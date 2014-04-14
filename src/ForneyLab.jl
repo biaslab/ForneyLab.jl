@@ -47,7 +47,19 @@ end
 type Edge
     tail::Union(Interface, Nothing)
     head::Union(Interface, Nothing)
-    # TODO: Constructor
+
+    function Edge(tail::Interface, head::Interface)
+        if  typeof(tail) == Nothing ||
+            typeof(head) == Nothing ||
+            typeof(head.message) == typeof(tail.message)
+
+            tail.partner = head
+            head.partner = tail
+            new(tail, head)
+        else
+            error("Head and tail message types do not match")
+        end
+    end
 end
 
 #
