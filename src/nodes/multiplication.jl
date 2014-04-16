@@ -38,10 +38,11 @@ type MultiplicationNode <: Node
 end
 
 function calculatemessage!{T<:Union(GaussianMessage,GeneralMessage)}(
-                            interfaceId::Int,
+                            interface_id::Int,
                             node::MultiplicationNode,
-                            inboundMessages::Array{T,1},
-                            messageType::DataType)
+                            inbound_messages::Array{T,1},
+                            message_type::DataType)
+ 
     # TODO: implement the message equations
-    node.interfaces[interfaceId].message = GaussianMessage()
+    node.interfaces[interface_id].message = GaussianMessage()
 end

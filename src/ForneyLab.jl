@@ -16,7 +16,7 @@ type Interface
     message::Union(Message, Nothing)
 
     # Sanity check for matching message types
-    function Interface(node::Node, partner::Interface, message::Message)
+    function Interface(node::Node, partner::Union(Interface, Nothing), message::Union(Message, Nothing))
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
             new(node, partner, message)
         elseif typeof(message) != typeof(partner.message) # Compare message types
@@ -52,6 +52,7 @@ type Edge
         end
     end
 end
+
 function Edge(tailNode::Node, headNode::Node)
     # Create an Edge from tailNode to headNode.
     # Use the first free interface on each node.
@@ -90,13 +91,13 @@ include("nodes/multiplication.jl")
 # Generic methods
 #############################
 
-function calculatemessage!(interface::Interface, node::Node, messageType::DataType=Message)
+function calculatemessage!(outbound_interface::Interface, node::Node, messageType::DataType=Message)
     # Calculate the outbound message on a specific interface of a specified node.
     # The message is stored in the specified interface.
     # Optionally, messageType defines the desired type of the calculated message.
 
     # Sanity check
-    if !is(interface.node, node)
+    if !is(outbound_interface.node, node)
         error("Specified interface does not belong to the specified node (", typeof(node), " ", node.name,")")
     end
 
@@ -104,7 +105,7 @@ function calculatemessage!(interface::Interface, node::Node, messageType::DataTy
     inbound_message_types = Union() # Union of all inbound message types
     for node_interface_id = 1:length(node.interfaces)
         node_interface = node.interfaces[node_interface_id]
-        if is(node_interface, interface) continue end
+        if is(node_interface, outbound_interface) continue end
         if node_interface.partner == nothing
             error("Cannot receive messages on disconnected interface ", node_interface_id, " of ", typeof(node), " ", node.name)
         end
@@ -120,20 +121,20 @@ function calculatemessage!(interface::Interface, node::Node, messageType::DataTy
 
     # Collect all inbound messages
     inbound_messages = Array(inbound_message_types, length(node.interfaces))
-    interface_id = 0
+    outbound_interface_id = 0
     for node_interface_id = 1:length(node.interfaces)
         node_interface = node.interfaces[node_interface_id]
         if is(node_interface, interface)
-            interface_id = node_interface_id
+            outbound_interface_id = node_interface_id
             continue
         end
         inbound_messages[node_interface_id] = node.interfaces[node_interface_id].partner.message
     end
 
     # Calculate the actual message
-    calculatemessage!(interface_id, node, inbound_messages, messageType)
+    calculatemessage!(outbound_interface_id, node, inbound_messages, messageType)
 end
-calculatemessage!(interface::Interface, messageType::DataType=Message) = calculatemessage!(interface, interface.node, messageType)
+calculatemessage!(outbound_interface::Interface, messageType::DataType=Message) = calculatemessage!(outbound_interface, outbound_interface.node, messageType)
 
 function calculatemessages!(node::Node)
     # Calculate the outbound messages on all interfaces of node.

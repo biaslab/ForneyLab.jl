@@ -23,15 +23,18 @@ type ConstantNode <: Node
         # Create interface
         self.interfaces[1] = Interface(self)
         # Init named interface handle
-        self.interface = self.interfaces[1]
+        self.interface = Interface(self) #self.interfaces[1]
         return self
     end
 end
+ConstantNode() = ConstantNode(GeneralMessage(1))
 
 function calculatemessage!{T<:Message}(
-                            interfaceId::Int,
+                            interface_id::Int,
                             node::ConstantNode,
-                            inboundMessages::Array{T,1},
-                            messageType::DataType)
-    node.interfaces[interfaceId].message = node.constant
+                            inbound_messages::Array{T,1},
+                            message_type::Message) #DataType)
+
+    # Just pass the unaltered message through
+    node.interfaces[interface_id].message = node.constant
 end
