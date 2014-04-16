@@ -5,12 +5,16 @@ module ForneyLab
 #
 abstract Message
 
+# Standard Gaussian message.
 type GaussianMessage <: Message
     V::Array{Float64}
     m::Array{Float64}
+    # TODO: precision and alternative parametrisations
 end
 GaussianMessage() = GaussianMessage([1.0], [0.0])
 
+# Message is a scalar or vector of arbitrary type.
+# Used for passing parameters (such as multiplication factors) to node functions.
 type ScalarParameterMessage{T} <: Message
     value::T
 end
@@ -21,12 +25,24 @@ ScalarParameterMessage() = ScalarParameterMessage(1.0)
 #
 abstract Node
 
-# An interface is a half-edge that connects to another interface to form a complete edge.
+# An interface is a half-edge that carries a message and connects to a pertner interface.
 type Interface
     node::Node
     partner::Union(Interface, Nothing)
     message::Union(Message, Nothing)
+
+    # Sanity check for matching message types
+    function Interface(node::Node, partner::Interface, message::Message)
+        if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
+            new(node, partner, message)
+        elseif typeof(message) != typeof(partner.message) # Compare message types
+            error("Message type of partner does not match with interface message type")
+        else
+            new(node, partner, message)
+        end
+    end
 end
+Interface(node::Node, message::Message) = Interface(node, nothing, message) 
 Interface(node::Node) = Interface(node, nothing, nothing)
 
 # interfaces(node) returns an array of interfaces for iterating
@@ -43,7 +59,7 @@ end
 
 # Constant node
 type ConstantNode <: Node
-    constant::Float64
+    constant::Float64 # TODO: Is this not a property of the interface?
     interface::Interface
     function ConstantNode(constant)
         self = new(constant)
@@ -51,6 +67,7 @@ type ConstantNode <: Node
         return self
     end
 end
+ConstantNode() = ConstantNode(1.0)
 
 # Mulitiply source with parameter multiplier: sink = multiplier * source
 type MultiplicationNode <: Node
@@ -67,22 +84,22 @@ type MultiplicationNode <: Node
 end
 
 # Combine two interfaces to form a complete edge.
-type Edge
-    tail::Interface
-    head::Interface
+# type Edge
+#     tail::Interface
+#     head::Interface
 
-    function Edge(tail::Interface, head::Interface)
-        if  typeof(head.message) == Nothing ||
-            typeof(tail.message) == Nothing ||
-            typeof(head.message) == typeof(tail.message)
-            tail.partner = head
-            head.partner = tail
-            new(tail, head)
-        else
-            error("Head and tail message types do not match")
-        end
-    end
-end
+#     function Edge(tail::Interface, head::Interface)
+#         if  typeof(head.message) == Nothing ||
+#             typeof(tail.message) == Nothing ||
+#             typeof(head.message) == typeof(tail.message)
+#             tail.partner = head
+#             head.partner = tail
+#             new(tail, head)
+#         else
+#             error("Head and tail message types do not match")
+#         end
+#     end
+# end
 
 #
 # calculatemessage calculates the outgoing message on the sink interface (half-edge).
@@ -156,7 +173,7 @@ function calculatemessage(node::Node)
 end
 
 # Calculate forward/backward messages on edge
-calculateforwardmessage(edge::Edge) = calculatemessage(edge.tail)
-calculatebackwardmessage(edge::Edge) = calculatemessage(edge.head)
+#calculateforwardmessage(edge::Edge) = calculatemessage(edge.tail)
+#calculatebackwardmessage(edge::Edge) = calculatemessage(edge.head)
 
 end # module ForneyLab
