@@ -1,13 +1,25 @@
+############################################
+# ConstantNode
+############################################
+# Description:
+#   Simple node with just 1 interface.
+#   Always sends out a constant (predefined) message.
+#
+# Interface ids, (names) and supported message types:
+#   1. (interface):
+#       Message
+############################################
+
 export ConstantNode
 
-# ConstantNode: has just one interface and always sends out a constant message
 type ConstantNode <: Node
     constant::Message
     interfaces::Array{Interface,1}
+    name::ASCIIString
     interface::Interface
 
-    function ConstantNode(constant::Message)
-        self = new(constant, Array(Interface, 1))
+    function ConstantNode(constant::Message, name::ASCIIString="#undef")
+        self = new(constant, Array(Interface, 1), name)
         # Create interface
         self.interfaces[1] = Interface(self)
         # Init named interface handle
@@ -16,7 +28,7 @@ type ConstantNode <: Node
     end
 end
 
-function calculatemessage{T<:Message}(
+function calculatemessage!{T<:Message}(
                             interfaceId::Int,
                             node::ConstantNode,
                             inboundMessages::Array{T,1},

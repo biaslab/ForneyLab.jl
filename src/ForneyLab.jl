@@ -1,7 +1,7 @@
 module ForneyLab
 
 export Message, Node, Interface, Edge
-export calculatemessage, calculatemessages, calculateforwardmessage, calculatebackwardmessage
+export calculatemessage!, calculatemessages!, calculateforwardmessage!, calculatebackwardmessage!
 
 abstract Message
 abstract Node
@@ -33,10 +33,10 @@ type Edge
                 head.partner = tail
                 new(tail, head)
             else
-                error("Cannot connect two interfaces of the same node.")
+                error("Cannot connect two interfaces of the same node: ", typeof(head.node), " ", head.name)
             end
         else
-            error("Head and tail message types do not match.")
+            error("Head and tail message types do not match: ", typeof(head.message), " and ", typeof(tail.message))
         end
     end
 end
@@ -52,7 +52,7 @@ function Edge(tailNode::Node, headNode::Node)
         end
     end
     if tail==nothing
-        error("Cannot create edge: no free interface on tail node.")
+        error("Cannot create edge: no free interface on tail node: ", typeof(tailNode), " ", tailNode.name)
     end
     for interface in headNode.interfaces
         if interface.partner==nothing
@@ -61,7 +61,7 @@ function Edge(tailNode::Node, headNode::Node)
         end
     end
     if head==nothing
-        error("Cannot create edge: no free interface on head node.")
+        error("Cannot create edge: no free interface on head node: ", typeof(headNode), " ", headNode.name)
     end
 
     return Edge(tail, head)
@@ -78,28 +78,29 @@ include("nodes/multiplication.jl")
 # Generic methods
 #############################
 
-function calculatemessage(interface::Interface, node::Node, messageType::DataType=Message)
+function calculatemessage!(interface::Interface, node::Node, messageType::DataType=Message)
     # Calculate the outbound message on a specific interface of a specified node.
     # The message is stored in the specified interface.
     # Optionally, messageType defines the desired type of the calculated message.
 
     # Sanity check
     if !is(interface.node, node)
-        error("Specified interface does not belong to the specified node.")
+        error("Specified interface does not belong to the specified node (", typeof(node), " ", node.name,")")
     end
 
     # Calculate all inbound messages
     inbound_message_types = Union() # Union of all inbound message types
-    for node_interface in node.interfaces
+    for node_interface_id = 1:length(node.interfaces)
+        node_interface = node.interfaces[node_interface_id]
         if is(node_interface, interface) continue end
         if node_interface.partner == nothing
-            error("Cannot receive messages on disconnected interface.")
+            error("Cannot receive messages on disconnected interface ", node_interface_id, " of ", typeof(node), " ", node.name)
         end
         if node_interface.partner.message == nothing
             # Recursive call to calculate required inbound message
-            calculatemessage(node_interface.partner)
+            calculatemessage!(node_interface.partner)
             if node_interface.partner.message == nothing
-                error("Could not calculate required inbound message.")
+                error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
             end
             inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
         end
@@ -118,26 +119,32 @@ function calculatemessage(interface::Interface, node::Node, messageType::DataTyp
     end
 
     # Calculate the actual message
-    calculatemessage(interface_id, node, inbound_messages, messageType)
-
-    # Clear all inbound messages
-    # TODO: check
-    for node_interface in node.interfaces
-        if is(node_interface, interface) continue end
-        node_interface.partner.message = nothing
-    end
+    calculatemessage!(interface_id, node, inbound_messages, messageType)
 end
-calculatemessage(interface::Interface, messageType::DataType=Message) = calculatemessage(interface, interface.node, messageType)
+calculatemessage!(interface::Interface, messageType::DataType=Message) = calculatemessage!(interface, interface.node, messageType)
 
-function calculatemessages(node::Node)
+function calculatemessages!(node::Node)
     # Calculate the outbound messages on all interfaces of node.
     for interface in node.interfaces
-        calculatemessage(interface, node)
+        calculatemessage!(interface, node)
     end
 end
 
 # Calculate forward/backward messages on an Edge
-calculateforwardmessage(edge::Edge) = calculatemessage(edge.tail)
-calculatebackwardmessage(edge::Edge) = calculatemessage(edge.head)
+calculateforwardmessage!(edge::Edge) = calculatemessage!(edge.tail)
+calculatebackwardmessage!(edge::Edge) = calculatemessage!(edge.head)
+
+function clearmessages!(node::Node)
+    # Clear all outbound messages on the interfaces of node
+    for interface in node.interfaces
+        interface.message = nothing
+    end
+end
+
+function clearmessages!(edge::Edge)
+    # Clear all messages on an edge.
+    edge.head.message = nothing
+    edge.tail.message = nothing
+end
 
 end # module ForneyLab
