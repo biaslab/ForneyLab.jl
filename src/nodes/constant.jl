@@ -1,5 +1,4 @@
 export ConstantNode
-export calculatemessage
 
 # ConstantNode: has just one interface and always sends out a constant message
 type ConstantNode <: Node

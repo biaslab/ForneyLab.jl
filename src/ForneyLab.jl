@@ -36,9 +36,35 @@ type Edge
                 error("Cannot connect two interfaces of the same node.")
             end
         else
-            error("Head and tail message types do not match")
+            error("Head and tail message types do not match.")
         end
     end
+end
+function Edge(tailNode::Node, headNode::Node)
+    # Create an Edge from tailNode to headNode.
+    # Use the first free interface on each node.
+    tail = nothing
+    head = nothing
+    for interface in tailNode.interfaces
+        if interface.partner==nothing
+            tail = interface
+            break
+        end
+    end
+    if tail==nothing
+        error("Cannot create edge: no free interface on tail node.")
+    end
+    for interface in headNode.interfaces
+        if interface.partner==nothing
+            head = interface
+            break
+        end
+    end
+    if head==nothing
+        error("Cannot create edge: no free interface on head node.")
+    end
+
+    return Edge(tail, head)
 end
 
 # Messages
@@ -59,7 +85,7 @@ function calculatemessage(interface::Interface, node::Node, messageType::DataTyp
 
     # Sanity check
     if !is(interface.node, node)
-        error("Specified interface does not belong to the specified node")
+        error("Specified interface does not belong to the specified node.")
     end
 
     # Calculate all inbound messages
@@ -67,13 +93,13 @@ function calculatemessage(interface::Interface, node::Node, messageType::DataTyp
     for node_interface in node.interfaces
         if is(node_interface, interface) continue end
         if node_interface.partner == nothing
-            error("Cannot receive messages on disconnected interface")
+            error("Cannot receive messages on disconnected interface.")
         end
         if node_interface.partner.message == nothing
             # Recursive call to calculate required inbound message
             calculatemessage(node_interface.partner)
             if node_interface.partner.message == nothing
-                error("Could not calculate required inbound message")
+                error("Could not calculate required inbound message.")
             end
             inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
         end
@@ -95,6 +121,7 @@ function calculatemessage(interface::Interface, node::Node, messageType::DataTyp
     calculatemessage(interface_id, node, inbound_messages, messageType)
 
     # Clear all inbound messages
+    # TODO: check
     for node_interface in node.interfaces
         if is(node_interface, interface) continue end
         node_interface.partner.message = nothing
