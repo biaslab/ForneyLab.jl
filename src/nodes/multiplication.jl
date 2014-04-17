@@ -26,7 +26,13 @@ type MultiplicationNode <: Node
     in2::Interface
     out::Interface
 
-    function MultiplicationNode(name::ASCIIString="#undef")
+    function MultiplicationNode(;args...)
+        name = "#undef"
+        for (key, val) in args
+            if key==:name
+                name=val
+            end
+        end
         self = new(Array(Interface, 3), name)
         # Create interfaces
         self.interfaces[1] = Interface(self)

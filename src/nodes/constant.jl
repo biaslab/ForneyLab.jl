@@ -18,7 +18,13 @@ type ConstantNode <: Node
     name::ASCIIString
     interface::Interface
 
-    function ConstantNode(constant::Message, name::ASCIIString="#undef")
+    function ConstantNode(constant::Message; args...)
+        name = "#undef"
+        for (key, val) in args
+            if key==:name
+                name=val
+            end
+        end
         self = new(constant, Array(Interface, 1), name)
         # Create interface
         self.interfaces[1] = Interface(self)

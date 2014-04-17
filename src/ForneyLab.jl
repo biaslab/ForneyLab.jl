@@ -1,10 +1,14 @@
 module ForneyLab
 
 export Message, Node, Interface, Edge
-export calculatemessage!, calculatemessages!, calculateforwardmessage!, calculatebackwardmessage!
+export calculatemessage!, calculatemessages!, calculateforwardmessage!, calculatebackwardmessage!, print
+
+import Base.show
 
 abstract Message
+
 abstract Node
+show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
 
 type Interface
     # An Interface belongs to a node and is used to send/receive messages.
@@ -28,6 +32,7 @@ type Interface
 end
 Interface(node::Node, message::Message) = Interface(node, nothing, message)
 Interface(node::Node) = Interface(node, nothing, nothing)
+show(io::IO, interface::Interface) = println(io, "Interface of ", typeof(interface.node), " with node name ", interface.node.name, " holds message of type ", typeof(interface.message), ".")
 
 type Edge
     # An Edge joins two interfaces and has a direction (from tail to head).
@@ -79,6 +84,7 @@ function Edge(tail_node::Node, head_node::Node)
 
     return Edge(tail, head)
 end
+show(io::IO, edge::Edge) = println(io, "Edge from ", typeof(edge.tail.node), " with node name ", edge.tail.node.name, " to ", typeof(edge.head.node), " with node name ", edge.head.node.name, ". Forward message type: ", typeof(edge.tail.message), ". Backward message type: ", typeof(edge.head.message), ".")
 
 # Messages
 include("messages.jl")
