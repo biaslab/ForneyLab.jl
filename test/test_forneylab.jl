@@ -36,6 +36,17 @@ end
 # Node specific tests are in a separate file
 include("test_nodes.jl")
 
+# Helper function for initializing a pair of nodes
+function initializepairofnodes()
+	# Initialize some nodes
+	node1 = MultiplicationNode()
+	node1.interfaces[1].message = GaussianMessage() 
+	node1.interfaces[2].message = GeneralMessage(1.0) 
+	node2 = ConstantNode()
+	node2.interfaces[1].message = GeneralMessage(2.0)
+	return node1, node2
+end
+
 # Helper function for node comparison
 function testinterfaceconnections(node1::MultiplicationNode, node2::ConstantNode)
 	# Check that nodes are properly connected
@@ -43,7 +54,6 @@ function testinterfaceconnections(node1::MultiplicationNode, node2::ConstantNode
 	@fact node2.interfaces[1].message.value => 2.0
 	@fact node1.interfaces[2].partner.message.value => 2.0
 	@fact node2.interfaces[1].partner.message.value => 1.0
-
 	# Check that pointers are initiatized correctly
 	@fact node1.multiplier.message.value => 1.0
 	@fact node2.interface.message.value => 2.0
@@ -53,70 +63,37 @@ end
 
 context("Connecting multiple nodes") do
 	facts("Nodes can directly be coupled through interfaces by using the interfaces array") do
-		# Initialize some nodes
-		node1 = MultiplicationNode()
-		node1.interfaces[1].message = GaussianMessage() 
-		node1.interfaces[2].message = GeneralMessage(1.0) 
-		node2 = ConstantNode()
-		node2.interfaces[1].message = GeneralMessage(2.0)
-
+		(node1, node2) = initializepairofnodes()
 		# Couple the interfaces that carry GeneralMessage
 		node1.interfaces[2].partner = node2.interfaces[1]
 		node2.interfaces[1].partner = node1.interfaces[2]
-
 		testinterfaceconnections(node1, node2)
 	end
 
 	facts("Nodes can directly be coupled through interfaces by using the explicit interface names") do
-		# Initialize some nodes
-		node1 = MultiplicationNode()
-		node1.interfaces[1].message = GaussianMessage() 
-		node1.interfaces[2].message = GeneralMessage(1.0) 
-		node2 = ConstantNode()
-		node2.interfaces[1].message = GeneralMessage(2.0)
-
+		(node1, node2) = initializepairofnodes()
 		# Couple the interfaces that carry GeneralMessage
 		node1.multiplier.partner = node2.interface
 		node2.interface.partner = node1.multiplier
-
 		testinterfaceconnections(node1, node2)
 	end
 
 	facts("Nodes can be coupled by edges by using the interfaces array") do
-		# Initialize some nodes
-		node1 = MultiplicationNode()
-		node1.interfaces[1].message = GaussianMessage() 
-		node1.interfaces[2].message = GeneralMessage(1.0) 
-		node2 = ConstantNode()
-		node2.interfaces[1].message = GeneralMessage(2.0)
-
+		(node1, node2) = initializepairofnodes()
 		# Couple the interfaces that carry GeneralMessage
 		edge = Edge(node2.interfaces[1],node1.interfaces[2]) # Edge from node 2 to node 1
-
 		testinterfaceconnections(node1, node2)
 	end
 
 	facts("Nodes can be coupled by edges using the explicit interface names") do
-		node1 = MultiplicationNode()
-		node1.interfaces[1].message = GaussianMessage() 
-		node1.interfaces[2].message = GeneralMessage(1.0) 
-		node2 = ConstantNode()
-		node2.interfaces[1].message = GeneralMessage(2.0)
-
+		(node1, node2) = initializepairofnodes()
 		# Couple the interfaces that carry GeneralMessage
 		edge = Edge(node2.interface,node1.multiplier) # Edge from node 2 to node 1
-
 		testinterfaceconnections(node1, node2)
 	end
 
 	facts("Edge should throw an error when messages are of different types") do
-		# Initialize some nodes
-		node1 = MultiplicationNode()
-		node1.interfaces[1].message = GaussianMessage() 
-		node1.interfaces[2].message = GeneralMessage(1.0) 
-		node2 = ConstantNode()
-		node2.interfaces[1].message = GeneralMessage(2.0)
-
+		(node1, node2) = initializepairofnodes()
 		# Couple the gaussian interface gaussian to the constant interface 
 		@fact_throws Edge(node2.interfaces[1],node1.interfaces[1])
 	end
