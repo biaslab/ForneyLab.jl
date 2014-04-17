@@ -17,10 +17,12 @@ context("Calculate messages for specific node types") do
 		end
 
 		facts("Constant node should propagate a message") do
-			node = ConstantNode(GaussianMessage())
+			node = ConstantNode(GaussianMessage(m=[2.0], V=[4.0]))
 			@fact node.interfaces[1].message => nothing
-			calculatemessage!(1,node,Array(GaussianMessage,0),GaussianMessage())
+			calculatemessage!(1,node,Array(GaussianMessage,0))
 			@fact typeof(node.interfaces[1].message) => GaussianMessage
+			@fact node.interfaces[1].message.m => [2.0]
+			@fact node.interfaces[1].message.V => [4.0]
 		end
 	end
 end

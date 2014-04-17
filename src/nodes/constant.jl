@@ -33,7 +33,7 @@ type ConstantNode <: Node
         return self
     end
 end
-ConstantNode() = ConstantNode(GeneralMessage(1.0))
+ConstantNode(; args...) = ConstantNode(GeneralMessage(1.0); args...)
 
 function calculatemessage!{T<:Message}(
                             outbound_interface_id::Int,
@@ -41,5 +41,5 @@ function calculatemessage!{T<:Message}(
                             inbound_messages::Array{T,1})
 
     # Just pass the unaltered message through
-    node.interfaces[outbound_interface_id].message = node.constant
+    node.interfaces[outbound_interface_id].message = deepcopy(node.constant)
 end

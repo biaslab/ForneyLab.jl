@@ -15,6 +15,13 @@ context("General node properties") do
 		end
 	end
 
+	facts("Node constructor should assign a name") do
+		for(NodeType in subtypes(Node))
+			my_node = NodeType(;name="my_name")
+			@fact my_node.name => "my_name"
+		end
+	end
+
 	facts("Nodes should couple interfaces to themselves") do
 		for(NodeType in subtypes(Node))
 			my_node = NodeType()
@@ -55,9 +62,9 @@ function testinterfaceconnections(node1::MultiplicationNode, node2::ConstantNode
 	@fact node1.interfaces[2].partner.message.value => 2.0
 	@fact node2.interfaces[1].partner.message.value => 1.0
 	# Check that pointers are initiatized correctly
-	@fact node1.multiplier.message.value => 1.0
+	@fact node1.in2.message.value => 1.0
 	@fact node2.interface.message.value => 2.0
-	@fact node1.multiplier.partner.message.value => 2.0
+	@fact node1.in2.partner.message.value => 2.0
 	@fact node2.interface.partner.message.value => 1.0
 end
 
@@ -73,8 +80,8 @@ context("Connecting multiple nodes") do
 	facts("Nodes can directly be coupled through interfaces by using the explicit interface names") do
 		(node1, node2) = initializepairofnodes()
 		# Couple the interfaces that carry GeneralMessage
-		node1.multiplier.partner = node2.interface
-		node2.interface.partner = node1.multiplier
+		node1.in2.partner = node2.interface
+		node2.interface.partner = node1.in2
 		testinterfaceconnections(node1, node2)
 	end
 
@@ -88,7 +95,7 @@ context("Connecting multiple nodes") do
 	facts("Nodes can be coupled by edges using the explicit interface names") do
 		(node1, node2) = initializepairofnodes()
 		# Couple the interfaces that carry GeneralMessage
-		edge = Edge(node2.interface,node1.multiplier) # Edge from node 2 to node 1
+		edge = Edge(node2.interface,node1.in2) # Edge from node 2 to node 1
 		testinterfaceconnections(node1, node2)
 	end
 
@@ -109,23 +116,8 @@ context("Connecting multiple nodes") do
 end
 
 context("Sending messages over interfaces") do
-	facts("Interface should carry a message") do
-		node = ConstantNode()
-		node.interfaces[1].message = GeneralMessage()
-		@fact node.interfaces[1].message.value => 1.0
-
-		# TODO: Creating an interface on a node does not yet propagate
-		# the information about that interface to the node itself.
-		@fact node.interface.message.value => 1.0
-		#@fact node.interfaces[1].message.value => 1.0
-	end
-
 
 end
-
-
-
-
 
 context("Specific message types") do
 	facts("GaussianMessage should initialize a Gaussian message") do
@@ -137,43 +129,6 @@ context("Specific message types") do
 		@fact GeneralMessage(1.0).value => 1.0
 		@fact GeneralMessage([1.0, 2.0]).value => [1.0, 2.0]
 	end
-end
-
-
-
-
-
-
-
-
-context("Interface") do
-	
-end
-
-
-context("interfaces function") do
-
-end
-
-# context("Edges") do
-# 	facts("It should initialize interfaces") do
-# 		# Initialize a multiplication node with a Gaussian source and scalar multiplier
-# 		node = MultiplicationNode();
-# 		node.multiplier = Interface(node, nothing, GeneralMessage());
-# 		node.source = Interface(node, nothing, GaussianMessage());
-# 		node.sink = Interface(node);
-
-# 		@fact typeof(node.multiplier.message) => GeneralMessage{Float64}
-# 		@fact typeof(node.source.message) => GaussianMessage
-# 		@fact typeof(node.sink.message) => Nothing
-# 	end
-
-# 	facts("It should initiatize edges as a combination of two interfaces") do
-# 	end
-# end
-
-context("calculatemessage function") do
-	
 end
 
 end # module TestForneyLab

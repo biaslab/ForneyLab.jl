@@ -41,7 +41,7 @@ type MatrixMultiplicationNode <: Node
         return self
     end
 end
-MatrixMultiplicationNode() = MatrixMultiplicationNode([1.0])
+MatrixMultiplicationNode(; args...) = MatrixMultiplicationNode([1.0]; args...)
 
 function calculatemessage!{T<:GaussianMessage}(
                             outbound_interface_id::Int,

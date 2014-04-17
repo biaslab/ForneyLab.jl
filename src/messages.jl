@@ -17,23 +17,23 @@ export
 #   m and xi are 1d arrays, V and W are 2d
 ############################################
 type GaussianMessage <: Message
-    m::Array{Float64, 1}     # Mean vector
-    V::Array{Float64, 2}     # Covariance matrix
-    W::Array{Float64, 2}     # Weight matrix
-    xi::Array{Float64, 1}    # Weighted mean vector: xi=W*m
+    m::Union(Array{Float64, 1}, Nothing)     # Mean vector
+    V::Union(Array{Float64}, Nothing)     # Covariance matrix
+    W::Union(Array{Float64}, Nothing)     # Weight matrix
+    xi::Union(Array{Float64, 1}, Nothing)    # Weighted mean vector: xi=W*m
 end
 function GaussianMessage(;args...)
-    self = GaussianMessage([], [], [], [])
+    self = GaussianMessage(nothing, nothing, nothing, nothing)
     for (key,val) in args
         setfield(self, key, deepcopy(val))
     end
-    if length(self.m)==0 && length(self.xi)==0
+    if is(self.m, nothing) && is(self.xi, nothing)
         error("Cannot create GaussianMessage: you should define m or xi or both.")
     end
-    if length(self.V)==0 && length(self.W)==0
+    if is(self.V, nothing) && is(self.W, nothing)
         error("Cannot create GaussianMessage: you should define V or W or both.")
     end
-    if length(self.xi)>0 && length(self.W)==0
+    if !is(self.xi, nothing) && is(self.W, nothing)
         error("Cannot create GaussianMessage: you should also define W if you use xi")
     end
 
