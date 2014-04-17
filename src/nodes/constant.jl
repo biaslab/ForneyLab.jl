@@ -23,7 +23,7 @@ type ConstantNode <: Node
         # Create interface
         self.interfaces[1] = Interface(self)
         # Init named interface handle
-        self.interface = Interface(self) #self.interfaces[1]
+        self.interface = self.interfaces[1]
         return self
     end
 end

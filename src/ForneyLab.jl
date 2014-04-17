@@ -124,7 +124,7 @@ function calculatemessage!(outbound_interface::Interface, node::Node, messageTyp
     outbound_interface_id = 0
     for node_interface_id = 1:length(node.interfaces)
         node_interface = node.interfaces[node_interface_id]
-        if is(node_interface, interface)
+        if is(node_interface, outbound_interface)
             outbound_interface_id = node_interface_id
             continue
         end
@@ -155,9 +155,9 @@ function clearmessages!(node::Node)
 end
 
 function clearmessages!(edge::Edge)
-    # Clear all messages on an edge.
-    edge.head.message = nothing
-    edge.tail.message = nothing
+   # Clear all messages on an edge.
+   edge.head.message = nothing
+   edge.tail.message = nothing
 end
 
 end # module ForneyLab
