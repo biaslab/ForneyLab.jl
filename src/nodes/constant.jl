@@ -27,14 +27,13 @@ type ConstantNode <: Node
         return self
     end
 end
-ConstantNode() = ConstantNode(GeneralMessage(1))
+ConstantNode() = ConstantNode(GeneralMessage(1.0))
 
 function calculatemessage!{T<:Message}(
-                            interface_id::Int,
+                            outbound_interface_id::Int,
                             node::ConstantNode,
-                            inbound_messages::Array{T,1},
-                            message_type::Message) #DataType)
+                            inbound_messages::Array{T,1})
 
     # Just pass the unaltered message through
-    node.interfaces[interface_id].message = node.constant
+    node.interfaces[outbound_interface_id].message = node.constant
 end

@@ -26,7 +26,7 @@ type Interface
         end
     end
 end
-Interface(node::Node, message::Message) = Interface(node, nothing, message) 
+Interface(node::Node, message::Message) = Interface(node, nothing, message)
 Interface(node::Node) = Interface(node, nothing, nothing)
 
 type Edge
@@ -53,28 +53,28 @@ type Edge
     end
 end
 
-function Edge(tailNode::Node, headNode::Node)
+function Edge(tail_node::Node, head_node::Node)
     # Create an Edge from tailNode to headNode.
     # Use the first free interface on each node.
     tail = nothing
     head = nothing
-    for interface in tailNode.interfaces
+    for interface in tail_node.interfaces
         if interface.partner==nothing
             tail = interface
             break
         end
     end
     if tail==nothing
-        error("Cannot create edge: no free interface on tail node: ", typeof(tailNode), " ", tailNode.name)
+        error("Cannot create edge: no free interface on tail node: ", typeof(tail_node), " ", tail_node.name)
     end
-    for interface in headNode.interfaces
+    for interface in head_node.interfaces
         if interface.partner==nothing
             head = interface
             break
         end
     end
     if head==nothing
-        error("Cannot create edge: no free interface on head node: ", typeof(headNode), " ", headNode.name)
+        error("Cannot create edge: no free interface on head node: ", typeof(head_node), " ", head_node.name)
     end
 
     return Edge(tail, head)
@@ -85,16 +85,16 @@ include("messages.jl")
 
 # Nodes
 include("nodes/constant.jl")
+include("nodes/matrixmultiplication.jl")
 include("nodes/multiplication.jl")
 
 #############################
 # Generic methods
 #############################
 
-function calculatemessage!(outbound_interface::Interface, node::Node, messageType::DataType=Message)
+function calculatemessage!(outbound_interface::Interface, node::Node)
     # Calculate the outbound message on a specific interface of a specified node.
     # The message is stored in the specified interface.
-    # Optionally, messageType defines the desired type of the calculated message.
 
     # Sanity check
     if !is(outbound_interface.node, node)
@@ -132,9 +132,9 @@ function calculatemessage!(outbound_interface::Interface, node::Node, messageTyp
     end
 
     # Calculate the actual message
-    calculatemessage!(outbound_interface_id, node, inbound_messages, messageType)
+    calculatemessage!(outbound_interface_id, node, inbound_messages)
 end
-calculatemessage!(outbound_interface::Interface, messageType::DataType=Message) = calculatemessage!(outbound_interface, outbound_interface.node, messageType)
+calculatemessage!(outbound_interface::Interface) = calculatemessage!(outbound_interface, outbound_interface.node)
 
 function calculatemessages!(node::Node)
     # Calculate the outbound messages on all interfaces of node.

@@ -2,16 +2,19 @@
 # MulitiplicationNode
 ############################################
 # Description:
-#   Multiplication with a multiplier that is received over an edge.
-#   sink = multiplier * source
+#   Multiplication of two messages.
+#   out = in1 * in2
 #
 # Interface ids, (names) and supported message types:
-#   1. (source):
+#   1. (in1):
 #       GaussianMessage
-#   2. (multiplier):
-#       GeneralMessage{FloatingPoint}
-#   3. (sink):
+#       GeneralMessage
+#   2. (in2):
 #       GaussianMessage
+#       GeneralMessage
+#   3. (out):
+#       GaussianMessage
+#       GeneralMessage
 ############################################
 
 export MultiplicationNode
@@ -19,9 +22,9 @@ export MultiplicationNode
 type MultiplicationNode <: Node
     interfaces::Array{Interface,1}
     name::ASCIIString
-    multiplier::Interface
-    source::Interface
-    sink::Interface
+    in1::Interface
+    in2::Interface
+    out::Interface
 
     function MultiplicationNode(name::ASCIIString="#undef")
         self = new(Array(Interface, 3), name)
@@ -30,19 +33,23 @@ type MultiplicationNode <: Node
         self.interfaces[2] = Interface(self)
         self.interfaces[3] = Interface(self)
         # Init named interface handles
-        self.source     = self.interfaces[1]
-        self.multiplier = self.interfaces[2]
-        self.sink       = self.interfaces[3]
+        self.in1 = self.interfaces[1]
+        self.in2 = self.interfaces[2]
+        self.out = self.interfaces[3]
         return self
     end
 end
 
 function calculatemessage!{T<:Union(GaussianMessage,GeneralMessage)}(
-                            interface_id::Int,
+                            outbound_interface_id::Int,
                             node::MultiplicationNode,
-                            inbound_messages::Array{T,1},
-                            message_type::DataType)
- 
-    # TODO: implement the message equations
-    node.interfaces[interface_id].message = GaussianMessage()
+                            inbound_messages::Array{T,1})
+    if outbound_interface_id == 1 # message to source interface
+
+    elseif outbound_interface_id == 2 # message to source interface
+
+    elseif outbound_interface_id == 3 # message to source interface
+
+    end
+    node.interfaces[outbound_interface_id].message = GaussianMessage()
 end
