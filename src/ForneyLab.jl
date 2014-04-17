@@ -50,7 +50,7 @@ type Edge
                 head.partner = tail
                 new(tail, head)
             else
-                error("Cannot connect two interfaces of the same node: ", typeof(head.node), " ", head.name)
+                error("Cannot connect two interfaces of the same node: ", typeof(head.node), " ", head.node.name)
             end
         else
             error("Head and tail message types do not match: ", typeof(head.message), " and ", typeof(tail.message))

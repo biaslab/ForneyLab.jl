@@ -1,5 +1,6 @@
 # This file contains the general ForneyLab tests.
-# Tests for specific node types are found in test_nodes.jl
+# Tests for specific node and message types are
+# found in test_nodes.jl and test_messages.jl
 
 module TestForneyLab
 
@@ -40,7 +41,8 @@ context("General node properties") do
 	end
 end
 
-# Node specific tests are in a separate file
+# Node and message specific tests are in separate files
+include("test_messages.jl")
 include("test_nodes.jl")
 
 # Helper function for initializing a pair of nodes
@@ -110,24 +112,45 @@ context("Connecting multiple nodes") do
 		node.interfaces[2].message = GaussianMessage() 
 		node.interfaces[3].message = GaussianMessage()
 		# Connect output directly to input 
-		Edge(node.interfaces[3],node.interfaces[2])
+		@fact_throws Edge(node.interfaces[3],node.interfaces[2])
 	end
 
 end
 
-context("Sending messages over interfaces") do
-
-end
-
-context("Specific message types") do
-	facts("GaussianMessage should initialize a Gaussian message") do
-		@fact GaussianMessage().V => [1.0]
-		@fact GaussianMessage().m => [0.0]
+context("Message passing over interfaces") do
+	facts("calculatemessage! should calculate an output message") do
+		node1 = ConstantNode(GeneralMessage(3.0))
+		node2 = MatrixMultiplicationNode([2.0])
+		Edge(node1.interface, node2.in1)
+		@fact node2.out.message => nothing
+		# Request message on node for which the input is unknown
+		calculatemessage!(node2.out)
+		@fact typeof(node2.out.message) => GeneralMessage
+		@fact node2.out.message.value => [6.0]
 	end
 
-	facts("GeneralMessage should initiatize a multiplication parameter as message") do
-		@fact GeneralMessage(1.0).value => 1.0
-		@fact GeneralMessage([1.0, 2.0]).value => [1.0, 2.0]
+	facts("calculatemessage! should recursively calculate a required message") do
+		# Define three nodes in series
+		node1 = ConstantNode(GeneralMessage(3.0))
+		node2 = MatrixMultiplicationNode([2.0])
+		node3 = MatrixMultiplicationNode([2.0])
+		Edge(node1.interface, node2.in1)
+		Edge(node2.out, node3.in1)
+		@fact node3.out.message => nothing
+		# Request message on node for which the input is unknown
+		calculatemessage!(node3.out)
+		@fact typeof(node3.out.message) => GeneralMessage
+		@fact node3.out.message.value => [12.0]
+	end
+
+	facts("calculatemessage! should throw an error if input node and interface do not match") do
+		(node1, node2) = initializepairofnodes()
+		@fact_throws calculatemessage!(node1.out, node2)
+	end
+
+	facts("calculatemessage! should throw an error if the message-less interface has no partner") do
+		node = MultiplicationNode()
+		@fact_throws calculatemessage!(node.out)
 	end
 end
 

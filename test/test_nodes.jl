@@ -10,6 +10,17 @@ context("Calculate messages for specific node types") do
 		end
 	end
 
+	context("Matrix multiplication node") do
+		facts("MatrixMultiplicationNode should initialize a matrix multiplication node") do
+			@fact typeof(MatrixMultiplicationNode()) => MatrixMultiplicationNode
+			@fact length(MatrixMultiplicationNode().interfaces) => 2
+		end
+
+		facts("MatrixMultiplication node should propagate a message") do
+			#TODO: implement calculations
+		end
+	end
+
 	context("Constant node") do
 		facts("ConstantNode should initialize a constant node") do
 			@fact typeof(ConstantNode()) => ConstantNode
