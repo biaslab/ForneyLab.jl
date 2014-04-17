@@ -161,9 +161,9 @@ function clearmessages!(node::Node)
 end
 
 function clearmessages!(edge::Edge)
-    # Clear all messages on an edge.
-    edge.head.message = nothing
-    edge.tail.message = nothing
+   # Clear all messages on an edge.
+   edge.head.message = nothing
+   edge.tail.message = nothing
 end
 
 end # module ForneyLab
