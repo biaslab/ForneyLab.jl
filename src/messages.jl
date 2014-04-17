@@ -1,3 +1,5 @@
+# TODO: Investigate if it's better to define messages as immutable.
+
 export
     GaussianMessage,
     GeneralMessage
@@ -33,7 +35,7 @@ function GaussianMessage(;args...)
     if is(self.V, nothing) && is(self.W, nothing)
         error("Cannot create GaussianMessage: you should define V or W or both.")
     end
-    if !is(self.xi, nothing) && is(self.W, nothing)
+    if typeof(self.xi)==Array && is(self.W, nothing)
         error("Cannot create GaussianMessage: you should also define W if you use xi")
     end
 
