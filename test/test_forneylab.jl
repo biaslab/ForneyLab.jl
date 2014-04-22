@@ -43,7 +43,9 @@ end
 
 # Node and message specific tests are in separate files
 include("test_messages.jl")
-include("test_nodes.jl")
+include("nodes/test_constant_node.jl")
+include("nodes/test_multiplication_node.jl")
+include("nodes/test_matrix_multiplication_node.jl")
 
 # Helper function for initializing a pair of nodes
 function initializepairofnodes()
