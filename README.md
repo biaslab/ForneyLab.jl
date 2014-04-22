@@ -30,16 +30,16 @@ using ForneyLab
 # Build a graph
 c1 = ConstantNode(GeneralMessage(3.0))
 c2 = ConstantNode(GeneralMessage(2.0))
-x = MultiplicationNode("MyMultiplier")
-e1 = Edge(c1.interface, x.source)
-e2 = Edge(c2.interface, x.multiplier)
-# Calculate the outbound message on x.sink, the output of the multiplication node.
+x = MultiplicationNode(name="MyMultiplier")
+e1 = Edge(c1.interface, x.in1)
+e2 = Edge(c2.interface, x.in2)
+# Calculate the outbound message on x.out, the output of the multiplication node.
 # This call will recursively calculate all required inbound messages.
-calculatemessage!(x.sink)
+calculatemessage!(x.out)
 # Print the calculated message, which is stored in the interface.
-print(x.sink.message)
+print(x.out.message)
 # We can also request directional messages on edges instead of an interface.
-# I.e. for calculating the message c1.interface -> x.source, we can use:
+# I.e. for calculating the message c1.interface -> x.in1, we can use:
 calculateforwardmessage!(e1)
 # The calculated message is again stored in the sending interface:
 print(e1.tail.message)
@@ -53,7 +53,7 @@ type BinomialMessage <: Message
 end
 BinomialMessage() = BinomialMessage(0.5)
 ```
-To create a message of type BinomialMessage, use `m = BinomialMessage(0.2)` or just `m = BinomialMessage()` to init p at 0.5.
+To create a message of type BinomialMessage, use `m = BinomialMessage(0.2)` or just `m = BinomialMessage()` to init p at 0.5. There should always be a message constructor that doesn't require any arguments, for testing purposes.
 
 Node types
 ==========
@@ -65,7 +65,13 @@ type AdditionNode <: Node
     in1::Interface
     in2::Interface
     out::Interface
-    function AdditionNode(name::ASCIIString="#undef")
+    function AdditionNode(;args...)
+        name = "#undef"
+        for (key, val) in args
+            if key==:name
+                name=val
+            end
+        end
         self = new(Array(Interface, 3), name)
         # Create interfaces
         self.interfaces[1] = Interface(self)
@@ -83,15 +89,13 @@ Every interface has a unique id, given by its index in the `interfaces` array.
 Apart from the node type definition, one also has to define one or more methods for calculating the outbound messages. For calculating messages, function `calculatemessage!()` is used. Multiple methods of this function can be defined if one wants separate implementations for different message types. The `calculatemessage!()` function for `AdditionNode` could be defined as:
 ```jl
 function calculatemessage!{T<:Union(GaussianMessage,GeneralMessage)}(
-                            interfaceId::Int,
+                            outbound_interface_id::Int,
                             node::AdditionNode,
-                            inboundMessages::Array{T,1},
-                            messageType::DataType)
+                            inbound_messages::Array{T,1})
     # Calculate the output message here, 
-    # based on the output interface (interfaceId) and the inboundMessages.
-    # messageType is the desired type of the output message.
-    # The calculated message is saved in node.interfaces[interfaceId].message
-    node.interfaces[interfaceId].message = GaussianMessage()
+    # based on the output interface (outbound_interface_id) and the inbound_messages.
+    # The calculated message is saved in node.interfaces[outbound_interface_id].message
+    node.interfaces[outbound_interface_id].message = GaussianMessage()
 end
 ```
-This method will be used when calculating outbound messages of a AdditionNode, when the inbound messages are of types GaussianMessage and/or GeneralMessage. For different message types, other methods can be defined.
+This method will be used when calculating outbound messages of a AdditionNode, when the inbound messages are of types GaussianMessage and/or GeneralMessage. For different message types, extra methods can be defined.
