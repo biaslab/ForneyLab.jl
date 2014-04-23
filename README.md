@@ -19,8 +19,8 @@ Usage
 Import ForneyLab:
 ```jl
 using ForneyLab
-```   
-Once imported, one can create nodes and edges to build a factor graph. There are multiple types of nodes. One can use built-in node types, or one can define custom nodes. A node has one or more interfaces, which can be used to send/receive messages. An edge connects two interfaces of different nodes. Every interface can handle one or more message types. ForneyLab comes with a set of built-in message types, but you can also define your own. 
+```
+Once imported, one can create nodes and edges to build a factor graph. There are multiple types of nodes. One can use built-in node types, or one can define custom nodes. A node has one or more interfaces, which can be used to send/receive messages. An edge connects two interfaces of different nodes. Every interface can handle one or more message types. ForneyLab comes with a set of built-in message types, but you can also define your own.
 
 Example
 -------
@@ -35,12 +35,12 @@ e1 = Edge(c1.interface, x.in1)
 e2 = Edge(c2.interface, x.in2)
 # Calculate the outbound message on x.out, the output of the multiplication node.
 # This call will recursively calculate all required inbound messages.
-calculatemessage!(x.out)
+calculateMessage!(x.out)
 # Print the calculated message, which is stored in the interface.
 print(x.out.message)
 # We can also request directional messages on edges instead of an interface.
 # I.e. for calculating the message c1.interface -> x.in1, we can use:
-calculateforwardmessage!(e1)
+calculateForwardMessage!(e1)
 # The calculated message is again stored in the sending interface:
 print(e1.tail.message)
 ```
@@ -88,11 +88,11 @@ end
 Every interface has a unique id, given by its index in the `interfaces` array.
 Apart from the node type definition, one also has to define one or more methods for calculating the outbound messages. For calculating messages, function `calculatemessage!()` is used. Multiple methods of this function can be defined if one wants separate implementations for different message types. The `calculatemessage!()` function for `AdditionNode` could be defined as:
 ```jl
-function calculatemessage!{T<:Union(GaussianMessage,GeneralMessage)}(
+function calculatemessage!{T<:Union(GaussianMessage, GeneralMessage)}(
                             outbound_interface_id::Int,
                             node::AdditionNode,
                             inbound_messages::Array{T,1})
-    # Calculate the output message here, 
+    # Calculate the output message here,
     # based on the output interface (outbound_interface_id) and the inbound_messages.
     # The calculated message is saved in node.interfaces[outbound_interface_id].message
     node.interfaces[outbound_interface_id].message = GaussianMessage()

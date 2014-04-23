@@ -1,12 +1,12 @@
 module ForneyLab
 
 export Message, Node, Interface, Edge
-export calculatemessage!, calculatemessages!, calculateforwardmessage!, calculatebackwardmessage!, print, ensurematrix!
+export calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, clearMessages!, ensureMatrix
 
 # Helper function needed for node and message initialization, ensures the input is a 2D array
-ensurematrix!{T<:Number}(arr::Array{T,2}) = arr
-ensurematrix!{T<:Number}(arr::Array{T,1}) = reshape(arr, 1, 1) # Can only accept arrays with one element
-ensurematrix!(n::Nothing) = nothing
+ensureMatrix{T<:Number}(arr::Array{T,2}) = arr
+ensureMatrix{T<:Number}(arr::Array{T,1}) = reshape(arr, 1, 1)
+ensureMatrix(n::Nothing) = nothing
 
 import Base.show
 
@@ -96,14 +96,14 @@ include("messages.jl")
 
 # Nodes
 include("nodes/constant.jl")
-include("nodes/matrixmultiplication.jl")
+include("nodes/matrix_multiplication.jl")
 include("nodes/multiplication.jl")
 
 #############################
 # Generic methods
 #############################
 
-function calculatemessage!(outbound_interface::Interface, node::Node)
+function calculateMessage!(outbound_interface::Interface, node::Node)
     # Calculate the outbound message on a specific interface of a specified node.
     # The message is stored in the specified interface.
 
@@ -122,7 +122,7 @@ function calculatemessage!(outbound_interface::Interface, node::Node)
         end
         if node_interface.partner.message == nothing
             # Recursive call to calculate required inbound message
-            calculatemessage!(node_interface.partner)
+            calculateMessage!(node_interface.partner)
             if node_interface.partner.message == nothing
                 error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
             end
@@ -143,29 +143,29 @@ function calculatemessage!(outbound_interface::Interface, node::Node)
     end
 
     # Calculate the actual message
-    calculatemessage!(outbound_interface_id, node, inbound_messages)
+    calculateMessage!(outbound_interface_id, node, inbound_messages)
 end
-calculatemessage!(outbound_interface::Interface) = calculatemessage!(outbound_interface, outbound_interface.node)
+calculateMessage!(outbound_interface::Interface) = calculateMessage!(outbound_interface, outbound_interface.node)
 
-function calculatemessages!(node::Node)
+function calculateMessages!(node::Node)
     # Calculate the outbound messages on all interfaces of node.
     for interface in node.interfaces
-        calculatemessage!(interface, node)
+        calculateMessage!(interface, node)
     end
 end
 
 # Calculate forward/backward messages on an Edge
-calculateforwardmessage!(edge::Edge) = calculatemessage!(edge.tail)
-calculatebackwardmessage!(edge::Edge) = calculatemessage!(edge.head)
+calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
+calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
-function clearmessages!(node::Node)
+function clearMessages!(node::Node)
     # Clear all outbound messages on the interfaces of node
     for interface in node.interfaces
         interface.message = nothing
     end
 end
 
-function clearmessages!(edge::Edge)
+function clearMessages!(edge::Edge)
    # Clear all messages on an edge.
    edge.head.message = nothing
    edge.tail.message = nothing
