@@ -1,5 +1,3 @@
-# TODO: Investigate if it's better to define messages as immutable.
-
 export
     GaussianMessage,
     GeneralMessage
@@ -26,13 +24,13 @@ type GaussianMessage <: Message
 end
 function GaussianMessage(;args...)
     self = GaussianMessage(nothing, nothing, nothing, nothing)
-    for (key,val) in args
+    for (key, val) in args
         setfield(self, key, deepcopy(val))
     end
 
     # In the case of single value V and W, cast V and W to matrix
-    ensurematrix!(self.W)
-    ensurematrix!(self.V)
+    self.W = ensureMatrix(self.W)
+    self.V = ensureMatrix(self.V)
 
     # Check parameterizations
     if is(self.m, nothing) && is(self.xi, nothing)

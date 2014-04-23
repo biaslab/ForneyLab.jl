@@ -46,16 +46,19 @@ type MultiplicationNode <: Node
     end
 end
 
-function calculatemessage!{T<:Union(GaussianMessage,GeneralMessage)}(
+function calculateMessage!{T<:Union(GaussianMessage, GeneralMessage)}(
                             outbound_interface_id::Int,
                             node::MultiplicationNode,
                             inbound_messages::Array{T,1})
-    if outbound_interface_id == 1 # message to source interface
-
-    elseif outbound_interface_id == 2 # message to source interface
-
-    elseif outbound_interface_id == 3 # message to source interface
-
+    msg = GaussianMessage()
+    if outbound_interface_id == 1 # message towards in1
+        # TODO
+    elseif outbound_interface_id == 2 # message towards in2
+        # TODO
+    elseif outbound_interface_id == 3 # message towards out
+        # TODO
     end
-    node.interfaces[outbound_interface_id].message = GaussianMessage()
+
+    # Set the outbound message
+    node.interfaces[outbound_interface_id].message = msg
 end

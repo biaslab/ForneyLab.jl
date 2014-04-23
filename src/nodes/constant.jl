@@ -35,7 +35,7 @@ type ConstantNode <: Node
 end
 ConstantNode(; args...) = ConstantNode(GeneralMessage(1.0); args...)
 
-function calculatemessage!{T<:Message}(
+function calculateMessage!{T<:Message}(
                             outbound_interface_id::Int,
                             node::ConstantNode,
                             inbound_messages::Array{T,1})
