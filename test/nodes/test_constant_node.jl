@@ -12,6 +12,6 @@ context("Sending out a message") do
 		calculatemessage!(1,node,Array(GaussianMessage,0))
 		@fact typeof(node.interfaces[1].message) => GaussianMessage
 		@fact node.interfaces[1].message.m => [2.0]
-		@fact node.interfaces[1].message.V => [4.0]
+		@fact node.interfaces[1].message.V => reshape([4.0],1,1)
 	end
 end

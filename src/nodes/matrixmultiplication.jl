@@ -25,13 +25,19 @@ type MatrixMultiplicationNode <: Node
     in1::Interface
     out::Interface
     function MatrixMultiplicationNode(A::Array; args...)
+        # TODO: cast A to matrix
+
         name = "#undef"
         for (key, val) in args
             if key==:name
                 name=val
             end
         end
-        self = new(deepcopy(A), name, Array(Interface, 2))
+        self = new(deepcopy(A), name, Array(Interface, 2)) # Deepcopy to avoid an unexpected change of the input argument A
+
+        # In the case of single value A, cast A to matrix
+        ensurematrix!(self.A)
+
         # Create interfaces
         self.interfaces[1] = Interface(self)
         self.interfaces[2] = Interface(self)
@@ -103,7 +109,7 @@ function calculatemessage!( outbound_interface_id::Int,
             msg.V = nothing
             msg.W = forward_W_rule(node.A, msg.W)
             msg.xi = nothing
-        elseif msg.xi != nothing && msg.W != nothing && isposdef(node.A) # TODO: How to check for positive definiteness of V?
+        elseif msg.xi != nothing && msg.W != nothing && isposdef(node.A) # TODO: ow to check for positive definiteness of V? Check rule for positive definiteness, what does positive definiteness of V say about W?.
             msg.m = nothing
             msg.V = nothing
             msg.W = forward_W_rule(node.A, msg.W)

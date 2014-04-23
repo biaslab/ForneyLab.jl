@@ -1,7 +1,12 @@
 module ForneyLab
 
 export Message, Node, Interface, Edge
-export calculatemessage!, calculatemessages!, calculateforwardmessage!, calculatebackwardmessage!, print
+export calculatemessage!, calculatemessages!, calculateforwardmessage!, calculatebackwardmessage!, print, ensurematrix!
+
+# Helper function needed for node and message initialization, ensures the input is a 2D array
+ensurematrix!{T<:Number}(arr::Array{T,2}) = arr
+ensurematrix!{T<:Number}(arr::Array{T,1}) = reshape(arr, 1, 1) # Can only accept arrays with one element
+ensurematrix!(n::Nothing) = nothing
 
 import Base.show
 

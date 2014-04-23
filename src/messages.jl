@@ -29,13 +29,19 @@ function GaussianMessage(;args...)
     for (key,val) in args
         setfield(self, key, deepcopy(val))
     end
+
+    # In the case of single value V and W, cast V and W to matrix
+    ensurematrix!(self.W)
+    ensurematrix!(self.V)
+
+    # Check parameterizations
     if is(self.m, nothing) && is(self.xi, nothing)
         error("Cannot create GaussianMessage: you should define m or xi or both.")
     end
     if is(self.V, nothing) && is(self.W, nothing)
         error("Cannot create GaussianMessage: you should define V or W or both.")
     end
-    if typeof(self.xi)==Array && is(self.W, nothing)
+    if !is(self.xi, nothing) && is(self.W, nothing)
         error("Cannot create GaussianMessage: you should also define W if you use xi")
     end
 

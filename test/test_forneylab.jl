@@ -7,6 +7,14 @@ module TestForneyLab
 using FactCheck
 using ForneyLab
 
+context("Basic functions") do
+	facts("ensurematrix!") do
+		@fact typeof(ensurematrix!([1.0])) => Array{Float64,2} # Cast 1D to 2D array
+		@fact ensurematrix!([1.0]) => reshape([1.0], 1, 1)
+		@fact ensurematrix!(eye(2)) => eye(2)
+	end
+end
+
 context("General node properties") do
 	facts("Node properties should include interfaces and name") do
 		for(NodeType in subtypes(Node))
