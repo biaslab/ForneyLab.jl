@@ -57,7 +57,7 @@ include("nodes/test_fixed_gain.jl")
 # Helper function for initializing a pair of nodes
 function initializePairOfNodes()
     # Initialize some nodes
-    node1 = MultiplicationNode()
+    node1 = FixedGainNode()
     node1.interfaces[1].message = GaussianMessage()
     node1.interfaces[2].message = GeneralMessage(1.0)
     node2 = ConstantNode()
@@ -66,16 +66,16 @@ function initializePairOfNodes()
 end
 
 # Helper function for node comparison
-function testInterfaceConnections(node1::MultiplicationNode, node2::ConstantNode)
+function testInterfaceConnections(node1::FixedGainNode, node2::ConstantNode)
     # Check that nodes are properly connected
     @fact node1.interfaces[2].message.value => 1.0
     @fact node2.interfaces[1].message.value => 2.0
     @fact node1.interfaces[2].partner.message.value => 2.0
     @fact node2.interfaces[1].partner.message.value => 1.0
     # Check that pointers are initiatized correctly
-    @fact node1.in2.message.value => 1.0
+    @fact node1.out.message.value => 1.0
     @fact node2.interface.message.value => 2.0
-    @fact node1.in2.partner.message.value => 2.0
+    @fact node1.out.partner.message.value => 2.0
     @fact node2.interface.partner.message.value => 1.0
 end
 
@@ -91,8 +91,8 @@ facts("Connections between nodes") do
     context("Nodes can directly be coupled through interfaces by using the explicit interface names") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
-        node1.in2.partner = node2.interface
-        node2.interface.partner = node1.in2
+        node1.out.partner = node2.interface
+        node2.interface.partner = node1.out
         testInterfaceConnections(node1, node2)
     end
 
@@ -106,7 +106,7 @@ facts("Connections between nodes") do
     context("Nodes can be coupled by edges using the explicit interface names") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
-        edge = Edge(node2.interface, node1.in2) # Edge from node 2 to node 1
+        edge = Edge(node2.interface, node1.out) # Edge from node 2 to node 1
         testInterfaceConnections(node1, node2)
     end
 
@@ -117,11 +117,11 @@ facts("Connections between nodes") do
     end
 
     context("Edge should throw an error when two interfaces on the same node are connected") do
-        node = MultiplicationNode()
+        node = FixedGainNode()
+        node.interfaces[1].message = GaussianMessage()
         node.interfaces[2].message = GaussianMessage()
-        node.interfaces[3].message = GaussianMessage()
         # Connect output directly to input
-        @fact_throws Edge(node.interfaces[3], node.interfaces[2])
+        @fact_throws Edge(node.interfaces[2], node.interfaces[1])
     end
 
 end
@@ -159,7 +159,7 @@ facts("Message passing over interfaces") do
     end
 
     context("calculateMessage! should throw an error if one or more interfaces have no partner") do
-        node = MultiplicationNode()
+        node = FixedGainNode()
         @fact_throws calculateMessage!(node.out)
     end
 end
