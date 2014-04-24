@@ -1,4 +1,4 @@
-facts("GaussionMessage") do
+facts("GaussianMessage") do
     context("GaussianMessage() should initialize a Gaussian message") do
         @fact GaussianMessage().V => ones(1, 1)
         @fact GaussianMessage().m => [0.0]
