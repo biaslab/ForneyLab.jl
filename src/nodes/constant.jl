@@ -41,5 +41,5 @@ function calculateMessage!{T<:Message}(
                             inbound_messages::Array{T,1})
 
     # Just pass the unaltered message through
-    node.interfaces[outbound_interface_id].message = deepcopy(node.constant)
+    return node.interfaces[outbound_interface_id].message = deepcopy(node.constant)
 end

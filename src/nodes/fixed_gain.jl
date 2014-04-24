@@ -1,11 +1,12 @@
 ############################################
-# MatrixMulitiplicationNode
+# FixedGainNode
 ############################################
 # Description:
-#   Multiplication with a predefined matrix:
+#   Multiplication with a predefined gain matrix A:
 #   out = A * in1
 #   Example:
 #       MatrixMulitiplicationNode([1.0]; name="my_node")
+#   Gain A may only be defined through the constructor!
 #
 # Interface ids, (names) and supported message types:
 #   1. (in1):
@@ -16,15 +17,15 @@
 #       GeneralMessage
 ############################################
 
-export MatrixMultiplicationNode
+export FixedGainNode
 
-type MatrixMultiplicationNode <: Node
+type FixedGainNode <: Node
     A::Array
     name::ASCIIString
     interfaces::Array{Interface,1}
     in1::Interface
     out::Interface
-    function MatrixMultiplicationNode(A::Array; args...)
+    function FixedGainNode(A::Array; args...)
         name = "#undef"
         for (key, val) in args
             if key==:name
@@ -33,6 +34,9 @@ type MatrixMultiplicationNode <: Node
         end
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
         self = new(ensureMatrix(deepcopy(A)), name, Array(Interface, 2))
+        if !isposdef(self.A)
+            warn("The specified multiplier for ", typeof(self), " ", self.name, " is not invertible. This might cause problems. Please check if this is really what you want.")
+        end
         # Create interfaces
         self.interfaces[1] = Interface(self)
         self.interfaces[2] = Interface(self)
@@ -42,7 +46,11 @@ type MatrixMultiplicationNode <: Node
         return self
     end
 end
-MatrixMultiplicationNode(; args...) = MatrixMultiplicationNode([1.0]; args...)
+FixedGainNode(; args...) = FixedGainNode([1.0]; args...)
+
+############################################
+# GaussianMessage methods
+############################################
 
 # Rule set for backward propagation
 backwardMRule{T<:Number}(A::Array{T, 2}, m::Array{T, 1}) = inv(A) * m
@@ -60,7 +68,7 @@ forwardXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}, V::Array{T, 2}) = pinv
 
 # Calculations for a gaussian message type; Korl (2005), table 4.1
 function calculateMessage!( outbound_interface_id::Int,
-                            node::MatrixMultiplicationNode,
+                            node::FixedGainNode,
                             inbound_messages::Array{GaussianMessage,1})
     if outbound_interface_id == 1
         # Backward message
@@ -84,8 +92,8 @@ function calculateMessage!( outbound_interface_id::Int,
             msg.V = nothing
             msg.W = backwardWRule(node.A, msg.W)
             msg.xi = nothing
-        elseif msg.m != nothing && msg.V != nothing && isposdef(node.A) && isposdef(msg.V) # W should be positive definite, meaning W is invertible and its inverse V is also positive definite.
-            msg.m = backwardMRule(node.A, msg.m) # Short version of the rule, only valid if A and W are positive definite
+        elseif msg.m != nothing && msg.V != nothing && isposdef(node.A) && (msg.V==zeros(size(msg.V)) || isposdef(msg.V)) # V positive definite <=> W (its inverse) is also positive definite. Border-case is an all-zero V, in which case the outbound message also has zero variance.
+            msg.m = backwardMRule(node.A, msg.m) # Short version of the rule, only valid if A is positive definite and (W is positive definite or V is 0)
             msg.V = backwardVRule(node.A, msg.V)
             msg.W = nothing
             msg.xi = nothing
@@ -104,7 +112,7 @@ function calculateMessage!( outbound_interface_id::Int,
             msg.V = forwardVRule(node.A, msg.V)
             msg.W = nothing
             msg.xi = nothing
-        elseif msg.m != nothing && msg.W != nothing
+        elseif msg.m != nothing && msg.W != nothing && isposdef(node.A)
             msg.m = forwardMRule(node.A, msg.m)
             msg.V = nothing
             msg.W = forwardWRule(node.A, msg.W)
@@ -114,7 +122,7 @@ function calculateMessage!( outbound_interface_id::Int,
             msg.V = nothing
             msg.W = forwardWRule(node.A, msg.W)
             msg.xi = forwardXiRule(node.A, msg.xi) # Short version of the rule, only valid if A and V are positive definite
-        elseif msg.xi != nothing && msg.V != nothing && msg.W != nothing
+        elseif msg.xi != nothing && msg.V != nothing && msg.W != nothing && isposdef(node.A)
             msg.m = nothing
             msg.V = nothing
             msg.W = forwardWRule(node.A, msg.W)
@@ -125,12 +133,16 @@ function calculateMessage!( outbound_interface_id::Int,
     end
 
     # Set the outbound message
-    node.interfaces[outbound_interface_id].message = msg
+    return node.interfaces[outbound_interface_id].message = msg
 end
+
+############################################
+# GeneralMessage methods
+############################################
 
 # Calculations for a general message type
 function calculateMessage!( outbound_interface_id::Int,
-                            node::MatrixMultiplicationNode,
+                            node::FixedGainNode,
                             inbound_messages::Array{GeneralMessage,1})
     if outbound_interface_id == 1
         # Backward message
@@ -141,5 +153,5 @@ function calculateMessage!( outbound_interface_id::Int,
     end
 
     # Set the outbound message
-    node.interfaces[outbound_interface_id].message = msg
+    return node.interfaces[outbound_interface_id].message = msg
 end

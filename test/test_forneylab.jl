@@ -7,16 +7,16 @@ module TestForneyLab
 using FactCheck
 using ForneyLab
 
-context("Basic functions") do
-    facts("ensureMatrix should convert an array with one element to a matrix type") do
+facts("Helper functions") do
+    context("ensureMatrix should convert an array with one element to a matrix type") do
         @fact typeof(ensureMatrix([1.0])) => Array{Float64, 2} # Cast 1D to 2D array
         @fact ensureMatrix([1.0]) => reshape([1.0], 1, 1)
         @fact ensureMatrix(eye(2)) => eye(2)
     end
 end
 
-context("General node properties") do
-    facts("Node properties should include interfaces and name") do
+facts("General node properties") do
+    context("Node properties should include interfaces and name") do
         for NodeType in subtypes(Node)
             @fact typeof(NodeType().interfaces) => Array{Interface, 1} # Check for interface array
             @fact length(NodeType().interfaces) >= 1 => true # Check length of interface array
@@ -24,27 +24,27 @@ context("General node properties") do
         end
     end
 
-    facts("Node constructor should assign a name") do
+    context("Node constructor should assign a name") do
         for NodeType in subtypes(Node)
             my_node = NodeType(;name="my_name")
             @fact my_node.name => "my_name"
         end
     end
 
-    facts("Nodes should couple interfaces to themselves") do
+    context("Nodes should couple interfaces to themselves") do
         for NodeType in subtypes(Node)
             my_node = NodeType()
             for interface_id in 1:length(my_node.interfaces)
                 # Check if the node interfaces couple back to the same node
-                @fact typeof(my_node.interfaces[interface_id].node) => typeof(my_node)
+                @fact my_node.interfaces[interface_id].node => my_node
             end
         end
     end
 
-    facts("Nodes should be able to calculate a message") do
+    context("Nodes should be able to calculate a message") do
         for NodeType in subtypes(Node)
             # Check if method description contains node type
-            @fact contains(string(methods(calculateMessage!)),string("::", NodeType)) => true
+            @fact contains(string(methods(calculateMessage!)), string("::", NodeType)) => true
         end
     end
 end
@@ -52,8 +52,7 @@ end
 # Node and message specific tests are in separate files
 include("test_messages.jl")
 include("nodes/test_constant.jl")
-include("nodes/test_multiplication.jl")
-include("nodes/test_matrix_multiplication.jl")
+include("nodes/test_fixed_gain.jl")
 
 # Helper function for initializing a pair of nodes
 function initializePairOfNodes()
@@ -80,8 +79,8 @@ function testInterfaceConnections(node1::MultiplicationNode, node2::ConstantNode
     @fact node2.interface.partner.message.value => 1.0
 end
 
-context("Connecting multiple nodes") do
-    facts("Nodes can directly be coupled through interfaces by using the interfaces array") do
+facts("Connections between nodes") do
+    context("Nodes can directly be coupled through interfaces by using the interfaces array") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
         node1.interfaces[2].partner = node2.interfaces[1]
@@ -89,7 +88,7 @@ context("Connecting multiple nodes") do
         testInterfaceConnections(node1, node2)
     end
 
-    facts("Nodes can directly be coupled through interfaces by using the explicit interface names") do
+    context("Nodes can directly be coupled through interfaces by using the explicit interface names") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
         node1.in2.partner = node2.interface
@@ -97,27 +96,27 @@ context("Connecting multiple nodes") do
         testInterfaceConnections(node1, node2)
     end
 
-    facts("Nodes can be coupled by edges by using the interfaces array") do
+    context("Nodes can be coupled by edges by using the interfaces array") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interfaces[1], node1.interfaces[2]) # Edge from node 2 to node 1
         testInterfaceConnections(node1, node2)
     end
 
-    facts("Nodes can be coupled by edges using the explicit interface names") do
+    context("Nodes can be coupled by edges using the explicit interface names") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interface, node1.in2) # Edge from node 2 to node 1
         testInterfaceConnections(node1, node2)
     end
 
-    facts("Edge should throw an error when messages are of different types") do
+    context("Edge should throw an error when messages are of different types") do
         (node1, node2) = initializePairOfNodes()
         # Couple the gaussian interface gaussian to the constant interface
         @fact_throws Edge(node2.interfaces[1], node1.interfaces[1])
     end
 
-    facts("Edge should throw an error when two interfaces on the same node are connected") do
+    context("Edge should throw an error when two interfaces on the same node are connected") do
         node = MultiplicationNode()
         node.interfaces[2].message = GaussianMessage()
         node.interfaces[3].message = GaussianMessage()
@@ -127,23 +126,24 @@ context("Connecting multiple nodes") do
 
 end
 
-context("Message passing over interfaces") do
-    facts("calculateMessage! should calculate an output message") do
+facts("Message passing over interfaces") do
+    context("calculateMessage! should return and write back an output message") do
         node1 = ConstantNode(GeneralMessage(3.0))
-        node2 = MatrixMultiplicationNode([2.0])
+        node2 = FixedGainNode([2.0])
         Edge(node1.interface, node2.in1)
         @fact node2.out.message => nothing
         # Request message on node for which the input is unknown
-        calculateMessage!(node2.out)
+        msg = calculateMessage!(node2.out)
+        @fact msg => node2.out.message # Returned message should be identical to message stored on interface.
         @fact typeof(node2.out.message) => GeneralMessage
         @fact node2.out.message.value => reshape([6.0], 1, 1)
     end
 
-    facts("calculateMessage! should recursively calculate a required message") do
+    context("calculateMessage! should recursively calculate required inbound message") do
         # Define three nodes in series
         node1 = ConstantNode(GeneralMessage(3.0))
-        node2 = MatrixMultiplicationNode([2.0])
-        node3 = MatrixMultiplicationNode([2.0])
+        node2 = FixedGainNode([2.0])
+        node3 = FixedGainNode([2.0])
         Edge(node1.interface, node2.in1)
         Edge(node2.out, node3.in1)
         @fact node3.out.message => nothing
@@ -153,12 +153,12 @@ context("Message passing over interfaces") do
         @fact node3.out.message.value => reshape([12.0], 1, 1)
     end
 
-    facts("calculateMessage! should throw an error if input node and interface do not match") do
+    context("calculateMessage! should throw an error if the specified interface does not belong to the specified node") do
         (node1, node2) = initializePairOfNodes()
         @fact_throws calculateMessage!(node1.out, node2)
     end
 
-    facts("calculateMessage! should throw an error if the message-less interface has no partner") do
+    context("calculateMessage! should throw an error if one or more interfaces have no partner") do
         node = MultiplicationNode()
         @fact_throws calculateMessage!(node.out)
     end

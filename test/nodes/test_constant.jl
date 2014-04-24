@@ -1,17 +1,27 @@
-context("General node properties") do
-    facts("ConstantNode should initialize a constant node") do
-        @fact typeof(ConstantNode()) => ConstantNode
-        @fact length(ConstantNode().interfaces) => 1
+facts("ConstantNode") do
+    context("ConstantNode() should initialize a ConstantNode with 1 interface") do
+        node = ConstantNode()
+        @fact typeof(node) => ConstantNode
+        @fact length(node.interfaces) => 1
+        @fact node.interface => node.interfaces[1]
     end
-end
 
-context("Sending out a message") do
-    facts("Constant node should propagate a message") do
+    context("ConstantNode should propagate a GaussianMessage") do
         node = ConstantNode(GaussianMessage(m=[2.0], V=[4.0]))
         @fact node.interfaces[1].message => nothing
-        calculateMessage!(1,node,Array(GaussianMessage,0))
+        msg = calculateMessage!(1, node, Array(Message, 0))
+        @fact node.interfaces[1].message => msg
         @fact typeof(node.interfaces[1].message) => GaussianMessage
         @fact node.interfaces[1].message.m => [2.0]
-        @fact node.interfaces[1].message.V => reshape([4.0],1,1)
+        @fact node.interfaces[1].message.V => reshape([4.0], 1, 1)
+    end
+
+    context("ConstantNode should propagate a GeneralMessage") do
+        node = ConstantNode(GeneralMessage([1.0, 2.0]))
+        @fact node.interfaces[1].message => nothing
+        msg = calculateMessage!(1, node, Array(Message, 0))
+        @fact node.interfaces[1].message => msg
+        @fact typeof(node.interfaces[1].message) => GeneralMessage
+        @fact node.interfaces[1].message.value => [1.0, 2.0]
     end
 end

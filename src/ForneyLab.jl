@@ -96,8 +96,7 @@ include("messages.jl")
 
 # Nodes
 include("nodes/constant.jl")
-include("nodes/matrix_multiplication.jl")
-include("nodes/multiplication.jl")
+include("nodes/fixed_gain.jl")
 
 #############################
 # Generic methods
@@ -143,7 +142,7 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
     end
 
     # Calculate the actual message
-    calculateMessage!(outbound_interface_id, node, inbound_messages)
+    return calculateMessage!(outbound_interface_id, node, inbound_messages)
 end
 calculateMessage!(outbound_interface::Interface) = calculateMessage!(outbound_interface, outbound_interface.node)
 
