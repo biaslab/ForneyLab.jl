@@ -48,6 +48,58 @@ type AdditionNode <: Node
     end
 end
 
+############################################
+# GaussianMessage methods
+############################################
+
+# Rule set for forward propagation
+forwardAdditionMRule{T<:Number}(m_x::Array{T, 1}, m_y::Array{T, 1}) = m_x + m_y
+forwardAdditionVRule{T<:Number}(V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x + V_y
+forwardAdditionWRule{T<:Number}(W_x::Array{T, 2}, W_y::Array{T, 2}) = W_x * pinv(W_x + W_y) * W_y
+forwardAdditionXiRule{T<:Number}(V_x::Array{T, 2}, xi_x::Array{T, 1}, V_y::Array{T, 2}, xi_y::Array{T, 1}) = pinv(V_x + V_y) * (V_x*xi_x + V_y*xi_y)
+
+# Calculations for a gaussian message type; Korl (2005), table 4.1
+function calculateMessage!( outbound_interface_id::Int,
+                            node::AdditionNode,
+                            inbound_messages::Array{GaussianMessage,1})
+    if outbound_interface_id == 3
+        # Forward message
+        msg_in_1 = inbound_messages[1]
+        msg_in_2 = inbound_messages[2]
+        msg_1 = deepcopy(msg_in_1)
+        msg_2 = deepcopy(msg_in_2)
+        msg = GaussianMessage()
+
+        # Select parameterization
+        # Order is from least to most computationally intensive
+        if msg_1.m != nothing && msg_1.V != nothing && msg_2.m != nothing && msg_2.V != nothing
+            msg.m = forwardAdditionMRule(msg_1.m, msg_2.m)
+            msg.V = forwardAdditionVRule(msg_1.V, msg_2.V)
+            msg.W = nothing
+            msg.xi = nothing
+        elseif msg_1.m != nothing && msg_1.W != nothing && msg_2.m != nothing && msg_2.W != nothing
+            msg.m = forwardAdditionMRule(msg_1.m, msg_2.m)
+            msg.V = nothing
+            msg.W = forwardAdditionWRule(msg_1.W, msg_2.W)
+            msg.xi = nothing
+        elseif msg_1.xi != nothing && msg_1.V != nothing && msg_2.xi != nothing && msg_2.V != nothing
+            msg.m = nothing
+            msg.V = forwardAdditionVRule(msg_1.V, msg_2.V)
+            msg.W = nothing
+            msg.xi = forwardAdditionXiRule(msg_1.W, msg_1.xi, msg_2.W, msg_2.xi)
+        #elseif msg_1.xi != nothing && msg_1.W != nothing && msg_2.xi != nothing && msg_2.W != nothing
+        #    msg.m = nothing
+        #    msg.V = forwardAdditionVRule(inv(msg_1.W), inv(msg_2.W))
+        #    msg.W = nothing
+        #    msg.xi = forwardAdditionXiRule(inv(msg_1.W), msg_1.xi, inv(msg_2.W), msg_2.xi)
+        else
+            error("Insufficient input to calculate outbound message on interface ", outbound_interface_id, " of ", typeof(node), " ", node.name)
+        end
+    elseif outbound_interface_id == 1 || outbound_interface_id == 2
+        # Backward message
+    end
+end
+
 # ############################################
 # # GeneralMessage methods
 # ############################################
@@ -58,7 +110,6 @@ function calculateMessage!( outbound_interface_id::Int,
                             inbound_messages::Array{GeneralMessage,1})
     if outbound_interface_id == 1 || outbound_interface_id == 2
         # Backward message
-        msg = GeneralMessage()
     elseif outbound_interface_id == 3
         # Forward message
         msg = GeneralMessage(inbound_messages[1].value + inbound_messages[2].value)
