@@ -86,7 +86,7 @@ function calculateMessage!( outbound_interface_id::Int,
             msg.m = nothing
             msg.V = forwardAdditionVRule(msg_1.V, msg_2.V)
             msg.W = nothing
-            msg.xi = forwardAdditionXiRule(msg_1.W, msg_1.xi, msg_2.W, msg_2.xi)
+            msg.xi = forwardAdditionXiRule(msg_1.V, msg_1.xi, msg_2.V, msg_2.xi)
         #elseif msg_1.xi != nothing && msg_1.W != nothing && msg_2.xi != nothing && msg_2.W != nothing
         #    msg.m = nothing
         #    msg.V = forwardAdditionVRule(inv(msg_1.W), inv(msg_2.W))
