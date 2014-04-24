@@ -103,6 +103,7 @@ include("messages.jl")
 
 # Nodes
 include("nodes/constant.jl")
+include("nodes/equality.jl")
 include("nodes/fixed_gain.jl")
 
 #############################

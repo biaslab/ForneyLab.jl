@@ -52,6 +52,7 @@ end
 # Node and message specific tests are in separate files
 include("test_messages.jl")
 include("nodes/test_constant.jl")
+include("nodes/test_equality.jl")
 include("nodes/test_fixed_gain.jl")
 
 # Helper function for initializing a pair of nodes
