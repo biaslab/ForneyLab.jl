@@ -74,12 +74,17 @@ function calculateMessage!( outbound_interface_id::Int,
             msg.V = nothing
             msg.W = backwardWRule(node.A, msg.W)
             msg.xi = backwardXiRule(node.A, msg.xi)
+        elseif msg.m != nothing && msg.W != nothing && isposdef(node.A) && isposdef(msg.W)
+            msg.m = backwardMRule(node.A, msg.m) # Short version of the rule
+            msg.V = nothing
+            msg.W = backwardWRule(node.A, msg.W)
+            msg.xi = nothing
         elseif msg.m != nothing && msg.W != nothing
             msg.m = backwardMRule(node.A, msg.m, msg.W) # Long version of the rule
             msg.V = nothing
             msg.W = backwardWRule(node.A, msg.W)
             msg.xi = nothing
-        elseif msg.m != nothing && msg.V != nothing && isposdef(node.A) # TODO: How to check for positive definiteness of W?
+        elseif msg.m != nothing && msg.V != nothing && isposdef(node.A) && isposdef(msg.V) # W should be positive definite, meaning W is invertible and its inverse V is also positive definite.
             msg.m = backwardMRule(node.A, msg.m) # Short version of the rule, only valid if A and W are positive definite
             msg.V = backwardVRule(node.A, msg.V)
             msg.W = nothing
@@ -104,7 +109,7 @@ function calculateMessage!( outbound_interface_id::Int,
             msg.V = nothing
             msg.W = forwardWRule(node.A, msg.W)
             msg.xi = nothing
-        elseif msg.xi != nothing && msg.W != nothing && isposdef(node.A) # TODO: ow to check for positive definiteness of V? Check rule for positive definiteness, what does positive definiteness of V say about W?.
+        elseif msg.xi != nothing && msg.W != nothing && isposdef(node.A) && isposdef(msg.W) # V should be positive definite, meaning V is invertible and its inverse W is also positive definite.
             msg.m = nothing
             msg.V = nothing
             msg.W = forwardWRule(node.A, msg.W)
