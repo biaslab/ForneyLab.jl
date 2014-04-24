@@ -10,17 +10,13 @@
 # Interface ids, (names) and supported message types:
 #   1. (none):
 #       GaussianMessage
-#       GeneralMessage
 #   2. (none):
 #       GaussianMessage
-#       GeneralMessage
 #   3. (none):
 #       GaussianMessage
-#       GeneralMessage
 #   ...
 #   N. (none):
 #       GaussianMessage
-#       GeneralMessage
 ############################################
 
 export EqualityNode
@@ -37,7 +33,7 @@ type EqualityNode <: Node
                 name=val
             end
         end
-        @assert(num_interfaces>2, "An EqualityNode should at least have 3 interfaces")
+        @assert(num_interfaces>2, "An EqualityNode should have at least 3 interfaces")
         self = new(num_interfaces, Array(Interface, num_interfaces), name)
         # Create interfaces
         for interface_id=1:num_interfaces
@@ -57,15 +53,4 @@ function calculateMessage!( outbound_interface_id::Int,
                             inbound_messages::Array{GaussianMessage,1})
     # TODO: implement
     return node.interfaces[outbound_interface_id].message = GaussianMessage()
-end
-
-############################################
-# GeneralMessage methods
-############################################
-
-function calculateMessage!( outbound_interface_id::Int,
-                            node::EqualityNode,
-                            inbound_messages::Array{GeneralMessage,1})
-    # TODO: implement
-    return node.interfaces[outbound_interface_id].message = GeneralMessage()
 end
