@@ -11,22 +11,25 @@ facts("EqualityNode") do
     end
 
     context("EqualityNode should propagate a univariate GaussianMessage") do
+        # The following tests on the update rules correspond to node 1 from Table 4.1 in:
+        # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
         node = EqualityNode()
+        delta = 2.0*eps(Float64)
         context("Univariate GaussianMessage with (m,V) parametrization") do
             inbound_msg = GaussianMessage(m=[3.0], V=[5.0])
             W = inv(inbound_msg.V)
             msg = calculateMessage!(1, node, [inbound_msg, inbound_msg, inbound_msg])
             @fact node.interfaces[1].message => msg
-            @fact (msg.m - (pinv(W + W) * (W*inbound_msg.m + W*inbound_msg.m))) < (2.0*eps(Float64)) => true
-            @fact (msg.V - (inbound_msg.V * pinv(inbound_msg.V + inbound_msg.V) * inbound_msg.V)) < (2.0*eps(Float64)) => true
+            @fact (msg.m - (pinv(W + W) * (W*inbound_msg.m + W*inbound_msg.m)))[1] < delta => true
+            @fact (msg.V - (inbound_msg.V * pinv(inbound_msg.V + inbound_msg.V) * inbound_msg.V))[1] < delta => true
         end
         context("Univariate GaussianMessage with (m,W) parametrization") do
             inbound_msg = GaussianMessage(m=[3.0], W=[0.2])
             W = inbound_msg.W
             msg = calculateMessage!(1, node, [inbound_msg, inbound_msg, inbound_msg])
             @fact node.interfaces[1].message => msg
-            @fact (msg.m - (pinv(W + W) * (W*inbound_msg.m + W*inbound_msg.m))) < (2.0*eps(Float64)) => true
-            @fact (msg.W - (W + W)) < (2.0*eps(Float64)) => true
+            @fact (msg.m - (pinv(W + W) * (W*inbound_msg.m + W*inbound_msg.m)))[1] < delta => true
+            @fact (msg.W - (W + W))[1] < delta => true
         end
         context("Univariate GaussianMessage with (xi,W) parametrization") do
             inbound_msg = GaussianMessage(xi=[0.6], W=[0.2])
@@ -34,12 +37,14 @@ facts("EqualityNode") do
             W = inbound_msg.W
             msg = calculateMessage!(1, node, [inbound_msg, inbound_msg, inbound_msg])
             @fact node.interfaces[1].message => msg
-            @fact (msg.xi - (xi + xi)) < (2.0*eps(Float64)) => true
-            @fact (msg.W - (W + W)) < (2.0*eps(Float64)) => true
+            @fact (msg.xi - (xi + xi))[1] < delta => true
+            @fact (msg.W - (W + W))[1] < delta => true
         end
     end
 
     context("EqualityNode should propagate a multivariate GaussianMessage") do
+        # The following tests on the update rules correspond to node 1 from Table 4.1 in:
+        # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
         node = EqualityNode()
         context("Multivariate GaussianMessage with (m,V) parametrization") do
             mean = [1.0:3.0]
