@@ -51,6 +51,34 @@ EqualityNode(; args...) = EqualityNode(3; args...)
 function calculateMessage!( outbound_interface_id::Int,
                             node::EqualityNode,
                             inbound_messages::Array{GaussianMessage,1})
-    # TODO: implement
-    return node.interfaces[outbound_interface_id].message = GaussianMessage()
+    # The following update rules correspond to node 1 from Table 4.1 in:
+    # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
+    # In this implementation, we calculate the (xi,W) parametrization of all incoming messages if it's not already present.
+    # TODO: check if there is a more efficient implementation.
+
+    # Create accumulators for W and xi of the correct size
+    first_incoming_id = (outbound_interface_id==1) ? 2 : 1
+    if !is(inbound_messages[first_incoming_id].W, nothing)
+        W_sum = zeros(size(inbound_messages[first_incoming_id].W))
+    else
+        W_sum = zeros(size(inbound_messages[first_incoming_id].V))
+    end
+    if !is(inbound_messages[first_incoming_id].xi, nothing)
+        xi_sum = zeros(size(inbound_messages[first_incoming_id].xi))
+    else
+        xi_sum = zeros(size(inbound_messages[first_incoming_id].m))
+    end
+
+    # Sum W and xi of all incoming messages
+    for incoming_interface_id = 1:length(node.interfaces)
+        if incoming_interface_id==outbound_interface_id
+            continue
+        end
+        # Calculate (xi,W) parametrization if it's not available yet
+        ensureXiWParametrization!(inbound_messages[incoming_interface_id])
+        W_sum += inbound_messages[incoming_interface_id].W
+        xi_sum += inbound_messages[incoming_interface_id].xi
+    end
+
+    return node.interfaces[outbound_interface_id].message = GaussianMessage(xi=xi_sum, W=W_sum)
 end
