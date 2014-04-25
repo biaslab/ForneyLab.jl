@@ -61,17 +61,17 @@ end
 function isConsistent(msg::GaussianMessage)
     # Check if msg is consistent in case it is overdetermined
     if !is(msg.V, nothing) && !is(msg.W, nothing)
-        if abs(maximum(inv(msg.V) - msg.W)) > 4.0 * eps(Float64)
+        if maximum(abs(inv(msg.V) - msg.W)) > epsilon
             return false # V and W are not consistent
         end
     end
     if !is(msg.m, nothing) && !is(msg.xi, nothing)
         if !is(msg.V, nothing)
-            if abs(maximum(msg.V * msg.xi - msg.m)) > 4.0 * eps(Float64)
+            if maximum(abs(msg.V * msg.xi - msg.m)) > epsilon
                 return false # m and xi are not consistent
             end
         else
-            if abs(maximum(msg.W * msg.m - msg.xi)) > 4.0 * eps(Float64)
+            if maximum(abs(msg.W * msg.m - msg.xi)) > epsilon
                 return false # m and xi are not consistent
             end
         end

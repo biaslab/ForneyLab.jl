@@ -2,12 +2,12 @@ module ForneyLab
 
 export Message, Node, Interface, Edge
 export calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, clearMessages!
-export delta
+export epsilon
 
 #############################
 # Helper methods
 #############################
-delta = 1.0e-12 # Resolution for approx. equality checks
+epsilon = 1.0e-12 # Resolution for approx. equality checks
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
