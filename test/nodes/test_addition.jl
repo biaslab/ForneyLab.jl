@@ -18,6 +18,8 @@ facts("AdditionNode") do
         @fact node.interfaces[3].message.value => 5.0
     end
 
+    # Tests on Gaussian messages use the update rules from Korl (2005), 
+    # "A Factor Graph Approach to Signal Modelling, System Identification and Filtering.", Table 4.1.
     context("AdditionNode should propagate a univariate GaussianMessage") do
         node = AdditionNode()
         context("Univariate GaussianMessage with (m,V) parametrization") do
@@ -28,6 +30,13 @@ facts("AdditionNode") do
             @fact node.interfaces[3].message => msg
             @fact node.interfaces[3].message.m => [4.0]
             @fact node.interfaces[3].message.V => reshape([6.0], 1, 1)
+            # Backward messages
+            for input = [1,2]
+                msg = calculateMessage!(input, node, [inbound_msg_1, inbound_msg_2])
+                @fact node.interfaces[input].message => msg
+                @fact node.interfaces[input].message.m => [2.0]
+                @fact node.interfaces[input].message.V => reshape([6.0], 1, 1)
+            end
         end
 
         context("Univariate GaussianMessage with (m,W) parametrization") do
@@ -38,6 +47,13 @@ facts("AdditionNode") do
             @fact node.interfaces[3].message => msg
             @fact node.interfaces[3].message.m => [4.0]
             @fact node.interfaces[3].message.W => reshape([4.0/3.0], 1, 1)
+            # Backward messages
+            for input = [1,2]
+                msg = calculateMessage!(input, node, [inbound_msg_1, inbound_msg_2])
+                @fact node.interfaces[input].message => msg
+                @fact node.interfaces[input].message.m => [2.0]
+                @fact node.interfaces[input].message.W => reshape([4.0/3.0], 1, 1)
+            end
         end
 
         context("Univariate GaussianMessage with (xi,V) parametrization") do
@@ -46,8 +62,15 @@ facts("AdditionNode") do
             # Forward message
             msg = calculateMessage!(3, node, [inbound_msg_1, inbound_msg_2])
             @fact node.interfaces[3].message => msg
-            @fact node.interfaces[3].message.xi => [6.0]
-            @fact node.interfaces[3].message.V => reshape([67/6], 1, 1)
+            @fact maximum(abs(node.interfaces[3].message.xi - [14/6])) < epsilon => true 
+            @fact node.interfaces[3].message.V => reshape([6.0], 1, 1)
+            # Backward messages
+            for input = [1,2]
+                msg = calculateMessage!(input, node, [inbound_msg_1, inbound_msg_2])
+                @fact node.interfaces[input].message => msg
+                @fact maximum(abs(node.interfaces[input].message.xi - [10/6])) < epsilon => true 
+                @fact node.interfaces[input].message.V => reshape([6.0], 1, 1)
+            end
         end
     end
 
