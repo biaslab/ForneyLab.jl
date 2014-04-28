@@ -98,6 +98,8 @@ function calculateMessage!( outbound_interface_id::Int,
     elseif outbound_interface_id == 1 || outbound_interface_id == 2
         # Backward message
     end
+
+    return node.interfaces[outbound_interface_id].message = msg
 end
 
 # ############################################

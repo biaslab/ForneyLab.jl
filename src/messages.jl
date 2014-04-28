@@ -39,8 +39,8 @@ function GaussianMessage(;args...)
     if is(self.V, nothing) && is(self.W, nothing)
         error("Cannot create GaussianMessage: you should define V or W or both.")
     end
-    if !is(self.xi, nothing) && is(self.W, nothing)
-        error("Cannot create GaussianMessage: you should also define W if you use xi")
+    if !is(self.xi, nothing) && is(self.W, nothing) && is(self.V, nothing)
+        error("Cannot create GaussianMessage: you should also define W or V if you use xi")
     end
 
     return self
