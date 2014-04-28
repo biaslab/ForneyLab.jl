@@ -114,6 +114,7 @@ facts("Connections between nodes") do
 
     context("Edge should throw an error when messages are of different types") do
         (node1, node2) = initializePairOfNodes()
+        node1.interfaces[1].message = GaussianMessage()
         # Couple the gaussian interface gaussian to the constant interface
         @fact_throws Edge(node2.interfaces[1], node1.interfaces[1])
     end
