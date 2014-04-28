@@ -54,7 +54,7 @@ function isWellDefined(msg::GaussianMessage)
     # Check if msg is not underdetermined
     return !( (is(msg.m, nothing) && is(msg.xi, nothing)) ||
               (is(msg.V, nothing) && is(msg.W, nothing)) ||
-              (!is(self.xi, nothing) && is(self.W, nothing) && is(self.V, nothing)) )
+              (!is(msg.xi, nothing) && is(msg.W, nothing) && is(msg.V, nothing)) )
 end
 function isConsistent(msg::GaussianMessage)
     # Check if msg is consistent in case it is overdetermined
