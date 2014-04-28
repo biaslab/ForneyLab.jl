@@ -9,9 +9,9 @@ using ForneyLab
 
 facts("Helper functions") do
     context("ensureMatrix should convert an array with one element to a matrix type") do
-        @fact typeof(ensureMatrix([1.0])) => Array{Float64, 2} # Cast 1D to 2D array
-        @fact ensureMatrix([1.0]) => reshape([1.0], 1, 1)
-        @fact ensureMatrix(eye(2)) => eye(2)
+        @fact typeof(ForneyLab.ensureMatrix([1.0])) => Array{Float64, 2} # Cast 1D to 2D array
+        @fact ForneyLab.ensureMatrix([1.0]) => reshape([1.0], 1, 1)
+        @fact ForneyLab.ensureMatrix(eye(2)) => eye(2)
     end
 end
 
@@ -52,6 +52,7 @@ end
 # Node and message specific tests are in separate files
 include("test_messages.jl")
 include("nodes/test_constant.jl")
+include("nodes/test_equality.jl")
 include("nodes/test_fixed_gain.jl")
 include("nodes/test_addition.jl")
 

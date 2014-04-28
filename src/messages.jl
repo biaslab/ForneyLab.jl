@@ -2,6 +2,14 @@ export
     GaussianMessage,
     GeneralMessage
 
+export
+    isWellDefined,
+    isConsistent,
+    ensureMVParametrization!,
+    ensureMWParametrization!,
+    ensureXiVParametrization!,
+    ensureXiWParametrization!
+
 ############################################
 # GaussianMessage
 ############################################
@@ -33,19 +41,69 @@ function GaussianMessage(;args...)
     self.V = ensureMatrix(self.V)
 
     # Check parameterizations
-    if is(self.m, nothing) && is(self.xi, nothing)
-        error("Cannot create GaussianMessage: you should define m or xi or both.")
-    end
-    if is(self.V, nothing) && is(self.W, nothing)
-        error("Cannot create GaussianMessage: you should define V or W or both.")
-    end
-    if !is(self.xi, nothing) && is(self.W, nothing) && is(self.V, nothing)
-        error("Cannot create GaussianMessage: you should also define W or V if you use xi")
+    if !isWellDefined(self)
+        error("Cannot create GaussianMessage, parameterization is underdetermined.")
     end
 
     return self
 end
 GaussianMessage() = GaussianMessage(m=[0.0], V=[1.0])
+
+# Methods to check and convert different parametrizations
+function isWellDefined(msg::GaussianMessage)
+    # Check if msg is not underdetermined
+    return !( (is(msg.m, nothing) && is(msg.xi, nothing)) ||
+              (is(msg.V, nothing) && is(msg.W, nothing)) ||
+              (!is(self.xi, nothing) && is(self.W, nothing) && is(self.V, nothing)) )
+end
+function isConsistent(msg::GaussianMessage)
+    # Check if msg is consistent in case it is overdetermined
+    if !is(msg.V, nothing) && !is(msg.W, nothing)
+        if maximum(abs(inv(msg.V) - msg.W)) > epsilon
+            return false # V and W are not consistent
+        end
+    end
+    if !is(msg.m, nothing) && !is(msg.xi, nothing)
+        if !is(msg.V, nothing)
+            if maximum(abs(msg.V * msg.xi - msg.m)) > epsilon
+                return false # m and xi are not consistent
+            end
+        else
+            if maximum(abs(msg.W * msg.m - msg.xi)) > epsilon
+                return false # m and xi are not consistent
+            end
+        end
+    end
+    return true # all validations passed
+end
+function ensureMDefined!(msg::GaussianMessage)
+    # Ensure that msg.m is defined, calculate it if needed.
+    # An underdetermined msg will throw an exception, we assume msg is well defined.
+    msg.m = is(msg.m, nothing) ? ensureVDefined!(msg).V * msg.xi : msg.m
+    return msg
+end
+function ensureXiDefined!(msg::GaussianMessage)
+    # Ensure that msg.xi is defined, calculate it if needed.
+    # An underdetermined msg will throw an exception, we assume msg is well defined.
+    msg.xi = is(msg.xi, nothing) ? ensureWDefined!(msg).W * msg.m : msg.xi
+    return msg
+end
+function ensureVDefined!(msg::GaussianMessage)
+    # Ensure that msg.V is defined, calculate it if needed.
+    # An underdetermined msg will throw an exception, we assume msg is well defined.
+    msg.V = is(msg.V, nothing) ? inv(msg.W) : msg.V
+    return msg
+end
+function ensureWDefined!(msg::GaussianMessage)
+    # Ensure that msg.W is defined, calculate it if needed.
+    # An underdetermined msg will throw an exception, we assume msg is well defined.
+    msg.W = is(msg.W, nothing) ? inv(msg.V) : msg.W
+    return msg
+end
+ensureMVParametrization!(msg::GaussianMessage) = ensureVDefined!(ensureMDefined!(msg))
+ensureMWParametrization!(msg::GaussianMessage) = ensureWDefined!(ensureMDefined!(msg))
+ensureXiVParametrization!(msg::GaussianMessage) = ensureVDefined!(ensureXiDefined!(msg))
+ensureXiWParametrization!(msg::GaussianMessage) = ensureWDefined!(ensureXiDefined!(msg))
 
 ############################################
 # GeneralMessage
