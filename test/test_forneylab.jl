@@ -54,60 +54,61 @@ include("test_messages.jl")
 include("nodes/test_constant.jl")
 include("nodes/test_equality.jl")
 include("nodes/test_fixed_gain.jl")
+include("nodes/test_addition.jl")
 
 # Helper function for initializing a pair of nodes
 function initializePairOfNodes()
     # Initialize some nodes
     node1 = FixedGainNode()
-    node1.interfaces[1].message = GaussianMessage()
-    node1.interfaces[2].message = GeneralMessage(1.0)
+    node1.interfaces[1].message = GeneralMessage(2.0) # Values differ to distinguish messages
+    node1.interfaces[2].message = GeneralMessage(3.0)
     node2 = ConstantNode()
-    node2.interfaces[1].message = GeneralMessage(2.0)
+    node2.interfaces[1].message = GeneralMessage(1.0)
     return node1, node2
 end
 
 # Helper function for node comparison
 function testInterfaceConnections(node1::FixedGainNode, node2::ConstantNode)
     # Check that nodes are properly connected
-    @fact node1.interfaces[2].message.value => 1.0
-    @fact node2.interfaces[1].message.value => 2.0
-    @fact node1.interfaces[2].partner.message.value => 2.0
-    @fact node2.interfaces[1].partner.message.value => 1.0
+    @fact node1.interfaces[1].message.value => 2.0
+    @fact node2.interfaces[1].message.value => 1.0
+    @fact node1.interfaces[1].partner.message.value => 1.0
+    @fact node2.interfaces[1].partner.message.value => 2.0
     # Check that pointers are initiatized correctly
-    @fact node1.out.message.value => 1.0
-    @fact node2.interface.message.value => 2.0
-    @fact node1.out.partner.message.value => 2.0
-    @fact node2.interface.partner.message.value => 1.0
+    @fact node1.out.message.value => 3.0
+    @fact node2.interface.message.value => 1.0
+    @fact node1.in1.partner.message.value => 1.0
+    @fact node2.interface.partner.message.value => 2.0
 end
 
 facts("Connections between nodes") do
     context("Nodes can directly be coupled through interfaces by using the interfaces array") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
-        node1.interfaces[2].partner = node2.interfaces[1]
-        node2.interfaces[1].partner = node1.interfaces[2]
+        node1.interfaces[1].partner = node2.interfaces[1]
+        node2.interfaces[1].partner = node1.interfaces[1]
         testInterfaceConnections(node1, node2)
     end
 
     context("Nodes can directly be coupled through interfaces by using the explicit interface names") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
-        node1.out.partner = node2.interface
-        node2.interface.partner = node1.out
+        node1.in1.partner = node2.interface
+        node2.interface.partner = node1.in1
         testInterfaceConnections(node1, node2)
     end
 
     context("Nodes can be coupled by edges by using the interfaces array") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
-        edge = Edge(node2.interfaces[1], node1.interfaces[2]) # Edge from node 2 to node 1
+        edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
         testInterfaceConnections(node1, node2)
     end
 
     context("Nodes can be coupled by edges using the explicit interface names") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
-        edge = Edge(node2.interface, node1.out) # Edge from node 2 to node 1
+        edge = Edge(node2.interface, node1.in1) # Edge from node 2 to node 1
         testInterfaceConnections(node1, node2)
     end
 

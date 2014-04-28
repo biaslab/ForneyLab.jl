@@ -107,6 +107,7 @@ include("messages.jl")
 include("nodes/constant.jl")
 include("nodes/equality.jl")
 include("nodes/fixed_gain.jl")
+include("nodes/addition.jl")
 
 #############################
 # Generic methods

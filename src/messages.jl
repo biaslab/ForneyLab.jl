@@ -41,11 +41,8 @@ function GaussianMessage(;args...)
     self.V = ensureMatrix(self.V)
 
     # Check parameterizations
-    if is(self.m, nothing) && is(self.xi, nothing)
-        error("Cannot create GaussianMessage: you should define m or xi or both.")
-    end
-    if is(self.V, nothing) && is(self.W, nothing)
-        error("Cannot create GaussianMessage: you should define V or W or both.")
+    if !isWellDefined(self)
+        error("Cannot create GaussianMessage, parameterization is underdetermined.")
     end
 
     return self
@@ -55,8 +52,9 @@ GaussianMessage() = GaussianMessage(m=[0.0], V=[1.0])
 # Methods to check and convert different parametrizations
 function isWellDefined(msg::GaussianMessage)
     # Check if msg is not underdetermined
-    return !((is(msg.m, nothing) && is(msg.xi, nothing)) ||
-             (is(msg.V, nothing) && is(msg.W, nothing)))
+    return !( (is(msg.m, nothing) && is(msg.xi, nothing)) ||
+              (is(msg.V, nothing) && is(msg.W, nothing)) ||
+              (!is(msg.xi, nothing) && is(msg.W, nothing) && is(msg.V, nothing)) )
 end
 function isConsistent(msg::GaussianMessage)
     # Check if msg is consistent in case it is overdetermined

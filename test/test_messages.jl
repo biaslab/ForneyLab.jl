@@ -1,4 +1,4 @@
-facts("GaussionMessage") do
+facts("GaussianMessage") do
     context("GaussianMessage() should initialize a Gaussian message") do
         @fact GaussianMessage().V => ones(1, 1)
         @fact GaussianMessage().m => [0.0]
@@ -7,6 +7,7 @@ facts("GaussionMessage") do
         @fact typeof(GaussianMessage(m=[1.0], V=[1.0]).V) => Array{Float64, 2} # cast single value to matrix
         @fact_throws GaussianMessage(V=[1.0], W=[1.0])
         @fact_throws GaussianMessage(m=[0.0], xi=[0.0])
+        @fact_throws GaussianMessage(xi=[0.0])
     end
     context("Underdetermined GaussianMessage should be detected by isWellDefined()") do
         @fact isWellDefined(GaussianMessage()) => true
