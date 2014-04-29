@@ -25,10 +25,10 @@ export
 #   m and xi are 1d arrays, V and W are 2d
 ############################################
 type GaussianMessage <: Message
-    m::Union(Array{Float64, 1}, Nothing)     # Mean vector
-    V::Union(Array{Float64}, Nothing)     # Covariance matrix
-    W::Union(Array{Float64}, Nothing)     # Weight matrix
-    xi::Union(Array{Float64, 1}, Nothing)    # Weighted mean vector: xi=W*m
+    m::Union(Array{Float64, 1}, Nothing)    # Mean vector
+    V::Union(Array{Float64}, Nothing)       # Covariance matrix
+    W::Union(Array{Float64}, Nothing)       # Weight matrix
+    xi::Union(Array{Float64, 1}, Nothing)   # Weighted mean vector: xi=W*m
 end
 function GaussianMessage(;args...)
     self = GaussianMessage(nothing, nothing, nothing, nothing)
@@ -53,8 +53,7 @@ GaussianMessage() = GaussianMessage(m=[0.0], V=[1.0])
 function isWellDefined(msg::GaussianMessage)
     # Check if msg is not underdetermined
     return !( (is(msg.m, nothing) && is(msg.xi, nothing)) ||
-              (is(msg.V, nothing) && is(msg.W, nothing)) ||
-              (!is(msg.xi, nothing) && is(msg.W, nothing) && is(msg.V, nothing)) )
+              (is(msg.V, nothing) && is(msg.W, nothing)) )
 end
 function isConsistent(msg::GaussianMessage)
     # Check if msg is consistent in case it is overdetermined
