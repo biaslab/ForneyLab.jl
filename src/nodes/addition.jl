@@ -6,8 +6,6 @@
 #   out = in1 + in2
 #   Example:
 #       AdditionNode(; name="my_node")
-#   The message order for calculating a backward message
-#   is calculatemessage!(..., [input_message, output_message])
 #
 # Interface ids, (names) and supported message types:
 #   1. (in1):
@@ -75,34 +73,40 @@ function calculateMessage!( outbound_interface_id::Int,
                             inbound_messages::Array{GaussianMessage,1})
     if outbound_interface_id == 3
         # Forward message, both messages on the incoming edges, required to calculate the outgoing message.
-        msg_1 = deepcopy(inbound_messages[1])
-        msg_2 = deepcopy(inbound_messages[2])
+        msg_in1 = inbound_messages[1]
+        msg_in2 = inbound_messages[2]
         msg = GaussianMessage()
 
         # Select parameterization
         # Order is from least to most computationally intensive
-        if msg_1.m != nothing && msg_1.V != nothing && msg_2.m != nothing && msg_2.V != nothing
-            msg.m = forwardAdditionMRule(msg_1.m, msg_2.m)
-            msg.V = forwardAdditionVRule(msg_1.V, msg_2.V)
+        if msg_in1.m != nothing && msg_in1.V != nothing && msg_in2.m != nothing && msg_in2.V != nothing
+            msg.m = forwardAdditionMRule(msg_in1.m, msg_in2.m)
+            msg.V = forwardAdditionVRule(msg_in1.V, msg_in2.V)
             msg.W = nothing
             msg.xi = nothing
-        elseif msg_1.m != nothing && msg_1.W != nothing && msg_2.m != nothing && msg_2.W != nothing
-            msg.m = forwardAdditionMRule(msg_1.m, msg_2.m)
+        elseif msg_in1.m != nothing && msg_in1.W != nothing && msg_in2.m != nothing && msg_in2.W != nothing
+            msg.m = forwardAdditionMRule(msg_in1.m, msg_in2.m)
             msg.V = nothing
-            msg.W = forwardAdditionWRule(msg_1.W, msg_2.W)
+            msg.W = forwardAdditionWRule(msg_in1.W, msg_in2.W)
             msg.xi = nothing
-        elseif msg_1.xi != nothing && msg_1.V != nothing && msg_2.xi != nothing && msg_2.V != nothing
+        elseif msg_in1.xi != nothing && msg_in1.V != nothing && msg_in2.xi != nothing && msg_in2.V != nothing
             msg.m = nothing
-            msg.V = forwardAdditionVRule(msg_1.V, msg_2.V)
+            msg.V = forwardAdditionVRule(msg_in1.V, msg_in2.V)
             msg.W = nothing
-            msg.xi = forwardAdditionXiRule(msg_1.V, msg_1.xi, msg_2.V, msg_2.xi)
+            msg.xi = forwardAdditionXiRule(msg_in1.V, msg_in1.xi, msg_in2.V, msg_in2.xi)
         else
-            error("Insufficient input to calculate outbound message on interface ", outbound_interface_id, " of ", typeof(node), " ", node.name)
+            # Last resort: calculate (m,V) parametrization for both inbound messages
+            ensureMVParametrization!(msg_in1)
+            ensureMVParametrization!(msg_in2)
+            msg.m = forwardAdditionMRule(msg_in1.m, msg_in2.m)
+            msg.V = forwardAdditionVRule(msg_in1.V, msg_in2.V)
+            msg.W = nothing
+            msg.xi = nothing
         end
     elseif outbound_interface_id == 1 || outbound_interface_id == 2
         # Backward message, one message on the incoming edge and one on the outgoing edge.
-        msg_in = deepcopy(inbound_messages[1])
-        msg_out = deepcopy(inbound_messages[2])
+        msg_in = (outbound_interface_id==1) ? inbound_messages[2] : inbound_messages[1]
+        msg_out = inbound_messages[3]
         msg = GaussianMessage()
 
         # Select parameterization
@@ -123,7 +127,13 @@ function calculateMessage!( outbound_interface_id::Int,
             msg.W = nothing
             msg.xi = backwardAdditionXiRule(msg_in.V, msg_in.xi, msg_out.V, msg_out.xi)
         else
-            error("Insufficient input to calculate outbound message on interface ", outbound_interface_id, " of ", typeof(node), " ", node.name)
+            # Last resort: calculate (m,V) parametrization for both inbound messages
+            ensureMVParametrization!(msg_in1)
+            ensureMVParametrization!(msg_in2)
+            msg.m = backwardAdditionMRule(msg_in1.m, msg_in2.m)
+            msg.V = backwardAdditionVRule(msg_in1.V, msg_in2.V)
+            msg.W = nothing
+            msg.xi = nothing
         end
     else
         error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
@@ -132,17 +142,20 @@ function calculateMessage!( outbound_interface_id::Int,
     return node.interfaces[outbound_interface_id].message = msg
 end
 
-# ############################################
-# # GeneralMessage methods
-# ############################################
+#############################################
+# GeneralMessage methods
+#############################################
 
 # Calculations for a general message type
 function calculateMessage!( outbound_interface_id::Int,
                             node::AdditionNode,
                             inbound_messages::Array{GeneralMessage,1})
-    if outbound_interface_id == 1 || outbound_interface_id == 2
-        # Backward message
-        msg = GeneralMessage(inbound_messages[2].value - inbound_messages[1].value)
+    if outbound_interface_id == 1
+        # Backward message 1
+        msg = GeneralMessage(inbound_messages[3].value - inbound_messages[2].value)
+    elseif outbound_interface_id == 2
+        # Backward message 2
+        msg = GeneralMessage(inbound_messages[3].value - inbound_messages[1].value)
     elseif outbound_interface_id == 3
         # Forward message
         msg = GeneralMessage(inbound_messages[1].value + inbound_messages[2].value)
