@@ -66,11 +66,19 @@ backwardAdditionVRule{T<:Number}(V_x::Array{T, 2}, V_z::Array{T, 2}) = V_x + V_z
 backwardAdditionWRule{T<:Number}(W_x::Array{T, 2}, W_z::Array{T, 2}) = W_x * pinv(W_x + W_z) * W_z
 backwardAdditionXiRule{T<:Number}(V_x::Array{T, 2}, xi_x::Array{T, 1}, V_z::Array{T, 2}, xi_z::Array{T, 1}) = pinv(V_x + V_z) * (V_z*xi_z - V_x*xi_x)
 
-# Calculations for a gaussian message type; Korl (2005), table 4.1
-# The message order for calculating a backward message is calculatemessage!(..., [input_message, output_message])
-function calculateMessage!( outbound_interface_id::Int,
+function updateNodeMessage!(outbound_interface_id::Int,
                             node::AdditionNode,
-                            inbound_messages::Array{GaussianMessage,1})
+                            inbound_messages::Array{GaussianMessage, 1})
+    # Calculate an outbound message based on the inbound_messages array and the node function.
+    # This function is not exported, and is only meant for internal use.
+    # inbound_messages is indexed with the interface ids of the node.
+    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
+
+    if isdefined(inbound_messages, outbound_interface_id)
+        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+    end
+
+    # Calculations for the GaussianMessage type; Korl (2005), table 4.1
     if outbound_interface_id == 3
         # Forward message, both messages on the incoming edges, required to calculate the outgoing message.
         msg_in1 = inbound_messages[1]
@@ -146,10 +154,19 @@ end
 # GeneralMessage methods
 #############################################
 
-# Calculations for a general message type
-function calculateMessage!( outbound_interface_id::Int,
+function updateNodeMessage!(outbound_interface_id::Int,
                             node::AdditionNode,
-                            inbound_messages::Array{GeneralMessage,1})
+                            inbound_messages::Array{GeneralMessage, 1})
+    # Calculate an outbound message based on the inbound_messages array and the node function.
+    # This function is not exported, and is only meant for internal use.
+    # inbound_messages is indexed with the interface ids of the node.
+    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
+
+    if isdefined(inbound_messages, outbound_interface_id)
+        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+    end
+
+    # Calculations for a general message type
     if outbound_interface_id == 1
         # Backward message 1
         msg = GeneralMessage(inbound_messages[3].value - inbound_messages[2].value)

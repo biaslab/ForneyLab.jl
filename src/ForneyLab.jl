@@ -153,7 +153,7 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
     end
 
     # Calculate the actual message
-    return calculateMessage!(outbound_interface_id, node, inbound_messages)
+    return updateNodeMessage!(outbound_interface_id, node, inbound_messages)
 end
 calculateMessage!(outbound_interface::Interface) = calculateMessage!(outbound_interface, outbound_interface.node)
 

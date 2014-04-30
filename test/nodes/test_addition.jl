@@ -13,11 +13,11 @@ facts("AdditionNode") do
         inbound_msg_1 = GeneralMessage(2.0)
         inbound_msg_2 = GeneralMessage(3.0)
         # Forward message
-        msg = calculateMessage!(3, node, [inbound_msg_1, inbound_msg_2, GeneralMessage()])
+        msg = ForneyLab.updateNodeMessage!(3, node, [inbound_msg_1, inbound_msg_2, GeneralMessage()])
         @fact node.interfaces[3].message => msg
         @fact node.interfaces[3].message.value => 5.0
         # Backward message
-        msg = calculateMessage!(1, node, [GeneralMessage(), inbound_msg_1, inbound_msg_2])
+        msg = ForneyLab.updateNodeMessage!(1, node, [GeneralMessage(), inbound_msg_1, inbound_msg_2])
         @fact node.interfaces[1].message => msg
         @fact node.interfaces[1].message.value => 1.0
     end
