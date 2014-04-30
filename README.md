@@ -2,7 +2,7 @@ ForneyLab.jl
 ============
 
 Forney-style Factor Graph toolbox in Julia.
-*This software is still very experimental*.
+**This software is still very experimental**.
 
 Installation
 ============
@@ -21,6 +21,8 @@ Import ForneyLab:
 using ForneyLab
 ```
 Once imported, one can create nodes and edges to build a factor graph. There are multiple types of nodes. One can use built-in node types, or one can define custom nodes. A node has one or more interfaces, which can be used to send/receive messages. An edge connects two interfaces of different nodes. Every interface can handle one or more message types. ForneyLab comes with a set of built-in message types, but you can also define your own.
+
+The demo directory contains some illustrative demos to get you started.
 
 Example
 -------
@@ -86,16 +88,26 @@ type AdditionNode <: Node
 end
 ```
 Every interface has a unique id, given by its index in the `interfaces` array.
-Apart from the node type definition, one also has to define one or more methods for calculating the outbound messages. For calculating messages, function `calculatemessage!()` is used. Multiple methods of this function can be defined if one wants separate implementations for different message types. The `calculatemessage!()` function for `AdditionNode` could be defined as:
+Apart from the node type definition, one also has to define one or more methods for calculating the outbound messages. For calculating messages, function `updateNodeMessage!()` is used. Multiple methods of this function can be defined if one wants separate implementations for different message types. The `updateNodeMessage!()` method for `AdditionNode` could be defined as:
 ```jl
-function calculatemessage!{T<:Union(GaussianMessage, GeneralMessage)}(
-                            outbound_interface_id::Int,
-                            node::AdditionNode,
-                            inbound_messages::Array{T,1})
-    # Calculate the output message here,
-    # based on the output interface (outbound_interface_id) and the inbound_messages.
-    # The calculated message is saved in node.interfaces[outbound_interface_id].message
-    node.interfaces[outbound_interface_id].message = GaussianMessage()
+function updateNodeMessage!{T<:Union(GaussianMessage, GeneralMessage)}
+                            (outbound_interface_id::Int,
+                             node::AdditionNode,
+                             inbound_messages::Array{T, 1})
+    # Calculate an outbound message based on the inbound_messages array and the node function.
+    # This function is not exported, and is only meant for internal use.
+    # inbound_messages is indexed with the interface ids of the node.
+    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
+
+    if isdefined(inbound_messages, outbound_interface_id)
+        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+    end
+
+    # TODO: CALCULATE THE OUTBOUND MESSAGE HERE,
+    # based on the outbound_interface_id and the inbound_messages.
+    # The calculated message is saved in node.interfaces[outbound_interface_id].message and should also be returned.
+
+    return node.interfaces[outbound_interface_id].message = GaussianMessage()
 end
 ```
 This method will be used when calculating outbound messages of a AdditionNode, when the inbound messages are of types GaussianMessage and/or GeneralMessage. For different message types, extra methods can be defined.
