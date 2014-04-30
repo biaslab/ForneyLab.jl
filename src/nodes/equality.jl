@@ -48,9 +48,18 @@ EqualityNode(; args...) = EqualityNode(3; args...)
 # GaussianMessage methods
 ############################################
 
-function calculateMessage!( outbound_interface_id::Int,
+function updateNodeMessage!(outbound_interface_id::Int,
                             node::EqualityNode,
-                            inbound_messages::Array{GaussianMessage,1})
+                            inbound_messages::Array{GaussianMessage, 1})
+    # Calculate an outbound message based on the inbound_messages array and the node function.
+    # This function is not exported, and is only meant for internal use.
+    # inbound_messages is indexed with the interface ids of the node.
+    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
+
+    if isdefined(inbound_messages, outbound_interface_id)
+        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+    end
+
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
     # In this implementation, we calculate the (xi,W) parametrization of all incoming messages if it's not already present.

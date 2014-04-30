@@ -44,7 +44,7 @@ facts("General node properties") do
     context("Nodes should be able to calculate a message") do
         for NodeType in subtypes(Node)
             # Check if method description contains node type
-            @fact contains(string(methods(calculateMessage!)), string("::", NodeType)) => true
+            @fact contains(string(methods(ForneyLab.updateNodeMessage!)), string("::", NodeType)) => true
         end
     end
 end
