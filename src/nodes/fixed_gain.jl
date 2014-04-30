@@ -71,10 +71,20 @@ forwardFixedGainWRule{T<:Number}(A_inv::Array{T, 2}, W::Array{T, 2}) = A_inv' * 
 forwardFixedGainXiRule{T<:Number}(A_inv::Array{T, 2}, xi::Array{T, 1}) = A_inv' * xi
 forwardFixedGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}, V::Array{T, 2}) = pinv(A * V * A') * A * V * xi # Combination of xi and V
 
-# Calculations for a gaussian message type; Korl (2005), table 4.1
-function calculateMessage!( outbound_interface_id::Int,
+function updateNodeMessage!(outbound_interface_id::Int,
                             node::FixedGainNode,
-                            inbound_messages::Array{GaussianMessage,1})
+                            inbound_messages::Array{GaussianMessage, 1})
+    # Calculate an outbound message based on the inbound_messages array and the node function.
+    # This function is not exported, and is only meant for internal use.
+    # inbound_messages is indexed with the interface ids of the node.
+    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
+
+    if isdefined(inbound_messages, outbound_interface_id)
+        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+    end
+
+    # Calculations for a gaussian message type; Korl (2005), table 4.1
+
     if outbound_interface_id == 1
         # Backward message
         msg_in = inbound_messages[2]
@@ -145,10 +155,18 @@ end
 # GeneralMessage methods
 ############################################
 
-# Calculations for a general message type
-function calculateMessage!( outbound_interface_id::Int,
+function updateNodeMessage!(outbound_interface_id::Int,
                             node::FixedGainNode,
-                            inbound_messages::Array{GeneralMessage,1})
+                            inbound_messages::Array{GeneralMessage, 1})
+    # Calculate an outbound message based on the inbound_messages array and the node function.
+    # This function is not exported, and is only meant for internal use.
+    # inbound_messages is indexed with the interface ids of the node.
+    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
+
+    if isdefined(inbound_messages, outbound_interface_id)
+        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+    end
+
     if outbound_interface_id == 1
         # Backward message
         msg = GeneralMessage(pinv(node.A) * inbound_messages[2].value)

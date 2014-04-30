@@ -35,10 +35,17 @@ type ConstantNode <: Node
 end
 ConstantNode(; args...) = ConstantNode(GeneralMessage(1.0); args...)
 
-function calculateMessage!{T<:Message}(
-                            outbound_interface_id::Int,
+function updateNodeMessage!{T<:Message}(outbound_interface_id::Int,
                             node::ConstantNode,
-                            inbound_messages::Array{T,1})
+                            inbound_messages::Array{T, 1})
+    # Calculate an outbound message based on the inbound_messages array and the node function.
+    # This function is not exported, and is only meant for internal use.
+    # inbound_messages is indexed with the interface ids of the node.
+    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
+
+    if isdefined(inbound_messages, outbound_interface_id)
+        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+    end
 
     # Just pass the unaltered message through
     return node.interfaces[outbound_interface_id].message = deepcopy(node.constant)
