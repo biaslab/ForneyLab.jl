@@ -67,7 +67,7 @@ facts("GaussianMessage") do
 end
 
 facts("GeneralMessage") do
-    context("GeneralMessage() should initiatize a multiplication parameter as message") do
+    context("GeneralMessage() should initiatize a message value") do
         @fact GeneralMessage(1.0).value => 1.0
         @fact GeneralMessage([1.0, 2.0]).value => [1.0, 2.0]
     end

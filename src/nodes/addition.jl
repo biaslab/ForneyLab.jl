@@ -136,10 +136,10 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg.xi = backwardAdditionXiRule(msg_in.V, msg_in.xi, msg_out.V, msg_out.xi)
         else
             # Last resort: calculate (m,V) parametrization for both inbound messages
-            ensureMVParametrization!(msg_in1)
-            ensureMVParametrization!(msg_in2)
-            msg.m = backwardAdditionMRule(msg_in1.m, msg_in2.m)
-            msg.V = backwardAdditionVRule(msg_in1.V, msg_in2.V)
+            ensureMVParametrization!(msg_in)
+            ensureMVParametrization!(msg_out)
+            msg.m = backwardAdditionMRule(msg_in.m, msg_out.m)
+            msg.V = backwardAdditionVRule(msg_in.V, msg_out.V)
             msg.W = nothing
             msg.xi = nothing
         end
