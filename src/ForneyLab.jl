@@ -7,6 +7,7 @@ export epsilon
 #############################
 # Helper methods
 #############################
+verbose = false
 epsilon = 1.0e-12 # Resolution for approx. equality checks
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
@@ -16,6 +17,10 @@ ensureMatrix(n::Nothing) = nothing
 
 # isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from.
 isRoundedPosDef{T<:FloatingPoint}(arr::Array{T, 2}) = ishermitian(round(arr, 12)) && isposdef(arr, 'L')
+
+# verbosity helpers
+setVerbose(verbose_mode=true) = global verbose=verbose_mode
+printVerbose(msg) = if verbose println(msg) end
 
 import Base.show
 
@@ -124,9 +129,13 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
 
     # Calculate all inbound messages
     inbound_message_types = Union() # Union of all inbound message types
+    outbound_interface_id = 0
     for node_interface_id = 1:length(node.interfaces)
         node_interface = node.interfaces[node_interface_id]
-        if is(node_interface, outbound_interface) continue end
+        if is(node_interface, outbound_interface)
+            outbound_interface_id = node_interface_id
+            continue
+        end
         if node_interface.partner == nothing
             error("Cannot receive messages on disconnected interface ", node_interface_id, " of ", typeof(node), " ", node.name)
         end
@@ -142,18 +151,20 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
 
     # Collect all inbound messages
     inbound_messages = Array(inbound_message_types, length(node.interfaces))
-    outbound_interface_id = 0
     for node_interface_id = 1:length(node.interfaces)
         node_interface = node.interfaces[node_interface_id]
-        if is(node_interface, outbound_interface)
-            outbound_interface_id = node_interface_id
-            continue
+        if is(node_interface, outbound_interface) continue end
+        if inbound_message_types==None
+            error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
         end
         inbound_messages[node_interface_id] = node.interfaces[node_interface_id].partner.message
     end
 
     # Calculate the actual message
-    return updateNodeMessage!(outbound_interface_id, node, inbound_messages)
+    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
+    msg = updateNodeMessage!(outbound_interface_id, node, inbound_messages)
+    printVerbose(" >> $(msg)")
+    return msg
 end
 calculateMessage!(outbound_interface::Interface) = calculateMessage!(outbound_interface, outbound_interface.node)
 
