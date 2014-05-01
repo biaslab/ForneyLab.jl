@@ -6,7 +6,7 @@ facts("GainEqualityCompositeNode") do
         @fact node.in1 => node.interfaces[1]
         @fact node.out1 => node.interfaces[2]
         @fact node.out2 => node.interfaces[3]
-        @fact typeof(node.A) => Array{Float64, 2} # cast single value to matrix
+        @fact typeof(node.A) => Array{Float64, 2}
     end
 
     context("GainEqualityCompositeNode() should define an internal Equality and FixedGain node") do
@@ -21,5 +21,26 @@ facts("GainEqualityCompositeNode") do
         @fact node.interfaces[1] => node.equality_node.interfaces[1]
         @fact node.interfaces[2] => node.fixed_gain_node.interfaces[2]
         @fact node.interfaces[3] => node.equality_node.interfaces[3]
+    end
+
+    context("A GainEqualityCompositeNode should be able to pass a message through its internals") do
+        #         _________
+        #     in1 |       | out2
+        # [N]-----|->[=]--|------>
+        #         |   |   |
+        #         |   v   |
+        #         |  [A]  |
+        #         |___|___|
+        #             | out1
+        #             v 
+        #            [N]
+
+        node = GainEqualityCompositeNode([2.0])
+        c_node1 = ConstantNode(GaussianMessage(W=[1.0], xi=[1.0]))
+        c_node2 = ConstantNode(GaussianMessage(W=[1.0], xi=[1.0]))
+        Edge(c_node1.interfaces[1], node.interfaces[1])
+        Edge(node.interfaces[2], c_node2.interfaces[1])
+        msg = calculateMessage!(node.interfaces[3])
+        println(msg)
     end
 end

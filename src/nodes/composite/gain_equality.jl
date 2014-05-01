@@ -4,14 +4,17 @@
 # Description:
 #   Composite gain-equality node.
 #
-#    in1      out1
-#   ----->[=]------>
-#          |
-#         [A]
-#          | out2
-#          v
+#        _________
+#    in1 |       | out2
+#   -----|->[=]--|------>
+#        |   |   |
+#        |   v   |
+#        |  [A]  |
+#        |___|___|
+#            | out1
+#            v 
 #
-#   in1 = out1 = A*out2
+#   in1 = A*out1 = out2
 #   Example:
 #       GainEqualityCompositeNode([1.0]; name="my_node")
 #   Gain A is fixed and defined through the constructor.
@@ -70,7 +73,7 @@ type GainEqualityCompositeNode <: Node
         self.in1 = self.interfaces[1]
         self.out1 = self.interfaces[2]
         self.out2 = self.interfaces[3]
-        # Pointer to precomputed inv(A), needed for quick calculat rules
+        # Pointer to precomputed inv(A), needed for quick calculate rules
         self.A_inv = self.fixed_gain_node.A_inv
         return self
     end
