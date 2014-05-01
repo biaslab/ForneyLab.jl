@@ -41,7 +41,7 @@ facts("General node properties") do
         end
     end
 
-    context("Nodes should be able to calculate a message") do
+    context("Every node type should have at least 1 updateNodeMessage!() method") do
         for NodeType in subtypes(Node)
             # Check if method description contains node type
             @fact contains(string(methods(ForneyLab.updateNodeMessage!)), string("::", NodeType)) => true
@@ -130,7 +130,7 @@ facts("Connections between nodes") do
 end
 
 facts("Message passing over interfaces") do
-    context("calculateMessage! should return and write back an output message") do
+    context("calculateMessage!() should return and write back an output message") do
         node1 = ConstantNode(GeneralMessage(3.0))
         node2 = FixedGainNode([2.0])
         Edge(node1.interface, node2.in1)
@@ -140,9 +140,11 @@ facts("Message passing over interfaces") do
         @fact msg => node2.out.message # Returned message should be identical to message stored on interface.
         @fact typeof(node2.out.message) => GeneralMessage
         @fact node2.out.message.value => reshape([6.0], 1, 1)
+        @fact node1.interface.message_valid => false # consumed messages should be invalidated
+        @fact node2.out.message_valid => true # fresh messages should be valid
     end
 
-    context("calculateMessage! should recursively calculate required inbound message") do
+    context("calculateMessage!() should recursively calculate required inbound message") do
         # Define three nodes in series
         node1 = ConstantNode(GeneralMessage(3.0))
         node2 = FixedGainNode([2.0])
@@ -154,14 +156,17 @@ facts("Message passing over interfaces") do
         calculateMessage!(node3.out)
         @fact typeof(node3.out.message) => GeneralMessage
         @fact node3.out.message.value => reshape([12.0], 1, 1)
+        @fact node1.interface.message_valid => false # consumed messages should be invalidated
+        @fact node2.out.message_valid => false
+        @fact node3.out.message_valid => true # fresh messages should be valid
     end
 
-    context("calculateMessage! should throw an error if the specified interface does not belong to the specified node") do
+    context("calculateMessage!() should throw an error if the specified interface does not belong to the specified node") do
         (node1, node2) = initializePairOfNodes()
         @fact_throws calculateMessage!(node1.out, node2)
     end
 
-    context("calculateMessage! should throw an error if one or more interfaces have no partner") do
+    context("calculateMessage!() should throw an error if one or more interfaces have no partner") do
         node = FixedGainNode()
         @fact_throws calculateMessage!(node.out)
     end
