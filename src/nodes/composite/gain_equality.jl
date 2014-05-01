@@ -1,0 +1,1 @@
+# Definition for a composite gain-equality node

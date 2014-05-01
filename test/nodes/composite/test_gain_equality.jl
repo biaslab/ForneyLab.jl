@@ -1,0 +1,1 @@
+# Tests for a composite gain-equality node
