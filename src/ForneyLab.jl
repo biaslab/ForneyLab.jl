@@ -37,21 +37,22 @@ type Interface
     node::Node
     partner::Union(Interface, Nothing)
     message::Union(Message, Nothing)
+    message_valid::Bool # false indicates that message has already been consumed
 
     # Sanity check for matching message types
     function Interface(node::Node, partner::Union(Interface, Nothing), message::Union(Message, Nothing))
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
-            new(node, partner, message)
+            new(node, partner, message, typeof(message)!=Nothing)
         elseif typeof(message) != typeof(partner.message) # Compare message types
             error("Message type of partner does not match with interface message type")
         else
-            new(node, partner, message)
+            new(node, partner, message, typeof(message)!=Nothing)
         end
     end
 end
 Interface(node::Node, message::Message) = Interface(node, nothing, message)
 Interface(node::Node) = Interface(node, nothing, nothing)
-show(io::IO, interface::Interface) = println(io, "Interface of ", typeof(interface.node), " with node name ", interface.node.name, " holds message of type ", typeof(interface.message), ".")
+show(io::IO, interface::Interface) = println(io, "Interface of $(typeof(interface.node)) with node name $(interface.node.name) holds ", interface.message_valid ? "VALID" : "INVALID", " message of type $(typeof(interface.message)).")
 
 type Edge
     # An Edge joins two interfaces and has a direction (from tail to head).
@@ -139,10 +140,10 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
         if node_interface.partner == nothing
             error("Cannot receive messages on disconnected interface ", node_interface_id, " of ", typeof(node), " ", node.name)
         end
-        if node_interface.partner.message == nothing
+        if !(node_interface.partner.message_valid)
             # Recursive call to calculate required inbound message
             calculateMessage!(node_interface.partner)
-            if node_interface.partner.message == nothing
+            if !(node_interface.partner.message_valid)
                 error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
             end
             inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
@@ -151,19 +152,27 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
 
     # Collect all inbound messages
     inbound_messages = Array(inbound_message_types, length(node.interfaces))
-    for node_interface_id = 1:length(node.interfaces)
-        node_interface = node.interfaces[node_interface_id]
-        if is(node_interface, outbound_interface) continue end
-        if inbound_message_types==None
-            error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
+    if (inbound_message_types!=None)
+        for node_interface_id = 1:length(node.interfaces)
+            if node_interface_id!=outbound_interface_id
+                inbound_messages[node_interface_id] = node.interfaces[node_interface_id].partner.message
+            end
         end
-        inbound_messages[node_interface_id] = node.interfaces[node_interface_id].partner.message
     end
 
     # Calculate the actual message
     printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
     msg = updateNodeMessage!(outbound_interface_id, node, inbound_messages)
     printVerbose(" >> $(msg)")
+
+    # Invalidate all consumed inbound messages, validate the outbound message
+    for node_interface_id = 1:length(node.interfaces)
+        if node_interface_id!=outbound_interface_id
+            node.interfaces[node_interface_id].partner.message_valid = false
+        end
+    end
+    outbound_interface.message_valid = (typeof(outbound_interface.message)<:Message)
+
     return msg
 end
 calculateMessage!(outbound_interface::Interface) = calculateMessage!(outbound_interface, outbound_interface.node)
