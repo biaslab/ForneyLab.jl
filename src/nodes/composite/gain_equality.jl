@@ -46,6 +46,7 @@ type GainEqualityCompositeNode <: Node
     in1::Interface
     in2::Interface
     out::Interface
+    A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
     function GainEqualityCompositeNode(A::Array, use_composite_update_rules::Bool; args...)
         name = "#undef"
@@ -60,6 +61,12 @@ type GainEqualityCompositeNode <: Node
             # This initializes the composite node interfaces belonging to the composite node itself.
             # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
             self = new(ensureMatrix(deepcopy(A)), true, name, Array(Interface, 3))
+            # Try to precompute inv(A)
+            try
+                self.A_inv = inv(self.A)
+            catch
+                warn("The specified multiplier for ", string(typeof(self)), " ", self.name, " is not invertible. This might cause problems. Please check if this is what you really want.")
+            end
             # Initialize interfaces
             self.interfaces[1] = Interface(self)
             self.interfaces[2] = Interface(self)
@@ -92,10 +99,16 @@ GainEqualityCompositeNode(; args...) = GainEqualityCompositeNode([1.0], true; ar
 ############################################
 
 # Rule set for forward propagation
+forwardGainEqualityWRule{T<:Number}(A_inv::Array{T, 2}, W_x::Array{T, 2}, W_y::Array{T, 2}) = A_inv' * (W_x + W_y) * A_inv
+forwardGainEqualityXiRule{T<:Number}(A_inv::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}) = A_inv' * (xi_x + xi_y)
+forwardGainEqualityVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Array{T, 2}) = A * V_x * pinv(V_x + V_y) * V_y * A'
+forwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, W_x::Array{T, 2}, m_y::Array{T, 1}, W_y::Array{T, 2}) = A * pinv(W_x + W_y) * (W_x * m_x + W_y * m_y)
 
 # Rule set for backward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-backGainEqualityWRule{T<:Number}(A::Array{T, 2}, W_x::Array{T, 2}, W_y::Array{T, 2}) = W_x + A' * W_y * A
-backGainEqualityXiRule{T<:Number}(A::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x + A' * xi_y
+backwardGainEqualityWRule{T<:Number}(A::Array{T, 2}, W_x::Array{T, 2}, W_y::Array{T, 2}) = W_x + A' * W_y * A
+backwardGainEqualityXiRule{T<:Number}(A::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x + A' * xi_y
+backwardGainEqualityVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x - V_x * A' * inv(V_y + A * V_x * A') * A * V_x
+backwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, V_x::Array{T, 2}, m_y::Array{T, 1}, V_y::Array{T, 2}) = m_x + V_x * A' * inv(V_y + A * V_x * A') * (m_y - A * m_x)
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::GainEqualityCompositeNode,
@@ -121,20 +134,37 @@ function updateNodeMessage!(outbound_interface_id::Int,
 
         # Select parameterization
         # Order is from least to most computationally intensive
-        if msg_1.xi != nothing && msg_1.W != nothing && msg_2.xi != nothing && msg_2.W != nothing
+        if msg_1.xi != nothing && msg_1.W != nothing && msg_2.xi != nothing && msg_2.W != nothing && isRoundedPosDef(node.A) && isRoundedPosDef(msg_1.W + msg_2.W)
             msg_out.m = nothing
             msg_out.V = nothing
-            msg_out.W = forwardGainEqualityWRule(node.A, msg_1.W, msg_2.W)
-            msg_out.xi = forwardGainEqualityXiRule(node.A, msg_1.xi, msg_2.xi)
+            msg_out.W = forwardGainEqualityWRule(node.A_inv, msg_1.W, msg_2.W)
+            msg_out.xi = forwardGainEqualityXiRule(node.A_inv, msg_1.xi, msg_2.xi)
+        elseif msg_1.m != nothing && msg_1.W != nothing && msg_2.m != nothing && msg_2.W != nothing
+            msg_out.m = forwardGainEqualityMRule(node.A, msg1.m, msg1.W, msg2.m, msg2.W)
+            msg_out.V = nothing
+            msg_out.W = forwardGainEqualityWRule(node.A_inv, msg_1.W, msg_2.W)
+            msg_out.xi = nothing
+        elseif msg_1.m != nothing && msg_1.V != nothing && msg_2.m != nothing && msg_2.V != nothing
+            W_1 = inv(msg_1.V)
+            W_2 = inv(msg_2.V)
+            msg_out.m = forwardGainEqualityMRule(node.A, msg_1.m, W_1, msg_2.m, W_2)
+            msg_out.V = forwardGainEqualityVRule(node.A, msg_1.V, msg_2.V)
+            msg_out.W = nothing
+            msg_out.xi = nothing
         else
             # Alternative parameterization not caught by the above rules
-            warn("Parameterization unknown; using xi, W parameterization instead ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+            warn("Parameterization unknown; using xi, W parameterization instead. ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
             ensureXiWParametrization!(msg_1)
             ensureXiWParametrization!(msg_2)
-            msg_out.m = nothing
-            msg_out.V = nothing
-            msg_out.W = forwardGainEqualityWRule(node.A, msg_1.W, msg_2.W)
-            msg_out.xi = forwardGainEqualityXiRule(node.A, msg_1.xi, msg_2.xi)
+            # Check preconditions
+            if isRoundedPosDef(node.A) && isRoundedPosDef(msg_1.W + msg_2.W)
+                msg_out.m = nothing
+                msg_out.V = nothing
+                msg_out.W = forwardGainEqualityWRule(node.A_inv, msg_1.W, msg_2.W)
+                msg_out.xi = forwardGainEqualityXiRule(node.A_inv, msg_1.xi, msg_2.xi)
+            else
+                error("Cannot calculate outbound message on ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+            end
         end
         # Set the outbound message
         return node.interfaces[outbound_interface_id].message = msg_out
@@ -151,6 +181,16 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg_out.V = nothing
             msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
             msg_out.xi = backwardGainEqualityXiRule(node.A, msg_in.xi, msg_3.xi)
+        elseif msg_3.m != nothing && msg_3.W != nothing && msg_in.m != nothing && msg_in.W != nothing
+            msg_out.m = backwardGainEqualityMRule(node.A, msg_in.m, msg_in.V, msg_3.m, msg_3.V)
+            msg_out.V = nothing
+            msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
+            msg_out.xi = nothing
+        elseif msg_3.m != nothing && msg_3.V != nothing && msg_in.m != nothing && msg_in.V != nothing
+            msg_out.m = backwardGainEqualityMRule(node.A, msg_in.m, msg_in.V, msg_3.m, msg_3.V)
+            msg_out.V = backwardGainEqualityVRule(node.A, msg_in.V, msg_3.V)
+            msg_out.W = nothing
+            msg_out.xi = nothing
         else
             # Alternative parameterization not caught by the above rules
             warn("Parameterization unknown; using xi, W parameterization instead ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
