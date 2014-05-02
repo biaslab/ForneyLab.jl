@@ -4,20 +4,20 @@ facts("GainEqualityCompositeNode") do
         @fact typeof(node) => GainEqualityCompositeNode
         @fact length(node.interfaces) => 3
         @fact node.in1 => node.interfaces[1]
-        @fact node.out1 => node.interfaces[2]
-        @fact node.out2 => node.interfaces[3]
+        @fact node.in2 => node.interfaces[2]
+        @fact node.out => node.interfaces[3]
         @fact typeof(node.A) => Array{Float64, 2}
     end
 
     context("GainEqualityCompositeNode() should define an internal Equality and FixedGain node") do
-        node = GainEqualityCompositeNode([5.0])
+        node = GainEqualityCompositeNode([5.0], false)
         @fact typeof(node.equality_node) => EqualityNode
         @fact typeof(node.fixed_gain_node) => FixedGainNode
-        @fact node.fixed_gain_node.A => reshape([5.0],1,1)
+        @fact node.fixed_gain_node.A => reshape([5.0], 1, 1)
     end
 
     context("GainEqualityCompositeNode() should point its own interfaces to the internal node interfaces") do
-        node = GainEqualityCompositeNode([1.0])
+        node = GainEqualityCompositeNode([1.0], false)
         @fact node.interfaces[1] => node.equality_node.interfaces[1]
         @fact node.interfaces[2] => node.fixed_gain_node.interfaces[2]
         @fact node.interfaces[3] => node.equality_node.interfaces[3]
@@ -25,41 +25,24 @@ facts("GainEqualityCompositeNode") do
 
     context("A GainEqualityCompositeNode should be able to pass a Gaussian message through its internals") do
         #         _________
-        #     in1 |       | out2
+        #     in1 |       | in2
         # [N]-----|->[=]--|------>
         #         |   |   |
         #         |   v   |
         #         |  [A]  |
         #         |___|___|
-        #             | out1
+        #             | out
         #             v 
         #            [N]
 
-        # TODO: this approach needs the graph to be defined, bacause it calls calculateMessage!(). That's not the idea behind the updateNodeMessage! function?
-
-        # Working behaviour
-        node = GainEqualityCompositeNode(2.0*eye(2), false) # Flag false to indicate explicit calculations
+        node = GainEqualityCompositeNode(2.0*eye(2), false) # Flag false to indicate internal message passing
         c_node1 = ConstantNode(GaussianMessage(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0]))
         c_node2 = ConstantNode(GaussianMessage(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0]))
-        Edge(c_node1.interfaces[1], node.interfaces[1])
-        Edge(node.interfaces[2], c_node2.interfaces[1])
-        inbound_messages = Array(GaussianMessage, 3)
-        #inbound_messages[1] = c_node1.constant
-        #inbound_messages[2] = c_node2.constant
-        # Forward message
-        ForneyLab.updateNodeMessage!(3, node, inbound_messages)
-        @fact node.interfaces[3].message.W => reshape([5.0, 2.5, 2.5, 5.0], 2, 2)
-        @fact node.interfaces[3].message.xi => [3.0, 6.0]
-
-        #Wanted behaviour
-        node = GainEqualityCompositeNode(2.0*eye(2), false) # Flag false to indicate explicit calculations
-        inbound_messages = Array(GaussianMessage, 3)
-        inbound_messages[1] = GaussianMessage(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])
-        inbound_messages[2] = GaussianMessage(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])
-        # Forward message
-        ForneyLab.updateNodeMessage!(3, node, inbound_messages)
-        @fact node.interfaces[3].message.W => reshape([5.0, 2.5, 2.5, 5.0], 2, 2)
-        @fact node.interfaces[3].message.xi => [3.0, 6.0]
+        Edge(c_node1.out, node.in1)
+        Edge(c_node2.out, node.in2)
+        calculateMessage!(node.out)
+        @fact node.out.message.W => reshape([5.0, 2.5, 2.5, 5.0], 2, 2)
+        @fact node.out.message.xi => [3.0, 6.0]
     end
 
     context("A GainEqualityCompositeNode should pass a Gaussian message using custom update rules for message passing") do
@@ -70,10 +53,10 @@ facts("GainEqualityCompositeNode") do
             inbound_messages = Array(GaussianMessage, 3)
             inbound_messages[1] = GaussianMessage(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])
             inbound_messages[2] = GaussianMessage(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])
-            # Forward message
+            # Backward message
             ForneyLab.updateNodeMessage!(3, node, inbound_messages)
-            @fact node.interfaces[3].message.W => reshape([5.0, 2.5, 2.5, 5.0], 2, 2)
-            @fact node.interfaces[3].message.xi => [3.0, 6.0]
+            @fact node.out.message.W => reshape([5.0, 2.5, 2.5, 5.0], 2, 2)
+            @fact node.out.message.xi => [3.0, 6.0]
         end
     end
 end
