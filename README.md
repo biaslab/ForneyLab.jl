@@ -4,6 +4,8 @@ ForneyLab.jl
 Forney-style Factor Graph toolbox in Julia.
 **This software is still very experimental**.
 
+The iJulia demos can be viewed [online](http://192.71.151.86/ForneyLab.jl-demos/).
+
 Installation
 ============
 Add the ForneyLab package to your Julia installation:
