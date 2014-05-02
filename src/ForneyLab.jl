@@ -114,6 +114,8 @@ include("nodes/constant.jl")
 include("nodes/equality.jl")
 include("nodes/fixed_gain.jl")
 include("nodes/addition.jl")
+# Composite nodes
+include("nodes/composite/gain_equality.jl")
 
 #############################
 # Generic methods

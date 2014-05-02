@@ -55,6 +55,7 @@ include("nodes/test_constant.jl")
 include("nodes/test_equality.jl")
 include("nodes/test_fixed_gain.jl")
 include("nodes/test_addition.jl")
+include("nodes/composite/test_gain_equality.jl")
 
 # Helper function for initializing a pair of nodes
 function initializePairOfNodes()

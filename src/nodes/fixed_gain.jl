@@ -62,14 +62,14 @@ FixedGainNode(; args...) = FixedGainNode([1.0]; args...)
 # GaussianMessage methods
 ############################################
 
-# Rule set for backward propagation
+# Rule set for backward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
 backwardFixedGainMRule{T<:Number}(A_inv::Array{T, 2}, m::Array{T, 1}) = A_inv * m
 backwardFixedGainMRule{T<:Number}(A::Array{T, 2}, m::Array{T, 1}, W::Array{T, 2}) = pinv(A' * W * A) * A' * W * m
 backwardFixedGainVRule{T<:Number}(A_inv::Array{T, 2}, V::Array{T, 2}) = A_inv * V * A_inv' # TODO: inversion only once
 backwardFixedGainWRule{T<:Number}(A::Array{T, 2}, W::Array{T, 2}) = A' * W * A
 backwardFixedGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}) = A' * xi
 
-# Rule set for forward propagation
+# Rule set for forward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
 forwardFixedGainMRule{T<:Number}(A::Array{T, 2}, m::Array{T, 1}) = A * m
 forwardFixedGainVRule{T<:Number}(A::Array{T, 2}, V::Array{T, 2}) = A * V * A'
 forwardFixedGainWRule{T<:Number}(A_inv::Array{T, 2}, W::Array{T, 2}) = A_inv' * W * A_inv
@@ -142,7 +142,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg_out.V = nothing
             msg_out.W = forwardFixedGainWRule(node.A_inv, msg_1.W)
             msg_out.xi = forwardFixedGainXiRule(node.A_inv, msg_1.xi) # Short version of the rule, only valid if A and V are positive definite
-        elseif msg_1.xi != nothing && msg_1.V != nothing && msg_1.W != nothing && isdefined(self, :A_inv)
+        elseif msg_1.xi != nothing && msg_1.V != nothing && msg_1.W != nothing && isdefined(node, :A_inv)
             msg_out.m = nothing
             msg_out.V = nothing
             msg_out.W = forwardFixedGainWRule(node.A_inv, msg_1.W)
