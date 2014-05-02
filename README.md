@@ -33,8 +33,8 @@ using ForneyLab
 c1 = ConstantNode(GeneralMessage(3.0))
 c2 = ConstantNode(GeneralMessage(2.0))
 x = MultiplicationNode(name="MyMultiplier")
-e1 = Edge(c1.interface, x.in1)
-e2 = Edge(c2.interface, x.in2)
+e1 = Edge(c1.out, x.in1)
+e2 = Edge(c2.out, x.in2)
 # Calculate the outbound message on x.out, the output of the multiplication node.
 # This call will recursively calculate all required inbound messages.
 calculateMessage!(x.out)
