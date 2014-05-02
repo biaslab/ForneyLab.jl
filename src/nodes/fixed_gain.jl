@@ -137,7 +137,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg.V = nothing
             msg.W = forwardFixedGainWRule(node.A_inv, msg.W)
             msg.xi = forwardFixedGainXiRule(node.A_inv, msg.xi) # Short version of the rule, only valid if A and V are positive definite
-        elseif msg.xi != nothing && msg.V != nothing && msg.W != nothing && isdefined(self, :A_inv)
+        elseif msg.xi != nothing && msg.V != nothing && msg.W != nothing && isdefined(node, :A_inv)
             msg.m = nothing
             msg.V = nothing
             msg.W = forwardFixedGainWRule(node.A_inv, msg.W)

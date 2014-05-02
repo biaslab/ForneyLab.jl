@@ -134,20 +134,19 @@ function updateNodeMessage!(outbound_interface_id::Int,
 
         # Select parameterization
         # Order is from least to most computationally intensive
-        if msg_1.xi != nothing && msg_1.W != nothing && msg_2.xi != nothing && msg_2.W != nothing && isRoundedPosDef(node.A) && isRoundedPosDef(msg_1.W + msg_2.W)
+        if msg_1.xi != nothing && msg_1.W != nothing && msg_2.xi != nothing && msg_2.W != nothing && isRoundedPosDef(node.A) && isRoundedPosDef(msg_1.W + msg_2.W) && isdefined(node, :A_inv)
             msg_out.m = nothing
             msg_out.V = nothing
             msg_out.W = forwardGainEqualityWRule(node.A_inv, msg_1.W, msg_2.W)
             msg_out.xi = forwardGainEqualityXiRule(node.A_inv, msg_1.xi, msg_2.xi)
-        elseif msg_1.m != nothing && msg_1.W != nothing && msg_2.m != nothing && msg_2.W != nothing
-            msg_out.m = forwardGainEqualityMRule(node.A, msg1.m, msg1.W, msg2.m, msg2.W)
+        elseif msg_1.m != nothing && msg_1.W != nothing && msg_2.m != nothing && msg_2.W != nothing && isdefined(node, :A_inv)
+            msg_out.m = forwardGainEqualityMRule(node.A, msg_1.m, msg_1.W, msg_2.m, msg_2.W)
             msg_out.V = nothing
             msg_out.W = forwardGainEqualityWRule(node.A_inv, msg_1.W, msg_2.W)
             msg_out.xi = nothing
         elseif msg_1.m != nothing && msg_1.V != nothing && msg_2.m != nothing && msg_2.V != nothing
-            W_1 = inv(msg_1.V)
-            W_2 = inv(msg_2.V)
-            msg_out.m = forwardGainEqualityMRule(node.A, msg_1.m, W_1, msg_2.m, W_2)
+            # TODO: Not very efficient!
+            msg_out.m = forwardGainEqualityMRule(node.A, msg_1.m, inv(msg_1.V), msg_2.m, inv(msg_2.V))
             msg_out.V = forwardGainEqualityVRule(node.A, msg_1.V, msg_2.V)
             msg_out.W = nothing
             msg_out.xi = nothing
@@ -181,15 +180,16 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg_out.V = nothing
             msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
             msg_out.xi = backwardGainEqualityXiRule(node.A, msg_in.xi, msg_3.xi)
-        elseif msg_3.m != nothing && msg_3.W != nothing && msg_in.m != nothing && msg_in.W != nothing
-            msg_out.m = backwardGainEqualityMRule(node.A, msg_in.m, msg_in.V, msg_3.m, msg_3.V)
-            msg_out.V = nothing
-            msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
-            msg_out.xi = nothing
         elseif msg_3.m != nothing && msg_3.V != nothing && msg_in.m != nothing && msg_in.V != nothing
             msg_out.m = backwardGainEqualityMRule(node.A, msg_in.m, msg_in.V, msg_3.m, msg_3.V)
             msg_out.V = backwardGainEqualityVRule(node.A, msg_in.V, msg_3.V)
             msg_out.W = nothing
+            msg_out.xi = nothing
+        elseif msg_3.m != nothing && msg_3.W != nothing && msg_in.m != nothing && msg_in.W != nothing
+            # TODO: Not very efficient!
+            msg_out.m = backwardGainEqualityMRule(node.A, msg_in.m, inv(msg_in.W), msg_3.m, inv(msg_3.W))
+            msg_out.V = nothing
+            msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
             msg_out.xi = nothing
         else
             # Alternative parameterization not caught by the above rules
