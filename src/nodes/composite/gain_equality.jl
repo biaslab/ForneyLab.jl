@@ -46,7 +46,6 @@ type GainEqualityCompositeNode <: Node
     in1::Interface
     in2::Interface
     out::Interface
-    A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
     function GainEqualityCompositeNode(A::Array, use_composite_update_rules::Bool; args...)
         name = "#undef"
@@ -65,12 +64,6 @@ type GainEqualityCompositeNode <: Node
             self.interfaces[1] = Interface(self)
             self.interfaces[2] = Interface(self)
             self.interfaces[3] = Interface(self)
-            # Try to precompute inv(A)
-            try
-                self.A_inv = inv(self.A)
-            catch
-                warn("The specified multiplier for ", string(typeof(self)), " ", self.name, " is not invertible. This might cause problems. You might want to use the composite update rules.")
-            end
         else
             # Build internal graph, ignore composite rules.
             # This initializes the interfaces as references to the internal node interfaces.
