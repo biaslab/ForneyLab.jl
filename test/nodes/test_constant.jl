@@ -3,7 +3,7 @@ facts("ConstantNode") do
         node = ConstantNode()
         @fact typeof(node) => ConstantNode
         @fact length(node.interfaces) => 1
-        @fact node.interface => node.interfaces[1]
+        @fact node.out => node.interfaces[1]
     end
 
     context("ConstantNode should propagate a GaussianMessage") do
