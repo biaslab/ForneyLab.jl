@@ -91,9 +91,11 @@ GainEqualityCompositeNode(; args...) = GainEqualityCompositeNode([1.0], true; ar
 # GaussianMessage methods
 ############################################
 
+# Rule set for forward propagation
+
 # Rule set for backward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-backwardGainEqualityWRule{T<:Number}(A::Array{T, 2}, W_x::Array{T, 2}, W_y::Array{T, 2}) = W_x + A' * W_y * A
-backwardGainEqualityXiRule{T<:Number}(A::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x + A' * xi_y
+backGainEqualityWRule{T<:Number}(A::Array{T, 2}, W_x::Array{T, 2}, W_y::Array{T, 2}) = W_x + A' * W_y * A
+backGainEqualityXiRule{T<:Number}(A::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x + A' * xi_y
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::GainEqualityCompositeNode,
@@ -112,7 +114,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
 
     # Use the shortcut update rules
     if outbound_interface_id == 3
-        # Backward message; msg_i = inbound message on interface i, msg_out is always the calculated outbound message.
+        # Forward message; msg_i = inbound message on interface i, msg_out is always the calculated outbound message.
         msg_1 = inbound_messages[1]
         msg_2 = inbound_messages[2]
         msg_out = GaussianMessage()
@@ -122,17 +124,47 @@ function updateNodeMessage!(outbound_interface_id::Int,
         if msg_1.xi != nothing && msg_1.W != nothing && msg_2.xi != nothing && msg_2.W != nothing
             msg_out.m = nothing
             msg_out.V = nothing
-            msg_out.W = backwardGainEqualityWRule(node.A, msg_1.W, msg_2.W)
-            msg_out.xi = backwardGainEqualityXiRule(node.A, msg_1.xi, msg_2.xi)
+            msg_out.W = forwardGainEqualityWRule(node.A, msg_1.W, msg_2.W)
+            msg_out.xi = forwardGainEqualityXiRule(node.A, msg_1.xi, msg_2.xi)
         else
-            # TODO: other parametrizations
-            error("No other parametrizations are implemented yet")
+            # Alternative parameterization not caught by the above rules
+            warn("Parameterization unknown; using xi, W parameterization instead ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+            ensureXiWParametrization!(msg_1)
+            ensureXiWParametrization!(msg_2)
+            msg_out.m = nothing
+            msg_out.V = nothing
+            msg_out.W = forwardGainEqualityWRule(node.A, msg_1.W, msg_2.W)
+            msg_out.xi = forwardGainEqualityXiRule(node.A, msg_1.xi, msg_2.xi)
+        end
+        # Set the outbound message
+        return node.interfaces[outbound_interface_id].message = msg_out
+    elseif outbound_interface_id == 1 || outbound_interface_id == 2
+        # Backward messages
+        msg_out = GaussianMessage()
+        msg_3 = inbound_messages[3]
+        msg_in = inbound_messages[outbound_interface_id == 1 ? 2 : 1] # the other input interface
+
+        # Select parameterization
+        # Order is from least to most computationally intensive
+        if msg_3.xi != nothing && msg_3.W != nothing && msg_in.xi != nothing && msg_in.W != nothing
+            msg_out.m = nothing
+            msg_out.V = nothing
+            msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
+            msg_out.xi = backwardGainEqualityXiRule(node.A, msg_in.xi, msg_3.xi)
+        else
+            # Alternative parameterization not caught by the above rules
+            warn("Parameterization unknown; using xi, W parameterization instead ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+            ensureXiWParametrization!(msg_in)
+            ensureXiWParametrization!(msg_3)
+            msg_out.m = nothing
+            msg_out.V = nothing
+            msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
+            msg_out.xi = backwardGainEqualityXiRule(node.A, msg_in.xi, msg_3.xi)
         end
         # Set the outbound message
         return node.interfaces[outbound_interface_id].message = msg_out
     else
-        # TODO: other interfaces; 3 and 1 are the same by symmetry
-        error("No other interfaces are implemented yet")
+        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
     end
 
 end
