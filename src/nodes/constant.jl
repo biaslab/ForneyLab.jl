@@ -5,6 +5,11 @@
 #   Simple node with just 1 interface.
 #   Always sends out a constant (predefined) message.
 #
+#           out
+#   [value]----->
+#
+#   out = value
+#
 # Interface ids, (names) and supported message types:
 #   1. (out):
 #       Message

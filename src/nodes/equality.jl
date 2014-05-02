@@ -4,9 +4,13 @@
 # Description:
 #   Equality constraint node with variable
 #   number of (symmetrical) interfaces (ports).
+#   Interfaces don't have names since the number
+#   of interfaces is variable.
+#
 #   Example:
 #       EqualityNode(name="3_port_equ") # 3 interfaces is default
 #       EqualityNode(5; name="5_port_equ")
+#
 # Interface ids, (names) and supported message types:
 #   1. (none):
 #       GaussianMessage

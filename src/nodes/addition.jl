@@ -3,7 +3,14 @@
 ############################################
 # Description:
 #   Addition of two messages of same type.
+#
+#    in1      out
+#   ----->[+]----->
+#          |
+#          | in2
+#
 #   out = in1 + in2
+#
 #   Example:
 #       AdditionNode(; name="my_node")
 #
@@ -81,73 +88,73 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculations for the GaussianMessage type; Korl (2005), table 4.1
     if outbound_interface_id == 3
         # Forward message, both messages on the incoming edges, required to calculate the outgoing message.
-        msg_in1 = inbound_messages[1]
-        msg_in2 = inbound_messages[2]
-        msg = GaussianMessage()
+        msg_1 = inbound_messages[1]
+        msg_2 = inbound_messages[2]
+        msg_out = GaussianMessage()
 
         # Select parameterization
         # Order is from least to most computationally intensive
-        if msg_in1.m != nothing && msg_in1.V != nothing && msg_in2.m != nothing && msg_in2.V != nothing
-            msg.m = forwardAdditionMRule(msg_in1.m, msg_in2.m)
-            msg.V = forwardAdditionVRule(msg_in1.V, msg_in2.V)
-            msg.W = nothing
-            msg.xi = nothing
-        elseif msg_in1.m != nothing && msg_in1.W != nothing && msg_in2.m != nothing && msg_in2.W != nothing
-            msg.m = forwardAdditionMRule(msg_in1.m, msg_in2.m)
-            msg.V = nothing
-            msg.W = forwardAdditionWRule(msg_in1.W, msg_in2.W)
-            msg.xi = nothing
-        elseif msg_in1.xi != nothing && msg_in1.V != nothing && msg_in2.xi != nothing && msg_in2.V != nothing
-            msg.m = nothing
-            msg.V = forwardAdditionVRule(msg_in1.V, msg_in2.V)
-            msg.W = nothing
-            msg.xi = forwardAdditionXiRule(msg_in1.V, msg_in1.xi, msg_in2.V, msg_in2.xi)
+        if msg_1.m != nothing && msg_1.V != nothing && msg_2.m != nothing && msg_2.V != nothing
+            msg_out.m = forwardAdditionMRule(msg_1.m, msg_2.m)
+            msg_out.V = forwardAdditionVRule(msg_1.V, msg_2.V)
+            msg_out.W = nothing
+            msg_out.xi= nothing
+        elseif msg_1.m != nothing && msg_1.W != nothing && msg_2.m != nothing && msg_2.W != nothing
+            msg_out.m = forwardAdditionMRule(msg_1.m, msg_2.m)
+            msg_out.V = nothing
+            msg_out.W = forwardAdditionWRule(msg_1.W, msg_2.W)
+            msg_out.xi= nothing
+        elseif msg_1.xi != nothing && msg_1.V != nothing && msg_2.xi != nothing && msg_2.V != nothing
+            msg_out.m = nothing
+            msg_out.V = forwardAdditionVRule(msg_1.V, msg_2.V)
+            msg_out.W = nothing
+            msg_out.xi= forwardAdditionXiRule(msg_1.V, msg_1.xi, msg_2.V, msg_2.xi)
         else
             # Last resort: calculate (m,V) parametrization for both inbound messages
-            ensureMVParametrization!(msg_in1)
-            ensureMVParametrization!(msg_in2)
-            msg.m = forwardAdditionMRule(msg_in1.m, msg_in2.m)
-            msg.V = forwardAdditionVRule(msg_in1.V, msg_in2.V)
-            msg.W = nothing
-            msg.xi = nothing
+            ensureMVParametrization!(msg_1)
+            ensureMVParametrization!(msg_2)
+            msg_out.m = forwardAdditionMRule(msg_1.m, msg_2.m)
+            msg_out.V = forwardAdditionVRule(msg_1.V, msg_2.V)
+            msg_out.W = nothing
+            msg_out.xi= nothing
         end
     elseif outbound_interface_id == 1 || outbound_interface_id == 2
         # Backward message, one message on the incoming edge and one on the outgoing edge.
-        msg_in = (outbound_interface_id==1) ? inbound_messages[2] : inbound_messages[1]
-        msg_out = inbound_messages[3]
-        msg = GaussianMessage()
+        msg_1or2 = (outbound_interface_id==1) ? inbound_messages[2] : inbound_messages[1]
+        msg_3 = inbound_messages[3]
+        msg_out = GaussianMessage()
 
         # Select parameterization
         # Order is from least to most computationally intensive
-        if msg_in.m != nothing && msg_in.V != nothing && msg_out.m != nothing && msg_out.V != nothing
-            msg.m = backwardAdditionMRule(msg_in.m, msg_out.m)
-            msg.V = backwardAdditionVRule(msg_in.V, msg_out.V)
-            msg.W = nothing
-            msg.xi = nothing
-        elseif msg_in.m != nothing && msg_in.W != nothing && msg_out.m != nothing && msg_out.W != nothing
-            msg.m = backwardAdditionMRule(msg_in.m, msg_out.m)
-            msg.V = nothing
-            msg.W = backwardAdditionWRule(msg_in.W, msg_out.W)
-            msg.xi = nothing
-        elseif msg_in.xi != nothing && msg_in.V != nothing && msg_out.xi != nothing && msg_out.V != nothing
-            msg.m = nothing
-            msg.V = backwardAdditionVRule(msg_in.V, msg_out.V)
-            msg.W = nothing
-            msg.xi = backwardAdditionXiRule(msg_in.V, msg_in.xi, msg_out.V, msg_out.xi)
+        if msg_1or2.m != nothing && msg_1or2.V != nothing && msg_3.m != nothing && msg_3.V != nothing
+            msg_out.m = backwardAdditionMRule(msg_1or2.m, msg_3.m)
+            msg_out.V = backwardAdditionVRule(msg_1or2.V, msg_3.V)
+            msg_out.W = nothing
+            msg_out.xi = nothing
+        elseif msg_1or2.m != nothing && msg_1or2.W != nothing && msg_3.m != nothing && msg_3.W != nothing
+            msg_out.m = backwardAdditionMRule(msg_1or2.m, msg_3.m)
+            msg_out.V = nothing
+            msg_out.W = backwardAdditionWRule(msg_1or2.W, msg_3.W)
+            msg_out.xi = nothing
+        elseif msg_1or2.xi != nothing && msg_1or2.V != nothing && msg_3.xi != nothing && msg_3.V != nothing
+            msg_out.m = nothing
+            msg_out.V = backwardAdditionVRule(msg_1or2.V, msg_3.V)
+            msg_out.W = nothing
+            msg_out.xi = backwardAdditionXiRule(msg_1or2.V, msg_1or2.xi, msg_3.V, msg_3.xi)
         else
             # Last resort: calculate (m,V) parametrization for both inbound messages
-            ensureMVParametrization!(msg_in)
-            ensureMVParametrization!(msg_out)
-            msg.m = backwardAdditionMRule(msg_in.m, msg_out.m)
-            msg.V = backwardAdditionVRule(msg_in.V, msg_out.V)
-            msg.W = nothing
-            msg.xi = nothing
+            ensureMVParametrization!(msg_1or2)
+            ensureMVParametrization!(msg_3)
+            msg_out.m = backwardAdditionMRule(msg_1or2.m, msg_3.m)
+            msg_out.V = backwardAdditionVRule(msg_1or2.V, msg_3.V)
+            msg_out.W = nothing
+            msg_out.xi = nothing
         end
     else
         error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
     end
 
-    return node.interfaces[outbound_interface_id].message = msg
+    return node.interfaces[outbound_interface_id].message = msg_out
 end
 
 #############################################
@@ -169,17 +176,17 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculations for a general message type
     if outbound_interface_id == 1
         # Backward message 1
-        msg = GeneralMessage(inbound_messages[3].value - inbound_messages[2].value)
+        msg_out = GeneralMessage(inbound_messages[3].value - inbound_messages[2].value)
     elseif outbound_interface_id == 2
         # Backward message 2
-        msg = GeneralMessage(inbound_messages[3].value - inbound_messages[1].value)
+        msg_out = GeneralMessage(inbound_messages[3].value - inbound_messages[1].value)
     elseif outbound_interface_id == 3
         # Forward message
-        msg = GeneralMessage(inbound_messages[1].value + inbound_messages[2].value)
+        msg_out = GeneralMessage(inbound_messages[1].value + inbound_messages[2].value)
     else
         error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
     end
 
     # Set the outbound message
-    return node.interfaces[outbound_interface_id].message = msg
+    return node.interfaces[outbound_interface_id].message = msg_out
 end

@@ -3,7 +3,12 @@
 ############################################
 # Description:
 #   Multiplication with a predefined gain matrix A:
+#
+#    in1      out
+#   ----->[A]----->
+#
 #   out = A * in1
+#
 #   Example:
 #       MatrixMulitiplicationNode([1.0]; name="my_node")
 #   Gain A may only be defined through the constructor!
@@ -87,68 +92,68 @@ function updateNodeMessage!(outbound_interface_id::Int,
 
     if outbound_interface_id == 1
         # Backward message
-        msg_in = inbound_messages[2]
-        msg = deepcopy(msg_in)
+        msg_2 = inbound_messages[2]
+        msg_out = GaussianMessage()
 
         # Select parameterization
         # Order is from least to most computationally intensive
-        if msg.xi != nothing && msg.W != nothing
-            msg.m = nothing
-            msg.V = nothing
-            msg.W = backwardFixedGainWRule(node.A, msg.W)
-            msg.xi = backwardFixedGainXiRule(node.A, msg.xi)
-        elseif msg.m != nothing && msg.W != nothing && isRoundedPosDef(node.A) && isRoundedPosDef(msg.W)
-            msg.m = backwardFixedGainMRule(node.A_inv, msg.m) # Short version of the rule
-            msg.V = nothing
-            msg.W = backwardFixedGainWRule(node.A, msg.W)
-            msg.xi = nothing
-        elseif msg.m != nothing && msg.W != nothing
-            msg.m = backwardFixedGainMRule(node.A, msg.m, msg.W) # Long version of the rule
-            msg.V = nothing
-            msg.W = backwardFixedGainWRule(node.A, msg.W)
-            msg.xi = nothing
-        elseif msg.m != nothing && msg.V != nothing && isdefined(node, :A_inv) && (msg.V==zeros(size(msg.V)) || isRoundedPosDef(msg.V)) # V positive definite <=> W (its inverse) is also positive definite. Border-case is an all-zero V, in which case the outbound message also has zero variance.
-            msg.m = backwardFixedGainMRule(node.A_inv, msg.m) # Short version of the rule, only valid if A is positive definite and (W is positive definite or V is 0)
-            msg.V = backwardFixedGainVRule(node.A_inv, msg.V)
-            msg.W = nothing
-            msg.xi = nothing
+        if msg_2.xi != nothing && msg_2.W != nothing
+            msg_out.m = nothing
+            msg_out.V = nothing
+            msg_out.W = backwardFixedGainWRule(node.A, msg_2.W)
+            msg_out.xi = backwardFixedGainXiRule(node.A, msg_2.xi)
+        elseif msg_2.m != nothing && msg_2.W != nothing && isRoundedPosDef(node.A) && isRoundedPosDef(msg_2.W)
+            msg_out.m = backwardFixedGainMRule(node.A_inv, msg_2.m) # Short version of the rule
+            msg_out.V = nothing
+            msg_out.W = backwardFixedGainWRule(node.A, msg_2.W)
+            msg_out.xi = nothing
+        elseif msg_2.m != nothing && msg_2.W != nothing
+            msg_out.m = backwardFixedGainMRule(node.A, msg_2.m, msg_2.W) # Long version of the rule
+            msg_out.V = nothing
+            msg_out.W = backwardFixedGainWRule(node.A, msg_2.W)
+            msg_out.xi = nothing
+        elseif msg_2.m != nothing && msg_2.V != nothing && isdefined(node, :A_inv) && (msg_2.V==zeros(size(msg_2.V)) || isRoundedPosDef(msg_2.V)) # V positive definite <=> W (its inverse) is also positive definite. Border-case is an all-zero V, in which case the outbound message also has zero variance.
+            msg_out.m = backwardFixedGainMRule(node.A_inv, msg_2.m) # Short version of the rule, only valid if A is positive definite and (W is positive definite or V is 0)
+            msg_out.V = backwardFixedGainVRule(node.A_inv, msg_2.V)
+            msg_out.W = nothing
+            msg_out.xi = nothing
         else
             error("Insufficient input to calculate outbound message on interface ", outbound_interface_id, " of ", typeof(node), " ", node.name)
         end
     elseif outbound_interface_id == 2
         # Forward message
-        msg_in = inbound_messages[1]
-        msg = deepcopy(msg_in)
+        msg_1 = inbound_messages[1]
+        msg_out = GaussianMessage()
 
         # Select parameterization
         # Order is from least to most computationally intensive
-        if msg.m != nothing && msg.V != nothing
-            msg.m = forwardFixedGainMRule(node.A, msg.m)
-            msg.V = forwardFixedGainVRule(node.A, msg.V)
-            msg.W = nothing
-            msg.xi = nothing
-        elseif msg.m != nothing && msg.W != nothing && isdefined(node, :A_inv)
-            msg.m = forwardFixedGainMRule(node.A, msg.m)
-            msg.V = nothing
-            msg.W = forwardFixedGainWRule(node.A_inv, msg.W)
-            msg.xi = nothing
-        elseif msg.xi != nothing && msg.W != nothing && isRoundedPosDef(node.A) && isRoundedPosDef(msg.W) # V should be positive definite, meaning V is invertible and its inverse W is also positive definite.
-            msg.m = nothing
-            msg.V = nothing
-            msg.W = forwardFixedGainWRule(node.A_inv, msg.W)
-            msg.xi = forwardFixedGainXiRule(node.A_inv, msg.xi) # Short version of the rule, only valid if A and V are positive definite
-        elseif msg.xi != nothing && msg.V != nothing && msg.W != nothing && isdefined(self, :A_inv)
-            msg.m = nothing
-            msg.V = nothing
-            msg.W = forwardFixedGainWRule(node.A_inv, msg.W)
-            msg.xi = forwardFixedGainXiRule(node.A_inv, msg.xi, msg.V) # Long version of the rule
+        if msg_1.m != nothing && msg_1.V != nothing
+            msg_out.m = forwardFixedGainMRule(node.A, msg_1.m)
+            msg_out.V = forwardFixedGainVRule(node.A, msg_1.V)
+            msg_out.W = nothing
+            msg_out.xi = nothing
+        elseif msg_1.m != nothing && msg_1.W != nothing && isdefined(node, :A_inv)
+            msg_out.m = forwardFixedGainMRule(node.A, msg_1.m)
+            msg_out.V = nothing
+            msg_out.W = forwardFixedGainWRule(node.A_inv, msg_1.W)
+            msg_out.xi = nothing
+        elseif msg_1.xi != nothing && msg_1.W != nothing && isRoundedPosDef(node.A) && isRoundedPosDef(msg_1.W) # V should be positive definite, meaning V is invertible and its inverse W is also positive definite.
+            msg_out.m = nothing
+            msg_out.V = nothing
+            msg_out.W = forwardFixedGainWRule(node.A_inv, msg_1.W)
+            msg_out.xi = forwardFixedGainXiRule(node.A_inv, msg_1.xi) # Short version of the rule, only valid if A and V are positive definite
+        elseif msg_1.xi != nothing && msg_1.V != nothing && msg_1.W != nothing && isdefined(self, :A_inv)
+            msg_out.m = nothing
+            msg_out.V = nothing
+            msg_out.W = forwardFixedGainWRule(node.A_inv, msg_1.W)
+            msg_out.xi = forwardFixedGainXiRule(node.A_inv, msg_1.xi, msg_1.V) # Long version of the rule
         else
             error("Insufficient input to calculate outbound message on interface ", outbound_interface_id, " of ", typeof(node), " ", node.name)
         end
     end
 
     # Set the outbound message
-    return node.interfaces[outbound_interface_id].message = msg
+    return node.interfaces[outbound_interface_id].message = msg_out
 end
 
 ############################################
@@ -169,12 +174,12 @@ function updateNodeMessage!(outbound_interface_id::Int,
 
     if outbound_interface_id == 1
         # Backward message
-        msg = GeneralMessage(pinv(node.A) * inbound_messages[2].value)
+        msg_out = GeneralMessage(pinv(node.A) * inbound_messages[2].value)
     elseif outbound_interface_id == 2
         # Forward message
-        msg = GeneralMessage(node.A * inbound_messages[1].value)
+        msg_out = GeneralMessage(node.A * inbound_messages[1].value)
     end
 
     # Set the outbound message
-    return node.interfaces[outbound_interface_id].message = msg
+    return node.interfaces[outbound_interface_id].message = msg_out
 end
