@@ -126,4 +126,4 @@ type GeneralMessage <: Message
     end
 end
 GeneralMessage() = GeneralMessage(1.0)
-show(io::IO, msg::GaussianMessage) = println(io, "GeneralMessage with value::$(typeof(msg.value)) = $(msg.value)")
+show(io::IO, msg::GeneralMessage) = println(io, "GeneralMessage with value::$(typeof(msg.value)) = $(msg.value)")
