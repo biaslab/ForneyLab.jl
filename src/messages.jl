@@ -48,6 +48,7 @@ function GaussianMessage(;args...)
     return self
 end
 GaussianMessage() = GaussianMessage(m=[0.0], V=[1.0])
+show(io::IO, msg::GaussianMessage) = println(io, "GaussianMessage\n m  = $(msg.m)\n V  = $(msg.V)\n W  = $(msg.W)\n xi = $(msg.xi)")
 
 # Methods to check and convert different parametrizations
 function isWellDefined(msg::GaussianMessage)
@@ -125,3 +126,4 @@ type GeneralMessage <: Message
     end
 end
 GeneralMessage() = GeneralMessage(1.0)
+show(io::IO, msg::GaussianMessage) = println(io, "GeneralMessage with value::$(typeof(msg.value)) = $(msg.value)")
