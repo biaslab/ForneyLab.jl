@@ -194,13 +194,16 @@ function clearMessages!(node::Node)
     # Clear all outbound messages on the interfaces of node
     for interface in node.interfaces
         interface.message = nothing
+        interface.message_valid = false
     end
 end
 
 function clearMessages!(edge::Edge)
    # Clear all messages on an edge.
    edge.head.message = nothing
+   edge.head.message_valid = false
    edge.tail.message = nothing
+   edge.tail.message_valid = false
 end
 
 end # module ForneyLab
