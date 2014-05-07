@@ -139,4 +139,38 @@ facts("EqualityNode") do
             @fact maximum(abs(msg.W - (W + W))) < epsilon => true
         end
     end
+
+    context("EqualityNode should propagate a GeneralMessage") do
+        # Equality constraint node should work for GeneralMessages, although not really useful.
+        # Outbound message is equal to the inbound messages if not all inbound messages are equal.
+        # Otherwise, the outbound message is GeneralMessage(0.0)
+        node = EqualityNode()
+        inbound_messages = Array(GeneralMessage, 3)
+        # Equal scalars
+        inbound_messages[1] = GeneralMessage(1.0)
+        inbound_messages[2] = GeneralMessage(1.0)
+        msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
+        @fact node.interfaces[3].message => msg
+        @fact msg.value => 1.0
+        # Unequal scalars
+        inbound_messages[2] = GeneralMessage(1.1)
+        msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
+        @fact msg.value => 0.0
+        # Equal matrices
+        inbound_messages[1] = GeneralMessage(ones(2,2))
+        inbound_messages[2] = GeneralMessage(ones(2,2))
+        msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
+        @fact node.interfaces[3].message => msg
+        @fact msg.value => ones(2,2)
+        # Unequal matrices (different values) should give zeros matrix
+        inbound_messages[2] = GeneralMessage(4.0*ones(2,2))
+        msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
+        @fact node.interfaces[3].message => msg
+        @fact msg.value => zeros(2,2)
+        # Unequal matrices (different size) should give zeros matrix
+        inbound_messages[2] = GeneralMessage(ones(3,3))
+        msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
+        @fact node.interfaces[3].message => msg
+        @fact maximum(msg.value) => 0.0
+    end
 end
