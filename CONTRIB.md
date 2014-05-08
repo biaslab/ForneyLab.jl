@@ -3,7 +3,7 @@ Contribution guidelines
 
 File structure
 --------------
-- `/demo/`: demos in iJulia notebook format (`.pynb`)
+- `/demo/`: demos in iJulia notebook format (`.ipynb`)
 - `/src/`: all source files
     + `ForneyLab.jl`: top-level module with general definitions and functions
     + `messages.jl`: all message type definitions and message-specific functions

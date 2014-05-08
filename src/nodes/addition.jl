@@ -4,10 +4,10 @@
 # Description:
 #   Addition of two messages of same type.
 #
-#    in1      out
-#   ----->[+]----->
+#          in2
 #          |
-#          | in2
+#    in1   v  out
+#   ----->[+]----->
 #
 #   out = in1 + in2
 #
