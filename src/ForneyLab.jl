@@ -110,11 +110,12 @@ show(io::IO, edge::Edge) = println(io, "Edge from ", typeof(edge.tail.node), " w
 include("messages.jl")
 
 # Nodes
+include("nodes/addition.jl")
 include("nodes/constant.jl")
 include("nodes/equality.jl")
 include("nodes/fixed_gain.jl")
-include("nodes/addition.jl")
 # Composite nodes
+include("nodes/composite/gain_addition.jl")
 include("nodes/composite/gain_equality.jl")
 
 #############################
