@@ -118,7 +118,12 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg_out.W = nothing
             msg_out.xi = nothing
         else
-            error("Insufficient input to calculate outbound message on interface ", outbound_interface_id, " of ", typeof(node), " ", node.name)
+            # Fallback: convert inbound message to (xi,W) parametrization and then use efficient rules
+            ensureXiWParametrization!(msg_2)
+            msg_out.m = nothing
+            msg_out.V = nothing
+            msg_out.W = backwardFixedGainWRule(node.A, msg_2.W)
+            msg_out.xi = backwardFixedGainXiRule(node.A, msg_2.xi)
         end
     elseif outbound_interface_id == 2
         # Forward message
@@ -148,7 +153,12 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg_out.W = forwardFixedGainWRule(node.A_inv, msg_1.W)
             msg_out.xi = forwardFixedGainXiRule(node.A_inv, msg_1.xi, msg_1.V) # Long version of the rule
         else
-            error("Insufficient input to calculate outbound message on interface ", outbound_interface_id, " of ", typeof(node), " ", node.name)
+            # Fallback: convert inbound message to (m,V) parametrization and then use efficient rules
+            ensureMVParametrization!(msg_1)
+            msg_out.m = forwardFixedGainMRule(node.A, msg_1.m)
+            msg_out.V = forwardFixedGainVRule(node.A, msg_1.V)
+            msg_out.W = nothing
+            msg_out.xi = nothing
         end
     end
 

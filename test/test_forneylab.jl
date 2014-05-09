@@ -172,6 +172,35 @@ facts("Message passing over interfaces") do
         node = FixedGainNode()
         @fact_throws calculateMessage!(node.out)
     end
+
+    context("calculateMarginal(edge) should check for legal forward/backward messages") do
+        @fact_throws calculateMarginal(Edge())
+        @fact_throws calculateMarginal(Edge(ConstantNode(), ConstantNode()))
+    end
+
+    context("calculateMarginal(forward_msg, backward_msg) should check equality of message types") do
+        @fact_throws calculateMarginal(GaussianMessage(), GeneralMessage())
+    end
+
+    context("calculateMarginal(edge) should give correct result") do
+        edge = Edge(ConstantNode(GaussianMessage(m=[0.0], V=[1.0])),
+                    ConstantNode(GaussianMessage(m=[0.0], V=[1.0])))
+        calculateForwardMessage!(edge)
+        calculateBackwardMessage!(edge)
+        marginal_msg = calculateMarginal(edge)
+        ensureMVParametrization!(marginal_msg)
+        @fact marginal_msg.m => [0.0]
+        @fact maximum(abs(marginal_msg.V - reshape([0.5], 1, 1))) < epsilon => true
+    end
+
+    context("calculateMarginal(forward_msg, backward_msg) should give correct result") do
+        marginal_msg = calculateMarginal(
+                                GaussianMessage(m=[0.0], V=[1.0]),
+                                GaussianMessage(m=[0.0], V=[1.0]))
+        ensureMVParametrization!(marginal_msg)
+        @fact marginal_msg.m => [0.0]
+        @fact maximum(abs(marginal_msg.V - reshape([0.5], 1, 1))) < epsilon => true
+    end
 end
 
 end # module TestForneyLab

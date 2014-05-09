@@ -48,6 +48,18 @@ function GaussianMessage(;args...)
     return self
 end
 GaussianMessage() = GaussianMessage(m=[0.0], V=[1.0])
+function show(io::IO, msg::GaussianMessage)
+    println(io, "GaussianMessage")
+    print(io, "m  = ")
+    show(io, msg.m)
+    print(io, "\nV  = ")
+    show(io, msg.V)
+    print(io, "\nW  = ")
+    show(io, msg.W)
+    print(io, "\nxi = ")
+    show(io, msg.xi)
+    print(io, "\n")
+end
 
 # Methods to check and convert different parametrizations
 function isWellDefined(msg::GaussianMessage)
@@ -58,7 +70,17 @@ end
 function isConsistent(msg::GaussianMessage)
     # Check if msg is consistent in case it is overdetermined
     if !is(msg.V, nothing) && !is(msg.W, nothing)
-        if maximum(abs(inv(msg.V) - msg.W)) > epsilon
+        V_W_consistent = false
+        try
+           V_W_consistent = maximum(abs(inv(msg.V) - msg.W)) < epsilon
+        catch
+            try
+                V_W_consistent = maximum(abs(inv(msg.W) - msg.V)) < epsilon
+            catch
+                error("Cannot check consistency of GaussianMessage because both V and W are non-invertible.")
+            end
+        end
+        if !V_W_consistent
             return false # V and W are not consistent
         end
     end
@@ -90,13 +112,21 @@ end
 function ensureVDefined!(msg::GaussianMessage)
     # Ensure that msg.V is defined, calculate it if needed.
     # An underdetermined msg will throw an exception, we assume msg is well defined.
-    msg.V = is(msg.V, nothing) ? inv(msg.W) : msg.V
+    try
+        msg.V = is(msg.V, nothing) ? inv(msg.W) : msg.V
+    catch
+        error("Cannot calculate V of GaussianMessage because W is not invertible.")
+    end
     return msg
 end
 function ensureWDefined!(msg::GaussianMessage)
     # Ensure that msg.W is defined, calculate it if needed.
     # An underdetermined msg will throw an exception, we assume msg is well defined.
-    msg.W = is(msg.W, nothing) ? inv(msg.V) : msg.W
+    try
+        msg.W = is(msg.W, nothing) ? inv(msg.V) : msg.W
+    catch
+        error("Cannot calculate W of GaussianMessage because V is not invertible.")
+    end
     return msg
 end
 ensureMVParametrization!(msg::GaussianMessage) = ensureVDefined!(ensureMDefined!(msg))
@@ -114,14 +144,14 @@ ensureXiWParametrization!(msg::GaussianMessage) = ensureWDefined!(ensureXiDefine
 type GeneralMessage <: Message
     value
     function GeneralMessage(value)
-        # In case value is mutable, copy it instead of just referencing.
-        if (isimmutable(value))
-            self = new(value)
-        else
-            self = new()
-            self.value = deepcopy(value)
-        end
+        self = new()
+        self.value = deepcopy(value) # Make a copy instead of referencing
         return self
     end
 end
 GeneralMessage() = GeneralMessage(1.0)
+function show(io::IO, msg::GeneralMessage)
+    print(io, "GeneralMessage with value = ")
+    show(io, msg.value)
+    print("\n")
+end

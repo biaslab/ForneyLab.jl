@@ -1,7 +1,7 @@
 module ForneyLab
 
 export Message, Node, Interface, Edge
-export calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, clearMessages!
+export calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, calculateMarginal, clearMessages!
 export epsilon
 
 #############################
@@ -191,17 +191,44 @@ end
 calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
 calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
+function calculateMarginal(forward_msg::Message, backward_msg::Message)
+    # Calculate the marginal from a forward/backward message pair.
+    # We calculate the marginal by using an EqualityNode.
+    # The forward and backward messages are inbound messages to the EqualityNode.
+    # The outbound message is the marginal.
+    @assert(typeof(forward_msg)==typeof(backward_msg), "Cannot create marginal from forward/backward messages of different types.")
+    eq_node = EqualityNode(3)
+    inbound_messages = Array(typeof(forward_msg), 3)
+    inbound_messages[1] = forward_msg
+    inbound_messages[2] = backward_msg
+    marginal_msg = deepcopy(ForneyLab.updateNodeMessage!(3, eq_node, inbound_messages))
+    return marginal_msg
+end
+
+function calculateMarginal(edge::Edge)
+    # Calculate the marginal message on an edge
+    # This method assumes that the tail and head interfaces hold (valid or invalid) messages.
+    @assert(typeof(edge.tail)==Interface, "Edge should be bound to a tail interface.")
+    @assert(typeof(edge.head)==Interface, "Edge should be bound to a head interface.")
+    @assert(typeof(edge.tail.message)<:Message, "Tail interface does not hold a message. First call calculateForwardMessage!(edge) or calculate the forward message in another way.")
+    @assert(typeof(edge.head.message)<:Message, "Head interface does not hold a message. First call calculateBackwardMessage!(edge) or calculate the forward message in another way.")
+    return calculateMarginal(edge.tail.message, edge.head.message)
+end
+
 function clearMessages!(node::Node)
     # Clear all outbound messages on the interfaces of node
     for interface in node.interfaces
         interface.message = nothing
+        interface.message_valid = false
     end
 end
 
 function clearMessages!(edge::Edge)
    # Clear all messages on an edge.
    edge.head.message = nothing
+   edge.head.message_valid = false
    edge.tail.message = nothing
+   edge.tail.message_valid = false
 end
 
 end # module ForneyLab

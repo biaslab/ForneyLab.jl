@@ -12,7 +12,7 @@
 #        |  [A]  |
 #        |___|___|
 #            | out
-#            v 
+#            v
 #
 #   out = A*in1 = A*in2
 #   Example:
@@ -33,8 +33,11 @@ export GainEqualityCompositeNode
 
 type GainEqualityCompositeNode <: Node
     # Basic node properties.
-    # Use_composite_update_rule is a flag for indicating use of shortcut update rules. When set to true, the internals are ignored and the updated
-    # outgoing message is calculated via the provided update rules. When set to false, messages are passed through the internals of the composite node.
+    # use_composite_update_rules is a flag for indicating use of
+    # shortcut update rules. When set to true (default), the outbound
+    # message is calculated via the provided update rules.
+    # When set to false, messages are passed through the internal
+    # graph of the composite node.
     A::Array
     use_composite_update_rules::Bool
     name::ASCIIString
@@ -98,13 +101,14 @@ GainEqualityCompositeNode(; args...) = GainEqualityCompositeNode([1.0], true; ar
 # GaussianMessage methods
 ############################################
 
-# Rule set for forward propagation
+# Rule set for forward propagation ({in1,in2}-->out)
 forwardGainEqualityWRule{T<:Number}(A_inv::Array{T, 2}, W_x::Array{T, 2}, W_y::Array{T, 2}) = A_inv' * (W_x + W_y) * A_inv
 forwardGainEqualityXiRule{T<:Number}(A_inv::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}) = A_inv' * (xi_x + xi_y)
 forwardGainEqualityVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Array{T, 2}) = A * V_x * pinv(V_x + V_y) * V_y * A'
 forwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, W_x::Array{T, 2}, m_y::Array{T, 1}, W_y::Array{T, 2}) = A * pinv(W_x + W_y) * (W_x * m_x + W_y * m_y)
 
-# Rule set for backward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
+# Rule set for backward propagation ({in2,out}-->in1 or {in1,out}-->in2)
+# From: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
 backwardGainEqualityWRule{T<:Number}(A::Array{T, 2}, W_x::Array{T, 2}, W_y::Array{T, 2}) = W_x + A' * W_y * A
 backwardGainEqualityXiRule{T<:Number}(A::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x + A' * xi_y
 backwardGainEqualityVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x - V_x * A' * inv(V_y + A * V_x * A') * A * V_x
@@ -125,9 +129,9 @@ function updateNodeMessage!(outbound_interface_id::Int,
         error("You can't call updateNodeMessage!() on a composite node ($(typeof(node)) $(node.name) interface $(outbound_interface_id)) that uses its internal graph to pass messages. Use calculateMessage!(node.interface) instead.")
     end
 
-    # Use the shortcut update rules
     if outbound_interface_id == 3
-        # Forward message; msg_i = inbound message on interface i, msg_out is always the calculated outbound message.
+        # Forward message
+        # msg_i = inbound message on interface i, msg_out is always the calculated outbound message.
         msg_1 = inbound_messages[1]
         msg_2 = inbound_messages[2]
         msg_out = GaussianMessage()
@@ -150,20 +154,28 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg_out.V = forwardGainEqualityVRule(node.A, msg_1.V, msg_2.V)
             msg_out.W = nothing
             msg_out.xi = nothing
-        else
-            # Alternative parameterization not caught by the above rules
-            warn("Parameterization unknown; using xi, W parameterization instead. ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+        elseif isRoundedPosDef(node.A) && isRoundedPosDef(msg_1.W + msg_2.W) && isdefined(node, :A_inv)
+            # Fallback: convert inbound messages to (xi,W) parametrization and then use efficient rules
             ensureXiWParametrization!(msg_1)
             ensureXiWParametrization!(msg_2)
-            # Check preconditions
-            if isRoundedPosDef(node.A) && isRoundedPosDef(msg_1.W + msg_2.W)
-                msg_out.m = nothing
-                msg_out.V = nothing
-                msg_out.W = forwardGainEqualityWRule(node.A_inv, msg_1.W, msg_2.W)
-                msg_out.xi = forwardGainEqualityXiRule(node.A_inv, msg_1.xi, msg_2.xi)
-            else
-                error("Cannot calculate outbound message on ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
-            end
+            msg_out.m = nothing
+            msg_out.V = nothing
+            msg_out.W = forwardGainEqualityWRule(node.A_inv, msg_1.W, msg_2.W)
+            msg_out.xi = forwardGainEqualityXiRule(node.A_inv, msg_1.xi, msg_2.xi)
+        else
+            # Fallback for if all other rules do not apply
+            # First convert to (xi,W) parametrization
+            ensureXiWParametrization!(msg_1)
+            ensureXiWParametrization!(msg_2)
+            # Calculate output of equality node
+            msg_temp = GaussianMessage(xi=msg_1.xi+msg_2.xi, W=msg_1.W+msg_2.W)
+            # Convert to (m,V)
+            ensureMVParametrization!(msg_temp)
+            # Finally, forward multiplication
+            msg_out.m = node.A * msg_temp.m
+            msg_out.V = node.A * msg_temp.V * node.A'
+            msg_out.W = nothing
+            msg_out.xi = nothing
         end
         # Set the outbound message
         return node.interfaces[outbound_interface_id].message = msg_out
@@ -192,8 +204,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
             msg_out.xi = nothing
         else
-            # Alternative parameterization not caught by the above rules
-            warn("Parameterization unknown; using xi, W parameterization instead ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+            # Fallback: convert inbound messages to (xi,W) parametrization and then use efficient rules
             ensureXiWParametrization!(msg_in)
             ensureXiWParametrization!(msg_3)
             msg_out.m = nothing

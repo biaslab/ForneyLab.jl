@@ -14,13 +14,17 @@
 # Interface ids, (names) and supported message types:
 #   1. (none):
 #       GaussianMessage
+#       GeneralMessage
 #   2. (none):
 #       GaussianMessage
+#       GeneralMessage
 #   3. (none):
 #       GaussianMessage
+#       GeneralMessage
 #   ...
 #   N. (none):
 #       GaussianMessage
+#       GeneralMessage
 ############################################
 
 export EqualityNode
@@ -94,4 +98,39 @@ function updateNodeMessage!(outbound_interface_id::Int,
     end
 
     return node.interfaces[outbound_interface_id].message = GaussianMessage(xi=xi_sum, W=W_sum)
+end
+
+############################################
+# GeneralMessage methods
+############################################
+
+function updateNodeMessage!(outbound_interface_id::Int,
+                            node::EqualityNode,
+                            inbound_messages::Array{GeneralMessage, 1})
+    # Calculate an outbound message based on the inbound_messages array and the node function.
+    # This function is not exported, and is only meant for internal use.
+    # inbound_messages is indexed with the interface ids of the node.
+    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
+
+    if isdefined(inbound_messages, outbound_interface_id)
+        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
+    end
+
+    # Outbound message is equal to the inbound messages if not all inbound messages are equal.
+    # Otherwise, the outbound message is GeneralMessage(0.0)
+    first_incoming_id = (outbound_interface_id==1) ? 2 : 1
+    for interface_id = 1:length(node.interfaces)
+        if interface_id==outbound_interface_id || interface_id==first_incoming_id
+            continue
+        end
+        if inbound_messages[interface_id].value!=inbound_messages[first_incoming_id].value
+            if typeof(inbound_messages[first_incoming_id].value)<:Array
+                return node.interfaces[outbound_interface_id].message = GeneralMessage(zeros(size(inbound_messages[first_incoming_id].value)))
+            else
+                return node.interfaces[outbound_interface_id].message = GeneralMessage(0.0)
+            end
+        end
+    end
+
+    return node.interfaces[outbound_interface_id].message = deepcopy(inbound_messages[first_incoming_id])
 end
