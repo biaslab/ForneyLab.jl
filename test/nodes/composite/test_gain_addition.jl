@@ -1,14 +1,41 @@
 facts("GainAdditionCompositeNode") do
     context("GainAdditionCompositeNode() should initialize a GainAdditionCompositeNode with 3 interfaces") do
+        node = GainAdditionCompositeNode()
+        @fact typeof(node) => GainAdditionCompositeNode
+        @fact length(node.interfaces) => 3
+        @fact node.in1 => node.interfaces[1]
+        @fact node.in2 => node.interfaces[2]
+        @fact node.out => node.interfaces[3]
+        @fact typeof(node.A) => Array{Float64, 2}
     end
 
-    context("GainAdditionCompositeNode() should define an internal Equality and FixedGain node") do
+    context("GainAdditionCompositeNode() should define an internal AdditionNode and FixedGainNode") do
+        node = GainAdditionCompositeNode([5.0], false)
+        @fact typeof(node.addition_node) => AdditionNode
+        @fact typeof(node.fixed_gain_node) => FixedGainNode
+        @fact node.fixed_gain_node.A => reshape([5.0], 1, 1)
     end
 
     context("GainAdditionCompositeNode() should point its own interfaces to the internal node interfaces") do
+        node = GainAdditionCompositeNode([1.0], false)
+        @fact node.in1 => node.fixed_gain_node.interfaces[1]
+        @fact node.in2 => node.addition_node.interfaces[2]
+        @fact node.out => node.addition_node.out
     end
 
-    context("A GainAdditionCompositeNode should be able to pass a Gaussian message through its internals") do
+    context("GainAdditionCompositeNode should be able to pass GaussianMessages: using shortcut rules or internal graph should yield same result") do
+        #           [N]
+        #            | in1
+        #            |
+        #        ____|____
+        #        |   v   |
+        #        |  [A]  |
+        #        |   |   |
+        #    in2 |   v   | out
+        #[N]-----|->[+]--|---->
+        #        |_______|
+
+        # TODO: implement tests
     end
 
     context("A GainAdditionCompositeNode should pass a Gaussian message using custom update rules for message passing") do
