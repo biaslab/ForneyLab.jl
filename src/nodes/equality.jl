@@ -56,6 +56,13 @@ EqualityNode(; args...) = EqualityNode(3; args...)
 # GaussianMessage methods
 ############################################
 
+# Rule set
+# From: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
+equalityMRule{T<:Number}(m_x::Array{T, 1}, m_y::Array{T, 1}, W_x::Array{T, 2}, W_y::Array{T, 2}) = pinv(W_x+W_y)*(W_x*m_x+W_y*m_y)
+equalityVRule{T<:Number}(V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x*pinv(V_x+V_y)*V_y
+equalityWRule{T<:Number}(W_x::Array{T, 2}, W_y::Array{T, 2}) = W_x+W_y
+equalityXiRule{T<:Number}(xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x+xi_y
+
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::EqualityNode,
                             inbound_messages::Array{GaussianMessage, 1})
@@ -70,34 +77,61 @@ function updateNodeMessage!(outbound_interface_id::Int,
 
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
-    # In this implementation, we calculate the (xi,W) parametrization of all incoming messages if it's not already present.
-    # TODO: check if there is a more efficient implementation.
-
-    # Create accumulators for W and xi of the correct size
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1
-    if !is(inbound_messages[first_incoming_id].W, nothing)
-        W_sum = zeros(size(inbound_messages[first_incoming_id].W))
-    else
-        W_sum = zeros(size(inbound_messages[first_incoming_id].V))
-    end
-    if !is(inbound_messages[first_incoming_id].xi, nothing)
-        xi_sum = zeros(size(inbound_messages[first_incoming_id].xi))
-    else
-        xi_sum = zeros(size(inbound_messages[first_incoming_id].m))
-    end
 
-    # Sum W and xi of all incoming messages
-    for incoming_interface_id = 1:length(node.interfaces)
-        if incoming_interface_id==outbound_interface_id
-            continue
+    if length(node.interfaces)>3
+        # Always calculate the (xi,W) parametrization of all incoming messages if it's not already present.
+
+        # Create accumulators for W and xi of the correct size
+        if !is(inbound_messages[first_incoming_id].W, nothing)
+            W_sum = zeros(size(inbound_messages[first_incoming_id].W))
+        else
+            W_sum = zeros(size(inbound_messages[first_incoming_id].V))
         end
-        # Calculate (xi,W) parametrization if it's not available yet
-        ensureXiWParametrization!(inbound_messages[incoming_interface_id])
-        W_sum += inbound_messages[incoming_interface_id].W
-        xi_sum += inbound_messages[incoming_interface_id].xi
+        if !is(inbound_messages[first_incoming_id].xi, nothing)
+            xi_sum = zeros(size(inbound_messages[first_incoming_id].xi))
+        else
+            xi_sum = zeros(size(inbound_messages[first_incoming_id].m))
+        end
+
+        # Sum W and xi of all incoming messages
+        for incoming_interface_id = 1:length(node.interfaces)
+            if incoming_interface_id==outbound_interface_id
+                continue
+            end
+            # Calculate (xi,W) parametrization if it's not available yet
+            ensureXiWParametrization!(inbound_messages[incoming_interface_id])
+            W_sum += inbound_messages[incoming_interface_id].W
+            xi_sum += inbound_messages[incoming_interface_id].xi
+        end
+        msg_out = GaussianMessage(xi=xi_sum, W=W_sum)
+    else # 3 interfaces
+        msg_1 = inbound_messages[first_incoming_id]
+        msg_2 = inbound_messages[(outbound_interface_id==3) ? 2 : 3]
+        msg_out = GaussianMessage()
+        if msg_1.m != nothing && msg_1.W != nothing && msg_2.m != nothing && msg_2.W != nothing
+            msg_out.m  = equalityMRule(msg_1.m, msg_2.m, msg_1.W, msg_2.W)
+            msg_out.V  = nothing
+            msg_out.W  = equalityWRule(msg_1.W, msg_2.W)
+            msg_out.xi = nothing
+        elseif msg_1.xi != nothing && msg_1.V != nothing && msg_2.xi != nothing && msg_2.V != nothing
+            msg_out.m  = nothing
+            msg_out.V  = equalityVRule(msg_1.V, msg_2.V)
+            msg_out.W  = nothing
+            msg_out.xi = equalityXiRule(msg_1.xi, msg_2.xi)
+        else
+            # Use (xi,W)
+            ensureXiWParametrization!(msg_1)
+            ensureXiWParametrization!(msg_2)
+            msg_out.m  = nothing
+            msg_out.V  = nothing
+            msg_out.W  = equalityWRule(msg_1.W, msg_2.W)
+            msg_out.xi = equalityXiRule(msg_1.xi, msg_2.xi)
+        end
     end
 
-    return node.interfaces[outbound_interface_id].message = GaussianMessage(xi=xi_sum, W=W_sum)
+    # Set the outbound message
+    return node.interfaces[outbound_interface_id].message = msg_out
 end
 
 ############################################
