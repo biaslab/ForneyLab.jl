@@ -102,7 +102,7 @@ facts("AdditionNode") do
             inbound_messages[2] = GaussianMessage(xi=[3.0], V=[4.0])
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             @fact node.interfaces[3].message => msg
-            @fact maximum(abs(node.interfaces[3].message.xi - [14/6])) < epsilon => true
+            @fact isApproxEqual(node.interfaces[3].message.xi, [14/6]) => true
             @fact node.interfaces[3].message.V => reshape([6.0], 1, 1)
             # Backward messages
             for outbound_interface_id = [1,2]
@@ -111,7 +111,7 @@ facts("AdditionNode") do
                 inbound_messages[3] = GaussianMessage(xi=[3.0], V=[4.0])
                 msg = ForneyLab.updateNodeMessage!(outbound_interface_id, node, inbound_messages)
                 @fact node.interfaces[outbound_interface_id].message => msg
-                @fact maximum(abs(node.interfaces[outbound_interface_id].message.xi - [10/6])) < epsilon => true
+                @fact isApproxEqual(node.interfaces[outbound_interface_id].message.xi, [10/6]) => true
                 @fact node.interfaces[outbound_interface_id].message.V => reshape([6.0], 1, 1)
             end
         end
@@ -157,8 +157,8 @@ facts("AdditionNode") do
             inbound_messages[2] = GaussianMessage(m=mean, W=precision)
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             @fact node.interfaces[3].message => msg
-            @fact maximum(abs(node.interfaces[3].message.m - [2.0, 4.0, 6.0])) < epsilon => true
-            @fact maximum(abs(node.interfaces[3].message.W - reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3))) < epsilon => true
+            @fact isApproxEqual(node.interfaces[3].message.m, [2.0, 4.0, 6.0]) => true
+            @fact isApproxEqual(node.interfaces[3].message.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
             # Backward messages
             for outbound_interface_id = [1,2]
                 inbound_messages = Array(GaussianMessage, 3)
@@ -167,7 +167,7 @@ facts("AdditionNode") do
                 msg = ForneyLab.updateNodeMessage!(outbound_interface_id, node, inbound_messages)
                 @fact node.interfaces[outbound_interface_id].message => msg
                 @fact node.interfaces[outbound_interface_id].message.m => [0.0, 0.0, 0.0]
-                @fact maximum(abs(node.interfaces[3].message.W - reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3))) < epsilon => true
+                @fact isApproxEqual(node.interfaces[3].message.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
             end
         end
 
@@ -183,8 +183,8 @@ facts("AdditionNode") do
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             ensureMWParametrization!(msg)
             @fact node.interfaces[3].message => msg
-            @fact maximum(abs(node.interfaces[3].message.m - [2.0, 4.0, 6.0])) < epsilon => true
-            @fact maximum(abs(node.interfaces[3].message.W - reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3))) < epsilon => true
+            @fact isApproxEqual(node.interfaces[3].message.m, [2.0, 4.0, 6.0]) => true
+            @fact isApproxEqual(node.interfaces[3].message.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
             # Backward messages
             for outbound_interface_id = [1,2]
                 inbound_messages = Array(GaussianMessage, 3)
@@ -193,8 +193,8 @@ facts("AdditionNode") do
                 msg = ForneyLab.updateNodeMessage!(outbound_interface_id, node, inbound_messages)
                 ensureMWParametrization!(msg)
                 @fact node.interfaces[outbound_interface_id].message => msg
-                @fact maximum(abs(node.interfaces[outbound_interface_id].message.m - [0.0, 0.0, 0.0])) < epsilon => true
-                @fact maximum(abs(node.interfaces[3].message.W - reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3))) < epsilon => true
+                @fact isApproxEqual(node.interfaces[outbound_interface_id].message.m, [0.0, 0.0, 0.0]) => true
+                @fact isApproxEqual(node.interfaces[3].message.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
             end
         end
 
@@ -209,7 +209,7 @@ facts("AdditionNode") do
             inbound_messages[2] = GaussianMessage(xi=xi, V=variance)
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             @fact node.interfaces[3].message => msg
-            @fact maximum(abs(node.interfaces[3].message.xi - [1.0, 2.0, 3.0])) < epsilon => true
+            @fact isApproxEqual(node.interfaces[3].message.xi, [1.0, 2.0, 3.0]) => true
             @fact node.interfaces[3].message.V => 2.0*variance
             # Backward messages
             for outbound_interface_id = [1,2]

@@ -25,8 +25,8 @@ facts("EqualityNode") do
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             @fact node.interfaces[3].message => msg
             ensureMVParametrization!(msg)
-            @fact maximum(abs(msg.m - (pinv(W + W) * (W*inbound_msg.m + W*inbound_msg.m)))) < epsilon => true
-            @fact maximum(abs(msg.V - (inbound_msg.V * pinv(inbound_msg.V + inbound_msg.V) * inbound_msg.V))) < epsilon => true
+            @fact isApproxEqual(msg.m, (pinv(W + W) * (W*inbound_msg.m + W*inbound_msg.m))) => true
+            @fact isApproxEqual(msg.V, (inbound_msg.V * pinv(inbound_msg.V + inbound_msg.V) * inbound_msg.V)) => true
         end
         context("Univariate GaussianMessage with (m,W) parametrization") do
             inbound_msg = GaussianMessage(m=[3.0], W=[0.2])
@@ -37,8 +37,8 @@ facts("EqualityNode") do
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             @fact node.interfaces[3].message => msg
             ensureMWParametrization!(msg)
-            @fact maximum(abs(msg.m - (pinv(W + W) * (W*inbound_msg.m + W*inbound_msg.m)))) < epsilon => true
-            @fact maximum(abs(msg.W - (W + W))) < epsilon => true
+            @fact isApproxEqual(msg.m, (pinv(W + W) * (W*inbound_msg.m + W*inbound_msg.m))) => true
+            @fact isApproxEqual(msg.W, (W + W)) => true
         end
         context("Univariate GaussianMessage with (xi,V) parametrization") do
             inbound_msg = GaussianMessage(xi=[0.6], V=[5.0])
@@ -50,8 +50,8 @@ facts("EqualityNode") do
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             @fact node.interfaces[3].message => msg
             ensureXiVParametrization!(msg)
-            @fact maximum(abs(msg.xi - (xi + xi))) < epsilon => true
-            @fact maximum(abs(msg.V - (inbound_msg.V * pinv(inbound_msg.V + inbound_msg.V) * inbound_msg.V))) < epsilon => true
+            @fact isApproxEqual(msg.xi, (xi + xi)) => true
+            @fact isApproxEqual(msg.V, (inbound_msg.V * pinv(inbound_msg.V + inbound_msg.V) * inbound_msg.V)) => true
         end
         context("Univariate GaussianMessage with (xi,W) parametrization") do
             inbound_msg = GaussianMessage(xi=[0.6], W=[0.2])
@@ -63,8 +63,8 @@ facts("EqualityNode") do
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             @fact node.interfaces[3].message => msg
             ensureXiWParametrization!(msg)
-            @fact maximum(abs(msg.xi - (xi + xi))) < epsilon => true
-            @fact maximum(abs(msg.W - (W + W))) < epsilon => true
+            @fact isApproxEqual(msg.xi, (xi + xi)) => true
+            @fact isApproxEqual(msg.W, (W + W)) => true
         end
     end
 
@@ -87,8 +87,8 @@ facts("EqualityNode") do
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             @fact node.interfaces[3].message => msg
             ensureMVParametrization!(msg)
-            @fact maximum(abs(msg.m - (pinv(W + W) * (W*inbound_msg.m + W*inbound_msg.m)))) < epsilon => true
-            @fact maximum(abs(msg.V - (inbound_msg.V * pinv(inbound_msg.V + inbound_msg.V) * inbound_msg.V))) < epsilon => true
+            @fact isApproxEqual(msg.m, (pinv(W + W) * (W*inbound_msg.m + W*inbound_msg.m))) => true
+            @fact isApproxEqual(msg.V, (inbound_msg.V * pinv(inbound_msg.V + inbound_msg.V) * inbound_msg.V)) => true
         end
         context("Multivariate GaussianMessage with (m,W) parametrization") do
             mean = [1.0:3.0]
@@ -103,8 +103,8 @@ facts("EqualityNode") do
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             @fact node.interfaces[3].message => msg
             ensureMWParametrization!(msg)
-            @fact maximum(abs(msg.m - (pinv(W + W) * (W*inbound_msg.m + W*inbound_msg.m)))) < epsilon => true
-            @fact maximum(abs(msg.W - (W + W))) < epsilon => true
+            @fact isApproxEqual(msg.m, (pinv(W + W) * (W*inbound_msg.m + W*inbound_msg.m))) => true
+            @fact isApproxEqual(msg.W, (W + W)) => true
         end
         context("Multivariate GaussianMessage with (xi,V) parametrization") do
             variance = reshape([4.0, 3.0, 2.0,
@@ -119,8 +119,8 @@ facts("EqualityNode") do
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             @fact node.interfaces[3].message => msg
             ensureXiVParametrization!(msg)
-            @fact maximum(abs(msg.xi - (xi + xi))) < epsilon => true
-            @fact maximum(abs(msg.V - (inbound_msg.V * pinv(inbound_msg.V + inbound_msg.V) * inbound_msg.V))) < epsilon => true
+            @fact isApproxEqual(msg.xi, (xi + xi)) => true
+            @fact isApproxEqual(msg.V, (inbound_msg.V * pinv(inbound_msg.V + inbound_msg.V) * inbound_msg.V)) => true
         end
         context("Multivariate GaussianMessage with (xi,W) parametrization") do
             precision = inv(reshape([   4.0, 3.0, 2.0,
@@ -135,8 +135,8 @@ facts("EqualityNode") do
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             @fact node.interfaces[3].message => msg
             ensureXiWParametrization!(msg)
-            @fact maximum(abs(msg.xi - (xi + xi))) < epsilon => true
-            @fact maximum(abs(msg.W - (W + W))) < epsilon => true
+            @fact isApproxEqual(msg.xi, (xi + xi)) => true
+            @fact isApproxEqual(msg.W, (W + W)) => true
         end
     end
 

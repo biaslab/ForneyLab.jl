@@ -72,10 +72,10 @@ function isConsistent(msg::GaussianMessage)
     if !is(msg.V, nothing) && !is(msg.W, nothing)
         V_W_consistent = false
         try
-           V_W_consistent = maximum(abs(inv(msg.V) - msg.W)) < epsilon
+           V_W_consistent = isApproxEqual(inv(msg.V), msg.W)
         catch
             try
-                V_W_consistent = maximum(abs(inv(msg.W) - msg.V)) < epsilon
+                V_W_consistent = isApproxEqual(inv(msg.W), msg.V)
             catch
                 error("Cannot check consistency of GaussianMessage because both V and W are non-invertible.")
             end
@@ -86,11 +86,11 @@ function isConsistent(msg::GaussianMessage)
     end
     if !is(msg.m, nothing) && !is(msg.xi, nothing)
         if !is(msg.V, nothing)
-            if maximum(abs(msg.V * msg.xi - msg.m)) > epsilon
+            if isApproxEqual(msg.V * msg.xi, msg.m) == false
                 return false # m and xi are not consistent
             end
         else
-            if maximum(abs(msg.W * msg.m - msg.xi)) > epsilon
+            if isApproxEqual(msg.W * msg.m, msg.xi) == false
                 return false # m and xi are not consistent
             end
         end

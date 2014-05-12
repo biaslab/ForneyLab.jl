@@ -96,7 +96,7 @@ facts("GainEqualityCompositeNode") do
             inbound_messages[2] = GaussianMessage(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])
             ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             @fact node.out.message.W => reshape([0.5, 0.25, 0.25, 0.5], 2, 2)
-            @fact maximum(abs(node.out.message.m - [2.0, 4.0])) < epsilon => true
+            @fact isApproxEqual(node.out.message.m, [2.0, 4.0]) => true
             # Backward message
             for outbound_interface = [1,2]
                 inbound_messages = Array(GaussianMessage, 3)
@@ -115,8 +115,8 @@ facts("GainEqualityCompositeNode") do
             inbound_messages[2] = GaussianMessage(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[0.0, 2.0])
             msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
             ensureMVParametrization!(msg)
-            @fact maximum(abs(node.out.message.V - reshape([2.0, 1.0, 1.0, 2.0], 2, 2))) < epsilon => true
-            @fact maximum(abs(node.out.message.m - [2.0, 4.0])) < epsilon => true
+            @fact isApproxEqual(node.out.message.V, reshape([2.0, 1.0, 1.0, 2.0], 2, 2)) => true
+            @fact isApproxEqual(node.out.message.m, [2.0, 4.0]) => true
             # Backward message
             for outbound_interface = [1,2]
                 inbound_messages = Array(GaussianMessage, 3)
@@ -124,8 +124,8 @@ facts("GainEqualityCompositeNode") do
                 inbound_messages[3] = GaussianMessage(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])
                 msg = ForneyLab.updateNodeMessage!(outbound_interface, node, inbound_messages)
                 ensureMVParametrization!(msg)
-                @fact maximum(abs(node.interfaces[outbound_interface].message.V - reshape([0.2, 0.1, 0.1, 0.2], 2, 2))) < epsilon => true
-                @fact maximum(abs(node.interfaces[outbound_interface].message.m - [0.6, 1.2])) < epsilon => true
+                @fact isApproxEqual(node.interfaces[outbound_interface].message.V, reshape([0.2, 0.1, 0.1, 0.2], 2, 2)) => true
+                @fact isApproxEqual(node.interfaces[outbound_interface].message.m, [0.6, 1.2]) => true
             end
         end
     end

@@ -1,14 +1,15 @@
 module ForneyLab
 
 export Message, Node, Interface, Edge
+# User functions
 export calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, calculateMarginal, clearMessages!
-export epsilon
+# Helper functions
+export isApproxEqual
 
 #############################
 # Helper methods
 #############################
 verbose = false
-epsilon = 1.0e-12 # Resolution for approx. equality checks
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
@@ -17,6 +18,9 @@ ensureMatrix(n::Nothing) = nothing
 
 # isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from.
 isRoundedPosDef{T<:FloatingPoint}(arr::Array{T, 2}) = ishermitian(round(arr, 12)) && isposdef(arr, 'L')
+
+# Helper function to check approximate equality
+isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < 1.0e-12
 
 # verbosity helpers
 setVerbose(verbose_mode=true) = global verbose=verbose_mode
