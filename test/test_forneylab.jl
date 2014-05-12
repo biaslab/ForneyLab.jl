@@ -7,6 +7,9 @@ module TestForneyLab
 using FactCheck
 using ForneyLab
 
+# Helper function to check approximate equality
+isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < epsilon
+
 facts("Helper functions") do
     context("ensureMatrix should convert an array with one element to a matrix type") do
         @fact typeof(ForneyLab.ensureMatrix([1.0])) => Array{Float64, 2} # Cast 1D to 2D array
