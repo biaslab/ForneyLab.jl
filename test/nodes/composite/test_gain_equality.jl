@@ -32,7 +32,7 @@ facts("GainEqualityCompositeNode") do
         #         |  [A]  |
         #         |___|___|
         #             | out
-        #             v     
+        #             v
 
         # Forward message
         node_f = GainEqualityCompositeNode(2.0*eye(2), false) # Flag false to indicate internal message passing
@@ -52,7 +52,7 @@ facts("GainEqualityCompositeNode") do
         #         |  [A]  |
         #         |___|___|
         #             | out
-        #             v 
+        #             v
         #            [N]
 
         # Backward message
@@ -108,22 +108,24 @@ facts("GainEqualityCompositeNode") do
             end
         end
 
-        context("GaussianMessage with (m,V) parametrization") do
+        context("GaussianMessage with (xi,V) parametrization") do
             # Forward message
             inbound_messages = Array(GaussianMessage, 3)
-            inbound_messages[1] = GaussianMessage(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])
-            inbound_messages[2] = GaussianMessage(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])
-            ForneyLab.updateNodeMessage!(3, node, inbound_messages)
+            inbound_messages[1] = GaussianMessage(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[0.0, 2.0])
+            inbound_messages[2] = GaussianMessage(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[0.0, 2.0])
+            msg = ForneyLab.updateNodeMessage!(3, node, inbound_messages)
+            ensureMVParametrization!(msg)
             @fact maximum(abs(node.out.message.V - reshape([2.0, 1.0, 1.0, 2.0], 2, 2))) < epsilon => true
             @fact maximum(abs(node.out.message.m - [2.0, 4.0])) < epsilon => true
             # Backward message
             for outbound_interface = [1,2]
                 inbound_messages = Array(GaussianMessage, 3)
-                inbound_messages[outbound_interface == 1 ? 2 : 1] = GaussianMessage(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])
+                inbound_messages[outbound_interface == 1 ? 2 : 1] = GaussianMessage(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[0.0, 2.0])
                 inbound_messages[3] = GaussianMessage(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])
-                ForneyLab.updateNodeMessage!(outbound_interface, node, inbound_messages)
+                msg = ForneyLab.updateNodeMessage!(outbound_interface, node, inbound_messages)
+                ensureMVParametrization!(msg)
                 @fact maximum(abs(node.interfaces[outbound_interface].message.V - reshape([0.2, 0.1, 0.1, 0.2], 2, 2))) < epsilon => true
-                @fact node.interfaces[outbound_interface].message.m => [0.6, 1.2]
+                @fact maximum(abs(node.interfaces[outbound_interface].message.m - [0.6, 1.2])) < epsilon => true
             end
         end
     end

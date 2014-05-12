@@ -49,7 +49,6 @@ type GainEqualityCompositeNode <: Node
     in1::Interface
     in2::Interface
     out::Interface
-    A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
     function GainEqualityCompositeNode(A::Array, use_composite_update_rules::Bool; args...)
         name = "#undef"
@@ -60,29 +59,24 @@ type GainEqualityCompositeNode <: Node
         end
 
         if use_composite_update_rules
-            # Build node, use composite rules without building internal graph.
-            # This initializes the composite node interfaces belonging to the composite node itself.
             # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
-            self = new(ensureMatrix(deepcopy(A)), true, name, Array(Interface, 3))
-            # Try to precompute inv(A)
-            try
-                self.A_inv = inv(self.A)
-            catch
-                warn("The specified multiplier for ", string(typeof(self)), " ", self.name, " is not invertible. This might cause problems. Please check if this is what you really want.")
-            end
-            # Initialize interfaces
+            # In case we don't use composite update rules, A is passed to the internal FixedGainNode.
+            A = ensureMatrix(deepcopy(A))
+        end
+        self = new(A, use_composite_update_rules, name, Array(Interface, 3))
+
+        # Define the internals of the composite node
+        self.equality_node = EqualityNode(name="$(name)_internal_equality")
+        self.fixed_gain_node = FixedGainNode(A, name="$(name)_internal_gain")
+        Edge(self.equality_node.interfaces[2], self.fixed_gain_node.in1) # Internal edge
+
+        if use_composite_update_rules
+            # Initialize the composite node interfaces belonging to the composite node itself.
             self.interfaces[1] = Interface(self)
             self.interfaces[2] = Interface(self)
             self.interfaces[3] = Interface(self)
         else
-            # Build internal graph, ignore composite rules.
-            # This initializes the interfaces as references to the internal node interfaces.
-            self = new(A, false, name, Array(Interface, 3))
-            # Define the internals of the composite node
-            self.equality_node = EqualityNode()
-            self.fixed_gain_node = FixedGainNode(A)
-            Edge(self.equality_node.interfaces[2], self.fixed_gain_node.in1) # Internal edge
-            # Set pointers of the composite node interfaces to the internal nodes
+            # Initialize the interfaces as references to the internal node interfaces.
             self.interfaces[1] = self.equality_node.interfaces[1]
             self.interfaces[2] = self.equality_node.interfaces[3]
             self.interfaces[3] = self.fixed_gain_node.out
@@ -100,12 +94,6 @@ GainEqualityCompositeNode(; args...) = GainEqualityCompositeNode([1.0], true; ar
 ############################################
 # GaussianMessage methods
 ############################################
-
-# Rule set for forward propagation ({in1,in2}-->out)
-forwardGainEqualityWRule{T<:Number}(A_inv::Array{T, 2}, W_x::Array{T, 2}, W_y::Array{T, 2}) = A_inv' * (W_x + W_y) * A_inv
-forwardGainEqualityXiRule{T<:Number}(A_inv::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}) = A_inv' * (xi_x + xi_y)
-forwardGainEqualityVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Array{T, 2}) = A * V_x * pinv(V_x + V_y) * V_y * A'
-forwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, W_x::Array{T, 2}, m_y::Array{T, 1}, W_y::Array{T, 2}) = A * pinv(W_x + W_y) * (W_x * m_x + W_y * m_y)
 
 # Rule set for backward propagation ({in2,out}-->in1 or {in1,out}-->in2)
 # From: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
@@ -131,54 +119,22 @@ function updateNodeMessage!(outbound_interface_id::Int,
 
     if outbound_interface_id == 3
         # Forward message
+        # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
         # msg_i = inbound message on interface i, msg_out is always the calculated outbound message.
         msg_1 = inbound_messages[1]
         msg_2 = inbound_messages[2]
         msg_out = GaussianMessage()
 
-        # Select parameterization
-        # Order is from least to most computationally intensive
-        if msg_1.xi != nothing && msg_1.W != nothing && msg_2.xi != nothing && msg_2.W != nothing && isRoundedPosDef(node.A) && isRoundedPosDef(msg_1.W + msg_2.W) && isdefined(node, :A_inv)
-            msg_out.m = nothing
-            msg_out.V = nothing
-            msg_out.W = forwardGainEqualityWRule(node.A_inv, msg_1.W, msg_2.W)
-            msg_out.xi = forwardGainEqualityXiRule(node.A_inv, msg_1.xi, msg_2.xi)
-        elseif msg_1.m != nothing && msg_1.W != nothing && msg_2.m != nothing && msg_2.W != nothing && isdefined(node, :A_inv)
-            msg_out.m = forwardGainEqualityMRule(node.A, msg_1.m, msg_1.W, msg_2.m, msg_2.W)
-            msg_out.V = nothing
-            msg_out.W = forwardGainEqualityWRule(node.A_inv, msg_1.W, msg_2.W)
-            msg_out.xi = nothing
-        elseif msg_1.m != nothing && msg_1.V != nothing && msg_2.m != nothing && msg_2.V != nothing
-            # TODO: Not very efficient!
-            msg_out.m = forwardGainEqualityMRule(node.A, msg_1.m, inv(msg_1.V), msg_2.m, inv(msg_2.V))
-            msg_out.V = forwardGainEqualityVRule(node.A, msg_1.V, msg_2.V)
-            msg_out.W = nothing
-            msg_out.xi = nothing
-        elseif isRoundedPosDef(node.A) && isRoundedPosDef(msg_1.W + msg_2.W) && isdefined(node, :A_inv)
-            # Fallback: convert inbound messages to (xi,W) parametrization and then use efficient rules
-            ensureXiWParametrization!(msg_1)
-            ensureXiWParametrization!(msg_2)
-            msg_out.m = nothing
-            msg_out.V = nothing
-            msg_out.W = forwardGainEqualityWRule(node.A_inv, msg_1.W, msg_2.W)
-            msg_out.xi = forwardGainEqualityXiRule(node.A_inv, msg_1.xi, msg_2.xi)
-        else
-            # Fallback for if all other rules do not apply
-            # First convert to (xi,W) parametrization
-            ensureXiWParametrization!(msg_1)
-            ensureXiWParametrization!(msg_2)
-            # Calculate output of equality node
-            msg_temp = GaussianMessage(xi=msg_1.xi+msg_2.xi, W=msg_1.W+msg_2.W)
-            # Convert to (m,V)
-            ensureMVParametrization!(msg_temp)
-            # Finally, forward multiplication
-            msg_out.m = node.A * msg_temp.m
-            msg_out.V = node.A * msg_temp.V * node.A'
-            msg_out.W = nothing
-            msg_out.xi = nothing
-        end
-        # Set the outbound message
-        return node.interfaces[outbound_interface_id].message = msg_out
+        # First pass through the internal equality node
+        inbound_messages = Array(GaussianMessage, 3)
+        inbound_messages[1] = msg_1
+        inbound_messages[3] = msg_2
+        msg_temp = updateNodeMessage!(2, node.equality_node, inbound_messages)
+
+        # Then go forward through the internal gain node
+        inbound_messages = Array(GaussianMessage, 2)
+        inbound_messages[1] = msg_temp
+        msg_out = updateNodeMessage!(2, node.fixed_gain_node, inbound_messages)
     elseif outbound_interface_id == 1 || outbound_interface_id == 2
         # Backward messages
         msg_out = GaussianMessage()
@@ -212,11 +168,10 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
             msg_out.xi = backwardGainEqualityXiRule(node.A, msg_in.xi, msg_3.xi)
         end
-        # Set the outbound message
-        return node.interfaces[outbound_interface_id].message = msg_out
     else
         error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
     end
-
+    # Set the outbound message
+    return node.interfaces[outbound_interface_id].message = msg_out
 end
 
