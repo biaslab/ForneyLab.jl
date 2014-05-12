@@ -23,7 +23,7 @@ facts("GainAdditionCompositeNode") do
         @fact node.out => node.addition_node.out
     end
 
-    context("GainAdditionCompositeNode should be able to pass GaussianMessages: using shortcut rules or internal graph should yield same result") do
+    context("GainAdditionCompositeNode should be able to pass GaussianMessages: using shortcut rules or internal graph should yield same result (m,V) parametrization") do
         #           [N]
         #            | in1
         #            |
@@ -34,21 +34,395 @@ facts("GainAdditionCompositeNode") do
         #    in2 |   v   | out
         #[N]-----|->[+]--|---->
         #        |_______|
+        A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
+        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], V=eye(2,2)))
+        node_c2 = ConstantNode(GaussianMessage(m=[1.0, 2.0], V=2.0*eye(2,2)))
 
-        # TODO: implement tests
+        #Shortcut rules
+        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
+        Edge(node_c1.out, node_gain_addition_composite.in1)
+        Edge(node_c2.out, node_gain_addition_composite.in2)
+        msg_shortcut = calculateMessage!(node_gain_addition_composite.out)
+        @fact is(msg_shortcut, node_gain_addition_composite.out.message) => true
+
+        #Internal graph
+        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
+        Edge(node_c1.out, node_gain_addition_internal.in1)
+        Edge(node_c2.out, node_gain_addition_internal.in2)
+        msg_internal = calculateMessage!(node_gain_addition_internal.out)
+        @fact is(msg_internal, node_gain_addition_internal.out.message) => true
+
+        ensureMVParametrization!(msg_shortcut)
+        ensureMVParametrization!(msg_internal)
+        @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
+        @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
+
+        #
+        #            | in1
+        #            |
+        #        ____|____
+        #        |   v   |
+        #        |  [A]  |
+        #        |   |   |
+        #    in2 |   v   | out
+        #[N]-----|->[+]--|---->[N]
+        #        |_______|
+
+        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], V=eye(2,2)))
+        node_c2 = ConstantNode(GaussianMessage(m=[1.0, 2.0], V=2.0*eye(2,2)))
+
+        #Shortcut rules
+        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
+        Edge(node_c1.out, node_gain_addition_composite.in2)
+        Edge(node_c2.out, node_gain_addition_composite.out)
+        msg_shortcut = calculateMessage!(node_gain_addition_composite.in1)
+        @fact is(msg_shortcut, node_gain_addition_composite.in1.message) => true
+
+        #Internal graph
+        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
+        Edge(node_c1.out, node_gain_addition_internal.in2)
+        Edge(node_c2.out, node_gain_addition_internal.out)
+        msg_internal = calculateMessage!(node_gain_addition_internal.in1)
+        @fact is(msg_internal, node_gain_addition_internal.in1.message) => true
+
+        ensureMVParametrization!(msg_shortcut)
+        ensureMVParametrization!(msg_internal)
+        @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
+        @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
+
+        #           [N]
+        #            | in1
+        #            |
+        #        ____|____
+        #        |   v   |
+        #        |  [A]  |
+        #        |   |   |
+        #    in2 |   v   | out
+        #   -----|->[+]--|---->[N]
+        #        |_______|
+
+        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], V=eye(2,2)))
+        node_c2 = ConstantNode(GaussianMessage(m=[1.0, 2.0], V=2.0*eye(2,2)))
+
+        #Shortcut rules
+        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
+        Edge(node_c1.out, node_gain_addition_composite.in1)
+        Edge(node_c2.out, node_gain_addition_composite.out)
+        msg_shortcut = calculateMessage!(node_gain_addition_composite.in2)
+        @fact is(msg_shortcut, node_gain_addition_composite.in2.message) => true
+
+        #Internal graph
+        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
+        Edge(node_c1.out, node_gain_addition_internal.in1)
+        Edge(node_c2.out, node_gain_addition_internal.out)
+        msg_internal = calculateMessage!(node_gain_addition_internal.in2)
+        @fact is(msg_internal, node_gain_addition_internal.in2.message) => true
+
+        ensureMVParametrization!(msg_shortcut)
+        ensureMVParametrization!(msg_internal)
+        @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
+        @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
     end
 
-    context("A GainAdditionCompositeNode should pass a Gaussian message using custom update rules for message passing") do
-        # The following tests on the update rules correspond to node 6 from Table 4.1 in:
-        # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
-        node = GainAdditionCompositeNode(2.0*eye(2)) # Defaults flag to true, telling updateNodeMessage! to use the shortcut update rules.
-        context("GaussianMessage with (xi,W) parametrization") do
-        end
+    context("GainAdditionCompositeNode should be able to pass GaussianMessages: using shortcut rules or internal graph should yield same result (m,W) parametrization") do
+        #           [N]
+        #            | in1
+        #            |
+        #        ____|____
+        #        |   v   |
+        #        |  [A]  |
+        #        |   |   |
+        #    in2 |   v   | out
+        #[N]-----|->[+]--|---->
+        #        |_______|
+        A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
+        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], W=eye(2,2)))
+        node_c2 = ConstantNode(GaussianMessage(m=[1.0, 2.0], W=2.0*eye(2,2)))
 
-        context("GaussianMessage with (m,W) parametrization") do
-        end
+        #Shortcut rules
+        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
+        Edge(node_c1.out, node_gain_addition_composite.in1)
+        Edge(node_c2.out, node_gain_addition_composite.in2)
+        msg_shortcut = calculateMessage!(node_gain_addition_composite.out)
+        @fact is(msg_shortcut, node_gain_addition_composite.out.message) => true
 
-        context("GaussianMessage with (m,V) parametrization") do
-        end
+        #Internal graph
+        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
+        Edge(node_c1.out, node_gain_addition_internal.in1)
+        Edge(node_c2.out, node_gain_addition_internal.in2)
+        msg_internal = calculateMessage!(node_gain_addition_internal.out)
+        @fact is(msg_internal, node_gain_addition_internal.out.message) => true
+
+        ensureMVParametrization!(msg_shortcut)
+        ensureMVParametrization!(msg_internal)
+        @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
+        @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
+
+        #
+        #            | in1
+        #            |
+        #        ____|____
+        #        |   v   |
+        #        |  [A]  |
+        #        |   |   |
+        #    in2 |   v   | out
+        #[N]-----|->[+]--|---->[N]
+        #        |_______|
+
+        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], W=eye(2,2)))
+        node_c2 = ConstantNode(GaussianMessage(m=[1.0, 2.0], W=2.0*eye(2,2)))
+
+        #Shortcut rules
+        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
+        Edge(node_c1.out, node_gain_addition_composite.in2)
+        Edge(node_c2.out, node_gain_addition_composite.out)
+        msg_shortcut = calculateMessage!(node_gain_addition_composite.in1)
+        @fact is(msg_shortcut, node_gain_addition_composite.in1.message) => true
+
+        #Internal graph
+        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
+        Edge(node_c1.out, node_gain_addition_internal.in2)
+        Edge(node_c2.out, node_gain_addition_internal.out)
+        msg_internal = calculateMessage!(node_gain_addition_internal.in1)
+        @fact is(msg_internal, node_gain_addition_internal.in1.message) => true
+
+        ensureMVParametrization!(msg_shortcut)
+        ensureMVParametrization!(msg_internal)
+        @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
+        @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
+
+        #           [N]
+        #            | in1
+        #            |
+        #        ____|____
+        #        |   v   |
+        #        |  [A]  |
+        #        |   |   |
+        #    in2 |   v   | out
+        #   -----|->[+]--|---->[N]
+        #        |_______|
+
+        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], W=eye(2,2)))
+        node_c2 = ConstantNode(GaussianMessage(m=[1.0, 2.0], W=2.0*eye(2,2)))
+
+        #Shortcut rules
+        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
+        Edge(node_c1.out, node_gain_addition_composite.in1)
+        Edge(node_c2.out, node_gain_addition_composite.out)
+        msg_shortcut = calculateMessage!(node_gain_addition_composite.in2)
+        @fact is(msg_shortcut, node_gain_addition_composite.in2.message) => true
+
+        #Internal graph
+        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
+        Edge(node_c1.out, node_gain_addition_internal.in1)
+        Edge(node_c2.out, node_gain_addition_internal.out)
+        msg_internal = calculateMessage!(node_gain_addition_internal.in2)
+        @fact is(msg_internal, node_gain_addition_internal.in2.message) => true
+
+        ensureMVParametrization!(msg_shortcut)
+        ensureMVParametrization!(msg_internal)
+        @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
+        @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
+    end
+
+    context("GainAdditionCompositeNode should be able to pass GaussianMessages: using shortcut rules or internal graph should yield same result (xi,W) parametrization") do
+        #           [N]
+        #            | in1
+        #            |
+        #        ____|____
+        #        |   v   |
+        #        |  [A]  |
+        #        |   |   |
+        #    in2 |   v   | out
+        #[N]-----|->[+]--|---->
+        #        |_______|
+        A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
+        node_c1 = ConstantNode(GaussianMessage(xi=[0.0, 0.0], W=eye(2,2)))
+        node_c2 = ConstantNode(GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)))
+
+        #Shortcut rules
+        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
+        Edge(node_c1.out, node_gain_addition_composite.in1)
+        Edge(node_c2.out, node_gain_addition_composite.in2)
+        msg_shortcut = calculateMessage!(node_gain_addition_composite.out)
+        @fact is(msg_shortcut, node_gain_addition_composite.out.message) => true
+
+        #Internal graph
+        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
+        Edge(node_c1.out, node_gain_addition_internal.in1)
+        Edge(node_c2.out, node_gain_addition_internal.in2)
+        msg_internal = calculateMessage!(node_gain_addition_internal.out)
+        @fact is(msg_internal, node_gain_addition_internal.out.message) => true
+
+        ensureMVParametrization!(msg_shortcut)
+        ensureMVParametrization!(msg_internal)
+        @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
+        @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
+
+        #
+        #            | in1
+        #            |
+        #        ____|____
+        #        |   v   |
+        #        |  [A]  |
+        #        |   |   |
+        #    in2 |   v   | out
+        #[N]-----|->[+]--|---->[N]
+        #        |_______|
+
+        node_c1 = ConstantNode(GaussianMessage(xi=[0.0, 0.0], W=eye(2,2)))
+        node_c2 = ConstantNode(GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)))
+
+        #Shortcut rules
+        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
+        Edge(node_c1.out, node_gain_addition_composite.in2)
+        Edge(node_c2.out, node_gain_addition_composite.out)
+        msg_shortcut = calculateMessage!(node_gain_addition_composite.in1)
+        @fact is(msg_shortcut, node_gain_addition_composite.in1.message) => true
+
+        #Internal graph
+        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
+        Edge(node_c1.out, node_gain_addition_internal.in2)
+        Edge(node_c2.out, node_gain_addition_internal.out)
+        msg_internal = calculateMessage!(node_gain_addition_internal.in1)
+        @fact is(msg_internal, node_gain_addition_internal.in1.message) => true
+
+        ensureMVParametrization!(msg_shortcut)
+        ensureMVParametrization!(msg_internal)
+        @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
+        @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
+
+        #           [N]
+        #            | in1
+        #            |
+        #        ____|____
+        #        |   v   |
+        #        |  [A]  |
+        #        |   |   |
+        #    in2 |   v   | out
+        #   -----|->[+]--|---->[N]
+        #        |_______|
+
+        node_c1 = ConstantNode(GaussianMessage(xi=[0.0, 0.0], W=eye(2,2)))
+        node_c2 = ConstantNode(GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)))
+
+        #Shortcut rules
+        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
+        Edge(node_c1.out, node_gain_addition_composite.in1)
+        Edge(node_c2.out, node_gain_addition_composite.out)
+        msg_shortcut = calculateMessage!(node_gain_addition_composite.in2)
+        @fact is(msg_shortcut, node_gain_addition_composite.in2.message) => true
+
+        #Internal graph
+        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
+        Edge(node_c1.out, node_gain_addition_internal.in1)
+        Edge(node_c2.out, node_gain_addition_internal.out)
+        msg_internal = calculateMessage!(node_gain_addition_internal.in2)
+        @fact is(msg_internal, node_gain_addition_internal.in2.message) => true
+
+        ensureMVParametrization!(msg_shortcut)
+        ensureMVParametrization!(msg_internal)
+        @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
+        @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
+    end
+    context("GainAdditionCompositeNode should be able to pass GaussianMessages: using shortcut rules or internal graph should yield same result (different parametrizations)") do
+        #           [N]
+        #            | in1
+        #            |
+        #        ____|____
+        #        |   v   |
+        #        |  [A]  |
+        #        |   |   |
+        #    in2 |   v   | out
+        #[N]-----|->[+]--|---->
+        #        |_______|
+        A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
+        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], V=eye(2,2)))
+        node_c2 = ConstantNode(GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)))
+
+        #Shortcut rules
+        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
+        Edge(node_c1.out, node_gain_addition_composite.in1)
+        Edge(node_c2.out, node_gain_addition_composite.in2)
+        msg_shortcut = calculateMessage!(node_gain_addition_composite.out)
+        @fact is(msg_shortcut, node_gain_addition_composite.out.message) => true
+
+        #Internal graph
+        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
+        Edge(node_c1.out, node_gain_addition_internal.in1)
+        Edge(node_c2.out, node_gain_addition_internal.in2)
+        msg_internal = calculateMessage!(node_gain_addition_internal.out)
+        @fact is(msg_internal, node_gain_addition_internal.out.message) => true
+
+        ensureMVParametrization!(msg_shortcut)
+        ensureMVParametrization!(msg_internal)
+        @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
+        @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
+
+        #
+        #            | in1
+        #            |
+        #        ____|____
+        #        |   v   |
+        #        |  [A]  |
+        #        |   |   |
+        #    in2 |   v   | out
+        #[N]-----|->[+]--|---->[N]
+        #        |_______|
+
+        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], V=eye(2,2)))
+        node_c2 = ConstantNode(GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)))
+
+        #Shortcut rules
+        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
+        Edge(node_c1.out, node_gain_addition_composite.in2)
+        Edge(node_c2.out, node_gain_addition_composite.out)
+        msg_shortcut = calculateMessage!(node_gain_addition_composite.in1)
+        @fact is(msg_shortcut, node_gain_addition_composite.in1.message) => true
+
+        #Internal graph
+        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
+        Edge(node_c1.out, node_gain_addition_internal.in2)
+        Edge(node_c2.out, node_gain_addition_internal.out)
+        msg_internal = calculateMessage!(node_gain_addition_internal.in1)
+        @fact is(msg_internal, node_gain_addition_internal.in1.message) => true
+
+        ensureMVParametrization!(msg_shortcut)
+        ensureMVParametrization!(msg_internal)
+        @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
+        @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
+
+        #           [N]
+        #            | in1
+        #            |
+        #        ____|____
+        #        |   v   |
+        #        |  [A]  |
+        #        |   |   |
+        #    in2 |   v   | out
+        #   -----|->[+]--|---->[N]
+        #        |_______|
+
+        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], V=eye(2,2)))
+        node_c2 = ConstantNode(GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)))
+
+        #Shortcut rules
+        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
+        Edge(node_c1.out, node_gain_addition_composite.in1)
+        Edge(node_c2.out, node_gain_addition_composite.out)
+        msg_shortcut = calculateMessage!(node_gain_addition_composite.in2)
+        @fact is(msg_shortcut, node_gain_addition_composite.in2.message) => true
+
+        #Internal graph
+        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
+        Edge(node_c1.out, node_gain_addition_internal.in1)
+        Edge(node_c2.out, node_gain_addition_internal.out)
+        msg_internal = calculateMessage!(node_gain_addition_internal.in2)
+        @fact is(msg_internal, node_gain_addition_internal.in2.message) => true
+
+        ensureMVParametrization!(msg_shortcut)
+        ensureMVParametrization!(msg_internal)
+        @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
+        @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
     end
 end
