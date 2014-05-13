@@ -51,12 +51,7 @@ type GainAdditionCompositeNode <: Node
     out::Interface
 
     function GainAdditionCompositeNode(A::Array, use_composite_update_rules::Bool; args...)
-        name = "#undef"
-        for (key, val) in args
-            if key==:name
-                name=val
-            end
-        end
+        (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
 
         if use_composite_update_rules
             # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.

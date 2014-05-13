@@ -35,12 +35,7 @@ type EqualityNode <: Node
     name::ASCIIString
 
     function EqualityNode(num_interfaces::Integer; args...)
-        name = "#undef"
-        for (key, val) in args
-            if key==:name
-                name=val
-            end
-        end
+        (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
         @assert(num_interfaces>2, "An EqualityNode should have at least 3 interfaces")
         self = new(num_interfaces, Array(Interface, num_interfaces), name)
         # Create interfaces
