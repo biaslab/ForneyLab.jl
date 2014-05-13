@@ -1,8 +1,8 @@
 ForneyLab.jl
 ============
 
-Forney-style Factor Graph toolbox in Julia.
-**This software is still in development**.
+Forney-style Factor Graph framework in Julia.
+**This software is still in an early development stage**.
 
 Installation
 ============
@@ -20,4 +20,4 @@ Import ForneyLab:
 ```jl
 using ForneyLab
 ```
-Once imported, one can create nodes and edges to build a factor graph, or create your own node and message types. There are demo's available [online](http://192.71.151.86/ForneyLab.jl-demos/) to get you started.
+Once imported, one can create nodes and edges to build a factor graph, or create custom node and message types. There are demos available [online](http://192.71.151.86/ForneyLab.jl-demos/) to get you started.
