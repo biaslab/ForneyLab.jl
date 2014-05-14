@@ -149,6 +149,7 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
         end
         if !(node_interface.partner.message_valid)
             # Recursive call to calculate required inbound message
+            printVerbose("Calling calculateMessage! on partner interface of interface $(node_interface_id) on node $(typeof(node_interface.partner.node)) $(node_interface.node.name)")
             calculateMessage!(node_interface.partner)
             if !(node_interface.partner.message_valid)
                 error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
