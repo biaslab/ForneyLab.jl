@@ -218,19 +218,22 @@ function clearMessages!(edge::Edge)
    edge.tail.message_valid = false
 end
 
-function pushMessageInvalidations!(inbound_interface::Interface)
-    # Invalidate all messages that depend on the inbound message on inbound_interface.
+function pushMessageInvalidations!(outbound_interface::Interface)
+    # Invalidate all messages that depend on the message on outbound_interface.
     # This method invalidates all outbound messages on other interfaces of the same node,
     # as well as all other messages in the graph that depend on these outbound messages (recursion).
-    node = inbound_interface.node
-    for interface_id = 1:length(node.interfaces)
-        if is(inbound_interface, node.interfaces[interface_id]) continue end # skip the inbound interface
-        was_valid = node.interfaces[interface_id].message_valid
-        node.interfaces[interface_id].message_valid = false
-        # Recurse into children?
-        # This performs a DFS through the graph, invalidating all messages that depend on node.interfaces[interface_id].message
-        if was_valid && typeof(node.interfaces[interface_id].message)!=Nothing
-            pushMessageInvalidations!(node.interfaces[interface_id].partner)
+    outbound_interface.message_valid = false
+    if typeof(outbound_interface.partner)==Interface
+        connected_node = outbound_interface.partner.node
+        for interface_id = 1:length(connected_node.interfaces)
+            if is(outbound_interface.partner, connected_node.interfaces[interface_id]) continue end # skip the inbound interface
+            was_valid = connected_node.interfaces[interface_id].message_valid
+            connected_node.interfaces[interface_id].message_valid = false
+            # Recurse into children?
+            # This performs a DFS through the graph, invalidating all messages that depend on connected_node.interfaces[interface_id].message
+            if was_valid && typeof(connected_node.interfaces[interface_id].message)!=Nothing
+                pushMessageInvalidations!(connected_node.interfaces[interface_id])
+            end
         end
     end
 end
