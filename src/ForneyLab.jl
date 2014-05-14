@@ -145,6 +145,7 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
     end
 
     # Collect all inbound messages
+    # TODO: use schedule here if available
     inbound_messages = Array(inbound_message_types, length(node.interfaces))
     if (inbound_message_types!=None)
         for node_interface_id = 1:length(node.interfaces)
