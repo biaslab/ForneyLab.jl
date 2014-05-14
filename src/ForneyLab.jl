@@ -160,12 +160,7 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
     msg = updateNodeMessage!(outbound_interface_id, node, inbound_messages)
     printVerbose(" >> $(msg)")
 
-    # Invalidate all consumed inbound messages, validate the outbound message
-    for node_interface_id = 1:length(node.interfaces)
-        if node_interface_id!=outbound_interface_id
-            node.interfaces[node_interface_id].partner.message_valid = false
-        end
-    end
+    # Validate the outbound message
     outbound_interface.message_valid = (typeof(outbound_interface.message)<:Message)
 
     return msg
@@ -221,6 +216,23 @@ function clearMessages!(edge::Edge)
    edge.head.message_valid = false
    edge.tail.message = nothing
    edge.tail.message_valid = false
+end
+
+function pushMessageInvalidations!(inbound_interface::Interface)
+    # Invalidate all messages that depend on the inbound message on inbound_interface.
+    # This method invalidates all outbound messages on other interfaces of the same node,
+    # as well as all other messages in the graph that depend on these outbound messages (recursion).
+    node = inbound_interface.node
+    for interface_id = 1:length(node.interfaces)
+        if is(inbound_interface, node.interfaces[interface_id]) continue end # skip the inbound interface
+        was_valid = node.interfaces[interface_id].message_valid
+        node.interfaces[interface_id].message_valid = false
+        # Recurse into children?
+        # This performs a DFS through the graph, invalidating all messages that depend on node.interfaces[interface_id].message
+        if was_valid && typeof(node.interfaces[interface_id].message)!=Nothing
+            pushMessageInvalidations!(node.interfaces[interface_id].partner)
+        end
+    end
 end
 
 end # module ForneyLab
