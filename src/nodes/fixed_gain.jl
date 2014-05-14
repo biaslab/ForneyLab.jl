@@ -33,12 +33,7 @@ type FixedGainNode <: Node
     out::Interface
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
     function FixedGainNode(A::Array; args...)
-        name = "#undef"
-        for (key, val) in args
-            if key==:name
-                name=val
-            end
-        end
+        (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
         self = new(ensureMatrix(deepcopy(A)), name, Array(Interface, 2))
         # Create interfaces

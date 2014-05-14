@@ -24,12 +24,7 @@ type ConstantNode <: Node
     out::Interface
 
     function ConstantNode(value::Message; args...)
-        name = "#undef"
-        for (key, val) in args
-            if key==:name
-                name=val
-            end
-        end
+        (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
         self = new(value, Array(Interface, 1), name)
         # Create interface
         self.interfaces[1] = Interface(self)
