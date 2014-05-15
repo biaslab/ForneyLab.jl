@@ -25,6 +25,22 @@ facts("ConstantNode") do
         @fact node.interfaces[1].message.value => [1.0, 2.0]
     end
 
+    context("setValue() should set the constant message value") do
+        node = ConstantNode()
+        setValue(node, GeneralMessage(42))
+        @fact node._value.value => 42
+    end
+
+    context("getValue() should get the constant message value") do
+        node = ConstantNode(GeneralMessage(42))
+        @fact getValue(node).value => 42
+    end
+
+    context("value should not be directly accessible") do
+        node = ConstantNode(GeneralMessage(42))
+        @fact_throws(node.value)
+    end
+
     context("pushMessageInvalidations!() should be called in the background by setValue(node::ConstantNode, value::Message)") do
         # Build testing graph
         #

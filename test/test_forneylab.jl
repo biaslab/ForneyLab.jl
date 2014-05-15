@@ -277,7 +277,7 @@ facts("Message passing over interfaces") do
         @fact c2.out.message_valid => false
         @fact add.in1.message_valid => false
         @fact add.out.message_valid => false
-        @fact equ.interfaces[2].message_valid => true # Should not be invalidated
+        @fact equ.interfaces[2].message_valid => false # Is false because it was never calculated
         @fact equ.interfaces[3].message_valid => true # Should not be invalidated
         # Validity of other messages should not be changed
         @fact c1.out.message_valid => true
