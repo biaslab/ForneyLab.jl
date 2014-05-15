@@ -24,4 +24,72 @@ facts("ConstantNode") do
         @fact typeof(node.interfaces[1].message) => GeneralMessage
         @fact node.interfaces[1].message.value => [1.0, 2.0]
     end
+
+    context("setValue() should set the constant message value") do
+        node = ConstantNode()
+        setValue(node, GeneralMessage(42))
+        @fact node._value.value => 42
+    end
+
+    context("getValue() should get the constant message value") do
+        node = ConstantNode(GeneralMessage(42))
+        @fact getValue(node).value => 42
+    end
+
+    context("value should not be directly accessible") do
+        node = ConstantNode(GeneralMessage(42))
+        @fact_throws(node.value)
+    end
+
+    context("pushMessageInvalidations!() should be called in the background by setValue(node::ConstantNode, value::Message)") do
+        # Build testing graph
+        #
+        #          (c2)
+        #           |
+        #           v
+        # (c1)---->[+]---->[=]----->
+        #                   ^    y
+        #                   |
+        #                  (c3)
+        #
+        c1 = ConstantNode(GaussianMessage())
+        c2 = ConstantNode(GaussianMessage())
+        c3 = ConstantNode(GaussianMessage(m=[-2.], V=[3.]))
+        add = AdditionNode()
+        equ = EqualityNode()
+        # Edges from left to right
+        Edge(c1.out, add.in1)
+        Edge(c2.out, add.in2)
+        Edge(add.out, equ.interfaces[1])
+        Edge(c3.out, equ.interfaces[2])
+        Edge(c3.out, equ.interfaces[2])
+
+        fwd_msg_y = calculateMessage!(equ.interfaces[3])
+        # Check message validity after message passing
+        # All forward messages should be valid
+        @fact c1.out.message_valid => true
+        @fact c2.out.message_valid => true
+        @fact c3.out.message_valid => true
+        @fact add.out.message_valid => true
+        @fact equ.interfaces[3].message_valid => true
+        # All backward messages should not be valid
+        @fact add.in1.message_valid => false
+        @fact add.in2.message_valid => false
+        @fact equ.interfaces[1].message_valid => false
+        @fact equ.interfaces[2].message_valid => false
+
+        # Now update the value of c2 and check the invalidations
+        setValue(c2, GaussianMessage(m=[-1.], V=[2.]))
+        # All messages that depend on c2 should be invalid
+        @fact c2.out.message_valid => false
+        @fact add.in1.message_valid => false
+        @fact add.out.message_valid => false
+        @fact equ.interfaces[2].message_valid => false
+        @fact equ.interfaces[3].message_valid => false
+        # Validity of other messages should not be changed
+        @fact c1.out.message_valid => true
+        @fact c3.out.message_valid => true
+        @fact add.in2.message_valid => false
+        @fact equ.interfaces[1].message_valid => false
+    end
 end

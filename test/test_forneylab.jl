@@ -136,7 +136,6 @@ facts("Message passing over interfaces") do
         @fact msg => node2.out.message # Returned message should be identical to message stored on interface.
         @fact typeof(node2.out.message) => GeneralMessage
         @fact node2.out.message.value => reshape([6.0], 1, 1)
-        @fact node1.out.message_valid => false # consumed messages should be invalidated
         @fact node2.out.message_valid => true # fresh messages should be valid
     end
 
@@ -152,8 +151,6 @@ facts("Message passing over interfaces") do
         calculateMessage!(node3.out)
         @fact typeof(node3.out.message) => GeneralMessage
         @fact node3.out.message.value => reshape([12.0], 1, 1)
-        @fact node1.out.message_valid => false # consumed messages should be invalidated
-        @fact node2.out.message_valid => false
         @fact node3.out.message_valid => true # fresh messages should be valid
     end
 
@@ -194,6 +191,99 @@ facts("Message passing over interfaces") do
         ensureMVParametrization!(marginal_msg)
         @fact marginal_msg.m => [0.0]
         @fact isApproxEqual(marginal_msg.V, reshape([0.5], 1, 1)) => true
+    end
+
+    context("pushMessageInvalidations!() should only invalidate all child messages") do
+        # Build testing graph
+        #
+        #          (c2)
+        #           |
+        #           v
+        # (c1)---->[+]---->[=]----->
+        #                   ^    y
+        #                   |
+        #                  (c3)
+        #
+        c1 = ConstantNode(GaussianMessage())
+        c2 = ConstantNode(GaussianMessage())
+        c3 = ConstantNode(GaussianMessage(m=[-2.], V=[3.]))
+        add = AdditionNode()
+        equ = EqualityNode()
+        # Edges from left to right
+        Edge(c1.out, add.in1)
+        Edge(c2.out, add.in2)
+        Edge(add.out, equ.interfaces[1])
+        Edge(c3.out, equ.interfaces[2])
+        Edge(c3.out, equ.interfaces[2])
+
+        fwd_msg_y = calculateMessage!(equ.interfaces[3])
+        # Check message validity after message passing
+        # All forward messages should be valid
+        @fact c1.out.message_valid => true
+        @fact c2.out.message_valid => true
+        @fact c3.out.message_valid => true
+        @fact add.out.message_valid => true
+        @fact equ.interfaces[3].message_valid => true
+        # All backward messages should not be valid
+        @fact add.in1.message_valid => false
+        @fact add.in2.message_valid => false
+        @fact equ.interfaces[1].message_valid => false
+        @fact equ.interfaces[2].message_valid => false
+
+        # Now push the invalidation of the outbound message of c2 through the graph
+        ForneyLab.pushMessageInvalidations!(c2.out)
+        # All messages that depend on c2 should be invalid
+        @fact c2.out.message_valid => false
+        @fact add.in1.message_valid => false
+        @fact add.out.message_valid => false
+        @fact equ.interfaces[2].message_valid => false
+        @fact equ.interfaces[3].message_valid => false
+        # Validity of other messages should not be changed
+        @fact c1.out.message_valid => true
+        @fact c3.out.message_valid => true
+        @fact add.in2.message_valid => false
+        @fact equ.interfaces[1].message_valid => false
+    end
+
+    context("pushMessageInvalidations!() should stop when an already invalidated message is encountered") do
+        # Build testing graph
+        #
+        #          (c2)
+        #           |
+        #           v
+        # (c1)---->[+]---->[=]----->
+        #                   ^    y
+        #                   |
+        #                  (c3)
+        #
+        c1 = ConstantNode(GaussianMessage())
+        c2 = ConstantNode(GaussianMessage())
+        c3 = ConstantNode(GaussianMessage(m=[-2.], V=[3.]))
+        add = AdditionNode()
+        equ = EqualityNode()
+        # Edges from left to right
+        Edge(c1.out, add.in1)
+        Edge(c2.out, add.in2)
+        Edge(add.out, equ.interfaces[1])
+        Edge(c3.out, equ.interfaces[2])
+        Edge(c3.out, equ.interfaces[2])
+
+        fwd_msg_y = calculateMessage!(equ.interfaces[3])
+        # Invalidate a message halfway to check stopping criterium
+        add.out.message_valid = false
+        # Now push the invalidation of the outbound message of c2 through the graph
+        ForneyLab.pushMessageInvalidations!(c2.out)
+        # All messages that depend on c2 should be invalid
+        @fact c2.out.message_valid => false
+        @fact add.in1.message_valid => false
+        @fact add.out.message_valid => false
+        @fact equ.interfaces[2].message_valid => false # Is false because it was never calculated
+        @fact equ.interfaces[3].message_valid => true # Should not be invalidated
+        # Validity of other messages should not be changed
+        @fact c1.out.message_valid => true
+        @fact c3.out.message_valid => true
+        @fact add.in2.message_valid => false
+        @fact equ.interfaces[1].message_valid => false
     end
 end
 

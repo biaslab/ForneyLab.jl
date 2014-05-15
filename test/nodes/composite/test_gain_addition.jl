@@ -46,6 +46,7 @@ facts("GainAdditionCompositeNode") do
         @fact is(msg_shortcut, node_gain_addition_composite.out.message) => true
 
         #Internal graph
+        map(clearMessages!, [node_c1, node_c2])
         node_gain_addition_internal = GainAdditionCompositeNode(A, false)
         Edge(node_c1.out, node_gain_addition_internal.in1)
         Edge(node_c2.out, node_gain_addition_internal.in2)
@@ -79,6 +80,7 @@ facts("GainAdditionCompositeNode") do
         @fact is(msg_shortcut, node_gain_addition_composite.in1.message) => true
 
         #Internal graph
+        map(clearMessages!, [node_c1, node_c2])
         node_gain_addition_internal = GainAdditionCompositeNode(A, false)
         Edge(node_c1.out, node_gain_addition_internal.in2)
         Edge(node_c2.out, node_gain_addition_internal.out)
@@ -112,6 +114,7 @@ facts("GainAdditionCompositeNode") do
         @fact is(msg_shortcut, node_gain_addition_composite.in2.message) => true
 
         #Internal graph
+        map(clearMessages!, [node_c1, node_c2])
         node_gain_addition_internal = GainAdditionCompositeNode(A, false)
         Edge(node_c1.out, node_gain_addition_internal.in1)
         Edge(node_c2.out, node_gain_addition_internal.out)
@@ -147,6 +150,7 @@ facts("GainAdditionCompositeNode") do
         @fact is(msg_shortcut, node_gain_addition_composite.out.message) => true
 
         #Internal graph
+        map(clearMessages!, [node_c1, node_c2])
         node_gain_addition_internal = GainAdditionCompositeNode(A, false)
         Edge(node_c1.out, node_gain_addition_internal.in1)
         Edge(node_c2.out, node_gain_addition_internal.in2)
@@ -180,6 +184,7 @@ facts("GainAdditionCompositeNode") do
         @fact is(msg_shortcut, node_gain_addition_composite.in1.message) => true
 
         #Internal graph
+        map(clearMessages!, [node_c1, node_c2])
         node_gain_addition_internal = GainAdditionCompositeNode(A, false)
         Edge(node_c1.out, node_gain_addition_internal.in2)
         Edge(node_c2.out, node_gain_addition_internal.out)
@@ -213,6 +218,7 @@ facts("GainAdditionCompositeNode") do
         @fact is(msg_shortcut, node_gain_addition_composite.in2.message) => true
 
         #Internal graph
+        map(clearMessages!, [node_c1, node_c2])
         node_gain_addition_internal = GainAdditionCompositeNode(A, false)
         Edge(node_c1.out, node_gain_addition_internal.in1)
         Edge(node_c2.out, node_gain_addition_internal.out)
@@ -248,6 +254,7 @@ facts("GainAdditionCompositeNode") do
         @fact is(msg_shortcut, node_gain_addition_composite.out.message) => true
 
         #Internal graph
+        map(clearMessages!, [node_c1, node_c2])
         node_gain_addition_internal = GainAdditionCompositeNode(A, false)
         Edge(node_c1.out, node_gain_addition_internal.in1)
         Edge(node_c2.out, node_gain_addition_internal.in2)
@@ -281,6 +288,7 @@ facts("GainAdditionCompositeNode") do
         @fact is(msg_shortcut, node_gain_addition_composite.in1.message) => true
 
         #Internal graph
+        map(clearMessages!, [node_c1, node_c2])
         node_gain_addition_internal = GainAdditionCompositeNode(A, false)
         Edge(node_c1.out, node_gain_addition_internal.in2)
         Edge(node_c2.out, node_gain_addition_internal.out)
@@ -314,6 +322,7 @@ facts("GainAdditionCompositeNode") do
         @fact is(msg_shortcut, node_gain_addition_composite.in2.message) => true
 
         #Internal graph
+        map(clearMessages!, [node_c1, node_c2])
         node_gain_addition_internal = GainAdditionCompositeNode(A, false)
         Edge(node_c1.out, node_gain_addition_internal.in1)
         Edge(node_c2.out, node_gain_addition_internal.out)
@@ -348,6 +357,7 @@ facts("GainAdditionCompositeNode") do
         @fact is(msg_shortcut, node_gain_addition_composite.out.message) => true
 
         #Internal graph
+        map(clearMessages!, [node_c1, node_c2])
         node_gain_addition_internal = GainAdditionCompositeNode(A, false)
         Edge(node_c1.out, node_gain_addition_internal.in1)
         Edge(node_c2.out, node_gain_addition_internal.in2)
@@ -381,6 +391,7 @@ facts("GainAdditionCompositeNode") do
         @fact is(msg_shortcut, node_gain_addition_composite.in1.message) => true
 
         #Internal graph
+        map(clearMessages!, [node_c1, node_c2])
         node_gain_addition_internal = GainAdditionCompositeNode(A, false)
         Edge(node_c1.out, node_gain_addition_internal.in2)
         Edge(node_c2.out, node_gain_addition_internal.out)
@@ -414,6 +425,7 @@ facts("GainAdditionCompositeNode") do
         @fact is(msg_shortcut, node_gain_addition_composite.in2.message) => true
 
         #Internal graph
+        map(clearMessages!, [node_c1, node_c2])
         node_gain_addition_internal = GainAdditionCompositeNode(A, false)
         Edge(node_c1.out, node_gain_addition_internal.in1)
         Edge(node_c2.out, node_gain_addition_internal.out)

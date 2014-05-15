@@ -136,6 +136,7 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
         end
         if !(node_interface.partner.message_valid)
             # Recursive call to calculate required inbound message
+            printVerbose("Calling calculateMessage! on partner interface of interface $(node_interface_id) on node $(typeof(node_interface.partner.node)) $(node_interface.node.name)")
             calculateMessage!(node_interface.partner)
             if !(node_interface.partner.message_valid)
                 error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
@@ -159,12 +160,7 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
     msg = updateNodeMessage!(outbound_interface_id, node, inbound_messages)
     printVerbose(" >> $(msg)")
 
-    # Invalidate all consumed inbound messages, validate the outbound message
-    for node_interface_id = 1:length(node.interfaces)
-        if node_interface_id!=outbound_interface_id
-            node.interfaces[node_interface_id].partner.message_valid = false
-        end
-    end
+    # Validate the outbound message
     outbound_interface.message_valid = (typeof(outbound_interface.message)<:Message)
 
     return msg
@@ -220,6 +216,29 @@ function clearMessages!(edge::Edge)
    edge.head.message_valid = false
    edge.tail.message = nothing
    edge.tail.message_valid = false
+end
+
+function pushMessageInvalidations!(outbound_interface::Interface)
+    # Invalidate all messages that depend on the message on outbound_interface.
+    # We call two messages dependent when one message (parent message) is used for the calculation of the other (child message).
+    # Dependence implies that alteration of the parent message invalidates the child message. 
+
+    # This method invalidates all outbound messages of a node except the message for the argument interface's partner (partner of outbound_interface),
+    # and makes a recursive call to all connected nodes to do the same.
+    outbound_interface.message_valid = false
+    if typeof(outbound_interface.partner)==Interface
+        connected_node = outbound_interface.partner.node
+        for interface_id = 1:length(connected_node.interfaces)
+            if is(outbound_interface.partner, connected_node.interfaces[interface_id]) continue end # skip the inbound interface
+            was_valid = connected_node.interfaces[interface_id].message_valid
+            connected_node.interfaces[interface_id].message_valid = false
+            # was_valid ensured that recursion stops when an already invalid message is encountered.
+            if was_valid && typeof(connected_node.interfaces[interface_id].message)!=Nothing # Recurse into the children only when the message was valid and present.
+                # This performs a DFS through the graph, invalidating all messages that depend on connected_node.interfaces[interface_id].message
+                pushMessageInvalidations!(connected_node.interfaces[interface_id])
+            end
+        end
+    end
 end
 
 end # module ForneyLab
