@@ -113,9 +113,16 @@ include("nodes/composite/gain_equality.jl")
 # Generic methods
 #############################
 
-function calculateMessage!(outbound_interface::Interface, node::Node)
+function calculateMessage!(outbound_interface::Interface, node::Node, call_count::Int64)
     # Calculate the outbound message on a specific interface of a specified node.
     # The message is stored in the specified interface.
+    call_count += 1
+    print(call_count)
+    if call_count > 10
+        inbound_messages = Array(GaussianMessage, length(node.interfaces))
+        inbound_messages[1] = GaussianMessage(m=[10.0], V=[100.0])
+        return
+    end
 
     # Sanity check
     if !is(outbound_interface.node, node)
@@ -136,8 +143,8 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
         end
         if !(node_interface.partner.message_valid)
             # Recursive call to calculate required inbound message
-            printVerbose("Calling calculateMessage! on partner interface of interface $(node_interface_id) on node $(typeof(node_interface.partner.node)) $(node_interface.node.name)")
-            calculateMessage!(node_interface.partner)
+            printVerbose("Calling calculateMessage! on node $(typeof(node_interface.partner.node)) $(node_interface.partner.node.name)")
+            calculateMessage!(node_interface.partner, call_count)
             if !(node_interface.partner.message_valid)
                 error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
             end
@@ -166,7 +173,8 @@ function calculateMessage!(outbound_interface::Interface, node::Node)
 
     return msg
 end
-calculateMessage!(outbound_interface::Interface) = calculateMessage!(outbound_interface, outbound_interface.node)
+calculateMessage!(outbound_interface::Interface, call_count::Int64) = calculateMessage!(outbound_interface, outbound_interface.node, call_count)
+calculateMessage!(outbound_interface::Interface) = calculateMessage!(outbound_interface, outbound_interface.node, 0)
 
 function calculateMessages!(node::Node)
     # Calculate the outbound messages on all interfaces of node.
