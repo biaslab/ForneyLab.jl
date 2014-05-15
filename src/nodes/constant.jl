@@ -15,10 +15,10 @@
 #       Message
 ############################################
 
-export ConstantNode
+export ConstantNode, getValue, setValue
 
 type ConstantNode <: Node
-    value::Message
+    _value::Message
     interfaces::Array{Interface,1}
     name::ASCIIString
     out::Interface
@@ -34,6 +34,12 @@ type ConstantNode <: Node
     end
 end
 ConstantNode(; args...) = ConstantNode(GeneralMessage(1.0); args...)
+# Functions to provide access to ConstantNode._value
+getValue(node::ConstantNode) = node._value
+function setValue(node::ConstantNode, value::Message)
+    node._value = value
+    pushMessageInvalidations!(node.out)
+end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::ConstantNode,
@@ -48,5 +54,5 @@ function updateNodeMessage!(outbound_interface_id::Int,
     end
 
     # Just pass the unaltered message through
-    return node.interfaces[outbound_interface_id].message = deepcopy(node.value)
+    return node.interfaces[outbound_interface_id].message = deepcopy(node._value)
 end
