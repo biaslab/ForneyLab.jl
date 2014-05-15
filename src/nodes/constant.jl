@@ -10,6 +10,16 @@
 #
 #   out = value
 #
+# One can pass the value to the constructor, and use
+# getValue(node) and setValue(node, value) to read and
+# update the value.
+# setValue() will automatically invalidate all
+# 'old' messages in the factor graph that depend on
+# the value of the ConstantNode.
+#
+# Example:
+#   ConstantNode(GaussianMessage(), name="myconst")
+#
 # Interface ids, (names) and supported message types:
 #   1. (out):
 #       Message
