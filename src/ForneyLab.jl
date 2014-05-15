@@ -220,8 +220,11 @@ end
 
 function pushMessageInvalidations!(outbound_interface::Interface)
     # Invalidate all messages that depend on the message on outbound_interface.
-    # This method invalidates all outbound messages on other interfaces of the same node,
-    # as well as all other messages in the graph that depend on these outbound messages (recursion).
+    # We call two messages dependent when one message (parent message) is used for the calculation of the other (child message).
+    # Dependence implies that alteration of the parent message invalidates the child message. 
+
+    # This method invalidates all outbound messages of a node except the message for the argument interface's partner (partner of outbound_interface),
+    # and makes a recursive call to all connected nodes to do the same.
     outbound_interface.message_valid = false
     if typeof(outbound_interface.partner)==Interface
         connected_node = outbound_interface.partner.node
@@ -229,9 +232,9 @@ function pushMessageInvalidations!(outbound_interface::Interface)
             if is(outbound_interface.partner, connected_node.interfaces[interface_id]) continue end # skip the inbound interface
             was_valid = connected_node.interfaces[interface_id].message_valid
             connected_node.interfaces[interface_id].message_valid = false
-            # Recurse into children?
-            # This performs a DFS through the graph, invalidating all messages that depend on connected_node.interfaces[interface_id].message
-            if was_valid && typeof(connected_node.interfaces[interface_id].message)!=Nothing
+            # was_valid ensured that recursion stops when an already invalid message is encountered.
+            if was_valid && typeof(connected_node.interfaces[interface_id].message)!=Nothing # Recurse into the children only when the message was valid and present.
+                # This performs a DFS through the graph, invalidating all messages that depend on connected_node.interfaces[interface_id].message
                 pushMessageInvalidations!(connected_node.interfaces[interface_id])
             end
         end

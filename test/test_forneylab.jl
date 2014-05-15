@@ -193,7 +193,7 @@ facts("Message passing over interfaces") do
         @fact isApproxEqual(marginal_msg.V, reshape([0.5], 1, 1)) => true
     end
 
-    context("pushMessageInvalidations!() should invalidate only all child messages") do
+    context("pushMessageInvalidations!() should only invalidate all child messages") do
         # Build testing graph
         #
         #          (c2)
@@ -244,7 +244,47 @@ facts("Message passing over interfaces") do
         @fact add.in2.message_valid => false
         @fact equ.interfaces[1].message_valid => false
     end
-end
 
+    context("pushMessageInvalidations!() should stop when an already invalidated message is encountered") do
+        # Build testing graph
+        #
+        #          (c2)
+        #           |
+        #           v
+        # (c1)---->[+]---->[=]----->
+        #                   ^    y
+        #                   |
+        #                  (c3)
+        #
+        c1 = ConstantNode(GaussianMessage())
+        c2 = ConstantNode(GaussianMessage())
+        c3 = ConstantNode(GaussianMessage(m=[-2.], V=[3.]))
+        add = AdditionNode()
+        equ = EqualityNode()
+        # Edges from left to right
+        Edge(c1.out, add.in1)
+        Edge(c2.out, add.in2)
+        Edge(add.out, equ.interfaces[1])
+        Edge(c3.out, equ.interfaces[2])
+        Edge(c3.out, equ.interfaces[2])
+
+        fwd_msg_y = calculateMessage!(equ.interfaces[3])
+        # Invalidate a message halfway to check stopping criterium
+        add.out.message_valid = false
+        # Now push the invalidation of the outbound message of c2 through the graph
+        ForneyLab.pushMessageInvalidations!(c2.out)
+        # All messages that depend on c2 should be invalid
+        @fact c2.out.message_valid => false
+        @fact add.in1.message_valid => false
+        @fact add.out.message_valid => false
+        @fact equ.interfaces[2].message_valid => true # Should not be invalidated
+        @fact equ.interfaces[3].message_valid => true # Should not be invalidated
+        # Validity of other messages should not be changed
+        @fact c1.out.message_valid => true
+        @fact c3.out.message_valid => true
+        @fact add.in2.message_valid => false
+        @fact equ.interfaces[1].message_valid => false
+    end
+end
 
 end # module TestForneyLab
