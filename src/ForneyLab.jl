@@ -116,17 +116,20 @@ include("nodes/composite/gain_equality.jl")
 function calculateMessage!(outbound_interface::Interface, node::Node, call_count::Int64)
     # Calculate the outbound message on a specific interface of a specified node.
     # The message is stored in the specified interface.
-    call_count += 1
-    print(call_count)
-    if call_count > 10
-        inbound_messages = Array(GaussianMessage, length(node.interfaces))
-        inbound_messages[1] = GaussianMessage(m=[10.0], V=[100.0])
-        return
-    end
 
     # Sanity check
     if !is(outbound_interface.node, node)
         error("Specified interface does not belong to the specified node (", typeof(node), " ", node.name,")")
+    end
+
+    # Increment and stopping condition for recursion
+    call_count += 1
+    if call_count > 100 #TODO: pick something better
+        uninformative_message = GaussianMessage(m=[10.0], V=[100.0]) # Return something uninformative
+        outbound_interface.message = uninformative_message
+        outbound_interface.message_valid = true # Validate
+        printVerbose("Stopping condition reached for calculateMessage at call count $(call_count).")
+        return uninformative_message
     end
 
     # Calculate all inbound messages
