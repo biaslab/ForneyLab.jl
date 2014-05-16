@@ -1,7 +1,9 @@
 module ForneyLab
 
-export Message, Node, Interface, Edge
-export calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, calculateMarginal, clearMessages!
+export  Message, Node, Interface, Edge
+export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, 
+        calculateMarginal,
+        getMessage, getForwardMessage, getBackwardMessage, setMessage!, setForwardMessage!, setBackwardMessage!, clearMessages!
 
 # Verbosity
 verbose = false
@@ -44,6 +46,12 @@ end
 Interface(node::Node, message::Message) = Interface(node, nothing, message)
 Interface(node::Node) = Interface(node, nothing, nothing)
 show(io::IO, interface::Interface) = println(io, "Interface of $(typeof(interface.node)) with node name $(interface.node.name) holds ", interface.message_valid ? "VALID" : "INVALID", " message of type $(typeof(interface.message)).")
+function setMessage!(interface::Interface, message::Message)
+    interface.message = message
+    interface.message_valid = true
+    pushMessageInvalidations!(interface)
+end
+getMessage(interface::Interface) = interface.message
 
 type Edge
     # An Edge joins two interfaces and has a direction (from tail to head).
@@ -96,6 +104,10 @@ function Edge(tail_node::Node, head_node::Node)
     return Edge(tail, head)
 end
 show(io::IO, edge::Edge) = println(io, "Edge from ", typeof(edge.tail.node), " with node name ", edge.tail.node.name, " to ", typeof(edge.head.node), " with node name ", edge.head.node.name, ". Forward message type: ", typeof(edge.tail.message), ". Backward message type: ", typeof(edge.head.message), ".")
+setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
+setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, message)
+getForwardMessage(edge::Edge) = edge.tail.message
+getBackwardMessage(edge::Edge) = edge.head.message
 
 # Messages
 include("messages.jl")
@@ -113,7 +125,7 @@ include("nodes/composite/gain_equality.jl")
 # Generic methods
 #############################
 
-function calculateMessage!(outbound_interface::Interface, node::Node, call_count::Int64)
+function calculateMessage!(outbound_interface::Interface, node::Node, call_list::Array{Interface, 1}=Array(Interface, 0))
     # Calculate the outbound message on a specific interface of a specified node.
     # The message is stored in the specified interface.
 
@@ -122,14 +134,12 @@ function calculateMessage!(outbound_interface::Interface, node::Node, call_count
         error("Specified interface does not belong to the specified node (", typeof(node), " ", node.name,")")
     end
 
-    # Increment and stopping condition for recursion
-    call_count += 1
-    if call_count > 10 #TODO: pick something better; let user decide the convergence criterium
-        uninformative_message = GaussianMessage(m=[10.0], V=[100.0]) # Return something uninformative TODO: make user pass this message
-        outbound_interface.message = uninformative_message
-        outbound_interface.message_valid = true # Validate
-        printVerbose("Stopping condition reached for calculateMessage at call count $(call_count).")
-        return uninformative_message
+    # Apply stopping condition for recursion. When the same interface is called twice, this is indicative of an unbroken loop.
+    if outbound_interface in call_list
+        # Notify the user to break the loop with an initial message
+        error("Loop detected around $(outbound_interface) Consider setting an initial message at this interface.")
+    else # Stopping condition not reached
+        push!(call_list, outbound_interface) # Increment list
     end
 
     # Calculate all inbound messages
@@ -144,17 +154,10 @@ function calculateMessage!(outbound_interface::Interface, node::Node, call_count
         if node_interface.partner == nothing
             error("Cannot receive messages on disconnected interface ", node_interface_id, " of ", typeof(node), " ", node.name)
         end
-<<<<<<< HEAD
         if !(node_interface.partner.message_valid) # When the required inbound message is invalid, calculate it anew
             # Calculate required inbound message by recursive call
             printVerbose("Calling calculateMessage! on node $(typeof(node_interface.partner.node)) $(node_interface.partner.node.name)")
-            calculateMessage!(node_interface.partner, call_count)
-=======
-        if !(node_interface.partner.message_valid)
-            # Recursive call to calculate required inbound message
-            printVerbose("Calling calculateMessage! on node $(typeof(node_interface.partner.node)) $(node_interface.partner.node.name)")
-            calculateMessage!(node_interface.partner)
->>>>>>> master
+            calculateMessage!(node_interface.partner, call_list)
             if !(node_interface.partner.message_valid)
                 error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
             end
@@ -180,10 +183,15 @@ function calculateMessage!(outbound_interface::Interface, node::Node, call_count
     # Validate the outbound message
     outbound_interface.message_valid = (typeof(outbound_interface.message)<:Message)
 
+    # When the backtrace of the recursion is finished, invalidate all messages that depend on the calculated message.
+    # Because the message has changed, all dependent messages are no longer valid.
+    if length(call_list) == 1
+        pushMessageInvalidations!(outbound_interface)
+    end
+
     return msg
 end
-calculateMessage!(outbound_interface::Interface, call_count::Int64) = calculateMessage!(outbound_interface, outbound_interface.node, call_count)
-calculateMessage!(outbound_interface::Interface) = calculateMessage!(outbound_interface, outbound_interface.node, 0)
+calculateMessage!(outbound_interface::Interface, call_list::Array{Interface, 1}=Array(Interface, 0)) = calculateMessage!(outbound_interface, outbound_interface.node, call_list)
 
 function calculateMessages!(node::Node)
     # Calculate the outbound messages on all interfaces of node.

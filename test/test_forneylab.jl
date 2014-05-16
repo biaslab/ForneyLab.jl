@@ -288,26 +288,31 @@ facts("Message passing over interfaces") do
 end
 
 facts("Graphs with loops") do
-    # Set up a loopy graph
-    #    (driver)
-    #   -->[A]---
-    #   |       |
-    #   |      [+]<-[N]
-    #   |       |
-    #   ---[B]<--
-    #  (inhibitor)
-
-    driver = FixedGainNode([1.1], name="driver")
-    inhibitor = FixedGainNode([0.8], name="inhibitor")
-    noise = ConstantNode(GaussianMessage(m=[0.0], V=[0.1]), name="noise")
-    add = AdditionNode(name="adder")
-    Edge(add.out, inhibitor.in1)
-    Edge(inhibitor.out, driver.in1)
-    Edge(driver.out, add.in1)
-    Edge(noise.out, add.in2)
-    msg = calculateMessage!(driver.out)
-    show(msg)
-    @fact bb
+    context("calculateMessage!() should throw an error when there is an unbroken loop") do
+        # Set up a loopy graph
+        #    (driver)
+        #   -->[A]---
+        #   |       |
+        #   |      [+]<-[N]
+        #   |       |
+        #   ---[B]<--
+        #  (inhibitor)
+    
+        driver = FixedGainNode([1.1], name="driver")
+        inhibitor = FixedGainNode([0.8], name="inhibitor")
+        noise = ConstantNode(GaussianMessage(m=[0.0], V=[0.1]), name="noise")
+        add = AdditionNode(name="adder")
+        Edge(add.out, inhibitor.in1)
+        Edge(inhibitor.out, driver.in1)
+        Edge(driver.out, add.in1)
+        Edge(noise.out, add.in2)
+        @fact_throws calculateMessage!(driver.out)
+        # Now set a breaker message and check that it works
+        driver.out.message = GaussianMessage()
+        driver.out.message_valid = true
+        msg = calculateMessage!(driver.out)
+        @fact typeof(msg) => GaussianMessage
+    end
 end
 
 facts("Passing schedules") do
