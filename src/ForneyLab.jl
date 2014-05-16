@@ -124,8 +124,8 @@ function calculateMessage!(outbound_interface::Interface, node::Node, call_count
 
     # Increment and stopping condition for recursion
     call_count += 1
-    if call_count > 100 #TODO: pick something better
-        uninformative_message = GaussianMessage(m=[10.0], V=[100.0]) # Return something uninformative
+    if call_count > 10 #TODO: pick something better; let user decide the convergence criterium
+        uninformative_message = GaussianMessage(m=[10.0], V=[100.0]) # Return something uninformative TODO: make user pass this message
         outbound_interface.message = uninformative_message
         outbound_interface.message_valid = true # Validate
         printVerbose("Stopping condition reached for calculateMessage at call count $(call_count).")
@@ -135,17 +135,17 @@ function calculateMessage!(outbound_interface::Interface, node::Node, call_count
     # Calculate all inbound messages
     inbound_message_types = Union() # Union of all inbound message types
     outbound_interface_id = 0
-    for node_interface_id = 1:length(node.interfaces)
+    for node_interface_id = 1:length(node.interfaces) #TODO: define a schedule; outbound edge dependent?
         node_interface = node.interfaces[node_interface_id]
-        if is(node_interface, outbound_interface)
+        if is(node_interface, outbound_interface) #TODO: substract from 1:length...
             outbound_interface_id = node_interface_id
             continue
         end
         if node_interface.partner == nothing
             error("Cannot receive messages on disconnected interface ", node_interface_id, " of ", typeof(node), " ", node.name)
         end
-        if !(node_interface.partner.message_valid)
-            # Recursive call to calculate required inbound message
+        if !(node_interface.partner.message_valid) # When the required inbound message is invalid, calculate it anew
+            # Calculate required inbound message by recursive call
             printVerbose("Calling calculateMessage! on node $(typeof(node_interface.partner.node)) $(node_interface.partner.node.name)")
             calculateMessage!(node_interface.partner, call_count)
             if !(node_interface.partner.message_valid)
@@ -156,7 +156,6 @@ function calculateMessage!(outbound_interface::Interface, node::Node, call_count
     end
 
     # Collect all inbound messages
-    # TODO: use schedule here if available
     inbound_messages = Array(inbound_message_types, length(node.interfaces))
     if (inbound_message_types!=None)
         for node_interface_id = 1:length(node.interfaces)

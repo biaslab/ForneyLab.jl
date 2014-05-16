@@ -287,4 +287,30 @@ facts("Message passing over interfaces") do
     end
 end
 
+facts("Graphs with loops") do
+    # Set up a loopy graph
+    #    (driver)
+    #   -->[A]---
+    #   |       |
+    #   |      [+]<-[N]
+    #   |       |
+    #   ---[B]<--
+    #  (inhibitor)
+
+    driver = FixedGainNode([1.1], name="driver")
+    inhibitor = FixedGainNode([0.8], name="inhibitor")
+    noise = ConstantNode(GaussianMessage(m=[0.0], V=[0.1]), name="noise")
+    add = AdditionNode(name="adder")
+    Edge(add.out, inhibitor.in1)
+    Edge(inhibitor.out, driver.in1)
+    Edge(driver.out, add.in1)
+    Edge(noise.out, add.in2)
+    msg = calculateMessage!(driver.out)
+    show(msg)
+    @fact bb
+end
+
+facts("Passing schedules") do
+end
+
 end # module TestForneyLab
