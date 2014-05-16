@@ -144,10 +144,17 @@ function calculateMessage!(outbound_interface::Interface, node::Node, call_count
         if node_interface.partner == nothing
             error("Cannot receive messages on disconnected interface ", node_interface_id, " of ", typeof(node), " ", node.name)
         end
+<<<<<<< HEAD
         if !(node_interface.partner.message_valid) # When the required inbound message is invalid, calculate it anew
             # Calculate required inbound message by recursive call
             printVerbose("Calling calculateMessage! on node $(typeof(node_interface.partner.node)) $(node_interface.partner.node.name)")
             calculateMessage!(node_interface.partner, call_count)
+=======
+        if !(node_interface.partner.message_valid)
+            # Recursive call to calculate required inbound message
+            printVerbose("Calling calculateMessage! on node $(typeof(node_interface.partner.node)) $(node_interface.partner.node.name)")
+            calculateMessage!(node_interface.partner)
+>>>>>>> master
             if !(node_interface.partner.message_valid)
                 error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
             end
@@ -234,9 +241,7 @@ function pushMessageInvalidations!(outbound_interface::Interface)
     # We call two messages dependent when one message (parent message) is used for the calculation of the other (child message).
     # Dependence implies that alteration of the parent message invalidates the child message. 
 
-    # This method invalidates all outbound messages of a node except the message for the argument interface's partner (partner of outbound_interface),
-    # and makes a recursive call to all connected nodes to do the same.
-    outbound_interface.message_valid = false
+    # This method invalidates all messages that depend on the message on outbound_interface, EXCLUDING the message on outbound_interface itself.
     if typeof(outbound_interface.partner)==Interface
         connected_node = outbound_interface.partner.node
         for interface_id = 1:length(connected_node.interfaces)
@@ -249,6 +254,13 @@ function pushMessageInvalidations!(outbound_interface::Interface)
                 pushMessageInvalidations!(connected_node.interfaces[interface_id])
             end
         end
+    end
+end
+function pushMessageInvalidations!(node::Node)
+    # Invalidates all outbound messages of node AND all messages that depend on the node's outbound messages. 
+    for interface in node.interfaces
+        interface.message_valid = false
+        pushMessageInvalidations!(interface)
     end
 end
 
