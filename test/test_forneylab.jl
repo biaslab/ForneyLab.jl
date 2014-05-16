@@ -193,7 +193,7 @@ facts("Message passing over interfaces") do
         @fact isApproxEqual(marginal_msg.V, reshape([0.5], 1, 1)) => true
     end
 
-    context("pushMessageInvalidations!() should only invalidate all child messages") do
+    context("pushMessageInvalidations!(Node) should only invalidate all child messages") do
         # Build testing graph
         #
         #          (c2)
@@ -231,7 +231,7 @@ facts("Message passing over interfaces") do
         @fact equ.interfaces[2].message_valid => false
 
         # Now push the invalidation of the outbound message of c2 through the graph
-        ForneyLab.pushMessageInvalidations!(c2.out)
+        ForneyLab.pushMessageInvalidations!(c2)
         # All messages that depend on c2 should be invalid
         @fact c2.out.message_valid => false
         @fact add.in1.message_valid => false
@@ -245,7 +245,7 @@ facts("Message passing over interfaces") do
         @fact equ.interfaces[1].message_valid => false
     end
 
-    context("pushMessageInvalidations!() should stop when an already invalidated message is encountered") do
+    context("pushMessageInvalidations!(Node) should stop when an already invalidated message is encountered") do
         # Build testing graph
         #
         #          (c2)
@@ -272,7 +272,7 @@ facts("Message passing over interfaces") do
         # Invalidate a message halfway to check stopping criterium
         add.out.message_valid = false
         # Now push the invalidation of the outbound message of c2 through the graph
-        ForneyLab.pushMessageInvalidations!(c2.out)
+        ForneyLab.pushMessageInvalidations!(c2)
         # All messages that depend on c2 should be invalid
         @fact c2.out.message_valid => false
         @fact add.in1.message_valid => false

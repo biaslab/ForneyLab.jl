@@ -48,7 +48,7 @@ ConstantNode(; args...) = ConstantNode(GeneralMessage(1.0); args...)
 getValue(node::ConstantNode) = node._value
 function setValue(node::ConstantNode, value::Message)
     node._value = value
-    pushMessageInvalidations!(node.out)
+    pushMessageInvalidations!(node)
 end
 
 function updateNodeMessage!(outbound_interface_id::Int,
