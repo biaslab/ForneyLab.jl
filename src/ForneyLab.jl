@@ -125,7 +125,7 @@ include("nodes/composite/gain_equality.jl")
 # Generic methods
 #############################
 
-function calculateMessage!(outbound_interface::Interface, node::Node, call_list::Array{Interface, 1}=Array(Interface, 0))
+function calculateMessage!(outbound_interface::Interface, node::Node, call_list::Array{Interface, 1}=Array(Interface, 0), loop_counter::Int=1)
     # Calculate the outbound message on a specific interface of a specified node.
     # The message is stored in the specified interface.
 
@@ -161,8 +161,8 @@ function calculateMessage!(outbound_interface::Interface, node::Node, call_list:
             if !(node_interface.partner.message_valid)
                 error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
             end
-            inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
         end
+        inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
     end
 
     # Collect all inbound messages
@@ -179,17 +179,32 @@ function calculateMessage!(outbound_interface::Interface, node::Node, call_list:
     printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
     msg = updateNodeMessage!(outbound_interface_id, node, inbound_messages)
     printVerbose(" >> $(msg)")
+    pop!(call_list) # Shrink the call list
 
     # Validate the outbound message
     outbound_interface.message_valid = (typeof(outbound_interface.message)<:Message)
 
     # When the backtrace of the recursion is finished, invalidate all messages that depend on the calculated message.
     # Because the message has changed, all dependent messages are no longer valid.
-    if length(call_list) == 1
+    if length(call_list) == 0
         pushMessageInvalidations!(outbound_interface)
+        # Check if the calculated message depends on itself. In that case, we have a loop in the graph.
+        if outbound_interface.message_valid == false
+            # Loop detected
+            outbound_interface.message_valid = true
+            # Test stopping criterium
+            if loop_counter >= 100
+                return msg
+            end
+            # Another round through the loop
+            loop_counter += 1
+            printVerbose("Starting new loop, number $(loop_counter) on $(outbound_interface)")
+            return calculateMessage!(outbound_interface, node, Array(Interface, 0), loop_counter)
+        else
+            # No loop
+            return msg
+        end
     end
-
-    return msg
 end
 calculateMessage!(outbound_interface::Interface, call_list::Array{Interface, 1}=Array(Interface, 0)) = calculateMessage!(outbound_interface, outbound_interface.node, call_list)
 

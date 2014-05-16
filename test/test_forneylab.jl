@@ -288,19 +288,19 @@ facts("Message passing over interfaces") do
 end
 
 facts("Graphs with loops") do
+    # Set up a loopy graph
+    #    (driver)
+    #   -->[A]---
+    #   |       |
+    #   |      [+]<-[N]
+    #   |       |
+    #   ---[B]<--
+    #  (inhibitor)
+
     context("calculateMessage!() should throw an error when there is an unbroken loop") do
-        # Set up a loopy graph
-        #    (driver)
-        #   -->[A]---
-        #   |       |
-        #   |      [+]<-[N]
-        #   |       |
-        #   ---[B]<--
-        #  (inhibitor)
-    
-        driver = FixedGainNode([1.1], name="driver")
-        inhibitor = FixedGainNode([0.8], name="inhibitor")
-        noise = ConstantNode(GaussianMessage(m=[0.0], V=[0.1]), name="noise")
+        driver = FixedGainNode([2.0], name="driver")
+        inhibitor = FixedGainNode([0.5], name="inhibitor")
+        noise = ConstantNode(GaussianMessage(m=[1.0], V=[0.1]), name="noise")
         add = AdditionNode(name="adder")
         Edge(add.out, inhibitor.in1)
         Edge(inhibitor.out, driver.in1)
@@ -308,10 +308,25 @@ facts("Graphs with loops") do
         Edge(noise.out, add.in2)
         @fact_throws calculateMessage!(driver.out)
         # Now set a breaker message and check that it works
-        driver.out.message = GaussianMessage()
-        driver.out.message_valid = true
+        setMessage!(driver.out, GaussianMessage())
         msg = calculateMessage!(driver.out)
         @fact typeof(msg) => GaussianMessage
+        @fact msg.m => [100.0] # For stop conditions at 100 cycles deep
+    end
+
+    context("calculateMessage!() should handle convergence") do
+        driver = FixedGainNode([1.1], name="driver")
+        inhibitor = FixedGainNode([0.1], name="inhibitor")
+        noise = ConstantNode(GaussianMessage(m=[0.0], V=[0.1]), name="noise")
+        add = AdditionNode(name="adder")
+        Edge(add.out, inhibitor.in1)
+        Edge(inhibitor.out, driver.in1)
+        Edge(driver.out, add.in1)
+        Edge(noise.out, add.in2)
+        # Now set a breaker message and check that it works
+        setMessage!(driver.out, GaussianMessage(m=[10.0], V=[100.0]))
+        msg = calculateMessage!(driver.out)
+        @fact isApproxEqual(msg.m[1], 0) => true
     end
 end
 
