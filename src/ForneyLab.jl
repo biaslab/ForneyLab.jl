@@ -134,7 +134,7 @@ type LoopState
 end
 LoopState() = LoopState(1, 10000, nothing, nothing) # Default is to do tenthousand rounds through a loop before terminating
 
-function convergenceCheck(loop_state::LoopState)
+function convergenceCheck!(loop_state::LoopState)
     # Returns a boolean value indicating wether the stopping criterium has been reached.
     # This method is designed to stop after a preset amount of iterations through the loop
     if typeof(loop_state.current_loop) != Nothing && typeof(loop_state.max_loops) != Nothing
@@ -146,12 +146,18 @@ function convergenceCheck(loop_state::LoopState)
         return false # Can't get no satisfaction
     end
 end
-function convergenceCheck(loop_state::LoopState, current_message::Message)
+function convergenceCheck!(loop_state::LoopState, current_message::Message)
     # Returns a boolean value indicating wether the stopping criterium has been reached.
     # This method is designed to stop after a difference between the current and previous message exceeds a threshold
     if typeof(loop_state.min_diff) != Nothing
         if typeof(loop_state.prev_message) != Nothing
-            satisfied = abs(loop_state.prev_message.m[1] - current_message.m[1]) <= loop_state.min_diff # TODO: Currently only defined for mean
+            if typeof(current_message.m) != Nothing && typeof(loop_state.prev_message.m) != Nothing 
+                satisfied = maximum(abs(loop_state.prev_message.m - current_message.m)) <= loop_state.min_diff
+            elseif typeof(current_message.xi) != Nothing && typeof(loop_state.prev_message.xi) != Nothing
+                satisfied = maximum(abs(loop_state.prev_message.xi - current_message.xi)) <= loop_state.min_diff
+            else
+                error("Error in convergence check message parameterizations.")
+            end
         else
             satisfied = false
         end
@@ -245,7 +251,7 @@ function calculateMessage!(outbound_interface::Interface, node::Node, loop_state
             if typeof(loop_state.max_loops) == Nothing && typeof(loop_state.min_diff) == Nothing
                 error("Loop detected but convergence criteria are underdefined. Please provide a valid LoopState type as argument.")
             end     
-            if ( typeof(loop_state.max_loops) != Nothing && convergenceCheck(loop_state) ) || ( typeof(loop_state.min_diff) != Nothing && convergenceCheck(loop_state, outbound_interface.message) )
+            if ( typeof(loop_state.max_loops) != Nothing && convergenceCheck!(loop_state) ) || ( typeof(loop_state.min_diff) != Nothing && convergenceCheck!(loop_state, outbound_interface.message) )
                 return msg
             end
             
