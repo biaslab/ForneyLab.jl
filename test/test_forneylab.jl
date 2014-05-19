@@ -216,7 +216,7 @@ facts("Message passing over interfaces") do
         Edge(c3.out, equ.interfaces[2])
         Edge(c3.out, equ.interfaces[2])
 
-        fwd_msg_y = calculateMessage!(equ.interfaces[3])
+        fwd_msg_y = calculateMessage!(equ.interfaces[3], LoopState(1, 10, nothing, nothing))
         # Check message validity after message passing
         # All forward messages should be valid
         @fact c1.out.message_valid => true
@@ -268,7 +268,7 @@ facts("Message passing over interfaces") do
         Edge(c3.out, equ.interfaces[2])
         Edge(c3.out, equ.interfaces[2])
 
-        fwd_msg_y = calculateMessage!(equ.interfaces[3])
+        fwd_msg_y = calculateMessage!(equ.interfaces[3], LoopState(1, 10, nothing, nothing))
         # Invalidate a message halfway to check stopping criterium
         add.out.message_valid = false
         # Now push the invalidation of the outbound message of c2 through the graph
@@ -306,10 +306,10 @@ facts("Graphs with loops") do
         Edge(inhibitor.out, driver.in1)
         Edge(driver.out, add.in1)
         Edge(noise.out, add.in2)
-        @fact_throws calculateMessage!(driver.out)
+        @fact_throws calculateMessage!(driver.out, LoopState(1, 100, nothing, nothing))
         # Now set a breaker message and check that it works
         setMessage!(driver.out, GaussianMessage())
-        msg = calculateMessage!(driver.out)
+        msg = calculateMessage!(driver.out, LoopState(1, 100, nothing, nothing))
         @fact typeof(msg) => GaussianMessage
         @fact msg.m => [100.0] # For stop conditions at 100 cycles deep
     end
@@ -325,7 +325,7 @@ facts("Graphs with loops") do
         Edge(noise.out, add.in2)
         # Now set a breaker message and check that it works
         setMessage!(driver.out, GaussianMessage(m=[10.0], V=[100.0]))
-        msg = calculateMessage!(driver.out)
+        msg = calculateMessage!(driver.out, LoopState(1, nothing, nothing, 1e-12))
         @fact isApproxEqual(msg.m[1], 0) => true
     end
 end
