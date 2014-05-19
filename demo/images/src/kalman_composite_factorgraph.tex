@@ -1,0 +1,96 @@
+\documentclass{article}
+\usepackage{tikz,amsmath,siunitx}
+\usetikzlibrary{arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks}
+\usepackage[graphics,tightpage,active]{preview}
+\PreviewEnvironment{tikzpicture}
+\PreviewEnvironment{equation}
+\PreviewEnvironment{equation*}
+\newlength{\imagewidth}
+\newlength{\imagescale}
+\pagestyle{empty}
+\thispagestyle{empty}
+\begin{document}
+
+\begin{tikzpicture}
+[node distance=20mm,auto,>=latex',
+box/.style={draw, minimum size=.5cm},
+bbox/.style={draw, minimum size=1cm}]
+
+    \tikzstyle{line} = [draw, -latex']
+
+    %Kalman filter
+    \node[] (Xprev) {$\mathbf{X}_{n-1}$};
+
+    \node[bbox,right of=Xprev] (A) {$\mathbf{A}$};
+    \path [line] (Xprev) edge[->] (A);
+
+    \node[box,right of=A] (add_AxBu) {$+$} ;
+    \path [line] (A) edge[->] (add_AxBu);
+
+    \node[bbox,above of=add_AxBu] (B) {$\mathbf{B}$};
+    \path [line] (B) edge[->] node[right,pos=0.5] {} (add_AxBu);
+
+    \node[above of=B] (U) {$\mathbf{U}_n$};
+    \path [line] (U) edge[->] (B);
+
+    \node[box, right of=add_AxBu] (equ) {$=$};
+    \path [line] (add_AxBu) edge[->] (equ);
+
+    \node[right of=equ] (Xnew) {$\mathbf{X}_n$};
+    \path [line] (equ) edge[->] (Xnew);
+    
+    \node[bbox, below of=equ] (C) {$\mathbf{C}$};
+    \path [line] (equ) edge[->] (C);
+    
+    \node[box, below of=C] (add_CxW) {$+$};
+    \path [line] (C) edge[->] (add_CxW);
+
+    \node[bbox, left of=add_CxW] (Nw) {$\mathcal{N}$};
+    \path [line] (Nw) edge[->] node[above,pos=0.5] {$W_n$} (add_CxW);
+
+    \node[below of=add_CxW] (Zn) {$\mathbf{Z}_n$};
+    \path [line] (add_CxW) edge[->] (Zn);
+                
+    \node[box,dotted,fit=(equ)(C),inner sep=2mm] {};
+            
+    \node[box,dashed,fit=(A)(add_AxBu)(B)(equ)(C)(add_CxW)(Nw),inner sep=4mm] {};
+%    
+%    \node[box,right of=add1] (equal) {$=$};
+%    \path [line] (add1) edge[->] (equal);
+%
+%    \node[right of=equal] (end) {$\cdots$};
+%    \path [line] (equal) edge[->] node[above,pos=0.5] {$x_n$} (end);
+%
+%    \node[box,below of=equal] (add2) {$+$};
+%    \path [line] (equal) edge[->] (add2);
+%
+%    \node[bbox,left of=add2, below of=add2,node distance=1.5cm] (Nr) {$\mathcal{N}$};
+%    \path [line] (Nr) |- node[left,pos=0.3] {$r_n$} (add2);
+%
+%    \node[below of=add2,node distance=2.7cm] (output) {} ;
+%    \path [line] (add2) edge[->] node[right,pos=0.8] {$y_n$} (output);
+%
+%    %Parameter estimation
+%    \node[box,above of=A,node distance=4cm] (equalA) {$=$};
+%    \path [line,loosely dashed] (A) edge[-] (equalA);
+%
+%    \node[above of=start,node distance=4cm] (startA) {};
+%    \path [line,loosely dashed] (startA) edge[-] (equalA);
+%
+%    \node[above of=end,node distance=4cm] (endA) {};
+%    \path [line, loosely dashed] (endA) edge[-] node[above,pos=0.16] {$a$} (equalA);
+%
+%    \node[above of=start, node distance=2cm] (startNq) {};
+%    \path [line, dotted] (startNq) edge[-] (Nq);
+%
+%    \node[above of=end, node distance=2cm] (endNq) {};
+%    \path [line, dotted] (endNq) edge[-] node[above,pos=0.25] {$\sigma_q^2$} (Nq);
+%
+%    \node[below of=start, node distance=3.5cm] (startNr) {};
+%    \path [line, dotted] (startNr) edge[-] (Nr);
+%
+%    \node[below of=end, node distance=3.5cm] (endNr) {};
+%    \path [line, dotted] (endNr) edge[-] node[above,pos=0.27] {$\sigma_r^2 $} (Nr);
+
+\end{tikzpicture}
+\end{document}
