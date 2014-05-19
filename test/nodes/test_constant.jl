@@ -25,9 +25,9 @@ facts("ConstantNode") do
         @fact node.interfaces[1].message.value => [1.0, 2.0]
     end
 
-    context("setValue() should set the constant message value") do
+    context("setValue!() should set the constant message value") do
         node = ConstantNode()
-        setValue(node, GeneralMessage(42))
+        setValue!(node, GeneralMessage(42))
         @fact node._value.value => 42
     end
 
@@ -41,7 +41,7 @@ facts("ConstantNode") do
         @fact_throws(node.value)
     end
 
-    context("pushMessageInvalidations!() should be called in the background by setValue(node::ConstantNode, value::Message)") do
+    context("pushMessageInvalidations!() should be called in the background by setValue!(node::ConstantNode, value::Message)") do
         # Build testing graph
         #
         #          (c2)
@@ -79,7 +79,7 @@ facts("ConstantNode") do
         @fact equ.interfaces[2].message_valid => false
 
         # Now update the value of c2 and check the invalidations
-        setValue(c2, GaussianMessage(m=[-1.], V=[2.]))
+        setValue!(c2, GaussianMessage(m=[-1.], V=[2.]))
         # All messages that depend on c2 should be invalid
         @fact c2.out.message_valid => false
         @fact add.in1.message_valid => false

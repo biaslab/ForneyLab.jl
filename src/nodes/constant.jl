@@ -25,7 +25,7 @@
 #       Message
 ############################################
 
-export ConstantNode, getValue, setValue
+export ConstantNode, getValue, setValue!
 
 type ConstantNode <: Node
     _value::Message
@@ -46,7 +46,7 @@ end
 ConstantNode(; args...) = ConstantNode(GeneralMessage(1.0); args...)
 # Functions to provide access to ConstantNode._value
 getValue(node::ConstantNode) = node._value
-function setValue(node::ConstantNode, value::Message)
+function setValue!(node::ConstantNode, value::Message)
     node._value = value
     pushMessageInvalidations!(node)
 end
