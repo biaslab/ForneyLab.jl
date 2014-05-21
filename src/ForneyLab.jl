@@ -1,6 +1,6 @@
 module ForneyLab
 
-export  Message, Node, Interface, Edge, LoopState
+export  Message, Node, CompositeNode, Interface, Edge
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, 
         calculateMarginal,
         getMessage, getForwardMessage, getBackwardMessage, setMessage!, setForwardMessage!, setBackwardMessage!, clearMessages!
@@ -21,6 +21,7 @@ abstract Message
 
 abstract Node
 show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
+abstract CompositeNode <: Node
 
 type Interface
     # An Interface belongs to a node and is used to send/receive messages.

@@ -11,34 +11,42 @@ include("test_helpers.jl")
 
 facts("General node properties") do
     context("Node properties should include interfaces and name") do
-        for NodeType in subtypes(Node)
-            @fact typeof(NodeType().interfaces) => Array{Interface, 1} # Check for interface array
-            @fact length(NodeType().interfaces) >= 1 => true # Check length of interface array
-            @fact typeof(NodeType().name) => ASCIIString
+        for NodeType in [subtypes(Node), subtypes(CompositeNode)]
+            if NodeType != CompositeNode
+                @fact typeof(NodeType().interfaces) => Array{Interface, 1} # Check for interface array
+                @fact length(NodeType().interfaces) >= 1 => true # Check length of interface array
+                @fact typeof(NodeType().name) => ASCIIString
+            end
         end
     end
 
     context("Node constructor should assign a name") do
-        for NodeType in subtypes(Node)
-            my_node = NodeType(;name="my_name")
-            @fact my_node.name => "my_name"
+        for NodeType in [subtypes(Node), subtypes(CompositeNode)]
+            if NodeType != CompositeNode
+                my_node = NodeType(;name="my_name")
+                @fact my_node.name => "my_name"
+            end
         end
     end
 
     context("Nodes should couple interfaces to themselves") do
-        for NodeType in subtypes(Node)
-            my_node = NodeType()
-            for interface_id in 1:length(my_node.interfaces)
-                # Check if the node interfaces couple back to the same node
-                @fact my_node.interfaces[interface_id].node => my_node
+        for NodeType in [subtypes(Node), subtypes(CompositeNode)]
+            if NodeType != CompositeNode
+                my_node = NodeType()
+                for interface_id in 1:length(my_node.interfaces)
+                    # Check if the node interfaces couple back to the same node
+                    @fact my_node.interfaces[interface_id].node => my_node
+                end
             end
         end
     end
 
     context("Every node type should have at least 1 updateNodeMessage!() method") do
-        for NodeType in subtypes(Node)
-            # Check if method description contains node type
-            @fact contains(string(methods(ForneyLab.updateNodeMessage!)), string("::", NodeType)) => true
+        for NodeType in [subtypes(Node), subtypes(CompositeNode)]
+            if NodeType != CompositeNode
+                # Check if method description contains node type
+                @fact contains(string(methods(ForneyLab.updateNodeMessage!)), string("::", NodeType)) => true
+            end
         end
     end
 end

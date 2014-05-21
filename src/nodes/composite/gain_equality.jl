@@ -31,7 +31,7 @@
 
 export GainEqualityCompositeNode
 
-type GainEqualityCompositeNode <: Node
+type GainEqualityCompositeNode <: CompositeNode
     # Basic node properties.
     # use_composite_update_rules is a flag for indicating use of
     # shortcut update rules. When set to true (default), the outbound
