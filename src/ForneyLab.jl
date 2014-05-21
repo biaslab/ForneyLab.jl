@@ -122,64 +122,10 @@ include("nodes/composite/gain_addition.jl")
 include("nodes/composite/gain_equality.jl")
 
 #############################
-# Types and functions for dealing with loops
-#############################
-
-type LoopState
-    # Holds the state at the current loop for cycles during recursion
-    current_loop::Union(Int, Nothing)
-    max_loops::Union(Int, Nothing)
-    prev_message::Union(Message, Nothing)
-    min_diff::Union(Float64, Nothing)
-end
-LoopState() = LoopState(1, 10000, nothing, nothing) # Default is to do tenthousand rounds through a loop before terminating
-
-function convergenceCheck!(loop_state::LoopState)
-    # Returns a boolean value indicating wether the stopping criterium has been reached.
-    # This method is designed to stop after a preset amount of iterations through the loop
-    if typeof(loop_state.current_loop) != Nothing && typeof(loop_state.max_loops) != Nothing
-        satisfied = loop_state.current_loop >= loop_state.max_loops
-        loop_state.current_loop += 1
-        return satisfied
-    else
-        warn("Loop state underdefined")
-        return false # Can't get no satisfaction
-    end
-end
-function convergenceCheck!(loop_state::LoopState, current_message::Message)
-    # Returns a boolean value indicating wether the stopping criterium has been reached.
-    # This method is designed to stop after a difference between the current and previous message exceeds a threshold
-    if typeof(loop_state.min_diff) != Nothing
-        if typeof(loop_state.prev_message) != Nothing
-            if typeof(current_message.m) != Nothing && typeof(loop_state.prev_message.m) != Nothing 
-                satisfied = maximum(abs(loop_state.prev_message.m - current_message.m)) <= loop_state.min_diff
-            elseif typeof(current_message.xi) != Nothing && typeof(loop_state.prev_message.xi) != Nothing
-                satisfied = maximum(abs(loop_state.prev_message.xi - current_message.xi)) <= loop_state.min_diff
-            else
-                error("Error in convergence check message parameterizations.")
-            end
-        else
-            satisfied = false
-        end
-        loop_state.prev_message = current_message
-        if typeof(loop_state.current_loop) == Nothing
-            loop_state.current_loop = 1
-        else
-            loop_state.current_loop += 1
-        end
-        return satisfied
-    else
-        warn("Loop state underdefined")
-        return false # Can't get no satisfaction
-    end
-end
-
-
-#############################
 # Generic methods
 #############################
 
-function calculateMessage!(outbound_interface::Interface, node::Node, loop_state::LoopState=LoopState(), call_list::Array{Interface, 1}=Array(Interface, 0))
+function calculateMessage!(outbound_interface::Interface, node::Node, call_list::Array{Interface, 1}=Array(Interface, 0))
     # Calculate the outbound message on a specific interface of a specified node.
     # The message is stored in the specified interface.
 
@@ -211,7 +157,7 @@ function calculateMessage!(outbound_interface::Interface, node::Node, loop_state
         if !(node_interface.partner.message_valid) # When the required inbound message is invalid, calculate it anew
             # Calculate required inbound message by recursive call
             printVerbose("Calling calculateMessage! on node $(typeof(node_interface.partner.node)) $(node_interface.partner.node.name)")
-            calculateMessage!(node_interface.partner, loop_state, call_list)
+            calculateMessage!(node_interface.partner, call_list)
             if !(node_interface.partner.message_valid)
                 error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
             end
@@ -238,44 +184,33 @@ function calculateMessage!(outbound_interface::Interface, node::Node, loop_state
     # Validate the outbound message
     outbound_interface.message_valid = (typeof(outbound_interface.message)<:Message)
 
-    # When the backtrace of the recursion is finished, invalidate all messages that depend on the calculated message.
+    # When the backtrace of the recursion is finished, invalidate all messages that depend on the newly calculated message.
     # Because the message has changed, all dependent messages are no longer valid.
-    if length(call_list) == 0
+    if length(call_list) == 0 # Top level reached
         pushMessageInvalidations!(outbound_interface)
         # Check if the calculated message depends on itself. In that case, we have a loop in the graph.
         if outbound_interface.message_valid == false
-            # Loop detected
+            # Loop detected, renew message
             outbound_interface.message_valid = true
-            
-            # Test stopping criterium
-            if typeof(loop_state.max_loops) == Nothing && typeof(loop_state.min_diff) == Nothing
-                error("Loop detected but convergence criteria are underdefined. Please provide a valid LoopState type as argument.")
-            end     
-            if ( typeof(loop_state.max_loops) != Nothing && convergenceCheck!(loop_state) ) || ( typeof(loop_state.min_diff) != Nothing && convergenceCheck!(loop_state, outbound_interface.message) )
-                return msg
-            end
-            
-            # Convergence check did not satisfy, do another round through the loop
-            printVerbose("Starting new loop (# $(loop_state.current_loop)) on $(outbound_interface)")
-            return calculateMessage!(outbound_interface, node, loop_state, Array(Interface, 0))
+            return msg
         else
             # No loop
             return msg
         end
     end
 end
-calculateMessage!(outbound_interface::Interface, loop_state::LoopState=LoopState(), call_list::Array{Interface, 1}=Array(Interface, 0)) = calculateMessage!(outbound_interface, outbound_interface.node, loop_state, call_list)
+calculateMessage!(outbound_interface::Interface, call_list::Array{Interface, 1}=Array(Interface, 0)) = calculateMessage!(outbound_interface, outbound_interface.node, call_list)
 
-function calculateMessages!(node::Node, loop_state::LoopState=LoopState())
+function calculateMessages!(node::Node)
     # Calculate the outbound messages on all interfaces of node.
     for interface in node.interfaces
-        calculateMessage!(interface, node, loop_state)
+        calculateMessage!(interface, node)
     end
 end
 
 # Calculate forward/backward messages on an Edge
-calculateForwardMessage!(edge::Edge, loop_state::LoopState=LoopState()) = calculateMessage!(edge.tail, loop_state)
-calculateBackwardMessage!(edge::Edge, loop_state::LoopState=LoopState()) = calculateMessage!(edge.head, loop_state)
+calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
+calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
 function calculateMarginal(forward_msg::Message, backward_msg::Message)
     # Calculate the marginal from a forward/backward message pair.
