@@ -31,11 +31,12 @@ type ConstantNode <: Node
     _value::Message
     interfaces::Array{Interface,1}
     name::ASCIIString
+    parent::Union(CompositeNode, Nothing)
     out::Interface
 
-    function ConstantNode(value::Message; args...)
+    function ConstantNode(value::Message, parent::Union(CompositeNode, Nothing)=nothing; args...)
         (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
-        self = new(value, Array(Interface, 1), name)
+        self = new(value, Array(Interface, 1), name, parent)
         # Create interface
         self.interfaces[1] = Interface(self)
         # Init named interface handle

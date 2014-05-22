@@ -13,6 +13,7 @@ facts("General node properties") do
     context("Node properties should include interfaces and name") do
         for NodeType in [subtypes(Node), subtypes(CompositeNode)]
             if NodeType != CompositeNode
+                @fact typeof(NodeType().parent) => Nothing # Check for parent field, is of type Nothing on creation
                 @fact typeof(NodeType().interfaces) => Array{Interface, 1} # Check for interface array
                 @fact length(NodeType().interfaces) >= 1 => true # Check length of interface array
                 @fact typeof(NodeType().name) => ASCIIString

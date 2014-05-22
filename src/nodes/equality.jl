@@ -33,11 +33,12 @@ type EqualityNode <: Node
     num_interfaces::Uint16
     interfaces::Array{Interface,1}
     name::ASCIIString
+    parent::Union(CompositeNode, Nothing)
 
-    function EqualityNode(num_interfaces::Integer; args...)
+    function EqualityNode(num_interfaces::Integer, parent::Union(CompositeNode, Nothing)=nothing; args...)
         (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
         @assert(num_interfaces>2, "An EqualityNode should have at least 3 interfaces")
-        self = new(num_interfaces, Array(Interface, num_interfaces), name)
+        self = new(num_interfaces, Array(Interface, num_interfaces), name, parent)
         # Create interfaces
         for interface_id=1:num_interfaces
             self.interfaces[interface_id] = Interface(self)
