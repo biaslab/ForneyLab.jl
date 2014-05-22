@@ -35,7 +35,7 @@ type EqualityNode <: Node
     name::ASCIIString
     parent::Union(CompositeNode, Nothing)
 
-    function EqualityNode(num_interfaces::Integer, parent::Union(CompositeNode, Nothing)=nothing; args...)
+    function EqualityNode(num_interfaces::Integer=3, parent::Union(CompositeNode, Nothing)=nothing; args...)
         (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
         @assert(num_interfaces>2, "An EqualityNode should have at least 3 interfaces")
         self = new(num_interfaces, Array(Interface, num_interfaces), name, parent)
@@ -46,7 +46,7 @@ type EqualityNode <: Node
         return self
     end
 end
-EqualityNode(; args...) = EqualityNode(3; args...)
+EqualityNode(parent::CompositeNode; args...) = EqualityNode(3, parent; args...)
 
 ############################################
 # GaussianMessage methods

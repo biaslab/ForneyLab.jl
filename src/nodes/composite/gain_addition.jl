@@ -51,7 +51,7 @@ type GainAdditionCompositeNode <: CompositeNode
     in2::Interface
     out::Interface
 
-    function GainAdditionCompositeNode(A::Array, use_composite_update_rules::Bool, parent::Union(CompositeNode, Nothing)=nothing; args...)
+    function GainAdditionCompositeNode(A::Array=[1.0], use_composite_update_rules::Bool=true, parent::Union(CompositeNode, Nothing)=nothing; args...)
         (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
 
         if use_composite_update_rules
@@ -84,8 +84,8 @@ type GainAdditionCompositeNode <: CompositeNode
         return self
     end
 end
-GainAdditionCompositeNode(A::Array; args...) = GainAdditionCompositeNode(A, true; args...)
-GainAdditionCompositeNode(; args...) = GainAdditionCompositeNode([1.0], true; args...)
+GainAdditionCompositeNode(A::Array, parent::CompositeNode; args...) = GainAdditionCompositeNode(A, true, parent; args...)
+GainAdditionCompositeNode(parent::CompositeNode; args...) = GainAdditionCompositeNode([1.0], true, parent; args...)
 
 ############################################
 # GaussianMessage methods

@@ -33,7 +33,7 @@ type FixedGainNode <: Node
     in1::Interface
     out::Interface
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
-    function FixedGainNode(A::Array, parent::Union(CompositeNode, Nothing)=nothing; args...)
+    function FixedGainNode(A::Array=[1.0], parent::Union(CompositeNode, Nothing)=nothing; args...)
         (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
         self = new(ensureMatrix(deepcopy(A)), name, parent, Array(Interface, 2))
@@ -52,7 +52,7 @@ type FixedGainNode <: Node
         return self
     end
 end
-FixedGainNode(; args...) = FixedGainNode([1.0]; args...)
+FixedGainNode(parent::CompositeNode; args...) = FixedGainNode([1.0], parent; args...)
 
 ############################################
 # GaussianMessage methods

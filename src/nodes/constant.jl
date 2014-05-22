@@ -34,7 +34,7 @@ type ConstantNode <: Node
     parent::Union(CompositeNode, Nothing)
     out::Interface
 
-    function ConstantNode(value::Message, parent::Union(CompositeNode, Nothing)=nothing; args...)
+    function ConstantNode(value::Message=GeneralMessage(1.0), parent::Union(CompositeNode, Nothing)=nothing; args...)
         (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
         self = new(value, Array(Interface, 1), name, parent)
         # Create interface
@@ -44,7 +44,7 @@ type ConstantNode <: Node
         return self
     end
 end
-ConstantNode(; args...) = ConstantNode(GeneralMessage(1.0); args...)
+
 # Functions to provide access to ConstantNode._value
 getValue(node::ConstantNode) = node._value
 function setValue!(node::ConstantNode, value::Message)
