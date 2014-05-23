@@ -41,7 +41,6 @@ type GainEqualityCompositeNode <: CompositeNode
     A::Array
     use_composite_update_rules::Bool
     name::ASCIIString
-    parent::Union(CompositeNode, Nothing)
     interfaces::Array{Interface,1}
     # Pointers to internal nodes
     equality_node::EqualityNode
@@ -51,7 +50,7 @@ type GainEqualityCompositeNode <: CompositeNode
     in2::Interface
     out::Interface
 
-    function GainEqualityCompositeNode(A::Array=[1.0], use_composite_update_rules::Bool=true, parent::Union(CompositeNode, Nothing)=nothing; args...)
+    function GainEqualityCompositeNode(A::Array=[1.0], use_composite_update_rules::Bool=true; args...)
         (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
 
         if use_composite_update_rules
@@ -59,11 +58,11 @@ type GainEqualityCompositeNode <: CompositeNode
             # In case we don't use composite update rules, A is passed to the internal FixedGainNode.
             A = ensureMatrix(deepcopy(A))
         end
-        self = new(A, use_composite_update_rules, name, parent, Array(Interface, 3))
+        self = new(A, use_composite_update_rules, name, Array(Interface, 3))
 
         # Define the internals of the composite node
-        self.equality_node = EqualityNode(3, self, name="$(name)_internal_equality")
-        self.fixed_gain_node = FixedGainNode(A, self, name="$(name)_internal_gain")
+        self.equality_node = EqualityNode(3, name="$(name)_internal_equality")
+        self.fixed_gain_node = FixedGainNode(A, name="$(name)_internal_gain")
         Edge(self.equality_node.interfaces[2], self.fixed_gain_node.in1) # Internal edge
 
         if use_composite_update_rules
@@ -84,8 +83,6 @@ type GainEqualityCompositeNode <: CompositeNode
         return self
     end
 end
-GainEqualityCompositeNode(A::Array, parent::CompositeNode; args...) = GainEqualityCompositeNode(A, true, parent; args...)
-GainEqualityCompositeNode(parent::CompositeNode; args...) = GainEqualityCompositeNode([1.0], true, parent; args...)
 
 ############################################
 # GaussianMessage methods

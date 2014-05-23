@@ -30,15 +30,14 @@ export AdditionNode
 
 type AdditionNode <: Node
     name::ASCIIString
-    parent::Union(CompositeNode, Nothing)
     interfaces::Array{Interface,1}
     in1::Interface
     in2::Interface
     out::Interface
 
-    function AdditionNode(parent::Union(CompositeNode, Nothing)=nothing ;args...)
+    function AdditionNode(;args...)
         (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
-        self = new(name, parent, Array(Interface, 3))
+        self = new(name, Array(Interface, 3))
         # Create interfaces
         self.interfaces[1] = Interface(self)
         self.interfaces[2] = Interface(self)
