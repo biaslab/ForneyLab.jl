@@ -65,21 +65,19 @@ type GainEqualityCompositeNode <: CompositeNode
         self.fixed_gain_node = FixedGainNode(A, name="$(name)_internal_gain")
         Edge(self.equality_node.interfaces[2], self.fixed_gain_node.in1) # Internal edge
 
-        if use_composite_update_rules
-            # Initialize the composite node interfaces belonging to the composite node itself.
-            self.interfaces[1] = Interface(self)
-            self.interfaces[2] = Interface(self)
-            self.interfaces[3] = Interface(self)
-        else
-            # Initialize the interfaces as references to the internal node interfaces.
-            self.interfaces[1] = self.equality_node.interfaces[1]
-            self.interfaces[2] = self.equality_node.interfaces[3]
-            self.interfaces[3] = self.fixed_gain_node.out
-        end
+        # Initialize the composite node interfaces belonging to the composite node itself.
+        self.interfaces[1] = Interface(self)
+        self.interfaces[2] = Interface(self)
+        self.interfaces[3] = Interface(self)
+        # Initialize the interfaces as references to the internal node interfaces.
+        self.interfaces[1].child = self.equality_node.interfaces[1]
+        self.interfaces[2].child = self.equality_node.interfaces[3]
+        self.interfaces[3].child = self.fixed_gain_node.out
         # Init named interface handles
         self.in1 = self.interfaces[1]
         self.in2 = self.interfaces[2]
         self.out = self.interfaces[3]
+
         return self
     end
 end
@@ -107,62 +105,48 @@ function updateNodeMessage!(outbound_interface_id::Int,
         warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
     end
     if !node.use_composite_update_rules
-        error("You can't call updateNodeMessage!() on a composite node ($(typeof(node)) $(node.name) interface $(outbound_interface_id)) that uses its internal graph to pass messages. Use calculateMessage!(node.interface) instead.")
-    end
-
-    if outbound_interface_id == 3
-        # Forward message
-        # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
-        # msg_i = inbound message on interface i, msg_out is always the calculated outbound message.
-        msg_1 = inbound_messages[1]
-        msg_2 = inbound_messages[2]
-        msg_out = GaussianMessage()
-
-        # First pass through the internal equality node
-        inbound_messages = Array(GaussianMessage, 3)
-        inbound_messages[1] = msg_1
-        inbound_messages[3] = msg_2
-        msg_temp = updateNodeMessage!(2, node.equality_node, inbound_messages)
-
-        # Then go forward through the internal gain node
-        inbound_messages = Array(GaussianMessage, 2)
-        inbound_messages[1] = msg_temp
-        msg_out = updateNodeMessage!(2, node.fixed_gain_node, inbound_messages)
-    elseif outbound_interface_id == 1 || outbound_interface_id == 2
-        # Backward messages
-        msg_out = GaussianMessage()
-        msg_3 = inbound_messages[3]
-        msg_in = inbound_messages[outbound_interface_id == 1 ? 2 : 1] # the other input interface
-
-        # Select parameterization
-        # Order is from least to most computationally intensive
-        if msg_3.xi != nothing && msg_3.W != nothing && msg_in.xi != nothing && msg_in.W != nothing
-            msg_out.m = nothing
-            msg_out.V = nothing
-            msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
-            msg_out.xi = backwardGainEqualityXiRule(node.A, msg_in.xi, msg_3.xi)
-        elseif msg_3.m != nothing && msg_3.V != nothing && msg_in.m != nothing && msg_in.V != nothing
-            msg_out.m = backwardGainEqualityMRule(node.A, msg_in.m, msg_in.V, msg_3.m, msg_3.V)
-            msg_out.V = backwardGainEqualityVRule(node.A, msg_in.V, msg_3.V)
-            msg_out.W = nothing
-            msg_out.xi = nothing
-        elseif msg_3.m != nothing && msg_3.W != nothing && msg_in.m != nothing && msg_in.W != nothing
-            # TODO: Not very efficient!
-            msg_out.m = backwardGainEqualityMRule(node.A, msg_in.m, inv(msg_in.W), msg_3.m, inv(msg_3.W))
-            msg_out.V = nothing
-            msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
-            msg_out.xi = nothing
-        else
-            # Fallback: convert inbound messages to (xi,W) parametrization and then use efficient rules
-            ensureXiWParametrization!(msg_in)
-            ensureXiWParametrization!(msg_3)
-            msg_out.m = nothing
-            msg_out.V = nothing
-            msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
-            msg_out.xi = backwardGainEqualityXiRule(node.A, msg_in.xi, msg_3.xi)
-        end
+        msg_out = calculateMessage!(node.interfaces[outbound_interface_id].child)
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+        if outbound_interface_id == 3
+            # Forward message
+            # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
+            msg_out = calculateMessage!(node.interfaces[outbound_interface_id].child)
+        elseif outbound_interface_id == 1 || outbound_interface_id == 2
+            # Backward messages
+            msg_out = GaussianMessage()
+            msg_3 = inbound_messages[3]
+            msg_in = inbound_messages[outbound_interface_id == 1 ? 2 : 1] # the other input interface
+
+            # Select parameterization
+            # Order is from least to most computationally intensive
+            if msg_3.xi != nothing && msg_3.W != nothing && msg_in.xi != nothing && msg_in.W != nothing
+                msg_out.m = nothing
+                msg_out.V = nothing
+                msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
+                msg_out.xi = backwardGainEqualityXiRule(node.A, msg_in.xi, msg_3.xi)
+            elseif msg_3.m != nothing && msg_3.V != nothing && msg_in.m != nothing && msg_in.V != nothing
+                msg_out.m = backwardGainEqualityMRule(node.A, msg_in.m, msg_in.V, msg_3.m, msg_3.V)
+                msg_out.V = backwardGainEqualityVRule(node.A, msg_in.V, msg_3.V)
+                msg_out.W = nothing
+                msg_out.xi = nothing
+            elseif msg_3.m != nothing && msg_3.W != nothing && msg_in.m != nothing && msg_in.W != nothing
+                # TODO: Not very efficient!
+                msg_out.m = backwardGainEqualityMRule(node.A, msg_in.m, inv(msg_in.W), msg_3.m, inv(msg_3.W))
+                msg_out.V = nothing
+                msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
+                msg_out.xi = nothing
+            else
+                # Fallback: convert inbound messages to (xi,W) parametrization and then use efficient rules
+                ensureXiWParametrization!(msg_in)
+                ensureXiWParametrization!(msg_3)
+                msg_out.m = nothing
+                msg_out.V = nothing
+                msg_out.W = backwardGainEqualityWRule(node.A, msg_in.W, msg_3.W)
+                msg_out.xi = backwardGainEqualityXiRule(node.A, msg_in.xi, msg_3.xi)
+            end
+        else
+            error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+        end
     end
     # Set the outbound message
     return node.interfaces[outbound_interface_id].message = msg_out

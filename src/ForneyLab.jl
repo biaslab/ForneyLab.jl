@@ -29,23 +29,24 @@ type Interface
     # An Interface can be seen as a half-edge, that connects to a partner Interface to form a complete edge.
     # A message from node a to node b is stored at the Interface of node a that connects to an Interface of node b.
     node::Node
-    partner::Union(Interface, Nothing)
+    partner::Union(Interface, Nothing) # Partner indicates the interface to which it is connected.
+    child::Union(Interface, Nothing) # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
     message::Union(Message, Nothing)
     message_valid::Bool # false indicates that message has already been consumed
 
     # Sanity check for matching message types
-    function Interface(node::Node, partner::Union(Interface, Nothing), message::Union(Message, Nothing))
+    function Interface(node::Node, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
-            new(node, partner, message, typeof(message)!=Nothing)
+            new(node, partner, child, message, typeof(message)!=Nothing)
         elseif typeof(message) != typeof(partner.message) # Compare message types
             error("Message type of partner does not match with interface message type")
         else
-            new(node, partner, message, typeof(message)!=Nothing)
+            new(node, partner, child, message, typeof(message)!=Nothing)
         end
     end
 end
-Interface(node::Node, message::Message) = Interface(node, nothing, message)
-Interface(node::Node) = Interface(node, nothing, nothing)
+Interface(node::Node, message::Message) = Interface(node, nothing, nothing, message)
+Interface(node::Node) = Interface(node, nothing, nothing, nothing)
 show(io::IO, interface::Interface) = println(io, "Interface of $(typeof(interface.node)) with node name $(interface.node.name) holds ", interface.message_valid ? "VALID" : "INVALID", " message of type $(typeof(interface.message)).")
 function setMessage!(interface::Interface, message::Message)
     interface.message = message
@@ -66,8 +67,21 @@ type Edge
             typeof(tail.message) == Nothing ||
             typeof(head.message) == typeof(tail.message)
             if !is(head.node, tail.node)
+                # Partner head and tail, and merge their families
                 tail.partner = head
                 head.partner = tail
+                # Backreferences for tail's children
+                child_interface = tail.child
+                while child_interface != nothing
+                    child_interface.partner = tail.partner
+                    child_interface = child_interface.child
+                end
+                # Backreferences for head's children
+                child_interface = head.child
+                while child_interface != nothing
+                    child_interface.partner = head.partner
+                    child_interface = child_interface.child
+                end
                 new(tail, head)
             else
                 error("Cannot connect two interfaces of the same node: ", typeof(head.node), " ", head.node.name)
