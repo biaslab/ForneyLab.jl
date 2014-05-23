@@ -160,9 +160,9 @@ function calculateMessage!(outbound_interface::Interface, node::Node, call_list:
     # Calculate all inbound messages
     inbound_message_types = Union() # Union of all inbound message types
     outbound_interface_id = 0
-    for node_interface_id = 1:length(node.interfaces) #TODO: define a schedule; outbound edge dependent?
+    for node_interface_id = 1:length(node.interfaces)
         node_interface = node.interfaces[node_interface_id]
-        if is(node_interface, outbound_interface) #TODO: substract from 1:length...
+        if is(node_interface, outbound_interface)
             outbound_interface_id = node_interface_id
             continue
         end
