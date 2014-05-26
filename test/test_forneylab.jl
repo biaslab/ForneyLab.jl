@@ -109,24 +109,6 @@ facts("Connections between nodes") do
         testInterfaceConnections(node1, node2)
     end
 
-    context("Edge can connect a normal node to a composite node") do
-        # Initialize some nodes
-        #             c_node
-        #           ------------
-        # node      |          |
-        # [N]--| |--| |--[=]-| |--|
-        #    out in1| in1 |    |
-        #           |    ...   |
-
-        c_node = GainEqualityCompositeNode()
-        node = ConstantNode()
-        edge = Edge(node.out, c_node.in1)
-        @fact node.out.partner => c_node.in1 # Set correct partners
-        @fact c_node.in1.partner => node.out
-        @fact c_node.equality_node.interfaces[1].partner => node.out 
-        @fact c_node.in1.child => c_node.equality_node.interfaces[1] # Set child 
-    end
-
     context("Nodes can be coupled by edges using the explicit interface names") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage

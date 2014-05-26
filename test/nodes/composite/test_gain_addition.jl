@@ -18,9 +18,27 @@ facts("GainAdditionCompositeNode") do
 
     context("GainAdditionCompositeNode() should point its own interfaces to the internal node interfaces") do
         node = GainAdditionCompositeNode([1.0], false)
-        @fact node.in1 => node.fixed_gain_node.interfaces[1]
-        @fact node.in2 => node.addition_node.interfaces[2]
-        @fact node.out => node.addition_node.out
+        @fact node.in1.child => node.fixed_gain_node.interfaces[1]
+        @fact node.in2.child => node.addition_node.interfaces[2]
+        @fact node.out.child => node.addition_node.out
+    end
+
+    context("Edge can connect a normal node to a GainAdditionCompositeNode") do
+        # Initialize some nodes
+        #             c_node
+        #           ------------
+        # node      |          |
+        # [N]--| |--| |--[+]-| |--|
+        #    out in2| in2 |    |
+        #           |    ...   |
+
+        c_node = GainAdditionCompositeNode([1.0], false)
+        node = ConstantNode()
+        edge = Edge(node.out, c_node.in2)
+        @fact node.out.partner => c_node.in2 # Set correct partners
+        @fact c_node.in2.partner => node.out
+        @fact c_node.addition_node.in2.partner => node.out 
+        @fact c_node.in2.child => c_node.addition_node.in2 # Set child 
     end
 
     context("GainAdditionCompositeNode should be able to pass GaussianMessages: using shortcut rules or internal graph should yield same result (m,V) parametrization") do

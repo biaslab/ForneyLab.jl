@@ -267,26 +267,43 @@ function clearMessages!(edge::Edge)
    edge.tail.message_valid = false
 end
 
-function pushMessageInvalidations!(outbound_interface::Interface)
-    # Invalidate all messages that depend on the message on outbound_interface.
+function pushMessageInvalidations!(interface::Union(Interface, Nothing), interface_is_inbound::Bool=false)
+    # Invalidate all dependencies of a message.
+    # IF interface_is_inbound==false: Invalidate everything that depends on the SENT (outbound) message message on interface.
+    # IF interface_is_inbound==true:  Invalidate everything that depends on the RECEIVED (inbound) message message on interface.
     # We call two messages dependent when one message (parent message) is used for the calculation of the other (child message).
     # Dependence implies that alteration of the parent message invalidates the child message. 
+    # The message on the argument interface itself is NOT INVALIDATED.
 
-    # This method invalidates all messages that depend on the message on outbound_interface, EXCLUDING the message on outbound_interface itself.
-    if typeof(outbound_interface.partner)==Interface
-        connected_node = outbound_interface.partner.node
-        for interface_id = 1:length(connected_node.interfaces)
-            if is(outbound_interface.partner, connected_node.interfaces[interface_id]) continue end # skip the inbound interface
-            was_valid = connected_node.interfaces[interface_id].message_valid
-            connected_node.interfaces[interface_id].message_valid = false
-            # was_valid ensured that recursion stops when an already invalid message is encountered.
-            if was_valid && typeof(connected_node.interfaces[interface_id].message)!=Nothing # Recurse into the children only when the message was valid and present.
-                # This performs a DFS through the graph, invalidating all messages that depend on connected_node.interfaces[interface_id].message
-                pushMessageInvalidations!(connected_node.interfaces[interface_id])
-            end
+    # If called with an outbound interface, translate call to inbound interface
+    if interface_is_inbound==false
+        pushMessageInvalidations!(interface.partner, true)
+    end
+
+    # Stopping condition for recursion
+    if interface==nothing
+        return
+    end
+
+    # Push invalidations through the other interfaces of the node.
+    node = interface.node
+    for interface_id = 1:length(node.interfaces)
+        if is(interface, node.interfaces[interface_id]) continue end # skip the inbound interface        
+        # This check ensures that recursion stops when an already invalid message is encountered.
+        if node.interfaces[interface_id].message_valid
+            node.interfaces[interface_id].message_valid = false
+            # Recurse into the dependencies only when the message was valid and present.
+            # This performs a DFS through the graph, invalidating all messages that depend on connected_node.interfaces[interface_id].message
+            pushMessageInvalidations!(node.interfaces[interface_id].partner, true)
         end
     end
+
+    # Push invalidations through the internals of the connected node (if applicable)
+    if interface.child!=nothing
+        pushMessageInvalidations!(interface.child, true)
+    end
 end
+
 function pushMessageInvalidations!(node::Node)
     # Invalidates all outbound messages of node AND all messages that depend on the node's outbound messages. 
     for interface in node.interfaces
