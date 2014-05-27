@@ -268,12 +268,15 @@ function clearMessages!(edge::Edge)
 end
 
 function pushMessageInvalidations!(interface::Union(Interface, Nothing), interface_is_inbound::Bool=false)
-    # Invalidate all dependencies of a message.
+    # Invalidate all dependencies of a message. We call two messages dependent when one message (parent message) is used for the calculation of the other (child message).
+    # Dependence implies that alteration of the parent message invalidates the child message. 
+
     # IF interface_is_inbound==false: Invalidate everything that depends on the SENT (outbound) message message on interface.
     # IF interface_is_inbound==true:  Invalidate everything that depends on the RECEIVED (inbound) message message on interface.
-    # We call two messages dependent when one message (parent message) is used for the calculation of the other (child message).
-    # Dependence implies that alteration of the parent message invalidates the child message. 
     # The message on the argument interface itself is NOT INVALIDATED.
+
+    # A call to this function with only an interface as argument expects the interface to be outbound. This is the behaviour the user sees.
+    # Internally, consecutive recursive calls to this function are on inbound interfaces from then on, indicated by interface_is_inbound=true.
 
     # If called with an outbound interface, translate call to inbound interface
     if interface_is_inbound==false
