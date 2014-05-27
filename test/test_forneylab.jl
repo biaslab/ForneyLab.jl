@@ -20,6 +20,12 @@ facts("General node properties") do
         end
     end
 
+    context("Composite nodes should have property use_composite_update_rules") do
+        for NodeType in [subtypes(CompositeNode)]
+            @fact NodeType().use_composite_update_rules => true || false
+        end
+    end
+
     context("Node constructor should assign a name") do
         for NodeType in [subtypes(Node), subtypes(CompositeNode)]
             if NodeType != CompositeNode
@@ -414,6 +420,11 @@ facts("Graphs with loops") do
         # msg = updateNodeMessage!(1, loopy_node, Array(GaussianMessage, 1))
         # print(msg)
     end
+end
+
+try
+    # Try to load user-defined extensions tests
+    include("$(Main.FORNEYLAB_EXTENSION_DIR)/test/test_forneylab.jl")
 end
 
 end # module TestForneyLab

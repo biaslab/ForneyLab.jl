@@ -135,6 +135,7 @@ include("nodes/fixed_gain.jl")
 # Composite nodes
 include("nodes/composite/gain_addition.jl")
 include("nodes/composite/gain_equality.jl")
+include("nodes/composite/general.jl")
 
 #############################
 # Generic methods
@@ -310,6 +311,11 @@ function pushMessageInvalidations!(node::Node)
         interface.message_valid = false
         pushMessageInvalidations!(interface)
     end
+end
+
+try
+    # Try to load user-defined extensions
+    include("$(Main.FORNEYLAB_EXTENSION_DIR)/src/ForneyLab.jl")
 end
 
 end # module ForneyLab
