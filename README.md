@@ -25,10 +25,10 @@ Once imported, one can create nodes and edges to build a factor graph, or create
 Extending ForneyLab.jl with custom node types / message types / ...
 ===================================================================
 It is easy to extend ForneyLab with for example custom node types and message types.
-Extensions live in a seperate directory, and are implemented in the following way:
+Extensions live in a separate directory, and are implemented in the following way:
 
-1. Create a directory to hold your extensions. This directory can be anywhere, and can be a seperate git repo.
-2. The extension directory should at least contain the directory `src` and the file `src/ForneyLab.jl`. Ideally, one would use the same directory tree as the ForneyLab package itself. So, a custom node would be implemented in a seperate file `[extension-dir]/src/nodes/my_node.jl` and this file should be included in `[extension-dir]/src/ForneyLab.jl` by adding `include("nodes/my_node.jl")` to that file. It is recommended to also add a main test file `[extension-dir]/test/test_forneylab.jl` for your extensions. This way, your extensions will be tested together with ForneyLab itself.
+1. Create a directory to hold your extensions. This directory can be anywhere, and can be a separate git repo.
+2. The extension directory should at least contain the directory `src` and the file `src/ForneyLab.jl`. Ideally, one would use the same directory tree as the ForneyLab package itself. So, a custom node would be implemented in a separate file `[extension-dir]/src/nodes/my_node.jl` and this file should be included in `[extension-dir]/src/ForneyLab.jl` by adding `include("nodes/my_node.jl")` to that file. It is recommended to also add a main test file `[extension-dir]/test/test_forneylab.jl` for your extensions. This way, your extensions will be tested together with ForneyLab itself.
 3. To use your extensions, define `FORNEYLAB_EXTENSION_DIR` in your top-level script before including ForneyLab itself:
 
 ```jl
