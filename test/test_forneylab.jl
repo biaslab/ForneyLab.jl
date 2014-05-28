@@ -424,7 +424,7 @@ end
 
 try
     # Try to load user-defined extensions tests
-    include("$(Main.FORNEYLAB_EXTENSION_DIR)/test/test_forneylab.jl")
+    include("$(Main.FORNEYLAB_EXTENSION_DIR)/test/test_forneylab_extensions.jl")
 end
 
 end # module TestForneyLab

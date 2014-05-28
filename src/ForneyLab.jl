@@ -318,7 +318,7 @@ end
 
 try
     # Try to load user-defined extensions
-    include("$(Main.FORNEYLAB_EXTENSION_DIR)/src/ForneyLab.jl")
+    include("$(Main.FORNEYLAB_EXTENSION_DIR)/src/forneylab_extensions.jl")
 end
 
 end # module ForneyLab
