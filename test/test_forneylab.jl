@@ -20,6 +20,12 @@ facts("General node properties") do
         end
     end
 
+    context("Composite nodes should have property use_composite_update_rules") do
+        for NodeType in [subtypes(CompositeNode)]
+            @fact NodeType().use_composite_update_rules => true || false
+        end
+    end
+
     context("Node constructor should assign a name") do
         for NodeType in [subtypes(Node), subtypes(CompositeNode)]
             if NodeType != CompositeNode
@@ -170,11 +176,6 @@ facts("Message passing over interfaces") do
     context("calculateMessage!() should throw an error if one or more interfaces have no partner") do
         node = FixedGainNode()
         @fact_throws calculateMessage!(node.out)
-    end
-
-    context("calculateMarginal(edge) should check for legal forward/backward messages") do
-        @fact_throws calculateMarginal(Edge())
-        @fact_throws calculateMarginal(Edge(ConstantNode(), ConstantNode()))
     end
 
     context("calculateMarginal(forward_msg, backward_msg) should check equality of message types") do
@@ -345,75 +346,11 @@ facts("Graphs with loops") do
         end
         @fact isApproxEqual(driver.out.message.m, [0.0]) => true
     end
+end
 
-    context("Composite nodes with loops should look after themselves") do
-        # Set up a loopy graph
-        # |-------------|
-        # |  (driver)   |
-        # | -->[A]---   |
-        # | |       |   |
-        # | |      [+]<-|-[N]
-        # | |       |   |
-        # | ---[B]<--   |
-        # | (inhibitor) |
-        # |-------------|
-
-        # type LoopyCompositeNode <: CompositeNode
-        #     use_composite_update_rules::Bool # Flag for using provided update rules, in our case defaults to false
-        #     name::ASCIIString
-        #     interfaces::Array{Interface,1}
-        #     # Pointers to internal nodes
-        #     driver_node::FixedGainNode
-        #     add_node::AdditionNode
-        #     inhibitor_node::FixedGainNode
-        #     # Helper fields filled by constructor
-        #     out::Interface
-
-        #     function LoopyCompositeNode(A::Array=[1.0], B::Array=[1.0], use_composite_update_rules::Bool=false; args...)
-        #         # Optionally pass a name
-        #         (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
-                
-        #         if use_composite_update_rules # Check use_composite_update_rules flag
-        #             # We do not define custom update rules in this demo
-        #             error("You can not set use_composite_update_rules to true, because no update rules are defined on node LoopyCompositeNode with name $(name).")
-        #         else # Build the internal graph
-        #             self = new(false, name, Array(Interface, 1))
-        #             self.driver_node = FixedGainNode(A, name="driver")
-        #             self.inhibitor_node = FixedGainNode(B, name="inhibitor")
-        #             self.add_node = AdditionNode(name="adder")
-        #             Edge(self.add_node.out, self.inhibitor_node.in1)
-        #             Edge(self.inhibitor_node.out, self.driver_node.in1)
-        #             Edge(self.driver_node.out, self.add_node.in1)
-        #             self.interfaces[1] = self.add_node.in2
-        #         end
-        #         # Initialize named interface handles
-        #         self.out = self.interfaces[1]
-        #         return self
-        #     end
-        # end
-
-        # function updateNodeMessage!(outbound_interface_id::Int,
-        #                             node::LoopyCompositeNode,
-        #                             inbound_messages::Array{GaussianMessage, 1})
-        #     if outbound_interface_id == 1
-        #         setMessage!(node.driver_node.out, GaussianMessage(m=[0.0], V=[1.0]))
-        #         for count = 1:100
-        #             calculateMessage!(node.driver_node.out)
-        #         end
-        #         setMessage!(node.inhibitor_node.in1, GaussianMessage(m=[0.0], V=[1.0]))
-        #         for count = 1:100
-        #             calculateMessage!(node.inhibitor_node.in1)
-        #         end
-        #         return calculateMessage!(node.out)
-        #     end
-        # end
-            
-        # c_node = ConstantNode(GaussianMessage(m=[1.0], V=[0.1]))
-        # loopy_node = LoopyCompositeNode()
-        # Edge(c_node.out, loopy_node.out)
-        # msg = updateNodeMessage!(1, loopy_node, Array(GaussianMessage, 1))
-        # print(msg)
-    end
+try
+    # Try to load user-defined extensions tests
+    include("$(Main.FORNEYLAB_EXTENSION_DIR)/test/test_forneylab_extensions.jl")
 end
 
 end # module TestForneyLab
