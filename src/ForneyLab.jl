@@ -3,7 +3,8 @@ module ForneyLab
 export  Message, Node, CompositeNode, Interface, Edge
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, 
         calculateMarginal,
-        getMessage, getForwardMessage, getBackwardMessage, setMessage!, setForwardMessage!, setBackwardMessage!, clearMessages!
+        getMessage, getForwardMessage, getBackwardMessage, setMessage!, setMessageValid!, setForwardMessage!, setBackwardMessage!, clearMessages!,
+        generateSchedule, executeSchedule
 
 # Verbosity
 verbose = false
@@ -55,6 +56,13 @@ function setMessage!(interface::Interface, message::Message)
 end
 getMessage(interface::Interface) = interface.message
 setMessageValid!(interface::Interface) = interface.message_valid = (interface.message!=nothing)
+function show(io::IO, schedule::Array{Interface, 1})
+    # Show schedules in a specific way
+    println(io, "Message passing schedule:")
+    for interface in schedule
+        println(io, " $(typeof(interface.node)) $(interface.node.name)")
+    end
+end
 
 type Edge
     # An Edge joins two interfaces and has a direction (from tail to head).
@@ -142,92 +150,87 @@ include("nodes/composite/general.jl")
 # Generic methods
 #############################
 
-function calculateMessage!(outbound_interface::Interface, node::Node, call_list::Array{Interface, 1}=Array(Interface, 0))
-    # Calculate the outbound message on a specific interface of a specified node.
-    # The message is stored in the specified interface.
+function calculateMessage!(outbound_interface::Interface, auto_scheduling::Bool=true, perform_invalidations::Bool=true)
+    # Calculate the outbound message on a specific interface.
+    # auto_scheduling indicates whether an automatic schedule should be generated to calculate the message.
+    # If ForneyLab is false, there will be no recursion through the graph and the inbound messages of the nodes
+    # are used whether they are valid or not.
+    # perform_invalidations indicates whether all messages in the graph that depend on the newly calculated message
+    # should be invalidated or not. Disabling this will increase performance but will mess up the auto schedule generation
+    # unless the validity flags are manually updated by the user.
+    # The resulting message is stored in the specified interface.
 
-    # Sanity check
-    if !is(outbound_interface.node, node)
-        error("Specified interface does not belong to the specified node (", typeof(node), " ", node.name,")")
-    end
+    if auto_scheduling
+        # Generate a message passing schedule and execute it
+        printVerbose("Auto-generating message passing schedule...")
+        schedule = generateSchedule(outbound_interface)
+        if verbose show(schedule) end
+        printVerbose("Executing above schedule...")
+        executeSchedule(schedule, perform_invalidations)
+        printVerbose("calculateMessage!() done.")
+        return outbound_interface.message
+    else
+        # Calculate the outbound message based on the inbound messages and the node update function
+        node = outbound_interface.node
 
-    # Apply stopping condition for recursion. When the same interface is called twice, this is indicative of an unbroken loop.
-    if outbound_interface in call_list
-        # Notify the user to break the loop with an initial message
-        error("Loop detected around $(outbound_interface) Consider setting an initial message at this interface.")
-    else # Stopping condition not reached
-        push!(call_list, outbound_interface) # Increment list
-    end
-
-    # Calculate all inbound messages
-    inbound_message_types = Union() # Union of all inbound message types
-    outbound_interface_id = 0
-    for node_interface_id = 1:length(node.interfaces)
-        node_interface = node.interfaces[node_interface_id]
-        if is(node_interface, outbound_interface)
-            outbound_interface_id = node_interface_id
-            continue
-        end
-        if node_interface.partner == nothing
-            error("Cannot receive messages on disconnected interface ", node_interface_id, " of ", typeof(node), " ", node.name)
-        end
-        if !(node_interface.partner.message_valid) # When the required inbound message is invalid, calculate it anew
-            # Calculate required inbound message by recursive call
-            printVerbose("Calling calculateMessage! on node $(typeof(node_interface.partner.node)) $(node_interface.partner.node.name)")
-            calculateMessage!(node_interface.partner, call_list)
-            if !(node_interface.partner.message_valid)
-                error("Could not calculate required inbound message on interface ", node_interface_id, " of ", typeof(node), " ", node.name)
-            end
-        end
-        inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
-    end
-
-    # Collect all inbound messages
-    inbound_messages = Array(inbound_message_types, length(node.interfaces))
-    if (inbound_message_types!=None)
+        # Determine types of inbound messages
+        inbound_message_types = Union() # Union of all inbound message types
+        outbound_interface_id = 0
         for node_interface_id = 1:length(node.interfaces)
-            if node_interface_id!=outbound_interface_id
-                inbound_messages[node_interface_id] = node.interfaces[node_interface_id].partner.message
+            node_interface = node.interfaces[node_interface_id]
+            if is(node_interface, outbound_interface)
+                outbound_interface_id = node_interface_id
+                continue
+            end
+            @assert(node_interface.partner!=nothing, "Cannot receive messages on disconnected interface $node_interface_id of $(typeof(node)) $(node.name)")
+            @assert(node_interface.partner.message!=nothing, "There is no inbound message present on interface $node_interface_id of $(typeof(node)) $(node.name)")
+            inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
+        end
+
+        # Collect all inbound messages in an array
+        inbound_messages = Array(inbound_message_types, length(node.interfaces))
+        if (inbound_message_types!=None)
+            for node_interface_id = 1:length(node.interfaces)
+                if node_interface_id!=outbound_interface_id
+                    inbound_messages[node_interface_id] = node.interfaces[node_interface_id].partner.message
+                end
             end
         end
-    end
 
-    # Calculate the actual message
-    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
-    msg = updateNodeMessage!(outbound_interface_id, node, inbound_messages)
-    printVerbose(" >> $(msg)")
-    pop!(call_list) # Shrink the call list
+        # Evaluate node update function
+        printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
+        msg = updateNodeMessage!(outbound_interface_id, node, inbound_messages)
+        printVerbose(" >> $(msg)")
 
-    # Validate the outbound message
-    outbound_interface.message_valid = (typeof(outbound_interface.message)<:Message)
+        # Validate the outbound message
+        outbound_interface.message_valid = (typeof(outbound_interface.message)<:Message)
 
-    # When the backtrace of the recursion is finished, invalidate all messages that depend on the newly calculated message.
-    # Because the message has changed, all dependent messages are no longer valid.
-    if length(call_list) == 0 # Top level reached
-        pushMessageInvalidations!(outbound_interface)
-        # Check if the calculated message depends on itself. In that case, we have a loop in the graph.
-        if outbound_interface.message_valid == false
-            # Loop detected, renew message
-            outbound_interface.message_valid = true
-            return msg
-        else
-            # No loop
-            return msg
-        end
+        # Invalidate everything that depends on the outbound message
+        if perform_invalidations pushMessageInvalidations!(outbound_interface) end
+        
+        return msg
     end
 end
-calculateMessage!(outbound_interface::Interface, call_list::Array{Interface, 1}=Array(Interface, 0)) = calculateMessage!(outbound_interface, outbound_interface.node, call_list)
 
 function calculateMessages!(node::Node)
     # Calculate the outbound messages on all interfaces of node.
     for interface in node.interfaces
-        calculateMessage!(interface, node)
+        calculateMessage!(interface)
     end
 end
 
 # Calculate forward/backward messages on an Edge
 calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
 calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
+
+function executeSchedule(schedule::Array{Interface, 1}, perform_invalidations::Bool=true)
+    # Execute a message passing schedule
+    for interface in schedule
+        calculateMessage!(interface, false, perform_invalidations)
+    end
+    # Return the last message in the schedule
+    return schedule[end].message
+end
 
 function calculateMarginal(forward_msg::Message, backward_msg::Message)
     # Calculate the marginal from a forward/backward message pair.
@@ -266,11 +269,59 @@ function clearMessages!(node::Node)
 end
 
 function clearMessages!(edge::Edge)
-   # Clear all messages on an edge.
-   edge.head.message = nothing
-   edge.head.message_valid = false
-   edge.tail.message = nothing
-   edge.tail.message_valid = false
+    # Clear all messages on an edge.
+    edge.head.message = nothing
+    edge.head.message_valid = false
+    edge.tail.message = nothing
+    edge.tail.message_valid = false
+end
+
+function generateSchedule(outbound_interface::Interface)
+    # Generate a schedule that can be executed to calculate the outbound message on outbound_interface.
+    # IMPORTANT: the resulting schedule depends on the current (valid) messages stored in the factor graph.
+    # The same graph with different messages being (in)valid can and probably will result in a different schedule.
+    # When a lot of iterations of the same message passing schedule are required, it can be very beneficial
+    # to generate the schedule just once using this function, and then execute the same schedule over and over.
+    # This prevents recursions through the graph in every call to calculateMessage!().
+    schedule = generateScheduleByDFS(outbound_interface)
+end
+
+function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{Interface, 1}=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0))
+    # This is a private function that performs a search through the factor graph to generate a schedule.
+    # IMPORTANT: the resulting schedule depends on the current (valid) messages stored in the factor graph.
+    # This is a recursive implementation of DFS. The recursive calls are stored in call_list. 
+    # backtrace will hold the backgrace of the recursion.
+    node = outbound_interface.node
+
+    # Apply stopping condition for recursion. When the same interface is called twice, this is indicative of an unbroken loop.
+    if outbound_interface in call_list
+        # Notify the user to break the loop with an initial message
+        error("Loop detected around $(outbound_interface) Consider setting an initial message at this interface.")
+    else # Stopping condition not reached
+        push!(call_list, outbound_interface) # Increment list
+    end
+
+    # Check all inbound messages on the other interfaces of the node
+    outbound_interface_id = 0
+    for node_interface_id = 1:length(node.interfaces)
+        node_interface = node.interfaces[node_interface_id]
+        if is(node_interface, outbound_interface)
+            outbound_interface_id = node_interface_id
+            continue
+        end
+        if node_interface.partner == nothing
+            error("Cannot receive messages on disconnected interface ", node_interface_id, " of ", typeof(node), " ", node.name)
+        end
+        if !(node_interface.partner.message_valid) # When the required inbound message is invalid, calculate it anew
+            # Recursive call
+            printVerbose("Recursive call of generateSchedule! on node $(typeof(node_interface.partner.node)) $(node_interface.partner.node.name)")
+            generateScheduleByDFS(node_interface.partner, backtrace, call_list)
+        end
+    end
+
+    # Update call_list and backtrace
+    pop!(call_list)
+    push!(backtrace, outbound_interface)
 end
 
 function pushMessageInvalidations!(interface::Union(Interface, Nothing), interface_is_inbound::Bool=false)
