@@ -11,34 +11,48 @@ include("test_helpers.jl")
 
 facts("General node properties") do
     context("Node properties should include interfaces and name") do
-        for NodeType in subtypes(Node)
-            @fact typeof(NodeType().interfaces) => Array{Interface, 1} # Check for interface array
-            @fact length(NodeType().interfaces) >= 1 => true # Check length of interface array
-            @fact typeof(NodeType().name) => ASCIIString
+        for NodeType in [subtypes(Node), subtypes(CompositeNode)]
+            if NodeType != CompositeNode
+                @fact typeof(NodeType().interfaces) => Array{Interface, 1} # Check for interface array
+                @fact length(NodeType().interfaces) >= 1 => true # Check length of interface array
+                @fact typeof(NodeType().name) => ASCIIString
+            end
+        end
+    end
+
+    context("Composite nodes should have property use_composite_update_rules") do
+        for NodeType in [subtypes(CompositeNode)]
+            @fact NodeType().use_composite_update_rules => true || false
         end
     end
 
     context("Node constructor should assign a name") do
-        for NodeType in subtypes(Node)
-            my_node = NodeType(;name="my_name")
-            @fact my_node.name => "my_name"
+        for NodeType in [subtypes(Node), subtypes(CompositeNode)]
+            if NodeType != CompositeNode
+                my_node = NodeType(;name="my_name")
+                @fact my_node.name => "my_name"
+            end
         end
     end
 
     context("Nodes should couple interfaces to themselves") do
-        for NodeType in subtypes(Node)
-            my_node = NodeType()
-            for interface_id in 1:length(my_node.interfaces)
-                # Check if the node interfaces couple back to the same node
-                @fact my_node.interfaces[interface_id].node => my_node
+        for NodeType in [subtypes(Node), subtypes(CompositeNode)]
+            if NodeType != CompositeNode
+                my_node = NodeType()
+                for interface_id in 1:length(my_node.interfaces)
+                    # Check if the node interfaces couple back to the same node
+                    @fact my_node.interfaces[interface_id].node => my_node
+                end
             end
         end
     end
 
     context("Every node type should have at least 1 updateNodeMessage!() method") do
-        for NodeType in subtypes(Node)
-            # Check if method description contains node type
-            @fact contains(string(methods(ForneyLab.updateNodeMessage!)), string("::", NodeType)) => true
+        for NodeType in [subtypes(Node), subtypes(CompositeNode)]
+            if NodeType != CompositeNode
+                # Check if method description contains node type
+                @fact contains(string(methods(ForneyLab.updateNodeMessage!)), string("::", NodeType)) => true
+            end
         end
     end
 end
@@ -164,11 +178,6 @@ facts("Message passing over interfaces") do
         @fact_throws calculateMessage!(node.out)
     end
 
-    context("calculateMarginal(edge) should check for legal forward/backward messages") do
-        @fact_throws calculateMarginal(Edge())
-        @fact_throws calculateMarginal(Edge(ConstantNode(), ConstantNode()))
-    end
-
     context("calculateMarginal(forward_msg, backward_msg) should check equality of message types") do
         @fact_throws calculateMarginal(GaussianMessage(), GeneralMessage())
     end
@@ -288,19 +297,19 @@ facts("Message passing over interfaces") do
 end
 
 facts("Graphs with loops") do
+    # Set up a loopy graph
+    #    (driver)
+    #   -->[A]---
+    #   |       |
+    #   |      [+]<-[N]
+    #   |       |
+    #   ---[B]<--
+    #  (inhibitor)
+
     context("calculateMessage!() should throw an error when there is an unbroken loop") do
-        # Set up a loopy graph
-        #    (driver)
-        #   -->[A]---
-        #   |       |
-        #   |      [+]<-[N]
-        #   |       |
-        #   ---[B]<--
-        #  (inhibitor)
-    
-        driver = FixedGainNode([1.1], name="driver")
-        inhibitor = FixedGainNode([0.8], name="inhibitor")
-        noise = ConstantNode(GaussianMessage(m=[0.0], V=[0.1]), name="noise")
+        driver = FixedGainNode([2.0], name="driver")
+        inhibitor = FixedGainNode([0.5], name="inhibitor")
+        noise = ConstantNode(GaussianMessage(m=[1.0], V=[0.1]), name="noise")
         add = AdditionNode(name="adder")
         Edge(add.out, inhibitor.in1)
         Edge(inhibitor.out, driver.in1)
@@ -308,14 +317,40 @@ facts("Graphs with loops") do
         Edge(noise.out, add.in2)
         @fact_throws calculateMessage!(driver.out)
         # Now set a breaker message and check that it works
-        driver.out.message = GaussianMessage()
-        driver.out.message_valid = true
-        msg = calculateMessage!(driver.out)
-        @fact typeof(msg) => GaussianMessage
+        setMessage!(driver.out, GaussianMessage())
+        for count = 1:100
+            calculateMessage!(driver.out)
+        end
+        @fact typeof(driver.out.message) => GaussianMessage
+        @fact driver.out.message.m => [100.0] # For stop conditions at 100 cycles deep
+    end
+
+    context("calculateMessage!() should handle convergence") do
+        driver = FixedGainNode([1.1], name="driver")
+        inhibitor = FixedGainNode([0.1], name="inhibitor")
+        noise = ConstantNode(GaussianMessage(m=[0.0], V=[0.1]), name="noise")
+        add = AdditionNode(name="adder")
+        Edge(add.out, inhibitor.in1)
+        Edge(inhibitor.out, driver.in1)
+        Edge(driver.out, add.in1)
+        Edge(noise.out, add.in2)
+        # Now set a breaker message and check that it works
+        breaker_message = GaussianMessage(m=[10.0], V=[100.0])
+        setMessage!(driver.out, breaker_message)
+        prev_msg = breaker_message
+        converged = false
+        while !converged
+            msg = calculateMessage!(driver.out)
+            converged = isApproxEqual(prev_msg.m, msg.m)
+            prev_msg = msg
+        end
+        @fact isApproxEqual(driver.out.message.m, [0.0]) => true
     end
 end
 
-facts("Passing schedules") do
+try
+    # Try to load user-defined extensions tests
+    include("$(Main.FORNEYLAB_EXTENSION_DIR)/test/test_forneylab_extensions.jl")
 end
 
 end # module TestForneyLab

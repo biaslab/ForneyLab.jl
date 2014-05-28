@@ -33,7 +33,7 @@ type ConstantNode <: Node
     name::ASCIIString
     out::Interface
 
-    function ConstantNode(value::Message; args...)
+    function ConstantNode(value::Message=GeneralMessage(1.0); args...)
         (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
         self = new(value, Array(Interface, 1), name)
         # Create interface
@@ -43,7 +43,7 @@ type ConstantNode <: Node
         return self
     end
 end
-ConstantNode(; args...) = ConstantNode(GeneralMessage(1.0); args...)
+
 # Functions to provide access to ConstantNode._value
 getValue(node::ConstantNode) = node._value
 function setValue!(node::ConstantNode, value::Message)

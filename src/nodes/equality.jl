@@ -34,7 +34,7 @@ type EqualityNode <: Node
     interfaces::Array{Interface,1}
     name::ASCIIString
 
-    function EqualityNode(num_interfaces::Integer; args...)
+    function EqualityNode(num_interfaces::Integer=3; args...)
         (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
         @assert(num_interfaces>2, "An EqualityNode should have at least 3 interfaces")
         self = new(num_interfaces, Array(Interface, num_interfaces), name)
@@ -45,7 +45,6 @@ type EqualityNode <: Node
         return self
     end
 end
-EqualityNode(; args...) = EqualityNode(3; args...)
 
 ############################################
 # GaussianMessage methods
