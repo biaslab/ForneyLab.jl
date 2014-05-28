@@ -54,6 +54,7 @@ function setMessage!(interface::Interface, message::Message)
     pushMessageInvalidations!(interface)
 end
 getMessage(interface::Interface) = interface.message
+setMessageValid!(interface::Interface) = interface.message_valid = (interface.message!=nothing)
 
 type Edge
     # An Edge joins two interfaces and has a direction (from tail to head).
@@ -247,8 +248,12 @@ function calculateMarginal(edge::Edge)
     # This method assumes that the tail and head interfaces hold (valid or invalid) messages.
     @assert(typeof(edge.tail)==Interface, "Edge should be bound to a tail interface.")
     @assert(typeof(edge.head)==Interface, "Edge should be bound to a head interface.")
-    @assert(typeof(edge.tail.message)<:Message, "Tail interface does not hold a message. First call calculateForwardMessage!(edge) or calculate the forward message in another way.")
-    @assert(typeof(edge.head.message)<:Message, "Head interface does not hold a message. First call calculateBackwardMessage!(edge) or calculate the forward message in another way.")
+    if edge.tail.message==nothing
+        calculateMessage!(edge.tail)
+    end
+    if edge.head.message==nothing
+        calculateMessage!(edge.head)
+    end
     return calculateMarginal(edge.tail.message, edge.head.message)
 end
 
@@ -272,8 +277,8 @@ function pushMessageInvalidations!(interface::Union(Interface, Nothing), interfa
     # Invalidate all dependencies of a message. We call two messages dependent when one message (parent message) is used for the calculation of the other (child message).
     # Dependence implies that alteration of the parent message invalidates the child message. 
 
-    # IF interface_is_inbound==false: Invalidate everything that depends on the SENT (outbound) message message on interface.
-    # IF interface_is_inbound==true:  Invalidate everything that depends on the RECEIVED (inbound) message message on interface.
+    # If interface_is_inbound==false: Invalidate everything that depends on the SENT (outbound) message message on interface.
+    # If interface_is_inbound==true:  Invalidate everything that depends on the RECEIVED (inbound) message message on interface.
     # The message on the argument interface itself is NOT INVALIDATED.
 
     # A call to this function with only an interface as argument expects the interface to be outbound. This is the behaviour the user sees.
