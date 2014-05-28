@@ -38,3 +38,7 @@ FORNEYLAB_EXTENSION_DIR = "/home/marco/dev/my_extensions"
 using ForneyLab
 ```
 - When you run ForneyLab's tests, the tests in `FORNEYLAB_EXTENSION_DIR/test/test_forneylab_extensions.jl` will automatically be evaluated (if this file exists). Moreover, the general ForneyLab tests will also be evaluated on your custom extensions (i.e. node types).
+
+Troubleshooting
+---------------
+When you run into trouble installing IJulia and the package manager begins to complain about not being able to build LibCURL and Nettle, first take a look at [this gist](https://gist.github.com/ThijsvdLaar/8e8f48077e5373ab7b80).
