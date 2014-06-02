@@ -253,47 +253,6 @@ facts("Message passing over interfaces") do
         @fact add.in2.message_valid => false
         @fact equ.interfaces[1].message_valid => false
     end
-
-    context("pushMessageInvalidations!(Node) should stop when an already invalidated message is encountered") do
-        # Build testing graph
-        #
-        #          (c2)
-        #           |
-        #           v
-        # (c1)---->[+]---->[=]----->
-        #                   ^    y
-        #                   |
-        #                  (c3)
-        #
-        c1 = ConstantNode(GaussianMessage())
-        c2 = ConstantNode(GaussianMessage())
-        c3 = ConstantNode(GaussianMessage(m=[-2.], V=[3.]))
-        add = AdditionNode()
-        equ = EqualityNode()
-        # Edges from left to right
-        Edge(c1.out, add.in1)
-        Edge(c2.out, add.in2)
-        Edge(add.out, equ.interfaces[1])
-        Edge(c3.out, equ.interfaces[2])
-        Edge(c3.out, equ.interfaces[2])
-
-        fwd_msg_y = calculateMessage!(equ.interfaces[3])
-        # Invalidate a message halfway to check stopping criterium
-        add.out.message_valid = false
-        # Now push the invalidation of the outbound message of c2 through the graph
-        ForneyLab.pushMessageInvalidations!(c2)
-        # All messages that depend on c2 should be invalid
-        @fact c2.out.message_valid => false
-        @fact add.in1.message_valid => false
-        @fact add.out.message_valid => false
-        @fact equ.interfaces[2].message_valid => false # Is false because it was never calculated
-        @fact equ.interfaces[3].message_valid => true # Should not be invalidated
-        # Validity of other messages should not be changed
-        @fact c1.out.message_valid => true
-        @fact c3.out.message_valid => true
-        @fact add.in2.message_valid => false
-        @fact equ.interfaces[1].message_valid => false
-    end
 end
 
 facts("Schedule generation and execution") do
@@ -318,10 +277,10 @@ facts("Graphs with loops") do
     #  (inhibitor)
 
     context("calculateMessage!() should throw an error when there is an unbroken loop") do
-        driver = FixedGainNode([2.0], name="driver")
-        inhibitor = FixedGainNode([0.5], name="inhibitor")
-        noise = ConstantNode(GaussianMessage(m=[1.0], V=[0.1]), name="noise")
-        add = AdditionNode(name="adder")
+        driver      = FixedGainNode([2.0], name="driver")
+        inhibitor   = FixedGainNode([0.5], name="inhibitor")
+        noise       = ConstantNode(GaussianMessage(m=[1.0], V=[0.1]), name="noise")
+        add         = AdditionNode(name="adder")
         Edge(add.out, inhibitor.in1)
         Edge(inhibitor.out, driver.in1)
         Edge(driver.out, add.in1)
@@ -337,10 +296,10 @@ facts("Graphs with loops") do
     end
 
     context("calculateMessage!() should handle convergence") do
-        driver = FixedGainNode([1.1], name="driver")
-        inhibitor = FixedGainNode([0.1], name="inhibitor")
-        noise = ConstantNode(GaussianMessage(m=[0.0], V=[0.1]), name="noise")
-        add = AdditionNode(name="adder")
+        driver      = FixedGainNode([1.1], name="driver")
+        inhibitor   = FixedGainNode([0.1], name="inhibitor")
+        noise       = ConstantNode(GaussianMessage(m=[0.0], V=[0.1]), name="noise")
+        add         = AdditionNode(name="adder")
         Edge(add.out, inhibitor.in1)
         Edge(inhibitor.out, driver.in1)
         Edge(driver.out, add.in1)
