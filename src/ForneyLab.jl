@@ -150,66 +150,64 @@ include("nodes/composite/general.jl")
 # Generic methods
 #############################
 
-function calculateMessage!(outbound_interface::Interface, auto_scheduling::Bool=true, perform_invalidations::Bool=true)
-    # Calculate the outbound message on a specific interface.
-    # auto_scheduling indicates whether an automatic schedule should be generated to calculate the message.
-    # If ForneyLab is false, there will be no recursion through the graph and the inbound messages of the nodes
-    # are used whether they are valid or not.
-    # perform_invalidations indicates whether all messages in the graph that depend on the newly calculated message
-    # should be invalidated or not. Disabling this will increase performance but will mess up the auto schedule generation
-    # unless the validity flags are manually updated by the user.
-    # The resulting message is stored in the specified interface.
+function calculateMessage!(outbound_interface::Interface)
+    # Calculate the outbound message on a specific interface by generating a schedule and executing it.
+    # The resulting message is stored in the specified interface and returned.
 
-    if auto_scheduling
-        # Generate a message passing schedule and execute it
-        printVerbose("Auto-generating message passing schedule...")
-        schedule = generateSchedule(outbound_interface)
-        if verbose show(schedule) end
-        printVerbose("Executing above schedule...")
-        executeSchedule(schedule, perform_invalidations)
-        printVerbose("calculateMessage!() done.")
-        return outbound_interface.message
-    else
-        # Calculate the outbound message based on the inbound messages and the node update function
-        node = outbound_interface.node
+    # Generate a message passing schedule
+    printVerbose("Auto-generating message passing schedule...")
+    schedule = generateSchedule(outbound_interface)
+    if verbose show(schedule) end
 
-        # Determine types of inbound messages
-        inbound_message_types = Union() # Union of all inbound message types
-        outbound_interface_id = 0
-        for node_interface_id = 1:length(node.interfaces)
-            node_interface = node.interfaces[node_interface_id]
-            if is(node_interface, outbound_interface)
-                outbound_interface_id = node_interface_id
-                continue
-            end
-            @assert(node_interface.partner!=nothing, "Cannot receive messages on disconnected interface $node_interface_id of $(typeof(node)) $(node.name)")
-            @assert(node_interface.partner.message!=nothing, "There is no inbound message present on interface $node_interface_id of $(typeof(node)) $(node.name)")
-            inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
+    # Execute the schedule
+    printVerbose("Executing above schedule...")
+    executeSchedule(schedule)
+    printVerbose("calculateMessage!() done.")
+    return outbound_interface.message
+end
+
+function updateNodeMessage!(outbound_interface::Interface)
+    # Calculate the outbound message based on the inbound messages and the node update function.
+    # The resulting message is stored in the specified interface and returned.
+    
+    node = outbound_interface.node
+
+    # Determine types of inbound messages
+    inbound_message_types = Union() # Union of all inbound message types
+    outbound_interface_id = 0
+    for node_interface_id = 1:length(node.interfaces)
+        node_interface = node.interfaces[node_interface_id]
+        if is(node_interface, outbound_interface)
+            outbound_interface_id = node_interface_id
+            continue
         end
-
-        # Collect all inbound messages in an array
-        inbound_messages = Array(inbound_message_types, length(node.interfaces))
-        if (inbound_message_types!=None)
-            for node_interface_id = 1:length(node.interfaces)
-                if node_interface_id!=outbound_interface_id
-                    inbound_messages[node_interface_id] = node.interfaces[node_interface_id].partner.message
-                end
-            end
-        end
-
-        # Evaluate node update function
-        printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
-        msg = updateNodeMessage!(outbound_interface_id, node, inbound_messages)
-        printVerbose(" >> $(msg)")
-
-        # Validate the outbound message
-        outbound_interface.message_valid = (typeof(outbound_interface.message)<:Message)
-
-        # Invalidate everything that depends on the outbound message
-        if perform_invalidations pushMessageInvalidations!(outbound_interface) end
-        
-        return msg
+        @assert(node_interface.partner!=nothing, "Cannot receive messages on disconnected interface $node_interface_id of $(typeof(node)) $(node.name)")
+        @assert(node_interface.partner.message!=nothing, "There is no inbound message present on interface $node_interface_id of $(typeof(node)) $(node.name)")
+        inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
     end
+
+    # Collect all inbound messages in an array
+    inbound_messages = Array(inbound_message_types, length(node.interfaces))
+    if (inbound_message_types!=None)
+        for node_interface_id = 1:length(node.interfaces)
+            if node_interface_id!=outbound_interface_id
+                inbound_messages[node_interface_id] = node.interfaces[node_interface_id].partner.message
+            end
+        end
+    end
+
+    # Evaluate node update function
+    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
+    msg = updateNodeMessage!(outbound_interface_id, node, inbound_messages)
+    printVerbose(" >> $(msg)")
+
+    # Invalidate everything that depends on the outbound message
+    pushMessageInvalidations!(outbound_interface)
+
+    # Validate the outbound message
+    outbound_interface.message_valid = (typeof(outbound_interface.message)<:Message)
+
+    return msg
 end
 
 function calculateMessages!(node::Node)
@@ -223,10 +221,10 @@ end
 calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
 calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
-function executeSchedule(schedule::Array{Interface, 1}, perform_invalidations::Bool=true)
+function executeSchedule(schedule::Array{Interface, 1})
     # Execute a message passing schedule
     for interface in schedule
-        calculateMessage!(interface, false, perform_invalidations)
+        updateNodeMessage!(interface)
     end
     # Return the last message in the schedule
     return schedule[end].message
@@ -242,7 +240,7 @@ function calculateMarginal(forward_msg::Message, backward_msg::Message)
     inbound_messages = Array(typeof(forward_msg), 3)
     inbound_messages[1] = forward_msg
     inbound_messages[2] = backward_msg
-    marginal_msg = deepcopy(ForneyLab.updateNodeMessage!(3, eq_node, inbound_messages))
+    marginal_msg = deepcopy(updateNodeMessage!(3, eq_node, inbound_messages))
     return marginal_msg
 end
 
