@@ -150,7 +150,7 @@ include("nodes/composite/general.jl")
 # Generic methods
 #############################
 
-function calculateMessage!(outbound_interface::Interface)
+function calculateMessage!(outbound_interface::Interface, track_invalidations::Bool=true)
     # Calculate the outbound message on a specific interface by generating a schedule and executing it.
     # The resulting message is stored in the specified interface and returned.
 
@@ -161,12 +161,12 @@ function calculateMessage!(outbound_interface::Interface)
 
     # Execute the schedule
     printVerbose("Executing above schedule...")
-    executeSchedule(schedule)
+    executeSchedule(schedule, track_invalidations)
     printVerbose("calculateMessage!() done.")
     return outbound_interface.message
 end
 
-function updateNodeMessage!(outbound_interface::Interface)
+function updateNodeMessage!(outbound_interface::Interface, track_invalidations::Bool=true)
     # Calculate the outbound message based on the inbound messages and the node update function.
     # The resulting message is stored in the specified interface and returned.
     
@@ -202,7 +202,7 @@ function updateNodeMessage!(outbound_interface::Interface)
     printVerbose(" >> $(msg)")
 
     # Invalidate everything that depends on the outbound message
-    pushMessageInvalidations!(outbound_interface)
+    if track_invalidations pushMessageInvalidations!(outbound_interface) end
 
     # Validate the outbound message
     outbound_interface.message_valid = (typeof(outbound_interface.message)<:Message)
@@ -210,21 +210,21 @@ function updateNodeMessage!(outbound_interface::Interface)
     return msg
 end
 
-function calculateMessages!(node::Node)
+function calculateMessages!(node::Node, track_invalidations::Bool=true)
     # Calculate the outbound messages on all interfaces of node.
     for interface in node.interfaces
-        calculateMessage!(interface)
+        calculateMessage!(interface, track_invalidations)
     end
 end
 
 # Calculate forward/backward messages on an Edge
-calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
-calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
+calculateForwardMessage!(edge::Edge, track_invalidations::Bool=true) = calculateMessage!(edge.tail, track_invalidations)
+calculateBackwardMessage!(edge::Edge, track_invalidations::Bool=true) = calculateMessage!(edge.head, track_invalidations)
 
-function executeSchedule(schedule::Array{Interface, 1})
+function executeSchedule(schedule::Array{Interface, 1}, track_invalidations::Bool=true)
     # Execute a message passing schedule
     for interface in schedule
-        updateNodeMessage!(interface)
+        updateNodeMessage!(interface, track_invalidations)
     end
     # Return the last message in the schedule
     return schedule[end].message
@@ -244,16 +244,16 @@ function calculateMarginal(forward_msg::Message, backward_msg::Message)
     return marginal_msg
 end
 
-function calculateMarginal(edge::Edge)
+function calculateMarginal(edge::Edge, track_invalidations::Bool=true)
     # Calculate the marginal message on an edge
-    # This method assumes that the tail and head interfaces hold (valid or invalid) messages.
+    # If the required messages are not available, they will be calculated by calling calculateMessage!().
     @assert(typeof(edge.tail)==Interface, "Edge should be bound to a tail interface.")
     @assert(typeof(edge.head)==Interface, "Edge should be bound to a head interface.")
     if edge.tail.message==nothing
-        calculateMessage!(edge.tail)
+        calculateMessage!(edge.tail, track_invalidations)
     end
     if edge.head.message==nothing
-        calculateMessage!(edge.head)
+        calculateMessage!(edge.head, track_invalidations)
     end
     return calculateMarginal(edge.tail.message, edge.head.message)
 end
