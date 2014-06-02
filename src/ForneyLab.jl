@@ -286,6 +286,23 @@ function generateSchedule(outbound_interface::Interface)
     schedule = generateScheduleByDFS(outbound_interface)
 end
 
+function generateSchedule(partial_schedule::Array{Interface, 1})
+    # Generate a complete schedule based on partial_schedule.
+    # A partial schedule only defines the order of a subset of all required messages.
+    # This function will find a valid complete schedule that satisfies the partial schedule.
+    # IMPORTANT: the resulting schedule depends on the current (valid) messages stored in the factor graph.
+    # The same graph with different messages being (in)valid can and probably will result in a different schedule.
+    # When a lot of iterations of the same message passing schedule are required, it can be very beneficial
+    # to generate the schedule just once using this function, and then execute the same schedule over and over.
+    # This prevents recursions through the graph in every call to calculateMessage!().
+    schedule = Array(Interface, 0)
+    for interface_order_constraint in partial_schedule
+        schedule = generateScheduleByDFS(interface_order_constraint, schedule)
+    end
+
+    return schedule
+end
+
 function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{Interface, 1}=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0))
     # This is a private function that performs a search through the factor graph to generate a schedule.
     # IMPORTANT: the resulting schedule depends on the current (valid) messages stored in the factor graph.
@@ -313,9 +330,11 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{I
             error("Cannot receive messages on disconnected interface ", node_interface_id, " of ", typeof(node), " ", node.name)
         end
         if !(node_interface.partner.message_valid) # When the required inbound message is invalid, calculate it anew
-            # Recursive call
-            printVerbose("Recursive call of generateSchedule! on node $(typeof(node_interface.partner.node)) $(node_interface.partner.node.name)")
-            generateScheduleByDFS(node_interface.partner, backtrace, call_list)
+            if !(node_interface.partner in backtrace) # Don't recalculate stuff that's already in the schedule.
+                # Recursive call
+                printVerbose("Recursive call of generateSchedule! on node $(typeof(node_interface.partner.node)) $(node_interface.partner.node.name)")
+                generateScheduleByDFS(node_interface.partner, backtrace, call_list)
+            end
         end
     end
 
