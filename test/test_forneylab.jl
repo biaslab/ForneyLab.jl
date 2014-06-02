@@ -255,17 +255,6 @@ facts("Message passing over interfaces") do
     end
 end
 
-facts("Schedule generation and execution") do
-    context("generateSchedule() should generate a feasible schedule") do
-        # TODO: implement tests
-    end
-
-    context("executeSchedule() should correctly execute a schedule") do
-        # TODO: implement tests
-    end
-end
-
-
 facts("Graphs with loops") do
     # Set up a loopy graph
     #    (driver)
@@ -315,6 +304,65 @@ facts("Graphs with loops") do
             prev_msg = msg
         end
         @fact isApproxEqual(driver.out.message.m, [0.0]) => true
+    end
+end
+
+facts("Schedule generation and execution") do
+    # Set up a loopy graph
+    #    (driver)
+    #   -->[A]---
+    #   |       |
+    #   |      [+]<-[N]
+    #   |       |
+    #   ---[B]<--
+    #  (inhibitor)
+    driver      = FixedGainNode([2.0], name="driver")
+    inhibitor   = FixedGainNode([0.5], name="inhibitor")
+    noise       = ConstantNode(GaussianMessage(m=[1.0], V=[0.1]), name="noise")
+    add         = AdditionNode(name="adder")
+    Edge(add.out, inhibitor.in1)
+    Edge(inhibitor.out, driver.in1)
+    Edge(driver.out, add.in1)
+    Edge(noise.out, add.in2)
+    # Initial message
+    setMessage!(add.in1, GaussianMessage(m=[2.0], V=[0.5]))
+    setMessage!(add.out, GaussianMessage(), false) # Set track_invalidations to false to not invalidate the other initial msg
+
+    context("generateSchedule() should auto-generate a feasible schedule") do
+        # Generate schedule automatically
+        schedule = generateSchedule(add.in2) # Message towards noise factor
+        # All (but just) required calculations should be in the schedule
+        @fact inhibitor.out in schedule => true
+        @fact driver.out    in schedule => true
+        @fact inhibitor.in1 in schedule => true
+        @fact driver.in1    in schedule => true
+        @fact add.in2       in schedule => true
+        @fact add.in1       in schedule => false
+        @fact add.out       in schedule => false
+        @fact noise.out     in schedule => false
+        # Validate correct relative order in schedule
+        @fact findfirst(schedule, inhibitor.out)    < findfirst(schedule, driver.out)   => true
+        @fact findfirst(schedule, driver.out)       < findfirst(schedule, add.in2)      => true
+        @fact findfirst(schedule, driver.in1)       < findfirst(schedule, inhibitor.in1)=> true
+        @fact findfirst(schedule, inhibitor.in1)    < findfirst(schedule, add.in2)      => true
+    end
+
+    context("generateSchedule() should correctly complete a partial schedule") do
+        # Generate a schedule that first passes clockwise through the cycle and then counterclockwise
+        schedule = generateSchedule([driver.out, add.in2]) # Message towards noise factor
+        # All (but just) required calculations should be in the schedule
+        @fact schedule[1] => inhibitor.out
+        @fact schedule[2] => driver.out
+        @fact schedule[3] => driver.in1
+        @fact schedule[4] => inhibitor.in1
+        @fact schedule[5] => add.in2
+    end
+
+    context("executeSchedule() should correctly execute a schedule") do
+        schedule = generateSchedule(add.in2)
+        msg = ensureMVParametrization!(executeSchedule(schedule))
+        @fact isApproxEqual(msg.m, [2.0]) => true
+        @fact isApproxEqual(msg.V, reshape([1.5], 1, 1)) => true
     end
 end
 
