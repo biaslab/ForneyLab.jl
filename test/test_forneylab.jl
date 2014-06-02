@@ -296,6 +296,17 @@ facts("Message passing over interfaces") do
     end
 end
 
+facts("Schedule generation and execution") do
+    context("generateSchedule() should generate a feasible schedule") do
+        # TODO: implement tests
+    end
+
+    context("executeSchedule() should correctly execute a schedule") do
+        # TODO: implement tests
+    end
+end
+
+
 facts("Graphs with loops") do
     # Set up a loopy graph
     #    (driver)
