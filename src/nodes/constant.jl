@@ -53,8 +53,9 @@ end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::ConstantNode,
-                            inbound_messages_types::Type{None})
-    # Calculate an outbound message based on the inbound messages and the node function.
+                            inbound_messages_types::Type{None}=None)
+    # Calculate an outbound message. The constant node is the only node that does not accept incoming messages,
+    # therefore inbound_messages_types is only present for consistency. 
     # This function is not exported, and is only meant for internal use.
     
     # Just pass the unaltered message through

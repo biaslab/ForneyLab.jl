@@ -1,4 +1,8 @@
-facts("GaussianMessage") do
+#####################
+# Unit tests
+#####################
+
+facts("GaussianMessage unit tests") do
     context("GaussianMessage() should initialize a Gaussian message") do
         @fact GaussianMessage().V => ones(1, 1)
         @fact GaussianMessage().m => [0.0]
@@ -66,7 +70,7 @@ facts("GaussianMessage") do
     end
 end
 
-facts("GeneralMessage") do
+facts("GeneralMessage unit tests") do
     context("GeneralMessage() should initiatize a message value") do
         @fact GeneralMessage(1.0).value => 1.0
         @fact GeneralMessage([1.0, 2.0]).value => [1.0, 2.0]

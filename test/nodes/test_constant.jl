@@ -1,4 +1,8 @@
-facts("ConstantNode") do
+#####################
+# Unit tests
+#####################
+
+facts("ConstantNode unit tests") do
     context("ConstantNode() should initialize a ConstantNode with 1 interface") do
         node = ConstantNode()
         @fact typeof(node) => ConstantNode
@@ -9,7 +13,7 @@ facts("ConstantNode") do
     context("ConstantNode should propagate a GaussianMessage") do
         node = ConstantNode(GaussianMessage(m=[2.0], V=[4.0]))
         @fact node.interfaces[1].message => nothing
-        msg = ForneyLab.updateNodeMessage!(1, node, Array(None, 0))
+        msg = ForneyLab.updateNodeMessage!(1, node)
         @fact node.interfaces[1].message => msg
         @fact typeof(node.interfaces[1].message) => GaussianMessage
         @fact node.interfaces[1].message.m => [2.0]
@@ -19,7 +23,7 @@ facts("ConstantNode") do
     context("ConstantNode should propagate a GeneralMessage") do
         node = ConstantNode(GeneralMessage([1.0, 2.0]))
         @fact node.interfaces[1].message => nothing
-        msg = ForneyLab.updateNodeMessage!(1, node, Array(None, 0))
+        msg = ForneyLab.updateNodeMessage!(1, node)
         @fact node.interfaces[1].message => msg
         @fact typeof(node.interfaces[1].message) => GeneralMessage
         @fact node.interfaces[1].message.value => [1.0, 2.0]
@@ -40,30 +44,15 @@ facts("ConstantNode") do
         node = ConstantNode(GeneralMessage(42))
         @fact_throws(node.value)
     end
+end
 
+#####################
+# Integration tests
+#####################
+
+facts("ConstantNode integration tests") do
     context("pushMessageInvalidations!() should be called in the background by setValue!(node::ConstantNode, value::Message)") do
-        # Build testing graph
-        #
-        #          (c2)
-        #           |
-        #           v
-        # (c1)---->[+]---->[=]----->
-        #                   ^    y
-        #                   |
-        #                  (c3)
-        #
-        c1 = ConstantNode(GaussianMessage())
-        c2 = ConstantNode(GaussianMessage())
-        c3 = ConstantNode(GaussianMessage(m=[-2.], V=[3.]))
-        add = AdditionNode()
-        equ = EqualityNode()
-        # Edges from left to right
-        Edge(c1.out, add.in1)
-        Edge(c2.out, add.in2)
-        Edge(add.out, equ.interfaces[1])
-        Edge(c3.out, equ.interfaces[2])
-        Edge(c3.out, equ.interfaces[2])
-
+        (c1, c2, c3, add, equ) = initializeTreeGraph()
         fwd_msg_y = calculateMessage!(equ.interfaces[3])
         # Check message validity after message passing
         # All forward messages should be valid

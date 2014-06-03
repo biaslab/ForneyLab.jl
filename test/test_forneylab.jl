@@ -7,9 +7,14 @@ module TestForneyLab
 using FactCheck
 using ForneyLab
 
-include("test_helpers.jl")
+include("integration_helpers.jl") # Helper file for integration tests, contains backgrounds and validations
+include("test_helpers.jl") # Tests for ForneyLab helper methods
 
-facts("General node properties") do
+#####################
+# Unit tests
+#####################
+
+facts("General node properties unit tests") do
     context("Node properties should include interfaces and name") do
         for NodeType in [subtypes(Node), subtypes(CompositeNode)]
             if NodeType != CompositeNode
@@ -57,6 +62,44 @@ facts("General node properties") do
     end
 end
 
+facts("CalculateMessage!() unit tests") do
+    context("calculateMessage!() should throw an error if the specified interface does not belong to the specified node") do
+        (node1, node2) = initializePairOfNodes()
+        @fact_throws calculateMessage!(node1.out, node2)
+    end
+
+    context("calculateMessage!() should throw an error if one or more interfaces have no partner") do
+        node = FixedGainNode()
+        @fact_throws calculateMessage!(node.out)
+    end
+end
+
+facts("calculateMarginal unit tests") do
+    context("calculateMarginal(forward_msg, backward_msg) should check equality of message types") do
+        @fact_throws calculateMarginal(GaussianMessage(), GeneralMessage())
+    end
+
+    context("calculateMarginal(edge) should give correct result") do
+        edge = Edge(ConstantNode(GaussianMessage(m=[0.0], V=[1.0])),
+                    ConstantNode(GaussianMessage(m=[0.0], V=[1.0])))
+        calculateForwardMessage!(edge)
+        calculateBackwardMessage!(edge)
+        marginal_msg = calculateMarginal(edge)
+        ensureMVParametrization!(marginal_msg)
+        @fact marginal_msg.m => [0.0]
+        @fact isApproxEqual(marginal_msg.V, reshape([0.5], 1, 1)) => true
+    end
+
+    context("calculateMarginal(forward_msg, backward_msg) should give correct result") do
+        marginal_msg = calculateMarginal(
+                                GaussianMessage(m=[0.0], V=[1.0]),
+                                GaussianMessage(m=[0.0], V=[1.0]))
+        ensureMVParametrization!(marginal_msg)
+        @fact marginal_msg.m => [0.0]
+        @fact isApproxEqual(marginal_msg.V, reshape([0.5], 1, 1)) => true
+    end
+end
+
 # Node and message specific tests are in separate files
 include("test_messages.jl")
 include("nodes/test_addition.jl")
@@ -66,32 +109,11 @@ include("nodes/test_fixed_gain.jl")
 include("nodes/composite/test_gain_addition.jl")
 include("nodes/composite/test_gain_equality.jl")
 
-# Helper function for initializing a pair of nodes
-function initializePairOfNodes()
-    # Initialize some nodes
-    node1 = FixedGainNode()
-    node1.interfaces[1].message = GeneralMessage(2.0) # Values differ to distinguish messages
-    node1.interfaces[2].message = GeneralMessage(3.0)
-    node2 = ConstantNode()
-    node2.interfaces[1].message = GeneralMessage(1.0)
-    return node1, node2
-end
+#####################
+# Integration tests
+#####################
 
-# Helper function for node comparison
-function testInterfaceConnections(node1::FixedGainNode, node2::ConstantNode)
-    # Check that nodes are properly connected
-    @fact node1.interfaces[1].message.value => 2.0
-    @fact node2.interfaces[1].message.value => 1.0
-    @fact node1.interfaces[1].partner.message.value => 1.0
-    @fact node2.interfaces[1].partner.message.value => 2.0
-    # Check that pointers are initiatized correctly
-    @fact node1.out.message.value => 3.0
-    @fact node2.out.message.value => 1.0
-    @fact node1.in1.partner.message.value => 1.0
-    @fact node2.out.partner.message.value => 2.0
-end
-
-facts("Connections between nodes") do
+facts("Connections between nodes integration tests") do
     context("Nodes can directly be coupled through interfaces by using the interfaces array") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
@@ -130,19 +152,16 @@ facts("Connections between nodes") do
     end
 
     context("Edge should throw an error when two interfaces on the same node are connected") do
-        node = FixedGainNode()
-        node.interfaces[1].message = GaussianMessage()
-        node.interfaces[2].message = GaussianMessage()
+        node = initializeFixedGainNode()
         # Connect output directly to input
         @fact_throws Edge(node.interfaces[2], node.interfaces[1])
     end
 
 end
 
-facts("Message passing over interfaces") do
+facts("CalculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do
-        node1 = ConstantNode(GeneralMessage(3.0))
-        node2 = FixedGainNode([2.0])
+        (node2, node1) = initializePairOfNodes(A=[2.0], msg_const=GeneralMessage(3.0))
         Edge(node1.out, node2.in1)
         @fact node2.out.message => nothing
         # Request message on node for which the input is unknown
@@ -155,11 +174,7 @@ facts("Message passing over interfaces") do
 
     context("calculateMessage!() should recursively calculate required inbound message") do
         # Define three nodes in series
-        node1 = ConstantNode(GeneralMessage(3.0))
-        node2 = FixedGainNode([2.0])
-        node3 = FixedGainNode([2.0])
-        Edge(node1.out, node2.in1)
-        Edge(node2.out, node3.in1)
+        (node1, node2, node3) = initializeChainOfNodes()
         @fact node3.out.message => nothing
         # Request message on node for which the input is unknown
         calculateMessage!(node3.out)
@@ -168,64 +183,42 @@ facts("Message passing over interfaces") do
         @fact node3.out.message_valid => true # fresh messages should be valid
     end
 
-    context("calculateMessage!() should throw an error if the specified interface does not belong to the specified node") do
-        (node1, node2) = initializePairOfNodes()
-        @fact_throws calculateMessage!(node1.out, node2)
+
+    context("calculateMessage!() should throw an error when there is an unbroken loop") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
+        @fact_throws calculateMessage!(driver.out)
+        # Now set a breaker message and check that it works
+        setMessage!(driver.out, GaussianMessage())
+        for count = 1:100
+            calculateMessage!(driver.out)
+        end
+        @fact typeof(driver.out.message) => GaussianMessage
+        @fact driver.out.message.m => [100.0] # For stop conditions at 100 cycles deep
     end
 
-    context("calculateMessage!() should throw an error if one or more interfaces have no partner") do
-        node = FixedGainNode()
-        @fact_throws calculateMessage!(node.out)
+    context("calculateMessage!() should handle convergence") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[1.1], B=[0.1], noise_m=[0.0], noise_V=[0.1])
+        # Now set a breaker message and check that it works
+        breaker_message = GaussianMessage(m=[10.0], V=[100.0])
+        setMessage!(driver.out, breaker_message)
+        prev_msg = breaker_message
+        converged = false
+        while !converged
+            msg = calculateMessage!(driver.out)
+            converged = isApproxEqual(prev_msg.m, msg.m)
+            prev_msg = msg
+        end
+        @fact isApproxEqual(driver.out.message.m, [0.0]) => true
     end
 
-    context("calculateMarginal(forward_msg, backward_msg) should check equality of message types") do
-        @fact_throws calculateMarginal(GaussianMessage(), GeneralMessage())
-    end
+end
 
-    context("calculateMarginal(edge) should give correct result") do
-        edge = Edge(ConstantNode(GaussianMessage(m=[0.0], V=[1.0])),
-                    ConstantNode(GaussianMessage(m=[0.0], V=[1.0])))
-        calculateForwardMessage!(edge)
-        calculateBackwardMessage!(edge)
-        marginal_msg = calculateMarginal(edge)
-        ensureMVParametrization!(marginal_msg)
-        @fact marginal_msg.m => [0.0]
-        @fact isApproxEqual(marginal_msg.V, reshape([0.5], 1, 1)) => true
-    end
-
-    context("calculateMarginal(forward_msg, backward_msg) should give correct result") do
-        marginal_msg = calculateMarginal(
-                                GaussianMessage(m=[0.0], V=[1.0]),
-                                GaussianMessage(m=[0.0], V=[1.0]))
-        ensureMVParametrization!(marginal_msg)
-        @fact marginal_msg.m => [0.0]
-        @fact isApproxEqual(marginal_msg.V, reshape([0.5], 1, 1)) => true
-    end
-
+facts("pushMessageInvalidations!(Node) integration tests")
     context("pushMessageInvalidations!(Node) should only invalidate all child messages") do
         # Build testing graph
-        #
-        #          (c2)
-        #           |
-        #           v
-        # (c1)---->[+]---->[=]----->
-        #                   ^    y
-        #                   |
-        #                  (c3)
-        #
-        c1 = ConstantNode(GaussianMessage())
-        c2 = ConstantNode(GaussianMessage())
-        c3 = ConstantNode(GaussianMessage(m=[-2.], V=[3.]))
-        add = AdditionNode()
-        equ = EqualityNode()
-        # Edges from left to right
-        Edge(c1.out, add.in1)
-        Edge(c2.out, add.in2)
-        Edge(add.out, equ.interfaces[1])
-        Edge(c3.out, equ.interfaces[2])
-        Edge(c3.out, equ.interfaces[2])
-
+        (c1, c2, c3, add, equ) = initializeTreeGraph()
         fwd_msg_y = calculateMessage!(equ.interfaces[3])
+
         # Check message validity after message passing
         # All forward messages should be valid
         @fact c1.out.message_valid => true
@@ -255,75 +248,11 @@ facts("Message passing over interfaces") do
     end
 end
 
-facts("Graphs with loops") do
-    # Set up a loopy graph
-    #    (driver)
-    #   -->[A]---
-    #   |       |
-    #   |      [+]<-[N]
-    #   |       |
-    #   ---[B]<--
-    #  (inhibitor)
-
-    context("calculateMessage!() should throw an error when there is an unbroken loop") do
-        driver      = FixedGainNode([2.0], name="driver")
-        inhibitor   = FixedGainNode([0.5], name="inhibitor")
-        noise       = ConstantNode(GaussianMessage(m=[1.0], V=[0.1]), name="noise")
-        add         = AdditionNode(name="adder")
-        Edge(add.out, inhibitor.in1)
-        Edge(inhibitor.out, driver.in1)
-        Edge(driver.out, add.in1)
-        Edge(noise.out, add.in2)
-        @fact_throws calculateMessage!(driver.out)
-        # Now set a breaker message and check that it works
-        setMessage!(driver.out, GaussianMessage())
-        for count = 1:100
-            calculateMessage!(driver.out)
-        end
-        @fact typeof(driver.out.message) => GaussianMessage
-        @fact driver.out.message.m => [100.0] # For stop conditions at 100 cycles deep
-    end
-
-    context("calculateMessage!() should handle convergence") do
-        driver      = FixedGainNode([1.1], name="driver")
-        inhibitor   = FixedGainNode([0.1], name="inhibitor")
-        noise       = ConstantNode(GaussianMessage(m=[0.0], V=[0.1]), name="noise")
-        add         = AdditionNode(name="adder")
-        Edge(add.out, inhibitor.in1)
-        Edge(inhibitor.out, driver.in1)
-        Edge(driver.out, add.in1)
-        Edge(noise.out, add.in2)
-        # Now set a breaker message and check that it works
-        breaker_message = GaussianMessage(m=[10.0], V=[100.0])
-        setMessage!(driver.out, breaker_message)
-        prev_msg = breaker_message
-        converged = false
-        while !converged
-            msg = calculateMessage!(driver.out)
-            converged = isApproxEqual(prev_msg.m, msg.m)
-            prev_msg = msg
-        end
-        @fact isApproxEqual(driver.out.message.m, [0.0]) => true
-    end
 end
 
-facts("Schedule generation and execution") do
-    # Set up a loopy graph
-    #    (driver)
-    #   -->[A]---
-    #   |       |
-    #   |      [+]<-[N]
-    #   |       |
-    #   ---[B]<--
-    #  (inhibitor)
-    driver      = FixedGainNode([2.0], name="driver")
-    inhibitor   = FixedGainNode([0.5], name="inhibitor")
-    noise       = ConstantNode(GaussianMessage(m=[1.0], V=[0.1]), name="noise")
-    add         = AdditionNode(name="adder")
-    Edge(add.out, inhibitor.in1)
-    Edge(inhibitor.out, driver.in1)
-    Edge(driver.out, add.in1)
-    Edge(noise.out, add.in2)
+
+facts("Generate and execute schedule integration tests") do
+    (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
     # Initial message
     setMessage!(add.in1, GaussianMessage(m=[2.0], V=[0.5]))
     setMessage!(add.out, GaussianMessage(), false) # Set track_invalidations to false to not invalidate the other initial msg
