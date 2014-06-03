@@ -70,21 +70,15 @@ backwardAdditionXiRule{T<:Number}(V_x::Array{T, 2}, xi_x::Array{T, 1}, V_z::Arra
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::AdditionNode,
-                            inbound_messages::Array{GaussianMessage, 1})
-    # Calculate an outbound message based on the inbound_messages array and the node function.
+                            inbound_messages_types::Type{GaussianMessage})
+    # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    # inbound_messages is indexed with the interface ids of the node.
-    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
-
-    if isdefined(inbound_messages, outbound_interface_id)
-        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
-    end
 
     # Calculations for the GaussianMessage type; Korl (2005), table 4.1
     if outbound_interface_id == 3
         # Forward message, both messages on the incoming edges, required to calculate the outgoing message.
-        msg_1 = inbound_messages[1]
-        msg_2 = inbound_messages[2]
+        msg_1 = node.interfaces[1].partner.message
+        msg_2 = node.interfaces[2].partner.message
         msg_out = GaussianMessage()
 
         # Select parameterization
@@ -115,8 +109,8 @@ function updateNodeMessage!(outbound_interface_id::Int,
         end
     elseif outbound_interface_id == 1 || outbound_interface_id == 2
         # Backward message, one message on the incoming edge and one on the outgoing edge.
-        msg_1or2 = (outbound_interface_id==1) ? inbound_messages[2] : inbound_messages[1]
-        msg_3 = inbound_messages[3]
+        msg_1or2 = (outbound_interface_id==1) ? node.interfaces[2].partner.message : node.interfaces[1].partner.message
+        msg_3 = node.interfaces[3].partner.message
         msg_out = GaussianMessage()
 
         # Select parameterization
@@ -158,26 +152,20 @@ end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::AdditionNode,
-                            inbound_messages::Array{GeneralMessage, 1})
-    # Calculate an outbound message based on the inbound_messages array and the node function.
+                            inbound_messages_types::Type{GeneralMessage})
+    # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    # inbound_messages is indexed with the interface ids of the node.
-    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
-
-    if isdefined(inbound_messages, outbound_interface_id)
-        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
-    end
 
     # Calculations for a general message type
     if outbound_interface_id == 1
         # Backward message 1
-        msg_out = GeneralMessage(inbound_messages[3].value - inbound_messages[2].value)
+        msg_out = GeneralMessage(node.interfaces[3].partner.message.value - node.interfaces[2].partner.message.value)
     elseif outbound_interface_id == 2
         # Backward message 2
-        msg_out = GeneralMessage(inbound_messages[3].value - inbound_messages[1].value)
+        msg_out = GeneralMessage(node.interfaces[3].partner.message.value - node.interfaces[1].partner.message.value)
     elseif outbound_interface_id == 3
         # Forward message
-        msg_out = GeneralMessage(inbound_messages[1].value + inbound_messages[2].value)
+        msg_out = GeneralMessage(node.interfaces[1].partner.message.value + node.interfaces[2].partner.message.value)
     else
         error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
     end

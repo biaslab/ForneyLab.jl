@@ -186,19 +186,9 @@ function updateNodeMessage!(outbound_interface::Interface, track_invalidations::
         inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
     end
 
-    # Collect all inbound messages in an array
-    inbound_messages = Array(inbound_message_types, length(node.interfaces))
-    if (inbound_message_types!=None)
-        for node_interface_id = 1:length(node.interfaces)
-            if node_interface_id!=outbound_interface_id
-                inbound_messages[node_interface_id] = node.interfaces[node_interface_id].partner.message
-            end
-        end
-    end
-
     # Evaluate node update function
     printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
-    msg = updateNodeMessage!(outbound_interface_id, node, inbound_messages) 
+    msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_types) 
     printVerbose(" >> $(msg)")
 
     # Invalidate everything that depends on the outbound message
