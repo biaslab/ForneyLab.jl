@@ -122,8 +122,7 @@ function initializeAdditionNode(msgs::Array{Any})
 	interface_count = 1
 	for msg=msgs
 		if msg!=nothing
-			m_node = MockNode(msg)
-			Edge(m_node.out, add_node.interfaces[interface_count])
+			Edge(MockNode(msg).out, add_node.interfaces[interface_count])
 		end
 		interface_count += 1
 	end
@@ -134,19 +133,36 @@ function initializeEqualityNode(msgs::Array{Any})
 	# Set up an equality node and prepare the messages
 	# A MockNode is connected for each argument message
 	#
-	# [M]-->[=]<--[M] (as many constant nodes as length(msgs))	
+	# [M]-->[=]<--[M] (as many incoming edges as length(msgs))	
 	#        |        
 
 	eq_node = EqualityNode(length(msgs))
 	interface_count = 1
 	for msg=msgs
 		if msg!=nothing
-			m_node = MockNode(msg)
-			Edge(m_node.out, eq_node.interfaces[interface_count])
+			Edge(MockNode(msg).out, eq_node.interfaces[interface_count])
 		end
 		interface_count += 1
 	end
 	return eq_node
+end
+
+function initializeFixedGainNode(A::Array, msgs::Array{Any})
+	# Set up a fixed gain node and prepare the messages
+	# A MockNode is connected for each argument message
+	#
+	# [M]-->[A]--|	
+	#                
+
+	fg_node = FixedGainNode(A)
+	interface_count = 1
+	for msg=msgs
+		if msg!=nothing
+			Edge(MockNode(msg).out, fg_node.interfaces[interface_count])
+		end
+		interface_count += 1
+	end
+	return fg_node
 end
 
 #############
