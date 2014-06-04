@@ -111,6 +111,27 @@ function initializeAdditionNode(msgs::Array{Any})
 	return add_node
 end
 
+function initializeEqualityNode(msgs::Array{Any})
+	# Set up an equality node and prepare the messages
+	# A constant node is connected for each argument message
+	# and all messages are propagated to the constant node's outgoing interface
+	#
+	# [C]-->[=]<--[C] (as many constant nodes as length(msgs))	
+	#        |        
+
+	eq_node = EqualityNode(length(msgs))
+	interface_count = 1
+	for msg=msgs
+		if msg!=nothing
+			c_node = ConstantNode(msg)
+			Edge(c_node.out, eq_node.interfaces[interface_count])
+			ForneyLab.updateNodeMessage!(1, c_node) # Prepare message
+		end
+		interface_count += 1
+	end
+	return eq_node
+end
+
 #############
 # Validations
 #############
