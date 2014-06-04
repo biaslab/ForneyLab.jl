@@ -161,15 +161,15 @@ end
 
 facts("CalculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do
-        (node2, node1) = initializePairOfNodes(A=[2.0], msg_const=GeneralMessage(3.0))
-        Edge(node1.out, node2.in1)
-        @fact node2.out.message => nothing
+        (gain, constant) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_const=GeneralMessage(3.0))
+        Edge(constant.out, gain.in1)
+        @fact gain.out.message => nothing
         # Request message on node for which the input is unknown
-        msg = calculateMessage!(node2.out)
-        @fact msg => node2.out.message # Returned message should be identical to message stored on interface.
-        @fact typeof(node2.out.message) => GeneralMessage
-        @fact node2.out.message.value => reshape([6.0], 1, 1)
-        @fact node2.out.message_valid => true # fresh messages should be valid
+        msg = calculateMessage!(gain.out)
+        @fact msg => gain.out.message # Returned message should be identical to message stored on interface.
+        @fact typeof(gain.out.message) => GeneralMessage
+        @fact gain.out.message.value => reshape([6.0], 1, 1)
+        @fact gain.out.message_valid => true # fresh messages should be valid
     end
 
     context("calculateMessage!() should recursively calculate required inbound message") do
@@ -213,7 +213,7 @@ facts("CalculateMessage!() integration tests") do
 
 end
 
-facts("pushMessageInvalidations!(Node) integration tests")
+facts("pushMessageInvalidations!(Node) integration tests") do
     context("pushMessageInvalidations!(Node) should only invalidate all child messages") do
         # Build testing graph
         (c1, c2, c3, add, equ) = initializeTreeGraph()
@@ -247,9 +247,6 @@ facts("pushMessageInvalidations!(Node) integration tests")
         @fact equ.interfaces[1].message_valid => false
     end
 end
-
-end
-
 
 facts("Generate and execute schedule integration tests") do
     (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
