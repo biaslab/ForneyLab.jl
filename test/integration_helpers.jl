@@ -167,7 +167,7 @@ function initializeFixedGainNode(A::Array, msgs::Array{Any})
 	return fg_node
 end
 
-function initializeConstantAndGainEqNode()
+function initializeConstantAndGainAddNode()
     # Initialize some nodes
     #
     #    node
@@ -187,7 +187,7 @@ function initializeConstantAndGainEqNode()
 end
 
 function initializeGainAdditionCompositeNode(A::Array, use_composite_update_rules::Bool, msgs::Array{Any})
-	# Set up a fixed gain node and prepare the messages
+	# Set up a gain addition node and prepare the messages
 	# A MockNode is connected for each argument message
 	#
     #           [M]
@@ -210,6 +210,50 @@ function initializeGainAdditionCompositeNode(A::Array, use_composite_update_rule
 		interface_count += 1
 	end
 	return gac_node
+end
+
+function initializeConstantAndGainEqNode()
+    # Initialize some nodes
+    #
+    #    node
+    #    [N]--| 
+    #       out
+    #
+    #       c_node
+    #    ------------
+    #    |          |
+    # |--| |--[=]-| |--|
+    # in1| in1 |    |
+    #    |    ...   |
+
+    c_node = GainEqualityCompositeNode([1.0], false)
+    node = ConstantNode()
+    return(c_node, node)
+end
+
+function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rules::Bool, msgs::Array{Any})
+	# Set up a gain equality node and prepare the messages
+	# A MockNode is connected for each argument message
+	#
+    #         _________
+    #     in1 |       | in2
+    # [M]-----|->[=]<-|-----[M]
+    #         |   |   |
+    #         |   v   |
+    #         |  [A]  |
+    #         |___|___|
+    #             | out
+    #             v
+
+	gec_node = GainEqualityCompositeNode(A, use_composite_update_rules)
+	interface_count = 1
+	for msg=msgs
+		if msg!=nothing
+			Edge(MockNode(msg).out, gec_node.interfaces[interface_count])
+		end
+		interface_count += 1
+	end
+	return gec_node
 end
 
 #############
