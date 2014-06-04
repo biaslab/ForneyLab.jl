@@ -90,6 +90,27 @@ function initializeTreeGraph()
     return (c1, c2, c3, add, equ)
 end
 
+function initializeAdditionNode(msgs::Array{Any})
+	# Set up an addition node and prepare the messages
+	# A constant node is connected for each argument message
+	# and all messages are propagated to the constant node's outgoing interface
+	#
+	# [C]-->[+]<--[C]	
+	#        |        
+
+	add_node = AdditionNode()
+	interface_count = 1
+	for msg=msgs
+		if msg!=nothing
+			c_node = ConstantNode(msg)
+			Edge(c_node.out, add_node.interfaces[interface_count])
+			ForneyLab.updateNodeMessage!(1, c_node) # Prepare message
+		end
+		interface_count += 1
+	end
+	return add_node
+end
+
 #############
 # Validations
 #############

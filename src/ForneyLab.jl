@@ -227,10 +227,11 @@ function calculateMarginal(forward_msg::Message, backward_msg::Message)
     # The outbound message is the marginal.
     @assert(typeof(forward_msg)==typeof(backward_msg), "Cannot create marginal from forward/backward messages of different types.")
     eq_node = EqualityNode(3)
-    inbound_messages = Array(typeof(forward_msg), 3)
-    inbound_messages[1] = forward_msg
-    inbound_messages[2] = backward_msg
-    marginal_msg = deepcopy(updateNodeMessage!(3, eq_node, inbound_messages))
+    c_node1 = ConstantNode(forward_msg)
+    c_node2 = ConstantNode(backward_msg)
+    Edge(c_node1.out, eq_node.interfaces[1])
+    Edge(c_node2.out, eq_node.interfaces[2])
+    marginal_msg = deepcopy(calculateMessage!(eq_node.interfaces[3]))
     return marginal_msg
 end
 
