@@ -1,4 +1,8 @@
-facts("GainAdditionCompositeNode") do
+#####################
+# Unit tests
+#####################
+
+facts("GainAdditionCompositeNode unit tests") do
     context("GainAdditionCompositeNode() should initialize a GainAdditionCompositeNode with 3 interfaces") do
         node = GainAdditionCompositeNode()
         @fact typeof(node) => GainAdditionCompositeNode
@@ -22,19 +26,16 @@ facts("GainAdditionCompositeNode") do
         @fact node.in2.child => node.addition_node.interfaces[2]
         @fact node.out.child => node.addition_node.out
     end
+end
 
+#####################
+# Integration tests
+#####################
+
+facts("GainAdditionCompositeNode integration tests") do
     context("Edge can connect a normal node to a GainAdditionCompositeNode") do
-        # Initialize some nodes
-        #             c_node
-        #           ------------
-        # node      |          |
-        # [N]--| |--| |--[+]-| |--|
-        #    out in2| in2 |    |
-        #           |    ...   |
-
-        c_node = GainAdditionCompositeNode([1.0], false)
-        node = ConstantNode()
-        edge = Edge(node.out, c_node.in2)
+        (c_node, node) = initializeConstantAndGainEqNode()
+        Edge(node.out, c_node.in2)
         @fact node.out.partner => c_node.in2 # Set correct partners
         @fact c_node.in2.partner => node.out
         @fact c_node.addition_node.in2.partner => node.out 
@@ -42,103 +43,40 @@ facts("GainAdditionCompositeNode") do
     end
 
     context("GainAdditionCompositeNode should be able to pass GaussianMessages: using shortcut rules or internal graph should yield same result (m,V) parametrization") do
-        #           [N]
-        #            | in1
-        #            |
-        #        ____|____
-        #        |   v   |
-        #        |  [A]  |
-        #        |   |   |
-        #    in2 |   v   | out
-        #[N]-----|->[+]--|---->
-        #        |_______|
         A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
-        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], V=eye(2,2)))
-        node_c2 = ConstantNode(GaussianMessage(m=[1.0, 2.0], V=2.0*eye(2,2)))
 
+        # Forward
         #Shortcut rules
-        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
-        Edge(node_c1.out, node_gain_addition_composite.in1)
-        Edge(node_c2.out, node_gain_addition_composite.in2)
-        msg_shortcut = calculateMessage!(node_gain_addition_composite.out)
-        @fact is(msg_shortcut, node_gain_addition_composite.out.message) => true
-
+        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [GaussianMessage(m=[0.0, 0.0], V=eye(2,2)), GaussianMessage(m=[1.0, 2.0], V=2.0*eye(2,2)), nothing])
+        msg_shortcut = ForneyLab.updateNodeMessage!(3, node_gain_addition_composite, GaussianMessage)
         #Internal graph
-        map(clearMessages!, [node_c1, node_c2])
-        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
-        Edge(node_c1.out, node_gain_addition_internal.in1)
-        Edge(node_c2.out, node_gain_addition_internal.in2)
-        msg_internal = calculateMessage!(node_gain_addition_internal.out)
-        @fact is(msg_internal, node_gain_addition_internal.out.message) => true
-
+        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [GaussianMessage(m=[0.0, 0.0], V=eye(2,2)), GaussianMessage(m=[1.0, 2.0], V=2.0*eye(2,2)), nothing])
+        msg_internal = ForneyLab.updateNodeMessage!(3, node_gain_addition_internal, GaussianMessage)
+        # Messages must be equal
         ensureMVParametrization!(msg_shortcut)
         ensureMVParametrization!(msg_internal)
         @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
         @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
 
-        #
-        #            | in1
-        #            |
-        #        ____|____
-        #        |   v   |
-        #        |  [A]  |
-        #        |   |   |
-        #    in2 |   v   | out
-        #[N]-----|->[+]--|---->[N]
-        #        |_______|
-
-        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], V=eye(2,2)))
-        node_c2 = ConstantNode(GaussianMessage(m=[1.0, 2.0], V=2.0*eye(2,2)))
-
+        # Backward
         #Shortcut rules
-        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
-        Edge(node_c1.out, node_gain_addition_composite.in2)
-        Edge(node_c2.out, node_gain_addition_composite.out)
-        msg_shortcut = calculateMessage!(node_gain_addition_composite.in1)
-        @fact is(msg_shortcut, node_gain_addition_composite.in1.message) => true
-
+        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [nothing, GaussianMessage(m=[0.0, 0.0], V=eye(2,2)), GaussianMessage(m=[1.0, 2.0], V=2.0*eye(2,2))])
+        msg_shortcut = ForneyLab.updateNodeMessage!(1, node_gain_addition_composite, GaussianMessage)
         #Internal graph
-        map(clearMessages!, [node_c1, node_c2])
-        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
-        Edge(node_c1.out, node_gain_addition_internal.in2)
-        Edge(node_c2.out, node_gain_addition_internal.out)
-        msg_internal = calculateMessage!(node_gain_addition_internal.in1)
-        @fact is(msg_internal, node_gain_addition_internal.in1.message) => true
-
+        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [nothing, GaussianMessage(m=[0.0, 0.0], V=eye(2,2)), GaussianMessage(m=[1.0, 2.0], V=2.0*eye(2,2))])
+        msg_internal = ForneyLab.updateNodeMessage!(1, node_gain_addition_internal, GaussianMessage)
+        # Messages must be equal
         ensureMVParametrization!(msg_shortcut)
         ensureMVParametrization!(msg_internal)
         @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
         @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
-
-        #           [N]
-        #            | in1
-        #            |
-        #        ____|____
-        #        |   v   |
-        #        |  [A]  |
-        #        |   |   |
-        #    in2 |   v   | out
-        #   -----|->[+]--|---->[N]
-        #        |_______|
-
-        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], V=eye(2,2)))
-        node_c2 = ConstantNode(GaussianMessage(m=[1.0, 2.0], V=2.0*eye(2,2)))
-
         #Shortcut rules
-        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
-        Edge(node_c1.out, node_gain_addition_composite.in1)
-        Edge(node_c2.out, node_gain_addition_composite.out)
-        msg_shortcut = calculateMessage!(node_gain_addition_composite.in2)
-        @fact is(msg_shortcut, node_gain_addition_composite.in2.message) => true
-
+        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [GaussianMessage(m=[0.0, 0.0], V=eye(2,2)), nothing, GaussianMessage(m=[1.0, 2.0], V=2.0*eye(2,2))])
+        msg_shortcut = ForneyLab.updateNodeMessage!(2, node_gain_addition_composite, GaussianMessage)
         #Internal graph
-        map(clearMessages!, [node_c1, node_c2])
-        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
-        Edge(node_c1.out, node_gain_addition_internal.in1)
-        Edge(node_c2.out, node_gain_addition_internal.out)
-        msg_internal = calculateMessage!(node_gain_addition_internal.in2)
-        @fact is(msg_internal, node_gain_addition_internal.in2.message) => true
-
+        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [GaussianMessage(m=[0.0, 0.0], V=eye(2,2)), nothing, GaussianMessage(m=[1.0, 2.0], V=2.0*eye(2,2))])
+        msg_internal = ForneyLab.updateNodeMessage!(2, node_gain_addition_internal, GaussianMessage)
+        # Messages must be equal
         ensureMVParametrization!(msg_shortcut)
         ensureMVParametrization!(msg_internal)
         @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
@@ -146,103 +84,35 @@ facts("GainAdditionCompositeNode") do
     end
 
     context("GainAdditionCompositeNode should be able to pass GaussianMessages: using shortcut rules or internal graph should yield same result (m,W) parametrization") do
-        #           [N]
-        #            | in1
-        #            |
-        #        ____|____
-        #        |   v   |
-        #        |  [A]  |
-        #        |   |   |
-        #    in2 |   v   | out
-        #[N]-----|->[+]--|---->
-        #        |_______|
         A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
-        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], W=eye(2,2)))
-        node_c2 = ConstantNode(GaussianMessage(m=[1.0, 2.0], W=2.0*eye(2,2)))
 
+        # Forward
         #Shortcut rules
-        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
-        Edge(node_c1.out, node_gain_addition_composite.in1)
-        Edge(node_c2.out, node_gain_addition_composite.in2)
-        msg_shortcut = calculateMessage!(node_gain_addition_composite.out)
-        @fact is(msg_shortcut, node_gain_addition_composite.out.message) => true
-
+        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [GaussianMessage(m=[0.0, 0.0], W=eye(2,2)), GaussianMessage(m=[1.0, 2.0], W=2.0*eye(2,2)), nothing])
+        msg_shortcut = ForneyLab.updateNodeMessage!(3, node_gain_addition_composite, GaussianMessage)
         #Internal graph
-        map(clearMessages!, [node_c1, node_c2])
-        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
-        Edge(node_c1.out, node_gain_addition_internal.in1)
-        Edge(node_c2.out, node_gain_addition_internal.in2)
-        msg_internal = calculateMessage!(node_gain_addition_internal.out)
-        @fact is(msg_internal, node_gain_addition_internal.out.message) => true
-
+        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [GaussianMessage(m=[0.0, 0.0], W=eye(2,2)), GaussianMessage(m=[1.0, 2.0], W=2.0*eye(2,2)), nothing])
+        msg_internal = ForneyLab.updateNodeMessage!(3, node_gain_addition_internal, GaussianMessage)        # Messages must be equal
         ensureMVParametrization!(msg_shortcut)
         ensureMVParametrization!(msg_internal)
         @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
         @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
 
-        #
-        #            | in1
-        #            |
-        #        ____|____
-        #        |   v   |
-        #        |  [A]  |
-        #        |   |   |
-        #    in2 |   v   | out
-        #[N]-----|->[+]--|---->[N]
-        #        |_______|
-
-        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], W=eye(2,2)))
-        node_c2 = ConstantNode(GaussianMessage(m=[1.0, 2.0], W=2.0*eye(2,2)))
-
+        # Backward
         #Shortcut rules
-        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
-        Edge(node_c1.out, node_gain_addition_composite.in2)
-        Edge(node_c2.out, node_gain_addition_composite.out)
-        msg_shortcut = calculateMessage!(node_gain_addition_composite.in1)
-        @fact is(msg_shortcut, node_gain_addition_composite.in1.message) => true
-
-        #Internal graph
-        map(clearMessages!, [node_c1, node_c2])
-        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
-        Edge(node_c1.out, node_gain_addition_internal.in2)
-        Edge(node_c2.out, node_gain_addition_internal.out)
-        msg_internal = calculateMessage!(node_gain_addition_internal.in1)
-        @fact is(msg_internal, node_gain_addition_internal.in1.message) => true
-
+        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [nothing, GaussianMessage(m=[0.0, 0.0], W=eye(2,2)), GaussianMessage(m=[1.0, 2.0], W=2.0*eye(2,2))])
+        msg_shortcut = ForneyLab.updateNodeMessage!(1, node_gain_addition_composite, GaussianMessage)        #Internal graph
+        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [nothing, GaussianMessage(m=[0.0, 0.0], W=eye(2,2)), GaussianMessage(m=[1.0, 2.0], W=2.0*eye(2,2))])
+        msg_internal = ForneyLab.updateNodeMessage!(1, node_gain_addition_internal, GaussianMessage)        # Messages must be equal
         ensureMVParametrization!(msg_shortcut)
         ensureMVParametrization!(msg_internal)
         @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
         @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
-
-        #           [N]
-        #            | in1
-        #            |
-        #        ____|____
-        #        |   v   |
-        #        |  [A]  |
-        #        |   |   |
-        #    in2 |   v   | out
-        #   -----|->[+]--|---->[N]
-        #        |_______|
-
-        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], W=eye(2,2)))
-        node_c2 = ConstantNode(GaussianMessage(m=[1.0, 2.0], W=2.0*eye(2,2)))
-
         #Shortcut rules
-        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
-        Edge(node_c1.out, node_gain_addition_composite.in1)
-        Edge(node_c2.out, node_gain_addition_composite.out)
-        msg_shortcut = calculateMessage!(node_gain_addition_composite.in2)
-        @fact is(msg_shortcut, node_gain_addition_composite.in2.message) => true
-
-        #Internal graph
-        map(clearMessages!, [node_c1, node_c2])
-        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
-        Edge(node_c1.out, node_gain_addition_internal.in1)
-        Edge(node_c2.out, node_gain_addition_internal.out)
-        msg_internal = calculateMessage!(node_gain_addition_internal.in2)
-        @fact is(msg_internal, node_gain_addition_internal.in2.message) => true
-
+        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [GaussianMessage(m=[0.0, 0.0], W=eye(2,2)), nothing, GaussianMessage(m=[1.0, 2.0], W=2.0*eye(2,2))])
+        msg_shortcut = ForneyLab.updateNodeMessage!(2, node_gain_addition_composite, GaussianMessage)        #Internal graph
+        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [GaussianMessage(m=[0.0, 0.0], W=eye(2,2)), nothing, GaussianMessage(m=[1.0, 2.0], W=2.0*eye(2,2))])
+        msg_internal = ForneyLab.updateNodeMessage!(2, node_gain_addition_internal, GaussianMessage)        # Messages must be equal
         ensureMVParametrization!(msg_shortcut)
         ensureMVParametrization!(msg_internal)
         @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
@@ -250,206 +120,69 @@ facts("GainAdditionCompositeNode") do
     end
 
     context("GainAdditionCompositeNode should be able to pass GaussianMessages: using shortcut rules or internal graph should yield same result (xi,W) parametrization") do
-        #           [N]
-        #            | in1
-        #            |
-        #        ____|____
-        #        |   v   |
-        #        |  [A]  |
-        #        |   |   |
-        #    in2 |   v   | out
-        #[N]-----|->[+]--|---->
-        #        |_______|
         A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
-        node_c1 = ConstantNode(GaussianMessage(xi=[0.0, 0.0], W=eye(2,2)))
-        node_c2 = ConstantNode(GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)))
 
+        # Forward
         #Shortcut rules
-        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
-        Edge(node_c1.out, node_gain_addition_composite.in1)
-        Edge(node_c2.out, node_gain_addition_composite.in2)
-        msg_shortcut = calculateMessage!(node_gain_addition_composite.out)
-        @fact is(msg_shortcut, node_gain_addition_composite.out.message) => true
-
+        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [GaussianMessage(xi=[0.0, 0.0], W=eye(2,2)), GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)), nothing])
+        msg_shortcut = ForneyLab.updateNodeMessage!(3, node_gain_addition_composite, GaussianMessage)
         #Internal graph
-        map(clearMessages!, [node_c1, node_c2])
-        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
-        Edge(node_c1.out, node_gain_addition_internal.in1)
-        Edge(node_c2.out, node_gain_addition_internal.in2)
-        msg_internal = calculateMessage!(node_gain_addition_internal.out)
-        @fact is(msg_internal, node_gain_addition_internal.out.message) => true
-
+        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [GaussianMessage(xi=[0.0, 0.0], W=eye(2,2)), GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)), nothing])
+        msg_internal = ForneyLab.updateNodeMessage!(3, node_gain_addition_internal, GaussianMessage)        # Messages must be equal
         ensureMVParametrization!(msg_shortcut)
         ensureMVParametrization!(msg_internal)
         @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
         @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
 
-        #
-        #            | in1
-        #            |
-        #        ____|____
-        #        |   v   |
-        #        |  [A]  |
-        #        |   |   |
-        #    in2 |   v   | out
-        #[N]-----|->[+]--|---->[N]
-        #        |_______|
-
-        node_c1 = ConstantNode(GaussianMessage(xi=[0.0, 0.0], W=eye(2,2)))
-        node_c2 = ConstantNode(GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)))
-
+        # Backward
         #Shortcut rules
-        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
-        Edge(node_c1.out, node_gain_addition_composite.in2)
-        Edge(node_c2.out, node_gain_addition_composite.out)
-        msg_shortcut = calculateMessage!(node_gain_addition_composite.in1)
-        @fact is(msg_shortcut, node_gain_addition_composite.in1.message) => true
-
-        #Internal graph
-        map(clearMessages!, [node_c1, node_c2])
-        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
-        Edge(node_c1.out, node_gain_addition_internal.in2)
-        Edge(node_c2.out, node_gain_addition_internal.out)
-        msg_internal = calculateMessage!(node_gain_addition_internal.in1)
-        @fact is(msg_internal, node_gain_addition_internal.in1.message) => true
-
+        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [nothing, GaussianMessage(xi=[0.0, 0.0], W=eye(2,2)), GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2))])
+        msg_shortcut = ForneyLab.updateNodeMessage!(1, node_gain_addition_composite, GaussianMessage)        #Internal graph
+        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [nothing, GaussianMessage(xi=[0.0, 0.0], W=eye(2,2)), GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2))])
+        msg_internal = ForneyLab.updateNodeMessage!(1, node_gain_addition_internal, GaussianMessage)        # Messages must be equal
         ensureMVParametrization!(msg_shortcut)
         ensureMVParametrization!(msg_internal)
         @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
         @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
-
-        #           [N]
-        #            | in1
-        #            |
-        #        ____|____
-        #        |   v   |
-        #        |  [A]  |
-        #        |   |   |
-        #    in2 |   v   | out
-        #   -----|->[+]--|---->[N]
-        #        |_______|
-
-        node_c1 = ConstantNode(GaussianMessage(xi=[0.0, 0.0], W=eye(2,2)))
-        node_c2 = ConstantNode(GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)))
-
         #Shortcut rules
-        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
-        Edge(node_c1.out, node_gain_addition_composite.in1)
-        Edge(node_c2.out, node_gain_addition_composite.out)
-        msg_shortcut = calculateMessage!(node_gain_addition_composite.in2)
-        @fact is(msg_shortcut, node_gain_addition_composite.in2.message) => true
-
-        #Internal graph
-        map(clearMessages!, [node_c1, node_c2])
-        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
-        Edge(node_c1.out, node_gain_addition_internal.in1)
-        Edge(node_c2.out, node_gain_addition_internal.out)
-        msg_internal = calculateMessage!(node_gain_addition_internal.in2)
-        @fact is(msg_internal, node_gain_addition_internal.in2.message) => true
-
+        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [GaussianMessage(xi=[0.0, 0.0], W=eye(2,2)), nothing, GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2))])
+        msg_shortcut = ForneyLab.updateNodeMessage!(2, node_gain_addition_composite, GaussianMessage)        #Internal graph
+        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [GaussianMessage(xi=[0.0, 0.0], W=eye(2,2)), nothing, GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2))])
+        msg_internal = ForneyLab.updateNodeMessage!(2, node_gain_addition_internal, GaussianMessage)        # Messages must be equal
         ensureMVParametrization!(msg_shortcut)
         ensureMVParametrization!(msg_internal)
         @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
         @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
     end
     context("GainAdditionCompositeNode should be able to pass GaussianMessages: using shortcut rules or internal graph should yield same result (different parametrizations)") do
-        #           [N]
-        #            | in1
-        #            |
-        #        ____|____
-        #        |   v   |
-        #        |  [A]  |
-        #        |   |   |
-        #    in2 |   v   | out
-        #[N]-----|->[+]--|---->
-        #        |_______|
         A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
-        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], V=eye(2,2)))
-        node_c2 = ConstantNode(GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)))
 
+        # Forward
         #Shortcut rules
-        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
-        Edge(node_c1.out, node_gain_addition_composite.in1)
-        Edge(node_c2.out, node_gain_addition_composite.in2)
-        msg_shortcut = calculateMessage!(node_gain_addition_composite.out)
-        @fact is(msg_shortcut, node_gain_addition_composite.out.message) => true
-
-        #Internal graph
-        map(clearMessages!, [node_c1, node_c2])
-        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
-        Edge(node_c1.out, node_gain_addition_internal.in1)
-        Edge(node_c2.out, node_gain_addition_internal.in2)
-        msg_internal = calculateMessage!(node_gain_addition_internal.out)
-        @fact is(msg_internal, node_gain_addition_internal.out.message) => true
-
+        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [GaussianMessage(m=[0.0, 0.0], V=eye(2,2)), GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)), nothing])
+        msg_shortcut = ForneyLab.updateNodeMessage!(3, node_gain_addition_composite, GaussianMessage)        #Internal graph
+        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [GaussianMessage(m=[0.0, 0.0], V=eye(2,2)), GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)), nothing])
+        msg_internal = ForneyLab.updateNodeMessage!(3, node_gain_addition_internal, GaussianMessage)        # Messages must be equal
         ensureMVParametrization!(msg_shortcut)
         ensureMVParametrization!(msg_internal)
         @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
         @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
 
-        #
-        #            | in1
-        #            |
-        #        ____|____
-        #        |   v   |
-        #        |  [A]  |
-        #        |   |   |
-        #    in2 |   v   | out
-        #[N]-----|->[+]--|---->[N]
-        #        |_______|
-
-        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], V=eye(2,2)))
-        node_c2 = ConstantNode(GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)))
-
+        # Backward
         #Shortcut rules
-        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
-        Edge(node_c1.out, node_gain_addition_composite.in2)
-        Edge(node_c2.out, node_gain_addition_composite.out)
-        msg_shortcut = calculateMessage!(node_gain_addition_composite.in1)
-        @fact is(msg_shortcut, node_gain_addition_composite.in1.message) => true
-
-        #Internal graph
-        map(clearMessages!, [node_c1, node_c2])
-        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
-        Edge(node_c1.out, node_gain_addition_internal.in2)
-        Edge(node_c2.out, node_gain_addition_internal.out)
-        msg_internal = calculateMessage!(node_gain_addition_internal.in1)
-        @fact is(msg_internal, node_gain_addition_internal.in1.message) => true
-
+        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [nothing, GaussianMessage(m=[0.0, 0.0], V=eye(2,2)), GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2))])
+        msg_shortcut = ForneyLab.updateNodeMessage!(1, node_gain_addition_composite, GaussianMessage)        #Internal graph
+        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [nothing, GaussianMessage(m=[0.0, 0.0], V=eye(2,2)), GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2))])
+        msg_internal = ForneyLab.updateNodeMessage!(1, node_gain_addition_internal, GaussianMessage)        # Messages must be equal
         ensureMVParametrization!(msg_shortcut)
         ensureMVParametrization!(msg_internal)
         @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true
         @fact isApproxEqual(msg_internal.V, msg_shortcut.V) => true
-
-        #           [N]
-        #            | in1
-        #            |
-        #        ____|____
-        #        |   v   |
-        #        |  [A]  |
-        #        |   |   |
-        #    in2 |   v   | out
-        #   -----|->[+]--|---->[N]
-        #        |_______|
-
-        node_c1 = ConstantNode(GaussianMessage(m=[0.0, 0.0], V=eye(2,2)))
-        node_c2 = ConstantNode(GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2)))
-
         #Shortcut rules
-        node_gain_addition_composite = GainAdditionCompositeNode(A, true)
-        Edge(node_c1.out, node_gain_addition_composite.in1)
-        Edge(node_c2.out, node_gain_addition_composite.out)
-        msg_shortcut = calculateMessage!(node_gain_addition_composite.in2)
-        @fact is(msg_shortcut, node_gain_addition_composite.in2.message) => true
-
-        #Internal graph
-        map(clearMessages!, [node_c1, node_c2])
-        node_gain_addition_internal = GainAdditionCompositeNode(A, false)
-        Edge(node_c1.out, node_gain_addition_internal.in1)
-        Edge(node_c2.out, node_gain_addition_internal.out)
-        msg_internal = calculateMessage!(node_gain_addition_internal.in2)
-        @fact is(msg_internal, node_gain_addition_internal.in2.message) => true
-
+        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [GaussianMessage(m=[0.0, 0.0], V=eye(2,2)), nothing, GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2))])
+        msg_shortcut = ForneyLab.updateNodeMessage!(2, node_gain_addition_composite, GaussianMessage)        #Internal graph
+        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [GaussianMessage(m=[0.0, 0.0], V=eye(2,2)), nothing, GaussianMessage(xi=[1.0, 2.0], W=2.0*eye(2,2))])
+        msg_internal = ForneyLab.updateNodeMessage!(2, node_gain_addition_internal, GaussianMessage)        # Messages must be equal
         ensureMVParametrization!(msg_shortcut)
         ensureMVParametrization!(msg_internal)
         @fact isApproxEqual(msg_internal.m, msg_shortcut.m) => true

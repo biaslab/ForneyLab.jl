@@ -7,10 +7,12 @@
 type MockNode <: Node
 	# MockNode is a node with an arbitrary function, that when created
 	# initiates a valid message on its only 'out' interface 
+	interfaces::Array{Interface, 1}
 	out::Interface
 	function MockNode()
-        self = new()
-        self.out = Interface(self)
+        self = new(Array(Interface, 1))
+        self.interfaces[1] = Interface(self)
+        self.out = self.interfaces[1]
         return(self)
 	end
 end
@@ -163,6 +165,51 @@ function initializeFixedGainNode(A::Array, msgs::Array{Any})
 		interface_count += 1
 	end
 	return fg_node
+end
+
+function initializeConstantAndGainEqNode()
+    # Initialize some nodes
+    #
+    #    node
+    #    [N]--| 
+    #       out
+    #
+    #       c_node
+    #    ------------
+    #    |          |
+    # |--| |--[+]-| |--|
+    # in2| in2 |    |
+    #    |    ...   |
+
+    c_node = GainAdditionCompositeNode([1.0], false)
+    node = ConstantNode()
+    return(c_node, node)
+end
+
+function initializeGainAdditionCompositeNode(A::Array, use_composite_update_rules::Bool, msgs::Array{Any})
+	# Set up a fixed gain node and prepare the messages
+	# A MockNode is connected for each argument message
+	#
+    #           [M]
+    #            | in1
+    #            |
+    #        ____|____
+    #        |   v   |
+    #        |  [A]  |
+    #        |   |   |
+    #    in2 |   v   | out
+    #[M]-----|->[+]--|---->
+    #        |_______|
+
+	gac_node = GainAdditionCompositeNode(A, use_composite_update_rules)
+	interface_count = 1
+	for msg=msgs
+		if msg!=nothing
+			Edge(MockNode(msg).out, gac_node.interfaces[interface_count])
+		end
+		interface_count += 1
+	end
+	return gac_node
 end
 
 #############
