@@ -1,6 +1,27 @@
 # This file contains ntgration helper functions for constructing and validating context graphs
 
 #############
+# Mocks
+#############
+
+type MockNode <: Node
+	# MockNode is a node with an arbitrary function, that when created
+	# initiates a valid message on its only 'out' interface 
+	out::Interface
+	function MockNode()
+        self = new()
+        self.out = Interface(self)
+        return(self)
+	end
+end
+function MockNode(message::Message)
+    self = MockNode()
+    self.out.message = message
+    self.out.message_valid = true
+    return(self)
+end
+
+#############
 # Backgrounds
 #############
 
@@ -92,19 +113,17 @@ end
 
 function initializeAdditionNode(msgs::Array{Any})
 	# Set up an addition node and prepare the messages
-	# A constant node is connected for each argument message
-	# and all messages are propagated to the constant node's outgoing interface
+	# A MockNode is connected for each argument message.
 	#
-	# [C]-->[+]<--[C]	
+	# [M]-->[+]<--[M]	
 	#        |        
 
 	add_node = AdditionNode()
 	interface_count = 1
 	for msg=msgs
 		if msg!=nothing
-			c_node = ConstantNode(msg)
-			Edge(c_node.out, add_node.interfaces[interface_count])
-			ForneyLab.updateNodeMessage!(1, c_node) # Prepare message
+			m_node = MockNode(msg)
+			Edge(m_node.out, add_node.interfaces[interface_count])
 		end
 		interface_count += 1
 	end
@@ -113,19 +132,17 @@ end
 
 function initializeEqualityNode(msgs::Array{Any})
 	# Set up an equality node and prepare the messages
-	# A constant node is connected for each argument message
-	# and all messages are propagated to the constant node's outgoing interface
+	# A MockNode is connected for each argument message
 	#
-	# [C]-->[=]<--[C] (as many constant nodes as length(msgs))	
+	# [M]-->[=]<--[M] (as many constant nodes as length(msgs))	
 	#        |        
 
 	eq_node = EqualityNode(length(msgs))
 	interface_count = 1
 	for msg=msgs
 		if msg!=nothing
-			c_node = ConstantNode(msg)
-			Edge(c_node.out, eq_node.interfaces[interface_count])
-			ForneyLab.updateNodeMessage!(1, c_node) # Prepare message
+			m_node = MockNode(msg)
+			Edge(m_node.out, eq_node.interfaces[interface_count])
 		end
 		interface_count += 1
 	end
