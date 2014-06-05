@@ -1,4 +1,5 @@
 export
+    GammaMessage,
     GaussianMessage,
     GeneralMessage
 
@@ -154,4 +155,30 @@ function show(io::IO, msg::GeneralMessage)
     print(io, "GeneralMessage with value = ")
     show(io, msg.value)
     print("\n")
+end
+
+############################################
+# GammaMessage
+############################################
+# Description:
+#   Encodes a Gamma PDF.
+#   Define scalars a (shape) and b (rate).
+############################################
+type GammaMessage <: Message
+    a::Union(Float64, Nothing) # shape
+    b::Union(Float64, Nothing) # rate
+    function GammaMessage(a, b)
+        self = new()
+        self.a = deepcopy(a) # Make a copies instead of referencing
+        self.b = deepcopy(b)
+        return self
+    end
+end
+GammaMessage() = GammaMessage(1, 1)
+function show(io::IO, msg::GammaMessage)
+    println(io, "GammaMessage")
+    print(io, "a  = ")
+    show(io, msg.a)
+    print(io, "b  = ")
+    show(io, msg.b)
 end

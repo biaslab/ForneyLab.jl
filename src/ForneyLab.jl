@@ -141,6 +141,7 @@ include("nodes/addition.jl")
 include("nodes/constant.jl")
 include("nodes/equality.jl")
 include("nodes/fixed_gain.jl")
+include("nodes/gaussian.jl")
 # Composite nodes
 include("nodes/composite/gain_addition.jl")
 include("nodes/composite/gain_equality.jl")

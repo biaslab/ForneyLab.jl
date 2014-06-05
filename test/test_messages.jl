@@ -76,3 +76,11 @@ facts("GeneralMessage unit tests") do
         @fact GeneralMessage([1.0, 2.0]).value => [1.0, 2.0]
     end
 end
+
+facts("GammaMessage unit tests") do
+    context("GammaMessage() should initiatize a message value") do
+        msg = GammaMessage(2.0, 0.5)
+        @fact msg.a => 2.0
+        @fact msg.b => 0.5
+    end
+end
