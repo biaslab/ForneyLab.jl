@@ -1,7 +1,7 @@
 module ForneyLab
 
 export  Message, Node, CompositeNode, Interface, Edge
-export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, 
+export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal,
         getMessage, getForwardMessage, getBackwardMessage, setMessage!, setMessageValid!, setForwardMessage!, setBackwardMessage!, clearMessages!,
         generateSchedule, executeSchedule
@@ -32,6 +32,7 @@ type Interface
     node::Node
     partner::Union(Interface, Nothing) # Partner indicates the interface to which it is connected.
     child::Union(Interface, Nothing) # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
+    #self_dependent::Bool # If an interface is self-dependent, the outbound message depends on the inbound message on the same interface
     message::Union(Message, Nothing)
     message_valid::Bool # false indicates that message has already been consumed
 
@@ -169,7 +170,7 @@ end
 function updateNodeMessage!(outbound_interface::Interface, track_invalidations::Bool=true)
     # Calculate the outbound message based on the inbound messages and the node update function.
     # The resulting message is stored in the specified interface and returned.
-    
+
     node = outbound_interface.node
 
     # Determine types of inbound messages
@@ -188,7 +189,7 @@ function updateNodeMessage!(outbound_interface::Interface, track_invalidations::
 
     # Evaluate node update function
     printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
-    msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_types) 
+    msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_types)
     printVerbose(" >> $(msg)")
 
     # Invalidate everything that depends on the outbound message
@@ -295,7 +296,7 @@ end
 function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{Interface, 1}=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0))
     # This is a private function that performs a search through the factor graph to generate a schedule.
     # IMPORTANT: the resulting schedule depends on the current (valid) messages stored in the factor graph.
-    # This is a recursive implementation of DFS. The recursive calls are stored in call_list. 
+    # This is a recursive implementation of DFS. The recursive calls are stored in call_list.
     # backtrace will hold the backgrace of the recursion.
     node = outbound_interface.node
 
@@ -334,7 +335,7 @@ end
 
 function pushMessageInvalidations!(interface::Union(Interface, Nothing), interface_is_inbound::Bool=false, call_list::Array{Interface, 1}=Array(Interface, 0))
     # Invalidate all dependencies of a message. We call two messages dependent when one message (parent message) is used for the calculation of the other (child message).
-    # Dependence implies that alteration of the parent message invalidates the child message. 
+    # Dependence implies that alteration of the parent message invalidates the child message.
 
     # If interface_is_inbound==false: Invalidate everything that depends on the SENT (outbound) message message on interface.
     # If interface_is_inbound==true:  Invalidate everything that depends on the RECEIVED (inbound) message message on interface.
@@ -358,7 +359,7 @@ function pushMessageInvalidations!(interface::Union(Interface, Nothing), interfa
     # Push invalidations through the other interfaces of the node.
     node = interface.node
     for interface_id = 1:length(node.interfaces)
-        if is(interface, node.interfaces[interface_id]) continue end # skip the inbound interface        
+        if is(interface, node.interfaces[interface_id]) continue end # skip the inbound interface
         node.interfaces[interface_id].message_valid = false
         # This performs a DFS through the graph, invalidating all messages that depend on connected_node.interfaces[interface_id].message
         pushMessageInvalidations!(node.interfaces[interface_id].partner, true, call_list)
@@ -373,7 +374,7 @@ function pushMessageInvalidations!(interface::Union(Interface, Nothing), interfa
 end
 
 function pushMessageInvalidations!(node::Node)
-    # Invalidates all outbound messages of node AND all messages that depend on the node's outbound messages. 
+    # Invalidates all outbound messages of node AND all messages that depend on the node's outbound messages.
     for interface in node.interfaces
         interface.message_valid = false
         pushMessageInvalidations!(interface)
