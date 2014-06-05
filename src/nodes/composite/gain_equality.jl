@@ -95,15 +95,10 @@ backwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, V_x::Arra
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::GainEqualityCompositeNode,
-                            inbound_messages::Array{GaussianMessage, 1})
-    # Calculate an outbound message based on the inbound_messages array and the node function.
+                            inbound_messages_types::Type{GaussianMessage})
+    # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    # inbound_messages is indexed with the interface ids of the node.
-    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
 
-    if isdefined(inbound_messages, outbound_interface_id)
-        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
-    end
     if !node.use_composite_update_rules
         msg_out = calculateMessage!(node.interfaces[outbound_interface_id].child)
     else
@@ -114,8 +109,8 @@ function updateNodeMessage!(outbound_interface_id::Int,
         elseif outbound_interface_id == 1 || outbound_interface_id == 2
             # Backward messages
             msg_out = GaussianMessage()
-            msg_3 = inbound_messages[3]
-            msg_in = inbound_messages[outbound_interface_id == 1 ? 2 : 1] # the other input interface
+            msg_3 = node.interfaces[3].partner.message
+            msg_in = node.interfaces[outbound_interface_id == 1 ? 2 : 1].partner.message # the other input interface
 
             # Select parameterization
             # Order is from least to most computationally intensive

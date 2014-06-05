@@ -186,19 +186,9 @@ function updateNodeMessage!(outbound_interface::Interface, track_invalidations::
         inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
     end
 
-    # Collect all inbound messages in an array
-    inbound_messages = Array(inbound_message_types, length(node.interfaces))
-    if (inbound_message_types!=None)
-        for node_interface_id = 1:length(node.interfaces)
-            if node_interface_id!=outbound_interface_id
-                inbound_messages[node_interface_id] = node.interfaces[node_interface_id].partner.message
-            end
-        end
-    end
-
     # Evaluate node update function
     printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
-    msg = updateNodeMessage!(outbound_interface_id, node, inbound_messages)
+    msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_types) 
     printVerbose(" >> $(msg)")
 
     # Invalidate everything that depends on the outbound message
@@ -237,10 +227,11 @@ function calculateMarginal(forward_msg::Message, backward_msg::Message)
     # The outbound message is the marginal.
     @assert(typeof(forward_msg)==typeof(backward_msg), "Cannot create marginal from forward/backward messages of different types.")
     eq_node = EqualityNode(3)
-    inbound_messages = Array(typeof(forward_msg), 3)
-    inbound_messages[1] = forward_msg
-    inbound_messages[2] = backward_msg
-    marginal_msg = deepcopy(updateNodeMessage!(3, eq_node, inbound_messages))
+    c_node1 = ConstantNode(forward_msg)
+    c_node2 = ConstantNode(backward_msg)
+    Edge(c_node1.out, eq_node.interfaces[1])
+    Edge(c_node2.out, eq_node.interfaces[2])
+    marginal_msg = deepcopy(calculateMessage!(eq_node.interfaces[3]))
     return marginal_msg
 end
 

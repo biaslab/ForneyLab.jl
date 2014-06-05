@@ -59,15 +59,9 @@ equalityXiRule{T<:Number}(xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x+xi_y
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::EqualityNode,
-                            inbound_messages::Array{GaussianMessage, 1})
-    # Calculate an outbound message based on the inbound_messages array and the node function.
+                            inbound_messages_types::Type{GaussianMessage})
+    # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    # inbound_messages is indexed with the interface ids of the node.
-    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
-
-    if isdefined(inbound_messages, outbound_interface_id)
-        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
-    end
 
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
@@ -77,15 +71,15 @@ function updateNodeMessage!(outbound_interface_id::Int,
         # Always calculate the (xi,W) parametrization of all incoming messages if it's not already present.
 
         # Create accumulators for W and xi of the correct size
-        if !is(inbound_messages[first_incoming_id].W, nothing)
-            W_sum = zeros(size(inbound_messages[first_incoming_id].W))
+        if !is(node.interfaces[first_incoming_id].partner.message.W, nothing)
+            W_sum = zeros(size(node.interfaces[first_incoming_id].partner.message.W))
         else
-            W_sum = zeros(size(inbound_messages[first_incoming_id].V))
+            W_sum = zeros(size(node.interfaces[first_incoming_id].partner.message.V))
         end
-        if !is(inbound_messages[first_incoming_id].xi, nothing)
-            xi_sum = zeros(size(inbound_messages[first_incoming_id].xi))
+        if !is(node.interfaces[first_incoming_id].partner.message.xi, nothing)
+            xi_sum = zeros(size(node.interfaces[first_incoming_id].partner.message.xi))
         else
-            xi_sum = zeros(size(inbound_messages[first_incoming_id].m))
+            xi_sum = zeros(size(node.interfaces[first_incoming_id].partner.message.m))
         end
 
         # Sum W and xi of all incoming messages
@@ -94,14 +88,14 @@ function updateNodeMessage!(outbound_interface_id::Int,
                 continue
             end
             # Calculate (xi,W) parametrization if it's not available yet
-            ensureXiWParametrization!(inbound_messages[incoming_interface_id])
-            W_sum += inbound_messages[incoming_interface_id].W
-            xi_sum += inbound_messages[incoming_interface_id].xi
+            ensureXiWParametrization!(node.interfaces[incoming_interface_id].partner.message)
+            W_sum += node.interfaces[incoming_interface_id].partner.message.W
+            xi_sum += node.interfaces[incoming_interface_id].partner.message.xi
         end
         msg_out = GaussianMessage(xi=xi_sum, W=W_sum)
     else # 3 interfaces
-        msg_1 = inbound_messages[first_incoming_id]
-        msg_2 = inbound_messages[(outbound_interface_id==3) ? 2 : 3]
+        msg_1 = node.interfaces[first_incoming_id].partner.message
+        msg_2 = node.interfaces[(outbound_interface_id==3) ? 2 : 3].partner.message
         msg_out = GaussianMessage()
         if msg_1.m != nothing && msg_1.W != nothing && msg_2.m != nothing && msg_2.W != nothing
             msg_out.m  = equalityMRule(msg_1.m, msg_2.m, msg_1.W, msg_2.W)
@@ -134,15 +128,9 @@ end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::EqualityNode,
-                            inbound_messages::Array{GeneralMessage, 1})
-    # Calculate an outbound message based on the inbound_messages array and the node function.
+                            inbound_messages_types::Type{GeneralMessage})
+    # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    # inbound_messages is indexed with the interface ids of the node.
-    # inbound_messages[outbound_interface_id] should be #undef to indicate that the inbound message on this interface is not relevant.
-
-    if isdefined(inbound_messages, outbound_interface_id)
-        warn("The inbound message on the outbound interface is not undefined ($(typeof(node)) $(node.name) interface $(outbound_interface_id))")
-    end
 
     # Outbound message is equal to the inbound messages if not all inbound messages are equal.
     # Otherwise, the outbound message is GeneralMessage(0.0)
@@ -151,14 +139,14 @@ function updateNodeMessage!(outbound_interface_id::Int,
         if interface_id==outbound_interface_id || interface_id==first_incoming_id
             continue
         end
-        if inbound_messages[interface_id].value!=inbound_messages[first_incoming_id].value
-            if typeof(inbound_messages[first_incoming_id].value)<:Array
-                return node.interfaces[outbound_interface_id].message = GeneralMessage(zeros(size(inbound_messages[first_incoming_id].value)))
+        if node.interfaces[interface_id].partner.message.value!=node.interfaces[first_incoming_id].partner.message.value
+            if typeof(node.interfaces[first_incoming_id].partner.message.value)<:Array
+                return node.interfaces[outbound_interface_id].message = GeneralMessage(zeros(size(node.interfaces[first_incoming_id].partner.message.value)))
             else
                 return node.interfaces[outbound_interface_id].message = GeneralMessage(0.0)
             end
         end
     end
 
-    return node.interfaces[outbound_interface_id].message = deepcopy(inbound_messages[first_incoming_id])
+    return node.interfaces[outbound_interface_id].message = deepcopy(node.interfaces[first_incoming_id].partner.message)
 end
