@@ -171,8 +171,8 @@ end
 #   
 ############################################
 type GammaMessage <: Message
-    a::Union(Float64, Nothing) # shape
-    b::Union(Float64, Nothing) # rate
+    a::Float64 # shape
+    b::Float64 # rate
     inverted::Bool
     function GammaMessage(a, b, inverted=false)
         self = new()
@@ -182,7 +182,8 @@ type GammaMessage <: Message
         return self
     end
 end
-GammaMessage() = GammaMessage(1, 1, false)
+GammaMessage(inverted::Bool) = GammaMessage(2.0, 1.0, inverted)
+GammaMessage() = GammaMessage(2.0, 1.0, false)
 
 # function ensureInverse!(msg::GammaMessage)
 #     # TODO: double check
@@ -204,8 +205,6 @@ GammaMessage() = GammaMessage(1, 1, false)
 function show(io::IO, msg::GammaMessage)
     println(io, "GammaMessage")
     println(io, "inverted = $(msg.inverted)")
-    print(io, "a  = ")
-    show(io, msg.a)
-    print(io, "b  = ")
-    show(io, msg.b)
+    println(io, "a = $(msg.a)")
+    println(io, "b = $(msg.b)")
 end

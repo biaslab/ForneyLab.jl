@@ -64,20 +64,20 @@ function updateNodeMessage!(outbound_interface_id::Int,
         # Forward message
         gamma = node.interfaces[2].partner.message
         mean = node.interfaces[1].partner.message.value
-        if gamma.inverse
-            msg_out = GaussianMessage(m = mean, V=gamma.b/(gamma.a-1)) # V is just the mode of the inverse gamma
+        if gamma.inverted
+            msg_out = GaussianMessage(m = [mean], V=[gamma.b/(gamma.a-1)]) # V is just the mode of the inverse gamma
         else
-            msg_out = GaussianMessage(m = mean, W=(gamma.a-1)/gamma.b) # W is just the mode of the gamma
+            msg_out = GaussianMessage(m = [mean], W=[(gamma.a-1)/gamma.b]) # W is just the mode of the gamma
         end
     elseif outbound_interface_id == 1
         # Backward over mean edge
         # Rules not in Korl, but equivalent by symmetry
         gamma = node.interfaces[2].partner.message
         y = node.interfaces[3].partner.message.value
-        if gamma.inverse
-            msg_out = GaussianMessage(m = y, V=gamma.b/(gamma.a-1)) # V is just the mode of the inverse gamma
+        if gamma.inverted
+            msg_out = GaussianMessage(m = [y], V=[gamma.b/(gamma.a-1)]) # V is just the mode of the inverse gamma
         else
-            msg_out = GaussianMessage(m = y, W=(gamma.a-1)/gamma.b) # W is just the mode of the gamma
+            msg_out = GaussianMessage(m = [y], W=[(gamma.a-1)/gamma.b]) # W is just the mode of the gamma
         end
     else
         error("Message-type ($(inbound_message_types)) outbound_interface_id ($(outbound_interface_id)) combination not defined for node $(node.name) of type $(typeof(node)).")

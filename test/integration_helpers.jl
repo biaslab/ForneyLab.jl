@@ -167,6 +167,28 @@ function initializeFixedGainNode(A::Array, msgs::Array{Any})
 	return fg_node
 end
 
+function initializeGaussianNode(msgs::Array{Any})
+    # Set up a Gaussian node and prepare the messages
+    # A MockNode is connected for each argument message
+    #
+    #         [M] (mean)
+    #          |
+    #          v  out
+    #   [M]-->[N]----->
+    #  (prec.)
+    #                
+
+    g_node = GaussianNode()
+    interface_count = 1
+    for msg=msgs
+        if msg!=nothing
+            Edge(MockNode(msg).out, g_node.interfaces[interface_count])
+        end
+        interface_count += 1
+    end
+    return g_node
+end
+
 function initializeConstantAndGainAddNode()
     # Initialize some nodes
     #
