@@ -161,22 +161,49 @@ end
 # GammaMessage
 ############################################
 # Description:
-#   Encodes a Gamma PDF.
+#   Encodes an (inverted) Gamma PDF.
 #   Define scalars a (shape) and b (rate).
+#
+#   The inverted flag indicates whether the 
+#   function represents a distribution
+#   over a variance (inverted=true) or
+#   a precision (inverted=false).
+#   
 ############################################
 type GammaMessage <: Message
     a::Union(Float64, Nothing) # shape
     b::Union(Float64, Nothing) # rate
-    function GammaMessage(a, b)
+    inverted::Bool
+    function GammaMessage(a, b, inverted=false)
         self = new()
         self.a = deepcopy(a) # Make a copies instead of referencing
         self.b = deepcopy(b)
+        self.inverted = deepcopy(inverted)
         return self
     end
 end
-GammaMessage() = GammaMessage(1, 1)
+GammaMessage() = GammaMessage(1, 1, false)
+
+# function ensureInverse!(msg::GammaMessage)
+#     # TODO: double check
+#     if !msg.inverse
+#         msg.a = -msg.a # Switching parameterizations negates a
+#         msg.inverse = true
+#     end
+#     return msg
+# end
+# function ensureStandard!(msg::GammaMessage)
+#     # TODO: double check
+#     if msg.inverse
+#         msg.a = -msg.a # Switching parameterizations negates a
+#         msg.inverse = false
+#     end
+#     return msg
+# end
+
 function show(io::IO, msg::GammaMessage)
     println(io, "GammaMessage")
+    println(io, "inverted = $(msg.inverted)")
     print(io, "a  = ")
     show(io, msg.a)
     print(io, "b  = ")

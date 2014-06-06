@@ -15,16 +15,20 @@
 #   1. (none):
 #       GaussianMessage
 #       GeneralMessage
+#       GammaMessage
 #   2. (none):
 #       GaussianMessage
 #       GeneralMessage
+#       GammaMessage
 #   3. (none):
 #       GaussianMessage
 #       GeneralMessage
+#       GammaMessage
 #   ...
 #   N. (none):
 #       GaussianMessage
 #       GeneralMessage
+#       GammaMessage
 ############################################
 
 export EqualityNode
@@ -149,4 +153,17 @@ function updateNodeMessage!(outbound_interface_id::Int,
     end
 
     return node.interfaces[outbound_interface_id].message = deepcopy(node.interfaces[first_incoming_id].partner.message)
+end
+
+############################################
+# GammaMessage methods
+############################################
+
+function updateNodeMessage!(outbound_interface_id::Int,
+                            node::EqualityNode,
+                            inbound_messages_types::Type{GeneralMessage})
+    # Calculate an outbound message based on the inbound messages and the node function.
+    # This function is not exported, and is only meant for internal use.
+
+    # TODO: implement from Korl table 5.2
 end

@@ -50,31 +50,55 @@ type GaussianNode <: Node
 end
 
 ############################################
-# Gaussian- and GammaMessage methods
+# GeneralMessage methods
 ############################################
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::GaussianNode,
-                            inbound_messages_types::Type{Union(GaussianMessage, GammaMessage)})
+                            inbound_messages_types::Type{Union(GeneralMessage, GammaMessage)})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
+    # Formulas from table 5.2 in Korl (2005)
     if outbound_interface_id == 3
         # Forward message
-        mean_msg = node.interfaces[1].partner.message
-        prec_msg = node.interfaces[2].partner.message
-        if typeof(mean_msg) != GaussianMessage || typeof(prec_msg) != GaussianMessage
-            error("Incompatible message type with update function for node $(typeof(node)) $(node.name).")
+        gamma = node.interfaces[2].partner.message
+        mean = node.interfaces[1].partner.message.value
+        if gamma.inverse
+            msg_out = GaussianMessage(m = mean, V=gamma.b/(gamma.a-1)) # V is just the mode of the inverse gamma
+        else
+            msg_out = GaussianMessage(m = mean, W=(gamma.a-1)/gamma.b) # W is just the mode of the gamma
         end
-        # TODO: now we take the expectations of the incoming messages, do the variational approach
-        msg_out = GaussianMessage(m = mean_msg.m, W=prec_msg.a/prec_msg.b)
+    elseif outbound_interface_id == 1
+        # Backward over mean edge
+        # Rules not in Korl, but equivalent by symmetry
+        gamma = node.interfaces[2].partner.message
+        y = node.interfaces[3].partner.message.value
+        if gamma.inverse
+            msg_out = GaussianMessage(m = y, V=gamma.b/(gamma.a-1)) # V is just the mode of the inverse gamma
+        else
+            msg_out = GaussianMessage(m = y, W=(gamma.a-1)/gamma.b) # W is just the mode of the gamma
+        end
     else
-        # Backward message
-        # TODO: implement
-        error("Backward messages not implemented yet for $(typeof(node)) type.")
+        error("Message-type ($(inbound_message_types)) outbound_interface_id ($(outbound_interface_id)) combination not defined for node $(node.name) of type $(typeof(node)).")
     end
-
     # Set the outbound message
     return node.interfaces[outbound_interface_id].message = msg_out
 end
+function updateNodeMessage!(outbound_interface_id::Int,
+                            node::GaussianNode,
+                            inbound_messages_types::Type{GeneralMessage})
 
+    # Both m and y are known
+    # Formulas from table 5.2 in Korl (2005)
+    if outbound_interface_id == 2
+        # Backward over variance edge
+        y = node.interfaces[3].partner.message.value
+        m = node.interfaces[1].partner.message.value
+        msg_out = GammaMessage(-0.5, 0.5*(y-m)^2, true) # Send inverse gamma message
+    else
+        error("Message-type ($(inbound_message_types)) outbound_interface_id ($(outbound_interface_id)) combination not defined for node $(node.name) of type $(typeof(node)).")
+    end
+    # Set the outbound message
+    return node.interfaces[outbound_interface_id].message = msg_out
+end
