@@ -9,7 +9,9 @@ export
     ensureMVParametrization!,
     ensureMWParametrization!,
     ensureXiVParametrization!,
-    ensureXiWParametrization!
+    ensureXiWParametrization!,
+    ensureInverted!,
+    ensureStandard!
 
 ############################################
 # GaussianMessage
@@ -175,6 +177,9 @@ type GammaMessage <: Message
     b::Float64 # rate
     inverted::Bool
     function GammaMessage(a, b, inverted=false)
+        if a < 0.0 || b < 0.0
+            error("Parameters a and b for gamma distribution must both be positive.")
+        end
         self = new()
         self.a = deepcopy(a) # Make a copies instead of referencing
         self.b = deepcopy(b)
@@ -185,19 +190,19 @@ end
 GammaMessage(inverted::Bool) = GammaMessage(2.0, 1.0, inverted)
 GammaMessage() = GammaMessage(2.0, 1.0, false)
 
-# function ensureInverse!(msg::GammaMessage)
+# function ensureInverted!(msg::GammaMessage)
 #     # TODO: double check
-#     if !msg.inverse
+#     if !msg.inverted
 #         msg.a = -msg.a # Switching parameterizations negates a
-#         msg.inverse = true
+#         msg.inverted = true
 #     end
 #     return msg
 # end
 # function ensureStandard!(msg::GammaMessage)
 #     # TODO: double check
-#     if msg.inverse
+#     if msg.inverted
 #         msg.a = -msg.a # Switching parameterizations negates a
-#         msg.inverse = false
+#         msg.inverted = false
 #     end
 #     return msg
 # end
