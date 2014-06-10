@@ -79,31 +79,9 @@ end
 
 facts("GammaMessage unit tests") do
     context("GammaMessage() should initiatize a message value") do
-        msg = GammaMessage(2.0, 0.5, true)
-        @fast msg.inverted => true
+        msg = GammaMessage(a=2.0, b=0.5, inverted=true)
+        @fact msg.inverted => true
         @fact msg.a => 2.0
         @fact msg.b => 0.5
-    end
-
-    context("Conversion of GammaMessage") do
-        msg = GammaMessage(true)
-        ensureInverted!(msg)
-        @fact msg.inverted => true
-        @fact msg.a => 1.0
-        ensureStandard!(msg)
-        @fact msg.inverted => false
-        @fact msg.a => -1.0
-        msg = GammaMessage(false)
-        ensureStandard!(msg)
-        @fact msg.inverted => false
-        @fact msg.a => 1.0
-        ensureInverted!(msg)
-        @fact msg.inverted => true
-        @fact msg.a => -1.0
-    end
-
-    context("Positive a and b") do
-        @fact_throws GammaMessage(-1.0, 1.0, false)
-        @fact_throws GammaMessage(1.0, -1.0, false)
     end
 end

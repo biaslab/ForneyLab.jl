@@ -21,30 +21,30 @@ facts("GaussianNode integration tests") do
 	context("Point estimates of y and m, so no approximation is required.") do
 	    context("GaussianNode should propagate a forward message to y") do
 	    	# Standard
-	    	node = initializeGaussianNode([GeneralMessage(), GammaMessage(false), nothing])
+	    	node = initializeGaussianNode([GeneralMessage(), GammaMessage(a=1.0, b=1.0, inverted=false), nothing])
   	        msg = ForneyLab.updateNodeMessage!(3, node, Union(GeneralMessage, GammaMessage))
-  	        show(msg)
+  	        @fact true => false
   	        # Inverted
-	    	node = initializeGaussianNode([GeneralMessage(), GammaMessage(true), nothing])
+	    	node = initializeGaussianNode([GeneralMessage(), GammaMessage(a=1.0, b=1.0, inverted=true), nothing])
   	        msg = ForneyLab.updateNodeMessage!(3, node, Union(GeneralMessage, GammaMessage))
-  	        show(msg)
+  	        @fact true => false
 	    end
 
 	    context("GaussianNode should propagate a backward message to the mean") do
 	    	# Standard
-	    	node = initializeGaussianNode([nothing, GammaMessage(false), GeneralMessage()])
+	    	node = initializeGaussianNode([nothing, GammaMessage(a=1.0, b=1.0, inverted=false), GeneralMessage()])
   	        msg = ForneyLab.updateNodeMessage!(1, node, Union(GeneralMessage, GammaMessage))
-  	        show(msg)
+  	        @fact true => false
   	        # Inverted
-	    	node = initializeGaussianNode([nothing, GammaMessage(true), GeneralMessage()])
+	    	node = initializeGaussianNode([nothing, GammaMessage(a=1.0, b=1.0, inverted=true), GeneralMessage()])
   	        msg = ForneyLab.updateNodeMessage!(1, node, Union(GeneralMessage, GammaMessage))
-  	        show(msg)
+  	        @fact true => false
 	    end
 
 	    context("GaussianNode should propagate a backward message to the variance") do
-	    	node = initializeGaussianNode([GeneralMessage(), nothing, GeneralMessage()])
+	    	node = initializeGaussianNode([GeneralMessage(2.0), nothing, GeneralMessage(1.0)])
   	        msg = ForneyLab.updateNodeMessage!(2, node, GeneralMessage)
-  	        show(msg)
+  	        @fact true => false
 	    end
 	end
 end

@@ -176,10 +176,7 @@ type GammaMessage <: Message
     a::Float64 # shape
     b::Float64 # rate
     inverted::Bool
-    function GammaMessage(a, b, inverted=false)
-        if a < 0.0 || b < 0.0
-            error("Parameters a and b for gamma distribution must both be positive.")
-        end
+    function GammaMessage(; a=1.0, b=1.0, inverted=false)
         self = new()
         self.a = deepcopy(a) # Make a copies instead of referencing
         self.b = deepcopy(b)
@@ -187,25 +184,6 @@ type GammaMessage <: Message
         return self
     end
 end
-GammaMessage(inverted::Bool) = GammaMessage(2.0, 1.0, inverted)
-GammaMessage() = GammaMessage(2.0, 1.0, false)
-
-# function ensureInverted!(msg::GammaMessage)
-#     # TODO: double check
-#     if !msg.inverted
-#         msg.a = -msg.a # Switching parameterizations negates a
-#         msg.inverted = true
-#     end
-#     return msg
-# end
-# function ensureStandard!(msg::GammaMessage)
-#     # TODO: double check
-#     if msg.inverted
-#         msg.a = -msg.a # Switching parameterizations negates a
-#         msg.inverted = false
-#     end
-#     return msg
-# end
 
 function show(io::IO, msg::GammaMessage)
     println(io, "GammaMessage")

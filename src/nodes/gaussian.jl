@@ -95,7 +95,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
         # Backward over variance edge
         y = node.interfaces[3].partner.message.value
         m = node.interfaces[1].partner.message.value
-        msg_out = GammaMessage(-0.5, 0.5*(y-m)^2, true) # Send inverse gamma message
+        msg_out = GammaMessage(a=-0.5, b=0.5*(y-m)^2, inverted=true) # Send inverse gamma message
     else
         error("Message-type ($(inbound_message_types)) outbound_interface_id ($(outbound_interface_id)) combination not defined for node $(node.name) of type $(typeof(node)).")
     end

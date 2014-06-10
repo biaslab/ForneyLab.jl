@@ -162,4 +162,9 @@ facts("EqualityNode integration tests") do
         @fact node.interfaces[3].message => msg
         @fact maximum(msg.value) => 0.0
     end
+
+    context("EqualityNode should propagate a GeneralMessage") do
+        # TODO: implement kort table 5.2 for gamma message equality node
+        @fact true => false
+    end
 end

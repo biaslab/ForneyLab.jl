@@ -161,7 +161,7 @@ end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::EqualityNode,
-                            inbound_messages_types::Type{GeneralMessage})
+                            inbound_messages_types::Type{GammaMessage})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
