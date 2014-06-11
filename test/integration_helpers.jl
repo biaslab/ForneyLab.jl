@@ -6,22 +6,26 @@
 
 type MockNode <: Node
 	# MockNode is a node with an arbitrary function, that when created
-	# initiates a valid message on its only 'out' interface 
+	# initiates a valid message on its only interface 'out'
 	interfaces::Array{Interface, 1}
 	out::Interface
     name::ASCIIString
-	function MockNode()
-        self = new(Array(Interface, 1))
-        self.interfaces[1] = Interface(self)
+	function MockNode(num_interfaces::Int=1)
+        self = new(Array(Interface, num_interfaces))
+        for interface_id = 1:num_interfaces
+            self.interfaces[interface_id] = Interface(self)
+        end
         self.out = self.interfaces[1]
         self.name = "#undefined"
         return(self)
 	end
 end
-function MockNode(message::Message)
-    self = MockNode()
-    self.out.message = message
-    self.out.message_valid = true
+function MockNode(message::Message, num_interfaces::Int=1)
+    self = MockNode(num_interfaces)
+    for interface in self.interfaces
+        interface.message = message
+        interface.message_valid = true
+    end
     return(self)
 end
 
