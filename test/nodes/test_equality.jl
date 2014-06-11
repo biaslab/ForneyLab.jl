@@ -163,8 +163,12 @@ facts("EqualityNode integration tests") do
         @fact maximum(msg.value) => 0.0
     end
 
-    context("EqualityNode should propagate a GeneralMessage") do
-        # TODO: implement kort table 5.2 for gamma message equality node
-        @fact true => false
+    context("EqualityNode should propagate a GammaMessage") do
+        node = initializeEqualityNode([GammaMessage(inverted=true), GammaMessage(inverted=true), nothing])
+        msg = ForneyLab.updateNodeMessage!(3, node, GammaMessage)
+        @fact node.interfaces[3].message => msg
+        @fact msg.a => 3.0
+        @fact msg.b => 2.0
+        @fact msg.inverted => true
     end
 end

@@ -21,30 +21,39 @@ facts("GaussianNode integration tests") do
 	context("Point estimates of y and m, so no approximation is required.") do
 	    context("GaussianNode should propagate a forward message to y") do
 	    	# Standard
-	    	node = initializeGaussianNode([GeneralMessage(), GammaMessage(a=1.0, b=1.0, inverted=false), nothing])
+	    	node = initializeGaussianNode([GeneralMessage(2.0), GammaMessage(a=3.0, b=1.0, inverted=false), nothing])
   	        msg = ForneyLab.updateNodeMessage!(3, node, Union(GeneralMessage, GammaMessage))
-  	        @fact true => false
+  	        @fact typeof(msg) => GaussianMessage
+  	        @fact msg.m => [2.0]
+  	        @fact msg.W => reshape([2.0], 1, 1)
   	        # Inverted
-	    	node = initializeGaussianNode([GeneralMessage(), GammaMessage(a=1.0, b=1.0, inverted=true), nothing])
+	    	node = initializeGaussianNode([GeneralMessage(2.0), GammaMessage(a=3.0, b=1.0, inverted=true), nothing])
   	        msg = ForneyLab.updateNodeMessage!(3, node, Union(GeneralMessage, GammaMessage))
-  	        @fact true => false
+  	        @fact typeof(msg) => GaussianMessage
+  	        @fact msg.m => [2.0]
+  	        @fact msg.V => reshape([0.5], 1, 1)
 	    end
 
 	    context("GaussianNode should propagate a backward message to the mean") do
 	    	# Standard
-	    	node = initializeGaussianNode([nothing, GammaMessage(a=1.0, b=1.0, inverted=false), GeneralMessage()])
+	    	node = initializeGaussianNode([nothing, GammaMessage(a=3.0, b=1.0, inverted=false), GeneralMessage(2.0)])
   	        msg = ForneyLab.updateNodeMessage!(1, node, Union(GeneralMessage, GammaMessage))
-  	        @fact true => false
+  	        @fact msg.m => [2.0]
+  	        @fact msg.W => reshape([2.0], 1, 1)
   	        # Inverted
-	    	node = initializeGaussianNode([nothing, GammaMessage(a=1.0, b=1.0, inverted=true), GeneralMessage()])
+	    	node = initializeGaussianNode([nothing, GammaMessage(a=3.0, b=1.0, inverted=true), GeneralMessage(2.0)])
   	        msg = ForneyLab.updateNodeMessage!(1, node, Union(GeneralMessage, GammaMessage))
-  	        @fact true => false
+  	        @fact msg.m => [2.0]
+  	        @fact msg.V => reshape([0.5], 1, 1)
 	    end
 
 	    context("GaussianNode should propagate a backward message to the variance") do
 	    	node = initializeGaussianNode([GeneralMessage(2.0), nothing, GeneralMessage(1.0)])
   	        msg = ForneyLab.updateNodeMessage!(2, node, GeneralMessage)
-  	        @fact true => false
+  	        @fact typeof(msg) => GammaMessage
+  	        @fact msg.a => -0.5
+  	        @fact msg.b => 0.5
+  	        @fact msg.inverted => true
 	    end
 	end
 end

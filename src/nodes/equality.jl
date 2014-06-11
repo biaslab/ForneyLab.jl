@@ -143,6 +143,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
         if interface_id==outbound_interface_id || interface_id==first_incoming_id
             continue
         end
+        msg_out
         if node.interfaces[interface_id].partner.message.value!=node.interfaces[first_incoming_id].partner.message.value
             if typeof(node.interfaces[first_incoming_id].partner.message.value)<:Array
                 return node.interfaces[outbound_interface_id].message = GeneralMessage(zeros(size(node.interfaces[first_incoming_id].partner.message.value)))
@@ -165,5 +166,25 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    # TODO: implement from Korl table 5.2
+    # Definition from Korl table 5.2
+    first_incoming_id = (outbound_interface_id==1) ? 2 : 1
+    if length(node.interfaces)!=3 
+        error("Equality update rule for gamma distribution only defined for three interfaces")
+    end
+    a = 1
+    b = 0
+    for interface_id = 1:length(node.interfaces)
+        if interface_id==outbound_interface_id
+            continue
+        end
+        msg = node.interfaces[interface_id].partner.message
+        if msg.inverted
+            a += msg.a 
+            b += msg.b
+        else
+            error("Equality update rule for gamma distribution only defined for inverted gamma messages")
+        end
+    end
+
+    return node.interfaces[outbound_interface_id].message = GammaMessage(a=a, b=b, inverted=true)
 end

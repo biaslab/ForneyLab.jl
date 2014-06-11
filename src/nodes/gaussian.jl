@@ -3,7 +3,10 @@
 ############################################
 # Description:
 #   Node converting an input mean and precision
-#   to a univariate Gaussian distribution:
+#   to a univariate Gaussian distribution.
+#   Estimate precision with given inputs and vice versa,
+#   Two distributions as input are not implemented 
+#   and is a task for vmp:
 #
 #         in1 (mean)
 #          |
@@ -17,10 +20,19 @@
 #       GaussianNode([1.0], [0.1]; name="my_node")
 #
 # Interface ids, (names) and supported message types:
+#   Receiving:
+#   1. (in1):
+#       GeneralMessage
+#   2. (in2):
+#       (Standard or inverted) GammaMessage
+#   3. (out):
+#       GeneralMessage
+#
+#   Sending:
 #   1. (in1):
 #       GaussianMessage
 #   2. (in2):
-#       GammaMessage
+#       (Inverted) GammaMessage
 #   3. (out):
 #       GaussianMessage
 ############################################
