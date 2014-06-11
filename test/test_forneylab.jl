@@ -246,6 +246,21 @@ facts("pushMessageInvalidations!(Node) integration tests") do
         @fact add.in2.message_valid => false
         @fact equ.interfaces[1].message_valid => false
     end
+    context("pushMessageInvalidations!() should incorporate interface dependencies") do
+        # Build testing graph
+        node_a = MockNode(GaussianMessage(), 3)
+        node_b = MockNode(GaussianMessage(), 1)
+        node_a.interfaces[1].message_dependencies = [node_a.interfaces[1]] # interface 1 only depends on itself
+        node_a.interfaces[3].message_dependencies = [node_a.interfaces[2]] # interface 3 only depends on interface 2
+        Edge(node_b.interfaces[1], node_a.interfaces[1])
+        # Now push the invalidation of the outbound message of node_b through the graph
+        ForneyLab.pushMessageInvalidations!(node_b)
+        # A message should be invalidated iff it depends on node_b
+        @fact node_b.interfaces[1].message_valid => false
+        @fact node_a.interfaces[1].message_valid => false
+        @fact node_a.interfaces[2].message_valid => false
+        @fact node_a.interfaces[3].message_valid => true
+    end
 end
 
 facts("Generate and execute schedule integration tests") do
