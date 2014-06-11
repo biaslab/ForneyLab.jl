@@ -35,6 +35,7 @@ facts("GaussianNode integration tests") do
 	    end
 
 	    context("GaussianNode should propagate a backward message to the mean") do
+	    	warn("Calculation rule should be double checked.")
 	    	# Standard
 	    	node = initializeGaussianNode([nothing, GammaMessage(a=3.0, b=1.0, inverted=false), GeneralMessage(2.0)])
   	        msg = ForneyLab.updateNodeMessage!(1, node, Union(GeneralMessage, GammaMessage))

@@ -79,12 +79,13 @@ facts("calculateMarginal unit tests") do
         @fact_throws calculateMarginal(GaussianMessage(), GeneralMessage())
     end
 
-    context("calculateMarginal(edge) should give correct result") do
+    context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
         edge = Edge(ConstantNode(GaussianMessage(m=[0.0], V=[1.0])),
                     ConstantNode(GaussianMessage(m=[0.0], V=[1.0])))
         calculateForwardMessage!(edge)
         calculateBackwardMessage!(edge)
-        marginal_msg = calculateMarginal(edge)
+        marginal_msg = calculateMarginal!(edge)
+        @fact edge.marginal => marginal_msg
         ensureMVParametrization!(marginal_msg)
         @fact marginal_msg.m => [0.0]
         @fact isApproxEqual(marginal_msg.V, reshape([0.5], 1, 1)) => true

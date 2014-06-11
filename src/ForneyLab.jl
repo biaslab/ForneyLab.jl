@@ -2,7 +2,7 @@ module ForneyLab
 
 export  Message, Node, CompositeNode, Interface, Edge
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, 
-        calculateMarginal,
+        calculateMarginal, calculateMarginal!,
         getMessage, getForwardMessage, getBackwardMessage, setMessage!, setMessageValid!, setForwardMessage!, setBackwardMessage!, clearMessages!,
         generateSchedule, executeSchedule
 
@@ -68,8 +68,11 @@ type Edge
     # An Edge joins two interfaces and has a direction (from tail to head).
     # Edges are mostly useful for code readability, they are not used internally.
     # Forward messages flow in the direction of the Edge (tail to head).
+    # Edges can contain marginals, which are the product of the forward and backward message.
+
     tail::Interface
     head::Interface
+    marginal::Message # Messages are probability distributions
 
     function Edge(tail::Interface, head::Interface)
         if  typeof(head.message) == Nothing ||
@@ -236,9 +239,11 @@ function calculateMarginal(forward_msg::Message, backward_msg::Message)
     return marginal_msg
 end
 
-function calculateMarginal(edge::Edge, track_invalidations::Bool=true)
+function calculateMarginal!(edge::Edge, track_invalidations::Bool=true)
     # Calculate the marginal message on an edge
-    # If the required messages are not available, they will be calculated by calling calculateMessage!().
+    # If the required messages are not available, they will be calculated by calling calculateMessage!(),
+    # otherwise the present messages are used.
+
     @assert(typeof(edge.tail)==Interface, "Edge should be bound to a tail interface.")
     @assert(typeof(edge.head)==Interface, "Edge should be bound to a head interface.")
     if edge.tail.message==nothing
@@ -247,7 +252,9 @@ function calculateMarginal(edge::Edge, track_invalidations::Bool=true)
     if edge.head.message==nothing
         calculateMessage!(edge.head, track_invalidations)
     end
-    return calculateMarginal(edge.tail.message, edge.head.message)
+    msg = calculateMarginal(edge.tail.message, edge.head.message)
+    edge.marginal = msg
+    return(msg)
 end
 
 function clearMessages!(node::Node)
