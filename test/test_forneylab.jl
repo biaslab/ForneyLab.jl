@@ -159,6 +159,14 @@ facts("Connections between nodes integration tests") do
         @fact_throws Edge(node.interfaces[2], node.interfaces[1])
     end
 
+    context("Edge construction should couple interfaces to edge") do
+        (node1, node2) = initializePairOfMockNodes()
+        @fact node1.out.edge => nothing
+        @fact node2.out.edge => nothing
+        edge = Edge(node1.out, node2.out)
+        @fact node1.out.edge => edge
+        @fact node2.out.edge => edge
+    end
 end
 
 facts("CalculateMessage!() integration tests") do

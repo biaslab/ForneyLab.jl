@@ -19,6 +19,7 @@ import Base.show
 
 # Top-level abstracts
 abstract Message
+abstract RootEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from RootEdge, solving this problem.
 
 abstract Node
 show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
@@ -30,24 +31,25 @@ type Interface
     # An Interface can be seen as a half-edge, that connects to a partner Interface to form a complete edge.
     # A message from node a to node b is stored at the Interface of node a that connects to an Interface of node b.
     node::Node
+    edge::Union(RootEdge, Nothing)
     partner::Union(Interface, Nothing) # Partner indicates the interface to which it is connected.
     child::Union(Interface, Nothing) # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
     message::Union(Message, Nothing)
     message_valid::Bool # false indicates that message has already been consumed
 
     # Sanity check for matching message types
-    function Interface(node::Node, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
+    function Interface(node::Node, edge::Union(RootEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
-            new(node, partner, child, message, typeof(message)!=Nothing)
+            new(node, edge, partner, child, message, typeof(message)!=Nothing)
         elseif typeof(message) != typeof(partner.message) # Compare message types
             error("Message type of partner does not match with interface message type")
         else
-            new(node, partner, child, message, typeof(message)!=Nothing)
+            new(node, edge, partner, child, message, typeof(message)!=Nothing)
         end
     end
 end
-Interface(node::Node, message::Message) = Interface(node, nothing, nothing, message)
-Interface(node::Node) = Interface(node, nothing, nothing, nothing)
+Interface(node::Node, message::Message) = Interface(node, nothing, nothing, nothing, message)
+Interface(node::Node) = Interface(node, nothing, nothing, nothing, nothing)
 show(io::IO, interface::Interface) = println(io, "Interface of $(typeof(interface.node)) with node name $(interface.node.name) holds ", interface.message_valid ? "VALID" : "INVALID", " message of type $(typeof(interface.message)).")
 function setMessage!(interface::Interface, message::Message, track_invalidations::Bool=true)
     interface.message = message
@@ -64,7 +66,7 @@ function show(io::IO, schedule::Array{Interface, 1})
     end
 end
 
-type Edge
+type Edge <: RootEdge
     # An Edge joins two interfaces and has a direction (from tail to head).
     # Edges are mostly useful for code readability, they are not used internally.
     # Forward messages flow in the direction of the Edge (tail to head).
@@ -79,6 +81,10 @@ type Edge
             typeof(tail.message) == Nothing ||
             typeof(head.message) == typeof(tail.message)
             if !is(head.node, tail.node)
+                self = new(tail, head)
+                # Assign pointed to edge from interfaces
+                tail.edge = self
+                head.edge = self
                 # Partner head and tail, and merge their families
                 tail.partner = head
                 head.partner = tail
@@ -94,7 +100,7 @@ type Edge
                     child_interface.partner = head.partner
                     child_interface = child_interface.child
                 end
-                new(tail, head)
+                return self
             else
                 error("Cannot connect two interfaces of the same node: ", typeof(head.node), " ", head.node.name)
             end
@@ -130,7 +136,7 @@ function Edge(tail_node::Node, head_node::Node)
 
     return Edge(tail, head)
 end
-show(io::IO, edge::Edge) = println(io, "Edge from ", typeof(edge.tail.node), " with node name ", edge.tail.node.name, " to ", typeof(edge.head.node), " with node name ", edge.head.node.name, ". Forward message type: ", typeof(edge.tail.message), ". Backward message type: ", typeof(edge.head.message), ".")
+show(io::IO, edge::Edge) = println(io, "Edge from $(typeof(edge.tail.node)) with node name $(edge.tail.node.name) to $(typeof(edge.head.node)) with node name $(edge.head.node.name) holds marginal of type $(typeof(edge.marginal)). Forward message type: $(typeof(edge.tail.message)). Backward message type: $(typeof(edge.head.message)).")
 setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
 setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, message)
 getForwardMessage(edge::Edge) = edge.tail.message

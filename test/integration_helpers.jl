@@ -9,10 +9,12 @@ type MockNode <: Node
 	# initiates a valid message on its only 'out' interface 
 	interfaces::Array{Interface, 1}
 	out::Interface
+    name::ASCIIString
 	function MockNode()
         self = new(Array(Interface, 1))
         self.interfaces[1] = Interface(self)
         self.out = self.interfaces[1]
+        self.name = "#undefined"
         return(self)
 	end
 end
@@ -26,6 +28,16 @@ end
 #############
 # Backgrounds
 #############
+
+function initializePairOfMockNodes()
+    # Two unconnected MockNodes
+    #
+    # [M]--|
+    #
+    # [M]--|
+    
+    return MockNode(), MockNode()
+end
 
 function initializePairOfNodes(; A=[1.0], msg_gain_1=GeneralMessage(2.0), msg_gain_2=GeneralMessage(3.0), msg_const=GeneralMessage(1.0))
 	# Helper function for initializing an unconnected pair of nodes
