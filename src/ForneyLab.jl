@@ -252,18 +252,22 @@ end
 
 function calculateMarginal!(edge::Edge, track_invalidations::Bool=true)
     # Calculate the marginal message on an edge
-    # If the required messages are not available, they will be calculated by calling calculateMessage!(),
+    # If the required messages are not available or invalid, they will be calculated by calling calculateMessage!(),
     # otherwise the present messages are used.
 
     @assert(typeof(edge.tail)==Interface, "Edge should be bound to a tail interface.")
     @assert(typeof(edge.head)==Interface, "Edge should be bound to a head interface.")
-    if edge.tail.message==nothing
-        calculateMessage!(edge.tail, track_invalidations)
+    if edge.tail.message==nothing || (edge.tail.message != nothing && !edge.tail.message_valid)
+        m1 = calculateMessage!(edge.tail, track_invalidations)
+    else
+        m1 = edge.tail.message
     end
-    if edge.head.message==nothing
-        calculateMessage!(edge.head, track_invalidations)
+    if edge.head.message==nothing || (edge.head.message != nothing && !edge.head.message_valid)
+        m2 = calculateMessage!(edge.head, track_invalidations)
+    else
+        m2 = edge.head.message
     end
-    msg = calculateMarginal(edge.tail.message, edge.head.message)
+    msg = calculateMarginal(m1, m2)
     edge.marginal = msg
     return(msg)
 end
