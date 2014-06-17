@@ -196,8 +196,8 @@ function updateNodeMessage!(outbound_interface::Interface, track_invalidations::
            (isdefined(outbound_interface, :message_dependencies) && !(node_interface in outbound_interface.message_dependencies))
             continue
         end
-        @assert(node_interface.partner!=nothing, "Cannot receive messages on disconnected interface $node_interface_id of $(typeof(node)) $(node.name)")
-        @assert(node_interface.partner.message!=nothing, "There is no inbound message present on interface $node_interface_id of $(typeof(node)) $(node.name)")
+        @assert(node_interface.partner!=nothing, "Cannot receive messages on disconnected interface $(node_interface_id) of $(typeof(node)) $(node.name)")
+        @assert(node_interface.partner.message!=nothing, "There is no inbound message present on interface $(node_interface_id) of $(typeof(node)) $(node.name)")
         inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
     end
 
