@@ -82,6 +82,9 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg_out = GaussianMessage(m = [mean], W=[(gamma.a-1)/gamma.b]) # W is just the mode of the gamma
         end
     elseif outbound_interface_id == 1
+
+        # TODO: check duplicate function
+
         # Backward over mean edge
         # Rules not in Korl, but equivalent by symmetry
         gamma = node.interfaces[2].partner.message
@@ -120,12 +123,15 @@ end
 ############################################
 
 function updateNodeMessage!(outbound_interface_id::Int, node::GaussianNode, inbound_messages_types::Type{Union(GeneralMessage, GammaMessage)})
+    
+    # TODO: check duplicate function
+
     # Variational update function, takes the MARGINALS as input instead of the inbound messages.
     # Update the outgoing message on the mean interface of a Gaussian node.
     # Derivation for the update rule can be found in the derivations notebook.
 
     if outbound_interface_id == 1 # Mean estimation from variance and sample
-        y_0 = node.out.edge.marginal.value # observation
+        y_0 = node.out.partner.message.value # observation
         a = node.in2.edge.marginal.a # gamma message
         b = node.in2.edge.marginal.b
         nu_m = GaussianMessage( m=[y_0], V=[((a+1)/b)] )
@@ -140,7 +146,7 @@ function updateNodeMessage!(outbound_interface_id::Int, node::GaussianNode, inbo
     # Derivation for the update rule can be found in the derivations notebook.
 
     if outbound_interface_id == 2 # Variance estimation from mean and sample
-        y_0 = node.out.edge.marginal.value # observation
+        y_0 = node.out.partner.message.value # observation
         m = node.in1.edge.marginal.m[1] # Gaussian message
         V = node.in1.edge.marginal.V[1,1]
         nu_s = GammaMessage( a=-0.5, b=0.5*(y_0-m)^2+0.5*V, inverted=true )

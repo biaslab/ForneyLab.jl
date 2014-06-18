@@ -204,7 +204,6 @@ function updateNodeMessage!(outbound_interface::Interface, track_invalidations::
     # Evaluate node update function
     printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
     msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_types)
-    printVerbose(" >> $(msg)")
 
     # Invalidate everything that depends on the outbound message
     if track_invalidations pushMessageInvalidations!(outbound_interface) end

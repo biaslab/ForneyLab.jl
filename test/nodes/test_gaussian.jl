@@ -57,4 +57,8 @@ facts("GaussianNode integration tests") do
   	        @fact msg.inverted => true
 	    end
 	end
+
+  context("Variational estimation") do
+    @fact true => false
+  end
 end
