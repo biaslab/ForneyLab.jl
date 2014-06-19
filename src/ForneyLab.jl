@@ -3,7 +3,7 @@ module ForneyLab
 export  Message, Node, CompositeNode, Interface, Edge
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal,
-        getMessage, getForwardMessage, getBackwardMessage, setMessage!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!
+        getMessage, getForwardMessage, getBackwardMessage, setMessage!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
         generateSchedule, executeSchedule
 
 # Verbosity
@@ -39,7 +39,7 @@ type Interface
     # Sanity check for matching message types
     function Interface(node::Node, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
-            return new(node, partner, child, message
+            return new(node, partner, child, message)
         elseif typeof(message) != typeof(partner.message) # Compare message types
             error("Message type of partner does not match with interface message type")
         else
