@@ -245,28 +245,17 @@ function calculateMarginal(forward_msg::Message, backward_msg::Message)
     c_node2 = ConstantNode(backward_msg)
     Edge(c_node1.out, eq_node.interfaces[1])
     Edge(c_node2.out, eq_node.interfaces[2])
-    marginal_msg = deepcopy(calculateMessage!(eq_node.interfaces[3]))
+    c_node1.out.message = deepcopy(c_node1._value) # just do it the quick way
+    c_node2.out.message = deepcopy(c_node2._value)
+    marginal_msg = updateNodeMessage!(3, eq_node, typeof(forward_msg)) # quick direct call
     return marginal_msg
 end
 
-function calculateMarginal!(edge::Edge, track_invalidations::Bool=true)
-    # Calculate the marginal message on an edge
-    # If the required messages are not available or invalid, they will be calculated by calling calculateMessage!(),
-    # otherwise the present messages are used.
-
-    @assert(typeof(edge.tail)==Interface, "Edge should be bound to a tail interface.")
-    @assert(typeof(edge.head)==Interface, "Edge should be bound to a head interface.")
-    if edge.tail.message==nothing || (edge.tail.message != nothing && !edge.tail.message_valid)
-        m1 = calculateMessage!(edge.tail, track_invalidations)
-    else
-        m1 = edge.tail.message
-    end
-    if edge.head.message==nothing || (edge.head.message != nothing && !edge.head.message_valid)
-        m2 = calculateMessage!(edge.head, track_invalidations)
-    else
-        m2 = edge.head.message
-    end
-    msg = calculateMarginal(m1, m2)
+function calculateMarginal!(edge::Edge)
+    # Calculates and writes the marginal on edge
+    @assert(typeof(edge.tail.message)==Message, "Edge should hold a forward message.")
+    @assert(typeof(edge.head.message)==Message, "Edge should hold a backward message.")
+    msg = calculateMarginal(edge.tail.message, edge.head.message)
     edge.marginal = msg
     return(msg)
 end
