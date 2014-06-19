@@ -253,8 +253,8 @@ end
 
 function calculateMarginal!(edge::Edge)
     # Calculates and writes the marginal on edge
-    @assert(typeof(edge.tail.message)==Message, "Edge should hold a forward message.")
-    @assert(typeof(edge.head.message)==Message, "Edge should hold a backward message.")
+    @assert(typeof(edge.tail.message)<:Message, "Edge should hold a forward message.")
+    @assert(typeof(edge.head.message)<:Message, "Edge should hold a backward message.")
     msg = calculateMarginal(edge.tail.message, edge.head.message)
     edge.marginal = msg
     return(msg)
