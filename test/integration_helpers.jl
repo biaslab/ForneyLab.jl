@@ -205,6 +205,30 @@ function initializeGaussianNode(msgs::Array{Any})
     return g_node
 end
 
+function initializeVariationalGaussianNode(msgs::Array{Any})
+    # Set up a Gaussian node and prepare the messages/marginals
+    # A MockNode is connected for each argument message
+    #
+    #         [M] (mean)
+    #          |
+    #          v  out
+    #   [M]-->[N]----->
+    #  (prec.)
+    #                
+
+    g_node = GaussianNode(true)
+    edge = Edge(MockNode(GaussianMessage()).out, g_node.in1)
+    if msgs[1] != nothing
+        edge.marginal = msgs[1]
+    end
+    edge = Edge(MockNode(GammaMessage()).out, g_node.in2)
+    if msgs[2] != nothing
+        edge.marginal = msgs[2]
+    end
+    Edge(g_node.out, MockNode(msgs[3]).out)
+    return g_node
+end
+
 function initializeConstantAndGainAddNode()
     # Initialize some nodes
     #

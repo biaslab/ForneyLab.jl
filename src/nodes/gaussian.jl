@@ -42,13 +42,14 @@ export GaussianNode
 type GaussianNode <: Node
     name::ASCIIString
     interfaces::Array{Interface,1}
+    variational::Bool
     # Helper fields filled by constructor
     in1::Interface
     in2::Interface
     out::Interface
-    function GaussianNode(; args...)
+    function GaussianNode(variational; args...)
         (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
-        self = new(name, Array(Interface, 3))
+        self = new(name, Array(Interface, 3), variational)
         # Create interfaces
         self.interfaces[1] = Interface(self)
         self.interfaces[2] = Interface(self)
@@ -60,16 +61,33 @@ type GaussianNode <: Node
         return self
     end
 end
+GaussianNode(; args...) = GaussianNode(false; args...)
+
+############################################
+# Update functions
+############################################
+
+function updateNodeMessage!(outbound_interface_id::Int,
+                            node::GaussianNode,
+                            inbound_messages_types::Any)
+    # Select update function depending on the variational or observed nature of the Gaussian node
+    if node.variational
+        updateNodeMessageVariational!(outbound_interface_id, node, inbound_messages_types)
+    else
+        updateNodeMessagePointEstimate!(outbound_interface_id, node, inbound_messages_types)
+    end
+end
 
 ############################################
 # Point-estimate update functions
 ############################################
 
-function updateNodeMessage!(outbound_interface_id::Int,
-                            node::GaussianNode,
-                            inbound_messages_types::Type{Union(GeneralMessage, GammaMessage)})
+function updateNodeMessagePointEstimate!(outbound_interface_id::Int,
+                                         node::GaussianNode,
+                                         inbound_messages_types::Type{Union(GeneralMessage, GammaMessage)})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
+    # For interface 1 this call is identical to the variational call. A decision about the right call is made by the invoking updateNodeMessage function.
 
     # Formulas from table 5.2 in Korl (2005)
     if outbound_interface_id == 3
@@ -82,9 +100,6 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg_out = GaussianMessage(m = [mean], W=[(gamma.a-1)/gamma.b]) # W is just the mode of the gamma
         end
     elseif outbound_interface_id == 1
-
-        # TODO: check duplicate function
-
         # Backward over mean edge
         # Rules not in Korl, but equivalent by symmetry
         gamma = node.interfaces[2].partner.message
@@ -100,9 +115,9 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Set the outbound message
     return node.interfaces[outbound_interface_id].message = msg_out
 end
-function updateNodeMessage!(outbound_interface_id::Int,
-                            node::GaussianNode,
-                            inbound_messages_types::Type{GeneralMessage})
+function updateNodeMessagePointEstimate!(outbound_interface_id::Int,
+                                         node::GaussianNode,
+                                         inbound_messages_types::Type{GeneralMessage})
 
     # Both m and y are known
     # Formulas from table 5.2 in Korl (2005)
@@ -122,11 +137,12 @@ end
 # Variational update functions
 ############################################
 
-function updateNodeMessage!(outbound_interface_id::Int, node::GaussianNode, inbound_messages_types::Type{Union(GeneralMessage, GammaMessage)})
-    
-    # TODO: check duplicate function
+function updateNodeMessageVariational!(outbound_interface_id::Int,
+                                       node::GaussianNode,
+                                       inbound_messages_types::Type{Union(GeneralMessage, GammaMessage)})
 
     # Variational update function, takes the MARGINALS as input instead of the inbound messages.
+    # For interface 1 this call is identical to the point estimate call. A decision about the right call is made by the invoking updateNodeMessage function.
     # Update the outgoing message on the mean interface of a Gaussian node.
     # Derivation for the update rule can be found in the derivations notebook.
 
@@ -140,7 +156,9 @@ function updateNodeMessage!(outbound_interface_id::Int, node::GaussianNode, inbo
     end
     return node.interfaces[outbound_interface_id].message = deepcopy(nu_m)
 end
-function updateNodeMessage!(outbound_interface_id::Int, node::GaussianNode, inbound_messages_types::Type{Union(GeneralMessage, GaussianMessage)})
+function updateNodeMessageVariational!(outbound_interface_id::Int,
+                                       node::GaussianNode,
+                                       inbound_messages_types::Type{Union(GeneralMessage, GaussianMessage)})
     # Variational update function, takes the MARGINALS as input instead of the inbound messages.
     # Update the outgoing message on the variance interface of a Gaussian node.
     # Derivation for the update rule can be found in the derivations notebook.
