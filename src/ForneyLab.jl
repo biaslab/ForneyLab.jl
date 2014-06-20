@@ -31,11 +31,12 @@ type Interface
     # A message from node a to node b is stored at the Interface of node a that connects to an Interface of node b.
     node::Node
     partner::Union(Interface, Nothing) # Partner indicates the interface to which it is connected.
-    child::Union(Interface, Nothing) # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
+    child::Union(Interface, Nothing)   # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
     message::Union(Message, Nothing)
-    message_dependencies::Array{Interface, 1}    # Optional array of interfaces (of the same node) on which the outbound msg on this interface depends.
-                                                 # If this array is #undef, it means that the outbound msg depends on the inbound msgs on ALL OTHER interfaces of the node.
-
+    message_dependencies::Array{Interface, 1}   # Optional array of interfaces (of the same node) on which the outbound msg on this interface depends.
+                                                # If this array is #undef, it means that the outbound msg depends on the inbound msgs on ALL OTHER interfaces of the node.
+    internal_schedule::Array{Interface, 1}      # Optional schedule that should be executed to calculate outbound message on this interface.
+                                                # The internal_schedule field is used in composite nodes, and holds the schedule for internal message passing.
     # Sanity check for matching message types
     function Interface(node::Node, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist

@@ -9,11 +9,17 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # This function is not exported, and is only meant for internal use.
 
     if node.use_composite_update_rules
-    	error("$(typeof(node)) $(node.name) is configured to use shortcut rules, but updateNodeMessage!() is not defined for this node type.")
-	else
-		# Internal message passing
-	    msg_out = calculateMessage!(node.interfaces[outbound_interface_id].child)
-	    # Copy the outbound message to composite node's interface and return it
-	    return node.interfaces[outbound_interface_id].message = msg_out
-	end
+        error("$(typeof(node)) $(node.name) is configured to use shortcut rules, but updateNodeMessage!() is not defined for this node type.")
+    else
+        # Internal message passing
+        schedule = nothing
+        try
+            schedule = node.interfaces[outbound_interface_id].internal_schedule
+        catch
+            error("No internal message passing schedule is defined for calculating outbound messages on interface $(outbound_interface_id) of $(typeof(node)) $(node.name).")
+        end
+
+        return node.interfaces[outbound_interface_id].message = executeSchedule(schedule)
+
+    end
 end
