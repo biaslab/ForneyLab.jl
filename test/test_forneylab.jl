@@ -158,6 +158,17 @@ facts("Connections between nodes integration tests") do
     end
 end
 
+facts("getAllNodesInGraph integration tests") do
+    context("getAllNodesInGraph() should return an array of all nodes in the graph") do
+        nodes = initializeLoopyGraph()
+        found_nodes = ForneyLab.getAllNodesInGraph(nodes[1])
+        @fact length(found_nodes) => length(nodes)
+        for node in nodes
+            @fact node in found_nodes => true
+        end
+    end
+end
+
 facts("calculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do
         (gain, constant) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_const=GeneralMessage(3.0))
@@ -260,6 +271,25 @@ facts("generateSchedule() and executeSchedule() integration tests") do
             prev_msg = deepcopy(msg)
         end
         @fact isApproxEqual(driver.out.message.m, [0.0]) => true
+    end
+end
+
+facts("clearMessage!(), clearMessages!(), clearAllMessages!() integration tests") do
+    (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
+    setMessage!(add.in1, GaussianMessage(m=[2.0], V=[0.5]))
+    setMessage!(add.out, GaussianMessage())
+    schedule = generateSchedule(add.in2)
+    executeSchedule(schedule)
+    clearMessage!(add.in2)
+    @fact add.in2.message => nothing
+    clearMessages!(add)
+    @fact add.in1.message => nothing
+    @fact add.out.message => nothing
+    clearAllMessages!(add)
+    for node in (driver, inhibitor, noise, add)
+        for interface in node.interfaces
+            @fact interface.message => nothing
+        end
     end
 end
 

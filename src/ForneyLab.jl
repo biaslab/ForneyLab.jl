@@ -177,7 +177,7 @@ function updateNodeMessage!(outbound_interface::Interface)
         if is(node_interface, outbound_interface)
             outbound_interface_id = node_interface_id
         end
-        if (!isdefined(outbound_interface, :message_dependencies) && outbound_interface_id==node_interface_id) || 
+        if (!isdefined(outbound_interface, :message_dependencies) && outbound_interface_id==node_interface_id) ||
            (isdefined(outbound_interface, :message_dependencies) && !(node_interface in outbound_interface.message_dependencies))
             continue
         end
@@ -250,18 +250,16 @@ function clearMessages!(node::Node)
         interface.message = nothing
     end
 end
-clearMessages!(nodes::Array{Node,1}) = map(clearMessages!, nodes)
 
 function clearMessages!(edge::Edge)
     # Clear all messages on an edge.
     edge.head.message = nothing
     edge.tail.message = nothing
 end
-clearMessages!(interfaces::Array{Interface,1}) = map(clearMessages!, nodes)
 
 # Functions to clear ALL MESSAGES in the graph
-clearAllMessages!(seed_node::Node) = clearMessages!(getAllNodesInGraph(seed_node))
-clearAllMessages!(seed_edge::Edge) = clearMessages!(getAllNodesInGraph(seed_edge.tail))
+clearAllMessages!(seed_node::Node) = map(clearMessages!, getAllNodesInGraph(seed_node))
+clearAllMessages!(seed_edge::Edge) = map(clearMessages!, getAllNodesInGraph(seed_edge.tail))
 
 function generateSchedule(outbound_interface::Interface)
     # Generate a schedule that can be executed to calculate the outbound message on outbound_interface.
@@ -312,12 +310,12 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{I
         if is(node_interface, outbound_interface)
             outbound_interface_id = node_interface_id
         end
-        if (!isdefined(outbound_interface, :message_dependencies) && outbound_interface_id==node_interface_id) || 
+        if (!isdefined(outbound_interface, :message_dependencies) && outbound_interface_id==node_interface_id) ||
            (isdefined(outbound_interface, :message_dependencies) && !(node_interface in outbound_interface.message_dependencies))
             continue
         end
         @assert(node_interface.partner!=nothing, "Disconnected interface should be connected: interface #$(node_interface_id) of $(typeof(node)) $(node.name)")
-        
+
         if node_interface.partner.message == nothing # Required message missing.
             if !(node_interface.partner in backtrace) # Don't recalculate stuff that's already in the schedule.
                 # Recursive call
