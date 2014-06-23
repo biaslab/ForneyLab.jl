@@ -158,7 +158,7 @@ facts("Connections between nodes integration tests") do
         # Connect output directly to input
         @fact_throws Edge(node.interfaces[2], node.interfaces[1])
     end
-
+    
     context("Edge construction should couple interfaces to edge") do
         (node1, node2) = initializePairOfMockNodes()
         @fact node1.out.edge => nothing
@@ -169,7 +169,18 @@ facts("Connections between nodes integration tests") do
     end
 end
 
-facts("CalculateMessage!() integration tests") do
+facts("getAllNodesInGraph integration tests") do
+    context("getAllNodesInGraph() should return an array of all nodes in the graph") do
+        nodes = initializeLoopyGraph()
+        found_nodes = ForneyLab.getAllNodesInGraph(nodes[1])
+        @fact length(found_nodes) => length(nodes)
+        for node in nodes
+            @fact node in found_nodes => true
+        end
+    end
+end
+
+facts("calculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do
         (gain, constant) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_const=GeneralMessage(3.0))
         Edge(constant.out, gain.in1)
@@ -179,7 +190,6 @@ facts("CalculateMessage!() integration tests") do
         @fact msg => gain.out.message # Returned message should be identical to message stored on interface.
         @fact typeof(gain.out.message) => GeneralMessage
         @fact gain.out.message.value => reshape([6.0], 1, 1)
-        @fact gain.out.message_valid => true # fresh messages should be valid
     end
 
     context("calculateMessage!() should recursively calculate required inbound message") do
@@ -190,94 +200,24 @@ facts("CalculateMessage!() integration tests") do
         calculateMessage!(node3.out)
         @fact typeof(node3.out.message) => GeneralMessage
         @fact node3.out.message.value => reshape([12.0], 1, 1)
-        @fact node3.out.message_valid => true # fresh messages should be valid
     end
-
 
     context("calculateMessage!() should throw an error when there is an unbroken loop") do
         (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
         @fact_throws calculateMessage!(driver.out)
-        # Now set a breaker message and check that it works
-        setMessage!(driver.out, GaussianMessage())
-        for count = 1:100
-            calculateMessage!(driver.out)
-        end
-        @fact typeof(driver.out.message) => GaussianMessage
-        @fact driver.out.message.m => [100.0] # For stop conditions at 100 cycles deep
-    end
-
-    context("calculateMessage!() should handle convergence") do
-        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[1.1], B=[0.1], noise_m=[0.0], noise_V=[0.1])
-        # Now set a breaker message and check that it works
-        breaker_message = GaussianMessage(m=[10.0], V=[100.0])
-        setMessage!(driver.out, breaker_message)
-        prev_msg = breaker_message
-        converged = false
-        while !converged
-            msg = calculateMessage!(driver.out)
-            converged = isApproxEqual(prev_msg.m, msg.m)
-            prev_msg = msg
-        end
-        @fact isApproxEqual(driver.out.message.m, [0.0]) => true
-    end
-
-end
-
-facts("pushMessageInvalidations!(Node) integration tests") do
-    context("pushMessageInvalidations!(Node) should only invalidate all child messages") do
-        # Build testing graph
-        (c1, c2, c3, add, equ) = initializeTreeGraph()
-        fwd_msg_y = calculateMessage!(equ.interfaces[3])
-
-        # Check message validity after message passing
-        # All forward messages should be valid
-        @fact c1.out.message_valid => true
-        @fact c2.out.message_valid => true
-        @fact c3.out.message_valid => true
-        @fact add.out.message_valid => true
-        @fact equ.interfaces[3].message_valid => true
-        # All backward messages should not be valid
-        @fact add.in1.message_valid => false
-        @fact add.in2.message_valid => false
-        @fact equ.interfaces[1].message_valid => false
-        @fact equ.interfaces[2].message_valid => false
-
-        # Now push the invalidation of the outbound message of c2 through the graph
-        ForneyLab.pushMessageInvalidations!(c2)
-        # All messages that depend on c2 should be invalid
-        @fact c2.out.message_valid => false
-        @fact add.in1.message_valid => false
-        @fact add.out.message_valid => false
-        @fact equ.interfaces[2].message_valid => false
-        @fact equ.interfaces[3].message_valid => false
-        # Validity of other messages should not be changed
-        @fact c1.out.message_valid => true
-        @fact c3.out.message_valid => true
-        @fact add.in2.message_valid => false
-        @fact equ.interfaces[1].message_valid => false
-    end
-    context("pushMessageInvalidations!() should incorporate interface dependencies") do
-        # Build testing graph
-        node_a = MockNode(GaussianMessage(), 3)
-        node_b = MockNode(GaussianMessage(), 1)
-        node_a.interfaces[1].message_dependencies = [node_a.interfaces[1]] # interface 1 only depends on itself
-        node_a.interfaces[3].message_dependencies = [node_a.interfaces[2]] # interface 3 only depends on interface 2
-        Edge(node_b.interfaces[1], node_a.interfaces[1])
-        # Now push the invalidation of the outbound message of node_b through the graph
-        ForneyLab.pushMessageInvalidations!(node_b)
-        # A message should be invalidated iff it depends on node_b
-        @fact node_b.interfaces[1].message_valid => false
-        @fact node_a.interfaces[1].message_valid => false
-        @fact node_a.interfaces[2].message_valid => false
-        @fact node_a.interfaces[3].message_valid => true
     end
 end
 
-facts("Generate and execute schedule integration tests") do
+facts("generateSchedule() and executeSchedule() integration tests") do
     (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
+
+    context("generateSchedule() should throw an error when there is an unbroken loop") do
+        @fact_throws generateSchedule(driver.out)
+    end
+
     # Initial message
     setMessage!(add.in1, GaussianMessage(m=[2.0], V=[0.5]))
-    setMessage!(add.out, GaussianMessage(), false) # Set track_invalidations to false to not invalidate the other initial msg
+    setMessage!(add.out, GaussianMessage())
 
     context("generateSchedule() should auto-generate a feasible schedule") do
         # Generate schedule automatically
@@ -309,11 +249,58 @@ facts("Generate and execute schedule integration tests") do
         @fact schedule[5] => add.in2
     end
 
-    context("executeSchedule() should correctly execute a schedule") do
+    context("executeSchedule() should correctly execute a schedule and return the result of the last step") do
         schedule = generateSchedule(add.in2)
         msg = ensureMVParametrization!(executeSchedule(schedule))
+        @fact msg => add.in2.message
         @fact isApproxEqual(msg.m, [2.0]) => true
         @fact isApproxEqual(msg.V, reshape([1.5], 1, 1)) => true
+    end
+
+    context("executeSchedule() should work as expeced in loopy graphs") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
+        setMessage!(driver.out, GaussianMessage())
+        schedule = generateSchedule(driver.out)
+        for count = 1:100
+            executeSchedule(schedule)
+        end
+        @fact typeof(driver.out.message) => GaussianMessage
+        @fact ensureMVParametrization!(driver.out.message).m => [100.0] # For stop conditions at 100 cycles deep
+    end
+
+    context("executeSchedule() should be called repeatedly until convergence") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[1.1], B=[0.1], noise_m=[0.0], noise_V=[0.1])
+        # Now set a breaker message and check that it works
+        breaker_message = GaussianMessage(m=[10.0], V=[100.0])
+        setMessage!(driver.out, breaker_message)
+        prev_msg = deepcopy(breaker_message)
+        converged = false
+        schedule = generateSchedule(driver.out)
+        while !converged
+            msg = ensureMVParametrization!(executeSchedule(schedule))
+            converged = isApproxEqual(prev_msg.m, msg.m)
+            prev_msg = deepcopy(msg)
+        end
+        @fact isApproxEqual(driver.out.message.m, [0.0]) => true
+    end
+end
+
+facts("clearMessage!(), clearMessages!(), clearAllMessages!() integration tests") do
+    (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
+    setMessage!(add.in1, GaussianMessage(m=[2.0], V=[0.5]))
+    setMessage!(add.out, GaussianMessage())
+    schedule = generateSchedule(add.in2)
+    executeSchedule(schedule)
+    clearMessage!(add.in2)
+    @fact add.in2.message => nothing
+    clearMessages!(add)
+    @fact add.in1.message => nothing
+    @fact add.out.message => nothing
+    clearAllMessages!(add)
+    for node in (driver, inhibitor, noise, add)
+        for interface in node.interfaces
+            @fact interface.message => nothing
+        end
     end
 end
 
