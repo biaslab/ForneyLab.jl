@@ -2,7 +2,7 @@ module ForneyLab
 
 export  Message, Node, CompositeNode, Interface, Edge
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
-        calculateMarginal, calculateMarginal!
+        calculateMarginal, calculateMarginal!,
         getMessage, getForwardMessage, getBackwardMessage, setMessage!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
         generateSchedule, executeSchedule
 
@@ -42,11 +42,11 @@ type Interface
     # Sanity check for matching message types
     function Interface(node::Node, edge::Union(RootEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
-            return new(node, partner, child, message)
+            return new(node, edge, partner, child, message)
         elseif typeof(message) != typeof(partner.message) # Compare message types
             error("Message type of partner does not match with interface message type")
         else
-            return new(node, partner, child, message)
+            return new(node, edge, partner, child, message)
         end
     end
 end
@@ -234,8 +234,8 @@ function calculateMarginal(forward_msg::Message, backward_msg::Message)
     c_node2 = ConstantNode(backward_msg)
     Edge(c_node1.out, eq_node.interfaces[1])
     Edge(c_node2.out, eq_node.interfaces[2])
-    c_node1.out.message = deepcopy(c_node1._value) # just do it the quick way
-    c_node2.out.message = deepcopy(c_node2._value)
+    c_node1.out.message = deepcopy(c_node1.value) # just do it the quick way
+    c_node2.out.message = deepcopy(c_node2.value)
     marginal_msg = updateNodeMessage!(3, eq_node, typeof(forward_msg)) # quick direct call
     return marginal_msg
 end
