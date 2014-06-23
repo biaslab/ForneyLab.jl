@@ -257,6 +257,20 @@ facts("generateSchedule() and executeSchedule() integration tests") do
         @fact isApproxEqual(msg.V, reshape([1.5], 1, 1)) => true
     end
 
+    context("executeSchedule() should accept edges") do
+        (node1, node2, node3) = initializeChainOfNodes()
+        schedule = [node1.out.edge, node2.out.edge]
+        node1.out.message = GaussianMessage(W=[1.0], xi=[1.0]) 
+        node1.out.partner.message = GaussianMessage(W=[1.0], xi=[1.0]) 
+        node2.out.message = GaussianMessage(W=[1.0], xi=[1.0]) 
+        node2.out.partner.message = GaussianMessage(W=[1.0], xi=[1.0])
+        executeSchedule(schedule)
+        @fact node1.out.edge.marginal.W => reshape([2.0], 1, 1)
+        @fact node2.out.edge.marginal.W => reshape([2.0], 1, 1)
+        @fact node1.out.edge.marginal.xi => [2.0]
+        @fact node2.out.edge.marginal.xi => [2.0]
+    end
+
     context("executeSchedule() should work as expeced in loopy graphs") do
         (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
         setMessage!(driver.out, GaussianMessage())
