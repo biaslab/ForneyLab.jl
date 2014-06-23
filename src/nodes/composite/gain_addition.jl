@@ -77,6 +77,10 @@ type GainAdditionCompositeNode <: CompositeNode
         self.in1 = self.interfaces[1]
         self.in2 = self.interfaces[2]
         self.out = self.interfaces[3]
+        # Set internal message passing schedules
+        self.in1.internal_schedule = [self.addition_node.in1, self.fixed_gain_node.in1]
+        self.in2.internal_schedule = [self.fixed_gain_node.out, self.addition_node.in2]
+        self.out.internal_schedule = [self.fixed_gain_node.out, self.addition_node.out]
 
         return self
     end
@@ -107,7 +111,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # This function is not exported, and is only meant for internal use.
 
     if !node.use_composite_update_rules
-        msg_out = calculateMessage!(node.interfaces[outbound_interface_id].child)
+        msg_out = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
     else
         if outbound_interface_id == 3
             # Forward message towards "out" interface
@@ -213,7 +217,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
         elseif outbound_interface_id == 1
             # Backward message towards "in1" interface
             # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
-            msg_out = calculateMessage!(node.interfaces[outbound_interface_id].child)
+            msg_out = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
         else
             error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
         end
