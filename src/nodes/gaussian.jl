@@ -165,6 +165,7 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
 
     if outbound_interface_id == 2 # Variance estimation from mean and sample
         y_0 = node.out.partner.message.value # observation
+        ensureMVParametrization!(node.in1.edge.marginal)
         m = node.in1.edge.marginal.m[1] # Gaussian message
         V = node.in1.edge.marginal.V[1,1]
         nu_s = GammaMessage( a=-0.5, b=0.5*(y_0-m)^2+0.5*V, inverted=true )

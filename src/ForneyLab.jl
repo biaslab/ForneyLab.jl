@@ -73,14 +73,14 @@ type Edge <: RootEdge
 
     tail::Interface
     head::Interface
-    marginal::Message # Messages are probability distributions
+    marginal::Union(Message, Nothing) # Messages are probability distributions
 
-    function Edge(tail::Interface, head::Interface)
+    function Edge(tail::Interface, head::Interface, marginal::Union(Message, Nothing)=nothing)
         if  typeof(head.message) == Nothing ||
             typeof(tail.message) == Nothing ||
             typeof(head.message) == typeof(tail.message)
             if !is(head.node, tail.node)
-                self = new(tail, head)
+                self = new(tail, head, marginal)
                 # Assign pointed to edge from interfaces
                 tail.edge = self
                 head.edge = self
@@ -109,7 +109,7 @@ type Edge <: RootEdge
     end
 end
 
-function Edge(tail_node::Node, head_node::Node)
+function Edge(tail_node::Node, head_node::Node, marginal::Union(Message, Nothing)=nothing)
     # Create an Edge from tailNode to headNode.
     # Use the first free interface on each node.
     tail = nothing
@@ -130,7 +130,7 @@ function Edge(tail_node::Node, head_node::Node)
     end
     @assert(head!=nothing, "Cannot create edge: no free interface on head node: $(typeof(head_node)) $(head_node.name)")
 
-    return Edge(tail, head)
+    return Edge(tail, head, marginal)
 end
 show(io::IO, edge::Edge) = println(io, "Edge from $(typeof(edge.tail.node)) with node name $(edge.tail.node.name) to $(typeof(edge.head.node)) with node name $(edge.head.node.name) holds marginal of type $(typeof(edge.marginal)). Forward message type: $(typeof(edge.tail.message)). Backward message type: $(typeof(edge.head.message)).")
 setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
@@ -221,6 +221,15 @@ function executeSchedule(schedule::Array{Interface, 1})
     end
     # Return the last message in the schedule
     return schedule[end].message
+end
+
+function executeSchedule(schedule::Array{Edge, 1})
+    # Execute a marginal update schedule
+    for edge in schedule
+        calculateMarginal!(edge)
+    end
+    # Return the last message in the schedule
+    return schedule[end].marginal
 end
 
 function calculateMarginal(forward_msg::Message, backward_msg::Message)
