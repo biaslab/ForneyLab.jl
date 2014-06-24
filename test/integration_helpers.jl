@@ -5,13 +5,13 @@
 #############
 
 type MockNode <: Node
-	# MockNode is a node with an arbitrary function, that when created
-	# initiates a message on all its interfaces.
+    # MockNode is a node with an arbitrary function, that when created
+    # initiates a message on all its interfaces.
     # Interface 1 is named "out"
-	interfaces::Array{Interface, 1}
-	out::Interface
+    interfaces::Array{Interface, 1}
+    out::Interface
     name::ASCIIString
-	function MockNode(num_interfaces::Int=1)
+    function MockNode(num_interfaces::Int=1)
         self = new(Array(Interface, num_interfaces))
         for interface_id = 1:num_interfaces
             self.interfaces[interface_id] = Interface(self)
@@ -19,7 +19,7 @@ type MockNode <: Node
         self.out = self.interfaces[1]
         self.name = "#undefined"
         return(self)
-	end
+    end
 end
 function MockNode(message::Message, num_interfaces::Int=1)
     self = MockNode(num_interfaces)
@@ -44,11 +44,11 @@ function initializePairOfMockNodes()
 end
 
 function initializePairOfNodes(; A=[1.0], msg_gain_1=GeneralMessage(2.0), msg_gain_2=GeneralMessage(3.0), msg_const=GeneralMessage(1.0))
-	# Helper function for initializing an unconnected pair of nodes
-	#     
-	# |--[A]--|
-	#
-	# |--[C]
+    # Helper function for initializing an unconnected pair of nodes
+    #     
+    # |--[A]--|
+    #
+    # |--[C]
 
     node1 = FixedGainNode(A)
     node1.interfaces[1].message = msg_gain_1
@@ -59,21 +59,21 @@ function initializePairOfNodes(; A=[1.0], msg_gain_1=GeneralMessage(2.0), msg_ga
 end
 
 function initializeFixedGainNode()    
-	# Helper function for initializing a fixed gain node
-	#     
-	# |--[A]--|
+    # Helper function for initializing a fixed gain node
+    #     
+    # |--[A]--|
 
-	node = FixedGainNode()
+    node = FixedGainNode()
     node.interfaces[1].message = GaussianMessage()
     node.interfaces[2].message = GaussianMessage()
     return node
 end
 
 function initializeChainOfNodes()
-	# Chain of three nodes
-	#
-	#  1     2     3
-	# [C]-->[A]-->[B]-|
+    # Chain of three nodes
+    #
+    #  1     2     3
+    # [C]-->[A]-->[B]-|
 
     node1 = ConstantNode(GeneralMessage(3.0))
     node2 = FixedGainNode([2.0])
@@ -105,7 +105,7 @@ function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
 end
 
 function initializeTreeGraph()
-	# Set up some tree graph
+    # Set up some tree graph
     #
     #          (c2)
     #           |
@@ -130,57 +130,57 @@ function initializeTreeGraph()
 end
 
 function initializeAdditionNode(msgs::Array{Any})
-	# Set up an addition node and prepare the messages
-	# A MockNode is connected for each argument message.
-	#
-	# [M]-->[+]<--[M]	
-	#        |        
+    # Set up an addition node and prepare the messages
+    # A MockNode is connected for each argument message.
+    #
+    # [M]-->[+]<--[M]   
+    #        |        
 
-	add_node = AdditionNode()
-	interface_count = 1
-	for msg=msgs
-		if msg!=nothing
-			Edge(MockNode(msg).out, add_node.interfaces[interface_count])
-		end
-		interface_count += 1
-	end
-	return add_node
+    add_node = AdditionNode()
+    interface_count = 1
+    for msg=msgs
+        if msg!=nothing
+            Edge(MockNode(msg).out, add_node.interfaces[interface_count])
+        end
+        interface_count += 1
+    end
+    return add_node
 end
 
 function initializeEqualityNode(msgs::Array{Any})
-	# Set up an equality node and prepare the messages
-	# A MockNode is connected for each argument message
-	#
-	# [M]-->[=]<--[M] (as many incoming edges as length(msgs))	
-	#        |        
+    # Set up an equality node and prepare the messages
+    # A MockNode is connected for each argument message
+    #
+    # [M]-->[=]<--[M] (as many incoming edges as length(msgs))  
+    #        |        
 
-	eq_node = EqualityNode(length(msgs))
-	interface_count = 1
-	for msg=msgs
-		if msg!=nothing
-			Edge(MockNode(msg).out, eq_node.interfaces[interface_count])
-		end
-		interface_count += 1
-	end
-	return eq_node
+    eq_node = EqualityNode(length(msgs))
+    interface_count = 1
+    for msg=msgs
+        if msg!=nothing
+            Edge(MockNode(msg).out, eq_node.interfaces[interface_count])
+        end
+        interface_count += 1
+    end
+    return eq_node
 end
 
 function initializeFixedGainNode(A::Array, msgs::Array{Any})
-	# Set up a fixed gain node and prepare the messages
-	# A MockNode is connected for each argument message
-	#
-	# [M]-->[A]--|	
-	#                
+    # Set up a fixed gain node and prepare the messages
+    # A MockNode is connected for each argument message
+    #
+    # [M]-->[A]--|  
+    #                
 
-	fg_node = FixedGainNode(A)
-	interface_count = 1
-	for msg=msgs
-		if msg!=nothing
-			Edge(MockNode(msg).out, fg_node.interfaces[interface_count])
-		end
-		interface_count += 1
-	end
-	return fg_node
+    fg_node = FixedGainNode(A)
+    interface_count = 1
+    for msg=msgs
+        if msg!=nothing
+            Edge(MockNode(msg).out, fg_node.interfaces[interface_count])
+        end
+        interface_count += 1
+    end
+    return fg_node
 end
 
 function initializeGaussianNode(msgs::Array{Any})
@@ -249,9 +249,9 @@ function initializeConstantAndGainAddNode()
 end
 
 function initializeGainAdditionCompositeNode(A::Array, use_composite_update_rules::Bool, msgs::Array{Any})
-	# Set up a gain addition node and prepare the messages
-	# A MockNode is connected for each argument message
-	#
+    # Set up a gain addition node and prepare the messages
+    # A MockNode is connected for each argument message
+    #
     #           [M]
     #            | in1
     #            |
@@ -263,15 +263,15 @@ function initializeGainAdditionCompositeNode(A::Array, use_composite_update_rule
     #[M]-----|->[+]--|---->
     #        |_______|
 
-	gac_node = GainAdditionCompositeNode(A, use_composite_update_rules)
-	interface_count = 1
-	for msg=msgs
-		if msg!=nothing
-			Edge(MockNode(msg).out, gac_node.interfaces[interface_count])
-		end
-		interface_count += 1
-	end
-	return gac_node
+    gac_node = GainAdditionCompositeNode(A, use_composite_update_rules)
+    interface_count = 1
+    for msg=msgs
+        if msg!=nothing
+            Edge(MockNode(msg).out, gac_node.interfaces[interface_count])
+        end
+        interface_count += 1
+    end
+    return gac_node
 end
 
 function initializeConstantAndGainEqNode()
@@ -294,9 +294,9 @@ function initializeConstantAndGainEqNode()
 end
 
 function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rules::Bool, msgs::Array{Any})
-	# Set up a gain equality node and prepare the messages
-	# A MockNode is connected for each argument message
-	#
+    # Set up a gain equality node and prepare the messages
+    # A MockNode is connected for each argument message
+    #
     #         _________
     #     in1 |       | in2
     # [M]-----|->[=]<-|-----[M]
@@ -307,15 +307,15 @@ function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rule
     #             | out
     #             v
 
-	gec_node = GainEqualityCompositeNode(A, use_composite_update_rules)
-	interface_count = 1
-	for msg=msgs
-		if msg!=nothing
-			Edge(MockNode(msg).out, gec_node.interfaces[interface_count])
-		end
-		interface_count += 1
-	end
-	return gec_node
+    gec_node = GainEqualityCompositeNode(A, use_composite_update_rules)
+    interface_count = 1
+    for msg=msgs
+        if msg!=nothing
+            Edge(MockNode(msg).out, gec_node.interfaces[interface_count])
+        end
+        interface_count += 1
+    end
+    return gec_node
 end
 
 #############
@@ -323,7 +323,7 @@ end
 #############
 
 function testInterfaceConnections(node1::FixedGainNode, node2::ConstantNode)
-	# Helper function for node comparison
+    # Helper function for node comparison
 
     # Check that nodes are properly connected
     @fact node1.interfaces[1].message.value => 2.0

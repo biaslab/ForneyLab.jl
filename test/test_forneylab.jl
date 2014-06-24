@@ -7,6 +7,7 @@ module TestForneyLab
 using FactCheck
 using ForneyLab
 
+include("test_style.jl") # Test style conventions on source files
 include("integration_helpers.jl") # Helper file for integration tests, contains backgrounds and validations
 include("test_helpers.jl") # Tests for ForneyLab helper methods
 
