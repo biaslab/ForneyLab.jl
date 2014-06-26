@@ -1,7 +1,10 @@
 export
     GammaMessage,
     GaussianMessage,
-    GeneralMessage
+    GeneralMessage,
+    UninformativeGammaMessage,
+    UninformativeGaussianMessage,
+    UninformativeGeneralMessage
 
 export
     isWellDefined,
@@ -51,6 +54,8 @@ function GaussianMessage(;args...)
     return self
 end
 GaussianMessage() = GaussianMessage(m=[0.0], V=[1.0])
+UninformativeGaussianMessage() = GaussianMessage(m=[0.0], V=[1000.0])
+
 function show(io::IO, msg::GaussianMessage)
     println(io, "GaussianMessage")
     print(io, "m  = ")
@@ -153,6 +158,8 @@ type GeneralMessage <: Message
     end
 end
 GeneralMessage() = GeneralMessage(1.0)
+UninformativeGeneralMessage() = GeneralMessage(1.0)
+
 function show(io::IO, msg::GeneralMessage)
     print(io, "GeneralMessage with value = ")
     show(io, msg.value)
@@ -182,6 +189,13 @@ type GammaMessage <: Message
         self.b = deepcopy(b)
         self.inverted = deepcopy(inverted)
         return self
+    end
+end
+function UninformativeGammaMessage(inverted::Bool)
+    if inverted
+        GammaMessage(a=-0.999, b=0.001, inverted=true)
+    else
+        error("Uninformative gamma message only defined for inverse gamma distribution")
     end
 end
 

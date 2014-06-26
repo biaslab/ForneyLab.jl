@@ -13,6 +13,13 @@ facts("GaussianMessage unit tests") do
         @fact_throws GaussianMessage(m=[0.0], xi=[0.0])
         @fact_throws GaussianMessage(xi=[0.0])
     end
+
+    context("UninformativeGaussianMessage() should initialize an uninformative Gaussian message") do
+        msg = UninformativeGaussianMessage()
+        @fact msg.m => [0.0]
+        @fact msg.V => reshape([1000.0],1,1)
+    end
+
     context("Underdetermined GaussianMessage should be detected by isWellDefined()") do
         @fact isWellDefined(GaussianMessage()) => true
         @fact isWellDefined(GaussianMessage(m=[0.0], V=[1.0])) => true
@@ -75,6 +82,11 @@ facts("GeneralMessage unit tests") do
         @fact GeneralMessage(1.0).value => 1.0
         @fact GeneralMessage([1.0, 2.0]).value => [1.0, 2.0]
     end
+
+    context("UninformativeGeneralMessage() should initialize an uninformative general message") do
+        msg = UninformativeGeneralMessage()
+        @fact msg.value => 1.0
+    end
 end
 
 facts("GammaMessage unit tests") do
@@ -83,5 +95,11 @@ facts("GammaMessage unit tests") do
         @fact msg.inverted => true
         @fact msg.a => 2.0
         @fact msg.b => 0.5
+    end
+
+    context("UninformativeGammaMessage() should initialize an uninformative gamma message") do
+        msg = UninformativeGammaMessage(true)
+        @fact msg.a => -0.999
+        @fact msg.b => 0.001
     end
 end

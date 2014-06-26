@@ -76,6 +76,15 @@ facts("CalculateMessage!() unit tests") do
 end
 
 facts("calculateMarginal unit tests") do
+    context("setMarginal!() should preset a marginal") do
+        (node1, node2) = initializePairOfMockNodes()
+        edge = Edge(node1.out, node2.out)
+        setMarginal!(edge, UninformativeGeneralMessage())
+        @fact edge.head.message.value => 1.0
+        @fact edge.tail.message.value => 1.0
+        @fact edge.marginal.value => 1.0
+    end
+
     context("calculateMarginal(forward_msg, backward_msg) should check equality of message types") do
         @fact_throws calculateMarginal(GaussianMessage(), GeneralMessage())
     end

@@ -3,7 +3,7 @@ module ForneyLab
 export  Message, Node, CompositeNode, Interface, Edge
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
-        getMessage, getForwardMessage, getBackwardMessage, setMessage!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
+        getMessage, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
         generateSchedule, executeSchedule
 
 # Verbosity
@@ -230,6 +230,15 @@ function executeSchedule(schedule::Array{Edge, 1})
     end
     # Return the last message in the schedule
     return schedule[end].marginal
+end
+
+function setMarginal!(edge::Edge, message::Message)
+    # Presets the marginal and head- tail messages on edge with the argument message
+    # Usually this method is used to set uninformative messages
+
+    edge.head.message = message
+    edge.tail.message = message
+    edge.marginal = message
 end
 
 function calculateMarginal(forward_msg::Message, backward_msg::Message)
