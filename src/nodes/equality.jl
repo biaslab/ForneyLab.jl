@@ -50,6 +50,17 @@ type EqualityNode <: Node
     end
 end
 
+# Overload firstFreeInterface since EqualityNode is symmetrical in its interfaces
+function firstFreeInterface(node::EqualityNode)
+    # Return id of first free interface of a symmetrical node
+    for interface_id = 1:length(node.interfaces)
+        if node.interfaces[interface_id].partner == nothing
+            return interrace_id
+        end
+    end
+    error("No free interface on $(typeof(node)) $(node.name)")
+end
+
 ############################################
 # GaussianMessage methods
 ############################################

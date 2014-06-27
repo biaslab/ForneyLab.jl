@@ -1,7 +1,7 @@
 export # types
     GammaMessage,
     GaussianMessage,
-    GeneralMessage,
+    GeneralMessage
 
 export # functions
     ensureMVParametrization!,
@@ -69,8 +69,23 @@ end
 # Methods to check and convert different parametrizations
 function isWellDefined(msg::GaussianMessage)
     # Check if msg is not underdetermined
-    return !( (is(msg.m, nothing) && is(msg.xi, nothing)) ||
-              (is(msg.V, nothing) && is(msg.W, nothing)) )
+    if ((is(msg.m, nothing) && is(msg.xi, nothing)) ||
+        (is(msg.V, nothing) && is(msg.W, nothing)))
+        return false
+    end
+    dimensions=0
+    for field in [:m, :xi, :V, :W]
+        if !is(getfield(msg, field), nothing)
+            if dimensions>0
+                if maximum(size(getfield(msg, field)))!=dimensions
+                    return false
+                end
+            else
+                dimensions = maximum(size(getfield(msg, field)))
+            end
+        end
+    end
+    return true
 end
 function isConsistent(msg::GaussianMessage)
     # Check if msg is consistent in case it is overdetermined

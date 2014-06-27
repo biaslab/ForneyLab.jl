@@ -1,6 +1,6 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Edge
+export  Message, Node, CompositeNode, Interface, Schedule, Edge
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
@@ -57,11 +57,19 @@ setMessage!(interface::Interface, message::Message) = (interface.message=message
 clearMessage!(interface::Interface) = (interface.message=nothing)
 getMessage(interface::Interface) = interface.message
 
-function show(io::IO, schedule::Array{Interface, 1})
+typealias Schedule Array{Interface, 1}
+function show(io::IO, schedule::Schedule)
     # Show schedules in a specific way
     println(io, "Message passing schedule:")
     for interface in schedule
-        println(io, " $(typeof(interface.node)) $(interface.node.name)")
+        interface_name = ""
+        for field in names(interface.node)
+            if is(getfield(interface.node, field), interface)
+                interface_name = "($(string(field)))"
+                break
+            end
+        end
+        println(io, " $(typeof(interface.node)) $(interface.node.name):$(findfirst(interface.node.interfaces, interface)) $(interface_name)")
     end
 end
 
@@ -109,30 +117,18 @@ type Edge <: RootEdge
     end
 end
 
-function Edge(tail_node::Node, head_node::Node, marginal::Union(Message, Nothing)=nothing)
-    # Create an Edge from tailNode to headNode.
-    # Use the first free interface on each node.
-    tail = nothing
-    head = nothing
-    for interface in tail_node.interfaces
-        if interface.partner==nothing
-            tail = interface
-            break
-        end
-    end
-    @assert(tail!=nothing, "Cannot create edge: no free interface on tail node: ", typeof(tail_node), " ", tail_node.name)
+# Edge constructors that accept an EqualityNode instead of specific Interface
+# firstFreeInterface(node) should be overloaded for nodes with interface-invariant node functions
+firstFreeInterface(node::Node) = error("Cannot automatically pick a free interface on non-symmetrical $(typeof(node)) $(node.name)")
+Edge(tail_node::Node, head::Interface) = Edge(firstFreeInterface(tail_node), head)
+Edge(tail::Interface, head_node::Node) = Edge(tail, firstFreeInterface(head_node))
+Edge(tail_node::Node, head_node::Node) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node))
 
-    for interface in head_node.interfaces
-        if interface.partner==nothing
-            head = interface
-            break
-        end
-    end
-    @assert(head!=nothing, "Cannot create edge: no free interface on head node: $(typeof(head_node)) $(head_node.name)")
-
-    return Edge(tail, head, marginal)
+function show(io::IO, edge::Edge)
+    println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name):$(findfirst(edge.tail.node.interfaces, edge.tail)) to $(typeof(edge.head.node)) $(edge.head.node.name):$(findfirst(edge.head.node.interfaces, edge.head)).")
+    println(io, "Forward message type: $(typeof(edge.tail.message)). Backward message type: $(typeof(edge.head.message)).")
 end
-show(io::IO, edge::Edge) = println(io, "Edge from $(typeof(edge.tail.node)) with node name $(edge.tail.node.name) to $(typeof(edge.head.node)) with node name $(edge.head.node.name) holds marginal of type $(typeof(edge.marginal)). Forward message type: $(typeof(edge.tail.message)). Backward message type: $(typeof(edge.head.message)).")
+
 setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
 setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, message)
 getForwardMessage(edge::Edge) = edge.tail.message
@@ -214,7 +210,7 @@ end
 calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
 calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
-function executeSchedule(schedule::Array{Interface, 1})
+function executeSchedule(schedule::Schedule)
     # Execute a message passing schedule
     for interface in schedule
         updateNodeMessage!(interface)
@@ -294,7 +290,7 @@ function generateSchedule(outbound_interface::Interface)
     schedule = generateScheduleByDFS(outbound_interface)
 end
 
-function generateSchedule(partial_schedule::Array{Interface, 1})
+function generateSchedule(partial_schedule::Schedule)
     # Generate a complete schedule based on partial_schedule.
     # A partial schedule only defines the order of a subset of all required messages.
     # This function will find a valid complete schedule that satisfies the partial schedule.
@@ -311,7 +307,7 @@ function generateSchedule(partial_schedule::Array{Interface, 1})
     return schedule
 end
 
-function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{Interface, 1}=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0))
+function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedule=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0))
     # This is a private function that performs a search through the factor graph to generate a schedule.
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
     # This is a recursive implementation of DFS. The recursive calls are stored in call_list.
