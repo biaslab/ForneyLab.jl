@@ -107,31 +107,17 @@ type Edge
         end
     end
 end
+# Edge constructors that accept an EqualityNode instead of specific Interface
+# firstFreeInterface(node) should be overloaded for nodes with interface-invariant node functions
+firstFreeInterface(node::Node) = error("Cannot automatically pick a free interface on non-symmetrical $(typeof(node)) $(node.name)")
+Edge(tail_node::Node, head::Interface) = Edge(firstFreeInterface(tail_node), head)
+Edge(tail::Interface, head_node::Node) = Edge(tail, firstFreeInterface(head_node))
+Edge(tail_node::Node, head_node::Node) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node))
 
-function Edge(tail_node::Node, head_node::Node)
-    # Create an Edge from tailNode to headNode.
-    # Use the first free interface on each node.
-    tail = nothing
-    head = nothing
-    for interface in tail_node.interfaces
-        if interface.partner==nothing
-            tail = interface
-            break
-        end
-    end
-    @assert(tail!=nothing, "Cannot create edge: no free interface on tail node: ", typeof(tail_node), " ", tail_node.name)
-
-    for interface in head_node.interfaces
-        if interface.partner==nothing
-            head = interface
-            break
-        end
-    end
-    @assert(head!=nothing, "Cannot create edge: no free interface on head node: $(typeof(head_node)) $(head_node.name)")
-
-    return Edge(tail, head)
+function show(io::IO, edge::Edge)
+    println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name):$(findfirst(edge.tail.node.interfaces, edge.tail)) to $(typeof(edge.head.node)) $(edge.head.node.name):$(findfirst(edge.head.node.interfaces, edge.head)).")
+    println(io, "Forward message type: $(typeof(edge.tail.message)). Backward message type: $(typeof(edge.head.message)).")
 end
-show(io::IO, edge::Edge) = println(io, "Edge from ", typeof(edge.tail.node), " with node name ", edge.tail.node.name, " to ", typeof(edge.head.node), " with node name ", edge.head.node.name, ". Forward message type: ", typeof(edge.tail.message), ". Backward message type: ", typeof(edge.head.message), ".")
 setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
 setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, message)
 getForwardMessage(edge::Edge) = edge.tail.message

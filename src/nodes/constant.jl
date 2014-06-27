@@ -44,6 +44,9 @@ type ConstantNode <: Node
     end
 end
 
+# Overload firstFreeInterface since EqualityNode is symmetrical in its interfaces
+firstFreeInterface(node::ConstantNode) = (node.out.partner==nothing) ? node.out : error("No free interface on $(typeof(node)) $(node.name)")
+
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::ConstantNode,
                             inbound_messages_types::Type{None}=None)
