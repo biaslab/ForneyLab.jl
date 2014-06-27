@@ -1,20 +1,16 @@
-export
+export # types
     GammaMessage,
     GaussianMessage,
     GeneralMessage,
-    UninformativeGammaMessage,
-    UninformativeGaussianMessage,
-    UninformativeGeneralMessage
 
-export
-    isWellDefined,
-    isConsistent,
+export # functions
     ensureMVParametrization!,
     ensureMWParametrization!,
     ensureXiVParametrization!,
     ensureXiWParametrization!,
-    ensureInverted!,
-    ensureStandard!
+    isWellDefined,
+    isConsistent,
+    uninformative
 
 ############################################
 # GaussianMessage
@@ -54,7 +50,8 @@ function GaussianMessage(;args...)
     return self
 end
 GaussianMessage() = GaussianMessage(m=[0.0], V=[1.0])
-UninformativeGaussianMessage() = GaussianMessage(m=[0.0], V=[1000.0])
+
+uninformative(msg_type::Type{GaussianMessage}) = GaussianMessage(m=[0.0], V=[1000.0])
 
 function show(io::IO, msg::GaussianMessage)
     println(io, "GaussianMessage")
@@ -158,7 +155,8 @@ type GeneralMessage <: Message
     end
 end
 GeneralMessage() = GeneralMessage(1.0)
-UninformativeGeneralMessage() = GeneralMessage(1.0)
+
+uninformative(msg_type::Type{GeneralMessage}) = GeneralMessage(1.0)
 
 function show(io::IO, msg::GeneralMessage)
     print(io, "GeneralMessage with value = ")
@@ -170,38 +168,32 @@ end
 # GammaMessage
 ############################################
 # Description:
-#   Encodes an (inverted) Gamma PDF.
-#   Define scalars a (shape) and b (rate).
-#
-#   The inverted flag indicates whether the 
-#   function represents a distribution
-#   over a variance (inverted=true) or
-#   a precision (inverted=false).
-#   
+#   Encodes a gamma PDF.
+#   Pamameters: scalars a (shape) and b (rate).
 ############################################
 type GammaMessage <: Message
     a::Float64 # shape
     b::Float64 # rate
-    inverted::Bool
-    function GammaMessage(; a=1.0, b=1.0, inverted=false)
-        self = new()
-        self.a = deepcopy(a) # Make a copies instead of referencing
-        self.b = deepcopy(b)
-        self.inverted = deepcopy(inverted)
-        return self
-    end
-end
-function UninformativeGammaMessage(inverted::Bool)
-    if inverted
-        GammaMessage(a=-0.999, b=0.001, inverted=true)
-    else
-        error("Uninformative gamma message only defined for inverse gamma distribution")
-    end
+    GammaMessage(; a=1.0, b=1.0) = GammaMessage(a, b)
 end
 
-function show(io::IO, msg::GammaMessage)
-    println(io, "GammaMessage")
-    println(io, "inverted = $(msg.inverted)")
-    println(io, "a = $(msg.a)")
-    println(io, "b = $(msg.b)")
+############################################
+# InverseGammaMessage
+############################################
+# Description:
+#   Encodes an inverse gamma PDF.
+#   Pamameters: scalars a (shape) and b (rate).
+############################################
+type InverseGammaMessage <: Message
+    a::Float64 # shape
+    b::Float64 # rate
+    InverseGammaMessage(; a=1.0, b=1.0) = InverseGammaMessage(a, b)
+end
+
+uninformative(msg_type::Type{InverseGammaMessage}) = GammaMessage(a=-0.999, b=0.001)
+
+function show(io::IO, msg::Union(GammaMessage, InverseGammaMessage))
+    println(io, typeof(msg))
+    println(io, "a = $(msg.a) (shape)")
+    println(io, "b = $(msg.b) (rate)")
 end
