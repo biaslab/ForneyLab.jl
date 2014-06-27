@@ -1,6 +1,6 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Edge
+export  Message, Node, CompositeNode, Interface, Schedule, Edge
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal,
         getMessage, getForwardMessage, getBackwardMessage, setMessage!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
@@ -55,11 +55,19 @@ setMessage!(interface::Interface, message::Message) = (interface.message=message
 clearMessage!(interface::Interface) = (interface.message=nothing)
 getMessage(interface::Interface) = interface.message
 
-function show(io::IO, schedule::Array{Interface, 1})
+typealias Schedule Array{Interface, 1}
+function show(io::IO, schedule::Schedule)
     # Show schedules in a specific way
     println(io, "Message passing schedule:")
     for interface in schedule
-        println(io, " $(typeof(interface.node)) $(interface.node.name)")
+        interface_name = ""
+        for field in names(interface.node)
+            if is(getfield(interface.node, field), interface)
+                interface_name = "($(string(field)))"
+                break
+            end
+        end
+        println(io, " $(typeof(interface.node)) $(interface.node.name):$(findfirst(interface.node.interfaces, interface)) $(interface_name)")
     end
 end
 
@@ -205,7 +213,7 @@ end
 calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
 calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
-function executeSchedule(schedule::Array{Interface, 1})
+function executeSchedule(schedule::Schedule)
     # Execute a message passing schedule
     for interface in schedule
         updateNodeMessage!(interface)
@@ -271,7 +279,7 @@ function generateSchedule(outbound_interface::Interface)
     schedule = generateScheduleByDFS(outbound_interface)
 end
 
-function generateSchedule(partial_schedule::Array{Interface, 1})
+function generateSchedule(partial_schedule::Schedule)
     # Generate a complete schedule based on partial_schedule.
     # A partial schedule only defines the order of a subset of all required messages.
     # This function will find a valid complete schedule that satisfies the partial schedule.
@@ -288,7 +296,7 @@ function generateSchedule(partial_schedule::Array{Interface, 1})
     return schedule
 end
 
-function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{Interface, 1}=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0))
+function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedule=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0))
     # This is a private function that performs a search through the factor graph to generate a schedule.
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
     # This is a recursive implementation of DFS. The recursive calls are stored in call_list.
