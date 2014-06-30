@@ -318,6 +318,65 @@ function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rule
     return gec_node
 end
 
+function initializeGaussianNodeChain()
+    # Set up a chain of Gaussian nodes for joint mean-precision estimation
+    #
+    # [gam_prior]-------->[=]---------->[=]--->    -->[C_gam]
+    #                      |             |   etc...
+    # [m_prior]-->[=]---------->[=]--------->      -->[C_m]
+    #          q(m)| q(gam)|     |       |
+    #              -->[N]<--     -->[N]<--
+    #                  |             |
+    #                  v y_1         v y_2
+
+    # Initial settings
+    # Fixed observations drawn from N(5.0, 2.0)
+    y_observations = [4.9411489951651735,4.4083330961647595,3.535639074214823,2.1690761263145855,4.740705436131505,5.407175878845115,3.6458623443189957,5.132115496214244,4.485471215629411,5.342809672818667]
+    n_samples = length(y_observations) # Number of observed samples
+
+    # Pre-assign arrays for later reference
+    g_nodes = Array(GaussianNode, n_samples)
+    m_eq_nodes = Array(EqualityNode, n_samples)
+    gam_eq_nodes = Array(EqualityNode, n_samples)
+    obs_nodes = Array(ConstantNode, n_samples)
+    q_gam_edges = Array(Edge, n_samples)
+    q_m_edges = Array(Edge, n_samples)
+    y_edges = Array(Edge, n_samples)
+
+    # Build graph
+    for section=1:n_samples
+        g_node = GaussianNode(true) # Variational flag set to true, so updateNodeMessage knows what formula to use
+        m_eq_node = EqualityNode() # Equality node chain for mean
+        gam_eq_node = EqualityNode() # Equality node chain for variance
+        obs_node = ConstantNode(GeneralMessage(y_observations[section])) # Observed y values are stored as constant node values
+        g_nodes[section] = g_node
+        m_eq_nodes[section] = m_eq_node
+        gam_eq_nodes[section] = gam_eq_node
+        obs_nodes[section] = obs_node
+        y_edges[section] = Edge(g_node.out, obs_node.out)
+        q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.in1)
+        q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.in2)
+        # Preset uninformative ('one') messages
+        setMarginal!(q_gam_edges[section], uninformative(GammaMessage))
+        setMarginal!(q_m_edges[section], uninformative(GaussianMessage))
+        if section > 1 # Connect sections
+            Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1])
+            Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1])
+        end
+    end
+    # Attach beginning and end nodes
+    m_prior = ConstantNode(GaussianMessage(m=[0.0], V=[100.0])) # Prior
+    s_prior = ConstantNode(GammaMessage(a=0.01, b=0.01)) # Prior
+    c_m = ConstantNode(uninformative(GaussianMessage)) # Neutral 'one' message
+    c_gam = ConstantNode(uninformative(GammaMessage)) # Neutral 'one' message
+    Edge(m_prior.out, m_eq_nodes[1].interfaces[1])
+    Edge(s_prior.out, gam_eq_nodes[1].interfaces[1])
+    Edge(m_eq_nodes[end].interfaces[2], c_m.out)
+    Edge(gam_eq_nodes[end].interfaces[2], c_gam.out)
+
+    return(g_nodes, obs_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges)
+end
+
 #############
 # Validations
 #############
