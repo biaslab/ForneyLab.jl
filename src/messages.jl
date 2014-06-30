@@ -1,5 +1,6 @@
 export # types
     GammaMessage,
+    InverseGammaMessage,
     GaussianMessage,
     GeneralMessage
 
@@ -189,8 +190,12 @@ end
 type GammaMessage <: Message
     a::Float64 # shape
     b::Float64 # rate
-    GammaMessage(; a=1.0, b=1.0) = GammaMessage(a, b)
+    GammaMessage(; a=1.0, b=1.0) = new(a, b)
 end
+
+uninformative(msg_type::Type{GammaMessage}) = GammaMessage(a=0.999, b=0.001)
+Base.mean(msg::GammaMessage) = msg.a / msg.b
+Base.var(msg::GammaMessage) = msg.a / (msg.b^2)
 
 ############################################
 # InverseGammaMessage
@@ -202,10 +207,12 @@ end
 type InverseGammaMessage <: Message
     a::Float64 # shape
     b::Float64 # rate
-    InverseGammaMessage(; a=1.0, b=1.0) = InverseGammaMessage(a, b)
+    InverseGammaMessage(; a=1.0, b=1.0) = new(a, b)
 end
 
-uninformative(msg_type::Type{InverseGammaMessage}) = GammaMessage(a=-0.999, b=0.001)
+uninformative(msg_type::Type{InverseGammaMessage}) = InverseGammaMessage(a=-0.999, b=0.001)
+Base.mean(msg::InverseGammaMessage) = msg.b / (msg.a - 1)
+Base.var(msg::InverseGammaMessage) = (msg.b^2) / ( ( (msg.a-1)^2 ) * (msg.a-2) )
 
 function show(io::IO, msg::Union(GammaMessage, InverseGammaMessage))
     println(io, typeof(msg))

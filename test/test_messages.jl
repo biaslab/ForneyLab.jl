@@ -14,8 +14,8 @@ facts("GaussianMessage unit tests") do
         @fact_throws GaussianMessage(xi=[0.0])
     end
 
-    context("UninformativeGaussianMessage() should initialize an uninformative Gaussian message") do
-        msg = UninformativeGaussianMessage()
+    context("uninformative() should initialize an uninformative Gaussian message") do
+        msg = uninformative(GaussianMessage)
         @fact msg.m => [0.0]
         @fact msg.V => reshape([1000.0],1,1)
     end
@@ -83,22 +83,35 @@ facts("GeneralMessage unit tests") do
         @fact GeneralMessage([1.0, 2.0]).value => [1.0, 2.0]
     end
 
-    context("UninformativeGeneralMessage() should initialize an uninformative general message") do
-        msg = UninformativeGeneralMessage()
+    context("uninformative() should initialize an uninformative general message") do
+        msg = uninformative(GeneralMessage)
         @fact msg.value => 1.0
     end
 end
 
 facts("GammaMessage unit tests") do
     context("GammaMessage() should initiatize a message value") do
-        msg = GammaMessage(a=2.0, b=0.5, inverted=true)
-        @fact msg.inverted => true
+        msg = GammaMessage(a=2.0, b=0.5)
         @fact msg.a => 2.0
         @fact msg.b => 0.5
     end
 
-    context("UninformativeGammaMessage() should initialize an uninformative gamma message") do
-        msg = UninformativeGammaMessage(true)
+    context("uninformative() should initialize an uninformative gamma message") do
+        msg = uninformative(GammaMessage)
+        @fact msg.a => 0.999
+        @fact msg.b => 0.001
+    end
+end
+
+facts("InverseGammaMessage unit tests") do
+    context("InverseGammaMessage() should initiatize a message value") do
+        msg = InverseGammaMessage(a=2.0, b=0.5)
+        @fact msg.a => 2.0
+        @fact msg.b => 0.5
+    end
+
+    context("uninformative() should initialize an uninformative gamma message") do
+        msg = uninformative(InverseGammaMessage)
         @fact msg.a => -0.999
         @fact msg.b => 0.001
     end

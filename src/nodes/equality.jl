@@ -168,6 +168,35 @@ function updateNodeMessage!(outbound_interface_id::Int,
 end
 
 ############################################
+# InverseGammaMessage methods
+############################################
+
+function updateNodeMessage!(outbound_interface_id::Int,
+                            node::EqualityNode,
+                            inbound_messages_types::Type{InverseGammaMessage})
+    # Calculate an outbound message based on the inbound messages and the node function.
+    # This function is not exported, and is only meant for internal use.
+
+    # Definition from Korl table 5.2
+    first_incoming_id = (outbound_interface_id==1) ? 2 : 1
+    if length(node.interfaces)!=3 
+        error("Equality update rule for inverse gamma distribution only defined for three interfaces")
+    end
+    a = 1.0
+    b = 0
+    for interface_id = 1:length(node.interfaces)
+        if interface_id==outbound_interface_id
+            continue
+        end
+        msg = node.interfaces[interface_id].partner.message
+        a += msg.a
+        b += msg.b
+    end
+
+    return node.interfaces[outbound_interface_id].message = InverseGammaMessage(a=a, b=b)
+end
+
+############################################
 # GammaMessage methods
 ############################################
 
@@ -177,25 +206,21 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    # Definition from Korl table 5.2
+    # Definition from derivation in notebook gamma_message_eq_node_derivation
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1
     if length(node.interfaces)!=3 
         error("Equality update rule for gamma distribution only defined for three interfaces")
     end
-    a = 1
+    a = -1.0
     b = 0
     for interface_id = 1:length(node.interfaces)
         if interface_id==outbound_interface_id
             continue
         end
         msg = node.interfaces[interface_id].partner.message
-        if msg.inverted
-            a += msg.a 
-            b += msg.b
-        else
-            error("Equality update rule for gamma distribution only defined for inverted gamma messages")
-        end
+        a += msg.a
+        b += msg.b
     end
 
-    return node.interfaces[outbound_interface_id].message = GammaMessage(a=a, b=b, inverted=true)
+    return node.interfaces[outbound_interface_id].message = GammaMessage(a=a, b=b)
 end

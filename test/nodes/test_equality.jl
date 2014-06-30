@@ -164,11 +164,18 @@ facts("EqualityNode integration tests") do
     end
 
     context("EqualityNode should propagate a GammaMessage") do
-        node = initializeEqualityNode([GammaMessage(inverted=true), GammaMessage(inverted=true), nothing])
+        node = initializeEqualityNode([GammaMessage(), GammaMessage(), nothing])
         msg = ForneyLab.updateNodeMessage!(3, node, GammaMessage)
+        @fact node.interfaces[3].message => msg
+        @fact msg.a => 1.0
+        @fact msg.b => 2.0
+    end
+
+    context("EqualityNode should propagate an InverseGammaMessage") do
+        node = initializeEqualityNode([InverseGammaMessage(), InverseGammaMessage(), nothing])
+        msg = ForneyLab.updateNodeMessage!(3, node, InverseGammaMessage)
         @fact node.interfaces[3].message => msg
         @fact msg.a => 3.0
         @fact msg.b => 2.0
-        @fact msg.inverted => true
     end
 end
