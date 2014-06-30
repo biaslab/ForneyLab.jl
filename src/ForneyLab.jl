@@ -1,6 +1,6 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Schedule, Edge
+export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
@@ -129,6 +129,15 @@ function show(io::IO, edge::Edge)
     println(io, "Forward message type: $(typeof(edge.tail.message)). Backward message type: $(typeof(edge.head.message)).")
 end
 
+typealias MarginalSchedule Array{Edge, 1}
+function show(io::IO, schedule::MarginalSchedule)
+    # Show marginal update schedule
+    println(io, "Marginal update schedule:")
+    for edge in schedule
+        println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name) to $(typeof(edge.head.node)) $(edge.head.node.name)")
+    end
+end
+
 setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
 setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, message)
 getForwardMessage(edge::Edge) = edge.tail.message
@@ -219,7 +228,7 @@ function executeSchedule(schedule::Schedule)
     return schedule[end].message
 end
 
-function executeSchedule(schedule::Array{Edge, 1})
+function executeSchedule(schedule::MarginalSchedule)
     # Execute a marginal update schedule
     for edge in schedule
         calculateMarginal!(edge)
