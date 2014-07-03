@@ -1,14 +1,17 @@
-export
+export # types
+    GammaMessage,
+    InverseGammaMessage,
     GaussianMessage,
     GeneralMessage
 
-export
-    isWellDefined,
-    isConsistent,
+export # functions
     ensureMVParametrization!,
     ensureMWParametrization!,
     ensureXiVParametrization!,
-    ensureXiWParametrization!
+    ensureXiWParametrization!,
+    isWellDefined,
+    isConsistent,
+    uninformative
 
 ############################################
 # GaussianMessage
@@ -48,6 +51,9 @@ function GaussianMessage(;args...)
     return self
 end
 GaussianMessage() = GaussianMessage(m=[0.0], V=[1.0])
+
+uninformative(msg_type::Type{GaussianMessage}) = GaussianMessage(m=[0.0], V=[1000.0])
+
 function show(io::IO, msg::GaussianMessage)
     println(io, "GaussianMessage")
     print(io, "m  = ")
@@ -64,8 +70,23 @@ end
 # Methods to check and convert different parametrizations
 function isWellDefined(msg::GaussianMessage)
     # Check if msg is not underdetermined
-    return !( (is(msg.m, nothing) && is(msg.xi, nothing)) ||
-              (is(msg.V, nothing) && is(msg.W, nothing)) )
+    if ((is(msg.m, nothing) && is(msg.xi, nothing)) ||
+        (is(msg.V, nothing) && is(msg.W, nothing)))
+        return false
+    end
+    dimensions=0
+    for field in [:m, :xi, :V, :W]
+        if !is(getfield(msg, field), nothing)
+            if dimensions>0
+                if maximum(size(getfield(msg, field)))!=dimensions
+                    return false
+                end
+            else
+                dimensions = maximum(size(getfield(msg, field)))
+            end
+        end
+    end
+    return true
 end
 function isConsistent(msg::GaussianMessage)
     # Check if msg is consistent in case it is overdetermined
@@ -150,8 +171,51 @@ type GeneralMessage <: Message
     end
 end
 GeneralMessage() = GeneralMessage(1.0)
+
+uninformative(msg_type::Type{GeneralMessage}) = GeneralMessage(1.0)
+
 function show(io::IO, msg::GeneralMessage)
     print(io, "GeneralMessage with value = ")
     show(io, msg.value)
     print("\n")
+end
+
+############################################
+# GammaMessage
+############################################
+# Description:
+#   Encodes a gamma PDF.
+#   Pamameters: scalars a (shape) and b (rate).
+############################################
+type GammaMessage <: Message
+    a::Float64 # shape
+    b::Float64 # rate
+    GammaMessage(; a=1.0, b=1.0) = new(a, b)
+end
+
+uninformative(msg_type::Type{GammaMessage}) = GammaMessage(a=0.999, b=0.001)
+Base.mean(msg::GammaMessage) = msg.a / msg.b
+Base.var(msg::GammaMessage) = msg.a / (msg.b^2)
+
+############################################
+# InverseGammaMessage
+############################################
+# Description:
+#   Encodes an inverse gamma PDF.
+#   Pamameters: scalars a (shape) and b (rate).
+############################################
+type InverseGammaMessage <: Message
+    a::Float64 # shape
+    b::Float64 # rate
+    InverseGammaMessage(; a=1.0, b=1.0) = new(a, b)
+end
+
+uninformative(msg_type::Type{InverseGammaMessage}) = InverseGammaMessage(a=-0.999, b=0.001)
+Base.mean(msg::InverseGammaMessage) = msg.b / (msg.a - 1)
+Base.var(msg::InverseGammaMessage) = (msg.b^2) / ( ( (msg.a-1)^2 ) * (msg.a-2) )
+
+function show(io::IO, msg::Union(GammaMessage, InverseGammaMessage))
+    println(io, typeof(msg))
+    println(io, "a = $(msg.a) (shape)")
+    println(io, "b = $(msg.b) (rate)")
 end

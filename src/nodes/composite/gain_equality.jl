@@ -77,6 +77,10 @@ type GainEqualityCompositeNode <: CompositeNode
         self.in1 = self.interfaces[1]
         self.in2 = self.interfaces[2]
         self.out = self.interfaces[3]
+        # Set internal message passing schedules
+        self.in1.internal_schedule = [self.fixed_gain_node.in1, self.equality_node.interfaces[1]]
+        self.in2.internal_schedule = [self.fixed_gain_node.in1, self.equality_node.interfaces[3]]
+        self.out.internal_schedule = [self.equality_node.interfaces[2], self.fixed_gain_node.out]
 
         return self
     end
@@ -100,12 +104,12 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # This function is not exported, and is only meant for internal use.
 
     if !node.use_composite_update_rules
-        msg_out = calculateMessage!(node.interfaces[outbound_interface_id].child)
+        msg_out = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
     else
         if outbound_interface_id == 3
             # Forward message
             # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
-            msg_out = calculateMessage!(node.interfaces[outbound_interface_id].child)
+            msg_out = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
         elseif outbound_interface_id == 1 || outbound_interface_id == 2
             # Backward messages
             msg_out = GaussianMessage()

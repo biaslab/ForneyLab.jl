@@ -25,10 +25,10 @@
 #       Message
 ############################################
 
-export ConstantNode, getValue, setValue!
+export ConstantNode
 
 type ConstantNode <: Node
-    _value::Message
+    value::Message
     interfaces::Array{Interface,1}
     name::ASCIIString
     out::Interface
@@ -44,12 +44,8 @@ type ConstantNode <: Node
     end
 end
 
-# Functions to provide access to ConstantNode._value
-getValue(node::ConstantNode) = node._value
-function setValue!(node::ConstantNode, value::Message)
-    node._value = value
-    pushMessageInvalidations!(node)
-end
+# Overload firstFreeInterface since EqualityNode is symmetrical in its interfaces
+firstFreeInterface(node::ConstantNode) = (node.out.partner==nothing) ? node.out : error("No free interface on $(typeof(node)) $(node.name)")
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::ConstantNode,
@@ -59,5 +55,5 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # This function is not exported, and is only meant for internal use.
     
     # Just pass the unaltered message through
-    return node.interfaces[outbound_interface_id].message = deepcopy(node._value)
+    return node.interfaces[outbound_interface_id].message = deepcopy(node.value)
 end
