@@ -10,7 +10,7 @@
 #   out = A * in1
 #
 #   Example:
-#       MatrixMulitiplicationNode([1.0]; name="my_node")
+#       FixedGainNode([1.0]; name="my_node")
 #   Gain A may only be defined through the constructor!
 #
 # Interface ids, (names) and supported message types:

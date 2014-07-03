@@ -1,9 +1,9 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Schedule, Edge
+export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
-        calculateMarginal,
-        getMessage, getForwardMessage, getBackwardMessage, setMessage!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
+        calculateMarginal, calculateMarginal!,
+        getMessage, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
         generateSchedule, executeSchedule
 
 # Verbosity
@@ -19,6 +19,7 @@ import Base.show
 
 # Top-level abstracts
 abstract Message
+abstract RootEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from RootEdge, solving this problem.
 
 abstract Node
 show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
@@ -30,6 +31,7 @@ type Interface
     # An Interface can be seen as a half-edge, that connects to a partner Interface to form a complete edge.
     # A message from node a to node b is stored at the Interface of node a that connects to an Interface of node b.
     node::Node
+    edge::Union(RootEdge, Nothing)
     partner::Union(Interface, Nothing) # Partner indicates the interface to which it is connected.
     child::Union(Interface, Nothing)   # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
     message::Union(Message, Nothing)
@@ -38,18 +40,18 @@ type Interface
     internal_schedule::Array{Interface, 1}      # Optional schedule that should be executed to calculate outbound message on this interface.
                                                 # The internal_schedule field is used in composite nodes, and holds the schedule for internal message passing.
     # Sanity check for matching message types
-    function Interface(node::Node, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
+    function Interface(node::Node, edge::Union(RootEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
-            return new(node, partner, child, message)
+            return new(node, edge, partner, child, message)
         elseif typeof(message) != typeof(partner.message) # Compare message types
             error("Message type of partner does not match with interface message type")
         else
-            return new(node, partner, child, message)
+            return new(node, edge, partner, child, message)
         end
     end
 end
-Interface(node::Node, message::Message) = Interface(node, nothing, nothing, message)
-Interface(node::Node) = Interface(node, nothing, nothing, nothing)
+Interface(node::Node, message::Message) = Interface(node, nothing, nothing, nothing, message)
+Interface(node::Node) = Interface(node, nothing, nothing, nothing, nothing)
 show(io::IO, interface::Interface) = println(io, "Interface of $(typeof(interface.node)) with node name $(interface.node.name) holds message of type $(typeof(interface.message)).")
 setMessage!(interface::Interface, message::Message) = (interface.message=message)
 clearMessage!(interface::Interface) = (interface.message=nothing)
@@ -71,18 +73,25 @@ function show(io::IO, schedule::Schedule)
     end
 end
 
-type Edge
+type Edge <: RootEdge
     # An Edge joins two interfaces and has a direction (from tail to head).
     # Edges are mostly useful for code readability, they are not used internally.
     # Forward messages flow in the direction of the Edge (tail to head).
+    # Edges can contain marginals, which are the product of the forward and backward message.
+
     tail::Interface
     head::Interface
+    marginal::Union(Message, Nothing) # Messages are probability distributions
 
-    function Edge(tail::Interface, head::Interface)
+    function Edge(tail::Interface, head::Interface, marginal::Union(Message, Nothing)=nothing)
         if  typeof(head.message) == Nothing ||
             typeof(tail.message) == Nothing ||
             typeof(head.message) == typeof(tail.message)
             if !is(head.node, tail.node)
+                self = new(tail, head, marginal)
+                # Assign pointed to edge from interfaces
+                tail.edge = self
+                head.edge = self
                 # Partner head and tail, and merge their families
                 tail.partner = head
                 head.partner = tail
@@ -98,7 +107,7 @@ type Edge
                     child_interface.partner = head.partner
                     child_interface = child_interface.child
                 end
-                new(tail, head)
+                return self
             else
                 error("Cannot connect two interfaces of the same node: ", typeof(head.node), " ", head.node.name)
             end
@@ -107,6 +116,7 @@ type Edge
         end
     end
 end
+
 # Edge constructors that accept an EqualityNode instead of specific Interface
 # firstFreeInterface(node) should be overloaded for nodes with interface-invariant node functions
 firstFreeInterface(node::Node) = error("Cannot automatically pick a free interface on non-symmetrical $(typeof(node)) $(node.name)")
@@ -118,6 +128,16 @@ function show(io::IO, edge::Edge)
     println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name):$(findfirst(edge.tail.node.interfaces, edge.tail)) to $(typeof(edge.head.node)) $(edge.head.node.name):$(findfirst(edge.head.node.interfaces, edge.head)).")
     println(io, "Forward message type: $(typeof(edge.tail.message)). Backward message type: $(typeof(edge.head.message)).")
 end
+
+typealias MarginalSchedule Array{Edge, 1}
+function show(io::IO, schedule::MarginalSchedule)
+    # Show marginal update schedule
+    println(io, "Marginal update schedule:")
+    for edge in schedule
+        println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name) to $(typeof(edge.head.node)) $(edge.head.node.name)")
+    end
+end
+
 setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
 setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, message)
 getForwardMessage(edge::Edge) = edge.tail.message
@@ -131,6 +151,7 @@ include("nodes/addition.jl")
 include("nodes/constant.jl")
 include("nodes/equality.jl")
 include("nodes/fixed_gain.jl")
+include("nodes/gaussian.jl")
 # Composite nodes
 include("nodes/composite/gain_addition.jl")
 include("nodes/composite/gain_equality.jl")
@@ -175,15 +196,14 @@ function updateNodeMessage!(outbound_interface::Interface)
            (isdefined(outbound_interface, :message_dependencies) && !(node_interface in outbound_interface.message_dependencies))
             continue
         end
-        @assert(node_interface.partner!=nothing, "Cannot receive messages on disconnected interface $node_interface_id of $(typeof(node)) $(node.name)")
-        @assert(node_interface.partner.message!=nothing, "There is no inbound message present on interface $node_interface_id of $(typeof(node)) $(node.name)")
+        @assert(node_interface.partner!=nothing, "Cannot receive messages on disconnected interface $(node_interface_id) of $(typeof(node)) $(node.name)")
+        @assert(node_interface.partner.message!=nothing, "There is no inbound message present on interface $(node_interface_id) of $(typeof(node)) $(node.name)")
         inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
     end
 
     # Evaluate node update function
     printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
     msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_types)
-    printVerbose(" >> $(msg)")
 
     return msg
 end
@@ -208,6 +228,24 @@ function executeSchedule(schedule::Schedule)
     return schedule[end].message
 end
 
+function executeSchedule(schedule::MarginalSchedule)
+    # Execute a marginal update schedule
+    for edge in schedule
+        calculateMarginal!(edge)
+    end
+    # Return the last message in the schedule
+    return schedule[end].marginal
+end
+
+function setMarginal!(edge::Edge, message::Message)
+    # Presets the marginal and head- tail messages on edge with the argument message
+    # Usually this method is used to set uninformative messages
+
+    edge.head.message = message
+    edge.tail.message = message
+    edge.marginal = message
+end
+
 function calculateMarginal(forward_msg::Message, backward_msg::Message)
     # Calculate the marginal from a forward/backward message pair.
     # We calculate the marginal by using an EqualityNode.
@@ -219,23 +257,19 @@ function calculateMarginal(forward_msg::Message, backward_msg::Message)
     c_node2 = ConstantNode(backward_msg)
     Edge(c_node1.out, eq_node.interfaces[1])
     Edge(c_node2.out, eq_node.interfaces[2])
-    marginal_msg = deepcopy(calculateMessage!(eq_node.interfaces[3]))
+    c_node1.out.message = deepcopy(c_node1.value) # just do it the quick way
+    c_node2.out.message = deepcopy(c_node2.value)
+    marginal_msg = updateNodeMessage!(3, eq_node, typeof(forward_msg)) # quick direct call
     return marginal_msg
 end
 
-function calculateMarginal(edge::Edge)
-    # Calculate the marginal message on an edge
-    # If the required messages are not available, they will be calculated by calling calculateMessage!().
-    @assert(typeof(edge.tail)==Interface, "Edge should be bound to a tail interface.")
-    @assert(typeof(edge.head)==Interface, "Edge should be bound to a head interface.")
-    if edge.tail.message==nothing
-        calculateMessage!(edge.tail) # Try to calculate forward msg if not present
-    end
-    if edge.head.message==nothing
-        calculateMessage!(edge.head) # Try to calculate backward msg if not present
-    end
-
-    return calculateMarginal(edge.tail.message, edge.head.message)
+function calculateMarginal!(edge::Edge)
+    # Calculates and writes the marginal on edge
+    @assert(typeof(edge.tail.message)<:Message, "Edge should hold a forward message.")
+    @assert(typeof(edge.head.message)<:Message, "Edge should hold a backward message.")
+    msg = calculateMarginal(edge.tail.message, edge.head.message)
+    edge.marginal = msg
+    return(msg)
 end
 
 function clearMessages!(node::Node)

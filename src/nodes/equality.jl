@@ -15,16 +15,20 @@
 #   1. (none):
 #       GaussianMessage
 #       GeneralMessage
+#       GammaMessage
 #   2. (none):
 #       GaussianMessage
 #       GeneralMessage
+#       GammaMessage
 #   3. (none):
 #       GaussianMessage
 #       GeneralMessage
+#       GammaMessage
 #   ...
 #   N. (none):
 #       GaussianMessage
 #       GeneralMessage
+#       GammaMessage
 ############################################
 
 export EqualityNode
@@ -150,6 +154,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
         if interface_id==outbound_interface_id || interface_id==first_incoming_id
             continue
         end
+        msg_out
         if node.interfaces[interface_id].partner.message.value!=node.interfaces[first_incoming_id].partner.message.value
             if typeof(node.interfaces[first_incoming_id].partner.message.value)<:Array
                 return node.interfaces[outbound_interface_id].message = GeneralMessage(zeros(size(node.interfaces[first_incoming_id].partner.message.value)))
@@ -160,4 +165,62 @@ function updateNodeMessage!(outbound_interface_id::Int,
     end
 
     return node.interfaces[outbound_interface_id].message = deepcopy(node.interfaces[first_incoming_id].partner.message)
+end
+
+############################################
+# InverseGammaMessage methods
+############################################
+
+function updateNodeMessage!(outbound_interface_id::Int,
+                            node::EqualityNode,
+                            inbound_messages_types::Type{InverseGammaMessage})
+    # Calculate an outbound message based on the inbound messages and the node function.
+    # This function is not exported, and is only meant for internal use.
+
+    # Definition from Korl table 5.2
+    first_incoming_id = (outbound_interface_id==1) ? 2 : 1
+    if length(node.interfaces)!=3 
+        error("Equality update rule for inverse gamma distribution only defined for three interfaces")
+    end
+    a = 1.0
+    b = 0
+    for interface_id = 1:length(node.interfaces)
+        if interface_id==outbound_interface_id
+            continue
+        end
+        msg = node.interfaces[interface_id].partner.message
+        a += msg.a
+        b += msg.b
+    end
+
+    return node.interfaces[outbound_interface_id].message = InverseGammaMessage(a=a, b=b)
+end
+
+############################################
+# GammaMessage methods
+############################################
+
+function updateNodeMessage!(outbound_interface_id::Int,
+                            node::EqualityNode,
+                            inbound_messages_types::Type{GammaMessage})
+    # Calculate an outbound message based on the inbound messages and the node function.
+    # This function is not exported, and is only meant for internal use.
+
+    # Definition from derivation in notebook gamma_message_eq_node_derivation
+    first_incoming_id = (outbound_interface_id==1) ? 2 : 1
+    if length(node.interfaces)!=3 
+        error("Equality update rule for gamma distribution only defined for three interfaces")
+    end
+    a = -1.0
+    b = 0
+    for interface_id = 1:length(node.interfaces)
+        if interface_id==outbound_interface_id
+            continue
+        end
+        msg = node.interfaces[interface_id].partner.message
+        a += msg.a
+        b += msg.b
+    end
+
+    return node.interfaces[outbound_interface_id].message = GammaMessage(a=a, b=b)
 end

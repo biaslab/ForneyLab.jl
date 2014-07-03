@@ -7,6 +7,7 @@ module TestForneyLab
 using FactCheck
 using ForneyLab
 
+include("test_style.jl") # Test style conventions on source files
 include("integration_helpers.jl") # Helper file for integration tests, contains backgrounds and validations
 include("test_helpers.jl") # Tests for ForneyLab helper methods
 
@@ -75,16 +76,26 @@ facts("CalculateMessage!() unit tests") do
 end
 
 facts("calculateMarginal unit tests") do
+    context("setMarginal!() should preset a marginal") do
+        (node1, node2) = initializePairOfMockNodes()
+        edge = Edge(node1.out, node2.out)
+        setMarginal!(edge, uninformative(GeneralMessage))
+        @fact edge.head.message.value => 1.0
+        @fact edge.tail.message.value => 1.0
+        @fact edge.marginal.value => 1.0
+    end
+
     context("calculateMarginal(forward_msg, backward_msg) should check equality of message types") do
         @fact_throws calculateMarginal(GaussianMessage(), GeneralMessage())
     end
 
-    context("calculateMarginal(edge) should give correct result") do
+    context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
         edge = Edge(ConstantNode(GaussianMessage(m=[0.0], V=[1.0])),
                     ConstantNode(GaussianMessage(m=[0.0], V=[1.0])))
         calculateForwardMessage!(edge)
         calculateBackwardMessage!(edge)
-        marginal_msg = calculateMarginal(edge)
+        marginal_msg = calculateMarginal!(edge)
+        @fact edge.marginal => marginal_msg
         ensureMVParametrization!(marginal_msg)
         @fact marginal_msg.m => [0.0]
         @fact isApproxEqual(marginal_msg.V, reshape([0.5], 1, 1)) => true
@@ -106,8 +117,10 @@ include("nodes/test_addition.jl")
 include("nodes/test_constant.jl")
 include("nodes/test_equality.jl")
 include("nodes/test_fixed_gain.jl")
+include("nodes/test_gaussian.jl")
 include("nodes/composite/test_gain_addition.jl")
 include("nodes/composite/test_gain_equality.jl")
+include("test_vmp.jl")
 
 #####################
 # Integration tests
@@ -155,6 +168,15 @@ facts("Connections between nodes integration tests") do
         node = initializeFixedGainNode()
         # Connect output directly to input
         @fact_throws Edge(node.interfaces[2], node.interfaces[1])
+    end
+    
+    context("Edge construction should couple interfaces to edge") do
+        (node1, node2) = initializePairOfMockNodes()
+        @fact node1.out.edge => nothing
+        @fact node2.out.edge => nothing
+        edge = Edge(node1.out, node2.out)
+        @fact node1.out.edge => edge
+        @fact node2.out.edge => edge
     end
 end
 
@@ -244,6 +266,20 @@ facts("generateSchedule() and executeSchedule() integration tests") do
         @fact msg => add.in2.message
         @fact isApproxEqual(msg.m, [2.0]) => true
         @fact isApproxEqual(msg.V, reshape([1.5], 1, 1)) => true
+    end
+
+    context("executeSchedule() should accept edges") do
+        (node1, node2, node3) = initializeChainOfNodes()
+        schedule = [node1.out.edge, node2.out.edge]
+        node1.out.message = GaussianMessage(W=[1.0], xi=[1.0]) 
+        node1.out.partner.message = GaussianMessage(W=[1.0], xi=[1.0]) 
+        node2.out.message = GaussianMessage(W=[1.0], xi=[1.0]) 
+        node2.out.partner.message = GaussianMessage(W=[1.0], xi=[1.0])
+        executeSchedule(schedule)
+        @fact node1.out.edge.marginal.W => reshape([2.0], 1, 1)
+        @fact node2.out.edge.marginal.W => reshape([2.0], 1, 1)
+        @fact node1.out.edge.marginal.xi => [2.0]
+        @fact node2.out.edge.marginal.xi => [2.0]
     end
 
     context("executeSchedule() should work as expeced in loopy graphs") do
