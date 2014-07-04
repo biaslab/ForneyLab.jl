@@ -427,6 +427,17 @@ function initializeLinearCompositeNodeChain()
     x = [0.0:(n_samples-1.0)]
     y = true_a*x + true_b + sqrt(true_s)*randn(n_samples)
 
+    # show some stuff
+    println("True slope a: $(true_a)")
+    println("True offset b: $(true_b)")
+    println("True noise variance s: $(true_s)")
+    println("-------")
+    pars = linreg(x, y)
+    println("Sample slope a: $(pars[2])")
+    println("Sample offset b: $(pars[1])")
+    println("Sample variance s: $(var((x - pars[1])/pars[2]))")
+    println("-------")
+
     # Pre-assign arrays for later reference
     lin_nodes = Array(LinearCompositeNode, n_samples)
     a_eq_nodes = Array(EqualityNode, n_samples)
