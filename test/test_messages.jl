@@ -71,7 +71,16 @@ facts("GaussianMessage unit tests") do
         @fact isConsistent(ensureXiVParametrization!(GaussianMessage(xi=[2.0], W=[1.0]))) => true
     end
     context("mean(GaussianMessage) and var(GaussianMessage) should return correct result") do
-        # TODO: add tests here
+        # Univariate
+        @fact mean(GaussianMessage(m=[1.0], V=[1.0])) => [1.0]
+        @fact mean(GaussianMessage(xi=[1.0], V=[2.0])) => [2.0]
+        @fact var(GaussianMessage(m=[1.0], V=[2.0])) => [2.0]
+        @fact var(GaussianMessage(m=[1.0], W=[2.0])) => [0.5]
+        # Multivariate
+        @fact mean(GaussianMessage(m=[1.0, 2.0], V=eye(2))) => [1.0, 2.0]
+        @fact mean(GaussianMessage(xi=[1.0, 2.0], V=2.0*eye(2))) => [2.0, 4.0]
+        @fact var(GaussianMessage(m=[1.0, 2.0], V=diagm([2.0, 4.0]))) => [2.0, 4.0]
+        @fact var(GaussianMessage(m=[1.0, 2.0], W=diagm([2.0, 4.0]))) => [0.5, 0.25]
     end
     context("Inconsistent overdetermined GaussianMessage should be detected by isConsistent()") do
         @fact isConsistent(GaussianMessage(m=[0.0], xi=[1.0], W=[1.0])) => false
