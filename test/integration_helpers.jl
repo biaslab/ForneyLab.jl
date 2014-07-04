@@ -377,7 +377,7 @@ function initializeGaussianNodeChain()
     return(g_nodes, obs_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges)
 end
 
-function initializeLinearCompositeNode(msgs::Array{Any})
+function initializeLinearCompositeNode(msgs::Array{Message})
     # Set up a linear composite node and prepare the marginals
     # A MockNode is connected for each argument message
     #

@@ -88,7 +88,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Derivation for the update rule can be found in the derivations notebook.
 
     # Ensure right parameterization
-    for i = [1, 2, 3, 5]
+    for i = [1, 2, 3, 5] # just get all of them, all marginals need to be defined
         ensureMVParametrization!(node.interfaces[i].edge.marginal)
     end
     # Get the variables beforehand for more readable update equations
@@ -104,11 +104,11 @@ function updateNodeMessage!(outbound_interface_id::Int,
     b_s = node.s_in.edge.marginal.b
 
     if outbound_interface_id == 1 # in1
-        nu_out = GaussianMessage( m = [(mu_a*(mu_b - mu_x2))/(s_a + mu_a^2)], V = [(a_s + 1)/(b_s*(mu_a^2 + s_a))] )
+        nu_out = GaussianMessage( m = [(mu_a*(mu_x2 - mu_b))/(s_a + mu_a^2)], V = [(a_s + 1)/(b_s*(mu_a^2 + s_a))] )
     elseif outbound_interface_id == 2 # a
-        nu_out = GaussianMessage( m = [(mu_x1*(mu_b - mu_x2))/(s_x1 + mu_x1^2)], V = [(a_s + 1)/(b_s*(mu_x1^2 + s_x1))] )
+        nu_out = GaussianMessage( m = [(mu_x1*(mu_x2 - mu_b))/(s_x1 + mu_x1^2)], V = [(a_s + 1)/(b_s*(mu_x1^2 + s_x1))] )
     elseif outbound_interface_id == 3 # b
-        nu_out = GaussianMessage( m = [mu_a*mu_x1 - mu_x2], V = [(a_s + 1)/b_s] )
+        nu_out = GaussianMessage( m = [mu_x2 - mu_a*mu_x1], V = [(a_s + 1)/b_s] )
     elseif outbound_interface_id == 5 # out
         nu_out = GaussianMessage( m = [mu_a*mu_x1 + mu_b], V = [(a_s + 1)/b_s] )
     else
