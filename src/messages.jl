@@ -67,6 +67,9 @@ function show(io::IO, msg::GaussianMessage)
     print(io, "\n")
 end
 
+Base.mean(msg::GaussianMessage) = ensureMDefined!(msg).m
+Base.var(msg::GaussianMessage) = diag(ensureVDefined!(msg).V, 0)
+
 # Methods to check and convert different parametrizations
 function isWellDefined(msg::GaussianMessage)
     # Check if msg is not underdetermined
