@@ -214,9 +214,20 @@ type InverseGammaMessage <: Message
 end
 
 uninformative(msg_type::Type{InverseGammaMessage}) = InverseGammaMessage(a=-0.999, b=0.001)
-Base.mean(msg::InverseGammaMessage) = msg.b / (msg.a - 1)
-Base.var(msg::InverseGammaMessage) = (msg.b^2) / ( ( (msg.a-1)^2 ) * (msg.a-2) )
-
+function Base.mean(msg::InverseGammaMessage)
+    if msg.a > 1.0
+        return msg.b / (msg.a - 1)
+    else
+        return NaN
+    end
+end
+function Base.var(msg::InverseGammaMessage)
+    if msg.a > 2.0
+        return (msg.b^2) / ( ( (msg.a-1)^2 ) * (msg.a-2) )
+    else
+        return NaN
+    end
+end
 function show(io::IO, msg::Union(GammaMessage, InverseGammaMessage))
     println(io, typeof(msg))
     println(io, "a = $(msg.a) (shape)")
