@@ -156,7 +156,7 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
     else
         error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
     end
-    return node.interfaces[outbound_interface_id].message = deepcopy(nu_m)
+    return node.interfaces[outbound_interface_id].message = nu_m
 end
 function updateNodeMessageVariational!(outbound_interface_id::Int,
                                        node::GaussianNode,
@@ -174,7 +174,7 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
     else
         error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
     end
-    return node.interfaces[outbound_interface_id].message = deepcopy(nu_m)
+    return node.interfaces[outbound_interface_id].message = nu_m
 end
 
 function updateNodeMessageVariational!(outbound_interface_id::Int,
@@ -203,5 +203,5 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
     else
         error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
     end
-    return node.interfaces[outbound_interface_id].message = deepcopy(nu_s)
+    return node.interfaces[outbound_interface_id].message = nu_s
 end

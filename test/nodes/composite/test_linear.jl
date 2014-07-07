@@ -82,13 +82,31 @@ facts("LinearCompositeNode integration tests") do
         marginal_schedule = [a_eq_edges, b_eq_edges, s_eq_edges, x_edges, y_edges]
 
         # Perform vmp updates
-        n_its = 50
+        n_its = 1000
+        a_m_arr = Array(Float64, n_its+1)
+        a_V_arr = Array(Float64, n_its+1)
+        b_m_arr = Array(Float64, n_its+1)
+        b_V_arr = Array(Float64, n_its+1)
+        s_m_arr = Array(Float64, n_its+1)
+        s_V_arr = Array(Float64, n_its+1)
         for iter = 1:n_its
             executeSchedule(sumproduct_schedule)
+            a_m_arr[iter] = ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message).m[1]
+            a_V_arr[iter] = a_eq_nodes[end].interfaces[2].message.V[1,1]
+            b_m_arr[iter] = ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message).m[1]
+            b_V_arr[iter] = b_eq_nodes[end].interfaces[2].message.V[1,1]
+            s_m_arr[iter] = mean(s_eq_nodes[end].interfaces[2].message)
+            s_V_arr[iter] = var(s_eq_nodes[end].interfaces[2].message)
+
             executeSchedule(marginal_schedule)
         end
         executeSchedule(sumproduct_schedule) # One last time to ensure all calculations have propagated through the equality chains
-
+        a_m_arr[end] = ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message).m[1]
+        a_V_arr[end] = a_eq_nodes[end].interfaces[2].message.V[1,1]
+        b_m_arr[end] = ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message).m[1]
+        b_V_arr[end] = b_eq_nodes[end].interfaces[2].message.V[1,1]
+        s_m_arr[end] = mean(s_eq_nodes[end].interfaces[2].message)
+        s_V_arr[end] = var(s_eq_nodes[end].interfaces[2].message)
         # Save outcome
         ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message)
         ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message)
@@ -100,5 +118,12 @@ facts("LinearCompositeNode integration tests") do
         println("a estimate mean $(a_out.m[1]) and variance $(a_out.V[1, 1])")
         println("b estimate mean $(b_out.m[1]) and variance $(b_out.V[1, 1])")
         println("s estimate mean $(mean(s_out)) and variance $(var(s_out))")
+
+        figure()
+        fill_between(0:n_its, a_m_arr - a_V_arr, a_m_arr + a_V_arr, alpha=0.2)
+        plot(0:n_its, a_m_arr)
+        figure()
+        fill_between(0:n_its, b_m_arr - b_V_arr, b_m_arr + b_V_arr, alpha=0.2)
+        plot(0:n_its, b_m_arr)
     end
 end

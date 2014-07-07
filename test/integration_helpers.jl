@@ -428,6 +428,7 @@ function initializeLinearCompositeNodeChain()
     y = true_a*x + true_b + sqrt(true_s)*randn(n_samples)
 
     # show some stuff
+    #plot(x,y)
     println("True slope a: $(true_a)")
     println("True offset b: $(true_b)")
     println("True noise variance s: $(true_s)")

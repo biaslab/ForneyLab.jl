@@ -237,7 +237,6 @@ function executeSchedule(schedule::MarginalSchedule)
     # Return the last message in the schedule
     return schedule[end].marginal
 end
-
 function setMarginal!(edge::Edge, message::Message)
     # Presets the marginal and head- tail messages on edge with the argument message
     # Usually this method is used to set uninformative messages
