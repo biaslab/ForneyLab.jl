@@ -424,20 +424,22 @@ function initializeLinearCompositeNodeChain()
     true_a = 3.0
     true_b = 5.0
     n_samples = 20
-    x = [0.0:(n_samples-1.0)]
-    y = true_a*x + true_b + sqrt(true_s)*randn(n_samples)
+    x = [0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0]
+    y = [6.1811923622357625,7.917496269084679,11.286102016681964,14.94255088702814,16.82264686442818,19.889355802073506,23.718253510300688,28.18105443765643,27.72075206943362,32.15921446069328,34.97262678800721,38.86444301740928,40.79138365100076,45.84963364094473,47.818481172238165,51.51027620022872,52.623019301773,53.91583839744505,58.14426361122961,59.895517438500164]
+    # x = [0.0:(n_samples-1.0)]
+    # y = true_a*x + true_b + sqrt(true_s)*randn(n_samples)
 
     # show some stuff
-    #plot(x,y)
-    println("True slope a: $(true_a)")
-    println("True offset b: $(true_b)")
-    println("True noise variance s: $(true_s)")
-    println("-------")
-    pars = linreg(x, y)
-    println("Sample slope a: $(pars[2])")
-    println("Sample offset b: $(pars[1])")
-    println("Sample variance s: $(var((x - pars[1])/pars[2]))")
-    println("-------")
+    # plot(x,y)
+    # println("True slope a: $(true_a)")
+    # println("True offset b: $(true_b)")
+    # println("True noise variance s: $(true_s)")
+    # println("-------")
+    # pars = linreg(x, y)
+    # println("Sample slope a: $(pars[2])")
+    # println("Sample offset b: $(pars[1])")
+    # println("Sample variance s: $(var((x - pars[1])/pars[2]))")
+    # println("-------")
 
     # Pre-assign arrays for later reference
     lin_nodes = Array(LinearCompositeNode, n_samples)
