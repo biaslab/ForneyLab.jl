@@ -111,13 +111,13 @@ facts("calculateMarginal unit tests") do
         marginal_msg = calculateMarginal(
                                 GammaMessage(a=1.0, b=2.0),
                                 GammaMessage(a=3.0, b=4.0))
-        @fact marginal_msg.a => 2.0
-        @fact marginal_msg.b => 7.0
+        @fact marginal_msg.a => 3.0
+        @fact marginal_msg.b => 6.0
         marginal_msg = calculateMarginal(
                                 InverseGammaMessage(a=1.0, b=2.0),
                                 InverseGammaMessage(a=3.0, b=4.0))
-        @fact marginal_msg.a => 4.0
-        @fact marginal_msg.b => 7.0
+        @fact marginal_msg.a => 5.0
+        @fact marginal_msg.b => 6.0
     end
 end
 
