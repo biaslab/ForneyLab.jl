@@ -50,9 +50,7 @@ type GainAdditionCompositeNode <: CompositeNode
     in2::Interface
     out::Interface
 
-    function GainAdditionCompositeNode(A::Array=[1.0], use_composite_update_rules::Bool=true; args...)
-        (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
-
+    function GainAdditionCompositeNode(A::Array=[1.0], use_composite_update_rules::Bool=true; name="unnamed", args...)
         if use_composite_update_rules
             # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
             # In case we don't use composite update rules, A is passed to the internal FixedGainNode.

@@ -33,8 +33,7 @@ type ConstantNode <: Node
     name::ASCIIString
     out::Interface
 
-    function ConstantNode(value::Message=GeneralMessage(1.0); args...)
-        (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
+    function ConstantNode(value::Message=GeneralMessage(1.0); name="unnamed", args...)
         self = new(value, Array(Interface, 1), name)
         # Create interface
         self.interfaces[1] = Interface(self)

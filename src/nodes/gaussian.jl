@@ -47,8 +47,7 @@ type GaussianNode <: Node
     in1::Interface
     in2::Interface
     out::Interface
-    function GaussianNode(variational; args...)
-        (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
+    function GaussianNode(variational; name="unnamed", args...)
         self = new(name, Array(Interface, 3), variational)
         # Create interfaces
         self.interfaces[1] = Interface(self)

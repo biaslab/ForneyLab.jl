@@ -35,8 +35,7 @@ type AdditionNode <: Node
     in2::Interface
     out::Interface
 
-    function AdditionNode(;args...)
-        (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
+    function AdditionNode(; name="unnamed", args...)
         self = new(name, Array(Interface, 3))
         # Create interfaces
         self.interfaces[1] = Interface(self)
