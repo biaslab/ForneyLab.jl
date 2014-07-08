@@ -76,12 +76,13 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
+    msg_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianMessage)
+
     # Calculations for a gaussian message type; Korl (2005), table 4.1
 
     if outbound_interface_id == 1
         # Backward message
         msg_2 = node.interfaces[2].partner.message
-        msg_out = GaussianMessage()
 
         # Select parameterization
         # Order is from least to most computationally intensive
@@ -116,7 +117,6 @@ function updateNodeMessage!(outbound_interface_id::Int,
     elseif outbound_interface_id == 2
         # Forward message
         msg_1 = node.interfaces[1].partner.message
-        msg_out = GaussianMessage()
 
         # Select parameterization
         # Order is from least to most computationally intensive
@@ -148,10 +148,11 @@ function updateNodeMessage!(outbound_interface_id::Int,
             msg_out.W = nothing
             msg_out.xi = nothing
         end
+    else
+        error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
     end
-
-    # Set the outbound message
-    return node.interfaces[outbound_interface_id].message = msg_out
+    
+    return msg_out
 end
 
 ############################################
@@ -164,14 +165,17 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
+    msg_out = getOrAssign(node.interfaces[outbound_interface_id], GeneralMessage)
+
     if outbound_interface_id == 1
         # Backward message
-        msg_out = GeneralMessage(pinv(node.A) * node.interfaces[2].partner.message.value)
+        msg_out.value = pinv(node.A) * node.interfaces[2].partner.message.value
     elseif outbound_interface_id == 2
         # Forward message
-        msg_out = GeneralMessage(node.A * node.interfaces[1].partner.message.value)
+        msg_out.value = node.A * node.interfaces[1].partner.message.value
+    else
+        error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
     end
 
-    # Set the outbound message
-    return node.interfaces[outbound_interface_id].message = msg_out
+    return msg_out
 end

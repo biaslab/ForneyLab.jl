@@ -78,6 +78,8 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
+    msg_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianMessage)
+
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1
@@ -107,11 +109,13 @@ function updateNodeMessage!(outbound_interface_id::Int,
             W_sum += node.interfaces[incoming_interface_id].partner.message.W
             xi_sum += node.interfaces[incoming_interface_id].partner.message.xi
         end
-        msg_out = GaussianMessage(xi=xi_sum, W=W_sum)
+        msg_out.xi = xi_sum
+        msg_out.W = W_sum
+        msg_out.V = nothing
+        msg_out.m = nothing
     else # 3 interfaces
         msg_1 = node.interfaces[first_incoming_id].partner.message
         msg_2 = node.interfaces[(outbound_interface_id==3) ? 2 : 3].partner.message
-        msg_out = GaussianMessage()
         if msg_1.m != nothing && msg_1.W != nothing && msg_2.m != nothing && msg_2.W != nothing
             msg_out.m  = equalityMRule(msg_1.m, msg_2.m, msg_1.W, msg_2.W)
             msg_out.V  = nothing
@@ -133,8 +137,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
         end
     end
 
-    # Set the outbound message
-    return node.interfaces[outbound_interface_id].message = msg_out
+    return msg_out
 end
 
 ############################################
@@ -147,6 +150,8 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
+    msg_out = getOrAssign(node.interfaces[outbound_interface_id], GeneralMessage)
+
     # Outbound message is equal to the inbound messages if not all inbound messages are equal.
     # Otherwise, the outbound message is GeneralMessage(0.0)
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1
@@ -154,17 +159,18 @@ function updateNodeMessage!(outbound_interface_id::Int,
         if interface_id==outbound_interface_id || interface_id==first_incoming_id
             continue
         end
-        msg_out
         if node.interfaces[interface_id].partner.message.value!=node.interfaces[first_incoming_id].partner.message.value
             if typeof(node.interfaces[first_incoming_id].partner.message.value)<:Array
-                return node.interfaces[outbound_interface_id].message = GeneralMessage(zeros(size(node.interfaces[first_incoming_id].partner.message.value)))
+                msg_out.value = zeros(size(node.interfaces[first_incoming_id].partner.message.value))
             else
-                return node.interfaces[outbound_interface_id].message = GeneralMessage(0.0)
+                msg_out.value = 0.0
             end
+            return msg_out
         end
     end
+    msg_out.value = deepcopy(node.interfaces[first_incoming_id].partner.message.value)
 
-    return node.interfaces[outbound_interface_id].message = deepcopy(node.interfaces[first_incoming_id].partner.message)
+    return msg_out
 end
 
 ############################################
@@ -176,6 +182,8 @@ function updateNodeMessage!(outbound_interface_id::Int,
                             inbound_messages_types::Type{InverseGammaMessage})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
+
+    msg_out = getOrAssign(node.interfaces[outbound_interface_id], InverseGammaMessage)
 
     # Definition from Korl table 5.2
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1
@@ -192,8 +200,10 @@ function updateNodeMessage!(outbound_interface_id::Int,
         a += msg.a
         b += msg.b
     end
+    msg_out.a = a
+    msg_out.b = b
 
-    return node.interfaces[outbound_interface_id].message = InverseGammaMessage(a=a, b=b)
+    return msg_out
 end
 
 ############################################
@@ -205,6 +215,8 @@ function updateNodeMessage!(outbound_interface_id::Int,
                             inbound_messages_types::Type{GammaMessage})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
+
+    msg_out = getOrAssign(node.interfaces[outbound_interface_id], GammaMessage)
 
     # Definition from derivation in notebook gamma_message_eq_node_derivation
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1
@@ -221,6 +233,8 @@ function updateNodeMessage!(outbound_interface_id::Int,
         a += msg.a
         b += msg.b
     end
+    msg_out.a = a
+    msg_out.b = b
 
-    return node.interfaces[outbound_interface_id].message = GammaMessage(a=a, b=b)
+    return msg_out
 end
