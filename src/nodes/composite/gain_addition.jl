@@ -113,10 +113,11 @@ function updateNodeMessage!(outbound_interface_id::Int,
     else
         if outbound_interface_id == 3
             # Forward message towards "out" interface
+            msg_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianMessage)
+    
             # msg_i = inbound message on interface i, msg_out is always the calculated outbound message.
             msg_1 = node.interfaces[1].partner.message
             msg_2 = node.interfaces[2].partner.message
-            msg_out = GaussianMessage()
 
             # Select parameterization
             # Order is from least to most computationally intensive
@@ -164,9 +165,10 @@ function updateNodeMessage!(outbound_interface_id::Int,
             end
         elseif outbound_interface_id == 2
             # Backward message towards "in2" interface
+            msg_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianMessage)
+
             msg_1 = node.interfaces[1].partner.message
             msg_3 = node.interfaces[3].partner.message
-            msg_out = GaussianMessage()
 
             # Select parameterization
             # Order is from least to most computationally intensive
@@ -221,5 +223,5 @@ function updateNodeMessage!(outbound_interface_id::Int,
         end
     end
     # Set the outbound message
-    return node.interfaces[outbound_interface_id].message = msg_out
+    return msg_out
 end

@@ -109,8 +109,9 @@ function updateNodeMessage!(outbound_interface_id::Int,
             # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
             msg_out = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
         elseif outbound_interface_id == 1 || outbound_interface_id == 2
+            msg_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianMessage)
+
             # Backward messages
-            msg_out = GaussianMessage()
             msg_3 = node.interfaces[3].partner.message
             msg_in = node.interfaces[outbound_interface_id == 1 ? 2 : 1].partner.message # the other input interface
 
@@ -146,6 +147,6 @@ function updateNodeMessage!(outbound_interface_id::Int,
         end
     end
     # Set the outbound message
-    return node.interfaces[outbound_interface_id].message = msg_out
+    return msg_out
 end
 
