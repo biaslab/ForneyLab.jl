@@ -204,6 +204,7 @@ function updateNodeMessage!(outbound_interface::Interface)
     # Evaluate node update function
     printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
     msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_types)
+    printVerbose(msg)
 
     return msg
 end
