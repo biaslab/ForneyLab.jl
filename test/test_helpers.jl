@@ -9,13 +9,6 @@ facts("Helper function unit tests") do
         @fact ForneyLab.ensureMatrix(eye(2)) => eye(2)
     end
 
-    context("getArgumentValue should return the value of a keyword argument or false if not found") do
-        args = Array(Any, 1)
-        args[1] = (:name, "SPS Brats")
-        @fact getArgumentValue(args, :name) => "SPS Brats"
-        @fact getArgumentValue(args, :age) => false
-    end
-
     context("isApproxEqual should work for scalars, vectors and matrices") do
         @fact isApproxEqual(1.0, 1.0+1e-15) => true
         @fact isApproxEqual(1.0, 1.0+1e-9) => false
