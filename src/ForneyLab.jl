@@ -203,8 +203,9 @@ function updateNodeMessage!(outbound_interface::Interface)
     end
 
     # Evaluate node update function
-    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id")
+    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id:")
     msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_types)
+    printVerbose(msg)
 
     return msg
 end
@@ -241,9 +242,9 @@ function setMarginal!(edge::Edge, message::Message)
     # Presets the marginal and head- tail messages on edge with the argument message
     # Usually this method is used to set uninformative messages
 
-    edge.head.message = message
-    edge.tail.message = message
-    edge.marginal = message
+    edge.head.message = deepcopy(message)
+    edge.tail.message = deepcopy(message)
+    edge.marginal = deepcopy(message)
 end
 
 function calculateMarginal(forward_msg::GaussianMessage, backward_msg::GaussianMessage)
