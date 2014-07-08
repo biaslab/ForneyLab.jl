@@ -246,27 +246,24 @@ function setMarginal!(edge::Edge, message::Message)
     edge.marginal = message
 end
 
-function calculateMarginal(forward_msg::Message, backward_msg::Message)
+function calculateMarginal(forward_msg::GaussianMessage, backward_msg::GaussianMessage)
     # Calculate the marginal from a forward/backward message pair.
-    # We calculate the marginal by using an EqualityNode.
-    # The forward and backward messages are inbound messages to the EqualityNode.
-    # The outbound message is the marginal.
-    @assert(typeof(forward_msg)==typeof(backward_msg), "Cannot create marginal from forward/backward messages of different types.")
-    eq_node = EqualityNode(3)
-    c_node1 = ConstantNode(forward_msg)
-    c_node2 = ConstantNode(backward_msg)
-    Edge(c_node1.out, eq_node.interfaces[1])
-    Edge(c_node2.out, eq_node.interfaces[2])
-    c_node1.out.message = deepcopy(c_node1.value) # just do it the quick way
-    c_node2.out.message = deepcopy(c_node2.value)
-    marginal_msg = updateNodeMessage!(3, eq_node, typeof(forward_msg)) # quick direct call
-    return marginal_msg
+    # We calculate the marginal by using the EqualityNode update rules; same for the functions below
+    ensureXiWParametrization!(forward_msg)
+    ensureXiWParametrization!(backward_msg)
+    return GaussianMessage(xi = forward_msg.xi+backward_msg.xi, W = forward_msg.W+backward_msg.W)
+end
+function calculateMarginal(forward_msg::GammaMessage, backward_msg::GammaMessage)
+    return GammaMessage(a = forward_msg.a+backward_msg.a-1.0, b = forward_msg.b+backward_msg.b)    
+end
+function calculateMarginal(forward_msg::InverseGammaMessage, backward_msg::InverseGammaMessage)
+    return InverseGammaMessage(a = forward_msg.a+backward_msg.a+1.0, b = forward_msg.b+backward_msg.b)    
 end
 
 function calculateMarginal!(edge::Edge)
     # Calculates and writes the marginal on edge
-    @assert(typeof(edge.tail.message)<:Message, "Edge should hold a forward message.")
-    @assert(typeof(edge.head.message)<:Message, "Edge should hold a backward message.")
+    @assert(edge.tail.message != nothing, "Edge should hold a forward message.")
+    @assert(edge.head.message != nothing, "Edge should hold a backward message.")
     msg = calculateMarginal(edge.tail.message, edge.head.message)
     edge.marginal = msg
     return(msg)
