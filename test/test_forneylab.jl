@@ -122,7 +122,9 @@ facts("calculateMarginal unit tests") do
 end
 
 # Node and message specific tests are in separate files
-include("test_messages.jl")
+include("distributions/test_gaussian.jl")
+include("distributions/test_gamma.jl")
+include("distributions/test_inverse_gamma.jl")
 include("nodes/test_addition.jl")
 include("nodes/test_constant.jl")
 include("nodes/test_equality.jl")

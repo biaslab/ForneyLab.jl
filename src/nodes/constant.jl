@@ -18,11 +18,11 @@
 # the value of the ConstantNode.
 #
 # Example:
-#   ConstantNode(GaussianMessage(), name="myconst")
+#   ConstantNode(GaussianDistribution(), name="myconst")
 #
 # Interface ids, (names) and supported message types:
 #   1. (out):
-#       Message
+#       Message{Any}
 ############################################
 
 export ConstantNode
