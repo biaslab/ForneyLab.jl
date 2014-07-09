@@ -50,9 +50,7 @@ type GainEqualityCompositeNode <: CompositeNode
     in2::Interface
     out::Interface
 
-    function GainEqualityCompositeNode(A::Array=[1.0], use_composite_update_rules::Bool=true; args...)
-        (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
-
+    function GainEqualityCompositeNode(A::Array=[1.0], use_composite_update_rules::Bool=true; name="unnamed", args...)
         if use_composite_update_rules
             # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
             # In case we don't use composite update rules, A is passed to the internal FixedGainNode.
@@ -111,8 +109,9 @@ function updateNodeMessage!(outbound_interface_id::Int,
             # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
             msg_out = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
         elseif outbound_interface_id == 1 || outbound_interface_id == 2
+            msg_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianMessage)
+
             # Backward messages
-            msg_out = GaussianMessage()
             msg_3 = node.interfaces[3].partner.message
             msg_in = node.interfaces[outbound_interface_id == 1 ? 2 : 1].partner.message # the other input interface
 
@@ -148,6 +147,6 @@ function updateNodeMessage!(outbound_interface_id::Int,
         end
     end
     # Set the outbound message
-    return node.interfaces[outbound_interface_id].message = msg_out
+    return msg_out
 end
 

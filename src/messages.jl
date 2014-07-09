@@ -11,7 +11,17 @@ export # functions
     ensureXiWParametrization!,
     isWellDefined,
     isConsistent,
-    uninformative
+    uninformative,
+    getOrAssign
+
+function getOrAssign{T<:Message}(interface::Interface, assign_type::Type{T})
+    # Looks for a message on interface.
+    # When no message is present, it sets and returns a standard message.
+    # Otherwise it returns the present message.
+
+    interface.message!=nothing || (interface.message=assign_type())
+    return msg_out = interface.message
+end
 
 ############################################
 # GaussianMessage
