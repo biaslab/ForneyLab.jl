@@ -35,7 +35,7 @@ type AdditionNode <: Node
     in2::Interface
     out::Interface
 
-    function AdditionNode(; name="unnamed", args...)
+    function AdditionNode(; name="unnamed")
         self = new(name, Array(Interface, 3))
         # Create interfaces
         self.interfaces[1] = Interface(self)
@@ -146,7 +146,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
 end
 
 #############################################
-# GeneralMessage methods
+# Float64 methods
 #############################################
 
 function updateNodeMessage!(outbound_interface_id::Int,

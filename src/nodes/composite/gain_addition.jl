@@ -22,11 +22,11 @@
 #
 # Interface ids, (names) and supported message types:
 #   1. in1:
-#       GaussianMessage
+#       Message{GaussianDistribution}
 #   2. in2:
-#       GaussianMessage
+#       Message{GaussianDistribution}
 #   3. out:
-#       GaussianMessage
+#       Message{GaussianDistribution}
 #
 ############################################
 export GainAdditionCompositeNode
@@ -50,7 +50,7 @@ type GainAdditionCompositeNode <: CompositeNode
     in2::Interface
     out::Interface
 
-    function GainAdditionCompositeNode(A::Array=[1.0], use_composite_update_rules::Bool=true; name="unnamed", args...)
+    function GainAdditionCompositeNode(A::Array=[1.0], use_composite_update_rules::Bool=true; name="unnamed")
         if use_composite_update_rules
             # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
             # In case we don't use composite update rules, A is passed to the internal FixedGainNode.
@@ -85,7 +85,7 @@ type GainAdditionCompositeNode <: CompositeNode
 end
 
 ############################################
-# GaussianMessage methods
+# GaussianDistribution methods
 ############################################
 
 # Rule set for forward propagation ({in1,in2}-->out)
@@ -104,7 +104,7 @@ backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::GainAdditionCompositeNode,
-                            inbound_messages_types::Type{GaussianMessage})
+                            inbound_messages_value_types::Type{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
