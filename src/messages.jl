@@ -14,18 +14,13 @@ export # functions
     uninformative,
     getOrAssign
 
-function getOrAssign(interface::Interface, assign_type::DataType)
+function getOrAssign{T<:Message}(interface::Interface, assign_type::Type{T})
     # Looks for a message on interface.
     # When no message is present, it sets and returns a standard message.
     # Otherwise it returns the present message.
 
-    if interface.message == nothing
-        msg_out = assign_type() # Initialize a message if there is none
-        interface.message = msg_out
-    else
-        msg_out = interface.message
-    end
-    return msg_out
+    interface.message!=nothing || (interface.message=assign_type())
+    return msg_out = interface.message
 end
 
 ############################################
