@@ -78,11 +78,13 @@ function getOrCreateMessage(interface::Interface, assign_value::DataType)
     # Looks for a message on interface.
     # When no message is present, it sets and returns a standard message.
     # Otherwise it returns the present message.
-    if interface.message==nothing 
-        try
+    if interface.message==nothing
+        if assign_value <: ProbabilityDistribution 
             interface.message = Message(assign_value())
-        catch 
+        elseif assign_value == Float64
             interface.message = Message(1.0)
+        else
+            error("Unknown assign type argument")
         end
     end
     return msg_out = interface.message

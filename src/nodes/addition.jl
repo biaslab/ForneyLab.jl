@@ -109,8 +109,8 @@ function updateNodeMessage!(outbound_interface_id::Int,
         end
     elseif outbound_interface_id == 1 || outbound_interface_id == 2
         # Backward message, one message on the incoming edge and one on the outgoing edge.
-        dist_1or2 = (outbound_interface_id==1) ? node.interfaces[2].partner.message : node.interfaces[1].partner.message
-        dist_3 = node.interfaces[3].partner.message
+        dist_1or2 = (outbound_interface_id==1) ? node.interfaces[2].partner.message.value : node.interfaces[1].partner.message.value
+        dist_3 = node.interfaces[3].partner.message.value
 
         # Select parameterization
         # Order is from least to most computationally intensive
@@ -155,7 +155,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Float64).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Float64)
 
     # Calculations for a general message type
     if outbound_interface_id == 1

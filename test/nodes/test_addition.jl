@@ -76,20 +76,20 @@ facts("AdditionNode integration tests") do
         context("Univariate GaussianDistribution with different parametrizations") do
             node = initializeAdditionNode([Message(GaussianDistribution(m=[1.0], V=[0.5])), Message(GaussianDistribution(m=[3.0], W=[4.0])), nothing])
             msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
-            ensureMWParametrization!(msg)
+            ensureMWParametrization!(msg.value)
             @fact node.interfaces[3].message => msg
             @fact node.interfaces[3].message.value.m => [4.0]
             @fact node.interfaces[3].message.value.W => reshape([4.0/3.0], 1, 1)
             # Backward messages
             node = initializeAdditionNode([nothing, Message(GaussianDistribution(m=[1.0], V=[0.5])), Message(GaussianDistribution(m=[3.0], W=[4.0]))])
             msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution)
-            ensureMWParametrization!(msg)
+            ensureMWParametrization!(msg.value)
             @fact node.interfaces[1].message => msg
             @fact node.interfaces[1].message.value.m => [2.0]
             @fact node.interfaces[1].message.value.W => reshape([4.0/3.0], 1, 1)
             node = initializeAdditionNode([Message(GaussianDistribution(m=[1.0], V=[0.5])), nothing, Message(GaussianDistribution(m=[3.0], W=[4.0]))])
             msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution)
-            ensureMWParametrization!(msg)
+            ensureMWParametrization!(msg.value)
             @fact node.interfaces[2].message => msg
             @fact node.interfaces[2].message.value.m => [2.0]
             @fact node.interfaces[2].message.value.W => reshape([4.0/3.0], 1, 1)
@@ -174,20 +174,20 @@ facts("AdditionNode integration tests") do
             # Forward message
             node = initializeAdditionNode([Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(xi=precision*mean, V=inv(precision))), nothing])
             msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
-            ensureMWParametrization!(msg)
+            ensureMWParametrization!(msg.value)
             @fact node.interfaces[3].message => msg
             @fact isApproxEqual(node.interfaces[3].message.value.m, [2.0, 4.0, 6.0]) => true
             @fact isApproxEqual(node.interfaces[3].message.value.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
             # Backward messages
             node = initializeAdditionNode([nothing, Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(xi=precision*mean, V=inv(precision)))])
             msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution)
-            ensureMWParametrization!(msg)
+            ensureMWParametrization!(msg.value)
             @fact node.interfaces[1].message => msg
             @fact isApproxEqual(node.interfaces[1].message.value.m, [0.0, 0.0, 0.0]) => true
             @fact isApproxEqual(node.interfaces[1].message.value.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
             node = initializeAdditionNode([Message(GaussianDistribution(m=mean, W=precision)), nothing, Message(GaussianDistribution(xi=precision*mean, V=inv(precision)))])
             msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution)
-            ensureMWParametrization!(msg)
+            ensureMWParametrization!(msg.value)
             @fact node.interfaces[2].message => msg
             @fact isApproxEqual(node.interfaces[2].message.value.m, [0.0, 0.0, 0.0]) => true
             @fact isApproxEqual(node.interfaces[2].message.value.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
