@@ -14,22 +14,26 @@
 # Interface ids, (names) and supported message types:
 #   1. (none):
 #       Message{Float64}
+#       Message{Array{Float64}}
 #       Message{GaussianDistribution}
 #       Message{GammaDistribution}
 #       Message{InverseGammaDistribution}
 #   2. (none):
 #       Message{Float64}
+#       Message{Array{Float64}}
 #       Message{GaussianDistribution}
 #       Message{GammaDistribution}
 #       Message{InverseGammaDistribution}
 #   3. (none):
 #       Message{Float64}
+#       Message{Array{Float64}}
 #       Message{GaussianDistribution}
 #       Message{GammaDistribution}
 #       Message{InverseGammaDistribution}
 #   ...
 #   N. (none):
 #       Message{Float64}
+#       Message{Array{Float64}}
 #       Message{GaussianDistribution}
 #       Message{GammaDistribution}
 #       Message{InverseGammaDistribution}
@@ -153,7 +157,6 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-
     # Outbound message is equal to the inbound messages if not all inbound messages are equal.
     # Otherwise, the outbound message is Message{Float64}(0.0)
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1
@@ -164,17 +167,18 @@ function updateNodeMessage!(outbound_interface_id::Int,
         end
         if node.interfaces[interface_id].partner.message.value != node.interfaces[first_incoming_id].partner.message.value
             if typeof(node.interfaces[first_incoming_id].partner.message.value)<:Array
-                msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Array{Float64}, size(incoming_msg.value))
-                msg_out.value = zeros(size(incoming_msg.value))
+                ans = zeros(size(incoming_msg.value))
             else
-                msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Float64)
-                msg_out.value = 0.0
+                ans = 0.0
             end
+            msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], inbound_messages_value_types, size(ans))
+            msg_out.value = ans
             return node.interfaces[outbound_interface_id].message
         end
     end
-    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], inbound_messages_value_types, size(incoming_msg.value))
-    msg_out.value = deepcopy(incoming_msg.value)
+    ans = deepcopy(incoming_msg.value)
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], inbound_messages_value_types, size(ans))
+    msg_out.value = ans
 
     return node.interfaces[outbound_interface_id].message
 end

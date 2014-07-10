@@ -15,10 +15,10 @@
 #
 # Interface ids, (names) and supported message types:
 #   1. (in1):
-#       Message{Flaot64}
+#       Message{Array{Float64}}
 #       Message{GaussianDistribution}
 #   2. (out):
-#       Message{Flaot64}
+#       Message{Array{Float64}}
 #       Message{GaussianDistribution}
 ############################################
 
@@ -155,26 +155,27 @@ function updateNodeMessage!(outbound_interface_id::Int,
 end
 
 ############################################
-# Float64 methods
+# Float64 and Array{Float64} methods
 ############################################
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::FixedGainNode,
-                            inbound_messages_value_types::Type{Float64})
+                            inbound_messages_value_types::Type{Array{Float64}})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Float64).value
-
     if outbound_interface_id == 1
         # Backward message
-        dist_out.value = pinv(node.A) * node.interfaces[2].partner.message.value
+        ans = pinv(node.A) * node.interfaces[2].partner.message.value
     elseif outbound_interface_id == 2
         # Forward message
-        dist_out.value = node.A * node.interfaces[1].partner.message.value
+        ans = node.A * node.interfaces[1].partner.message.value
     else
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
+
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Array{Float64}, size(ans))
+    msg_out.value = ans
 
     return node.interfaces[outbound_interface_id].message
 end

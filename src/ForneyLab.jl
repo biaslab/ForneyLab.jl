@@ -74,10 +74,11 @@ getMessage(interface::Interface) = interface.message
 # end
 # getOrCreateMessage(interface::Interface, assign_value::DataType) = getOrCreateMessage{assign_value}(interface, assign_value)
 
-function getOrCreateMessage(interface::Interface, assign_value::DataType, arr_dims=(1, 1))
+function getOrCreateMessage(interface::Interface, assign_value::DataType, arr_dims::Tuple=(1, 1))
     # Looks for a message on interface.
     # When no message is present, it sets and returns a standard message.
     # Otherwise it returns the present message.
+    # For Array types we pre-allocate the array size with arr_dims
     if interface.message==nothing
         if assign_value <: ProbabilityDistribution 
             interface.message = Message(assign_value())

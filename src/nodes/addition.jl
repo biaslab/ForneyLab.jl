@@ -18,12 +18,15 @@
 #   1. (in1):
 #       Message{GaussianDistribution}
 #       Message{Float64}
+#       Message{Array{Float64}}
 #   2. (in2):
 #       Message{GaussianDistribution}
 #       Message{Float64}
+#       Message{Array{Float64}}
 #   3. (out):
 #       Message{GaussianDistribution}
 #       Message{Float64}
+#       Message{Array{Float64}}
 ############################################
 
 export AdditionNode
@@ -155,23 +158,22 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    first_incoming_id = (outbound_interface_id==1) ? 2 : 1
-    dims = size(node.interfaces[first_incoming_id].partner.message.value)
-    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], inbound_messages_value_types, dims)
-
     # Calculations for a general message type
     if outbound_interface_id == 1
         # Backward message 1
-        msg_out.value = node.interfaces[3].partner.message.value - node.interfaces[2].partner.message.value
+        ans = node.interfaces[3].partner.message.value - node.interfaces[2].partner.message.value
     elseif outbound_interface_id == 2
         # Backward message 2
-        msg_out.value = node.interfaces[3].partner.message.value - node.interfaces[1].partner.message.value
+        ans = node.interfaces[3].partner.message.value - node.interfaces[1].partner.message.value
     elseif outbound_interface_id == 3
         # Forward message
-        msg_out.value = node.interfaces[1].partner.message.value + node.interfaces[2].partner.message.value
+        ans = node.interfaces[1].partner.message.value + node.interfaces[2].partner.message.value
     else
         error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
     end
+
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], inbound_messages_value_types, size(ans))
+    msg_out.value = ans
 
     return node.interfaces[outbound_interface_id].message
 end
