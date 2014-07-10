@@ -31,6 +31,19 @@ facts("AdditionNode integration tests") do
         @fact node.interfaces[1].message.value => 1.0
     end
 
+    context("AdditionNode should add two Arrays") do
+        # Forward message
+        node = initializeAdditionNode([Message([1.0, 2.0]), Message([3.0, 4.0]), nothing])
+        msg = ForneyLab.updateNodeMessage!(3, node, Array{Float64})
+        @fact node.interfaces[3].message => msg
+        @fact node.interfaces[3].message.value => [4.0, 6.0]
+        # Backward message
+        node = initializeAdditionNode([nothing, Message([1.0, 2.0]), Message([3.0, 4.0])])
+        msg = ForneyLab.updateNodeMessage!(1, node, Array{Float64})
+        @fact node.interfaces[1].message => msg
+        @fact node.interfaces[1].message.value => [2.0, 2.0]
+    end
+
     # Tests on Gaussian messages use the update rules from Korl (2005),
     # "A Factor Graph Approach to Signal Modelling, System Identification and Filtering.", Table 4.1.
     context("AdditionNode should propagate a univariate GaussianDistribution") do

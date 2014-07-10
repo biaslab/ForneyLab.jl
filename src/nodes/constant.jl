@@ -30,8 +30,8 @@ type ConstantNode <: Node
     out::Interface
 
     function ConstantNode(value=1.0; name="unnamed")
-        if typeof(value) <: Message
-            error("ConstantNode $(name) can not hold value of type Message.")
+        if typeof(value) <: Message || typeof(value) == DataType
+            error("ConstantNode $(name) can not hold value of type $(typeof(value)).")
         end
         self = new(deepcopy(value), Array(Interface, 1), name)
         # Create interface

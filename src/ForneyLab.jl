@@ -74,7 +74,7 @@ getMessage(interface::Interface) = interface.message
 # end
 # getOrCreateMessage(interface::Interface, assign_value::DataType) = getOrCreateMessage{assign_value}(interface, assign_value)
 
-function getOrCreateMessage(interface::Interface, assign_value::DataType)
+function getOrCreateMessage(interface::Interface, assign_value::DataType, arr_dims=(1, 1))
     # Looks for a message on interface.
     # When no message is present, it sets and returns a standard message.
     # Otherwise it returns the present message.
@@ -83,6 +83,8 @@ function getOrCreateMessage(interface::Interface, assign_value::DataType)
             interface.message = Message(assign_value())
         elseif assign_value == Float64
             interface.message = Message(1.0)
+        elseif assign_value == Array{Float64}
+            interface.message = Message(zeros(arr_dims))
         else
             error("Unknown assign type argument")
         end

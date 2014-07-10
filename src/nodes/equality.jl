@@ -140,40 +140,43 @@ function updateNodeMessage!(outbound_interface_id::Int,
         end
     end
 
-    return node.interfaces[outbound_interface_id]
+    return node.interfaces[outbound_interface_id].message
 end
 
 ############################################
-# Float64 methods
+# Float64 and Array{Float64} methods
 ############################################
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::EqualityNode,
-                            inbound_messages_value_types::Type{Float64})
+                            inbound_messages_value_types::Union(Type{Float64}, Type{Array{Float64}}))
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Float64).value
 
     # Outbound message is equal to the inbound messages if not all inbound messages are equal.
     # Otherwise, the outbound message is Message{Float64}(0.0)
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1
+    incoming_msg = node.interfaces[first_incoming_id].partner.message
     for interface_id = 1:length(node.interfaces)
         if interface_id==outbound_interface_id || interface_id==first_incoming_id
             continue
         end
         if node.interfaces[interface_id].partner.message.value != node.interfaces[first_incoming_id].partner.message.value
             if typeof(node.interfaces[first_incoming_id].partner.message.value)<:Array
-                dist_out.value = zero(node.interfaces[first_incoming_id].partner.message.value)
+                msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Array{Float64}, size(incoming_msg.value))
+                msg_out.value = zeros(size(incoming_msg.value))
             else
-                dist_out.value = 0.0
+                msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Float64)
+                msg_out.value = 0.0
             end
-            return node.interfaces[outbound_interface_id]
+            return node.interfaces[outbound_interface_id].message
         end
     end
-    dist_out.value = deepcopy(node.interfaces[first_incoming_id].partner.message.value)
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], inbound_messages_value_types, size(incoming_msg.value))
+    msg_out.value = deepcopy(incoming_msg.value)
 
-    return node.interfaces[outbound_interface_id]
+    return node.interfaces[outbound_interface_id].message
 end
 
 ############################################
@@ -203,7 +206,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
         dist_out.b += node.interfaces[interface_id].partner.message.value.b
     end
 
-    return node.interfaces[outbound_interface_id]
+    return node.interfaces[outbound_interface_id].message
 end
 
 ############################################
@@ -233,5 +236,5 @@ function updateNodeMessage!(outbound_interface_id::Int,
         dist_out.b += node.interfaces[interface_id].partner.message.value.b
     end
 
-    return node.interfaces[outbound_interface_id]
+    return node.interfaces[outbound_interface_id].message
 end

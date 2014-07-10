@@ -146,27 +146,29 @@ function updateNodeMessage!(outbound_interface_id::Int,
 end
 
 #############################################
-# Float64 methods
+# Float64 and Array{Float64} methods
 #############################################
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::AdditionNode,
-                            inbound_messages_value_types::Type{Float64})
+                            inbound_messages_value_types::Union(Type{Float64}, Type{Array{Float64}}))
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Float64)
+    first_incoming_id = (outbound_interface_id==1) ? 2 : 1
+    dims = size(node.interfaces[first_incoming_id].partner.message.value)
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], inbound_messages_value_types, dims)
 
     # Calculations for a general message type
     if outbound_interface_id == 1
         # Backward message 1
-        dist_out.value = node.interfaces[3].partner.message.value - node.interfaces[2].partner.message.value
+        msg_out.value = node.interfaces[3].partner.message.value - node.interfaces[2].partner.message.value
     elseif outbound_interface_id == 2
         # Backward message 2
-        dist_out.value = node.interfaces[3].partner.message.value - node.interfaces[1].partner.message.value
+        msg_out.value = node.interfaces[3].partner.message.value - node.interfaces[1].partner.message.value
     elseif outbound_interface_id == 3
         # Forward message
-        dist_out.value = node.interfaces[1].partner.message.value + node.interfaces[2].partner.message.value
+        msg_out.value = node.interfaces[1].partner.message.value + node.interfaces[2].partner.message.value
     else
         error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
     end
