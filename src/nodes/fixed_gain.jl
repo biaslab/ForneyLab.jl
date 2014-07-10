@@ -75,7 +75,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianDistribution).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
 
     # Calculations for a gaussian message type; Korl (2005), table 4.1
 
@@ -164,7 +164,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrAssign(node.interfaces[outbound_interface_id], Float64).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Float64).value
 
     if outbound_interface_id == 1
         # Backward message

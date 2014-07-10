@@ -88,7 +88,7 @@ function updateNodeMessagePointEstimate!(outbound_interface_id::Int,
     # This function is not exported, and is only meant for internal use.
     # For interface 1 this call is identical to the variational call. A decision about the right call is made by the invoking updateNodeMessage function.
 
-    msg_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianMessage)
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianMessage)
 
     # Formulas from table 5.2 in Korl (2005)
     if outbound_interface_id == 3
@@ -130,7 +130,7 @@ function updateNodeMessagePointEstimate!(outbound_interface_id::Int,
 
     # Both m and y are known
 
-    msg_out = getOrAssign(node.interfaces[outbound_interface_id], InverseGammaMessage)
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaMessage)
 
     # Formulas from table 5.2 in Korl (2005)
     if outbound_interface_id == 2
@@ -159,7 +159,7 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
     # Update the outgoing message on the mean interface of a Gaussian node.
     # Derivation for the update rule can be found in the derivations notebook.
 
-    msg_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianMessage)
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianMessage)
 
     if outbound_interface_id == 1 # Mean estimation from variance and sample
         y_0 = node.out.partner.message.value # observation
@@ -182,7 +182,7 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
     # Update the outgoing message on the mean interface of a Gaussian node.
     # Derivation for the update rule can be found in the derivations notebook.
 
-    msg_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianMessage)
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianMessage)
 
     if outbound_interface_id == 1 # Mean estimation from variance and sample
         y_0 = node.out.partner.message.value # observation
@@ -207,7 +207,7 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
 
     if outbound_interface_id == 2 # Variance/precision estimation from mean and sample
         if typeof(node.in2.edge.marginal) == GammaMessage # return standard gamma
-            msg_out = getOrAssign(node.interfaces[outbound_interface_id], GammaMessage)
+            msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaMessage)
             y_0 = node.out.partner.message.value # observation
             ensureMWParametrization!(node.in1.edge.marginal)
             m = node.in1.edge.marginal.m[1] # Gaussian messsage
@@ -215,7 +215,7 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
             msg_out.a = 1.5
             msg_out.b = 0.5*(y_0-m)^2+0.5*inv(W)
         elseif typeof(node.in2.edge.marginal) == InverseGammaMessage # Return inverse gamma 
-            msg_out = getOrAssign(node.interfaces[outbound_interface_id], InverseGammaMessage)
+            msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaMessage)
             y_0 = node.out.partner.message.value # observation
             ensureMVParametrization!(node.in1.edge.marginal)
             m = node.in1.edge.marginal.m[1] # Gaussian message

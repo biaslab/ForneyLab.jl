@@ -81,7 +81,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianDistribution).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
 
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
@@ -153,7 +153,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrAssign(node.interfaces[outbound_interface_id], Float64).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Float64).value
 
     # Outbound message is equal to the inbound messages if not all inbound messages are equal.
     # Otherwise, the outbound message is Message{Float64}(0.0)
@@ -186,7 +186,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrAssign(node.interfaces[outbound_interface_id], InverseGammaDistribution).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).value
 
     # Definition from Korl table 5.2
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1
@@ -216,7 +216,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrAssign(node.interfaces[outbound_interface_id], GammaDistribution).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaDistribution).value
 
     # Definition from derivation in notebook gamma_message_eq_node_derivation
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1
