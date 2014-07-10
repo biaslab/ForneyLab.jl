@@ -1,10 +1,10 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule
+export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
-        generateSchedule, executeSchedule
+        generateSchedule, executeSchedule, uninformative, getOrCreateMessage
 
 # Verbosity
 verbose = false
@@ -25,13 +25,14 @@ abstract Node
 show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
 abstract CompositeNode <: Node
 
-immutable Message{T}
+type Message{T}
     # Message has a value payload, which will be a ProbabilityDistribution most of the time.
     # It may also carry a Float representing a sample, or an Array as particle list etc.
     # immutable means the value field can not be reassigned. The parameters of the object in the value field (such as distribution parameters) remain mutable
     value::T
-    Message(value) = Message{typeof(value)}(deepcopy(value))
 end
+Message(value::Any) = Message{typeof(value)}(deepcopy(value))
+Message() = Message(1.0)
 show(io::IO, message::Message) = println(io, typeof(message), " with value ", message.value, ".")
 
 type Interface
@@ -66,7 +67,22 @@ setMessage!(interface::Interface, message::Message) = (interface.message=deepcop
 clearMessage!(interface::Interface) = (interface.message=nothing)
 getMessage(interface::Interface) = interface.message
 
-function getOrCreateMessage{T<:Message}(interface::Interface, assign_value::Type{T})
+# function getOrCreateMessage{T<:Message}(interface::Interface, assign_value::Type{T})
+#     # Looks for a message on interface.
+#     # When no message is present, it sets and returns a standard message.
+#     # Otherwise it returns the present message.
+#     if interface.message==nothing 
+#         try
+#             interface.message = Message(assign_value())
+#         catch 
+#             interface.message = Message(1.0)
+#         end
+#     end
+#     return msg_out = interface.message
+# end
+# getOrCreateMessage(interface::Interface, assign_value::DataType) = getOrCreateMessage{assign_value}(interface, assign_value)
+
+function getOrCreateMessage(interface::Interface, assign_value::DataType)
     # Looks for a message on interface.
     # When no message is present, it sets and returns a standard message.
     # Otherwise it returns the present message.
@@ -269,8 +285,8 @@ function setMarginal!(edge::Edge, distribution::ProbabilityDistribution)
 
     # TODO: check this, message value type does not have to be equal to marginal distribution type
     # TODO: marginal should be the product of the message distributions
-    edge.head.message = deepcopy(message)
-    edge.tail.message = deepcopy(message)
+    edge.head.message = Message(deepcopy(distribution))
+    edge.tail.message = Message(deepcopy(distribution))
     edge.marginal = deepcopy(distribution)
 end
 

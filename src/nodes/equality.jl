@@ -229,8 +229,8 @@ function updateNodeMessage!(outbound_interface_id::Int,
         if interface_id==outbound_interface_id
             continue
         end
-        dist_out.a += node.interfaces[interface_id].partner.message.a
-        dist_out.b += node.interfaces[interface_id].partner.message.b
+        dist_out.a += node.interfaces[interface_id].partner.message.value.a
+        dist_out.b += node.interfaces[interface_id].partner.message.value.b
     end
 
     return node.interfaces[outbound_interface_id]

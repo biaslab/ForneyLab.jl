@@ -41,12 +41,12 @@ facts("VMP implementation integration tests") do
     executeSchedule(sumproduct_schedule) # One last time to ensure all calculations have propagated through the equality chains
 
     # Save outcome
-    ensureMWParametrization!(m_eq_nodes[end].interfaces[2].message)
+    ensureMVParametrization!(m_eq_nodes[end].interfaces[2].message.value)
 
     # Check the results against the outcome of Infer.NET
     accuracy = 4 # number of decimals accuracy
-    m_out = m_eq_nodes[end].interfaces[2].message
-    gam_out = gam_eq_nodes[end].interfaces[2].message
+    m_out = m_eq_nodes[end].interfaces[2].message.value
+    gam_out = gam_eq_nodes[end].interfaces[2].message.value
     @fact round(m_out.m[1], accuracy) => round(4.37638750753, accuracy)
     @fact round(m_out.V[1, 1], accuracy) => round(0.101492691239, accuracy)
     @fact round(mean(gam_out), accuracy) => round(0.984292623332, accuracy)

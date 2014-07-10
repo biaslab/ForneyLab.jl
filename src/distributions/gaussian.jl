@@ -13,6 +13,15 @@
 #   m and xi are 1d arrays, V and W are 2d
 ############################################
 
+export
+    GaussianDistribution,
+    ensureMVParametrization!,
+    ensureMWParametrization!,
+    ensureXiVParametrization!,
+    ensureXiWParametrization!,
+    isWellDefined,
+    isConsistent
+
 type GaussianDistribution <: ProbabilityDistribution
     m::Union(Array{Float64, 1}, Nothing)    # Mean vector
     V::Union(Array{Float64}, Nothing)       # Covariance matrix

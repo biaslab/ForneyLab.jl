@@ -5,6 +5,8 @@
 #   Encodes a gamma PDF.
 #   Pamameters: scalars a (shape) and b (rate).
 ############################################
+export GammaDistribution
+
 type GammaDistribution <: ProbabilityDistribution
     a::Float64 # shape
     b::Float64 # rate

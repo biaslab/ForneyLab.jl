@@ -5,6 +5,8 @@
 #   Encodes an inverse gamma PDF.
 #   Pamameters: scalars a (shape) and b (rate).
 ############################################
+export InverseGammaDistribution
+
 type InverseGammaDistribution <: ProbabilityDistribution
     a::Float64 # shape
     b::Float64 # rate
