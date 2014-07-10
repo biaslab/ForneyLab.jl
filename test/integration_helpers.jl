@@ -53,7 +53,7 @@ function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(2.0), msg_gain_2=Me
     node1 = FixedGainNode(A)
     node1.interfaces[1].message = msg_gain_1
     node1.interfaces[2].message = msg_gain_2
-    node2 = ConstantNode(msg_const)
+    node2 = ConstantNode(msg_const.value)
     node2.interfaces[1].message = msg_const
     return node1, node2
 end

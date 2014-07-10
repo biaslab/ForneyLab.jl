@@ -30,6 +30,9 @@ type ConstantNode <: Node
     out::Interface
 
     function ConstantNode(value=1.0; name="unnamed")
+        if typeof(value) <: Message
+            error("ConstantNode $(name) can not hold value of type Message.")
+        end
         self = new(deepcopy(value), Array(Interface, 1), name)
         # Create interface
         self.interfaces[1] = Interface(self)
@@ -48,7 +51,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # Calculate an outbound message. The constant node is the only node that does not accept incoming messages,
     # therefore inbound_messages_value_types is only present for consistency. 
     # This function is not exported, and is only meant for internal use.
-    
+
     # Just put node.value in the outbound value
     return node.interfaces[outbound_interface_id].message = Message(node.value)
 end
