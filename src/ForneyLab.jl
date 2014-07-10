@@ -33,6 +33,7 @@ type Message{T}
 end
 Message(value::Any) = Message{typeof(value)}(deepcopy(value))
 Message() = Message(1.0)
+uninformative(type_in::Type{Float64}) = Message(1.0) # uninformative general message
 show(io::IO, message::Message) = println(io, typeof(message), " with value ", message.value, ".")
 
 type Interface
@@ -67,18 +68,9 @@ setMessage!(interface::Interface, message::Message) = (interface.message=deepcop
 clearMessage!(interface::Interface) = (interface.message=nothing)
 getMessage(interface::Interface) = interface.message
 
+# TODO:
 # function getOrCreateMessage{T<:Message}(interface::Interface, assign_value::Type{T})
-#     # Looks for a message on interface.
-#     # When no message is present, it sets and returns a standard message.
-#     # Otherwise it returns the present message.
-#     if interface.message==nothing 
-#         try
-#             interface.message = Message(assign_value())
-#         catch 
-#             interface.message = Message(1.0)
-#         end
-#     end
-#     return msg_out = interface.message
+# ...
 # end
 # getOrCreateMessage(interface::Interface, assign_value::DataType) = getOrCreateMessage{assign_value}(interface, assign_value)
 
@@ -120,9 +112,9 @@ type Edge <: AbstractEdge
 
     tail::Interface
     head::Interface
-    marginal::Union(ProbabilityDistribution, Nothing)
+    marginal::Any
 
-    function Edge(tail::Interface, head::Interface, marginal::Union(ProbabilityDistribution, Nothing)=nothing)
+    function Edge(tail::Interface, head::Interface, marginal::Any=nothing)
         if  typeof(head.message) == Nothing ||
             typeof(tail.message) == Nothing ||
             typeof(head.message) == typeof(tail.message)
@@ -279,7 +271,7 @@ function executeSchedule(schedule::MarginalSchedule)
     return schedule[end].marginal
 end
 
-function setMarginal!(edge::Edge, distribution::ProbabilityDistribution)
+function setMarginal!(edge::Edge, distribution::Any)
     # Presets the marginal and head- tail messages on edge with the argument message
     # Usually this method is used to set uninformative messages
 
