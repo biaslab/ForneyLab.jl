@@ -83,10 +83,11 @@ facts("VMP implementation integration tests") do
         marginal_schedule = [a_eq_edges, b_eq_edges, s_eq_edges, x_edges, y_edges]
 
         # Perform vmp updates
-        n_its = 200
+        n_its = 50
+        Profile.clear()
         for iter = 1:n_its
             executeSchedule(sumproduct_schedule)
-            executeSchedule(marginal_schedule)
+            @profile executeSchedule(marginal_schedule)
         end
         executeSchedule(sumproduct_schedule) # One last time to ensure all calculations have propagated through the equality chains
 
@@ -101,5 +102,7 @@ facts("VMP implementation integration tests") do
         println("a estimate mean $(a_out.m[1]) and variance $(a_out.V[1, 1])")
         println("b estimate mean $(b_out.m[1]) and variance $(b_out.V[1, 1])")
         println("s estimate mean $(mean(s_out)) and variance $(var(s_out))")
+
+        Profile.print(format = :tree)#:flat)
     end
 end
