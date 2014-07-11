@@ -96,7 +96,7 @@ facts("GainEqualityCompositeNode integration tests") do
             # Forward
             node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing])
             msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
-            ensureMVParametrization!(msg)
+            ensureMVParametrization!(msg.value)
             @fact isApproxEqual(msg.value.V, reshape([2.0, 1.0, 1.0, 2.0], 2, 2)) => true
             @fact isApproxEqual(msg.value.m, [2.0, 4.0]) => true
             # Backward message

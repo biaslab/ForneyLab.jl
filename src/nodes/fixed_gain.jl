@@ -15,9 +15,11 @@
 #
 # Interface ids, (names) and supported message types:
 #   1. (in1):
+#       Message{Float64}
 #       Message{Array{Float64}}
 #       Message{GaussianDistribution}
 #   2. (out):
+#       Message{Float64}
 #       Message{Array{Float64}}
 #       Message{GaussianDistribution}
 ############################################
@@ -160,7 +162,7 @@ end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::FixedGainNode,
-                            inbound_messages_value_types::Type{Array{Float64}})
+                            inbound_messages_value_types::Union(Type{Float64}, Type{Array{Float64}}, Type{Array{Float64, 2}}))
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
@@ -174,7 +176,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
 
-    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], Array{Float64}, size(ans))
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], typeof(ans), size(ans))
     msg_out.value = ans
 
     return node.interfaces[outbound_interface_id].message

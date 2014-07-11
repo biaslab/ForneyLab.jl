@@ -18,6 +18,19 @@ end
 #####################
 
 facts("FixedGainNode integration tests") do
+    context("FixedGainNode should propagate a Float") do
+        # Backward message
+        node = initializeFixedGainNode([2.0], [nothing, Message(3.0)])
+        msg = ForneyLab.updateNodeMessage!(1, node, Array{Float64})
+        @fact node.interfaces[1].message => msg
+        @fact node.interfaces[1].message.value => reshape([1.5], 1, 1)
+        # Forward message
+        node = initializeFixedGainNode([2.0], [Message(3.0), nothing])
+        msg = ForneyLab.updateNodeMessage!(2, node, Array{Float64})
+        @fact node.interfaces[2].message => msg
+        @fact node.interfaces[2].message.value => reshape([6.0], 1, 1)
+    end
+
     context("FixedGainNode should propagate an Array") do
         # Backward message
         node = initializeFixedGainNode([2.0], [nothing, Message([3.0])])

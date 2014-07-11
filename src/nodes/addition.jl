@@ -154,7 +154,7 @@ end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::AdditionNode,
-                            inbound_messages_value_types::Union(Type{Float64}, Type{Array{Float64}}))
+                            inbound_messages_value_types::Union(Type{Float64}, Type{Array{Float64}}, Type{Array{Float64, 2}}))
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 

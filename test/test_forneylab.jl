@@ -211,7 +211,7 @@ facts("calculateMessage!() integration tests") do
         # Request message on node for which the input is unknown
         msg = calculateMessage!(gain.out)
         @fact msg => gain.out.message # Returned message should be identical to message stored on interface.
-        @fact typeof(gain.out.message.value) => Float64
+        @fact typeof(gain.out.message.value) => Array{Float64, 2}
         @fact gain.out.message.value => reshape([6.0], 1, 1)
     end
 
@@ -221,7 +221,7 @@ facts("calculateMessage!() integration tests") do
         @fact node3.out.message => nothing
         # Request message on node for which the input is unknown
         calculateMessage!(node3.out)
-        @fact typeof(node3.out.message.value) => Float64
+        @fact typeof(node3.out.message.value) => Array{Float64, 2}
         @fact node3.out.message.value => reshape([12.0], 1, 1)
     end
 
@@ -276,8 +276,8 @@ facts("generateSchedule() and executeSchedule() integration tests") do
         schedule = generateSchedule(add.in2)
         dist = ensureMVParametrization!(executeSchedule(schedule).value)
         @fact dist => add.in2.message.value
-        @fact isApproxEqual(dist.value.m, [2.0]) => true
-        @fact isApproxEqual(dist.value.V, reshape([1.5], 1, 1)) => true
+        @fact isApproxEqual(dist.m, [2.0]) => true
+        @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
     end
 
     context("executeSchedule() should accept edges") do
@@ -302,7 +302,7 @@ facts("generateSchedule() and executeSchedule() integration tests") do
             executeSchedule(schedule)
         end
         @fact typeof(driver.out.message) => Message{GaussianDistribution}
-        @fact ensureMVParametrization!(driver.out.message).m => [100.0] # For stop conditions at 100 cycles deep
+        @fact ensureMVParametrization!(driver.out.message.value).m => [100.0] # For stop conditions at 100 cycles deep
     end
 
     context("executeSchedule() should be called repeatedly until convergence") do
@@ -310,15 +310,15 @@ facts("generateSchedule() and executeSchedule() integration tests") do
         # Now set a breaker message and check that it works
         breaker_message = Message(GaussianDistribution(m=[10.0], V=[100.0]))
         setMessage!(driver.out, breaker_message)
-        prev_msg = deepcopy(breaker_message)
+        prev_dist = deepcopy(breaker_message.value)
         converged = false
         schedule = generateSchedule(driver.out)
         while !converged
-            msg = ensureMVParametrization!(executeSchedule(schedule))
-            converged = isApproxEqual(prev_msg.m, msg.m)
-            prev_msg = deepcopy(msg)
+            dist = ensureMVParametrization!(executeSchedule(schedule).value)
+            converged = isApproxEqual(prev_dist.m, dist.m)
+            prev_dist = deepcopy(dist)
         end
-        @fact isApproxEqual(driver.out.message.m, [0.0]) => true
+        @fact isApproxEqual(driver.out.message.value.m, [0.0]) => true
     end
 end
 

@@ -84,7 +84,7 @@ function getOrCreateMessage(interface::Interface, assign_value::DataType, arr_di
             interface.message = Message(assign_value())
         elseif assign_value == Float64
             interface.message = Message(1.0)
-        elseif assign_value == Array{Float64}
+        elseif assign_value <: Array{Float64}
             interface.message = Message(zeros(arr_dims))
         else
             error("Unknown assign type argument")
