@@ -167,7 +167,7 @@ end
 function getOrCreateMarginal(edge::Edge, assign_value::DataType)
     # Looks for a marginal on edge.
     # When no marginal is present, it sets and returns a standard distribution.
-    # Otherwise it returns the present marginal.
+    # Otherwise it returns the present marginal. User for fast marginal calculations.
     if edge.marginal==nothing
         if assign_value <: ProbabilityDistribution 
             edge.marginal = assign_value()

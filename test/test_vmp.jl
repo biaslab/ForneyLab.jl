@@ -55,7 +55,7 @@ facts("VMP implementation integration tests") do
     end
 
     context("LinearCompositeNode linear regression parameter estimation") do
-        (lin_nodes, a_eq_nodes, b_eq_nodes, s_eq_nodes, a_eq_edges, b_eq_edges, s_eq_edges, x_edges, y_edges) = initializeLinearCompositeNodeChain()
+        (lin_nodes, a_eq_nodes, b_eq_nodes, gam_eq_nodes, a_eq_edges, b_eq_edges, gam_eq_edges, x_edges, y_edges) = initializeLinearCompositeNodeChain()
 
         # Equality chain schedules
         left_update_run_a = generateSchedule(a_eq_nodes[1].interfaces[1]) # a
@@ -64,9 +64,9 @@ facts("VMP implementation integration tests") do
         left_update_run_b = generateSchedule(b_eq_nodes[1].interfaces[1]) # b
         right_update_run_b = generateSchedule(b_eq_nodes[end].interfaces[2])
         downward_b = map(x -> x.interfaces[3], b_eq_nodes)
-        left_update_run_s = generateSchedule(s_eq_nodes[1].interfaces[1]) # s
-        right_update_run_s = generateSchedule(s_eq_nodes[end].interfaces[2])
-        downward_s = map(x -> x.interfaces[3], s_eq_nodes)
+        left_update_run_gam = generateSchedule(gam_eq_nodes[1].interfaces[1]) # s
+        right_update_run_gam = generateSchedule(gam_eq_nodes[end].interfaces[2])
+        downward_gam = map(x -> x.interfaces[3], gam_eq_nodes)
         # Update for samples
         node_update = Array(Interface, 0)
         for node = lin_nodes
@@ -74,35 +74,42 @@ facts("VMP implementation integration tests") do
             push!(node_update, node.in1.partner)
             push!(node_update, node.a_in)
             push!(node_update, node.b_in)
-            push!(node_update, node.s_in)
+            push!(node_update, node.noise_in)
         end
         # Put it all together
-        sumproduct_schedule = [left_update_run_a, right_update_run_a, downward_a, left_update_run_b, right_update_run_b, downward_b, left_update_run_s, right_update_run_s, downward_s, node_update]
+        sumproduct_schedule = [left_update_run_a, right_update_run_a, downward_a, left_update_run_b, right_update_run_b, downward_b, left_update_run_gam, right_update_run_gam, downward_gam, node_update]
 
         # Marginal updates
-        marginal_schedule = [a_eq_edges, b_eq_edges, s_eq_edges, x_edges, y_edges]
+        marginal_schedule = [a_eq_edges, b_eq_edges, gam_eq_edges, x_edges, y_edges]
 
         # Perform vmp updates
         n_its = 50
-        Profile.clear()
         for iter = 1:n_its
             executeSchedule(sumproduct_schedule)
-            @profile executeSchedule(marginal_schedule)
+            executeSchedule(marginal_schedule)
         end
         executeSchedule(sumproduct_schedule) # One last time to ensure all calculations have propagated through the equality chains
 
-        # Save outcome
+        # Check the results against the outcome of Infer.NET
+        accuracy = 1 # number of decimals accuracy
         ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message.value)
         ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message.value)
         a_out = a_eq_nodes[end].interfaces[2].message.value
         b_out = b_eq_nodes[end].interfaces[2].message.value
-        s_out = s_eq_nodes[end].interfaces[2].message.value
+        gam_out = gam_eq_nodes[end].interfaces[2].message.value
 
-        # Print
-        println("a estimate mean $(a_out.m[1]) and variance $(a_out.V[1, 1])")
-        println("b estimate mean $(b_out.m[1]) and variance $(b_out.V[1, 1])")
-        println("s estimate mean $(mean(s_out)) and variance $(var(s_out))")
+        # println(mean(a_out))
+        # println(var(a_out))
+        # println(mean(b_out))
+        # println(var(b_out))
+        # println(mean(gam_out))
+        # println(var(gam_out))
 
-        Profile.print(format = :tree)#:flat)
+        @fact round(mean(a_out), accuracy) => round(2.92642601384, accuracy)
+        @fact round(var(a_out), accuracy) => round(0.000493670181134, accuracy)
+        @fact round(mean(b_out), accuracy) => round(5.85558752435, accuracy)
+        @fact round(var(b_out), accuracy) => round(0.0609314195382, accuracy)
+        @fact round(mean(gam_out), accuracy) => round(0.820094703716, accuracy)
+        @fact round(var(gam_out), accuracy) => round(0.0671883439624, accuracy)
     end
 end

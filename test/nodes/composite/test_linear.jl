@@ -10,7 +10,7 @@ facts("LinearCompositeNode unit tests") do
         @fact node.in1 => node.interfaces[1]
         @fact node.a_in => node.interfaces[2]
         @fact node.b_in => node.interfaces[3]
-        @fact node.s_in => node.interfaces[4]
+        @fact node.noise_in => node.interfaces[4]
         @fact node.out => node.interfaces[5]
         @fact node.variational => true # default variational to true
         @fact node.use_composite_update_rules => true # default use_composite_update_rules to true
@@ -40,7 +40,7 @@ facts("LinearCompositeNode integration tests") do
         @fact msg.value.m => [0.5]
     end
 
-    context("LinearCompositeNode should propagate a backward variational message to s_in") do
+    context("LinearCompositeNode should propagate a backward variational message to noise_in") do
         lin_node = initializeLinearCompositeNode([GaussianDistribution(m=[1.0], V=[0.0]), GaussianDistribution(m=[2.0], V=[0.0]), GaussianDistribution(m=[0.5], V=[0.0]), uninformative(InverseGammaDistribution), GaussianDistribution(m=[2.5], V=[0.0])])
         msg = ForneyLab.updateNodeMessage!(4, lin_node, Union(GaussianDistribution))
         @fact msg.value.a => -0.5

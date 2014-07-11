@@ -381,7 +381,7 @@ function initializeLinearCompositeNode(dists::Array{ProbabilityDistribution})
     # Set up a linear composite node and prepare the marginals
     # A MockNode is connected for each argument message
     #
-    #        [a_in][b_in] [s_in]
+    #        [a_in][b_in][noise_in]
     #            |  |       |
     #       |-----------------|
     #       |    |  |       | |
@@ -394,7 +394,7 @@ function initializeLinearCompositeNode(dists::Array{ProbabilityDistribution})
 
     lin_node = LinearCompositeNode(true)
     for intf = 1:5
-        edge = Edge(MockNode(Message(GaussianDistribution())).out, lin_node.interfaces[intf])
+        edge = Edge(MockNode(Message(1.0)).out, lin_node.interfaces[intf])
         if dists[intf] != nothing
             edge.marginal = dists[intf]
         end
@@ -409,7 +409,7 @@ function initializeLinearCompositeNodeChain()
     #          |               |        
     #  [b_0]---|>[=]---- ... --|>[=]----->[C_b]
     #          |  |            |  |     
-    #  [s_0]---|--|>[=]- ... --|--|>[=]-->[C_s]
+    #[gam_0]---|--|>[=]- ... --|--|>[=]-->[C_gam]
     #          |  |  |         |  |  |  
     #          v  v  v         v  v  v  
     #         |-------|       |-------| 
@@ -420,37 +420,23 @@ function initializeLinearCompositeNodeChain()
     #          x_1 y_1         x_n y_n
 
     # prepare samples
-    true_s = 2.0
+    true_gam = 0.5
     true_a = 3.0
     true_b = 5.0
     n_samples = 20
     x = [0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0]
     y = [6.1811923622357625,7.917496269084679,11.286102016681964,14.94255088702814,16.82264686442818,19.889355802073506,23.718253510300688,28.18105443765643,27.72075206943362,32.15921446069328,34.97262678800721,38.86444301740928,40.79138365100076,45.84963364094473,47.818481172238165,51.51027620022872,52.623019301773,53.91583839744505,58.14426361122961,59.895517438500164]
-    # x = [0.0:(n_samples-1.0)]
-    # y = true_a*x + true_b + sqrt(true_s)*randn(n_samples)
-
-    # show some stuff
-    # plot(x,y)
-    # println("True slope a: $(true_a)")
-    # println("True offset b: $(true_b)")
-    # println("True noise variance s: $(true_s)")
-    # println("-------")
-    # pars = linreg(x, y)
-    # println("Sample slope a: $(pars[2])")
-    # println("Sample offset b: $(pars[1])")
-    # println("Sample variance s: $(var((x - pars[1])/pars[2]))")
-    # println("-------")
 
     # Pre-assign arrays for later reference
     lin_nodes = Array(LinearCompositeNode, n_samples)
     a_eq_nodes = Array(EqualityNode, n_samples)
     b_eq_nodes = Array(EqualityNode, n_samples)
-    s_eq_nodes = Array(EqualityNode, n_samples)
+    gam_eq_nodes = Array(EqualityNode, n_samples)
     x_nodes = Array(ConstantNode, n_samples)
     y_nodes = Array(ConstantNode, n_samples)
     a_eq_edges = Array(Edge, n_samples)
     b_eq_edges = Array(Edge, n_samples)
-    s_eq_edges = Array(Edge, n_samples)
+    gam_eq_edges = Array(Edge, n_samples)
     x_edges = Array(Edge, n_samples)
     y_edges = Array(Edge, n_samples)
 
@@ -459,51 +445,51 @@ function initializeLinearCompositeNodeChain()
         lin_node = LinearCompositeNode()
         a_eq_node = EqualityNode()
         b_eq_node = EqualityNode()
-        s_eq_node = EqualityNode()
-        x_node = ConstantNode(GaussianDistribution(m = [x[section]], V = [0.0001]))
-        y_node = ConstantNode(GaussianDistribution(m = [y[section]], V = [0.0001]))
+        gam_eq_node = EqualityNode()
+        x_node = ConstantNode(GaussianDistribution(m = [x[section]], W = [10000.0]))
+        y_node = ConstantNode(GaussianDistribution(m = [y[section]], W = [10000.0]))
         # Save to array
         lin_nodes[section] = lin_node
         a_eq_nodes[section] = a_eq_node
         b_eq_nodes[section] = b_eq_node
-        s_eq_nodes[section] = s_eq_node
+        gam_eq_nodes[section] = gam_eq_node
         x_nodes[section] = x_node
         y_nodes[section] = y_node
         # Connect section within
         a_eq_edges[section] = Edge(a_eq_node.interfaces[3], lin_node.a_in)
         b_eq_edges[section] = Edge(b_eq_node.interfaces[3], lin_node.b_in)
-        s_eq_edges[section] = Edge(s_eq_node.interfaces[3], lin_node.s_in)
+        gam_eq_edges[section] = Edge(gam_eq_node.interfaces[3], lin_node.noise_in)
         x_edges[section] = Edge(x_node.out, lin_node.in1)
         y_edges[section] = Edge(lin_node.out, y_node.out)
         # Preset marginals
         setMarginal!(a_eq_edges[section], uninformative(GaussianDistribution)) # uninformative
         setMarginal!(b_eq_edges[section], uninformative(GaussianDistribution))
-        setMarginal!(s_eq_edges[section], uninformative(InverseGammaDistribution))
-        setMarginal!(x_edges[section], GaussianDistribution(m = [x[section]], V = [0.0001])) # samples
-        setMarginal!(y_edges[section], GaussianDistribution(m = [y[section]], V = [0.0001]))
+        setMarginal!(gam_eq_edges[section], uninformative(GammaDistribution))
+        setMarginal!(x_edges[section], GaussianDistribution(m = [x[section]], W = [10000.0])) # samples
+        setMarginal!(y_edges[section], GaussianDistribution(m = [y[section]], W = [10000.0]))
 
         if section > 1 # Connect sections
             Edge(a_eq_nodes[section-1].interfaces[2], a_eq_nodes[section].interfaces[1])
             Edge(b_eq_nodes[section-1].interfaces[2], b_eq_nodes[section].interfaces[1])
-            Edge(s_eq_nodes[section-1].interfaces[2], s_eq_nodes[section].interfaces[1])
+            Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1])
         end
     end
     # Attach beginning and end nodes
-    a_0 = ConstantNode(GaussianDistribution(m=[0.0], V=[100.0])) # priors
-    b_0 = ConstantNode(GaussianDistribution(m=[0.0], V=[100.0]))
-    s_0 = ConstantNode(InverseGammaDistribution(a=0.001, b=0.001))
+    a_0 = ConstantNode(GaussianDistribution(m=[0.0], W=[0.01])) # priors
+    b_0 = ConstantNode(GaussianDistribution(m=[0.0], W=[0.01]))
+    gam_0 = ConstantNode(GammaDistribution(a=0.01, b=0.01))
     C_a = ConstantNode(uninformative(GaussianDistribution)) # uninformative
     C_b = ConstantNode(uninformative(GaussianDistribution))
-    C_s = ConstantNode(uninformative(InverseGammaDistribution))
+    C_gam = ConstantNode(uninformative(GammaDistribution))
     # connect
     Edge(a_0, a_eq_nodes[1].interfaces[1])
     Edge(b_0, b_eq_nodes[1].interfaces[1])
-    Edge(s_0, s_eq_nodes[1].interfaces[1])
+    Edge(gam_0, gam_eq_nodes[1].interfaces[1])
     Edge(a_eq_nodes[end].interfaces[2], C_a.out)
     Edge(b_eq_nodes[end].interfaces[2], C_b.out)
-    Edge(s_eq_nodes[end].interfaces[2], C_s.out)
+    Edge(gam_eq_nodes[end].interfaces[2], C_gam.out)
 
-    return(lin_nodes, a_eq_nodes, b_eq_nodes, s_eq_nodes, a_eq_edges, b_eq_edges, s_eq_edges, x_edges, y_edges)
+    return(lin_nodes, a_eq_nodes, b_eq_nodes, gam_eq_nodes, a_eq_edges, b_eq_edges, gam_eq_edges, x_edges, y_edges)
 end
 
 #############
