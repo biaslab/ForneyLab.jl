@@ -42,12 +42,12 @@ facts("VMP implementation integration tests") do
         executeSchedule(sumproduct_schedule) # One last time to ensure all calculations have propagated through the equality chains
 
         # Save outcome
-        ensureMWParametrization!(m_eq_nodes[end].interfaces[2].message)
+        ensureMVParametrization!(m_eq_nodes[end].interfaces[2].message.value)
 
         # Check the results against the outcome of Infer.NET
         accuracy = 4 # number of decimals accuracy
-        m_out = m_eq_nodes[end].interfaces[2].message
-        gam_out = gam_eq_nodes[end].interfaces[2].message
+        m_out = m_eq_nodes[end].interfaces[2].message.value
+        gam_out = gam_eq_nodes[end].interfaces[2].message.value
         @fact round(m_out.m[1], accuracy) => round(4.37638750753, accuracy)
         @fact round(m_out.V[1, 1], accuracy) => round(0.101492691239, accuracy)
         @fact round(mean(gam_out), accuracy) => round(0.984292623332, accuracy)
@@ -83,48 +83,23 @@ facts("VMP implementation integration tests") do
         marginal_schedule = [a_eq_edges, b_eq_edges, s_eq_edges, x_edges, y_edges]
 
         # Perform vmp updates
-        n_its = 50
-        # a_m_arr = Array(Float64, n_its+1)
-        # a_V_arr = Array(Float64, n_its+1)
-        # b_m_arr = Array(Float64, n_its+1)
-        # b_V_arr = Array(Float64, n_its+1)
-        # s_m_arr = Array(Float64, n_its+1)
-        # s_V_arr = Array(Float64, n_its+1)
+        n_its = 200
         for iter = 1:n_its
             executeSchedule(sumproduct_schedule)
-            # a_m_arr[iter] = ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message).m[1]
-            # a_V_arr[iter] = a_eq_nodes[end].interfaces[2].message.V[1,1]
-            # b_m_arr[iter] = ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message).m[1]
-            # b_V_arr[iter] = b_eq_nodes[end].interfaces[2].message.V[1,1]
-            # s_m_arr[iter] = mean(s_eq_nodes[end].interfaces[2].message)
-            # s_V_arr[iter] = var(s_eq_nodes[end].interfaces[2].message)
-
             executeSchedule(marginal_schedule)
         end
         executeSchedule(sumproduct_schedule) # One last time to ensure all calculations have propagated through the equality chains
-        # a_m_arr[end] = ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message).m[1]
-        # a_V_arr[end] = a_eq_nodes[end].interfaces[2].message.V[1,1]
-        # b_m_arr[end] = ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message).m[1]
-        # b_V_arr[end] = b_eq_nodes[end].interfaces[2].message.V[1,1]
-        # s_m_arr[end] = mean(s_eq_nodes[end].interfaces[2].message)
-        # s_V_arr[end] = var(s_eq_nodes[end].interfaces[2].message)
+
         # Save outcome
-        ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message)
-        ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message)
-        a_out = a_eq_nodes[end].interfaces[2].message
-        b_out = b_eq_nodes[end].interfaces[2].message
-        s_out = s_eq_nodes[end].interfaces[2].message
+        ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message.value)
+        ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message.value)
+        a_out = a_eq_nodes[end].interfaces[2].message.value
+        b_out = b_eq_nodes[end].interfaces[2].message.value
+        s_out = s_eq_nodes[end].interfaces[2].message.value
 
         # Print
-        # println("a estimate mean $(a_out.m[1]) and variance $(a_out.V[1, 1])")
-        # println("b estimate mean $(b_out.m[1]) and variance $(b_out.V[1, 1])")
-        # println("s estimate mean $(mean(s_out)) and variance $(var(s_out))")
-
-        # figure()
-        # fill_between(0:n_its, a_m_arr - a_V_arr, a_m_arr + a_V_arr, alpha=0.2)
-        # plot(0:n_its, a_m_arr)
-        # figure()
-        # fill_between(0:n_its, b_m_arr - b_V_arr, b_m_arr + b_V_arr, alpha=0.2)
-        # plot(0:n_its, b_m_arr)
+        println("a estimate mean $(a_out.m[1]) and variance $(a_out.V[1, 1])")
+        println("b estimate mean $(b_out.m[1]) and variance $(b_out.V[1, 1])")
+        println("s estimate mean $(mean(s_out)) and variance $(var(s_out))")
     end
 end

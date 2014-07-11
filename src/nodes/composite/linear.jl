@@ -19,15 +19,15 @@
 #
 # Interface ids, (names) and supported message types:
 #   1. in1:
-#       GaussianMessage
+#       Message{GaussianDistribution}
 #   2. a_in:
-#       GaussianMessage
+#       Message{GaussianDistribution}
 #   3. b_in:
-#       GaussianMessage
+#       Message{GaussianDistribution}
 #   4. s_in:
-#       InvertedGammaMessage
+#       Message{InvertedGammaDistribution}
 #   3. out:
-#       GaussianMessage
+#       Message{GaussianDistribution}
 #
 ############################################
 
@@ -81,11 +81,11 @@ end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::LinearCompositeNode,
-                            inbound_messages_types::Type{Union(GaussianMessage, InverseGammaMessage)})
+                            inbound_messages_types::Type{Union(GaussianDistribution, InverseGammaDistribution)})
     # Variational update function, takes the marginals as input.
     # Derivation for the update rule can be found in the derivations notebook.
 
-    msg_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianMessage)
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
 
     # Ensure right parameterization
     for i = [1, 2, 3, 5] # just get all of them, all marginals need to be defined
@@ -104,39 +104,39 @@ function updateNodeMessage!(outbound_interface_id::Int,
     b_s = node.s_in.edge.marginal.b
 
     if outbound_interface_id == 1 # in1
-        msg_out.m = [(mu_a*(mu_x2 - mu_b))/(s_a + mu_a^2)]
-        msg_out.V = reshape([(a_s + 1)/(b_s*(mu_a^2 + s_a))], 1, 1)
-        msg_out.W = nothing
-        msg_out.xi = nothing
+        dist_out.m = [(mu_a*(mu_x2 - mu_b))/(s_a + mu_a^2)]
+        dist_out.V = reshape([(a_s + 1)/(b_s*(mu_a^2 + s_a))], 1, 1)
+        dist_out.W = nothing
+        dist_out.xi = nothing
     elseif outbound_interface_id == 2 # a
-        msg_out.m = [(mu_x1*(mu_x2 - mu_b))/(s_x1 + mu_x1^2)]
-        msg_out.V = reshape([(a_s + 1)/(b_s*(mu_x1^2 + s_x1))], 1, 1)
-        msg_out.W = nothing
-        msg_out.xi = nothing
+        dist_out.m = [(mu_x1*(mu_x2 - mu_b))/(s_x1 + mu_x1^2)]
+        dist_out.V = reshape([(a_s + 1)/(b_s*(mu_x1^2 + s_x1))], 1, 1)
+        dist_out.W = nothing
+        dist_out.xi = nothing
     elseif outbound_interface_id == 3 # b
-        msg_out.m = [mu_x2 - mu_a*mu_x1]
-        msg_out.V = reshape([(a_s + 1)/b_s], 1, 1)
-        msg_out.W = nothing
-        msg_out.xi = nothing
+        dist_out.m = [mu_x2 - mu_a*mu_x1]
+        dist_out.V = reshape([(a_s + 1)/b_s], 1, 1)
+        dist_out.W = nothing
+        dist_out.xi = nothing
     elseif outbound_interface_id == 5 # out
-        msg_out.m = [mu_a*mu_x1 + mu_b]
-        msg_out.V = reshape([(a_s + 1)/b_s], 1, 1)
-        msg_out.W = nothing
-        msg_out.xi = nothing
+        dist_out.m = [mu_a*mu_x1 + mu_b]
+        dist_out.V = reshape([(a_s + 1)/b_s], 1, 1)
+        dist_out.W = nothing
+        dist_out.xi = nothing
     else
         error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
     end
 
     # Set the outbound message
-    return msg_out
+    return node.interfaces[outbound_interface_id].message
 end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::LinearCompositeNode,
-                            inbound_messages_types::Type{GaussianMessage})
+                            inbound_messages_types::Type{GaussianDistribution})
     # Variational update function, takes the marginals as input.
     # Derivation for the update rule can be found in the derivations notebook.
-    msg_out = getOrAssign(node.interfaces[outbound_interface_id], InverseGammaMessage)
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).value
 
     # Get the variables beforehand for more readable update equations
     mu_a = node.a_in.edge.marginal.m[1]
@@ -149,12 +149,12 @@ function updateNodeMessage!(outbound_interface_id::Int,
     s_x1 = node.in1.edge.marginal.V[1, 1] # sigma_x1^2
 
     if outbound_interface_id == 4 # s_N
-        msg_out.a = -0.5
-        msg_out.b = 0.5*((mu_x2 - mu_a*mu_x1 - mu_b)^2 - (mu_a^2)*(mu_x1^2) + (mu_a^2 + s_a)*(mu_x1^2 + s_x1) + s_b + s_x2)
+        dist_out.a = -0.5
+        dist_out.b = 0.5*((mu_x2 - mu_a*mu_x1 - mu_b)^2 - (mu_a^2)*(mu_x1^2) + (mu_a^2 + s_a)*(mu_x1^2 + s_x1) + s_b + s_x2)
     else
         error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
     end
 
     # Set the outbound message
-    return msg_out
+    return node.interfaces[outbound_interface_id].message
 end

@@ -377,7 +377,7 @@ function initializeGaussianNodeChain()
     return(g_nodes, obs_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges)
 end
 
-function initializeLinearCompositeNode(msgs::Array{Message})
+function initializeLinearCompositeNode(dists::Array{ProbabilityDistribution})
     # Set up a linear composite node and prepare the marginals
     # A MockNode is connected for each argument message
     #
@@ -394,9 +394,9 @@ function initializeLinearCompositeNode(msgs::Array{Message})
 
     lin_node = LinearCompositeNode(true)
     for intf = 1:5
-        edge = Edge(MockNode(GaussianMessage()).out, lin_node.interfaces[intf])
-        if msgs[intf] != nothing
-            edge.marginal = msgs[intf]
+        edge = Edge(MockNode(Message(GaussianDistribution())).out, lin_node.interfaces[intf])
+        if dists[intf] != nothing
+            edge.marginal = dists[intf]
         end
     end    
     return lin_node
@@ -460,8 +460,8 @@ function initializeLinearCompositeNodeChain()
         a_eq_node = EqualityNode()
         b_eq_node = EqualityNode()
         s_eq_node = EqualityNode()
-        x_node = ConstantNode(GaussianMessage(m = [x[section]], V = [0.0001]))
-        y_node = ConstantNode(GaussianMessage(m = [y[section]], V = [0.0001]))
+        x_node = ConstantNode(GaussianDistribution(m = [x[section]], V = [0.0001]))
+        y_node = ConstantNode(GaussianDistribution(m = [y[section]], V = [0.0001]))
         # Save to array
         lin_nodes[section] = lin_node
         a_eq_nodes[section] = a_eq_node
@@ -476,11 +476,11 @@ function initializeLinearCompositeNodeChain()
         x_edges[section] = Edge(x_node.out, lin_node.in1)
         y_edges[section] = Edge(lin_node.out, y_node.out)
         # Preset marginals
-        setMarginal!(a_eq_edges[section], uninformative(GaussianMessage)) # uninformative
-        setMarginal!(b_eq_edges[section], uninformative(GaussianMessage))
-        setMarginal!(s_eq_edges[section], uninformative(InverseGammaMessage))
-        setMarginal!(x_edges[section], GaussianMessage(m = [x[section]], V = [0.0001])) # samples
-        setMarginal!(y_edges[section], GaussianMessage(m = [y[section]], V = [0.0001]))
+        setMarginal!(a_eq_edges[section], uninformative(GaussianDistribution)) # uninformative
+        setMarginal!(b_eq_edges[section], uninformative(GaussianDistribution))
+        setMarginal!(s_eq_edges[section], uninformative(InverseGammaDistribution))
+        setMarginal!(x_edges[section], GaussianDistribution(m = [x[section]], V = [0.0001])) # samples
+        setMarginal!(y_edges[section], GaussianDistribution(m = [y[section]], V = [0.0001]))
 
         if section > 1 # Connect sections
             Edge(a_eq_nodes[section-1].interfaces[2], a_eq_nodes[section].interfaces[1])
@@ -489,12 +489,12 @@ function initializeLinearCompositeNodeChain()
         end
     end
     # Attach beginning and end nodes
-    a_0 = ConstantNode(GaussianMessage(m=[0.0], V=[100.0])) # priors
-    b_0 = ConstantNode(GaussianMessage(m=[0.0], V=[100.0]))
-    s_0 = ConstantNode(InverseGammaMessage(a=0.001, b=0.001))
-    C_a = ConstantNode(uninformative(GaussianMessage)) # uninformative
-    C_b = ConstantNode(uninformative(GaussianMessage))
-    C_s = ConstantNode(uninformative(InverseGammaMessage))
+    a_0 = ConstantNode(GaussianDistribution(m=[0.0], V=[100.0])) # priors
+    b_0 = ConstantNode(GaussianDistribution(m=[0.0], V=[100.0]))
+    s_0 = ConstantNode(InverseGammaDistribution(a=0.001, b=0.001))
+    C_a = ConstantNode(uninformative(GaussianDistribution)) # uninformative
+    C_b = ConstantNode(uninformative(GaussianDistribution))
+    C_s = ConstantNode(uninformative(InverseGammaDistribution))
     # connect
     Edge(a_0, a_eq_nodes[1].interfaces[1])
     Edge(b_0, b_eq_nodes[1].interfaces[1])
