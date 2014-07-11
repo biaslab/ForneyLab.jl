@@ -75,7 +75,7 @@ facts("CalculateMessage!() unit tests") do
     end
 end
 
-facts("calculateMarginal unit tests") do
+facts("setMarginal unit tests") do
     context("setMarginal!() should preset a marginal") do
         (node1, node2) = initializePairOfMockNodes()
         edge = Edge(node1.out, node2.out)
@@ -83,41 +83,6 @@ facts("calculateMarginal unit tests") do
         @fact edge.head.message.value => 1.0
         @fact edge.tail.message.value => 1.0
         @fact edge.marginal => 1.0
-    end
-
-    context("calculateMarginal(forward_msg, backward_msg) should check equality of message types") do
-        @fact_throws calculateMarginal(Message(GaussianDistribution()), Message(2.0))
-    end
-
-    context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
-        edge = Edge(ConstantNode(GaussianDistribution(m=[0.0], V=[1.0])),
-                    ConstantNode(GaussianDistribution(m=[0.0], V=[1.0])))
-        calculateForwardMessage!(edge)
-        calculateBackwardMessage!(edge)
-        marginal_dist = calculateMarginal!(edge)
-        @fact edge.marginal => marginal_dist
-        ensureMVParametrization!(marginal_dist)
-        @fact marginal_dist.m => [0.0]
-        @fact isApproxEqual(marginal_dist.V, reshape([0.5], 1, 1)) => true
-    end
-
-    context("calculateMarginal(forward_msg, backward_msg) should give correct result") do
-        marginal_dist = calculateMarginal(
-                                GaussianDistribution(m=[0.0], V=[1.0]),
-                                GaussianDistribution(m=[0.0], V=[1.0]))
-        ensureMVParametrization!(marginal_dist)
-        @fact marginal_dist.m => [0.0]
-        @fact isApproxEqual(marginal_dist.V, reshape([0.5], 1, 1)) => true
-        marginal_dist = calculateMarginal(
-                                GammaDistribution(a=1.0, b=2.0),
-                                GammaDistribution(a=3.0, b=4.0))
-        @fact marginal_dist.a => 3.0
-        @fact marginal_dist.b => 6.0
-        marginal_dist = calculateMarginal(
-                                InverseGammaDistribution(a=1.0, b=2.0),
-                                InverseGammaDistribution(a=3.0, b=4.0))
-        @fact marginal_dist.a => 5.0
-        @fact marginal_dist.b => 6.0
     end
 end
 

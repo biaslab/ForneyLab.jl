@@ -68,31 +68,6 @@ setMessage!(interface::Interface, message::Message) = (interface.message=deepcop
 clearMessage!(interface::Interface) = (interface.message=nothing)
 getMessage(interface::Interface) = interface.message
 
-# TODO:
-# function getOrCreateMessage{T<:Message}(interface::Interface, assign_value::Type{T})
-# ...
-# end
-# getOrCreateMessage(interface::Interface, assign_value::DataType) = getOrCreateMessage{assign_value}(interface, assign_value)
-
-function getOrCreateMessage(interface::Interface, assign_value::DataType, arr_dims::Tuple=(1, 1))
-    # Looks for a message on interface.
-    # When no message is present, it sets and returns a standard message.
-    # Otherwise it returns the present message.
-    # For Array types we pre-allocate the array size with arr_dims
-    if interface.message==nothing
-        if assign_value <: ProbabilityDistribution 
-            interface.message = Message(assign_value())
-        elseif assign_value == Float64
-            interface.message = Message(1.0)
-        elseif assign_value <: Array{Float64}
-            interface.message = Message(zeros(arr_dims))
-        else
-            error("Unknown assign type argument")
-        end
-    end
-    return msg_out = interface.message
-end
-
 typealias Schedule Array{Interface, 1}
 function show(io::IO, schedule::Schedule)
     # Show schedules in a specific way
@@ -163,6 +138,44 @@ Edge(tail_node::Node, head_node::Node) = Edge(firstFreeInterface(tail_node), fir
 function show(io::IO, edge::Edge)
     println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name):$(findfirst(edge.tail.node.interfaces, edge.tail)) to $(typeof(edge.head.node)) $(edge.head.node.name):$(findfirst(edge.head.node.interfaces, edge.head)).")
     println(io, "Forward message type: $(typeof(edge.tail.message)). Backward message type: $(typeof(edge.head.message)).")
+end
+
+# TODO:
+# function getOrCreateMessage{T<:Message}(interface::Interface, assign_value::Type{T})
+# ...
+# end
+# getOrCreateMessage(interface::Interface, assign_value::DataType) = getOrCreateMessage{assign_value}(interface, assign_value)
+
+function getOrCreateMessage(interface::Interface, assign_value::DataType, arr_dims::Tuple=(1, 1))
+    # Looks for a message on interface.
+    # When no message is present, it sets and returns a standard message.
+    # Otherwise it returns the present message.
+    # For Array types we pre-allocate the array size with arr_dims
+    if interface.message==nothing
+        if assign_value <: ProbabilityDistribution 
+            interface.message = Message(assign_value())
+        elseif assign_value == Float64
+            interface.message = Message(1.0)
+        elseif assign_value <: Array{Float64}
+            interface.message = Message(zeros(arr_dims))
+        else
+            error("Unknown assign type argument")
+        end
+    end
+    return interface.message
+end
+function getOrCreateMarginal(edge::Edge, assign_value::DataType)
+    # Looks for a marginal on edge.
+    # When no marginal is present, it sets and returns a standard distribution.
+    # Otherwise it returns the present marginal.
+    if edge.marginal==nothing
+        if assign_value <: ProbabilityDistribution 
+            edge.marginal = assign_value()
+        else
+            error("Unknown assign type argument")
+        end
+    end
+    return edge.marginal
 end
 
 typealias MarginalSchedule Array{Edge, 1}
@@ -288,12 +301,18 @@ function setMarginal!(edge::Edge, distribution::Any)
     edge.marginal = deepcopy(distribution)
 end
 
+function calculateMarginal(edge::Edge)
+    # Calculates the marginal without writing back to the edge
+    @assert(edge.tail.message != nothing, "Edge should hold a forward message.")
+    @assert(edge.head.message != nothing, "Edge should hold a backward message.")
+    return calculateMarginal(edge.tail.message.value, edge.head.message.value)
+end
 function calculateMarginal!(edge::Edge)
     # Calculates and writes the marginal on edge
     @assert(edge.tail.message != nothing, "Edge should hold a forward message.")
     @assert(edge.head.message != nothing, "Edge should hold a backward message.")
-    marg = calculateMarginal(edge.tail.message.value, edge.head.message.value)
-    return edge.marginal = marg
+    calculateMarginal!(edge, edge.tail.message.value, edge.head.message.value)
+    return edge.marginal
 end
 
 function clearMessages!(node::Node)

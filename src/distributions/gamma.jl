@@ -26,3 +26,12 @@ end
 function calculateMarginal(forward_dist::GammaDistribution, backward_dist::GammaDistribution)
     return GammaDistribution(a = forward_dist.a+backward_dist.a-1.0, b = forward_dist.b+backward_dist.b)    
 end
+
+function calculateMarginal!(edge::Edge, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
+    # Calculate the marginal from a forward/backward message pair.
+    # We calculate the marginal by using the EqualityNode update rules; same for the functions below
+    marg = getOrCreateMarginal(edge, GammaDistribution)
+    marg.a = forward_dist.a+backward_dist.a-1.0
+    marg.b = forward_dist.b+backward_dist.b
+    return marg
+end

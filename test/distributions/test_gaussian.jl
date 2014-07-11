@@ -88,3 +88,26 @@ facts("GaussianDistribution unit tests") do
         @fact isConsistent(GaussianDistribution(m=[0.0], xi=[1.0], V=[1.0], W=[2.0])) => false
     end
 end
+
+facts("Marginal calculations for the Gaussian") do
+    context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
+        edge = Edge(ConstantNode(GaussianDistribution(m=[0.0], V=[1.0])),
+                    ConstantNode(GaussianDistribution(m=[0.0], V=[1.0])))
+        calculateForwardMessage!(edge)
+        calculateBackwardMessage!(edge)
+        marginal_dist = calculateMarginal!(edge)
+        @fact edge.marginal => marginal_dist
+        ensureMVParametrization!(marginal_dist)
+        @fact edge.marginal.m => [0.0]
+        @fact isApproxEqual(edge.marginal.V, reshape([0.5], 1, 1)) => true
+    end
+
+    context("calculateMarginal(forward_msg, backward_msg) should give correct result") do
+        marginal_dist = calculateMarginal(
+                                GaussianDistribution(m=[0.0], V=[1.0]),
+                                GaussianDistribution(m=[0.0], V=[1.0]))
+        ensureMVParametrization!(marginal_dist)
+        @fact marginal_dist.m => [0.0]
+        @fact isApproxEqual(marginal_dist.V, reshape([0.5], 1, 1)) => true
+    end
+end

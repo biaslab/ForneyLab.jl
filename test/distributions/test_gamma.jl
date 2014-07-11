@@ -15,3 +15,24 @@ facts("GammaDistribution unit tests") do
         @fact dist.b => 0.001
     end
 end
+
+facts("Marginal calculations for the gamma") do
+    context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
+        edge = Edge(ConstantNode(GammaDistribution(a=1.0, b=2.0)),
+                    ConstantNode(GammaDistribution(a=3.0, b=4.0)))
+        calculateForwardMessage!(edge)
+        calculateBackwardMessage!(edge)
+        marginal_dist = calculateMarginal!(edge)
+        @fact edge.marginal => marginal_dist
+        @fact edge.marginal.a => 3.0
+        @fact edge.marginal.b => 6.0
+    end
+
+    context("calculateMarginal(forward_msg, backward_msg) should give correct result") do
+        marginal_dist = calculateMarginal(
+                                GammaDistribution(a=1.0, b=2.0),
+                                GammaDistribution(a=3.0, b=4.0))
+        @fact marginal_dist.a => 3.0
+        @fact marginal_dist.b => 6.0
+    end
+end

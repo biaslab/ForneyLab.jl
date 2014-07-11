@@ -160,3 +160,16 @@ function calculateMarginal(forward_dist::GaussianDistribution, backward_dist::Ga
     ensureXiWParametrization!(backward_dist)
     return GaussianDistribution(xi = forward_dist.xi+backward_dist.xi, W = forward_dist.W+backward_dist.W)
 end
+
+function calculateMarginal!(edge::Edge, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
+    # Calculate the marginal from a forward/backward message pair.
+    # We calculate the marginal by using the EqualityNode update rules; same for the functions below
+    marg = getOrCreateMarginal(edge, GaussianDistribution)
+    ensureXiWParametrization!(forward_dist)
+    ensureXiWParametrization!(backward_dist)
+    marg.xi = forward_dist.xi+backward_dist.xi
+    marg.W = forward_dist.W+backward_dist.W
+    marg.V = nothing
+    marg.m = nothing
+    return marg
+end
