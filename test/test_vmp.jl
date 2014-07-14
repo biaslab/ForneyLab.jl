@@ -45,13 +45,13 @@ facts("VMP implementation integration tests") do
         ensureMVParametrization!(m_eq_nodes[end].interfaces[2].message.value)
 
         # Check the results against the outcome of Infer.NET
-        accuracy = 4 # number of decimals accuracy
+        accuracy = 3 # number of decimals accuracy
         m_out = m_eq_nodes[end].interfaces[2].message.value
         gam_out = gam_eq_nodes[end].interfaces[2].message.value
         @fact round(m_out.m[1], accuracy) => round(4.37638750753, accuracy)
-        @fact round(m_out.V[1, 1], accuracy) => round(0.101492691239, accuracy)
-        @fact round(mean(gam_out), accuracy) => round(0.984292623332, accuracy)
-        @fact round(var(gam_out), accuracy) => round(0.1933796344, accuracy)
+        @fact round(m_out.V[1, 1], accuracy+1) => round(0.101492691239, accuracy+1)
+        @fact round(mean(gam_out), accuracy+1) => round(0.984292623332, accuracy+1)
+        @fact round(var(gam_out), accuracy+1) => round(0.1933796344, accuracy+1)
     end
 
     context("LinearCompositeNode linear regression parameter estimation") do
@@ -83,7 +83,7 @@ facts("VMP implementation integration tests") do
         marginal_schedule = [a_eq_edges, b_eq_edges, gam_eq_edges, x_edges, y_edges]
 
         # Perform vmp updates
-        n_its = 50
+        n_its = 100
         for iter = 1:n_its
             executeSchedule(sumproduct_schedule)
             executeSchedule(marginal_schedule)
@@ -91,25 +91,19 @@ facts("VMP implementation integration tests") do
         executeSchedule(sumproduct_schedule) # One last time to ensure all calculations have propagated through the equality chains
 
         # Check the results against the outcome of Infer.NET
-        accuracy = 1 # number of decimals accuracy
         ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message.value)
         ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message.value)
         a_out = a_eq_nodes[end].interfaces[2].message.value
         b_out = b_eq_nodes[end].interfaces[2].message.value
         gam_out = gam_eq_nodes[end].interfaces[2].message.value
 
-        # println(mean(a_out))
-        # println(var(a_out))
-        # println(mean(b_out))
-        # println(var(b_out))
-        # println(mean(gam_out))
-        # println(var(gam_out))
+        accuracy = 1
 
-        @fact round(mean(a_out), accuracy) => round(2.92642601384, accuracy)
-        @fact round(var(a_out), accuracy) => round(0.000493670181134, accuracy)
-        @fact round(mean(b_out), accuracy) => round(5.85558752435, accuracy)
-        @fact round(var(b_out), accuracy) => round(0.0609314195382, accuracy)
-        @fact round(mean(gam_out), accuracy) => round(0.820094703716, accuracy)
-        @fact round(var(gam_out), accuracy) => round(0.0671883439624, accuracy)
+        @fact round(mean(a_out), accuracy)[1] => round(2.92642601384, accuracy)
+        @fact round(var(a_out), accuracy+4)[1, 1] => round(0.000493670181134, accuracy+4)
+        @fact round(mean(b_out), accuracy)[1] => round(5.85558752435, accuracy)
+        @fact round(var(b_out), accuracy+2)[1, 1] => round(0.0609314195382, accuracy+2)
+        @fact round(mean(gam_out), accuracy+1) => round(0.820094703716, accuracy+1)
+        @fact round(var(gam_out), accuracy+2) => round(0.0671883439624, accuracy+2)
     end
 end
