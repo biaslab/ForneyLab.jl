@@ -16,14 +16,17 @@
 #
 # Interface ids, (names) and supported message types:
 #   1. (in1):
-#       GaussianMessage
-#       GeneralMessage
+#       Message{GaussianDistribution}
+#       Message{Float64}
+#       Message{Array{Float64}}
 #   2. (in2):
-#       GaussianMessage
-#       GeneralMessage
+#       Message{GaussianDistribution}
+#       Message{Float64}
+#       Message{Array{Float64}}
 #   3. (out):
-#       GaussianMessage
-#       GeneralMessage
+#       Message{GaussianDistribution}
+#       Message{Float64}
+#       Message{Array{Float64}}
 ############################################
 
 export AdditionNode
@@ -35,8 +38,7 @@ type AdditionNode <: Node
     in2::Interface
     out::Interface
 
-    function AdditionNode(;args...)
-        (name = getArgumentValue(args, :name))!=false || (name = "unnamed")
+    function AdditionNode(; name="unnamed")
         self = new(name, Array(Interface, 3))
         # Create interfaces
         self.interfaces[1] = Interface(self)
@@ -51,7 +53,7 @@ type AdditionNode <: Node
 end
 
 ############################################
-# GaussianMessage methods
+# GaussianDistribution methods
 ############################################
 
 # Rule set for forward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
@@ -70,106 +72,108 @@ backwardAdditionXiRule{T<:Number}(V_x::Array{T, 2}, xi_x::Array{T, 1}, V_z::Arra
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::AdditionNode,
-                            inbound_messages_types::Type{GaussianMessage})
+                            inbound_messages_value_types::Type{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    # Calculations for the GaussianMessage type; Korl (2005), table 4.1
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
+
+    # Calculations for the GaussianDistribution type; Korl (2005), table 4.1
     if outbound_interface_id == 3
         # Forward message, both messages on the incoming edges, required to calculate the outgoing message.
-        msg_1 = node.interfaces[1].partner.message
-        msg_2 = node.interfaces[2].partner.message
-        msg_out = GaussianMessage()
+        dist_1 = node.interfaces[1].partner.message.value
+        dist_2 = node.interfaces[2].partner.message.value
 
         # Select parameterization
         # Order is from least to most computationally intensive
-        if msg_1.m != nothing && msg_1.V != nothing && msg_2.m != nothing && msg_2.V != nothing
-            msg_out.m = forwardAdditionMRule(msg_1.m, msg_2.m)
-            msg_out.V = forwardAdditionVRule(msg_1.V, msg_2.V)
-            msg_out.W = nothing
-            msg_out.xi= nothing
-        elseif msg_1.m != nothing && msg_1.W != nothing && msg_2.m != nothing && msg_2.W != nothing
-            msg_out.m = forwardAdditionMRule(msg_1.m, msg_2.m)
-            msg_out.V = nothing
-            msg_out.W = forwardAdditionWRule(msg_1.W, msg_2.W)
-            msg_out.xi= nothing
-        elseif msg_1.xi != nothing && msg_1.V != nothing && msg_2.xi != nothing && msg_2.V != nothing
-            msg_out.m = nothing
-            msg_out.V = forwardAdditionVRule(msg_1.V, msg_2.V)
-            msg_out.W = nothing
-            msg_out.xi= forwardAdditionXiRule(msg_1.V, msg_1.xi, msg_2.V, msg_2.xi)
+        if dist_1.m != nothing && dist_1.V != nothing && dist_2.m != nothing && dist_2.V != nothing
+            dist_out.m = forwardAdditionMRule(dist_1.m, dist_2.m)
+            dist_out.V = forwardAdditionVRule(dist_1.V, dist_2.V)
+            dist_out.W = nothing
+            dist_out.xi= nothing
+        elseif dist_1.m != nothing && dist_1.W != nothing && dist_2.m != nothing && dist_2.W != nothing
+            dist_out.m = forwardAdditionMRule(dist_1.m, dist_2.m)
+            dist_out.V = nothing
+            dist_out.W = forwardAdditionWRule(dist_1.W, dist_2.W)
+            dist_out.xi= nothing
+        elseif dist_1.xi != nothing && dist_1.V != nothing && dist_2.xi != nothing && dist_2.V != nothing
+            dist_out.m = nothing
+            dist_out.V = forwardAdditionVRule(dist_1.V, dist_2.V)
+            dist_out.W = nothing
+            dist_out.xi= forwardAdditionXiRule(dist_1.V, dist_1.xi, dist_2.V, dist_2.xi)
         else
             # Last resort: calculate (m,V) parametrization for both inbound messages
-            ensureMVParametrization!(msg_1)
-            ensureMVParametrization!(msg_2)
-            msg_out.m = forwardAdditionMRule(msg_1.m, msg_2.m)
-            msg_out.V = forwardAdditionVRule(msg_1.V, msg_2.V)
-            msg_out.W = nothing
-            msg_out.xi= nothing
+            ensureMVParametrization!(dist_1)
+            ensureMVParametrization!(dist_2)
+            dist_out.m = forwardAdditionMRule(dist_1.m, dist_2.m)
+            dist_out.V = forwardAdditionVRule(dist_1.V, dist_2.V)
+            dist_out.W = nothing
+            dist_out.xi= nothing
         end
     elseif outbound_interface_id == 1 || outbound_interface_id == 2
         # Backward message, one message on the incoming edge and one on the outgoing edge.
-        msg_1or2 = (outbound_interface_id==1) ? node.interfaces[2].partner.message : node.interfaces[1].partner.message
-        msg_3 = node.interfaces[3].partner.message
-        msg_out = GaussianMessage()
+        dist_1or2 = (outbound_interface_id==1) ? node.interfaces[2].partner.message.value : node.interfaces[1].partner.message.value
+        dist_3 = node.interfaces[3].partner.message.value
 
         # Select parameterization
         # Order is from least to most computationally intensive
-        if msg_1or2.m != nothing && msg_1or2.V != nothing && msg_3.m != nothing && msg_3.V != nothing
-            msg_out.m = backwardAdditionMRule(msg_1or2.m, msg_3.m)
-            msg_out.V = backwardAdditionVRule(msg_1or2.V, msg_3.V)
-            msg_out.W = nothing
-            msg_out.xi = nothing
-        elseif msg_1or2.m != nothing && msg_1or2.W != nothing && msg_3.m != nothing && msg_3.W != nothing
-            msg_out.m = backwardAdditionMRule(msg_1or2.m, msg_3.m)
-            msg_out.V = nothing
-            msg_out.W = backwardAdditionWRule(msg_1or2.W, msg_3.W)
-            msg_out.xi = nothing
-        elseif msg_1or2.xi != nothing && msg_1or2.V != nothing && msg_3.xi != nothing && msg_3.V != nothing
-            msg_out.m = nothing
-            msg_out.V = backwardAdditionVRule(msg_1or2.V, msg_3.V)
-            msg_out.W = nothing
-            msg_out.xi = backwardAdditionXiRule(msg_1or2.V, msg_1or2.xi, msg_3.V, msg_3.xi)
+        if dist_1or2.m != nothing && dist_1or2.V != nothing && dist_3.m != nothing && dist_3.V != nothing
+            dist_out.m = backwardAdditionMRule(dist_1or2.m, dist_3.m)
+            dist_out.V = backwardAdditionVRule(dist_1or2.V, dist_3.V)
+            dist_out.W = nothing
+            dist_out.xi = nothing
+        elseif dist_1or2.m != nothing && dist_1or2.W != nothing && dist_3.m != nothing && dist_3.W != nothing
+            dist_out.m = backwardAdditionMRule(dist_1or2.m, dist_3.m)
+            dist_out.V = nothing
+            dist_out.W = backwardAdditionWRule(dist_1or2.W, dist_3.W)
+            dist_out.xi = nothing
+        elseif dist_1or2.xi != nothing && dist_1or2.V != nothing && dist_3.xi != nothing && dist_3.V != nothing
+            dist_out.m = nothing
+            dist_out.V = backwardAdditionVRule(dist_1or2.V, dist_3.V)
+            dist_out.W = nothing
+            dist_out.xi = backwardAdditionXiRule(dist_1or2.V, dist_1or2.xi, dist_3.V, dist_3.xi)
         else
             # Last resort: calculate (m,V) parametrization for both inbound messages
-            ensureMVParametrization!(msg_1or2)
-            ensureMVParametrization!(msg_3)
-            msg_out.m = backwardAdditionMRule(msg_1or2.m, msg_3.m)
-            msg_out.V = backwardAdditionVRule(msg_1or2.V, msg_3.V)
-            msg_out.W = nothing
-            msg_out.xi = nothing
+            ensureMVParametrization!(dist_1or2)
+            ensureMVParametrization!(dist_3)
+            dist_out.m = backwardAdditionMRule(dist_1or2.m, dist_3.m)
+            dist_out.V = backwardAdditionVRule(dist_1or2.V, dist_3.V)
+            dist_out.W = nothing
+            dist_out.xi = nothing
         end
     else
         error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
     end
 
-    return node.interfaces[outbound_interface_id].message = msg_out
+    return node.interfaces[outbound_interface_id].message
 end
 
 #############################################
-# GeneralMessage methods
+# Float64 and Array{Float64} methods
 #############################################
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::AdditionNode,
-                            inbound_messages_types::Type{GeneralMessage})
+                            inbound_messages_value_types::Union(Type{Float64}, Type{Array{Float64}}, Type{Array{Float64, 2}}))
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
     # Calculations for a general message type
     if outbound_interface_id == 1
         # Backward message 1
-        msg_out = GeneralMessage(node.interfaces[3].partner.message.value - node.interfaces[2].partner.message.value)
+        ans = node.interfaces[3].partner.message.value - node.interfaces[2].partner.message.value
     elseif outbound_interface_id == 2
         # Backward message 2
-        msg_out = GeneralMessage(node.interfaces[3].partner.message.value - node.interfaces[1].partner.message.value)
+        ans = node.interfaces[3].partner.message.value - node.interfaces[1].partner.message.value
     elseif outbound_interface_id == 3
         # Forward message
-        msg_out = GeneralMessage(node.interfaces[1].partner.message.value + node.interfaces[2].partner.message.value)
+        ans = node.interfaces[1].partner.message.value + node.interfaces[2].partner.message.value
     else
         error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
     end
 
-    # Set the outbound message
-    return node.interfaces[outbound_interface_id].message = msg_out
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], inbound_messages_value_types, size(ans))
+    msg_out.value = ans
+
+    return node.interfaces[outbound_interface_id].message
 end

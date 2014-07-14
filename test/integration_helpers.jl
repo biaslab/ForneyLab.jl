@@ -43,7 +43,7 @@ function initializePairOfMockNodes()
     return MockNode(), MockNode()
 end
 
-function initializePairOfNodes(; A=[1.0], msg_gain_1=GeneralMessage(2.0), msg_gain_2=GeneralMessage(3.0), msg_const=GeneralMessage(1.0))
+function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(2.0), msg_gain_2=Message(3.0), msg_const=Message(1.0))
     # Helper function for initializing an unconnected pair of nodes
     #     
     # |--[A]--|
@@ -53,7 +53,7 @@ function initializePairOfNodes(; A=[1.0], msg_gain_1=GeneralMessage(2.0), msg_ga
     node1 = FixedGainNode(A)
     node1.interfaces[1].message = msg_gain_1
     node1.interfaces[2].message = msg_gain_2
-    node2 = ConstantNode(msg_const)
+    node2 = ConstantNode(msg_const.value)
     node2.interfaces[1].message = msg_const
     return node1, node2
 end
@@ -64,8 +64,8 @@ function initializeFixedGainNode()
     # |--[A]--|
 
     node = FixedGainNode()
-    node.interfaces[1].message = GaussianMessage()
-    node.interfaces[2].message = GaussianMessage()
+    node.interfaces[1].message = Message(GaussianDistribution())
+    node.interfaces[2].message = Message(GaussianDistribution())
     return node
 end
 
@@ -75,7 +75,7 @@ function initializeChainOfNodes()
     #  1     2     3
     # [C]-->[A]-->[B]-|
 
-    node1 = ConstantNode(GeneralMessage(3.0))
+    node1 = ConstantNode(3.0)
     node2 = FixedGainNode([2.0])
     node3 = FixedGainNode([2.0])
     Edge(node1.out, node2.in1)
@@ -95,7 +95,7 @@ function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
 
     driver      = FixedGainNode(A, name="driver")
     inhibitor   = FixedGainNode(B, name="inhibitor")
-    noise       = ConstantNode(GaussianMessage(m=noise_m, V=noise_V), name="noise")
+    noise       = ConstantNode(GaussianDistribution(m=noise_m, V=noise_V), name="noise")
     add         = AdditionNode(name="adder")
     Edge(add.out, inhibitor.in1)
     Edge(inhibitor.out, driver.in1)
@@ -115,9 +115,9 @@ function initializeTreeGraph()
     #                   |
     #                  (c3)
     #
-    c1 = ConstantNode(GaussianMessage())
-    c2 = ConstantNode(GaussianMessage())
-    c3 = ConstantNode(GaussianMessage(m=[-2.], V=[3.]))
+    c1 = ConstantNode(GaussianDistribution())
+    c2 = ConstantNode(GaussianDistribution())
+    c3 = ConstantNode(GaussianDistribution(m=[-2.], V=[3.]))
     add = AdditionNode()
     equ = EqualityNode()
     # Edges from left to right
@@ -217,13 +217,13 @@ function initializeVariationalGaussianNode(msgs::Array{Any})
     #                
 
     g_node = GaussianNode(true)
-    edge = Edge(MockNode(GaussianMessage()).out, g_node.in1)
+    edge = Edge(MockNode(Message(GaussianDistribution())).out, g_node.in1)
     if msgs[1] != nothing
-        edge.marginal = msgs[1]
+        edge.marginal = msgs[1].value
     end
-    edge = Edge(MockNode(GammaMessage()).out, g_node.in2)
+    edge = Edge(MockNode(Message(GammaDistribution())).out, g_node.in2)
     if msgs[2] != nothing
-        edge.marginal = msgs[2]
+        edge.marginal = msgs[2].value
     end
     Edge(g_node.out, MockNode(msgs[3]).out)
     return g_node
@@ -345,10 +345,10 @@ function initializeGaussianNodeChain()
 
     # Build graph
     for section=1:n_samples
-        g_node = GaussianNode(true) # Variational flag set to true, so updateNodeMessage knows what formula to use
-        m_eq_node = EqualityNode() # Equality node chain for mean
-        gam_eq_node = EqualityNode() # Equality node chain for variance
-        obs_node = ConstantNode(GeneralMessage(y_observations[section])) # Observed y values are stored as constant node values
+        g_node = GaussianNode(true; name="g_node_$(section)") # Variational flag set to true, so updateNodeMessage knows what formula to use
+        m_eq_node = EqualityNode(; name="m_eq_$(section)") # Equality node chain for mean
+        gam_eq_node = EqualityNode(; name="s_eq_$(section)") # Equality node chain for variance
+        obs_node = ConstantNode(y_observations[section], name="c_obs_$(section)") # Observed y values are stored as constant node values
         g_nodes[section] = g_node
         m_eq_nodes[section] = m_eq_node
         gam_eq_nodes[section] = gam_eq_node
@@ -357,18 +357,18 @@ function initializeGaussianNodeChain()
         q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.in1)
         q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.in2)
         # Preset uninformative ('one') messages
-        setMarginal!(q_gam_edges[section], uninformative(GammaMessage))
-        setMarginal!(q_m_edges[section], uninformative(GaussianMessage))
+        setMarginal!(q_gam_edges[section], uninformative(GammaDistribution))
+        setMarginal!(q_m_edges[section], uninformative(GaussianDistribution))
         if section > 1 # Connect sections
             Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1])
             Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1])
         end
     end
     # Attach beginning and end nodes
-    m_prior = ConstantNode(GaussianMessage(m=[0.0], V=[100.0])) # Prior
-    s_prior = ConstantNode(GammaMessage(a=0.01, b=0.01)) # Prior
-    c_m = ConstantNode(uninformative(GaussianMessage)) # Neutral 'one' message
-    c_gam = ConstantNode(uninformative(GammaMessage)) # Neutral 'one' message
+    m_prior = ConstantNode(GaussianDistribution(m=[0.0], V=[100.0])) # Prior
+    s_prior = ConstantNode(GammaDistribution(a=0.01, b=0.01)) # Prior
+    c_m = ConstantNode(uninformative(GaussianDistribution)) # Neutral 'one' message
+    c_gam = ConstantNode(uninformative(GammaDistribution)) # Neutral 'one' message
     Edge(m_prior.out, m_eq_nodes[1].interfaces[1])
     Edge(s_prior.out, gam_eq_nodes[1].interfaces[1])
     Edge(m_eq_nodes[end].interfaces[2], c_m.out)

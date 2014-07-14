@@ -9,13 +9,6 @@ facts("Helper function unit tests") do
         @fact ForneyLab.ensureMatrix(eye(2)) => eye(2)
     end
 
-    context("getArgumentValue should return the value of a keyword argument or false if not found") do
-        args = Array(Any, 1)
-        args[1] = (:name, "SPS Brats")
-        @fact getArgumentValue(args, :name) => "SPS Brats"
-        @fact getArgumentValue(args, :age) => false
-    end
-
     context("isApproxEqual should work for scalars, vectors and matrices") do
         @fact isApproxEqual(1.0, 1.0+1e-15) => true
         @fact isApproxEqual(1.0, 1.0+1e-9) => false
@@ -23,6 +16,19 @@ facts("Helper function unit tests") do
         @fact isApproxEqual([1.0, 1.0], [1.0, 1.0]+1e-9) => false
         @fact isApproxEqual(eye(3,3), eye(3,3)+1e-15) => true
         @fact isApproxEqual(eye(3,3), eye(3,3)+1e-9) => false
+    end
+
+    context("getOrCreateMessage should assign a message to an interface if there is none and otherwise set a standard message") do
+        node = ConstantNode(GaussianDistribution())
+        @fact node.out.message => nothing
+        getOrCreateMessage(node.out, GaussianDistribution)
+        @fact typeof(node.out.message) => Message{GaussianDistribution}
+        node2 = ConstantNode(2.0)
+        @fact node2.out.message => nothing
+        getOrCreateMessage(node2.out, Float64)
+        @fact node2.out.message.value => 1.0
+        ForneyLab.updateNodeMessage!(1, node2)
+        @fact getOrCreateMessage(node2.out, Float64).value => 2.0
     end
 end
 
