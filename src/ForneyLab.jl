@@ -1,10 +1,10 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule
+export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
-        generateSchedule, executeSchedule
+        generateSchedule, executeSchedule, uninformative, getOrCreateMessage
 
 # Verbosity
 verbose = false
@@ -18,12 +18,23 @@ include("helpers.jl")
 import Base.show
 
 # Top-level abstracts
-abstract Message
-abstract RootEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from RootEdge, solving this problem.
+abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
+abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
 
 abstract Node
 show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
 abstract CompositeNode <: Node
+
+type Message{T}
+    # Message has a value payload, which will be a ProbabilityDistribution most of the time.
+    # It may also carry a Float representing a sample, or an Array as particle list etc.
+    # immutable means the value field can not be reassigned. The parameters of the object in the value field (such as distribution parameters) remain mutable
+    value::T
+end
+Message(value::Any) = Message{typeof(value)}(deepcopy(value))
+Message() = Message(1.0)
+uninformative(type_in::Type{Float64}) = Message(1.0) # uninformative general message
+show(io::IO, message::Message) = println(io, typeof(message), " with value ", message.value, ".")
 
 type Interface
     # An Interface belongs to a node and is used to send/receive messages.
@@ -31,7 +42,7 @@ type Interface
     # An Interface can be seen as a half-edge, that connects to a partner Interface to form a complete edge.
     # A message from node a to node b is stored at the Interface of node a that connects to an Interface of node b.
     node::Node
-    edge::Union(RootEdge, Nothing)
+    edge::Union(AbstractEdge, Nothing)
     partner::Union(Interface, Nothing) # Partner indicates the interface to which it is connected.
     child::Union(Interface, Nothing)   # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
     message::Union(Message, Nothing)
@@ -40,7 +51,7 @@ type Interface
     internal_schedule::Array{Interface, 1}      # Optional schedule that should be executed to calculate outbound message on this interface.
                                                 # The internal_schedule field is used in composite nodes, and holds the schedule for internal message passing.
     # Sanity check for matching message types
-    function Interface(node::Node, edge::Union(RootEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
+    function Interface(node::Node, edge::Union(AbstractEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
             return new(node, edge, partner, child, message)
         elseif typeof(message) != typeof(partner.message) # Compare message types
@@ -53,7 +64,7 @@ end
 Interface(node::Node, message::Message) = Interface(node, nothing, nothing, nothing, message)
 Interface(node::Node) = Interface(node, nothing, nothing, nothing, nothing)
 show(io::IO, interface::Interface) = println(io, "Interface of $(typeof(interface.node)) with node name $(interface.node.name) holds message of type $(typeof(interface.message)).")
-setMessage!(interface::Interface, message::Message) = (interface.message=message)
+setMessage!(interface::Interface, message::Message) = (interface.message=deepcopy(message))
 clearMessage!(interface::Interface) = (interface.message=nothing)
 getMessage(interface::Interface) = interface.message
 
@@ -73,7 +84,7 @@ function show(io::IO, schedule::Schedule)
     end
 end
 
-type Edge <: RootEdge
+type Edge <: AbstractEdge
     # An Edge joins two interfaces and has a direction (from tail to head).
     # Edges are mostly useful for code readability, they are not used internally.
     # Forward messages flow in the direction of the Edge (tail to head).
@@ -81,9 +92,9 @@ type Edge <: RootEdge
 
     tail::Interface
     head::Interface
-    marginal::Union(Message, Nothing) # Messages are probability distributions
+    marginal::Any
 
-    function Edge(tail::Interface, head::Interface, marginal::Union(Message, Nothing)=nothing)
+    function Edge(tail::Interface, head::Interface, marginal::Any=nothing)
         if  typeof(head.message) == Nothing ||
             typeof(tail.message) == Nothing ||
             typeof(head.message) == typeof(tail.message)
@@ -129,6 +140,44 @@ function show(io::IO, edge::Edge)
     println(io, "Forward message type: $(typeof(edge.tail.message)). Backward message type: $(typeof(edge.head.message)).")
 end
 
+# TODO:
+# function getOrCreateMessage{T<:Message}(interface::Interface, assign_value::Type{T})
+# ...
+# end
+# getOrCreateMessage(interface::Interface, assign_value::DataType) = getOrCreateMessage{assign_value}(interface, assign_value)
+
+function getOrCreateMessage(interface::Interface, assign_value::DataType, arr_dims::Tuple=(1, 1))
+    # Looks for a message on interface.
+    # When no message is present, it sets and returns a standard message.
+    # Otherwise it returns the present message.
+    # For Array types we pre-allocate the array size with arr_dims
+    if interface.message==nothing
+        if assign_value <: ProbabilityDistribution 
+            interface.message = Message(assign_value())
+        elseif assign_value == Float64
+            interface.message = Message(1.0)
+        elseif assign_value <: Array{Float64}
+            interface.message = Message(zeros(arr_dims))
+        else
+            error("Unknown assign type argument")
+        end
+    end
+    return interface.message
+end
+function getOrCreateMarginal(edge::Edge, assign_value::DataType)
+    # Looks for a marginal on edge.
+    # When no marginal is present, it sets and returns a standard distribution.
+    # Otherwise it returns the present marginal.
+    if edge.marginal==nothing
+        if assign_value <: ProbabilityDistribution 
+            edge.marginal = assign_value()
+        else
+            error("Unknown assign type argument")
+        end
+    end
+    return edge.marginal
+end
+
 typealias MarginalSchedule Array{Edge, 1}
 function show(io::IO, schedule::MarginalSchedule)
     # Show marginal update schedule
@@ -143,9 +192,10 @@ setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, messa
 getForwardMessage(edge::Edge) = edge.tail.message
 getBackwardMessage(edge::Edge) = edge.head.message
 
-# Messages
-include("messages.jl")
-
+# Distributions
+include("distributions/gaussian.jl")
+include("distributions/gamma.jl")
+include("distributions/inverse_gamma.jl")
 # Nodes
 include("nodes/addition.jl")
 include("nodes/constant.jl")
@@ -185,7 +235,7 @@ function updateNodeMessage!(outbound_interface::Interface)
     node = outbound_interface.node
 
     # Determine types of inbound messages
-    inbound_message_types = Union() # Union of all inbound message types
+    inbound_message_value_types = Union() # Union of all inbound message value types (i.e. probability distributions)
     outbound_interface_id = 0
     for node_interface_id = 1:length(node.interfaces)
         node_interface = node.interfaces[node_interface_id]
@@ -198,12 +248,13 @@ function updateNodeMessage!(outbound_interface::Interface)
         end
         @assert(node_interface.partner!=nothing, "Cannot receive messages on disconnected interface $(node_interface_id) of $(typeof(node)) $(node.name)")
         @assert(node_interface.partner.message!=nothing, "There is no inbound message present on interface $(node_interface_id) of $(typeof(node)) $(node.name)")
-        inbound_message_types = Union(inbound_message_types, typeof(node_interface.partner.message))
+        # TODO: how to handle variational nodes that take the marginal as input? Marginal distribution type does not have to be the same as message value type
+        inbound_message_value_types = Union(inbound_message_value_types, typeof(node_interface.partner.message.value))
     end
 
     # Evaluate node update function
     printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id:")
-    msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_types)
+    msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_value_types)
     printVerbose(msg)
 
     return msg
@@ -238,36 +289,29 @@ function executeSchedule(schedule::MarginalSchedule)
     return schedule[end].marginal
 end
 
-function setMarginal!(edge::Edge, message::Message)
+function setMarginal!(edge::Edge, distribution::Any)
     # Presets the marginal and head- tail messages on edge with the argument message
     # Usually this method is used to set uninformative messages
 
-    edge.head.message = deepcopy(message)
-    edge.tail.message = deepcopy(message)
-    edge.marginal = deepcopy(message)
+    # TODO: check this, message value type does not have to be equal to marginal distribution type
+    # TODO: marginal should be the product of the message distributions
+    edge.head.message = Message(deepcopy(distribution))
+    edge.tail.message = Message(deepcopy(distribution))
+    edge.marginal = deepcopy(distribution)
 end
 
-function calculateMarginal(forward_msg::GaussianMessage, backward_msg::GaussianMessage)
-    # Calculate the marginal from a forward/backward message pair.
-    # We calculate the marginal by using the EqualityNode update rules; same for the functions below
-    ensureXiWParametrization!(forward_msg)
-    ensureXiWParametrization!(backward_msg)
-    return GaussianMessage(xi = forward_msg.xi+backward_msg.xi, W = forward_msg.W+backward_msg.W)
+function calculateMarginal(edge::Edge)
+    # Calculates the marginal without writing back to the edge
+    @assert(edge.tail.message != nothing, "Edge should hold a forward message.")
+    @assert(edge.head.message != nothing, "Edge should hold a backward message.")
+    return calculateMarginal(edge.tail.message.value, edge.head.message.value)
 end
-function calculateMarginal(forward_msg::GammaMessage, backward_msg::GammaMessage)
-    return GammaMessage(a = forward_msg.a+backward_msg.a-1.0, b = forward_msg.b+backward_msg.b)    
-end
-function calculateMarginal(forward_msg::InverseGammaMessage, backward_msg::InverseGammaMessage)
-    return InverseGammaMessage(a = forward_msg.a+backward_msg.a+1.0, b = forward_msg.b+backward_msg.b)    
-end
-
 function calculateMarginal!(edge::Edge)
     # Calculates and writes the marginal on edge
     @assert(edge.tail.message != nothing, "Edge should hold a forward message.")
     @assert(edge.head.message != nothing, "Edge should hold a backward message.")
-    msg = calculateMarginal(edge.tail.message, edge.head.message)
-    edge.marginal = msg
-    return(msg)
+    calculateMarginal!(edge, edge.tail.message.value, edge.head.message.value)
+    return edge.marginal
 end
 
 function clearMessages!(node::Node)

@@ -17,5 +17,18 @@ facts("Helper function unit tests") do
         @fact isApproxEqual(eye(3,3), eye(3,3)+1e-15) => true
         @fact isApproxEqual(eye(3,3), eye(3,3)+1e-9) => false
     end
+
+    context("getOrCreateMessage should assign a message to an interface if there is none and otherwise set a standard message") do
+        node = ConstantNode(GaussianDistribution())
+        @fact node.out.message => nothing
+        getOrCreateMessage(node.out, GaussianDistribution)
+        @fact typeof(node.out.message) => Message{GaussianDistribution}
+        node2 = ConstantNode(2.0)
+        @fact node2.out.message => nothing
+        getOrCreateMessage(node2.out, Float64)
+        @fact node2.out.message.value => 1.0
+        ForneyLab.updateNodeMessage!(1, node2)
+        @fact getOrCreateMessage(node2.out, Float64).value => 2.0
+    end
 end
 

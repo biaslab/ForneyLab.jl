@@ -22,11 +22,11 @@
 #
 # Interface ids, (names) and supported message types:
 #   1. in1:
-#       GaussianMessage
+#       Message{GaussianDistribution}
 #   2. in2:
-#       GaussianMessage
+#       Message{GaussianDistribution}
 #   3. out:
-#       GaussianMessage
+#       Message{GaussianDistribution}
 #
 ############################################
 export GainAdditionCompositeNode
@@ -50,7 +50,7 @@ type GainAdditionCompositeNode <: CompositeNode
     in2::Interface
     out::Interface
 
-    function GainAdditionCompositeNode(A::Array=[1.0], use_composite_update_rules::Bool=true; name="unnamed", args...)
+    function GainAdditionCompositeNode(A::Array=[1.0], use_composite_update_rules::Bool=true; name="unnamed")
         if use_composite_update_rules
             # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
             # In case we don't use composite update rules, A is passed to the internal FixedGainNode.
@@ -85,7 +85,7 @@ type GainAdditionCompositeNode <: CompositeNode
 end
 
 ############################################
-# GaussianMessage methods
+# GaussianDistribution methods
 ############################################
 
 # Rule set for forward propagation ({in1,in2}-->out)
@@ -104,124 +104,124 @@ backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::GainAdditionCompositeNode,
-                            inbound_messages_types::Type{GaussianMessage})
+                            inbound_messages_value_types::Type{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
     if !node.use_composite_update_rules
-        msg_out = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
+        node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
     else
         if outbound_interface_id == 3
             # Forward message towards "out" interface
-            msg_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianMessage)
+            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
     
-            # msg_i = inbound message on interface i, msg_out is always the calculated outbound message.
-            msg_1 = node.interfaces[1].partner.message
-            msg_2 = node.interfaces[2].partner.message
+            # msg_i = inbound message on interface i, dist_out is always the calculated outbound message.
+            dist_1 = node.interfaces[1].partner.message.value
+            dist_2 = node.interfaces[2].partner.message.value
 
             # Select parameterization
             # Order is from least to most computationally intensive
-            if msg_1.m != nothing && msg_1.V != nothing && msg_2.m != nothing && msg_2.V != nothing
-                msg_out.m  = forwardGainAdditionMRule(node.A, msg_2.m, msg_1.m)
-                msg_out.V  = forwardGainAdditionVRule(node.A, msg_2.V, msg_1.V)
-                msg_out.W  = nothing
-                msg_out.xi = nothing
-            elseif msg_1.m != nothing && msg_1.W != nothing && msg_2.m != nothing && msg_2.W != nothing
-                msg_out.m  = forwardGainAdditionMRule(node.A, msg_2.m, msg_1.m)
-                msg_out.V  = nothing
-                msg_out.W  = forwardGainAdditionWRule(node.A, msg_2.W, msg_1.W)
-                msg_out.xi = nothing
-            elseif msg_1.xi != nothing && msg_1.W != nothing && msg_2.xi != nothing && msg_2.W != nothing
-                msg_out.m  = nothing
-                msg_out.V  = nothing
-                msg_out.W  = forwardGainAdditionWRule(node.A, msg_2.W, msg_1.W)
-                msg_out.xi = forwardGainAdditionXiRule(node.A, msg_2.xi, msg_1.xi, msg_2.W, msg_1.W)
-            elseif (msg_1.m != nothing && msg_1.V != nothing) || (msg_2.m != nothing && msg_2.V != nothing)
+            if dist_1.m != nothing && dist_1.V != nothing && dist_2.m != nothing && dist_2.V != nothing
+                dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
+                dist_out.V  = forwardGainAdditionVRule(node.A, dist_2.V, dist_1.V)
+                dist_out.W  = nothing
+                dist_out.xi = nothing
+            elseif dist_1.m != nothing && dist_1.W != nothing && dist_2.m != nothing && dist_2.W != nothing
+                dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
+                dist_out.V  = nothing
+                dist_out.W  = forwardGainAdditionWRule(node.A, dist_2.W, dist_1.W)
+                dist_out.xi = nothing
+            elseif dist_1.xi != nothing && dist_1.W != nothing && dist_2.xi != nothing && dist_2.W != nothing
+                dist_out.m  = nothing
+                dist_out.V  = nothing
+                dist_out.W  = forwardGainAdditionWRule(node.A, dist_2.W, dist_1.W)
+                dist_out.xi = forwardGainAdditionXiRule(node.A, dist_2.xi, dist_1.xi, dist_2.W, dist_1.W)
+            elseif (dist_1.m != nothing && dist_1.V != nothing) || (dist_2.m != nothing && dist_2.V != nothing)
                 # Fallback: at least one inbound msg is in (m,V) parametrization
                 # Convert the other one to (m,V)
-                ensureMVParametrization!(msg_1)
-                ensureMVParametrization!(msg_2)
-                msg_out.m  = forwardGainAdditionMRule(node.A, msg_2.m, msg_1.m)
-                msg_out.V  = forwardGainAdditionVRule(node.A, msg_2.V, msg_1.V)
-                msg_out.W  = nothing
-                msg_out.xi = nothing
-            elseif (msg_1.m != nothing && msg_1.W != nothing) || (msg_2.m != nothing && msg_2.W != nothing)
+                ensureMVParametrization!(dist_1)
+                ensureMVParametrization!(dist_2)
+                dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
+                dist_out.V  = forwardGainAdditionVRule(node.A, dist_2.V, dist_1.V)
+                dist_out.W  = nothing
+                dist_out.xi = nothing
+            elseif (dist_1.m != nothing && dist_1.W != nothing) || (dist_2.m != nothing && dist_2.W != nothing)
                 # Fallback: at least one inbound msg is in (m,W) parametrization
                 # Convert the other one to (m,W)
-                ensureMWParametrization!(msg_1)
-                ensureMWParametrization!(msg_2)
-                msg_out.m  = forwardGainAdditionMRule(node.A, msg_2.m, msg_1.m)
-                msg_out.V  = nothing
-                msg_out.W  = forwardGainAdditionWRule(node.A, msg_2.W, msg_1.W)
-                msg_out.xi = nothing
+                ensureMWParametrization!(dist_1)
+                ensureMWParametrization!(dist_2)
+                dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
+                dist_out.V  = nothing
+                dist_out.W  = forwardGainAdditionWRule(node.A, dist_2.W, dist_1.W)
+                dist_out.xi = nothing
             else
                 # Fallback: if all else fails, convert everything to (m,V) and then use efficient rule
-                ensureMVParametrization!(msg_1)
-                ensureMVParametrization!(msg_2)
-                msg_out.m  = forwardGainAdditionMRule(node.A, msg_2.m, msg_1.m)
-                msg_out.V  = forwardGainAdditionVRule(node.A, msg_2.V, msg_1.V)
-                msg_out.W  = nothing
-                msg_out.xi = nothing
+                ensureMVParametrization!(dist_1)
+                ensureMVParametrization!(dist_2)
+                dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
+                dist_out.V  = forwardGainAdditionVRule(node.A, dist_2.V, dist_1.V)
+                dist_out.W  = nothing
+                dist_out.xi = nothing
             end
         elseif outbound_interface_id == 2
             # Backward message towards "in2" interface
-            msg_out = getOrAssign(node.interfaces[outbound_interface_id], GaussianMessage)
+            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
 
-            msg_1 = node.interfaces[1].partner.message
-            msg_3 = node.interfaces[3].partner.message
+            dist_1 = node.interfaces[1].partner.message.value
+            dist_3 = node.interfaces[3].partner.message.value
 
             # Select parameterization
             # Order is from least to most computationally intensive
-            if msg_1.m != nothing && msg_1.V != nothing && msg_3.m != nothing && msg_3.V != nothing
-                msg_out.m  = backwardIn2GainAdditionMRule(node.A, msg_1.m, msg_3.m)
-                msg_out.V  = backwardIn2GainAdditionVRule(node.A, msg_1.V, msg_3.V)
-                msg_out.W  = nothing
-                msg_out.xi = nothing
-            elseif msg_1.m != nothing && msg_1.W != nothing && msg_3.m != nothing && msg_3.W != nothing
-                msg_out.m  = backwardIn2GainAdditionMRule(node.A, msg_1.m, msg_3.m)
-                msg_out.V  = nothing
-                msg_out.W  = backwardIn2GainAdditionWRule(node.A, msg_1.W, msg_3.W)
-                msg_out.xi = nothing
-            elseif msg_1.xi != nothing && msg_1.W != nothing && msg_3.xi != nothing && msg_3.W != nothing
-                msg_out.m  = nothing
-                msg_out.V  = nothing
-                msg_out.W  = backwardIn2GainAdditionWRule(node.A, msg_1.W, msg_3.W)
-                msg_out.xi = backwardIn2GainAdditionXiRule(node.A, msg_1.xi, msg_3.xi, msg_1.W, msg_3.W)
-            elseif (msg_1.m != nothing && msg_1.V != nothing) || (msg_3.m != nothing && msg_3.V != nothing)
+            if dist_1.m != nothing && dist_1.V != nothing && dist_3.m != nothing && dist_3.V != nothing
+                dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
+                dist_out.V  = backwardIn2GainAdditionVRule(node.A, dist_1.V, dist_3.V)
+                dist_out.W  = nothing
+                dist_out.xi = nothing
+            elseif dist_1.m != nothing && dist_1.W != nothing && dist_3.m != nothing && dist_3.W != nothing
+                dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
+                dist_out.V  = nothing
+                dist_out.W  = backwardIn2GainAdditionWRule(node.A, dist_1.W, dist_3.W)
+                dist_out.xi = nothing
+            elseif dist_1.xi != nothing && dist_1.W != nothing && dist_3.xi != nothing && dist_3.W != nothing
+                dist_out.m  = nothing
+                dist_out.V  = nothing
+                dist_out.W  = backwardIn2GainAdditionWRule(node.A, dist_1.W, dist_3.W)
+                dist_out.xi = backwardIn2GainAdditionXiRule(node.A, dist_1.xi, dist_3.xi, dist_1.W, dist_3.W)
+            elseif (dist_1.m != nothing && dist_1.V != nothing) || (dist_3.m != nothing && dist_3.V != nothing)
                 # Fallback: at least one inbound msg is in (m,V) parametrization
                 # Convert the other one to (m,V)
-                ensureMVParametrization!(msg_1)
-                ensureMVParametrization!(msg_3)
-                msg_out.m  = backwardIn2GainAdditionMRule(node.A, msg_1.m, msg_3.m)
-                msg_out.V  = backwardIn2GainAdditionVRule(node.A, msg_1.V, msg_3.V)
-                msg_out.W  = nothing
-                msg_out.xi = nothing
-            elseif (msg_1.m != nothing && msg_1.W != nothing) || (msg_3.m != nothing && msg_3.W != nothing)
+                ensureMVParametrization!(dist_1)
+                ensureMVParametrization!(dist_3)
+                dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
+                dist_out.V  = backwardIn2GainAdditionVRule(node.A, dist_1.V, dist_3.V)
+                dist_out.W  = nothing
+                dist_out.xi = nothing
+            elseif (dist_1.m != nothing && dist_1.W != nothing) || (dist_3.m != nothing && dist_3.W != nothing)
                 # Fallback: at least one inbound msg is in (m,W) parametrization
                 # Convert the other one to (m,W)
-                ensureMWParametrization!(msg_1)
-                ensureMWParametrization!(msg_3)
-                msg_out.m  = backwardIn2GainAdditionMRule(node.A, msg_1.m, msg_3.m)
-                msg_out.V  = nothing
-                msg_out.W  = backwardIn2GainAdditionWRule(node.A, msg_1.W, msg_3.W)
-                msg_out.xi = nothing
+                ensureMWParametrization!(dist_1)
+                ensureMWParametrization!(dist_3)
+                dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
+                dist_out.V  = nothing
+                dist_out.W  = backwardIn2GainAdditionWRule(node.A, dist_1.W, dist_3.W)
+                dist_out.xi = nothing
             else
                 # Fallback: if all else fails, convert everything to (m,V) and then use efficient rule
-                ensureMVParametrization!(msg_1)
-                ensureMVParametrization!(msg_3)
-                msg_out.m  = backwardIn2GainAdditionMRule(node.A, msg_1.m, msg_3.m)
-                msg_out.V  = backwardIn2GainAdditionVRule(node.A, msg_1.V, msg_3.V)
-                msg_out.W  = nothing
-                msg_out.xi = nothing
+                ensureMVParametrization!(dist_1)
+                ensureMVParametrization!(dist_3)
+                dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
+                dist_out.V  = backwardIn2GainAdditionVRule(node.A, dist_1.V, dist_3.V)
+                dist_out.W  = nothing
+                dist_out.xi = nothing
             end
         elseif outbound_interface_id == 1
             # Backward message towards "in1" interface
             # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
-            msg_out = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
+            node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
         else
             error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
         end
     end
-    # Set the outbound message
-    return msg_out
+    # Return the outbound message
+    return node.interfaces[outbound_interface_id].message
 end
