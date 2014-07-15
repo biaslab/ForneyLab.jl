@@ -73,21 +73,21 @@ facts("GaussianNode integration tests") do
 
         context("Variational GaussianNode should propagate a backward variational message to the variance or precision") do
             # Standard
-            node = initializeVariationalGaussianNode([Message(GaussianDistribution(m=[4.0], W=[2.0])), nothing, Message(2.0)])
+            node = initializeVariationalGaussianNode([Message(GaussianDistribution(m=4.0, W=2.0)), nothing, Message(2.0)])
             node.in2.edge.marginal = GammaDistribution() # Let them know what I expect returned
             msg = ForneyLab.updateNodeMessage!(2, node, Union(Float64, GaussianDistribution))
             @fact typeof(msg) => Message{GammaDistribution}
             @fact msg.value.a => 1.5
             @fact msg.value.b => 2.25
             # Inverse
-            node = initializeVariationalGaussianNode([Message(GaussianDistribution(m=[4.0], V=[1.0])), nothing, Message(2.0)])
+            node = initializeVariationalGaussianNode([Message(GaussianDistribution(m=4.0, V=1.0)), nothing, Message(2.0)])
             node.in2.edge.marginal = InverseGammaDistribution() # Let them know what I expect returned
             msg = ForneyLab.updateNodeMessage!(2, node, Union(Float64, GaussianDistribution))
             @fact typeof(msg) => Message{InverseGammaDistribution}
             @fact msg.value.a => -0.5
             @fact msg.value.b => 2.5
             # Throw error when marginal is not set and does not know what to return
-            node = initializeVariationalGaussianNode([Message(GaussianDistribution(m=[4.0], V=[1.0])), nothing, Message(2.0)])
+            node = initializeVariationalGaussianNode([Message(GaussianDistribution(m=4.0, V=1.0)), nothing, Message(2.0)])
             @fact_throws ForneyLab.updateNodeMessage!(2, node, Union(Float64, GaussianDistribution))
         end
     end
