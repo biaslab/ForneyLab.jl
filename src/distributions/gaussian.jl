@@ -29,27 +29,14 @@ type GaussianDistribution <: ProbabilityDistribution
     W::Union(Matrix{Float64}, Nothing)       # Weight matrix
     xi::Union(Vector{Float64}, Nothing)   # Weighted mean vector: xi=W*m
 end
-function GaussianDistribution(; m::Union(Vector{Float64},Nothing)=nothing,
-                                V::Union(Matrix{Float64},Nothing)=nothing,
-                                W::Union(Matrix{Float64},Nothing)=nothing,
-                                xi::Union(Vector{Float64},Nothing)=nothing)
-    # Multivariate constructor
-    self = GaussianDistribution(copy(m), copy(V), copy(W), copy(xi))
-
-    # Check parameterizations
-    isWellDefined(self) || error("Cannot create GaussianDistribution, parameterization is underdetermined.")
-
-    return self
-end
-function GaussianDistribution(; m::Union(Float64,Nothing)=nothing,
-                                V::Union(Float64,Nothing)=nothing,
-                                W::Union(Float64,Nothing)=nothing,
-                                xi::Union(Float64,Nothing)=nothing)
-    # Univariate constructor
-    m==nothing || (m=[m])
-    V==nothing || (V=fill!(Array(Float64,1,1),V))
-    W==nothing || (W=fill!(Array(Float64,1,1),W))
-    xi==nothing || (xi=[xi])
+function GaussianDistribution(; m::Union(Float64,Vector{Float64},Nothing)=nothing,
+                                V::Union(Float64,Matrix{Float64},Nothing)=nothing,
+                                W::Union(Float64,Matrix{Float64},Nothing)=nothing,
+                                xi::Union(Float64,Vector{Float64},Nothing)=nothing)
+    m = (typeof(m)==Float64) ? [m] : deepcopy(m)
+    V = (typeof(V)==Float64) ? fill!(Array(Float64,1,1),V) : deepcopy(V)
+    W = (typeof(W)==Float64) ? fill!(Array(Float64,1,1),W) : deepcopy(W)
+    xi = (typeof(xi)==Float64) ? [xi] : deepcopy(xi)
 
     self = GaussianDistribution(m, V, W, xi)
 

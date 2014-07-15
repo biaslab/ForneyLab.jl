@@ -16,7 +16,7 @@ facts("ConstantNode unit tests") do
     end
 
     context("ConstantNode should propagate a GaussianMessage") do
-        node = ConstantNode(GaussianDistribution(m=[2.0], V=[4.0]))
+        node = ConstantNode(GaussianDistribution(m=2.0, V=4.0))
         @fact node.interfaces[1].message => nothing
         msg = ForneyLab.updateNodeMessage!(1, node)
         @fact node.interfaces[1].message => msg
