@@ -49,13 +49,13 @@ facts("FixedGainNode integration tests") do
         # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
         context("Univariate GaussianDistribution with (m,V) parametrization") do
             # Backward message
-            node = initializeFixedGainNode([2.0], [nothing, Message(GaussianDistribution(m=[3.0], V=[5.0]))])
+            node = initializeFixedGainNode([2.0], [nothing, Message(GaussianDistribution(m=3.0, V=5.0))])
             msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution)
             @fact node.interfaces[1].message => msg
             @fact node.interfaces[1].message.value.m => [1.5]
             @fact node.interfaces[1].message.value.V => reshape([1.25], 1, 1)
             # Forward message
-            node = initializeFixedGainNode([2.0], [Message(GaussianDistribution(m=[3.0], V=[5.0])), nothing])
+            node = initializeFixedGainNode([2.0], [Message(GaussianDistribution(m=3.0, V=5.0)), nothing])
             msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution)
             @fact node.interfaces[2].message => msg
             @fact node.interfaces[2].message.value.m => [6.0]
@@ -63,13 +63,13 @@ facts("FixedGainNode integration tests") do
         end
         context("Univariate GaussianDistribution with (m,V=0) parametrization") do
             # Backward message
-            node = initializeFixedGainNode([2.0], [nothing, Message(GaussianDistribution(m=[3.0], V=[0.0]))])
+            node = initializeFixedGainNode([2.0], [nothing, Message(GaussianDistribution(m=3.0, V=0.0))])
             msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution)
             @fact node.interfaces[1].message => msg
             @fact node.interfaces[1].message.value.m => [1.5]
             @fact node.interfaces[1].message.value.V => reshape([0.0], 1, 1)
             # Forward message
-            node = initializeFixedGainNode([2.0], [Message(GaussianDistribution(m=[3.0], V=[0.0])), nothing])
+            node = initializeFixedGainNode([2.0], [Message(GaussianDistribution(m=3.0, V=0.0)), nothing])
             msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution)
             @fact node.interfaces[2].message => msg
             @fact node.interfaces[2].message.value.m => [6.0]
@@ -77,13 +77,13 @@ facts("FixedGainNode integration tests") do
         end
         context("Univariate GaussianDistribution with (m,W) parametrization") do
             # Backward message
-            node = initializeFixedGainNode([2.0], [nothing, Message(GaussianDistribution(m=[3.0], W=[2.0]))])
+            node = initializeFixedGainNode([2.0], [nothing, Message(GaussianDistribution(m=3.0, W=2.0))])
             msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution)
             @fact node.interfaces[1].message => msg
             @fact node.interfaces[1].message.value.m => [1.5]
             @fact node.interfaces[1].message.value.W => reshape([8.0], 1, 1)
             # Forward message
-            node = initializeFixedGainNode([2.0], [Message(GaussianDistribution(m=[3.0], W=[2.0])), nothing])
+            node = initializeFixedGainNode([2.0], [Message(GaussianDistribution(m=3.0, W=2.0)), nothing])
             msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution)
             @fact node.interfaces[2].message => msg
             @fact node.interfaces[2].message.value.m => [6.0]
@@ -91,13 +91,13 @@ facts("FixedGainNode integration tests") do
         end
         context("Univariate GaussianDistribution with (xi,W) parametrization") do
             # Backward message
-            node = initializeFixedGainNode([2.0], [nothing, Message(GaussianDistribution(xi=[6.0], W=[2.0]))])
+            node = initializeFixedGainNode([2.0], [nothing, Message(GaussianDistribution(xi=6.0, W=2.0))])
             msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution)
             @fact node.interfaces[1].message => msg
             @fact node.interfaces[1].message.value.xi => [12.0]
             @fact node.interfaces[1].message.value.W => reshape([8.0], 1, 1)
             # Forward message
-            node = initializeFixedGainNode([2.0], [Message(GaussianDistribution(xi=[6.0], W=[2.0])), nothing])
+            node = initializeFixedGainNode([2.0], [Message(GaussianDistribution(xi=6.0, W=2.0)), nothing])
             msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution)
             @fact node.interfaces[2].message => msg
             @fact node.interfaces[2].message.value.xi => [3.0]

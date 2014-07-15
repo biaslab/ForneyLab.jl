@@ -26,7 +26,7 @@ facts("EqualityNode integration tests") do
         # In the tests, we use the exact rules from Korl. The actual implementation of updateNodeMessage!() will calculate
         # the (xi,W) parametrizations of the inbound messages, such that only the W and xi update rules are used in practice.
         context("Univariate GaussianDistribution with (m,V) parametrization") do
-            inbound_dist = GaussianDistribution(m=[3.0], V=[5.0])
+            inbound_dist = GaussianDistribution(m=3.0, V=5.0)
             node = initializeEqualityNode([Message(inbound_dist), Message(inbound_dist), nothing])
             W = inv(inbound_dist.V)
             msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
@@ -36,7 +36,7 @@ facts("EqualityNode integration tests") do
             @fact isApproxEqual(msg.value.V, (inbound_dist.V * pinv(inbound_dist.V + inbound_dist.V) * inbound_dist.V)) => true
         end
         context("Univariate GaussianDistribution with (m,W) parametrization") do
-            inbound_dist = GaussianDistribution(m=[3.0], W=[0.2])
+            inbound_dist = GaussianDistribution(m=3.0, W=0.2)
             node = initializeEqualityNode([Message(inbound_dist), Message(inbound_dist), nothing])
             W = inbound_dist.W
             msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
@@ -46,7 +46,7 @@ facts("EqualityNode integration tests") do
             @fact isApproxEqual(msg.value.W, (W + W)) => true
         end
         context("Univariate GaussianDistribution with (xi,V) parametrization") do
-            inbound_dist = GaussianDistribution(xi=[0.6], V=[5.0])
+            inbound_dist = GaussianDistribution(xi=0.6, V=5.0)
             xi = inbound_dist.xi
             W = inbound_dist.W
             node = initializeEqualityNode([Message(inbound_dist), Message(inbound_dist), nothing])
@@ -57,7 +57,7 @@ facts("EqualityNode integration tests") do
             @fact isApproxEqual(msg.value.V, (inbound_dist.V * pinv(inbound_dist.V + inbound_dist.V) * inbound_dist.V)) => true
         end
         context("Univariate GaussianDistribution with (xi,W) parametrization") do
-            inbound_dist = GaussianDistribution(xi=[0.6], W=[0.2])
+            inbound_dist = GaussianDistribution(xi=0.6, W=0.2)
             xi = inbound_dist.xi
             W = inbound_dist.W
             node = initializeEqualityNode([Message(inbound_dist), Message(inbound_dist), nothing])

@@ -2,15 +2,16 @@
 # GaussianDistribution
 ############################################
 # Description:
-#   Encodes a Gaussian PDF.
+#   Encodes a univariate or multivariate Gaussian PDF.
 #   Define (mean (m) or weighted mean (xi))
 #   and (covariance (V) or precision (W)).
 #   These result in the same PDF:
-#    dist = GaussianDistribution(m=[1.0], V=[2.0])
-#    dist = GaussianDistribution(m=[1.0], W=[0.5])
-#    dist = GaussianDistribution(xi=[0.5], W=[0.5])
-#    dist = GaussianDistribution(xi=[0.5], V=[2.0])
-#   m and xi are 1d arrays, V and W are 2d
+#    dist = GaussianDistribution(m=1.0, V=2.0)
+#    dist = GaussianDistribution(m=1.0, W=0.5)
+#    dist = GaussianDistribution(xi=0.5, W=0.5)
+#    dist = GaussianDistribution(xi=0.5, V=2.0)
+#   In case of a multivariate distribution,
+#   m&xi should be vectors and V&W should be matrices.
 ############################################
 
 export
@@ -23,31 +24,30 @@ export
     isConsistent
 
 type GaussianDistribution <: ProbabilityDistribution
-    m::Union(Array{Float64, 1}, Nothing)    # Mean vector
-    V::Union(Array{Float64}, Nothing)       # Covariance matrix
-    W::Union(Array{Float64}, Nothing)       # Weight matrix
-    xi::Union(Array{Float64, 1}, Nothing)   # Weighted mean vector: xi=W*m
+    m::Union(Vector{Float64}, Nothing)    # Mean vector
+    V::Union(Matrix{Float64}, Nothing)       # Covariance matrix
+    W::Union(Matrix{Float64}, Nothing)       # Weight matrix
+    xi::Union(Vector{Float64}, Nothing)   # Weighted mean vector: xi=W*m
 end
-function GaussianDistribution(;args...)
-    self = GaussianDistribution(nothing, nothing, nothing, nothing)
-    for (key, val) in args
-        setfield(self, key, deepcopy(val))
-    end
+function GaussianDistribution(; m::Union(Float64,Vector{Float64},Nothing)=nothing,
+                                V::Union(Float64,Matrix{Float64},Nothing)=nothing,
+                                W::Union(Float64,Matrix{Float64},Nothing)=nothing,
+                                xi::Union(Float64,Vector{Float64},Nothing)=nothing)
+    m = (typeof(m)==Float64) ? [m] : deepcopy(m)
+    V = (typeof(V)==Float64) ? fill!(Array(Float64,1,1),V) : deepcopy(V)
+    W = (typeof(W)==Float64) ? fill!(Array(Float64,1,1),W) : deepcopy(W)
+    xi = (typeof(xi)==Float64) ? [xi] : deepcopy(xi)
 
-    # In the case of single value V and W, cast V and W to matrix
-    self.W = ensureMatrix(self.W)
-    self.V = ensureMatrix(self.V)
+    self = GaussianDistribution(m, V, W, xi)
 
     # Check parameterizations
-    if !isWellDefined(self)
-        error("Cannot create GaussianDistribution, parameterization is underdetermined.")
-    end
+    isWellDefined(self) || error("Cannot create GaussianDistribution, parameterization is underdetermined.")
 
     return self
 end
-GaussianDistribution() = GaussianDistribution(m=[0.0], V=[1.0])
+GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
 
-uninformative(dist_type::Type{GaussianDistribution}) = GaussianDistribution(m=[0.0], V=[1000.0])
+uninformative(dist_type::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=1000.0)
 
 function show(io::IO, dist::GaussianDistribution)
     println(io, "GaussianDistribution")

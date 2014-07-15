@@ -192,20 +192,20 @@ facts("calculateMessage!() integration tests") do
     end
 
     context("calculateMessage!() should throw an error when there is an unbroken loop") do
-        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
+        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
         @fact_throws calculateMessage!(driver.out)
     end
 end
 
 facts("generateSchedule() and executeSchedule() integration tests") do
-    (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
+    (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
 
     context("generateSchedule() should throw an error when there is an unbroken loop") do
         @fact_throws generateSchedule(driver.out)
     end
 
     # Initial message
-    setMessage!(add.in1, Message(GaussianDistribution(m=[2.0], V=[0.5])))
+    setMessage!(add.in1, Message(GaussianDistribution(m=2.0, V=0.5)))
     setMessage!(add.out, Message(GaussianDistribution()))
 
     context("generateSchedule() should auto-generate a feasible schedule") do
@@ -249,10 +249,10 @@ facts("generateSchedule() and executeSchedule() integration tests") do
     context("executeSchedule() should accept edges") do
         (node1, node2, node3) = initializeChainOfNodes()
         schedule = [node1.out.edge, node2.out.edge]
-        node1.out.message = Message(GaussianDistribution(W=[1.0], xi=[1.0])) 
-        node1.out.partner.message = Message(GaussianDistribution(W=[1.0], xi=[1.0])) 
-        node2.out.message = Message(GaussianDistribution(W=[1.0], xi=[1.0])) 
-        node2.out.partner.message = Message(GaussianDistribution(W=[1.0], xi=[1.0]))
+        node1.out.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
+        node1.out.partner.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
+        node2.out.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
+        node2.out.partner.message = Message(GaussianDistribution(W=1.0, xi=1.0))
         executeSchedule(schedule)
         @fact node1.out.edge.marginal.W => reshape([2.0], 1, 1)
         @fact node2.out.edge.marginal.W => reshape([2.0], 1, 1)
@@ -261,7 +261,7 @@ facts("generateSchedule() and executeSchedule() integration tests") do
     end
 
     context("executeSchedule() should work as expeced in loopy graphs") do
-        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
+        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
         setMessage!(driver.out, Message(GaussianDistribution()))
         schedule = generateSchedule(driver.out)
         for count = 1:100
@@ -272,9 +272,9 @@ facts("generateSchedule() and executeSchedule() integration tests") do
     end
 
     context("executeSchedule() should be called repeatedly until convergence") do
-        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[1.1], B=[0.1], noise_m=[0.0], noise_V=[0.1])
+        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[1.1], B=[0.1], noise_m=0.0, noise_V=0.1)
         # Now set a breaker message and check that it works
-        breaker_message = Message(GaussianDistribution(m=[10.0], V=[100.0]))
+        breaker_message = Message(GaussianDistribution(m=10.0, V=100.0))
         setMessage!(driver.out, breaker_message)
         prev_dist = deepcopy(breaker_message.value)
         converged = false
@@ -289,8 +289,8 @@ facts("generateSchedule() and executeSchedule() integration tests") do
 end
 
 facts("clearMessage!(), clearMessages!(), clearAllMessages!() integration tests") do
-    (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
-    setMessage!(add.in1, Message(GaussianDistribution(m=[2.0], V=[0.5])))
+    (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
+    setMessage!(add.in1, Message(GaussianDistribution(m=2.0, V=0.5)))
     setMessage!(add.out, Message(GaussianDistribution()))
     schedule = generateSchedule(add.in2)
     executeSchedule(schedule)
