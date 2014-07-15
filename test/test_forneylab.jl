@@ -161,8 +161,8 @@ facts("Connections between nodes integration tests") do
         comp_node = GainEqualityCompositeNode()
         node = ConstantNode()
         edge = Edge(node.out, comp_node.in1)
-        @fact comp_node.equality_node.interfaces[1].partner == node.out
-        @fact comp_node.equality_node.interfaces[1].edge == edge
+        @fact comp_node.equality_node.interfaces[1].partner => node.out
+        @fact comp_node.equality_node.interfaces[1].edge => edge
     end
 
 end
