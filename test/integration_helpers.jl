@@ -83,7 +83,7 @@ function initializeChainOfNodes()
     return (node1, node2, node3)
 end
 
-function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=[1.0], noise_V=[0.1])
+function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
     # Set up a loopy graph
     #    (driver)
     #   -->[A]---
@@ -365,7 +365,7 @@ function initializeGaussianNodeChain()
         end
     end
     # Attach beginning and end nodes
-    m_prior = ConstantNode(GaussianDistribution(m=[0.0], V=[100.0])) # Prior
+    m_prior = ConstantNode(GaussianDistribution(m=0.0, V=100.0)) # Prior
     s_prior = ConstantNode(GammaDistribution(a=0.01, b=0.01)) # Prior
     c_m = ConstantNode(uninformative(GaussianDistribution)) # Neutral 'one' message
     c_gam = ConstantNode(uninformative(GammaDistribution)) # Neutral 'one' message

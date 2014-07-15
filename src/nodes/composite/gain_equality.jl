@@ -50,8 +50,10 @@ type GainEqualityCompositeNode <: CompositeNode
     in2::Interface
     out::Interface
 
-    function GainEqualityCompositeNode(A::Array=[1.0], use_composite_update_rules::Bool=true; name="unnamed")
-        if use_composite_update_rules
+    function GainEqualityCompositeNode(A::Union(Array{Float64},Float64)=1.0, use_composite_update_rules::Bool=true; name="unnamed")
+        if typeof(A)==Float64
+            A = fill!(Array(Float64,1,1),A)
+        elseif use_composite_update_rules
             # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
             # In case we don't use composite update rules, A is passed to the internal FixedGainNode.
             A = ensureMatrix(deepcopy(A))
