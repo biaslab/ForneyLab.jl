@@ -117,7 +117,7 @@ function initializeTreeGraph()
     #
     c1 = ConstantNode(GaussianDistribution())
     c2 = ConstantNode(GaussianDistribution())
-    c3 = ConstantNode(GaussianDistribution(m=[-2.], V=[3.]))
+    c3 = ConstantNode(GaussianDistribution(m=[-2.], V=3.))
     add = AdditionNode()
     equ = EqualityNode()
     # Edges from left to right
@@ -446,8 +446,8 @@ function initializeLinearCompositeNodeChain()
         a_eq_node = EqualityNode()
         b_eq_node = EqualityNode()
         gam_eq_node = EqualityNode()
-        x_node = ConstantNode(GaussianDistribution(m = [x[section]], W = [10000.0]))
-        y_node = ConstantNode(GaussianDistribution(m = [y[section]], W = [10000.0]))
+        x_node = ConstantNode(GaussianDistribution(m = x[section], W = 10000.0))
+        y_node = ConstantNode(GaussianDistribution(m = y[section], W = 10000.0))
         # Save to array
         lin_nodes[section] = lin_node
         a_eq_nodes[section] = a_eq_node
@@ -465,8 +465,8 @@ function initializeLinearCompositeNodeChain()
         setMarginal!(a_eq_edges[section], uninformative(GaussianDistribution)) # uninformative
         setMarginal!(b_eq_edges[section], uninformative(GaussianDistribution))
         setMarginal!(gam_eq_edges[section], uninformative(GammaDistribution))
-        setMarginal!(x_edges[section], GaussianDistribution(m = [x[section]], W = [10000.0])) # samples
-        setMarginal!(y_edges[section], GaussianDistribution(m = [y[section]], W = [10000.0]))
+        setMarginal!(x_edges[section], GaussianDistribution(m = x[section], W = 10000.0)) # samples
+        setMarginal!(y_edges[section], GaussianDistribution(m = y[section], W = 10000.0))
 
         if section > 1 # Connect sections
             Edge(a_eq_nodes[section-1].interfaces[2], a_eq_nodes[section].interfaces[1])
@@ -475,8 +475,8 @@ function initializeLinearCompositeNodeChain()
         end
     end
     # Attach beginning and end nodes
-    a_0 = ConstantNode(GaussianDistribution(m=[0.0], W=[0.01])) # priors
-    b_0 = ConstantNode(GaussianDistribution(m=[0.0], W=[0.01]))
+    a_0 = ConstantNode(GaussianDistribution(m=0.0, W=0.01)) # priors
+    b_0 = ConstantNode(GaussianDistribution(m=0.0, W=0.01))
     gam_0 = ConstantNode(GammaDistribution(a=0.01, b=0.01))
     C_a = ConstantNode(uninformative(GaussianDistribution)) # uninformative
     C_b = ConstantNode(uninformative(GaussianDistribution))
