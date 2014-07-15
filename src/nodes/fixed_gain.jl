@@ -34,9 +34,10 @@ type FixedGainNode <: Node
     in1::Interface
     out::Interface
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
-    function FixedGainNode(A::Array=[1.0]; name="unnamed")
+    function FixedGainNode(A::Union(Array{Float64},Float64)=1.0; name="unnamed")
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
-        self = new(ensureMatrix(deepcopy(A)), name, Array(Interface, 2))
+        A = (typeof(A)==Float64) ? fill!(Array(Float64,1,1),A) : ensureMatrix(deepcopy(A))
+        self = new(A, name, Array(Interface, 2))
         # Create interfaces
         self.interfaces[1] = Interface(self)
         self.interfaces[2] = Interface(self)
