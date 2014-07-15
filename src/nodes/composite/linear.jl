@@ -19,16 +19,18 @@
 #
 # Interface ids, (names) and supported message types:
 #   1. in1:
-#       Message{GaussianDistribution}
+#       GaussianDistribution (marginal)
+#       TODO: Message{GaussianDistribution}
 #   2. a_in:
-#       Message{GaussianDistribution}
+#       GaussianDistribution (marginal)
 #   3. b_in:
-#       Message{GaussianDistribution}
+#       GaussianDistribution (marginal)
 #   4. noise_in:
-#       Message{InvertedGammaDistribution}
-#       Message{GammaDistribution}
+#       InvertedGammaDistribution (marginal)
+#       GammaDistribution (marginal)
 #   3. out:
-#       Message{GaussianDistribution}
+#       GaussianDistribution (marginal)
+#       TODO: Message{GaussianDistribution}
 #
 ############################################
 
