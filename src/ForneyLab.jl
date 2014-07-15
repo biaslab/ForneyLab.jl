@@ -110,12 +110,14 @@ type Edge <: AbstractEdge
                 child_interface = tail.child
                 while child_interface != nothing
                     child_interface.partner = tail.partner
+                    child_interface.edge = self
                     child_interface = child_interface.child
                 end
                 # Backreferences for head's children
                 child_interface = head.child
                 while child_interface != nothing
                     child_interface.partner = head.partner
+                    child_interface.edge = self
                     child_interface = child_interface.child
                 end
                 return self
