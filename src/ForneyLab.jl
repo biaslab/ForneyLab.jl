@@ -1,6 +1,6 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message
+export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message, ProbabilityDistribution
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
@@ -110,12 +110,14 @@ type Edge <: AbstractEdge
                 child_interface = tail.child
                 while child_interface != nothing
                     child_interface.partner = tail.partner
+                    child_interface.edge = self
                     child_interface = child_interface.child
                 end
                 # Backreferences for head's children
                 child_interface = head.child
                 while child_interface != nothing
                     child_interface.partner = head.partner
+                    child_interface.edge = self
                     child_interface = child_interface.child
                 end
                 return self
@@ -167,7 +169,7 @@ end
 function getOrCreateMarginal(edge::Edge, assign_value::DataType)
     # Looks for a marginal on edge.
     # When no marginal is present, it sets and returns a standard distribution.
-    # Otherwise it returns the present marginal.
+    # Otherwise it returns the present marginal. User for fast marginal calculations.
     if edge.marginal==nothing
         if assign_value <: ProbabilityDistribution 
             edge.marginal = assign_value()
@@ -205,6 +207,7 @@ include("nodes/gaussian.jl")
 # Composite nodes
 include("nodes/composite/gain_addition.jl")
 include("nodes/composite/gain_equality.jl")
+include("nodes/composite/linear.jl")
 include("nodes/composite/general.jl")
 
 #############################
