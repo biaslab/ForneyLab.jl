@@ -62,7 +62,7 @@ function firstFreeInterface(node::EqualityNode)
     # Return id of first free interface of a symmetrical node
     for interface_id = 1:length(node.interfaces)
         if node.interfaces[interface_id].partner == nothing
-            return interrace_id
+            return interface_id
         end
     end
     error("No free interface on $(typeof(node)) $(node.name)")
