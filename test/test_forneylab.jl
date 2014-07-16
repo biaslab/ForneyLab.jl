@@ -91,7 +91,7 @@ include("distributions/test_gaussian.jl")
 include("distributions/test_gamma.jl")
 include("distributions/test_inverse_gamma.jl")
 include("nodes/test_addition.jl")
-include("nodes/test_constant.jl")
+include("nodes/test_terminal.jl")
 include("nodes/test_equality.jl")
 include("nodes/test_fixed_gain.jl")
 include("nodes/test_gaussian.jl")
@@ -138,7 +138,7 @@ facts("Connections between nodes integration tests") do
     context("Edge should throw an error when messages are of different types") do
         (node1, node2) = initializePairOfNodes()
         node1.interfaces[1].message = Message(GaussianDistribution())
-        # Couple the gaussian interface gaussian to the constant interface
+        # Try to connect interfaces that carry messages of different types
         @fact_throws Edge(node2.interfaces[1], node1.interfaces[1])
     end
 
@@ -180,8 +180,8 @@ end
 
 facts("calculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do
-        (gain, constant) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_const=Message(3.0))
-        Edge(constant.out, gain.in1)
+        (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(3.0))
+        Edge(terminal.out, gain.in1)
         @fact gain.out.message => nothing
         # Request message on node for which the input is unknown
         msg = calculateMessage!(gain.out)
