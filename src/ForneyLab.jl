@@ -198,7 +198,7 @@ include("distributions/gamma.jl")
 include("distributions/inverse_gamma.jl")
 # Nodes
 include("nodes/addition.jl")
-include("nodes/constant.jl")
+include("nodes/terminal.jl")
 include("nodes/equality.jl")
 include("nodes/fixed_gain.jl")
 include("nodes/gaussian.jl")
