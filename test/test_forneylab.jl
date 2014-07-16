@@ -159,7 +159,7 @@ facts("Connections between nodes integration tests") do
 
     context("Edge should couple standard to composite nodes") do
         comp_node = GainEqualityCompositeNode()
-        node = ConstantNode()
+        node = TerminalNode()
         edge = Edge(node.out, comp_node.in1)
         @fact comp_node.equality_node.interfaces[1].partner => node.out
         @fact comp_node.equality_node.interfaces[1].edge => edge
