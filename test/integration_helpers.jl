@@ -229,7 +229,7 @@ function initializeVariationalGaussianNode(msgs::Array{Any})
     return g_node
 end
 
-function initializeConstantAndGainAddNode()
+function initializeTerminalAndGainAddNode()
     # Initialize some nodes
     #
     #    node
@@ -274,7 +274,7 @@ function initializeGainAdditionCompositeNode(A::Array, use_composite_update_rule
     return gac_node
 end
 
-function initializeConstantAndGainEqNode()
+function initializeTerminalAndGainEqNode()
     # Initialize some nodes
     #
     #    node
@@ -348,7 +348,7 @@ function initializeGaussianNodeChain()
         g_node = GaussianNode(true; name="g_node_$(section)") # Variational flag set to true, so updateNodeMessage knows what formula to use
         m_eq_node = EqualityNode(; name="m_eq_$(section)") # Equality node chain for mean
         gam_eq_node = EqualityNode(; name="s_eq_$(section)") # Equality node chain for variance
-        obs_node = TerminalNode(y_observations[section], name="c_obs_$(section)") # Observed y values are stored as constant node values
+        obs_node = TerminalNode(y_observations[section], name="c_obs_$(section)") # Observed y values are stored in terminal node
         g_nodes[section] = g_node
         m_eq_nodes[section] = m_eq_node
         gam_eq_nodes[section] = gam_eq_node

@@ -3,7 +3,7 @@
 ############################################
 # Description:
 #   Simple node with just 1 interface.
-#   Always sends out a constant (predefined) message.
+#   Always sends out a predefined message.
 #
 #           out
 #   [value]----->
@@ -14,7 +14,7 @@
 # modify the value directly later.
 #
 # Example:
-#   TerminalNode(GaussianDistribution(), name="myconst")
+#   TerminalNode(GaussianDistribution(), name="myterminal")
 #
 # Interface ids, (names) and supported message types:
 #   1. (out):
@@ -48,7 +48,7 @@ firstFreeInterface(node::TerminalNode) = (node.out.partner==nothing) ? node.out 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::TerminalNode,
                             inbound_messages_value_types::Type{None}=None)
-    # Calculate an outbound message. The constant node is the only node that does not accept incoming messages,
+    # Calculate an outbound message. The TerminalNode does not accept incoming messages,
     # therefore inbound_messages_value_types is only present for consistency. 
     # This function is not exported, and is only meant for internal use.
 
