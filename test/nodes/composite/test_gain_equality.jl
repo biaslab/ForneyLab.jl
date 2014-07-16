@@ -34,7 +34,7 @@ end
 
 facts("GainEqualityCompositeNode integration tests") do
     context("Edge can connect a normal node to a GainEqualityCompositeNode") do
-        (c_node, node) = initializeConstantAndGainEqNode()
+        (c_node, node) = initializeTerminalAndGainEqNode()
         Edge(node.out, c_node.in1)
         @fact node.out.partner => c_node.in1 # Set correct partners
         @fact c_node.in1.partner => node.out

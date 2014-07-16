@@ -1,9 +1,9 @@
 ############################################
-# ConstantNode
+# TerminalNode
 ############################################
 # Description:
 #   Simple node with just 1 interface.
-#   Always sends out a constant (predefined) message.
+#   Always sends out a predefined message.
 #
 #           out
 #   [value]----->
@@ -14,24 +14,24 @@
 # modify the value directly later.
 #
 # Example:
-#   ConstantNode(GaussianDistribution(), name="myconst")
+#   TerminalNode(GaussianDistribution(), name="myterminal")
 #
 # Interface ids, (names) and supported message types:
 #   1. (out):
 #       Message{Any}
 ############################################
 
-export ConstantNode
+export TerminalNode
 
-type ConstantNode <: Node
+type TerminalNode <: Node
     value::Any
     interfaces::Array{Interface,1}
     name::ASCIIString
     out::Interface
 
-    function ConstantNode(value=1.0; name="unnamed")
+    function TerminalNode(value=1.0; name="unnamed")
         if typeof(value) <: Message || typeof(value) == DataType
-            error("ConstantNode $(name) can not hold value of type $(typeof(value)).")
+            error("TerminalNode $(name) can not hold value of type $(typeof(value)).")
         end
         self = new(deepcopy(value), Array(Interface, 1), name)
         # Create interface
@@ -43,12 +43,12 @@ type ConstantNode <: Node
 end
 
 # Overload firstFreeInterface since EqualityNode is symmetrical in its interfaces
-firstFreeInterface(node::ConstantNode) = (node.out.partner==nothing) ? node.out : error("No free interface on $(typeof(node)) $(node.name)")
+firstFreeInterface(node::TerminalNode) = (node.out.partner==nothing) ? node.out : error("No free interface on $(typeof(node)) $(node.name)")
 
 function updateNodeMessage!(outbound_interface_id::Int,
-                            node::ConstantNode,
+                            node::TerminalNode,
                             inbound_messages_value_types::Type{None}=None)
-    # Calculate an outbound message. The constant node is the only node that does not accept incoming messages,
+    # Calculate an outbound message. The TerminalNode does not accept incoming messages,
     # therefore inbound_messages_value_types is only present for consistency. 
     # This function is not exported, and is only meant for internal use.
 
