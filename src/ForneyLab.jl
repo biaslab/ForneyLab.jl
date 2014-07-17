@@ -249,8 +249,11 @@ function updateNodeMessage!(outbound_interface::Interface)
            (isdefined(outbound_interface, :message_dependencies) && !(node_interface in outbound_interface.message_dependencies))
             continue
         end
-        @assert(node_interface.partner!=nothing, "Cannot receive messages on disconnected interface $(node_interface_id) of $(typeof(node)) $(node.name)")
-        @assert(node_interface.partner.message!=nothing, "There is no inbound message present on interface $(node_interface_id) of $(typeof(node)) $(node.name)")
+        if node_interface.partner==nothing
+            error("Cannot receive messages on disconnected interface $(node_interface_id) of $(typeof(node)) $(node.name)")
+        elseif node_interface.partner.message==nothing
+            error("There is no inbound message present on the partner of interface $(node_interface_id) of $(typeof(node)) $(node.name)")
+        end
         # TODO: how to handle variational nodes that take the marginal as input? Marginal distribution type does not have to be the same as message value type
         inbound_message_value_types = Union(inbound_message_value_types, typeof(node_interface.partner.message.value))
     end
