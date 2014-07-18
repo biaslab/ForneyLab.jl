@@ -1,6 +1,6 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message, ProbabilityDistribution
+export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message, MessageValue, ProbabilityDistribution
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
@@ -19,19 +19,18 @@ import Base.show
 
 # Top-level abstracts
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
+typealias MessageValue Union(ProbabilityDistribution, Number, Vector, Matrix)
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
 
 abstract Node
 show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
 abstract CompositeNode <: Node
 
-type Message{T}
-    # Message has a value payload, which will be a ProbabilityDistribution most of the time.
-    # It may also carry a Float representing a sample, or an Array as particle list etc.
-    # immutable means the value field can not be reassigned. The parameters of the object in the value field (such as distribution parameters) remain mutable
+type Message{T<:MessageValue}
+    # Message has a value payload, which must be a subtype of MessageValue.
     value::T
 end
-Message(value::Any) = Message{typeof(value)}(deepcopy(value))
+Message(value::MessageValue) = Message{typeof(value)}(deepcopy(value))
 Message() = Message(1.0)
 uninformative(type_in::Type{Float64}) = Message(1.0) # uninformative general message
 show(io::IO, message::Message) = println(io, typeof(message), " with value ", message.value, ".")
@@ -50,6 +49,8 @@ type Interface
                                                 # If this array is #undef, it means that the outbound msg depends on the inbound msgs on ALL OTHER interfaces of the node.
     internal_schedule::Array{Interface, 1}      # Optional schedule that should be executed to calculate outbound message on this interface.
                                                 # The internal_schedule field is used in composite nodes, and holds the schedule for internal message passing.
+    message_value_type::DataType       # Indicates the type of the message value that is carried by the interfce
+
     # Sanity check for matching message types
     function Interface(node::Node, edge::Union(AbstractEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
@@ -94,59 +95,76 @@ type Edge <: AbstractEdge
     head::Interface
     marginal::Any
 
-    function Edge(tail::Interface, head::Interface, marginal::Any=nothing)
-        if  typeof(head.message) == Nothing ||
-            typeof(tail.message) == Nothing ||
-            typeof(head.message) == typeof(tail.message)
-            if !is(head.node, tail.node)
-                self = new(tail, head, marginal)
-                # Assign pointed to edge from interfaces
-                tail.edge = self
-                head.edge = self
-                # Partner head and tail, and merge their families
-                tail.partner = head
-                head.partner = tail
-                # Backreferences for tail's children
-                child_interface = tail.child
-                while child_interface != nothing
-                    child_interface.partner = tail.partner
-                    child_interface.edge = self
-                    child_interface = child_interface.child
-                end
-                # Backreferences for head's children
-                child_interface = head.child
-                while child_interface != nothing
-                    child_interface.partner = head.partner
-                    child_interface.edge = self
-                    child_interface = child_interface.child
-                end
-                return self
-            else
-                error("Cannot connect two interfaces of the same node: ", typeof(head.node), " ", head.node.name)
-            end
-        else
-            error("Head and tail message types do not match: ", typeof(head.message), " and ", typeof(tail.message))
+    function Edge(tail::Interface, head::Interface, forward_message_value_type::DataType, backward_message_value_type::DataType)
+        (forward_message_value_type <: MessageValue) || error("Forward message value type $(forward_message_value_type) not supported")
+        (backward_message_value_type <: MessageValue) || error("Backward message value type $(backward_message_value_type) not supported")
+        if tail.message != nothing && (typeof(tail.message.value) != forward_message_value_type)
+            error("Existing forward message ($(typeof(tail.message))) does not match expected type Message{$(forward_message_value_type)}")
         end
+        if head.message != nothing && (typeof(head.message.value) != backward_message_value_type)
+            error("Existing backward message ($(typeof(head.message))) does not match expected type Message{$(backward_message_value_type)}")
+        end
+        (!is(head.node, tail.node)) || error("Cannot connect two interfaces of the same node: ", typeof(head.node), " ", head.node.name)
+
+        self = new(tail, head, nothing)
+        # Assign pointed to edge from interfaces
+        tail.edge = self
+        head.edge = self
+        # Partner head and tail, and merge their families
+        tail.partner = head
+        head.partner = tail
+        # Set expected outbound interface message types
+        tail.message_value_type = forward_message_value_type
+        head.message_value_type = backward_message_value_type
+
+        # Backreferences for tail's children
+        child_interface = tail.child
+        while child_interface != nothing
+            child_interface.partner = tail.partner
+            child_interface.edge = self
+            child_interface.message_value_type = forward_message_value_type
+            child_interface = child_interface.child
+        end
+        # Backreferences for head's children
+        child_interface = head.child
+        while child_interface != nothing
+            child_interface.partner = head.partner
+            child_interface.edge = self
+            child_interface.message_value_type = backward_message_value_type
+            child_interface = child_interface.child
+        end
+
+        return self
     end
 end
+Edge(tail::Interface, head::Interface, message_value_type::DataType) = Edge(tail, head, message_value_type, message_value_type)
+function Edge(tail::Interface, head::Interface)
+    forward_message_value_type = backward_message_value_type = GaussianDistribution # Default to Gaussian; we could also do a check whether the nodes accept Gaussians
+    (tail.message == nothing) || (forward_message_value_type = typeof(tail.message.value))
+    (head.message == nothing) || (backward_message_value_type = typeof(head.message.value))
+    Edge(tail, head, forward_message_value_type, backward_message_value_type)
+end
 
-# Edge constructors that accept an EqualityNode instead of specific Interface
+# Edge constructors that accept nodes instead of a specific Interface
 # firstFreeInterface(node) should be overloaded for nodes with interface-invariant node functions
 firstFreeInterface(node::Node) = error("Cannot automatically pick a free interface on non-symmetrical $(typeof(node)) $(node.name)")
 Edge(tail_node::Node, head::Interface) = Edge(firstFreeInterface(tail_node), head)
+Edge(tail_node::Node, head::Interface, message_value_type::DataType) = Edge(firstFreeInterface(tail_node), head, message_value_type)
+Edge(tail_node::Node, head::Interface, forward_message_value_type::DataType, backward_message_value_type::DataType) = Edge(firstFreeInterface(tail_node), head, forward_message_value_type, backward_message_value_type)
+
 Edge(tail::Interface, head_node::Node) = Edge(tail, firstFreeInterface(head_node))
+Edge(tail::Interface, head_node::Node, message_value_type::DataType) = Edge(tail, firstFreeInterface(head_node), message_value_type)
+Edge(tail::Interface, head_node::Node, forward_message_value_type::DataType, backward_message_value_type::DataType) = Edge(tail, firstFreeInterface(head_node), forward_message_value_type, backward_message_value_type)
+
 Edge(tail_node::Node, head_node::Node) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node))
+Edge(tail_node::Node, head_node::Node, message_value_type::DataType) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), message_value_type)
+Edge(tail_node::Node, head_node::Node, forward_message_value_type::DataType, backward_message_value_type::DataType) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), forward_message_value_type, backward_message_value_type)
 
 function show(io::IO, edge::Edge)
     println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name):$(findfirst(edge.tail.node.interfaces, edge.tail)) to $(typeof(edge.head.node)) $(edge.head.node.name):$(findfirst(edge.head.node.interfaces, edge.head)).")
-    println(io, "Forward message type: $(typeof(edge.tail.message)). Backward message type: $(typeof(edge.head.message)).")
+    println(io, "Accepted forward message value type: $(edge.tail.message_value_type).")
+    println(io, "Accepted backward message value type: $(edge.head.message_value_type).")
 end
-
-# TODO:
-# function getOrCreateMessage{T<:Message}(interface::Interface, assign_value::Type{T})
-# ...
-# end
-# getOrCreateMessage(interface::Interface, assign_value::DataType) = getOrCreateMessage{assign_value}(interface, assign_value)
 
 function getOrCreateMessage(interface::Interface, assign_value::DataType, arr_dims::Tuple=(1, 1))
     # Looks for a message on interface.

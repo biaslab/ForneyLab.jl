@@ -135,19 +135,19 @@ facts("Connections between nodes integration tests") do
         testInterfaceConnections(node1, node2)
     end
 
-    context("Edge should throw an error when messages are of different types") do
-        (node1, node2) = initializePairOfNodes()
-        node1.interfaces[1].message = Message(GaussianDistribution())
-        # Try to connect interfaces that carry messages of different types
-        @fact_throws Edge(node2.interfaces[1], node1.interfaces[1])
-    end
-
     context("Edge should throw an error when two interfaces on the same node are connected") do
         node = initializeFixedGainNode()
         # Connect output directly to input
         @fact_throws Edge(node.interfaces[2], node.interfaces[1])
     end
-    
+
+    context("Edge constructor should write the expected message value types to the interfaces") do
+        (node1, node2) = initializePairOfMockNodes()
+        edge = Edge(node1.out, node2.out, GaussianDistribution, Float64)
+        @fact edge.tail.message_value_type => GaussianDistribution
+        @fact edge.head.message_value_type => Float64
+    end
+
     context("Edge construction should couple interfaces to edge") do
         (node1, node2) = initializePairOfMockNodes()
         @fact node1.out.edge => nothing
