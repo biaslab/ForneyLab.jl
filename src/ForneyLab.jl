@@ -273,12 +273,12 @@ function updateNodeMessage!(outbound_interface::Interface)
             error("There is no inbound message present on the partner of interface $(node_interface_id) of $(typeof(node)) $(node.name)")
         end
         # TODO: how to handle variational nodes that take the marginal as input? Marginal distribution type does not have to be the same as message value type
-        inbound_message_value_types = Union(inbound_message_value_types, typeof(node_interface.partner.message.value))
+        inbound_message_value_types = Union(inbound_message_value_types, node_interface.partner.message_value_type)
     end
 
     # Evaluate node update function
     printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id:")
-    msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_value_types)
+     msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_value_types, outbound_interface.message_value_type)
     printVerbose(msg)
 
     return msg

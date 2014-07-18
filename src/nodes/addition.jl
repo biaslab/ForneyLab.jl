@@ -72,11 +72,12 @@ backwardAdditionXiRule{T<:Number}(V_x::Array{T, 2}, xi_x::Array{T, 1}, V_z::Arra
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::AdditionNode,
-                            inbound_messages_value_types::Type{GaussianDistribution})
+                            inbound_messages_value_types::Type{GaussianDistribution},
+                            outbound_message_value_type::Type{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     # Calculations for the GaussianDistribution type; Korl (2005), table 4.1
     if outbound_interface_id == 3
@@ -154,7 +155,9 @@ end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::AdditionNode,
-                            inbound_messages_value_types::Union(Type{Float64}, Type{Array{Float64}}, Type{Array{Float64, 2}}))
+                            inbound_messages_value_types::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}}),
+                            outbound_message_value_type::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}}))
+
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
@@ -172,8 +175,9 @@ function updateNodeMessage!(outbound_interface_id::Int,
         error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
     end
 
-    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], inbound_messages_value_types, size(ans))
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type, size(ans))
     msg_out.value = ans
 
+    (typeof(msg_out.value) == outbound_message_value_type) || error("Output type $(typeof(msg_out)) of $(typeof(node)) node $(node.name) does not match expected output type $(outbound_message_value_type)")
     return node.interfaces[outbound_interface_id].message
 end

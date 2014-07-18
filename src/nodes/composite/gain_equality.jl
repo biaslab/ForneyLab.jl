@@ -63,7 +63,7 @@ type GainEqualityCompositeNode <: CompositeNode
         # Define the internals of the composite node
         self.equality_node = EqualityNode(3, name="$(name)_internal_equality")
         self.fixed_gain_node = FixedGainNode(A, name="$(name)_internal_gain")
-        Edge(self.equality_node.interfaces[2], self.fixed_gain_node.in1) # Internal edge
+        Edge(self.equality_node.interfaces[2], self.fixed_gain_node.in1, GaussianDistribution, GaussianDistribution) # Internal edge
 
         # Initialize the composite node interfaces belonging to the composite node itself.
         self.interfaces[1] = Interface(self)
@@ -99,7 +99,8 @@ backwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, V_x::Arra
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::GainEqualityCompositeNode,
-                            inbound_messages_value_types::Type{GaussianDistribution})
+                            inbound_messages_value_types::Type{GaussianDistribution},
+                            outbound_message_value_type::Type{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
@@ -111,7 +112,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
             # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
             node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
         elseif outbound_interface_id == 1 || outbound_interface_id == 2
-            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
+            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
             # Backward messages
             dist_3 = node.interfaces[3].partner.message.value
