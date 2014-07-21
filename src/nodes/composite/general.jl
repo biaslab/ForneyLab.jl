@@ -4,7 +4,8 @@
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::CompositeNode,
-                            inbound_messages_value_types::Type{GaussianDistribution})
+                            inbound_messages_value_types::Type{GaussianDistribution},
+                            outbound_message_value_type::Type{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 

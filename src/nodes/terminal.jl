@@ -47,7 +47,8 @@ firstFreeInterface(node::TerminalNode) = (node.out.partner==nothing) ? node.out 
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::TerminalNode,
-                            inbound_messages_value_types::Type{None}=None)
+                            inbound_messages_value_types::Type{None}=None,
+                            outbound_message_value_type::DataType=Any)
     # Calculate an outbound message. The TerminalNode does not accept incoming messages,
     # therefore inbound_messages_value_types is only present for consistency. 
     # This function is not exported, and is only meant for internal use.

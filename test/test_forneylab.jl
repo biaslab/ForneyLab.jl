@@ -135,19 +135,19 @@ facts("Connections between nodes integration tests") do
         testInterfaceConnections(node1, node2)
     end
 
-    context("Edge should throw an error when messages are of different types") do
-        (node1, node2) = initializePairOfNodes()
-        node1.interfaces[1].message = Message(GaussianDistribution())
-        # Try to connect interfaces that carry messages of different types
-        @fact_throws Edge(node2.interfaces[1], node1.interfaces[1])
-    end
-
     context("Edge should throw an error when two interfaces on the same node are connected") do
         node = initializeFixedGainNode()
         # Connect output directly to input
         @fact_throws Edge(node.interfaces[2], node.interfaces[1])
     end
-    
+
+    context("Edge constructor should write the expected message value types to the interfaces") do
+        (node1, node2) = initializePairOfMockNodes()
+        edge = Edge(node1.out, node2.out, GaussianDistribution, Float64)
+        @fact edge.tail.message_value_type => GaussianDistribution
+        @fact edge.head.message_value_type => Float64
+    end
+
     context("Edge construction should couple interfaces to edge") do
         (node1, node2) = initializePairOfMockNodes()
         @fact node1.out.edge => nothing
@@ -181,7 +181,8 @@ end
 facts("calculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do
         (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(3.0))
-        Edge(terminal.out, gain.in1)
+        Edge(terminal.out, gain.in1, Float64, Array{Float64, 2})
+        gain.out.message_value_type = Array{Float64, 2} # Expect a matrix
         @fact gain.out.message => nothing
         # Request message on node for which the input is unknown
         msg = calculateMessage!(gain.out)
@@ -195,6 +196,7 @@ facts("calculateMessage!() integration tests") do
         (node1, node2, node3) = initializeChainOfNodes()
         @fact node3.out.message => nothing
         # Request message on node for which the input is unknown
+        node3.out.message_value_type = Array{Float64, 2} # Expect a matrix
         calculateMessage!(node3.out)
         @fact typeof(node3.out.message.value) => Array{Float64, 2}
         @fact node3.out.message.value => reshape([12.0], 1, 1)

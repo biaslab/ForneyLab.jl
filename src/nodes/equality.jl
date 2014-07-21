@@ -81,7 +81,8 @@ equalityXiRule{T<:Number}(xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x+xi_y
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::EqualityNode,
-                            inbound_messages_value_types::Type{GaussianDistribution})
+                            inbound_messages_value_types::Type{GaussianDistribution},
+                            outbound_message_value_type::Type{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
@@ -153,7 +154,8 @@ end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::EqualityNode,
-                            inbound_messages_value_types::Union(Type{Float64}, Type{Array{Float64}}, Type{Array{Float64, 2}}))
+                            inbound_messages_value_types::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}}),
+                            outbound_message_value_type::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}}))
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
@@ -171,15 +173,16 @@ function updateNodeMessage!(outbound_interface_id::Int,
             else
                 ans = 0.0
             end
-            msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], inbound_messages_value_types, size(ans))
+            msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type, size(ans))
             msg_out.value = ans
             return node.interfaces[outbound_interface_id].message
         end
     end
     ans = deepcopy(incoming_msg.value)
-    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], inbound_messages_value_types, size(ans))
+    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type, size(ans))
     msg_out.value = ans
 
+    (typeof(msg_out.value) == outbound_message_value_type) || error("Output type $(typeof(msg_out)) of $(typeof(node)) node $(node.name) does not match expected output type $(outbound_message_value_type)")
     return node.interfaces[outbound_interface_id].message
 end
 
@@ -189,11 +192,12 @@ end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::EqualityNode,
-                            inbound_messages_value_types::Type{InverseGammaDistribution})
+                            inbound_messages_value_types::Type{InverseGammaDistribution},
+                            outbound_message_value_type::Type{InverseGammaDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     # Definition from Korl table 5.2
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1
@@ -219,11 +223,12 @@ end
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::EqualityNode,
-                            inbound_messages_value_types::Type{GammaDistribution})
+                            inbound_messages_value_types::Type{GammaDistribution},
+                            outbound_message_value_type::Type{GammaDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaDistribution).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     # Definition from derivation in notebook gamma_message_eq_node_derivation
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1

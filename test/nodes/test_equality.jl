@@ -29,7 +29,7 @@ facts("EqualityNode integration tests") do
             inbound_dist = GaussianDistribution(m=3.0, V=5.0)
             node = initializeEqualityNode([Message(inbound_dist), Message(inbound_dist), nothing])
             W = inv(inbound_dist.V)
-            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
             @fact node.interfaces[3].message => msg
             ensureMVParametrization!(msg.value)
             @fact isApproxEqual(msg.value.m, (pinv(W + W) * (W*inbound_dist.m + W*inbound_dist.m))) => true
@@ -39,7 +39,7 @@ facts("EqualityNode integration tests") do
             inbound_dist = GaussianDistribution(m=3.0, W=0.2)
             node = initializeEqualityNode([Message(inbound_dist), Message(inbound_dist), nothing])
             W = inbound_dist.W
-            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
             @fact node.interfaces[3].message => msg
             ensureMWParametrization!(msg.value)
             @fact isApproxEqual(msg.value.m, (pinv(W + W) * (W*inbound_dist.m + W*inbound_dist.m))) => true
@@ -50,7 +50,7 @@ facts("EqualityNode integration tests") do
             xi = inbound_dist.xi
             W = inbound_dist.W
             node = initializeEqualityNode([Message(inbound_dist), Message(inbound_dist), nothing])
-            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
             @fact node.interfaces[3].message => msg
             ensureXiVParametrization!(msg.value)
             @fact isApproxEqual(msg.value.xi, (xi + xi)) => true
@@ -61,7 +61,7 @@ facts("EqualityNode integration tests") do
             xi = inbound_dist.xi
             W = inbound_dist.W
             node = initializeEqualityNode([Message(inbound_dist), Message(inbound_dist), nothing])
-            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
             @fact node.interfaces[3].message => msg
             ensureXiWParametrization!(msg.value)
             @fact isApproxEqual(msg.value.xi, (xi + xi)) => true
@@ -82,7 +82,7 @@ facts("EqualityNode integration tests") do
             inbound_dist = GaussianDistribution(m=mean, V=variance)
             W = inv(inbound_dist.V)
             node = initializeEqualityNode([Message(inbound_dist), Message(inbound_dist), nothing])
-            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
             @fact node.interfaces[3].message => msg
             ensureMVParametrization!(msg.value)
             @fact isApproxEqual(msg.value.m, (pinv(W + W) * (W*inbound_dist.m + W*inbound_dist.m))) => true
@@ -96,7 +96,7 @@ facts("EqualityNode integration tests") do
             inbound_dist = GaussianDistribution(m=mean, W=precision)
             W = inbound_dist.W
             node = initializeEqualityNode([Message(inbound_dist), Message(inbound_dist), nothing])
-            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
             @fact node.interfaces[3].message => msg
             ensureMWParametrization!(msg.value)
             @fact isApproxEqual(msg.value.m, (pinv(W + W) * (W*inbound_dist.m + W*inbound_dist.m))) => true
@@ -110,7 +110,7 @@ facts("EqualityNode integration tests") do
             xi = inbound_dist.xi
             V = inbound_dist.V
             node = initializeEqualityNode([Message(inbound_dist), Message(inbound_dist), nothing])
-            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
             @fact node.interfaces[3].message => msg
             ensureXiVParametrization!(msg.value)
             @fact isApproxEqual(msg.value.xi, (xi + xi)) => true
@@ -124,7 +124,7 @@ facts("EqualityNode integration tests") do
             xi = inbound_dist.xi
             W = inbound_dist.W
             node = initializeEqualityNode([Message(inbound_dist), Message(inbound_dist), nothing])
-            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
             @fact node.interfaces[3].message => msg
             ensureXiWParametrization!(msg.value)
             @fact isApproxEqual(msg.value.xi, (xi + xi)) => true
@@ -139,33 +139,33 @@ facts("EqualityNode integration tests") do
 
         # Equal scalars
         node = initializeEqualityNode([Message(1.0), Message(1.0), nothing])
-        msg = ForneyLab.updateNodeMessage!(3, node, Float64)
+        msg = ForneyLab.updateNodeMessage!(3, node, Float64, Float64)
         @fact node.interfaces[3].message => msg
         @fact msg.value => 1.0
         # Unequal scalars
         node = initializeEqualityNode([Message(1.0), Message(1.1), nothing])
-        msg = ForneyLab.updateNodeMessage!(3, node, Float64)
+        msg = ForneyLab.updateNodeMessage!(3, node, Float64, Float64)
         @fact msg.value => 0.0
         # Equal matrices
         node = initializeEqualityNode([Message(ones(2,2)), Message(ones(2,2)), nothing])
-        msg = ForneyLab.updateNodeMessage!(3, node, Array{Float64})
+        msg = ForneyLab.updateNodeMessage!(3, node, Array{Float64, 2}, Array{Float64, 2})
         @fact node.interfaces[3].message => msg
         @fact msg.value => ones(2,2)
         # Unequal matrices (different values) should give zeros matrix
         node = initializeEqualityNode([Message(ones(2,2)), Message(4.0*ones(2,2)), nothing])
-        msg = ForneyLab.updateNodeMessage!(3, node, Array{Float64})
+        msg = ForneyLab.updateNodeMessage!(3, node, Array{Float64, 2}, Array{Float64, 2})
         @fact node.interfaces[3].message => msg
         @fact msg.value => zeros(2,2)
         # Unequal matrices (different size) should give zeros matrix
         node = initializeEqualityNode([Message(ones(2,2)), Message(ones(3,3)), nothing])
-        msg = ForneyLab.updateNodeMessage!(3, node, Array{Float64})
+        msg = ForneyLab.updateNodeMessage!(3, node, Array{Float64, 2}, Array{Float64, 2})
         @fact node.interfaces[3].message => msg
         @fact maximum(msg.value) => 0.0
     end
 
     context("EqualityNode should propagate a GammaMessage") do
         node = initializeEqualityNode([Message(GammaDistribution()), Message(GammaDistribution()), nothing])
-        msg = ForneyLab.updateNodeMessage!(3, node, GammaDistribution)
+        msg = ForneyLab.updateNodeMessage!(3, node, GammaDistribution, GammaDistribution)
         @fact node.interfaces[3].message => msg
         @fact msg.value.a => 1.0
         @fact msg.value.b => 2.0
@@ -173,7 +173,7 @@ facts("EqualityNode integration tests") do
 
     context("EqualityNode should propagate an InverseGammaMessage") do
         node = initializeEqualityNode([Message(InverseGammaDistribution()), Message(InverseGammaDistribution()), nothing])
-        msg = ForneyLab.updateNodeMessage!(3, node, InverseGammaDistribution)
+        msg = ForneyLab.updateNodeMessage!(3, node, InverseGammaDistribution, InverseGammaDistribution)
         @fact node.interfaces[3].message => msg
         @fact msg.value.a => 3.0
         @fact msg.value.b => 2.0

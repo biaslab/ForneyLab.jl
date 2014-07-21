@@ -74,12 +74,13 @@ GaussianNode(; args...) = GaussianNode(false; args...)
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::GaussianNode,
-                            inbound_messages_value_types::Any)
+                            inbound_messages_value_types::Any,
+                            outbound_message_value_type::Any)
     # Select update function depending on the variational or observed nature of the Gaussian node
     if node.variational
-        updateNodeMessageVariational!(outbound_interface_id, node, inbound_messages_value_types)
+        updateNodeMessageVariational!(outbound_interface_id, node, inbound_messages_value_types, outbound_message_value_type)
     else
-        updateNodeMessagePointEstimate!(outbound_interface_id, node, inbound_messages_value_types)
+        updateNodeMessagePointEstimate!(outbound_interface_id, node, inbound_messages_value_types, outbound_message_value_type)
     end
 end
 
@@ -89,13 +90,14 @@ end
 
 function updateNodeMessagePointEstimate!(outbound_interface_id::Int,
                                          node::GaussianNode,
-                                         inbound_messages_value_types::Type{Union(Float64, InverseGammaDistribution)})
+                                         inbound_messages_value_types::Type{Union(Float64, InverseGammaDistribution)},
+                                         outbound_message_value_type::Type{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
     # For interface 1 the calling signature for this function is identical to the variational call.
     # A decision about where to direct the call is made by the invoking updateNodeMessage function.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     # Formulas from table 5.2 in Korl (2005)
     if outbound_interface_id == 3
@@ -123,7 +125,8 @@ function updateNodeMessagePointEstimate!(outbound_interface_id::Int,
 end
 function updateNodeMessagePointEstimate!(outbound_interface_id::Int,
                                          node::GaussianNode,
-                                         inbound_messages_value_types::Type{Union(Float64, GammaDistribution)})
+                                         inbound_messages_value_types::Type{Union(Float64, GammaDistribution)},
+                                         outbound_message_value_type::Type{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
@@ -132,11 +135,12 @@ end
 
 function updateNodeMessagePointEstimate!(outbound_interface_id::Int,
                                          node::GaussianNode,
-                                         inbound_messages_value_types::Type{Float64})
+                                         inbound_messages_value_types::Type{Float64},
+                                         outbound_message_value_type::Type{InverseGammaDistribution})
 
     # Calculate the message for the variance when both m and y are incoming.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     # Formulas from table 5.2 in Korl (2005)
     if outbound_interface_id == 2
@@ -158,7 +162,8 @@ end
 
 function updateNodeMessageVariational!(outbound_interface_id::Int,
                                        node::GaussianNode,
-                                       inbound_messages_value_types::Type{Union(Float64, InverseGammaDistribution)})
+                                       inbound_messages_value_types::Type{Union(Float64, InverseGammaDistribution)},
+                                       outbound_message_value_type::Type{GaussianDistribution})
 
     # Variational update function, takes the marginals as input (instead of the inbound messages)
     # and update the outgoing message on the mean interface of a Gaussian node.
@@ -166,7 +171,7 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
     # A decision about where to direct the call is made by the invoking updateNodeMessage function.
     # Derivation for the update rule can be found in the derivations notebook.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     if outbound_interface_id == 1 # Mean estimation from variance and sample
         y_0 = node.out.partner.message.value # observation
@@ -183,13 +188,14 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
 end
 function updateNodeMessageVariational!(outbound_interface_id::Int,
                                        node::GaussianNode,
-                                       inbound_messages_value_types::Type{Union(Float64, GammaDistribution)})
+                                       inbound_messages_value_types::Type{Union(Float64, GammaDistribution)},
+                                       outbound_message_value_type::Type{GaussianDistribution})
 
     # Variational update function, takes the MARGINALS as input instead of the inbound messages.
     # Update the outgoing message on the mean interface of a Gaussian node.
     # Derivation for the update rule can be found in the derivations notebook.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     if outbound_interface_id == 1 # Mean estimation from variance and sample
         y_0 = node.out.partner.message.value # observation
@@ -207,33 +213,46 @@ end
 
 function updateNodeMessageVariational!(outbound_interface_id::Int,
                                        node::GaussianNode,
-                                       inbound_messages_value_types::Type{Union(Float64, GaussianDistribution)})
+                                       inbound_messages_value_types::Type{Union(Float64, GaussianDistribution)},
+                                       outbound_message_value_type::Type{GammaDistribution})
     # Variational update function, takes the MARGINALS as input instead of the inbound messages.
     # Update the outgoing message on the variance interface of a Gaussian node.
     # Derivation for the update rule can be found in the derivations notebook.
 
     if outbound_interface_id == 2 # Variance/precision estimation from mean and sample
-        if typeof(node.in2.edge.marginal) == GammaDistribution # return standard gamma
-            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaDistribution).value
-            y_0 = node.out.partner.message.value # observation
-            ensureMWParametrization!(node.in1.edge.marginal)
-            m = node.in1.edge.marginal.m[1] # Gaussian distribution
-            W = node.in1.edge.marginal.W[1,1]
-            dist_out.a = 1.5
-            dist_out.b = 0.5*(y_0-m)^2+0.5*inv(W)
-        elseif typeof(node.in2.edge.marginal) == InverseGammaDistribution # Return inverse gamma 
-            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).value
-            y_0 = node.out.partner.message.value # observation
-            ensureMVParametrization!(node.in1.edge.marginal)
-            m = node.in1.edge.marginal.m[1] # Gaussian message
-            V = node.in1.edge.marginal.V[1,1]
-            dist_out.a = -0.5
-            dist_out.b = 0.5*(y_0-m)^2+0.5*V
-        else
-            error("Don't know whether to return gamma or inverse gamma message. Please preset the marginal on the in2 interface's edge of GaussianNode $(node.name).")
-        end
+        dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
+        y_0 = node.out.partner.message.value # observation
+        ensureMWParametrization!(node.in1.edge.marginal)
+        m = node.in1.edge.marginal.m[1] # Gaussian distribution
+        W = node.in1.edge.marginal.W[1,1]
+        dist_out.a = 1.5
+        dist_out.b = 0.5*(y_0-m)^2+0.5*inv(W)
     else
         error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
     end
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+function updateNodeMessageVariational!(outbound_interface_id::Int,
+                                       node::GaussianNode,
+                                       inbound_messages_value_types::Type{Union(Float64, GaussianDistribution)},
+                                       outbound_message_value_type::Type{InverseGammaDistribution})
+    # Variational update function, takes the MARGINALS as input instead of the inbound messages.
+    # Update the outgoing message on the variance interface of a Gaussian node.
+    # Derivation for the update rule can be found in the derivations notebook.
+
+    if outbound_interface_id == 2 # Variance/precision estimation from mean and sample
+        dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
+        y_0 = node.out.partner.message.value # observation
+        ensureMVParametrization!(node.in1.edge.marginal)
+        m = node.in1.edge.marginal.m[1] # Gaussian message
+        V = node.in1.edge.marginal.V[1,1]
+        dist_out.a = -0.5
+        dist_out.b = 0.5*(y_0-m)^2+0.5*V
+    else
+        error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
+    end
+
     return node.interfaces[outbound_interface_id].message
 end

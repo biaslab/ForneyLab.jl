@@ -45,12 +45,12 @@ facts("GainEqualityCompositeNode integration tests") do
     context("A GainEqualityCompositeNode should be able to pass a Gaussian message through its internals") do
         # Forward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), false, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), nothing])
-        msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
+        msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
         @fact msg.value.W => reshape([0.5, 0.25, 0.25, 0.5], 2, 2)
         @fact msg.value.xi => [1.0, 2.0]
         # Backward message
         node = initializeGainEqualityCompositeNode(2.0*eye(2), false, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0]))])
-        msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution)
+        msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution, GaussianDistribution)
         @fact msg.value.W => reshape([5.0, 2.5, 2.5, 5.0], 2, 2)
         @fact msg.value.xi => [3.0, 6.0]
     end
@@ -61,16 +61,16 @@ facts("GainEqualityCompositeNode integration tests") do
         context("GaussianDistribution with (xi,W) parametrization") do
             # Forward
             node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), nothing])
-            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
             @fact msg.value.W => reshape([0.5, 0.25, 0.25, 0.5], 2, 2)
             @fact msg.value.xi => [1.0, 2.0]
             # Backward message
             node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0]))])
-            msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution, GaussianDistribution)
             @fact msg.value.W => reshape([5.0, 2.5, 2.5, 5.0], 2, 2)
             @fact msg.value.xi => [3.0, 6.0]
             node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0]))])
-            msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution, GaussianDistribution)
             @fact msg.value.W => reshape([5.0, 2.5, 2.5, 5.0], 2, 2)
             @fact msg.value.xi => [3.0, 6.0]
         end
@@ -78,16 +78,16 @@ facts("GainEqualityCompositeNode integration tests") do
         context("GaussianDistribution with (m,W) parametrization") do
             # Forward
             node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing])
-            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
             @fact isApproxEqual(msg.value.W, reshape([0.5, 0.25, 0.25, 0.5], 2, 2)) => true
             @fact isApproxEqual(msg.value.m, [2.0, 4.0]) => true
             # Backward message
             node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0]))])
-            msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution, GaussianDistribution)
             @fact isApproxEqual(msg.value.W, reshape([5.0, 2.5, 2.5, 5.0], 2, 2)) => true
             @fact isApproxEqual(msg.value.m, [0.6, 1.2]) => true
             node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0]))])
-            msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution, GaussianDistribution)
             @fact isApproxEqual(msg.value.W, reshape([5.0, 2.5, 2.5, 5.0], 2, 2)) => true
             @fact isApproxEqual(msg.value.m, [0.6, 1.2]) => true
         end
@@ -95,17 +95,17 @@ facts("GainEqualityCompositeNode integration tests") do
         context("GaussianDistribution with (m,V) parametrization") do
             # Forward
             node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing])
-            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
             ensureMVParametrization!(msg.value)
             @fact isApproxEqual(msg.value.V, reshape([2.0, 1.0, 1.0, 2.0], 2, 2)) => true
             @fact isApproxEqual(msg.value.m, [2.0, 4.0]) => true
             # Backward message
             node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing, Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0]))])
-            msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution, GaussianDistribution)
             @fact isApproxEqual(msg.value.V, reshape([0.2, 0.1, 0.1, 0.2], 2, 2)) => true
             @fact isApproxEqual(msg.value.m, [0.6, 1.2]) => true
             node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [nothing, Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0]))])
-            msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution)
+            msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution, GaussianDistribution)
             @fact isApproxEqual(msg.value.V, reshape([0.2, 0.1, 0.1, 0.2], 2, 2)) => true
             @fact isApproxEqual(msg.value.m, [0.6, 1.2]) => true
         end

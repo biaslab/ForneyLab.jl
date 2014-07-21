@@ -63,7 +63,7 @@ type GainAdditionCompositeNode <: CompositeNode
         # Define the internals of the composite node
         self.addition_node = AdditionNode(name="$(name)_internal_addition")
         self.fixed_gain_node = FixedGainNode(A, name="$(name)_internal_gain")
-        Edge(self.fixed_gain_node.out, self.addition_node.in1) # Internal edge
+        Edge(self.fixed_gain_node.out, self.addition_node.in1, GaussianDistribution, GaussianDistribution) # Internal edge
 
         # Initialize the composite node interfaces belonging to the composite node itself.
         self.interfaces[1] = Interface(self)
@@ -106,7 +106,8 @@ backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z
 
 function updateNodeMessage!(outbound_interface_id::Int,
                             node::GainAdditionCompositeNode,
-                            inbound_messages_value_types::Type{GaussianDistribution})
+                            inbound_messages_value_types::Type{GaussianDistribution},
+                            outbound_message_value_type::Type{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
@@ -115,7 +116,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
     else
         if outbound_interface_id == 3
             # Forward message towards "out" interface
-            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
+            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
     
             # msg_i = inbound message on interface i, dist_out is always the calculated outbound message.
             dist_1 = node.interfaces[1].partner.message.value
@@ -167,7 +168,7 @@ function updateNodeMessage!(outbound_interface_id::Int,
             end
         elseif outbound_interface_id == 2
             # Backward message towards "in2" interface
-            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
+            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
             dist_1 = node.interfaces[1].partner.message.value
             dist_3 = node.interfaces[3].partner.message.value

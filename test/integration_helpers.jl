@@ -75,11 +75,11 @@ function initializeChainOfNodes()
     #  1     2     3
     # [C]-->[A]-->[B]-|
 
-    node1 = TerminalNode(3.0)
+    node1 = TerminalNode(reshape([3.0], 1, 1))
     node2 = FixedGainNode([2.0])
     node3 = FixedGainNode([2.0])
-    Edge(node1.out, node2.in1)
-    Edge(node2.out, node3.in1)
+    Edge(node1.out, node2.in1, Array{Float64, 2})
+    Edge(node2.out, node3.in1, Array{Float64, 2})
     return (node1, node2, node3)
 end
 
@@ -353,15 +353,15 @@ function initializeGaussianNodeChain()
         m_eq_nodes[section] = m_eq_node
         gam_eq_nodes[section] = gam_eq_node
         obs_nodes[section] = obs_node
-        y_edges[section] = Edge(g_node.out, obs_node.out)
+        y_edges[section] = Edge(g_node.out, obs_node.out, Float64)
         q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.in1)
-        q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.in2)
+        q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.in2, GammaDistribution)
         # Preset uninformative ('one') messages
         setMarginal!(q_gam_edges[section], uninformative(GammaDistribution))
         setMarginal!(q_m_edges[section], uninformative(GaussianDistribution))
         if section > 1 # Connect sections
             Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1])
-            Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1])
+            Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)
         end
     end
     # Attach beginning and end nodes
@@ -370,9 +370,9 @@ function initializeGaussianNodeChain()
     c_m = TerminalNode(uninformative(GaussianDistribution)) # Neutral 'one' message
     c_gam = TerminalNode(uninformative(GammaDistribution)) # Neutral 'one' message
     Edge(m_prior.out, m_eq_nodes[1].interfaces[1])
-    Edge(s_prior.out, gam_eq_nodes[1].interfaces[1])
+    Edge(s_prior.out, gam_eq_nodes[1].interfaces[1], GammaDistribution)
     Edge(m_eq_nodes[end].interfaces[2], c_m.out)
-    Edge(gam_eq_nodes[end].interfaces[2], c_gam.out)
+    Edge(gam_eq_nodes[end].interfaces[2], c_gam.out, GammaDistribution)
 
     return(g_nodes, obs_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges)
 end
@@ -394,7 +394,7 @@ function initializeLinearCompositeNode(dists::Array{ProbabilityDistribution})
 
     lin_node = LinearCompositeNode(true)
     for intf = 1:5
-        edge = Edge(MockNode(Message(1.0)).out, lin_node.interfaces[intf])
+        edge = Edge(MockNode(Message(dists[intf])).out, lin_node.interfaces[intf], typeof(dists[intf]))
         if dists[intf] != nothing
             edge.marginal = dists[intf]
         end
@@ -458,7 +458,7 @@ function initializeLinearCompositeNodeChain()
         # Connect section within
         a_eq_edges[section] = Edge(a_eq_node.interfaces[3], lin_node.a_in)
         b_eq_edges[section] = Edge(b_eq_node.interfaces[3], lin_node.b_in)
-        gam_eq_edges[section] = Edge(gam_eq_node.interfaces[3], lin_node.noise_in)
+        gam_eq_edges[section] = Edge(gam_eq_node.interfaces[3], lin_node.noise_in, GammaDistribution)
         x_edges[section] = Edge(x_node.out, lin_node.in1)
         y_edges[section] = Edge(lin_node.out, y_node.out)
         # Preset marginals
@@ -471,7 +471,7 @@ function initializeLinearCompositeNodeChain()
         if section > 1 # Connect sections
             Edge(a_eq_nodes[section-1].interfaces[2], a_eq_nodes[section].interfaces[1])
             Edge(b_eq_nodes[section-1].interfaces[2], b_eq_nodes[section].interfaces[1])
-            Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1])
+            Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)
         end
     end
     # Attach beginning and end nodes
@@ -484,10 +484,10 @@ function initializeLinearCompositeNodeChain()
     # connect
     Edge(a_0, a_eq_nodes[1].interfaces[1])
     Edge(b_0, b_eq_nodes[1].interfaces[1])
-    Edge(gam_0, gam_eq_nodes[1].interfaces[1])
+    Edge(gam_0, gam_eq_nodes[1].interfaces[1], GammaDistribution)
     Edge(a_eq_nodes[end].interfaces[2], C_a.out)
     Edge(b_eq_nodes[end].interfaces[2], C_b.out)
-    Edge(gam_eq_nodes[end].interfaces[2], C_gam.out)
+    Edge(gam_eq_nodes[end].interfaces[2], C_gam.out, GammaDistribution)
 
     return(lin_nodes, a_eq_nodes, b_eq_nodes, gam_eq_nodes, a_eq_edges, b_eq_edges, gam_eq_edges, x_edges, y_edges)
 end
