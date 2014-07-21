@@ -24,32 +24,32 @@ end
 facts("LinearCompositeNode integration tests") do
     context("LinearCompositeNode should propagate a backward variational message to in1") do
         lin_node = initializeLinearCompositeNode([uninformative(GaussianDistribution), GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), InverseGammaDistribution(a=10000.0, b=19998.0), GaussianDistribution(m=2.5, V=0.0)])
-        msg = ForneyLab.updateNodeMessage!(1, lin_node, Union(GaussianDistribution, InverseGammaDistribution))
+        msg = ForneyLab.updateNodeMessage!(1, lin_node, Union(GaussianDistribution, InverseGammaDistribution), GaussianDistribution)
         @fact msg.value.m => [1.0]
     end
 
     context("LinearCompositeNode should propagate a backward variational message to a_in") do
         lin_node = initializeLinearCompositeNode([GaussianDistribution(m=1.0, V=0.0), uninformative(GaussianDistribution), GaussianDistribution(m=0.5, V=0.0), InverseGammaDistribution(a=10000.0, b=19998.0), GaussianDistribution(m=2.5, V=0.0)])
-        msg = ForneyLab.updateNodeMessage!(2, lin_node, Union(GaussianDistribution, InverseGammaDistribution))
+        msg = ForneyLab.updateNodeMessage!(2, lin_node, Union(GaussianDistribution, InverseGammaDistribution), GaussianDistribution)
         @fact msg.value.m => [2.0]
     end
 
     context("LinearCompositeNode should propagate a backward variational message to b_in") do
         lin_node = initializeLinearCompositeNode([GaussianDistribution(m=1.0, V=0.0), GaussianDistribution(m=2.0, V=0.0), uninformative(GaussianDistribution), InverseGammaDistribution(a=10000.0, b=19998.0), GaussianDistribution(m=2.5, V=0.0)])
-        msg = ForneyLab.updateNodeMessage!(3, lin_node, Union(GaussianDistribution, InverseGammaDistribution))
+        msg = ForneyLab.updateNodeMessage!(3, lin_node, Union(GaussianDistribution, InverseGammaDistribution), GaussianDistribution)
         @fact msg.value.m => [0.5]
     end
 
     context("LinearCompositeNode should propagate a backward variational message to noise_in") do
         lin_node = initializeLinearCompositeNode([GaussianDistribution(m=1.0, V=0.0), GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), uninformative(InverseGammaDistribution), GaussianDistribution(m=2.5, V=0.0)])
-        msg = ForneyLab.updateNodeMessage!(4, lin_node, Union(GaussianDistribution))
+        msg = ForneyLab.updateNodeMessage!(4, lin_node, GaussianDistribution, InverseGammaDistribution)
         @fact msg.value.a => -0.5
         @fact msg.value.b => 0.0
     end
 
     context("LinearCompositeNode should propagate a forward variational message to out") do
         lin_node = initializeLinearCompositeNode([GaussianDistribution(m=1.0, V=0.0), GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), InverseGammaDistribution(a=10000.0, b=19998.0), uninformative(GaussianDistribution)])
-        msg = ForneyLab.updateNodeMessage!(5, lin_node, Union(GaussianDistribution, InverseGammaDistribution))
+        msg = ForneyLab.updateNodeMessage!(5, lin_node, Union(GaussianDistribution, InverseGammaDistribution), GaussianDistribution)
         @fact msg.value.m => [2.5]
     end
 end

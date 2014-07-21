@@ -112,8 +112,6 @@ function updateNodeMessage!(outbound_interface_id::Int,
     # This function is not exported, and is only meant for internal use.
 
     if !node.use_composite_update_rules
-        println(node.interfaces[outbound_interface_id].internal_schedule)
-        println(executeSchedule(node.interfaces[outbound_interface_id].internal_schedule))
         node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
     else
         if outbound_interface_id == 3

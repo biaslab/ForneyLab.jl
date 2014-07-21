@@ -11,20 +11,24 @@ verbose = false
 setVerbose(verbose_mode=true) = global verbose=verbose_mode
 printVerbose(msg) = if verbose println(msg) end
 
-# Helpers
+# ForneyLab Helpers
 include("helpers.jl")
 
 # Other includes
 import Base.show
 
 # Top-level abstracts
+abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
 typealias MessageValue Union(ProbabilityDistribution, Number, Vector, Matrix)
-abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
-
 abstract Node
 show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
 abstract CompositeNode <: Node
+
+# Distributions
+include("distributions/gaussian.jl")
+include("distributions/gamma.jl")
+include("distributions/inverse_gamma.jl")
 
 type Message{T<:MessageValue}
     # Message has a value payload, which must be a subtype of MessageValue.
@@ -45,27 +49,31 @@ type Interface
     partner::Union(Interface, Nothing) # Partner indicates the interface to which it is connected.
     child::Union(Interface, Nothing)   # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
     message::Union(Message, Nothing)
+    message_value_type::DataType       # Indicates the type of the message value that is carried by the interface
+                                       # The default is a GaussianDistribution, which can be overwitten by the Edge constructor or setMessage! and setMarginal!
     message_dependencies::Array{Interface, 1}   # Optional array of interfaces (of the same node) on which the outbound msg on this interface depends.
                                                 # If this array is #undef, it means that the outbound msg depends on the inbound msgs on ALL OTHER interfaces of the node.
     internal_schedule::Array{Interface, 1}      # Optional schedule that should be executed to calculate outbound message on this interface.
                                                 # The internal_schedule field is used in composite nodes, and holds the schedule for internal message passing.
-    message_value_type::DataType       # Indicates the type of the message value that is carried by the interfce
 
     # Sanity check for matching message types
-    function Interface(node::Node, edge::Union(AbstractEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
+    function Interface(node::Node, edge::Union(AbstractEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing, message_value_type::DataType=GaussianDistribution)
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
-            return new(node, edge, partner, child, message)
+            return new(node, edge, partner, child, message, message_value_type)
         elseif typeof(message) != typeof(partner.message) # Compare message types
             error("Message type of partner does not match with interface message type")
         else
-            return new(node, edge, partner, child, message)
+            return new(node, edge, partner, child, message, message_value_type)
         end
     end
 end
-Interface(node::Node, message::Message) = Interface(node, nothing, nothing, nothing, message)
-Interface(node::Node) = Interface(node, nothing, nothing, nothing, nothing)
+Interface(node::Node, message::Message) = Interface(node, nothing, nothing, nothing, message, GaussianDistribution)
+Interface(node::Node) = Interface(node, nothing, nothing, nothing, nothing, GaussianDistribution)
 show(io::IO, interface::Interface) = println(io, "Interface of $(typeof(interface.node)) with node name $(interface.node.name) holds message of type $(typeof(interface.message)).")
-setMessage!(interface::Interface, message::Message) = (interface.message=deepcopy(message))
+function setMessage!(interface::Interface, message::Message)
+    interface.message_value_type = typeof(message.value)
+    interface.message = deepcopy(message)
+end
 clearMessage!(interface::Interface) = (interface.message=nothing)
 getMessage(interface::Interface) = interface.message
 
@@ -212,10 +220,8 @@ setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, messa
 getForwardMessage(edge::Edge) = edge.tail.message
 getBackwardMessage(edge::Edge) = edge.head.message
 
-# Distributions
-include("distributions/gaussian.jl")
-include("distributions/gamma.jl")
-include("distributions/inverse_gamma.jl")
+# Distribution helpers
+include("distributions/helpers.jl")
 # Nodes
 include("nodes/addition.jl")
 include("nodes/terminal.jl")
@@ -277,9 +283,8 @@ function updateNodeMessage!(outbound_interface::Interface)
     end
 
     # Evaluate node update function
-    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id:")
-     msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_value_types, outbound_interface.message_value_type)
-    printVerbose(msg)
+    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id (inbound $(inbound_message_value_types), outbound $(outbound_interface.message_value_type)):")
+    msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_value_types, outbound_interface.message_value_type)
 
     return msg
 end
@@ -319,6 +324,7 @@ function setMarginal!(edge::Edge, distribution::Any)
 
     # TODO: check this, message value type does not have to be equal to marginal distribution type
     # TODO: marginal should be the product of the message distributions
+    edge.tail.message_value_type = edge.head.message_value_type = typeof(distribution)
     edge.head.message = Message(deepcopy(distribution))
     edge.tail.message = Message(deepcopy(distribution))
     edge.marginal = deepcopy(distribution)

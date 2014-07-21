@@ -51,13 +51,11 @@ facts("GainAdditionCompositeNode integration tests") do
         msg_shortcut = ForneyLab.updateNodeMessage!(3, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)
         #Internal graph
         node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing])
-    println("--------")
         msg_internal = ForneyLab.updateNodeMessage!(3, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)
 
         # TODO: msg_internal returns nothing
 
         # Messages must be equal
-    println("--------")
         ensureMVParametrization!(msg_shortcut.value)
         ensureMVParametrization!(msg_internal.value)
         @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
