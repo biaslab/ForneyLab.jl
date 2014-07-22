@@ -3,7 +3,7 @@ module ForneyLab
 export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message, MessageValue, ProbabilityDistribution
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
-        getMessage, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
+        getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
         generateSchedule, executeSchedule, uninformative, getOrCreateMessage
 
 # Verbosity
@@ -76,19 +76,22 @@ function setMessage!(interface::Interface, message::Message)
 end
 clearMessage!(interface::Interface) = (interface.message=nothing)
 getMessage(interface::Interface) = interface.message
+function getName(interface::Interface)
+    # Return interface name
+    for field in names(interface.node)
+        if is(getfield(interface.node, field), interface)
+            return string(field)
+        end
+    end
+    return ""
+end
 
 typealias Schedule Array{Interface, 1}
 function show(io::IO, schedule::Schedule)
     # Show schedules in a specific way
     println(io, "Message passing schedule:")
     for interface in schedule
-        interface_name = ""
-        for field in names(interface.node)
-            if is(getfield(interface.node, field), interface)
-                interface_name = "($(string(field)))"
-                break
-            end
-        end
+        interface_name = (getName(interface)!="") ? "($(getName(interface)))" : ""
         println(io, " $(typeof(interface.node)) $(interface.node.name):$(findfirst(interface.node.interfaces, interface)) $(interface_name)")
     end
 end
@@ -358,8 +361,8 @@ function clearMessages!(edge::Edge)
 end
 
 # Functions to clear ALL MESSAGES in the graph
-clearAllMessages!(seed_node::Node) = map(clearMessages!, getAllNodesInGraph(seed_node))
-clearAllMessages!(seed_edge::Edge) = map(clearMessages!, getAllNodesInGraph(seed_edge.tail))
+clearAllMessages!(seed_node::Node) = map(clearMessages!, getAllNodes(seed_node, open_composites=true))
+clearAllMessages!(seed_edge::Edge) = map(clearMessages!, getAllNodes(seed_edge.tail, open_composites=true))
 
 function generateSchedule(outbound_interface::Interface)
     # Generate a schedule that can be executed to calculate the outbound message on outbound_interface.
@@ -431,20 +434,36 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedul
     return push!(backtrace, outbound_interface)
 end
 
-function getAllNodesInGraph(seed_node::Node, node_array::Array{Node,1}=Array(Node,0))
-    # Return a list of all nodes in the graph
+function getAllNodes(seed_node::Node, node_array::Array{Node,1}=Array(Node,0); open_composites::Bool=true)
+    # Return a list of all nodes
+    # If open_composites is false, the search will not pass through composite node boundaries.
     if !(seed_node in node_array)
         push!(node_array, seed_node)
+        # Partners
         for node_interface in seed_node.interfaces
             if node_interface.partner != nothing
-                # Recursion
-                getAllNodesInGraph(node_interface.partner.node, node_array)
+                if node_interface.partner.partner==node_interface || open_composites
+                    # Recursion
+                    getAllNodes(node_interface.partner.node, node_array, open_composites=open_composites)
+                end
             end
         end
+        # Children
+        if open_composites && typeof(seed_node)<:CompositeNode
+            for field in names(seed_node)
+                if typeof(getfield(seed_node, field)) <: Node
+                    # Recursion
+                    getAllNodes(getfield(seed_node, field), node_array, open_composites=open_composites)
+                end
+            end
+        end        
     end
 
     return node_array
 end
+
+# Utils
+include("visualization.jl")
 
 try
     # Try to load user-defined extensions

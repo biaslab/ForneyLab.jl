@@ -11,10 +11,12 @@ Add the ForneyLab package to your Julia installation:
 ```jl
 Pkg.clone("https://github.com/spsbrats/ForneyLab.jl.git")
 ```
-To update an already installed package, use:
+To update, use:
 ```jl
 Pkg.update()
 ```
+If you want to be able to use the graph visualization functions, you'll also need to have [GraphViz](http://www.graphviz.org/) installed. On Linux, just use `apt-get install graphviz` or `yum install graphviz`.
+
 Usage
 =====
 Import ForneyLab:
