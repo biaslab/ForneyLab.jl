@@ -66,12 +66,44 @@ function graph2dot(composite_node::CompositeNode)
 end
 graph2dot(seed_node::Node) = graph2dot(getAllNodes(seed_node, open_composites=false))
 
-function graphViz(n::Union(Node, Array{Node,1}))
+function graphViz(n::Union(Node, Array{Node,1}); external_viewer::Bool=false)
     # Generates a DOT graph and shows it
     dot_graph = graph2dot(n)
-    stdin, proc = writesto(`dot -Tx11`)
+    if external_viewer
+        viewDotExternal(dot_graph)
+    else
+        try
+            # For iJulia notebook
+            display("image/svg+xml", dot2svg(dot_graph))
+        catch
+            viewDotExternal(dot_graph)
+        end
+    end
+end
+
+function dot2svg(dot_graph::String)
+    # Generate SVG image from DOT graph
+    stdout, stdin, proc = readandwrite(`dot -Tsvg`)
     write(stdin, dot_graph)
     close(stdin)
+    return readall(stdout)
+end
+
+function viewDotExternal(dot_graph::String)
+    # View a DOT graph in an external viewer
+    try
+        stdin, proc = writesto(`dot -Tx11`)
+        write(stdin, dot_graph)
+        close(stdin)
+    catch
+        # Write the image to a file and open it
+        svg = dot2svg(dot_graph)
+        filename = tempname()*".svg"
+        open(filename, "w") do f
+            write(f, svg)
+        end
+        viewFile(filename)
+    end
 end
 
 function graphPdf(n::Union(Node, Array{Node,1}), filename::String)
