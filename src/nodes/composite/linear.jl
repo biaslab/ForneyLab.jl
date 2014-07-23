@@ -4,7 +4,7 @@
 # Description:
 #   Linear variational node for parameter estimation on a linear function.
 #
-#         a_in  b_in  noise_in
+#         slope offset  noise
 #            |  |       |
 #       |-----------------|
 #       |    |  |       | |
@@ -20,11 +20,11 @@
 # Interface ids, (names) and supported message types:
 #   1. in1:
 #       GaussianDistribution (marginal)
-#   2. a_in:
+#   2. slope:
 #       GaussianDistribution (marginal)
-#   3. b_in:
+#   3. offset:
 #       GaussianDistribution (marginal)
-#   4. noise_in:
+#   4. noise:
 #       InvertedGammaDistribution (marginal)
 #       GammaDistribution (marginal)
 #   3. out:
@@ -45,9 +45,9 @@ type LinearCompositeNode <: CompositeNode
     interfaces::Array{Interface,1}
     # Helper fields filled by constructor
     in1::Interface
-    a_in::Interface
-    b_in::Interface
-    noise_in::Interface
+    slope::Interface
+    offset::Interface
+    noise::Interface
     out::Interface
 
     function LinearCompositeNode(use_composite_update_rules::Bool=true, variational::Bool=true; name = "unnamed", args...)
@@ -67,9 +67,9 @@ type LinearCompositeNode <: CompositeNode
         end
         # Init named interface handles
         self.in1 = self.interfaces[1]
-        self.a_in = self.interfaces[2]
-        self.b_in = self.interfaces[3]
-        self.noise_in = self.interfaces[4]
+        self.slope = self.interfaces[2]
+        self.offset = self.interfaces[3]
+        self.noise = self.interfaces[4]
         self.out = self.interfaces[5]
 
         return self
@@ -94,16 +94,16 @@ function updateNodeMessage!(outbound_interface_id::Int,
         ensureMVParametrization!(node.interfaces[i].edge.marginal)
     end
     # Get the variables beforehand for more readable update equations
-    mu_a = node.a_in.edge.marginal.m[1]
-    s_a = node.a_in.edge.marginal.V[1, 1] # sigma_a^2
-    mu_b = node.b_in.edge.marginal.m[1]
-    s_b = node.b_in.edge.marginal.V[1, 1] # sigma_b^2
+    mu_a = node.slope.edge.marginal.m[1]
+    s_a = node.slope.edge.marginal.V[1, 1] # sigma_a^2
+    mu_b = node.offset.edge.marginal.m[1]
+    s_b = node.offset.edge.marginal.V[1, 1] # sigma_b^2
     mu_x2 = node.out.edge.marginal.m[1]
     s_x2 = node.out.edge.marginal.V[1, 1] # sigma_x2^2
     mu_x1 = node.in1.edge.marginal.m[1]
     s_x1 = node.in1.edge.marginal.V[1, 1] # sigma_x1^2
-    a_s = node.noise_in.edge.marginal.a
-    b_s = node.noise_in.edge.marginal.b
+    a_s = node.noise.edge.marginal.a
+    b_s = node.noise.edge.marginal.b
 
     if outbound_interface_id == 1 # in1
         dist_out.m = [(mu_a*(mu_x2 - mu_b))/(s_a + mu_a^2)]
@@ -147,16 +147,16 @@ function updateNodeMessage!(outbound_interface_id::Int,
         ensureMWParametrization!(node.interfaces[i].edge.marginal)
     end
     # Get the variables beforehand for more readable update equations
-    mu_a = node.a_in.edge.marginal.m[1]
-    gam_a = node.a_in.edge.marginal.W[1, 1] # gamma_a
-    mu_b = node.b_in.edge.marginal.m[1]
-    gam_b = node.b_in.edge.marginal.W[1, 1] # gamma_b
+    mu_a = node.slope.edge.marginal.m[1]
+    gam_a = node.slope.edge.marginal.W[1, 1] # gamma_a
+    mu_b = node.offset.edge.marginal.m[1]
+    gam_b = node.offset.edge.marginal.W[1, 1] # gamma_b
     mu_x2 = node.out.edge.marginal.m[1]
     gam_x2 = node.out.edge.marginal.W[1, 1] # gamma_x2
     mu_x1 = node.in1.edge.marginal.m[1]
     gam_x1 = node.in1.edge.marginal.W[1, 1] # gamma_x1
-    a_gam = node.noise_in.edge.marginal.a
-    b_gam = node.noise_in.edge.marginal.b
+    a_gam = node.noise.edge.marginal.a
+    b_gam = node.noise.edge.marginal.b
 
     if outbound_interface_id == 1 # in1
         dist_out.m = [(mu_a*(mu_x2 - mu_b))/(inv(gam_a) + mu_a^2)]
@@ -201,10 +201,10 @@ function updateNodeMessage!(outbound_interface_id::Int,
     end
 
     # Get the variables beforehand for more readable update equations
-    mu_a = node.a_in.edge.marginal.m[1]
-    s_a = node.a_in.edge.marginal.V[1, 1] # sigma_a^2
-    mu_b = node.b_in.edge.marginal.m[1]
-    s_b = node.b_in.edge.marginal.V[1, 1] # sigma_b^2
+    mu_a = node.slope.edge.marginal.m[1]
+    s_a = node.slope.edge.marginal.V[1, 1] # sigma_a^2
+    mu_b = node.offset.edge.marginal.m[1]
+    s_b = node.offset.edge.marginal.V[1, 1] # sigma_b^2
     mu_x2 = node.out.edge.marginal.m[1]
     s_x2 = node.out.edge.marginal.V[1, 1] # sigma_x2^2
     mu_x1 = node.in1.edge.marginal.m[1]
@@ -236,10 +236,10 @@ function updateNodeMessage!(outbound_interface_id::Int,
     end
 
     # Get the variables beforehand for more readable update equations
-    mu_a = node.a_in.edge.marginal.m[1]
-    gam_a = node.a_in.edge.marginal.W[1, 1] # gamma_a
-    mu_b = node.b_in.edge.marginal.m[1]
-    gam_b = node.b_in.edge.marginal.W[1, 1] # gamma_b
+    mu_a = node.slope.edge.marginal.m[1]
+    gam_a = node.slope.edge.marginal.W[1, 1] # gamma_a
+    mu_b = node.offset.edge.marginal.m[1]
+    gam_b = node.offset.edge.marginal.W[1, 1] # gamma_b
     mu_x2 = node.out.edge.marginal.m[1]
     gam_x2 = node.out.edge.marginal.W[1, 1] # gamma_x2
     mu_x1 = node.in1.edge.marginal.m[1]

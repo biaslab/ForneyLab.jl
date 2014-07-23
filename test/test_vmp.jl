@@ -24,8 +24,8 @@ facts("VMP implementation integration tests") do
         upward_y = Array(Interface, 0)
         for node = g_nodes
             push!(upward_y, node.out.partner)
-            push!(upward_y, node.in1)
-            push!(upward_y, node.in2)
+            push!(upward_y, node.mean)
+            push!(upward_y, node.precision)
         end
         # Put it all together
         sumproduct_schedule = [left_update_run_m, right_update_run_m, downward_m, left_update_run_gam, right_update_run_gam, downward_gam, upward_y]
@@ -72,9 +72,9 @@ facts("VMP implementation integration tests") do
         for node = lin_nodes
             push!(node_update, node.out.partner)
             push!(node_update, node.in1.partner)
-            push!(node_update, node.a_in)
-            push!(node_update, node.b_in)
-            push!(node_update, node.noise_in)
+            push!(node_update, node.slope)
+            push!(node_update, node.offset)
+            push!(node_update, node.noise)
         end
         # Put it all together
         sumproduct_schedule = [left_update_run_a, right_update_run_a, downward_a, left_update_run_b, right_update_run_b, downward_b, left_update_run_gam, right_update_run_gam, downward_gam, node_update]

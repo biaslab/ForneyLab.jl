@@ -7,8 +7,9 @@ facts("GaussianNode unit tests") do
         node = GaussianNode()
         @fact typeof(node) => GaussianNode
         @fact length(node.interfaces) => 3
-        @fact node.in1 => node.interfaces[1]
-        @fact node.in2 => node.interfaces[2]
+        @fact node.mean => node.interfaces[1]
+        @fact node.precision => node.interfaces[2]
+        @fact node.variance => node.interfaces[2]
         @fact node.out => node.interfaces[3]
         @fact node.variational => false # default variational to false
     end
@@ -75,14 +76,14 @@ facts("GaussianNode integration tests") do
         context("Variational GaussianNode should propagate a backward variational message to the variance or precision") do
             # Standard
             node = initializeVariationalGaussianNode([Message(GaussianDistribution(m=4.0, W=2.0)), nothing, Message(2.0)])
-            node.in2.edge.marginal = GammaDistribution() # Let them know what I expect returned
+            node.precision.edge.marginal = GammaDistribution() # Let them know what I expect returned
             msg = ForneyLab.updateNodeMessage!(2, node, Union(Float64, GaussianDistribution), GammaDistribution)
             @fact typeof(msg) => Message{GammaDistribution}
             @fact msg.value.a => 1.5
             @fact msg.value.b => 2.25
             # Inverse
             node = initializeVariationalGaussianNode([Message(GaussianDistribution(m=4.0, V=1.0)), nothing, Message(2.0)])
-            node.in2.edge.marginal = InverseGammaDistribution() # Let them know what I expect returned
+            node.variance.edge.marginal = InverseGammaDistribution() # Let them know what I expect returned
             msg = ForneyLab.updateNodeMessage!(2, node, Union(Float64, GaussianDistribution), InverseGammaDistribution)
             @fact typeof(msg) => Message{InverseGammaDistribution}
             @fact msg.value.a => -0.5

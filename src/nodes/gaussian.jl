@@ -4,29 +4,29 @@
 # Description:
 #   Node converting an input mean and precision
 #   to a univariate Gaussian distribution.
-#   Estimate precision with given inputs and vice versa,
-#   GaussianNode has two inference methods,
-#   standard sumproduct and variational message passing.
-#   Wether to use standard or variational updates
-#   is set by the variational::Bool field.
+#   
+#   The GaussianNode has two different names for its second interface,
+#   namely precision and variance. These named handles are simply
+#   pointers to one and the same interface. 
 #
-#         in1 (mean)
+#         mean
 #          |
 #          v  out
 #   ----->[N]----->
-#  in2 (prec.)
+#  precision/
+#  variance
 #
-#   out = Message(GaussianDistribution(m=in1, W=in2))
+#   out = Message(GaussianDistribution(m=mean, W=precision))
 #
 #   Example:
 #       GaussianNode([1.0], [0.1]; name="my_node")
 #
 # Interface ids, (names) and supported message types:
 #   Receiving:
-#   1. (in1):
+#   1. (mean):
 #       Message{Float64}
 #       GaussianDistribution (marginal)
-#   2. (in2):
+#   2. (precision / variance):
 #       Message{Float64}
 #       GammaDistribution (marginal)
 #       InverseGammaDistribution (marginal)
@@ -34,9 +34,9 @@
 #       Message{Float64}
 #
 #   Sending:
-#   1. (in1):
+#   1. (mean):
 #       Message{GaussianDistribution}
-#   2. (in2):
+#   2. (precision / variance):
 #       Message{GammaDistribution}
 #       Message{InverseGammaDistribution}
 #   3. (out):
@@ -50,8 +50,9 @@ type GaussianNode <: Node
     interfaces::Array{Interface,1}
     variational::Bool
     # Helper fields filled by constructor
-    in1::Interface
-    in2::Interface
+    mean::Interface
+    precision::Interface # alias
+    variance::Interface # alias
     out::Interface
     function GaussianNode(variational; name="unnamed", args...)
         self = new(name, Array(Interface, 3), variational)
@@ -60,8 +61,9 @@ type GaussianNode <: Node
         self.interfaces[2] = Interface(self)
         self.interfaces[3] = Interface(self)
         # Init named interface handles
-        self.in1 = self.interfaces[1]
-        self.in2 = self.interfaces[2]
+        self.mean = self.interfaces[1]
+        self.precision = self.interfaces[2] # alias
+        self.variance = self.interfaces[2] # alias
         self.out = self.interfaces[3]
         return self
     end
@@ -175,8 +177,8 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
 
     if outbound_interface_id == 1 # Mean estimation from variance and sample
         y_0 = node.out.partner.message.value # observation
-        a = node.in2.edge.marginal.a # gamma message
-        b = node.in2.edge.marginal.b
+        a = node.variance.edge.marginal.a # gamma message
+        b = node.variance.edge.marginal.b
         dist_out.m = [y_0]
         dist_out.V = reshape([((a+1)/b)], 1, 1)
         dist_out.xi = nothing
@@ -199,8 +201,8 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
 
     if outbound_interface_id == 1 # Mean estimation from variance and sample
         y_0 = node.out.partner.message.value # observation
-        a = node.in2.edge.marginal.a # gamma distribution
-        b = node.in2.edge.marginal.b
+        a = node.precision.edge.marginal.a # gamma distribution
+        b = node.precision.edge.marginal.b
         dist_out.m = [y_0]
         dist_out.V = nothing
         dist_out.xi = nothing
@@ -222,9 +224,9 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
     if outbound_interface_id == 2 # Variance/precision estimation from mean and sample
         dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
         y_0 = node.out.partner.message.value # observation
-        ensureMWParametrization!(node.in1.edge.marginal)
-        m = node.in1.edge.marginal.m[1] # Gaussian distribution
-        W = node.in1.edge.marginal.W[1,1]
+        ensureMWParametrization!(node.mean.edge.marginal)
+        m = node.mean.edge.marginal.m[1] # Gaussian distribution
+        W = node.mean.edge.marginal.W[1,1]
         dist_out.a = 1.5
         dist_out.b = 0.5*(y_0-m)^2+0.5*inv(W)
     else
@@ -245,9 +247,9 @@ function updateNodeMessageVariational!(outbound_interface_id::Int,
     if outbound_interface_id == 2 # Variance/precision estimation from mean and sample
         dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
         y_0 = node.out.partner.message.value # observation
-        ensureMVParametrization!(node.in1.edge.marginal)
-        m = node.in1.edge.marginal.m[1] # Gaussian message
-        V = node.in1.edge.marginal.V[1,1]
+        ensureMVParametrization!(node.mean.edge.marginal)
+        m = node.mean.edge.marginal.m[1] # Gaussian message
+        V = node.mean.edge.marginal.V[1,1]
         dist_out.a = -0.5
         dist_out.b = 0.5*(y_0-m)^2+0.5*V
     else

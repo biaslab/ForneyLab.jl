@@ -217,11 +217,11 @@ function initializeVariationalGaussianNode(msgs::Array{Any})
     #                
 
     g_node = GaussianNode(true)
-    edge = Edge(MockNode(Message(GaussianDistribution())).out, g_node.in1)
+    edge = Edge(MockNode(Message(GaussianDistribution())).out, g_node.mean)
     if msgs[1] != nothing
         edge.marginal = msgs[1].value
     end
-    edge = Edge(MockNode(Message(GammaDistribution())).out, g_node.in2)
+    edge = Edge(MockNode(Message(GammaDistribution())).out, g_node.precision)
     if msgs[2] != nothing
         edge.marginal = msgs[2].value
     end
@@ -354,8 +354,8 @@ function initializeGaussianNodeChain()
         gam_eq_nodes[section] = gam_eq_node
         obs_nodes[section] = obs_node
         y_edges[section] = Edge(g_node.out, obs_node.out, Float64)
-        q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.in1)
-        q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.in2, GammaDistribution)
+        q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.mean)
+        q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.precision, GammaDistribution)
         # Preset uninformative ('one') messages
         setMarginal!(q_gam_edges[section], uninformative(GammaDistribution))
         setMarginal!(q_m_edges[section], uninformative(GaussianDistribution))
@@ -381,7 +381,7 @@ function initializeLinearCompositeNode(dists::Array{ProbabilityDistribution})
     # Set up a linear composite node and prepare the marginals
     # A MockNode is connected for each argument message
     #
-    #        [a_in][b_in][noise_in]
+    #        [slope][offset][noise]
     #            |  |       |
     #       |-----------------|
     #       |    |  |       | |
@@ -456,9 +456,9 @@ function initializeLinearCompositeNodeChain()
         x_nodes[section] = x_node
         y_nodes[section] = y_node
         # Connect section within
-        a_eq_edges[section] = Edge(a_eq_node.interfaces[3], lin_node.a_in)
-        b_eq_edges[section] = Edge(b_eq_node.interfaces[3], lin_node.b_in)
-        gam_eq_edges[section] = Edge(gam_eq_node.interfaces[3], lin_node.noise_in, GammaDistribution)
+        a_eq_edges[section] = Edge(a_eq_node.interfaces[3], lin_node.slope)
+        b_eq_edges[section] = Edge(b_eq_node.interfaces[3], lin_node.offset)
+        gam_eq_edges[section] = Edge(gam_eq_node.interfaces[3], lin_node.noise, GammaDistribution)
         x_edges[section] = Edge(x_node.out, lin_node.in1)
         y_edges[section] = Edge(lin_node.out, y_node.out)
         # Preset marginals
