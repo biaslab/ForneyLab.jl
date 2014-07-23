@@ -167,10 +167,10 @@ facts("Connections between nodes integration tests") do
 
 end
 
-facts("getAllNodesInGraph integration tests") do
-    context("getAllNodesInGraph() should return an array of all nodes in the graph") do
+facts("getAllNodes integration tests") do
+    context("getAllNodes() should return an array of all nodes in the graph") do
         nodes = initializeLoopyGraph()
-        found_nodes = ForneyLab.getAllNodesInGraph(nodes[1])
+        found_nodes = ForneyLab.getAllNodes(nodes[1])
         @fact length(found_nodes) => length(nodes)
         for node in nodes
             @fact node in found_nodes => true
