@@ -102,7 +102,7 @@ GaussianNode(; args...) = GaussianNode(false; args...)
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_value_type::Type{GaussianDistribution},
-                            msg1::Message{Float64},
+                            msg1::Any,
                             msg2::Message{InverseGammaDistribution},
                             msg3::Any)
     # Forward / point estimate / InverseGamma
@@ -118,25 +118,7 @@ function updateNodeMessage!(node::GaussianNode,
         dist_out.V = reshape([gamma.b/(gamma.a-1)], 1, 1)
         dist_out.xi = nothing
         dist_out.W = nothing
-    else
-        error("Message-type ($(inbound_message_types)) outbound_interface_id ($(outbound_interface_id)) combination not defined for node $(node.name) of type $(typeof(node)).")
-    end
-
-    return node.interfaces[outbound_interface_id].message
-end
-
-function updateNodeMessage!(node::GaussianNode,
-                            outbound_interface_id::Int,
-                            outbound_message_value_type::Type{GaussianDistribution},
-                            msg1::Any,
-                            msg2::Message{InverseGammaDistribution},
-                            msg3::Message{Float64})
-    # Backward over mean / point estimate / InverseGamma
-
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
-
-    # Formulas from table 5.2 in Korl (2005)
-    if is(node.interfaces[outbound_interface_id], node.mean)
+    elseif is(node.interfaces[outbound_interface_id], node.mean)
         # Backward over mean edge
         # Rules not in Korl, but equivalent by symmetry
         gamma = msg2.value

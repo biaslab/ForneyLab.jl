@@ -226,6 +226,7 @@ getBackwardMessage(edge::Edge) = edge.head.message
 # Distribution helpers
 include("distributions/helpers.jl")
 # Nodes
+include("nodes/clamp.jl")
 include("nodes/addition.jl")
 include("nodes/terminal.jl")
 include("nodes/equality.jl")

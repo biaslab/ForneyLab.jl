@@ -18,7 +18,7 @@ include("test_helpers.jl") # Tests for ForneyLab helper methods
 facts("General node properties unit tests") do
     context("Node properties should include interfaces and name") do
         for NodeType in [subtypes(Node), subtypes(CompositeNode)]
-            if NodeType != CompositeNode && NodeType != MockNode
+            if NodeType != CompositeNode && NodeType != MockNode && NodeType != ClampNode
                 @fact typeof(NodeType().interfaces) => Array{Interface, 1} # Check for interface array
                 @fact length(NodeType().interfaces) >= 1 => true # Check length of interface array
                 @fact typeof(NodeType().name) => ASCIIString
@@ -90,6 +90,7 @@ end
 include("distributions/test_gaussian.jl")
 include("distributions/test_gamma.jl")
 include("distributions/test_inverse_gamma.jl")
+include("nodes/test_clamp.jl")
 include("nodes/test_addition.jl")
 include("nodes/test_terminal.jl")
 include("nodes/test_equality.jl")
