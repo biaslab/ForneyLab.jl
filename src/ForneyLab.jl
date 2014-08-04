@@ -265,29 +265,30 @@ function updateNodeMessage!(outbound_interface::Interface)
     node = outbound_interface.node
 
     # Determine types of inbound messages
-    inbound_message_value_types = Union() # Union of all inbound message value types (i.e. probability distributions)
+    inbound_messages = Array{Union(Message, MessageValue)} # Union of all inbound message value types (i.e. probability distributions)
     outbound_interface_id = 0
     for node_interface_id = 1:length(node.interfaces)
         node_interface = node.interfaces[node_interface_id]
         if is(node_interface, outbound_interface)
             outbound_interface_id = node_interface_id
         end
-        if (!isdefined(outbound_interface, :message_dependencies) && outbound_interface_id==node_interface_id) ||
-           (isdefined(outbound_interface, :message_dependencies) && !(node_interface in outbound_interface.message_dependencies))
-            continue
-        end
         if node_interface.partner==nothing
             error("Cannot receive messages on disconnected interface $(node_interface_id) of $(typeof(node)) $(node.name)")
         elseif node_interface.partner.message==nothing
             error("There is no inbound message present on the partner of interface $(node_interface_id) of $(typeof(node)) $(node.name)")
         end
-        # TODO: how to handle variational nodes that take the marginal as input? Marginal distribution type does not have to be the same as message value type
-        inbound_message_value_types = Union(inbound_message_value_types, node_interface.partner.message_value_type)
+        # Build array for overloading
+        # TODO: PROPERLY CHECK FOR VARIATIONAL
+        if node_interface.edge.marginal != nothing #node_interface.variational
+            append!(inbound_messages, node_interface.edge.marginal)
+        else
+            append!(inbound_messages, node_interface.partner.message)
+        end
     end
 
     # Evaluate node update function
-    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id (inbound $(inbound_message_value_types), outbound $(outbound_interface.message_value_type)):")
-    msg = updateNodeMessage!(outbound_interface_id, node, inbound_message_value_types, outbound_interface.message_value_type)
+    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id (outbound $(outbound_interface.message_value_type)):")
+    msg = updateNodeMessage!(node, outbound_interface_id, outbound_interface.message_value_type, inbound_messages...)
 
     return msg
 end
