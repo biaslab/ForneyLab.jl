@@ -439,3 +439,11 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     @fact node1.in1.partner.message.value => 1.0
     @fact node2.out.partner.message.value => 2.0
 end
+
+function validateOutboundMessage(node::Node, outbound_interface_id::Int, outbound_type::DataType, inbound_messages::Array, correct_outbound_value)
+    msg = ForneyLab.updateNodeMessage!(node, outbound_interface_id, outbound_type, inbound_messages...)
+    @fact node.interfaces[outbound_interface_id].message => msg
+    @fact node.interfaces[outbound_interface_id].message.value => correct_outbound_value
+
+    return node.interfaces[outbound_interface_id].message
+end

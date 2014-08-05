@@ -21,7 +21,8 @@ export
     ensureXiVParametrization!,
     ensureXiWParametrization!,
     isWellDefined,
-    isConsistent
+    isConsistent,
+    ==
 
 type GaussianDistribution <: ProbabilityDistribution
     m::Union(Vector{Float64}, Nothing)    # Mean vector
@@ -152,3 +153,7 @@ ensureMVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureMDe
 ensureMWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureMDefined!(dist))
 ensureXiVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureXiDefined!(dist))
 ensureXiWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
+
+function ==(a::GaussianDistribution, b::GaussianDistribution)
+    return true
+end

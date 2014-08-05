@@ -123,8 +123,8 @@ function updateNodeMessage!(node::AdditionNode,
 
     # Calculations for the GaussianDistribution type; Korl (2005), table 4.1
     # Backward message, one message on the incoming edge and one on the outgoing edge.
-    dist_1or2 = (outbound_interface_id==1) ? node.interfaces[2].partner.message.value : node.interfaces[1].partner.message.value
-    dist_3 = node.interfaces[3].partner.message.value
+    dist_1or2 = (outbound_interface_id==1) ? msg_in2.value : msg_in1.value
+    dist_3 = msg_out.value
 
     # Select parameterization
     # Order is from least to most computationally intensive
