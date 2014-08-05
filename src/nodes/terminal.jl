@@ -45,14 +45,13 @@ end
 # Overload firstFreeInterface since EqualityNode is symmetrical in its interfaces
 firstFreeInterface(node::TerminalNode) = (node.out.partner==nothing) ? node.out : error("No free interface on $(typeof(node)) $(node.name)")
 
-function updateNodeMessage!(outbound_interface_id::Int,
-                            node::TerminalNode,
-                            inbound_messages_value_types::Type{None}=None,
-                            outbound_message_value_type::DataType=Any)
+function updateNodeMessage!(node::TerminalNode,
+                            outbound_interface_id::Int,
+                            outbound_message_value_type::DataType,
+                            ::Any)
     # Calculate an outbound message. The TerminalNode does not accept incoming messages,
     # therefore inbound_messages_value_types is only present for consistency. 
     # This function is not exported, and is only meant for internal use.
-
-    # Just put node.value in the outbound value
-    return node.interfaces[outbound_interface_id].message = Message(node.value)
+    (typeof(node.value) <: outbound_message_value_type) || error("TerminalNode cannot produce a message with payload type $(outbound_message_value_type) since the node value is of type $(typeof(node.value))")
+    return node.out.message = Message(node.value)
 end
