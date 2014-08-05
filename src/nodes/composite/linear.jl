@@ -50,7 +50,7 @@ type LinearCompositeNode <: CompositeNode
     noise::Interface
     out::Interface
 
-    function LinearCompositeNode(use_composite_update_rules::Bool=true, variational::Bool=true; name = "unnamed", args...)
+    function LinearCompositeNode(use_composite_update_rules::Bool=true, variational::Bool=true; name = "unnamed", form::ASCIIString="moment", args...)
         if use_composite_update_rules == false # Check
             error("LinearCompositeNode $(name) does not support explicit internal message passing")
         end
@@ -60,21 +60,34 @@ type LinearCompositeNode <: CompositeNode
 
         self = new(use_composite_update_rules, variational, name, Array(Interface, 5))
 
-        # Define the internals of the composite node
-        # Initialize the composite node interfaces belonging to the composite node itself.
-        for i = 1:5
-            self.interfaces[i] = Interface(self)
+        # Set up the interfaces
+        param_list = [:in1, :slope, :offset, :noise, :out]
+        for i = 1:length(param_list)
+            self.interfaces[i] = Interface(self) # Construct interface
+            setfield(self, param_list[i], self.interfaces[i]) # Set named interfaces
+
+            # Clamp parameter values when given as argument
+            if haskey(args, param_list[i])
+                Edge(ForneyLab.ClampNode(Message(args[param_list[i]])).out, self.mean, typeof(args[param_list[i]])) # Connect clamp node
+            end
         end
-        # Init named interface handles
-        self.in1 = self.interfaces[1]
-        self.slope = self.interfaces[2]
-        self.offset = self.interfaces[3]
-        self.noise = self.interfaces[4]
-        self.out = self.interfaces[5]
 
         return self
     end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ############################################
 # Variational update functions

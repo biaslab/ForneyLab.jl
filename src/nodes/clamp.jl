@@ -11,8 +11,9 @@ type ClampNode <: Node
     out::Interface
 
     function ClampNode()
-        self = new()
-        self.out = Interface(self)
+    	self = new()
+    	self.out = Interface(self)
+    	return self
     end
 end
 
