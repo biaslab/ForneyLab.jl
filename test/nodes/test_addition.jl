@@ -137,107 +137,103 @@ facts("AdditionNode unit tests") do
     end
 
     # TODO: fix these multivariate tests
-    # context("AdditionNode should propagate a multivariate GaussianDistribution") do
-    #     context("AdditionNode should propagate a multivariate GaussianDistribution with (m,V) parametrization") do
-    #         mean = [1.0:3.0]
-    #         variance = reshape([4.0, 3.0, 2.0,
-    #                             3.0, 4.0, 3.0,
-    #                             2.0, 3.0, 4.0], 3, 3)
-    #         # Forward message
-    #         inbound_array = [Message(GaussianDistribution(m=mean, V=variance)), Message(GaussianDistribution(m=mean, V=variance)), nothing]
-    #         msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
-    #         @fact node.interfaces[3].message => msg
-    #         @fact node.interfaces[3].message.value.m => [2.0, 4.0, 6.0]
-    #         @fact node.interfaces[3].message.value.V => 2.0*variance
-    #         # Backward messages
-    #         inbound_array = [nothing, Message(GaussianDistribution(m=mean, V=variance)), Message(GaussianDistribution(m=mean, V=variance))]
-    #         msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution, GaussianDistribution)
-    #         @fact node.interfaces[1].message => msg
-    #         @fact node.interfaces[1].message.value.m => [0.0, 0.0, 0.0]
-    #         @fact node.interfaces[1].message.value.V => 2.0*variance
-    #         inbound_array = [Message(GaussianDistribution(m=mean, V=variance)), nothing, Message(GaussianDistribution(m=mean, V=variance))]
-    #         msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution, GaussianDistribution)
-    #         @fact node.interfaces[2].message => msg
-    #         @fact node.interfaces[2].message.value.m => [0.0, 0.0, 0.0]
-    #         @fact node.interfaces[2].message.value.V => 2.0*variance
-    #     end
+    context("AdditionNode should propagate a multivariate GaussianDistribution") do
+        context("AdditionNode should propagate a multivariate GaussianDistribution with (m,V) parametrization") do
+            mean = [1.0:3.0]
+            variance = reshape([4.0, 3.0, 2.0,
+                                3.0, 4.0, 3.0,
+                                2.0, 3.0, 4.0], 3, 3)
+            # Forward message
+            validateOutboundMessage(AdditionNode(), 
+                                    3, 
+                                    GaussianDistribution, 
+                                    [Message(GaussianDistribution(m=mean, V=variance)), Message(GaussianDistribution(m=mean, V=variance)), nothing],
+                                    GaussianDistribution(m=[2.0, 4.0, 6.0], V=2.0*variance))
+            # Backward message
+            validateOutboundMessage(AdditionNode(), 
+                                    1, 
+                                    GaussianDistribution, 
+                                    [nothing, Message(GaussianDistribution(m=mean, V=variance)), Message(GaussianDistribution(m=mean, V=variance))],
+                                    GaussianDistribution(m=[0.0, 0.0, 0.0], V=2.0*variance))
+            validateOutboundMessage(AdditionNode(), 
+                                    2, 
+                                    GaussianDistribution, 
+                                    [Message(GaussianDistribution(m=mean, V=variance)), nothing, Message(GaussianDistribution(m=mean, V=variance))],
+                                    GaussianDistribution(m=[0.0, 0.0, 0.0], V=2.0*variance))
+        end
 
-    #     context("AdditionNode should propagate a multivariate GaussianDistribution with (m,W) parametrization") do
-    #         mean = [1.0:3.0]
-    #         precision = reshape([4.0, 3.0, 2.0,
-    #                              3.0, 4.0, 3.0,
-    #                              2.0, 3.0, 4.0], 3, 3)
-    #         # Forward message
-    #         inbound_array = [Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(m=mean, W=precision)), nothing]
-    #         msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
-    #         @fact node.interfaces[3].message => msg
-    #         @fact isApproxEqual(node.interfaces[3].message.value.m, [2.0, 4.0, 6.0]) => true
-    #         @fact isApproxEqual(node.interfaces[3].message.value.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
-    #         # Backward messages
-    #         inbound_array = [nothing, Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(m=mean, W=precision))]
-    #         msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution, GaussianDistribution)
-    #         @fact node.interfaces[1].message => msg
-    #         @fact node.interfaces[1].message.value.m => [0.0, 0.0, 0.0]
-    #         @fact isApproxEqual(node.interfaces[1].message.value.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
-    #         inbound_array = [Message(GaussianDistribution(m=mean, W=precision)), nothing, Message(GaussianDistribution(m=mean, W=precision))]
-    #         msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution, GaussianDistribution)
-    #         @fact node.interfaces[2].message => msg
-    #         @fact node.interfaces[2].message.value.m => [0.0, 0.0, 0.0]
-    #         @fact isApproxEqual(node.interfaces[2].message.value.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
-    #     end
+        context("AdditionNode should propagate a multivariate GaussianDistribution with (m,W) parametrization") do
+            mean = [1.0:3.0]
+            precision = reshape([4.0, 3.0, 2.0,
+                                 3.0, 4.0, 3.0,
+                                 2.0, 3.0, 4.0], 3, 3)
+            # Forward message
+            validateOutboundMessage(AdditionNode(), 
+                                    3, 
+                                    GaussianDistribution, 
+                                    [Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(m=mean, W=precision)), nothing],
+                                    GaussianDistribution(m=[2.0, 4.0, 6.0], W=0.5*precision))
+            # Backward message
+            validateOutboundMessage(AdditionNode(), 
+                                    1, 
+                                    GaussianDistribution, 
+                                    [nothing, Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(m=mean, W=precision))],
+                                    GaussianDistribution(m=[0.0, 0.0, 0.0], W=0.5*precision))
+            validateOutboundMessage(AdditionNode(), 
+                                    2, 
+                                    GaussianDistribution, 
+                                    [Message(GaussianDistribution(m=mean, W=precision)), nothing, Message(GaussianDistribution(m=mean, W=precision))],
+                                    GaussianDistribution(m=[0.0, 0.0, 0.0], W=0.5*precision))
+        end
 
-    #     context("AdditionNode should propagate a multivariate GaussianDistribution with different parametrizations") do
-    #         mean = [1.0:3.0]
-    #         precision = reshape([4.0, 3.0, 2.0,
-    #                              3.0, 4.0, 3.0,
-    #                              2.0, 3.0, 4.0], 3, 3)
-    #         # Forward message
-    #         inbound_array = [Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(xi=precision*mean, V=inv(precision))), nothing]
-    #         msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
-    #         ensureMWParametrization!(msg.value)
-    #         @fact node.interfaces[3].message => msg
-    #         @fact isApproxEqual(node.interfaces[3].message.value.m, [2.0, 4.0, 6.0]) => true
-    #         @fact isApproxEqual(node.interfaces[3].message.value.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
-    #         # Backward messages
-    #         inbound_array = [nothing, Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(xi=precision*mean, V=inv(precision)))]
-    #         msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution, GaussianDistribution)
-    #         ensureMWParametrization!(msg.value)
-    #         @fact node.interfaces[1].message => msg
-    #         @fact isApproxEqual(node.interfaces[1].message.value.m, [0.0, 0.0, 0.0]) => true
-    #         @fact isApproxEqual(node.interfaces[1].message.value.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
-    #         inbound_array = [Message(GaussianDistribution(m=mean, W=precision)), nothing, Message(GaussianDistribution(xi=precision*mean, V=inv(precision)))]
-    #         msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution, GaussianDistribution)
-    #         ensureMWParametrization!(msg.value)
-    #         @fact node.interfaces[2].message => msg
-    #         @fact isApproxEqual(node.interfaces[2].message.value.m, [0.0, 0.0, 0.0]) => true
-    #         @fact isApproxEqual(node.interfaces[2].message.value.W, reshape([2.0, 1.5, 1.0, 1.5, 2.0, 1.5, 1.0, 1.5, 2.0], 3, 3)) => true
-    #     end
+        context("AdditionNode should propagate a multivariate GaussianDistribution with (xi,V) parametrization") do
+            xi = [1.0:3.0]
+            variance = reshape([4.0, 3.0, 2.0,
+                                3.0, 4.0, 3.0,
+                                2.0, 3.0, 4.0], 3, 3)
+            # Forward message
+            validateOutboundMessage(AdditionNode(), 
+                                    3, 
+                                    GaussianDistribution, 
+                                    [Message(GaussianDistribution(xi=xi, V=variance)), Message(GaussianDistribution(xi=xi, V=variance)), nothing],
+                                    GaussianDistribution(xi=[1.0, 2.0, 3.0], V=2.0*variance))
+            # Backward message
+            validateOutboundMessage(AdditionNode(), 
+                                    1, 
+                                    GaussianDistribution, 
+                                    [nothing, Message(GaussianDistribution(xi=xi, V=variance)), Message(GaussianDistribution(xi=xi, V=variance))],
+                                    GaussianDistribution(xi=[0.0, 0.0, 0.0], V=2.0*variance))
+            validateOutboundMessage(AdditionNode(), 
+                                    2, 
+                                    GaussianDistribution, 
+                                    [Message(GaussianDistribution(xi=xi, V=variance)), nothing, Message(GaussianDistribution(xi=xi, V=variance))],
+                                    GaussianDistribution(xi=[0.0, 0.0, 0.0], V=2.0*variance))
+        end
 
-    #     context("AdditionNode should propagate a multivariate GaussianDistribution with (xi,V) parametrization") do
-    #         xi = [1.0:3.0]
-    #         variance = reshape([4.0, 3.0, 2.0,
-    #                             3.0, 4.0, 3.0,
-    #                             2.0, 3.0, 4.0], 3, 3)
-    #         # Forward message
-    #         inbound_array = [Message(GaussianDistribution(xi=xi, V=variance)), Message(GaussianDistribution(xi=xi, V=variance)), nothing]
-    #         msg = ForneyLab.updateNodeMessage!(3, node, GaussianDistribution, GaussianDistribution)
-    #         @fact node.interfaces[3].message => msg
-    #         @fact isApproxEqual(node.interfaces[3].message.value.xi, [1.0, 2.0, 3.0]) => true
-    #         @fact node.interfaces[3].message.value.V => 2.0*variance
-    #         # Backward messages
-    #         inbound_array = [nothing, Message(GaussianDistribution(xi=xi, V=variance)), Message(GaussianDistribution(xi=xi, V=variance))]
-    #         msg = ForneyLab.updateNodeMessage!(1, node, GaussianDistribution, GaussianDistribution)
-    #         @fact node.interfaces[1].message => msg
-    #         @fact node.interfaces[1].message.value.xi => [0.0, 0.0, 0.0]
-    #         @fact node.interfaces[1].message.value.V => 2.0*variance
-
-    #         inbound_array = [Message(GaussianDistribution(xi=xi, V=variance)), nothing, Message(GaussianDistribution(xi=xi, V=variance))]
-    #         msg = ForneyLab.updateNodeMessage!(2, node, GaussianDistribution, GaussianDistribution)
-    #         @fact node.interfaces[2].message => msg
-    #         @fact node.interfaces[2].message.value.xi => [0.0, 0.0, 0.0]
-    #         @fact node.interfaces[2].message.value.V => 2.0*variance
-    #     end
-    # end
+        context("AdditionNode should propagate a multivariate GaussianDistribution with different parametrizations") do
+            mean = [1.0:3.0]
+            precision = reshape([4.0, 3.0, 2.0,
+                                 3.0, 4.0, 3.0,
+                                 2.0, 3.0, 4.0], 3, 3)
+            # Forward message
+            validateOutboundMessage(AdditionNode(), 
+                                    3, 
+                                    GaussianDistribution, 
+                                    [Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(xi=precision*mean, V=inv(precision))), nothing],
+                                    GaussianDistribution(m=[2.0, 4.0, 6.0], W=0.5*precision))
+            # Backward message
+            validateOutboundMessage(AdditionNode(), 
+                                    1, 
+                                    GaussianDistribution, 
+                                    [nothing, Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(xi=precision*mean, V=inv(precision)))],
+                                    GaussianDistribution(m=[0.0, 0.0, 0.0], W=0.5*precision))
+            validateOutboundMessage(AdditionNode(), 
+                                    2, 
+                                    GaussianDistribution, 
+                                    [Message(GaussianDistribution(m=mean, W=precision)), nothing, Message(GaussianDistribution(xi=precision*mean, V=inv(precision)))],
+                                    GaussianDistribution(m=[0.0, 0.0, 0.0], W=0.5*precision))
+        end
+    end
 end
 
 #####################
