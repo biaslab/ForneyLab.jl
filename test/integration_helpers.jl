@@ -165,24 +165,6 @@ function initializeEqualityNode(msgs::Array{Any})
     return eq_node
 end
 
-function initializeFixedGainNode(A::Array, msgs::Array{Any})
-    # Set up a fixed gain node and prepare the messages
-    # A MockNode is connected for each argument message
-    #
-    # [M]-->[A]--|  
-    #                
-
-    fg_node = FixedGainNode(A)
-    interface_count = 1
-    for msg=msgs
-        if msg!=nothing
-            Edge(MockNode(msg).out, fg_node.interfaces[interface_count])
-        end
-        interface_count += 1
-    end
-    return fg_node
-end
-
 function initializeTerminalAndGainAddNode()
     # Initialize some nodes
     #

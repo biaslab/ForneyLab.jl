@@ -11,19 +11,19 @@ facts("FixedGainNode unit tests") do
         @fact node.out => node.interfaces[2]
         @fact typeof(node.A) => Array{Float64, 2} # cast single value to matrix
     end
-end
 
-#####################
-# Integration tests
-#####################
+    context("FixedGainNode() should allow parameters to be clamped") do
 
-facts("FixedGainNode integration tests") do
+    end
+
     context("FixedGainNode should propagate a Float") do
         # Backward message
-        node = initializeFixedGainNode([2.0], [nothing, Message(3.0)])
-        msg = ForneyLab.updateNodeMessage!(1, node, Array{Float64, 1}, Array{Float64, 2})
+        msg = ForneyLab.updateNodeMessage!(FixedGainNode([2.0]), 1, Array{Float64, 2}, nothing, Message(3.0))
         @fact node.interfaces[1].message => msg
         @fact node.interfaces[1].message.value => reshape([1.5], 1, 1)
+
+        #--------------------------------
+
         # Forward message
         node = initializeFixedGainNode([2.0], [Message(3.0), nothing])
         msg = ForneyLab.updateNodeMessage!(2, node, Array{Float64, 1}, Array{Float64, 2})

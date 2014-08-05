@@ -81,21 +81,18 @@ forwardFixedGainWRule{T<:Number}(A_inv::Array{T, 2}, W::Array{T, 2}) = A_inv' * 
 forwardFixedGainXiRule{T<:Number}(A_inv::Array{T, 2}, xi::Array{T, 1}) = A_inv' * xi
 forwardFixedGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}, V::Array{T, 2}) = pinv(A * V * A') * A * V * xi # Combination of xi and V
 
-function updateNodeMessage!(outbound_interface_id::Int,
-                            node::FixedGainNode,
-                            inbound_messages_value_types::Type{GaussianDistribution},
-                            outbound_message_value_type::Type{GaussianDistribution})
-    # Calculate an outbound message based on the inbound messages and the node function.
-    # This function is not exported, and is only meant for internal use.
+# Backward Gaussian to IN1
+function updateNodeMessage!(node::FixedGainNode,
+                            outbound_interface_id::Int,
+                            outbound_message_value_type::Type{GaussianDistribution},
+                            ::Nothing,
+                            msg_out::Message{GaussianDistribution})
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     # Calculations for a gaussian message type; Korl (2005), table 4.1
-
     if outbound_interface_id == 1
-        # Backward message
-        dist_2 = node.interfaces[2].partner.message.value
-
+        dist_2 = msg_out.value
         # Select parameterization
         # Order is from least to most computationally intensive
         if dist_2.xi != nothing && dist_2.W != nothing
@@ -126,10 +123,26 @@ function updateNodeMessage!(outbound_interface_id::Int,
             dist_out.W = backwardFixedGainWRule(node.A, dist_2.W)
             dist_out.xi = backwardFixedGainXiRule(node.A, dist_2.xi)
         end
-    elseif outbound_interface_id == 2
-        # Forward message
-        dist_1 = node.interfaces[1].partner.message.value
+    else
+        error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
+    end
+    
+    return node.interfaces[outbound_interface_id].message
+end
 
+# Forward Gaussian to OUT
+function updateNodeMessage!(node::FixedGainNode,
+                            outbound_interface_id::Int,
+                            outbound_message_value_type::Type{GaussianDistribution},
+                            msg_in1::Message{GaussianDistribution},
+                            ::Nothing)
+
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
+
+    # Calculations for a gaussian message type; Korl (2005), table 4.1
+    if outbound_interface_id == 2
+        # Forward message
+        dist_1 = msg_in1.value
         # Select parameterization
         # Order is from least to most computationally intensive
         if dist_1.m != nothing && dist_1.V != nothing
@@ -167,30 +180,43 @@ function updateNodeMessage!(outbound_interface_id::Int,
     return node.interfaces[outbound_interface_id].message
 end
 
-############################################
-# Float64 and Array{Float64} methods
-############################################
-
-function updateNodeMessage!(outbound_interface_id::Int,
-                            node::FixedGainNode,
-                            inbound_messages_value_types::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}}),
-                            outbound_message_value_type::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}}))
-    # Calculate an outbound message based on the inbound messages and the node function.
-    # This function is not exported, and is only meant for internal use.
-
+# Backward numeric to IN1
+function updateNodeMessage!(node::FixedGainNode,
+                            outbound_interface_id::Int,
+                            outbound_message_value_type::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}})),
+                            ::Nothing,
+                            msg_out::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}))
     if outbound_interface_id == 1
         # Backward message
-        ans = pinv(node.A) * node.interfaces[2].partner.message.value
-    elseif outbound_interface_id == 2
-        # Forward message
-        ans = node.A * node.interfaces[1].partner.message.value
+        ans = pinv(node.A) * msg_out.value
     else
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
 
-    msg_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type, size(ans))
-    msg_out.value = ans
+    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type, size(ans))
+    msg_ans.value = ans
 
-    (typeof(msg_out.value) == outbound_message_value_type) || error("Output type $(typeof(msg_out)) of $(typeof(node)) node $(node.name) does not match expected output type $(outbound_message_value_type)")
+    (typeof(msg_ans.value) == outbound_message_value_type) || error("Output type $(typeof(msg_ans)) of $(typeof(node)) node $(node.name) does not match expected output type $(outbound_message_value_type)")
+    return node.interfaces[outbound_interface_id].message
+
+end
+
+# Forward numeric to OUT
+function updateNodeMessage!(node::FixedGainNode,
+                            outbound_interface_id::Int,
+                            outbound_message_value_type::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}})),
+                            msg_in1::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}),
+                            ::Nothing)
+    if outbound_interface_id == 2
+        # Forward message
+        ans = node.A * msg_in1.value
+    else
+        error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
+    end
+
+    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type, size(ans))
+    msg_ans.value = ans
+
+    (typeof(msg_ans.value) == outbound_message_value_type) || error("Output type $(typeof(msg_ans)) of $(typeof(node)) node $(node.name) does not match expected output type $(outbound_message_value_type)")
     return node.interfaces[outbound_interface_id].message
 end
