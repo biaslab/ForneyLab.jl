@@ -18,7 +18,8 @@ facts("TerminalNode unit tests") do
     context("TerminalNode should propagate a GaussianMessage") do
         node = TerminalNode(GaussianDistribution(m=2.0, V=4.0))
         @fact node.interfaces[1].message => nothing
-        msg = ForneyLab.updateNodeMessage!(1, node)
+        @fact_throws ForneyLab.updateNodeMessage!(node, 1, Float64, nothing)
+        msg = ForneyLab.updateNodeMessage!(node, 1, GaussianDistribution, nothing)
         @fact node.interfaces[1].message => msg
         @fact typeof(node.interfaces[1].message) => Message{GaussianDistribution}
         @fact node.interfaces[1].message.value.m => [2.0]
@@ -28,7 +29,8 @@ facts("TerminalNode unit tests") do
     context("TerminalNode should propagate an arbitrary value") do
         node = TerminalNode([1.0, 2.0])
         @fact node.interfaces[1].message => nothing
-        msg = ForneyLab.updateNodeMessage!(1, node)
+        @fact_throws ForneyLab.updateNodeMessage!(node, 1, GaussianDistribution, nothing)
+        msg = ForneyLab.updateNodeMessage!(node, 1, Array, nothing)
         @fact node.interfaces[1].message => msg
         @fact typeof(node.interfaces[1].message) => Message{Array{Float64, 1}}
         @fact node.interfaces[1].message.value => [1.0, 2.0]
