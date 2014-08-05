@@ -183,52 +183,6 @@ function initializeFixedGainNode(A::Array, msgs::Array{Any})
     return fg_node
 end
 
-# function initializeGaussianNode(msgs::Array{Any})
-#     # Set up a Gaussian node and prepare the messages
-#     # A MockNode is connected for each argument message
-#     #
-#     #         [M] (mean)
-#     #          |
-#     #          v  out
-#     #   [M]-->[N]----->
-#     #  (prec.)
-#     #                
-
-#     g_node = GaussianNode()
-#     interface_count = 1
-#     for msg=msgs
-#         if msg!=nothing
-#             Edge(MockNode(msg).out, g_node.interfaces[interface_count])
-#         end
-#         interface_count += 1
-#     end
-#     return g_node
-# end
-
-function initializeVariationalGaussianNode(msgs::Array{Any})
-    # Set up a Gaussian node and prepare the messages/marginals
-    # A MockNode is connected for each argument message
-    #
-    #         [M] (mean)
-    #          |
-    #          v  out
-    #   [M]-->[N]----->
-    #  (prec.)
-    #                
-
-    g_node = GaussianNode(true)
-    edge = Edge(MockNode(Message(GaussianDistribution())).out, g_node.mean)
-    if msgs[1] != nothing
-        edge.marginal = msgs[1].value
-    end
-    edge = Edge(MockNode(Message(GammaDistribution())).out, g_node.precision)
-    if msgs[2] != nothing
-        edge.marginal = msgs[2].value
-    end
-    Edge(g_node.out, MockNode(msgs[3]).out)
-    return g_node
-end
-
 function initializeTerminalAndGainAddNode()
     # Initialize some nodes
     #
@@ -375,31 +329,6 @@ function initializeGaussianNodeChain()
     Edge(gam_eq_nodes[end].interfaces[2], c_gam.out, GammaDistribution)
 
     return(g_nodes, obs_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges)
-end
-
-function initializeLinearCompositeNode(dists::Array{ProbabilityDistribution})
-    # Set up a linear composite node and prepare the marginals
-    # A MockNode is connected for each argument message
-    #
-    #        [slope][offset][noise]
-    #            |  |       |
-    #       |-----------------|
-    #       |    |  |       | |
-    #       |    |  -->[N]<-- |
-    #       |    |      |     |
-    #       |    v      v     |
-    #[in1]--|-->[a]--->[+]----|-->[out]
-    #       |                 |
-    #       |-----------------|
-
-    lin_node = LinearCompositeNode(true)
-    for intf = 1:5
-        edge = Edge(MockNode(Message(dists[intf])).out, lin_node.interfaces[intf], typeof(dists[intf]))
-        if dists[intf] != nothing
-            edge.marginal = dists[intf]
-        end
-    end    
-    return lin_node
 end
 
 function initializeLinearCompositeNodeChain()

@@ -102,9 +102,9 @@ GaussianNode(; args...) = GaussianNode(false; args...)
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_value_type::Type{GaussianDistribution},
-                            msg1::Any,
-                            msg2::Message{InverseGammaDistribution},
-                            msg3::Any)
+                            msg_mean::Any,
+                            msg_variance::Message{InverseGammaDistribution},
+                            msg_out::Any)
     # Forward / point estimate / InverseGamma
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
@@ -112,8 +112,8 @@ function updateNodeMessage!(node::GaussianNode,
     # Formulas from table 5.2 in Korl (2005)
     if is(node.interfaces[outbound_interface_id], node.out)
         # Forward message
-        gamma = msg2.value
-        mean = msg1.value
+        gamma = msg_variance.value
+        mean = msg_mean.value
         dist_out.m = [mean]
         dist_out.V = reshape([gamma.b/(gamma.a-1)], 1, 1)
         dist_out.xi = nothing
@@ -121,8 +121,8 @@ function updateNodeMessage!(node::GaussianNode,
     elseif is(node.interfaces[outbound_interface_id], node.mean)
         # Backward over mean edge
         # Rules not in Korl, but equivalent by symmetry
-        gamma = msg2.value
-        y = msg3.value
+        gamma = msg_variance.value
+        y = msg_out.value
         dist_out.m = [y]
         dist_out.V = reshape([gamma.b/(gamma.a-1)], 1, 1)
         dist_out.xi = nothing
@@ -137,17 +137,17 @@ end
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_value_type::Type{InverseGammaDistribution},
-                            msg1::Message{Float64},
+                            msg_mean::Message{Float64},
                             ::Any,
-                            msg3::Message{Float64})
+                            msg_out::Message{Float64})
     # Backward over variance / point estimate / InverseGamma
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     if is(node.interfaces[outbound_interface_id], node.variance)
         # Backward over variance edge
-        y = msg3.value
-        m = msg1.value
+        y = msg_out.value
+        m = msg_mean.value
         dist_out.a = -0.5
         dist_out.b = 0.5*(y-m)^2
     else
@@ -161,8 +161,8 @@ function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_value_type::Type{GaussianDistribution},
                             ::Any,
-                            marg2::InverseGammaDistribution,
-                            msg3::Message{Float64})
+                            marg_variance::InverseGammaDistribution,
+                            msg_out::Message{Float64})
     # Backward over mean / variational / InverseGamma
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
@@ -170,9 +170,9 @@ function updateNodeMessage!(node::GaussianNode,
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     if is(node.interfaces[outbound_interface_id], node.mean) # Mean estimation from variance and sample
-        y_0 = msg3.value # observation
-        a = marg2.a # gamma message
-        b = marg2.b
+        y_0 = msg_out.value # observation
+        a = marg_variance.a # gamma message
+        b = marg_variance.b
         dist_out.m = [y_0]
         dist_out.V = reshape([((a+1)/b)], 1, 1)
         dist_out.xi = nothing
@@ -188,8 +188,8 @@ function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_value_type::Type{GaussianDistribution},
                             ::Any,
-                            marg2::GammaDistribution,
-                            msg3::Message{Float64})
+                            marg_precision::GammaDistribution,
+                            msg_out::Message{Float64})
     # Backward over mean / variational / Gamma
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
@@ -197,9 +197,9 @@ function updateNodeMessage!(node::GaussianNode,
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     if is(node.interfaces[outbound_interface_id], node.mean) # Mean estimation from variance and sample
-        y_0 = msg3.value # observation
-        a = marg2.a # gamma distribution
-        b = marg2.b
+        y_0 = msg_out.value # observation
+        a = marg_precision.a # gamma distribution
+        b = marg_precision.b
         dist_out.m = [y_0]
         dist_out.V = nothing
         dist_out.xi = nothing
@@ -214,9 +214,9 @@ end
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_value_type::Type{GammaDistribution},
-                            marg1::GaussianDistribution,
+                            marg_mean::GaussianDistribution,
                             ::Any,
-                            msg3::Message{Float64})
+                            msg_out::Message{Float64})
     # Backward over precision / variational / Gamma
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
@@ -224,10 +224,10 @@ function updateNodeMessage!(node::GaussianNode,
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     if is(node.interfaces[outbound_interface_id], node.precision) # Precision estimation from mean and sample
-        y_0 = msg3.value # observation
-        ensureMWParametrization!(marg1)
-        m = marg1.m[1] # Gaussian distribution
-        W = marg1.W[1,1]
+        y_0 = msg_out.value # observation
+        ensureMWParametrization!(marg_mean)
+        m = marg_mean.m[1] # Gaussian distribution
+        W = marg_mean.W[1,1]
         dist_out.a = 1.5
         dist_out.b = 0.5*(y_0-m)^2+0.5*inv(W)
     else
@@ -240,9 +240,9 @@ end
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_value_type::Type{InverseGammaDistribution},
-                            marg1::GaussianDistribution,
+                            marg_mean::GaussianDistribution,
                             ::Any,
-                            msg3::Message{Float64})
+                            msg_out::Message{Float64})
     # Backward over variance / variational / InverseGamma
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
@@ -250,10 +250,10 @@ function updateNodeMessage!(node::GaussianNode,
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
     if is(node.interfaces[outbound_interface_id], node.variance) # Variance estimation from mean and sample
-        y_0 = msg3.value # observation
-        ensureMVParametrization!(marg1)
-        m = marg1.m[1] # Gaussian message
-        V = marg1.V[1,1]
+        y_0 = msg_out.value # observation
+        ensureMVParametrization!(marg_mean)
+        m = marg_mean.m[1] # Gaussian message
+        V = marg_mean.V[1,1]
         dist_out.a = -0.5
         dist_out.b = 0.5*(y_0-m)^2+0.5*V
     else

@@ -60,6 +60,7 @@ type LinearCompositeNode <: CompositeNode
 
         self = new(use_composite_update_rules, variational, name, Array(Interface, 5))
 
+        args = Dict(zip(args...)...) # Cast args to dictionary
         # Set up the interfaces
         param_list = [:in1, :slope, :offset, :noise, :out]
         for i = 1:length(param_list)
@@ -68,7 +69,7 @@ type LinearCompositeNode <: CompositeNode
 
             # Clamp parameter values when given as argument
             if haskey(args, param_list[i])
-                Edge(ForneyLab.ClampNode(Message(args[param_list[i]])).out, self.mean, typeof(args[param_list[i]])) # Connect clamp node
+                Edge(ForneyLab.ClampNode(Message(args[param_list[i]])).out, getfield(self, param_list[i]), typeof(args[param_list[i]])) # Connect clamp node
             end
         end
 
