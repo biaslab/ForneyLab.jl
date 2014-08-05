@@ -30,42 +30,29 @@ facts("General node properties unit tests") do
                 @fact length(node_type().interfaces) >= 1 => true # Check length of interface array
                 @fact typeof(node_type().name) => ASCIIString
             end
-        end
-    end
 
-    context("Composite nodes should have property use_composite_update_rules") do
-        for node_type in [subtypes(CompositeNode)]
-            @fact node_type().use_composite_update_rules => true || false
-        end
-    end
-
-    context("Node constructor should assign a name") do
-        for node_type in [subtypes(Node), subtypes(CompositeNode)]
-            if node_type!=CompositeNode && node_type!=MockNode && node_type!=ForneyLab.ClampNode
+            context("$(node_type) constructor should assign a name") do
                 my_node = node_type(;name="my_name")
                 @fact my_node.name => "my_name"
             end
-        end
-    end
 
-    context("Nodes should couple interfaces to themselves") do
-        for node_type in [subtypes(Node), subtypes(CompositeNode)]
-            if node_type!=CompositeNode && node_type!=MockNode && node_type!=ForneyLab.ClampNode
+            context("$(node_type) constructor should assign interfaces to itself") do
                 my_node = node_type()
                 for interface_id in 1:length(my_node.interfaces)
                     # Check if the node interfaces couple back to the same node
                     @fact my_node.interfaces[interface_id].node => my_node
                 end
             end
+
+            context("$(node_type) should have at least 1 updateNodeMessage!() method") do
+                @fact contains(string(methods(ForneyLab.updateNodeMessage!)), string("::", node_type)) => true
+            end
         end
     end
 
-    context("Every node type should have at least 1 updateNodeMessage!() method") do
-        for node_type in [subtypes(Node), subtypes(CompositeNode)]
-            if node_type!=CompositeNode && node_type!=MockNode && node_type!=ForneyLab.ClampNode
-                # Check if method description contains node type
-                @fact contains(string(methods(ForneyLab.updateNodeMessage!)), string("::", node_type)) => true
-            end
+    for node_type in [subtypes(CompositeNode)]
+        context("$(node_type) should have property use_composite_update_rules") do
+            @fact node_type().use_composite_update_rules => true || false
         end
     end
 end
