@@ -13,7 +13,7 @@ type ClampNode <: Node
     function ClampNode()
     	self = new()
     	self.out = Interface(self)
-    	return(self)
+    	return self
     end
 end
 
