@@ -58,17 +58,6 @@ function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(2.0), msg_gain_2=Me
     return node1, node2
 end
 
-function initializeFixedGainNode()    
-    # Helper function for initializing a fixed gain node
-    #     
-    # |--[A]--|
-
-    node = FixedGainNode()
-    node.interfaces[1].message = Message(GaussianDistribution())
-    node.interfaces[2].message = Message(GaussianDistribution())
-    return node
-end
-
 function initializeChainOfNodes()
     # Chain of three nodes
     #

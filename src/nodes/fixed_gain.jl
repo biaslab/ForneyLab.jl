@@ -183,7 +183,7 @@ end
 # Backward numeric to IN1
 function updateNodeMessage!(node::FixedGainNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}})),
+                            outbound_message_value_type::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}}),
                             ::Nothing,
                             msg_out::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}))
     if outbound_interface_id == 1
@@ -204,7 +204,7 @@ end
 # Forward numeric to OUT
 function updateNodeMessage!(node::FixedGainNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}})),
+                            outbound_message_value_type::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}}),
                             msg_in1::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}),
                             ::Nothing)
     if outbound_interface_id == 2
