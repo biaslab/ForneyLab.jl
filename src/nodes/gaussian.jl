@@ -63,7 +63,7 @@ type GaussianNode <: Node
         args = Dict(zip(args...)...) # Cast args to dictionary
         # Set m if required
         self.interfaces[1] = Interface(self)
-        self.mean = interfaces[1]
+        self.mean = self.interfaces[1]
         if haskey(args, :m)
             Edge(ForneyLab.ClampNode(Message(args[:m])).out, self.mean, typeof(args[:m]))
         end
@@ -71,13 +71,13 @@ type GaussianNode <: Node
         self.interfaces[2] = Interface(self)
         if form == "moment"
             # Parameters m, V
-            self.variance = interfaces[2]
+            self.variance = self.interfaces[2]
             if haskey(args, :V)
                 Edge(ForneyLab.ClampNode(Message(args[:V])).out, self.variance, typeof(args[:V]))
             end
         elseif form == "precision"
             # Parameters m, W
-            self.precision = interfaces[2]
+            self.precision = self.interfaces[2]
             if haskey(args, :W)
                 Edge(ForneyLab.ClampNode(Message(args[:W])).out, self.precision, typeof(args[:W]))
             end
@@ -138,7 +138,7 @@ function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_value_type::Type{InverseGammaDistribution},
                             msg1::Message{Float64},
-                            msg2::Any,
+                            ::Any,
                             msg3::Message{Float64})
     # Backward over variance / point estimate / InverseGamma
 
@@ -160,7 +160,7 @@ end
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_value_type::Type{GaussianDistribution},
-                            marg1::Any,
+                            ::Any,
                             marg2::InverseGammaDistribution,
                             msg3::Message{Float64})
     # Backward over mean / variational / InverseGamma
@@ -187,7 +187,7 @@ end
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_value_type::Type{GaussianDistribution},
-                            marg1::Any,
+                            ::Any,
                             marg2::GammaDistribution,
                             msg3::Message{Float64})
     # Backward over mean / variational / Gamma
@@ -215,7 +215,7 @@ function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_value_type::Type{GammaDistribution},
                             marg1::GaussianDistribution,
-                            marg2::Any,
+                            ::Any,
                             msg3::Message{Float64})
     # Backward over precision / variational / Gamma
     # Variational update function takes the marginals as input (instead of the inbound messages)
@@ -241,7 +241,7 @@ function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_value_type::Type{InverseGammaDistribution},
                             marg1::GaussianDistribution,
-                            marg2::Any,
+                            ::Any,
                             msg3::Message{Float64})
     # Backward over variance / variational / InverseGamma
     # Variational update function takes the marginals as input (instead of the inbound messages)
