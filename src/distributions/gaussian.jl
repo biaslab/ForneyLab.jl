@@ -21,8 +21,7 @@ export
     ensureXiVParametrization!,
     ensureXiWParametrization!,
     isWellDefined,
-    isConsistent,
-    ==
+    isConsistent
 
 type GaussianDistribution <: ProbabilityDistribution
     m::Union(Vector{Float64}, Nothing)    # Mean vector
@@ -154,6 +153,33 @@ ensureMWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureMDe
 ensureXiVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureXiDefined!(dist))
 ensureXiWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
 
-function ==(a::GaussianDistribution, b::GaussianDistribution)
+function ==(x::GaussianDistribution, y::GaussianDistribution)
+    eps = 1e-12
+    # Check m or xi
+    if x.m!=nothing && y.m!=nothing
+        (length(x.m)==length(x.m)) || return false
+        (maximum(abs(x.m-y.m)) < eps) || return false
+    elseif x.xi!=nothing && y.xi!=nothing
+        (length(x.xi)==length(x.xi)) || return false
+        (maximum(abs(x.xi-y.xi)) < eps) || return false
+    else
+        ensureMDefined!(x); ensureMDefined!(y);
+        (length(x.m)==length(x.m)) || return false
+        (maximum(abs(x.m-y.m)) < eps) || return false
+    end
+
+    # Check V or W
+    if x.V!=nothing && y.V!=nothing
+        (length(x.V)==length(x.V)) || return false
+        (maximum(abs(x.V-y.V)) < eps) || return false
+    elseif x.W!=nothing && y.W!=nothing
+        (length(x.W)==length(x.W)) || return false
+        (maximum(abs(x.W-y.W)) < eps) || return false
+    else
+        ensureVDefined!(x); ensureVDefined!(y);
+        (length(x.V)==length(x.V)) || return false
+        (maximum(abs(x.V-y.V)) < eps) || return false
+    end
+
     return true
 end

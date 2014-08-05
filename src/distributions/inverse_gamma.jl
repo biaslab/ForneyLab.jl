@@ -34,3 +34,5 @@ function show(io::IO, dist::InverseGammaDistribution)
     println(io, "a = $(dist.a) (shape)")
     println(io, "b = $(dist.b) (rate)")
 end
+
+==(x::InverseGammaDistribution, y::InverseGammaDistribution) = (x.a==y.a && x.b==y.b)
