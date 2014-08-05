@@ -46,13 +46,13 @@ type Interface
     # A message from node a to node b is stored at the Interface of node a that connects to an Interface of node b.
     node::Node
     edge::Union(AbstractEdge, Nothing)
-    partner::Union(Interface, Nothing) # Partner indicates the interface to which it is connected.
-    child::Union(Interface, Nothing)   # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
+    partner::Union(Interface, Nothing)  # Partner indicates the interface to which it is connected.
+    child::Union(Interface, Nothing)    # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
     message::Union(Message, Nothing)
-    message_value_type::DataType       # Indicates the type of the message value that is carried by the interface
-                                       # The default is a GaussianDistribution, which can be overwitten by the Edge constructor or setMessage! and setMarginal!
-    message_dependencies::Array{Interface, 1}   # Optional array of interfaces (of the same node) on which the outbound msg on this interface depends.
-                                                # If this array is #undef, it means that the outbound msg depends on the inbound msgs on ALL OTHER interfaces of the node.
+    message_value_type::DataType        # Indicates the type of the message value that is carried by the interface
+                                        # The default is a GaussianDistribution, which can be overwitten by the Edge constructor or setMessage! and setMarginal!
+    dependencies::Array{Interface, 1}   # Optional array of interfaces (of the same node) on which the outbound msg on this interface depends.
+                                        # If this array is #undef, it means that the outbound msg depends on the inbound msgs on ALL OTHER interfaces of the node.
     internal_schedule::Array{Interface, 1}      # Optional schedule that should be executed to calculate outbound message on this interface.
                                                 # The internal_schedule field is used in composite nodes, and holds the schedule for internal message passing.
 
@@ -261,37 +261,41 @@ end
 
 function updateNodeMessage!(outbound_interface::Interface)
     # Calculate the outbound message based on the inbound messages and the node update function.
-    # The resulting message is stored in the specified interface and returned.
-
+    # The resulting message is stored in the specified interface and is returned.
     node = outbound_interface.node
 
-    # Determine types of inbound messages
-    inbound_messages = Array{Union(Message, MessageValue)} # Union of all inbound message value types (i.e. probability distributions)
+    # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
+    inbound_array = Array(Union(Message, ProbabilityDistribution, Nothing), length(node.interfaces))
     outbound_interface_id = 0
-    for node_interface_id = 1:length(node.interfaces)
-        node_interface = node.interfaces[node_interface_id]
-        if is(node_interface, outbound_interface)
-            outbound_interface_id = node_interface_id
+    for interface_id = 1:length(node.interfaces)
+        interface = node.interfaces[interface_id]
+        if is(interface, outbound_interface)
+            outbound_interface_id = interface_id
         end
-        if node_interface.partner==nothing
-            error("Cannot receive messages on disconnected interface $(node_interface_id) of $(typeof(node)) $(node.name)")
-        elseif node_interface.partner.message==nothing
-            error("There is no inbound message present on the partner of interface $(node_interface_id) of $(typeof(node)) $(node.name)")
+        if (!isdefined(outbound_interface, :dependencies) && outbound_interface_id==interface_id) ||
+            (isdefined(outbound_interface, :dependencies) && !(interface in outbound_interface.dependencies))
+            # Ignore the inbound on this interface
+            inbound_array[interface_id] = nothing
+            continue
         end
-        # Build array for overloading
+        if interface.partner==nothing
+            error("Cannot receive messages on disconnected interface $(interface_id) of $(typeof(node)) $(node.name)")
+        elseif interface.partner.message==nothing
+            error("There is no inbound message present on the partner of interface $(interface_id) of $(typeof(node)) $(node.name)")
+        end
+        # Add message or marginal to the inbound array
         # TODO: PROPERLY CHECK FOR VARIATIONAL
-        if node_interface.edge.marginal != nothing #node_interface.variational
-            append!(inbound_messages, node_interface.edge.marginal)
+        if interface.edge.marginal != nothing #interface.variational
+            inbound_array[interface_id] = interface.edge.marginal
         else
-            append!(inbound_messages, node_interface.partner.message)
+            inbound_array[interface_id] = interface.partner.message
         end
     end
 
     # Evaluate node update function
     printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id (outbound $(outbound_interface.message_value_type)):")
-    msg = updateNodeMessage!(node, outbound_interface_id, outbound_interface.message_value_type, inbound_messages...)
 
-    return msg
+    return updateNodeMessage!(node, outbound_interface_id, outbound_interface.message_value_type, inbound_array...)
 end
 
 function calculateMessages!(node::Node)
@@ -410,22 +414,22 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedul
 
     # Check all inbound messages on the other interfaces of the node
     outbound_interface_id = 0
-    for node_interface_id = 1:length(node.interfaces)
-        node_interface = node.interfaces[node_interface_id]
-        if is(node_interface, outbound_interface)
-            outbound_interface_id = node_interface_id
+    for interface_id = 1:length(node.interfaces)
+        interface = node.interfaces[interface_id]
+        if is(interface, outbound_interface)
+            outbound_interface_id = interface_id
         end
-        if (!isdefined(outbound_interface, :message_dependencies) && outbound_interface_id==node_interface_id) ||
-           (isdefined(outbound_interface, :message_dependencies) && !(node_interface in outbound_interface.message_dependencies))
+        if (!isdefined(outbound_interface, :dependencies) && outbound_interface_id==interface_id) ||
+           (isdefined(outbound_interface, :dependencies) && !(interface in outbound_interface.dependencies))
             continue
         end
-        @assert(node_interface.partner!=nothing, "Disconnected interface should be connected: interface #$(node_interface_id) of $(typeof(node)) $(node.name)")
+        @assert(interface.partner!=nothing, "Disconnected interface should be connected: interface #$(interface_id) of $(typeof(node)) $(node.name)")
 
-        if node_interface.partner.message == nothing # Required message missing.
-            if !(node_interface.partner in backtrace) # Don't recalculate stuff that's already in the schedule.
+        if interface.partner.message == nothing # Required message missing.
+            if !(interface.partner in backtrace) # Don't recalculate stuff that's already in the schedule.
                 # Recursive call
-                printVerbose("Recursive call of generateSchedule! on node $(typeof(node_interface.partner.node)) $(node_interface.partner.node.name)")
-                generateScheduleByDFS(node_interface.partner, backtrace, call_list)
+                printVerbose("Recursive call of generateSchedule! on node $(typeof(interface.partner.node)) $(interface.partner.node.name)")
+                generateScheduleByDFS(interface.partner, backtrace, call_list)
             end
         end
     end
@@ -442,11 +446,11 @@ function getAllNodes(seed_node::Node, node_array::Array{Node,1}=Array(Node,0); o
     if !(seed_node in node_array)
         push!(node_array, seed_node)
         # Partners
-        for node_interface in seed_node.interfaces
-            if node_interface.partner != nothing
-                if node_interface.partner.partner==node_interface || open_composites
+        for interface in seed_node.interfaces
+            if interface.partner != nothing
+                if interface.partner.partner==interface || open_composites
                     # Recursion
-                    getAllNodes(node_interface.partner.node, node_array, open_composites=open_composites)
+                    getAllNodes(interface.partner.node, node_array, open_composites=open_composites)
                 end
             end
         end
