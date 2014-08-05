@@ -13,7 +13,14 @@ facts("FixedGainNode unit tests") do
     end
 
     context("FixedGainNode() should allow parameters to be clamped") do
-
+        # Fix in1
+        node = FixedGainNode(in1=GaussianDistribution)
+        @fact typeof(node.mean.partner.node) => ForneyLab.ClampNode
+        @fact node.in1.partner.message.value => GaussianDistribution()
+        # Fix out
+        node = FixedGainNode(out=GaussianDistribution)
+        @fact typeof(node.variance.partner.node) => ForneyLab.ClampNode
+        @fact node.out.partner.message.value => GaussianDistribution()
     end
 
     context("FixedGainNode should propagate a Float") do
