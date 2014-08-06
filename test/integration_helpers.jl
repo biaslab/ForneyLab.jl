@@ -58,17 +58,6 @@ function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(2.0), msg_gain_2=Me
     return node1, node2
 end
 
-function initializeFixedGainNode()    
-    # Helper function for initializing a fixed gain node
-    #     
-    # |--[A]--|
-
-    node = FixedGainNode()
-    node.interfaces[1].message = Message(GaussianDistribution())
-    node.interfaces[2].message = Message(GaussianDistribution())
-    return node
-end
-
 function initializeChainOfNodes()
     # Chain of three nodes
     #
@@ -163,24 +152,6 @@ function initializeEqualityNode(msgs::Array{Any})
         interface_count += 1
     end
     return eq_node
-end
-
-function initializeFixedGainNode(A::Array, msgs::Array{Any})
-    # Set up a fixed gain node and prepare the messages
-    # A MockNode is connected for each argument message
-    #
-    # [M]-->[A]--|  
-    #                
-
-    fg_node = FixedGainNode(A)
-    interface_count = 1
-    for msg=msgs
-        if msg!=nothing
-            Edge(MockNode(msg).out, fg_node.interfaces[interface_count])
-        end
-        interface_count += 1
-    end
-    return fg_node
 end
 
 function initializeTerminalAndGainAddNode()

@@ -45,9 +45,11 @@ facts("LinearCompositeNode unit tests") do
     end
 
     context("LinearCompositeNode should propagate a backward variational message to noise") do
-        msg = ForneyLab.updateNodeMessage!(LinearCompositeNode(), 4, InverseGammaDistribution, GaussianDistribution(m=1.0, V=0.0), GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), uninformative(InverseGammaDistribution), GaussianDistribution(m=2.5, V=0.0))
-        @fact msg.value.a => -0.5
-        @fact msg.value.b => 0.0
+        validateOutboundMessage(LinearCompositeNode(), 
+                                4, 
+                                InverseGammaDistribution, 
+                                [GaussianDistribution(m=1.0, V=0.0), GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), uninformative(InverseGammaDistribution), GaussianDistribution(m=2.5, V=0.0)],
+                                InverseGammaDistribution(a=-0.5, b=0.0))
     end
 
     context("LinearCompositeNode should propagate a forward variational message to out") do
