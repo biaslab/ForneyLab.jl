@@ -2,10 +2,10 @@
 # This implementation can be used if the outbound messages can be calculated by internal message passing.
 # The internal graph should have no loops. If it does, the user should overload updateNodeMessage!() to set initial messages, iterate through the loop(s) and check convergence.
 
-function updateNodeMessage!(outbound_interface_id::Int,
-                            node::CompositeNode,
-                            inbound_messages_value_types::Type{GaussianDistribution},
-                            outbound_message_value_type::Type{GaussianDistribution})
+function updateNodeMessage!(node::CompositeNode,
+                            outbound_interface_id::Int,
+                            ::DataType,
+                            inbounds...)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
 
