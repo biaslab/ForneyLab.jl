@@ -14,12 +14,12 @@ facts("FixedGainNode unit tests") do
 
     context("FixedGainNode() should allow parameters to be clamped") do
         # Fix in1
-        node = FixedGainNode(in1=GaussianDistribution)
-        @fact typeof(node.mean.partner.node) => ForneyLab.ClampNode
+        node = FixedGainNode(in1=GaussianDistribution())
+        @fact typeof(node.in1.partner.node) => ForneyLab.ClampNode
         @fact node.in1.partner.message.value => GaussianDistribution()
         # Fix out
-        node = FixedGainNode(out=GaussianDistribution)
-        @fact typeof(node.variance.partner.node) => ForneyLab.ClampNode
+        node = FixedGainNode(out=GaussianDistribution())
+        @fact typeof(node.out.partner.node) => ForneyLab.ClampNode
         @fact node.out.partner.message.value => GaussianDistribution()
     end
 
@@ -43,14 +43,14 @@ facts("FixedGainNode unit tests") do
         validateOutboundMessage(FixedGainNode([2.0]), 
                                 1, 
                                 Array{Float64, 1}, 
-                                [nothing, Message(3.0)],
-                                [1.5]])
+                                [nothing, Message([3.0])],
+                                [1.5])
         # Forward message
         validateOutboundMessage(FixedGainNode([2.0]), 
                                 2, 
                                 Array{Float64, 1}, 
-                                [Message(3.0), nothing],
-                                [6.0]])
+                                [Message([3.0]), nothing],
+                                [6.0])
     end
 
     context("FixedGainNode should propagate a univariate GaussianDistribution") do
@@ -170,7 +170,7 @@ facts("FixedGainNode unit tests") do
                                     2, 
                                     GaussianDistribution, 
                                     [Message(GaussianDistribution(m=mean, W=precision)), nothing],
-                                    GaussianDistribution(m=A * mean, W=inv(A)' * precision * inv(A))
+                                    GaussianDistribution(m=A * mean, W=inv(A)' * precision * inv(A)))
         end
     end
 end
