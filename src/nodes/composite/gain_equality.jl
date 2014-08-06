@@ -50,7 +50,7 @@ type GainEqualityCompositeNode <: CompositeNode
     in2::Interface
     out::Interface
 
-    function GainEqualityCompositeNode(A::Union(Array{Float64},Float64)=1.0, use_composite_update_rules::Bool=true; name="unnamed")
+    function GainEqualityCompositeNode(A::Union(Array{Float64},Float64)=1.0, use_composite_update_rules::Bool=true; name="unnamed", args...)
         if typeof(A)==Float64
             A = fill!(Array(Float64,1,1),A)
         elseif use_composite_update_rules
@@ -65,18 +65,23 @@ type GainEqualityCompositeNode <: CompositeNode
         self.fixed_gain_node = FixedGainNode(A, name="$(name)_internal_gain")
         Edge(self.equality_node.interfaces[2], self.fixed_gain_node.in1, GaussianDistribution, GaussianDistribution) # Internal edge
 
-        # Initialize the composite node interfaces belonging to the composite node itself.
-        self.interfaces[1] = Interface(self)
-        self.interfaces[2] = Interface(self)
-        self.interfaces[3] = Interface(self)
+        args = Dict(zip(args...)...) # Cast args to dictionary
+        param_list = [:in1, :in2, :out]
+        for i = 1:length(param_list)
+            self.interfaces[i] = Interface(self) # Initialize the composite node interfaces belonging to the composite node itself.
+            setfield(self, param_list[i], self.interfaces[i]) # Init named interface handles
+
+            # Clamp parameter values when given as argument
+            if haskey(args, param_list[i])
+                Edge(ForneyLab.ClampNode(Message(args[param_list[i]])).out, getfield(self, param_list[i]), typeof(args[param_list[i]])) # Connect clamp node
+            end
+        end
+
         # Initialize the interfaces as references to the internal node interfaces.
         self.interfaces[1].child = self.equality_node.interfaces[1]
         self.interfaces[2].child = self.equality_node.interfaces[3]
         self.interfaces[3].child = self.fixed_gain_node.out
-        # Init named interface handles
-        self.in1 = self.interfaces[1]
-        self.in2 = self.interfaces[2]
-        self.out = self.interfaces[3]
+
         # Set internal message passing schedules
         self.in1.internal_schedule = [self.fixed_gain_node.in1, self.equality_node.interfaces[1]]
         self.in2.internal_schedule = [self.fixed_gain_node.in1, self.equality_node.interfaces[3]]

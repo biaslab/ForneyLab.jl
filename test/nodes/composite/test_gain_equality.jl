@@ -13,6 +13,21 @@ facts("GainEqualityCompositeNode unit tests") do
         @fact typeof(node.A) => Array{Float64, 2}
     end
 
+    context("GainEqualityCompositeNode() should allow parameters to be clamped") do
+        # Fix in1
+        node = GainEqualityCompositeNode(in1=GaussianDistribution())
+        @fact typeof(node.in1.partner.node) => ForneyLab.ClampNode
+        @fact node.in1.partner.message.value => GaussianDistribution()
+        # Fix in2
+        node = GainEqualityCompositeNode(in2=GaussianDistribution())
+        @fact typeof(node.in2.partner.node) => ForneyLab.ClampNode
+        @fact node.in2.partner.message.value => GaussianDistribution()
+        # Fix out
+        node = GainEqualityCompositeNode(out=GaussianDistribution())
+        @fact typeof(node.out.partner.node) => ForneyLab.ClampNode
+        @fact node.out.partner.message.value => GaussianDistribution()
+    end
+
     context("GainEqualityCompositeNode() should define an internal Equality and FixedGain node") do
         node = GainEqualityCompositeNode([5.0], false)
         @fact typeof(node.equality_node) => EqualityNode
