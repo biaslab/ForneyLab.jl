@@ -13,6 +13,21 @@ facts("GainAdditionCompositeNode unit tests") do
         @fact typeof(node.A) => Array{Float64, 2}
     end
 
+    context("GainAdditionCompositeNode() should allow parameters to be clamped") do
+        # Fix in1
+        node = GainAdditionCompositeNode(in1=GaussianDistribution())
+        @fact typeof(node.in1.partner.node) => ForneyLab.ClampNode
+        @fact node.in1.partner.message.payload => GaussianDistribution()
+        # Fix in2
+        node = GainAdditionCompositeNode(in2=GaussianDistribution())
+        @fact typeof(node.in2.partner.node) => ForneyLab.ClampNode
+        @fact node.in2.partner.message.payload => GaussianDistribution()
+        # Fix out
+        node = GainAdditionCompositeNode(out=GaussianDistribution())
+        @fact typeof(node.out.partner.node) => ForneyLab.ClampNode
+        @fact node.out.partner.message.payload => GaussianDistribution()
+    end
+
     context("GainAdditionCompositeNode() should define an internal AdditionNode and FixedGainNode") do
         node = GainAdditionCompositeNode([5.0], false)
         @fact typeof(node.addition_node) => AdditionNode
@@ -25,6 +40,111 @@ facts("GainAdditionCompositeNode unit tests") do
         @fact node.in1.child => node.fixed_gain_node.interfaces[1]
         @fact node.in2.child => node.addition_node.interfaces[2]
         @fact node.out.child => node.addition_node.out
+    end
+
+    msg_internal = Message(GaussianDistribution())
+    context("GainAdditionCompositeNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result (m,V) parametrization") do
+        A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
+
+        # Forward
+        node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing])
+        msg_internal = calculateMessage!(node.interfaces[3])
+        validateOutboundMessage(GainAdditionCompositeNode(A, true), 
+                                3, 
+                                GaussianDistribution, 
+                                [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing],
+                                msg_internal.payload)
+
+        # Backward
+        node = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
+        msg_internal = calculateMessage!(node.interfaces[1])
+        @fact msg_internal.payload => GaussianDistribution(m=[0.8, -0.2], V=[1.56 -1.44; -1.44 1.56])
+
+        node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
+        msg_internal = calculateMessage!(node.interfaces[2])
+        validateOutboundMessage(GainAdditionCompositeNode(A, true), 
+                                2, 
+                                GaussianDistribution, 
+                                [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))],
+                                msg_internal.payload)
+    end
+
+    context("GainAdditionCompositeNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result (m,W) parametrization") do
+        A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
+
+        # Forward
+        node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
+        msg_internal = calculateMessage!(node.interfaces[3])
+        validateOutboundMessage(GainAdditionCompositeNode(A, true), 
+                                3, 
+                                GaussianDistribution, 
+                                [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
+                                msg_internal.payload)
+
+        # Backward
+        node = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
+        msg_internal = calculateMessage!(node.interfaces[1])
+        @fact msg_internal.payload => GaussianDistribution(m=[0.8, -0.2], W=[8.0+(2/3) 8.0; 8.0 8.0+(2/3)])
+
+        node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
+        msg_internal = calculateMessage!(node.interfaces[2])
+        validateOutboundMessage(GainAdditionCompositeNode(A, true), 
+                                2, 
+                                GaussianDistribution, 
+                                [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))],
+                                msg_internal.payload)
+    end
+
+    context("GainAdditionCompositeNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result (xi,W) parametrization") do
+        A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
+
+        # Forward
+        node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
+        msg_internal = calculateMessage!(node.interfaces[3])
+        validateOutboundMessage(GainAdditionCompositeNode(A, true), 
+                                3, 
+                                GaussianDistribution, 
+                                [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
+                                msg_internal.payload)
+
+        # Backward
+        node = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
+        msg_internal = calculateMessage!(node.interfaces[1])
+        @fact msg_internal.payload => GaussianDistribution(m=[0.4, -0.1], V=[0.78 -0.72; -0.72 0.78])
+
+        node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
+        msg_internal = calculateMessage!(node.interfaces[2])
+        validateOutboundMessage(GainAdditionCompositeNode(A, true), 
+                                2, 
+                                GaussianDistribution, 
+                                [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))],
+                                msg_internal.payload)
+    end
+
+    context("GainAdditionCompositeNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result (different parametrizations)") do
+        A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
+
+        # Forward
+        node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
+        msg_internal = calculateMessage!(node.interfaces[3])
+        validateOutboundMessage(GainAdditionCompositeNode(A, true), 
+                                3, 
+                                GaussianDistribution, 
+                                [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
+                                msg_internal.payload)
+
+        # Backward
+        node = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
+        msg_internal = calculateMessage!(node.interfaces[1])
+        @fact msg_internal.payload => GaussianDistribution(m=[0.4, -0.1], V=[0.78 -0.72; -0.72 0.78])
+
+        node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
+        msg_internal = calculateMessage!(node.interfaces[2])
+        validateOutboundMessage(GainAdditionCompositeNode(A, true), 
+                                2, 
+                                GaussianDistribution, 
+                                [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))],
+                                msg_internal.payload)
     end
 end
 
@@ -40,156 +160,5 @@ facts("GainAdditionCompositeNode integration tests") do
         @fact c_node.in2.partner => node.out
         @fact c_node.addition_node.in2.partner => node.out 
         @fact c_node.in2.child => c_node.addition_node.in2 # Set child 
-    end
-
-    context("GainAdditionCompositeNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result (m,V) parametrization") do
-        A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
-
-        # Forward
-        #Shortcut rules
-        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing])
-        msg_shortcut = ForneyLab.updateNodeMessage!(3, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)
-        #Internal graph
-        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing])
-        msg_internal = ForneyLab.updateNodeMessage!(3, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)
-
-        # TODO: msg_internal returns nothing
-
-        # Messages must be equal
-        ensureMVParametrization!(msg_shortcut.value)
-        ensureMVParametrization!(msg_internal.value)
-        @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
-        @fact isApproxEqual(msg_internal.value.V, msg_shortcut.value.V) => true
-
-        # Backward
-        #Shortcut rules
-        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
-        msg_shortcut = ForneyLab.updateNodeMessage!(1, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)
-        #Internal graph
-        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
-        msg_internal = ForneyLab.updateNodeMessage!(1, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)
-        # Messages must be equal
-        ensureMVParametrization!(msg_shortcut.value)
-        ensureMVParametrization!(msg_internal.value)
-        @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
-        @fact isApproxEqual(msg_internal.value.V, msg_shortcut.value.V) => true
-        #Shortcut rules
-        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
-        msg_shortcut = ForneyLab.updateNodeMessage!(2, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)
-        #Internal graph
-        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
-        msg_internal = ForneyLab.updateNodeMessage!(2, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)
-        # Messages must be equal
-        ensureMVParametrization!(msg_shortcut.value)
-        ensureMVParametrization!(msg_internal.value)
-        @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
-        @fact isApproxEqual(msg_internal.value.V, msg_shortcut.value.V) => true
-    end
-
-    context("GainAdditionCompositeNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result (m,W) parametrization") do
-        A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
-
-        # Forward
-        #Shortcut rules
-        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
-        msg_shortcut = ForneyLab.updateNodeMessage!(3, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)
-        #Internal graph
-        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
-        msg_internal = ForneyLab.updateNodeMessage!(3, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)        # Messages must be equal
-        ensureMVParametrization!(msg_shortcut.value)
-        ensureMVParametrization!(msg_internal.value)
-        @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
-        @fact isApproxEqual(msg_internal.value.V, msg_shortcut.value.V) => true
-
-        # Backward
-        #Shortcut rules
-        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_shortcut = ForneyLab.updateNodeMessage!(1, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)        #Internal graph
-        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = ForneyLab.updateNodeMessage!(1, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)        # Messages must be equal
-        ensureMVParametrization!(msg_shortcut.value)
-        ensureMVParametrization!(msg_internal.value)
-        @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
-        @fact isApproxEqual(msg_internal.value.V, msg_shortcut.value.V) => true
-        #Shortcut rules
-        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_shortcut = ForneyLab.updateNodeMessage!(2, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)        #Internal graph
-        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = ForneyLab.updateNodeMessage!(2, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)        # Messages must be equal
-        ensureMVParametrization!(msg_shortcut.value)
-        ensureMVParametrization!(msg_internal.value)
-        @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
-        @fact isApproxEqual(msg_internal.value.V, msg_shortcut.value.V) => true
-    end
-
-    context("GainAdditionCompositeNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result (xi,W) parametrization") do
-        A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
-
-        # Forward
-        #Shortcut rules
-        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
-        msg_shortcut = ForneyLab.updateNodeMessage!(3, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)
-        #Internal graph
-        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
-        msg_internal = ForneyLab.updateNodeMessage!(3, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)        # Messages must be equal
-        ensureMVParametrization!(msg_shortcut.value)
-        ensureMVParametrization!(msg_internal.value)
-        @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
-        @fact isApproxEqual(msg_internal.value.V, msg_shortcut.value.V) => true
-
-        # Backward
-        #Shortcut rules
-        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_shortcut = ForneyLab.updateNodeMessage!(1, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)        #Internal graph
-        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [nothing, Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = ForneyLab.updateNodeMessage!(1, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)        # Messages must be equal
-        ensureMVParametrization!(msg_shortcut.value)
-        ensureMVParametrization!(msg_internal.value)
-        @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
-        @fact isApproxEqual(msg_internal.value.V, msg_shortcut.value.V) => true
-        #Shortcut rules
-        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_shortcut = ForneyLab.updateNodeMessage!(2, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)        #Internal graph
-        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = ForneyLab.updateNodeMessage!(2, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)        # Messages must be equal
-        ensureMVParametrization!(msg_shortcut.value)
-        ensureMVParametrization!(msg_internal.value)
-        @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
-        @fact isApproxEqual(msg_internal.value.V, msg_shortcut.value.V) => true
-    end
-
-    context("GainAdditionCompositeNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result (different parametrizations)") do
-        A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
-
-        # Forward
-        #Shortcut rules
-        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
-        msg_shortcut = ForneyLab.updateNodeMessage!(3, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)        #Internal graph
-        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
-        msg_internal = ForneyLab.updateNodeMessage!(3, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)        # Messages must be equal
-        ensureMVParametrization!(msg_shortcut.value)
-        ensureMVParametrization!(msg_internal.value)
-        @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
-        @fact isApproxEqual(msg_internal.value.V, msg_shortcut.value.V) => true
-
-        # Backward
-        #Shortcut rules
-        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_shortcut = ForneyLab.updateNodeMessage!(1, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)        #Internal graph
-        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = ForneyLab.updateNodeMessage!(1, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)        # Messages must be equal
-        ensureMVParametrization!(msg_shortcut.value)
-        ensureMVParametrization!(msg_internal.value)
-        @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
-        @fact isApproxEqual(msg_internal.value.V, msg_shortcut.value.V) => true
-        #Shortcut rules
-        node_gain_addition_composite = initializeGainAdditionCompositeNode(A, true, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_shortcut = ForneyLab.updateNodeMessage!(2, node_gain_addition_composite, GaussianDistribution, GaussianDistribution)        #Internal graph
-        node_gain_addition_internal = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = ForneyLab.updateNodeMessage!(2, node_gain_addition_internal, GaussianDistribution, GaussianDistribution)        # Messages must be equal
-        ensureMVParametrization!(msg_shortcut.value)
-        ensureMVParametrization!(msg_internal.value)
-        @fact isApproxEqual(msg_internal.value.m, msg_shortcut.value.m) => true
-        @fact isApproxEqual(msg_internal.value.V, msg_shortcut.value.V) => true
     end
 end

@@ -27,6 +27,8 @@ function graph2dot(nodes::Array{Node,1})
     for node in nodes
         if typeof(node)==TerminalNode
             dot *= "\t$(object_id(node)) [label=\"$(node.name)\", style=filled, width=0.75, height=0.75]\n"
+        elseif typeof(node)==ClampNode
+            dot *= "\t$(object_id(node)) [label=\"\", shape=point,  width=0.15, height=0.15]\n"
         else
             if haskey(node_type_symbols, typeof(node))
                 dot *= "\t$(object_id(node)) [label=\"$(node_type_symbols[typeof(node)])\\n$(node.name)\"]\n"
@@ -41,8 +43,8 @@ function graph2dot(nodes::Array{Node,1})
         tail_label = "$tail_id $(getName(edge.tail))"
         head_id = findfirst(edge.head.node.interfaces, edge.head)
         head_label = "$head_id $(getName(edge.head))"
-        label =  string("FW: ", (edge.tail.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.tail.message_value_type)\n")
-        label *= string("BW: ", (edge.head.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.head.message_value_type)")
+        label =  string("FW: ", (edge.tail.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.tail.message_payload_type)\n")
+        label *= string("BW: ", (edge.head.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.head.message_payload_type)")
         dot *= "\t$(object_id(edge.tail.node)) -> $(object_id(edge.head.node)) " 
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", label=\"$(label)\"]\n"
     end
@@ -64,7 +66,7 @@ function graph2dot(composite_node::CompositeNode)
 
     return graph2dot(nodes)
 end
-graph2dot(seed_node::Node) = graph2dot(getAllNodes(seed_node, open_composites=false))
+graph2dot(seed_node::Node) = graph2dot(getAllNodes(seed_node, open_composites=false, include_clamps=true))
 
 function graphViz(n::Union(Node, Array{Node,1}); external_viewer::Bool=false)
     # Generates a DOT graph and shows it

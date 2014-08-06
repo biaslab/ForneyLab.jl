@@ -50,7 +50,7 @@ type GainEqualityCompositeNode <: CompositeNode
     in2::Interface
     out::Interface
 
-    function GainEqualityCompositeNode(A::Union(Array{Float64},Float64)=1.0, use_composite_update_rules::Bool=true; name="unnamed")
+    function GainEqualityCompositeNode(A::Union(Array{Float64},Float64)=1.0, use_composite_update_rules::Bool=true; name="unnamed", args...)
         if typeof(A)==Float64
             A = fill!(Array(Float64,1,1),A)
         elseif use_composite_update_rules
@@ -65,18 +65,23 @@ type GainEqualityCompositeNode <: CompositeNode
         self.fixed_gain_node = FixedGainNode(A, name="$(name)_internal_gain")
         Edge(self.equality_node.interfaces[2], self.fixed_gain_node.in1, GaussianDistribution, GaussianDistribution) # Internal edge
 
-        # Initialize the composite node interfaces belonging to the composite node itself.
-        self.interfaces[1] = Interface(self)
-        self.interfaces[2] = Interface(self)
-        self.interfaces[3] = Interface(self)
+        args = Dict(zip(args...)...) # Cast args to dictionary
+        param_list = [:in1, :in2, :out]
+        for i = 1:length(param_list)
+            self.interfaces[i] = Interface(self) # Initialize the composite node interfaces belonging to the composite node itself.
+            setfield(self, param_list[i], self.interfaces[i]) # Init named interface handles
+
+            # Clamp parameter values when given as argument
+            if haskey(args, param_list[i])
+                Edge(ForneyLab.ClampNode(Message(args[param_list[i]])).out, getfield(self, param_list[i]), typeof(args[param_list[i]])) # Connect clamp node
+            end
+        end
+
         # Initialize the interfaces as references to the internal node interfaces.
         self.interfaces[1].child = self.equality_node.interfaces[1]
         self.interfaces[2].child = self.equality_node.interfaces[3]
         self.interfaces[3].child = self.fixed_gain_node.out
-        # Init named interface handles
-        self.in1 = self.interfaces[1]
-        self.in2 = self.interfaces[2]
-        self.out = self.interfaces[3]
+
         # Set internal message passing schedules
         self.in1.internal_schedule = [self.fixed_gain_node.in1, self.equality_node.interfaces[1]]
         self.in2.internal_schedule = [self.fixed_gain_node.in1, self.equality_node.interfaces[3]]
@@ -97,59 +102,80 @@ backwardGainEqualityXiRule{T<:Number}(A::Array{T, 2}, xi_x::Array{T, 1}, xi_y::A
 backwardGainEqualityVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x - V_x * A' * inv(V_y + A * V_x * A') * A * V_x
 backwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, V_x::Array{T, 2}, m_y::Array{T, 1}, V_y::Array{T, 2}) = m_x + V_x * A' * inv(V_y + A * V_x * A') * (m_y - A * m_x)
 
-function updateNodeMessage!(outbound_interface_id::Int,
-                            node::GainEqualityCompositeNode,
-                            inbound_messages_value_types::Type{GaussianDistribution},
-                            outbound_message_value_type::Type{GaussianDistribution})
+function updateNodeMessage!(node::GainEqualityCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            msg_in1::Message{GaussianDistribution},
+                            msg_in2::Message{GaussianDistribution},
+                            msg_out::Nothing)
+    # Forward message (towards out)
+    # We don't have a shortcut rule for this one, so we always use the internal nodes to calculate the outbound msg
+    return node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
+end
+
+function updateNodeMessage!(node::GainEqualityCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            msg_in1::Message{GaussianDistribution},
+                            msg_in2::Nothing,
+                            msg_out::Message{GaussianDistribution})
+    # Backward message (towards in2)
+    return applyBackwardRule!(node, outbound_interface_id, outbound_message_payload_type, msg_in1, msg_out)
+end
+
+function updateNodeMessage!(node::GainEqualityCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            msg_in1::Nothing,
+                            msg_in2::Message{GaussianDistribution},
+                            msg_out::Message{GaussianDistribution})
+    # Backward message (towards in1)
+    return applyBackwardRule!(node, outbound_interface_id, outbound_message_payload_type, msg_in2, msg_out)
+end
+
+function applyBackwardRule!(node::GainEqualityCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            msg_in::Message{GaussianDistribution},
+                            msg_out::Message{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-
+    # Backward message (towards in1 or in2)
     if !node.use_composite_update_rules
         node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
     else
-        if outbound_interface_id == 3
-            # Forward message
-            # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
-            node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
-        elseif outbound_interface_id == 1 || outbound_interface_id == 2
-            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
+        dist_result = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+        dist_3 = msg_out.payload
+        dist_in = msg_in.payload
 
-            # Backward messages
-            dist_3 = node.interfaces[3].partner.message.value
-            dist_in = node.interfaces[outbound_interface_id == 1 ? 2 : 1].partner.message.value # the other input interface
-
-            # Select parameterization
-            # Order is from least to most computationally intensive
-            if dist_3.xi != nothing && dist_3.W != nothing && dist_in.xi != nothing && dist_in.W != nothing
-                dist_out.m = nothing
-                dist_out.V = nothing
-                dist_out.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
-                dist_out.xi = backwardGainEqualityXiRule(node.A, dist_in.xi, dist_3.xi)
-            elseif dist_3.m != nothing && dist_3.V != nothing && dist_in.m != nothing && dist_in.V != nothing
-                dist_out.m = backwardGainEqualityMRule(node.A, dist_in.m, dist_in.V, dist_3.m, dist_3.V)
-                dist_out.V = backwardGainEqualityVRule(node.A, dist_in.V, dist_3.V)
-                dist_out.W = nothing
-                dist_out.xi = nothing
-            elseif dist_3.m != nothing && dist_3.W != nothing && dist_in.m != nothing && dist_in.W != nothing
-                # TODO: Not very efficient!
-                dist_out.m = backwardGainEqualityMRule(node.A, dist_in.m, inv(dist_in.W), dist_3.m, inv(dist_3.W))
-                dist_out.V = nothing
-                dist_out.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
-                dist_out.xi = nothing
-            else
-                # Fallback: convert inbound messages to (xi,W) parametrization and then use efficient rules
-                ensureXiWParametrization!(dist_in)
-                ensureXiWParametrization!(dist_3)
-                dist_out.m = nothing
-                dist_out.V = nothing
-                dist_out.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
-                dist_out.xi = backwardGainEqualityXiRule(node.A, dist_in.xi, dist_3.xi)
-            end
+        # Select parameterization
+        # Order is from least to most computationally intensive
+        if dist_3.xi != nothing && dist_3.W != nothing && dist_in.xi != nothing && dist_in.W != nothing
+            dist_result.m = nothing
+            dist_result.V = nothing
+            dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
+            dist_result.xi = backwardGainEqualityXiRule(node.A, dist_in.xi, dist_3.xi)
+        elseif dist_3.m != nothing && dist_3.V != nothing && dist_in.m != nothing && dist_in.V != nothing
+            dist_result.m = backwardGainEqualityMRule(node.A, dist_in.m, dist_in.V, dist_3.m, dist_3.V)
+            dist_result.V = backwardGainEqualityVRule(node.A, dist_in.V, dist_3.V)
+            dist_result.W = nothing
+            dist_result.xi = nothing
+        elseif dist_3.m != nothing && dist_3.W != nothing && dist_in.m != nothing && dist_in.W != nothing
+            # TODO: Not very efficient!
+            dist_result.m = backwardGainEqualityMRule(node.A, dist_in.m, inv(dist_in.W), dist_3.m, inv(dist_3.W))
+            dist_result.V = nothing
+            dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
+            dist_result.xi = nothing
         else
-            error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+            # Fallback: convert inbound messages to (xi,W) parametrization and then use efficient rules
+            ensureXiWParametrization!(dist_in)
+            ensureXiWParametrization!(dist_3)
+            dist_result.m = nothing
+            dist_result.V = nothing
+            dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
+            dist_result.xi = backwardGainEqualityXiRule(node.A, dist_in.xi, dist_3.xi)
         end
     end
     # Return the outbound message
     return node.interfaces[outbound_interface_id].message
 end
-

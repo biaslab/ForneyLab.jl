@@ -7,86 +7,94 @@ facts("GaussianNode unit tests") do
         node = GaussianNode()
         @fact typeof(node) => GaussianNode
         @fact length(node.interfaces) => 3
-        @fact node.in1 => node.interfaces[1]
-        @fact node.in2 => node.interfaces[2]
+        @fact node.mean => node.interfaces[1]
+        @fact node.variance => node.interfaces[2]
         @fact node.out => node.interfaces[3]
         @fact node.variational => false # default variational to false
     end
-end
 
-#####################
-# Integration tests
-#####################
+    context("GaussianNode() should initialize a GaussianNode with precision parametrization") do
+        node = GaussianNode(form="precision")
+        @fact node.mean => node.interfaces[1]
+        @fact node.precision => node.interfaces[2]
+        @fact node.out => node.interfaces[3]
+    end
 
-facts("GaussianNode integration tests") do
+    context("GaussianNode() should handle fixed parameters") do
+        # Fix mean
+        node = GaussianNode(m=GaussianDistribution())
+        @fact typeof(node.mean.partner.node) => ForneyLab.ClampNode
+        @fact node.mean.partner.message.payload => GaussianDistribution()
+        # Fix variance
+        node = GaussianNode(V=InverseGammaDistribution())
+        @fact typeof(node.variance.partner.node) => ForneyLab.ClampNode
+        @fact node.variance.partner.message.payload => InverseGammaDistribution()
+        # Fix precision
+        node = GaussianNode(form="precision", W=GammaDistribution())
+        @fact typeof(node.precision.partner.node) => ForneyLab.ClampNode
+        @fact node.precision.partner.message.payload => GammaDistribution()
+        # Fix mean and variance
+        node = GaussianNode(m=GaussianDistribution(), V=InverseGammaDistribution())
+        @fact typeof(node.mean.partner.node) => ForneyLab.ClampNode
+        @fact typeof(node.variance.partner.node) => ForneyLab.ClampNode
+    end
+
     context("Point estimates of y and m, so no approximation is required.") do
         context("GaussianNode should propagate a forward message to y") do
-            # Standard
-            # TODO
-
-            # Inverted
-            node = initializeGaussianNode([Message(2.0), Message(InverseGammaDistribution(a=3.0, b=1.0)), nothing])
-            msg = ForneyLab.updateNodeMessage!(3, node, Union(Float64, InverseGammaDistribution), GaussianDistribution)
-            @fact typeof(msg) => Message{GaussianDistribution}
-            @fact msg.value.m => [2.0]
-            @fact msg.value.V => reshape([0.5], 1, 1)
+            validateOutboundMessage(GaussianNode(), 
+                                    3, 
+                                    GaussianDistribution, 
+                                    [Message(2.0), Message(InverseGammaDistribution(a=3.0, b=1.0)), nothing],
+                                    GaussianDistribution(m=2.0, V=0.5))
         end
 
         context("GaussianNode should propagate a backward message to the mean") do
-            # Standard
-            # TODO
-
-            # Inverted
-            node = initializeGaussianNode([nothing, Message(InverseGammaDistribution(a=3.0, b=1.0)), Message(2.0)])
-            msg = ForneyLab.updateNodeMessage!(1, node, Union(Float64, InverseGammaDistribution), GaussianDistribution)
-            @fact msg.value.m => [2.0]
-            @fact msg.value.V => reshape([0.5], 1, 1)
+            validateOutboundMessage(GaussianNode(), 
+                                    1, 
+                                    GaussianDistribution, 
+                                    [nothing, Message(InverseGammaDistribution(a=3.0, b=1.0)), Message(2.0)],
+                                    GaussianDistribution(m=2.0, V=0.5))
         end
 
         context("GaussianNode should propagate a backward message to the variance") do
-            node = initializeGaussianNode([Message(2.0), nothing, Message(1.0)])
-            msg = ForneyLab.updateNodeMessage!(2, node, Float64, InverseGammaDistribution)
-            @fact typeof(msg) => Message{InverseGammaDistribution}
-            @fact msg.value.a => -0.5
-            @fact msg.value.b => 0.5
+            validateOutboundMessage(GaussianNode(), 
+                                    2, 
+                                    InverseGammaDistribution, 
+                                    [Message(2.0), nothing, Message(1.0)],
+                                    InverseGammaDistribution(a=-0.5, b=0.5))
         end
     end
 
 
     context("Variational estimation") do
-        context("Variational GaussianNode should propagate a forward message to y") do
-        end
-
         context("Variational GaussianNode should propagate a backward variational message to the mean") do
             # Standard
-            node = initializeVariationalGaussianNode([nothing, Message(GammaDistribution(a=3.0, b=1.0)), Message(2.0)])
-            msg = ForneyLab.updateNodeMessage!(1, node, Union(Float64, GammaDistribution), GaussianDistribution)
-            @fact typeof(msg) => Message{GaussianDistribution}
-            @fact msg.value.m => [2.0]
-            @fact msg.value.W => reshape([3.0], 1, 1)
+            validateOutboundMessage(GaussianNode(true, form="precision"), 
+                                    1, 
+                                    GaussianDistribution, 
+                                    [nothing, GammaDistribution(a=3.0, b=1.0), Message(2.0)],
+                                    GaussianDistribution(m=2.0, W=3.0))
             # Inverse
-            node = initializeVariationalGaussianNode([nothing, Message(InverseGammaDistribution(a=3.0, b=1.0)), Message(2.0)])
-            msg = ForneyLab.updateNodeMessage!(1, node, Union(Float64, InverseGammaDistribution), GaussianDistribution)
-            @fact typeof(msg) => Message{GaussianDistribution}
-            @fact msg.value.m => [2.0]
-            @fact msg.value.V => reshape([4.0], 1, 1)
+            validateOutboundMessage(GaussianNode(true), 
+                                    1, 
+                                    GaussianDistribution, 
+                                    [nothing, InverseGammaDistribution(a=3.0, b=1.0), Message(2.0)],
+                                    GaussianDistribution(m=2.0, V=4.0))
         end
 
         context("Variational GaussianNode should propagate a backward variational message to the variance or precision") do
             # Standard
-            node = initializeVariationalGaussianNode([Message(GaussianDistribution(m=4.0, W=2.0)), nothing, Message(2.0)])
-            node.in2.edge.marginal = GammaDistribution() # Let them know what I expect returned
-            msg = ForneyLab.updateNodeMessage!(2, node, Union(Float64, GaussianDistribution), GammaDistribution)
-            @fact typeof(msg) => Message{GammaDistribution}
-            @fact msg.value.a => 1.5
-            @fact msg.value.b => 2.25
+            validateOutboundMessage(GaussianNode(true, form="precision"), 
+                                    2, 
+                                    GammaDistribution, 
+                                    [GaussianDistribution(m=4.0, W=2.0), nothing, Message(2.0)],
+                                    GammaDistribution(a=1.5, b=2.25))
             # Inverse
-            node = initializeVariationalGaussianNode([Message(GaussianDistribution(m=4.0, V=1.0)), nothing, Message(2.0)])
-            node.in2.edge.marginal = InverseGammaDistribution() # Let them know what I expect returned
-            msg = ForneyLab.updateNodeMessage!(2, node, Union(Float64, GaussianDistribution), InverseGammaDistribution)
-            @fact typeof(msg) => Message{InverseGammaDistribution}
-            @fact msg.value.a => -0.5
-            @fact msg.value.b => 2.5
+            validateOutboundMessage(GaussianNode(true), 
+                                    2, 
+                                    InverseGammaDistribution, 
+                                    [GaussianDistribution(m=4.0, V=1.0), nothing, Message(2.0)],
+                                    InverseGammaDistribution(a=-0.5, b=2.5))
         end
     end
 end

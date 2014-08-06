@@ -26,9 +26,9 @@ facts("Helper function unit tests") do
         node2 = TerminalNode(2.0)
         @fact node2.out.message => nothing
         getOrCreateMessage(node2.out, Float64)
-        @fact node2.out.message.value => 1.0
-        ForneyLab.updateNodeMessage!(1, node2, None, Float64)
-        @fact getOrCreateMessage(node2.out, Float64).value => 2.0
+        @fact node2.out.message.payload => 1.0
+        ForneyLab.updateNodeMessage!(node2, 1, Float64, nothing)
+        @fact getOrCreateMessage(node2.out, Float64).payload => 2.0
     end
 end
 

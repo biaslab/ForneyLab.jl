@@ -22,3 +22,5 @@ function show(io::IO, dist::GammaDistribution)
     println(io, "a = $(dist.a) (shape)")
     println(io, "b = $(dist.b) (rate)")
 end
+
+==(x::GammaDistribution, y::GammaDistribution) = (x.a==y.a && x.b==y.b)

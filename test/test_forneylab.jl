@@ -1,6 +1,6 @@
 # This file contains the general ForneyLab tests.
 # Tests for specific node and message types are
-# found in test_nodes.jl and test_messages.jl
+# found in test_nodes.jl and test_messages.jl 
 
 module TestForneyLab
 
@@ -14,51 +14,45 @@ include("test_helpers.jl") # Tests for ForneyLab helper methods
 #####################
 # Unit tests
 #####################
+facts("General ProbabilityDistribution unit tests") do
+    for probdist_type in subtypes(ProbabilityDistribution)
+        context("$(probdist_type) should have a default constructor and a == operator") do
+            @fact probdist_type()==probdist_type() => true
+        end
+    end
+end
 
 facts("General node properties unit tests") do
-    context("Node properties should include interfaces and name") do
-        for NodeType in [subtypes(Node), subtypes(CompositeNode)]
-            if NodeType != CompositeNode && NodeType != MockNode
-                @fact typeof(NodeType().interfaces) => Array{Interface, 1} # Check for interface array
-                @fact length(NodeType().interfaces) >= 1 => true # Check length of interface array
-                @fact typeof(NodeType().name) => ASCIIString
+    for node_type in [subtypes(Node), subtypes(CompositeNode)]
+        if node_type!=CompositeNode && node_type!=MockNode && node_type!=ForneyLab.ClampNode
+            context("$(node_type) properties should include interfaces and name") do
+                @fact typeof(node_type().interfaces) => Array{Interface, 1} # Check for interface array
+                @fact length(node_type().interfaces) >= 1 => true # Check length of interface array
+                @fact typeof(node_type().name) => ASCIIString
             end
-        end
-    end
 
-    context("Composite nodes should have property use_composite_update_rules") do
-        for NodeType in [subtypes(CompositeNode)]
-            @fact NodeType().use_composite_update_rules => true || false
-        end
-    end
-
-    context("Node constructor should assign a name") do
-        for NodeType in [subtypes(Node), subtypes(CompositeNode)]
-            if NodeType != CompositeNode && NodeType != MockNode
-                my_node = NodeType(;name="my_name")
+            context("$(node_type) constructor should assign a name") do
+                my_node = node_type(;name="my_name")
                 @fact my_node.name => "my_name"
             end
-        end
-    end
 
-    context("Nodes should couple interfaces to themselves") do
-        for NodeType in [subtypes(Node), subtypes(CompositeNode)]
-            if NodeType != CompositeNode && NodeType != MockNode
-                my_node = NodeType()
+            context("$(node_type) constructor should assign interfaces to itself") do
+                my_node = node_type()
                 for interface_id in 1:length(my_node.interfaces)
                     # Check if the node interfaces couple back to the same node
                     @fact my_node.interfaces[interface_id].node => my_node
                 end
             end
+
+            context("$(node_type) should have at least 1 updateNodeMessage!() method") do
+                @fact contains(string(methods(ForneyLab.updateNodeMessage!)), string("::", node_type)) => true
+            end
         end
     end
 
-    context("Every node type should have at least 1 updateNodeMessage!() method") do
-        for NodeType in [subtypes(Node), subtypes(CompositeNode)]
-            if NodeType != CompositeNode && NodeType != MockNode
-                # Check if method description contains node type
-                @fact contains(string(methods(ForneyLab.updateNodeMessage!)), string("::", NodeType)) => true
-            end
+    for node_type in [subtypes(CompositeNode)]
+        context("$(node_type) should have property use_composite_update_rules") do
+            @fact node_type().use_composite_update_rules => true || false
         end
     end
 end
@@ -80,8 +74,8 @@ facts("setMarginal unit tests") do
         (node1, node2) = initializePairOfMockNodes()
         edge = Edge(node1.out, node2.out)
         setMarginal!(edge, 1.0)
-        @fact edge.head.message.value => 1.0
-        @fact edge.tail.message.value => 1.0
+        @fact edge.head.message.payload => 1.0
+        @fact edge.tail.message.payload => 1.0
         @fact edge.marginal => 1.0
     end
 end
@@ -90,6 +84,7 @@ end
 include("distributions/test_gaussian.jl")
 include("distributions/test_gamma.jl")
 include("distributions/test_inverse_gamma.jl")
+include("nodes/test_clamp.jl")
 include("nodes/test_addition.jl")
 include("nodes/test_terminal.jl")
 include("nodes/test_equality.jl")
@@ -136,7 +131,7 @@ facts("Connections between nodes integration tests") do
     end
 
     context("Edge should throw an error when two interfaces on the same node are connected") do
-        node = initializeFixedGainNode()
+        node = FixedGainNode()
         # Connect output directly to input
         @fact_throws Edge(node.interfaces[2], node.interfaces[1])
     end
@@ -144,8 +139,8 @@ facts("Connections between nodes integration tests") do
     context("Edge constructor should write the expected message value types to the interfaces") do
         (node1, node2) = initializePairOfMockNodes()
         edge = Edge(node1.out, node2.out, GaussianDistribution, Float64)
-        @fact edge.tail.message_value_type => GaussianDistribution
-        @fact edge.head.message_value_type => Float64
+        @fact edge.tail.message_payload_type => GaussianDistribution
+        @fact edge.head.message_payload_type => Float64
     end
 
     context("Edge construction should couple interfaces to edge") do
@@ -182,13 +177,13 @@ facts("calculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do
         (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(3.0))
         Edge(terminal.out, gain.in1, Float64, Array{Float64, 2})
-        gain.out.message_value_type = Array{Float64, 2} # Expect a matrix
+        gain.out.message_payload_type = Array{Float64, 2} # Expect a matrix
         @fact gain.out.message => nothing
         # Request message on node for which the input is unknown
         msg = calculateMessage!(gain.out)
         @fact msg => gain.out.message # Returned message should be identical to message stored on interface.
-        @fact typeof(gain.out.message.value) => Array{Float64, 2}
-        @fact gain.out.message.value => reshape([6.0], 1, 1)
+        @fact typeof(gain.out.message.payload) => Array{Float64, 2}
+        @fact gain.out.message.payload => reshape([6.0], 1, 1)
     end
 
     context("calculateMessage!() should recursively calculate required inbound message") do
@@ -196,10 +191,10 @@ facts("calculateMessage!() integration tests") do
         (node1, node2, node3) = initializeChainOfNodes()
         @fact node3.out.message => nothing
         # Request message on node for which the input is unknown
-        node3.out.message_value_type = Array{Float64, 2} # Expect a matrix
+        node3.out.message_payload_type = Array{Float64, 2} # Expect a matrix
         calculateMessage!(node3.out)
-        @fact typeof(node3.out.message.value) => Array{Float64, 2}
-        @fact node3.out.message.value => reshape([12.0], 1, 1)
+        @fact typeof(node3.out.message.payload) => Array{Float64, 2}
+        @fact node3.out.message.payload => reshape([12.0], 1, 1)
     end
 
     context("calculateMessage!() should throw an error when there is an unbroken loop") do
@@ -251,8 +246,8 @@ facts("generateSchedule() and executeSchedule() integration tests") do
 
     context("executeSchedule() should correctly execute a schedule and return the result of the last step") do
         schedule = generateSchedule(add.in2)
-        dist = ensureMVParametrization!(executeSchedule(schedule).value)
-        @fact dist => add.in2.message.value
+        dist = ensureMVParametrization!(executeSchedule(schedule).payload)
+        @fact dist => add.in2.message.payload
         @fact isApproxEqual(dist.m, [2.0]) => true
         @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
     end
@@ -279,7 +274,7 @@ facts("generateSchedule() and executeSchedule() integration tests") do
             executeSchedule(schedule)
         end
         @fact typeof(driver.out.message) => Message{GaussianDistribution}
-        @fact ensureMVParametrization!(driver.out.message.value).m => [100.0] # For stop conditions at 100 cycles deep
+        @fact ensureMVParametrization!(driver.out.message.payload).m => [100.0] # For stop conditions at 100 cycles deep
     end
 
     context("executeSchedule() should be called repeatedly until convergence") do
@@ -287,15 +282,15 @@ facts("generateSchedule() and executeSchedule() integration tests") do
         # Now set a breaker message and check that it works
         breaker_message = Message(GaussianDistribution(m=10.0, V=100.0))
         setMessage!(driver.out, breaker_message)
-        prev_dist = deepcopy(breaker_message.value)
+        prev_dist = deepcopy(breaker_message.payload)
         converged = false
         schedule = generateSchedule(driver.out)
         while !converged
-            dist = ensureMVParametrization!(executeSchedule(schedule).value)
+            dist = ensureMVParametrization!(executeSchedule(schedule).payload)
             converged = isApproxEqual(prev_dist.m, dist.m)
             prev_dist = deepcopy(dist)
         end
-        @fact isApproxEqual(driver.out.message.value.m, [0.0]) => true
+        @fact isApproxEqual(driver.out.message.payload.m, [0.0]) => true
     end
 end
 

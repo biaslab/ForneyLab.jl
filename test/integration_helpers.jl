@@ -53,20 +53,9 @@ function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(2.0), msg_gain_2=Me
     node1 = FixedGainNode(A)
     node1.interfaces[1].message = msg_gain_1
     node1.interfaces[2].message = msg_gain_2
-    node2 = TerminalNode(msg_terminal.value)
+    node2 = TerminalNode(msg_terminal.payload)
     node2.interfaces[1].message = msg_terminal
     return node1, node2
-end
-
-function initializeFixedGainNode()    
-    # Helper function for initializing a fixed gain node
-    #     
-    # |--[A]--|
-
-    node = FixedGainNode()
-    node.interfaces[1].message = Message(GaussianDistribution())
-    node.interfaces[2].message = Message(GaussianDistribution())
-    return node
 end
 
 function initializeChainOfNodes()
@@ -163,70 +152,6 @@ function initializeEqualityNode(msgs::Array{Any})
         interface_count += 1
     end
     return eq_node
-end
-
-function initializeFixedGainNode(A::Array, msgs::Array{Any})
-    # Set up a fixed gain node and prepare the messages
-    # A MockNode is connected for each argument message
-    #
-    # [M]-->[A]--|  
-    #                
-
-    fg_node = FixedGainNode(A)
-    interface_count = 1
-    for msg=msgs
-        if msg!=nothing
-            Edge(MockNode(msg).out, fg_node.interfaces[interface_count])
-        end
-        interface_count += 1
-    end
-    return fg_node
-end
-
-function initializeGaussianNode(msgs::Array{Any})
-    # Set up a Gaussian node and prepare the messages
-    # A MockNode is connected for each argument message
-    #
-    #         [M] (mean)
-    #          |
-    #          v  out
-    #   [M]-->[N]----->
-    #  (prec.)
-    #                
-
-    g_node = GaussianNode()
-    interface_count = 1
-    for msg=msgs
-        if msg!=nothing
-            Edge(MockNode(msg).out, g_node.interfaces[interface_count])
-        end
-        interface_count += 1
-    end
-    return g_node
-end
-
-function initializeVariationalGaussianNode(msgs::Array{Any})
-    # Set up a Gaussian node and prepare the messages/marginals
-    # A MockNode is connected for each argument message
-    #
-    #         [M] (mean)
-    #          |
-    #          v  out
-    #   [M]-->[N]----->
-    #  (prec.)
-    #                
-
-    g_node = GaussianNode(true)
-    edge = Edge(MockNode(Message(GaussianDistribution())).out, g_node.in1)
-    if msgs[1] != nothing
-        edge.marginal = msgs[1].value
-    end
-    edge = Edge(MockNode(Message(GammaDistribution())).out, g_node.in2)
-    if msgs[2] != nothing
-        edge.marginal = msgs[2].value
-    end
-    Edge(g_node.out, MockNode(msgs[3]).out)
-    return g_node
 end
 
 function initializeTerminalAndGainAddNode()
@@ -345,7 +270,7 @@ function initializeGaussianNodeChain()
 
     # Build graph
     for section=1:n_samples
-        g_node = GaussianNode(true; name="g_node_$(section)") # Variational flag set to true, so updateNodeMessage knows what formula to use
+        g_node = GaussianNode(true; name="g_node_$(section)", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
         m_eq_node = EqualityNode(; name="m_eq_$(section)") # Equality node chain for mean
         gam_eq_node = EqualityNode(; name="s_eq_$(section)") # Equality node chain for variance
         obs_node = TerminalNode(y_observations[section], name="c_obs_$(section)") # Observed y values are stored in terminal node
@@ -354,8 +279,8 @@ function initializeGaussianNodeChain()
         gam_eq_nodes[section] = gam_eq_node
         obs_nodes[section] = obs_node
         y_edges[section] = Edge(g_node.out, obs_node.out, Float64)
-        q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.in1)
-        q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.in2, GammaDistribution)
+        q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.mean)
+        q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.precision, GammaDistribution)
         # Preset uninformative ('one') messages
         setMarginal!(q_gam_edges[section], uninformative(GammaDistribution))
         setMarginal!(q_m_edges[section], uninformative(GaussianDistribution))
@@ -377,37 +302,12 @@ function initializeGaussianNodeChain()
     return(g_nodes, obs_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges)
 end
 
-function initializeLinearCompositeNode(dists::Array{ProbabilityDistribution})
-    # Set up a linear composite node and prepare the marginals
-    # A MockNode is connected for each argument message
-    #
-    #        [a_in][b_in][noise_in]
-    #            |  |       |
-    #       |-----------------|
-    #       |    |  |       | |
-    #       |    |  -->[N]<-- |
-    #       |    |      |     |
-    #       |    v      v     |
-    #[in1]--|-->[a]--->[+]----|-->[out]
-    #       |                 |
-    #       |-----------------|
-
-    lin_node = LinearCompositeNode(true)
-    for intf = 1:5
-        edge = Edge(MockNode(Message(dists[intf])).out, lin_node.interfaces[intf], typeof(dists[intf]))
-        if dists[intf] != nothing
-            edge.marginal = dists[intf]
-        end
-    end    
-    return lin_node
-end
-
 function initializeLinearCompositeNodeChain()
     # Set up a chain of Gaussian nodes for regression parameter estimation
     #
-    #  [a_0]-->[=]------ ... ->[=]------->[C_a]
+    # [a_0]-->[=]------ ... ->[=]------->[C_a]
     #          |               |        
-    #  [b_0]---|>[=]---- ... --|>[=]----->[C_b]
+    # [b_0]----|>[=]---- ... --|>[=]----->[C_b]
     #          |  |            |  |     
     #[gam_0]---|--|>[=]- ... --|--|>[=]-->[C_gam]
     #          |  |  |         |  |  |  
@@ -456,9 +356,9 @@ function initializeLinearCompositeNodeChain()
         x_nodes[section] = x_node
         y_nodes[section] = y_node
         # Connect section within
-        a_eq_edges[section] = Edge(a_eq_node.interfaces[3], lin_node.a_in)
-        b_eq_edges[section] = Edge(b_eq_node.interfaces[3], lin_node.b_in)
-        gam_eq_edges[section] = Edge(gam_eq_node.interfaces[3], lin_node.noise_in, GammaDistribution)
+        a_eq_edges[section] = Edge(a_eq_node.interfaces[3], lin_node.slope)
+        b_eq_edges[section] = Edge(b_eq_node.interfaces[3], lin_node.offset)
+        gam_eq_edges[section] = Edge(gam_eq_node.interfaces[3], lin_node.noise, GammaDistribution)
         x_edges[section] = Edge(x_node.out, lin_node.in1)
         y_edges[section] = Edge(lin_node.out, y_node.out)
         # Preset marginals
@@ -500,13 +400,21 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     # Helper function for node comparison
 
     # Check that nodes are properly connected
-    @fact node1.interfaces[1].message.value => 2.0
-    @fact node2.interfaces[1].message.value => 1.0
-    @fact node1.interfaces[1].partner.message.value => 1.0
-    @fact node2.interfaces[1].partner.message.value => 2.0
+    @fact node1.interfaces[1].message.payload => 2.0
+    @fact node2.interfaces[1].message.payload => 1.0
+    @fact node1.interfaces[1].partner.message.payload => 1.0
+    @fact node2.interfaces[1].partner.message.payload => 2.0
     # Check that pointers are initiatized correctly
-    @fact node1.out.message.value => 3.0
-    @fact node2.out.message.value => 1.0
-    @fact node1.in1.partner.message.value => 1.0
-    @fact node2.out.partner.message.value => 2.0
+    @fact node1.out.message.payload => 3.0
+    @fact node2.out.message.payload => 1.0
+    @fact node1.in1.partner.message.payload => 1.0
+    @fact node2.out.partner.message.payload => 2.0
+end
+
+function validateOutboundMessage(node::Node, outbound_interface_id::Int, outbound_type::DataType, inbound_messages::Array, correct_outbound_value)
+    msg = ForneyLab.updateNodeMessage!(node, outbound_interface_id, outbound_type, inbound_messages...)
+    @fact node.interfaces[outbound_interface_id].message => msg
+    @fact node.interfaces[outbound_interface_id].message.payload => correct_outbound_value
+
+    return node.interfaces[outbound_interface_id].message
 end

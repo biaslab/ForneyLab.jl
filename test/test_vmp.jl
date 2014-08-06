@@ -24,8 +24,8 @@ facts("VMP implementation integration tests") do
         upward_y = Array(Interface, 0)
         for node = g_nodes
             push!(upward_y, node.out.partner)
-            push!(upward_y, node.in1)
-            push!(upward_y, node.in2)
+            push!(upward_y, node.mean)
+            push!(upward_y, node.precision)
         end
         # Put it all together
         sumproduct_schedule = [left_update_run_m, right_update_run_m, downward_m, left_update_run_gam, right_update_run_gam, downward_gam, upward_y]
@@ -42,12 +42,12 @@ facts("VMP implementation integration tests") do
         executeSchedule(sumproduct_schedule) # One last time to ensure all calculations have propagated through the equality chains
 
         # Save outcome
-        ensureMVParametrization!(m_eq_nodes[end].interfaces[2].message.value)
+        ensureMVParametrization!(m_eq_nodes[end].interfaces[2].message.payload)
 
         # Check the results against the outcome of Infer.NET
         accuracy = 3 # number of decimals accuracy
-        m_out = m_eq_nodes[end].interfaces[2].message.value
-        gam_out = gam_eq_nodes[end].interfaces[2].message.value
+        m_out = m_eq_nodes[end].interfaces[2].message.payload
+        gam_out = gam_eq_nodes[end].interfaces[2].message.payload
         @fact round(m_out.m[1], accuracy) => round(4.37638750753, accuracy)
         @fact round(m_out.V[1, 1], accuracy+1) => round(0.101492691239, accuracy+1)
         @fact round(mean(gam_out), accuracy+1) => round(0.984292623332, accuracy+1)
@@ -72,9 +72,9 @@ facts("VMP implementation integration tests") do
         for node = lin_nodes
             push!(node_update, node.out.partner)
             push!(node_update, node.in1.partner)
-            push!(node_update, node.a_in)
-            push!(node_update, node.b_in)
-            push!(node_update, node.noise_in)
+            push!(node_update, node.slope)
+            push!(node_update, node.offset)
+            push!(node_update, node.noise)
         end
         # Put it all together
         sumproduct_schedule = [left_update_run_a, right_update_run_a, downward_a, left_update_run_b, right_update_run_b, downward_b, left_update_run_gam, right_update_run_gam, downward_gam, node_update]
@@ -91,11 +91,11 @@ facts("VMP implementation integration tests") do
         executeSchedule(sumproduct_schedule) # One last time to ensure all calculations have propagated through the equality chains
 
         # Check the results against the outcome of Infer.NET
-        ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message.value)
-        ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message.value)
-        a_out = a_eq_nodes[end].interfaces[2].message.value
-        b_out = b_eq_nodes[end].interfaces[2].message.value
-        gam_out = gam_eq_nodes[end].interfaces[2].message.value
+        ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message.payload)
+        ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message.payload)
+        a_out = a_eq_nodes[end].interfaces[2].message.payload
+        b_out = b_eq_nodes[end].interfaces[2].message.payload
+        gam_out = gam_eq_nodes[end].interfaces[2].message.payload
 
         accuracy = 1
 

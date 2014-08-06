@@ -19,7 +19,7 @@ end
 facts("Marginal calculations for the gamma") do
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
         edge = Edge(TerminalNode(GammaDistribution(a=1.0, b=2.0)),
-                    TerminalNode(GammaDistribution(a=3.0, b=4.0)))
+                    TerminalNode(GammaDistribution(a=3.0, b=4.0)), GammaDistribution)
         calculateForwardMessage!(edge)
         calculateBackwardMessage!(edge)
         marginal_dist = calculateMarginal!(edge)
