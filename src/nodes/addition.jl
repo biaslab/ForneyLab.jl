@@ -38,16 +38,21 @@ type AdditionNode <: Node
     in2::Interface
     out::Interface
 
-    function AdditionNode(; name="unnamed")
+    function AdditionNode(; name="unnamed", args...)
         self = new(name, Array(Interface, 3))
-        # Create interfaces
-        self.interfaces[1] = Interface(self)
-        self.interfaces[2] = Interface(self)
-        self.interfaces[3] = Interface(self)
-        # Init named interface handles
-        self.in1 = self.interfaces[1]
-        self.in2 = self.interfaces[2]
-        self.out = self.interfaces[3]
+
+        args = Dict(zip(args...)...) # Cast args to dictionary
+        param_list = [:in1, :in2, :out]
+        for i = 1:length(param_list)
+            self.interfaces[i] = Interface(self)
+            setfield(self, param_list[i], self.interfaces[i])
+
+            # Clamp parameter values when given as argument
+            if haskey(args, param_list[i])
+                Edge(ForneyLab.ClampNode(Message(args[param_list[i]])).out, getfield(self, param_list[i]), typeof(args[param_list[i]])) # Connect clamp node
+            end
+        end
+
         return self
     end
 end
