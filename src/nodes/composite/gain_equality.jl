@@ -104,7 +104,7 @@ backwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, V_x::Arra
 
 function updateNodeMessage!(node::GainEqualityCompositeNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Type{GaussianDistribution},
+                            outbound_message_payload_type::Type{GaussianDistribution},
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Nothing)
@@ -115,27 +115,27 @@ end
 
 function updateNodeMessage!(node::GainEqualityCompositeNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Type{GaussianDistribution},
+                            outbound_message_payload_type::Type{GaussianDistribution},
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Nothing,
                             msg_out::Message{GaussianDistribution})
     # Backward message (towards in2)
-    return applyBackwardRule!(node, outbound_interface_id, outbound_message_value_type, msg_in1, msg_out)
+    return applyBackwardRule!(node, outbound_interface_id, outbound_message_payload_type, msg_in1, msg_out)
 end
 
 function updateNodeMessage!(node::GainEqualityCompositeNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Type{GaussianDistribution},
+                            outbound_message_payload_type::Type{GaussianDistribution},
                             msg_in1::Nothing,
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Message{GaussianDistribution})
     # Backward message (towards in1)
-    return applyBackwardRule!(node, outbound_interface_id, outbound_message_value_type, msg_in2, msg_out)
+    return applyBackwardRule!(node, outbound_interface_id, outbound_message_payload_type, msg_in2, msg_out)
 end
 
 function applyBackwardRule!(node::GainEqualityCompositeNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Type{GaussianDistribution},
+                            outbound_message_payload_type::Type{GaussianDistribution},
                             msg_in::Message{GaussianDistribution},
                             msg_out::Message{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
@@ -144,9 +144,9 @@ function applyBackwardRule!(node::GainEqualityCompositeNode,
     if !node.use_composite_update_rules
         node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
     else
-        dist_result = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
-        dist_3 = msg_out.value
-        dist_in = msg_in.value
+        dist_result = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+        dist_3 = msg_out.payload
+        dist_in = msg_in.payload
 
         # Select parameterization
         # Order is from least to most computationally intensive

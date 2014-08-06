@@ -74,8 +74,8 @@ facts("setMarginal unit tests") do
         (node1, node2) = initializePairOfMockNodes()
         edge = Edge(node1.out, node2.out)
         setMarginal!(edge, 1.0)
-        @fact edge.head.message.value => 1.0
-        @fact edge.tail.message.value => 1.0
+        @fact edge.head.message.payload => 1.0
+        @fact edge.tail.message.payload => 1.0
         @fact edge.marginal => 1.0
     end
 end
@@ -139,8 +139,8 @@ facts("Connections between nodes integration tests") do
     context("Edge constructor should write the expected message value types to the interfaces") do
         (node1, node2) = initializePairOfMockNodes()
         edge = Edge(node1.out, node2.out, GaussianDistribution, Float64)
-        @fact edge.tail.message_value_type => GaussianDistribution
-        @fact edge.head.message_value_type => Float64
+        @fact edge.tail.message_payload_type => GaussianDistribution
+        @fact edge.head.message_payload_type => Float64
     end
 
     context("Edge construction should couple interfaces to edge") do
@@ -177,13 +177,13 @@ facts("calculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do
         (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(3.0))
         Edge(terminal.out, gain.in1, Float64, Array{Float64, 2})
-        gain.out.message_value_type = Array{Float64, 2} # Expect a matrix
+        gain.out.message_payload_type = Array{Float64, 2} # Expect a matrix
         @fact gain.out.message => nothing
         # Request message on node for which the input is unknown
         msg = calculateMessage!(gain.out)
         @fact msg => gain.out.message # Returned message should be identical to message stored on interface.
-        @fact typeof(gain.out.message.value) => Array{Float64, 2}
-        @fact gain.out.message.value => reshape([6.0], 1, 1)
+        @fact typeof(gain.out.message.payload) => Array{Float64, 2}
+        @fact gain.out.message.payload => reshape([6.0], 1, 1)
     end
 
     context("calculateMessage!() should recursively calculate required inbound message") do
@@ -191,10 +191,10 @@ facts("calculateMessage!() integration tests") do
         (node1, node2, node3) = initializeChainOfNodes()
         @fact node3.out.message => nothing
         # Request message on node for which the input is unknown
-        node3.out.message_value_type = Array{Float64, 2} # Expect a matrix
+        node3.out.message_payload_type = Array{Float64, 2} # Expect a matrix
         calculateMessage!(node3.out)
-        @fact typeof(node3.out.message.value) => Array{Float64, 2}
-        @fact node3.out.message.value => reshape([12.0], 1, 1)
+        @fact typeof(node3.out.message.payload) => Array{Float64, 2}
+        @fact node3.out.message.payload => reshape([12.0], 1, 1)
     end
 
     context("calculateMessage!() should throw an error when there is an unbroken loop") do
@@ -246,8 +246,8 @@ facts("generateSchedule() and executeSchedule() integration tests") do
 
     context("executeSchedule() should correctly execute a schedule and return the result of the last step") do
         schedule = generateSchedule(add.in2)
-        dist = ensureMVParametrization!(executeSchedule(schedule).value)
-        @fact dist => add.in2.message.value
+        dist = ensureMVParametrization!(executeSchedule(schedule).payload)
+        @fact dist => add.in2.message.payload
         @fact isApproxEqual(dist.m, [2.0]) => true
         @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
     end
@@ -274,7 +274,7 @@ facts("generateSchedule() and executeSchedule() integration tests") do
             executeSchedule(schedule)
         end
         @fact typeof(driver.out.message) => Message{GaussianDistribution}
-        @fact ensureMVParametrization!(driver.out.message.value).m => [100.0] # For stop conditions at 100 cycles deep
+        @fact ensureMVParametrization!(driver.out.message.payload).m => [100.0] # For stop conditions at 100 cycles deep
     end
 
     context("executeSchedule() should be called repeatedly until convergence") do
@@ -282,15 +282,15 @@ facts("generateSchedule() and executeSchedule() integration tests") do
         # Now set a breaker message and check that it works
         breaker_message = Message(GaussianDistribution(m=10.0, V=100.0))
         setMessage!(driver.out, breaker_message)
-        prev_dist = deepcopy(breaker_message.value)
+        prev_dist = deepcopy(breaker_message.payload)
         converged = false
         schedule = generateSchedule(driver.out)
         while !converged
-            dist = ensureMVParametrization!(executeSchedule(schedule).value)
+            dist = ensureMVParametrization!(executeSchedule(schedule).payload)
             converged = isApproxEqual(prev_dist.m, dist.m)
             prev_dist = deepcopy(dist)
         end
-        @fact isApproxEqual(driver.out.message.value.m, [0.0]) => true
+        @fact isApproxEqual(driver.out.message.payload.m, [0.0]) => true
     end
 end
 

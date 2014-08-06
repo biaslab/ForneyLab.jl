@@ -17,15 +17,15 @@ facts("GainAdditionCompositeNode unit tests") do
         # Fix in1
         node = GainAdditionCompositeNode(in1=GaussianDistribution())
         @fact typeof(node.in1.partner.node) => ForneyLab.ClampNode
-        @fact node.in1.partner.message.value => GaussianDistribution()
+        @fact node.in1.partner.message.payload => GaussianDistribution()
         # Fix in2
         node = GainAdditionCompositeNode(in2=GaussianDistribution())
         @fact typeof(node.in2.partner.node) => ForneyLab.ClampNode
-        @fact node.in2.partner.message.value => GaussianDistribution()
+        @fact node.in2.partner.message.payload => GaussianDistribution()
         # Fix out
         node = GainAdditionCompositeNode(out=GaussianDistribution())
         @fact typeof(node.out.partner.node) => ForneyLab.ClampNode
-        @fact node.out.partner.message.value => GaussianDistribution()
+        @fact node.out.partner.message.payload => GaussianDistribution()
     end
 
     context("GainAdditionCompositeNode() should define an internal AdditionNode and FixedGainNode") do
@@ -53,12 +53,12 @@ facts("GainAdditionCompositeNode unit tests") do
                                 3, 
                                 GaussianDistribution, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing],
-                                msg_internal.value)
+                                msg_internal.payload)
 
         # Backward
         node = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
         msg_internal = calculateMessage!(node.interfaces[1])
-        @fact msg_internal.value => GaussianDistribution(m=[0.8, -0.2], V=[1.56 -1.44; -1.44 1.56])
+        @fact msg_internal.payload => GaussianDistribution(m=[0.8, -0.2], V=[1.56 -1.44; -1.44 1.56])
 
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
         msg_internal = calculateMessage!(node.interfaces[2])
@@ -66,7 +66,7 @@ facts("GainAdditionCompositeNode unit tests") do
                                 2, 
                                 GaussianDistribution, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))],
-                                msg_internal.value)
+                                msg_internal.payload)
     end
 
     context("GainAdditionCompositeNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result (m,W) parametrization") do
@@ -79,12 +79,12 @@ facts("GainAdditionCompositeNode unit tests") do
                                 3, 
                                 GaussianDistribution, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
-                                msg_internal.value)
+                                msg_internal.payload)
 
         # Backward
         node = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
         msg_internal = calculateMessage!(node.interfaces[1])
-        @fact msg_internal.value => GaussianDistribution(m=[0.8, -0.2], W=[8.0+(2/3) 8.0; 8.0 8.0+(2/3)])
+        @fact msg_internal.payload => GaussianDistribution(m=[0.8, -0.2], W=[8.0+(2/3) 8.0; 8.0 8.0+(2/3)])
 
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
         msg_internal = calculateMessage!(node.interfaces[2])
@@ -92,7 +92,7 @@ facts("GainAdditionCompositeNode unit tests") do
                                 2, 
                                 GaussianDistribution, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))],
-                                msg_internal.value)
+                                msg_internal.payload)
     end
 
     context("GainAdditionCompositeNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result (xi,W) parametrization") do
@@ -105,12 +105,12 @@ facts("GainAdditionCompositeNode unit tests") do
                                 3, 
                                 GaussianDistribution, 
                                 [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
-                                msg_internal.value)
+                                msg_internal.payload)
 
         # Backward
         node = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
         msg_internal = calculateMessage!(node.interfaces[1])
-        @fact msg_internal.value => GaussianDistribution(m=[0.4, -0.1], V=[0.78 -0.72; -0.72 0.78])
+        @fact msg_internal.payload => GaussianDistribution(m=[0.4, -0.1], V=[0.78 -0.72; -0.72 0.78])
 
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
         msg_internal = calculateMessage!(node.interfaces[2])
@@ -118,7 +118,7 @@ facts("GainAdditionCompositeNode unit tests") do
                                 2, 
                                 GaussianDistribution, 
                                 [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))],
-                                msg_internal.value)
+                                msg_internal.payload)
     end
 
     context("GainAdditionCompositeNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result (different parametrizations)") do
@@ -131,12 +131,12 @@ facts("GainAdditionCompositeNode unit tests") do
                                 3, 
                                 GaussianDistribution, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
-                                msg_internal.value)
+                                msg_internal.payload)
 
         # Backward
         node = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
         msg_internal = calculateMessage!(node.interfaces[1])
-        @fact msg_internal.value => GaussianDistribution(m=[0.4, -0.1], V=[0.78 -0.72; -0.72 0.78])
+        @fact msg_internal.payload => GaussianDistribution(m=[0.4, -0.1], V=[0.78 -0.72; -0.72 0.78])
 
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
         msg_internal = calculateMessage!(node.interfaces[2])
@@ -144,7 +144,7 @@ facts("GainAdditionCompositeNode unit tests") do
                                 2, 
                                 GaussianDistribution, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))],
-                                msg_internal.value)
+                                msg_internal.payload)
     end
 end
 

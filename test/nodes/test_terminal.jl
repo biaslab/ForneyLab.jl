@@ -22,8 +22,8 @@ facts("TerminalNode unit tests") do
         msg = ForneyLab.updateNodeMessage!(node, 1, GaussianDistribution, nothing)
         @fact node.interfaces[1].message => msg
         @fact typeof(node.interfaces[1].message) => Message{GaussianDistribution}
-        @fact node.interfaces[1].message.value.m => [2.0]
-        @fact node.interfaces[1].message.value.V => reshape([4.0], 1, 1)
+        @fact node.interfaces[1].message.payload.m => [2.0]
+        @fact node.interfaces[1].message.payload.V => reshape([4.0], 1, 1)
     end
 
     context("TerminalNode should propagate an arbitrary value") do
@@ -33,10 +33,6 @@ facts("TerminalNode unit tests") do
         msg = ForneyLab.updateNodeMessage!(node, 1, Array, nothing)
         @fact node.interfaces[1].message => msg
         @fact typeof(node.interfaces[1].message) => Message{Array{Float64, 1}}
-        @fact node.interfaces[1].message.value => [1.0, 2.0]
+        @fact node.interfaces[1].message.payload => [1.0, 2.0]
     end
 end
-
-#####################
-# Integration tests
-#####################

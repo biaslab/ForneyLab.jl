@@ -81,11 +81,11 @@ equalityXiRule{T<:Number}(xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x+xi_y
 
 function updateNodeMessage!(node::EqualityNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Type{GaussianDistribution},
+                            outbound_message_payload_type::Type{GaussianDistribution},
                             inbounds...)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    dist_result = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).value
+    dist_result = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
@@ -96,32 +96,32 @@ function updateNodeMessage!(node::EqualityNode,
         # Always calculate the (xi,W) parametrization of all incoming messages if it's not already present.
 
         # Create accumulators for W and xi of the correct size
-        if !is(inbounds[first_incoming_id].value.W, nothing)
-            W_sum = zeros(size(inbounds[first_incoming_id].value.W))
+        if !is(inbounds[first_incoming_id].payload.W, nothing)
+            W_sum = zeros(size(inbounds[first_incoming_id].payload.W))
         else
-            W_sum = zeros(size(inbounds[first_incoming_id].value.V))
+            W_sum = zeros(size(inbounds[first_incoming_id].payload.V))
         end
-        if !is(inbounds[first_incoming_id].value.xi, nothing)
-            xi_sum = zeros(size(inbounds[first_incoming_id].value.xi))
+        if !is(inbounds[first_incoming_id].payload.xi, nothing)
+            xi_sum = zeros(size(inbounds[first_incoming_id].payload.xi))
         else
-            xi_sum = zeros(size(inbounds[first_incoming_id].value.m))
+            xi_sum = zeros(size(inbounds[first_incoming_id].payload.m))
         end
 
         # Sum W and xi of all incoming messages
         for interface_id = 1:length(node.interfaces)
             (interface_id != outbound_interface_id) || continue
             (typeof(inbounds[interface_id])==Message{GaussianDistribution}) || error("EqualityNode: cannot calculate outbound Message{GaussianDistribution} from inbound $(typeof(inbounds[interface_id]))")
-            ensureXiWParametrization!(inbounds[interface_id].value)
-            W_sum += inbounds[interface_id].value.W
-            xi_sum += inbounds[interface_id].value.xi
+            ensureXiWParametrization!(inbounds[interface_id].payload)
+            W_sum += inbounds[interface_id].payload.W
+            xi_sum += inbounds[interface_id].payload.xi
         end
         dist_result.xi = xi_sum
         dist_result.W = W_sum
         dist_result.V = nothing
         dist_result.m = nothing
     else # 3 interfaces
-        dist_1 = inbounds[first_incoming_id].value
-        dist_2 = inbounds[(outbound_interface_id==3) ? 2 : 3].value
+        dist_1 = inbounds[first_incoming_id].payload
+        dist_2 = inbounds[(outbound_interface_id==3) ? 2 : 3].payload
         if dist_1.m != nothing && dist_1.W != nothing && dist_2.m != nothing && dist_2.W != nothing
             dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.W)
             dist_result.V  = nothing
@@ -152,7 +152,7 @@ end
 
 function updateNodeMessage!(node::EqualityNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Union(Type{Float64}, Type{Vector{Float64}}, Type{Matrix{Float64}}),
+                            outbound_message_payload_type::Union(Type{Float64}, Type{Vector{Float64}}, Type{Matrix{Float64}}),
                             inbounds...)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
@@ -160,19 +160,19 @@ function updateNodeMessage!(node::EqualityNode,
     # Outbound message is equal to the inbound messages if not all inbound messages are equal.
     # Otherwise, the outbound message is Message{Float64}(0.0)
     first_incoming_id = (outbound_interface_id==1) ? 2 : 1
-    constraint = inbounds[first_incoming_id].value
-    (typeof(constraint)==outbound_message_value_type) || error("EqualityNode: cannot calculate outbound Message{$(outbound_message_value_type)} from inbound $(typeof(constraint))")
+    constraint = inbounds[first_incoming_id].payload
+    (typeof(constraint)==outbound_message_payload_type) || error("EqualityNode: cannot calculate outbound Message{$(outbound_message_payload_type)} from inbound $(typeof(constraint))")
  
     for interface_id = 1:length(node.interfaces)
         (interface_id != outbound_interface_id) || continue
-        if inbounds[interface_id].value != constraint
-            msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type, size(constraint))
-            msg_result.value = zero(constraint)
+        if inbounds[interface_id].payload != constraint
+            msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type, size(constraint))
+            msg_result.payload = zero(constraint)
             return node.interfaces[outbound_interface_id].message
         end
     end
-    msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type, size(constraint))
-    msg_result.value = deepcopy(constraint)
+    msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type, size(constraint))
+    msg_result.payload = deepcopy(constraint)
 
     return node.interfaces[outbound_interface_id].message
 end
@@ -183,22 +183,22 @@ end
 
 function updateNodeMessage!(node::EqualityNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Type{InverseGammaDistribution},
+                            outbound_message_payload_type::Type{InverseGammaDistribution},
                             msg_1::Union(Message{InverseGammaDistribution}, Nothing),
                             msg_2::Union(Message{InverseGammaDistribution}, Nothing),
                             msg_3::Union(Message{InverseGammaDistribution}, Nothing))
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Definition from Korl table 5.2
     dist_out.a = 1.0
     dist_out.b = 0.0
     for inbound_msg in [msg_1, msg_2, msg_3]
         (inbound_msg != nothing) || continue
-        (typeof(inbound_msg) == Message{outbound_message_value_type}) || error("EqualityNode: cannot calculate outbound Message{$(outbound_message_value_type)} from inbound $(typeof(inbound_msg))")
-        dist_out.a += inbound_msg.value.a
-        dist_out.b += inbound_msg.value.b
+        (typeof(inbound_msg) == Message{outbound_message_payload_type}) || error("EqualityNode: cannot calculate outbound Message{$(outbound_message_payload_type)} from inbound $(typeof(inbound_msg))")
+        dist_out.a += inbound_msg.payload.a
+        dist_out.b += inbound_msg.payload.b
     end
 
     return node.interfaces[outbound_interface_id].message
@@ -210,22 +210,22 @@ end
 
 function updateNodeMessage!(node::EqualityNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Type{GammaDistribution},
+                            outbound_message_payload_type::Type{GammaDistribution},
                             msg_1::Union(Message{GammaDistribution}, Nothing),
                             msg_2::Union(Message{GammaDistribution}, Nothing),
                             msg_3::Union(Message{GammaDistribution}, Nothing))
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Definition from Korl table 5.2
     dist_out.a = -1.0
     dist_out.b = 0.0
     for inbound_msg in [msg_1, msg_2, msg_3]
         (inbound_msg != nothing) || continue
-        (typeof(inbound_msg) == Message{outbound_message_value_type}) || error("EqualityNode: cannot calculate outbound Message{$(outbound_message_value_type)} from inbound $(typeof(inbound_msg))")
-        dist_out.a += inbound_msg.value.a
-        dist_out.b += inbound_msg.value.b
+        (typeof(inbound_msg) == Message{outbound_message_payload_type}) || error("EqualityNode: cannot calculate outbound Message{$(outbound_message_payload_type)} from inbound $(typeof(inbound_msg))")
+        dist_out.a += inbound_msg.payload.a
+        dist_out.b += inbound_msg.payload.b
     end
 
     return node.interfaces[outbound_interface_id].message

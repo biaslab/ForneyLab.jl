@@ -1,6 +1,6 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message, MessageValue, ProbabilityDistribution
+export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message, MessagePayload, ProbabilityDistribution
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
@@ -21,7 +21,7 @@ import Base.show
 # Top-level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
-typealias MessageValue Union(ProbabilityDistribution, Number, Vector, Matrix)
+typealias MessagePayload Union(ProbabilityDistribution, Number, Vector, Matrix)
 abstract Node
 show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
 abstract CompositeNode <: Node
@@ -31,14 +31,14 @@ include("distributions/gaussian.jl")
 include("distributions/gamma.jl")
 include("distributions/inverse_gamma.jl")
 
-type Message{T<:MessageValue}
-    # Message has a value payload, which must be a subtype of MessageValue.
-    value::T
+type Message{T<:MessagePayload}
+    # Message has a payload, which must be a subtype of MessagePayload.
+    payload::T
 end
-Message(value::MessageValue) = Message{typeof(value)}(deepcopy(value))
+Message(payload::MessagePayload) = Message{typeof(payload)}(deepcopy(payload))
 Message() = Message(1.0)
 uninformative(type_in::Type{Float64}) = Message(1.0) # uninformative general message
-show(io::IO, message::Message) = println(io, typeof(message), " with value ", message.value, ".")
+show(io::IO, message::Message) = println(io, typeof(message), " with payload ", message.payload, ".")
 
 type Interface
     # An Interface belongs to a node and is used to send/receive messages.
@@ -50,7 +50,7 @@ type Interface
     partner::Union(Interface, Nothing)  # Partner indicates the interface to which it is connected.
     child::Union(Interface, Nothing)    # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
     message::Union(Message, Nothing)
-    message_value_type::DataType        # Indicates the type of the message value that is carried by the interface
+    message_payload_type::DataType      # Indicates the type of the message payload that is carried by the interface
                                         # The default is a GaussianDistribution, which can be overwitten by the Edge constructor or setMessage! and setMarginal!
     dependencies::Array{Interface, 1}   # Optional array of interfaces (of the same node) on which the outbound msg on this interface depends.
                                         # If this array is #undef, it means that the outbound msg depends on the inbound msgs on ALL OTHER interfaces of the node.
@@ -58,13 +58,13 @@ type Interface
                                                 # The internal_schedule field is used in composite nodes, and holds the schedule for internal message passing.
 
     # Sanity check for matching message types
-    function Interface(node::Node, edge::Union(AbstractEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing, message_value_type::DataType=GaussianDistribution)
+    function Interface(node::Node, edge::Union(AbstractEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing, message_payload_type::DataType=GaussianDistribution)
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
-            return new(node, edge, partner, child, message, message_value_type)
+            return new(node, edge, partner, child, message, message_payload_type)
         elseif typeof(message) != typeof(partner.message) # Compare message types
             error("Message type of partner does not match with interface message type")
         else
-            return new(node, edge, partner, child, message, message_value_type)
+            return new(node, edge, partner, child, message, message_payload_type)
         end
     end
 end
@@ -72,7 +72,7 @@ Interface(node::Node, message::Message) = Interface(node, nothing, nothing, noth
 Interface(node::Node) = Interface(node, nothing, nothing, nothing, nothing, GaussianDistribution)
 show(io::IO, interface::Interface) = println(io, "Interface of $(typeof(interface.node)) with node name $(interface.node.name) holds message of type $(typeof(interface.message)).")
 function setMessage!(interface::Interface, message::Message)
-    interface.message_value_type = typeof(message.value)
+    interface.message_payload_type = typeof(message.payload)
     interface.message = deepcopy(message)
 end
 clearMessage!(interface::Interface) = (interface.message=nothing)
@@ -107,14 +107,14 @@ type Edge <: AbstractEdge
     head::Interface
     marginal::Any
 
-    function Edge(tail::Interface, head::Interface, forward_message_value_type::DataType, backward_message_value_type::DataType)
-        (forward_message_value_type <: MessageValue) || error("Forward message value type $(forward_message_value_type) not supported")
-        (backward_message_value_type <: MessageValue) || error("Backward message value type $(backward_message_value_type) not supported")
-        if tail.message != nothing && (typeof(tail.message.value) != forward_message_value_type)
-            error("Existing forward message ($(typeof(tail.message))) does not match expected type Message{$(forward_message_value_type)}")
+    function Edge(tail::Interface, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType)
+        (forward_message_payload_type <: MessagePayload) || error("Forward message payload type $(forward_message_payload_type) not supported")
+        (backward_message_payload_type <: MessagePayload) || error("Backward message payload type $(backward_message_payload_type) not supported")
+        if tail.message != nothing && (typeof(tail.message.payload) != forward_message_payload_type)
+            error("Existing forward message ($(typeof(tail.message))) does not match expected type Message{$(forward_message_payload_type)}")
         end
-        if head.message != nothing && (typeof(head.message.value) != backward_message_value_type)
-            error("Existing backward message ($(typeof(head.message))) does not match expected type Message{$(backward_message_value_type)}")
+        if head.message != nothing && (typeof(head.message.payload) != backward_message_payload_type)
+            error("Existing backward message ($(typeof(head.message))) does not match expected type Message{$(backward_message_payload_type)}")
         end
         (!is(head.node, tail.node)) || error("Cannot connect two interfaces of the same node: ", typeof(head.node), " ", head.node.name)
 
@@ -126,15 +126,15 @@ type Edge <: AbstractEdge
         tail.partner = head
         head.partner = tail
         # Set expected outbound interface message types
-        tail.message_value_type = forward_message_value_type
-        head.message_value_type = backward_message_value_type
+        tail.message_payload_type = forward_message_payload_type
+        head.message_payload_type = backward_message_payload_type
 
         # Backreferences for tail's children
         child_interface = tail.child
         while child_interface != nothing
             child_interface.partner = tail.partner
             child_interface.edge = self
-            child_interface.message_value_type = forward_message_value_type
+            child_interface.message_payload_type = forward_message_payload_type
             child_interface = child_interface.child
         end
         # Backreferences for head's children
@@ -142,53 +142,53 @@ type Edge <: AbstractEdge
         while child_interface != nothing
             child_interface.partner = head.partner
             child_interface.edge = self
-            child_interface.message_value_type = backward_message_value_type
+            child_interface.message_payload_type = backward_message_payload_type
             child_interface = child_interface.child
         end
 
         return self
     end
 end
-Edge(tail::Interface, head::Interface, message_value_type::DataType) = Edge(tail, head, message_value_type, message_value_type)
+Edge(tail::Interface, head::Interface, message_payload_type::DataType) = Edge(tail, head, message_payload_type, message_payload_type)
 function Edge(tail::Interface, head::Interface)
-    forward_message_value_type = backward_message_value_type = GaussianDistribution # Default to Gaussian; we could also do a check whether the nodes accept Gaussians
-    (tail.message == nothing) || (forward_message_value_type = typeof(tail.message.value))
-    (head.message == nothing) || (backward_message_value_type = typeof(head.message.value))
-    Edge(tail, head, forward_message_value_type, backward_message_value_type)
+    forward_message_payload_type = backward_message_payload_type = GaussianDistribution # Default to Gaussian; we could also do a check whether the nodes accept Gaussians
+    (tail.message == nothing) || (forward_message_payload_type = typeof(tail.message.payload))
+    (head.message == nothing) || (backward_message_payload_type = typeof(head.message.payload))
+    Edge(tail, head, forward_message_payload_type, backward_message_payload_type)
 end
 
 # Edge constructors that accept nodes instead of a specific Interface
 # firstFreeInterface(node) should be overloaded for nodes with interface-invariant node functions
 firstFreeInterface(node::Node) = error("Cannot automatically pick a free interface on non-symmetrical $(typeof(node)) $(node.name)")
 Edge(tail_node::Node, head::Interface) = Edge(firstFreeInterface(tail_node), head)
-Edge(tail_node::Node, head::Interface, message_value_type::DataType) = Edge(firstFreeInterface(tail_node), head, message_value_type)
-Edge(tail_node::Node, head::Interface, forward_message_value_type::DataType, backward_message_value_type::DataType) = Edge(firstFreeInterface(tail_node), head, forward_message_value_type, backward_message_value_type)
+Edge(tail_node::Node, head::Interface, message_payload_type::DataType) = Edge(firstFreeInterface(tail_node), head, message_payload_type)
+Edge(tail_node::Node, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType) = Edge(firstFreeInterface(tail_node), head, forward_message_payload_type, backward_message_payload_type)
 
 Edge(tail::Interface, head_node::Node) = Edge(tail, firstFreeInterface(head_node))
-Edge(tail::Interface, head_node::Node, message_value_type::DataType) = Edge(tail, firstFreeInterface(head_node), message_value_type)
-Edge(tail::Interface, head_node::Node, forward_message_value_type::DataType, backward_message_value_type::DataType) = Edge(tail, firstFreeInterface(head_node), forward_message_value_type, backward_message_value_type)
+Edge(tail::Interface, head_node::Node, message_payload_type::DataType) = Edge(tail, firstFreeInterface(head_node), message_payload_type)
+Edge(tail::Interface, head_node::Node, forward_message_payload_type::DataType, backward_message_payload_type::DataType) = Edge(tail, firstFreeInterface(head_node), forward_message_payload_type, backward_message_payload_type)
 
 Edge(tail_node::Node, head_node::Node) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node))
-Edge(tail_node::Node, head_node::Node, message_value_type::DataType) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), message_value_type)
-Edge(tail_node::Node, head_node::Node, forward_message_value_type::DataType, backward_message_value_type::DataType) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), forward_message_value_type, backward_message_value_type)
+Edge(tail_node::Node, head_node::Node, message_payload_type::DataType) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), message_payload_type)
+Edge(tail_node::Node, head_node::Node, forward_message_payload_type::DataType, backward_message_payload_type::DataType) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), forward_message_payload_type, backward_message_payload_type)
 
 function show(io::IO, edge::Edge)
     println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name):$(findfirst(edge.tail.node.interfaces, edge.tail)) to $(typeof(edge.head.node)) $(edge.head.node.name):$(findfirst(edge.head.node.interfaces, edge.head)).")
-    println(io, "Accepted forward message value type: $(edge.tail.message_value_type).")
-    println(io, "Accepted backward message value type: $(edge.head.message_value_type).")
+    println(io, "Accepted forward message payload type: $(edge.tail.message_payload_type).")
+    println(io, "Accepted backward message payload type: $(edge.head.message_payload_type).")
 end
 
-function getOrCreateMessage(interface::Interface, assign_value::DataType, arr_dims::Tuple=(1, 1))
+function getOrCreateMessage(interface::Interface, assign_payload::DataType, arr_dims::Tuple=(1, 1))
     # Looks for a message on interface.
     # When no message is present, it sets and returns a standard message.
     # Otherwise it returns the present message.
     # For Array types we pre-allocate the array size with arr_dims
     if interface.message==nothing
-        if assign_value <: ProbabilityDistribution 
-            interface.message = Message(assign_value())
-        elseif assign_value == Float64
+        if assign_payload <: ProbabilityDistribution 
+            interface.message = Message(assign_payload())
+        elseif assign_payload == Float64
             interface.message = Message(1.0)
-        elseif assign_value <: Array{Float64}
+        elseif assign_payload <: Array{Float64}
             interface.message = Message(zeros(arr_dims))
         else
             error("Unknown assign type argument")
@@ -196,13 +196,13 @@ function getOrCreateMessage(interface::Interface, assign_value::DataType, arr_di
     end
     return interface.message
 end
-function getOrCreateMarginal(edge::Edge, assign_value::DataType)
+function getOrCreateMarginal(edge::Edge, assign_payload::DataType)
     # Looks for a marginal on edge.
     # When no marginal is present, it sets and returns a standard distribution.
     # Otherwise it returns the present marginal. User for fast marginal calculations.
     if edge.marginal==nothing
-        if assign_value <: ProbabilityDistribution 
-            edge.marginal = assign_value()
+        if assign_payload <: ProbabilityDistribution 
+            edge.marginal = assign_payload()
         else
             error("Unknown assign type argument")
         end
@@ -294,9 +294,9 @@ function updateNodeMessage!(outbound_interface::Interface)
     end
 
     # Evaluate node update function
-    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id (outbound $(outbound_interface.message_value_type)):")
+    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id (outbound $(outbound_interface.message_payload_type)):")
 
-    return updateNodeMessage!(node, outbound_interface_id, outbound_interface.message_value_type, inbound_array...)
+    return updateNodeMessage!(node, outbound_interface_id, outbound_interface.message_payload_type, inbound_array...)
 end
 
 function calculateMessages!(node::Node)
@@ -332,9 +332,9 @@ function setMarginal!(edge::Edge, distribution::Any)
     # Presets the marginal and head- tail messages on edge with the argument message
     # Usually this method is used to set uninformative messages
 
-    # TODO: check this, message value type does not have to be equal to marginal distribution type
+    # TODO: check this, message payload type does not have to be equal to marginal distribution type
     # TODO: marginal should be the product of the message distributions
-    edge.tail.message_value_type = edge.head.message_value_type = typeof(distribution)
+    edge.tail.message_payload_type = edge.head.message_payload_type = typeof(distribution)
     edge.head.message = Message(deepcopy(distribution))
     edge.tail.message = Message(deepcopy(distribution))
     edge.marginal = deepcopy(distribution)
@@ -344,13 +344,13 @@ function calculateMarginal(edge::Edge)
     # Calculates the marginal without writing back to the edge
     @assert(edge.tail.message != nothing, "Edge should hold a forward message.")
     @assert(edge.head.message != nothing, "Edge should hold a backward message.")
-    return calculateMarginal(edge.tail.message.value, edge.head.message.value)
+    return calculateMarginal(edge.tail.message.payload, edge.head.message.payload)
 end
 function calculateMarginal!(edge::Edge)
     # Calculates and writes the marginal on edge
     @assert(edge.tail.message != nothing, "Edge should hold a forward message.")
     @assert(edge.head.message != nothing, "Edge should hold a backward message.")
-    calculateMarginal!(edge, edge.tail.message.value, edge.head.message.value)
+    calculateMarginal!(edge, edge.tail.message.payload, edge.head.message.payload)
     return edge.marginal
 end
 

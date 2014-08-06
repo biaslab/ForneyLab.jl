@@ -31,17 +31,17 @@ facts("LinearCompositeNode unit tests") do
 
     context("LinearCompositeNode should propagate a backward variational message to in1") do
         msg = ForneyLab.updateNodeMessage!(LinearCompositeNode(), 1, GaussianDistribution, uninformative(GaussianDistribution), GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), InverseGammaDistribution(a=10000.0, b=19998.0), GaussianDistribution(m=2.5, V=0.0))
-        @fact msg.value.m => [1.0]
+        @fact msg.payload.m => [1.0]
     end
 
     context("LinearCompositeNode should propagate a backward variational message to slope") do
         msg = ForneyLab.updateNodeMessage!(LinearCompositeNode(), 2, GaussianDistribution, GaussianDistribution(m=1.0, V=0.0), uninformative(GaussianDistribution), GaussianDistribution(m=0.5, V=0.0), InverseGammaDistribution(a=10000.0, b=19998.0), GaussianDistribution(m=2.5, V=0.0))
-        @fact msg.value.m => [2.0]
+        @fact msg.payload.m => [2.0]
     end
 
     context("LinearCompositeNode should propagate a backward variational message to offset") do
         msg = ForneyLab.updateNodeMessage!(LinearCompositeNode(), 3, GaussianDistribution, GaussianDistribution(m=1.0, V=0.0), GaussianDistribution(m=2.0, V=0.0), uninformative(GaussianDistribution), InverseGammaDistribution(a=10000.0, b=19998.0), GaussianDistribution(m=2.5, V=0.0))
-        @fact msg.value.m => [0.5]
+        @fact msg.payload.m => [0.5]
     end
 
     context("LinearCompositeNode should propagate a backward variational message to noise") do
@@ -54,6 +54,6 @@ facts("LinearCompositeNode unit tests") do
 
     context("LinearCompositeNode should propagate a forward variational message to out") do
         msg = ForneyLab.updateNodeMessage!(LinearCompositeNode(), 5, GaussianDistribution, GaussianDistribution(m=1.0, V=0.0), GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), InverseGammaDistribution(a=10000.0, b=19998.0), uninformative(GaussianDistribution))
-        @fact msg.value.m => [2.5]
+        @fact msg.payload.m => [2.5]
     end
 end

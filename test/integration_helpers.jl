@@ -53,7 +53,7 @@ function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(2.0), msg_gain_2=Me
     node1 = FixedGainNode(A)
     node1.interfaces[1].message = msg_gain_1
     node1.interfaces[2].message = msg_gain_2
-    node2 = TerminalNode(msg_terminal.value)
+    node2 = TerminalNode(msg_terminal.payload)
     node2.interfaces[1].message = msg_terminal
     return node1, node2
 end
@@ -400,21 +400,21 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     # Helper function for node comparison
 
     # Check that nodes are properly connected
-    @fact node1.interfaces[1].message.value => 2.0
-    @fact node2.interfaces[1].message.value => 1.0
-    @fact node1.interfaces[1].partner.message.value => 1.0
-    @fact node2.interfaces[1].partner.message.value => 2.0
+    @fact node1.interfaces[1].message.payload => 2.0
+    @fact node2.interfaces[1].message.payload => 1.0
+    @fact node1.interfaces[1].partner.message.payload => 1.0
+    @fact node2.interfaces[1].partner.message.payload => 2.0
     # Check that pointers are initiatized correctly
-    @fact node1.out.message.value => 3.0
-    @fact node2.out.message.value => 1.0
-    @fact node1.in1.partner.message.value => 1.0
-    @fact node2.out.partner.message.value => 2.0
+    @fact node1.out.message.payload => 3.0
+    @fact node2.out.message.payload => 1.0
+    @fact node1.in1.partner.message.payload => 1.0
+    @fact node2.out.partner.message.payload => 2.0
 end
 
 function validateOutboundMessage(node::Node, outbound_interface_id::Int, outbound_type::DataType, inbound_messages::Array, correct_outbound_value)
     msg = ForneyLab.updateNodeMessage!(node, outbound_interface_id, outbound_type, inbound_messages...)
     @fact node.interfaces[outbound_interface_id].message => msg
-    @fact node.interfaces[outbound_interface_id].message.value => correct_outbound_value
+    @fact node.interfaces[outbound_interface_id].message.payload => correct_outbound_value
 
     return node.interfaces[outbound_interface_id].message
 end

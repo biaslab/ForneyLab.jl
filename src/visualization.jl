@@ -41,8 +41,8 @@ function graph2dot(nodes::Array{Node,1})
         tail_label = "$tail_id $(getName(edge.tail))"
         head_id = findfirst(edge.head.node.interfaces, edge.head)
         head_label = "$head_id $(getName(edge.head))"
-        label =  string("FW: ", (edge.tail.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.tail.message_value_type)\n")
-        label *= string("BW: ", (edge.head.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.head.message_value_type)")
+        label =  string("FW: ", (edge.tail.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.tail.message_payload_type)\n")
+        label *= string("BW: ", (edge.head.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.head.message_payload_type)")
         dot *= "\t$(object_id(edge.tail.node)) -> $(object_id(edge.head.node)) " 
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", label=\"$(label)\"]\n"
     end

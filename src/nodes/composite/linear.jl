@@ -84,7 +84,7 @@ end
 
 function updateNodeMessage!(node::LinearCompositeNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Type{GaussianDistribution},
+                            outbound_message_payload_type::Type{GaussianDistribution},
                             marg_in1::Any,
                             marg_slope::Any,
                             marg_offset::Any,
@@ -94,7 +94,7 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # Sends to any interface carrying a Gaussian message, while using precision parameterized noise
     # Derivation for the update rule can be found in the derivations notebook.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Ensure right parameterization
     for param = [marg_in1, marg_slope, marg_offset, marg_out] # just get all of them, all marginals need to be defined anyway
@@ -150,7 +150,7 @@ end
 
 function updateNodeMessage!(node::LinearCompositeNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Type{GaussianDistribution},
+                            outbound_message_payload_type::Type{GaussianDistribution},
                             marg_in1::Any,
                             marg_slope::Any,
                             marg_offset::Any,
@@ -160,7 +160,7 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # Sends to any interface carrying a Gaussian message, while using variance parameterized noise
     # Derivation for the update rule can be found in the derivations notebook.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Ensure right parameterization
     for param = [marg_in1, marg_slope, marg_offset, marg_out] # just get all of them, all marginals need to be defined anyway
@@ -216,7 +216,7 @@ end
 
 function updateNodeMessage!(node::LinearCompositeNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Type{GammaDistribution},
+                            outbound_message_payload_type::Type{GammaDistribution},
                             marg_in1::GaussianDistribution,
                             marg_slope::GaussianDistribution,
                             marg_offset::GaussianDistribution,
@@ -226,7 +226,7 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # Sends to precision parameterized noise.
     # Derivation for the update rule can be found in the derivations notebook.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Ensure right parameterization
     for param = [marg_in1, marg_slope, marg_offset, marg_out] # just get all of them, all marginals need to be defined anyway
@@ -256,7 +256,7 @@ end
 
 function updateNodeMessage!(node::LinearCompositeNode,
                             outbound_interface_id::Int,
-                            outbound_message_value_type::Type{InverseGammaDistribution},
+                            outbound_message_payload_type::Type{InverseGammaDistribution},
                             marg_in1::GaussianDistribution,
                             marg_slope::GaussianDistribution,
                             marg_offset::GaussianDistribution,
@@ -266,7 +266,7 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # Sends to variance parameterized noise.
     # Derivation for the update rule can be found in the derivations notebook.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Ensure right parameterization
     for param = [marg_in1, marg_slope, marg_offset, marg_out] # just get all of them, all marginals need to be defined anyway

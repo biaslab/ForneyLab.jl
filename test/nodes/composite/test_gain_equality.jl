@@ -17,15 +17,15 @@ facts("GainEqualityCompositeNode unit tests") do
         # Fix in1
         node = GainEqualityCompositeNode(in1=GaussianDistribution())
         @fact typeof(node.in1.partner.node) => ForneyLab.ClampNode
-        @fact node.in1.partner.message.value => GaussianDistribution()
+        @fact node.in1.partner.message.payload => GaussianDistribution()
         # Fix in2
         node = GainEqualityCompositeNode(in2=GaussianDistribution())
         @fact typeof(node.in2.partner.node) => ForneyLab.ClampNode
-        @fact node.in2.partner.message.value => GaussianDistribution()
+        @fact node.in2.partner.message.payload => GaussianDistribution()
         # Fix out
         node = GainEqualityCompositeNode(out=GaussianDistribution())
         @fact typeof(node.out.partner.node) => ForneyLab.ClampNode
-        @fact node.out.partner.message.value => GaussianDistribution()
+        @fact node.out.partner.message.payload => GaussianDistribution()
     end
 
     context("GainEqualityCompositeNode() should define an internal Equality and FixedGain node") do
@@ -46,42 +46,42 @@ facts("GainEqualityCompositeNode unit tests") do
         # Forward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), nothing])
         ForneyLab.updateNodeMessage!(node.out)
-        @fact node.out.message.value => GaussianDistribution(W=reshape([0.5, 0.25, 0.25, 0.5], 2, 2), xi=[1.0, 2.0])
+        @fact node.out.message.payload => GaussianDistribution(W=reshape([0.5, 0.25, 0.25, 0.5], 2, 2), xi=[1.0, 2.0])
         # Backward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0]))])
         ForneyLab.updateNodeMessage!(node.in2)
-        @fact node.in2.message.value => GaussianDistribution(W=reshape([5.0, 2.5, 2.5, 5.0], 2, 2), xi=[3.0, 6.0])
+        @fact node.in2.message.payload => GaussianDistribution(W=reshape([5.0, 2.5, 2.5, 5.0], 2, 2), xi=[3.0, 6.0])
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0]))])
         ForneyLab.updateNodeMessage!(node.in1)
-        @fact node.in1.message.value => GaussianDistribution(W=reshape([5.0, 2.5, 2.5, 5.0], 2, 2), xi=[3.0, 6.0])
+        @fact node.in1.message.payload => GaussianDistribution(W=reshape([5.0, 2.5, 2.5, 5.0], 2, 2), xi=[3.0, 6.0])
     end
 
     context("GainEqualityCompositeNode should propagate a GaussianDistribution with (m,W) parametrization") do
         # Forward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing])
         ForneyLab.updateNodeMessage!(node.out)
-        @fact node.out.message.value => GaussianDistribution(W=reshape([0.5, 0.25, 0.25, 0.5], 2, 2), m=[2.0, 4.0])
+        @fact node.out.message.payload => GaussianDistribution(W=reshape([0.5, 0.25, 0.25, 0.5], 2, 2), m=[2.0, 4.0])
         # Backward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0]))])
         ForneyLab.updateNodeMessage!(node.in2)
-        @fact node.in2.message.value => GaussianDistribution(W=reshape([5.0, 2.5, 2.5, 5.0], 2, 2), m=[0.6, 1.2])
+        @fact node.in2.message.payload => GaussianDistribution(W=reshape([5.0, 2.5, 2.5, 5.0], 2, 2), m=[0.6, 1.2])
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0]))])
         ForneyLab.updateNodeMessage!(node.in1)
-        @fact node.in1.message.value => GaussianDistribution(W=reshape([5.0, 2.5, 2.5, 5.0], 2, 2), m=[0.6, 1.2])
+        @fact node.in1.message.payload => GaussianDistribution(W=reshape([5.0, 2.5, 2.5, 5.0], 2, 2), m=[0.6, 1.2])
     end
 
     context("GainEqualityCompositeNode should propagate a GaussianDistribution with (m,V) parametrization") do
         # Forward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing])
         ForneyLab.updateNodeMessage!(node.out)
-        @fact node.out.message.value => GaussianDistribution(V=reshape([2.0, 1.0, 1.0, 2.0], 2, 2), m=[2.0, 4.0])
+        @fact node.out.message.payload => GaussianDistribution(V=reshape([2.0, 1.0, 1.0, 2.0], 2, 2), m=[2.0, 4.0])
         # Backward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing, Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0]))])
         ForneyLab.updateNodeMessage!(node.in2)
-        @fact node.in2.message.value => GaussianDistribution(V=reshape([0.2, 0.1, 0.1, 0.2], 2, 2), m=[0.6, 1.2])
+        @fact node.in2.message.payload => GaussianDistribution(V=reshape([0.2, 0.1, 0.1, 0.2], 2, 2), m=[0.6, 1.2])
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [nothing, Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0]))])
         ForneyLab.updateNodeMessage!(node.in1)
-        @fact node.in1.message.value => GaussianDistribution(V=reshape([0.2, 0.1, 0.1, 0.2], 2, 2), m=[0.6, 1.2])
+        @fact node.in1.message.payload => GaussianDistribution(V=reshape([0.2, 0.1, 0.1, 0.2], 2, 2), m=[0.6, 1.2])
     end
 end
 

@@ -24,15 +24,15 @@ facts("GaussianNode unit tests") do
         # Fix mean
         node = GaussianNode(m=GaussianDistribution())
         @fact typeof(node.mean.partner.node) => ForneyLab.ClampNode
-        @fact node.mean.partner.message.value => GaussianDistribution()
+        @fact node.mean.partner.message.payload => GaussianDistribution()
         # Fix variance
         node = GaussianNode(V=InverseGammaDistribution())
         @fact typeof(node.variance.partner.node) => ForneyLab.ClampNode
-        @fact node.variance.partner.message.value => InverseGammaDistribution()
+        @fact node.variance.partner.message.payload => InverseGammaDistribution()
         # Fix precision
         node = GaussianNode(form="precision", W=GammaDistribution())
         @fact typeof(node.precision.partner.node) => ForneyLab.ClampNode
-        @fact node.precision.partner.message.value => GammaDistribution()
+        @fact node.precision.partner.message.payload => GammaDistribution()
         # Fix mean and variance
         node = GaussianNode(m=GaussianDistribution(), V=InverseGammaDistribution())
         @fact typeof(node.mean.partner.node) => ForneyLab.ClampNode
