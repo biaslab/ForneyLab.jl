@@ -131,7 +131,7 @@ facts("Connections between nodes integration tests") do
     end
 
     context("Edge should throw an error when two interfaces on the same node are connected") do
-        node = initializeFixedGainNode()
+        node = FixedGainNode()
         # Connect output directly to input
         @fact_throws Edge(node.interfaces[2], node.interfaces[1])
     end

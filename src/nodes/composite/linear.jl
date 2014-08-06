@@ -98,17 +98,25 @@ function updateNodeMessage!(node::LinearCompositeNode,
 
     # Ensure right parameterization
     for param = [marg_in1, marg_slope, marg_offset, marg_out] # just get all of them, all marginals need to be defined anyway
-        ensureMWParametrization!(param)
+        (param == nothing) || ensureMWParametrization!(param)
     end
     # Get the variables beforehand for more readable update equations
-    mu_a = marg_slope.m[1]
-    gam_a = marg_slope.W[1, 1] # gamma_a
-    mu_b = marg_offset.m[1]
-    gam_b = marg_offset.W[1, 1] # gamma_b
-    mu_x2 = marg_out.m[1]
-    gam_x2 = marg_out.W[1, 1] # gamma_x2
-    mu_x1 = marg_in1.m[1]
-    gam_x1 = marg_in1.W[1, 1] # gamma_x1
+    if marg_slope != nothing
+        mu_a = marg_slope.m[1]
+        gam_a = marg_slope.W[1, 1] # gamma_a
+    end
+    if marg_offset != nothing
+        mu_b = marg_offset.m[1]
+        gam_b = marg_offset.W[1, 1] # gamma_b
+    end
+    if marg_out != nothing
+        mu_x2 = marg_out.m[1]
+        gam_x2 = marg_out.W[1, 1] # gamma_x2
+    end
+    if marg_in1 != nothing
+        mu_x1 = marg_in1.m[1]
+        gam_x1 = marg_in1.W[1, 1] # gamma_x1
+    end
     a_gam = marg_noise.a
     b_gam = marg_noise.b
 
@@ -156,17 +164,25 @@ function updateNodeMessage!(node::LinearCompositeNode,
 
     # Ensure right parameterization
     for param = [marg_in1, marg_slope, marg_offset, marg_out] # just get all of them, all marginals need to be defined anyway
-        ensureMVParametrization!(param)
+        (param==nothing) || ensureMVParametrization!(param)
     end
     # Get the variables beforehand for more readable update equations
-    mu_a = marg_slope.m[1]
-    s_a = marg_slope.V[1, 1] # sigma_a^2
-    mu_b = marg_offset.m[1]
-    s_b = marg_offset.V[1, 1] # sigma_b^2
-    mu_x2 = marg_out.m[1]
-    s_x2 = marg_out.V[1, 1] # sigma_x2^2
-    mu_x1 = marg_in1.m[1]
-    s_x1 = marg_in1.V[1, 1] # sigma_x1^2
+    if marg_slope != nothing
+        mu_a = marg_slope.m[1]
+        s_a = marg_slope.V[1, 1] # sigma_a^2
+    end
+    if marg_offset != nothing
+        mu_b = marg_offset.m[1]
+        s_b = marg_offset.V[1, 1] # sigma_b^2
+    end
+    if marg_out != nothing
+        mu_x2 = marg_out.m[1]
+        s_x2 = marg_out.V[1, 1] # sigma_x2^2
+    end
+    if marg_in1 != nothing
+        mu_x1 = marg_in1.m[1]
+        s_x1 = marg_in1.V[1, 1] # sigma_x1^2
+    end
     a_s = marg_noise.a
     b_s = marg_noise.b
 

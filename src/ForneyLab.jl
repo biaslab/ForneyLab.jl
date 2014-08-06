@@ -286,7 +286,7 @@ function updateNodeMessage!(outbound_interface::Interface)
         end
         # Add message or marginal to the inbound array
         # TODO: PROPERLY CHECK FOR VARIATIONAL
-        if interface.edge.marginal != nothing #interface.variational
+        if interface.edge.marginal!=nothing && (:variational in names(node)) && node.variational
             inbound_array[interface_id] = interface.edge.marginal
         else
             inbound_array[interface_id] = interface.partner.message
