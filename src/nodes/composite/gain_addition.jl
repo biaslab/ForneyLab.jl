@@ -104,23 +104,22 @@ backwardIn2GainAdditionVRule{T<:Number}(A::Array{T, 2}, V_y::Array{T, 2}, V_z::A
 backwardIn2GainAdditionWRule{T<:Number}(A::Array{T, 2}, W_y::Array{T, 2}, W_z::Array{T, 2}) = W_z - W_z * A * inv(W_y+A'*W_z*A) * A' * W_z
 backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z::Array{T, 1}, W_y::Array{T, 2}, W_z::Array{T, 2}) = xi_z - W_z*A*inv(W_y+A'*W_z*A)*(xi_y+A'*xi_z)
 
-function updateNodeMessage!(outbound_interface_id::Int,
-                            node::GainAdditionCompositeNode,
-                            inbound_messages_value_types::Type{GaussianDistribution},
-                            outbound_message_value_type::Type{GaussianDistribution})
-    # Calculate an outbound message based on the inbound messages and the node function.
-    # This function is not exported, and is only meant for internal use.
+# Forward to OUT
+function updateNodeMessage!(node::GainAdditionCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_value_type::Type{GaussianDistribution},
+                            in1::Message{GaussianDistribution},
+                            in2::Message{GaussianDistribution},
+                            ::Nothing)
 
-    if !node.use_composite_update_rules
-        node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
-    else
-        if outbound_interface_id == 3
-            # Forward message towards "out" interface
+    if outbound_interface_id == 3
+        if !node.use_composite_update_rules
+            node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
+        else
             dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
     
-            # msg_i = inbound message on interface i, dist_out is always the calculated outbound message.
-            dist_1 = node.interfaces[1].partner.message.value
-            dist_2 = node.interfaces[2].partner.message.value
+            dist_1 = in1.value
+            dist_2 = in2.value
 
             # Select parameterization
             # Order is from least to most computationally intensive
@@ -166,12 +165,30 @@ function updateNodeMessage!(outbound_interface_id::Int,
                 dist_out.W  = nothing
                 dist_out.xi = nothing
             end
-        elseif outbound_interface_id == 2
-            # Backward message towards "in2" interface
+        end
+    else
+        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+    end
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+# Backward to IN2
+function updateNodeMessage!(node::GainAdditionCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_value_type::Type{GaussianDistribution},
+                            in1::Message{GaussianDistribution},
+                            ::Nothing,
+                            out::Message{GaussianDistribution})
+
+    if outbound_interface_id == 2
+        if !node.use_composite_update_rules
+            node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
+        else
             dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_value_type).value
 
-            dist_1 = node.interfaces[1].partner.message.value
-            dist_3 = node.interfaces[3].partner.message.value
+            dist_1 = in1.value
+            dist_3 = out.value
 
             # Select parameterization
             # Order is from least to most computationally intensive
@@ -217,14 +234,28 @@ function updateNodeMessage!(outbound_interface_id::Int,
                 dist_out.W  = nothing
                 dist_out.xi = nothing
             end
-        elseif outbound_interface_id == 1
-            # Backward message towards "in1" interface
-            # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
-            node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
-        else
-            error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
         end
+    else
+        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
     end
-    # Return the outbound message
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+# Backward to IN1
+function updateNodeMessage!(node::GainAdditionCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_value_type::Type{GaussianDistribution},
+                            ::Nothing,
+                            in2::Message{GaussianDistribution},
+                            out::Message{GaussianDistribution})
+
+    if outbound_interface_id == 1
+        # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
+        node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
+    else
+        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+    end
+
     return node.interfaces[outbound_interface_id].message
 end
