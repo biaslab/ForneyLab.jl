@@ -441,9 +441,12 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedul
     return push!(backtrace, outbound_interface)
 end
 
-function getAllNodes(seed_node::Node, node_array::Array{Node,1}=Array(Node,0); open_composites::Bool=true)
+function getAllNodes(seed_node::Node, node_array::Array{Node,1}=Array(Node,0); open_composites::Bool=true, include_clamps=false)
     # Return a list of all nodes
     # If open_composites is false, the search will not pass through composite node boundaries.
+    if include_clamps==false && typeof(seed_node)==ClampNode
+        return node_array
+    end
     if !(seed_node in node_array)
         push!(node_array, seed_node)
         # Partners
@@ -451,7 +454,7 @@ function getAllNodes(seed_node::Node, node_array::Array{Node,1}=Array(Node,0); o
             if interface.partner != nothing
                 if interface.partner.partner==interface || open_composites
                     # Recursion
-                    getAllNodes(interface.partner.node, node_array, open_composites=open_composites)
+                    getAllNodes(interface.partner.node, node_array, open_composites=open_composites, include_clamps=include_clamps)
                 end
             end
         end
@@ -460,7 +463,7 @@ function getAllNodes(seed_node::Node, node_array::Array{Node,1}=Array(Node,0); o
             for field in names(seed_node)
                 if typeof(getfield(seed_node, field)) <: Node
                     # Recursion
-                    getAllNodes(getfield(seed_node, field), node_array, open_composites=open_composites)
+                    getAllNodes(getfield(seed_node, field), node_array, open_composites=open_composites, include_clamps=include_clamps)
                 end
             end
         end        
