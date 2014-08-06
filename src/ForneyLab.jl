@@ -5,6 +5,7 @@ export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calcula
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
         generateSchedule, executeSchedule, uninformative, getOrCreateMessage
+export  ==
 
 # Verbosity
 verbose = false
