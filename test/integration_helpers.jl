@@ -270,7 +270,7 @@ function initializeGaussianNodeChain()
 
     # Build graph
     for section=1:n_samples
-        g_node = GaussianNode(true; name="g_node_$(section)") # Variational flag set to true, so updateNodeMessage knows what formula to use
+        g_node = GaussianNode(true; name="g_node_$(section)", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
         m_eq_node = EqualityNode(; name="m_eq_$(section)") # Equality node chain for mean
         gam_eq_node = EqualityNode(; name="s_eq_$(section)") # Equality node chain for variance
         obs_node = TerminalNode(y_observations[section], name="c_obs_$(section)") # Observed y values are stored in terminal node
@@ -305,9 +305,9 @@ end
 function initializeLinearCompositeNodeChain()
     # Set up a chain of Gaussian nodes for regression parameter estimation
     #
-    #  [a_0]-->[=]------ ... ->[=]------->[C_a]
+    # [a_0]-->[=]------ ... ->[=]------->[C_a]
     #          |               |        
-    #  [b_0]---|>[=]---- ... --|>[=]----->[C_b]
+    # [b_0]----|>[=]---- ... --|>[=]----->[C_b]
     #          |  |            |  |     
     #[gam_0]---|--|>[=]- ... --|--|>[=]-->[C_gam]
     #          |  |  |         |  |  |  
