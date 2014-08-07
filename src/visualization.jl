@@ -102,24 +102,24 @@ function validateGraphVizInstalled()
     end
 end
 
-viewDotExternal(dot_graph::String) = (@windows? viewDotExternal(dot_graph::String, false) : viewDotExternal(dot_graph::String, true))
+viewDotExternal(dot_graph::String) = (@windows? viewDotExternalImage(dot_graph::String) : viewDotExternalInteractive(dot_graph::Stringss))
 
-function viewDotExternal(dot_graph::String, interactive::Bool=true)
-    # View a DOT graph in an external viewer
+function viewDotExternalInteractive(dot_graph::String)
+    # View a DOT graph in interactive viewer
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    if interactive
-        stdin, proc = writesto(`dot -Tx11`)
-        write(stdin, dot_graph)
-        close(stdin)
-    else
-        # Write the image to a file and open it with the default image viewer
-        svg = dot2svg(dot_graph)
-        filename = tempname()*".svg"
-        open(filename, "w") do f
-            write(f, svg)
-        end
-        viewFile(filename)
+    stdin, proc = writesto(`dot -Tx11`)
+    write(stdin, dot_graph)
+    close(stdin)
+end
+
+function viewDotExternalImage(dot_graph::String)
+    # Write the image to a file and open it with the default image viewer
+    svg = dot2svg(dot_graph)
+    filename = tempname()*".svg"
+    open(filename, "w") do f
+        write(f, svg)
     end
+    viewFile(filename)
 end
 
 function graphPdf(n::Union(Node, Array{Node,1}), filename::String)
