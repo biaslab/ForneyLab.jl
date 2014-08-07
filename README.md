@@ -15,7 +15,7 @@ To update, use:
 ```jl
 Pkg.update()
 ```
-If you want to be able to use the graph visualization functions, you'll also need to have [GraphViz](http://www.graphviz.org/) installed. On Linux, just use `apt-get install graphviz` or `yum install graphviz`. On Windows, you have to manually add the path of the GraphViz installation to the `path` system variable.
+If you want to be able to use the graph visualization functions, you'll also need to have [GraphViz](http://www.graphviz.org/) installed. On Linux, just use `apt-get install graphviz` or `yum install graphviz`. On Windows, run the installer and afterwards manually add the path of the GraphViz installation to the `PATH` system variable. The command `dot -?` should work from the command line.
 
 Usage
 =====
