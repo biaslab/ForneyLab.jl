@@ -70,6 +70,7 @@ graph2dot(seed_node::Node) = graph2dot(getAllNodes(seed_node, open_composites=fa
 
 function graphViz(n::Union(Node, Array{Node,1}); external_viewer::Bool=false)
     # Generates a DOT graph and shows it
+    validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     dot_graph = graph2dot(n)
     if external_viewer
         viewDotExternal(dot_graph)
@@ -85,20 +86,34 @@ end
 
 function dot2svg(dot_graph::String)
     # Generate SVG image from DOT graph
+    validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     stdout, stdin, proc = readandwrite(`dot -Tsvg`)
     write(stdin, dot_graph)
     close(stdin)
     return readall(stdout)
 end
 
-function viewDotExternal(dot_graph::String)
-    # View a DOT graph in an external viewer
+function validateGraphVizInstalled()
+    # Check if GraphViz is installed
     try
+        stdout, proc = readsfrom(`dot -?`)
+        (readline(stdout)[1:10] == "Usage: dot") || error()
+    catch
+        error("GraphViz is not installed correctly. Make sure GraphViz is installed. If you are on Windows, manually add the path to GraphViz to your path variable. You should be able to run 'dot' from the command line.")
+    end
+end
+
+viewDotExternal(dot_graph::String) = (@windows? viewDotExternal(dot_graph::String, false) : viewDotExternal(dot_graph::String, true))
+
+function viewDotExternal(dot_graph::String, interactive::Bool=true)
+    # View a DOT graph in an external viewer
+    validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
+    if interactive
         stdin, proc = writesto(`dot -Tx11`)
         write(stdin, dot_graph)
         close(stdin)
-    catch
-        # Write the image to a file and open it
+    else
+        # Write the image to a file and open it with the default image viewer
         svg = dot2svg(dot_graph)
         filename = tempname()*".svg"
         open(filename, "w") do f
@@ -110,6 +125,7 @@ end
 
 function graphPdf(n::Union(Node, Array{Node,1}), filename::String)
     # Generates a DOT graph and writes it to a pdf file
+    validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     dot_graph = graph2dot(n)
     stdin, proc = writesto(`dot -Tpdf -o$(filename)`)
     write(stdin, dot_graph)
