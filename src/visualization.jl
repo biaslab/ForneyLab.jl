@@ -96,8 +96,7 @@ end
 function validateGraphVizInstalled()
     # Check if GraphViz is installed
     try
-        stdout, proc = readsfrom(`dot -?`)
-        (readline(stdout)[1:10] == "Usage: dot") || error()
+        (readall(`dot -?`)[1:10] == "Usage: dot") || error()
     catch
         error("GraphViz is not installed correctly. Make sure GraphViz is installed. If you are on Windows, manually add the path to GraphViz to your path variable. You should be able to run 'dot' from the command line.")
     end
