@@ -134,7 +134,7 @@ function updateNodeMessage!(node::EqualityNode,
                             outbound_message_payload_type::Type{GaussianDistribution},
                             msg_st::Message{StudentsTDistribution},
                             msg_n::Message{GaussianDistribution},
-                            ::Any)
+                            ::Nothing)
     # Combination of Gaussian and student's t-distribution
     # Definitions available in derivations notebook
     # Outcome reasonable for 0 < (msg_st.W / msg_st.nu) * (x - msg_st.m)^2 < 1 
@@ -156,14 +156,14 @@ function updateNodeMessage!(node::EqualityNode,
     return node.interfaces[outbound_interface_id].message
 end
 # Call signature for messages other ways around
-# Outbound interface 3 (remaining combination)
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GaussianDistribution}, msg_n::Message{GaussianDistribution}, msg_st::Message{StudentsTDistribution}, msg_dummy::Any) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_st, msg_n, msg_dummy)
+# Outbound interface 3
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GaussianDistribution}, msg_n::Message{GaussianDistribution}, msg_st::Message{StudentsTDistribution}, msg_dummy::Nothing) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_st, msg_n, msg_dummy)
 # Outbound interface 2
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GaussianDistribution}, msg_n::Message{GaussianDistribution}, msg_dummy::Any, msg_st::Message{StudentsTDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_st, msg_n, msg_dummy)
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GaussianDistribution}, msg_st::Message{StudentsTDistribution}, msg_dummy::Any, msg_n::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_st, msg_n, msg_dummy)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GaussianDistribution}, msg_n::Message{GaussianDistribution}, msg_dummy::Nothing, msg_st::Message{StudentsTDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_st, msg_n, msg_dummy)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GaussianDistribution}, msg_st::Message{StudentsTDistribution}, msg_dummy::Nothing, msg_n::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_st, msg_n, msg_dummy)
 # Outbound interface 1
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GaussianDistribution}, msg_dummy::Any, msg_n::Message{GaussianDistribution}, msg_st::Message{StudentsTDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_st, msg_n, msg_dummy)
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GaussianDistribution}, msg_dummy::Any, msg_st::Message{StudentsTDistribution}, msg_n::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_st, msg_n, msg_dummy)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GaussianDistribution}, msg_dummy::Nothing, msg_n::Message{GaussianDistribution}, msg_st::Message{StudentsTDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_st, msg_n, msg_dummy)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GaussianDistribution}, msg_dummy::Nothing, msg_st::Message{StudentsTDistribution}, msg_n::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_st, msg_n, msg_dummy)
 
 ############################################
 # Number and Array{Number} methods

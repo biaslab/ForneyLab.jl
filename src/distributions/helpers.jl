@@ -98,21 +98,15 @@ function calculateMarginal!(node::GaussianNode)
 
     marg = getOrCreateMarginal(node, NormalGammaDistribution)
 
-    if node.form == "precision"
-        mu_in = node.mean.partner.message.payload
-        gam_in = node.precision.partner.message.payload
-        ensureMWParametrization(mu_in)
-        (length(mu_in.m) == 1 && length(mu_in.W) == 1) || error("Update rule for NormalGammaDistribution marginal only supports univariate Gaussian distribution as input.")
+    mu_in = node.mean.partner.message.payload
+    gam_in = node.precision.partner.message.payload
+    ensureMWParametrization!(mu_in)
+    (length(mu_in.m) == 1 && length(mu_in.W) == 1) || error("Update rule for NormalGammaDistribution marginal only supports univariate Gaussian distribution as input.")
 
-        # TODO: Check rules, these are incorrect
-        warn("GaussianNode marginal update rule still incorrect")
-        # marg.m = mu_in.m[1]
-        # marg.W = mu_in.W[1, 1]
-        # marg.a = gam_in.a
-        # marg.b = gam_in.b
-    else
-        error("Marginal update rule for $(typeof(node)) $(node.name) not implemented for $(node.form) form.")
-    end
+    marg.m = mu_in.m[1]
+    marg.W = mu_in.W[1, 1]
+    marg.a = gam_in.a
+    marg.b = gam_in.b
 
     return marg
 end

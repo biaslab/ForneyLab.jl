@@ -58,7 +58,7 @@ type GaussianNode <: Node
     out::Interface
 
     function GaussianNode(variational; name="unnamed", form::ASCIIString="moment", args...)
-        self = new(name, Array(Interface, 3), variational)
+        self = new(name, Array(Interface, 3), variational, nothing)
 
         # Look for fixed parameters
         args = Dict(zip(args...)...) # Cast args to dictionary
