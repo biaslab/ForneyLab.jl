@@ -165,8 +165,3 @@ facts("EqualityNode unit tests") do
                                 InverseGammaDistribution(a=3.0, b=2.0))
     end
 end
-
-#####################
-# Integration tests
-#####################
-

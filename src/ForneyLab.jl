@@ -12,7 +12,7 @@ verbose = false
 setVerbose(verbose_mode=true) = global verbose=verbose_mode
 printVerbose(msg) = if verbose println(msg) end
 
-# ForneyLab Helpers
+# ForneyLab helpers
 include("helpers.jl")
 
 # Other includes
@@ -30,6 +30,8 @@ abstract CompositeNode <: Node
 include("distributions/gaussian.jl")
 include("distributions/gamma.jl")
 include("distributions/inverse_gamma.jl")
+include("distributions/normal_gamma.jl")
+include("distributions/students_t.jl")
 
 type Message{T<:MessagePayload}
     # Message has a payload, which must be a subtype of MessagePayload.
@@ -199,7 +201,7 @@ end
 function getOrCreateMarginal(edge::Edge, assign_payload::DataType)
     # Looks for a marginal on edge.
     # When no marginal is present, it sets and returns a standard distribution.
-    # Otherwise it returns the present marginal. User for fast marginal calculations.
+    # Otherwise it returns the present marginal. Used for fast marginal calculations.
     if edge.marginal==nothing
         if assign_payload <: ProbabilityDistribution 
             edge.marginal = assign_payload()
@@ -209,13 +211,30 @@ function getOrCreateMarginal(edge::Edge, assign_payload::DataType)
     end
     return edge.marginal
 end
+function getOrCreateMarginal(node::Node, assign_payload::DataType)
+    # Looks for a marginal on node.
+    # When no marginal is present, it sets and returns a standard distribution.
+    # Otherwise it returns the present marginal. Used for fast marginal calculations.
+    if node.marginal==nothing
+        if assign_payload <: ProbabilityDistribution 
+            node.marginal = assign_payload()
+        else
+            error("Unknown assign type argument")
+        end
+    end
+    return node.marginal
+end
 
-typealias MarginalSchedule Array{Edge, 1}
+typealias MarginalSchedule Union(Array{Union(Edge, Node), 1}, Array{Edge, 1}, Array{Node, 1})
 function show(io::IO, schedule::MarginalSchedule)
     # Show marginal update schedule
     println(io, "Marginal update schedule:")
-    for edge in schedule
-        println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name) to $(typeof(edge.head.node)) $(edge.head.node.name)")
+    for entry in schedule
+        if typeof(entry) == Edge
+            println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name) to $(typeof(edge.head.node)) $(edge.head.node.name)")
+        else # Node type
+            println(io, "Node $(entry.name) of type $(typeof(entry))")
+        end
     end
 end
 
@@ -224,8 +243,6 @@ setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, messa
 getForwardMessage(edge::Edge) = edge.tail.message
 getBackwardMessage(edge::Edge) = edge.head.message
 
-# Distribution helpers
-include("distributions/helpers.jl")
 # Nodes
 include("nodes/clamp.jl")
 include("nodes/addition.jl")
@@ -238,6 +255,8 @@ include("nodes/composite/gain_addition.jl")
 include("nodes/composite/gain_equality.jl")
 include("nodes/composite/linear.jl")
 include("nodes/composite/general.jl")
+# Distribution helpers
+include("distributions/helpers.jl")
 
 #############################
 # Generic methods

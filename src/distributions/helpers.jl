@@ -1,8 +1,8 @@
 # Helper functions for distributions
 
-#######################
-# Marginal calculations
-#######################
+############################
+# Edge marginal calculations
+############################
 
 # GammaDistribution
 function calculateMarginal(forward_dist::GammaDistribution, backward_dist::GammaDistribution)
@@ -48,5 +48,71 @@ function calculateMarginal!(edge::Edge, forward_dist::GaussianDistribution, back
     marg.W = forward_dist.W+backward_dist.W
     marg.V = nothing
     marg.m = nothing
+    return marg
+end
+
+# Gaussian-studens t combination
+function calculateMarginal(forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
+    # Calculate the marginal from a forward/backward message pair.
+    ensureMWParametrization!(forward_dist)
+    (length(forward_dist.m) == 1 && length(forward_dist.W) == 1) || error("Equality node update for StudentsTDistribution and GaussianDistribution only supports univariate Gaussian distribution.")
+
+    # Definitions available in derivations notebook
+    l_a = backward_dist.W[1, 1] 
+    mu_a = backward_dist.m[1]
+    l_b = forward_dist.W[1, 1]
+    mu_b = forward_dist.m[1]
+    nu_term = 1 + (1/backward_dist.nu)
+
+    return GaussianDistribution(m = (l_a*nu_term*mu_a + l_b*mu_b) / (l_a*nu_term + l_b), W = l_a*nu_term + l_b)
+end
+calculateMarginal(forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal(backward_dist, forward_dist)
+function calculateMarginal!(edge::Edge, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
+    marg = getOrCreateMarginal(edge, GaussianDistribution)
+    ensureMWParametrization!(forward_dist)
+    (length(forward_dist.m) == 1 && length(forward_dist.W) == 1) || error("Equality node update for StudentsTDistribution and GaussianDistribution only supports univariate Gaussian distribution.")
+
+    # Definitions available in derivations notebook
+    l_a = backward_dist.W[1, 1] 
+    mu_a = backward_dist.m[1]
+    l_b = forward_dist.W[1, 1]
+    mu_b = forward_dist.m[1]
+    nu_term = 1 + (1/backward_dist.nu)
+
+    marg.m = [(l_a*nu_term*mu_a + l_b*mu_b) / (l_a*nu_term + l_b)]
+    marg.W = reshape([l_a*nu_term + l_b], 1, 1)
+    marg.xi = nothing
+    marg.V = nothing
+    return marg
+end
+calculateMarginal!(edge::Edge, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal!(edge, backward_dist, forward_dist)
+
+
+############################
+# Node (joint) marginal calculations
+############################
+
+function calculateMarginal!(node::GaussianNode)
+    # (Joint) marginal update function used for VMP
+    # Definitions available in derivations notebook
+
+    marg = getOrCreateMarginal(node, NormalGammaDistribution)
+
+    if node.form == "precision"
+        mu_in = node.mean.partner.message.payload
+        gam_in = node.precision.partner.message.payload
+        ensureMWParametrization(mu_in)
+        (length(mu_in.m) == 1 && length(mu_in.W) == 1) || error("Update rule for NormalGammaDistribution marginal only supports univariate Gaussian distribution as input.")
+
+        # TODO: Check rules, these are incorrect
+        warn("GaussianNode marginal update rule still incorrect")
+        # marg.m = mu_in.m[1]
+        # marg.W = mu_in.W[1, 1]
+        # marg.a = gam_in.a
+        # marg.b = gam_in.b
+    else
+        error("Marginal update rule for $(typeof(node)) $(node.name) not implemented for $(node.form) form.")
+    end
+
     return marg
 end

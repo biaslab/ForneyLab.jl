@@ -48,14 +48,15 @@ export GaussianNode
 type GaussianNode <: Node
     name::ASCIIString
     interfaces::Array{Interface,1}
-    variational::Bool
+    variational::Bool # TODO: remove variational flag
+    marginal::Any
+
     # Helper fields filled by constructor
     mean::Interface
     precision::Interface
     variance::Interface
     out::Interface
 
-    # TODO: THE VARIATIONAL FLAG SHOULD ONLY BE USED AS A MEANS TO PROPAGATE INFORMATION TO THE INTERFACES
     function GaussianNode(variational; name="unnamed", form::ASCIIString="moment", args...)
         self = new(name, Array(Interface, 3), variational)
 

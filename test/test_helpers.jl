@@ -30,5 +30,17 @@ facts("Helper function unit tests") do
         ForneyLab.updateNodeMessage!(node2, 1, Float64, nothing)
         @fact getOrCreateMessage(node2.out, Float64).payload => 2.0
     end
+
+    context("Marginal calculation for the GaussianNode") do
+        # TODO: NormalGammaDistribution
+        @fact true => false 
+    end
+
+    context("Marginal calculation for the combination of a Gaussian and student's t-distribution") do
+        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(StudentsTDistribution())).out)
+        calculateMarginal!(edge)
+        @fact edge.marginal => GaussianDistribution(m=0.0, W=3.0) 
+    end
 end
+
 

@@ -12,31 +12,14 @@
 #       EqualityNode(5; name="5_port_equ")
 #
 # Interface ids, (names) and supported message types:
-#   1. (none):
+# 1 ... N. (none):
 #       Message{Float64}
 #       Message{Array{Float64}}
 #       Message{GaussianDistribution}
 #       Message{GammaDistribution}
 #       Message{InverseGammaDistribution}
-#   2. (none):
-#       Message{Float64}
-#       Message{Array{Float64}}
-#       Message{GaussianDistribution}
-#       Message{GammaDistribution}
-#       Message{InverseGammaDistribution}
-#   3. (none):
-#       Message{Float64}
-#       Message{Array{Float64}}
-#       Message{GaussianDistribution}
-#       Message{GammaDistribution}
-#       Message{InverseGammaDistribution}
-#   ...
-#   N. (none):
-#       Message{Float64}
-#       Message{Array{Float64}}
-#       Message{GaussianDistribution}
-#       Message{GammaDistribution}
-#       Message{InverseGammaDistribution}
+#       Message{NormalGammaDistribution}
+#       Message{StudentsTDistribution}
 ############################################
 
 export EqualityNode
@@ -145,6 +128,35 @@ function updateNodeMessage!(node::EqualityNode,
 
     return node.interfaces[outbound_interface_id].message
 end
+
+function updateNodeMessage!(node::EqualityNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            msg_1::Message{StudentsTDistribution},
+                            msg_2::Message{GaussianDistribution},
+                            ::Any)
+    # Combination of Gaussian and student's t-distribution
+    # Definitions available in derivations notebook
+    # Outcome reasonable for 0 < (msg_1.W / msg_1.nu) * (x - msg_1.m)^2 < 1 
+
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    ensureMWParametrization!(msg_2.payload)
+    (length(msg_2.payload.m) == 1 && length(msg_2.payload.W) == 1) || error("Equality node update for StudentsTDistribution and GaussianDistribution only supports univariate Gaussian distribution.")
+
+    l_a = msg_1.payload.W[1, 1] 
+    mu_a = msg_1.payload.m[1]
+    l_b = msg_2.payload.W[1, 1]
+    mu_b = msg_2.payload.m[1]
+    nu_term = 1 + (1/msg_1.payload.nu)
+
+    dist_out.m = [(l_a*nu_term*mu_a + l_b*mu_b) / (l_a*nu_term + l_b)]
+    dist_out.W = reshape([l_a*nu_term + l_b], 1, 1)
+    dist_out.xi = nothing
+    dist_out.V = nothing
+    return node.interfaces[outbound_interface_id].message
+end
+# Call signature for messages the other way around
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GaussianDistribution}, msg_1::Message{GaussianDistribution}, msg_2::Message{StudentsTDistribution}, msg_3::Any) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_2, msg_1, msg_3)
 
 ############################################
 # Number and Array{Number} methods
