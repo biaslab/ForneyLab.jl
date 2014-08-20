@@ -11,10 +11,17 @@ type StudentsTDistribution <: ProbabilityDistribution
     m::Vector{Float64} # mean
     W::Matrix{Float64} # precision
     nu::Float64 # degrees of freedom
-    StudentsTDistribution(; m=[0.0], W=reshape([1.0], 1, 1), nu=1.0) = new(m, W, nu)
+end
+function StudentsTDistribution(; m::Union(Float64, Vector{Float64})=[0.0],
+                                 W::Union(Float64, Matrix{Float64})=reshape([1.0], 1, 1),
+                                 nu::Float64=1.0)
+    m = (typeof(m)==Float64) ? [m] : deepcopy(m)
+    W = (typeof(W)==Float64) ? fill!(Array(Float64,1,1),W) : deepcopy(W)
+
+    return StudentsTDistribution(m, W, nu)
 end
 
-uninformative(dist_type::Type{StudentsTDistribution}) = StudentsTDistribution(m=[0.0], W=reshape([0.001], 1, 1), nu=1000)
+uninformative(dist_type::Type{StudentsTDistribution}) = StudentsTDistribution(m=[0.0], W=reshape([0.001], 1, 1), nu=1000.0)
 
 Base.mean(dist::StudentsTDistribution) = dist.m
 Base.var(dist::StudentsTDistribution) = dist.nu / (dist.nu - 2) * inv(dist.W)

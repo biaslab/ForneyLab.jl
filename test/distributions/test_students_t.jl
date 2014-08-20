@@ -14,6 +14,6 @@ facts("StudentsTDistribution unit tests") do
         dist = uninformative(StudentsTDistribution)
         @fact dist.m => [0.0]
         @fact dist.W => reshape([0.001], 1, 1)
-        @fact dist.nu => 1000
+        @fact dist.nu => 1000.0
     end
 end
