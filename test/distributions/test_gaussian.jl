@@ -110,4 +110,10 @@ facts("Marginal calculations for the Gaussian") do
         @fact marginal_dist.m => [0.0]
         @fact isApproxEqual(marginal_dist.V, reshape([0.5], 1, 1)) => true
     end
+
+    context("Marginal calculation for the combination of a Gaussian and student's t-distribution") do
+        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(StudentsTDistribution())).out)
+        calculateMarginal!(edge)
+        @fact edge.marginal => GaussianDistribution(m=0.0, W=3.0) 
+    end
 end

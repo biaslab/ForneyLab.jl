@@ -255,8 +255,8 @@ include("nodes/composite/gain_addition.jl")
 include("nodes/composite/gain_equality.jl")
 include("nodes/composite/linear.jl")
 include("nodes/composite/general.jl")
-# Distribution helpers
-include("distributions/helpers.jl")
+# Methods for calculating marginals
+include("distributions/calculate_marginal.jl")
 
 #############################
 # Generic methods

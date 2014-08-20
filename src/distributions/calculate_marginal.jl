@@ -1,4 +1,10 @@
-# Helper functions for distributions
+# Functions for calculating marginals on nodes and edges.
+
+# Marginal calculations are in a separate file from the distribution definitions,
+# because types that are needed for marginal calculations are defined after distribution definitions
+
+# Marginal calculations on the edges are the same as the equality node rules,
+# where the forward and backward messages are incoming and the marginal outcome is on the outgoing edge.
 
 ############################
 # Edge marginal calculations

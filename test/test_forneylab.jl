@@ -84,6 +84,8 @@ end
 include("distributions/test_gaussian.jl")
 include("distributions/test_gamma.jl")
 include("distributions/test_inverse_gamma.jl")
+include("distributions/test_normal_gamma.jl")
+include("distributions/test_students_t.jl")
 include("nodes/test_clamp.jl")
 include("nodes/test_addition.jl")
 include("nodes/test_terminal.jl")

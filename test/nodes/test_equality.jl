@@ -166,7 +166,7 @@ facts("EqualityNode unit tests") do
     end
 
     context("EqualityNode should propagate combination of student's t and Gaussian distribution") do
-        # Just test the original and a permutation
+        # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(), 
                                 3, 
                                 GaussianDistribution, 
