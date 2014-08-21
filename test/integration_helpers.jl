@@ -243,29 +243,95 @@ function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rule
     return gec_node
 end
 
-function initializeGaussianNodeChain()
-    # Set up a chain of Gaussian nodes for joint mean-precision estimation
+function initializeGaussianNodeChain(y::Array{Float64, 1})
+    # Set up a chain of Gaussian nodes for mean-precision estimation
     #
-    # [gam_prior]-------->[=]---------->[=]--->    -->[C_gam]
+    # [gam_0]-------->[=]---------->[=]--->    -->[gam_N]
     #                      |             |   etc...
-    # [m_prior]-->[=]---------->[=]--------->      -->[C_m]
+    # [m_0]-->[=]---------->[=]--------->      -->[m_N]
     #          q(m)| q(gam)|     |       |
     #              -->[N]<--     -->[N]<--
-    #                  |             |
-    #                  v y_1         v y_2
+    #                  | q(y)        |
+    #                  v             v
+    #                [y_1]         [y_2]
 
     # Initial settings
-    # Fixed observations drawn from N(5.0, 2.0)
-    y_observations = [4.9411489951651735,4.4083330961647595,3.535639074214823,2.1690761263145855,4.740705436131505,5.407175878845115,3.6458623443189957,5.132115496214244,4.485471215629411,5.342809672818667]
-    n_samples = length(y_observations) # Number of observed samples
+    n_samples = length(y) # Number of observed samples
 
     # Pre-assign arrays for later reference
     g_nodes = Array(GaussianNode, n_samples)
     m_eq_nodes = Array(EqualityNode, n_samples)
     gam_eq_nodes = Array(EqualityNode, n_samples)
-    obs_nodes = Array(TerminalNode, n_samples)
+    y_nodes = Array(TerminalNode, n_samples)
     q_gam_edges = Array(Edge, n_samples)
     q_m_edges = Array(Edge, n_samples)
+    q_y_edges = Array(Edge, n_samples)
+
+    # Build graph
+    for section=1:n_samples
+        g_node = GaussianNode(true; name="g_node_$(section)", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
+        m_eq_node = EqualityNode(; name="m_eq_$(section)") # Equality node chain for mean
+        gam_eq_node = EqualityNode(; name="s_eq_$(section)") # Equality node chain for variance
+        y_node = TerminalNode(y[section], name="c_obs_$(section)") # Observed y values are stored in terminal node
+        g_nodes[section] = g_node
+        m_eq_nodes[section] = m_eq_node
+        gam_eq_nodes[section] = gam_eq_node
+        y_nodes[section] = y_node
+        q_y_edges[section] = Edge(g_node.out, y_node.out, GaussianDistribution, Float64)
+        q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.mean)
+        q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.precision, GammaDistribution)
+        # Preset uninformative ('one') messages
+        setMarginal!(q_gam_edges[section], uninformative(GammaDistribution))
+        setMarginal!(q_m_edges[section], uninformative(GaussianDistribution))
+        setMarginal!(q_y_edges[section], uninformative(Float64))
+        if section > 1 # Connect sections
+            Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1])
+            Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)
+        end
+    end
+    # Attach beginning and end nodes
+    m_0 = TerminalNode(GaussianDistribution(m=0.0, V=100.0)) # Prior
+    gam_0 = TerminalNode(GammaDistribution(a=0.01, b=0.01)) # Prior
+    m_N = TerminalNode(uninformative(GaussianDistribution)) # Neutral 'one' message
+    gam_N = TerminalNode(uninformative(GammaDistribution)) # Neutral 'one' message
+    Edge(m_0.out, m_eq_nodes[1].interfaces[1])
+    Edge(gam_0.out, gam_eq_nodes[1].interfaces[1], GammaDistribution)
+    Edge(m_eq_nodes[end].interfaces[2], m_N.out)
+    Edge(gam_eq_nodes[end].interfaces[2], gam_N.out, GammaDistribution)
+
+    return (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges)
+end
+
+function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
+    # Set up a chain of Gaussian nodes for joint mean-precision estimation
+    # through structured variational message passing
+    #
+    #     [gam_0]-------->[=]---------->[=]--->    -->[1] gam_N
+    #                      |             |   etc...
+    #     [m_0]-->[=]---------->[=]--------->      -->[1] m_N
+    #              |       |     |       |
+    #     q(m,gam) -->[N]<--     -->[N]<--
+    # - - - - - - - - -|- - - - - - -|- - - - - - - - -
+    #                  |q(y)         |
+    #                  v             v
+    #                [y_1]         [y_2]
+
+    # TODO: batch estimation in this way does not work because of cycles in the subgraph.
+    # Possible solutions:
+    # - Online estimation with one sample at a time
+    # - One incoming interface with a normal-gamma message (does not require vmp)
+    # - Fix m or gam and estimate the other one
+
+    # Initial settings
+    n_samples = length(y) # Number of observed samples
+
+    # Pre-assign arrays for later reference
+    g_nodes = Array(GaussianNode, n_samples)
+    m_eq_nodes = Array(EqualityNode, n_samples)
+    gam_eq_nodes = Array(EqualityNode, n_samples)
+    y_nodes = Array(TerminalNode, n_samples)
+    gam_edges = Array(Edge, n_samples)
+    m_edges = Array(Edge, n_samples)
     y_edges = Array(Edge, n_samples)
 
     # Build graph
@@ -273,36 +339,36 @@ function initializeGaussianNodeChain()
         g_node = GaussianNode(true; name="g_node_$(section)", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
         m_eq_node = EqualityNode(; name="m_eq_$(section)") # Equality node chain for mean
         gam_eq_node = EqualityNode(; name="s_eq_$(section)") # Equality node chain for variance
-        obs_node = TerminalNode(y_observations[section], name="c_obs_$(section)") # Observed y values are stored in terminal node
+        y_node = TerminalNode(y[section], name="c_obs_$(section)") # Observed y values are stored in terminal node
         g_nodes[section] = g_node
         m_eq_nodes[section] = m_eq_node
         gam_eq_nodes[section] = gam_eq_node
-        obs_nodes[section] = obs_node
-        y_edges[section] = Edge(g_node.out, obs_node.out, Float64)
-        q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.mean)
-        q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.precision, GammaDistribution)
+        y_nodes[section] = y_node
+        y_edges[section] = Edge(g_node.out, y_node.out, GaussianDistribution, Float64)
+        m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.mean, GaussianDistribution, StudentsTDistribution)
+        gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.precision, GammaDistribution)
         # Preset uninformative ('one') messages
-        setMarginal!(q_gam_edges[section], uninformative(GammaDistribution))
-        setMarginal!(q_m_edges[section], uninformative(GaussianDistribution))
+        setMarginal!(g_nodes[section], uninformative(NormalGammaDistribution))
+        setMarginal!(y_edges[section], uninformative(Float64)) # 1
         if section > 1 # Connect sections
-            Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1])
+            Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1], GaussianDistribution)
             Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)
         end
     end
     # Attach beginning and end nodes
-    m_prior = TerminalNode(GaussianDistribution(m=0.0, V=100.0)) # Prior
-    s_prior = TerminalNode(GammaDistribution(a=0.01, b=0.01)) # Prior
-    c_m = TerminalNode(uninformative(GaussianDistribution)) # Neutral 'one' message
-    c_gam = TerminalNode(uninformative(GammaDistribution)) # Neutral 'one' message
-    Edge(m_prior.out, m_eq_nodes[1].interfaces[1])
-    Edge(s_prior.out, gam_eq_nodes[1].interfaces[1], GammaDistribution)
-    Edge(m_eq_nodes[end].interfaces[2], c_m.out)
-    Edge(gam_eq_nodes[end].interfaces[2], c_gam.out, GammaDistribution)
+    m_0 = TerminalNode(GaussianDistribution(m=0.0, V=100.0)) # Prior
+    gam_0 = TerminalNode(GammaDistribution(a=0.01, b=0.01)) # Prior
+    m_N = TerminalNode(uninformative(GaussianDistribution)) # Neutral 'one' message
+    gam_N = TerminalNode(uninformative(GammaDistribution)) # Neutral 'one' message
+    Edge(m_0.out, m_eq_nodes[1].interfaces[1], GaussianDistribution)
+    Edge(gam_0.out, gam_eq_nodes[1].interfaces[1], GammaDistribution)
+    Edge(m_eq_nodes[end].interfaces[2], m_N.out, GaussianDistribution)
+    Edge(gam_eq_nodes[end].interfaces[2], gam_N.out, GammaDistribution)
 
-    return(g_nodes, obs_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges)
+    return (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, m_edges, gam_edges, y_edges)
 end
 
-function initializeLinearCompositeNodeChain()
+function initializeLinearCompositeNodeChain(x::Array{Float64, 1}, y::Array{Float64, 1})
     # Set up a chain of Gaussian nodes for regression parameter estimation
     #
     # [a_0]-->[=]------ ... ->[=]------->[C_a]
@@ -320,12 +386,8 @@ function initializeLinearCompositeNodeChain()
     #          x_1 y_1         x_n y_n
 
     # prepare samples
-    true_gam = 0.5
-    true_a = 3.0
-    true_b = 5.0
-    n_samples = 20
-    x = [0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0]
-    y = [6.1811923622357625,7.917496269084679,11.286102016681964,14.94255088702814,16.82264686442818,19.889355802073506,23.718253510300688,28.18105443765643,27.72075206943362,32.15921446069328,34.97262678800721,38.86444301740928,40.79138365100076,45.84963364094473,47.818481172238165,51.51027620022872,52.623019301773,53.91583839744505,58.14426361122961,59.895517438500164]
+    length(x) == length(y) || error("x and y must have same length")
+    n_samples = length(y)
 
     # Pre-assign arrays for later reference
     lin_nodes = Array(LinearCompositeNode, n_samples)
@@ -362,7 +424,7 @@ function initializeLinearCompositeNodeChain()
         x_edges[section] = Edge(x_node.out, lin_node.in1)
         y_edges[section] = Edge(lin_node.out, y_node.out)
         # Preset marginals
-        setMarginal!(a_eq_edges[section], uninformative(GaussianDistribution)) # uninformative
+        setMarginal!(a_eq_edges[section], uninformative(GaussianDistribution))
         setMarginal!(b_eq_edges[section], uninformative(GaussianDistribution))
         setMarginal!(gam_eq_edges[section], uninformative(GammaDistribution))
         setMarginal!(x_edges[section], GaussianDistribution(m = x[section], W = 10000.0)) # samples

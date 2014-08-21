@@ -74,8 +74,6 @@ facts("setMarginal unit tests") do
         (node1, node2) = initializePairOfMockNodes()
         edge = Edge(node1.out, node2.out)
         setMarginal!(edge, 1.0)
-        @fact edge.head.message.payload => 1.0
-        @fact edge.tail.message.payload => 1.0
         @fact edge.marginal => 1.0
     end
 end

@@ -16,7 +16,7 @@ type NormalGammaDistribution <: ProbabilityDistribution
     NormalGammaDistribution(; m=0.0, W=1.0, a=1.0, b=1.0) = new(m, W, a, b)
 end
 
-uninformative(dist_type::Type{NormalGammaDistribution}) = NormalGammaDistribution(m=0.0, W=1.0, a=0.999, b=0.001)
+uninformative(::Type{NormalGammaDistribution}) = NormalGammaDistribution(m=0.0, W=1.0, a=0.999, b=0.001)
 
 function show(io::IO, dist::NormalGammaDistribution)
     println(io, typeof(dist))

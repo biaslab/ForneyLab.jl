@@ -2,44 +2,63 @@
 # Integration tests
 #####################
 
-facts("VMP implementation integration tests") do
-    context("Gaussian node joint mean variance estimation") do
-        # Integration test for the VMP implementation by trying to estimate the mean and variance of a Gaussian
+facts("Naive VMP implementation integration tests") do
+    context("Gaussian node mean precision estimation") do
+        # Integration test for the VMP implementation by trying to estimate the mean and precision of a Gaussian
         # and comparing the outcome against the outcome of the Infer.NET framework
 
         # Initialize chain
-        (g_nodes, obs_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges) = initializeGaussianNodeChain()
+        # Fixed observations drawn from N(5.0, 2.0)
+        data = [4.9411489951651735,4.4083330961647595,3.535639074214823,2.1690761263145855,4.740705436131505,5.407175878845115,3.6458623443189957,5.132115496214244,4.485471215629411,5.342809672818667]
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
+        n_sections = length(data)
 
         # Initialize schedules
-        # Sumproduct updates
-        # Update for mean equality chain
-        left_update_run_m = generateSchedule(m_eq_nodes[1].interfaces[1])
-        right_update_run_m = generateSchedule(m_eq_nodes[end].interfaces[2])
-        downward_m = map(x -> x.interfaces[3], m_eq_nodes)
-        # Update for variance equality chain
-        left_update_run_gam = generateSchedule(gam_eq_nodes[1].interfaces[1])
-        right_update_run_gam = generateSchedule(gam_eq_nodes[end].interfaces[2])
-        downward_gam = map(x -> x.interfaces[3], gam_eq_nodes)
-        # Update for samples
-        upward_y = Array(Interface, 0)
-        for node = g_nodes
-            push!(upward_y, node.out.partner)
-            push!(upward_y, node.mean)
-            push!(upward_y, node.precision)
+        # Sumproduct and marginal schedule for q(y)
+        sumproduct_y_schedule = Array(Interface, 0)
+        for section = 1:n_sections 
+            push!(sumproduct_y_schedule, y_nodes[section].out) # Backward y message
+            push!(sumproduct_y_schedule, g_nodes[section].out) # Forward y message
         end
-        # Put it all together
-        sumproduct_schedule = [left_update_run_m, right_update_run_m, downward_m, left_update_run_gam, right_update_run_gam, downward_gam, upward_y]
+        marginal_y_schedule = q_y_edges
 
-        # Marginal updates
-        marginal_schedule = [q_m_edges, q_gam_edges]
+        # Sumproduct and marginal schedule for q(m)
+        sumproduct_m_schedule = Array(Interface, 0)
+        for section = 1:n_sections; push!(sumproduct_m_schedule, g_nodes[section].mean); end # Backward
+        push!(sumproduct_m_schedule, m_eq_nodes[1].interfaces[1].partner) # Prior message        
+        for section = 1:n_sections; push!(sumproduct_m_schedule, m_eq_nodes[section].interfaces[2]); end # Forward run
+        push!(sumproduct_m_schedule, m_eq_nodes[end].interfaces[2].partner) # Terminal message        
+        for section = n_sections:-1:1; push!(sumproduct_m_schedule, m_eq_nodes[section].interfaces[1]); end # Backward run
+        for section = 1:n_sections; push!(sumproduct_m_schedule, m_eq_nodes[section].interfaces[3]); end # Forward (downward run)
+        marginal_m_schedule = q_m_edges
+
+        # Sumproduct and marginal schedule for q(gam)
+        sumproduct_gam_schedule = Array(Interface, 0)
+        for section = 1:n_sections; push!(sumproduct_gam_schedule, g_nodes[section].precision); end # Backward
+        push!(sumproduct_gam_schedule, gam_eq_nodes[1].interfaces[1].partner) # Prior message        
+        for section = 1:n_sections; push!(sumproduct_gam_schedule, gam_eq_nodes[section].interfaces[2]); end # Forward run
+        push!(sumproduct_gam_schedule, gam_eq_nodes[end].interfaces[2].partner) # Terminal message        
+        for section = n_sections:-1:1; push!(sumproduct_gam_schedule, gam_eq_nodes[section].interfaces[1]); end # Backward run
+        for section = 1:n_sections; push!(sumproduct_gam_schedule, gam_eq_nodes[section].interfaces[3]); end # Forward (downward run)
+        marginal_gam_schedule = q_gam_edges
 
         # Perform vmp updates
         n_its = 50
+        # q(y) update
+        # We need to execute the q(y) updates only once, because sample values do not change.
+        executeSchedule(sumproduct_y_schedule)
+        executeSchedule(marginal_y_schedule)
         for iter = 1:n_its
-            executeSchedule(sumproduct_schedule)
-            executeSchedule(marginal_schedule)
+            # q(m) update
+            executeSchedule(sumproduct_m_schedule)
+            executeSchedule(marginal_m_schedule)
+            # q(gam) update
+            executeSchedule(sumproduct_gam_schedule)
+            executeSchedule(marginal_gam_schedule)
         end
-        executeSchedule(sumproduct_schedule) # One last time to ensure all calculations have propagated through the equality chains
+        # One last time to ensure all calculations have propagated through the equality chains
+        executeSchedule(sumproduct_m_schedule)
+        executeSchedule(sumproduct_gam_schedule)
 
         # Save outcome
         ensureMVParametrization!(m_eq_nodes[end].interfaces[2].message.payload)
@@ -55,40 +74,59 @@ facts("VMP implementation integration tests") do
     end
 
     context("LinearCompositeNode linear regression parameter estimation") do
-        (lin_nodes, a_eq_nodes, b_eq_nodes, gam_eq_nodes, a_eq_edges, b_eq_edges, gam_eq_edges, x_edges, y_edges) = initializeLinearCompositeNodeChain()
+        #true_gam = 0.5
+        #true_a = 3.0
+        #true_b = 5.0
+        x = [0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0]
+        y = [6.1811923622357625,7.917496269084679,11.286102016681964,14.94255088702814,16.82264686442818,19.889355802073506,23.718253510300688,28.18105443765643,27.72075206943362,32.15921446069328,34.97262678800721,38.86444301740928,40.79138365100076,45.84963364094473,47.818481172238165,51.51027620022872,52.623019301773,53.91583839744505,58.14426361122961,59.895517438500164]
+        (lin_nodes, a_eq_nodes, b_eq_nodes, gam_eq_nodes, a_eq_edges, b_eq_edges, gam_eq_edges, x_edges, y_edges) = initializeLinearCompositeNodeChain(x, y)
+        n_sections = length(y)
 
-        # Equality chain schedules
-        left_update_run_a = generateSchedule(a_eq_nodes[1].interfaces[1]) # a
-        right_update_run_a = generateSchedule(a_eq_nodes[end].interfaces[2])
-        downward_a = map(x -> x.interfaces[3], a_eq_nodes)
-        left_update_run_b = generateSchedule(b_eq_nodes[1].interfaces[1]) # b
-        right_update_run_b = generateSchedule(b_eq_nodes[end].interfaces[2])
-        downward_b = map(x -> x.interfaces[3], b_eq_nodes)
-        left_update_run_gam = generateSchedule(gam_eq_nodes[1].interfaces[1]) # s
-        right_update_run_gam = generateSchedule(gam_eq_nodes[end].interfaces[2])
-        downward_gam = map(x -> x.interfaces[3], gam_eq_nodes)
-        # Update for samples
-        node_update = Array(Interface, 0)
-        for node = lin_nodes
-            push!(node_update, node.out.partner)
-            push!(node_update, node.in1.partner)
-            push!(node_update, node.slope)
-            push!(node_update, node.offset)
-            push!(node_update, node.noise)
-        end
-        # Put it all together
-        sumproduct_schedule = [left_update_run_a, right_update_run_a, downward_a, left_update_run_b, right_update_run_b, downward_b, left_update_run_gam, right_update_run_gam, downward_gam, node_update]
+        # Sumproduct and marginal schedule for q(a)
+        sumproduct_a_schedule = Array(Interface, 0)
+        for section = 1:n_sections; push!(sumproduct_a_schedule, lin_nodes[section].slope); end # Backward
+        push!(sumproduct_a_schedule, a_eq_nodes[1].interfaces[1].partner) # Prior message        
+        for section = 1:n_sections; push!(sumproduct_a_schedule, a_eq_nodes[section].interfaces[2]); end # Forward run
+        push!(sumproduct_a_schedule, a_eq_nodes[end].interfaces[2].partner) # Terminal message        
+        for section = n_sections:-1:1; push!(sumproduct_a_schedule, a_eq_nodes[section].interfaces[1]); end # Backward run
+        for section = 1:n_sections; push!(sumproduct_a_schedule, a_eq_nodes[section].interfaces[3]); end # Forward (downward run)
+        marginal_a_schedule = a_eq_edges
 
-        # Marginal updates
-        marginal_schedule = [a_eq_edges, b_eq_edges, gam_eq_edges, x_edges, y_edges]
+        # Sumproduct and marginal schedule for q(b)
+        sumproduct_b_schedule = Array(Interface, 0)
+        for section = 1:n_sections; push!(sumproduct_b_schedule, lin_nodes[section].offset); end # Backward
+        push!(sumproduct_b_schedule, b_eq_nodes[1].interfaces[1].partner) # Prior message        
+        for section = 1:n_sections; push!(sumproduct_b_schedule, b_eq_nodes[section].interfaces[2]); end # Forward run
+        push!(sumproduct_b_schedule, b_eq_nodes[end].interfaces[2].partner) # Terminal message        
+        for section = n_sections:-1:1; push!(sumproduct_b_schedule, b_eq_nodes[section].interfaces[1]); end # Backward run
+        for section = 1:n_sections; push!(sumproduct_b_schedule, b_eq_nodes[section].interfaces[3]); end # Forward (downward run)
+        marginal_b_schedule = b_eq_edges
+
+        # Sumproduct and marginal schedule for q(gam)
+        sumproduct_gam_schedule = Array(Interface, 0)
+        for section = 1:n_sections; push!(sumproduct_gam_schedule, lin_nodes[section].noise); end # Backward
+        push!(sumproduct_gam_schedule, gam_eq_nodes[1].interfaces[1].partner) # Prior message        
+        for section = 1:n_sections; push!(sumproduct_gam_schedule, gam_eq_nodes[section].interfaces[2]); end # Forward run
+        push!(sumproduct_gam_schedule, gam_eq_nodes[end].interfaces[2].partner) # Terminal message        
+        for section = n_sections:-1:1; push!(sumproduct_gam_schedule, gam_eq_nodes[section].interfaces[1]); end # Backward run
+        for section = 1:n_sections; push!(sumproduct_gam_schedule, gam_eq_nodes[section].interfaces[3]); end # Forward (downward run)
+        marginal_gam_schedule = gam_eq_edges
+
+        # x and y marginals are already set upon initialization. These need to be set only once because samples remain the same.
 
         # Perform vmp updates
         n_its = 100
         for iter = 1:n_its
-            executeSchedule(sumproduct_schedule)
-            executeSchedule(marginal_schedule)
+            executeSchedule(sumproduct_a_schedule)
+            executeSchedule(marginal_a_schedule)
+            executeSchedule(sumproduct_b_schedule)
+            executeSchedule(marginal_b_schedule)
+            executeSchedule(sumproduct_gam_schedule)
+            executeSchedule(marginal_gam_schedule)
         end
-        executeSchedule(sumproduct_schedule) # One last time to ensure all calculations have propagated through the equality chains
+        executeSchedule(sumproduct_a_schedule) # One last time to ensure all calculations have propagated through the equality chains
+        executeSchedule(sumproduct_b_schedule)
+        executeSchedule(sumproduct_gam_schedule)
 
         # Check the results against the outcome of Infer.NET
         ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message.payload)
@@ -105,5 +143,36 @@ facts("VMP implementation integration tests") do
         @fact round(var(b_out), accuracy+2)[1, 1] => round(0.0609314195382, accuracy+2)
         @fact round(mean(gam_out), accuracy+1) => round(0.820094703716, accuracy+1)
         @fact round(var(gam_out), accuracy+2) => round(0.0671883439624, accuracy+2)
+    end
+end
+
+facts("Structured VMP implementation integration tests") do
+    context("Gaussian node joint mean variance estimation") do
+        # Initialize chain
+        # Fixed observations drawn from N(5.0, 2.0)
+        data = [4.9411489951651735,4.4083330961647595,3.535639074214823,2.1690761263145855,4.740705436131505,5.407175878845115,3.6458623443189957,5.132115496214244,4.485471215629411,5.342809672818667]
+        n_samples = length(data)
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, m_edges, gam_edges, y_edges) = initializeGaussianNodeChainForSvmp(data)
+
+        # Update schedules for q(y) subgraph
+        # We update q(y) for completeness. Although the samples won't change and we can just once initialize the values, it's the general correct way to perform svmp.
+        y_sumproduct_schedule = Array(Interface, 0)
+        for section = 1:n_samples
+            push!(y_sumproduct_schedule, g_nodes[section].out)
+            push!(y_sumproduct_schedule, y_nodes[section].out)
+        end
+        q_y_marginal_schedule = Array(Edge, 0)
+        for section = 1:n_samples
+            push!(q_y_marginal_schedule, y_edges[section])
+        end
+
+        # Update schedules for q(m, gam) subgraph
+        m_gam_sumproduct_schedule = Array(Interface, 0)
+        for section = 1:n_samples
+            push!(m_gam_sumproduct_schedule, g_nodes[section].out)
+        end
+
+
+        @fact true => false
     end
 end

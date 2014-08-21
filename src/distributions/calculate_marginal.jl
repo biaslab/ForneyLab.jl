@@ -93,6 +93,18 @@ function calculateMarginal!(edge::Edge, forward_dist::GaussianDistribution, back
 end
 calculateMarginal!(edge::Edge, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal!(edge, backward_dist, forward_dist)
 
+# Gaussian-Float64 combination
+# Float64 can be seen as a Gaussian with zero variance (delta peak at the mean).
+# Therefore a multiplication of a float with any Gaussian returns the float value.
+calculateMarginal(forward_dist::Float64, ::GaussianDistribution) = deepcopy(forward_dist)
+calculateMarginal(::GaussianDistribution, backward_dist::Float64) = deepcopy(backward_dist)
+function calculateMarginal!(edge::Edge, forward_dist::Float64, ::GaussianDistribution)
+    return edge.marginal = deepcopy(forward_dist)
+end
+function calculateMarginal!(edge::Edge, ::GaussianDistribution, backward_dist::Float64)
+    return edge.marginal = deepcopy(backward_dist)
+end
+
 
 ############################
 # Node (joint) marginal calculations

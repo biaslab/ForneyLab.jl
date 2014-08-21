@@ -21,8 +21,6 @@ function StudentsTDistribution(; m::Union(Float64, Vector{Float64})=[0.0],
     return StudentsTDistribution(m, W, nu)
 end
 
-uninformative(dist_type::Type{StudentsTDistribution}) = StudentsTDistribution(m=[0.0], W=reshape([0.001], 1, 1), nu=1000.0)
-
 Base.mean(dist::StudentsTDistribution) = dist.m
 Base.var(dist::StudentsTDistribution) = dist.nu / (dist.nu - 2) * inv(dist.W)
 

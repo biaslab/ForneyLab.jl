@@ -39,7 +39,6 @@ type Message{T<:MessagePayload}
 end
 Message(payload::MessagePayload) = Message{typeof(payload)}(deepcopy(payload))
 Message() = Message(1.0)
-uninformative(type_in::Type{Float64}) = Message(1.0) # uninformative general message
 show(io::IO, message::Message) = println(io, typeof(message), " with payload ", message.payload, ".")
 
 type Interface
@@ -285,7 +284,7 @@ function updateNodeMessage!(outbound_interface::Interface)
     node = outbound_interface.node
 
     # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
-    inbound_array = Array(Union(Message, ProbabilityDistribution, Nothing), length(node.interfaces))
+    inbound_array = Array(Union(Message, MessagePayload, Nothing), length(node.interfaces))
     outbound_interface_id = 0
     for interface_id = 1:length(node.interfaces)
         interface = node.interfaces[interface_id]
@@ -300,8 +299,8 @@ function updateNodeMessage!(outbound_interface::Interface)
         end
         if interface.partner==nothing
             error("Cannot receive messages on disconnected interface $(interface_id) of $(typeof(node)) $(node.name)")
-        elseif interface.partner.message==nothing
-            error("There is no inbound message present on the partner of interface $(interface_id) of $(typeof(node)) $(node.name)")
+        elseif interface.partner.message==nothing && interface.edge.marginal==nothing
+            error("There is no inbound message/marginal present on the partner/edge of interface $(interface_id) of $(typeof(node)) $(node.name)")
         end
         # Add message or marginal to the inbound array
         # TODO: PROPERLY CHECK FOR VARIATIONAL
@@ -348,15 +347,14 @@ function executeSchedule(schedule::MarginalSchedule)
 end
 
 function setMarginal!(edge::Edge, distribution::Any)
-    # Presets the marginal and head- tail messages on edge with the argument message
-    # Usually this method is used to set uninformative messages
-
-    # TODO: check this, message payload type does not have to be equal to marginal distribution type
-    # TODO: marginal should be the product of the message distributions
-    edge.tail.message_payload_type = edge.head.message_payload_type = typeof(distribution)
-    edge.head.message = Message(deepcopy(distribution))
-    edge.tail.message = Message(deepcopy(distribution))
+    # Presets the marginal on edge with the argument message
+    # Usually this method is used to set an uninformative distribution
     edge.marginal = deepcopy(distribution)
+end
+function setMarginal!(node::Node, distribution::Any)
+    # Presets the marginal on a node
+    # Usually this method is used to set an uninformative distribution
+    node.marginal = deepcopy(distribution)
 end
 
 function calculateMarginal(edge::Edge)
