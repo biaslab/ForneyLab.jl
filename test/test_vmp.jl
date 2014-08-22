@@ -152,27 +152,41 @@ facts("Structured VMP implementation integration tests") do
         # Fixed observations drawn from N(5.0, 2.0)
         data = [4.9411489951651735,4.4083330961647595,3.535639074214823,2.1690761263145855,4.740705436131505,5.407175878845115,3.6458623443189957,5.132115496214244,4.485471215629411,5.342809672818667]
         n_samples = length(data)
-        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, m_edges, gam_edges, y_edges) = initializeGaussianNodeChainForSvmp(data)
+        (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge) = initializeGaussianNodeChainForSvmp(data)
+        n_its = 50 # Number of VMP iterations
 
         # Update schedules for q(y) subgraph
-        # We update q(y) for completeness. Although the samples won't change and we can just once initialize the values, it's the general correct way to perform svmp.
-        y_sumproduct_schedule = Array(Interface, 0)
-        for section = 1:n_samples
-            push!(y_sumproduct_schedule, g_nodes[section].out)
-            push!(y_sumproduct_schedule, y_nodes[section].out)
-        end
-        q_y_marginal_schedule = Array(Edge, 0)
-        for section = 1:n_samples
-            push!(q_y_marginal_schedule, y_edges[section])
-        end
+        y_sumproduct_schedule = [g_node.out, y_node.out]
+        q_y_marginal_schedule = [y_edge]
 
         # Update schedules for q(m, gam) subgraph
-        m_gam_sumproduct_schedule = Array(Interface, 0)
-        for section = 1:n_samples
-            push!(m_gam_sumproduct_schedule, g_nodes[section].out)
+        m_gam_sumproduct_schedule = [m_0_node.out, m_N_node.out, m_eq_node.interfaces[3], gam_0_node.out, gam_N_node.out, gam_eq_node.interfaces[3], g_node.mean, m_eq_node.interfaces[2], g_node.precision, gam_eq_node.interfaces[2]]
+        q_m_gam_marginal_schedule = [g_node] # Not used in practice, but here for completeness. We do not really need to calculate the downward y message, because its mean will collapse to the sample value.
+
+        for sample = 1:n_samples
+            # Reset
+            # Preset uninformative ('one') messages
+            setMarginal!(g_node, uninformative(NormalGammaDistribution))
+            setMarginal!(y_edge, uninformative(Float64)) # 1
+            #y_node.value = data[sample] # Set sample
+
+            # Do the VMP 'iterations'
+            # TODO: does this reduce to the standard sumproduct rule for a fixed sample?
+            #executeSchedule(y_sumproduct_schedule) # y updates only once, because sample value does not change
+            #executeSchedule(q_y_marginal_schedule)
+            y_edge.marginal=data[sample] # The quick and dirty way
+            executeSchedule(m_gam_sumproduct_schedule) # m_gam updates only once, because q(y) does not change
+            #executeSchedule(q_m_gam_marginal_schedule) # for show
+
+            # Switch posterior to prior for next sample
+            m_0_node.value = deepcopy(m_eq_node.interfaces[2].message.payload)
+            gam_0_node.value = deepcopy(gam_eq_node.interfaces[2].message.payload)
         end
 
-
+        println("sample mean = $(mean(data))")
+        println("sample variance = $(var(data))")
+        println("m estimate = $(mean(m_eq_node.interfaces[2].message.payload)) var: $(var(m_eq_node.interfaces[2].message.payload))")
+        println("var estimate = $(mean(gam_eq_node.interfaces[2].message.payload)) var: $(var(gam_eq_node.interfaces[2].message.payload))")
         @fact true => false
     end
 end

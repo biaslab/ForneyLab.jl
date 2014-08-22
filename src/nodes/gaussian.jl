@@ -419,6 +419,7 @@ function updateNodeMessage!(node::GaussianNode,
 
     if is(node.interfaces[outbound_interface_id], node.precision)
         y_0 = marg_out
+        ensureMDefined!(msg_mean.payload)
         mu = msg_mean.payload.m[1]
         dist_out.a = 1.5
         dist_out.b = 0.5*(y_0 - mu)^2
@@ -447,6 +448,7 @@ function updateNodeMessage!(node::GaussianNode,
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     if is(node.interfaces[outbound_interface_id], node.out)
+        ensureMDefined!(marg)
         dist_out.m = [marg.m]
         dist_out.W = reshape([marg.a/marg.b], 1, 1)
         dist_out.xi = nothing
