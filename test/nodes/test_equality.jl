@@ -171,11 +171,16 @@ facts("EqualityNode unit tests") do
                                 3, 
                                 GaussianDistribution, 
                                 [Message(StudentsTDistribution()), Message(GaussianDistribution()), nothing],
-                                GaussianDistribution(m=0.0, W=3.0))
+                                GaussianDistribution(m=0.0, W=2.0))
         validateOutboundMessage(EqualityNode(), 
                                 3, 
                                 GaussianDistribution, 
                                 [Message(GaussianDistribution()), Message(StudentsTDistribution()), nothing],
-                                GaussianDistribution(m=0.0, W=3.0))
+                                GaussianDistribution(m=0.0, W=2.0))
+        validateOutboundMessage(EqualityNode(), 
+                                2, 
+                                GaussianDistribution, 
+                                [Message(StudentsTDistribution()), nothing, Message(GaussianDistribution())],
+                                GaussianDistribution(m=0.0, W=2.0))
     end
 end

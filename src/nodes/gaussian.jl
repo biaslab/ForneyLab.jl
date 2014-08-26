@@ -106,6 +106,8 @@ GaussianNode(; args...) = GaussianNode(false; args...)
 # Update functions
 ############################################
 
+# Standard SP
+
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_payload_type::Type{GaussianDistribution},
@@ -175,6 +177,8 @@ function updateNodeMessage!(node::GaussianNode,
 
     return node.interfaces[outbound_interface_id].message
 end
+
+# Mean Field
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
@@ -369,29 +373,34 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
+# Structured Mean Field
+
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_payload_type::Type{StudentsTDistribution},
                             ::Nothing,
                             msg_prec::Message{GammaDistribution},
-                            marg_out::Float64)
+                            marg_out::GaussianDistribution)
     # Backward message over the mean
     #
     #   <--     Gam            
     #  ---->[N]<----
     #   St   |
     # - - - - - - - -   
-    #        | Q~Flt  
+    #        | Q~N
     #        v
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean)
-        y_0 = marg_out
+        ensureMWParametrization!(marg_out)
+        length(marg_out.m) == 1 || error("SVMP update on GaussianNode only defined for univariate distributions")
+        m_y = marg_out.m[1]
+        prec_y = marg_out.W[1, 1]
         a = msg_prec.payload.a
         b = msg_prec.payload.b
-        dist_out.m = [y_0]
-        dist_out.W = reshape([a/b], 1, 1)
+        dist_out.m = [m_y]
+        dist_out.W = reshape([(2.0*prec_y*a)/(2.0*prec_y*b + 1)], 1, 1)
         dist_out.nu = 2.0*a
     else
         error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
@@ -405,24 +414,27 @@ function updateNodeMessage!(node::GaussianNode,
                             outbound_message_payload_type::Type{GammaDistribution},
                             msg_mean::Message{GaussianDistribution},
                             ::Nothing,
-                            marg_out::Float64)
+                            marg_out::GaussianDistribution)
     # Backward message over the precision
     #
     #    N      Gam            
     #  ---->[N]<----
     #        |   -->
     # - - - - - - - -   
-    #        | Q~Flt  
+    #        | Q~N
     #        v
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     if is(node.interfaces[outbound_interface_id], node.precision)
-        y_0 = marg_out
+        ensureMWParametrization!(marg_out)
+        length(marg_out.m) == 1 || error("SVMP update on GaussianNode only defined for univariate distributions")
+        m_y = marg_out.m[1]
+        prec_y = marg_out.W[1, 1]
         ensureMDefined!(msg_mean.payload)
-        mu = msg_mean.payload.m[1]
+        m_m = msg_mean.payload.m[1]
         dist_out.a = 1.5
-        dist_out.b = 0.5*(y_0 - mu)^2
+        dist_out.b = 0.5*((1.0/prec_y) + (m_m - m_y)^2)
     else
         error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
     end
@@ -448,7 +460,6 @@ function updateNodeMessage!(node::GaussianNode,
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     if is(node.interfaces[outbound_interface_id], node.out)
-        ensureMDefined!(marg)
         dist_out.m = [marg.m]
         dist_out.W = reshape([marg.a/marg.b], 1, 1)
         dist_out.xi = nothing

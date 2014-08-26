@@ -116,23 +116,23 @@ facts("GaussianNode unit tests") do
                 validateOutboundMessage(GaussianNode(true, form="precision"), 
                                         1, 
                                         StudentsTDistribution, 
-                                        [nothing, Message(GammaDistribution(a=3.0, b=1.0)), 2.0],
-                                        StudentsTDistribution(m=2.0, W=3.0, nu=6.0))
+                                        [nothing, Message(GammaDistribution(a=3.0, b=1.0)), GaussianDistribution(m=2.0, W=10.0)],
+                                        StudentsTDistribution(m=2.0, W=60.0/21.0, nu=6.0))
             end
 
             context("GaussianNode should propagate a backward message to the precision") do
                 validateOutboundMessage(GaussianNode(true, form="precision"), 
                                         2, 
                                         GammaDistribution, 
-                                        [Message(GaussianDistribution(m=4.0, W=2.0)), nothing, 2.0],
-                                        GammaDistribution(a=1.5, b=2.0))
+                                        [Message(GaussianDistribution(m=4.0, W=2.0)), nothing, GaussianDistribution(m=2.0, W=10.0)],
+                                        GammaDistribution(a=1.5, b=41.0/20.0))
             end
 
             context("GaussianNode should propagate a forward message") do
                 validateOutboundMessage(GaussianNode(true, form="precision"), 
                                         3, 
                                         GaussianDistribution, 
-                                        [NormalGammaDistribution(m=4.0, W=2.0, a=3.0, b=1.0), nothing],
+                                        [NormalGammaDistribution(m=4.0, beta=2.0, a=3.0, b=1.0), nothing],
                                         GaussianDistribution(m=4.0, W=3.0))
             end
         end
@@ -141,8 +141,10 @@ facts("GaussianNode unit tests") do
     context("Marginal calculation for the GaussianNode") do
         node = GaussianNode(form="precision")
         m_edge = Edge(MockNode(Message(GaussianDistribution())).out, node.mean)
-        gam_edge = Edge(MockNode(Message(GammaDistribution())).out, node.precision)
+        gam_edge = Edge(MockNode(Message(GammaDistribution())).out, node.precision, GammaDistribution)
+        y_edge = Edge(node.out, MockNode(Message(GaussianDistribution(m=0.0, W=10.0))).out)
+        y_edge.marginal = GaussianDistribution(m=0.0, W=10.0)
         calculateMarginal!(node)
-        @fact node.marginal => NormalGammaDistribution(m=0.0, W=1.0, a=1.0, b=1.0) 
+        @fact node.marginal => NormalGammaDistribution(m=0.0, beta=10000.0, a=1.5, b=21.0/20.0) 
     end    
 end

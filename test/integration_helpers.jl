@@ -322,8 +322,8 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     g_node = GaussianNode(true; name="g_node", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
     m_eq_node = EqualityNode(; name="m_eq_node") # Equality node chain for mean
     gam_eq_node = EqualityNode(; name="gam_eq_node") # Equality node chain for variance
-    y_node = TerminalNode(y, name="y_node") # Observed y values are stored in terminal node
-    y_edge = Edge(g_node.out, y_node.out, GaussianDistribution, Float64)
+    y_node = TerminalNode(GaussianDistribution(), name="y_node") # Observed y values are stored in terminal node
+    y_edge = Edge(g_node.out, y_node.out, GaussianDistribution)
     m_edge = Edge(m_eq_node.interfaces[3], g_node.mean, GaussianDistribution, StudentsTDistribution)
     gam_edge = Edge(gam_eq_node.interfaces[3], g_node.precision, GammaDistribution)
 

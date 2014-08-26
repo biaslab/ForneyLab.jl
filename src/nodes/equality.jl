@@ -137,22 +137,33 @@ function updateNodeMessage!(node::EqualityNode,
                             ::Nothing)
     # Combination of Gaussian and student's t-distribution
     # Definitions available in derivations notebook
-    # Outcome reasonable for 0 < (msg_st.W / msg_st.nu) * (x - msg_st.m)^2 < 1 
+    # Same as Gaussian equality rule
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
-    ensureMWParametrization!(msg_n.payload)
-    (length(msg_n.payload.m) == 1 && length(msg_n.payload.W) == 1) || error("Equality node update for StudentsTDistribution and GaussianDistribution only supports univariate Gaussian distribution.")
+    dist_result = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    l_a = msg_st.payload.W[1, 1] 
-    mu_a = msg_st.payload.m[1]
-    l_b = msg_n.payload.W[1, 1]
-    mu_b = msg_n.payload.m[1]
-    nu_term = 1 + (1/msg_st.payload.nu)
+    dist_1 = GaussianDistribution(m=msg_st.payload.m, W=msg_st.payload.W) # Approximate student's with Gaussian
+    dist_2 = msg_n.payload
 
-    dist_out.m = [(l_a*nu_term*mu_a + l_b*mu_b) / (l_a*nu_term + l_b)]
-    dist_out.W = reshape([l_a*nu_term + l_b], 1, 1)
-    dist_out.xi = nothing
-    dist_out.V = nothing
+    if dist_1.m != nothing && dist_1.W != nothing && dist_2.m != nothing && dist_2.W != nothing
+        dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.W)
+        dist_result.V  = nothing
+        dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
+        dist_result.xi = nothing
+    elseif dist_1.xi != nothing && dist_1.V != nothing && dist_2.xi != nothing && dist_2.V != nothing
+        dist_result.m  = nothing
+        dist_result.V  = equalityVRule(dist_1.V, dist_2.V)
+        dist_result.W  = nothing
+        dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
+    else
+        # Use (xi,W)
+        ensureXiWParametrization!(dist_1)
+        ensureXiWParametrization!(dist_2)
+        dist_result.m  = nothing
+        dist_result.V  = nothing
+        dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
+        dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
+    end
+
     return node.interfaces[outbound_interface_id].message
 end
 # Call signature for messages other ways around

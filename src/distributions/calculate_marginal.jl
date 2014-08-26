@@ -116,15 +116,19 @@ function calculateMarginal!(node::GaussianNode)
 
     marg = getOrCreateMarginal(node, NormalGammaDistribution)
 
-    mu_in = node.mean.partner.message.payload
-    gam_in = node.precision.partner.message.payload
-    ensureMWParametrization!(mu_in)
-    (length(mu_in.m) == 1 && length(mu_in.W) == 1) || error("Update rule for NormalGammaDistribution marginal only supports univariate Gaussian distribution as input.")
+    mu_m = node.mean.partner.message.payload
+    mu_gam = node.precision.partner.message.payload
+    q_y = node.out.edge.marginal
+    
+    ensureMDefined!(mu_m)
+    ensureMWParametrization!(q_y)
 
-    marg.m = mu_in.m[1]
-    marg.W = mu_in.W[1, 1]
-    marg.a = gam_in.a
-    marg.b = gam_in.b
+    (length(mu_m.m) == 1 && length(q_y.m) == 1)|| error("Update rule for NormalGammaDistribution marginal only supports univariate distributions.")
+
+    marg.m = mu_m.m[1]
+    marg.beta = 10000.0 # Big number
+    marg.a = mu_gam.a + 0.5
+    marg.b = (1.0/(2.0*q_y.W[1, 1])) + mu_gam.b
 
     return marg
 end
