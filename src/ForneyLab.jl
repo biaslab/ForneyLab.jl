@@ -224,7 +224,7 @@ function getOrCreateMarginal(node::Node, assign_payload::DataType)
     return node.marginal
 end
 
-typealias MarginalSchedule Union(Array{Union(Edge, Node), 1}, Array{Edge, 1}, Array{Node, 1})
+typealias MarginalSchedule{T<:Union(Edge, Node)} Array{T, 1}
 function show(io::IO, schedule::MarginalSchedule)
     # Show marginal update schedule
     println(io, "Marginal update schedule:")
@@ -339,8 +339,8 @@ end
 
 function executeSchedule(schedule::MarginalSchedule)
     # Execute a marginal update schedule
-    for edge in schedule
-        calculateMarginal!(edge)
+    for entry in schedule
+        calculateMarginal!(entry)
     end
     # Return the last message in the schedule
     return schedule[end].marginal

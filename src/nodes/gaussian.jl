@@ -470,3 +470,13 @@ function updateNodeMessage!(node::GaussianNode,
 
     return node.interfaces[outbound_interface_id].message
 end
+
+function updateNodeMessage!(node::GaussianNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            ::Message{GaussianDistribution},
+                            ::Message{GammaDistribution},
+                            ::Nothing)
+    # Shortcut cheat
+    return updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, node.marginal, nothing)
+end
