@@ -54,7 +54,6 @@ export GaussianNode
 type GaussianNode <: Node
     name::ASCIIString
     interfaces::Array{Interface,1}
-    variational::Bool # TODO: remove variational flag
     marginal::Any
 
     # Helper fields filled by constructor
@@ -63,8 +62,8 @@ type GaussianNode <: Node
     variance::Interface
     out::Interface
 
-    function GaussianNode(variational; name="unnamed", form::ASCIIString="moment", args...)
-        self = new(name, Array(Interface, 3), variational, nothing)
+    function GaussianNode(name="unnamed", form::ASCIIString="moment", args...)
+        self = new(name, Array(Interface, 3), nothing)
 
         # Look for fixed parameters
         args = Dict(zip(args...)...) # Cast args to dictionary
@@ -99,7 +98,6 @@ type GaussianNode <: Node
         return self
     end
 end
-GaussianNode(; args...) = GaussianNode(false; args...)
 
 
 ############################################
@@ -469,14 +467,4 @@ function updateNodeMessage!(node::GaussianNode,
     end
 
     return node.interfaces[outbound_interface_id].message
-end
-
-function updateNodeMessage!(node::GaussianNode,
-                            outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
-                            ::Message{GaussianDistribution},
-                            ::Message{GammaDistribution},
-                            ::Nothing)
-    # Shortcut cheat
-    return updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, node.marginal, nothing)
 end

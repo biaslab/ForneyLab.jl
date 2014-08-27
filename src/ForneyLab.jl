@@ -1,10 +1,10 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message, MessagePayload, ProbabilityDistribution
+export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message, MessagePayload, ProbabilityDistribution, Factorization
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
-        generateSchedule, executeSchedule, uninformative, getOrCreateMessage
+        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getLocalFactorization
 export  ==
 
 # Verbosity
@@ -258,6 +258,16 @@ include("nodes/composite/general.jl")
 include("distributions/calculate_marginal.jl")
 
 #############################
+# Variational methods
+#############################
+
+# A Factorization is a dictionary that defines the full factorization for the graph of the approximating (q) distribution.
+# It couples an integer value to an edge, indicating that this edge is an internal edge of the specified subgraph (Dauwels, 2007).
+typealias Factorization Dict{Edge, Int}
+# Returns the local factorization of the edges around 'node'; used in updateNodeMessage!() to distinguish between required inbounds
+getLocalFactorization(node::Node, factorization::Factorization) = [factorization[interface.edge] for interface = node.interfaces]
+
+#############################
 # Generic methods
 #############################
 
@@ -304,11 +314,11 @@ function updateNodeMessage!(outbound_interface::Interface)
         end
         # Add message or marginal to the inbound array
         # TODO: PROPERLY CHECK FOR VARIATIONAL
-        if interface.edge.marginal!=nothing && (:variational in names(node)) && node.variational
-            inbound_array[interface_id] = interface.edge.marginal
-        else
-            inbound_array[interface_id] = interface.partner.message
-        end
+        # if interface.edge.marginal!=nothing && (:variational in names(node)) && node.variational
+        #     inbound_array[interface_id] = interface.edge.marginal
+        # else
+        #     inbound_array[interface_id] = interface.partner.message
+        # end
     end
 
     # Evaluate node update function

@@ -40,7 +40,6 @@ type LinearCompositeNode <: CompositeNode
     # The linear composite node only has explicit variational update rules and thus does not need an explicit internal structure.
 
     use_composite_update_rules::Bool
-    variational::Bool
     name::ASCIIString
     interfaces::Array{Interface,1}
     # Helper fields filled by constructor
@@ -50,7 +49,7 @@ type LinearCompositeNode <: CompositeNode
     noise::Interface
     out::Interface
 
-    function LinearCompositeNode(use_composite_update_rules::Bool=true, variational::Bool=true; name = "unnamed", form::ASCIIString="moment", args...)
+    function LinearCompositeNode(use_composite_update_rules::Bool=true; name = "unnamed", form::ASCIIString="moment", args...)
         if use_composite_update_rules == false # Check
             error("LinearCompositeNode $(name) does not support explicit internal message passing")
         end
@@ -58,7 +57,7 @@ type LinearCompositeNode <: CompositeNode
             error("LinearCompositeNode $(name) only supports variational message passing")
         end
 
-        self = new(use_composite_update_rules, variational, name, Array(Interface, 5))
+        self = new(use_composite_update_rules, name, Array(Interface, 5))
 
         args = Dict(zip(args...)...) # Cast args to dictionary
         # Set up the interfaces

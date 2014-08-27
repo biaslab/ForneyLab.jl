@@ -243,6 +243,23 @@ function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rule
     return gec_node
 end
 
+function initializeGaussianNode()
+    # Initialize a Gaussian node
+    #
+    #    mean   precision
+    #  [M]-->[N]<--[M]
+    #         |
+    #         v y
+    #        [M]
+
+    node = GaussianNode(form="precision")
+    edges = Array(Edge, 3)
+    for index = 1:length(edges)
+        edges[index] = Edge(MockNode().out, node.interfaces[index])
+    end
+    return (node, edges)
+end
+
 function initializeGaussianNodeChain(y::Array{Float64, 1})
     # Set up a chain of Gaussian nodes for mean-precision estimation
     #
@@ -269,7 +286,7 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
 
     # Build graph
     for section=1:n_samples
-        g_node = GaussianNode(true; name="g_node_$(section)", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
+        g_node = GaussianNode(; name="g_node_$(section)", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
         m_eq_node = EqualityNode(; name="m_eq_$(section)") # Equality node chain for mean
         gam_eq_node = EqualityNode(; name="s_eq_$(section)") # Equality node chain for variance
         y_node = TerminalNode(y[section], name="c_obs_$(section)") # Observed y values are stored in terminal node
@@ -319,7 +336,7 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     # Batch estimation with multiple samples will intruduce cycles in the subgraph.
     # Therefore we implement a forward algorithm that uses forward estimation only.
 
-    g_node = GaussianNode(true; name="g_node", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
+    g_node = GaussianNode(; name="g_node", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
     m_eq_node = EqualityNode(; name="m_eq_node") # Equality node chain for mean
     gam_eq_node = EqualityNode(; name="gam_eq_node") # Equality node chain for variance
     y_node = TerminalNode(GaussianDistribution(), name="y_node") # Observed y values are stored in terminal node

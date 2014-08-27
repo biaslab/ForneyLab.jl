@@ -78,6 +78,16 @@ facts("setMarginal unit tests") do
     end
 end
 
+facts("Factorization tests") do
+    context("getLocalFactorization() should return a node's local factorization") do
+        (node, edges) = initializeGaussianNode()
+        factorization = [edges[1]=>1, edges[2]=>1, edges[3]=>2] # Structured
+        @fact getLocalFactorization(node, factorization) => [1, 1, 2]
+        factorization = [edges[1]=>1, edges[2]=>2, edges[3]=>3] # Mean field
+        @fact getLocalFactorization(node, factorization) => [1, 2, 3]
+    end
+end
+
 # Node and message specific tests are in separate files
 include("distributions/test_gaussian.jl")
 include("distributions/test_gamma.jl")

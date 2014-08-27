@@ -69,13 +69,13 @@ facts("GaussianNode unit tests") do
         context("Naive variational implementation (mean field)") do
             context("GaussianNode should propagate a backward message to the mean") do
                 # Standard
-                validateOutboundMessage(GaussianNode(true, form="precision"), 
+                validateOutboundMessage(GaussianNode(form="precision"), 
                                         1, 
                                         GaussianDistribution, 
                                         [nothing, GammaDistribution(a=3.0, b=1.0), 2.0],
                                         GaussianDistribution(m=2.0, W=3.0))
                 # Inverse
-                validateOutboundMessage(GaussianNode(true), 
+                validateOutboundMessage(GaussianNode(), 
                                         1, 
                                         GaussianDistribution, 
                                         [nothing, InverseGammaDistribution(a=3.0, b=1.0), 2.0],
@@ -84,13 +84,13 @@ facts("GaussianNode unit tests") do
 
             context("GaussianNode should propagate a backward message to the variance or precision") do
                 # Standard
-                validateOutboundMessage(GaussianNode(true, form="precision"), 
+                validateOutboundMessage(GaussianNode(form="precision"), 
                                         2, 
                                         GammaDistribution, 
                                         [GaussianDistribution(m=4.0, W=2.0), nothing, 2.0],
                                         GammaDistribution(a=1.5, b=2.25))
                 # Inverse
-                validateOutboundMessage(GaussianNode(true), 
+                validateOutboundMessage(GaussianNode(), 
                                         2, 
                                         InverseGammaDistribution, 
                                         [GaussianDistribution(m=4.0, V=1.0), nothing, 2.0],
@@ -98,12 +98,12 @@ facts("GaussianNode unit tests") do
             end
 
             context("GaussianNode should propagate a forward message") do
-                validateOutboundMessage(GaussianNode(true, form="precision"), 
+                validateOutboundMessage(GaussianNode(form="precision"), 
                                         3, 
                                         GaussianDistribution, 
                                         [GaussianDistribution(), GammaDistribution(), nothing],
                                         GaussianDistribution(m=0.0, W=1.0))
-                validateOutboundMessage(GaussianNode(true, form="moment"), 
+                validateOutboundMessage(GaussianNode(form="moment"), 
                                         3, 
                                         GaussianDistribution, 
                                         [GaussianDistribution(), InverseGammaDistribution(a=2.0, b=1.0), nothing],
@@ -113,7 +113,7 @@ facts("GaussianNode unit tests") do
 
         context("Structured variational implementation") do
             context("GaussianNode should propagate a backward message to the mean") do
-                validateOutboundMessage(GaussianNode(true, form="precision"), 
+                validateOutboundMessage(GaussianNode(form="precision"), 
                                         1, 
                                         StudentsTDistribution, 
                                         [nothing, Message(GammaDistribution(a=3.0, b=1.0)), GaussianDistribution(m=2.0, W=10.0)],
@@ -121,7 +121,7 @@ facts("GaussianNode unit tests") do
             end
 
             context("GaussianNode should propagate a backward message to the precision") do
-                validateOutboundMessage(GaussianNode(true, form="precision"), 
+                validateOutboundMessage(GaussianNode(form="precision"), 
                                         2, 
                                         GammaDistribution, 
                                         [Message(GaussianDistribution(m=4.0, W=2.0)), nothing, GaussianDistribution(m=2.0, W=10.0)],
@@ -129,7 +129,7 @@ facts("GaussianNode unit tests") do
             end
 
             context("GaussianNode should propagate a forward message") do
-                validateOutboundMessage(GaussianNode(true, form="precision"), 
+                validateOutboundMessage(GaussianNode(form="precision"), 
                                         3, 
                                         GaussianDistribution, 
                                         [NormalGammaDistribution(m=4.0, beta=2.0, a=3.0, b=1.0), nothing],
