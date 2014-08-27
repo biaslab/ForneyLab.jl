@@ -264,14 +264,22 @@ include("distributions/calculate_marginal.jl")
 # A Factorization is a dictionary that defines the full factorization for the graph of the approximating (q) distribution.
 # It couples an integer value to an edge, indicating that this edge is an internal edge of the specified subgraph (Dauwels, 2007).
 typealias Factorization Dict{Edge, Int}
-# Returns the local factorization of the edges around 'node'; used in updateNodeMessage!() to distinguish between required inbounds
-getLocalFactorization(node::Node, factorization::Factorization) = [factorization[interface.edge] for interface = node.interfaces]
+function getLocalFactorization(node::Node, factorization::Factorization)
+    # Returns a list of the subgraph ids for the edges around 'node' that are defined in 'factorization'
+    list = Array(Int64, 0)
+    for interface = node.interfaces
+        if haskey(factorization, interface.edge)
+            push!(list, factorization[interface.edge])
+        end
+    end
+    return list
+end
 
 #############################
 # Generic methods
 #############################
 
-function calculateMessage!(outbound_interface::Interface)
+function calculateMessage!(outbound_interface::Interface, factorization::Factorization)
     # Calculate the outbound message on a specific interface by generating a schedule and executing it.
     # The resulting message is stored in the specified interface and returned.
 
@@ -282,20 +290,27 @@ function calculateMessage!(outbound_interface::Interface)
 
     # Execute the schedule
     printVerbose("Executing above schedule...")
-    executeSchedule(schedule)
+    executeSchedule(schedule, factorization)
     printVerbose("calculateMessage!() done.")
 
     return outbound_interface.message
 end
+calculateMessage!(outbound_interface::Interface) = calculateMessage!(outbound_interface, Factorization())
 
-function updateNodeMessage!(outbound_interface::Interface)
+function updateNodeMessage!(outbound_interface::Interface, factorization::Factorization)
     # Calculate the outbound message based on the inbound messages and the node update function.
     # The resulting message is stored in the specified interface and is returned.
     node = outbound_interface.node
+    outbound_edge = outbound_interface.edge
+
+    local_edge_subgraph_ids = getLocalFactorization(node, factorization)
+    joint_set_subgraph_id = find(hist(local_edge_subgraph_ids)[2] .> 1) # Find the values of the entries that are in 'local_edge_subgraph_ids' more than once (subgraph id's for joint factorizations)
+    (length(joint_set_subgraph_id) <= 1) || error("There is more than one joint factorization on $(typeof(node)) $(node.name). This is not supported at the moment because a node can only hold one joint marginal.")
 
     # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
     inbound_array = Array(Union(Message, MessagePayload, Nothing), length(node.interfaces))
     outbound_interface_id = 0
+    visited_subgraph_ids = Array(Int64, 0)
     for interface_id = 1:length(node.interfaces)
         interface = node.interfaces[interface_id]
         if is(interface, outbound_interface)
@@ -307,18 +322,33 @@ function updateNodeMessage!(outbound_interface::Interface)
             inbound_array[interface_id] = nothing
             continue
         end
+        inbound_edge = interface.edge
         if interface.partner==nothing
             error("Cannot receive messages on disconnected interface $(interface_id) of $(typeof(node)) $(node.name)")
-        elseif interface.partner.message==nothing && interface.edge.marginal==nothing
+        elseif interface.partner.message==nothing && inbound_edge.marginal==nothing
             error("There is no inbound message/marginal present on the partner/edge of interface $(interface_id) of $(typeof(node)) $(node.name)")
         end
-        # Add message or marginal to the inbound array
-        # TODO: PROPERLY CHECK FOR VARIATIONAL
-        # if interface.edge.marginal!=nothing && (:variational in names(node)) && node.variational
-        #     inbound_array[interface_id] = interface.edge.marginal
-        # else
-        #     inbound_array[interface_id] = interface.partner.message
-        # end
+
+        # Collect the incoming edges and marginals
+        if !haskey(factorization, inbound_edge)
+            # If inbound_edge is no key in factorization, then take the message from the inbound interface (standard SP)
+            inbound_array[interface_id] = interface.partner.message
+        else # Edge is marked as internal edge on a subgraph
+            if !(factorization[inbound_edge] in visited_subgraph_ids) # Marginal is not already accounted for
+                if factorization[inbound_edge] == factorization[outbound_edge]
+                    # If the outbound and the inbound edge are in the same subgraph, take the message from the inbound's partner interface
+                    inbound_array[interface_id] = interface.partner.message
+                else # The inbound and outbound edges are not in the same subgraph, we need to take a marginal
+                    if factorization[inbound_edge] in joint_set_subgraph_id
+                        # The inbound edge is part of a joint factorization, take the node marginal.
+                        inbound_array[interface_id] = node.marginal
+                    else # The inbound edge is part of a univariate factorization, take the inbound edge marginal
+                        inbound_array[interface_id] = inbound_edge.marginal
+                    end
+                end
+                push!(visited_subgraph_ids, factorization[inbound_edge])
+            end
+        end
     end
 
     # Evaluate node update function
@@ -327,25 +357,29 @@ function updateNodeMessage!(outbound_interface::Interface)
     return updateNodeMessage!(node, outbound_interface_id, outbound_interface.message_payload_type, inbound_array...)
 end
 
-function calculateMessages!(node::Node)
+function calculateMessages!(node::Node, factorization::Factorization)
     # Calculate the outbound messages on all interfaces of node.
     for interface in node.interfaces
-        calculateMessage!(interface)
+        calculateMessage!(interface, factorization)
     end
 end
+calculateMessages!(node::Node) = calculateMessages!(node, Factorization())
 
 # Calculate forward/backward messages on an Edge
-calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
-calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
+calculateForwardMessage!(edge::Edge, factorization::Factorization) = calculateMessage!(edge.tail, factorization)
+calculateForwardMessage!(edge::Edge) = calculateForwardMessage!(edge, Factorization())
+calculateBackwardMessage!(edge::Edge, factorization::Factorization) = calculateMessage!(edge.head, factorization)
+calculateBackwardMessage!(edge::Edge) = calculateBackwardMessage!(edge, Factorization())
 
-function executeSchedule(schedule::Schedule)
+function executeSchedule(schedule::Schedule, factorization::Factorization)
     # Execute a message passing schedule
     for interface in schedule
-        updateNodeMessage!(interface)
+        updateNodeMessage!(interface, factorization)
     end
     # Return the last message in the schedule
     return schedule[end].message
 end
+executeSchedule(schedule::Schedule) = executeSchedule(schedule, Factorization())
 
 function executeSchedule(schedule::MarginalSchedule)
     # Execute a marginal update schedule

@@ -85,6 +85,8 @@ facts("Factorization tests") do
         @fact getLocalFactorization(node, factorization) => [1, 1, 2]
         factorization = [edges[1]=>1, edges[2]=>2, edges[3]=>3] # Mean field
         @fact getLocalFactorization(node, factorization) => [1, 2, 3]
+        factorization = [edges[1]=>1, edges[2]=>2] # Not all edges accounted for
+        @fact_throws getLocalFactorization(node, factorization)
     end
 end
 

@@ -62,7 +62,7 @@ type GaussianNode <: Node
     variance::Interface
     out::Interface
 
-    function GaussianNode(name="unnamed", form::ASCIIString="moment", args...)
+    function GaussianNode(; name="unnamed", form::ASCIIString="moment", args...)
         self = new(name, Array(Interface, 3), nothing)
 
         # Look for fixed parameters
