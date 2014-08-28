@@ -253,10 +253,19 @@ function initializeGaussianNode()
     #        [M]
 
     node = GaussianNode(form="precision")
+    node.marginal = NormalGammaDistribution()
     edges = Array(Edge, 3)
-    for index = 1:length(edges)
-        edges[index] = Edge(MockNode().out, node.interfaces[index])
-    end
+    edges[1] = Edge(MockNode().out, node.mean)
+    edges[1].marginal = GaussianDistribution()
+    edges[1].tail.message = Message(GaussianDistribution())
+    edges[2] = Edge(MockNode().out, node.precision, GammaDistribution)
+    edges[2].marginal = GammaDistribution()
+    edges[2].tail.message = Message(GammaDistribution())
+    edges[3] = Edge(node.out, MockNode().out, Float64)
+    edges[3].marginal = 1.0
+    edges[3].head.message = Message(1.0)
+
+    # Set messages and marginals
     return (node, edges)
 end
 

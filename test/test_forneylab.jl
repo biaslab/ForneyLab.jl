@@ -78,18 +78,6 @@ facts("setMarginal unit tests") do
     end
 end
 
-facts("Factorization tests") do
-    context("getLocalFactorization() should return a node's local factorization") do
-        (node, edges) = initializeGaussianNode()
-        factorization = [edges[1]=>1, edges[2]=>1, edges[3]=>2] # Structured
-        @fact getLocalFactorization(node, factorization) => [1, 1, 2]
-        factorization = [edges[1]=>1, edges[2]=>2, edges[3]=>3] # Mean field
-        @fact getLocalFactorization(node, factorization) => [1, 2, 3]
-        factorization = [edges[1]=>1, edges[2]=>2] # Not all edges accounted for
-        @fact_throws getLocalFactorization(node, factorization)
-    end
-end
-
 # Node and message specific tests are in separate files
 include("distributions/test_gaussian.jl")
 include("distributions/test_gamma.jl")
@@ -184,6 +172,78 @@ facts("getAllNodes integration tests") do
         end
     end
 end
+
+facts("Factorization integration tests") do
+    context("getLocalFactorization() should return a node's local factorization") do
+        (node, edges) = initializeGaussianNode()
+        factorization = [edges[1]=>1, edges[2]=>1, edges[3]=>2] # Structured
+        @fact getLocalFactorization(node, factorization) => [1, 1, 2]
+        factorization = [edges[1]=>1, edges[2]=>2, edges[3]=>3] # Mean field
+        @fact getLocalFactorization(node, factorization) => [1, 2, 3]
+    end
+
+    context("insertRequiredInbound!() should read a factorization and delegate inbound message/marginal collection") do
+        (node, edges) = initializeGaussianNode()
+        outbound_interface_id = 3
+        outbound_interface = node.interfaces[outbound_interface_id]
+
+        # No factorization
+        inbound_array = Array(Union(Message, MessagePayload, Nothing), length(node.interfaces))
+        inbound_array[outbound_interface_id] = nothing
+        factorization = Factorization()
+        joint_set_subgraph_id = Array(Int64, 0)
+        for inbound_id = 1:length(edges)
+            inbound_interface = node.interfaces[inbound_id]
+            ForneyLab.insertRequiredInbound!(inbound_array, node, factorization, edges[inbound_id], outbound_interface, joint_set_subgraph_id, inbound_interface, inbound_id)
+        end
+        @fact inbound_array => [Message(GaussianDistribution()), Message(GammaDistribution()), nothing]
+
+        # All in one subgraph
+        inbound_array = Array(Union(Message, MessagePayload, Nothing), length(node.interfaces))
+        inbound_array[outbound_interface_id] = nothing
+        factorization = [edges[1]=>1, edges[2]=>1, edges[3]=>1]
+        joint_set_subgraph_id = Array(Int64, 0)
+        for inbound_id = 1:length(edges)
+            inbound_interface = node.interfaces[inbound_id]
+            ForneyLab.insertRequiredInbound!(inbound_array, node, factorization, edges[inbound_id], outbound_interface, joint_set_subgraph_id, inbound_interface, inbound_id)
+        end
+        @fact inbound_array => [Message(GaussianDistribution()), Message(GammaDistribution()), nothing]
+
+        # Mean field
+        inbound_array = Array(Union(Message, MessagePayload, Nothing), length(node.interfaces))
+        inbound_array[outbound_interface_id] = nothing
+        factorization = [edges[1]=>1, edges[2]=>2, edges[3]=>3]
+        joint_set_subgraph_id = Array(Int64, 0)
+        for inbound_id = 1:length(edges)
+            inbound_interface = node.interfaces[inbound_id]
+            ForneyLab.insertRequiredInbound!(inbound_array, node, factorization, edges[inbound_id], outbound_interface, joint_set_subgraph_id, inbound_interface, inbound_id)
+        end
+        @fact inbound_array => [GaussianDistribution(), GammaDistribution(), nothing]
+        
+        # Structured out in joint
+        inbound_array = Array(Union(Message, MessagePayload, Nothing), length(node.interfaces))
+        inbound_array[outbound_interface_id] = nothing
+        factorization = [edges[1]=>1, edges[2]=>2, edges[3]=>2]
+        joint_set_subgraph_id = [2]
+        for inbound_id = 1:length(edges)
+            inbound_interface = node.interfaces[inbound_id]
+            ForneyLab.insertRequiredInbound!(inbound_array, node, factorization, edges[inbound_id], outbound_interface, joint_set_subgraph_id, inbound_interface, inbound_id)
+        end
+        @fact inbound_array => [GaussianDistribution(), Message(GammaDistribution()), nothing]
+        
+        # Structured out not in joint
+        inbound_array = Array(Union(Message, MessagePayload, Nothing), length(node.interfaces))
+        inbound_array[outbound_interface_id] = nothing
+        factorization = [edges[1]=>1, edges[2]=>1, edges[3]=>2]
+        joint_set_subgraph_id = [1]
+        for inbound_id = 1:length(edges)
+            inbound_interface = node.interfaces[inbound_id]
+            ForneyLab.insertRequiredInbound!(inbound_array, node, factorization, edges[inbound_id], outbound_interface, joint_set_subgraph_id, inbound_interface, inbound_id)
+        end
+        @fact inbound_array => [NormalGammaDistribution(), NormalGammaDistribution(), nothing]
+    end
+end
+
 
 facts("calculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do

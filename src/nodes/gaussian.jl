@@ -444,6 +444,7 @@ function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_payload_type::Type{GaussianDistribution},
                             marg::NormalGammaDistribution,
+                            ::NormalGammaDistribution, # Same distribution as marg
                             ::Nothing)
     # Forward message over out.
     # This update function has two argments instead of three because it uses the node's joint marginal over the mean and precision.

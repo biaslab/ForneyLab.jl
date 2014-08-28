@@ -1,4 +1,4 @@
-export isApproxEqual
+export isApproxEqual, getDuplicatedIds
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
@@ -14,4 +14,9 @@ isRoundedPosDef{T<:FloatingPoint}(arr::Array{T, 2}) = ishermitian(round(arr, 12)
 function viewFile(filename::String)
     # Open a file with the application associated with the file type
     @windows? run(`cmd /c start $filename`) : (@osx? run(`open $filename`) : (@linux? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
+end
+
+function getDuplicatedIds(list::Array{Int, 1})
+    # Returns values of duplicate entries in list
+    return find(hist(list, length(list))[2] .> 1)
 end

@@ -12,7 +12,6 @@ facts("LinearCompositeNode unit tests") do
         @fact node.offset => node.interfaces[3]
         @fact node.noise => node.interfaces[4]
         @fact node.out => node.interfaces[5]
-        @fact node.variational => true # default variational to true
         @fact node.use_composite_update_rules => true # default use_composite_update_rules to true
     end
 

@@ -10,7 +10,6 @@ facts("GaussianNode unit tests") do
         @fact node.mean => node.interfaces[1]
         @fact node.variance => node.interfaces[2]
         @fact node.out => node.interfaces[3]
-        @fact node.variational => false # default variational to false
     end
 
     context("GaussianNode() should initialize a GaussianNode with precision parametrization") do
@@ -129,10 +128,11 @@ facts("GaussianNode unit tests") do
             end
 
             context("GaussianNode should propagate a forward message") do
+                node_marg = NormalGammaDistribution(m=4.0, beta=2.0, a=3.0, b=1.0)
                 validateOutboundMessage(GaussianNode(form="precision"), 
                                         3, 
                                         GaussianDistribution, 
-                                        [NormalGammaDistribution(m=4.0, beta=2.0, a=3.0, b=1.0), nothing],
+                                        [node_marg, node_marg, nothing],
                                         GaussianDistribution(m=4.0, W=3.0))
             end
         end

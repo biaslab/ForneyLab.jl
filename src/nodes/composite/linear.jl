@@ -53,9 +53,6 @@ type LinearCompositeNode <: CompositeNode
         if use_composite_update_rules == false # Check
             error("LinearCompositeNode $(name) does not support explicit internal message passing")
         end
-        if variational == false # Check
-            error("LinearCompositeNode $(name) only supports variational message passing")
-        end
 
         self = new(use_composite_update_rules, name, Array(Interface, 5))
 
