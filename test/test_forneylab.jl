@@ -188,27 +188,27 @@ facts("Factorization integration tests") do
         validateRequiredInbound(node,
                                 node.interfaces[3],
                                 Factorization(), # No factorization
-                                [Message(GaussianDistribution()), Message(GammaDistribution()), nothing])
+                                [Message(GaussianDistribution()), Message(GammaDistribution()), Message(1.0)])
 
         validateRequiredInbound(node,
                                 node.interfaces[3],
                                 [edges[1]=>1, edges[2]=>1, edges[3]=>1], # All in one subgraph
-                                [Message(GaussianDistribution()), Message(GammaDistribution()), nothing])
+                                [Message(GaussianDistribution()), Message(GammaDistribution()), Message(1.0)])
 
         validateRequiredInbound(node,
                                 node.interfaces[3],
                                 [edges[1]=>1, edges[2]=>2, edges[3]=>3], # Mean field
-                                [GaussianDistribution(), GammaDistribution(), nothing])
+                                [GaussianDistribution(), GammaDistribution(), Message(1.0)])
 
         validateRequiredInbound(node,
                                 node.interfaces[3],
                                 [edges[1]=>1, edges[2]=>2, edges[3]=>2], # Structured out in joint
-                                [GaussianDistribution(), Message(GammaDistribution()), nothing])
+                                [GaussianDistribution(), Message(GammaDistribution()), Message(1.0)])
         
         validateRequiredInbound(node,
                                 node.interfaces[3],
                                 [edges[1]=>1, edges[2]=>1, edges[3]=>2], # Structured out not in joint
-                                [NormalGammaDistribution(), NormalGammaDistribution(), nothing])
+                                [NormalGammaDistribution(), NormalGammaDistribution(), Message(1.0)])
     end
 end
 

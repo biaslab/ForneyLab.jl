@@ -494,11 +494,11 @@ function validateOutboundMessage(node::Node, outbound_interface_id::Int, outboun
     return node.interfaces[outbound_interface_id].message
 end
 
-function validateRequiredInbound(node::Node, local_factorization::Factorization, expected::Array{Any, 1})
-    inbound_array = Array(Union(Message, MessagePayload, Nothing), 0)
+function validateRequiredInbound(node::Node, outbound_interface::Interface, local_factorization::Factorization, expected::Any)
+    inbound_array = Array(Any, 0)
     joint_set_subgraph_id = duplicated(collect(values(local_factorization)))
     for inbound_interface = node.interfaces
-        ForneyLab.pushRequiredInbound!(inbound_array, node, factorization, joint_set_subgraph_id, inbound_interface, outbound_interface)
+        ForneyLab.pushRequiredInbound!(inbound_array, node, local_factorization, joint_set_subgraph_id, inbound_interface, outbound_interface)
     end
     @fact inbound_array => expected
     

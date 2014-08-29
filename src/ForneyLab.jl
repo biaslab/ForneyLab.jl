@@ -295,7 +295,7 @@ function calculateMessage!(outbound_interface::Interface, factorization::Factori
 end
 calculateMessage!(outbound_interface::Interface) = calculateMessage!(outbound_interface, Factorization())
 
-function pushRequiredInbound!(inbound_array::Array{Union(Message, MessagePayload, Nothing), 1},
+function pushRequiredInbound!(inbound_array::Array{Any, 1},
                        node::Node,
                        factorization::Factorization,
                        joint_set_subgraph_id::Array{Int, 1},
@@ -339,7 +339,7 @@ function updateNodeMessage!(outbound_interface::Interface, factorization::Factor
     (length(joint_set_subgraph_id) <= 1) || error("There is more than one joint factorization on $(typeof(node)) $(node.name). This is not supported at the moment because a node can only hold one marginal.")
 
     # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
-    inbound_array = Array(Union(Message, MessagePayload, Nothing), 0)
+    inbound_array = Array(Any, 0)
     outbound_interface_id = 0
     for interface_id = 1:length(node.interfaces)
         interface = node.interfaces[interface_id]
