@@ -272,6 +272,29 @@ include("nodes/composite/general.jl")
 # Methods for calculating marginals
 include("distributions/calculate_marginal.jl")
 
+function factorizeMeanField(seed_node::TerminalNode)
+    global global_counter = 1
+    # Make a start
+    seed_factorization = [seed_node.interfaces[1].edge=>global_counter]
+    return factorizeMeanField(seed_node.interfaces[1].partner.node, seed_node.interfaces[1].partner, seed_factorization)
+end
+
+function factorizeMeanField(node::Node, stem_interface::Interface, factorization::Factorization=Factorization())
+    # TODO: equality node same subgraph id as stem interface edge
+    for interface in node.interfaces
+        if !haskey(factorization, interface.edge) && !is(interface, stem_interface)
+            if typeof(node) == EqualityNode
+                id = factorization[stem_interface.edge] # equality nodes belong to same subgraph
+            else
+                global global_counter += 1
+                id = global_counter
+            end 
+            merge!(factorization, [interface.edge=>id])
+            factorizeMeanField(interface.partner.node, interface.partner, factorization)
+        end
+    end
+    return factorization
+end
 
 #############################
 # Generic methods
