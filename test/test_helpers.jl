@@ -31,8 +31,8 @@ facts("Helper function unit tests") do
         @fact getOrCreateMessage(node2.out, Float64).payload => 2.0
     end
 
-    context("getDuplicatedIds() should return values of duplicate entries") do
-        @fact getDuplicatedIds([1, 2, 3]) => []
-        @fact getDuplicatedIds([1, 2, 2, 3, 6, 6, 2, 2]) => [2, 6]
+    context("duplicated() should return values of duplicate entries") do
+        @fact duplicated([1, 2, 3]) => []
+        @fact duplicated([1, 2, 2, 3, 6, 6, 2, 2]) => [2, 6]
     end
 end

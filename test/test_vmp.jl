@@ -46,6 +46,9 @@ facts("Naive VMP implementation integration tests") do
         n_its = 50
         # q(y) update
         # We need to execute the q(y) updates only once, because sample values do not change.
+        Profile.clear()
+        @profile begin
+
         executeSchedule(sumproduct_y_schedule, factorization)
         executeSchedule(marginal_y_schedule)
         for iter = 1:n_its
@@ -59,6 +62,8 @@ facts("Naive VMP implementation integration tests") do
         # One last time to ensure all calculations have propagated through the equality chains
         executeSchedule(sumproduct_m_schedule, factorization)
         executeSchedule(sumproduct_gam_schedule, factorization)
+
+        end # @profile
 
         # Save outcome
         ensureMVParametrization!(m_eq_nodes[end].interfaces[2].message.payload)
@@ -116,6 +121,7 @@ facts("Naive VMP implementation integration tests") do
 
         # Perform vmp updates
         n_its = 100
+        @profile begin
         for iter = 1:n_its
             executeSchedule(sumproduct_a_schedule, factorization)
             executeSchedule(marginal_a_schedule)
@@ -127,7 +133,7 @@ facts("Naive VMP implementation integration tests") do
         executeSchedule(sumproduct_a_schedule, factorization) # One last time to ensure all calculations have propagated through the equality chains
         executeSchedule(sumproduct_b_schedule, factorization)
         executeSchedule(sumproduct_gam_schedule, factorization)
-
+        end # @profile
         # Check the results against the outcome of Infer.NET
         ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message.payload)
         ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message.payload)
@@ -165,6 +171,7 @@ facts("Structured VMP implementation integration tests") do
         m_gam_sumproduct_schedule = [m_0_node.out, m_N_node.out, m_eq_node.interfaces[3], gam_0_node.out, gam_N_node.out, gam_eq_node.interfaces[3], g_node.mean, m_eq_node.interfaces[2], g_node.precision, gam_eq_node.interfaces[2]]
         q_m_gam_marginal_schedule = [g_node]
 
+        @profile begin
         for sample = 1:n_samples
             # Reset
             y_node.value = GaussianDistribution(m = data[sample], W=10.0) # Small variance on sample
@@ -184,6 +191,7 @@ facts("Structured VMP implementation integration tests") do
             m_0_node.value = deepcopy(m_eq_node.interfaces[2].message.payload)
             gam_0_node.value = deepcopy(gam_eq_node.interfaces[2].message.payload)
         end
+        end # @profile
 
         m_m = mean(m_eq_node.interfaces[2].message.payload)[1]
         m_sigma = sqrt(var(m_eq_node.interfaces[2].message.payload)[1])
@@ -197,4 +205,6 @@ facts("Structured VMP implementation integration tests") do
         @fact m_m-m_sigma < true_mean < m_m+m_sigma => true
         @fact gam_m-gam_sigma < true_prec < gam_m+gam_sigma => true
     end
+
+    Profile.print(format = :flat)
 end

@@ -16,7 +16,16 @@ function viewFile(filename::String)
     @windows? run(`cmd /c start $filename`) : (@osx? run(`open $filename`) : (@linux? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
 end
 
-function getDuplicatedIds(list::Array{Int, 1})
-    # Returns values of duplicate entries in list
-    return find(hist(list, length(list))[2] .> 1)
+function duplicated(C)
+    # Returns duplicated values in C
+    out = Array(eltype(C),0)
+    seen = Set{eltype(C)}()
+    for x in C
+        if in(x, seen) && !in(x, out)
+            push!(out, x)
+        else
+            push!(seen, x)
+        end
+    end
+    out
 end

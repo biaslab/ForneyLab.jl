@@ -339,11 +339,11 @@ function updateNodeMessage!(outbound_interface::Interface, factorization::Factor
     node = outbound_interface.node
 
     local_edge_subgraph_ids = getLocalFactorization(node, factorization) # Subgraph id's for edges around 'node'
-    joint_set_subgraph_id = getDuplicatedIds(local_edge_subgraph_ids) # Find the id's that are present more than once (these are the joint factorizations)
+    joint_set_subgraph_id = duplicated(local_edge_subgraph_ids) # Find the id's that are present more than once (these are the joint factorizations)
     (length(joint_set_subgraph_id) <= 1) || error("There is more than one joint factorization on $(typeof(node)) $(node.name). This is not supported at the moment because a node can only hold one marginal.")
 
     # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
-    inbound_array = Array(Union(Message, MessagePayload, Nothing), length(node.interfaces))
+    inbound_array = Array(Union(Message, MessagePayload, Nothing), length(node.interfaces)) # SLOW TO CREATE EACH TIME
     outbound_interface_id = 0
     for interface_id = 1:length(node.interfaces)
         interface = node.interfaces[interface_id]
