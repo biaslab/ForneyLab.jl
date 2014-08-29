@@ -214,26 +214,21 @@ end
 function updateNodeMessage!(node::EqualityNode,
                             outbound_interface_id::Int,
                             outbound_message_payload_type::Type{InverseGammaDistribution},
-                            msg_1::Union(Message{InverseGammaDistribution}, Nothing),
-                            msg_2::Union(Message{InverseGammaDistribution}, Nothing),
-                            msg_3::Union(Message{InverseGammaDistribution}, Nothing))
+                            msg_1::Message{InverseGammaDistribution},
+                            msg_2::Message{InverseGammaDistribution},
+                            ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Definition from Korl table 5.2
-    dist_out.a = 1.0
-    dist_out.b = 0.0
-    for inbound_msg in [msg_1, msg_2, msg_3]
-        (inbound_msg != nothing) || continue
-        (typeof(inbound_msg) == Message{outbound_message_payload_type}) || error("EqualityNode: cannot calculate outbound Message{$(outbound_message_payload_type)} from inbound $(typeof(inbound_msg))")
-        dist_out.a += inbound_msg.payload.a
-        dist_out.b += inbound_msg.payload.b
-    end
+    dist_out.a = 1.0 + msg_1.payload.a + msg_2.payload.a
+    dist_out.b = msg_1.payload.b + msg_2.payload.b
 
     return node.interfaces[outbound_interface_id].message
 end
-
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{InverseGammaDistribution}, msg_1::Message{InverseGammaDistribution}, ::Nothing, msg_2::Message{InverseGammaDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_1, msg_2, nothing)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{InverseGammaDistribution}, ::Nothing, msg_1::Message{InverseGammaDistribution}, msg_2::Message{InverseGammaDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_1, msg_2, nothing)
 ############################################
 # GammaDistribution methods
 ############################################
@@ -241,22 +236,18 @@ end
 function updateNodeMessage!(node::EqualityNode,
                             outbound_interface_id::Int,
                             outbound_message_payload_type::Type{GammaDistribution},
-                            msg_1::Union(Message{GammaDistribution}, Nothing),
-                            msg_2::Union(Message{GammaDistribution}, Nothing),
-                            msg_3::Union(Message{GammaDistribution}, Nothing))
+                            msg_1::Message{GammaDistribution},
+                            msg_2::Message{GammaDistribution},
+                            ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
-    # Definition from Korl table 5.2
-    dist_out.a = -1.0
-    dist_out.b = 0.0
-    for inbound_msg in [msg_1, msg_2, msg_3]
-        (inbound_msg != nothing) || continue
-        (typeof(inbound_msg) == Message{outbound_message_payload_type}) || error("EqualityNode: cannot calculate outbound Message{$(outbound_message_payload_type)} from inbound $(typeof(inbound_msg))")
-        dist_out.a += inbound_msg.payload.a
-        dist_out.b += inbound_msg.payload.b
-    end
+    # Derivation available in notebook
+    dist_out.a = -1.0 + msg_1.payload.a + msg_2.payload.a
+    dist_out.b = msg_1.payload.b + msg_2.payload.b
 
     return node.interfaces[outbound_interface_id].message
 end
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GammaDistribution}, msg_1::Message{GammaDistribution}, ::Nothing, msg_2::Message{GammaDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_1, msg_2, nothing)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{GammaDistribution}, ::Nothing, msg_1::Message{GammaDistribution}, msg_2::Message{GammaDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_1, msg_2, nothing)

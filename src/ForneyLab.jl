@@ -295,14 +295,12 @@ function calculateMessage!(outbound_interface::Interface, factorization::Factori
 end
 calculateMessage!(outbound_interface::Interface) = calculateMessage!(outbound_interface, Factorization())
 
-function insertRequiredInbound!(inbound_array::Array{Union(Message, MessagePayload, Nothing), 1},
+function pushRequiredInbound!(inbound_array::Array{Union(Message, MessagePayload, Nothing), 1},
                        node::Node,
                        factorization::Factorization,
-                       inbound_edge::Edge,
-                       outbound_interface::Interface,
                        joint_set_subgraph_id::Array{Int, 1},
                        inbound_interface::Interface,
-                       inbound_interface_id::Int)
+                       outbound_interface::Interface)
     # Used by updateNodeMessage(Interface, Factorization)
     # Uses the graph factorization and local node context to determine the required inbound type.
     # Depending on the context, the required inbound can be:
@@ -311,21 +309,19 @@ function insertRequiredInbound!(inbound_array::Array{Union(Message, MessagePaylo
     # - a marginal from the node.
 
     # Collect the incoming edges and marginals
-    if !(isdefined(inbound_array, inbound_interface_id) && inbound_array[inbound_interface_id] == nothing) # (Double) check if inbound is required
-        if !haskey(factorization, inbound_edge)
-            # If inbound_edge is no key in factorization, then take the message from the inbound interface (standard SP)
-            inbound_array[inbound_interface_id] = inbound_interface.partner.message
-        else # Edge is marked as internal edge on a subgraph
-            if factorization[inbound_edge] == factorization[outbound_interface.edge]
-                # If the outbound and the inbound edge are in the same subgraph, take the message from the inbound's partner interface
-                inbound_array[inbound_interface_id] = inbound_interface.partner.message
-            else # The inbound and outbound edges are not in the same subgraph, we need to take a node or edge marginal
-                if factorization[inbound_edge] in joint_set_subgraph_id
-                    # The inbound edge is part of a joint factorization, take the node marginal.
-                    inbound_array[inbound_interface_id] = node.marginal
-                else # The inbound edge is part of a univariate factorization, take the inbound edge marginal
-                    inbound_array[inbound_interface_id] = inbound_edge.marginal
-                end
+    if !haskey(factorization, inbound_interface.edge)
+        # If inbound_interface.edge is no key in factorization, then take the message from the inbound interface (standard SP)
+        push!(inbound_array, inbound_interface.partner.message)
+    else # Edge is marked as internal edge on a subgraph
+        if factorization[inbound_interface.edge] == factorization[outbound_interface.edge]
+            # If the outbound and the inbound edge are in the same subgraph, take the message from the inbound's partner interface
+            push!(inbound_array, inbound_interface.partner.message)
+        else # The inbound and outbound edges are not in the same subgraph, we need to take a node or edge marginal
+            if factorization[inbound_interface.edge] in joint_set_subgraph_id
+                # The inbound edge is part of a joint factorization, take the node marginal.
+                push!(inbound_array, node.marginal)
+            else # The inbound edge is part of a univariate factorization, take the inbound edge marginal
+                push!(inbound_array, inbound_interface.edge.marginal)
             end
         end
     end
@@ -343,7 +339,7 @@ function updateNodeMessage!(outbound_interface::Interface, factorization::Factor
     (length(joint_set_subgraph_id) <= 1) || error("There is more than one joint factorization on $(typeof(node)) $(node.name). This is not supported at the moment because a node can only hold one marginal.")
 
     # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
-    inbound_array = Array(Union(Message, MessagePayload, Nothing), length(node.interfaces)) # SLOW TO CREATE EACH TIME
+    inbound_array = Array(Union(Message, MessagePayload, Nothing), 0)
     outbound_interface_id = 0
     for interface_id = 1:length(node.interfaces)
         interface = node.interfaces[interface_id]
@@ -353,18 +349,18 @@ function updateNodeMessage!(outbound_interface::Interface, factorization::Factor
         if (!isdefined(outbound_interface, :dependencies) && outbound_interface_id==interface_id) ||
             (isdefined(outbound_interface, :dependencies) && !(interface in outbound_interface.dependencies))
             # Ignore the inbound on this interface
-            inbound_array[interface_id] = nothing
-            continue
-        end
-        inbound_edge = interface.edge
-        if interface.partner==nothing
-            error("Cannot receive messages on disconnected interface $(interface_id) of $(typeof(node)) $(node.name)")
-        elseif interface.partner.message==nothing && inbound_edge.marginal==nothing
-            error("There is no inbound message/marginal present on the partner/edge of interface $(interface_id) of $(typeof(node)) $(node.name)")
-        end
+            push!(inbound_array, nothing)
+        else # Inbound is required
+            inbound_edge = interface.edge
+            if interface.partner==nothing
+                error("Cannot receive messages on disconnected interface $(interface_id) of $(typeof(node)) $(node.name)")
+            elseif interface.partner.message==nothing && inbound_edge.marginal==nothing
+                error("There is no inbound message/marginal present on the partner/edge of interface $(interface_id) of $(typeof(node)) $(node.name)")
+            end
 
-        # Plug in the required inbound message or edge/node marginal for the inbound interface in inbound_array
-        insertRequiredInbound!(inbound_array, node, factorization, inbound_edge, outbound_interface, joint_set_subgraph_id, interface, interface_id)
+            # Push the required inbound message or edge/node marginal for the inbound interface to inbound_array
+            pushRequiredInbound!(inbound_array, node, factorization, joint_set_subgraph_id, interface, outbound_interface)
+        end
     end
 
     # Evaluate node update function
