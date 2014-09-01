@@ -361,7 +361,7 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     # Batch estimation with multiple samples will intruduce cycles in the subgraph.
     # Therefore we implement a forward algorithm that uses forward estimation only.
 
-    g_node = GaussianNode(; name="g_node", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
+    g_node = GaussianNode(; name="g_node", form="precision")
     m_eq_node = EqualityNode(; name="m_eq_node") # Equality node chain for mean
     gam_eq_node = EqualityNode(; name="gam_eq_node") # Equality node chain for variance
     y_node = TerminalNode(GaussianDistribution(), name="y_node") # Observed y values are stored in terminal node
