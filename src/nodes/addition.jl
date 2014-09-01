@@ -45,7 +45,7 @@ type AdditionNode <: Node
         param_list = [:in1, :in2, :out]
         for i = 1:length(param_list)
             self.interfaces[i] = Interface(self)
-            setfield(self, param_list[i], self.interfaces[i])
+            setfield!(self, param_list[i], self.interfaces[i])
 
             # Clamp parameter values when given as argument
             if haskey(args, param_list[i])
