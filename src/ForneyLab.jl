@@ -273,43 +273,55 @@ include("nodes/composite/general.jl")
 include("distributions/calculate_marginal.jl")
 
 function factorizeMeanField(seed_node::TerminalNode)
+    # Returns a mean field factorization starting from a seen node
+
     global global_counter = 1
     # Make a start
     seed_factorization = [seed_node.interfaces[1].edge=>global_counter]
+    global blocked = Array(Edge, 0)
     return factorizeMeanField(seed_node.interfaces[1].partner.node, seed_node.interfaces[1].partner, seed_factorization)
 end
 
 function factorizeMeanField(node::Node, stem_interface::Interface, factorization::Factorization=Factorization())
-    println("CALL")
+    # Returns a mean field factorization by recursive DFS with greedy equality nodes
+
     # Build call list for recursion order
     # We need to be greedy with the equality nodes, so move them to the front of the line,
     # so once we enter a clique of equality nodes we stay there unill all are visited
-    call_list = deepcopy(node.interfaces)
-    for index = 1:length(call_list)
-        if typeof(call_list[index].partner.node) == EqualityNode # Check for equality node
-            entry = call_list[index]
-            splice!(call_list, index) # Remove from the middle
-            call_list = [entry, call_list] # Move to the front
+    call_list = Array(Interface, 0)
+    if typeof(node) == EqualityNode # Are we on an equality node?
+        for interface = node.interfaces
+            if !is(interface, stem_interface) # If not the stem
+                push!(call_list, interface) # Push to call list
+                global blocked = [blocked, interface.edge] # Nobody else touch this edge
+            end
+        end
+    else # We are not on an equality node
+        for interface = node.interfaces
+            if !haskey(factorization, interface.edge) && !is(interface, stem_interface) && !(interface.edge in blocked) # Skip if stem, already present or will be called in future    
+                if typeof(interface.partner.node) == EqualityNode # Are we going towards an equality node?
+                    call_list = [interface, call_list] # Priority, add to front
+                else
+                    call_list = [call_list, interface] # Add to back
+                end
+            end
         end
     end
 
-    println(call_list)
-    
     # For each interface that is not the stem and not already accounted for,
     # assign an id, add to the factorization and continue from this interface as stem
-    for interface in call_list
-        if !haskey(factorization, interface.edge) && !is(interface, stem_interface)
-            if typeof(node) == EqualityNode
-                id = factorization[stem_interface.edge] # equality nodes belong to same subgraph
-            else
-                global global_counter += 1
-                id = global_counter
-            end 
-            merge!(factorization, [interface.edge=>id])
-            factorizeMeanField(interface.partner.node, interface.partner, factorization)
-        end
+    for interface = call_list
+        if typeof(node) == EqualityNode
+            id = factorization[stem_interface.edge] # Propose id; equality nodes belong to same subgraph
+        else
+            global global_counter += 1
+            id = global_counter # Propose id
+        end 
+
+        merge!(factorization, [interface.edge=>id]) # Append or overwrite
+        factorizeMeanField(interface.partner.node, interface.partner, factorization)
     end
-    println(length(factorization))
+
     return factorization
 end
 
