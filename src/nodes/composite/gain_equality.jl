@@ -69,7 +69,7 @@ type GainEqualityCompositeNode <: CompositeNode
         param_list = [:in1, :in2, :out]
         for i = 1:length(param_list)
             self.interfaces[i] = Interface(self) # Initialize the composite node interfaces belonging to the composite node itself.
-            setfield(self, param_list[i], self.interfaces[i]) # Init named interface handles
+            setfield!(self, param_list[i], self.interfaces[i]) # Init named interface handles
 
             # Clamp parameter values when given as argument
             if haskey(args, param_list[i])

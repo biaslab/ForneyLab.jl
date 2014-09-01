@@ -61,7 +61,7 @@ type LinearCompositeNode <: CompositeNode
         param_list = [:in1, :slope, :offset, :noise, :out]
         for i = 1:length(param_list)
             self.interfaces[i] = Interface(self) # Construct interface
-            setfield(self, param_list[i], self.interfaces[i]) # Set named interfaces
+            setfield!(self, param_list[i], self.interfaces[i]) # Set named interfaces
 
             # Clamp parameter values when given as argument
             if haskey(args, param_list[i])

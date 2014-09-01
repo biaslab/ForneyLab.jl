@@ -9,7 +9,7 @@ ensureMatrix(n::Nothing) = nothing
 isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < 1.0e-12
 
 # isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from.
-isRoundedPosDef{T<:FloatingPoint}(arr::Array{T, 2}) = ishermitian(round(arr, 12)) && isposdef(arr, 'L')
+isRoundedPosDef{T<:FloatingPoint}(arr::Array{T, 2}) = ishermitian(round(arr, 12)) && isposdef(arr)
 
 function viewFile(filename::String)
     # Open a file with the application associated with the file type
