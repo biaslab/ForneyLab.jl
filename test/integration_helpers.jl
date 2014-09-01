@@ -269,7 +269,7 @@ function initializeGaussianNode()
     return (node, edges)
 end
 
-function initializeGaussianNodeChain(y::Array{Float64, 1})
+function initializeGaussianNodeChain(y::Array{Float64, 1}, factorize::Bool=true)
     # Set up a chain of Gaussian nodes for mean-precision estimation
     #
     #     [gam_0]-------->[=]---------->[=]---->    -->[gam_N]
@@ -312,8 +312,13 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
         setMarginal!(q_m_edges[section], uninformative(GaussianDistribution))
         setMarginal!(q_y_edges[section], uninformative(Float64))
         if section > 1 # Connect sections
-            merge!(factorization, [Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1])=>1])
-            merge!(factorization, [Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)=>2])
+            if factorize
+                merge!(factorization, [Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1])=>1])
+                merge!(factorization, [Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)=>2])
+            else
+            Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1])
+            Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)
+            end
         end
     end
     # Attach beginning and end nodes
@@ -321,14 +326,20 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
     gam_0 = TerminalNode(GammaDistribution(a=0.01, b=0.01)) # Prior
     m_N = TerminalNode(uninformative(GaussianDistribution)) # Neutral 'one' message
     gam_N = TerminalNode(uninformative(GammaDistribution)) # Neutral 'one' message
-    merge!(factorization, [Edge(m_0.out, m_eq_nodes[1].interfaces[1])=>1])
-    merge!(factorization, [Edge(gam_0.out, gam_eq_nodes[1].interfaces[1], GammaDistribution)=>2])
-    merge!(factorization, [Edge(m_eq_nodes[end].interfaces[2], m_N.out)=>1])
-    merge!(factorization, [Edge(gam_eq_nodes[end].interfaces[2], gam_N.out, GammaDistribution)=>2])
-
-    merge!(factorization, [edge=>1 for edge in q_m_edges])
-    merge!(factorization, [edge=>2 for edge in q_gam_edges])
-    merge!(factorization, [edge=>3 for edge in q_y_edges])
+    if factorize
+        merge!(factorization, [Edge(m_0.out, m_eq_nodes[1].interfaces[1])=>1])
+        merge!(factorization, [Edge(gam_0.out, gam_eq_nodes[1].interfaces[1], GammaDistribution)=>2])
+        merge!(factorization, [Edge(m_eq_nodes[end].interfaces[2], m_N.out)=>1])
+        merge!(factorization, [Edge(gam_eq_nodes[end].interfaces[2], gam_N.out, GammaDistribution)=>2])
+        merge!(factorization, [edge=>1 for edge in q_m_edges])
+        merge!(factorization, [edge=>2 for edge in q_gam_edges])
+        merge!(factorization, [edge=>3 for edge in q_y_edges])
+    else
+        Edge(m_0.out, m_eq_nodes[1].interfaces[1])
+        Edge(gam_0.out, gam_eq_nodes[1].interfaces[1], GammaDistribution)
+        Edge(m_eq_nodes[end].interfaces[2], m_N.out)
+        Edge(gam_eq_nodes[end].interfaces[2], gam_N.out, GammaDistribution)
+    end
 
     return (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges, factorization)
 end

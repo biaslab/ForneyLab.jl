@@ -4,7 +4,7 @@ export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedul
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
-        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getLocalFactorization
+        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getLocalFactorization, factorizeMeanField
 export  ==
 
 # Verbosity
@@ -82,7 +82,7 @@ getMessage(interface::Interface) = interface.message
 function getName(interface::Interface)
     # Return interface name
     for field in names(interface.node)
-        if is(getfield(interface.node, field), interface)
+        if isdefined(interface.node, field) && is(getfield(interface.node, field), interface)
             return string(field)
         end
     end
@@ -280,8 +280,24 @@ function factorizeMeanField(seed_node::TerminalNode)
 end
 
 function factorizeMeanField(node::Node, stem_interface::Interface, factorization::Factorization=Factorization())
-    # TODO: equality node same subgraph id as stem interface edge
-    for interface in node.interfaces
+    println("CALL")
+    # Build call list for recursion order
+    # We need to be greedy with the equality nodes, so move them to the front of the line,
+    # so once we enter a clique of equality nodes we stay there unill all are visited
+    call_list = deepcopy(node.interfaces)
+    for index = 1:length(call_list)
+        if typeof(call_list[index].partner.node) == EqualityNode # Check for equality node
+            entry = call_list[index]
+            splice!(call_list, index) # Remove from the middle
+            call_list = [entry, call_list] # Move to the front
+        end
+    end
+
+    println(call_list)
+    
+    # For each interface that is not the stem and not already accounted for,
+    # assign an id, add to the factorization and continue from this interface as stem
+    for interface in call_list
         if !haskey(factorization, interface.edge) && !is(interface, stem_interface)
             if typeof(node) == EqualityNode
                 id = factorization[stem_interface.edge] # equality nodes belong to same subgraph
@@ -293,6 +309,7 @@ function factorizeMeanField(node::Node, stem_interface::Interface, factorization
             factorizeMeanField(interface.partner.node, interface.partner, factorization)
         end
     end
+    println(length(factorization))
     return factorization
 end
 

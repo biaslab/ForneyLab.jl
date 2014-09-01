@@ -174,6 +174,13 @@ facts("getAllNodes integration tests") do
 end
 
 facts("Factorization integration tests") do
+    context("factorizeMeanField should return a valid mean field factorization") do
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges, factorization) = initializeGaussianNodeChain([1.0], false)
+        @fact !haskey(factorization, g_nodes[1].mean.edge)
+        @fact !haskey(factorization, g_nodes[1].precision.edge)
+        @fact !haskey(factorization, g_nodes[1].out.edge)
+    end
+
     context("getLocalFactorization() should return a node's local factorization") do
         (node, edges) = initializeGaussianNode()
         factorization = [edges[1]=>1, edges[2]=>1, edges[3]=>2] # Structured

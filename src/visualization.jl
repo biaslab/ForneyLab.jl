@@ -14,7 +14,7 @@ function getEdges(nodes::Array{Node,1})
     return edges
 end
 
-function graph2dot(nodes::Array{Node,1})
+function graph2dot(nodes::Array{Node,1}, factorization::Factorization=Factorization())
     # Return a string representing the graph that connects the nodes in DOT format for visualization.
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)
     node_type_symbols = {   AdditionNode => "+",
@@ -44,7 +44,8 @@ function graph2dot(nodes::Array{Node,1})
         head_id = findfirst(edge.head.node.interfaces, edge.head)
         head_label = "$head_id $(getName(edge.head))"
         label =  string("FW: ", (edge.tail.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.tail.message_payload_type)\n")
-        label *= string("BW: ", (edge.head.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.head.message_payload_type)")
+        label *= string("BW: ", (edge.head.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.head.message_payload_type)\n")
+        label *= haskey(factorization, edge) ? string("Subgraph: ", factorization[edge]) : string("")
         dot *= "\t$(object_id(edge.tail.node)) -> $(object_id(edge.head.node)) " 
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", label=\"$(label)\"]\n"
     end
@@ -54,8 +55,8 @@ function graph2dot(nodes::Array{Node,1})
     return dot
 end
 
-function graph2dot(composite_node::CompositeNode)
-    # Return graph2dot(nodes) where nodes are the internal nodes of composite_node
+function graph2dot(composite_node::CompositeNode, factorization::Factorization=Factorization())
+    # Return graph2dot(nodes, factorization) where nodes are the internal nodes of composite_node
     nodes = Node[]
     for field in names(composite_node)
         if typeof(getfield(composite_node, field))<:Node
@@ -64,14 +65,14 @@ function graph2dot(composite_node::CompositeNode)
     end
     (length(nodes) > 0) || error("CompositeNode does not contain any internal nodes.")
 
-    return graph2dot(nodes)
+    return graph2dot(nodes, factorization)
 end
-graph2dot(seed_node::Node) = graph2dot(getAllNodes(seed_node, open_composites=false, include_clamps=true))
+graph2dot(seed_node::Node, factorization::Factorization=Factorization()) = graph2dot(getAllNodes(seed_node, open_composites=false, include_clamps=true), factorization)
 
-function graphViz(n::Union(Node, Array{Node,1}); external_viewer::Bool=false)
+function graphViz(n::Union(Node, Array{Node,1}), factorization::Factorization=Factorization(); external_viewer::Bool=false)
     # Generates a DOT graph and shows it
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    dot_graph = graph2dot(n)
+    dot_graph = graph2dot(n, factorization)
     if external_viewer
         viewDotExternal(dot_graph)
     else
@@ -122,10 +123,10 @@ function viewDotExternalImage(dot_graph::String)
     viewFile(filename)
 end
 
-function graphPdf(n::Union(Node, Array{Node,1}), filename::String)
+function graphPdf(n::Union(Node, Array{Node,1}), filename::String, factorization::Factorization=Factorization())
     # Generates a DOT graph and writes it to a pdf file
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    dot_graph = graph2dot(n)
+    dot_graph = graph2dot(n, factorization)
     stdin, proc = writesto(`dot -Tpdf -o$(filename)`)
     write(stdin, dot_graph)
     close(stdin)
