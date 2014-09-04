@@ -1,11 +1,12 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message, MessagePayload, ProbabilityDistribution
+export  Message, Node, CompositeNode, Interface, Schedule, Edge, ExternalSchedule, Message, MessagePayload, ProbabilityDistribution, FactorGraph, Factorization, SubGraph
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
-        generateSchedule, executeSchedule, uninformative, getOrCreateMessage
+        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, gcg
 export  ==
+export  current_graph
 
 # Verbosity
 verbose = false
@@ -210,8 +211,8 @@ function getOrCreateMarginal(edge::Edge, assign_payload::DataType)
     return edge.marginal
 end
 
-typealias MarginalSchedule Array{Edge, 1}
-function show(io::IO, schedule::MarginalSchedule)
+typealias ExternalSchedule{T<:Union(Edge, Node)} Array{T, 1}
+function show(io::IO, schedule::ExternalSchedule)
     # Show marginal update schedule
     println(io, "Marginal update schedule:")
     for edge in schedule
@@ -219,21 +220,29 @@ function show(io::IO, schedule::MarginalSchedule)
     end
 end
 
-# FactorGraph and SubGraph types
-type SubGraph
-    internal_schedule::Schedule # Schedule for internal message passing (Dauwels step 2)
-    external_schedule::MarginalSchedule # Schedule for marginal updates on nodes connected to external edges (Dauwels step 3)
-end
-
-typealias Factorization Dict{Edge, SubGraph} # Mapping of edges to subgraphs in which these edges are internal
-type FactorGraph
-    factorization::Factorization
-end
-
 setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
 setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, message)
 getForwardMessage(edge::Edge) = edge.tail.message
 getBackwardMessage(edge::Edge) = edge.head.message
+
+# FactorGraph and SubGraph types
+type SubGraph
+    internal_schedule::Schedule # Schedule for internal message passing (Dauwels step 2)
+    external_schedule::ExternalSchedule # Schedule for updates on nodes connected to external edges (Dauwels step 3)
+end
+SubGraph() = SubGraph(Array(Interface, 0), Array(Union(Edge, Node), 0))
+
+typealias Factorization Dict{Edge, SubGraph} # Mapping of edges to subgraphs in which these edges are internal
+
+type FactorGraph
+    factorization::Factorization # factorization mapping edges to subgraphs
+    nodes::Array{Node, 1} # Nodes in this graph
+end
+FactorGraph() = FactorGraph(Factorization(), Array(Node, 0))
+
+# Get current graph function
+global current_graph = FactorGraph() # Set a current graph
+gcg() = return current_graph::FactorGraph
 
 # Distribution helpers
 include("distributions/helpers.jl")
@@ -330,7 +339,7 @@ function executeSchedule(schedule::Schedule)
     return schedule[end].message
 end
 
-function executeSchedule(schedule::MarginalSchedule)
+function executeSchedule(schedule::ExternalSchedule)
     # Execute a marginal update schedule
     for edge in schedule
         calculateMarginal!(edge)

@@ -80,6 +80,32 @@ facts("setMarginal unit tests") do
     end
 end
 
+facts("Graph level unit tests") do
+    context("FactorGraph() should initialize a factor graph") do
+        fg = FactorGraph()
+        @fact typeof(fg) => FactorGraph
+        @fact typeof(fg.factorization) => Factorization
+        @fact typeof(fg.nodes) => Array{Node, 1}
+    end
+
+    context("SubGraph() should initialize a subgraph") do
+        sg = SubGraph()
+        @fact typeof(sg) => SubGraph
+        @fact typeof(sg.internal_schedule) => Schedule
+        @fact typeof(sg.external_schedule) <: ExternalSchedule => true
+    end
+
+    context("gcg() should return a current graph object") do
+        @fact gcg() => current_graph
+        my_graph = gcg()  # Make local pointer to global variable
+        @fact length(my_graph.nodes) => 0
+        @fact length(current_graph.nodes) => 0
+        push!(my_graph.nodes, MockNode()) 
+        @fact length(my_graph.nodes) => 1
+        @fact length(current_graph.nodes) => 1
+    end
+end
+
 # Node and message specific tests are in separate files
 include("distributions/test_gaussian.jl")
 include("distributions/test_gamma.jl")
