@@ -25,6 +25,7 @@ abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a M
 typealias MessagePayload Union(ProbabilityDistribution, Number, Vector, Matrix)
 abstract Node
 show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
+show(io::IO, nodes::Array{Node, 1}) = [show(io, node) for node in nodes]
 abstract CompositeNode <: Node
 
 # Distributions
@@ -147,6 +148,13 @@ type Edge <: AbstractEdge
             child_interface = child_interface.child
         end
 
+        # Incorporate edge and nodes in current graph
+        graph = gcg()
+        (tail.node in graph.nodes) || push!(graph.nodes, tail.node)
+        (head.node in graph.nodes) || push!(graph.nodes, head.node)
+        sub_graph = SubGraph() # TODO: get proper subgraph
+        merge!(graph.factorization, [self => sub_graph])
+
         return self
     end
 end
@@ -213,10 +221,14 @@ end
 
 typealias ExternalSchedule{T<:Union(Edge, Node)} Array{T, 1}
 function show(io::IO, schedule::ExternalSchedule)
-    # Show marginal update schedule
-    println(io, "Marginal update schedule:")
-    for edge in schedule
-        println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name) to $(typeof(edge.head.node)) $(edge.head.node.name)")
+     # Show external schedule
+    println(io, "External schedule:")
+    for entry in schedule
+        if typeof(entry) == Edge
+            println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name) to $(typeof(edge.head.node)) $(edge.head.node.name)")
+        else # Node type
+            println(io, "Node $(entry.name) of type $(typeof(entry))")
+        end
     end
 end
 

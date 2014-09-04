@@ -96,6 +96,7 @@ facts("Graph level unit tests") do
     end
 
     context("gcg() should return a current graph object") do
+        global current_graph = FactorGraph() # Reset
         @fact gcg() => current_graph
         my_graph = gcg()  # Make local pointer to global variable
         @fact length(my_graph.nodes) => 0
@@ -147,6 +148,16 @@ facts("Connections between nodes integration tests") do
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
         testInterfaceConnections(node1, node2)
+    end
+
+    context("Edge constructor should add edge and nodes to current graph") do
+        global current_graph = FactorGraph() # Reset
+        (node1, node2) = initializePairOfNodes()
+        # Couple the interfaces that carry GeneralMessage
+        edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
+        graph = gcg()
+        @fact haskey(graph.factorization, edge) => true
+        @fact graph.nodes => [node2, node1]
     end
 
     context("Nodes can be coupled by edges using the explicit interface names") do
