@@ -219,6 +219,17 @@ function show(io::IO, schedule::MarginalSchedule)
     end
 end
 
+# FactorGraph and SubGraph types
+type SubGraph
+    internal_schedule::Schedule # Schedule for internal message passing (Dauwels step 2)
+    external_schedule::MarginalSchedule # Schedule for marginal updates on nodes connected to external edges (Dauwels step 3)
+end
+
+typealias Factorization Dict{Edge, SubGraph} # Mapping of edges to subgraphs in which these edges are internal
+type FactorGraph
+    factorization::Factorization
+end
+
 setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
 setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, message)
 getForwardMessage(edge::Edge) = edge.tail.message
