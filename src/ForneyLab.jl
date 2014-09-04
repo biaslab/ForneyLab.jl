@@ -277,7 +277,7 @@ function factorizeMeanField(seed_node::TerminalNode)
 
     global global_counter = 1
     # Make a start
-    seed_factorization = [seed_node.interfaces[1].edge=>global_counter]
+    seed_factorization = [seed_node.interfaces[1].edge=>global_counter::Int64]
     global blocked = Array(Edge, 0)
     return factorizeMeanField(seed_node.interfaces[1].partner.node, seed_node.interfaces[1].partner, seed_factorization)
 end
@@ -293,12 +293,12 @@ function factorizeMeanField(node::Node, stem_interface::Interface, factorization
         for interface = node.interfaces
             if !is(interface, stem_interface) # If not the stem
                 push!(call_list, interface) # Push to call list
-                global blocked = [blocked, interface.edge] # Nobody else touch this edge
+                global blocked = [blocked::Array{Edge, 1}, interface.edge] # Nobody else touch this edge
             end
         end
     else # We are not on an equality node
         for interface = node.interfaces
-            if !haskey(factorization, interface.edge) && !is(interface, stem_interface) && !(interface.edge in blocked) # Skip if stem, already present or will be called in future    
+            if !haskey(factorization, interface.edge) && !is(interface, stem_interface) && !(interface.edge in blocked::Array{Edge, 1}) # Skip if stem, already present or will be called in future    
                 if typeof(interface.partner.node) == EqualityNode # Are we going towards an equality node?
                     call_list = [interface, call_list] # Priority, add to front
                 else
@@ -314,8 +314,8 @@ function factorizeMeanField(node::Node, stem_interface::Interface, factorization
         if typeof(node) == EqualityNode
             id = factorization[stem_interface.edge] # Propose id; equality nodes belong to same subgraph
         else
-            global global_counter += 1
-            id = global_counter # Propose id
+            global global_counter = global_counter::Int64 + 1
+            id = global_counter::Int64 # Propose id
         end 
 
         merge!(factorization, [interface.edge=>id]) # Append or overwrite
