@@ -84,26 +84,23 @@ facts("Graph level unit tests") do
     context("FactorGraph() should initialize a factor graph") do
         fg = FactorGraph()
         @fact typeof(fg) => FactorGraph
-        @fact typeof(fg.factorization) => Factorization
-        @fact typeof(fg.nodes) => Array{Node, 1}
+        @fact length(fg.factorization) => 1
+        @fact typeof(fg.factorization[1]) => Subgraph
+        @fact current_graph => fg # Global should be set
     end
 
-    context("SubGraph() should initialize a subgraph") do
-        sg = SubGraph()
-        @fact typeof(sg) => SubGraph
+    context("Subgraph() should initialize a subgraph") do
+        sg = Subgraph()
+        @fact typeof(sg) => Subgraph
         @fact typeof(sg.internal_schedule) => Schedule
-        @fact typeof(sg.external_schedule) <: ExternalSchedule => true
+        @fact typeof(sg.external_schedule) => ExternalSchedule
     end
 
-    context("gcg() should return a current graph object") do
-        global current_graph = FactorGraph() # Reset
-        @fact gcg() => current_graph
-        my_graph = gcg()  # Make local pointer to global variable
-        @fact length(my_graph.nodes) => 0
-        @fact length(current_graph.nodes) => 0
-        push!(my_graph.nodes, MockNode()) 
-        @fact length(my_graph.nodes) => 1
-        @fact length(current_graph.nodes) => 1
+    context("getCurrentGraph() should return a current graph object") do
+        FactorGraph() # Reset
+        @fact getCurrentGraph() => current_graph
+        my_graph = getCurrentGraph()  # Make local pointer to global variable
+        @fact typeof(my_graph) => FactorGraph
     end
 end
 
@@ -150,14 +147,14 @@ facts("Connections between nodes integration tests") do
         testInterfaceConnections(node1, node2)
     end
 
-    context("Edge constructor should add edge and nodes to current graph") do
-        global current_graph = FactorGraph() # Reset
+    context("Edge constructor should add edge and nodes to current subgraph") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
-        graph = gcg()
-        @fact haskey(graph.factorization, edge) => true
-        @fact graph.nodes => [node2, node1]
+        graph = getCurrentGraph()
+        @fact edge in graph.factorization[1].internal_edges => true
+        @fact node1 in graph.factorization[1].nodes => true
+        @fact node2 in graph.factorization[1].nodes => true
     end
 
     context("Nodes can be coupled by edges using the explicit interface names") do

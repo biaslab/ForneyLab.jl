@@ -1,10 +1,10 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Schedule, Edge, ExternalSchedule, Message, MessagePayload, ProbabilityDistribution, FactorGraph, Factorization, SubGraph
+export  Message, Node, CompositeNode, Interface, Schedule, Edge, ExternalSchedule, Message, MessagePayload, ProbabilityDistribution, FactorGraph, Factorization, Subgraph
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
-        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, gcg
+        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph
 export  ==
 export  current_graph
 
@@ -149,11 +149,12 @@ type Edge <: AbstractEdge
         end
 
         # Incorporate edge and nodes in current graph
-        graph = gcg()
-        (tail.node in graph.nodes) || push!(graph.nodes, tail.node)
-        (head.node in graph.nodes) || push!(graph.nodes, head.node)
-        sub_graph = SubGraph() # TODO: get proper subgraph
-        merge!(graph.factorization, [self => sub_graph])
+        graph = getCurrentGraph()
+        (length(graph.factorization) == 1) || error("Cannot create Edge in an already factorized graph; first build the graph, then define factorizations.")
+        subgraph = graph.factorization[1] # There is only one
+        push!(subgraph.internal_edges, self) # Define edge as internal
+        push!(subgraph.nodes, tail.node) # Add node to subgraph
+        push!(subgraph.nodes, head.node)
 
         return self
     end
@@ -219,16 +220,12 @@ function getOrCreateMarginal(edge::Edge, assign_payload::DataType)
     return edge.marginal
 end
 
-typealias ExternalSchedule{T<:Union(Edge, Node)} Array{T, 1}
+typealias ExternalSchedule Array{Node, 1}
 function show(io::IO, schedule::ExternalSchedule)
      # Show external schedule
     println(io, "External schedule:")
     for entry in schedule
-        if typeof(entry) == Edge
-            println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name) to $(typeof(edge.head.node)) $(edge.head.node.name)")
-        else # Node type
-            println(io, "Node $(entry.name) of type $(typeof(entry))")
-        end
+        println(io, "Node $(entry.name) of type $(typeof(entry))")
     end
 end
 
@@ -237,24 +234,26 @@ setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, messa
 getForwardMessage(edge::Edge) = edge.tail.message
 getBackwardMessage(edge::Edge) = edge.head.message
 
-# FactorGraph and SubGraph types
-type SubGraph
+# FactorGraph and Subgraph types
+type Subgraph
+    nodes::Set{Node}
+    internal_edges::Set{Edge}
+    external_edges::Set{Edge}
     internal_schedule::Schedule # Schedule for internal message passing (Dauwels step 2)
     external_schedule::ExternalSchedule # Schedule for updates on nodes connected to external edges (Dauwels step 3)
 end
-SubGraph() = SubGraph(Array(Interface, 0), Array(Union(Edge, Node), 0))
-
-typealias Factorization Dict{Edge, SubGraph} # Mapping of edges to subgraphs in which these edges are internal
+Subgraph() = Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
 
 type FactorGraph
-    factorization::Factorization # factorization mapping edges to subgraphs
-    nodes::Array{Node, 1} # Nodes in this graph
+    factorization::Array{Subgraph, 1} # References to subgraphs
+    approximate_marginals::Dict{(Node, Subgraph), MessagePayload} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
 end
-FactorGraph() = FactorGraph(Factorization(), Array(Node, 0))
+# Get and set current graph functions
+global current_graph = FactorGraph([Subgraph()], Dict{(Node, Subgraph), MessagePayload}()) # Initialize a current_graph
+getCurrentGraph() = current_graph::FactorGraph
+setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
-# Get current graph function
-global current_graph = FactorGraph() # Set a current graph
-gcg() = return current_graph::FactorGraph
+FactorGraph() = setCurrentGraph(FactorGraph([Subgraph()], Dict{(Node, Subgraph), MessagePayload}())) # Initialize a new factor graph; automatically sets current_graph
 
 # Distribution helpers
 include("distributions/helpers.jl")
