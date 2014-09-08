@@ -3,8 +3,8 @@ module ForneyLab
 export  Message, Node, CompositeNode, Interface, Schedule, Edge, ExternalSchedule, Message, MessagePayload, ProbabilityDistribution, FactorGraph, Factorization, Subgraph
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
-        getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
-        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph
+        getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!,
+        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, nodes
 export  ==
 export  current_graph
 
@@ -109,7 +109,7 @@ type Edge <: AbstractEdge
     head::Interface
     marginal::Any
 
-    function Edge(tail::Interface, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType)
+    function Edge(tail::Interface, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType; add_to_graph::Bool=true)
         (forward_message_payload_type <: MessagePayload) || error("Forward message payload type $(forward_message_payload_type) not supported")
         (backward_message_payload_type <: MessagePayload) || error("Backward message payload type $(backward_message_payload_type) not supported")
         if tail.message != nothing && (typeof(tail.message.payload) != forward_message_payload_type)
@@ -149,38 +149,40 @@ type Edge <: AbstractEdge
         end
 
         # Incorporate edge and nodes in current graph
-        graph = getCurrentGraph()
-        (length(graph.factorization) == 1) || error("Cannot create Edge in an already factorized graph; first build the graph, then define factorizations.")
-        subgraph = graph.factorization[1] # There is only one
-        push!(subgraph.internal_edges, self) # Define edge as internal
-        push!(subgraph.nodes, tail.node) # Add node to subgraph
-        push!(subgraph.nodes, head.node)
+        if add_to_graph && typeof(tail.node) != ClampNode && typeof(head.node) != ClampNode # Clampnodes and edges connected to clampnodes are not added to subgraph
+            graph = getCurrentGraph()
+            (length(graph.factorization) == 1) || error("Cannot create Edge in an already factorized graph; first build the graph, then define factorizations.")
+            subgraph = graph.factorization[1] # There is only one
+            push!(subgraph.internal_edges, self) # Define edge as internal
+            push!(subgraph.nodes, tail.node) # Add node to subgraph
+            push!(subgraph.nodes, head.node)
+        end
 
         return self
     end
 end
-Edge(tail::Interface, head::Interface, message_payload_type::DataType) = Edge(tail, head, message_payload_type, message_payload_type)
-function Edge(tail::Interface, head::Interface)
+Edge(tail::Interface, head::Interface, message_payload_type::DataType; args...) = Edge(tail, head, message_payload_type, message_payload_type; args...)
+function Edge(tail::Interface, head::Interface; args...)
     forward_message_payload_type = backward_message_payload_type = GaussianDistribution # Default to Gaussian; we could also do a check whether the nodes accept Gaussians
     (tail.message == nothing) || (forward_message_payload_type = typeof(tail.message.payload))
     (head.message == nothing) || (backward_message_payload_type = typeof(head.message.payload))
-    Edge(tail, head, forward_message_payload_type, backward_message_payload_type)
+    Edge(tail, head, forward_message_payload_type, backward_message_payload_type; args...)
 end
 
 # Edge constructors that accept nodes instead of a specific Interface
 # firstFreeInterface(node) should be overloaded for nodes with interface-invariant node functions
 firstFreeInterface(node::Node) = error("Cannot automatically pick a free interface on non-symmetrical $(typeof(node)) $(node.name)")
-Edge(tail_node::Node, head::Interface) = Edge(firstFreeInterface(tail_node), head)
-Edge(tail_node::Node, head::Interface, message_payload_type::DataType) = Edge(firstFreeInterface(tail_node), head, message_payload_type)
-Edge(tail_node::Node, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType) = Edge(firstFreeInterface(tail_node), head, forward_message_payload_type, backward_message_payload_type)
+Edge(tail_node::Node, head::Interface; args...) = Edge(firstFreeInterface(tail_node), head; args...)
+Edge(tail_node::Node, head::Interface, message_payload_type::DataType; args...) = Edge(firstFreeInterface(tail_node), head, message_payload_type; args...)
+Edge(tail_node::Node, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType; args...) = Edge(firstFreeInterface(tail_node), head, forward_message_payload_type, backward_message_payload_type; args...)
 
-Edge(tail::Interface, head_node::Node) = Edge(tail, firstFreeInterface(head_node))
-Edge(tail::Interface, head_node::Node, message_payload_type::DataType) = Edge(tail, firstFreeInterface(head_node), message_payload_type)
-Edge(tail::Interface, head_node::Node, forward_message_payload_type::DataType, backward_message_payload_type::DataType) = Edge(tail, firstFreeInterface(head_node), forward_message_payload_type, backward_message_payload_type)
+Edge(tail::Interface, head_node::Node; args...) = Edge(tail, firstFreeInterface(head_node); args...)
+Edge(tail::Interface, head_node::Node, message_payload_type::DataType; args...) = Edge(tail, firstFreeInterface(head_node), message_payload_type; args...)
+Edge(tail::Interface, head_node::Node, forward_message_payload_type::DataType, backward_message_payload_type::DataType; args...) = Edge(tail, firstFreeInterface(head_node), forward_message_payload_type, backward_message_payload_type; args...)
 
-Edge(tail_node::Node, head_node::Node) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node))
-Edge(tail_node::Node, head_node::Node, message_payload_type::DataType) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), message_payload_type)
-Edge(tail_node::Node, head_node::Node, forward_message_payload_type::DataType, backward_message_payload_type::DataType) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), forward_message_payload_type, backward_message_payload_type)
+Edge(tail_node::Node, head_node::Node; args...) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node); args...)
+Edge(tail_node::Node, head_node::Node, message_payload_type::DataType; args...) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), message_payload_type; args...)
+Edge(tail_node::Node, head_node::Node, forward_message_payload_type::DataType, backward_message_payload_type::DataType; args...) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), forward_message_payload_type, backward_message_payload_type; args...)
 
 function show(io::IO, edge::Edge)
     println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name):$(findfirst(edge.tail.node.interfaces, edge.tail)) to $(typeof(edge.head.node)) $(edge.head.node.name):$(findfirst(edge.head.node.interfaces, edge.head)).")
@@ -399,8 +401,8 @@ function clearMessages!(edge::Edge)
 end
 
 # Functions to clear ALL MESSAGES in the graph
-clearAllMessages!(seed_node::Node) = map(clearMessages!, getAllNodes(seed_node, open_composites=true))
-clearAllMessages!(seed_edge::Edge) = map(clearMessages!, getAllNodes(seed_edge.tail, open_composites=true))
+clearMessages!(graph::FactorGraph) = map(clearMessages!, nodes(graph, open_composites=true))
+clearMessages!() = clearMessages!(getCurrentGraph())
 
 function generateSchedule(outbound_interface::Interface)
     # Generate a schedule that can be executed to calculate the outbound message on outbound_interface.
@@ -470,38 +472,66 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedul
     pop!(call_list)
 
     return push!(backtrace, outbound_interface)
-end
+end   
 
-function getAllNodes(seed_node::Node, node_array::Array{Node,1}=Array(Node,0); open_composites::Bool=true, include_clamps=false)
-    # Return a list of all nodes
-    # If open_composites is false, the search will not pass through composite node boundaries.
-    if include_clamps==false && typeof(seed_node)==ClampNode
-        return node_array
+function addChildNodes!(nodes::Set{Node})
+    # Add all child nodes to the nodes set
+    composite_nodes_stack = Array(CompositeNode, 0) # Composite nodes to open
+    for node in nodes
+        if typeof(node) <: CompositeNode
+            push!(composite_nodes_stack, node)
+        end
     end
-    if !(seed_node in node_array)
-        push!(node_array, seed_node)
-        # Partners
-        for interface in seed_node.interfaces
-            if interface.partner != nothing
-                if interface.partner.partner==interface || open_composites
-                    # Recursion
-                    getAllNodes(interface.partner.node, node_array, open_composites=open_composites, include_clamps=include_clamps)
+    # Open all composite nodes
+    while length(composite_nodes_stack) > 0
+        composite_node = pop!(composite_nodes_stack)
+        for field in names(composite_node)
+            if typeof(getfield(composite_node, field)) <: Node
+                # Add child
+                child_node = getfield(composite_node, field)
+                push!(nodes, child_node)
+                if typeof(child_node) <: CompositeNode
+                    push!(composite_nodes_stack, child_node)
                 end
             end
         end
-        # Children
-        if open_composites && typeof(seed_node)<:CompositeNode
-            for field in names(seed_node)
-                if typeof(getfield(seed_node, field)) <: Node
-                    # Recursion
-                    getAllNodes(getfield(seed_node, field), node_array, open_composites=open_composites, include_clamps=include_clamps)
-                end
+    end
+    return nodes
+end
+
+function addClampNodes!(nodes::Set{Node})
+    # Add all clamp nodes to the nodes set
+    for node in nodes
+        for interface in node.interfaces
+            if typeof(interface.partner.node) == ClampNode
+                push!(nodes, interface.partner.node)
             end
-        end        
+        end
+    end
+    return nodes
+end
+
+function nodes(subgraph::Subgraph; open_composites::Bool=true, include_clamps=false)
+    all_nodes = copy(subgraph.nodes)
+
+    if open_composites; addChildNodes!(all_nodes); end
+    if include_clamps; addClampNodes!(all_nodes); end
+
+    return all_nodes
+end
+
+function nodes(graph::FactorGraph; open_composites::Bool=true, include_clamps=false)
+    all_nodes = Set{Node}()
+    for subgraph in graph.factorization
+        union!(all_nodes, subgraph.nodes)
     end
 
-    return node_array
+    if open_composites; addChildNodes!(all_nodes); end
+    if include_clamps; addClampNodes!(all_nodes); end
+
+    return all_nodes
 end
+nodes(;args...) = nodes(getCurrentGraph(); args...)
 
 # Utils
 include("visualization.jl")

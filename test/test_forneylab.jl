@@ -196,14 +196,28 @@ facts("Connections between nodes integration tests") do
 
 end
 
-facts("getAllNodes integration tests") do
-    context("getAllNodes() should return an array of all nodes in the graph") do
+facts("nodes() integration tests") do
+    context("nodes() should return an array of all nodes in the graph") do
         nodes = initializeLoopyGraph()
-        found_nodes = ForneyLab.getAllNodes(nodes[1])
+        found_nodes = nodes(getCurrentGraph())
+        @fact length(found_nodes) => length(nodes) # FactorGraph test
+        for node in nodes
+            @fact node in found_nodes => true
+        end
+
+        found_nodes = nodes(getCurrentGraph().factorization[1]) # Subgraph test
         @fact length(found_nodes) => length(nodes)
         for node in nodes
             @fact node in found_nodes => true
         end
+    end
+
+    context("addChildNodes!() should add composite node's child nodes to the node array") do
+        @fact true => false
+    end
+
+    context("addClampNodes! should add clamp nodes to the node array") do
+        @fact true => false
     end
 end
 

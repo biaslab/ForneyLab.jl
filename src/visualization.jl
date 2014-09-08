@@ -66,9 +66,11 @@ function graph2dot(composite_node::CompositeNode)
 
     return graph2dot(nodes)
 end
-graph2dot(seed_node::Node) = graph2dot(getAllNodes(seed_node, open_composites=false, include_clamps=true))
+graph2dot(graph::FactorGraph) = graph2dot(nodes(graph, open_composites=false, include_clamps=true))
+graph2dot() = graph2dot(getCurrentGraph())
+graph2dot(subgraph::Subgraph) = graph2dot(nodes(subgraph, open_composites=false, include_clamps=true))
 
-function graphViz(n::Union(Node, Array{Node,1}); external_viewer::Bool=false)
+function graphViz(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1}); external_viewer::Bool=false)
     # Generates a DOT graph and shows it
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     dot_graph = graph2dot(n)
@@ -82,6 +84,15 @@ function graphViz(n::Union(Node, Array{Node,1}); external_viewer::Bool=false)
             viewDotExternal(dot_graph)
         end
     end
+end
+
+function graphPdf(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1}), filename::String)
+    # Generates a DOT graph and writes it to a pdf file
+    validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
+    dot_graph = graph2dot(n)
+    stdin, proc = writesto(`dot -Tpdf -o$(filename)`)
+    write(stdin, dot_graph)
+    close(stdin)
 end
 
 function dot2svg(dot_graph::String)
@@ -120,13 +131,4 @@ function viewDotExternalImage(dot_graph::String)
         write(f, svg)
     end
     viewFile(filename)
-end
-
-function graphPdf(n::Union(Node, Array{Node,1}), filename::String)
-    # Generates a DOT graph and writes it to a pdf file
-    validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    dot_graph = graph2dot(n)
-    stdin, proc = writesto(`dot -Tpdf -o$(filename)`)
-    write(stdin, dot_graph)
-    close(stdin)
 end
