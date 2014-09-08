@@ -4,7 +4,7 @@ export  Message, Node, CompositeNode, Interface, Schedule, Edge, ExternalSchedul
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!,
-        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, nodes
+        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, nodes, edges
 export  ==
 export  current_graph
 
@@ -149,7 +149,7 @@ type Edge <: AbstractEdge
         end
 
         # Incorporate edge and nodes in current graph
-        if add_to_graph && typeof(tail.node) != ClampNode && typeof(head.node) != ClampNode # Clampnodes and edges connected to clampnodes are not added to subgraph
+        if add_to_graph # Note: edges connected to clamp nodes are added to the subgraph as well
             graph = getCurrentGraph()
             (length(graph.factorization) == 1) || error("Cannot create Edge in an already factorized graph; first build the graph, then define factorizations.")
             subgraph = graph.factorization[1] # There is only one
@@ -256,6 +256,64 @@ getCurrentGraph() = current_graph::FactorGraph
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
 FactorGraph() = setCurrentGraph(FactorGraph([Subgraph()], Dict{(Node, Subgraph), MessagePayload}())) # Initialize a new factor graph; automatically sets current_graph
+
+function conformSubgraph!(subgraph::Subgraph)
+    # Updates external edges and nodes field based on internal edges
+
+    subgraph.nodes = Set{Node}()
+    subgraph.external_edges = Set{Edge}()
+
+    for internal_edge in subgraph.internal_edges # Collect all nodes in the subgraph
+        push!(subgraph.nodes, internal_edge.head.node)
+        push!(subgraph.nodes, internal_edge.tail.node)
+    end
+    subgraph.external_edges = setdiff(edges(subgraph.nodes), subgraph.internal_edges) # External edges are the difference between all edges connected to nodes, and the internal edges
+
+    return subgraph
+end
+
+function factorize!(graph::FactorGraph, internal_edges::Set{Edge})
+    # Add a subgraph containing the edges specified in internal_edges and conform
+    for subgraph in graph.factorization
+        setdiff!(subgraph.internal_edges, internal_edges) # Remove edges from existing subgraph
+    end
+    new_subgraph = Subgraph(Set{Node}(), copy(internal_edges), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
+    conformSubgraph!(new_subgraph)
+
+    return new_subgraph
+end
+factorize!(internal_edges::Set{Edge}) = factorize(getCurrentGraph(), internal_edges)
+
+function factorizeMeanField!(graph::FactorGraph)
+    # Generate a mean field factorization
+    (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
+    edges = edges(nodes(graph, include_clamps=true, open_composites=false), include_external=false)
+
+    for edge in edges
+        if typeof(edge.head.node)==EqualityNode || typeof(edge.tail.node)==EqualityNode
+            # Collect all other edges that are connected to this one through equality nodes
+            edge_cluster = Set{Edge}()
+            connected_edge_buffer = [edge]
+            while length(connected_edge_buffer) > 0
+                current_edge = pop!(connected_edge_buffer)
+                push!(edge_cluster, current_edge)
+                for node in [edge.head.node, edge.tail.node]
+                    if typoef(node) == EqualityNode
+                        for interface in node.interfaces
+                            if !is(interface.edge, current_edge) && !(interface.edge in edge_cluster)
+                                push!(connected_edge_buffer, interface.edge)
+                            end
+                        end
+                    end
+                end
+            end
+        else
+            factorize!(graph, edge)
+        end
+    end
+    return graph
+end
+factorizeMeanField!() = factorizeMeanField!(getCurrentGraph())
 
 # Distribution helpers
 include("distributions/helpers.jl")
@@ -532,6 +590,27 @@ function nodes(graph::FactorGraph; open_composites::Bool=true, include_clamps=fa
     return all_nodes
 end
 nodes(;args...) = nodes(getCurrentGraph(); args...)
+
+function edges(nodes::Array{Node,1}; include_external=true)
+    # Returns the set of edges connected to nodes, including or excluding external edges
+    # An external edge has only head or tail in the interfaces belonging to nodes in the nodes array
+
+    edges = Set()
+    for node in nodes
+        for interface in node.interfaces
+            if include_external
+                if interface.edge!=nothing && ((interface.edge.tail.node in nodes) || (interface.edge.head.node in nodes))
+                    push!(edges, interface.edge)
+                end
+            else
+                if interface.edge!=nothing && (interface.edge.tail.node in nodes) && (interface.edge.head.node in nodes)
+                    push!(edges, interface.edge)
+                end
+            end
+        end
+    end
+    return edges
+end
 
 # Utils
 include("visualization.jl")

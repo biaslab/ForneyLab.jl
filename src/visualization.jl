@@ -1,25 +1,12 @@
 # Functions for visualizing graphs
 export graph2dot, graphPdf, graphViz
 
-function getEdges(nodes::Array{Node,1})
-    # Return a set containing all Edges that connect the nodes
-    edges = Set()
-    for node in nodes
-        for interface in node.interfaces
-            if interface.edge!=nothing && (interface.edge.tail.node in nodes) && (interface.edge.head.node in nodes)
-                push!(edges, interface.edge)
-            end
-        end
-    end
-    return edges
-end
-
 function graph2dot(nodes::Array{Node,1})
     # Return a string representing the graph that connects the nodes in DOT format for visualization.
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)
     node_type_symbols = {   AdditionNode => "+",
                             EqualityNode => "="}
-    edges = getEdges(nodes)
+    edges = edges(nodes, include_external=false)
     
     dot = "digraph G{splines=true;sep=\"+25,25\";overlap=scalexy;nodesep=1.6;compound=true;\n"
     dot *= "\tnode [shape=box, width=1.0, height=1.0, fontsize=9];\n"
