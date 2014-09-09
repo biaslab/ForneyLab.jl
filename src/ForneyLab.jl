@@ -336,7 +336,7 @@ function factorizeMeanField!(graph::FactorGraph)
             while length(connected_edges) > 0 # As long as there are unchecked edges connected through eq nodes
                 current_edge = pop!(connected_edges) # Pick one
                 push!(edge_cluster, current_edge) # Add to edge cluster
-                for node in [edge.head.node, edge.tail.node] # Check both head and tail node for EqualityNode
+                for node in [current_edge.head.node, current_edge.tail.node] # Check both head and tail node for EqualityNode
                     if typeof(node) == EqualityNode
                         for interface in node.interfaces
                             if !is(interface.edge, current_edge) && !(interface.edge in edge_cluster) # Is next level edge not seen yet?

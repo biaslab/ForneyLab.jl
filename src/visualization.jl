@@ -30,7 +30,6 @@ function graph2dot(nodes::Set{Node})
         head_label = "$head_id $(getName(edge.head))"
         label =  string("FW: ", (edge.tail.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.tail.message_payload_type)\n")
         label *= string("BW: ", (edge.head.message!=nothing) ? "&#9679;" : "&#9675;", " $(edge.head.message_payload_type)\n")
-        label *= haskey(factorization, edge) ? string("Subgraph: ", factorization[edge]) : string("")
         dot *= "\t$(object_id(edge.tail.node)) -> $(object_id(edge.head.node)) " 
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", label=\"$(label)\"]\n"
     end
@@ -50,7 +49,7 @@ function graph2dot(composite_node::CompositeNode)
     end
     (length(nodes) > 0) || error("CompositeNode does not contain any internal nodes.")
 
-    return graph2dot(nodes, factorization)
+    return graph2dot(nodes)
 end
 graph2dot(graph::FactorGraph) = graph2dot(getNodes(graph, open_composites=false))
 graph2dot() = graph2dot(getCurrentGraph())
@@ -59,7 +58,7 @@ graph2dot(subgraph::Subgraph) = graph2dot(getNodes(subgraph, open_composites=fal
 function graphViz(n::Union(FactorGraph, Subgraph, CompositeNode, Set{Node}); external_viewer::Bool=false)
     # Generates a DOT graph and shows it
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    dot_graph = graph2dot(n, factorization)
+    dot_graph = graph2dot(n)
     if external_viewer
         viewDotExternal(dot_graph)
     else
