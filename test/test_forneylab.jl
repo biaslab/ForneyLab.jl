@@ -126,7 +126,6 @@ include("nodes/test_gaussian.jl")
 include("nodes/composite/test_gain_addition.jl")
 include("nodes/composite/test_gain_equality.jl")
 include("nodes/composite/test_linear.jl")
-include("test_vmp.jl")
 
 #####################
 # Integration tests
@@ -265,7 +264,7 @@ facts("Graph leven integration tests") do
         @fact graph.factorization[1].nodes => Set{Node}({driver, inhibitor, noise, add})
         @fact graph.factorization[1].internal_edges => Set{Edge}({add.out.edge, add.in1.edge, add.in2.edge})
         @fact graph.factorization[1].external_edges => Set{Edge}({inhibitor.out.edge})
-        @fact graph.factorization[2].nodes => Set{Node}({driver, inhibitor, noise, add})
+        @fact graph.factorization[2].nodes => Set{Node}({driver, inhibitor})
         @fact graph.factorization[2].internal_edges => Set{Edge}({inhibitor.out.edge})
         @fact graph.factorization[2].external_edges => Set{Edge}({add.in1.edge, add.out.edge})
     end
@@ -354,20 +353,6 @@ facts("generateSchedule() and executeSchedule() integration tests") do
         @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
     end
 
-    context("executeSchedule() should accept edges") do
-        (node1, node2, node3) = initializeChainOfNodes()
-        schedule = [node1.out.edge, node2.out.edge]
-        node1.out.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
-        node1.out.partner.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
-        node2.out.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
-        node2.out.partner.message = Message(GaussianDistribution(W=1.0, xi=1.0))
-        executeSchedule(schedule)
-        @fact node1.out.edge.marginal.W => reshape([2.0], 1, 1)
-        @fact node2.out.edge.marginal.W => reshape([2.0], 1, 1)
-        @fact node1.out.edge.marginal.xi => [2.0]
-        @fact node2.out.edge.marginal.xi => [2.0]
-    end
-
     context("executeSchedule() should work as expeced in loopy graphs") do
         (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
         setMessage!(driver.out, Message(GaussianDistribution()))
@@ -396,7 +381,7 @@ facts("generateSchedule() and executeSchedule() integration tests") do
     end
 end
 
-facts("clearMessage!(), clearMessages!(), clearAllMessages!() integration tests") do
+facts("clearMessage!(), clearMessages!() integration tests") do
     (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
     setMessage!(add.in1, Message(GaussianDistribution(m=2.0, V=0.5)))
     setMessage!(add.out, Message(GaussianDistribution()))
@@ -407,13 +392,10 @@ facts("clearMessage!(), clearMessages!(), clearAllMessages!() integration tests"
     clearMessages!(add)
     @fact add.in1.message => nothing
     @fact add.out.message => nothing
-    clearAllMessages!(add)
-    for node in (driver, inhibitor, noise, add)
-        for interface in node.interfaces
-            @fact interface.message => nothing
-        end
-    end
 end
+
+# Vmp test
+include("test_vmp.jl")
 
 try
     # Try to load user-defined extensions tests
