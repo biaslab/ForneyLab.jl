@@ -21,7 +21,21 @@ facts("GaussianNode unit tests") do
     end
 
     context("GaussianNode() should handle fixed mean") do
-        @fact true => false
+        context("GaussianNode with fixed mean should propagate a forward message to y") do
+            validateOutboundMessage(GaussianNode(m=2.0), 
+                                    2, 
+                                    GaussianDistribution, 
+                                    [Message(InverseGammaDistribution(a=3.0, b=1.0)), nothing],
+                                    GaussianDistribution(m=2.0, V=0.5))
+        end
+
+        context("GaussianNode with fixed mean should propagate a backward message to the variance") do
+            validateOutboundMessage(GaussianNode(m=2.0), 
+                                    1, 
+                                    InverseGammaDistribution, 
+                                    [nothing, Message(1.0)],
+                                    InverseGammaDistribution(a=-0.5, b=0.5))
+        end
     end
 
     context("Point estimates of y and m, so no approximation is required.") do
