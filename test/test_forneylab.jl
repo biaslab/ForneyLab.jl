@@ -118,7 +118,6 @@ include("distributions/test_gamma.jl")
 include("distributions/test_inverse_gamma.jl")
 include("distributions/test_normal_gamma.jl")
 include("distributions/test_students_t.jl")
-include("nodes/test_clamp.jl")
 include("nodes/test_addition.jl")
 include("nodes/test_terminal.jl")
 include("nodes/test_equality.jl")
@@ -273,103 +272,11 @@ facts("Graph leven integration tests") do
     context("factorizeMeanField!() should output a mean field factorized graph") do
         @fact true => false
     end
-end
 
-facts("Factorization integration tests") do
-    context("factorizeMeanField should return a valid mean field factorization") do
-        # Starting from first observation
-        for chain_length = [1, 5]
-            (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges, factorization) = initializeGaussianNodeChain(ones(chain_length), false)
-            @fact [haskey(factorization, edge) for edge in q_m_edges] => falses(length(q_m_edges))
-            @fact [haskey(factorization, edge) for edge in q_gam_edges] => falses(length(q_gam_edges))
-            @fact [haskey(factorization, edge) for edge in q_y_edges] => falses(length(q_y_edges))
-            @fact [[haskey(factorization, node.interfaces[1].edge) for node in m_eq_nodes], haskey(factorization, m_eq_nodes[end].interfaces[2].edge)] => falses(length(m_eq_nodes)+1)
-            @fact [[haskey(factorization, node.interfaces[1].edge) for node in gam_eq_nodes], haskey(factorization, gam_eq_nodes[end].interfaces[2].edge)] => falses(length(gam_eq_nodes)+1)
-            factorization = factorizeMeanField(y_nodes[1])
-            @fact typeof(factorization) => Factorization
-            if chain_length == 1
-                @fact [factorization[edge] for edge in q_m_edges] => [3]
-                @fact [factorization[edge] for edge in q_gam_edges] => [2]
-                @fact [factorization[edge] for edge in q_y_edges] => [1]
-                @fact [[factorization[node.interfaces[1].edge] for node in m_eq_nodes], factorization[m_eq_nodes[end].interfaces[2].edge]] => [3, 3]
-                @fact [[factorization[node.interfaces[1].edge] for node in gam_eq_nodes], factorization[gam_eq_nodes[end].interfaces[2].edge]] => [2, 2]        
-            elseif chain_length == 5
-                @fact [factorization[edge] for edge in q_m_edges] => [8, 8, 8, 8, 8]
-                @fact [factorization[edge] for edge in q_gam_edges] => [2, 2, 2, 2, 2]
-                @fact [factorization[edge] for edge in q_y_edges] => [1, 4, 5, 6, 7]
-                @fact [[factorization[node.interfaces[1].edge] for node in m_eq_nodes], factorization[m_eq_nodes[end].interfaces[2].edge]] => [8, 8, 8, 8, 8, 8]
-                @fact [[factorization[node.interfaces[1].edge] for node in gam_eq_nodes], factorization[gam_eq_nodes[end].interfaces[2].edge]] => [2, 2, 2, 2, 2, 2]        
-            else
-                @fact true => false # Fail
-            end
-        end
-
-        # Starting from m prior
-        for chain_length = [1, 5]
-            (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges, factorization) = initializeGaussianNodeChain(ones(chain_length), false)
-            @fact [haskey(factorization, edge) for edge in q_m_edges] => falses(length(q_m_edges))
-            @fact [haskey(factorization, edge) for edge in q_gam_edges] => falses(length(q_gam_edges))
-            @fact [haskey(factorization, edge) for edge in q_y_edges] => falses(length(q_y_edges))
-            @fact [[haskey(factorization, node.interfaces[1].edge) for node in m_eq_nodes], haskey(factorization, m_eq_nodes[end].interfaces[2].edge)] => falses(length(m_eq_nodes)+1)
-            @fact [[haskey(factorization, node.interfaces[1].edge) for node in gam_eq_nodes], haskey(factorization, gam_eq_nodes[end].interfaces[2].edge)] => falses(length(gam_eq_nodes)+1)
-            factorization = factorizeMeanField(m_eq_nodes[1].interfaces[1].partner.node)
-            @fact typeof(factorization) => Factorization
-            if chain_length == 1
-                @fact [factorization[edge] for edge in q_m_edges] => [1]
-                @fact [factorization[edge] for edge in q_gam_edges] => [2]
-                @fact [factorization[edge] for edge in q_y_edges] => [3]
-                @fact [[factorization[node.interfaces[1].edge] for node in m_eq_nodes], factorization[m_eq_nodes[end].interfaces[2].edge]] => [1, 1]
-                @fact [[factorization[node.interfaces[1].edge] for node in gam_eq_nodes], factorization[gam_eq_nodes[end].interfaces[2].edge]] => [2, 2]        
-            elseif chain_length == 5
-                @fact [factorization[edge] for edge in q_m_edges] => [1, 1, 1, 1, 1]
-                @fact [factorization[edge] for edge in q_gam_edges] => [2, 2, 2, 2, 2]
-                @fact [factorization[edge] for edge in q_y_edges] => [3, 4, 5, 6, 7]
-                @fact [[factorization[node.interfaces[1].edge] for node in m_eq_nodes], factorization[m_eq_nodes[end].interfaces[2].edge]] => [1, 1, 1, 1, 1, 1]
-                @fact [[factorization[node.interfaces[1].edge] for node in gam_eq_nodes], factorization[gam_eq_nodes[end].interfaces[2].edge]] => [2, 2, 2, 2, 2, 2]        
-            else
-                @fact true => false # Fail
-            end
-        end
-    end
-
-    context("getLocalFactorization() should return a node's local factorization") do
-        (node, edges) = initializeGaussianNode()
-        factorization = [edges[1]=>1, edges[2]=>1, edges[3]=>2] # Structured
-        @fact getLocalFactorization(node, factorization) => [1, 1, 2]
-        factorization = [edges[1]=>1, edges[2]=>2, edges[3]=>3] # Mean field
-        @fact getLocalFactorization(node, factorization) => [1, 2, 3]
-    end
-
-    context("pushRequiredInbound!() should read a factorization and delegate inbound message/marginal collection") do
-        (node, edges) = initializeGaussianNode()
-
-        validateRequiredInbound(node,
-                                node.interfaces[3],
-                                Factorization(), # No factorization
-                                [Message(GaussianDistribution()), Message(GammaDistribution()), Message(1.0)])
-
-        validateRequiredInbound(node,
-                                node.interfaces[3],
-                                [edges[1]=>1, edges[2]=>1, edges[3]=>1], # All in one subgraph
-                                [Message(GaussianDistribution()), Message(GammaDistribution()), Message(1.0)])
-
-        validateRequiredInbound(node,
-                                node.interfaces[3],
-                                [edges[1]=>1, edges[2]=>2, edges[3]=>3], # Mean field
-                                [GaussianDistribution(), GammaDistribution(), Message(1.0)])
-
-        validateRequiredInbound(node,
-                                node.interfaces[3],
-                                [edges[1]=>1, edges[2]=>2, edges[3]=>2], # Structured out in joint
-                                [GaussianDistribution(), Message(GammaDistribution()), Message(1.0)])
-        
-        validateRequiredInbound(node,
-                                node.interfaces[3],
-                                [edges[1]=>1, edges[2]=>1, edges[3]=>2], # Structured out not in joint
-                                [NormalGammaDistribution(), NormalGammaDistribution(), Message(1.0)])
+    context("pushRequiredInbound!() should add the proper message/marginal") do
+        @fact true => false
     end
 end
-
 
 facts("calculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do

@@ -88,7 +88,6 @@ export GaussianNode
 type GaussianNode <: Node
     name::ASCIIString
     interfaces::Array{Interface,1}
-    marginal::Any
 
     # Helper fields filled by constructor
     mean::Interface
@@ -98,15 +97,15 @@ type GaussianNode <: Node
     # Fixed parameters
     m::Vector{Float64}
 
-    function GaussianNode(variational; name="unnamed", form::ASCIIString="moment", m::Union(Float64,Vector{Float64},Nothing)=nothing)
+    function GaussianNode(; name="unnamed", form::ASCIIString="moment", m::Union(Float64,Vector{Float64},Nothing)=nothing)
         if m != nothing
             # GaussianNode with fixed mean
-            self = new(name, Array(Interface, 2), variational)
+            self = new(name, Array(Interface, 2))
             self.m = (typeof(m)==Float64) ? [m] : deepcopy(m)
             variance_precision_interface_index = 1
         else
             # GaussianNode with variable mean
-            self = new(name, Array(Interface, 3), variational)
+            self = new(name, Array(Interface, 3))
             self.interfaces[1] = Interface(self) # Mean interface
             self.mean = self.interfaces[1]
             variance_precision_interface_index = 2
@@ -264,7 +263,6 @@ function updateNodeMessage!(node::GaussianNode,
                             ::Any,
                             marg_variance::InverseGammaDistribution,
                             marg_out::Float64)
-    # Backward over mean / variational / InverseGamma
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
     #
@@ -297,7 +295,6 @@ function updateNodeMessage!(node::GaussianNode,
                             ::Nothing,
                             marg_precision::GammaDistribution,
                             marg_out::Float64)
-    # Backward over mean / variational / Gamma
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
     #
@@ -330,7 +327,6 @@ function updateNodeMessage!(node::GaussianNode,
                             marg_mean::GaussianDistribution,
                             ::Nothing,
                             marg_out::Float64)
-    # Backward over precision / variational / Gamma
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
     #
@@ -362,7 +358,6 @@ function updateNodeMessage!(node::GaussianNode,
                             marg_mean::GaussianDistribution,
                             ::Nothing,
                             marg_out::Float64)
-    # Backward over variance / variational / InverseGamma
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
     #
@@ -395,7 +390,6 @@ function updateNodeMessage!(node::GaussianNode,
                             marg_var::InverseGammaDistribution,
                             ::Nothing)
     # Forward over out, InverseGamma input
-    # Backward over variance / variational / InverseGamma
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
     #

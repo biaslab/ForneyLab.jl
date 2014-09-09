@@ -223,19 +223,19 @@ function getOrCreateMarginal(edge::Edge, assign_payload::DataType)
     end
     return edge.marginal
 end
-function getOrCreateMarginal(node::Node, assign_payload::DataType)
-    # Looks for a marginal on node.
-    # When no marginal is present, it sets and returns a standard distribution.
-    # Otherwise it returns the present marginal. Used for fast marginal calculations.
-    if node.marginal==nothing
-        if assign_payload <: ProbabilityDistribution 
-            node.marginal = assign_payload()
-        else
-            error("Unknown assign type argument")
-        end
-    end
-    return node.marginal
-end
+# function getOrCreateMarginal(node::Node, assign_payload::DataType)
+#     # Looks for a marginal on node.
+#     # When no marginal is present, it sets and returns a standard distribution.
+#     # Otherwise it returns the present marginal. Used for fast marginal calculations.
+#     if node.marginal==nothing
+#         if assign_payload <: ProbabilityDistribution 
+#             node.marginal = assign_payload()
+#         else
+#             error("Unknown assign type argument")
+#         end
+#     end
+#     return node.marginal
+# end
 
 typealias ExternalSchedule Array{Node, 1}
 function show(io::IO, schedule::ExternalSchedule)
@@ -326,28 +326,29 @@ function factorizeMeanField!(graph::FactorGraph)
     (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
     edges_to_factor = getEdges(getNodes(graph, open_composites=false), include_external=false) # All top-level edges in the factor graph
 
-    while length(edges_to_factor) > 0
-        edge = pop!(edges_to_factor)
+    while length(edges_to_factor) > 0 # As long as there are edges to factor
+        edge = pop!(edges_to_factor) # Pick an edge to factor
+        # Check connection to equality node
         if typeof(edge.head.node)==EqualityNode || typeof(edge.tail.node)==EqualityNode
             # Collect all other edges that are connected to this one through equality nodes
-            edge_cluster = Set{Edge}()
-            connected_edges = Set{Edge}()
-            while length(connected_edges) > 0
-                current_edge = pop!(connected_edges)
-                push!(edge_cluster, current_edge)
-                for node in [edge.head.node, edge.tail.node]
+            edge_cluster = Set{Edge}() # Set to fill with edges in equality cluster
+            connected_edges = Set{Edge}({edge})
+            while length(connected_edges) > 0 # As long as there are unchecked edges connected through eq nodes
+                current_edge = pop!(connected_edges) # Pick one
+                push!(edge_cluster, current_edge) # Add to edge cluster
+                for node in [edge.head.node, edge.tail.node] # Check both head and tail node for EqualityNode
                     if typoef(node) == EqualityNode
                         for interface in node.interfaces
-                            if !is(interface.edge, current_edge) && !(interface.edge in edge_cluster)
-                                push!(connected_edges, interface.edge)
+                            if !is(interface.edge, current_edge) && !(interface.edge in edge_cluster) # Is next level edge not seen yet?
+                                push!(connected_edges, interface.edge) # Add to buffer to visit sometime in the future
                             end
                         end
                     end
                 end
             end
-            # Remove all edges in edge_cluster from edges_to_factor
-            setdiff!(edges_to_factor, edge_cluster)
             factorize!(graph, edge_cluster)
+            # Remove all edges in edge_cluster from edges_to_factor, they have just been added to the same factor
+            setdiff!(edges_to_factor, edge_cluster)
         else
             factorize!(graph, edge)
         end
@@ -386,15 +387,15 @@ function calculateMessage!(outbound_interface::Interface)
 
     # Execute the schedule
     printVerbose("Executing above schedule...")
-    executeSchedule(schedule, factorization)
+    executeSchedule(schedule)
     printVerbose("calculateMessage!() done.")
 
     return outbound_interface.message
 end
 
-function pushRequiredInbound!(inbound_array::Array{Any, 1}, outbound_interface::Interface, subgraph::Subgraph)
+function pushRequiredInbound!(inbound_array::Array{Any, 1}, interface::Interface)
     # TODO: push required inbound to inbound array
-
+    push!(inbound_array, interface.partner.message)
     return inbound_array
 end
 
@@ -424,7 +425,7 @@ function updateNodeMessage!(outbound_interface::Interface)
             end
 
             # Push the required inbound message or edge/node marginal for the inbound interface to inbound_array
-            pushRequiredInbound!(inbound_array, outbound_interface, subgraph)
+            pushRequiredInbound!(inbound_array, interface)
         end
     end
 

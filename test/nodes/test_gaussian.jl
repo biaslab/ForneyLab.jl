@@ -137,13 +137,13 @@ facts("GaussianNode unit tests") do
         end
     end
 
-    context("Marginal calculation for the GaussianNode") do
-        node = GaussianNode(form="precision")
-        m_edge = Edge(MockNode(Message(GaussianDistribution())).out, node.mean)
-        gam_edge = Edge(MockNode(Message(GammaDistribution())).out, node.precision, GammaDistribution)
-        y_edge = Edge(node.out, MockNode(Message(GaussianDistribution(m=0.0, W=10.0))).out)
-        y_edge.marginal = GaussianDistribution(m=0.0, W=10.0)
-        calculateMarginal!(node)
-        @fact node.marginal => NormalGammaDistribution(m=0.0, beta=10000.0, a=1.5, b=21.0/20.0) 
-    end    
+    # context("Marginal calculation for the GaussianNode") do
+    #     node = GaussianNode(form="precision")
+    #     m_edge = Edge(MockNode(Message(GaussianDistribution())).out, node.mean)
+    #     gam_edge = Edge(MockNode(Message(GammaDistribution())).out, node.precision, GammaDistribution)
+    #     y_edge = Edge(node.out, MockNode(Message(GaussianDistribution(m=0.0, W=10.0))).out)
+    #     y_edge.marginal = GaussianDistribution(m=0.0, W=10.0)
+    #     calculateMarginal!(node)
+    #     @fact node.marginal => NormalGammaDistribution(m=0.0, beta=10000.0, a=1.5, b=21.0/20.0) 
+    # end    
 end

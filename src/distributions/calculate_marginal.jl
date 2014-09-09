@@ -110,25 +110,25 @@ end
 # Node (joint) marginal calculations
 ############################
 
-function calculateMarginal!(node::GaussianNode)
-    # (Joint) marginal update function used for VMP
-    # Definitions available in derivations notebook
+# function calculateMarginal!(node::GaussianNode)
+#     # (Joint) marginal update function used for VMP
+#     # Definitions available in derivations notebook
 
-    marg = getOrCreateMarginal(node, NormalGammaDistribution)
+#     marg = getOrCreateMarginal(node, NormalGammaDistribution)
 
-    mu_m = node.mean.partner.message.payload
-    mu_gam = node.precision.partner.message.payload
-    q_y = node.out.edge.marginal
+#     mu_m = node.mean.partner.message.payload
+#     mu_gam = node.precision.partner.message.payload
+#     q_y = node.out.edge.marginal
     
-    ensureMDefined!(mu_m)
-    ensureMWParametrization!(q_y)
+#     ensureMDefined!(mu_m)
+#     ensureMWParametrization!(q_y)
 
-    (length(mu_m.m) == 1 && length(q_y.m) == 1)|| error("Update rule for NormalGammaDistribution marginal only supports univariate distributions.")
+#     (length(mu_m.m) == 1 && length(q_y.m) == 1)|| error("Update rule for NormalGammaDistribution marginal only supports univariate distributions.")
 
-    marg.m = mu_m.m[1]
-    marg.beta = 10000.0 # Big number
-    marg.a = mu_gam.a + 0.5
-    marg.b = (1.0/(2.0*q_y.W[1, 1])) + mu_gam.b
+#     marg.m = mu_m.m[1]
+#     marg.beta = 10000.0 # Big number
+#     marg.a = mu_gam.a + 0.5
+#     marg.b = (1.0/(2.0*q_y.W[1, 1])) + mu_gam.b
 
-    return marg
-end
+#     return marg
+# end
