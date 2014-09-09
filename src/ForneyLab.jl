@@ -293,7 +293,13 @@ function factorize!(graph::FactorGraph, internal_edges::Set{Edge})
     new_subgraph = Subgraph(Set{Node}(), copy(internal_edges), Set{Edge}(), Array(Interface, 0), Array(Node, 0)) # Create subgraph
     graph = getCurrentGraph()
     push!(graph.factorization, new_subgraph) # Add to current graph
-    for subgraph in graph.factorization
+    for (subgraph_index, subgraph) in enumerate(graph.factorization)
+        # Remove empty subgraphs
+        if length(subgraph.internal_edges) == 0
+            splice!(graph.factorization, subgraph_index)
+            continue
+        end
+        # Update the external edges and node list
         conformSubgraph!(subgraph)
     end
     return new_subgraph
@@ -303,7 +309,7 @@ factorize!(internal_edges::Set{Edge}) = factorize!(getCurrentGraph(), internal_e
 function factorizeMeanField!(graph::FactorGraph)
     # Generate a mean field factorization
     (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
-    edges = getEdges(getNodes(graph, open_composites=false), include_external=false)
+    edges = getEdges(getNodes(graph, open_composites=false), include_external=false) # All top-level edges in the factor graph
 
     for edge in edges
         if typeof(edge.head.node)==EqualityNode || typeof(edge.tail.node)==EqualityNode
