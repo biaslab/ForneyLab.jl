@@ -149,7 +149,7 @@ type Edge <: AbstractEdge
         end
 
         # Incorporate edge and nodes in current graph
-        if add_to_graph # Note: edges connected to clamp nodes are added to the subgraph as well
+        if add_to_graph
             graph = getCurrentGraph()
             (length(graph.factorization) == 1) || error("Cannot create Edge in an already factorized graph; first build the graph, then define factorizations.")
             subgraph = graph.factorization[1] # There is only one
@@ -287,7 +287,7 @@ factorize!(internal_edges::Set{Edge}) = factorize(getCurrentGraph(), internal_ed
 function factorizeMeanField!(graph::FactorGraph)
     # Generate a mean field factorization
     (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
-    edges = edges(nodes(graph, include_clamps=true, open_composites=false), include_external=false)
+    edges = edges(nodes(graph, open_composites=false), include_external=false)
 
     for edge in edges
         if typeof(edge.head.node)==EqualityNode || typeof(edge.tail.node)==EqualityNode
@@ -307,6 +307,7 @@ function factorizeMeanField!(graph::FactorGraph)
                     end
                 end
             end
+            factorize!(graph, edge_cluster)
         else
             factorize!(graph, edge)
         end
@@ -318,7 +319,6 @@ factorizeMeanField!() = factorizeMeanField!(getCurrentGraph())
 # Distribution helpers
 include("distributions/helpers.jl")
 # Nodes
-include("nodes/clamp.jl")
 include("nodes/addition.jl")
 include("nodes/terminal.jl")
 include("nodes/equality.jl")
@@ -557,35 +557,21 @@ function addChildNodes!(nodes::Set{Node})
     return nodes
 end
 
-function addClampNodes!(nodes::Set{Node})
-    # Add all clamp nodes to the nodes set
-    for node in nodes
-        for interface in node.interfaces
-            if typeof(interface.partner.node) == ClampNode
-                push!(nodes, interface.partner.node)
-            end
-        end
-    end
-    return nodes
-end
-
-function nodes(subgraph::Subgraph; open_composites::Bool=true, include_clamps=false)
+function nodes(subgraph::Subgraph; open_composites::Bool=true)
     all_nodes = copy(subgraph.nodes)
 
     if open_composites; addChildNodes!(all_nodes); end
-    if include_clamps; addClampNodes!(all_nodes); end
 
     return all_nodes
 end
 
-function nodes(graph::FactorGraph; open_composites::Bool=true, include_clamps=false)
+function nodes(graph::FactorGraph; open_composites::Bool=true)
     all_nodes = Set{Node}()
     for subgraph in graph.factorization
         union!(all_nodes, subgraph.nodes)
     end
 
     if open_composites; addChildNodes!(all_nodes); end
-    if include_clamps; addClampNodes!(all_nodes); end
 
     return all_nodes
 end

@@ -56,31 +56,19 @@ type GaussianNode <: Node
     out::Interface
 
     # TODO: THE VARIATIONAL FLAG SHOULD ONLY BE USED AS A MEANS TO PROPAGATE INFORMATION TO THE INTERFACES
-    function GaussianNode(variational; name="unnamed", form::ASCIIString="moment", args...)
+    function GaussianNode(variational; name="unnamed", form::ASCIIString="moment")
         self = new(name, Array(Interface, 3), variational)
 
-        # Look for fixed parameters
-        args = Dict(zip(args...)...) # Cast args to dictionary
-        # Set m if required
         self.interfaces[1] = Interface(self)
         self.mean = self.interfaces[1]
-        if haskey(args, :m)
-            Edge(ForneyLab.ClampNode(Message(args[:m])).out, self.mean, typeof(args[:m]))
-        end
         # Pick a form for the variance/precision
         self.interfaces[2] = Interface(self)
         if form == "moment"
             # Parameters m, V
             self.variance = self.interfaces[2]
-            if haskey(args, :V)
-                Edge(ForneyLab.ClampNode(Message(args[:V])).out, self.variance, typeof(args[:V]))
-            end
         elseif form == "precision"
             # Parameters m, W
             self.precision = self.interfaces[2]
-            if haskey(args, :W)
-                Edge(ForneyLab.ClampNode(Message(args[:W])).out, self.precision, typeof(args[:W]))
-            end
         elseif form == "canonical"
             error("Canonical form not implemented")
         else

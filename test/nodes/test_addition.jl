@@ -12,21 +12,6 @@ facts("AdditionNode unit tests") do
         @fact node.out => node.interfaces[3]
     end
 
-    context("AdditionNode() should allow parameters to be clamped") do
-        # Fix in1
-        node = AdditionNode(in1=GaussianDistribution())
-        @fact typeof(node.in1.partner.node) => ForneyLab.ClampNode
-        @fact node.in1.partner.message.payload => GaussianDistribution()
-        # Fix in2
-        node = AdditionNode(in2=GaussianDistribution())
-        @fact typeof(node.in2.partner.node) => ForneyLab.ClampNode
-        @fact node.in2.partner.message.payload => GaussianDistribution()
-        # Fix out
-        node = AdditionNode(out=GaussianDistribution())
-        @fact typeof(node.out.partner.node) => ForneyLab.ClampNode
-        @fact node.out.partner.message.payload => GaussianDistribution()
-    end
-
     context("AdditionNode should add two Floats") do
         # Forward message
         validateOutboundMessage(AdditionNode(), 

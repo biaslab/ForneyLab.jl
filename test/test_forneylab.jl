@@ -24,7 +24,7 @@ end
 
 facts("General node properties unit tests") do
     for node_type in [subtypes(Node), subtypes(CompositeNode)]
-        if node_type!=CompositeNode && node_type!=MockNode && node_type!=ForneyLab.ClampNode
+        if node_type!=CompositeNode && node_type!=MockNode
             context("$(node_type) properties should include interfaces and name") do
                 @fact typeof(node_type().interfaces) => Array{Interface, 1} # Check for interface array
                 @fact length(node_type().interfaces) >= 1 => true # Check length of interface array
@@ -108,7 +108,6 @@ end
 include("distributions/test_gaussian.jl")
 include("distributions/test_gamma.jl")
 include("distributions/test_inverse_gamma.jl")
-include("nodes/test_clamp.jl")
 include("nodes/test_addition.jl")
 include("nodes/test_terminal.jl")
 include("nodes/test_equality.jl")
@@ -213,10 +212,6 @@ facts("nodes() integration tests") do
     end
 
     context("addChildNodes!() should add composite node's child nodes to the node array") do
-        @fact true => false
-    end
-
-    context("addClampNodes! should add clamp nodes to the node array") do
         @fact true => false
     end
 end
