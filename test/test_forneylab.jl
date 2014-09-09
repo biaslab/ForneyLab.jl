@@ -112,32 +112,6 @@ facts("Graph level unit tests") do
         setCurrentGraph(my_first_graph)
         @fact my_first_graph == current_graph => true
     end
-
-    context("conformSubGraph!() should complete a subgraph with nodes and external edges based in its internal edges") do
-        my_graph = FactorGraph()
-        # On empty subgraph
-        my_subgraph = my_graph.factorization[1]
-        @fact length(my_subgraph.internal_edges) => 0
-        ForneyLab.conformSubgraph!(my_subgraph)
-        @fact length(my_subgraph.nodes) => 0
-        @fact length(my_subgraph.external_edges) => 0
-        # Initialize a subgraph
-        node1 = MockNode()
-        node2 = MockNode(2)
-        node3 = MockNode() 
-        edge1 = Edge(node1.out, node2.interfaces[1])
-        edge2 = Edge(node2.interfaces[2], node3.out)
-        @fact length(my_subgraph.internal_edges) => 2
-        ForneyLab.conformSubgraph!(my_subgraph)
-        @fact length(my_subgraph.nodes) => 3
-        @fact length(my_subgraph.external_edges) => 0
-        # Subgraph with external edges
-        new_subgraph = Subgraph(Set{Node}(), Set{Edge}({edge2}), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
-        @fact length(new_subgraph.internal_edges) => 1
-        ForneyLab.conformSubgraph!(new_subgraph)
-        @fact length(new_subgraph.nodes) => 2
-        @fact length(new_subgraph.external_edges) => 1
-    end
 end
 
 # Node and message specific tests are in separate files
@@ -231,23 +205,72 @@ facts("Connections between nodes integration tests") do
 
 end
 
-facts("nodes() integration tests") do
-    context("nodes() should return an array of all nodes in the graph") do
+facts("Graph leven integration tests") do
+    context("getNodes() should return an array of all nodes in the graph") do
         nodes = initializeLoopyGraph()
-        found_nodes = nodes(getCurrentGraph())
+        found_nodes = getNodes(getCurrentGraph())
         @fact length(found_nodes) => length(nodes) # FactorGraph test
         for node in nodes
             @fact node in found_nodes => true
         end
 
-        found_nodes = nodes(getCurrentGraph().factorization[1]) # Subgraph test
+        found_nodes = getNodes(getCurrentGraph().factorization[1]) # Subgraph test
         @fact length(found_nodes) => length(nodes)
         for node in nodes
             @fact node in found_nodes => true
         end
     end
 
+    context("getEdges() should get all edges internal (optionally external as well) to the argument node set") do
+        nodes = initializeLoopyGraph()
+        @fact getEdges(Set{Node}({nodes[1], nodes[2]}), include_external=false) => Set{Edge}({nodes[1].in1.edge})
+        @fact getEdges(Set{Node}({nodes[1], nodes[2]})) => Set{Edge}({nodes[1].in1.edge, nodes[4].in1.edge, nodes[4].out.edge})
+    end
+
+    context("conformSubGraph!() should complete a subgraph with nodes and external edges based in its internal edges") do
+        my_graph = FactorGraph()
+        # On empty subgraph
+        my_subgraph = my_graph.factorization[1]
+        @fact length(my_subgraph.internal_edges) => 0
+        ForneyLab.conformSubgraph!(my_subgraph)
+        @fact length(my_subgraph.nodes) => 0
+        @fact length(my_subgraph.external_edges) => 0
+        # Initialize a subgraph
+        node1 = MockNode()
+        node2 = MockNode(2)
+        node3 = MockNode() 
+        edge1 = Edge(node1.out, node2.interfaces[1])
+        edge2 = Edge(node2.interfaces[2], node3.out)
+        @fact length(my_subgraph.internal_edges) => 2
+        ForneyLab.conformSubgraph!(my_subgraph)
+        @fact length(my_subgraph.nodes) => 3
+        @fact length(my_subgraph.external_edges) => 0
+        # Subgraph with external edges
+        new_subgraph = Subgraph(Set{Node}(), Set{Edge}({edge2}), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
+        @fact length(new_subgraph.internal_edges) => 1
+        ForneyLab.conformSubgraph!(new_subgraph)
+        @fact length(new_subgraph.nodes) => 2
+        @fact length(new_subgraph.external_edges) => 1
+    end
+
     context("addChildNodes!() should add composite node's child nodes to the node array") do
+        node = initializeGainEqualityCompositeNode(eye(1), false, [Message(GaussianDistribution()), Message(GaussianDistribution()), nothing])
+        @fact ForneyLab.addChildNodes!(Set{Node}({node})) => Set{Node}({node, node.equality_node, node.fixed_gain_node})
+    end
+
+    context("factorize!() should include argument edges in a new subgraph") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph()
+        factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+        graph = getCurrentGraph()
+        @fact graph.factorization[1].nodes => Set{Node}({driver, inhibitor, noise, add})
+        @fact graph.factorization[1].internal_edges => Set{Edge}({add.out.edge, add.in1.edge, add.in2.edge})
+        @fact graph.factorization[1].external_edges => Set{Edge}({inhibitor.out.edge})
+        @fact graph.factorization[2].nodes => Set{Node}({driver, inhibitor, noise, add})
+        @fact graph.factorization[2].internal_edges => Set{Edge}({inhibitor.out.edge})
+        @fact graph.factorization[2].external_edges => Set{Edge}({add.in1.edge, add.out.edge})
+    end
+
+    context("factorizeMeanField!() should output a mean field factorized graph") do
         @fact true => false
     end
 end

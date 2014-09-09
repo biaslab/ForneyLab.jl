@@ -4,7 +4,7 @@ export  Message, Node, CompositeNode, Interface, Schedule, Edge, ExternalSchedul
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!,
-        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, getNodes, getEdges
+        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, getNodes, getEdges, factorize!
 export  ==
 export  current_graph
 
@@ -290,12 +290,15 @@ function factorize!(graph::FactorGraph, internal_edges::Set{Edge})
     for subgraph in graph.factorization
         setdiff!(subgraph.internal_edges, internal_edges) # Remove edges from existing subgraph
     end
-    new_subgraph = Subgraph(Set{Node}(), copy(internal_edges), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
-    conformSubgraph!(new_subgraph)
-
+    new_subgraph = Subgraph(Set{Node}(), copy(internal_edges), Set{Edge}(), Array(Interface, 0), Array(Node, 0)) # Create subgraph
+    graph = getCurrentGraph()
+    push!(graph.factorization, new_subgraph) # Add to current graph
+    for subgraph in graph.factorization
+        conformSubgraph!(subgraph)
+    end
     return new_subgraph
 end
-factorize!(internal_edges::Set{Edge}) = factorize(getCurrentGraph(), internal_edges)
+factorize!(internal_edges::Set{Edge}) = factorize!(getCurrentGraph(), internal_edges)
 
 function factorizeMeanField!(graph::FactorGraph)
     # Generate a mean field factorization
