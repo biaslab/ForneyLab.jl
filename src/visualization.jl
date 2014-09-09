@@ -14,8 +14,6 @@ function graph2dot(nodes::Array{Node,1})
     for node in nodes
         if typeof(node)==TerminalNode
             dot *= "\t$(object_id(node)) [label=\"$(node.name)\", style=filled, width=0.75, height=0.75]\n"
-        elseif typeof(node)==ClampNode
-            dot *= "\t$(object_id(node)) [label=\"\", shape=point,  width=0.15, height=0.15]\n"
         else
             if haskey(node_type_symbols, typeof(node))
                 dot *= "\t$(object_id(node)) [label=\"$(node_type_symbols[typeof(node)])\\n$(node.name)\"]\n"
@@ -53,9 +51,9 @@ function graph2dot(composite_node::CompositeNode)
 
     return graph2dot(nodes)
 end
-graph2dot(graph::FactorGraph) = graph2dot(nodes(graph, open_composites=false, include_clamps=true))
+graph2dot(graph::FactorGraph) = graph2dot(nodes(graph, open_composites=false))
 graph2dot() = graph2dot(getCurrentGraph())
-graph2dot(subgraph::Subgraph) = graph2dot(nodes(subgraph, open_composites=false, include_clamps=true))
+graph2dot(subgraph::Subgraph) = graph2dot(nodes(subgraph, open_composites=false))
 
 function graphViz(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1}); external_viewer::Bool=false)
     # Generates a DOT graph and shows it
