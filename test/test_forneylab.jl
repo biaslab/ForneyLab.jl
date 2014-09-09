@@ -274,8 +274,25 @@ facts("Graph level integration tests") do
         (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
         graph = getCurrentGraph()
         factorizeMeanField!(graph)
-        println([length(sg.internal_edges) for sg in graph.factorization])
-        @fact true => false
+        gam_set = Set{Edge}()
+        for gam_eq_node in gam_eq_nodes
+            for interface in gam_eq_node.interfaces
+                push!(gam_set, interface.edge)
+            end
+        end
+        m_set = Set{Edge}()
+        for m_eq_node in m_eq_nodes
+            for interface in m_eq_node.interfaces
+                push!(m_set, interface.edge)
+            end
+        end
+        factorized_internal_edges = [sg.internal_edges for sg in graph.factorization]
+        
+        @fact m_set in factorized_internal_edges => true
+        @fact gam_set in factorized_internal_edges => true
+        @fact Set{Edge}({q_y_edges[1]}) in factorized_internal_edges => true
+        @fact Set{Edge}({q_y_edges[1]}) in factorized_internal_edges => true
+        @fact Set{Edge}({q_y_edges[1]}) in factorized_internal_edges => true
     end
 
     context("pushRequiredInbound!() should add the proper message/marginal") do
