@@ -10,7 +10,7 @@ export  current_graph
 
 # Verbosity
 verbose = false
-setVerbose(verbose_mode=true) = global verbose=verbose_mode
+setVerbose(verbose_mode=true) = global verbose = verbose_mode
 printVerbose(msg) = if verbose println(msg) end
 
 # ForneyLab Helpers
@@ -25,7 +25,7 @@ abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a M
 typealias MessagePayload Union(ProbabilityDistribution, Number, Vector, Matrix)
 abstract Node
 show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
-show(io::IO, nodes::Array{Node, 1}) = [show(io, node) for node in nodes]
+show(io::IO, nodes::Union(Set{Node}, Vector{Node})) = [show(io, node) for node in nodes]
 abstract CompositeNode <: Node
 
 # Distributions
@@ -92,7 +92,7 @@ end
 typealias Schedule Array{Interface, 1}
 function show(io::IO, schedule::Schedule)
     # Show schedules in a specific way
-    println(io, "Message passing schedule:")
+    println(io, "Message passing schedule [{node type} {node name}:{outbound iface index} ({outbound iface name})]:")
     for interface in schedule
         interface_name = (getName(interface)!="") ? "($(getName(interface)))" : ""
         println(io, " $(typeof(interface.node)) $(interface.node.name):$(findfirst(interface.node.interfaces, interface)) $(interface_name)")
