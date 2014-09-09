@@ -281,7 +281,7 @@ function initializeGaussianNode()
     return (node, edges)
 end
 
-function initializeGaussianNodeChain(y::Array{Float64, 1}, factorize::Bool=true)
+function initializeGaussianNodeChain(y::Array{Float64, 1})
     # Set up a chain of Gaussian nodes for mean-precision estimation
     #
     #     [gam_0]-------->[=]---------->[=]---->    -->[gam_N]
@@ -296,7 +296,6 @@ function initializeGaussianNodeChain(y::Array{Float64, 1}, factorize::Bool=true)
     FactorGraph()
     # Initial settings
     n_samples = length(y) # Number of observed samples
-    factorization = Factorization()
 
     # Pre-assign arrays for later reference
     g_nodes = Array(GaussianNode, n_samples)
@@ -325,13 +324,8 @@ function initializeGaussianNodeChain(y::Array{Float64, 1}, factorize::Bool=true)
         setMarginal!(q_m_edges[section], uninformative(GaussianDistribution))
         setMarginal!(q_y_edges[section], uninformative(Float64))
         if section > 1 # Connect sections
-            if factorize
-                merge!(factorization, [Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1])=>1])
-                merge!(factorization, [Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)=>2])
-            else
             Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1])
             Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)
-            end
         end
     end
     # Attach beginning and end nodes
@@ -339,22 +333,12 @@ function initializeGaussianNodeChain(y::Array{Float64, 1}, factorize::Bool=true)
     gam_0 = TerminalNode(GammaDistribution(a=0.01, b=0.01)) # Prior
     m_N = TerminalNode(uninformative(GaussianDistribution)) # Neutral 'one' message
     gam_N = TerminalNode(uninformative(GammaDistribution)) # Neutral 'one' message
-    if factorize
-        merge!(factorization, [Edge(m_0.out, m_eq_nodes[1].interfaces[1])=>1])
-        merge!(factorization, [Edge(gam_0.out, gam_eq_nodes[1].interfaces[1], GammaDistribution)=>2])
-        merge!(factorization, [Edge(m_eq_nodes[end].interfaces[2], m_N.out)=>1])
-        merge!(factorization, [Edge(gam_eq_nodes[end].interfaces[2], gam_N.out, GammaDistribution)=>2])
-        merge!(factorization, [edge=>1 for edge in q_m_edges])
-        merge!(factorization, [edge=>2 for edge in q_gam_edges])
-        merge!(factorization, [edge=>3 for edge in q_y_edges])
-    else
-        Edge(m_0.out, m_eq_nodes[1].interfaces[1])
-        Edge(gam_0.out, gam_eq_nodes[1].interfaces[1], GammaDistribution)
-        Edge(m_eq_nodes[end].interfaces[2], m_N.out)
-        Edge(gam_eq_nodes[end].interfaces[2], gam_N.out, GammaDistribution)
-    end
+    Edge(m_0.out, m_eq_nodes[1].interfaces[1])
+    Edge(gam_0.out, gam_eq_nodes[1].interfaces[1], GammaDistribution)
+    Edge(m_eq_nodes[end].interfaces[2], m_N.out)
+    Edge(gam_eq_nodes[end].interfaces[2], gam_N.out, GammaDistribution)
 
-    return (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges, factorization)
+    return (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges)
 end
 
 function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
@@ -392,9 +376,9 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     m_N_eq_edge = Edge(m_eq_node.interfaces[2], m_N_node.out, GaussianDistribution)
     gam_N_eq_edge = Edge(gam_eq_node.interfaces[2], gam_N_node.out, GammaDistribution)
 
-    factorization = [y_edge=>2, m_edge=>1, gam_edge=>1, m_0_eq_edge=>1, gam_0_eq_edge=>1, m_N_eq_edge=>1, gam_N_eq_edge=>1]
+    #factorization = [y_edge=>2, m_edge=>1, gam_edge=>1, m_0_eq_edge=>1, gam_0_eq_edge=>1, m_N_eq_edge=>1, gam_N_eq_edge=>1]
 
-    return (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge, factorization)
+    return (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge)
 end
 
 function initializeLinearCompositeNodeChain(x::Array{Float64, 1}, y::Array{Float64, 1})
@@ -418,8 +402,6 @@ function initializeLinearCompositeNodeChain(x::Array{Float64, 1}, y::Array{Float
     # prepare samples
     length(x) == length(y) || error("x and y must have same length")
     n_samples = length(y)
-
-    factorization = Factorization()
 
     # Pre-assign arrays for later reference
     lin_nodes = Array(LinearCompositeNode, n_samples)
@@ -463,9 +445,9 @@ function initializeLinearCompositeNodeChain(x::Array{Float64, 1}, y::Array{Float
         setMarginal!(y_edges[section], GaussianDistribution(m = y[section], W = 10000.0))
 
         if section > 1 # Connect sections
-            merge!(factorization, [Edge(a_eq_nodes[section-1].interfaces[2], a_eq_nodes[section].interfaces[1])=>2])
-            merge!(factorization, [Edge(b_eq_nodes[section-1].interfaces[2], b_eq_nodes[section].interfaces[1])=>3])
-            merge!(factorization, [Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)=>4])
+            Edge(a_eq_nodes[section-1].interfaces[2], a_eq_nodes[section].interfaces[1])
+            Edge(b_eq_nodes[section-1].interfaces[2], b_eq_nodes[section].interfaces[1])
+            Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)
         end
     end
     # Attach beginning and end nodes
@@ -476,20 +458,14 @@ function initializeLinearCompositeNodeChain(x::Array{Float64, 1}, y::Array{Float
     C_b = TerminalNode(uninformative(GaussianDistribution))
     C_gam = TerminalNode(uninformative(GammaDistribution))
     # connect
-    merge!(factorization, [Edge(a_0, a_eq_nodes[1].interfaces[1])=>2])
-    merge!(factorization, [Edge(b_0, b_eq_nodes[1].interfaces[1])=>3])
-    merge!(factorization, [Edge(gam_0, gam_eq_nodes[1].interfaces[1], GammaDistribution)=>4])
-    merge!(factorization, [Edge(a_eq_nodes[end].interfaces[2], C_a.out)=>2])
-    merge!(factorization, [Edge(b_eq_nodes[end].interfaces[2], C_b.out)=>3])
-    merge!(factorization, [Edge(gam_eq_nodes[end].interfaces[2], C_gam.out, GammaDistribution)=>4])
+    Edge(a_0, a_eq_nodes[1].interfaces[1])
+    Edge(b_0, b_eq_nodes[1].interfaces[1])
+    Edge(gam_0, gam_eq_nodes[1].interfaces[1], GammaDistribution)
+    Edge(a_eq_nodes[end].interfaces[2], C_a.out)
+    Edge(b_eq_nodes[end].interfaces[2], C_b.out)
+    Edge(gam_eq_nodes[end].interfaces[2], C_gam.out, GammaDistribution)
 
-    merge!(factorization, [edge=>2 for edge in a_eq_edges])
-    merge!(factorization, [edge=>3 for edge in b_eq_edges])
-    merge!(factorization, [edge=>4 for edge in gam_eq_edges])
-    merge!(factorization, [edge=>1 for edge in x_edges])
-    merge!(factorization, [edge=>5 for edge in y_edges])
-
-    return(lin_nodes, a_eq_nodes, b_eq_nodes, gam_eq_nodes, a_eq_edges, b_eq_edges, gam_eq_edges, x_edges, y_edges, factorization)
+    return(lin_nodes, a_eq_nodes, b_eq_nodes, gam_eq_nodes, a_eq_edges, b_eq_edges, gam_eq_edges, x_edges, y_edges)
 end
 
 #############
@@ -517,15 +493,4 @@ function validateOutboundMessage(node::Node, outbound_interface_id::Int, outboun
     @fact node.interfaces[outbound_interface_id].message.payload => correct_outbound_value
 
     return node.interfaces[outbound_interface_id].message
-end
-
-function validateRequiredInbound(node::Node, outbound_interface::Interface, local_factorization::Factorization, expected::Any)
-    inbound_array = Array(Any, 0)
-    joint_set_subgraph_id = duplicated(collect(values(local_factorization)))
-    for inbound_interface = node.interfaces
-        ForneyLab.pushRequiredInbound!(inbound_array, node, local_factorization, joint_set_subgraph_id, inbound_interface, outbound_interface)
-    end
-    @fact inbound_array => expected
-    
-    return inbound_array
 end

@@ -337,7 +337,7 @@ function factorizeMeanField!(graph::FactorGraph)
                 current_edge = pop!(connected_edges) # Pick one
                 push!(edge_cluster, current_edge) # Add to edge cluster
                 for node in [edge.head.node, edge.tail.node] # Check both head and tail node for EqualityNode
-                    if typoef(node) == EqualityNode
+                    if typeof(node) == EqualityNode
                         for interface in node.interfaces
                             if !is(interface.edge, current_edge) && !(interface.edge in edge_cluster) # Is next level edge not seen yet?
                                 push!(connected_edges, interface.edge) # Add to buffer to visit sometime in the future
@@ -350,7 +350,7 @@ function factorizeMeanField!(graph::FactorGraph)
             # Remove all edges in edge_cluster from edges_to_factor, they have just been added to the same factor
             setdiff!(edges_to_factor, edge_cluster)
         else
-            factorize!(graph, edge)
+            factorize!(graph, Set{Edge}({edge}))
         end
     end
     return graph

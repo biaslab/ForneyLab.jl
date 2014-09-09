@@ -204,7 +204,7 @@ facts("Connections between nodes integration tests") do
 
 end
 
-facts("Graph leven integration tests") do
+facts("Graph level integration tests") do
     context("getNodes() should return an array of all nodes in the graph") do
         nodes = initializeLoopyGraph()
         found_nodes = getNodes(getCurrentGraph())
@@ -270,6 +270,11 @@ facts("Graph leven integration tests") do
     end
 
     context("factorizeMeanField!() should output a mean field factorized graph") do
+        data = [1.0, 1.0, 1.0]
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
+        graph = getCurrentGraph()
+        factorizeMeanField!(graph)
+        println([length(sg.internal_edges) for sg in graph.factorization])
         @fact true => false
     end
 
