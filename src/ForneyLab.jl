@@ -244,7 +244,6 @@ type Subgraph
     internal_schedule::Schedule # Schedule for internal message passing (Dauwels step 2)
     external_schedule::ExternalSchedule # Schedule for updates on nodes connected to external edges (Dauwels step 3)
 end
-Subgraph() = Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
 
 type FactorGraph
     factorization::Array{Subgraph, 1} # References to subgraphs
@@ -259,11 +258,17 @@ function show(io::IO, factor_graph::FactorGraph)
 end
 
 # Get and set current graph functions
-global current_graph = FactorGraph([Subgraph()], Dict{(Node, Subgraph), MessagePayload}()) # Initialize a current_graph
+global current_graph = FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], Dict{(Node, Subgraph), MessagePayload}()) # Initialize a current_graph
 getCurrentGraph() = current_graph::FactorGraph
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
-FactorGraph() = setCurrentGraph(FactorGraph([Subgraph()], Dict{(Node, Subgraph), MessagePayload}())) # Initialize a new factor graph; automatically sets current_graph
+FactorGraph() = setCurrentGraph(FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], Dict{(Node, Subgraph), MessagePayload}())) # Initialize a new factor graph; automatically sets current_graph
+function Subgraph() # Construct and add to current graph
+    subgraph = Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
+    graph = getCurrentGraph()
+    push!(graph.factorization, subgraph)
+    return subgraph
+end
 
 function conformSubgraph!(subgraph::Subgraph)
     # Updates external edges and nodes field based on internal edges
