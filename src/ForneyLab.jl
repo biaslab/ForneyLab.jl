@@ -1,11 +1,12 @@
 module ForneyLab
 
-export  Message, Node, CompositeNode, Interface, Schedule, Edge, MarginalSchedule, Message, MessagePayload, ProbabilityDistribution, Factorization
+export  Message, Node, CompositeNode, Interface, Schedule, Edge, ExternalSchedule, Message, MessagePayload, ProbabilityDistribution, FactorGraph, Factorization, Subgraph
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
-        getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!, clearAllMessages!,
-        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getLocalFactorization, factorizeMeanField
+        getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!,
+        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, nodes, edges, factorizeMeanField
 export  ==
+export  current_graph
 
 # Verbosity
 verbose = false
@@ -24,6 +25,7 @@ abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a M
 typealias MessagePayload Union(ProbabilityDistribution, Number, Vector, Matrix)
 abstract Node
 show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
+show(io::IO, nodes::Array{Node, 1}) = [show(io, node) for node in nodes]
 abstract CompositeNode <: Node
 
 # Distributions
@@ -109,7 +111,7 @@ type Edge <: AbstractEdge
     head::Interface
     marginal::Any
 
-    function Edge(tail::Interface, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType)
+    function Edge(tail::Interface, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType; add_to_graph::Bool=true)
         (forward_message_payload_type <: MessagePayload) || error("Forward message payload type $(forward_message_payload_type) not supported")
         (backward_message_payload_type <: MessagePayload) || error("Backward message payload type $(backward_message_payload_type) not supported")
         if tail.message != nothing && (typeof(tail.message.payload) != forward_message_payload_type)
@@ -148,31 +150,41 @@ type Edge <: AbstractEdge
             child_interface = child_interface.child
         end
 
+        # Incorporate edge and nodes in current graph
+        if add_to_graph # Note: edges connected to clamp nodes are added to the subgraph as well
+            graph = getCurrentGraph()
+            (length(graph.factorization) == 1) || error("Cannot create Edge in an already factorized graph; first build the graph, then define factorizations.")
+            subgraph = graph.factorization[1] # There is only one
+            push!(subgraph.internal_edges, self) # Define edge as internal
+            push!(subgraph.nodes, tail.node) # Add node to subgraph
+            push!(subgraph.nodes, head.node)
+        end
+
         return self
     end
 end
-Edge(tail::Interface, head::Interface, message_payload_type::DataType) = Edge(tail, head, message_payload_type, message_payload_type)
-function Edge(tail::Interface, head::Interface)
+Edge(tail::Interface, head::Interface, message_payload_type::DataType; args...) = Edge(tail, head, message_payload_type, message_payload_type; args...)
+function Edge(tail::Interface, head::Interface; args...)
     forward_message_payload_type = backward_message_payload_type = GaussianDistribution # Default to Gaussian; we could also do a check whether the nodes accept Gaussians
     (tail.message == nothing) || (forward_message_payload_type = typeof(tail.message.payload))
     (head.message == nothing) || (backward_message_payload_type = typeof(head.message.payload))
-    Edge(tail, head, forward_message_payload_type, backward_message_payload_type)
+    Edge(tail, head, forward_message_payload_type, backward_message_payload_type; args...)
 end
 
 # Edge constructors that accept nodes instead of a specific Interface
 # firstFreeInterface(node) should be overloaded for nodes with interface-invariant node functions
 firstFreeInterface(node::Node) = error("Cannot automatically pick a free interface on non-symmetrical $(typeof(node)) $(node.name)")
-Edge(tail_node::Node, head::Interface) = Edge(firstFreeInterface(tail_node), head)
-Edge(tail_node::Node, head::Interface, message_payload_type::DataType) = Edge(firstFreeInterface(tail_node), head, message_payload_type)
-Edge(tail_node::Node, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType) = Edge(firstFreeInterface(tail_node), head, forward_message_payload_type, backward_message_payload_type)
+Edge(tail_node::Node, head::Interface; args...) = Edge(firstFreeInterface(tail_node), head; args...)
+Edge(tail_node::Node, head::Interface, message_payload_type::DataType; args...) = Edge(firstFreeInterface(tail_node), head, message_payload_type; args...)
+Edge(tail_node::Node, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType; args...) = Edge(firstFreeInterface(tail_node), head, forward_message_payload_type, backward_message_payload_type; args...)
 
-Edge(tail::Interface, head_node::Node) = Edge(tail, firstFreeInterface(head_node))
-Edge(tail::Interface, head_node::Node, message_payload_type::DataType) = Edge(tail, firstFreeInterface(head_node), message_payload_type)
-Edge(tail::Interface, head_node::Node, forward_message_payload_type::DataType, backward_message_payload_type::DataType) = Edge(tail, firstFreeInterface(head_node), forward_message_payload_type, backward_message_payload_type)
+Edge(tail::Interface, head_node::Node; args...) = Edge(tail, firstFreeInterface(head_node); args...)
+Edge(tail::Interface, head_node::Node, message_payload_type::DataType; args...) = Edge(tail, firstFreeInterface(head_node), message_payload_type; args...)
+Edge(tail::Interface, head_node::Node, forward_message_payload_type::DataType, backward_message_payload_type::DataType; args...) = Edge(tail, firstFreeInterface(head_node), forward_message_payload_type, backward_message_payload_type; args...)
 
-Edge(tail_node::Node, head_node::Node) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node))
-Edge(tail_node::Node, head_node::Node, message_payload_type::DataType) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), message_payload_type)
-Edge(tail_node::Node, head_node::Node, forward_message_payload_type::DataType, backward_message_payload_type::DataType) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), forward_message_payload_type, backward_message_payload_type)
+Edge(tail_node::Node, head_node::Node; args...) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node); args...)
+Edge(tail_node::Node, head_node::Node, message_payload_type::DataType; args...) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), message_payload_type; args...)
+Edge(tail_node::Node, head_node::Node, forward_message_payload_type::DataType, backward_message_payload_type::DataType; args...) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), forward_message_payload_type, backward_message_payload_type; args...)
 
 function show(io::IO, edge::Edge)
     println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name):$(findfirst(edge.tail.node.interfaces, edge.tail)) to $(typeof(edge.head.node)) $(edge.head.node.name):$(findfirst(edge.head.node.interfaces, edge.head)).")
@@ -225,16 +237,12 @@ function getOrCreateMarginal(node::Node, assign_payload::DataType)
     return node.marginal
 end
 
-typealias MarginalSchedule{T<:Union(Edge, Node)} Array{T, 1}
-function show(io::IO, schedule::MarginalSchedule)
-    # Show marginal update schedule
-    println(io, "Marginal update schedule:")
+typealias ExternalSchedule Array{Node, 1}
+function show(io::IO, schedule::ExternalSchedule)
+     # Show external schedule
+    println(io, "External schedule:")
     for entry in schedule
-        if typeof(entry) == Edge
-            println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.name) to $(typeof(edge.head.node)) $(edge.head.node.name)")
-        else # Node type
-            println(io, "Node $(entry.name) of type $(typeof(entry))")
-        end
+        println(io, "Node $(entry.name) of type $(typeof(entry))")
     end
 end
 
@@ -243,19 +251,84 @@ setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, messa
 getForwardMessage(edge::Edge) = edge.tail.message
 getBackwardMessage(edge::Edge) = edge.head.message
 
-# A Factorization is a dictionary that defines the full factorization for the graph of the approximating (q) distribution.
-# It couples an integer value to an edge, indicating that this edge is an internal edge of the specified subgraph (Dauwels, 2007).
-typealias Factorization Dict{Edge, Int}
-function getLocalFactorization(node::Node, factorization::Factorization)
-    # Returns a list of the subgraph ids for the edges around 'node' that are defined in 'factorization'
-    list = Array(Int64, 0)
-    for interface = node.interfaces
-        if haskey(factorization, interface.edge)
-            push!(list, factorization[interface.edge])
+# FactorGraph and Subgraph types
+type Subgraph
+    nodes::Set{Node}
+    internal_edges::Set{Edge}
+    external_edges::Set{Edge}
+    internal_schedule::Schedule # Schedule for internal message passing (Dauwels step 2)
+    external_schedule::ExternalSchedule # Schedule for updates on nodes connected to external edges (Dauwels step 3)
+end
+Subgraph() = Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
+
+type FactorGraph
+    factorization::Array{Subgraph, 1} # References to subgraphs
+    approximate_marginals::Dict{(Node, Subgraph), MessagePayload} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
+end
+# Get and set current graph functions
+global current_graph = FactorGraph([Subgraph()], Dict{(Node, Subgraph), MessagePayload}()) # Initialize a current_graph
+getCurrentGraph() = current_graph::FactorGraph
+setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
+
+FactorGraph() = setCurrentGraph(FactorGraph([Subgraph()], Dict{(Node, Subgraph), MessagePayload}())) # Initialize a new factor graph; automatically sets current_graph
+
+function conformSubgraph!(subgraph::Subgraph)
+    # Updates external edges and nodes field based on internal edges
+
+    subgraph.nodes = Set{Node}()
+    subgraph.external_edges = Set{Edge}()
+
+    for internal_edge in subgraph.internal_edges # Collect all nodes in the subgraph
+        push!(subgraph.nodes, internal_edge.head.node)
+        push!(subgraph.nodes, internal_edge.tail.node)
+    end
+    subgraph.external_edges = setdiff(edges(subgraph.nodes), subgraph.internal_edges) # External edges are the difference between all edges connected to nodes, and the internal edges
+
+    return subgraph
+end
+
+function factorize!(graph::FactorGraph, internal_edges::Set{Edge})
+    # Add a subgraph containing the edges specified in internal_edges and conform
+    for subgraph in graph.factorization
+        setdiff!(subgraph.internal_edges, internal_edges) # Remove edges from existing subgraph
+    end
+    new_subgraph = Subgraph(Set{Node}(), copy(internal_edges), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
+    conformSubgraph!(new_subgraph)
+
+    return new_subgraph
+end
+factorize!(internal_edges::Set{Edge}) = factorize(getCurrentGraph(), internal_edges)
+
+function factorizeMeanField!(graph::FactorGraph)
+    # Generate a mean field factorization
+    (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
+    edges = edges(nodes(graph, include_clamps=true, open_composites=false), include_external=false)
+
+    for edge in edges
+        if typeof(edge.head.node)==EqualityNode || typeof(edge.tail.node)==EqualityNode
+            # Collect all other edges that are connected to this one through equality nodes
+            edge_cluster = Set{Edge}()
+            connected_edge_buffer = [edge]
+            while length(connected_edge_buffer) > 0
+                current_edge = pop!(connected_edge_buffer)
+                push!(edge_cluster, current_edge)
+                for node in [edge.head.node, edge.tail.node]
+                    if typoef(node) == EqualityNode
+                        for interface in node.interfaces
+                            if !is(interface.edge, current_edge) && !(interface.edge in edge_cluster)
+                                push!(connected_edge_buffer, interface.edge)
+                            end
+                        end
+                    end
+                end
+            end
+        else
+            factorize!(graph, edge)
         end
     end
-    return list
+    return graph
 end
+factorizeMeanField!() = factorizeMeanField!(getCurrentGraph())
 
 # Nodes
 include("nodes/clamp.jl")
@@ -272,64 +345,12 @@ include("nodes/composite/general.jl")
 # Methods for calculating marginals
 include("distributions/calculate_marginal.jl")
 
-function factorizeMeanField(seed_node::TerminalNode)
-    # Returns a mean field factorization starting from a seen node
-
-    global global_counter = 1
-    # Make a start
-    seed_factorization = [seed_node.interfaces[1].edge=>global_counter::Int64]
-    global blocked = Array(Edge, 0)
-    return factorizeMeanField(seed_node.interfaces[1].partner.node, seed_node.interfaces[1].partner, seed_factorization)
-end
-
-function factorizeMeanField(node::Node, stem_interface::Interface, factorization::Factorization=Factorization())
-    # Returns a mean field factorization by recursive DFS with greedy equality nodes
-
-    # Build call list for recursion order
-    # We need to be greedy with the equality nodes, so move them to the front of the line,
-    # so once we enter a clique of equality nodes we stay there unill all are visited
-    call_list = Array(Interface, 0)
-    if typeof(node) == EqualityNode # Are we on an equality node?
-        for interface = node.interfaces
-            if !is(interface, stem_interface) # If not the stem
-                push!(call_list, interface) # Push to call list
-                global blocked = [blocked::Array{Edge, 1}, interface.edge] # Nobody else touch this edge
-            end
-        end
-    else # We are not on an equality node
-        for interface = node.interfaces
-            if !haskey(factorization, interface.edge) && !is(interface, stem_interface) && !(interface.edge in blocked::Array{Edge, 1}) # Skip if stem, already present or will be called in future    
-                if typeof(interface.partner.node) == EqualityNode # Are we going towards an equality node?
-                    call_list = [interface, call_list] # Priority, add to front
-                else
-                    call_list = [call_list, interface] # Add to back
-                end
-            end
-        end
-    end
-
-    # For each interface that is not the stem and not already accounted for,
-    # assign an id, add to the factorization and continue from this interface as stem
-    for interface = call_list
-        if typeof(node) == EqualityNode
-            id = factorization[stem_interface.edge] # Propose id; equality nodes belong to same subgraph
-        else
-            global global_counter = global_counter::Int64 + 1
-            id = global_counter::Int64 # Propose id
-        end 
-
-        merge!(factorization, [interface.edge=>id]) # Append or overwrite
-        factorizeMeanField(interface.partner.node, interface.partner, factorization)
-    end
-
-    return factorization
-end
 
 #############################
 # Generic methods
 #############################
 
-function calculateMessage!(outbound_interface::Interface, factorization::Factorization)
+function calculateMessage!(outbound_interface::Interface)
     # Calculate the outbound message on a specific interface by generating a schedule and executing it.
     # The resulting message is stored in the specified interface and returned.
 
@@ -345,50 +366,17 @@ function calculateMessage!(outbound_interface::Interface, factorization::Factori
 
     return outbound_interface.message
 end
-calculateMessage!(outbound_interface::Interface) = calculateMessage!(outbound_interface, Factorization())
 
-function pushRequiredInbound!(inbound_array::Array{Any, 1},
-                       node::Node,
-                       factorization::Factorization,
-                       joint_set_subgraph_id::Array{Int, 1},
-                       inbound_interface::Interface,
-                       outbound_interface::Interface)
-    # Used by updateNodeMessage(Interface, Factorization)
-    # Uses the graph factorization and local node context to determine the required inbound type.
-    # Depending on the context, the required inbound can be:
-    # - a message from the inbound partner interface,
-    # - a marginal from the inbound edge,
-    # - a marginal from the node.
-
-    # Collect the incoming edges and marginals
-    if !haskey(factorization, inbound_interface.edge)
-        # If inbound_interface.edge is no key in factorization, then take the message from the inbound interface (standard SP)
-        push!(inbound_array, inbound_interface.partner.message)
-    else # Edge is marked as internal edge on a subgraph
-        if factorization[inbound_interface.edge] == factorization[outbound_interface.edge]
-            # If the outbound and the inbound edge are in the same subgraph, take the message from the inbound's partner interface
-            push!(inbound_array, inbound_interface.partner.message)
-        else # The inbound and outbound edges are not in the same subgraph, we need to take a node or edge marginal
-            if factorization[inbound_interface.edge] in joint_set_subgraph_id
-                # The inbound edge is part of a joint factorization, take the node marginal.
-                push!(inbound_array, node.marginal)
-            else # The inbound edge is part of a univariate factorization, take the inbound edge marginal
-                push!(inbound_array, inbound_interface.edge.marginal)
-            end
-        end
-    end
+function pushRequiredInbound!(inbound_array::Array{Any, 1}, outbound_interface::Interface, subgraph::Subgraph)
+    # TODO: push required inbound to inbound array
 
     return inbound_array
 end
 
-function updateNodeMessage!(outbound_interface::Interface, factorization::Factorization)
+function updateNodeMessage!(outbound_interface::Interface)
     # Calculate the outbound message based on the inbound messages and the node update function.
     # The resulting message is stored in the specified interface and is returned.
     node = outbound_interface.node
-
-    local_edge_subgraph_ids = getLocalFactorization(node, factorization) # Subgraph id's for edges around 'node'
-    joint_set_subgraph_id = duplicated(local_edge_subgraph_ids) # Find the id's that are present more than once (these are the joint factorizations)
-    (length(joint_set_subgraph_id) <= 1) || error("There is more than one joint factorization on $(typeof(node)) $(node.name). This is not supported at the moment because a node can only hold one marginal.")
 
     # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
     inbound_array = Array(Any, 0)
@@ -411,7 +399,7 @@ function updateNodeMessage!(outbound_interface::Interface, factorization::Factor
             end
 
             # Push the required inbound message or edge/node marginal for the inbound interface to inbound_array
-            pushRequiredInbound!(inbound_array, node, factorization, joint_set_subgraph_id, interface, outbound_interface)
+            pushRequiredInbound!(inbound_array, outbound_interface, subgraph)
         end
     end
 
@@ -420,33 +408,28 @@ function updateNodeMessage!(outbound_interface::Interface, factorization::Factor
 
     return updateNodeMessage!(node, outbound_interface_id, outbound_interface.message_payload_type, inbound_array...)
 end
-updateNodeMessage!(outbound_interface::Interface) = updateNodeMessage!(outbound_interface, Factorization())
 
-function calculateMessages!(node::Node, factorization::Factorization)
+function calculateMessages!(node::Node)
     # Calculate the outbound messages on all interfaces of node.
     for interface in node.interfaces
-        calculateMessage!(interface, factorization)
+        calculateMessage!(interface)
     end
 end
-calculateMessages!(node::Node) = calculateMessages!(node, Factorization())
 
 # Calculate forward/backward messages on an Edge
-calculateForwardMessage!(edge::Edge, factorization::Factorization) = calculateMessage!(edge.tail, factorization)
-calculateForwardMessage!(edge::Edge) = calculateForwardMessage!(edge, Factorization())
-calculateBackwardMessage!(edge::Edge, factorization::Factorization) = calculateMessage!(edge.head, factorization)
-calculateBackwardMessage!(edge::Edge) = calculateBackwardMessage!(edge, Factorization())
+calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
+calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
-function executeSchedule(schedule::Schedule, factorization::Factorization)
+function executeSchedule(schedule::Schedule)
     # Execute a message passing schedule
     for interface in schedule
-        updateNodeMessage!(interface, factorization)
+        updateNodeMessage!(interface)
     end
     # Return the last message in the schedule
     return schedule[end].message
 end
-executeSchedule(schedule::Schedule) = executeSchedule(schedule, Factorization())
 
-function executeSchedule(schedule::MarginalSchedule)
+function executeSchedule(schedule::ExternalSchedule)
     # Execute a marginal update schedule
     for entry in schedule
         calculateMarginal!(entry)
@@ -494,8 +477,8 @@ function clearMessages!(edge::Edge)
 end
 
 # Functions to clear ALL MESSAGES in the graph
-clearAllMessages!(seed_node::Node) = map(clearMessages!, getAllNodes(seed_node, open_composites=true))
-clearAllMessages!(seed_edge::Edge) = map(clearMessages!, getAllNodes(seed_edge.tail, open_composites=true))
+clearMessages!(graph::FactorGraph) = map(clearMessages!, nodes(graph, open_composites=true))
+clearMessages!() = clearMessages!(getCurrentGraph())
 
 function generateSchedule(outbound_interface::Interface)
     # Generate a schedule that can be executed to calculate the outbound message on outbound_interface.
@@ -565,37 +548,86 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedul
     pop!(call_list)
 
     return push!(backtrace, outbound_interface)
-end
+end   
 
-function getAllNodes(seed_node::Node, node_array::Array{Node,1}=Array(Node,0); open_composites::Bool=true, include_clamps=false)
-    # Return a list of all nodes
-    # If open_composites is false, the search will not pass through composite node boundaries.
-    if include_clamps==false && typeof(seed_node)==ClampNode
-        return node_array
+function addChildNodes!(nodes::Set{Node})
+    # Add all child nodes to the nodes set
+    composite_nodes_stack = Array(CompositeNode, 0) # Composite nodes to open
+    for node in nodes
+        if typeof(node) <: CompositeNode
+            push!(composite_nodes_stack, node)
+        end
     end
-    if !(seed_node in node_array)
-        push!(node_array, seed_node)
-        # Partners
-        for interface in seed_node.interfaces
-            if interface.partner != nothing
-                if interface.partner.partner==interface || open_composites
-                    # Recursion
-                    getAllNodes(interface.partner.node, node_array, open_composites=open_composites, include_clamps=include_clamps)
+    # Open all composite nodes
+    while length(composite_nodes_stack) > 0
+        composite_node = pop!(composite_nodes_stack)
+        for field in names(composite_node)
+            if typeof(getfield(composite_node, field)) <: Node
+                # Add child
+                child_node = getfield(composite_node, field)
+                push!(nodes, child_node)
+                if typeof(child_node) <: CompositeNode
+                    push!(composite_nodes_stack, child_node)
                 end
             end
         end
-        # Children
-        if open_composites && typeof(seed_node)<:CompositeNode
-            for field in names(seed_node)
-                if typeof(getfield(seed_node, field)) <: Node
-                    # Recursion
-                    getAllNodes(getfield(seed_node, field), node_array, open_composites=open_composites, include_clamps=include_clamps)
-                end
+    end
+    return nodes
+end
+
+function addClampNodes!(nodes::Set{Node})
+    # Add all clamp nodes to the nodes set
+    for node in nodes
+        for interface in node.interfaces
+            if typeof(interface.partner.node) == ClampNode
+                push!(nodes, interface.partner.node)
             end
-        end        
+        end
+    end
+    return nodes
+end
+
+function nodes(subgraph::Subgraph; open_composites::Bool=true, include_clamps=false)
+    all_nodes = copy(subgraph.nodes)
+
+    if open_composites; addChildNodes!(all_nodes); end
+    if include_clamps; addClampNodes!(all_nodes); end
+
+    return all_nodes
+end
+
+function nodes(graph::FactorGraph; open_composites::Bool=true, include_clamps=false)
+    all_nodes = Set{Node}()
+    for subgraph in graph.factorization
+        union!(all_nodes, subgraph.nodes)
     end
 
-    return node_array
+    if open_composites; addChildNodes!(all_nodes); end
+    if include_clamps; addClampNodes!(all_nodes); end
+
+    return all_nodes
+end
+nodes(;args...) = nodes(getCurrentGraph(); args...)
+
+function edges(nodes::Array{Node,1}; include_external=true)
+    # Returns the set of edges connected to nodes, including or excluding external edges
+    # An external edge has only head or tail in the interfaces belonging to nodes in the nodes array
+
+    edges = Set()
+    for node in nodes
+        for interface in node.interfaces
+            if include_external
+                if interface.edge!=nothing && ((interface.edge.tail.node in nodes) || (interface.edge.head.node in nodes))
+                    push!(edges, interface.edge)
+                end
+            else
+                if interface.edge!=nothing && (interface.edge.tail.node in nodes) && (interface.edge.head.node in nodes)
+                    push!(edges, interface.edge)
+                end
+            end
+        end
+    end
+    return edges
 end
 
 # Utils

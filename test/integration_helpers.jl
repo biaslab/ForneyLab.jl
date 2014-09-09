@@ -39,7 +39,8 @@ function initializePairOfMockNodes()
     # [M]--|
     #
     # [M]--|
-    
+
+    FactorGraph()
     return MockNode(), MockNode()
 end
 
@@ -50,6 +51,7 @@ function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(2.0), msg_gain_2=Me
     #
     # |--[C]
 
+    FactorGraph()
     node1 = FixedGainNode(A)
     node1.interfaces[1].message = msg_gain_1
     node1.interfaces[2].message = msg_gain_2
@@ -64,6 +66,7 @@ function initializeChainOfNodes()
     #  1     2     3
     # [C]-->[A]-->[B]-|
 
+    FactorGraph()
     node1 = TerminalNode(reshape([3.0], 1, 1))
     node2 = FixedGainNode([2.0])
     node3 = FixedGainNode([2.0])
@@ -82,6 +85,7 @@ function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
     #   ---[B]<--
     #  (inhibitor)
 
+    FactorGraph()
     driver      = FixedGainNode(A, name="driver")
     inhibitor   = FixedGainNode(B, name="inhibitor")
     noise       = TerminalNode(GaussianDistribution(m=noise_m, V=noise_V), name="noise")
@@ -104,6 +108,8 @@ function initializeTreeGraph()
     #                   |
     #                  (c3)
     #
+
+    FactorGraph()
     c1 = TerminalNode(GaussianDistribution())
     c2 = TerminalNode(GaussianDistribution())
     c3 = TerminalNode(GaussianDistribution(m=-2.0, V=3.0))
@@ -125,6 +131,7 @@ function initializeAdditionNode(msgs::Array{Any})
     # [M]-->[+]<--[M]   
     #        |        
 
+    FactorGraph()
     add_node = AdditionNode()
     interface_count = 1
     for msg=msgs
@@ -143,6 +150,7 @@ function initializeEqualityNode(msgs::Array{Any})
     # [M]-->[=]<--[M] (as many incoming edges as length(msgs))  
     #        |        
 
+    FactorGraph()
     eq_node = EqualityNode(length(msgs))
     interface_count = 1
     for msg=msgs
@@ -168,6 +176,7 @@ function initializeTerminalAndGainAddNode()
     # in2| in2 |    |
     #    |    ...   |
 
+    FactorGraph()
     c_node = GainAdditionCompositeNode([1.0], false)
     node = TerminalNode()
     return(c_node, node)
@@ -188,6 +197,7 @@ function initializeGainAdditionCompositeNode(A::Array, use_composite_update_rule
     #[M]-----|->[+]--|---->
     #        |_______|
 
+    FactorGraph()
     gac_node = GainAdditionCompositeNode(A, use_composite_update_rules)
     interface_count = 1
     for msg=msgs
@@ -213,6 +223,7 @@ function initializeTerminalAndGainEqNode()
     # in1| in1 |    |
     #    |    ...   |
 
+    FactorGraph()
     c_node = GainEqualityCompositeNode([1.0], false)
     node = TerminalNode()
     return(c_node, node)
@@ -232,6 +243,7 @@ function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rule
     #             | out
     #             v
 
+    FactorGraph()
     gec_node = GainEqualityCompositeNode(A, use_composite_update_rules)
     interface_count = 1
     for msg=msgs
@@ -281,6 +293,7 @@ function initializeGaussianNodeChain(y::Array{Float64, 1}, factorize::Bool=true)
     #                  v             v
     #                [y_1]         [y_2]
 
+    FactorGraph()
     # Initial settings
     n_samples = length(y) # Number of observed samples
     factorization = Factorization()
@@ -401,6 +414,7 @@ function initializeLinearCompositeNodeChain(x::Array{Float64, 1}, y::Array{Float
     #           |   v           |   v   
     #          x_1 y_1         x_n y_n
 
+    FactorGraph()
     # prepare samples
     length(x) == length(y) || error("x and y must have same length")
     n_samples = length(y)

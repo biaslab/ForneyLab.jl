@@ -1,25 +1,12 @@
 # Functions for visualizing graphs
 export graph2dot, graphPdf, graphViz
 
-function getEdges(nodes::Array{Node,1})
-    # Return a set containing all Edges that connect the nodes
-    edges = Set()
-    for node in nodes
-        for interface in node.interfaces
-            if interface.edge!=nothing && (interface.edge.tail.node in nodes) && (interface.edge.head.node in nodes)
-                push!(edges, interface.edge)
-            end
-        end
-    end
-    return edges
-end
-
-function graph2dot(nodes::Array{Node,1}, factorization::Factorization=Factorization())
+function graph2dot(nodes::Array{Node,1})
     # Return a string representing the graph that connects the nodes in DOT format for visualization.
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)
     node_type_symbols = {   AdditionNode => "+",
                             EqualityNode => "="}
-    edges = getEdges(nodes)
+    edges = edges(nodes, include_external=false)
     
     dot = "digraph G{splines=true;sep=\"+25,25\";overlap=scalexy;nodesep=1.6;compound=true;\n"
     dot *= "\tnode [shape=box, width=1.0, height=1.0, fontsize=9];\n"
@@ -67,9 +54,11 @@ function graph2dot(composite_node::CompositeNode, factorization::Factorization=F
 
     return graph2dot(nodes, factorization)
 end
-graph2dot(seed_node::Node, factorization::Factorization=Factorization()) = graph2dot(getAllNodes(seed_node, open_composites=false, include_clamps=true), factorization)
+graph2dot(graph::FactorGraph) = graph2dot(nodes(graph, open_composites=false, include_clamps=true))
+graph2dot() = graph2dot(getCurrentGraph())
+graph2dot(subgraph::Subgraph) = graph2dot(nodes(subgraph, open_composites=false, include_clamps=true))
 
-function graphViz(n::Union(Node, Array{Node,1}), factorization::Factorization=Factorization(); external_viewer::Bool=false)
+function graphViz(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1}); external_viewer::Bool=false)
     # Generates a DOT graph and shows it
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     dot_graph = graph2dot(n, factorization)
@@ -83,6 +72,15 @@ function graphViz(n::Union(Node, Array{Node,1}), factorization::Factorization=Fa
             viewDotExternal(dot_graph)
         end
     end
+end
+
+function graphPdf(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1}), filename::String)
+    # Generates a DOT graph and writes it to a pdf file
+    validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
+    dot_graph = graph2dot(n)
+    stdin, proc = writesto(`dot -Tpdf -o$(filename)`)
+    write(stdin, dot_graph)
+    close(stdin)
 end
 
 function dot2svg(dot_graph::String)
@@ -121,13 +119,4 @@ function viewDotExternalImage(dot_graph::String)
         write(f, svg)
     end
     viewFile(filename)
-end
-
-function graphPdf(n::Union(Node, Array{Node,1}), filename::String, factorization::Factorization=Factorization())
-    # Generates a DOT graph and writes it to a pdf file
-    validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    dot_graph = graph2dot(n, factorization)
-    stdin, proc = writesto(`dot -Tpdf -o$(filename)`)
-    write(stdin, dot_graph)
-    close(stdin)
 end
