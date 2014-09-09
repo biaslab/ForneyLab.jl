@@ -19,23 +19,22 @@ facts("GaussianNode unit tests") do
         @fact node.out => node.interfaces[3]
     end
 
-    context("GaussianNode() should handle fixed parameters") do
-        # Fix mean
-        node = GaussianNode(m=GaussianDistribution())
-        @fact typeof(node.mean.partner.node) => ForneyLab.ClampNode
-        @fact node.mean.partner.message.payload => GaussianDistribution()
-        # Fix variance
-        node = GaussianNode(V=InverseGammaDistribution())
-        @fact typeof(node.variance.partner.node) => ForneyLab.ClampNode
-        @fact node.variance.partner.message.payload => InverseGammaDistribution()
-        # Fix precision
-        node = GaussianNode(form="precision", W=GammaDistribution())
-        @fact typeof(node.precision.partner.node) => ForneyLab.ClampNode
-        @fact node.precision.partner.message.payload => GammaDistribution()
-        # Fix mean and variance
-        node = GaussianNode(m=GaussianDistribution(), V=InverseGammaDistribution())
-        @fact typeof(node.mean.partner.node) => ForneyLab.ClampNode
-        @fact typeof(node.variance.partner.node) => ForneyLab.ClampNode
+    context("GaussianNode() should handle fixed mean") do
+        context("GaussianNode with fixed mean should propagate a forward message to y") do
+            validateOutboundMessage(GaussianNode(m=2.0), 
+                                    2, 
+                                    GaussianDistribution, 
+                                    [Message(InverseGammaDistribution(a=3.0, b=1.0)), nothing],
+                                    GaussianDistribution(m=2.0, V=0.5))
+        end
+
+        context("GaussianNode with fixed mean should propagate a backward message to the variance") do
+            validateOutboundMessage(GaussianNode(m=2.0), 
+                                    1, 
+                                    InverseGammaDistribution, 
+                                    [nothing, Message(1.0)],
+                                    InverseGammaDistribution(a=-0.5, b=0.5))
+        end
     end
 
     context("Point estimates of y and m, so no approximation is required.") do

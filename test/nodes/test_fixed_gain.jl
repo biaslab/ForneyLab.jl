@@ -12,17 +12,6 @@ facts("FixedGainNode unit tests") do
         @fact typeof(node.A) => Array{Float64, 2} # cast single value to matrix
     end
 
-    context("FixedGainNode() should allow parameters to be clamped") do
-        # Fix in1
-        node = FixedGainNode(in1=GaussianDistribution())
-        @fact typeof(node.in1.partner.node) => ForneyLab.ClampNode
-        @fact node.in1.partner.message.payload => GaussianDistribution()
-        # Fix out
-        node = FixedGainNode(out=GaussianDistribution())
-        @fact typeof(node.out.partner.node) => ForneyLab.ClampNode
-        @fact node.out.partner.message.payload => GaussianDistribution()
-    end
-
     context("FixedGainNode should propagate a Float") do
         # Backward message
         validateOutboundMessage(FixedGainNode([2.0]), 

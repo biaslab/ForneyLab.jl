@@ -4,13 +4,13 @@ export  Message, Node, CompositeNode, Interface, Schedule, Edge, ExternalSchedul
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!,
-        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, nodes, edges, factorizeMeanField
+        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, getNodes, getEdges, factorize!, factorizeMeanField!
 export  ==
 export  current_graph
 
 # Verbosity
 verbose = false
-setVerbose(verbose_mode=true) = global verbose=verbose_mode
+setVerbose(verbose_mode=true) = global verbose = verbose_mode
 printVerbose(msg) = if verbose println(msg) end
 
 # ForneyLab helpers
@@ -25,7 +25,7 @@ abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a M
 typealias MessagePayload Union(ProbabilityDistribution, Number, Vector, Matrix)
 abstract Node
 show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
-show(io::IO, nodes::Array{Node, 1}) = [show(io, node) for node in nodes]
+show(io::IO, nodes::Union(Set{Node}, Vector{Node})) = [show(io, node) for node in nodes]
 abstract CompositeNode <: Node
 
 # Distributions
@@ -94,7 +94,7 @@ end
 typealias Schedule Array{Interface, 1}
 function show(io::IO, schedule::Schedule)
     # Show schedules in a specific way
-    println(io, "Message passing schedule:")
+    println(io, "Message passing schedule [{node type} {node name}:{outbound iface index} ({outbound iface name})]:")
     for interface in schedule
         interface_name = (getName(interface)!="") ? "($(getName(interface)))" : ""
         println(io, " $(typeof(interface.node)) $(interface.node.name):$(findfirst(interface.node.interfaces, interface)) $(interface_name)")
@@ -151,7 +151,7 @@ type Edge <: AbstractEdge
         end
 
         # Incorporate edge and nodes in current graph
-        if add_to_graph # Note: edges connected to clamp nodes are added to the subgraph as well
+        if add_to_graph
             graph = getCurrentGraph()
             (length(graph.factorization) == 1) || error("Cannot create Edge in an already factorized graph; first build the graph, then define factorizations.")
             subgraph = graph.factorization[1] # There is only one
@@ -259,18 +259,31 @@ type Subgraph
     internal_schedule::Schedule # Schedule for internal message passing (Dauwels step 2)
     external_schedule::ExternalSchedule # Schedule for updates on nodes connected to external edges (Dauwels step 3)
 end
-Subgraph() = Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
 
 type FactorGraph
     factorization::Array{Subgraph, 1} # References to subgraphs
     approximate_marginals::Dict{(Node, Subgraph), MessagePayload} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
 end
+
+function show(io::IO, factor_graph::FactorGraph)
+    nodes_top = getNodes(factor_graph, open_composites=false)
+    println(io, "FactorGraph")
+    println(io, " # nodes: $(length(nodes_top)) ($(length(getNodes(factor_graph))) including child nodes)")
+    println(io, " # edges (top level): $(length(getEdges(nodes_top)))")
+end
+
 # Get and set current graph functions
-global current_graph = FactorGraph([Subgraph()], Dict{(Node, Subgraph), MessagePayload}()) # Initialize a current_graph
+global current_graph = FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], Dict{(Node, Subgraph), MessagePayload}()) # Initialize a current_graph
 getCurrentGraph() = current_graph::FactorGraph
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
-FactorGraph() = setCurrentGraph(FactorGraph([Subgraph()], Dict{(Node, Subgraph), MessagePayload}())) # Initialize a new factor graph; automatically sets current_graph
+FactorGraph() = setCurrentGraph(FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], Dict{(Node, Subgraph), MessagePayload}())) # Initialize a new factor graph; automatically sets current_graph
+function Subgraph() # Construct and add to current graph
+    subgraph = Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
+    graph = getCurrentGraph()
+    push!(graph.factorization, subgraph)
+    return subgraph
+end
 
 function conformSubgraph!(subgraph::Subgraph)
     # Updates external edges and nodes field based on internal edges
@@ -282,7 +295,7 @@ function conformSubgraph!(subgraph::Subgraph)
         push!(subgraph.nodes, internal_edge.head.node)
         push!(subgraph.nodes, internal_edge.tail.node)
     end
-    subgraph.external_edges = setdiff(edges(subgraph.nodes), subgraph.internal_edges) # External edges are the difference between all edges connected to nodes, and the internal edges
+    subgraph.external_edges = setdiff(getEdges(subgraph.nodes), subgraph.internal_edges) # External edges are the difference between all edges connected to nodes, and the internal edges
 
     return subgraph
 end
@@ -292,17 +305,20 @@ function factorize!(graph::FactorGraph, internal_edges::Set{Edge})
     for subgraph in graph.factorization
         setdiff!(subgraph.internal_edges, internal_edges) # Remove edges from existing subgraph
     end
-    new_subgraph = Subgraph(Set{Node}(), copy(internal_edges), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
-    conformSubgraph!(new_subgraph)
-
+    new_subgraph = Subgraph(Set{Node}(), copy(internal_edges), Set{Edge}(), Array(Interface, 0), Array(Node, 0)) # Create subgraph
+    graph = getCurrentGraph()
+    push!(graph.factorization, new_subgraph) # Add to current graph
+    for subgraph in graph.factorization
+        conformSubgraph!(subgraph)
+    end
     return new_subgraph
 end
-factorize!(internal_edges::Set{Edge}) = factorize(getCurrentGraph(), internal_edges)
+factorize!(internal_edges::Set{Edge}) = factorize!(getCurrentGraph(), internal_edges)
 
 function factorizeMeanField!(graph::FactorGraph)
     # Generate a mean field factorization
     (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
-    edges = edges(nodes(graph, include_clamps=true, open_composites=false), include_external=false)
+    edges = getEdges(getNodes(graph, open_composites=false), include_external=false)
 
     for edge in edges
         if typeof(edge.head.node)==EqualityNode || typeof(edge.tail.node)==EqualityNode
@@ -322,6 +338,7 @@ function factorizeMeanField!(graph::FactorGraph)
                     end
                 end
             end
+            factorize!(graph, edge_cluster)
         else
             factorize!(graph, edge)
         end
@@ -331,7 +348,6 @@ end
 factorizeMeanField!() = factorizeMeanField!(getCurrentGraph())
 
 # Nodes
-include("nodes/clamp.jl")
 include("nodes/addition.jl")
 include("nodes/terminal.jl")
 include("nodes/equality.jl")
@@ -477,7 +493,7 @@ function clearMessages!(edge::Edge)
 end
 
 # Functions to clear ALL MESSAGES in the graph
-clearMessages!(graph::FactorGraph) = map(clearMessages!, nodes(graph, open_composites=true))
+clearMessages!(graph::FactorGraph) = map(clearMessages!, getNodes(graph, open_composites=true))
 clearMessages!() = clearMessages!(getCurrentGraph())
 
 function generateSchedule(outbound_interface::Interface)
@@ -575,59 +591,45 @@ function addChildNodes!(nodes::Set{Node})
     return nodes
 end
 
-function addClampNodes!(nodes::Set{Node})
-    # Add all clamp nodes to the nodes set
-    for node in nodes
-        for interface in node.interfaces
-            if typeof(interface.partner.node) == ClampNode
-                push!(nodes, interface.partner.node)
-            end
-        end
-    end
-    return nodes
-end
-
-function nodes(subgraph::Subgraph; open_composites::Bool=true, include_clamps=false)
+function getNodes(subgraph::Subgraph; open_composites::Bool=true)
     all_nodes = copy(subgraph.nodes)
 
     if open_composites; addChildNodes!(all_nodes); end
-    if include_clamps; addClampNodes!(all_nodes); end
 
     return all_nodes
 end
 
-function nodes(graph::FactorGraph; open_composites::Bool=true, include_clamps=false)
+function getNodes(graph::FactorGraph; open_composites::Bool=true)
     all_nodes = Set{Node}()
     for subgraph in graph.factorization
         union!(all_nodes, subgraph.nodes)
     end
 
     if open_composites; addChildNodes!(all_nodes); end
-    if include_clamps; addClampNodes!(all_nodes); end
 
     return all_nodes
 end
-nodes(;args...) = nodes(getCurrentGraph(); args...)
+getNodes(;args...) = getNodes(getCurrentGraph(); args...)
 
-function edges(nodes::Array{Node,1}; include_external=true)
+function getEdges(nodes::Set{Node}; include_external=true)
     # Returns the set of edges connected to nodes, including or excluding external edges
     # An external edge has only head or tail in the interfaces belonging to nodes in the nodes array
 
-    edges = Set()
+    edge_set = Set{Edge}()
     for node in nodes
         for interface in node.interfaces
             if include_external
                 if interface.edge!=nothing && ((interface.edge.tail.node in nodes) || (interface.edge.head.node in nodes))
-                    push!(edges, interface.edge)
+                    push!(edge_set, interface.edge)
                 end
             else
                 if interface.edge!=nothing && (interface.edge.tail.node in nodes) && (interface.edge.head.node in nodes)
-                    push!(edges, interface.edge)
+                    push!(edge_set, interface.edge)
                 end
             end
         end
     end
-    return edges
+    return edge_set
 end
 
 # Utils

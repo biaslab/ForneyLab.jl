@@ -13,21 +13,6 @@ facts("GainAdditionCompositeNode unit tests") do
         @fact typeof(node.A) => Array{Float64, 2}
     end
 
-    context("GainAdditionCompositeNode() should allow parameters to be clamped") do
-        # Fix in1
-        node = GainAdditionCompositeNode(in1=GaussianDistribution())
-        @fact typeof(node.in1.partner.node) => ForneyLab.ClampNode
-        @fact node.in1.partner.message.payload => GaussianDistribution()
-        # Fix in2
-        node = GainAdditionCompositeNode(in2=GaussianDistribution())
-        @fact typeof(node.in2.partner.node) => ForneyLab.ClampNode
-        @fact node.in2.partner.message.payload => GaussianDistribution()
-        # Fix out
-        node = GainAdditionCompositeNode(out=GaussianDistribution())
-        @fact typeof(node.out.partner.node) => ForneyLab.ClampNode
-        @fact node.out.partner.message.payload => GaussianDistribution()
-    end
-
     context("GainAdditionCompositeNode() should define an internal AdditionNode and FixedGainNode") do
         node = GainAdditionCompositeNode([5.0], false)
         @fact typeof(node.addition_node) => AdditionNode

@@ -7,7 +7,14 @@
 #   
 #   The GaussianNode has two different names for its second interface,
 #   namely precision and variance. These named handles are simply
-#   pointers to one and the same interface. 
+#   pointers to one and the same interface.
+#
+#   Also the GaussianNode can accept a fixed mean. This removes the mean interface
+#   and stores the mean in the node itself.
+#
+############################################
+#
+#   GaussianNode with variable mean:
 #
 #         mean
 #          |
@@ -19,7 +26,7 @@
 #   out = Message(GaussianDistribution(m=mean, W=precision))
 #
 #   Example:
-#       GaussianNode([1.0], [0.1]; name="my_node")
+#       GaussianNode(name="my_node")
 #
 # Interface ids, (names) and supported message types:
 #   Receiving:
@@ -44,8 +51,35 @@
 #   3. (out):
 #       Message{GaussianDistribution}
 #
-#   Node marginal:
-#       NormalGammaDistribution
+############################################
+#
+# GaussianNode with fixed mean:
+#
+#             out
+#   ----->[N]----->
+#  precision/
+#  variance
+#
+#   out = Message(GaussianDistribution(m=mean, W=precision))
+#
+#   Example:
+#       GaussianNode(name="my_node", m=1.0)
+#
+# Interface ids, (names) and supported message types:
+#   Receiving:
+#   1. (precision / variance):
+#       Message{Float64}
+#       GammaDistribution (marginal)
+#       InverseGammaDistribution (marginal)
+#   2. (out):
+#       Message{Float64}
+#
+#   Sending:
+#   1. (precision / variance):
+#       Message{GammaDistribution}
+#       Message{InverseGammaDistribution}
+#   2. (out):
+#       Message{GaussianDistribution}
 #
 ############################################
 
@@ -61,39 +95,39 @@ type GaussianNode <: Node
     precision::Interface
     variance::Interface
     out::Interface
+    # Fixed parameters
+    m::Vector{Float64}
 
-    function GaussianNode(; name="unnamed", form::ASCIIString="moment", args...)
-        self = new(name, Array(Interface, 3), nothing)
-
-        # Look for fixed parameters
-        args = Dict(zip(args...)...) # Cast args to dictionary
-        # Set m if required
-        self.interfaces[1] = Interface(self)
-        self.mean = self.interfaces[1]
-        if haskey(args, :m)
-            Edge(ForneyLab.ClampNode(Message(args[:m])).out, self.mean, typeof(args[:m]))
+    function GaussianNode(variational; name="unnamed", form::ASCIIString="moment", m::Union(Float64,Vector{Float64},Nothing)=nothing)
+        if m != nothing
+            # GaussianNode with fixed mean
+            self = new(name, Array(Interface, 2), variational)
+            self.m = (typeof(m)==Float64) ? [m] : deepcopy(m)
+            variance_precision_interface_index = 1
+        else
+            # GaussianNode with variable mean
+            self = new(name, Array(Interface, 3), variational)
+            self.interfaces[1] = Interface(self) # Mean interface
+            self.mean = self.interfaces[1]
+            variance_precision_interface_index = 2
         end
+
         # Pick a form for the variance/precision
-        self.interfaces[2] = Interface(self)
+        self.interfaces[variance_precision_interface_index] = Interface(self)
         if form == "moment"
             # Parameters m, V
-            self.variance = self.interfaces[2]
-            if haskey(args, :V)
-                Edge(ForneyLab.ClampNode(Message(args[:V])).out, self.variance, typeof(args[:V]))
-            end
+            self.variance = self.interfaces[variance_precision_interface_index]
         elseif form == "precision"
             # Parameters m, W
-            self.precision = self.interfaces[2]
-            if haskey(args, :W)
-                Edge(ForneyLab.ClampNode(Message(args[:W])).out, self.precision, typeof(args[:W]))
-            end
+            self.precision = self.interfaces[variance_precision_interface_index]
         elseif form == "canonical"
             error("Canonical form not implemented")
         else
             error("Unrecognized form, $(form). Please use \"moment\", \"canonical\", or \"precision\"")
         end
-        self.interfaces[3] = Interface(self) # Set out interface
-        self.out = self.interfaces[3]
+
+        self.interfaces[variance_precision_interface_index+1] = Interface(self) # Out interface
+        self.out = self.interfaces[variance_precision_interface_index+1]
 
         return self
     end
@@ -176,12 +210,58 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
+function updateNodeMessage!(node::GaussianNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            msg_variance::Message{InverseGammaDistribution},
+                            msg_out::Nothing)
+    # Forward with fixed mean
+    #
+    # IG     -->
+    # --->[N]--->
+    #         N
+    
+    # Rule from Korl table 5.2
+
+    (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+    dist_out.m = deepcopy(node.m)
+    dist_out.xi = nothing
+    dist_out.V = reshape([msg_variance.payload.b/(msg_variance.payload.a-1)], 1, 1)
+    dist_out.W = nothing
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+function updateNodeMessage!(node::GaussianNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{InverseGammaDistribution},
+                            msg_variance::Nothing,
+                            msg_out::Message{Float64})
+    # Backward with fixed mean
+    #
+    # <--    Flt
+    # --->[N]--->
+    #  IG
+
+    # Rule from Korl table 5.2
+
+    (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+    dist_out.a = -0.5
+    dist_out.b = 0.5*(msg_out.payload - node.m[1])^2
+
+    return node.interfaces[outbound_interface_id].message
+end
+
 # Mean Field
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             outbound_message_payload_type::Type{GaussianDistribution},
-                            ::Nothing,
+                            ::Any,
                             marg_variance::InverseGammaDistribution,
                             marg_out::Float64)
     # Backward over mean / variational / InverseGamma

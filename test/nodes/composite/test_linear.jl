@@ -15,19 +15,6 @@ facts("LinearCompositeNode unit tests") do
         @fact node.use_composite_update_rules => true # default use_composite_update_rules to true
     end
 
-    context("LinearCompositeNode() should allow parameters to be fixed") do
-        node = LinearCompositeNode(in1=GaussianDistribution())
-        @fact typeof(node.in1.partner.node) => ForneyLab.ClampNode
-        node = LinearCompositeNode(slope=GaussianDistribution())
-        @fact typeof(node.slope.partner.node) => ForneyLab.ClampNode
-        node = LinearCompositeNode(offset=GaussianDistribution())
-        @fact typeof(node.offset.partner.node) => ForneyLab.ClampNode
-        node = LinearCompositeNode(noise=GammaDistribution())
-        @fact typeof(node.noise.partner.node) => ForneyLab.ClampNode
-        node = LinearCompositeNode(out=GaussianDistribution())
-        @fact typeof(node.out.partner.node) => ForneyLab.ClampNode
-    end
-
     context("LinearCompositeNode should propagate a backward variational message to in1") do
         msg = ForneyLab.updateNodeMessage!(LinearCompositeNode(), 1, GaussianDistribution, uninformative(GaussianDistribution), GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), InverseGammaDistribution(a=10000.0, b=19998.0), GaussianDistribution(m=2.5, V=0.0))
         @fact msg.payload.m => [1.0]

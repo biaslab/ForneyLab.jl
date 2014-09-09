@@ -24,7 +24,7 @@ end
 
 facts("General node properties unit tests") do
     for node_type in [subtypes(Node), subtypes(CompositeNode)]
-        if node_type!=CompositeNode && node_type!=MockNode && node_type!=ForneyLab.ClampNode
+        if node_type!=CompositeNode && node_type!=MockNode
             context("$(node_type) properties should include interfaces and name") do
                 @fact typeof(node_type().interfaces) => Array{Interface, 1} # Check for interface array
                 @fact length(node_type().interfaces) >= 1 => true # Check length of interface array
@@ -87,11 +87,13 @@ facts("Graph level unit tests") do
         @fact current_graph => fg # Global should be set
     end
 
-    context("Subgraph() should initialize a subgraph") do
+    context("Subgraph() should initialize a subgraph and add it to the current graph") do
         sg = Subgraph()
         @fact typeof(sg) => Subgraph
         @fact typeof(sg.internal_schedule) => Schedule
         @fact typeof(sg.external_schedule) => ExternalSchedule
+        graph = getCurrentGraph()
+        @fact graph.factorization[2] => sg
     end
 
     context("getCurrentGraph() should return a current graph object") do
@@ -99,6 +101,14 @@ facts("Graph level unit tests") do
         @fact getCurrentGraph() => current_graph
         my_graph = getCurrentGraph()  # Make local pointer to global variable
         @fact typeof(my_graph) => FactorGraph
+    end
+
+    context("setCurrentGraph() should set a new current graph object") do
+        my_first_graph = FactorGraph() # Reset
+        my_second_graph = FactorGraph()
+        @fact my_first_graph == current_graph => false
+        setCurrentGraph(my_first_graph)
+        @fact my_first_graph == current_graph => true
     end
 end
 
@@ -117,7 +127,6 @@ include("nodes/test_gaussian.jl")
 include("nodes/composite/test_gain_addition.jl")
 include("nodes/composite/test_gain_equality.jl")
 include("nodes/composite/test_linear.jl")
-include("test_vmp.jl")
 
 #####################
 # Integration tests
@@ -196,27 +205,72 @@ facts("Connections between nodes integration tests") do
 
 end
 
-facts("nodes() integration tests") do
-    context("nodes() should return an array of all nodes in the graph") do
+facts("Graph leven integration tests") do
+    context("getNodes() should return an array of all nodes in the graph") do
         nodes = initializeLoopyGraph()
-        found_nodes = nodes(getCurrentGraph())
+        found_nodes = getNodes(getCurrentGraph())
         @fact length(found_nodes) => length(nodes) # FactorGraph test
         for node in nodes
             @fact node in found_nodes => true
         end
 
-        found_nodes = nodes(getCurrentGraph().factorization[1]) # Subgraph test
+        found_nodes = getNodes(getCurrentGraph().factorization[1]) # Subgraph test
         @fact length(found_nodes) => length(nodes)
         for node in nodes
             @fact node in found_nodes => true
         end
     end
 
-    context("addChildNodes!() should add composite node's child nodes to the node array") do
-        @fact true => false
+    context("getEdges() should get all edges internal (optionally external as well) to the argument node set") do
+        nodes = initializeLoopyGraph()
+        @fact getEdges(Set{Node}({nodes[1], nodes[2]}), include_external=false) => Set{Edge}({nodes[1].in1.edge})
+        @fact getEdges(Set{Node}({nodes[1], nodes[2]})) => Set{Edge}({nodes[1].in1.edge, nodes[4].in1.edge, nodes[4].out.edge})
     end
 
-    context("addClampNodes! should add clamp nodes to the node array") do
+    context("conformSubGraph!() should complete a subgraph with nodes and external edges based in its internal edges") do
+        my_graph = FactorGraph()
+        # On empty subgraph
+        my_subgraph = my_graph.factorization[1]
+        @fact length(my_subgraph.internal_edges) => 0
+        ForneyLab.conformSubgraph!(my_subgraph)
+        @fact length(my_subgraph.nodes) => 0
+        @fact length(my_subgraph.external_edges) => 0
+        # Initialize a subgraph
+        node1 = MockNode()
+        node2 = MockNode(2)
+        node3 = MockNode() 
+        edge1 = Edge(node1.out, node2.interfaces[1])
+        edge2 = Edge(node2.interfaces[2], node3.out)
+        @fact length(my_subgraph.internal_edges) => 2
+        ForneyLab.conformSubgraph!(my_subgraph)
+        @fact length(my_subgraph.nodes) => 3
+        @fact length(my_subgraph.external_edges) => 0
+        # Subgraph with external edges
+        new_subgraph = Subgraph(Set{Node}(), Set{Edge}({edge2}), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
+        @fact length(new_subgraph.internal_edges) => 1
+        ForneyLab.conformSubgraph!(new_subgraph)
+        @fact length(new_subgraph.nodes) => 2
+        @fact length(new_subgraph.external_edges) => 1
+    end
+
+    context("addChildNodes!() should add composite node's child nodes to the node array") do
+        node = initializeGainEqualityCompositeNode(eye(1), false, [Message(GaussianDistribution()), Message(GaussianDistribution()), nothing])
+        @fact ForneyLab.addChildNodes!(Set{Node}({node})) => Set{Node}({node, node.equality_node, node.fixed_gain_node})
+    end
+
+    context("factorize!() should include argument edges in a new subgraph") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph()
+        factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+        graph = getCurrentGraph()
+        @fact graph.factorization[1].nodes => Set{Node}({driver, inhibitor, noise, add})
+        @fact graph.factorization[1].internal_edges => Set{Edge}({add.out.edge, add.in1.edge, add.in2.edge})
+        @fact graph.factorization[1].external_edges => Set{Edge}({inhibitor.out.edge})
+        @fact graph.factorization[2].nodes => Set{Node}({driver, inhibitor})
+        @fact graph.factorization[2].internal_edges => Set{Edge}({inhibitor.out.edge})
+        @fact graph.factorization[2].external_edges => Set{Edge}({add.in1.edge, add.out.edge})
+    end
+
+    context("factorizeMeanField!() should output a mean field factorized graph") do
         @fact true => false
     end
 end
@@ -396,20 +450,6 @@ facts("generateSchedule() and executeSchedule() integration tests") do
         @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
     end
 
-    context("executeSchedule() should accept edges") do
-        (node1, node2, node3) = initializeChainOfNodes()
-        schedule = [node1.out.edge, node2.out.edge]
-        node1.out.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
-        node1.out.partner.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
-        node2.out.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
-        node2.out.partner.message = Message(GaussianDistribution(W=1.0, xi=1.0))
-        executeSchedule(schedule)
-        @fact node1.out.edge.marginal.W => reshape([2.0], 1, 1)
-        @fact node2.out.edge.marginal.W => reshape([2.0], 1, 1)
-        @fact node1.out.edge.marginal.xi => [2.0]
-        @fact node2.out.edge.marginal.xi => [2.0]
-    end
-
     context("executeSchedule() should work as expeced in loopy graphs") do
         (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
         setMessage!(driver.out, Message(GaussianDistribution()))
@@ -438,7 +478,7 @@ facts("generateSchedule() and executeSchedule() integration tests") do
     end
 end
 
-facts("clearMessage!(), clearMessages!(), clearAllMessages!() integration tests") do
+facts("clearMessage!(), clearMessages!() integration tests") do
     (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
     setMessage!(add.in1, Message(GaussianDistribution(m=2.0, V=0.5)))
     setMessage!(add.out, Message(GaussianDistribution()))
@@ -449,13 +489,10 @@ facts("clearMessage!(), clearMessages!(), clearAllMessages!() integration tests"
     clearMessages!(add)
     @fact add.in1.message => nothing
     @fact add.out.message => nothing
-    clearAllMessages!(add)
-    for node in (driver, inhibitor, noise, add)
-        for interface in node.interfaces
-            @fact interface.message => nothing
-        end
-    end
 end
+
+# Vmp test
+include("test_vmp.jl")
 
 try
     # Try to load user-defined extensions tests
