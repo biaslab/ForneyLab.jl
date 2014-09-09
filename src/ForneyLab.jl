@@ -309,26 +309,29 @@ factorize!(internal_edges::Set{Edge}) = factorize!(getCurrentGraph(), internal_e
 function factorizeMeanField!(graph::FactorGraph)
     # Generate a mean field factorization
     (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
-    edges = getEdges(getNodes(graph, open_composites=false), include_external=false) # All top-level edges in the factor graph
+    edges_to_factor = getEdges(getNodes(graph, open_composites=false), include_external=false) # All top-level edges in the factor graph
 
-    for edge in edges
+    while length(edges_to_factor) > 0
+        edge = pop!(edges_to_factor)
         if typeof(edge.head.node)==EqualityNode || typeof(edge.tail.node)==EqualityNode
             # Collect all other edges that are connected to this one through equality nodes
             edge_cluster = Set{Edge}()
-            connected_edge_buffer = [edge]
-            while length(connected_edge_buffer) > 0
-                current_edge = pop!(connected_edge_buffer)
+            connected_edges = Set{Edge}()
+            while length(connected_edges) > 0
+                current_edge = pop!(connected_edges)
                 push!(edge_cluster, current_edge)
                 for node in [edge.head.node, edge.tail.node]
                     if typoef(node) == EqualityNode
                         for interface in node.interfaces
                             if !is(interface.edge, current_edge) && !(interface.edge in edge_cluster)
-                                push!(connected_edge_buffer, interface.edge)
+                                push!(connected_edges, interface.edge)
                             end
                         end
                     end
                 end
             end
+            # Remove all edges in edge_cluster from edges_to_factor
+            setdiff!(edges_to_factor, edge_cluster)
             factorize!(graph, edge_cluster)
         else
             factorize!(graph, edge)
