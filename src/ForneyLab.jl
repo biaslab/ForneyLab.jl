@@ -4,7 +4,7 @@ export  Message, Node, CompositeNode, Interface, Schedule, Edge, ExternalSchedul
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!,
-        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, nodes, edges
+        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, getNodes, getEdges
 export  ==
 export  current_graph
 
@@ -250,6 +250,14 @@ type FactorGraph
     factorization::Array{Subgraph, 1} # References to subgraphs
     approximate_marginals::Dict{(Node, Subgraph), MessagePayload} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
 end
+
+function show(io::IO, factor_graph::FactorGraph)
+    nodes_top = getNodes(factor_graph, open_composites=false)
+    println(io, "FactorGraph")
+    println(io, " # nodes: $(length(nodes_top)) ($(length(getNodes(factor_graph))) including child nodes)")
+    println(io, " # edges (top level): $(length(getEdges(nodes_top)))")
+end
+
 # Get and set current graph functions
 global current_graph = FactorGraph([Subgraph()], Dict{(Node, Subgraph), MessagePayload}()) # Initialize a current_graph
 getCurrentGraph() = current_graph::FactorGraph
@@ -267,7 +275,7 @@ function conformSubgraph!(subgraph::Subgraph)
         push!(subgraph.nodes, internal_edge.head.node)
         push!(subgraph.nodes, internal_edge.tail.node)
     end
-    subgraph.external_edges = setdiff(edges(subgraph.nodes), subgraph.internal_edges) # External edges are the difference between all edges connected to nodes, and the internal edges
+    subgraph.external_edges = setdiff(getEdges(subgraph.nodes), subgraph.internal_edges) # External edges are the difference between all edges connected to nodes, and the internal edges
 
     return subgraph
 end
@@ -287,7 +295,7 @@ factorize!(internal_edges::Set{Edge}) = factorize(getCurrentGraph(), internal_ed
 function factorizeMeanField!(graph::FactorGraph)
     # Generate a mean field factorization
     (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
-    edges = edges(nodes(graph, open_composites=false), include_external=false)
+    edges = getEdges(getNodes(graph, open_composites=false), include_external=false)
 
     for edge in edges
         if typeof(edge.head.node)==EqualityNode || typeof(edge.tail.node)==EqualityNode
@@ -459,7 +467,7 @@ function clearMessages!(edge::Edge)
 end
 
 # Functions to clear ALL MESSAGES in the graph
-clearMessages!(graph::FactorGraph) = map(clearMessages!, nodes(graph, open_composites=true))
+clearMessages!(graph::FactorGraph) = map(clearMessages!, getNodes(graph, open_composites=true))
 clearMessages!() = clearMessages!(getCurrentGraph())
 
 function generateSchedule(outbound_interface::Interface)
@@ -557,7 +565,7 @@ function addChildNodes!(nodes::Set{Node})
     return nodes
 end
 
-function nodes(subgraph::Subgraph; open_composites::Bool=true)
+function getNodes(subgraph::Subgraph; open_composites::Bool=true)
     all_nodes = copy(subgraph.nodes)
 
     if open_composites; addChildNodes!(all_nodes); end
@@ -565,7 +573,7 @@ function nodes(subgraph::Subgraph; open_composites::Bool=true)
     return all_nodes
 end
 
-function nodes(graph::FactorGraph; open_composites::Bool=true)
+function getNodes(graph::FactorGraph; open_composites::Bool=true)
     all_nodes = Set{Node}()
     for subgraph in graph.factorization
         union!(all_nodes, subgraph.nodes)
@@ -575,27 +583,27 @@ function nodes(graph::FactorGraph; open_composites::Bool=true)
 
     return all_nodes
 end
-nodes(;args...) = nodes(getCurrentGraph(); args...)
+getNodes(;args...) = getNodes(getCurrentGraph(); args...)
 
-function edges(nodes::Array{Node,1}; include_external=true)
+function getEdges(nodes::Set{Node}; include_external=true)
     # Returns the set of edges connected to nodes, including or excluding external edges
     # An external edge has only head or tail in the interfaces belonging to nodes in the nodes array
 
-    edges = Set()
+    edge_set = Set{Edge}()
     for node in nodes
         for interface in node.interfaces
             if include_external
                 if interface.edge!=nothing && ((interface.edge.tail.node in nodes) || (interface.edge.head.node in nodes))
-                    push!(edges, interface.edge)
+                    push!(edge_set, interface.edge)
                 end
             else
                 if interface.edge!=nothing && (interface.edge.tail.node in nodes) && (interface.edge.head.node in nodes)
-                    push!(edges, interface.edge)
+                    push!(edge_set, interface.edge)
                 end
             end
         end
     end
-    return edges
+    return edge_set
 end
 
 # Utils

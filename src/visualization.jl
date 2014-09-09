@@ -1,12 +1,12 @@
 # Functions for visualizing graphs
 export graph2dot, graphPdf, graphViz
 
-function graph2dot(nodes::Array{Node,1})
+function graph2dot(nodes::Set{Node})
     # Return a string representing the graph that connects the nodes in DOT format for visualization.
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)
     node_type_symbols = {   AdditionNode => "+",
                             EqualityNode => "="}
-    edges = edges(nodes, include_external=false)
+    edges = getEdges(nodes, include_external=false)
     
     dot = "digraph G{splines=true;sep=\"+25,25\";overlap=scalexy;nodesep=1.6;compound=true;\n"
     dot *= "\tnode [shape=box, width=1.0, height=1.0, fontsize=9];\n"
@@ -41,9 +41,9 @@ end
 
 function graph2dot(composite_node::CompositeNode)
     # Return graph2dot(nodes) where nodes are the internal nodes of composite_node
-    nodes = Node[]
+    nodes = Set{Node}()
     for field in names(composite_node)
-        if typeof(getfield(composite_node, field))<:Node
+        if typeof(getfield(composite_node, field)) <: Node
             push!(nodes, getfield(composite_node, field))
         end
     end
@@ -51,9 +51,9 @@ function graph2dot(composite_node::CompositeNode)
 
     return graph2dot(nodes)
 end
-graph2dot(graph::FactorGraph) = graph2dot(nodes(graph, open_composites=false))
+graph2dot(graph::FactorGraph) = graph2dot(getNodes(graph, open_composites=false))
 graph2dot() = graph2dot(getCurrentGraph())
-graph2dot(subgraph::Subgraph) = graph2dot(nodes(subgraph, open_composites=false))
+graph2dot(subgraph::Subgraph) = graph2dot(getNodes(subgraph, open_composites=false))
 
 function graphViz(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1}); external_viewer::Bool=false)
     # Generates a DOT graph and shows it
@@ -70,6 +70,7 @@ function graphViz(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1});
         end
     end
 end
+graphViz(; args...) = graphViz(getCurrentGraph(); args...)
 
 function graphPdf(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1}), filename::String)
     # Generates a DOT graph and writes it to a pdf file
@@ -79,6 +80,7 @@ function graphPdf(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1}),
     write(stdin, dot_graph)
     close(stdin)
 end
+graphPdf(filename::String) = graphPdf(getCurrentGraph(), filename)
 
 function dot2svg(dot_graph::String)
     # Generate SVG image from DOT graph

@@ -59,7 +59,7 @@ end
 
 facts("CalculateMessage!() unit tests") do
     context("calculateMessage!() should throw an error if the specified interface does not belong to the specified node") do
-        (node1, node2) = initializePairOfNodes()
+        (node1, node2) = initializePairOfgetNodes()
         @fact_throws calculateMessage!(node1.out, node2)
     end
 
@@ -71,7 +71,7 @@ end
 
 facts("setMarginal unit tests") do
     context("setMarginal!() should preset a marginal") do
-        (node1, node2) = initializePairOfMockNodes()
+        (node1, node2) = initializePairOfMockgetNodes()
         edge = Edge(node1.out, node2.out)
         setMarginal!(edge, 1.0)
         @fact edge.head.message.payload => 1.0
@@ -124,7 +124,7 @@ include("test_vmp.jl")
 
 facts("Connections between nodes integration tests") do
     context("Nodes can directly be coupled through interfaces by using the interfaces array") do
-        (node1, node2) = initializePairOfNodes()
+        (node1, node2) = initializePairOfgetNodes()
         # Couple the interfaces that carry GeneralMessage
         node1.interfaces[1].partner = node2.interfaces[1]
         node2.interfaces[1].partner = node1.interfaces[1]
@@ -132,7 +132,7 @@ facts("Connections between nodes integration tests") do
     end
 
     context("Nodes can directly be coupled through interfaces by using the explicit interface names") do
-        (node1, node2) = initializePairOfNodes()
+        (node1, node2) = initializePairOfgetNodes()
         # Couple the interfaces that carry GeneralMessage
         node1.in1.partner = node2.out
         node2.out.partner = node1.in1
@@ -140,14 +140,14 @@ facts("Connections between nodes integration tests") do
     end
 
     context("Nodes can be coupled by edges by using the interfaces array") do
-        (node1, node2) = initializePairOfNodes()
+        (node1, node2) = initializePairOfgetNodes()
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
         testInterfaceConnections(node1, node2)
     end
 
     context("Edge constructor should add edge and nodes to current subgraph") do
-        (node1, node2) = initializePairOfNodes()
+        (node1, node2) = initializePairOfgetNodes()
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
         graph = getCurrentGraph()
@@ -157,7 +157,7 @@ facts("Connections between nodes integration tests") do
     end
 
     context("Nodes can be coupled by edges using the explicit interface names") do
-        (node1, node2) = initializePairOfNodes()
+        (node1, node2) = initializePairOfgetNodes()
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.out, node1.in1) # Edge from node 2 to node 1
         testInterfaceConnections(node1, node2)
@@ -170,14 +170,14 @@ facts("Connections between nodes integration tests") do
     end
 
     context("Edge constructor should write the expected message value types to the interfaces") do
-        (node1, node2) = initializePairOfMockNodes()
+        (node1, node2) = initializePairOfMockgetNodes()
         edge = Edge(node1.out, node2.out, GaussianDistribution, Float64)
         @fact edge.tail.message_payload_type => GaussianDistribution
         @fact edge.head.message_payload_type => Float64
     end
 
     context("Edge construction should couple interfaces to edge") do
-        (node1, node2) = initializePairOfMockNodes()
+        (node1, node2) = initializePairOfMockgetNodes()
         @fact node1.out.edge => nothing
         @fact node2.out.edge => nothing
         edge = Edge(node1.out, node2.out)
@@ -195,16 +195,16 @@ facts("Connections between nodes integration tests") do
 
 end
 
-facts("nodes() integration tests") do
-    context("nodes() should return an array of all nodes in the graph") do
+facts("getNodes() integration tests") do
+    context("getNodes() should return an array of all nodes in the graph") do
         nodes = initializeLoopyGraph()
-        found_nodes = nodes(getCurrentGraph())
+        found_nodes = getNodes(getCurrentGraph())
         @fact length(found_nodes) => length(nodes) # FactorGraph test
         for node in nodes
             @fact node in found_nodes => true
         end
 
-        found_nodes = nodes(getCurrentGraph().factorization[1]) # Subgraph test
+        found_nodes = getNodes(getCurrentGraph().factorization[1]) # Subgraph test
         @fact length(found_nodes) => length(nodes)
         for node in nodes
             @fact node in found_nodes => true
@@ -218,7 +218,7 @@ end
 
 facts("calculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do
-        (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(3.0))
+        (gain, terminal) = initializePairOfgetNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(3.0))
         Edge(terminal.out, gain.in1, Float64, Array{Float64, 2})
         gain.out.message_payload_type = Array{Float64, 2} # Expect a matrix
         @fact gain.out.message => nothing
@@ -231,7 +231,7 @@ facts("calculateMessage!() integration tests") do
 
     context("calculateMessage!() should recursively calculate required inbound message") do
         # Define three nodes in series
-        (node1, node2, node3) = initializeChainOfNodes()
+        (node1, node2, node3) = initializeChainOfgetNodes()
         @fact node3.out.message => nothing
         # Request message on node for which the input is unknown
         node3.out.message_payload_type = Array{Float64, 2} # Expect a matrix
@@ -296,7 +296,7 @@ facts("generateSchedule() and executeSchedule() integration tests") do
     end
 
     context("executeSchedule() should accept edges") do
-        (node1, node2, node3) = initializeChainOfNodes()
+        (node1, node2, node3) = initializeChainOfgetNodes()
         schedule = [node1.out.edge, node2.out.edge]
         node1.out.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
         node1.out.partner.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 

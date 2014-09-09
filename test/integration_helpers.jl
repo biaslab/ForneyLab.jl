@@ -33,7 +33,7 @@ end
 # Backgrounds
 #############
 
-function initializePairOfMockNodes()
+function initializePairOfMockgetNodes()
     # Two unconnected MockNodes
     #
     # [M]--|
@@ -44,7 +44,7 @@ function initializePairOfMockNodes()
     return MockNode(), MockNode()
 end
 
-function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(2.0), msg_gain_2=Message(3.0), msg_terminal=Message(1.0))
+function initializePairOfgetNodes(; A=[1.0], msg_gain_1=Message(2.0), msg_gain_2=Message(3.0), msg_terminal=Message(1.0))
     # Helper function for initializing an unconnected pair of nodes
     #     
     # |--[A]--|
@@ -60,7 +60,7 @@ function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(2.0), msg_gain_2=Me
     return node1, node2
 end
 
-function initializeChainOfNodes()
+function initializeChainOfgetNodes()
     # Chain of three nodes
     #
     #  1     2     3
