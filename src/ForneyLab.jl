@@ -24,7 +24,7 @@ abstract AbstractEdge # An Interface belongs to an Edge, but Interface is define
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
 typealias MessagePayload Union(ProbabilityDistribution, Number, Vector, Matrix)
 abstract Node
-show(io::IO, node::Node) = println(io, typeof(node), " with name ", node.name, ".")
+show(io::IO, node::Node) = println(io, "$(typeof(node)) with name $(node.name)")
 show(io::IO, nodes::Union(Set{Node}, Vector{Node})) = [show(io, node) for node in nodes]
 abstract CompositeNode <: Node
 
@@ -40,7 +40,7 @@ end
 Message(payload::MessagePayload) = Message{typeof(payload)}(deepcopy(payload))
 Message() = Message(1.0)
 uninformative(type_in::Type{Float64}) = Message(1.0) # uninformative general message
-show(io::IO, message::Message) = println(io, typeof(message), " with payload ", message.payload, ".")
+show(io::IO, message::Message) = println(io, "$(typeof(message)) with payload $(message.payload)")
 
 type Interface
     # An Interface belongs to a node and is used to send/receive messages.
