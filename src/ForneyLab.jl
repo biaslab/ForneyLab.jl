@@ -316,7 +316,7 @@ function factorizeMeanField!(graph::FactorGraph)
         if typeof(edge.head.node)==EqualityNode || typeof(edge.tail.node)==EqualityNode
             # Collect all other edges that are connected to this one through equality nodes
             edge_cluster = Set{Edge}()
-            connected_edges = Set{Edge}()
+            connected_edges = Set{Edge}(edge)
             while length(connected_edges) > 0
                 current_edge = pop!(connected_edges)
                 push!(edge_cluster, current_edge)
