@@ -55,7 +55,7 @@ graph2dot(graph::FactorGraph) = graph2dot(getNodes(graph, open_composites=false)
 graph2dot() = graph2dot(getCurrentGraph())
 graph2dot(subgraph::Subgraph) = graph2dot(getNodes(subgraph, open_composites=false))
 
-function graphViz(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1}); external_viewer::Bool=false)
+function graphViz(n::Union(FactorGraph, Subgraph, CompositeNode, Set{Node}); external_viewer::Bool=false)
     # Generates a DOT graph and shows it
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     dot_graph = graph2dot(n)
@@ -70,9 +70,10 @@ function graphViz(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1});
         end
     end
 end
+graphViz(nodes::Vector{Node}; args...) = graphViz(Set(nodes); args...)
 graphViz(; args...) = graphViz(getCurrentGraph(); args...)
 
-function graphPdf(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1}), filename::String)
+function graphPdf(n::Union(FactorGraph, Subgraph, CompositeNode, Set{Node}), filename::String)
     # Generates a DOT graph and writes it to a pdf file
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     dot_graph = graph2dot(n)
@@ -80,6 +81,7 @@ function graphPdf(n::Union(FactorGraph, Subgraph, CompositeNode, Array{Node,1}),
     write(stdin, dot_graph)
     close(stdin)
 end
+graphPdf(nodes::Vector{Node}, filename::String) = graphPdf(Set(nodes), filename)
 graphPdf(filename::String) = graphPdf(getCurrentGraph(), filename)
 
 function dot2svg(dot_graph::String)
@@ -100,14 +102,14 @@ function validateGraphVizInstalled()
     end
 end
 
-viewDotExternal(dot_graph::String) = (@windows? viewDotExternalImage(dot_graph::String) : viewDotExternalInteractive(dot_graph::Stringss))
+viewDotExternal(dot_graph::String) = (@windows? viewDotExternalImage(dot_graph::String) : viewDotExternalInteractive(dot_graph::String))
 
 function viewDotExternalInteractive(dot_graph::String)
     # View a DOT graph in interactive viewer
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    stdin, proc = writesto(`dot -Tx11`)
-    write(stdin, dot_graph)
-    close(stdin)
+    open(`dot -Tx11`, "w", STDOUT) do io
+        println(io, dot_graph)
+    end
 end
 
 function viewDotExternalImage(dot_graph::String)
