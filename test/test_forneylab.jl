@@ -102,6 +102,31 @@ facts("Graph level unit tests") do
         my_graph = getCurrentGraph()  # Make local pointer to global variable
         @fact typeof(my_graph) => FactorGraph
     end
+
+    context("setCurrentGraph() should set a new current graph object") do
+        my_first_graph = FactorGraph() # Reset
+        my_second_graph = FactorGraph()
+        @fact my_first_graph == current_graph => false
+        setCurrentGraph(my_first_graph)
+        @fact my_first_graph == current_graph => true
+    end
+
+    context("conformSubGraph!() should complete a subgraph with nodes and external edges based in its internal edges") do
+        my_graph = FactorGraph()
+        # On empty subgraph
+        my_subgraph = my_graph.subgraph
+        @fact length(my_subgraph.internal_edges) => 0
+        conformSubGraph!(my_subgraph)
+        @fact length(my_subgraph.nodes) => 0
+        @fact length(my_subgraph.external_edges) => 0
+        # Subgraph with one internal edge
+        Edge(MockNode().out, MockNode().out)
+        @fact length(my_subgraph.internal_edges) => 1
+        conformSubGraph!(my_subgraph)
+        @fact length(my_subgraph.nodes) => 2
+        @fact length(my_subgraph.external_edges) => 0
+
+    end
 end
 
 # Node and message specific tests are in separate files

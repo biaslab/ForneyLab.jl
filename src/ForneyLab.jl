@@ -577,25 +577,25 @@ function nodes(graph::FactorGraph; open_composites::Bool=true)
 end
 nodes(;args...) = nodes(getCurrentGraph(); args...)
 
-function edges(nodes::Array{Node,1}; include_external=true)
+function edges(nodes::Set{Node}; include_external=true)
     # Returns the set of edges connected to nodes, including or excluding external edges
     # An external edge has only head or tail in the interfaces belonging to nodes in the nodes array
 
-    edges = Set()
+    edge_set = Set{Edge}()
     for node in nodes
         for interface in node.interfaces
             if include_external
                 if interface.edge!=nothing && ((interface.edge.tail.node in nodes) || (interface.edge.head.node in nodes))
-                    push!(edges, interface.edge)
+                    push!(edge_set, interface.edge)
                 end
             else
                 if interface.edge!=nothing && (interface.edge.tail.node in nodes) && (interface.edge.head.node in nodes)
-                    push!(edges, interface.edge)
+                    push!(edge_set, interface.edge)
                 end
             end
         end
     end
-    return edges
+    return edge_set
 end
 
 # Utils
