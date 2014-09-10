@@ -102,7 +102,7 @@ function validateGraphVizInstalled()
     end
 end
 
-viewDotExternal(dot_graph::String) = (@windows? viewDotExternalImage(dot_graph::String) : viewDotExternalInteractive(dot_graph::Stringss))
+viewDotExternal(dot_graph::String) = (@windows? viewDotExternalImage(dot_graph::String) : viewDotExternalInteractive(dot_graph::String))
 
 function viewDotExternalInteractive(dot_graph::String)
     # View a DOT graph in interactive viewer
