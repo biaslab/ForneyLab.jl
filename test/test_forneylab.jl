@@ -391,6 +391,16 @@ facts("generateSchedule() and executeSchedule() integration tests") do
     end
 
     context("generateSchedule!() should generate an internal and external schedule when called on a subgraph") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph()
+        factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+        graph = getCurrentGraph()
+        generateSchedule!(graph.factorization[1])
+        generateSchedule!(graph.factorization[2])
+        println(graph.factorization[1].internal_schedule)
+        println(graph.factorization[2].internal_schedule)
+        println(graph.factorization[1].external_schedule)
+        println(graph.factorization[2].external_schedule)
+
         @fact true => false
     end
 

@@ -512,17 +512,17 @@ end
 clearMessages!(graph::FactorGraph) = map(clearMessages!, getNodes(graph, open_composites=true))
 clearMessages!() = clearMessages!(getCurrentGraph())
 
-function generateSchedule(outbound_interface::Interface)
+function generateSchedule(outbound_interface::Interface; args...)
     # Generate a schedule that can be executed to calculate the outbound message on outbound_interface.
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
     # The same graph with different messages being present can (and probably will) result in a different schedule.
     # When a lot of iterations of the same message passing schedule are required, it can be very beneficial
     # to generate the schedule just once using this function, and then execute the same schedule over and over.
     # This prevents having to generate the same schedule in every call to calculateMessage!().
-    schedule = generateScheduleByDFS(outbound_interface)
+    schedule = generateScheduleByDFS(outbound_interface; args...)
 end
 
-function generateSchedule(partial_schedule::Schedule)
+function generateSchedule(partial_schedule::Schedule; args...)
     # Generate a complete schedule based on partial_schedule.
     # A partial schedule only defines the order of a subset of all required messages.
     # This function will find a valid complete schedule that satisfies the partial schedule.
@@ -533,7 +533,7 @@ function generateSchedule(partial_schedule::Schedule)
     # This prevents having to generate the same schedule in every call to calculateMessage!().
     schedule = Array(Interface, 0)
     for interface_order_constraint in partial_schedule
-        schedule = generateScheduleByDFS(interface_order_constraint, schedule)
+        schedule = generateScheduleByDFS(interface_order_constraint, schedule; args...)
     end
 
     return schedule
@@ -542,9 +542,38 @@ end
 function generateSchedule!(subgraph::Subgraph)
     # Generate an internal and external schedule for the subgraph
 
+    # Find nodes connected to external edges
+    nodes_connected_to_external = Array(Node, 0)
+    for external_edge in subgraph.external_edges
+         # Check if head node is in subgraph, connected to external, and not already accounted for
+        if (external_edge.head.node in subgraph.nodes) && !(external_edge.head.node in nodes_connected_to_external)
+            push!(nodes_connected_to_external, external_edge.head.node)
+        end
+         # Check if tail node is in subgraph, connected to external, and not already accounted for
+        if (external_edge.tail.node in subgraph.nodes) && !(external_edge.tail.node in nodes_connected_to_external)
+            push!(nodes_connected_to_external, external_edge.tail.node)
+        end
+    end
+    # Set external schedule with nodes (g) connected to external edges
+    subgraph.external_schedule = nodes_connected_to_external
+
+    # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present
+    internal_schedule = Array(Interface, 0)
+    for g_node in nodes_connected_to_external
+        for interface in g_node.interfaces
+            if interface.edge in subgraph.internal_edges # edge carries incoming internal message
+                internal_schedule = [internal_schedule, generateSchedule(interface, stay_in_subgraph=true)] # What do we need to do to calculate this message
+                internal_schedule = unique(internal_schedule)
+            end
+        end
+    end
+    # Set the internal schedule
+    subgraph.internal_schedule = internal_schedule
+
+    return subgraph
 end
 
-function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedule=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0))
+function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedule=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0); stay_in_subgraph=false)
     # This is a private function that performs a search through the factor graph to generate a schedule.
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
     # This is a recursive implementation of DFS. The recursive calls are stored in call_list.
@@ -566,8 +595,10 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedul
         if is(interface, outbound_interface)
             outbound_interface_id = interface_id
         end
-        if (!isdefined(outbound_interface, :dependencies) && outbound_interface_id==interface_id) ||
-           (isdefined(outbound_interface, :dependencies) && !(interface in outbound_interface.dependencies))
+        graph = getCurrentGraph() # TODO: DOES NOT HAVE TO BE CURRENT GRAPH, JUST THE GRAPH THE OUTBOUND INTERFACE EDGE IS INTERNAL ON
+        if (!isdefined(outbound_interface, :dependencies) && outbound_interface_id==interface_id) || # Outbound is inbound and not specified as required
+           (isdefined(outbound_interface, :dependencies) && !(interface in outbound_interface.dependencies)) || # Inbound specified as not required
+           (stay_in_subgraph && graph.edge_to_subgraph[outbound_interface.edge] != graph.edge_to_subgraph[interface.edge]) # Internal subgraph schedule generation and edges are on different subgraphs
             continue
         end
         @assert(interface.partner!=nothing, "Disconnected interface should be connected: interface #$(interface_id) of $(typeof(node)) $(node.name)")
