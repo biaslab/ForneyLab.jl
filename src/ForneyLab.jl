@@ -626,10 +626,19 @@ function getNodes(graph::FactorGraph; open_composites::Bool=true)
 end
 getNodes(;args...) = getNodes(getCurrentGraph(); args...)
 
+function getEdges(graph::FactorGraph)
+    # Returns the set of edges in the graph
+    edge_set = Set{Edge}()
+    for subgraph in graph.factorization
+        union!(edge_set, subgraph.internal_edges)
+    end
+    return edge_set
+end
+getEdges(;args...) = getEdges(getCurrentGraph())
+
 function getEdges(nodes::Set{Node}; include_external=true)
     # Returns the set of edges connected to nodes, including or excluding external edges
     # An external edge has only head or tail in the interfaces belonging to nodes in the nodes array
-
     edge_set = Set{Edge}()
     for node in nodes
         for interface in node.interfaces
