@@ -84,6 +84,7 @@ facts("Graph level unit tests") do
         @fact typeof(fg) => FactorGraph
         @fact length(fg.factorization) => 1
         @fact typeof(fg.factorization[1]) => Subgraph
+        @fact typeof(fg.edge_to_subgraph) => Dict{Edge, Subgraph}
         @fact current_graph => fg # Global should be set
     end
 
@@ -163,6 +164,14 @@ facts("Connections between nodes integration tests") do
         @fact edge in graph.factorization[1].internal_edges => true
         @fact node1 in graph.factorization[1].nodes => true
         @fact node2 in graph.factorization[1].nodes => true
+    end
+
+    context("Edge constructor should add edge to edge_to_subgraph mapping") do
+        (node1, node2) = initializePairOfNodes()
+        # Couple the interfaces that carry GeneralMessage
+        edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
+        graph = getCurrentGraph()
+        @fact graph.edge_to_subgraph[edge] => graph.factorization[1]
     end
 
     context("Nodes can be coupled by edges using the explicit interface names") do
@@ -267,6 +276,16 @@ facts("Graph level integration tests") do
         @fact graph.factorization[2].nodes => Set{Node}({driver, inhibitor})
         @fact graph.factorization[2].internal_edges => Set{Edge}({inhibitor.out.edge})
         @fact graph.factorization[2].external_edges => Set{Edge}({add.in1.edge, add.out.edge})
+    end
+
+    context("factorize!() should update the edge_to_subgraph mapping for the graph") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph()
+        factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+        graph = getCurrentGraph()
+        @fact graph.edge_to_subgraph[add.out.edge] => graph.factorization[1]
+        @fact graph.edge_to_subgraph[add.in1.edge] => graph.factorization[1]
+        @fact graph.edge_to_subgraph[add.in2.edge] => graph.factorization[1]
+        @fact graph.edge_to_subgraph[inhibitor.out.edge] => graph.factorization[2]
     end
 
     context("factorizeMeanField!() should output a mean field factorized graph") do
