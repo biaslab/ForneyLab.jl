@@ -18,7 +18,7 @@ facts("Naive VMP implementation integration tests") do
 
         graph = getCurrentGraph()
         for subgraph in graph.factorization
-            generatechedule!(subgraph) # Generate internal and external schedule automatically
+            generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
 
         #---------------------------------------------------------------------------

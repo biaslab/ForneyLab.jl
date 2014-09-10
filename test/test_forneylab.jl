@@ -352,6 +352,8 @@ end
 facts("generateSchedule() and executeSchedule() integration tests") do
     (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
 
+    # Begin of graph context
+
     context("generateSchedule() should throw an error when there is an unbroken loop") do
         @fact_throws generateSchedule(driver.out)
     end
@@ -390,20 +392,6 @@ facts("generateSchedule() and executeSchedule() integration tests") do
         @fact schedule[5] => add.in2
     end
 
-    context("generateSchedule!() should generate an internal and external schedule when called on a subgraph") do
-        (driver, inhibitor, noise, add) = initializeLoopyGraph()
-        factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
-        graph = getCurrentGraph()
-        generateSchedule!(graph.factorization[1])
-        generateSchedule!(graph.factorization[2])
-        println(graph.factorization[1].internal_schedule)
-        println(graph.factorization[2].internal_schedule)
-        println(graph.factorization[1].external_schedule)
-        println(graph.factorization[2].external_schedule)
-
-        @fact true => false
-    end
-
     context("executeSchedule() should correctly execute a schedule and return the result of the last step") do
         schedule = generateSchedule(add.in2)
         dist = ensureMVParametrization!(executeSchedule(schedule).payload)
@@ -411,6 +399,25 @@ facts("generateSchedule() and executeSchedule() integration tests") do
         @fact isApproxEqual(dist.m, [2.0]) => true
         @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
     end
+
+    context("generateSchedule!() should generate an internal and external schedule when called on a subgraph") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph()
+        factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+        graph = getCurrentGraph()
+        for subgraph in graph.factorization
+            #graphViz(subgraph)
+            generateSchedule!(subgraph)
+            #println(subgraph.internal_schedule)
+            #println(subgraph.external_schedule)
+        end
+        # Order differs between test runs, validity of order is not checked
+        @fact Set{Interface}(graph.factorization[1].internal_schedule) => Set{Interface}([noise.out, inhibitor.in1, add.in1, driver.out, add.out])
+        @fact Set{Interface}(graph.factorization[2].internal_schedule) => Set{Interface}([driver.in1, inhibitor.out])
+        @fact Set{Node}(graph.factorization[1].external_schedule) => Set{Node}([driver, inhibitor])
+        @fact Set{Node}(graph.factorization[2].external_schedule) => Set{Node}([inhibitor, driver])
+    end
+
+    # End of graph context
 
     context("executeSchedule() should work as expeced in loopy graphs") do
         (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
