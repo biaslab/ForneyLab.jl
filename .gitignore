@@ -2,3 +2,4 @@
 *.log
 *.synctex.*
 .ipynb_checkpoints
+demo/*.jl
