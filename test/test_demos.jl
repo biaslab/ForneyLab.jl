@@ -1,4 +1,5 @@
 # This file validates that all demos run without errors
+# Simply run this file to check the demos
 
 orig_pwd = pwd()
 demo_dir = normpath(joinpath(dirname(@__FILE__()), "..", "demo"))
