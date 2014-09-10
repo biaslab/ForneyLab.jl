@@ -50,6 +50,11 @@ The main testing file `test_forneylab.jl` performs some tests on all available n
 ```jl
 include("test/runtests.jl")
 ```
+Alternatively, you can also use:
+
+```jl
+Pkg.test("ForneyLab")
+```
 
 If you add a new test file, do not forget to add the inclusion to `/test/test/test_forneylab.jl`.
 
