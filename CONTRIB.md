@@ -45,11 +45,16 @@ For every `.jl` file in `/src/`, there should be a corresponding FactCheck test 
 - Triggering all possible exceptions
 
 The main testing file `test_forneylab.jl` performs some tests on all available node types.
-**Before each commit, confirm that all tests pass**. Pull requests that break tests or that do not include sufficient tests will not be merged. The tests are evaluated by simply including the main test file:
+**Before each commit, confirm that all tests pass**. Pull requests that break tests or that do not include sufficient tests will not be merged. The tests are evaluated by simply running or including `test/runtests.jl`:
 
 ```jl
-using ForneyLab
-include("test/test_forneylab.jl")
+include("test/runtests.jl")
 ```
 
 If you add a new test file, do not forget to add the inclusion to `/test/test/test_forneylab.jl`.
+
+To test the demos, use:
+
+```jl
+include("test/test_demos.jl")
+```
