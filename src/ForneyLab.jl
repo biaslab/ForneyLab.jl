@@ -112,6 +112,8 @@ type Edge <: AbstractEdge
     marginal::Any
 
     function Edge(tail::Interface, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType; add_to_graph::Bool=true)
+        # add_to_graph is false for edges that are internal in a composite node
+
         (forward_message_payload_type <: MessagePayload) || error("Forward message payload type $(forward_message_payload_type) not supported")
         (backward_message_payload_type <: MessagePayload) || error("Backward message payload type $(backward_message_payload_type) not supported")
         if tail.message != nothing && (typeof(tail.message.payload) != forward_message_payload_type)
@@ -155,6 +157,7 @@ type Edge <: AbstractEdge
             graph = getCurrentGraph()
             (length(graph.factorization) == 1) || error("Cannot create Edge in an already factorized graph; first build the graph, then define factorizations.")
             subgraph = graph.factorization[1] # There is only one
+            graph.edge_to_subgraph[self] = subgraph # Add edge to internal mapping
             push!(subgraph.internal_edges, self) # Define edge as internal
             push!(subgraph.nodes, tail.node) # Add node to subgraph
             push!(subgraph.nodes, head.node)
@@ -262,6 +265,7 @@ end
 
 type FactorGraph
     factorization::Array{Subgraph, 1} # References to subgraphs
+    edge_to_subgraph::Dict{Edge, Subgraph} # Fast lookup for edge to subgraph in which edge is internal; also determines the ordering of edges
     approximate_marginals::Dict{(Node, Subgraph), MessagePayload} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
 end
 
@@ -273,11 +277,11 @@ function show(io::IO, factor_graph::FactorGraph)
 end
 
 # Get and set current graph functions
-global current_graph = FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], Dict{(Node, Subgraph), MessagePayload}()) # Initialize a current_graph
+global current_graph = FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], Dict{Edge, Subgraph}(), Dict{(Node, Subgraph), MessagePayload}()) # Initialize a current_graph
 getCurrentGraph() = current_graph::FactorGraph
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
-FactorGraph() = setCurrentGraph(FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], Dict{(Node, Subgraph), MessagePayload}())) # Initialize a new factor graph; automatically sets current_graph
+FactorGraph() = setCurrentGraph(FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], Dict{Edge, Subgraph}(), Dict{(Node, Subgraph), MessagePayload}())) # Initialize a new factor graph; automatically sets current_graph
 function Subgraph() # Construct and add to current graph
     subgraph = Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
     graph = getCurrentGraph()
@@ -306,8 +310,10 @@ function factorize!(graph::FactorGraph, internal_edges::Set{Edge})
         setdiff!(subgraph.internal_edges, internal_edges) # Remove edges from existing subgraph
     end
     new_subgraph = Subgraph(Set{Node}(), copy(internal_edges), Set{Edge}(), Array(Interface, 0), Array(Node, 0)) # Create subgraph
-    graph = getCurrentGraph()
     push!(graph.factorization, new_subgraph) # Add to current graph
+    for internal_edge in internal_edges # Point edges to new subgraph in which they are internal
+        graph.edge_to_subgraph[internal_edge] = new_subgraph
+    end
     for (subgraph_index, subgraph) in enumerate(graph.factorization)
         # Remove empty subgraphs
         if length(subgraph.internal_edges) == 0
@@ -324,7 +330,7 @@ factorize!(internal_edges::Set{Edge}) = factorize!(getCurrentGraph(), internal_e
 function factorizeMeanField!(graph::FactorGraph)
     # Generate a mean field factorization
     (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
-    edges_to_factor = getEdges(getNodes(graph, open_composites=false), include_external=false) # All top-level edges in the factor graph
+    edges_to_factor = getEdges(graph) # All top-level edges in the factor graph
 
     while length(edges_to_factor) > 0 # As long as there are edges to factor
         edge = pop!(edges_to_factor) # Pick an edge to factor
