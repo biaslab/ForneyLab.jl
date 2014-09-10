@@ -562,7 +562,7 @@ function generateSchedule!(subgraph::Subgraph)
     for g_node in nodes_connected_to_external
         for interface in g_node.interfaces
             if interface.edge in subgraph.internal_edges # edge carries incoming internal message
-                internal_schedule = [internal_schedule, generateSchedule(interface, stay_in_subgraph=true)] # What do we need to do to calculate this message
+                internal_schedule = [internal_schedule, generateSchedule(interface.partner, stay_in_subgraph=true)] # What do we need to do to calculate this message
                 internal_schedule = unique(internal_schedule)
             end
         end
@@ -607,7 +607,7 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedul
             if !(interface.partner in backtrace) # Don't recalculate stuff that's already in the schedule.
                 # Recursive call
                 printVerbose("Recursive call of generateSchedule! on node $(typeof(interface.partner.node)) $(interface.partner.node.name)")
-                generateScheduleByDFS(interface.partner, backtrace, call_list)
+                generateScheduleByDFS(interface.partner, backtrace, call_list, stay_in_subgraph=stay_in_subgraph)
             end
         end
     end
