@@ -10,8 +10,18 @@ facts("Naive VMP implementation integration tests") do
         # Initialize chain
         # Fixed observations drawn from N(5.0, 2.0)
         data = [4.9411489951651735,4.4083330961647595,3.535639074214823,2.1690761263145855,4.740705436131505,5.407175878845115,3.6458623443189957,5.132115496214244,4.485471215629411,5.342809672818667]
-        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges, factorization) = initializeGaussianNodeChain(data)
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
         n_sections = length(data)
+
+        # Apply mean field factorization
+        factorizeMeanField!()
+
+        graph = getCurrentGraph()
+        for subgraph in graph.factorization
+            generatechedule!(subgraph) # Generate internal and external schedule automatically
+        end
+
+        #---------------------------------------------------------------------------
 
         # Initialize schedules
         # Sumproduct and marginal schedule for q(y)

@@ -4,7 +4,7 @@ export  Message, Node, CompositeNode, Interface, Schedule, Edge, ExternalSchedul
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!,
-        generateSchedule, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, getNodes, getEdges, factorize!, factorizeMeanField!
+        generateSchedule, generateSchedule!, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, getNodes, getEdges, factorize!, factorizeMeanField!
 export  ==
 export  current_graph
 
@@ -531,6 +531,11 @@ function generateSchedule(partial_schedule::Schedule)
     end
 
     return schedule
+end
+
+function generateSchedule!(subgraph::Subgraph)
+    # Generate an internal and external schedule for the subgraph
+
 end
 
 function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedule=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0))

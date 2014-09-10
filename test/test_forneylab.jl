@@ -291,8 +291,8 @@ facts("Graph level integration tests") do
         @fact m_set in factorized_internal_edges => true
         @fact gam_set in factorized_internal_edges => true
         @fact Set{Edge}({q_y_edges[1]}) in factorized_internal_edges => true
-        @fact Set{Edge}({q_y_edges[1]}) in factorized_internal_edges => true
-        @fact Set{Edge}({q_y_edges[1]}) in factorized_internal_edges => true
+        @fact Set{Edge}({q_y_edges[2]}) in factorized_internal_edges => true
+        @fact Set{Edge}({q_y_edges[3]}) in factorized_internal_edges => true
     end
 
     context("pushRequiredInbound!() should add the proper message/marginal") do
@@ -369,6 +369,10 @@ facts("generateSchedule() and executeSchedule() integration tests") do
         @fact schedule[3] => driver.in1
         @fact schedule[4] => inhibitor.in1
         @fact schedule[5] => add.in2
+    end
+
+    context("generateSchedule!() should generate an internal and external schedule when called on a subgraph") do
+        @fact true => false
     end
 
     context("executeSchedule() should correctly execute a schedule and return the result of the last step") do
