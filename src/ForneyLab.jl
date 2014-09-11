@@ -195,6 +195,43 @@ function show(io::IO, edge::Edge)
     println(io, "Accepted backward message payload type: $(edge.head.message_payload_type).")
 end
 
+typealias ExternalSchedule Array{Node, 1}
+function show(io::IO, schedule::ExternalSchedule)
+     # Show external schedule
+    println(io, "External schedule:")
+    for entry in schedule
+        println(io, "Node $(entry.name) of type $(typeof(entry))")
+    end
+end
+
+setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
+setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, message)
+getForwardMessage(edge::Edge) = edge.tail.message
+getBackwardMessage(edge::Edge) = edge.head.message
+
+# FactorGraph and Subgraph types
+type Subgraph
+    nodes::Set{Node}
+    internal_edges::Set{Edge}
+    external_edges::Set{Edge}
+    internal_schedule::Schedule # Schedule for internal message passing (Dauwels step 2)
+    external_schedule::ExternalSchedule # Schedule for updates on nodes connected to external edges (Dauwels step 3)
+end
+
+type FactorGraph
+    factorization::Array{Subgraph, 1} # References to subgraphs
+    edge_to_subgraph::Dict{Edge, Subgraph} # Fast lookup for edge to subgraph in which edge is internal; also determines the ordering of edges
+    approximate_marginals::Dict{(Node, Subgraph), MessagePayload} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
+end
+
+function show(io::IO, factor_graph::FactorGraph)
+    nodes_top = getNodes(factor_graph, open_composites=false)
+    println(io, "FactorGraph")
+    println(io, " # nodes: $(length(nodes_top)) ($(length(getNodes(factor_graph))) including child nodes)")
+    println(io, " # edges (top level): $(length(getEdges(nodes_top)))")
+end
+
+# Effcient get/set combinations for messages and marginals
 function getOrCreateMessage(interface::Interface, assign_payload::DataType, arr_dims::Tuple=(1, 1))
     # Looks for a message on interface.
     # When no message is present, it sets and returns a standard message.
@@ -238,42 +275,6 @@ function getOrCreateMarginal(node::Node, subgraph::Subgraph, graph::FactorGraph,
         end
     end
     return graph.approximate_marginals[(node, subgraph)]
-end
-
-typealias ExternalSchedule Array{Node, 1}
-function show(io::IO, schedule::ExternalSchedule)
-     # Show external schedule
-    println(io, "External schedule:")
-    for entry in schedule
-        println(io, "Node $(entry.name) of type $(typeof(entry))")
-    end
-end
-
-setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
-setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, message)
-getForwardMessage(edge::Edge) = edge.tail.message
-getBackwardMessage(edge::Edge) = edge.head.message
-
-# FactorGraph and Subgraph types
-type Subgraph
-    nodes::Set{Node}
-    internal_edges::Set{Edge}
-    external_edges::Set{Edge}
-    internal_schedule::Schedule # Schedule for internal message passing (Dauwels step 2)
-    external_schedule::ExternalSchedule # Schedule for updates on nodes connected to external edges (Dauwels step 3)
-end
-
-type FactorGraph
-    factorization::Array{Subgraph, 1} # References to subgraphs
-    edge_to_subgraph::Dict{Edge, Subgraph} # Fast lookup for edge to subgraph in which edge is internal; also determines the ordering of edges
-    approximate_marginals::Dict{(Node, Subgraph), MessagePayload} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
-end
-
-function show(io::IO, factor_graph::FactorGraph)
-    nodes_top = getNodes(factor_graph, open_composites=false)
-    println(io, "FactorGraph")
-    println(io, " # nodes: $(length(nodes_top)) ($(length(getNodes(factor_graph))) including child nodes)")
-    println(io, " # edges (top level): $(length(getEdges(nodes_top)))")
 end
 
 # Get and set current graph functions
@@ -469,17 +470,6 @@ function executeSchedule(schedule::ExternalSchedule)
     # Return the last message in the schedule
     return schedule[end].marginal
 end
-
-# function setMarginal!(edge::Edge, distribution::Any)
-#     # Presets the marginal on edge with the argument message
-#     # Usually this method is used to set an uninformative distribution
-#     edge.marginal = deepcopy(distribution)
-# end
-# function setMarginal!(node::Node, distribution::Any)
-#     # Presets the marginal on a node
-#     # Usually this method is used to set an uninformative distribution
-#     node.marginal = deepcopy(distribution)
-# end
 
 # Standard marginal calculations for an edge variable
 function calculateMarginal(edge::Edge)

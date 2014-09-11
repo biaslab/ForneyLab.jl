@@ -69,15 +69,6 @@ facts("CalculateMessage!() unit tests") do
     end
 end
 
-facts("setMarginal unit tests") do
-    context("setMarginal!() should preset a marginal") do
-        (node1, node2) = initializePairOfMockNodes()
-        edge = Edge(node1.out, node2.out)
-        setMarginal!(edge, 1.0)
-        @fact edge.marginal => 1.0
-    end
-end
-
 facts("Graph level unit tests") do
     context("FactorGraph() should initialize a factor graph") do
         fg = FactorGraph()
