@@ -21,6 +21,8 @@ facts("Naive VMP implementation integration tests") do
             generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
 
+        setUninformativeMarginals!()
+
         # Perform vmp updates
         n_its = 50
 
@@ -72,6 +74,8 @@ facts("Naive VMP implementation integration tests") do
         for subgraph in graph.factorization
             generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
+
+        setUninformativeMarginals!()
 
         # x and y marginals need to be set only once because samples remain the same.
         # q(x) update
@@ -143,9 +147,10 @@ facts("Structured VMP implementation integration tests") do
             generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
 
+        setUninformativeMarginals!()
+
         y_subgraph = getSubgraph(g_node.out.edge)
         m_gam_subgraph = getSubgraph(g_node.mean.edge)
-
         for sample = 1:n_samples
             # Reset
             y_node.value = GaussianDistribution(m = data[sample], W=10.0) # Small variance on sample

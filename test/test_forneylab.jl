@@ -313,6 +313,10 @@ facts("Graph level integration tests") do
         @fact Set{Edge}({q_y_edges[3]}) in factorized_internal_edges => true
     end
 
+    context("setUninformativeMarginals() should preset uninformative marginals at the appropriate places") do
+        @fact true => false
+    end
+
     context("pushRequiredInbound!() should add the proper message/marginal") do
         @fact true => false
     end

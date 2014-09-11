@@ -4,7 +4,7 @@ export  Message, Node, CompositeNode, Interface, Schedule, Edge, ExternalSchedul
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!,
-        generateSchedule, generateSchedule!, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, getSubgraph, getNodes, getEdges, factorize!, factorizeMeanField!
+        generateSchedule, generateSchedule!, executeSchedule, uninformative, setUninformativeMarginals!, getOrCreateMessage, getCurrentGraph, setCurrentGraph, getSubgraph, getNodes, getEdges, factorize!, factorizeMeanField!
 export  ==
 export  current_graph
 
@@ -373,6 +373,42 @@ function factorizeMeanField!(graph::FactorGraph)
     return graph
 end
 factorizeMeanField!() = factorizeMeanField!(getCurrentGraph())
+
+function setUninformativeMarginals!(graph::FactorGraph=getCurrentGraph())
+    # Sets the uninformative marginals in the approximate marginal dictionary, depending on the graph factorization
+    for subgraph in graph.factorization
+        external_nodes = Array(Node, 0)
+        for external_edge in subgraph.external_edges
+            for node in [external_edge.tail.node, external_edge.head.node]
+                if !(node in subgraph.nodes) push!(external_nodes, node) end
+            end
+        end
+        for node in external_nodes
+            interface_list = Array(Interface, 0)
+            internal_list = Array(Bool, 0)
+            for interface in node.interfaces
+                # Build a boolean list of edges that are internal
+                push!(internal_list, graph.edge_to_subgraph[interface.edge] == subgraph)
+                # And corresponding edges
+                push!(interface_list, interface)
+            end
+            # From the invertarization of internal edges and the node type we can deduce the marginal types
+            if sum(internal_list) == 1
+                # Univariate
+                internal_interface = interface_list[internal_list]
+                marginal_type = getMarginalType(internal_interface.message_payload_type, internal_interface.partner.message_payload_type)
+            else
+                # Multivariate
+                internal_interfaces = interface_list[internal_list]
+                internal_incoming_message_types = [intf.partner.message_payload_type for intf in internal_interfaces]
+                marginal_type = getMarginalType(typeof(node), internal_incoming_message_types...)
+            end
+            graph.approximate_marginals[(node, subgraph)] = uninformative(marginal_type)
+        end
+    end
+
+    return graph
+end
 
 # Nodes
 include("nodes/addition.jl")

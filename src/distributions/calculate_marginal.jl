@@ -169,3 +169,21 @@ function calculateMarginal!(node::GaussianNode,
 
     return marg
 end
+
+
+############################
+# Lookup for marginal type combinations
+############################
+
+# Univariate
+getMarginalType(::Type{GaussianDistribution}, ::Type{GaussianDistribution}) = GaussianDistribution
+getMarginalType(::Type{GammaDistribution}, ::Type{GammaDistribution}) = GammaDistribution
+getMarginalType(::Type{InverseGammaDistribution}, ::Type{InverseGammaDistribution}) = InverseGammaDistribution
+getMarginalType(::Type{GaussianDistribution}, ::Type{StudentsTDistribution}) = GaussianDistribution
+getMarginalType(::Type{StudentsTDistribution}, ::Type{GaussianDistribution}) = GaussianDistribution
+getMarginalType(::Type{GaussianDistribution}, ::Type{Float64}) = Float64
+getMarginalType(::Type{Float64}, ::Type{GaussianDistribution}) = Float64
+
+# Multivariate
+getMarginalType(::Type{GaussianNode}, ::Type{GaussianDistribution}, ::Type{GammaDistribution}) = NormalGammaDistribution
+getMarginalType(::Type{GaussianNode}, ::Type{GammaDistribution}, ::Type{GaussianDistribution}) = NormalGammaDistribution
