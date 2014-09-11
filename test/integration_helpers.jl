@@ -255,7 +255,7 @@ function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rule
     return gec_node
 end
 
-function initializeGaussianNode()
+function initializeGaussianNode(; y_type::DataType=Float64)
     # Initialize a Gaussian node
     #
     #    mean   precision
@@ -264,18 +264,18 @@ function initializeGaussianNode()
     #         v y
     #        [M]
 
+    graph = FactorGraph()
     node = GaussianNode(form="precision")
-    node.marginal = NormalGammaDistribution()
     edges = Array(Edge, 3)
     edges[1] = Edge(MockNode().out, node.mean)
-    edges[1].marginal = GaussianDistribution()
     edges[1].tail.message = Message(GaussianDistribution())
+    edges[1].head.message = Message(GaussianDistribution())
     edges[2] = Edge(MockNode().out, node.precision, GammaDistribution)
-    edges[2].marginal = GammaDistribution()
     edges[2].tail.message = Message(GammaDistribution())
-    edges[3] = Edge(node.out, MockNode().out, Float64)
-    edges[3].marginal = 1.0
-    edges[3].head.message = Message(1.0)
+    edges[2].head.message = Message(GammaDistribution())
+    edges[3] = Edge(node.out, MockNode().out, GaussianDistribution, y_type)
+    edges[3].tail.message = Message(GaussianDistribution())
+    edges[3].head.message = Message(uninformative(y_type))
 
     # Set messages and marginals
     return (node, edges)

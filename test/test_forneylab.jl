@@ -102,6 +102,10 @@ facts("Graph level unit tests") do
         setCurrentGraph(my_first_graph)
         @fact my_first_graph == current_graph => true
     end
+
+    context("getSubgraph(edge) should return the subgraph where edge is internal") do
+        @fact true => false
+    end
 end
 
 # Node and message specific tests are in separate files

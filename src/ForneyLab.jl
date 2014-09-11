@@ -4,7 +4,7 @@ export  Message, Node, CompositeNode, Interface, Schedule, Edge, ExternalSchedul
 export  calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!,
         calculateMarginal, calculateMarginal!,
         getMessage, getName, getForwardMessage, getBackwardMessage, setMessage!, setMarginal!, setForwardMessage!, setBackwardMessage!, clearMessage!, clearMessages!,
-        generateSchedule, generateSchedule!, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, getNodes, getEdges, factorize!, factorizeMeanField!
+        generateSchedule, generateSchedule!, executeSchedule, uninformative, getOrCreateMessage, getCurrentGraph, setCurrentGraph, getSubgraph, getNodes, getEdges, factorize!, factorizeMeanField!
 export  ==
 export  current_graph
 
@@ -305,6 +305,16 @@ function conformSubgraph!(subgraph::Subgraph)
     return subgraph
 end
 
+function getSubgraph(graph::FactorGraph, internal_edge::Edge)
+    # Returns the subgraph in which internal_edge is internal
+    for sg in graph.factorization
+        if internal_edge in sg.internal_edges
+            return sg
+        end
+    end
+end
+getSubgraph(internal_edge::Edge) = getSubgraph(getCurrentGraph(), internal_edge)
+
 function factorize!(graph::FactorGraph, internal_edges::Set{Edge})
     # Add a subgraph containing the edges specified in internal_edges and conform
     for subgraph in graph.factorization
@@ -497,9 +507,10 @@ function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=g
     for interface in node.interfaces # In the order of the node's interfaces
         edge_subgraph = graph.edge_to_subgraph[interface.edge]
         if edge_subgraph == subgraph # Edge is internal
-            push!(required_inputs, interface.message)
-            push!(internal_edge_list, Edge)
+            push!(required_inputs, interface.partner.message)
+            push!(internal_edge_list, interface.edge)
         else # Edge is external
+            haskey(graph.approximate_marginals, (node, edge_subgraph)) || error("A required approximate marginal for $(node.name) is not preset. Please preset an (uninformative) marginal.")
             push!(required_inputs, graph.approximate_marginals[(node, edge_subgraph)])
         end
     end

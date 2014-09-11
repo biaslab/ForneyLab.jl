@@ -15,17 +15,3 @@ function viewFile(filename::String)
     # Open a file with the application associated with the file type
     @windows? run(`cmd /c start $filename`) : (@osx? run(`open $filename`) : (@linux? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
 end
-
-function duplicated(C)
-    # Returns duplicated values in C
-    out = Array(eltype(C),0)
-    seen = Set{eltype(C)}()
-    for x in C
-        if in(x, seen) && !in(x, out)
-            push!(out, x)
-        else
-            push!(seen, x)
-        end
-    end
-    out
-end

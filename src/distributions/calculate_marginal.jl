@@ -156,7 +156,6 @@ function calculateMarginal!(node::GaussianNode,
 
     mu_m = gaus_msg.payload
     mu_gam = gam_msg.payload
-    y_dist = node.out.edge.marginal
     
     ensureMDefined!(mu_m)
     ensureMWParametrization!(y_dist)
