@@ -350,74 +350,74 @@ facts("calculateMessage!() integration tests") do
 end
 
 facts("generateSchedule() and executeSchedule() integration tests") do
-    (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
 
     # Begin of graph context
+    context("Graph context") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
 
-    context("generateSchedule() should throw an error when there is an unbroken loop") do
-        @fact_throws generateSchedule(driver.out)
-    end
-
-    # Initial message
-    setMessage!(add.in1, Message(GaussianDistribution(m=2.0, V=0.5)))
-    setMessage!(add.out, Message(GaussianDistribution()))
-
-    context("generateSchedule() should auto-generate a feasible schedule") do
-        # Generate schedule automatically
-        schedule = generateSchedule(add.in2) # Message towards noise factor
-        # All (but just) required calculations should be in the schedule
-        @fact inhibitor.out in schedule => true
-        @fact driver.out    in schedule => true
-        @fact inhibitor.in1 in schedule => true
-        @fact driver.in1    in schedule => true
-        @fact add.in2       in schedule => true
-        @fact add.in1       in schedule => false
-        @fact add.out       in schedule => false
-        @fact noise.out     in schedule => false
-        # Validate correct relative order in schedule
-        @fact findfirst(schedule, inhibitor.out)    < findfirst(schedule, driver.out)   => true
-        @fact findfirst(schedule, driver.out)       < findfirst(schedule, add.in2)      => true
-        @fact findfirst(schedule, driver.in1)       < findfirst(schedule, inhibitor.in1)=> true
-        @fact findfirst(schedule, inhibitor.in1)    < findfirst(schedule, add.in2)      => true
-    end
-
-    context("generateSchedule() should correctly complete a partial schedule") do
-        # Generate a schedule that first passes clockwise through the cycle and then counterclockwise
-        schedule = generateSchedule([driver.out, add.in2]) # Message towards noise factor
-        # All (but just) required calculations should be in the schedule
-        @fact schedule[1] => inhibitor.out
-        @fact schedule[2] => driver.out
-        @fact schedule[3] => driver.in1
-        @fact schedule[4] => inhibitor.in1
-        @fact schedule[5] => add.in2
-    end
-
-    context("executeSchedule() should correctly execute a schedule and return the result of the last step") do
-        schedule = generateSchedule(add.in2)
-        dist = ensureMVParametrization!(executeSchedule(schedule).payload)
-        @fact dist => add.in2.message.payload
-        @fact isApproxEqual(dist.m, [2.0]) => true
-        @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
-    end
-
-    context("generateSchedule!() should generate an internal and external schedule when called on a subgraph") do
-        (driver, inhibitor, noise, add) = initializeLoopyGraph()
-        factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
-        graph = getCurrentGraph()
-        for subgraph in graph.factorization
-            #graphViz(subgraph)
-            generateSchedule!(subgraph)
-            #println(subgraph.internal_schedule)
-            #println(subgraph.external_schedule)
+        context("generateSchedule() should throw an error when there is an unbroken loop") do
+            @fact_throws generateSchedule(driver.out)
         end
-        # Order differs between test runs, validity of order is not checked
-        @fact Set{Interface}(graph.factorization[1].internal_schedule) => Set{Interface}([noise.out, inhibitor.in1, add.in1, driver.out, add.out])
-        @fact Set{Interface}(graph.factorization[2].internal_schedule) => Set{Interface}([driver.in1, inhibitor.out])
-        @fact Set{Node}(graph.factorization[1].external_schedule) => Set{Node}([driver, inhibitor])
-        @fact Set{Node}(graph.factorization[2].external_schedule) => Set{Node}([inhibitor, driver])
-    end
 
-    # End of graph context
+        # Initial message
+        setMessage!(add.in1, Message(GaussianDistribution(m=2.0, V=0.5)))
+        setMessage!(add.out, Message(GaussianDistribution()))
+
+        context("generateSchedule() should auto-generate a feasible schedule") do
+            # Generate schedule automatically
+            schedule = generateSchedule(add.in2) # Message towards noise factor
+            # All (but just) required calculations should be in the schedule
+            @fact inhibitor.out in schedule => true
+            @fact driver.out    in schedule => true
+            @fact inhibitor.in1 in schedule => true
+            @fact driver.in1    in schedule => true
+            @fact add.in2       in schedule => true
+            @fact add.in1       in schedule => false
+            @fact add.out       in schedule => false
+            @fact noise.out     in schedule => false
+            # Validate correct relative order in schedule
+            @fact findfirst(schedule, inhibitor.out)    < findfirst(schedule, driver.out)   => true
+            @fact findfirst(schedule, driver.out)       < findfirst(schedule, add.in2)      => true
+            @fact findfirst(schedule, driver.in1)       < findfirst(schedule, inhibitor.in1)=> true
+            @fact findfirst(schedule, inhibitor.in1)    < findfirst(schedule, add.in2)      => true
+        end
+
+        context("generateSchedule() should correctly complete a partial schedule") do
+            # Generate a schedule that first passes clockwise through the cycle and then counterclockwise
+            schedule = generateSchedule([driver.out, add.in2]) # Message towards noise factor
+            # All (but just) required calculations should be in the schedule
+            @fact schedule[1] => inhibitor.out
+            @fact schedule[2] => driver.out
+            @fact schedule[3] => driver.in1
+            @fact schedule[4] => inhibitor.in1
+            @fact schedule[5] => add.in2
+        end
+
+        context("executeSchedule() should correctly execute a schedule and return the result of the last step") do
+            schedule = generateSchedule(add.in2)
+            dist = ensureMVParametrization!(executeSchedule(schedule).payload)
+            @fact dist => add.in2.message.payload
+            @fact isApproxEqual(dist.m, [2.0]) => true
+            @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
+        end
+
+        context("generateSchedule!() should generate an internal and external schedule when called on a subgraph") do
+            (driver, inhibitor, noise, add) = initializeLoopyGraph()
+            factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+            graph = getCurrentGraph()
+            for subgraph in graph.factorization
+                #graphViz(subgraph)
+                generateSchedule!(subgraph)
+                #println(subgraph.internal_schedule)
+                #println(subgraph.external_schedule)
+            end
+            # Order differs between test runs, validity of order is not checked
+            @fact Set{Interface}(graph.factorization[1].internal_schedule) => Set{Interface}([noise.out, inhibitor.in1, add.in1, driver.out, add.out])
+            @fact Set{Interface}(graph.factorization[2].internal_schedule) => Set{Interface}([driver.in1, inhibitor.out])
+            @fact Set{Node}(graph.factorization[1].external_schedule) => Set{Node}([driver, inhibitor])
+            @fact Set{Node}(graph.factorization[2].external_schedule) => Set{Node}([inhibitor, driver])
+        end
+    end # End of graph context
 
     context("executeSchedule() should work as expeced in loopy graphs") do
         (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)

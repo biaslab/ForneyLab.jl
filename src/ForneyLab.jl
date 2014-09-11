@@ -213,32 +213,32 @@ function getOrCreateMessage(interface::Interface, assign_payload::DataType, arr_
     end
     return interface.message
 end
-function getOrCreateMarginal(edge::Edge, assign_payload::DataType)
+function getOrCreateMarginal(edge::Edge, assign_distribution::DataType)
     # Looks for a marginal on edge.
-    # When no marginal is present, it sets and returns a standard distribution.
+    # When no marginal is present, it sets and returns an uninformative distribution.
     # Otherwise it returns the present marginal. Used for fast marginal calculations.
     if edge.marginal==nothing
-        if assign_payload <: ProbabilityDistribution 
-            edge.marginal = assign_payload()
+        if assign_distribution <: ProbabilityDistribution 
+            edge.marginal = uninformative(assign_distribution)
         else
             error("Unknown assign type argument")
         end
     end
     return edge.marginal
 end
-# function getOrCreateMarginal(node::Node, assign_payload::DataType)
-#     # Looks for a marginal on node.
-#     # When no marginal is present, it sets and returns a standard distribution.
-#     # Otherwise it returns the present marginal. Used for fast marginal calculations.
-#     if node.marginal==nothing
-#         if assign_payload <: ProbabilityDistribution 
-#             node.marginal = assign_payload()
-#         else
-#             error("Unknown assign type argument")
-#         end
-#     end
-#     return node.marginal
-# end
+function getOrCreateMarginal(node::Node, subgraph::Subgraph, graph::FactorGraph, assign_distribution::DataType)
+    # Looks for a marginal in the node-subgraph dictionary.
+    # When no marginal is present, it sets and returns an uninformative distribution.
+    # Otherwise it returns the present approximate marginal. Used for fast marginal calculations.
+    if !haskey(graph.approximate_marginals, (node, subgraph))
+        if assign_distribution <: ProbabilityDistribution 
+            graph.approximate_marginals[(node, subgraph)] = uninformative(assign_distribution)
+        else
+            error("Unknown assign type argument")
+        end
+    end
+    return graph.approximate_marginals[(node, subgraph)]
+end
 
 typealias ExternalSchedule Array{Node, 1}
 function show(io::IO, schedule::ExternalSchedule)
@@ -470,17 +470,18 @@ function executeSchedule(schedule::ExternalSchedule)
     return schedule[end].marginal
 end
 
-function setMarginal!(edge::Edge, distribution::Any)
-    # Presets the marginal on edge with the argument message
-    # Usually this method is used to set an uninformative distribution
-    edge.marginal = deepcopy(distribution)
-end
-function setMarginal!(node::Node, distribution::Any)
-    # Presets the marginal on a node
-    # Usually this method is used to set an uninformative distribution
-    node.marginal = deepcopy(distribution)
-end
+# function setMarginal!(edge::Edge, distribution::Any)
+#     # Presets the marginal on edge with the argument message
+#     # Usually this method is used to set an uninformative distribution
+#     edge.marginal = deepcopy(distribution)
+# end
+# function setMarginal!(node::Node, distribution::Any)
+#     # Presets the marginal on a node
+#     # Usually this method is used to set an uninformative distribution
+#     node.marginal = deepcopy(distribution)
+# end
 
+# Standard marginal calculations for an edge variable
 function calculateMarginal(edge::Edge)
     # Calculates the marginal without writing back to the edge
     @assert(edge.tail.message != nothing, "Edge should hold a forward message.")
@@ -493,6 +494,39 @@ function calculateMarginal!(edge::Edge)
     @assert(edge.head.message != nothing, "Edge should hold a backward message.")
     calculateMarginal!(edge, edge.tail.message.payload, edge.head.message.payload)
     return edge.marginal
+end
+
+# Approximate marginal calculations for variational q distributions
+function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
+    # Calculate the approximate marginal for node from the perspective of subgraph,
+    # and store the result in the graph.approximate_marginals dictionary.
+
+    # Gather internal and external messages/qs
+    required_inputs = Array(Union(Message, MessagePayload), 0)
+    internal_edge_list = Array(Edge, 0)
+    for interface in node.interfaces # In the order of the node's interfaces
+        edge_subgraph = graph.edge_to_subgraph[interface.edge]
+        if edge_subgraph == subgraph # Edge is internal
+            push!(required_inputs, interface.message)
+            push!(internal_edge_list, Edge)
+        else # Edge is external
+            push!(required_inputs, graph.approximate_marginals[(node, edge_subgraph)])
+        end
+    end
+
+    if length(internal_edge_list) == 1
+        # Update for univariate q
+        # When there is only one internal edge, the approximate marginal calculation reduces to the naive marginal update
+        # The internal_edge_list contains the edge that requires the update
+        internal_edge = internal_edge_list[1]
+        calculateMarginal!(node, subgraph, graph, internal_edge.tail.message.payload, internal_edge.head.message.payload) 
+    else
+        # Update for multivariate q
+        # This update involves the node function 
+        calculateMarginal!(node, subgraph, graph, required_inputs...)
+    end
+
+    return graph.approximate_marginals[(node, subgraph)]
 end
 
 function clearMessages!(node::Node)
@@ -562,7 +596,12 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
     for g_node in nodes_connected_to_external
         for interface in g_node.interfaces
             if interface.edge in subgraph.internal_edges # edge carries incoming internal message
+                # TODO: This function can be improved by using partial schedules; now a full schedule is generated for each node (g)
+                # Schedule to calculate the message that is incoming to (g)
                 internal_schedule = [internal_schedule, generateSchedule(interface.partner, graph, stay_in_subgraph=true)] # What do we need to do to calculate this message
+                # Schedule to calculate the message that is outgoing from (g) (required for univariate q updates)
+                push!(internal_schedule, interface)
+                # Reduce schedule to prevent duplicate updates
                 internal_schedule = unique(internal_schedule)
             end
         end
