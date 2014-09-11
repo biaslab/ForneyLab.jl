@@ -319,10 +319,6 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
         q_y_edges[section] = Edge(g_node.out, y_node.out, GaussianDistribution, Float64)
         q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.mean)
         q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.precision, GammaDistribution)
-        # # Preset uninformative ('one') messages
-        # setMarginal!(q_gam_edges[section], uninformative(GammaDistribution))
-        # setMarginal!(q_m_edges[section], uninformative(GaussianDistribution))
-        # setMarginal!(q_y_edges[section], uninformative(Float64))
         if section > 1 # Connect sections
             Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1])
             Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)
@@ -375,8 +371,6 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     gam_0_eq_edge = Edge(gam_0_node.out, gam_eq_node.interfaces[1], GammaDistribution)
     m_N_eq_edge = Edge(m_eq_node.interfaces[2], m_N_node.out, GaussianDistribution)
     gam_N_eq_edge = Edge(gam_eq_node.interfaces[2], gam_N_node.out, GammaDistribution)
-
-    #factorization = [y_edge=>2, m_edge=>1, gam_edge=>1, m_0_eq_edge=>1, gam_0_eq_edge=>1, m_N_eq_edge=>1, gam_N_eq_edge=>1]
 
     return (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge)
 end
@@ -437,12 +431,6 @@ function initializeLinearCompositeNodeChain(x::Array{Float64, 1}, y::Array{Float
         gam_eq_edges[section] = Edge(gam_eq_node.interfaces[3], lin_node.noise, GammaDistribution)
         x_edges[section] = Edge(x_node.out, lin_node.in1)
         y_edges[section] = Edge(lin_node.out, y_node.out)
-        # Preset marginals
-        # setMarginal!(a_eq_edges[section], uninformative(GaussianDistribution))
-        # setMarginal!(b_eq_edges[section], uninformative(GaussianDistribution))
-        # setMarginal!(gam_eq_edges[section], uninformative(GammaDistribution))
-        # setMarginal!(x_edges[section], GaussianDistribution(m = x[section], W = 10000.0)) # samples
-        # setMarginal!(y_edges[section], GaussianDistribution(m = y[section], W = 10000.0))
 
         if section > 1 # Connect sections
             Edge(a_eq_nodes[section-1].interfaces[2], a_eq_nodes[section].interfaces[1])

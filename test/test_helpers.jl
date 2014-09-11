@@ -30,9 +30,4 @@ facts("Helper function unit tests") do
         ForneyLab.updateNodeMessage!(node2, 1, Float64, nothing)
         @fact getOrCreateMessage(node2.out, Float64).payload => 2.0
     end
-
-    context("duplicated() should return values of duplicate entries") do
-        @fact duplicated([1, 2, 3]) => []
-        @fact duplicated([1, 2, 2, 3, 6, 6, 2, 2]) => [2, 6]
-    end
 end

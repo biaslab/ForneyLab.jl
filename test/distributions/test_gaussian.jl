@@ -95,6 +95,9 @@ facts("GaussianDistribution unit tests") do
 end
 
 facts("Marginal calculations for the Gaussian") do
+    
+    FactorGraph()
+
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
         edge = Edge(TerminalNode(GaussianDistribution(m=0.0, V=1.0)),
                     TerminalNode(GaussianDistribution(m=0.0, V=1.0)))

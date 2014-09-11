@@ -463,6 +463,7 @@ end
 calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
 calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
+# Execute schedules
 function executeSchedule(schedule::Schedule)
     # Execute a message passing schedule
     for interface in schedule
@@ -471,7 +472,6 @@ function executeSchedule(schedule::Schedule)
     # Return the last message in the schedule
     return schedule[end].message
 end
-
 function executeSchedule(schedule::ExternalSchedule)
     # Execute a marginal update schedule
     for entry in schedule
@@ -479,6 +479,10 @@ function executeSchedule(schedule::ExternalSchedule)
     end
     # Return the last message in the schedule
     return schedule[end].marginal
+end
+function executeSchedule(subgraph::Subgraph)
+    executeSchedule(subgraph.internal_schedule)
+    executeSchedule(subgraph.external_schedule)
 end
 
 # Standard marginal calculations for an edge variable

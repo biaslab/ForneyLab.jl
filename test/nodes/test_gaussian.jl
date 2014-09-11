@@ -4,6 +4,7 @@
 
 facts("GaussianNode unit tests") do
     context("GaussianNode() should initialize a GaussianNode with 3 interfaces") do
+        FactorGraph()
         node = GaussianNode()
         @fact typeof(node) => GaussianNode
         @fact length(node.interfaces) => 3
@@ -13,11 +14,14 @@ facts("GaussianNode unit tests") do
     end
 
     context("GaussianNode() should initialize a GaussianNode with precision parametrization") do
+        FactorGraph()
         node = GaussianNode(form="precision")
         @fact node.mean => node.interfaces[1]
         @fact node.precision => node.interfaces[2]
         @fact node.out => node.interfaces[3]
     end
+
+    FactorGraph()
 
     context("GaussianNode() should handle fixed mean") do
         context("GaussianNode with fixed mean should propagate a forward message to y") do
@@ -136,14 +140,4 @@ facts("GaussianNode unit tests") do
             end
         end
     end
-
-    # context("Marginal calculation for the GaussianNode") do
-    #     node = GaussianNode(form="precision")
-    #     m_edge = Edge(MockNode(Message(GaussianDistribution())).out, node.mean)
-    #     gam_edge = Edge(MockNode(Message(GammaDistribution())).out, node.precision, GammaDistribution)
-    #     y_edge = Edge(node.out, MockNode(Message(GaussianDistribution(m=0.0, W=10.0))).out)
-    #     y_edge.marginal = GaussianDistribution(m=0.0, W=10.0)
-    #     calculateMarginal!(node)
-    #     @fact node.marginal => NormalGammaDistribution(m=0.0, beta=10000.0, a=1.5, b=21.0/20.0) 
-    # end    
 end
