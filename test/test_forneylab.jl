@@ -234,7 +234,7 @@ facts("Graph level integration tests") do
         @fact getEdges(Set{Node}({nodes[1], nodes[2]})) => Set{Edge}({nodes[1].in1.edge, nodes[4].in1.edge, nodes[4].out.edge})
     end
 
-    context("getNodesConectedToExternalEdges() should return all nodes (g) connected to external edges") do
+    context("getNodesConnectedToExternalEdges() should return all nodes (g) connected to external edges") do
         data = [1.0, 1.0, 1.0]
 
         # MF case
@@ -247,11 +247,11 @@ facts("Graph level integration tests") do
         y1_subgraph = getSubgraph(g_nodes[1].out.edge)
         y2_subgraph = getSubgraph(g_nodes[2].out.edge)
         y3_subgraph = getSubgraph(g_nodes[3].out.edge)
-        @fact Set(ForneyLab.getNodesConectedToExternalEdges(m_subgraph)) => Set(g_nodes)
-        @fact Set(ForneyLab.getNodesConectedToExternalEdges(gam_subgraph)) => Set(g_nodes)
-        @fact Set(ForneyLab.getNodesConectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
-        @fact Set(ForneyLab.getNodesConectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])
-        @fact Set(ForneyLab.getNodesConectedToExternalEdges(y3_subgraph)) => Set([g_nodes[3]])
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(m_subgraph)) => Set(g_nodes)
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(gam_subgraph)) => Set(g_nodes)
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y3_subgraph)) => Set([g_nodes[3]])
 
         # Structured case
         (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
@@ -264,10 +264,10 @@ facts("Graph level integration tests") do
         y1_subgraph = getSubgraph(g_nodes[1].out.edge)
         y2_subgraph = getSubgraph(g_nodes[2].out.edge)
         y3_subgraph = getSubgraph(g_nodes[3].out.edge)
-        @fact Set(ForneyLab.getNodesConectedToExternalEdges(m_gam_subgraph)) => Set(g_nodes)
-        @fact Set(ForneyLab.getNodesConectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
-        @fact Set(ForneyLab.getNodesConectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])
-        @fact Set(ForneyLab.getNodesConectedToExternalEdges(y3_subgraph)) => Set([g_nodes[3]])
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(m_gam_subgraph)) => Set(g_nodes)
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y3_subgraph)) => Set([g_nodes[3]])
     end
 
     context("conformSubGraph!() should complete a subgraph with nodes and external edges based in its internal edges") do
@@ -340,13 +340,11 @@ facts("Graph level integration tests") do
                 push!(m_set, interface.edge)
             end
         end
-        factorized_internal_edges = [sg.internal_edges for sg in graph.factorization]
-        
-        @fact m_set in factorized_internal_edges => true
-        @fact gam_set in factorized_internal_edges => true
-        @fact Set{Edge}({q_y_edges[1]}) in factorized_internal_edges => true
-        @fact Set{Edge}({q_y_edges[2]}) in factorized_internal_edges => true
-        @fact Set{Edge}({q_y_edges[3]}) in factorized_internal_edges => true
+        @fact getSubgraph(g_nodes[1].mean.edge).internal_edges => m_set 
+        @fact getSubgraph(g_nodes[1].precision.edge).internal_edges => gam_set 
+        @fact getSubgraph(g_nodes[1].out.edge).internal_edges => Set{Edge}([q_y_edges[1]]) 
+        @fact getSubgraph(g_nodes[2].out.edge).internal_edges => Set{Edge}([q_y_edges[2]])
+        @fact getSubgraph(g_nodes[3].out.edge).internal_edges => Set{Edge}([q_y_edges[3]])
     end
 
     context("setUninformativeMarginals() should preset uninformative marginals at the appropriate places") do

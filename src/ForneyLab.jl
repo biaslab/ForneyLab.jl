@@ -314,11 +314,7 @@ end
 
 function getSubgraph(graph::FactorGraph, internal_edge::Edge)
     # Returns the subgraph in which internal_edge is internal
-    for sg in graph.factorization
-        if internal_edge in sg.internal_edges
-            return sg
-        end
-    end
+    return graph.edge_to_subgraph[internal_edge]
 end
 getSubgraph(internal_edge::Edge) = getSubgraph(getCurrentGraph(), internal_edge)
 
@@ -383,7 +379,7 @@ function factorizeMeanField!(graph::FactorGraph)
 end
 factorizeMeanField!() = factorizeMeanField!(getCurrentGraph())
 
-function getNodesConectedToExternalEdges(graph::FactorGraph, subgraph::Subgraph)
+function getNodesConnectedToExternalEdges(graph::FactorGraph, subgraph::Subgraph)
     # Find nodes connected to external edges
     nodes_connected_to_external = Array(Node, 0)
     for external_edge in subgraph.external_edges
@@ -398,31 +394,27 @@ function getNodesConectedToExternalEdges(graph::FactorGraph, subgraph::Subgraph)
     end
     return nodes_connected_to_external
 end
-getNodesConectedToExternalEdges(subgraph::Subgraph) = getNodesConectedToExternalEdges(getCurrentGraph(), subgraph)
+getNodesConnectedToExternalEdges(subgraph::Subgraph) = getNodesConnectedToExternalEdges(getCurrentGraph(), subgraph)
 
 function setUninformativeMarginals!(graph::FactorGraph=getCurrentGraph())
     # Sets the uninformative marginals in the graph's approximate marginal dictionary at the appropriate places
     for subgraph in graph.factorization
-        external_nodes = getNodesConectedToExternalEdges(graph, subgraph)
+        external_nodes = getNodesConnectedToExternalEdges(graph, subgraph)
         for node in external_nodes
-            interface_list = Array(Interface, 0)
-            internal_list = Array(Bool, 0)
+            internal_interfaces = Array(Interface, 0)
             for interface in node.interfaces
-                # Build a boolean list of edges that are internal
-                push!(internal_list, graph.edge_to_subgraph[interface.edge] == subgraph)
-                # And corresponding interfaces
-                push!(interface_list, interface)
+                if graph.edge_to_subgraph[interface.edge] == subgraph
+                    push!(internal_interfaces, interface)
+                end
             end
             # From the invertarization of internal edges and the node type we can deduce the marginal types
-            if sum(internal_list) == 1
+            if length(internal_interfaces) == 1
                 # Univariate
-                internal_interface = interface_list[internal_list]
-                marginal_type = getMarginalType(internal_interface[1].message_payload_type, internal_interface[1].partner.message_payload_type)
-            elseif sum(internal_list) == 0
+                marginal_type = getMarginalType(internal_interfaces[1].message_payload_type, internal_interfaces[1].partner.message_payload_type)
+            elseif length(internal_interfaces) == 0
                 error("The list of internal edges at node $(node) is empty, check your graph definition.")
             else
                 # Multivariate
-                internal_interfaces = interface_list[internal_list]
                 internal_incoming_message_types = [intf.partner.message_payload_type for intf in internal_interfaces]
                 marginal_type = getMarginalType(typeof(node), internal_incoming_message_types...)
             end
@@ -568,13 +560,13 @@ function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=g
     required_inputs = Array(Union(Message, MessagePayload), 0)
     internal_edge_list = Array(Edge, 0)
     for interface in node.interfaces # In the order of the node's interfaces
-        edge_subgraph = graph.edge_to_subgraph[interface.edge]
-        if edge_subgraph == subgraph # Edge is internal
+        neighbouring_subgraph = graph.edge_to_subgraph[interface.edge]
+        if neighbouring_subgraph == subgraph # Edge is internal
             push!(required_inputs, interface.partner.message)
             push!(internal_edge_list, interface.edge)
         else # Edge is external
-            haskey(graph.approximate_marginals, (node, edge_subgraph)) || error("A required approximate marginal for $(node.name) is not preset. Please preset an (uninformative) marginal.")
-            push!(required_inputs, graph.approximate_marginals[(node, edge_subgraph)])
+            haskey(graph.approximate_marginals, (node, neighbouring_subgraph)) || error("A required approximate marginal for $(node.name) is not preset. Please preset an (uninformative) marginal.")
+            push!(required_inputs, graph.approximate_marginals[(node, neighbouring_subgraph)])
         end
     end
 
@@ -641,7 +633,7 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
     # Generate an internal and external schedule for the subgraph
 
     # Set external schedule with nodes (g) connected to external edges
-    nodes_connected_to_external = getNodesConectedToExternalEdges(graph, subgraph)
+    nodes_connected_to_external = getNodesConnectedToExternalEdges(graph, subgraph)
     subgraph.external_schedule = nodes_connected_to_external
 
     # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present
