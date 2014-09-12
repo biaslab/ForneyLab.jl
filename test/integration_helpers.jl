@@ -1,4 +1,4 @@
-# This file contains ntgration helper functions for constructing and validating context graphs
+# This file contains intgration helper functions for constructing and validating context graphs
 
 #############
 # Mocks
