@@ -461,13 +461,19 @@ function calculateMessage!(outbound_interface::Interface)
     return outbound_interface.message
 end
 
-function pushRequiredInbound!(inbound_array::Array{Any, 1}, interface::Interface)
-    # TODO: push required inbound to inbound array
-    push!(inbound_array, interface.partner.message)
+function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any, 1}, node::Node, inbound_interface::Interface, outbound_interface::Interface)
+    outbound_subgraph = graph.edge_to_subgraph[outbound_interface.edge]
+    inbound_subgraph = graph.edge_to_subgraph[inbound_interface.edge]
+    if inbound_subgraph == outbound_subgraph # Both edges in same graph, require message
+        push!(inbound_array, inbound_interface.partner.message)
+    else # A subgraph border is crossed, require marginal
+        push!(inbound_array, graph.approximate_marginals[(node, inbound_subgraph)])
+    end
+
     return inbound_array
 end
 
-function updateNodeMessage!(outbound_interface::Interface)
+function updateNodeMessage!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph())
     # Calculate the outbound message based on the inbound messages and the node update function.
     # The resulting message is stored in the specified interface and is returned.
     node = outbound_interface.node
@@ -488,12 +494,12 @@ function updateNodeMessage!(outbound_interface::Interface)
             inbound_edge = interface.edge
             if interface.partner==nothing
                 error("Cannot receive messages on disconnected interface $(interface_id) of $(typeof(node)) $(node.name)")
-            elseif interface.partner.message==nothing && inbound_edge.marginal==nothing
-                error("There is no inbound message/marginal present on the partner/edge of interface $(interface_id) of $(typeof(node)) $(node.name)")
+            elseif interface.partner.message==nothing && !haskey(graph.approximate_marginals, (node, graph.edge_to_subgraph[inbound_edge]))
+                error("There is no inbound message/marginal present for inbound interface $(interface_id) of $(typeof(node)) $(node.name)")
             end
 
             # Push the required inbound message or edge/node marginal for the inbound interface to inbound_array
-            pushRequiredInbound!(inbound_array, interface)
+            pushRequiredInbound!(graph::FactorGraph, inbound_array, node, interface, outbound_interface)
         end
     end
 
@@ -515,25 +521,23 @@ calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
 calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
 # Execute schedules
-function executeSchedule(schedule::Schedule)
+function executeSchedule(schedule::Schedule, graph::FactorGraph=getCurrentGraph())
     # Execute a message passing schedule
     for interface in schedule
-        updateNodeMessage!(interface)
+        updateNodeMessage!(interface, graph)
     end
     # Return the last message in the schedule
     return schedule[end].message
 end
-function executeSchedule(schedule::ExternalSchedule)
+function executeSchedule(schedule::ExternalSchedule, subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
     # Execute a marginal update schedule
     for entry in schedule
-        calculateMarginal!(entry)
+        calculateMarginal!(entry, subgraph, graph)
     end
-    # Return the last message in the schedule
-    return schedule[end].marginal
 end
-function executeSchedule(subgraph::Subgraph)
+function executeSchedule(subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
     executeSchedule(subgraph.internal_schedule)
-    executeSchedule(subgraph.external_schedule)
+    executeSchedule(subgraph.external_schedule, subgraph, graph)
 end
 
 # Standard marginal calculations for an edge variable
