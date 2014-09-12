@@ -196,10 +196,10 @@ function show(io::IO, edge::Edge)
 end
 
 typealias ExternalSchedule Array{Node, 1}
-function show(io::IO, schedule::ExternalSchedule)
-     # Show external schedule
-    println(io, "External schedule:")
-    for entry in schedule
+function show(io::IO, nodes::Array{Node, 1})
+     # Show node array (possibly an external schedule)
+    println(io, "Nodes:")
+    for entry in nodes
         println(io, "Node $(entry.name) of type $(typeof(entry))")
     end
 end
@@ -216,6 +216,13 @@ type Subgraph
     external_edges::Set{Edge}
     internal_schedule::Schedule # Schedule for internal message passing (Dauwels step 2)
     external_schedule::ExternalSchedule # Schedule for updates on nodes connected to external edges (Dauwels step 3)
+end
+function show(io::IO, subgraph::Subgraph)
+    println(io, "Nodes:"); [println(io, node) for node in subgraph.nodes]
+    println(io, "Internal edges:"); [println(io, edge) for edge in subgraph.internal_edges]
+    println(io, "External edges:"); [println(io, edge) for edge in subgraph.external_edges]
+    println(io, "Internal schedule:"); [println(io, interface) for interface in subgraph.internal_schedule]
+    println(io, "External schedule:"); [println(io, node) for node in subgraph.external_schedule]
 end
 
 type FactorGraph
@@ -337,6 +344,8 @@ function factorize!(graph::FactorGraph, internal_edges::Set{Edge})
     return new_subgraph
 end
 factorize!(internal_edges::Set{Edge}) = factorize!(getCurrentGraph(), internal_edges)
+factorize!(internal_edge::Edge) = factorize!(Set{Edge}([internal_edge]))
+factorize!(internal_edges::Array{Edge, 1}) = factorize!(Set{Edge}(internal_edges))
 
 function factorizeMeanField!(graph::FactorGraph)
     # Generate a mean field factorization
@@ -374,29 +383,43 @@ function factorizeMeanField!(graph::FactorGraph)
 end
 factorizeMeanField!() = factorizeMeanField!(getCurrentGraph())
 
-function setUninformativeMarginals!(graph::FactorGraph=getCurrentGraph())
-    # Sets the uninformative marginals in the approximate marginal dictionary, depending on the graph factorization
-    for subgraph in graph.factorization
-        external_nodes = Array(Node, 0)
-        for external_edge in subgraph.external_edges
-            for node in [external_edge.tail.node, external_edge.head.node]
-                if !(node in subgraph.nodes) push!(external_nodes, node) end
-            end
+function getNodesConectedToExternalEdges(graph::FactorGraph, subgraph::Subgraph)
+    # Find nodes connected to external edges
+    nodes_connected_to_external = Array(Node, 0)
+    for external_edge in subgraph.external_edges
+         # Check if head node is in subgraph, connected to external, and not already accounted for
+        if (external_edge.head.node in subgraph.nodes) && !(external_edge.head.node in nodes_connected_to_external)
+            push!(nodes_connected_to_external, external_edge.head.node)
         end
+         # Check if tail node is in subgraph, connected to external, and not already accounted for
+        if (external_edge.tail.node in subgraph.nodes) && !(external_edge.tail.node in nodes_connected_to_external)
+            push!(nodes_connected_to_external, external_edge.tail.node)
+        end
+    end
+    return nodes_connected_to_external
+end
+getNodesConectedToExternalEdges(subgraph::Subgraph) = getNodesConectedToExternalEdges(getCurrentGraph(), subgraph)
+
+function setUninformativeMarginals!(graph::FactorGraph=getCurrentGraph())
+    # Sets the uninformative marginals in the graph's approximate marginal dictionary at the appropriate places
+    for subgraph in graph.factorization
+        external_nodes = getNodesConectedToExternalEdges(graph, subgraph)
         for node in external_nodes
             interface_list = Array(Interface, 0)
             internal_list = Array(Bool, 0)
             for interface in node.interfaces
                 # Build a boolean list of edges that are internal
                 push!(internal_list, graph.edge_to_subgraph[interface.edge] == subgraph)
-                # And corresponding edges
+                # And corresponding interfaces
                 push!(interface_list, interface)
             end
             # From the invertarization of internal edges and the node type we can deduce the marginal types
             if sum(internal_list) == 1
                 # Univariate
                 internal_interface = interface_list[internal_list]
-                marginal_type = getMarginalType(internal_interface.message_payload_type, internal_interface.partner.message_payload_type)
+                marginal_type = getMarginalType(internal_interface[1].message_payload_type, internal_interface[1].partner.message_payload_type)
+            elseif sum(internal_list) == 0
+                error("The list of internal edges at node $(node) is empty, check your graph definition.")
             else
                 # Multivariate
                 internal_interfaces = interface_list[internal_list]
@@ -617,19 +640,8 @@ end
 function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
     # Generate an internal and external schedule for the subgraph
 
-    # Find nodes connected to external edges
-    nodes_connected_to_external = Array(Node, 0)
-    for external_edge in subgraph.external_edges
-         # Check if head node is in subgraph, connected to external, and not already accounted for
-        if (external_edge.head.node in subgraph.nodes) && !(external_edge.head.node in nodes_connected_to_external)
-            push!(nodes_connected_to_external, external_edge.head.node)
-        end
-         # Check if tail node is in subgraph, connected to external, and not already accounted for
-        if (external_edge.tail.node in subgraph.nodes) && !(external_edge.tail.node in nodes_connected_to_external)
-            push!(nodes_connected_to_external, external_edge.tail.node)
-        end
-    end
     # Set external schedule with nodes (g) connected to external edges
+    nodes_connected_to_external = getNodesConectedToExternalEdges(graph, subgraph)
     subgraph.external_schedule = nodes_connected_to_external
 
     # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present

@@ -234,6 +234,42 @@ facts("Graph level integration tests") do
         @fact getEdges(Set{Node}({nodes[1], nodes[2]})) => Set{Edge}({nodes[1].in1.edge, nodes[4].in1.edge, nodes[4].out.edge})
     end
 
+    context("getNodesConectedToExternalEdges() should return all nodes (g) connected to external edges") do
+        data = [1.0, 1.0, 1.0]
+
+        # MF case
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
+        n_sections = length(data)
+        factorizeMeanField!()
+        graph = getCurrentGraph()
+        m_subgraph = getSubgraph(g_nodes[1].mean.edge)
+        gam_subgraph = getSubgraph(g_nodes[1].precision.edge)
+        y1_subgraph = getSubgraph(g_nodes[1].out.edge)
+        y2_subgraph = getSubgraph(g_nodes[2].out.edge)
+        y3_subgraph = getSubgraph(g_nodes[3].out.edge)
+        @fact Set(ForneyLab.getNodesConectedToExternalEdges(m_subgraph)) => Set(g_nodes)
+        @fact Set(ForneyLab.getNodesConectedToExternalEdges(gam_subgraph)) => Set(g_nodes)
+        @fact Set(ForneyLab.getNodesConectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
+        @fact Set(ForneyLab.getNodesConectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])
+        @fact Set(ForneyLab.getNodesConectedToExternalEdges(y3_subgraph)) => Set([g_nodes[3]])
+
+        # Structured case
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
+        n_sections = length(data)
+        for edge in q_y_edges
+            factorize!(Set{Edge}({edge}))
+        end        
+        graph = getCurrentGraph()
+        m_gam_subgraph = getSubgraph(g_nodes[1].mean.edge)
+        y1_subgraph = getSubgraph(g_nodes[1].out.edge)
+        y2_subgraph = getSubgraph(g_nodes[2].out.edge)
+        y3_subgraph = getSubgraph(g_nodes[3].out.edge)
+        @fact Set(ForneyLab.getNodesConectedToExternalEdges(m_gam_subgraph)) => Set(g_nodes)
+        @fact Set(ForneyLab.getNodesConectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
+        @fact Set(ForneyLab.getNodesConectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])
+        @fact Set(ForneyLab.getNodesConectedToExternalEdges(y3_subgraph)) => Set([g_nodes[3]])
+    end
+
     context("conformSubGraph!() should complete a subgraph with nodes and external edges based in its internal edges") do
         my_graph = FactorGraph()
         # On empty subgraph
@@ -314,7 +350,51 @@ facts("Graph level integration tests") do
     end
 
     context("setUninformativeMarginals() should preset uninformative marginals at the appropriate places") do
-        @fact true => false
+        data = [1.0, 1.0, 1.0]
+
+        # MF case
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
+        n_sections = length(data)
+        factorizeMeanField!()
+        setUninformativeMarginals!()
+        graph = getCurrentGraph()
+        m_subgraph = getSubgraph(g_nodes[1].mean.edge)
+        gam_subgraph = getSubgraph(g_nodes[1].precision.edge)
+        y1_subgraph = getSubgraph(g_nodes[1].out.edge)
+        y2_subgraph = getSubgraph(g_nodes[2].out.edge)
+        y3_subgraph = getSubgraph(g_nodes[3].out.edge)
+
+        @fact length(graph.approximate_marginals) => 9
+        @fact graph.approximate_marginals[(g_nodes[1], m_subgraph)] => uninformative(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], m_subgraph)] => uninformative(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], m_subgraph)] => uninformative(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[1], gam_subgraph)] => uninformative(GammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], gam_subgraph)] => uninformative(GammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], gam_subgraph)] => uninformative(GammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => 1.0
+        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => 1.0
+        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => 1.0
+
+        # Structured case
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
+        n_sections = length(data)
+        for edge in q_y_edges
+            factorize!(Set{Edge}({edge}))
+        end        
+        setUninformativeMarginals!()
+        graph = getCurrentGraph()
+        m_gam_subgraph = getSubgraph(g_nodes[1].mean.edge)
+        y1_subgraph = getSubgraph(g_nodes[1].out.edge)
+        y2_subgraph = getSubgraph(g_nodes[2].out.edge)
+        y3_subgraph = getSubgraph(g_nodes[3].out.edge)
+
+        @fact length(graph.approximate_marginals) => 6
+        @fact graph.approximate_marginals[(g_nodes[1], m_gam_subgraph)] => uninformative(NormalGammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], m_gam_subgraph)] => uninformative(NormalGammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], m_gam_subgraph)] => uninformative(NormalGammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => 1.0
+        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => 1.0
+        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => 1.0
     end
 
     context("pushRequiredInbound!() should add the proper message/marginal") do
