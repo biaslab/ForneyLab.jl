@@ -487,12 +487,10 @@ facts("generateSchedule() and executeSchedule() integration tests") do
             factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
             graph = getCurrentGraph()
             for subgraph in graph.factorization
-                #graphViz(subgraph)
                 generateSchedule!(subgraph)
-                #println(subgraph.internal_schedule)
-                #println(subgraph.external_schedule)
+                @fact length(unique(subgraph.internal_schedule)) => length(subgraph.internal_schedule) # No duplicate entries in schedule
             end
-            # Order differs between test runs, validity of order is not checked
+            # There are multiple valid schedules because of different orderings. Validity or schedule order is not checked here.
             @fact Set{Interface}(graph.factorization[1].internal_schedule) => Set{Interface}([noise.out, inhibitor.in1, add.in1, driver.out, add.out])
             @fact Set{Interface}(graph.factorization[2].internal_schedule) => Set{Interface}([driver.in1, inhibitor.out])
             @fact Set{Node}(graph.factorization[1].external_schedule) => Set{Node}([driver, inhibitor])

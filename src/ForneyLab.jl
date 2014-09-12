@@ -612,7 +612,7 @@ function generateSchedule(outbound_interface::Interface, graph::FactorGraph=getC
     schedule = generateScheduleByDFS(outbound_interface, Array(Interface, 0), Array(Interface, 0), graph; args...)
 end
 
-function generateSchedule(partial_schedule::Schedule; args...)
+function generateSchedule(partial_schedule::Schedule, graph::FactorGraph=getCurrentGraph(); args...)
     # Generate a complete schedule based on partial_schedule.
     # A partial schedule only defines the order of a subset of all required messages.
     # This function will find a valid complete schedule that satisfies the partial schedule.
@@ -623,7 +623,7 @@ function generateSchedule(partial_schedule::Schedule; args...)
     # This prevents having to generate the same schedule in every call to calculateMessage!().
     schedule = Array(Interface, 0)
     for interface_order_constraint in partial_schedule
-        schedule = generateScheduleByDFS(interface_order_constraint, schedule, Array(Interface, 0), getCurrentGraph(); args...)
+        schedule = generateScheduleByDFS(interface_order_constraint, schedule, Array(Interface, 0), graph; args...)
     end
 
     return schedule
@@ -633,26 +633,24 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
     # Generate an internal and external schedule for the subgraph
 
     # Set external schedule with nodes (g) connected to external edges
-    nodes_connected_to_external = getNodesConnectedToExternalEdges(graph, subgraph)
-    subgraph.external_schedule = nodes_connected_to_external
+    subgraph.external_schedule = getNodesConnectedToExternalEdges(graph, subgraph)
 
     # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present
-    internal_schedule = Array(Interface, 0)
-    for g_node in nodes_connected_to_external
+    internal_schedule = subgraph.internal_schedule = Array(Interface, 0)
+    for g_node in subgraph.external_schedule # All nodes that are connected to at least one external edge
         for interface in g_node.interfaces
             if interface.edge in subgraph.internal_edges # edge carries incoming internal message
-                # TODO: This function can be improved by using partial schedules; now a full schedule is generated for each node (g)
-                # Schedule to calculate the message that is incoming to (g)
-                internal_schedule = [internal_schedule, generateSchedule(interface.partner, graph, stay_in_subgraph=true)] # What do we need to do to calculate this message
+                # Extend internal_schedule to calculate the inbound message on interface
+                try
+                    internal_schedule = generateScheduleByDFS(interface.partner, internal_schedule, Array(Interface, 0), graph, stay_in_subgraph=true)
+                catch
+                    error("Cannot generate internal schedule for loopy subgraph with internal edge $(interface.edge).")
+                end
                 # Schedule to calculate the message that is outgoing from (g) (required for univariate q updates)
-                push!(internal_schedule, interface)
-                # Reduce schedule to prevent duplicate updates
-                internal_schedule = unique(internal_schedule)
+                (interface in internal_schedule) || push!(internal_schedule, interface)
             end
         end
     end
-    # Set the internal schedule
-    subgraph.internal_schedule = internal_schedule
 
     return subgraph
 end
@@ -668,6 +666,9 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedul
     if outbound_interface in call_list
         # Notify the user to break the loop with an initial message
         error("Loop detected around $(outbound_interface) Consider setting an initial message somewhere in this loop.")
+    elseif outbound_interface in backtrace
+        # This outbound_interface is already in the schedule
+        return backtrace
     else # Stopping condition not satisfied
         push!(call_list, outbound_interface)
     end
