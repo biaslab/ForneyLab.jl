@@ -155,8 +155,7 @@ facts("Structured VMP implementation integration tests") do
             # Reset
             y_node.value = GaussianDistribution(m = data[sample], W=10.0) # Small variance on sample
             # Reset uninformative ('one') messages
-            #setMarginal!(g_node, uninformative(NormalGammaDistribution))
-            #setMarginal!(y_edge, uninformative(GaussianDistribution))
+            setUninformativeMarginals!()
 
             # Do the VMP iterations
             for it = 1:n_its

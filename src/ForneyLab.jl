@@ -669,8 +669,9 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
     # Set external schedule with nodes (g) connected to external edges
     subgraph.external_schedule = getNodesConnectedToExternalEdges(graph, subgraph)
 
-    # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present
+    schedule_for_univariate = Array(Interface, 0)
     internal_schedule = subgraph.internal_schedule = Array(Interface, 0)
+    # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present
     for g_node in subgraph.external_schedule # All nodes that are connected to at least one external edge
         for interface in g_node.interfaces
             if interface.edge in subgraph.internal_edges # edge carries incoming internal message
@@ -680,12 +681,18 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
                 catch
                     error("Cannot generate internal schedule for loopy subgraph with internal edge $(interface.edge).")
                 end
-                # Schedule to calculate the message that is outgoing from (g) (required for univariate q updates)
-                (interface in internal_schedule) || push!(internal_schedule, interface)
+
+                # For univariate q, the calculation reduces to the naive vmp update which requires the outbound
+                if !(interface in internal_schedule) && !(interface in schedule_for_univariate)
+                    push!(schedule_for_univariate, interface)
+                end
             end
         end
     end
-
+    
+    # Schedule for univariate comes last because it can depend on inbounds
+    subgraph.internal_schedule = unique([internal_schedule, schedule_for_univariate])
+    
     return subgraph
 end
 
