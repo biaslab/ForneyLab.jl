@@ -319,6 +319,24 @@ end
 getSubgraph(internal_edge::Edge) = getSubgraph(getCurrentGraph(), internal_edge)
 
 function factorize!(graph::FactorGraph, internal_edges::Set{Edge})
+    # We do not support composite nodes with explicit message passing as node connected to an external edge. All these edges should belong to the same subgraph
+    nodes = getNodes(internal_edges)
+    internal_interfaces = Set{Interface}()
+    for edge in internal_edges
+        push!(internal_interfaces, edge.head)
+        push!(internal_interfaces, edge.tail)
+    end
+    for node in nodes
+        if typeof(node) <: CompositeNode && node.use_composite_update_rules == false # Composite node is set to use explicit message passing
+            # Check that all interfaces are internal
+            for interface in node.interfaces
+                if !(interface in internal_interfaces)
+                    error("Factorization leads CompositeNode with explicit message passing $(node.name) to become connected to an external edge. Please build the node's internals explicitly and manually define where you wish to place the subgraph borders.")
+                end
+            end
+        end
+    end
+
     # Add a subgraph containing the edges specified in internal_edges and conform
     for subgraph in graph.factorization
         setdiff!(subgraph.internal_edges, internal_edges) # Remove edges from existing subgraph
@@ -462,8 +480,19 @@ function calculateMessage!(outbound_interface::Interface)
 end
 
 function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any, 1}, node::Node, inbound_interface::Interface, outbound_interface::Interface)
-    outbound_subgraph = graph.edge_to_subgraph[outbound_interface.edge]
+    # Depending on the local graph structure return the required message or marginal 
+
+    # When the incoming edge is not listed (probably because it is internal of a composite node) then assume sumproduct
+    # (composite nodes with explicit message passing will throw an error when one of their external interfaces belongs to a different subgraph, so it is safe to assume sumproduct)
+    if !(haskey(graph.edge_to_subgraph, inbound_interface.edge) && haskey(graph.edge_to_subgraph, outbound_interface.edge))
+        push!(inbound_array, inbound_interface.partner.message) # Default to sumproduct
+        return inbound_array
+    end        
+    
     inbound_subgraph = graph.edge_to_subgraph[inbound_interface.edge]
+    outbound_subgraph = graph.edge_to_subgraph[outbound_interface.edge]
+
+    # Look for required message or marginal
     if inbound_subgraph == outbound_subgraph # Both edges in same graph, require message
         push!(inbound_array, inbound_interface.partner.message)
     else # A subgraph border is crossed, require marginal
@@ -476,8 +505,8 @@ end
 function updateNodeMessage!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph())
     # Calculate the outbound message based on the inbound messages and the node update function.
     # The resulting message is stored in the specified interface and is returned.
-    node = outbound_interface.node
 
+    node = outbound_interface.node
     # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
     inbound_array = Array(Any, 0)
     outbound_interface_id = 0
@@ -485,6 +514,7 @@ function updateNodeMessage!(outbound_interface::Interface, graph::FactorGraph=ge
         interface = node.interfaces[interface_id]
         if is(interface, outbound_interface)
             outbound_interface_id = interface_id
+            outbound_interface.partner!=nothing || error("Outbound interface $(interface_id) of $(typeof(node)) $(node.name) has no partner.")
         end
         if (!isdefined(outbound_interface, :dependencies) && outbound_interface_id==interface_id) ||
             (isdefined(outbound_interface, :dependencies) && !(interface in outbound_interface.dependencies))
@@ -750,6 +780,15 @@ function getNodes(graph::FactorGraph; open_composites::Bool=true)
     return all_nodes
 end
 getNodes(;args...) = getNodes(getCurrentGraph(); args...)
+
+function getNodes(edges::Set{Edge})
+    nodes = Set{Node}()
+    for edge in edges
+        push!(nodes, edge.head.node)
+        push!(nodes, edge.tail.node)
+    end
+    return nodes
+end
 
 function getEdges(graph::FactorGraph)
     # Returns the set of edges in the graph

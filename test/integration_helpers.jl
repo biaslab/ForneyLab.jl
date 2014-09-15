@@ -64,7 +64,7 @@ function initializeChainOfNodes()
     # Chain of three nodes
     #
     #  1     2     3
-    # [C]-->[A]-->[B]-|
+    # [C]-->[A]-->[B]-->[M]
 
     FactorGraph()
     node1 = TerminalNode(reshape([3.0], 1, 1))
@@ -72,6 +72,7 @@ function initializeChainOfNodes()
     node3 = FixedGainNode([2.0])
     Edge(node1.out, node2.in1, Array{Float64, 2})
     Edge(node2.out, node3.in1, Array{Float64, 2})
+    Edge(node3.out, MockNode().out, Array{Float64, 2})
     return (node1, node2, node3)
 end
 
@@ -201,7 +202,9 @@ function initializeGainAdditionCompositeNode(A::Array, use_composite_update_rule
     gac_node = GainAdditionCompositeNode(A, use_composite_update_rules)
     interface_count = 1
     for msg=msgs
-        if msg!=nothing
+        if msg == nothing
+            Edge(MockNode().out, gac_node.interfaces[interface_count])
+        else
             Edge(MockNode(msg).out, gac_node.interfaces[interface_count])
         end
         interface_count += 1
@@ -247,7 +250,9 @@ function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rule
     gec_node = GainEqualityCompositeNode(A, use_composite_update_rules)
     interface_count = 1
     for msg=msgs
-        if msg!=nothing
+        if msg == nothing
+            Edge(MockNode().out, gec_node.interfaces[interface_count])
+        else
             Edge(MockNode(msg).out, gec_node.interfaces[interface_count])
         end
         interface_count += 1

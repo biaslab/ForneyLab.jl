@@ -301,6 +301,13 @@ facts("Graph level integration tests") do
         @fact ForneyLab.addChildNodes!(Set{Node}({node})) => Set{Node}({node, node.equality_node, node.fixed_gain_node})
     end
 
+    context("factorize!() should throw an error when a CompositeNode with explicit message passing has an edge that would be factored as external") do
+        node = initializeGainEqualityCompositeNode(eye(1), true, Any[Message(1.0), Message(1.0), Message(1.0)])
+        @fact typeof(factorize!(node.out.edge)) => Subgraph
+        node = initializeGainEqualityCompositeNode(eye(1), false, Any[Message(1.0), Message(1.0), Message(1.0)])
+        @fact_throws factorize!(node.out.edge)
+    end
+
     context("factorize!() should include argument edges in a new subgraph") do
         (driver, inhibitor, noise, add) = initializeLoopyGraph()
         factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
@@ -404,6 +411,7 @@ facts("calculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do
         (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(3.0))
         Edge(terminal.out, gain.in1, Float64, Array{Float64, 2})
+        Edge(gain.out, MockNode().out, Array{Float64, 2})
         gain.out.message_payload_type = Array{Float64, 2} # Expect a matrix
         @fact gain.out.message => nothing
         # Request message on node for which the input is unknown
