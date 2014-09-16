@@ -77,20 +77,6 @@ facts("Naive VMP implementation integration tests") do
 
         setUninformativeMarginals!()
 
-        # x and y marginals need to be set only once because samples remain the same.
-        # q(x) update
-        # We need to execute the q(y) updates only once, because sample values do not change.
-        for x_edge in x_edges
-            subgraph_x = getSubgraph(x_edge)
-            executeSchedule(subgraph_x)
-        end
-        # q(y) update
-        # We need to execute the q(y) updates only once, because sample values do not change.
-        for y_edge in y_edges
-            subgraph_y = getSubgraph(y_edge)
-            executeSchedule(subgraph_y)
-        end
-
         # Perform vmp updates
         n_its = 100
 
@@ -98,6 +84,16 @@ facts("Naive VMP implementation integration tests") do
         subgraph_b = getSubgraph(lin_nodes[1].offset.edge)
         subgraph_gam = getSubgraph(lin_nodes[1].noise.edge)
         for iter = 1:n_its
+            # q(x) update
+            for x_edge in x_edges
+                subgraph_x = getSubgraph(x_edge)
+                executeSchedule(subgraph_x)
+            end
+            # q(y) update
+            for y_edge in y_edges
+                subgraph_y = getSubgraph(y_edge)
+                executeSchedule(subgraph_y)
+            end
             # q(gam) update
             executeSchedule(subgraph_gam)
             # q(b) update
