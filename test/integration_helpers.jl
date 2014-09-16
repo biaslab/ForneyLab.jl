@@ -286,6 +286,28 @@ function initializeGaussianNode(; y_type::DataType=Float64)
     return (node, edges)
 end
 
+function initializeLinearCompositeNode()
+    # Initialize a LinearComposite node
+    #
+    #         [M] noise
+    #          |
+    #   slope  v  offset
+    #  [M]-->[ L ]<--[M]
+    #        ^   |
+    #      x |   v y
+    #       [M] [M]
+
+    graph = FactorGraph()
+    node = LinearCompositeNode(form="precision")
+    Edge(MockNode().out, node.in1)
+    Edge(MockNode().out, node.slope)
+    Edge(MockNode().out, node.offset)
+    Edge(MockNode().out, node.noise, GammaDistribution)
+    Edge(node.out, MockNode().out)
+
+    return node
+end
+
 function initializeGaussianNodeChain(y::Array{Float64, 1})
     # Set up a chain of Gaussian nodes for mean-precision estimation
     #
@@ -419,12 +441,12 @@ function initializeLinearCompositeNodeChain(x::Array{Float64, 1}, y::Array{Float
 
     # Build graph
     for section=1:n_samples
-        lin_node = LinearCompositeNode()
-        a_eq_node = EqualityNode()
-        b_eq_node = EqualityNode()
-        gam_eq_node = EqualityNode()
-        x_node = TerminalNode(GaussianDistribution(m = x[section], W = 10000.0))
-        y_node = TerminalNode(GaussianDistribution(m = y[section], W = 10000.0))
+        lin_node = LinearCompositeNode(name="lin_node_$(section)", form="precision")
+        a_eq_node = EqualityNode(name="a_eq_node_$(section)")
+        b_eq_node = EqualityNode(name="b_eq_node_$(section)")
+        gam_eq_node = EqualityNode(name="gam_eq_node_$(section)")
+        x_node = TerminalNode(GaussianDistribution(m = x[section], W = 10000.0), name="x_node_$(section)")
+        y_node = TerminalNode(GaussianDistribution(m = y[section], W = 10000.0), name="y_node_$(section)")
         # Save to array
         lin_nodes[section] = lin_node
         a_eq_nodes[section] = a_eq_node
@@ -446,12 +468,12 @@ function initializeLinearCompositeNodeChain(x::Array{Float64, 1}, y::Array{Float
         end
     end
     # Attach beginning and end nodes
-    a_0 = TerminalNode(GaussianDistribution(m=0.0, W=0.01)) # priors
-    b_0 = TerminalNode(GaussianDistribution(m=0.0, W=0.01))
-    gam_0 = TerminalNode(GammaDistribution(a=0.01, b=0.01))
-    C_a = TerminalNode(uninformative(GaussianDistribution)) # uninformative
-    C_b = TerminalNode(uninformative(GaussianDistribution))
-    C_gam = TerminalNode(uninformative(GammaDistribution))
+    a_0 = TerminalNode(GaussianDistribution(m=0.0, W=0.01), name="a_0") # priors
+    b_0 = TerminalNode(GaussianDistribution(m=0.0, W=0.01), name="b_0")
+    gam_0 = TerminalNode(GammaDistribution(a=0.01, b=0.01), name="gam_0")
+    C_a = TerminalNode(uninformative(GaussianDistribution), name="a_N") # uninformative
+    C_b = TerminalNode(uninformative(GaussianDistribution), name="b_N")
+    C_gam = TerminalNode(uninformative(GammaDistribution), name="gam_N")
     # connect
     Edge(a_0, a_eq_nodes[1].interfaces[1])
     Edge(b_0, b_eq_nodes[1].interfaces[1])

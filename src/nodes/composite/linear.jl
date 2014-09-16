@@ -42,6 +42,8 @@ type LinearCompositeNode <: CompositeNode
     use_composite_update_rules::Bool
     name::ASCIIString
     interfaces::Array{Interface,1}
+    # Field for form checking
+    form::ASCIIString
     # Helper fields filled by constructor
     in1::Interface
     slope::Interface
@@ -54,7 +56,7 @@ type LinearCompositeNode <: CompositeNode
             error("LinearCompositeNode $(name) does not support explicit internal message passing")
         end
 
-        self = new(use_composite_update_rules, name, Array(Interface, 5))
+        self = new(use_composite_update_rules, name, Array(Interface, 5), form)
 
         # Set up the interfaces
         param_list = [:in1, :slope, :offset, :noise, :out]
@@ -83,6 +85,8 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # Variational update function, takes the marginals as input.
     # Sends to any interface carrying a Gaussian message, while using precision parameterized noise
     # Derivation for the update rule can be found in the derivations notebook.
+
+    node.form == "precision" || error("You need to specify the 'precision' form when constructing $(typeof(node)) $(node.name) in order to work with mean-precision parametrization")
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
@@ -150,6 +154,8 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # Sends to any interface carrying a Gaussian message, while using variance parameterized noise
     # Derivation for the update rule can be found in the derivations notebook.
 
+    node.form == "moment" || error("You need to specify the 'moment' form when constructing $(typeof(node)) $(node.name) in order to work with mean-variance parameterization")
+
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Ensure right parameterization
@@ -216,6 +222,8 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # Sends to precision parameterized noise.
     # Derivation for the update rule can be found in the derivations notebook.
 
+    node.form == "precision" || error("You need to specify the 'precision' form when constructing $(typeof(node)) $(node.name) in order to work with mean-precision parametrization")
+
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Ensure right parameterization
@@ -255,6 +263,8 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # Variational update function, takes the marginals as input.
     # Sends to variance parameterized noise.
     # Derivation for the update rule can be found in the derivations notebook.
+
+    node.form == "moment" || error("You need to specify the 'moment' form when constructing $(typeof(node)) $(node.name) in order to work with mean-variance parameterization")
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 

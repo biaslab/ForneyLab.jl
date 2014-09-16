@@ -403,7 +403,56 @@ facts("Graph level integration tests") do
     end
 
     context("pushRequiredInbound!() should add the proper message/marginal") do
-        @fact true => false
+        # Composite node
+        node = initializeGainEqualityCompositeNode(eye(1), true, Any[Message(1.0), Message(2.0), Message(3.0)])
+        graph = getCurrentGraph()
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in1, node.out)[1], node.in1.partner.message) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in2, node.out)[1], node.in2.partner.message) => true
+
+        # Not factorized
+        (node, edges) = initializeGaussianNode()
+        graph = getCurrentGraph()
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], node.mean.partner.message) => true 
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], node.precision.partner.message) => true
+
+        # Mean field factorized Gaussian node
+        (node, edges) = initializeGaussianNode()
+        graph = getCurrentGraph()
+        factorizeMeanField!(graph)
+        setUninformativeMarginals!(graph)
+        sg_mean = getSubgraph(node.mean.edge)
+        sg_prec = getSubgraph(node.precision.edge)
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], graph.approximate_marginals[(node, sg_prec)]) => true
+
+        # Mean field factorized linear node
+        node = initializeLinearCompositeNode()
+        graph = getCurrentGraph()
+        factorizeMeanField!(graph)
+        setUninformativeMarginals!(graph)
+        sg_a = getSubgraph(node.slope.edge)
+        sg_b = getSubgraph(node.offset.edge)
+        sg_gam = getSubgraph(node.noise.edge)
+        sg_x = getSubgraph(node.in1.edge)
+        sg_y = getSubgraph(node.out.edge)
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.slope, node.out)[1], graph.approximate_marginals[(node, sg_a)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.offset, node.out)[1], graph.approximate_marginals[(node, sg_b)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.noise, node.out)[1], graph.approximate_marginals[(node, sg_gam)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in1, node.out)[1], graph.approximate_marginals[(node, sg_x)]) => true
+
+        # Structurally factorized
+        (node, edges) = initializeGaussianNode()
+        graph = getCurrentGraph()
+        factorize!(node.out.edge)
+        setUninformativeMarginals!(graph)
+        sg_mean_prec = getSubgraph(node.mean.edge)
+        sg_out = getSubgraph(node.out.edge)
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean_prec)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], graph.approximate_marginals[(node, sg_mean_prec)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.mean)[1], node.precision.partner.message) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.precision)[1], node.mean.partner.message) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.out, node.mean)[1], graph.approximate_marginals[(node, sg_out)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.out, node.precision)[1], graph.approximate_marginals[(node, sg_out)]) => true
     end
 end
 

@@ -218,11 +218,8 @@ type Subgraph
     external_schedule::ExternalSchedule # Schedule for updates on nodes connected to external edges (Dauwels step 3)
 end
 function show(io::IO, subgraph::Subgraph)
-    println(io, "Nodes:"); [println(io, node) for node in subgraph.nodes]
-    println(io, "Internal edges:"); [println(io, edge) for edge in subgraph.internal_edges]
-    println(io, "External edges:"); [println(io, edge) for edge in subgraph.external_edges]
-    println(io, "Internal schedule:"); [println(io, interface) for interface in subgraph.internal_schedule]
-    println(io, "External schedule:"); [println(io, node) for node in subgraph.external_schedule]
+    graph = getCurrentGraph()
+    println("Subgraph $(findfirst(graph.factorization, subgraph))")
 end
 
 type FactorGraph

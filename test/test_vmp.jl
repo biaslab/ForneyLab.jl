@@ -98,12 +98,12 @@ facts("Naive VMP implementation integration tests") do
         subgraph_b = getSubgraph(lin_nodes[1].offset.edge)
         subgraph_gam = getSubgraph(lin_nodes[1].noise.edge)
         for iter = 1:n_its
-            # q(a) update
-            executeSchedule(subgraph_a)
-            # q(b) update
-            executeSchedule(subgraph_b)
             # q(gam) update
             executeSchedule(subgraph_gam)
+            # q(b) update
+            executeSchedule(subgraph_b)
+            # q(a) update
+            executeSchedule(subgraph_a)
         end
         # Ensure all calculations have propagated through the equality chains
         calculateMessage!(a_eq_nodes[end].interfaces[2])
@@ -119,6 +119,7 @@ facts("Naive VMP implementation integration tests") do
 
         accuracy = 1
 
+        # Cross-reference with results from Infer.NET
         @fact round(mean(a_out), accuracy)[1] => round(2.92642601384, accuracy)
         @fact round(var(a_out), accuracy+4)[1, 1] => round(0.000493670181134, accuracy+4)
         @fact round(mean(b_out), accuracy)[1] => round(5.85558752435, accuracy)

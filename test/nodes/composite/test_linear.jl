@@ -4,6 +4,7 @@
 
 facts("LinearCompositeNode unit tests") do
     context("LinearCompositeNode() should initialize a LinearCompositeNode with 5 interfaces") do
+        FactorGraph()
         node = LinearCompositeNode()
         @fact typeof(node) => LinearCompositeNode
         @fact length(node.interfaces) => 5
@@ -14,6 +15,8 @@ facts("LinearCompositeNode unit tests") do
         @fact node.out => node.interfaces[5]
         @fact node.use_composite_update_rules => true # default use_composite_update_rules to true
     end
+
+    FactorGraph()
 
     context("LinearCompositeNode should propagate a backward variational message to in1") do
         msg = ForneyLab.updateNodeMessage!(LinearCompositeNode(), 1, GaussianDistribution, uninformative(GaussianDistribution), GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), InverseGammaDistribution(a=10000.0, b=19998.0), GaussianDistribution(m=2.5, V=0.0))
