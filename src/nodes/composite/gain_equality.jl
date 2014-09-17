@@ -155,7 +155,6 @@ function applyBackwardRule!(node::GainEqualityCompositeNode,
             dist_result.W = nothing
             dist_result.xi = nothing
         elseif dist_3.m != nothing && dist_3.W != nothing && dist_in.m != nothing && dist_in.W != nothing
-            # TODO: Not very efficient!
             dist_result.m = backwardGainEqualityMRule(node.A, dist_in.m, inv(dist_in.W), dist_3.m, inv(dist_3.W))
             dist_result.V = nothing
             dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)

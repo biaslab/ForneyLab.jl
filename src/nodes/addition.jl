@@ -175,7 +175,6 @@ function updateNodeMessage!(node::AdditionNode,
 end
 
 # Message towards IN1 or IN2
-# TODO: HIER GEBLEVEN!!!!
 function updateNodeMessage!(node::AdditionNode,
                             outbound_interface_id::Int,
                             outbound_message_payload_type::Union(Type{Float64}, Type{Vector{Float64}}, Type{Matrix{Float64}}),

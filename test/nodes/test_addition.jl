@@ -136,7 +136,6 @@ facts("AdditionNode unit tests") do
         end
     end
 
-    # TODO: fix these multivariate tests
     context("AdditionNode should propagate a multivariate GaussianDistribution") do
         context("AdditionNode should propagate a multivariate GaussianDistribution with (m,V) parametrization") do
             mean = [1.0:3.0]
