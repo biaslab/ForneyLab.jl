@@ -164,9 +164,23 @@ facts("EqualityNode unit tests") do
                                 [Message(InverseGammaDistribution()), Message(InverseGammaDistribution()), nothing],
                                 InverseGammaDistribution(a=3.0, b=2.0))
     end
+
+    context("EqualityNode should propagate combination of student's t and Gaussian distribution") do
+        # Just test the original and a permutation of the arguments
+        validateOutboundMessage(EqualityNode(), 
+                                3, 
+                                GaussianDistribution, 
+                                [Message(StudentsTDistribution()), Message(GaussianDistribution()), nothing],
+                                GaussianDistribution(m=0.0, W=2.0))
+        validateOutboundMessage(EqualityNode(), 
+                                3, 
+                                GaussianDistribution, 
+                                [Message(GaussianDistribution()), Message(StudentsTDistribution()), nothing],
+                                GaussianDistribution(m=0.0, W=2.0))
+        validateOutboundMessage(EqualityNode(), 
+                                2, 
+                                GaussianDistribution, 
+                                [Message(StudentsTDistribution()), nothing, Message(GaussianDistribution())],
+                                GaussianDistribution(m=0.0, W=2.0))
+    end
 end
-
-#####################
-# Integration tests
-#####################
-

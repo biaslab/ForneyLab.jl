@@ -31,4 +31,3 @@ facts("Helper function unit tests") do
         @fact getOrCreateMessage(node2.out, Float64).payload => 2.0
     end
 end
-

@@ -63,18 +63,12 @@ type GainEqualityCompositeNode <: CompositeNode
         # Define the internals of the composite node
         self.equality_node = EqualityNode(3, name="$(name)_internal_equality")
         self.fixed_gain_node = FixedGainNode(A, name="$(name)_internal_gain")
-        Edge(self.equality_node.interfaces[2], self.fixed_gain_node.in1, GaussianDistribution, GaussianDistribution) # Internal edge
+        Edge(self.equality_node.interfaces[2], self.fixed_gain_node.in1, GaussianDistribution, GaussianDistribution, add_to_graph=false) # Internal edge
 
-        args = Dict(zip(args...)...) # Cast args to dictionary
-        param_list = [:in1, :in2, :out]
-        for i = 1:length(param_list)
+        named_handle_list = [:in1, :in2, :out]
+        for i = 1:length(named_handle_list)
             self.interfaces[i] = Interface(self) # Initialize the composite node interfaces belonging to the composite node itself.
-            setfield!(self, param_list[i], self.interfaces[i]) # Init named interface handles
-
-            # Clamp parameter values when given as argument
-            if haskey(args, param_list[i])
-                Edge(ForneyLab.ClampNode(Message(args[param_list[i]])).out, getfield(self, param_list[i]), typeof(args[param_list[i]])) # Connect clamp node
-            end
+            setfield!(self, named_handle_list[i], self.interfaces[i]) # Init named interface handles
         end
 
         # Initialize the interfaces as references to the internal node interfaces.

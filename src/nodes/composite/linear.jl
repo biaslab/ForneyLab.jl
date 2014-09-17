@@ -40,9 +40,10 @@ type LinearCompositeNode <: CompositeNode
     # The linear composite node only has explicit variational update rules and thus does not need an explicit internal structure.
 
     use_composite_update_rules::Bool
-    variational::Bool
     name::ASCIIString
     interfaces::Array{Interface,1}
+    # Field for form checking
+    form::ASCIIString
     # Helper fields filled by constructor
     in1::Interface
     slope::Interface
@@ -50,27 +51,18 @@ type LinearCompositeNode <: CompositeNode
     noise::Interface
     out::Interface
 
-    function LinearCompositeNode(use_composite_update_rules::Bool=true, variational::Bool=true; name = "unnamed", form::ASCIIString="moment", args...)
+    function LinearCompositeNode(use_composite_update_rules::Bool=true; name = "unnamed", form::ASCIIString="moment")
         if use_composite_update_rules == false # Check
             error("LinearCompositeNode $(name) does not support explicit internal message passing")
         end
-        if variational == false # Check
-            error("LinearCompositeNode $(name) only supports variational message passing")
-        end
 
-        self = new(use_composite_update_rules, variational, name, Array(Interface, 5))
+        self = new(use_composite_update_rules, name, Array(Interface, 5), form)
 
-        args = Dict(zip(args...)...) # Cast args to dictionary
         # Set up the interfaces
         param_list = [:in1, :slope, :offset, :noise, :out]
         for i = 1:length(param_list)
             self.interfaces[i] = Interface(self) # Construct interface
             setfield!(self, param_list[i], self.interfaces[i]) # Set named interfaces
-
-            # Clamp parameter values when given as argument
-            if haskey(args, param_list[i])
-                Edge(ForneyLab.ClampNode(Message(args[param_list[i]])).out, getfield(self, param_list[i]), typeof(args[param_list[i]])) # Connect clamp node
-            end
         end
 
         return self
@@ -93,6 +85,8 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # Variational update function, takes the marginals as input.
     # Sends to any interface carrying a Gaussian message, while using precision parameterized noise
     # Derivation for the update rule can be found in the derivations notebook.
+
+    node.form == "precision" || error("You need to specify the 'precision' form when constructing $(typeof(node)) $(node.name) in order to work with mean-precision parametrization")
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
@@ -160,6 +154,8 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # Sends to any interface carrying a Gaussian message, while using variance parameterized noise
     # Derivation for the update rule can be found in the derivations notebook.
 
+    node.form == "moment" || error("You need to specify the 'moment' form when constructing $(typeof(node)) $(node.name) in order to work with mean-variance parameterization")
+
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Ensure right parameterization
@@ -226,6 +222,8 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # Sends to precision parameterized noise.
     # Derivation for the update rule can be found in the derivations notebook.
 
+    node.form == "precision" || error("You need to specify the 'precision' form when constructing $(typeof(node)) $(node.name) in order to work with mean-precision parametrization")
+
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Ensure right parameterization
@@ -265,6 +263,8 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # Variational update function, takes the marginals as input.
     # Sends to variance parameterized noise.
     # Derivation for the update rule can be found in the derivations notebook.
+
+    node.form == "moment" || error("You need to specify the 'moment' form when constructing $(typeof(node)) $(node.name) in order to work with mean-variance parameterization")
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 

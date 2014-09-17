@@ -34,23 +34,16 @@ type FixedGainNode <: Node
     in1::Interface
     out::Interface
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
-    function FixedGainNode(A::Union(Array{Float64},Float64)=1.0; name="unnamed", args...)
+    function FixedGainNode(A::Union(Array{Float64},Float64)=1.0; name="unnamed")
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
         A = (typeof(A)==Float64) ? fill!(Array(Float64,1,1),A) : ensureMatrix(deepcopy(A))
         self = new(A, name, Array(Interface, 2))
 
-        args = Dict(zip(args...)...) # Cast args to dictionary
-
         # Set up the interfaces
-        param_list = [:in1, :out]
-        for i = 1:length(param_list)
+        named_handle_list = [:in1, :out]
+        for i = 1:length(named_handle_list)
             self.interfaces[i] = Interface(self) # Construct interface
-            setfield!(self, param_list[i], self.interfaces[i]) # Set named interfaces
-
-            # Clamp parameter values when given as argument
-            if haskey(args, param_list[i])
-                Edge(ForneyLab.ClampNode(Message(args[param_list[i]])).out, getfield(self, param_list[i]), typeof(args[param_list[i]])) # Connect clamp node
-            end
+            setfield!(self, named_handle_list[i], self.interfaces[i]) # Set named interfaces
         end
 
         # Try to precompute inv(A)

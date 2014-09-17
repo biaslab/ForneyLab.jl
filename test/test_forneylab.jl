@@ -24,7 +24,7 @@ end
 
 facts("General node properties unit tests") do
     for node_type in [subtypes(Node), subtypes(CompositeNode)]
-        if node_type!=CompositeNode && node_type!=MockNode && node_type!=ForneyLab.ClampNode
+        if node_type!=CompositeNode && node_type!=MockNode
             context("$(node_type) properties should include interfaces and name") do
                 @fact typeof(node_type().interfaces) => Array{Interface, 1} # Check for interface array
                 @fact length(node_type().interfaces) >= 1 => true # Check length of interface array
@@ -69,14 +69,46 @@ facts("CalculateMessage!() unit tests") do
     end
 end
 
-facts("setMarginal unit tests") do
-    context("setMarginal!() should preset a marginal") do
-        (node1, node2) = initializePairOfMockNodes()
-        edge = Edge(node1.out, node2.out)
-        setMarginal!(edge, 1.0)
-        @fact edge.head.message.payload => 1.0
-        @fact edge.tail.message.payload => 1.0
-        @fact edge.marginal => 1.0
+facts("Graph level unit tests") do
+    context("FactorGraph() should initialize a factor graph") do
+        fg = FactorGraph()
+        @fact typeof(fg) => FactorGraph
+        @fact length(fg.factorization) => 1
+        @fact typeof(fg.factorization[1]) => Subgraph
+        @fact typeof(fg.edge_to_subgraph) => Dict{Edge, Subgraph}
+        @fact current_graph => fg # Global should be set
+    end
+
+    context("Subgraph() should initialize a subgraph and add it to the current graph") do
+        sg = Subgraph()
+        @fact typeof(sg) => Subgraph
+        @fact typeof(sg.internal_schedule) => Schedule
+        @fact typeof(sg.external_schedule) => ExternalSchedule
+        graph = getCurrentGraph()
+        @fact graph.factorization[2] => sg
+    end
+
+    context("getCurrentGraph() should return a current graph object") do
+        FactorGraph() # Reset
+        @fact getCurrentGraph() => current_graph
+        my_graph = getCurrentGraph()  # Make local pointer to global variable
+        @fact typeof(my_graph) => FactorGraph
+    end
+
+    context("setCurrentGraph() should set a new current graph object") do
+        my_first_graph = FactorGraph() # Reset
+        my_second_graph = FactorGraph()
+        @fact my_first_graph == current_graph => false
+        setCurrentGraph(my_first_graph)
+        @fact my_first_graph == current_graph => true
+    end
+
+    context("getSubgraph(edge) should return the subgraph where edge is internal") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph()
+        factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+        graph = getCurrentGraph()
+        @fact getSubgraph(driver.out.edge) => graph.factorization[1]
+        @fact getSubgraph(inhibitor.out.edge) => graph.factorization[2]
     end
 end
 
@@ -84,7 +116,8 @@ end
 include("distributions/test_gaussian.jl")
 include("distributions/test_gamma.jl")
 include("distributions/test_inverse_gamma.jl")
-include("nodes/test_clamp.jl")
+include("distributions/test_normal_gamma.jl")
+include("distributions/test_students_t.jl")
 include("nodes/test_addition.jl")
 include("nodes/test_terminal.jl")
 include("nodes/test_equality.jl")
@@ -93,7 +126,6 @@ include("nodes/test_gaussian.jl")
 include("nodes/composite/test_gain_addition.jl")
 include("nodes/composite/test_gain_equality.jl")
 include("nodes/composite/test_linear.jl")
-include("test_vmp.jl")
 
 #####################
 # Integration tests
@@ -121,6 +153,24 @@ facts("Connections between nodes integration tests") do
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
         testInterfaceConnections(node1, node2)
+    end
+
+    context("Edge constructor should add edge and nodes to current subgraph") do
+        (node1, node2) = initializePairOfNodes()
+        # Couple the interfaces that carry GeneralMessage
+        edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
+        graph = getCurrentGraph()
+        @fact edge in graph.factorization[1].internal_edges => true
+        @fact node1 in graph.factorization[1].nodes => true
+        @fact node2 in graph.factorization[1].nodes => true
+    end
+
+    context("Edge constructor should add edge to edge_to_subgraph mapping") do
+        (node1, node2) = initializePairOfNodes()
+        # Couple the interfaces that carry GeneralMessage
+        edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
+        graph = getCurrentGraph()
+        @fact graph.edge_to_subgraph[edge] => graph.factorization[1]
     end
 
     context("Nodes can be coupled by edges using the explicit interface names") do
@@ -162,14 +212,247 @@ facts("Connections between nodes integration tests") do
 
 end
 
-facts("getAllNodes integration tests") do
-    context("getAllNodes() should return an array of all nodes in the graph") do
+facts("Graph level integration tests") do
+    context("getNodes() should return an array of all nodes in the graph") do
         nodes = initializeLoopyGraph()
-        found_nodes = ForneyLab.getAllNodes(nodes[1])
+        found_nodes = getNodes(getCurrentGraph())
+        @fact length(found_nodes) => length(nodes) # FactorGraph test
+        for node in nodes
+            @fact node in found_nodes => true
+        end
+
+        found_nodes = getNodes(getCurrentGraph().factorization[1]) # Subgraph test
         @fact length(found_nodes) => length(nodes)
         for node in nodes
             @fact node in found_nodes => true
         end
+    end
+
+    context("getEdges() should get all edges internal (optionally external as well) to the argument node set") do
+        nodes = initializeLoopyGraph()
+        @fact getEdges(Set{Node}({nodes[1], nodes[2]}), include_external=false) => Set{Edge}({nodes[1].in1.edge})
+        @fact getEdges(Set{Node}({nodes[1], nodes[2]})) => Set{Edge}({nodes[1].in1.edge, nodes[4].in1.edge, nodes[4].out.edge})
+    end
+
+    context("getNodesConnectedToExternalEdges() should return all nodes (g) connected to external edges") do
+        data = [1.0, 1.0, 1.0]
+
+        # MF case
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
+        n_sections = length(data)
+        factorizeMeanField!()
+        graph = getCurrentGraph()
+        m_subgraph = getSubgraph(g_nodes[1].mean.edge)
+        gam_subgraph = getSubgraph(g_nodes[1].precision.edge)
+        y1_subgraph = getSubgraph(g_nodes[1].out.edge)
+        y2_subgraph = getSubgraph(g_nodes[2].out.edge)
+        y3_subgraph = getSubgraph(g_nodes[3].out.edge)
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(m_subgraph)) => Set(g_nodes)
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(gam_subgraph)) => Set(g_nodes)
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y3_subgraph)) => Set([g_nodes[3]])
+
+        # Structured case
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
+        n_sections = length(data)
+        for edge in q_y_edges
+            factorize!(Set{Edge}({edge}))
+        end        
+        graph = getCurrentGraph()
+        m_gam_subgraph = getSubgraph(g_nodes[1].mean.edge)
+        y1_subgraph = getSubgraph(g_nodes[1].out.edge)
+        y2_subgraph = getSubgraph(g_nodes[2].out.edge)
+        y3_subgraph = getSubgraph(g_nodes[3].out.edge)
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(m_gam_subgraph)) => Set(g_nodes)
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])
+        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y3_subgraph)) => Set([g_nodes[3]])
+    end
+
+    context("conformSubGraph!() should complete a subgraph with nodes and external edges based in its internal edges") do
+        my_graph = FactorGraph()
+        # On empty subgraph
+        my_subgraph = my_graph.factorization[1]
+        @fact length(my_subgraph.internal_edges) => 0
+        ForneyLab.conformSubgraph!(my_subgraph)
+        @fact length(my_subgraph.nodes) => 0
+        @fact length(my_subgraph.external_edges) => 0
+        # Initialize a subgraph
+        node1 = MockNode()
+        node2 = MockNode(2)
+        node3 = MockNode() 
+        edge1 = Edge(node1.out, node2.interfaces[1])
+        edge2 = Edge(node2.interfaces[2], node3.out)
+        @fact length(my_subgraph.internal_edges) => 2
+        ForneyLab.conformSubgraph!(my_subgraph)
+        @fact length(my_subgraph.nodes) => 3
+        @fact length(my_subgraph.external_edges) => 0
+        # Subgraph with external edges
+        new_subgraph = Subgraph(Set{Node}(), Set{Edge}({edge2}), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
+        @fact length(new_subgraph.internal_edges) => 1
+        ForneyLab.conformSubgraph!(new_subgraph)
+        @fact length(new_subgraph.nodes) => 2
+        @fact length(new_subgraph.external_edges) => 1
+    end
+
+    context("addChildNodes!() should add composite node's child nodes to the node array") do
+        node = initializeGainEqualityCompositeNode(eye(1), false, [Message(GaussianDistribution()), Message(GaussianDistribution()), nothing])
+        @fact ForneyLab.addChildNodes!(Set{Node}({node})) => Set{Node}({node, node.equality_node, node.fixed_gain_node})
+    end
+
+    context("factorize!() should throw an error when a CompositeNode with explicit message passing has an edge that would be factored as external") do
+        node = initializeGainEqualityCompositeNode(eye(1), true, Any[Message(1.0), Message(1.0), Message(1.0)])
+        @fact typeof(factorize!(node.out.edge)) => Subgraph
+        node = initializeGainEqualityCompositeNode(eye(1), false, Any[Message(1.0), Message(1.0), Message(1.0)])
+        @fact_throws factorize!(node.out.edge)
+    end
+
+    context("factorize!() should include argument edges in a new subgraph") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph()
+        factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+        graph = getCurrentGraph()
+        @fact graph.factorization[1].nodes => Set{Node}({driver, inhibitor, noise, add})
+        @fact graph.factorization[1].internal_edges => Set{Edge}({add.out.edge, add.in1.edge, add.in2.edge})
+        @fact graph.factorization[1].external_edges => Set{Edge}({inhibitor.out.edge})
+        @fact graph.factorization[2].nodes => Set{Node}({driver, inhibitor})
+        @fact graph.factorization[2].internal_edges => Set{Edge}({inhibitor.out.edge})
+        @fact graph.factorization[2].external_edges => Set{Edge}({add.in1.edge, add.out.edge})
+    end
+
+    context("factorize!() should update the edge_to_subgraph mapping for the graph") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph()
+        factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+        graph = getCurrentGraph()
+        @fact graph.edge_to_subgraph[add.out.edge] => graph.factorization[1]
+        @fact graph.edge_to_subgraph[add.in1.edge] => graph.factorization[1]
+        @fact graph.edge_to_subgraph[add.in2.edge] => graph.factorization[1]
+        @fact graph.edge_to_subgraph[inhibitor.out.edge] => graph.factorization[2]
+    end
+
+    context("factorizeMeanField!() should output a mean field factorized graph") do
+        data = [1.0, 1.0, 1.0]
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
+        graph = getCurrentGraph()
+        factorizeMeanField!(graph)
+        gam_set = Set{Edge}()
+        for gam_eq_node in gam_eq_nodes
+            for interface in gam_eq_node.interfaces
+                push!(gam_set, interface.edge)
+            end
+        end
+        m_set = Set{Edge}()
+        for m_eq_node in m_eq_nodes
+            for interface in m_eq_node.interfaces
+                push!(m_set, interface.edge)
+            end
+        end
+        @fact getSubgraph(g_nodes[1].mean.edge).internal_edges => m_set 
+        @fact getSubgraph(g_nodes[1].precision.edge).internal_edges => gam_set 
+        @fact getSubgraph(g_nodes[1].out.edge).internal_edges => Set{Edge}([q_y_edges[1]]) 
+        @fact getSubgraph(g_nodes[2].out.edge).internal_edges => Set{Edge}([q_y_edges[2]])
+        @fact getSubgraph(g_nodes[3].out.edge).internal_edges => Set{Edge}([q_y_edges[3]])
+    end
+
+    context("setUninformativeMarginals() should preset uninformative marginals at the appropriate places") do
+        data = [1.0, 1.0, 1.0]
+
+        # MF case
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
+        n_sections = length(data)
+        factorizeMeanField!()
+        setUninformativeMarginals!()
+        graph = getCurrentGraph()
+        m_subgraph = getSubgraph(g_nodes[1].mean.edge)
+        gam_subgraph = getSubgraph(g_nodes[1].precision.edge)
+        y1_subgraph = getSubgraph(g_nodes[1].out.edge)
+        y2_subgraph = getSubgraph(g_nodes[2].out.edge)
+        y3_subgraph = getSubgraph(g_nodes[3].out.edge)
+
+        @fact length(graph.approximate_marginals) => 9
+        @fact graph.approximate_marginals[(g_nodes[1], m_subgraph)] => uninformative(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], m_subgraph)] => uninformative(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], m_subgraph)] => uninformative(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[1], gam_subgraph)] => uninformative(GammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], gam_subgraph)] => uninformative(GammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], gam_subgraph)] => uninformative(GammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => 1.0
+        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => 1.0
+        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => 1.0
+
+        # Structured case
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
+        n_sections = length(data)
+        for edge in q_y_edges
+            factorize!(Set{Edge}({edge}))
+        end        
+        setUninformativeMarginals!()
+        graph = getCurrentGraph()
+        m_gam_subgraph = getSubgraph(g_nodes[1].mean.edge)
+        y1_subgraph = getSubgraph(g_nodes[1].out.edge)
+        y2_subgraph = getSubgraph(g_nodes[2].out.edge)
+        y3_subgraph = getSubgraph(g_nodes[3].out.edge)
+
+        @fact length(graph.approximate_marginals) => 6
+        @fact graph.approximate_marginals[(g_nodes[1], m_gam_subgraph)] => uninformative(NormalGammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], m_gam_subgraph)] => uninformative(NormalGammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], m_gam_subgraph)] => uninformative(NormalGammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => 1.0
+        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => 1.0
+        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => 1.0
+    end
+
+    context("pushRequiredInbound!() should add the proper message/marginal") do
+        # Composite node
+        node = initializeGainEqualityCompositeNode(eye(1), true, Any[Message(1.0), Message(2.0), Message(3.0)])
+        graph = getCurrentGraph()
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in1, node.out)[1], node.in1.partner.message) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in2, node.out)[1], node.in2.partner.message) => true
+
+        # Not factorized
+        (node, edges) = initializeGaussianNode()
+        graph = getCurrentGraph()
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], node.mean.partner.message) => true 
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], node.precision.partner.message) => true
+
+        # Mean field factorized Gaussian node
+        (node, edges) = initializeGaussianNode()
+        graph = getCurrentGraph()
+        factorizeMeanField!(graph)
+        setUninformativeMarginals!(graph)
+        sg_mean = getSubgraph(node.mean.edge)
+        sg_prec = getSubgraph(node.precision.edge)
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], graph.approximate_marginals[(node, sg_prec)]) => true
+
+        # Mean field factorized linear node
+        node = initializeLinearCompositeNode()
+        graph = getCurrentGraph()
+        factorizeMeanField!(graph)
+        setUninformativeMarginals!(graph)
+        sg_a = getSubgraph(node.slope.edge)
+        sg_b = getSubgraph(node.offset.edge)
+        sg_gam = getSubgraph(node.noise.edge)
+        sg_x = getSubgraph(node.in1.edge)
+        sg_y = getSubgraph(node.out.edge)
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.slope, node.out)[1], graph.approximate_marginals[(node, sg_a)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.offset, node.out)[1], graph.approximate_marginals[(node, sg_b)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.noise, node.out)[1], graph.approximate_marginals[(node, sg_gam)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in1, node.out)[1], graph.approximate_marginals[(node, sg_x)]) => true
+
+        # Structurally factorized
+        (node, edges) = initializeGaussianNode()
+        graph = getCurrentGraph()
+        factorize!(node.out.edge)
+        setUninformativeMarginals!(graph)
+        sg_mean_prec = getSubgraph(node.mean.edge)
+        sg_out = getSubgraph(node.out.edge)
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean_prec)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], graph.approximate_marginals[(node, sg_mean_prec)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.mean)[1], node.precision.partner.message) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.precision)[1], node.mean.partner.message) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.out, node.mean)[1], graph.approximate_marginals[(node, sg_out)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.out, node.precision)[1], graph.approximate_marginals[(node, sg_out)]) => true
     end
 end
 
@@ -177,6 +460,7 @@ facts("calculateMessage!() integration tests") do
     context("calculateMessage!() should return and write back an output message") do
         (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(3.0))
         Edge(terminal.out, gain.in1, Float64, Array{Float64, 2})
+        Edge(gain.out, MockNode().out, Array{Float64, 2})
         gain.out.message_payload_type = Array{Float64, 2} # Expect a matrix
         @fact gain.out.message => nothing
         # Request message on node for which the input is unknown
@@ -204,67 +488,90 @@ facts("calculateMessage!() integration tests") do
 end
 
 facts("generateSchedule() and executeSchedule() integration tests") do
-    (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
 
-    context("generateSchedule() should throw an error when there is an unbroken loop") do
-        @fact_throws generateSchedule(driver.out)
-    end
+    # Begin of graph context
+    context("Graph context") do
+        (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
 
-    # Initial message
-    setMessage!(add.in1, Message(GaussianDistribution(m=2.0, V=0.5)))
-    setMessage!(add.out, Message(GaussianDistribution()))
+        context("generateSchedule() should throw an error when there is an unbroken loop") do
+            @fact_throws generateSchedule(driver.out)
+        end
 
-    context("generateSchedule() should auto-generate a feasible schedule") do
-        # Generate schedule automatically
-        schedule = generateSchedule(add.in2) # Message towards noise factor
-        # All (but just) required calculations should be in the schedule
-        @fact inhibitor.out in schedule => true
-        @fact driver.out    in schedule => true
-        @fact inhibitor.in1 in schedule => true
-        @fact driver.in1    in schedule => true
-        @fact add.in2       in schedule => true
-        @fact add.in1       in schedule => false
-        @fact add.out       in schedule => false
-        @fact noise.out     in schedule => false
-        # Validate correct relative order in schedule
-        @fact findfirst(schedule, inhibitor.out)    < findfirst(schedule, driver.out)   => true
-        @fact findfirst(schedule, driver.out)       < findfirst(schedule, add.in2)      => true
-        @fact findfirst(schedule, driver.in1)       < findfirst(schedule, inhibitor.in1)=> true
-        @fact findfirst(schedule, inhibitor.in1)    < findfirst(schedule, add.in2)      => true
-    end
+        # Initial message
+        setMessage!(add.in1, Message(GaussianDistribution(m=2.0, V=0.5)))
+        setMessage!(add.out, Message(GaussianDistribution()))
 
-    context("generateSchedule() should correctly complete a partial schedule") do
-        # Generate a schedule that first passes clockwise through the cycle and then counterclockwise
-        schedule = generateSchedule([driver.out, add.in2]) # Message towards noise factor
-        # All (but just) required calculations should be in the schedule
-        @fact schedule[1] => inhibitor.out
-        @fact schedule[2] => driver.out
-        @fact schedule[3] => driver.in1
-        @fact schedule[4] => inhibitor.in1
-        @fact schedule[5] => add.in2
-    end
+        context("generateSchedule() should auto-generate a feasible schedule") do
+            # Generate schedule automatically
+            schedule = generateSchedule(add.in2) # Message towards noise factor
+            # All (but just) required calculations should be in the schedule
+            @fact inhibitor.out in schedule => true
+            @fact driver.out    in schedule => true
+            @fact inhibitor.in1 in schedule => true
+            @fact driver.in1    in schedule => true
+            @fact add.in2       in schedule => true
+            @fact add.in1       in schedule => false
+            @fact add.out       in schedule => false
+            @fact noise.out     in schedule => false
+            # Validate correct relative order in schedule
+            @fact findfirst(schedule, inhibitor.out)    < findfirst(schedule, driver.out)   => true
+            @fact findfirst(schedule, driver.out)       < findfirst(schedule, add.in2)      => true
+            @fact findfirst(schedule, driver.in1)       < findfirst(schedule, inhibitor.in1)=> true
+            @fact findfirst(schedule, inhibitor.in1)    < findfirst(schedule, add.in2)      => true
+        end
 
-    context("executeSchedule() should correctly execute a schedule and return the result of the last step") do
-        schedule = generateSchedule(add.in2)
-        dist = ensureMVParametrization!(executeSchedule(schedule).payload)
-        @fact dist => add.in2.message.payload
-        @fact isApproxEqual(dist.m, [2.0]) => true
-        @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
-    end
+        context("generateSchedule() should correctly complete a partial schedule") do
+            # Generate a schedule that first passes clockwise through the cycle and then counterclockwise
+            schedule = generateSchedule([driver.out, add.in2]) # Message towards noise factor
+            # All (but just) required calculations should be in the schedule
+            @fact schedule[1] => inhibitor.out
+            @fact schedule[2] => driver.out
+            @fact schedule[3] => driver.in1
+            @fact schedule[4] => inhibitor.in1
+            @fact schedule[5] => add.in2
+        end
 
-    context("executeSchedule() should accept edges") do
-        (node1, node2, node3) = initializeChainOfNodes()
-        schedule = [node1.out.edge, node2.out.edge]
-        node1.out.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
-        node1.out.partner.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
-        node2.out.message = Message(GaussianDistribution(W=1.0, xi=1.0)) 
-        node2.out.partner.message = Message(GaussianDistribution(W=1.0, xi=1.0))
-        executeSchedule(schedule)
-        @fact node1.out.edge.marginal.W => reshape([2.0], 1, 1)
-        @fact node2.out.edge.marginal.W => reshape([2.0], 1, 1)
-        @fact node1.out.edge.marginal.xi => [2.0]
-        @fact node2.out.edge.marginal.xi => [2.0]
-    end
+        context("executeSchedule() should correctly execute a schedule and return the result of the last step") do
+            schedule = generateSchedule(add.in2)
+            dist = ensureMVParametrization!(executeSchedule(schedule).payload)
+            @fact dist => add.in2.message.payload
+            @fact isApproxEqual(dist.m, [2.0]) => true
+            @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
+        end
+
+        context("generateSchedule!() should generate an internal and external schedule when called on a subgraph") do
+            (driver, inhibitor, noise, add) = initializeLoopyGraph()
+            factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+            graph = getCurrentGraph()
+            for subgraph in graph.factorization
+                generateSchedule!(subgraph)
+                @fact length(unique(subgraph.internal_schedule)) => length(subgraph.internal_schedule) # No duplicate entries in schedule
+            end
+            # There are multiple valid schedules because of different orderings. Validity or schedule order is not checked here.
+            @fact Set{Interface}(graph.factorization[1].internal_schedule) => Set{Interface}([noise.out, inhibitor.in1, add.in1, driver.out, add.out])
+            @fact Set{Interface}(graph.factorization[2].internal_schedule) => Set{Interface}([driver.in1, inhibitor.out])
+            @fact Set{Node}(graph.factorization[1].external_schedule) => Set{Node}([driver, inhibitor])
+            @fact Set{Node}(graph.factorization[2].external_schedule) => Set{Node}([inhibitor, driver])
+        end
+
+        context("generateSchedule!() should include backward messages when there is only one internal interface connected to an external node") do
+            data = [1.0]
+            (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge) = initializeGaussianNodeChainForSvmp(data)
+
+            # Structured factorization
+            factorize!(Set{Edge}([y_edge]))
+
+            graph = getCurrentGraph()
+            for subgraph in graph.factorization
+                generateSchedule!(subgraph) # Generate internal and external schedule automatically
+            end
+
+            y_subgraph = getSubgraph(y_edge)
+            m_gam_subgraph = getSubgraph(m_edge)
+            @fact Set(y_subgraph.internal_schedule) => Set([y_edge.head, y_edge.tail])#Include outgoing interface
+            @fact Set(m_gam_subgraph.internal_schedule) => Set([m_edge.tail, gam_edge.tail, m_0_node.out, gam_0_node.out, m_N_node.out, gam_N_node.out])# Exclude outgoing interfaces
+        end
+    end # End of graph context
 
     context("executeSchedule() should work as expeced in loopy graphs") do
         (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
@@ -294,7 +601,7 @@ facts("generateSchedule() and executeSchedule() integration tests") do
     end
 end
 
-facts("clearMessage!(), clearMessages!(), clearAllMessages!() integration tests") do
+facts("clearMessage!(), clearMessages!() integration tests") do
     (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
     setMessage!(add.in1, Message(GaussianDistribution(m=2.0, V=0.5)))
     setMessage!(add.out, Message(GaussianDistribution()))
@@ -305,13 +612,10 @@ facts("clearMessage!(), clearMessages!(), clearAllMessages!() integration tests"
     clearMessages!(add)
     @fact add.in1.message => nothing
     @fact add.out.message => nothing
-    clearAllMessages!(add)
-    for node in (driver, inhibitor, noise, add)
-        for interface in node.interfaces
-            @fact interface.message => nothing
-        end
-    end
 end
+
+# Vmp test
+include("test_vmp.jl")
 
 try
     # Try to load user-defined extensions tests

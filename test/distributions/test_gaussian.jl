@@ -20,6 +20,11 @@ facts("GaussianDistribution unit tests") do
         @fact dist.V => reshape([1000.0],1,1)
     end
 
+    context("uninformative(Float64) should return 1") do
+        dist = uninformative(Float64)
+        @fact dist => 1.0
+    end
+
     context("Underdetermined GaussianDistribution should be detected by isWellDefined()") do
         @fact isWellDefined(GaussianDistribution()) => true
         @fact isWellDefined(GaussianDistribution(m=0.0, V=1.0)) => true
@@ -90,6 +95,9 @@ facts("GaussianDistribution unit tests") do
 end
 
 facts("Marginal calculations for the Gaussian") do
+    
+    FactorGraph()
+
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
         edge = Edge(TerminalNode(GaussianDistribution(m=0.0, V=1.0)),
                     TerminalNode(GaussianDistribution(m=0.0, V=1.0)))
@@ -109,5 +117,17 @@ facts("Marginal calculations for the Gaussian") do
         ensureMVParametrization!(marginal_dist)
         @fact marginal_dist.m => [0.0]
         @fact isApproxEqual(marginal_dist.V, reshape([0.5], 1, 1)) => true
+    end
+
+    context("Marginal calculation for the combination of a Gaussian and student's t-distribution") do
+        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(StudentsTDistribution())).out, GaussianDistribution, StudentsTDistribution)
+        calculateMarginal!(edge)
+        @fact edge.marginal => GaussianDistribution(m=0.0, W=3.0) 
+    end
+
+    context("Marginal calculation for the combination of a Gaussian and Float64") do
+        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(3.0)).out, GaussianDistribution, Float64)
+        calculateMarginal!(edge)
+        @fact edge.marginal => 3.0 
     end
 end
