@@ -58,7 +58,6 @@ include("distributions/calculate_marginal.jl")
 # Generic methods
 include("message_passing.jl")
 include("generate_schedule.jl")
-include("graph_operations.jl")
 
 # Utils
 include("visualization.jl")
