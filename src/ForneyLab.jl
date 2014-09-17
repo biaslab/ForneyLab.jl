@@ -670,20 +670,27 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
     internal_schedule = subgraph.internal_schedule = Array(Interface, 0)
     # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present
     for g_node in subgraph.external_schedule # All nodes that are connected to at least one external edge
+        outbound_interfaces = Array(Interface, 0) # Array that holds required outbound for the case of one internal edge connected to g_node
         for interface in g_node.interfaces
             if interface.edge in subgraph.internal_edges # edge carries incoming internal message
+                # Store outbound interfaces for check later on
+                if !(interface in internal_schedule) && !(interface in schedule_for_univariate)
+                    push!(outbound_interfaces, interface) # If we were to add the outbound to the schedule (for the case of univariate q), this is the one
+                end
+
                 # Extend internal_schedule to calculate the inbound message on interface
                 try
                     internal_schedule = generateScheduleByDFS(interface.partner, internal_schedule, Array(Interface, 0), graph, stay_in_subgraph=true)
                 catch
                     error("Cannot generate internal schedule for loopy subgraph with internal edge $(interface.edge).")
                 end
-
-                # For univariate q, the calculation reduces to the naive vmp update which requires the outbound
-                if !(interface in internal_schedule) && !(interface in schedule_for_univariate)
-                    push!(schedule_for_univariate, interface)
-                end
             end
+        end
+        
+        # For the case that g_node is connected to one internal edge,
+        # the calculation reduces to the naive vmp update which requires the outbound (Dauwels, 2007)
+        if length(outbound_interfaces) == 1
+            push!(schedule_for_univariate, outbound_interfaces[1])
         end
     end
     

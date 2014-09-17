@@ -553,6 +553,24 @@ facts("generateSchedule() and executeSchedule() integration tests") do
             @fact Set{Node}(graph.factorization[1].external_schedule) => Set{Node}([driver, inhibitor])
             @fact Set{Node}(graph.factorization[2].external_schedule) => Set{Node}([inhibitor, driver])
         end
+
+        context("generateSchedule!() should include backward messages when there is only one internal interface connected to an external node") do
+            data = [1.0]
+            (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge) = initializeGaussianNodeChainForSvmp(data)
+
+            # Structured factorization
+            factorize!(Set{Edge}([y_edge]))
+
+            graph = getCurrentGraph()
+            for subgraph in graph.factorization
+                generateSchedule!(subgraph) # Generate internal and external schedule automatically
+            end
+
+            y_subgraph = getSubgraph(y_edge)
+            m_gam_subgraph = getSubgraph(m_edge)
+            @fact Set(y_subgraph.internal_schedule) => Set([y_edge.head, y_edge.tail])#Include outgoing interface
+            @fact Set(m_gam_subgraph.internal_schedule) => Set([m_edge.tail, gam_edge.tail, m_0_node.out, gam_0_node.out, m_N_node.out, gam_N_node.out])# Exclude outgoing interfaces
+        end
     end # End of graph context
 
     context("executeSchedule() should work as expeced in loopy graphs") do
