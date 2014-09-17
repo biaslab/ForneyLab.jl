@@ -1,3 +1,5 @@
+export calculateMarginal, calculateMarginal!
+
 # Functions for calculating marginals on nodes and edges.
 
 # Marginal calculations are in a separate file from the distribution definitions,
@@ -9,6 +11,20 @@
 ############################
 # Edge marginal calculations
 ############################
+
+function calculateMarginal(edge::Edge)
+    # Calculates the marginal without writing back to the edge
+    @assert(edge.tail.message != nothing, "Edge should hold a forward message.")
+    @assert(edge.head.message != nothing, "Edge should hold a backward message.")
+    return calculateMarginal(edge.tail.message.payload, edge.head.message.payload)
+end
+function calculateMarginal!(edge::Edge)
+    # Calculates and writes the marginal on edge
+    @assert(edge.tail.message != nothing, "Edge should hold a forward message.")
+    @assert(edge.head.message != nothing, "Edge should hold a backward message.")
+    calculateMarginal!(edge, edge.tail.message.payload, edge.head.message.payload)
+    return edge.marginal
+end
 
 # GammaDistribution
 function gammaMarginalRule!(marg::GammaDistribution, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
@@ -142,6 +158,39 @@ end
 ############################
 # Joint approximate marginal calculations
 ############################
+
+function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
+    # Calculate the approximate marginal for node from the perspective of subgraph,
+    # and store the result in the graph.approximate_marginals dictionary.
+
+    # Gather internal and external messages/qs
+    required_inputs = Array(Union(Message, MessagePayload), 0)
+    internal_edge_list = Array(Edge, 0)
+    for interface in node.interfaces # In the order of the node's interfaces
+        neighbouring_subgraph = graph.edge_to_subgraph[interface.edge]
+        if neighbouring_subgraph == subgraph # Edge is internal
+            push!(required_inputs, interface.partner.message)
+            push!(internal_edge_list, interface.edge)
+        else # Edge is external
+            haskey(graph.approximate_marginals, (node, neighbouring_subgraph)) || error("A required approximate marginal for $(node.name) is not preset. Please preset an (uninformative) marginal.")
+            push!(required_inputs, graph.approximate_marginals[(node, neighbouring_subgraph)])
+        end
+    end
+
+    if length(internal_edge_list) == 1
+        # Update for univariate q
+        # When there is only one internal edge, the approximate marginal calculation reduces to the naive marginal update
+        # The internal_edge_list contains the edge that requires the update
+        internal_edge = internal_edge_list[1]
+        calculateMarginal!(node, subgraph, graph, internal_edge.tail.message.payload, internal_edge.head.message.payload) 
+    else
+        # Update for multivariate q
+        # This update involves the node function 
+        calculateMarginal!(node, subgraph, graph, required_inputs...)
+    end
+
+    return graph.approximate_marginals[(node, subgraph)]
+end
 
 function calculateMarginal!(node::GaussianNode,
                             subgraph::Subgraph,

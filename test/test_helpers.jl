@@ -21,13 +21,13 @@ facts("Helper function unit tests") do
     context("getOrCreateMessage should assign a message to an interface if there is none and otherwise set a standard message") do
         node = TerminalNode(GaussianDistribution())
         @fact node.out.message => nothing
-        getOrCreateMessage(node.out, GaussianDistribution)
+        ForneyLab.getOrCreateMessage(node.out, GaussianDistribution)
         @fact typeof(node.out.message) => Message{GaussianDistribution}
         node2 = TerminalNode(2.0)
         @fact node2.out.message => nothing
-        getOrCreateMessage(node2.out, Float64)
+        ForneyLab.getOrCreateMessage(node2.out, Float64)
         @fact node2.out.message.payload => 1.0
         ForneyLab.updateNodeMessage!(node2, 1, Float64, nothing)
-        @fact getOrCreateMessage(node2.out, Float64).payload => 2.0
+        @fact ForneyLab.getOrCreateMessage(node2.out, Float64).payload => 2.0
     end
 end
