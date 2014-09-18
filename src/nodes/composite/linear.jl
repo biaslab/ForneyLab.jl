@@ -19,15 +19,20 @@
 #
 # Interface ids, (names) and supported message types:
 #   1. in1:
+#       Message{GaussianDistribution}
 #       GaussianDistribution (marginal)
 #   2. slope:
+#       Message{Float64}
 #       GaussianDistribution (marginal)
 #   3. offset:
+#       Message{Float64}
 #       GaussianDistribution (marginal)
 #   4. noise:
+#       Message{Float64}
 #       InvertedGammaDistribution (marginal)
 #       GammaDistribution (marginal)
-#   3. out:
+#   5. out:
+#       Message{GaussianDistribution}
 #       GaussianDistribution (marginal)
 #
 ############################################
@@ -69,6 +74,57 @@ type LinearCompositeNode <: CompositeNode
     end
 end
 
+############################################
+# Standard update functions
+############################################
+
+function updateNodeMessage!(node::LinearCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            msg_in1::Message{GaussianDistribution},
+                            msg_slope::Message{Float64},
+                            msg_offset::Message{Float64},
+                            msg_noise::Message{Float64},
+                            ::Nothing)
+    # Forward message to out, same rules as GainAdditionCompositeNode from Korl
+    node.form == "precision" || error("You need to specify the 'precision' form when constructing $(typeof(node)) $(node.name) in order to work with mean-precision parametrization")
+
+    ensureMWParametrization!(msg_in1.payload)
+
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out.m = forwardGainAdditionMRule(msg_slope.payload*eye(1), [msg_offset.payload], msg_in1.payload.m)
+    dist_out.W = forwardGainAdditionWRule(msg_slope.payload*eye(1), msg_noise.payload*eye(1), msg_in1.payload.W)
+    dist_out.V = nothing
+    dist_out.xi = nothing
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+function updateNodeMessage!(node::LinearCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            ::Nothing,
+                            msg_slope::Message{Float64},
+                            msg_offset::Message{Float64},
+                            msg_noise::Message{Float64},
+                            msg_out::Message{GaussianDistribution})
+    # Backward message to in1, same rules as GainAdditionCompositeNode from Korl
+    node.form == "precision" || error("You need to specify the 'precision' form when constructing $(typeof(node)) $(node.name) in order to work with mean-precision parametrization")
+
+    ensureMWParametrization!(msg_out.payload)
+
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+    # No explicit backward rule exists, so stack them manually
+    m_y = backwardAdditionMRule([msg_offset.payload], msg_out.payload.m) 
+    W_y = backwardAdditionWRule(msg_noise.payload*eye(1), msg_out.payload.W)
+    dist_out.m = backwardFixedGainMRule(inv(msg_slope.payload*eye(1)), m_y)
+    dist_out.W = backwardFixedGainWRule(msg_slope.payload*eye(1), W_y)
+    dist_out.V = nothing
+    dist_out.xi = nothing
+
+    return node.interfaces[outbound_interface_id].message
+end
 
 ############################################
 # Variational update functions
