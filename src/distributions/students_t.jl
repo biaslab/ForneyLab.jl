@@ -31,4 +31,7 @@ function show(io::IO, dist::StudentsTDistribution)
     println(io, "nu = $(dist.nu) (degrees of freedom)")
 end
 
-==(x::StudentsTDistribution, y::StudentsTDistribution) = (x.m==y.m && x.W==y.W && x.nu==y.nu)
+function ==(x::StudentsTDistribution, y::StudentsTDistribution)
+    if is(x, y) return true end
+    return (x.m==y.m && x.W==y.W && x.nu==y.nu)
+end

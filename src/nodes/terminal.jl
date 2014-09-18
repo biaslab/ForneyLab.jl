@@ -56,6 +56,6 @@ function updateNodeMessage!(node::TerminalNode,
         # Only create a new message if the existing one is not correct
         node.out.message = Message(node.value)
     end
-    
+
     return node.out.message
 end

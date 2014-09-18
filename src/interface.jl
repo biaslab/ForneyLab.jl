@@ -58,7 +58,7 @@ function getOrCreateMessage(interface::Interface, assign_payload::DataType, arr_
     # When no message is present, it sets and returns a standard message.
     # Otherwise it returns the present message.
     # For Array types we pre-allocate the array size with arr_dims
-    if interface.message==nothing
+    if interface.message == nothing
         if assign_payload <: ProbabilityDistribution 
             interface.message = Message(assign_payload())
         elseif assign_payload == Float64

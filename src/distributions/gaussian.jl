@@ -155,6 +155,7 @@ ensureXiVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureXi
 ensureXiWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
 
 function ==(x::GaussianDistribution, y::GaussianDistribution)
+    if is(x, y) return true end
     eps = 1e-12
     # Check m or xi
     if x.m!=nothing && y.m!=nothing

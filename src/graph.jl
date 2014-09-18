@@ -42,16 +42,18 @@ end
 
 function getOrCreateMarginal(node::Node, subgraph::Subgraph, graph::FactorGraph, assign_distribution::DataType)
     # Looks for a marginal in the node-subgraph dictionary.
-    # When no marginal is present, it sets and returns an uninformative distribution.
-    # Otherwise it returns the present approximate marginal. Used for fast marginal calculations.
-    if !haskey(graph.approximate_marginals, (node, subgraph))
+    # If no marginal is present, it sets and returns an uninformative distribution.
+    # Otherwise, it returns the existing marginal. Used for fast marginal calculations.
+    try
+        return graph.approximate_marginals[(node, subgraph)]
+    catch
         if assign_distribution <: ProbabilityDistribution 
-            graph.approximate_marginals[(node, subgraph)] = uninformative(assign_distribution)
+            return graph.approximate_marginals[(node, subgraph)] = uninformative(assign_distribution)
         else
-            error("Unknown assign type argument")
+            error("Cannot create a marginal of type $(assign_distribution) since a marginal should be <: ProbabilityDistribution")
         end
     end
-    return graph.approximate_marginals[(node, subgraph)]
+    
 end
 
 function conformSubgraph!(subgraph::Subgraph)
@@ -69,10 +71,8 @@ function conformSubgraph!(subgraph::Subgraph)
     return subgraph
 end
 
-function getSubgraph(graph::FactorGraph, internal_edge::Edge)
-    # Returns the subgraph in which internal_edge is internal
-    return graph.edge_to_subgraph[internal_edge]
-end
+# Get the subgraph in which internal_edge is internal
+getSubgraph(graph::FactorGraph, internal_edge::Edge) = graph.edge_to_subgraph[internal_edge]
 getSubgraph(internal_edge::Edge) = getSubgraph(getCurrentGraph(), internal_edge)
 
 function getNodesConnectedToExternalEdges(graph::FactorGraph, subgraph::Subgraph)
