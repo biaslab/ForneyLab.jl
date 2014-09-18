@@ -18,6 +18,22 @@ facts("LinearCompositeNode unit tests") do
 
     FactorGraph()
 
+    context("LinearCompositeNode should propagate a forward message to out") do
+        validateOutboundMessage(LinearCompositeNode(form="precision"), 
+                                5, 
+                                GaussianDistribution, 
+                                [Message(GaussianDistribution(m=1.0, W=1.0)), Message(0.5), Message(1.5), Message(1.0), nothing],
+                                GaussianDistribution(m=2.0, W=0.8))
+    end
+
+    context("LinearCompositeNode should propagate a backward message to in1") do
+        validateOutboundMessage(LinearCompositeNode(form="precision"), 
+                                1, 
+                                GaussianDistribution, 
+                                [nothing, Message(0.5), Message(1.5), Message(1.0), Message(GaussianDistribution(m=2.0, W=0.8))],
+                                GaussianDistribution(m=1.0, W=1/9))
+    end
+
     context("LinearCompositeNode should propagate a backward variational message to in1") do
         msg = ForneyLab.updateNodeMessage!(LinearCompositeNode(), 1, GaussianDistribution, uninformative(GaussianDistribution), GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), InverseGammaDistribution(a=10000.0, b=19998.0), GaussianDistribution(m=2.5, V=0.0))
         @fact msg.payload.m => [1.0]
