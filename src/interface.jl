@@ -31,7 +31,11 @@ type Interface
 end
 Interface(node::Node, message::Message) = Interface(node, nothing, nothing, nothing, message, GaussianDistribution)
 Interface(node::Node) = Interface(node, nothing, nothing, nothing, nothing, GaussianDistribution)
-show(io::IO, interface::Interface) = println(io, "Interface of $(typeof(interface.node)) with node name $(interface.node.name) holds message of type $(typeof(interface.message)).")
+function show(io::IO, interface::Interface)
+    name = getName(interface)
+    (name == "") || (name = "($(name))")
+    println(io, "Interface $(findfirst(interface.node.interfaces, interface)) $(name) of $(typeof(interface.node)) $(interface.node.name)")
+end
 function setMessage!(interface::Interface, message::Message)
     interface.message_payload_type = typeof(message.payload)
     interface.message = deepcopy(message)

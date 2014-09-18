@@ -17,27 +17,41 @@ function calculateMessage!(outbound_interface::Interface)
     return outbound_interface.message
 end
 
-function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any, 1}, node::Node, inbound_interface::Interface, outbound_interface::Interface)
-    # Depending on the local graph structure return the required message or marginal 
-
-    # When the incoming edge is not listed (probably because it is internal of a composite node) then assume sumproduct
-    # (composite nodes with explicit message passing will throw an error when one of their external interfaces belongs to a different subgraph, so it is safe to assume sumproduct)
-    if !(haskey(graph.edge_to_subgraph, inbound_interface.edge) && haskey(graph.edge_to_subgraph, outbound_interface.edge))
-        push!(inbound_array, inbound_interface.partner.message) # Default to sumproduct
-        return inbound_array
+function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, node::Node, inbound_interface::Interface, outbound_interface::Interface)
+    # Push the inbound message or marginal on inbound_interface, depending on the local graph structure.
+    
+    if !haskey(graph.edge_to_subgraph, inbound_interface.edge) || !haskey(graph.edge_to_subgraph, outbound_interface.edge)
+        # Inbound and/or outbound edge is not explicitly listed in the graph.
+        # This is possible if one of those edges is internal to a composite node.
+        # We will default to sum-product message passing, and consume the message on the inbound interface.
+        # Composite nodes with explicit message passing will throw an error when one of their external interfaces belongs to a different subgraph, so it is safe to assume sum-product.
+        try
+            return push!(inbound_array, inbound_interface.partner.message)
+        catch
+            error("$(inbound_interface) is not connected to an edge.")
+        end
     end        
     
     inbound_subgraph = graph.edge_to_subgraph[inbound_interface.edge]
     outbound_subgraph = graph.edge_to_subgraph[outbound_interface.edge]
 
-    # Look for required message or marginal
-    if inbound_subgraph == outbound_subgraph # Both edges in same graph, require message
-        push!(inbound_array, inbound_interface.partner.message)
-    else # A subgraph border is crossed, require marginal
-        push!(inbound_array, graph.approximate_marginals[(node, inbound_subgraph)])
+    # Should we require the inbound message or marginal?
+    if is(inbound_subgraph, outbound_subgraph)
+        # Both edges in same subgraph, require message
+        try
+            push!(inbound_array, inbound_interface.partner.message)
+        catch
+            error("$(inbound_interface) is not connected to an edge.")
+        end
+    else 
+        # A subgraph border is crossed, require marginal
+        try
+            push!(inbound_array, graph.approximate_marginals[(node, inbound_subgraph)])
+        catch
+            error("Missing approximate marginal for $(inbound_interface)")
+        end
     end
 
-    return inbound_array
 end
 
 function updateNodeMessage!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph())
@@ -50,24 +64,17 @@ function updateNodeMessage!(outbound_interface::Interface, graph::FactorGraph=ge
     outbound_interface_id = 0
     for interface_id = 1:length(node.interfaces)
         interface = node.interfaces[interface_id]
-        if is(interface, outbound_interface)
+        if interface == outbound_interface
             outbound_interface_id = interface_id
-            outbound_interface.partner!=nothing || error("Outbound interface $(interface_id) of $(typeof(node)) $(node.name) has no partner.")
         end
         if (!isdefined(outbound_interface, :dependencies) && outbound_interface_id==interface_id) ||
             (isdefined(outbound_interface, :dependencies) && !(interface in outbound_interface.dependencies))
-            # Ignore the inbound on this interface
+            # Ignore this interface
             push!(inbound_array, nothing)
-        else # Inbound is required
-            inbound_edge = interface.edge
-            if interface.partner==nothing
-                error("Cannot receive messages on disconnected interface $(interface_id) of $(typeof(node)) $(node.name)")
-            elseif interface.partner.message==nothing && !haskey(graph.approximate_marginals, (node, graph.edge_to_subgraph[inbound_edge]))
-                error("There is no inbound message/marginal present for inbound interface $(interface_id) of $(typeof(node)) $(node.name)")
-            end
-
-            # Push the required inbound message or edge/node marginal for the inbound interface to inbound_array
-            pushRequiredInbound!(graph::FactorGraph, inbound_array, node, interface, outbound_interface)
+        else 
+            # Inbound message or marginal is required
+            # Put the required inbound message or edge/node marginal for the inbound interface in inbound_array
+            pushRequiredInbound!(graph, inbound_array, node, interface, outbound_interface)
         end
     end
 
