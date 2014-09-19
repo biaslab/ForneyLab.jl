@@ -118,6 +118,9 @@ function updateNodeMessage!(node::LinearCompositeNode,
     # No explicit backward rule exists, so stack them manually
     m_y = backwardAdditionMRule([msg_offset.payload], msg_out.payload.m) 
     W_y = backwardAdditionWRule(msg_noise.payload*eye(1), msg_out.payload.W)
+    println("----")
+    println(msg_slope.payload*eye(1))
+    println("----")
     dist_out.m = backwardFixedGainMRule(inv(msg_slope.payload*eye(1)), m_y)
     dist_out.W = backwardFixedGainWRule(msg_slope.payload*eye(1), W_y)
     dist_out.V = nothing
