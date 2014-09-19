@@ -51,7 +51,7 @@ function updateNodeMessage!(node::TerminalNode,
                             ::Any)
     # Calculate an outbound message. The TerminalNode does not accept incoming messages.
     # This function is not exported, and is only meant for internal use.
-    (typeof(node.value) <: outbound_message_payload_type) || error("TerminalNode cannot produce a message with payload type $(outbound_message_value_type) since the node value is of type $(typeof(node.value))")
+    (typeof(node.value) <: outbound_message_payload_type) || error("TerminalNode cannot produce a message with payload type $(outbound_message_payload_type) since the node value is of type $(typeof(node.value))")
     if (typeof(node.out.message) != Message{typeof(node.value)}) || (node.out.message.payload != node.value)
         # Only create a new message if the existing one is not correct
         node.out.message = Message(node.value)
