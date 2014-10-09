@@ -24,14 +24,7 @@ type Edge <: AbstractEdge
         end
         (!is(head.node, tail.node)) || error("Cannot connect two interfaces of the same node: ", typeof(head.node), " ", head.node.name)
         # Reset connection between possible previous partners
-        if head.partner != nothing
-            head.partner.partner = nothing
-            head.partner = nothing
-        end 
-        if tail.partner != nothing
-            tail.partner.partner = nothing
-            tail.partner = nothing
-        end 
+        (head.partner == nothing && tail.partner == nothing) || error("Once defined edges cannot be repositioned.")
 
         self = new(tail, head, nothing)
         # Assign pointed to edge from interfaces
