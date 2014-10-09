@@ -47,4 +47,15 @@ facts("Edge integration tests") do
         @fact comp_node.equality_node.interfaces[1].partner => node.out
         @fact comp_node.equality_node.interfaces[1].edge => edge
     end
+
+    context("Edge can be repositioned") do
+        node1 = TerminalNode(name="node1")
+        node2 = TerminalNode(name="node2")
+        node3 = TerminalNode(name="node3")
+        edge_old = Edge(node1.out, node2.out)
+        edge_new = Edge(node1.out, node3.out)
+        @fact node1.out.partner => node3.out
+        @fact node3.out.partner => node1.out
+        @fact node2.out.partner => nothing
+    end
 end

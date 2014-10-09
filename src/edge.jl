@@ -23,6 +23,15 @@ type Edge <: AbstractEdge
             error("Existing backward message ($(typeof(head.message))) does not match expected type Message{$(backward_message_payload_type)}")
         end
         (!is(head.node, tail.node)) || error("Cannot connect two interfaces of the same node: ", typeof(head.node), " ", head.node.name)
+        # Reset connection between possible previous partners
+        if head.partner != nothing
+            head.partner.partner = nothing
+            head.partner = nothing
+        end 
+        if tail.partner != nothing
+            tail.partner.partner = nothing
+            tail.partner = nothing
+        end 
 
         self = new(tail, head, nothing)
         # Assign pointed to edge from interfaces
