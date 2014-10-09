@@ -41,6 +41,24 @@ facts("GaussianNode unit tests") do
         end
     end
 
+    context("GaussianNode() should handle fixed variance for mean field") do
+        context("GaussianNode with fixed variance should propagate a forward message to y") do
+            validateOutboundMessage(GaussianNode(V=2.0), 
+                                    2, 
+                                    GaussianDistribution, 
+                                    [GaussianDistribution(m=3.0, V=1.0), nothing],
+                                    GaussianDistribution(m=3.0, V=2.0))
+        end
+
+        context("GaussianNode with fixed variance should propagate a backward message to the variance") do
+            validateOutboundMessage(GaussianNode(V=2.0), 
+                                    1, 
+                                    GaussianDistribution, 
+                                    [nothing, GaussianDistribution(m=3.0, V=1.0)],
+                                    GaussianDistribution(m=3.0, V=2.0))
+        end
+    end
+
     context("Point estimates of y and m, so no approximation is required.") do
         context("GaussianNode should propagate a forward message to y") do
             validateOutboundMessage(GaussianNode(), 

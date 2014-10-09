@@ -82,6 +82,31 @@
 #       Message{GaussianDistribution}
 #
 ############################################
+#
+# GaussianNode with fixed variance:
+#
+#    mean     out
+#   ----->[N]----->
+#
+#   out = Message(GaussianDistribution(m=mean, V=variance))
+#
+#   Example:
+#       GaussianNode(name="my_node", variance=1.0)
+#
+# Interface ids, (names) and supported message types:
+#   Receiving:
+#   1. (mean):
+#       GaussianDistribution
+#   2. (out):
+#       GaussianDistribution
+#
+#   Sending:
+#   1. (mean):
+#       Message{GaussianDistribution}
+#   2. (out):
+#       Message{GaussianDistribution}
+#
+############################################
 
 export GaussianNode
 
@@ -96,37 +121,53 @@ type GaussianNode <: Node
     out::Interface
     # Fixed parameters
     m::Vector{Float64}
+    V::Matrix{Float64}
 
-    function GaussianNode(; name="unnamed", form::ASCIIString="moment", m::Union(Float64,Vector{Float64},Nothing)=nothing)
+    function GaussianNode(; name="unnamed", form::ASCIIString="moment", m::Union(Float64,Vector{Float64},Nothing)=nothing, V::Union(Float64,Matrix{Float64},Nothing)=nothing)
+        if m!=nothing && V!=nothing
+            error("Only one interface (mean or variance) may be fixed.")
+        elseif m!=nothing || V!=nothing
+            total_interfaces = 2
+        else
+            total_interfaces = 3
+        end
+        self = new(name, Array(Interface, total_interfaces))
+        next_interface_index = 1 # Counter keeping track of constructed interfaces
+
         if m != nothing
             # GaussianNode with fixed mean
-            self = new(name, Array(Interface, 2))
             self.m = (typeof(m)==Float64) ? [m] : deepcopy(m)
-            variance_precision_interface_index = 1
         else
             # GaussianNode with variable mean
-            self = new(name, Array(Interface, 3))
-            self.interfaces[1] = Interface(self) # Mean interface
-            self.mean = self.interfaces[1]
-            variance_precision_interface_index = 2
+            self.interfaces[next_interface_index] = Interface(self) # Mean interface
+            self.mean = self.interfaces[next_interface_index]
+            next_interface_index += 1
         end
 
         # Pick a form for the variance/precision
-        self.interfaces[variance_precision_interface_index] = Interface(self)
-        if form == "moment"
-            # Parameters m, V
-            self.variance = self.interfaces[variance_precision_interface_index]
-        elseif form == "precision"
-            # Parameters m, W
-            self.precision = self.interfaces[variance_precision_interface_index]
-        elseif form == "canonical"
-            error("Canonical form not implemented")
+        if V != nothing
+            # GaussianNode with fixed variance
+            self.V = (typeof(V)==Float64) ? reshape([V], 1, 1) : deepcopy(V)
         else
-            error("Unrecognized form, $(form). Please use \"moment\", \"canonical\", or \"precision\"")
+            # GaussianNode with variable variance
+            self.interfaces[next_interface_index] = Interface(self)
+            if form == "moment"
+                # Parameters m, V
+                self.variance = self.interfaces[next_interface_index]
+            elseif form == "precision"
+                # Parameters m, W
+                self.precision = self.interfaces[next_interface_index]
+            elseif form == "canonical"
+                error("Canonical form not implemented")
+            else
+                error("Unrecognized form, $(form). Please use \"moment\", \"canonical\", or \"precision\"")
+            end
+            next_interface_index += 1
         end
-
-        self.interfaces[variance_precision_interface_index+1] = Interface(self) # Out interface
-        self.out = self.interfaces[variance_precision_interface_index+1]
+        
+        # Out interface
+        self.interfaces[next_interface_index] = Interface(self)
+        self.out = self.interfaces[next_interface_index]
 
         return self
     end
@@ -174,7 +215,7 @@ function updateNodeMessage!(node::GaussianNode,
         dist_out.xi = nothing
         dist_out.W = nothing
     else
-        error("Message-type ($(inbound_message_types)) outbound_interface_id ($(outbound_interface_id)) combination not defined for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
     return node.interfaces[outbound_interface_id].message
@@ -203,7 +244,7 @@ function updateNodeMessage!(node::GaussianNode,
         dist_out.a = -0.5
         dist_out.b = 0.5*(y-m)^2
     else
-        error("Message-type ($(inbound_message_types)) outbound_interface_id ($(outbound_interface_id)) combination not defined for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
     return node.interfaces[outbound_interface_id].message
@@ -283,7 +324,33 @@ function updateNodeMessage!(node::GaussianNode,
         dist_out.xi = nothing
         dist_out.W = nothing
     else
-        error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+    end
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+function updateNodeMessage!(node::GaussianNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            ::Nothing,
+                            marg_out::GaussianDistribution)
+    # Backward variational update function with fixed variance
+    #
+    #   <--     Q~N            
+    #  ---->[N]---->
+    #    N
+    #
+
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+    if is(node.interfaces[outbound_interface_id], node.mean)
+        dist_out.m = deepcopy(marg_out.m)
+        dist_out.V = deepcopy(node.V)
+        dist_out.xi = nothing
+        dist_out.W = nothing
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
     return node.interfaces[outbound_interface_id].message
@@ -315,7 +382,7 @@ function updateNodeMessage!(node::GaussianNode,
         dist_out.xi = nothing
         dist_out.W = reshape([a/b], 1, 1)
     else
-        error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
     return node.interfaces[outbound_interface_id].message
@@ -346,7 +413,7 @@ function updateNodeMessage!(node::GaussianNode,
         dist_out.a = 1.5
         dist_out.b = 0.5*(y_0-m)^2+0.5*inv(W)
     else
-        error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
     return node.interfaces[outbound_interface_id].message
@@ -377,7 +444,7 @@ function updateNodeMessage!(node::GaussianNode,
         dist_out.a = -0.5
         dist_out.b = 0.5*(y_0-m)^2+0.5*V
     else
-        error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
     return node.interfaces[outbound_interface_id].message
@@ -408,7 +475,33 @@ function updateNodeMessage!(node::GaussianNode,
         dist_out.xi = nothing
         dist_out.W = nothing
     else
-        error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+    end
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+function updateNodeMessage!(node::GaussianNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            marg_mean::GaussianDistribution,
+                            ::Nothing)
+    # Backward variational update function with fixed variance
+    #
+    #   Q~N     -->            
+    #  ---->[N]---->
+    #            N
+    #
+
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+    if is(node.interfaces[outbound_interface_id], node.out)
+        dist_out.m = deepcopy(marg_mean.m)
+        dist_out.V = deepcopy(node.V)
+        dist_out.xi = nothing
+        dist_out.W = nothing
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
     return node.interfaces[outbound_interface_id].message
@@ -439,7 +532,7 @@ function updateNodeMessage!(node::GaussianNode,
         dist_out.xi = nothing
         dist_out.V = nothing
     else
-        error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
     return node.interfaces[outbound_interface_id].message
@@ -475,7 +568,7 @@ function updateNodeMessage!(node::GaussianNode,
         dist_out.W = reshape([(2.0*prec_y*a)/(2.0*prec_y*b + 1)], 1, 1)
         dist_out.nu = 2.0*a
     else
-        error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
     return node.interfaces[outbound_interface_id].message
@@ -508,7 +601,7 @@ function updateNodeMessage!(node::GaussianNode,
         dist_out.a = 1.5
         dist_out.b = 0.5*((1.0/prec_y) + (m_m - m_y)^2)
     else
-        error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
     return node.interfaces[outbound_interface_id].message
@@ -538,7 +631,7 @@ function updateNodeMessage!(node::GaussianNode,
         dist_out.xi = nothing
         dist_out.V = nothing
     else
-        error("Inbound message type $(inbound_message_types) outbound_interface_id $(outbound_interface_id) undefined for type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
     return node.interfaces[outbound_interface_id].message
