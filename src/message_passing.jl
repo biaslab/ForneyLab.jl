@@ -1,12 +1,12 @@
 export calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, executeSchedule, clearMessages!
 
-function calculateMessage!(outbound_interface::Interface)
+function calculateMessage!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph())
     # Calculate the outbound message on a specific interface by generating a schedule and executing it.
     # The resulting message is stored in the specified interface and returned.
 
     # Generate a message passing schedule
     printVerbose("Auto-generating message passing schedule...")
-    schedule = generateSchedule(outbound_interface)
+    schedule = generateSchedule!(outbound_interface, graph)
     if verbose show(schedule) end
 
     # Execute the schedule
@@ -113,6 +113,12 @@ end
 function executeSchedule(subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
     executeSchedule(subgraph.internal_schedule)
     executeSchedule(subgraph.external_schedule, subgraph, graph)
+end
+
+function executeSchedule(graph::FactorGraph=getCurrentGraph())
+    for subgraph in graph.factorization
+        executeSchedule(subgraph, graph)
+    end
 end
 
 function clearMessages!(node::Node)
