@@ -15,9 +15,12 @@ function show(io::IO, subgraph::Subgraph)
 end
 
 type FactorGraph
-    factorization::Array{Subgraph, 1} # References to subgraphs
+    factorization::Vector{Subgraph} # References to subgraphs
     edge_to_subgraph::Dict{Edge, Subgraph} # Fast lookup for edge to subgraph in which edge is internal; also determines the ordering of edges
     approximate_marginals::Dict{(Node, Subgraph), MessagePayload} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
+    read_buffers::Dict{TerminalNode, Vector}
+    write_buffers::Dict{Union(Edge,Interface), Vector}
+    time_wraps::Vector{(TerminalNode, TerminalNode)}
 end
 
 function show(io::IO, factor_graph::FactorGraph)
@@ -28,11 +31,23 @@ function show(io::IO, factor_graph::FactorGraph)
 end
 
 # Get and set current graph functions
-global current_graph = FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], Dict{Edge, Subgraph}(), Dict{(Node, Subgraph), MessagePayload}()) # Initialize a current_graph
+global current_graph = FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], 
+                                   Dict{Edge, Subgraph}(), 
+                                   Dict{(Node, Subgraph), MessagePayload}(),
+                                   Dict{TerminalNode, Vector}(),
+                                   Dict{Union(Edge,Interface), Vector}(),
+                                   Array((TerminalNode, TerminalNode), 0)) # Create an empty graph
+
 getCurrentGraph() = current_graph::FactorGraph
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
-FactorGraph() = setCurrentGraph(FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], Dict{Edge, Subgraph}(), Dict{(Node, Subgraph), MessagePayload}())) # Initialize a new factor graph; automatically sets current_graph
+FactorGraph() = setCurrentGraph(FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], 
+                                            Dict{Edge, Subgraph}(), 
+                                            Dict{(Node, Subgraph), MessagePayload}(),
+                                            Dict{TerminalNode, Vector}(),
+                                            Dict{Union(Edge,Interface), Vector}(),
+                                            Array((TerminalNode, TerminalNode), 0))) # Initialize a new factor graph; automatically sets current_graph
+
 function Subgraph() # Construct and add to current graph
     subgraph = Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
     graph = getCurrentGraph()
