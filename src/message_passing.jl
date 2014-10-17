@@ -98,6 +98,7 @@ calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 # Execute schedules
 function executeSchedule(schedule::Schedule, graph::FactorGraph=getCurrentGraph())
     # Execute a message passing schedule
+    !isempty(schedule) || error("Cannot execute an empty schedule")
     for interface in schedule
         updateNodeMessage!(interface, graph)
     end

@@ -74,3 +74,26 @@ facts("TimeWrap integration tests") do
         @fact length(g.time_wraps) => 0
     end
 end
+
+facts("step integration tests") do
+    context("step should perform a time step and handle read/write buffers") do
+        # out = in + delta
+        g = FactorGraph()
+        node_in = TerminalNode(0.0, name="in")
+        node_add = AdditionNode(name="add")
+        node_delta = TerminalNode(name="delta")
+        node_out = TerminalNode(name="out")
+        Edge(node_in, node_add.in1, Float64)
+        Edge(node_delta, node_add.in2, Float64)
+        Edge(node_add.out, node_out, Float64)
+        addTimeWrap(node_out, node_in)
+        generateSchedule!(node_add.out)
+        deltas = [1.:10.]
+        setReadBuffer(node_delta, deltas)
+        results = setWriteBuffer(node_add.out)
+        while !isempty(deltas)
+            step()
+        end
+        @fact results => cumsum([1.:10.])
+    end
+end
