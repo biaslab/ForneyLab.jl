@@ -36,8 +36,6 @@ include("message.jl")
 include("interface.jl")
 include("edge.jl")
 include("schedule.jl")
-include("graph.jl")
-include("factorization.jl")
 
 # Nodes
 include("nodes/addition.jl")
@@ -52,12 +50,17 @@ include("nodes/composite/gain_equality.jl")
 include("nodes/composite/linear.jl")
 include("nodes/composite/general.jl")
 
+# Graphs
+include("graph.jl")
+include("factorization.jl")
+
 # Methods for calculating marginals
 include("distributions/calculate_marginal.jl")
 
 # Generic methods
 include("message_passing.jl")
 include("generate_schedule.jl")
+include("step.jl")
 
 # Utils
 include("visualization.jl")
