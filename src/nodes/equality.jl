@@ -275,3 +275,27 @@ updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_mess
 # Outbound interface 1
 updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{Float64}, msg_dummy::Nothing, msg_n::Message{GaussianDistribution}, msg_flt::Message{Float64}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_flt, msg_n, msg_dummy)
 updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{Float64}, msg_dummy::Nothing, msg_flt::Message{Float64}, msg_n::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_flt, msg_n, msg_dummy)
+
+############################################
+# Gamma-Float combination
+############################################
+
+function updateNodeMessage!(node::EqualityNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{Float64},
+                            msg_flt::Message{Float64},
+                            msg_gam::Message{GammaDistribution},
+                            ::Nothing)
+    # Combination of gamma and float
+    (msg_flt.payload >= 0) || error("Node $(node.name) cannot perform update for gamma-float combination for negative floats")
+    return node.interfaces[outbound_interface_id].message = Message(msg_flt.payload)
+end
+# Call signature for messages other ways around
+# Outbound interface 3
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{Float64}, msg_gam::Message{GammaDistribution}, msg_flt::Message{Float64}, msg_dummy::Nothing) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_flt, msg_gam, msg_dummy)
+# Outbound interface 2
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{Float64}, msg_gam::Message{GammaDistribution}, msg_dummy::Nothing, msg_flt::Message{Float64}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_flt, msg_gam, msg_dummy)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{Float64}, msg_flt::Message{Float64}, msg_dummy::Nothing, msg_gam::Message{GammaDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_flt, msg_gam, msg_dummy)
+# Outbound interface 1
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{Float64}, msg_dummy::Nothing, msg_gam::Message{GammaDistribution}, msg_flt::Message{Float64}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_flt, msg_gam, msg_dummy)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, outbound_message_payload_type::Type{Float64}, msg_dummy::Nothing, msg_flt::Message{Float64}, msg_gam::Message{GammaDistribution}) = updateNodeMessage!(node, outbound_interface_id, outbound_message_payload_type, msg_flt, msg_gam, msg_dummy)

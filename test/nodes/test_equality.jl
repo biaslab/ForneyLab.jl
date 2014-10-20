@@ -202,4 +202,23 @@ facts("EqualityNode unit tests") do
                                 [Message(5.0), nothing, Message(GaussianDistribution())],
                                 5.0)
     end
+
+    context("EqualityNode should propagate combination of a Float and a gamma distribution") do
+        # Just test the original and a permutation of the arguments
+        validateOutboundMessage(EqualityNode(), 
+                                3, 
+                                Float64, 
+                                [Message(5.0), Message(GammaDistribution()), nothing],
+                                5.0)
+        validateOutboundMessage(EqualityNode(), 
+                                3, 
+                                Float64, 
+                                [Message(GammaDistribution()), Message(5.0), nothing],
+                                5.0)
+        validateOutboundMessage(EqualityNode(), 
+                                2, 
+                                Float64, 
+                                [Message(5.0), nothing, Message(GammaDistribution())],
+                                5.0)
+    end
 end

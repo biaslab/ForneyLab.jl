@@ -44,6 +44,7 @@ factorize!(internal_edge::Edge) = factorize!(Set{Edge}([internal_edge]))
 factorize!(internal_edges::Array{Edge, 1}) = factorize!(Set{Edge}(internal_edges))
 
 function factorizeMeanField!(graph::FactorGraph)
+    deterministic_node_types = [EqualityNode, AdditionNode, FixedGainNode]
     # Generate a mean field factorization
     (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
     edges_to_factor = getEdges(graph) # All top-level edges in the factor graph
@@ -51,15 +52,15 @@ function factorizeMeanField!(graph::FactorGraph)
     while length(edges_to_factor) > 0 # As long as there are edges to factor
         edge = pop!(edges_to_factor) # Pick an edge to factor
         # Check connection to equality node
-        if typeof(edge.head.node)==EqualityNode || typeof(edge.tail.node)==EqualityNode
+        if typeof(edge.head.node) in deterministic_node_types || typeof(edge.tail.node) in deterministic_node_types
             # Collect all other edges that are connected to this one through equality nodes
             edge_cluster = Set{Edge}() # Set to fill with edges in equality cluster
             connected_edges = Set{Edge}({edge})
             while length(connected_edges) > 0 # As long as there are unchecked edges connected through eq nodes
                 current_edge = pop!(connected_edges) # Pick one
                 push!(edge_cluster, current_edge) # Add to edge cluster
-                for node in [current_edge.head.node, current_edge.tail.node] # Check both head and tail node for EqualityNode
-                    if typeof(node) == EqualityNode
+                for node in [current_edge.head.node, current_edge.tail.node] # Check both head and tail node for deterministic type
+                    if typeof(node) in deterministic_node_types
                         for interface in node.interfaces
                             if !is(interface.edge, current_edge) && !(interface.edge in edge_cluster) # Is next level edge not seen yet?
                                 push!(connected_edges, interface.edge) # Add to buffer to visit sometime in the future

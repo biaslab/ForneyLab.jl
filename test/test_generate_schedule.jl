@@ -56,6 +56,18 @@ facts("generateSchedule() integration tests") do
             @fact Set{Node}(graph.factorization[2].external_schedule) => Set{Node}([inhibitor, driver])
         end
 
+        context("Should generate a schedule that propagates messages to timewraps when called on a subgraph") do
+            g = FactorGraph()
+            node_t1 = TerminalNode()
+            node_t2 = TerminalNode()
+            e = Edge(node_t1, node_t2)
+            generateSchedule!(g.factorization[1])
+            @fact g.factorization[1].internal_schedule => Array(Interface, 0)
+            addTimeWrap(node_t1, node_t2)
+            generateSchedule!(g.factorization[1])
+            @fact g.factorization[1].internal_schedule => [node_t1.out.partner]
+        end
+
         context("Should include backward messages when there is only one internal interface connected to an external node") do
             data = [1.0]
             (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge) = initializeGaussianNodeChainForSvmp(data)

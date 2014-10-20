@@ -36,7 +36,7 @@ end
 
 clearTimeWraps!(graph::FactorGraph=getCurrentGraph()) = (graph.time_wraps = Array((TerminalNode, TerminalNode), 0))
 
-function step(graph::FactorGraph=getCurrentGraph())
+function step(graph::FactorGraph=getCurrentGraph(); n_iterations::Int64=1)
     # Reset marginals
     setUninformativeMarginals!(graph)
     # Read buffers
@@ -45,7 +45,9 @@ function step(graph::FactorGraph=getCurrentGraph())
         terminal_node.value = shift!(read_buffer) # pick the first element off the read_buffer
     end
     # Execute schedule
-    executeSchedule(graph)
+    for iteration = 1:n_iterations
+        executeSchedule(graph)
+    end
     # Write buffers
     for (component, write_buffer) in graph.write_buffers
         if typeof(component) == Interface

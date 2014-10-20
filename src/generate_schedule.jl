@@ -75,9 +75,22 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
             push!(schedule_for_univariate, outbound_interfaces[1])
         end
     end
+
+    # Make sure that messages are propagated to the timewraps
+    schedule_for_time_wraps = Array(Interface, 0)
+    for (from_node, to_node) in graph.time_wraps
+        if graph.edge_to_subgraph[from_node.out.edge] == subgraph # Timewrap is the responsibility of this subgraph
+            #try
+                time_wrap_schedule = generateScheduleByDFS(from_node.out.partner, Array(Interface, 0), Array(Interface, 0), graph, stay_in_subgraph=true)
+            #catch
+            #    error("Cannot generate time wrap update schedule for loopy subgraph with internal edge $(from_node.out.edge).")
+            #end
+            schedule_for_time_wraps = [schedule_for_time_wraps, time_wrap_schedule]
+        end
+    end
     
-    # Schedule for univariate comes last because it can depend on inbounds
-    subgraph.internal_schedule = unique([internal_schedule, schedule_for_univariate])
+    # Schedule for univariate comes after internal schedule, because it can depend on inbounds
+    subgraph.internal_schedule = unique([internal_schedule, schedule_for_univariate, schedule_for_time_wraps])
     
     return subgraph
 end

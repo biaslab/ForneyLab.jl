@@ -96,4 +96,30 @@ facts("step integration tests") do
         end
         @fact results => cumsum([1.:10.])
     end
+
+    context("step should accept and execute a number of iterations for VMP") do
+        data = [2.0]
+        g = FactorGraph()
+        g_node = GaussianNode(form="precision")
+        t_out = TerminalNode(name="t_out")
+        t_mean = TerminalNode(GaussianDistribution(), name="t_mean")
+        t_var = TerminalNode(GammaDistribution(), name="t_var")
+        Edge(g_node.out, t_out, GaussianDistribution, Float64)
+        Edge(t_mean, g_node.mean)
+        Edge(t_var, g_node.precision, GammaDistribution)
+
+        setReadBuffer(t_out, data)
+        mean_out = setWriteBuffer(g_node.mean.edge)
+        prec_out = setWriteBuffer(g_node.precision.edge)
+        factorizeMeanField!(g)
+        for subgraph in g.factorization
+            generateSchedule!(subgraph)
+        end
+        setUninformativeMarginals!()
+        step(n_iterations=10)
+        @fact round(mean_out[end].W[1,1], 2) => 1.79
+        @fact round(mean_out[end].xi[1], 2) => 1.57
+        @fact prec_out[end].a => 1.5
+        @fact round(prec_out[end].b, 2) => 1.91
+    end
 end
