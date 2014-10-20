@@ -14,14 +14,14 @@ export calculateMarginal, calculateMarginal!
 
 function calculateMarginal(edge::Edge)
     # Calculates the marginal without writing back to the edge
-    @assert(edge.tail.message != nothing, "Edge should hold a forward message.")
-    @assert(edge.head.message != nothing, "Edge should hold a backward message.")
+    @assert(edge.tail.message != nothing, "Edge ($(edge.tail.node.name) --> $(edge.head.node.name)) should hold a forward message.")
+    @assert(edge.head.message != nothing, "Edge ($(edge.tail.node.name) --> $(edge.head.node.name)) should hold a backward message.")
     return calculateMarginal(edge.tail.message.payload, edge.head.message.payload)
 end
 function calculateMarginal!(edge::Edge)
     # Calculates and writes the marginal on edge
-    @assert(edge.tail.message != nothing, "Edge should hold a forward message.")
-    @assert(edge.head.message != nothing, "Edge should hold a backward message.")
+    @assert(edge.tail.message != nothing, "Edge ($(edge.tail.node.name) --> $(edge.head.node.name)) should hold a forward message.")
+    @assert(edge.head.message != nothing, "Edge ($(edge.tail.node.name) --> $(edge.head.node.name)) should hold a backward message.")
     calculateMarginal!(edge, edge.tail.message.payload, edge.head.message.payload)
     return edge.marginal
 end
@@ -182,7 +182,7 @@ function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=g
         # When there is only one internal edge, the approximate marginal calculation reduces to the naive marginal update
         # The internal_edge_list contains the edge that requires the update
         internal_edge = internal_edge_list[1]
-        calculateMarginal!(node, subgraph, graph, internal_edge.tail.message.payload, internal_edge.head.message.payload) 
+        marg = calculateMarginal!(node, subgraph, graph, internal_edge.tail.message.payload, internal_edge.head.message.payload)
     else
         # Update for multivariate q
         # This update involves the node function 

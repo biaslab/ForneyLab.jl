@@ -345,6 +345,7 @@ function updateNodeMessage!(node::GaussianNode,
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean)
+        ensureMDefined!(marg_out)
         dist_out.m = deepcopy(marg_out.m)
         dist_out.V = deepcopy(node.V)
         dist_out.xi = nothing
@@ -496,6 +497,7 @@ function updateNodeMessage!(node::GaussianNode,
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     if is(node.interfaces[outbound_interface_id], node.out)
+        ensureMDefined!(marg_mean)
         dist_out.m = deepcopy(marg_mean.m)
         dist_out.V = deepcopy(node.V)
         dist_out.xi = nothing
