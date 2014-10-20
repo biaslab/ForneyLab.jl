@@ -20,10 +20,10 @@ function graphViz(dot_graph::String; external_viewer::Bool=false)
     end
 end
 
-graphViz(factor_graph::FactorGraph; args...) = graphViz(genDot(getNodes(factor_graph, open_composites=false), getEdges(factor_graph)); args...)
+graphViz(factor_graph::FactorGraph; args...) = graphViz(genDot(getNodes(factor_graph, open_composites=false), getEdges(factor_graph), time_wraps=factor_graph.time_wraps); args...)
 graphViz(; args...) = graphViz(getCurrentGraph(); args...)
 
-graphViz(subgraph::Subgraph; args...) = graphViz(genDot(subgraph.nodes, subgraph.internal_edges, subgraph.external_edges); args...)
+graphViz(subgraph::Subgraph; args...) = graphViz(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=subgraph.external_edges); args...)
 
 function graphViz(composite_node::CompositeNode; args...)
     # Visualize the internals of composite_node
@@ -56,7 +56,7 @@ end
 graphPdf(factor_graph::FactorGraph, filename::String) = graphPdf(genDot(getNodes(factor_graph, open_composites=false), getEdges(factor_graph)), filename)
 graphPdf(filename::String) = graphPdf(getCurrentGraph(), filename)
 
-graphPdf(subgraph::Subgraph, filename::String) = graphPdf(genDot(subgraph.nodes, subgraph.internal_edges, subgraph.external_edges), filename)
+graphPdf(subgraph::Subgraph, filename::String) = graphPdf(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=subgraph.external_edges), filename)
 
 function graphPdf(composite_node::CompositeNode, filename::String)
     # Visualize the internals of composite_node
@@ -79,7 +79,7 @@ graphPdf(nodes::Vector{Node}, filename::String) = graphPdf(Set(nodes), filename)
 # Internal functions
 ####################################################
 
-function genDot(nodes::Set{Node}, edges::Set{Edge}, external_edges::Set{Edge}=Set{Edge}())
+function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Set{Edge}(), time_wraps::Array{(TerminalNode,TerminalNode),1} = Array((TerminalNode,TerminalNode),0))
     # Return a string representing the graph in DOT format
     # External edges are edges of which only the head or tail is in the nodes set
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)
@@ -119,6 +119,13 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}, external_edges::Set{Edge}=Se
         # Add the external edges themselves
         for edge in external_edges
             dot *= edgeDot(edge, is_external_edge=true)
+        end
+    end
+
+    if !isempty(time_wraps)
+        # Add edges to visualize time wraps
+        for (from, to) in time_wraps
+            dot *= "\t$(object_id(from)) -> $(object_id(to)) [style=\"dotted\" color=\"green\"]\n"             
         end
     end
 

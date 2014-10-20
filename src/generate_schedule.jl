@@ -1,4 +1,4 @@
-export generateSchedule, generateSchedule!
+export generateSchedule!, generateSchedule
 
 function generateSchedule(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph(); args...)
     # Generate a schedule that can be executed to calculate the outbound message on outbound_interface.
@@ -7,7 +7,11 @@ function generateSchedule(outbound_interface::Interface, graph::FactorGraph=getC
     # When a lot of iterations of the same message passing schedule are required, it can be very beneficial
     # to generate the schedule just once using this function, and then execute the same schedule over and over.
     # This prevents having to generate the same schedule in every call to calculateMessage!().
-    schedule = generateScheduleByDFS(outbound_interface, Array(Interface, 0), Array(Interface, 0), graph; args...)
+    return generateScheduleByDFS(outbound_interface, Array(Interface, 0), Array(Interface, 0), graph; args...)
+end
+function generateSchedule!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph(); args...)
+    schedule = generateSchedule(outbound_interface, graph; args...)
+    return graph.edge_to_subgraph[outbound_interface.edge].internal_schedule = schedule
 end
 
 function generateSchedule(partial_schedule::Schedule, graph::FactorGraph=getCurrentGraph(); args...)
@@ -19,12 +23,23 @@ function generateSchedule(partial_schedule::Schedule, graph::FactorGraph=getCurr
     # When a lot of iterations of the same message passing schedule are required, it can be very beneficial
     # to generate the schedule just once using this function, and then execute the same schedule over and over.
     # This prevents having to generate the same schedule in every call to calculateMessage!().
+
+    # Verify that all entries in partial_schedule belong to the same subgraph
+    (length(partial_schedule) > 0) || error("Partial schedule should contain at least one entry")
+    for interface in partial_schedule
+        is(graph.edge_to_subgraph[interface.edge], graph.edge_to_subgraph[partial_schedule[1].edge]) || error("Not all interfaces in your partial schedule belong to the same subgraph")
+    end
+
     schedule = Array(Interface, 0)
     for interface_order_constraint in partial_schedule
         schedule = generateScheduleByDFS(interface_order_constraint, schedule, Array(Interface, 0), graph; args...)
     end
 
     return schedule
+end
+function generateSchedule!(partial_schedule::Schedule, graph::FactorGraph=getCurrentGraph(); args...)
+    schedule = generateSchedule(partial_schedule, graph; args...)
+    return graph.edge_to_subgraph[partial_schedule[1].edge].internal_schedule = schedule
 end
 
 function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
@@ -97,7 +112,7 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedul
            (stay_in_subgraph && graph.edge_to_subgraph[outbound_interface.edge] != graph.edge_to_subgraph[interface.edge]) # Internal subgraph schedule generation and edges are on different subgraphs
             continue
         end
-        @assert(interface.partner!=nothing, "Disconnected interface should be connected: interface #$(interface_id) of $(typeof(node)) $(node.name)")
+        (interface.partner != nothing) || error("Disconnected interface should be connected: interface #$(interface_id) of $(typeof(node)) $(node.name)")
 
         if interface.partner.message == nothing # Required message missing.
             if !(interface.partner in backtrace) # Don't recalculate stuff that's already in the schedule.

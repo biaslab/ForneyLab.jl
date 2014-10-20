@@ -1,12 +1,12 @@
 export calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, executeSchedule, clearMessages!
 
-function calculateMessage!(outbound_interface::Interface)
+function calculateMessage!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph())
     # Calculate the outbound message on a specific interface by generating a schedule and executing it.
     # The resulting message is stored in the specified interface and returned.
 
     # Generate a message passing schedule
     printVerbose("Auto-generating message passing schedule...")
-    schedule = generateSchedule(outbound_interface)
+    schedule = generateSchedule!(outbound_interface, graph)
     if verbose show(schedule) end
 
     # Execute the schedule
@@ -98,6 +98,7 @@ calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 # Execute schedules
 function executeSchedule(schedule::Schedule, graph::FactorGraph=getCurrentGraph())
     # Execute a message passing schedule
+    !isempty(schedule) || error("Cannot execute an empty schedule")
     for interface in schedule
         updateNodeMessage!(interface, graph)
     end
@@ -113,6 +114,12 @@ end
 function executeSchedule(subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
     executeSchedule(subgraph.internal_schedule)
     executeSchedule(subgraph.external_schedule, subgraph, graph)
+end
+
+function executeSchedule(graph::FactorGraph=getCurrentGraph())
+    for subgraph in graph.factorization
+        executeSchedule(subgraph, graph)
+    end
 end
 
 function clearMessages!(node::Node)
