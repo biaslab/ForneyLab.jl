@@ -58,4 +58,23 @@ facts("Marginal calculation integration tests") do
         calculateMarginal!(node, subgraph, graph)
         @fact graph.approximate_marginals[(node, subgraph)] => GaussianDistribution(W=1.001, xi=0.0)
     end
+
+    context("Marginal calculation for the structurally factorized LinearCompositeNode") do
+        node = initializeLinearCompositeNode()
+        graph = getCurrentGraph()
+        factorize!(Set{Edge}([node.slope.edge]))
+        factorize!(Set{Edge}([node.offset.edge]))
+        factorize!(Set{Edge}([node.noise.edge]))
+        
+        # Presetting uninformative marginals
+        graph.approximate_marginals[(node, graph.factorization[1])] = GaussianDistribution(m=[0.0, 0.0], V=[100.0 0.0; 0.0 100.0])
+        graph.approximate_marginals[(node, graph.factorization[2])] = uninformative(GaussianDistribution)
+        graph.approximate_marginals[(node, graph.factorization[3])] = uninformative(GaussianDistribution)
+        graph.approximate_marginals[(node, graph.factorization[4])] = uninformative(GammaDistribution)
+
+        # Joint marginal
+        subgraph = graph.factorization[1]
+        calculateMarginal!(node, subgraph, graph)
+        @fact graph.approximate_marginals[(node, subgraph)] => GaussianDistribution(m=[0.0, 0.0], V=[1000.0 0; 0 1000.0])
+    end
 end

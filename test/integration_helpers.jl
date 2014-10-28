@@ -299,11 +299,11 @@ function initializeLinearCompositeNode()
 
     graph = FactorGraph()
     node = LinearCompositeNode(form="precision")
-    Edge(MockNode().out, node.in1)
-    Edge(MockNode().out, node.slope)
-    Edge(MockNode().out, node.offset)
-    Edge(MockNode().out, node.noise, GammaDistribution)
-    Edge(node.out, MockNode().out)
+    Edge(MockNode(Message(GaussianDistribution())).out, node.in1)
+    Edge(MockNode(Message(GaussianDistribution())).out, node.slope)
+    Edge(MockNode(Message(GaussianDistribution())).out, node.offset)
+    Edge(MockNode(Message(GammaDistribution())).out, node.noise, GammaDistribution)
+    Edge(node.out, MockNode(Message(GaussianDistribution())).out)
 
     return node
 end

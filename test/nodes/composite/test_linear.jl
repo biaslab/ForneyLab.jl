@@ -63,22 +63,45 @@ facts("LinearCompositeNode unit tests") do
     end
 
     context("LinearCompositeNode should propagate a backward variational message to in1 under structured factorization") do
-        @fact true => false
+        validateOutboundMessage(LinearCompositeNode(), 
+                                1, 
+                                GaussianDistribution, 
+                                [nothing, GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), GammaDistribution(a=0.1, b=0.1), Message(GaussianDistribution(m=2.5, V=0.0))],
+                                GaussianDistribution(m=0.25, W=4.0))
     end
 
     context("LinearCompositeNode should propagate a backward variational message to slope under structured factorization") do
-        @fact true => false
+        dist_xy = GaussianDistribution(m=[1.0, 2.0], V=[1.0 0.5; 0.5 0.9])
+        validateOutboundMessage(LinearCompositeNode(), 
+                                2, 
+                                GaussianDistribution, 
+                                [dist_xy, nothing, GaussianDistribution(m=0.5, V=0.0), GammaDistribution(a=0.1, b=0.1), dist_xy],
+                                GaussianDistribution(m=1.0, W=2.0))
     end
 
     context("LinearCompositeNode should propagate a backward variational message to offset under structured factorization") do
-        @fact true => false
+        dist_xy = GaussianDistribution(m=[1.0, 2.0], V=[1.0 0.5; 0.5 0.9])
+        validateOutboundMessage(LinearCompositeNode(), 
+                                3, 
+                                GaussianDistribution, 
+                                [dist_xy, GaussianDistribution(m=2.0, V=0.0), nothing, GammaDistribution(a=0.1, b=0.1), dist_xy],
+                                GaussianDistribution(m=0.0, W=1.0))
     end
 
     context("LinearCompositeNode should propagate a backward variational message to noise under structured factorization") do
-        @fact true => false
+        dist_xy = GaussianDistribution(m=[1.0, 2.0], V=[1.0 0.5; 0.5 0.9])
+        validateOutboundMessage(LinearCompositeNode(), 
+                                4, 
+                                GammaDistribution, 
+                                [dist_xy, GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), nothing, dist_xy],
+                                GammaDistribution(a=1.5, b=3.425))
     end
 
     context("LinearCompositeNode should propagate a forward variational message to out under structured factorization") do
-        @fact true => false
+        validateOutboundMessage(LinearCompositeNode(), 
+                                5,
+                                GaussianDistribution, 
+                                [Message(GaussianDistribution(m=1.0, V=0.0)), GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), GammaDistribution(a=0.1, b=0.1), nothing],
+                                GaussianDistribution(m=0.5, W=1.0))
     end
 end
