@@ -74,6 +74,7 @@ type LinearCompositeNode <: CompositeNode
     end
 end
 
+
 ############################################
 # Standard update functions
 ############################################
@@ -126,226 +127,692 @@ function updateNodeMessage!(node::LinearCompositeNode,
     return node.interfaces[outbound_interface_id].message
 end
 
+
 ############################################
-# Variational update functions
+# Naive variational update functions
 ############################################
 
 function updateNodeMessage!(node::LinearCompositeNode,
                             outbound_interface_id::Int,
                             outbound_message_payload_type::Type{GaussianDistribution},
-                            marg_in1::Any,
-                            marg_slope::Any,
-                            marg_offset::Any,
-                            marg_noise::GammaDistribution,
-                            marg_out::Any)
-    # Variational update function, takes the marginals as input.
-    # Sends to any interface carrying a Gaussian message, while using precision parameterized noise
-    # Derivation for the update rule can be found in the derivations notebook.
-
-    node.form == "precision" || error("You need to specify the 'precision' form when constructing $(typeof(node)) $(node.name) in order to work with mean-precision parametrization")
+                            ::Nothing,
+                            dist_a::GaussianDistribution,
+                            dist_b::GaussianDistribution,
+                            dist_gam::GammaDistribution,
+                            dist_y::GaussianDistribution)
+    # Backward message over x
+    #
+    #        Q(b)~N
+    #          |
+    # Q(a)~N   v   Q(gam)~Gam         
+    #  ---->[  L  ]<----
+    #        ^   |
+    #      | |   | Q(y)~N
+    #      v |   v
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Ensure right parameterization
-    for param = [marg_in1, marg_slope, marg_offset, marg_out] # just get all of them, all marginals need to be defined anyway
-        (param == nothing) || ensureMWParametrization!(param)
-    end
-    # Get the variables beforehand for more readable update equations
-    if marg_slope != nothing
-        mu_a = marg_slope.m[1]
-        gam_a = marg_slope.W[1, 1] # gamma_a
-    end
-    if marg_offset != nothing
-        mu_b = marg_offset.m[1]
-        gam_b = marg_offset.W[1, 1] # gamma_b
-    end
-    if marg_out != nothing
-        mu_x2 = marg_out.m[1]
-        gam_x2 = marg_out.W[1, 1] # gamma_x2
-    end
-    if marg_in1 != nothing
-        mu_x1 = marg_in1.m[1]
-        gam_x1 = marg_in1.W[1, 1] # gamma_x1
-    end
-    a_gam = marg_noise.a
-    b_gam = marg_noise.b
+    ensureMWParametrization!(dist_a)
+    ensureMDefined!(dist_b)
+    ensureMDefined!(dist_y)
+    
+    mu_a = dist_a.m[1]
+    gam_a = dist_a.W[1,1]
+    mu_y = dist_y.m[1]
+    mu_b = dist_b.m[1]
+    a_gam = dist_gam.a
+    b_gam = dist_gam.b
 
-    if outbound_interface_id == 1 # in1
-        dist_out.m = [(mu_a*(mu_x2 - mu_b))/(inv(gam_a) + mu_a^2)]
+    if is(node.interfaces[outbound_interface_id], node.in1)
+        dist_out.m = [(mu_a*(mu_y - mu_b))/(inv(gam_a) + mu_a^2)]
         dist_out.V = nothing
         dist_out.W = reshape([(a_gam*(mu_a^2 + inv(gam_a)))/(b_gam)], 1, 1)
         dist_out.xi = nothing
-    elseif outbound_interface_id == 2 # a
-        dist_out.m = [(mu_x1*(mu_x2 - mu_b))/(inv(gam_x1) + mu_x1^2)]
-        dist_out.V = nothing
-        dist_out.W = reshape([(a_gam*(mu_x1^2 + inv(gam_x1)))/b_gam], 1, 1)
-        dist_out.xi = nothing
-    elseif outbound_interface_id == 3 # b
-        dist_out.m = [mu_x2 - mu_a*mu_x1]
-        dist_out.V = nothing
-        dist_out.W = reshape([a_gam/b_gam], 1, 1)
-        dist_out.xi = nothing
-    elseif outbound_interface_id == 5 # out
-        dist_out.m = [mu_a*mu_x1 + mu_b]
-        dist_out.V = nothing
-        dist_out.W = reshape([a_gam/b_gam], 1, 1)
-        dist_out.xi = nothing
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
-    # Set the outbound message
     return node.interfaces[outbound_interface_id].message
 end
 
 function updateNodeMessage!(node::LinearCompositeNode,
                             outbound_interface_id::Int,
                             outbound_message_payload_type::Type{GaussianDistribution},
-                            marg_in1::Any,
-                            marg_slope::Any,
-                            marg_offset::Any,
-                            marg_noise::InverseGammaDistribution,
-                            marg_out::Any)
-    # Variational update function, takes the marginals as input.
-    # Sends to any interface carrying a Gaussian message, while using variance parameterized noise
-    # Derivation for the update rule can be found in the derivations notebook.
-
-    node.form == "moment" || error("You need to specify the 'moment' form when constructing $(typeof(node)) $(node.name) in order to work with mean-variance parameterization")
+                            dist_x::GaussianDistribution,
+                            ::Nothing,
+                            dist_b::GaussianDistribution,
+                            dist_gam::GammaDistribution,
+                            dist_y::GaussianDistribution)
+    # Backward message over slope
+    #
+    #        Q(b)~N
+    #          |
+    #   <--    v   Q(gam)~Gam         
+    #  ---->[  L  ]<----
+    #        ^   |
+    #        |   v
+    #   Q(x)~N   Q(y)~N
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Ensure right parameterization
-    for param = [marg_in1, marg_slope, marg_offset, marg_out] # just get all of them, all marginals need to be defined anyway
-        (param==nothing) || ensureMVParametrization!(param)
-    end
-    # Get the variables beforehand for more readable update equations
-    if marg_slope != nothing
-        mu_a = marg_slope.m[1]
-        s_a = marg_slope.V[1, 1] # sigma_a^2
-    end
-    if marg_offset != nothing
-        mu_b = marg_offset.m[1]
-        s_b = marg_offset.V[1, 1] # sigma_b^2
-    end
-    if marg_out != nothing
-        mu_x2 = marg_out.m[1]
-        s_x2 = marg_out.V[1, 1] # sigma_x2^2
-    end
-    if marg_in1 != nothing
-        mu_x1 = marg_in1.m[1]
-        s_x1 = marg_in1.V[1, 1] # sigma_x1^2
-    end
-    a_s = marg_noise.a
-    b_s = marg_noise.b
+    ensureMWParametrization!(dist_x)
+    ensureMDefined!(dist_y)
+    ensureMDefined!(dist_b)
 
-    if outbound_interface_id == 1 # in1
-        dist_out.m = [(mu_a*(mu_x2 - mu_b))/(s_a + mu_a^2)]
-        dist_out.V = reshape([(a_s + 1)/(b_s*(mu_a^2 + s_a))], 1, 1)
-        dist_out.W = nothing
-        dist_out.xi = nothing
-    elseif outbound_interface_id == 2 # a
-        dist_out.m = [(mu_x1*(mu_x2 - mu_b))/(s_x1 + mu_x1^2)]
-        dist_out.V = reshape([(a_s + 1)/(b_s*(mu_x1^2 + s_x1))], 1, 1)
-        dist_out.W = nothing
-        dist_out.xi = nothing
-    elseif outbound_interface_id == 3 # b
-        dist_out.m = [mu_x2 - mu_a*mu_x1]
-        dist_out.V = reshape([(a_s + 1)/b_s], 1, 1)
-        dist_out.W = nothing
-        dist_out.xi = nothing
-    elseif outbound_interface_id == 5 # out
-        dist_out.m = [mu_a*mu_x1 + mu_b]
-        dist_out.V = reshape([(a_s + 1)/b_s], 1, 1)
-        dist_out.W = nothing
+    mu_x = dist_x.m[1]
+    gam_x = dist_x.W[1,1]
+    mu_y = dist_y.m[1]
+    mu_b = dist_b.m[1]
+    a_gam = dist_gam.a
+    b_gam = dist_gam.b
+
+    if is(node.interfaces[outbound_interface_id], node.slope)
+        dist_out.m = [(mu_x*(mu_y - mu_b))/(inv(gam_x) + mu_x^2)]
+        dist_out.V = nothing
+        dist_out.W = reshape([(a_gam*(mu_x^2 + inv(gam_x)))/b_gam], 1, 1)
         dist_out.xi = nothing
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
-    # Set the outbound message
+    return node.interfaces[outbound_interface_id].message
+end
+
+function updateNodeMessage!(node::LinearCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            dist_x::GaussianDistribution,
+                            dist_a::GaussianDistribution,
+                            ::Nothing,
+                            dist_gam::GammaDistribution,
+                            dist_y::GaussianDistribution)
+    # Backward message over offset
+    #
+    #        ^ |
+    #        | |
+    # Q(b)~N   v   Q(gam)~Gam         
+    #  ---->[  L  ]<----
+    #        ^   |
+    #        |   v
+    #   Q(x)~N   Q(y)~N
+
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+    # Ensure right parameterization
+    ensureMDefined!(dist_x)
+    ensureMDefined!(dist_y)
+    ensureMDefined!(dist_a)
+
+    mu_x = dist_x.m[1]
+    mu_a = dist_a.m[1]
+    mu_y = dist_y.m[1]
+    a_gam = dist_gam.a
+    b_gam = dist_gam.b
+
+    if is(node.interfaces[outbound_interface_id], node.offset)
+        dist_out.m = [mu_y - mu_a*mu_x]
+        dist_out.V = nothing
+        dist_out.W = reshape([a_gam/b_gam], 1, 1)
+        dist_out.xi = nothing
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+    end
+
     return node.interfaces[outbound_interface_id].message
 end
 
 function updateNodeMessage!(node::LinearCompositeNode,
                             outbound_interface_id::Int,
                             outbound_message_payload_type::Type{GammaDistribution},
-                            marg_in1::GaussianDistribution,
-                            marg_slope::GaussianDistribution,
-                            marg_offset::GaussianDistribution,
-                            ::Any,
-                            marg_out::GaussianDistribution)
-    # Variational update function, takes the marginals as input.
-    # Sends to precision parameterized noise.
-    # Derivation for the update rule can be found in the derivations notebook.
+                            dist_x::GaussianDistribution,
+                            dist_a::GaussianDistribution,
+                            dist_b::GaussianDistribution,
+                            ::Nothing,
+                            dist_y::GaussianDistribution)
+    # Backward message over noise
+    #
+    #        Q(b)~N
+    #          |
+    # Q(a)~N   v    -->         
+    #  ---->[  L  ]<----
+    #        ^   |
+    #        |   v
+    #   Q(x)~N   Q(y)~N
 
-    node.form == "precision" || error("You need to specify the 'precision' form when constructing $(typeof(node)) $(node.name) in order to work with mean-precision parametrization")
+    (node.form == "precision") || error("LinearCompositeNode $(node.name) must be declared in precision form")
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+    # Ensure right parameterization
+    ensureMWParametrization!(dist_x)
+    ensureMWParametrization!(dist_a)
+    ensureMWParametrization!(dist_b)
+    ensureMWParametrization!(dist_y)
+
+    mu_a = dist_a.m[1]
+    gam_a = dist_a.W[1,1]
+    mu_b = dist_b.m[1]
+    gam_b = dist_b.W[1,1]
+    mu_y = dist_y.m[1]
+    gam_y = dist_y.W[1,1]
+    mu_x = dist_x.m[1]
+    gam_x = dist_x.W[1,1]
+
+    if is(node.interfaces[outbound_interface_id], node.noise)
+        dist_out.a = 1.5
+        dist_out.b = 0.5*((mu_y - mu_a*mu_x - mu_b)^2 - (mu_a^2)*(mu_x^2) + (mu_a^2 + inv(gam_a))*(mu_x^2 + inv(gam_x)) + inv(gam_b) + inv(gam_y))
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+    end
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+function updateNodeMessage!(node::LinearCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            dist_x::GaussianDistribution,
+                            dist_a::GaussianDistribution,
+                            dist_b::GaussianDistribution,
+                            dist_gam::GammaDistribution,
+                            ::Nothing)
+    # Forward message over y
+    #
+    #        Q(b)~N
+    #          |
+    # Q(a)~N   v   Q(gam)~Gam         
+    #  ---->[  L  ]<----
+    #        ^   |
+    # Q(x)~N |   | |
+    #        |   v v
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Ensure right parameterization
-    for param = [marg_in1, marg_slope, marg_offset, marg_out] # just get all of them, all marginals need to be defined anyway
-        ensureMWParametrization!(param)
-    end
+    ensureMDefined!(dist_a)
+    ensureMDefined!(dist_b)
+    ensureMDefined!(dist_x)
 
-    # Get the variables beforehand for more readable update equations
-    mu_a = marg_slope.m[1]
-    gam_a = marg_slope.W[1, 1] # gamma_a
-    mu_b = marg_offset.m[1]
-    gam_b = marg_offset.W[1, 1] # gamma_b
-    mu_x2 = marg_out.m[1]
-    gam_x2 = marg_out.W[1, 1] # gamma_x2
-    mu_x1 = marg_in1.m[1]
-    gam_x1 = marg_in1.W[1, 1] # gamma_x1
+    mu_a = dist_a.m[1]
+    mu_b = dist_b.m[1]
+    mu_x = dist_x.m[1]
+    a_gam = dist_gam.a
+    b_gam = dist_gam.b
 
-    if outbound_interface_id == 4 # noise_N
-        dist_out.a = 1.5
-        dist_out.b = 0.5*((mu_x2 - mu_a*mu_x1 - mu_b)^2 - (mu_a^2)*(mu_x1^2) + (mu_a^2 + inv(gam_a))*(mu_x1^2 + inv(gam_x1)) + inv(gam_b) + inv(gam_x2))
+    if is(node.interfaces[outbound_interface_id], node.out)
+        dist_out.m = [mu_a*mu_x + mu_b]
+        dist_out.V = nothing
+        dist_out.W = reshape([a_gam/b_gam], 1, 1)
+        dist_out.xi = nothing
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
-    # Set the outbound message
+    return node.interfaces[outbound_interface_id].message
+end
+
+
+function updateNodeMessage!(node::LinearCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            ::Nothing,
+                            dist_a::GaussianDistribution,
+                            dist_b::GaussianDistribution,
+                            dist_s::InverseGammaDistribution,
+                            dist_y::GaussianDistribution)
+    # Backward message over x
+    #
+    #        Q(b)~N
+    #          |
+    # Q(a)~N   v   Q(s)~Ig         
+    #  ---->[  L  ]<----
+    #        ^   |
+    #      | |   | Q(y)~N
+    #      v |   v
+
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+    # Ensure right parameterization
+    ensureMVParametrization!(dist_a)
+    ensureMDefined!(dist_b)
+    ensureMDefined!(dist_y)
+    
+    mu_a = dist_a.m[1]
+    s_a = dist_a.V[1,1]
+    mu_y = dist_y.m[1]
+    mu_b = dist_b.m[1]
+    a_s = dist_s.a
+    b_s = dist_s.b
+
+    if is(node.interfaces[outbound_interface_id], node.in1)
+        dist_out.m = [(mu_a*(mu_y - mu_b))/(s_a + mu_a^2)]
+        dist_out.V = reshape([(a_s + 1)/(b_s*(mu_a^2 + s_a))], 1, 1)
+        dist_out.W = nothing
+        dist_out.xi = nothing
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+    end
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+function updateNodeMessage!(node::LinearCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            dist_x::GaussianDistribution,
+                            ::Nothing,
+                            dist_b::GaussianDistribution,
+                            dist_s::InverseGammaDistribution,
+                            dist_y::GaussianDistribution)
+    # Backward message over slope
+    #
+    #        Q(b)~N
+    #          |
+    #   <--    v   Q(s)~Ig         
+    #  ---->[  L  ]<----
+    #        ^   |
+    #        |   v
+    #   Q(x)~N   Q(y)~N
+
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+    # Ensure right parameterization
+    ensureMVParametrization!(dist_x)
+    ensureMDefined!(dist_y)
+    ensureMDefined!(dist_b)
+
+    mu_x = dist_x.m[1]
+    s_x = dist_x.V[1,1]
+    mu_y = dist_y.m[1]
+    mu_b = dist_b.m[1]
+    a_s = dist_s.a
+    b_s = dist_s.b
+
+    if is(node.interfaces[outbound_interface_id], node.slope)
+        dist_out.m = [(mu_x*(mu_y - mu_b))/(s_x + mu_x^2)]
+        dist_out.V = reshape([(a_s + 1)/(b_s*(mu_x^2 + s_x))], 1, 1)
+        dist_out.W = nothing
+        dist_out.xi = nothing
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+    end
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+function updateNodeMessage!(node::LinearCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            dist_x::GaussianDistribution,
+                            dist_a::GaussianDistribution,
+                            ::Nothing,
+                            dist_s::InverseGammaDistribution,
+                            dist_y::GaussianDistribution)
+    # Backward message over offset
+    #
+    #        ^ |
+    #        | |
+    # Q(b)~N   v   Q(s)~Ig         
+    #  ---->[  L  ]<----
+    #        ^   |
+    #        |   v
+    #   Q(x)~N   Q(y)~N
+
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+    # Ensure right parameterization
+    ensureMDefined!(dist_x)
+    ensureMDefined!(dist_y)
+    ensureMDefined!(dist_a)
+
+    mu_x = dist_x.m[1]
+    mu_a = dist_a.m[1]
+    mu_y = dist_y.m[1]
+    a_s = dist_s.a
+    b_s = dist_s.b
+
+    if is(node.interfaces[outbound_interface_id], node.offset)
+        dist_out.m = [mu_y - mu_a*mu_x]
+        dist_out.V = reshape([(a_s + 1)/b_s], 1, 1)
+        dist_out.W = nothing
+        dist_out.xi = nothing
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+    end
+
     return node.interfaces[outbound_interface_id].message
 end
 
 function updateNodeMessage!(node::LinearCompositeNode,
                             outbound_interface_id::Int,
                             outbound_message_payload_type::Type{InverseGammaDistribution},
-                            marg_in1::GaussianDistribution,
-                            marg_slope::GaussianDistribution,
-                            marg_offset::GaussianDistribution,
-                            ::Any,
-                            marg_out::GaussianDistribution)
-    # Variational update function, takes the marginals as input.
-    # Sends to variance parameterized noise.
-    # Derivation for the update rule can be found in the derivations notebook.
+                            dist_x::GaussianDistribution,
+                            dist_a::GaussianDistribution,
+                            dist_b::GaussianDistribution,
+                            ::Nothing,
+                            dist_y::GaussianDistribution)
+    # Backward message over noise
+    #
+    #        Q(b)~N
+    #          |
+    # Q(a)~N   v    -->         
+    #  ---->[  L  ]<----
+    #        ^   |
+    #        |   v
+    #   Q(x)~N   Q(y)~N
 
-    node.form == "moment" || error("You need to specify the 'moment' form when constructing $(typeof(node)) $(node.name) in order to work with mean-variance parameterization")
+    (node.form == "moment") || error("LinearCompositeNode $(node.name) must be declared in moment form")
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+    # Ensure right parameterization
+    ensureMVParametrization!(dist_x)
+    ensureMVParametrization!(dist_a)
+    ensureMVParametrization!(dist_b)
+    ensureMVParametrization!(dist_y)
+
+    mu_a = dist_a.m[1]
+    s_a = dist_a.V[1,1]
+    mu_b = dist_b.m[1]
+    s_b = dist_b.V[1,1]
+    mu_y = dist_y.m[1]
+    s_y = dist_y.V[1,1]
+    mu_x = dist_x.m[1]
+    s_x = dist_x.V[1,1]
+
+    if is(node.interfaces[outbound_interface_id], node.noise)
+        dist_out.a = -0.5
+        dist_out.b = 0.5*((mu_y - mu_a*mu_x - mu_b)^2 - (mu_a^2)*(mu_x^2) + (mu_a^2 + s_a)*(mu_x^2 + s_x) + s_b + s_y)
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+    end
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+function updateNodeMessage!(node::LinearCompositeNode,
+                            outbound_interface_id::Int,
+                            outbound_message_payload_type::Type{GaussianDistribution},
+                            dist_x::GaussianDistribution,
+                            dist_a::GaussianDistribution,
+                            dist_b::GaussianDistribution,
+                            dist_s::InverseGammaDistribution,
+                            ::Nothing)
+    # Forward message over y
+    #
+    #        Q(b)~N
+    #          |
+    # Q(a)~N   v   Q(s)~Ig         
+    #  ---->[  L  ]<----
+    #        ^   |
+    # Q(x)~N |   | |
+    #        |   v v
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
 
     # Ensure right parameterization
-    for param = [marg_in1, marg_slope, marg_offset, marg_out] # just get all of them, all marginals need to be defined anyway
-        ensureMVParametrization!(param)
-    end
+    ensureMDefined!(dist_a)
+    ensureMDefined!(dist_b)
+    ensureMDefined!(dist_x)
 
-    # Get the variables beforehand for more readable update equations
-    mu_a = marg_slope.m[1]
-    s_a = marg_slope.V[1, 1] # sigma_a^2
-    mu_b = marg_offset.m[1]
-    s_b = marg_offset.V[1, 1] # sigma_b^2
-    mu_x2 = marg_out.m[1]
-    s_x2 = marg_out.V[1, 1] # sigma_x2^2
-    mu_x1 = marg_in1.m[1]
-    s_x1 = marg_in1.V[1, 1] # sigma_x1^2
+    mu_a = dist_a.m[1]
+    mu_b = dist_b.m[1]
+    mu_x = dist_x.m[1]
+    a_s = dist_s.a
+    b_s = dist_s.b
 
-    if outbound_interface_id == 4 # s_N
-        dist_out.a = -0.5
-        dist_out.b = 0.5*((mu_x2 - mu_a*mu_x1 - mu_b)^2 - (mu_a^2)*(mu_x1^2) + (mu_a^2 + s_a)*(mu_x1^2 + s_x1) + s_b + s_x2)
+    if is(node.interfaces[outbound_interface_id], node.out)
+        dist_out.m = [mu_a*mu_x + mu_b]
+        dist_out.V = reshape([(a_s + 1)/b_s], 1, 1)
+        dist_out.W = nothing
+        dist_out.xi = nothing
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
 
-    # Set the outbound message
     return node.interfaces[outbound_interface_id].message
 end
+
+
+############################################
+# Structured variational update functions
+############################################
+
+# function updateNodeMessage!(node::LinearCompositeNode,
+#                             outbound_interface_id::Int,
+#                             outbound_message_payload_type::Type{GaussianDistribution},
+#                             ::Nothing,
+#                             dist_a::GaussianDistribution,
+#                             dist_b::GaussianDistribution,
+#                             dist_gam::GammaDistribution,
+#                             ::Message{GaussianDistribution})
+#     # Backward message over x
+#     #
+#     #        Q(b)~N
+#     #          |
+#     # Q(a)~N   v   Q(gam)~Gam         
+#     #  ---->[  L  ]<----
+#     #        ^   |
+#     #      | |   | y~N
+#     #      v |   v
+
+#     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+#     # Ensure right parameterization
+#     ensureMVParametrization!(dist_a)
+#     ensureMDefined!(dist_b)
+
+#     mu_a = dist_a.m[1]
+#     sig_a_2 = dist_a.V[1,1]
+#     mu_b = dist_b.m[1]
+#     gam_a = dist_gam.a
+#     gam_b = dist_gam.b
+
+#     if is(node.interfaces[outbound_interface_id], node.in1)
+#         dist_out.m = [(mu_a*mu_b)/(sig_a_2+mu_a^2)]
+#         dist_out.W = reshape([(gam_a*(sig_a_2 + mu_a^2))/(gam_b)],1,1)
+#         dist_out.xi = nothing
+#         dist_out.V = nothing
+#     else
+#         error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+#     end
+
+#     return node.interfaces[outbound_interface_id].message
+# end   
+
+# function updateNodeMessage!(node::LinearCompositeNode,
+#                             outbound_interface_id::Int,
+#                             outbound_message_payload_type::Type{GaussianDistribution},
+#                             dist_xy::GaussianDistribution,
+#                             ::Nothing,
+#                             dist_b::GaussianDistribution,
+#                             dist_gam::GammaDistribution,
+#                             ::GaussianDistribution)
+#     graph = getCurrentGraph()
+#     if graph.edge_to_subgraph[node.in1.edge] == graph.edge_to_subgraph[node.out.edge]
+#         # Structured
+
+#         # Backward message over slope
+#         #
+#         #        Q(b)~N
+#         #          |
+#         #   <--    v   Q(gam)~Gam         
+#         #  ---->[  L  ]<----
+#         #        ^   |
+#         #        |   v
+#         #       Q(x,y)~N
+
+#         dist_xy = dist_x
+#         dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+#         # Ensure right parameterization
+#         ensureMVParametrization!(dist_xy)
+#         ensureMDefined!(dist_b)
+
+#         a_gam = dist_gam.a
+#         b_gam = dist_gam.b
+#         mu_b = dist_b.m[1]
+#         mu_x = dist_xy.m[1]
+#         mu_y = dist_xy.m[2]
+#         rho_xx = dist_xy.V[1,1]
+#         rho_xy = dist_xy.V[1,2]
+
+#         if is(node.interfaces[outbound_interface_id], node.slope)
+#             dist_out.m = [(mu_x*mu_y + rho_xy - mu_b*mu_x)/(mu_x^2 + rho_xx)]
+#             dist_out.W = reshape([(a_gam*(mu_x^2+rho_xx))/(b_gam)],1,1)
+#             dist_out.xi = nothing
+#             dist_out.V = nothing
+#         else
+#             error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+#         end
+#     else
+#         # Naive
+
+#     end
+
+#     return node.interfaces[outbound_interface_id].message
+# end
+
+# function updateNodeMessage!(node::LinearCompositeNode,
+#                             outbound_interface_id::Int,
+#                             outbound_message_payload_type::Type{GaussianDistribution},
+#                             dist_xy::GaussianDistribution,
+#                             dist_a::GaussianDistribution,
+#                             ::Nothing,
+#                             dist_gam::GammaDistribution,
+#                             ::GaussianDistribution)
+#     graph = getCurrentGraph()
+#     if graph.edge_to_subgraph[node.in1.edge] == graph.edge_to_subgraph[node.out.edge]
+#         # Structured
+
+#         # Backward message over slope
+#         #
+#         #        ^ |
+#         #        | |
+#         # Q(a)~N   v   Q(gam)~Gam         
+#         #  ---->[  L  ]<----
+#         #        ^   |
+#         #        |   v
+#         #       Q(x,y)~N
+
+#         dist_xy = dist_x
+#         dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+#         # Ensure right parameterization
+#         ensureMVParametrization!(dist_xy)
+#         ensureMDefined!(dist_a)
+
+#         a_gam = dist_gam.a
+#         b_gam = dist_gam.b
+#         mu_a = dist_a.m[1]
+#         mu_x = dist_xy.m[1]
+#         mu_y = dist_xy.m[2]
+
+#         if is(node.interfaces[outbound_interface_id], node.offset)
+#             dist_out.m = [mu_y - mu_a*mu_x]
+#             dist_out.W = reshape([a_gam/b_gam],1,1)
+#             dist_out.xi = nothing
+#             dist_out.V = nothing
+#         else
+#             error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+#         end
+#     else
+#         # Naive
+
+#     end
+
+#     return node.interfaces[outbound_interface_id].message
+# end
+
+# function updateNodeMessage!(node::LinearCompositeNode,
+#                             outbound_interface_id::Int,
+#                             outbound_message_payload_type::Type{GammaDistribution},
+#                             dist_xy::GaussianDistribution,
+#                             dist_a::GaussianDistribution,
+#                             dist_b::GaussianDistribution,
+#                             ::Nothing,
+#                             ::GaussianDistribution)
+#     graph = getCurrentGraph()
+#     if graph.edge_to_subgraph[node.in1.edge] == graph.edge_to_subgraph[node.out.edge]
+#         # Structured
+
+#         # Backward message over noise
+#         #
+#         #        Q(b)~N
+#         #          |
+#         # Q(a)~N   v    -->         
+#         #  ---->[  L  ]<----
+#         #        ^   |
+#         #        |   v
+#         #       Q(x,y)~N
+
+#         dist_xy = dist_x
+#         dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+#         # Ensure right parameterization
+#         ensureMVParametrization!(dist_xy)
+#         ensureMVParametrization!(dist_a)
+#         ensureMVParametrization!(dist_b)
+
+#         mu_a = dist_a.m[1]
+#         sig_a_2 = dist_a.V[1,1]
+#         mu_b = dist_b.m[1]
+#         sig_b_2 = dist_b.V[1,1]
+#         mu_x = dist_xy.m[1]
+#         mu_y = dist_xy.m[2]
+#         rho_xx = dist_xy.V[1,1]
+#         rho_xy = dist_xy.V[1,2]
+#         rho_yy = dist_xy.V[2,2]
+
+#         if is(node.interfaces[outbound_interface_id], node.noise)
+#             dist_out.a = 3.0/2.0
+#             dist_out.b = 0.5*(mu_y^2*rho_yy - mu_a*(mu_x*mu_y + rho_xy) - mu_b*mu_y + (mu_a^2 + sig_a_2)*(mu_x^2 + rho_xx) + mu_a*mu_b*mu_x + mu_b^2 + sig_b_2)
+#         else
+#             error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+#         end
+#     else
+#         # Naive
+
+#     end
+
+#     return node.interfaces[outbound_interface_id].message
+# end
+
+# function updateNodeMessage!(node::LinearCompositeNode,
+#                             outbound_interface_id::Int,
+#                             outbound_message_payload_type::Type{GaussianDistribution},
+#                             ::Message{GaussianDistribution},
+#                             ::GaussianDistribution,
+#                             dist_b::GaussianDistribution,
+#                             dist_gam::GammaDistribution,
+#                             ::Nothing)
+#     # Forward message over y
+#     #
+#     #        Q(b)~N
+#     #          |
+#     # Q(a)~N   v   Q(gam)~Gam         
+#     #  ---->[  L  ]<----
+#     #        ^   |
+#     #    x~N |   | |
+#     #        |   v v
+
+#     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+
+#     # Ensure right parameterization
+#     ensureMDefined!(dist_b)
+
+#     mu_b = dist_b.m[1]
+#     gam_a = dist_gam.a
+#     gam_b = dist_gam.b
+
+#      if is(node.interfaces[outbound_interface_id], node.out)
+#         dist_out.m = [mu_b]
+#         dist_out.W = reshape([gam_a/gam_b],1,1)
+#         dist_out.xi = nothing
+#         dist_out.V = nothing
+#     else
+#         error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+#     end
+
+#     return node.interfaces[outbound_interface_id].message
+# end 

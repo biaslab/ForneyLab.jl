@@ -180,4 +180,8 @@ facts("Structured VMP implementation integration tests") do
         @fact m_m-m_sigma < true_mean < m_m+m_sigma => true
         @fact gam_m-gam_sigma < true_prec < gam_m+gam_sigma => true
     end
+
+    context("LinearCompositeNode parameter estimation for joint in-out") do
+        @fact true => false
+    end
 end

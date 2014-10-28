@@ -10,7 +10,7 @@ function updateNodeMessage!(node::CompositeNode,
     # This function is not exported, and is only meant for internal use.
 
     if node.use_composite_update_rules
-        error("$(typeof(node)) $(node.name) is configured to use shortcut rules, but updateNodeMessage!() is not defined for this node type.")
+        error("$(typeof(node)) $(node.name) is configured to use shortcut rules, but updateNodeMessage!() with arguments $([typeof(inbound) for inbound in [inbounds...]]) is not defined for this node type.")
     else
         # Internal message passing
         schedule = nothing

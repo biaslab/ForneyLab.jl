@@ -175,10 +175,8 @@ end
 
 
 ############################################
-# Update functions
+# Standard update functions
 ############################################
-
-# Standard SP
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
@@ -296,7 +294,9 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-# Mean Field
+############################################
+# Naive variational update functions
+############################################
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
@@ -643,7 +643,9 @@ function updateNodeMessage!(node::GaussianNode,
 end
 
 
-# Structured Mean Field
+############################################
+# Structured variational update functions
+############################################
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
