@@ -182,6 +182,94 @@ facts("Structured VMP implementation integration tests") do
     end
 
     context("LinearCompositeNode parameter estimation for joint in-out") do
-        @fact true => false
+        #true_gam = 0.5
+        #true_a = 3.0
+        #true_b = 5.0
+        x = [0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0]
+        y = [6.1811923622357625,7.917496269084679,11.286102016681964,14.94255088702814,16.82264686442818,19.889355802073506,23.718253510300688,28.18105443765643,27.72075206943362,32.15921446069328,34.97262678800721,38.86444301740928,40.79138365100076,45.84963364094473,47.818481172238165,51.51027620022872,52.623019301773,53.91583839744505,58.14426361122961,59.895517438500164]
+        (lin_nodes, a_eq_nodes, b_eq_nodes, gam_eq_nodes, a_eq_edges, b_eq_edges, gam_eq_edges, x_edges, y_edges) = initializeLinearCompositeNodeChain(x, y)
+        n_sections = length(y)
+
+        graph = getCurrentGraph()
+
+        # Apply structured factorization
+        a_chain_edges = Array(Edge, 0)
+        for a_eq_node in a_eq_nodes
+            for intf in a_eq_node.interfaces
+                push!(a_chain_edges, intf.edge)
+            end
+        end
+        b_chain_edges = Array(Edge, 0)
+        for b_eq_node in b_eq_nodes
+            for intf in b_eq_node.interfaces
+                push!(b_chain_edges, intf.edge)
+            end
+        end
+        gam_chain_edges = Array(Edge, 0)
+        for gam_eq_node in gam_eq_nodes
+            for intf in gam_eq_node.interfaces
+                push!(gam_chain_edges, intf.edge)
+            end
+        end
+        subgraph_a = factorize!(Set{Edge}(a_chain_edges))
+        subgraph_b = factorize!(Set{Edge}(b_chain_edges))
+        subgraph_gam = factorize!(Set{Edge}(gam_chain_edges))
+        subgraphs_xy = Array(Subgraph, 0)
+        for lin_node in lin_nodes
+            push!(subgraphs_xy, factorize!(Set{Edge}([lin_node.in1.edge, lin_node.out.edge])))
+        end
+        
+        for subgraph in graph.factorization
+            generateSchedule!(subgraph) # Generate internal and external schedule automatically
+            #graphViz(subgraph)
+        end
+
+        # Presetting uninformative marginals
+        for i = 1:length(y)
+            graph.approximate_marginals[(lin_nodes[i], subgraphs_xy[i])] = GaussianDistribution(m=[0.0, 0.0], V=[1000.0 0.0; 0.0 1000.0])
+            graph.approximate_marginals[(lin_nodes[i], subgraph_a)] = GaussianDistribution(m=0.001, V=1000.0)
+            graph.approximate_marginals[(lin_nodes[i], subgraph_b)] = GaussianDistribution(m=0.0, V=1000.0)
+            graph.approximate_marginals[(lin_nodes[i], subgraph_gam)] = uninformative(GammaDistribution)
+        end
+        
+        # Adjust prior to prevent divide by zero error
+        a_0 = a_eq_nodes[1].interfaces[1].partner.node
+        a_0.value = GaussianDistribution(m=1.1, W=0.01)
+
+        # Perform iterations
+        n_its = 50
+        for iter = 1:n_its
+            # q(gam) update
+            executeSchedule(subgraph_gam)
+            # q(b) update
+            executeSchedule(subgraph_b)
+            # q(a) update
+            executeSchedule(subgraph_a)
+            # q(x, y) update
+            for subgraph_xy in subgraphs_xy
+                executeSchedule(subgraph_xy)
+            end
+        end
+        # Ensure all calculations have propagated through the equality chains
+        executeSchedule([a_eq_nodes[end].interfaces[2]])
+        executeSchedule([b_eq_nodes[end].interfaces[2]])
+        executeSchedule([gam_eq_nodes[end].interfaces[2]])
+
+        # Check the results against the outcome of Infer.NET
+        ensureMVParametrization!(a_eq_nodes[end].interfaces[2].message.payload)
+        ensureMVParametrization!(b_eq_nodes[end].interfaces[2].message.payload)
+        a_out = a_eq_nodes[end].interfaces[2].message.payload
+        b_out = b_eq_nodes[end].interfaces[2].message.payload
+        gam_out = gam_eq_nodes[end].interfaces[2].message.payload
+
+        accuracy = 1
+
+        # Cross-reference with results from Infer.NET
+        @fact round(mean(a_out), accuracy)[1] => round(2.92642601384, accuracy)
+        @fact round(var(a_out), accuracy+4)[1, 1] => round(0.000493670181134, accuracy+4)
+        @fact round(mean(b_out), accuracy)[1] => round(5.85558752435, accuracy)
+        @fact round(var(b_out), accuracy+2)[1, 1] => round(0.0609314195382, accuracy+2)
+        @fact round(mean(gam_out), accuracy+1) => round(0.820094703716, accuracy+1)
+        @fact round(var(gam_out), accuracy+2) => round(0.0671883439624, accuracy+2)
     end
 end

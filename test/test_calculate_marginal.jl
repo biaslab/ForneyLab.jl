@@ -67,14 +67,14 @@ facts("Marginal calculation integration tests") do
         factorize!(Set{Edge}([node.noise.edge]))
         
         # Presetting uninformative marginals
-        graph.approximate_marginals[(node, graph.factorization[1])] = GaussianDistribution(m=[0.0, 0.0], V=[100.0 0.0; 0.0 100.0])
-        graph.approximate_marginals[(node, graph.factorization[2])] = uninformative(GaussianDistribution)
-        graph.approximate_marginals[(node, graph.factorization[3])] = uninformative(GaussianDistribution)
-        graph.approximate_marginals[(node, graph.factorization[4])] = uninformative(GammaDistribution)
+        graph.approximate_marginals[(node, graph.factorization[1])] = GaussianDistribution(m=[0.0, 0.0], V=[10.0 0.0; 0.0 10.0])
+        graph.approximate_marginals[(node, graph.factorization[2])] = GaussianDistribution(m=10.0, V=1.0)
+        graph.approximate_marginals[(node, graph.factorization[3])] = GaussianDistribution(m=10.0, V=1.0)
+        graph.approximate_marginals[(node, graph.factorization[4])] = GammaDistribution(a=1.0, b=1.0)
 
         # Joint marginal
         subgraph = graph.factorization[1]
         calculateMarginal!(node, subgraph, graph)
-        @fact graph.approximate_marginals[(node, subgraph)] => GaussianDistribution(m=[0.0, 0.0], V=[1000.0 0; 0 1000.0])
+        @fact graph.approximate_marginals[(node, subgraph)] => GaussianDistribution(m=[-0.9615384615384616, 0.19230769230769232], V=[0.019230769230769232 0.09615384615384616; 0.09615384615384616 0.9807692307692308])
     end
 end

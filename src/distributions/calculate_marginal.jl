@@ -239,24 +239,23 @@ function calculateMarginal!(node::LinearCompositeNode,
 
     (length(x_msg.payload.m) == 1 && length(y_msg.payload.m) == 1 && length(a_dist.m) == 1 && length(b_dist.m) == 1) || error("Structured update rule for LinearCompositeNode marginal only supports univariate input distributions.")
 
-    sig_a_2 = a_dist.V[1,1]
+    E_a_2 = a_dist.m[1]^2 + a_dist.V[1,1]
     mu_a = a_dist.m[1]
-    #sig_b_2 = b_dist.V[1,1]
     mu_b = b_dist.m[1]
-    a_gam = gam_dist.a
-    b_gam = gam_dist.b
-    #mu_x = x_msg.payload.m[1]
+    E_gam = gam_dist.a/gam_dist.b
+    mu_x = x_msg.payload.m[1]
     gam_x = x_msg.payload.W[1,1]
-    #mu_y = y_msg.payload.m[1]
+    mu_y = y_msg.payload.m[1]
     gam_y = y_msg.payload.W[1,1]
 
-    Sigma = reshape([(a_gam/b_gam)*(sig_a_2 + mu_a^2)+gam_x, -(a_gam*mu_a)/(2.0*b_gam), -(a_gam*mu_a)/(2.0*b_gam), a_gam/b_gam + gam_y], 2, 2)
-    A = (1.0/mu_a^2)*( (9.0*gam_y*gam_x*a_gam^2)/(b_gam^2) + (6.0*(gam_y*(sig_a_2+mu_a^2)+gam_x)*a_gam)/(b_gam) + 4.0*(sig_a_2 + mu_a^2))
-    B = -(1.0/mu_a)*( (3.0*gam_y*a_gam)/(b_gam) + mu_b )
-    D = (mu_b/mu_a^2)*((3.0*gam_x*a_gam)/(b_gam) + 2.0*sig_a_2 + mu_a^2)
+    A_x = (gam_y + E_gam)*(gam_x*mu_x - mu_a*mu_b*E_gam) + (E_gam*mu_b + gam_y*mu_y)*E_gam*mu_a
+    A_y = (E_gam*mu_b + gam_y*mu_y)*(E_gam*E_a_2 + gam_x) + (gam_x*mu_x - mu_a*mu_b*E_gam)*E_gam*mu_a
+    B = (E_gam*E_a_2 + gam_x)*(gam_y + E_gam) - (E_gam*mu_a)^2
 
-    marg.m = [B/(1-A), D/(1-A)]
-    marg.V = Sigma
+    W = reshape([E_gam*E_a_2+gam_x, -E_gam*mu_a, -E_gam*mu_a, gam_y + E_gam], 2, 2)
+
+    marg.m = [A_x/B, A_y/B]
+    marg.V = inv(W)
     marg.xi = nothing
     marg.W = nothing
 

@@ -476,8 +476,8 @@ function updateNodeMessage!(node::LinearCompositeNode,
     gam_b = dist_gam.b
 
     if is(node.interfaces[outbound_interface_id], node.in1)
-        dist_out.m = [(mu_a*mu_b)/(sig_a_2+mu_a^2)]
-        dist_out.W = reshape([(gam_a*(sig_a_2 + mu_a^2))/(gam_b)],1,1)
+        dist_out.m = [-(mu_a*mu_b)/(sig_a_2+mu_a^2)]
+        dist_out.W = reshape([(gam_a/gam_b)*(sig_a_2 + mu_a^2)],1,1)
         dist_out.xi = nothing
         dist_out.V = nothing
     else
@@ -693,7 +693,7 @@ function updateNodeMessage!(node::LinearCompositeNode,
 
         if is(node.interfaces[outbound_interface_id], node.noise)
             dist_out.a = 1.5
-            dist_out.b = 0.5*(mu_y^2*rho_yy - mu_a*(mu_x*mu_y + rho_xy) - mu_b*mu_y + (mu_a^2 + sig_a_2)*(mu_x^2 + rho_xx) + mu_a*mu_b*mu_x + mu_b^2 + sig_b_2)
+            dist_out.b = 0.5*(mu_y^2 + rho_yy - 2.0*mu_a*(mu_x*mu_y + rho_xy) - 2.0*mu_b*mu_y + (mu_a^2 + sig_a_2)*(mu_x^2 + rho_xx) + 2.0*mu_a*mu_b*mu_x + mu_b^2 + sig_b_2)
         else
             error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
         end

@@ -67,7 +67,7 @@ facts("LinearCompositeNode unit tests") do
                                 1, 
                                 GaussianDistribution, 
                                 [nothing, GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), GammaDistribution(a=0.1, b=0.1), Message(GaussianDistribution(m=2.5, V=0.0))],
-                                GaussianDistribution(m=0.25, W=4.0))
+                                GaussianDistribution(m=-0.25, W=4.0))
     end
 
     context("LinearCompositeNode should propagate a backward variational message to slope under structured factorization") do
@@ -94,7 +94,7 @@ facts("LinearCompositeNode unit tests") do
                                 4, 
                                 GammaDistribution, 
                                 [dist_xy, GaussianDistribution(m=2.0, V=0.0), GaussianDistribution(m=0.5, V=0.0), nothing, dist_xy],
-                                GammaDistribution(a=1.5, b=3.425))
+                                GammaDistribution(a=1.5, b=1.5750000000000002))
     end
 
     context("LinearCompositeNode should propagate a forward variational message to out under structured factorization") do

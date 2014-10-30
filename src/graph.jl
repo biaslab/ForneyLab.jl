@@ -1,5 +1,5 @@
 export FactorGraph, Subgraph
-export getCurrentGraph, setCurrentGraph, getSubgraph, setUninformativeMarginals!, clearMessages!, getNodes, getEdges
+export getCurrentGraph, setCurrentGraph, getSubgraph, setUninformativeMarginals!, clearMessages!, getNodes, getEdges, findNodeByName
 
 # FactorGraph and Subgraph types
 type Subgraph
@@ -222,4 +222,15 @@ function getEdges(nodes::Set{Node}; include_external=true)
         end
     end
     return edge_set
+end
+
+function findNodeByName(name::ASCIIString, graph::FactorGraph=getCurrentGraph())
+    # Returns first node found in graph with same name as argument
+    
+    nodes = getNodes(graph, open_composites=true)
+    for node in nodes
+        if node.name == name
+            return node
+        end
+    end
 end
