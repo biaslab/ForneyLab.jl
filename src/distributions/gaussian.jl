@@ -46,8 +46,10 @@ function GaussianDistribution(; m::Union(Float64,Vector{Float64},Nothing)=nothin
     return self
 end
 GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
+abstract BiVariateGaussianDistribution # Only used for uninformative function
 
 uninformative(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=1000.0)
+uninformative(::Type{BiVariateGaussianDistribution}) = GaussianDistribution(m=[0.0, 0.0], V=[1000.0 0.0; 0.0 1000.0])
 uninformative(::Type{Float64}) = 1.0 # Float can be seen as a Gaussian with zero variance (delta peak at value)
 
 function show(io::IO, dist::GaussianDistribution)

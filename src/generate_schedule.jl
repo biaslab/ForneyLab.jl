@@ -95,6 +95,13 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
     return subgraph
 end
 
+function generateSchedule!(graph::FactorGraph=getCurrentGraph())
+    for subgraph in graph.factorization
+        generateSchedule!(subgraph, graph)
+    end
+    return graph
+end
+
 function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedule=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0), graph::FactorGraph=getCurrentGraph(); stay_in_subgraph=false)
     # This is a private function that performs a search through the factor graph to generate a schedule.
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.

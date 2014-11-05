@@ -278,3 +278,4 @@ getMarginalType(::Type{Float64}, ::Type{GaussianDistribution}) = Float64
 # Multivariate
 getMarginalType(::Type{GaussianNode}, ::Type{GaussianDistribution}, ::Type{GammaDistribution}) = NormalGammaDistribution
 getMarginalType(::Type{GaussianNode}, ::Type{GammaDistribution}, ::Type{GaussianDistribution}) = NormalGammaDistribution
+getMarginalType(::Type{LinearCompositeNode}, ::Type{GaussianDistribution}, ::Type{GaussianDistribution}) = BiVariateGaussianDistribution
