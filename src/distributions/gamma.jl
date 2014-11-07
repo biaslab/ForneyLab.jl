@@ -13,7 +13,7 @@ type GammaDistribution <: ProbabilityDistribution
     GammaDistribution(; a=1.0, b=1.0) = new(a, b)
 end
 
-uninformative(::Type{GammaDistribution}) = GammaDistribution(a=0.999, b=0.001)
+uninformative(::Type{GammaDistribution}) = GammaDistribution(a=1.0-tiny(), b=tiny())
 Base.mean(dist::GammaDistribution) = dist.a / dist.b
 Base.var(dist::GammaDistribution) = dist.a / (dist.b^2)
 

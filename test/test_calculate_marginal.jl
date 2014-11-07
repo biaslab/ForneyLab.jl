@@ -52,11 +52,11 @@ facts("Marginal calculation integration tests") do
         # Joint marginal
         subgraph = graph.factorization[1]
         calculateMarginal!(node, subgraph, graph)
-        @fact graph.approximate_marginals[(node, subgraph)] => NormalGammaDistribution(m=0.0, beta=10000.0, a=1.5, b=501.0)
+        @fact graph.approximate_marginals[(node, subgraph)] => NormalGammaDistribution(m=0.0, beta=huge(), a=1.5, b=5.00000000001e11)
         # Univariate marginal
         subgraph = graph.factorization[2]
         calculateMarginal!(node, subgraph, graph)
-        @fact graph.approximate_marginals[(node, subgraph)] => GaussianDistribution(W=1.001, xi=0.0)
+        @fact graph.approximate_marginals[(node, subgraph)] => GaussianDistribution(W=1.000000000001, xi=0.0)
     end
 
     context("Marginal calculation for the structurally factorized LinearCompositeNode") do

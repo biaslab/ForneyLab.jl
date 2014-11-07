@@ -15,7 +15,7 @@ facts("NormalGammaDistribution unit tests") do
         dist = uninformative(NormalGammaDistribution)
         @fact dist.m => 0.0
         @fact dist.beta => 1.0
-        @fact dist.a => 0.999
-        @fact dist.b => 0.001
+        @fact dist.a => 1.0-tiny()
+        @fact dist.b => tiny()
     end
 end

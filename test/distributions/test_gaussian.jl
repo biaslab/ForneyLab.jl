@@ -17,7 +17,11 @@ facts("GaussianDistribution unit tests") do
     context("uninformative() should initialize an uninformative Gaussian distribution") do
         dist = uninformative(GaussianDistribution)
         @fact dist.m => [0.0]
-        @fact dist.V => reshape([1000.0],1,1)
+        @fact dist.V => reshape([huge()],1,1)
+    end
+
+    context("Uninformative Gaussians should be equal") do
+        @fact uninformative(GaussianDistribution) => uninformative(GaussianDistribution)
     end
 
     context("uninformative(Float64) should return 1") do

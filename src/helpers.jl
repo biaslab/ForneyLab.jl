@@ -1,4 +1,4 @@
-export isApproxEqual, duplicated
+export isApproxEqual, duplicated, huge, tiny
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
@@ -15,3 +15,9 @@ function viewFile(filename::String)
     # Open a file with the application associated with the file type
     @windows? run(`cmd /c start $filename`) : (@osx? run(`open $filename`) : (@linux? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
 end
+
+# Define what is considered big and small, mostly used for setting uninformative messages.
+huge(::Type{Float64}) = 1e12
+huge() = huge(Float64)
+tiny(::Type{Float64}) = 1e-12
+tiny() = tiny(Float64)

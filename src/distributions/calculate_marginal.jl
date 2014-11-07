@@ -212,7 +212,7 @@ function calculateMarginal!(node::GaussianNode,
     (length(mu_m.m) == 1 && length(y_dist.m) == 1)|| error("Update rule for NormalGammaDistribution marginal only supports univariate distributions.")
 
     marg.m = mu_m.m[1]
-    marg.beta = 10000.0 # Big number
+    marg.beta = huge()
     marg.a = mu_gam.a + 0.5
     marg.b = (1.0/(2.0*y_dist.W[1, 1])) + mu_gam.b
 
