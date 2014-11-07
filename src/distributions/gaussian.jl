@@ -11,7 +11,7 @@
 #    dist = GaussianDistribution(xi=0.5, W=0.5)
 #    dist = GaussianDistribution(xi=0.5, V=2.0)
 #   In case of a multivariate distribution,
-#   m&xi should be vectors and V&W should be matrices.
+#   m/xi should be vectors and V/W should be matrices.
 ############################################
 
 export
@@ -25,27 +25,55 @@ export
 
 type GaussianDistribution <: ProbabilityDistribution
     m::Union(Vector{Float64}, Nothing)    # Mean vector
-    V::Union(Matrix{Float64}, Nothing)       # Covariance matrix
-    W::Union(Matrix{Float64}, Nothing)       # Weight matrix
+    V::Union(Matrix{Float64}, Nothing)    # Covariance matrix
+    W::Union(Matrix{Float64}, Nothing)    # Weight matrix
     xi::Union(Vector{Float64}, Nothing)   # Weighted mean vector: xi=W*m
+    function GaussianDistribution(m, V, W, xi)
+        self = new(m, V, W, xi)
+        isWellDefined(self) || error("Cannot create GaussianDistribution, distribution is underdetermined.")
+        return self
+    end
 end
 function GaussianDistribution(; m::Union(Float64,Vector{Float64},Nothing)=nothing,
                                 V::Union(Float64,Matrix{Float64},Nothing)=nothing,
                                 W::Union(Float64,Matrix{Float64},Nothing)=nothing,
                                 xi::Union(Float64,Vector{Float64},Nothing)=nothing)
-    m = (typeof(m)==Float64) ? [m] : deepcopy(m)
-    V = (typeof(V)==Float64) ? fill!(Array(Float64,1,1),V) : deepcopy(V)
-    W = (typeof(W)==Float64) ? fill!(Array(Float64,1,1),W) : deepcopy(W)
-    xi = (typeof(xi)==Float64) ? [xi] : deepcopy(xi)
+    if typeof(m) <: Vector
+        _m = copy(m)
+    elseif typeof(m) <: Number
+        _m = [m]
+    else
+        _m = nothing
+    end
 
-    self = GaussianDistribution(m, V, W, xi)
+    if typeof(xi) <: Vector
+        _xi = copy(xi)
+    elseif typeof(xi) <: Number
+        _xi = [xi]
+    else
+        _xi = nothing
+    end
 
-    # Check parameterizations
-    isWellDefined(self) || error("Cannot create GaussianDistribution, parameterization is underdetermined.")
+    if typeof(V) <: Matrix
+        _V = copy(V)
+    elseif typeof(V) <: Number
+        _V = fill!(Array(Float64,1,1), V)
+    else
+        _V = nothing
+    end
 
-    return self
+    if typeof(W) <: Matrix
+        _W = copy(W)
+    elseif typeof(W) <: Number
+        _W = fill!(Array(Float64,1,1), W)
+    else
+        _W = nothing
+    end
+
+    return GaussianDistribution(_m, _V, _W, _xi)
 end
 GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
+# TODO: BiVariateGaussianDistribution should be removed
 abstract BiVariateGaussianDistribution # Only used for uninformative function
 
 uninformative(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge())
@@ -83,7 +111,7 @@ function isWellDefined(dist::GaussianDistribution)
                     return false
                 end
             else
-                dimensions = maximum(size(getfield(dist, field)))
+                dimensions = size(getfield(dist, field), 1)
             end
         end
     end
