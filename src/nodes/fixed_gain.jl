@@ -56,6 +56,8 @@ type FixedGainNode <: Node
     end
 end
 
+isDeterministic(::FixedGainNode) = true
+
 ############################################
 # GaussianDistribution methods
 ############################################

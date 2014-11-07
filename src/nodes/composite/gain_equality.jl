@@ -85,6 +85,8 @@ type GainEqualityCompositeNode <: CompositeNode
     end
 end
 
+isDeterministic(::GainEqualityCompositeNode) = true
+
 ############################################
 # GaussianDistribution methods
 ############################################

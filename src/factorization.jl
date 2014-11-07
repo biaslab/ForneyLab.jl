@@ -1,22 +1,36 @@
 export factorize!, factorizeMeanField!
 
+function extend(edges::Set{Edge})
+    # Returns the smallest legal subgraph (connected through deterministic nodes) that includes 'edges'
+
+    edge_cluster = Set{Edge}() # Set to fill with edges in equality cluster
+    while length(edges) > 0 # As long as there are unchecked edges connected through deterministic nodes
+        current_edge = pop!(edges) # Pick one
+        push!(edge_cluster, current_edge) # Add to edge cluster
+        for node in [current_edge.head.node, current_edge.tail.node] # Check both head and tail node for deterministic type
+            if isDeterministic(node)
+                for interface in node.interfaces
+                    if !is(interface.edge, current_edge) && !(interface.edge in edge_cluster) # Is next level edge not seen yet?
+                        push!(edges, interface.edge) # Add to buffer to visit sometime in the future
+                    end
+                end
+            end
+        end
+    end
+
+    return edge_cluster
+end
+
 function factorize!(graph::FactorGraph, internal_edges::Set{Edge})
+    # The set of internal edges needs to be extended to envelope deterministic nodes
+    internal_edges = extend(internal_edges)
+
     # We do not support composite nodes with explicit message passing as node connected to an external edge. All these edges should belong to the same subgraph
     nodes = getNodes(internal_edges)
     internal_interfaces = Set{Interface}()
     for edge in internal_edges
         push!(internal_interfaces, edge.head)
         push!(internal_interfaces, edge.tail)
-    end
-    for node in nodes
-        if typeof(node) <: CompositeNode && node.use_composite_update_rules == false # Composite node is set to use explicit message passing
-            # Check that all interfaces are internal
-            for interface in node.interfaces
-                if !(interface in internal_interfaces)
-                    error("Factorization leads CompositeNode with explicit message passing $(node.name) to become connected to an external edge. Please build the node's internals explicitly and manually define where you wish to place the subgraph borders.")
-                end
-            end
-        end
     end
 
     # Add a subgraph containing the edges specified in internal_edges and conform
@@ -44,7 +58,6 @@ factorize!(internal_edge::Edge) = factorize!(Set{Edge}([internal_edge]))
 factorize!(internal_edges::Array{Edge, 1}) = factorize!(Set{Edge}(internal_edges))
 
 function factorizeMeanField!(graph::FactorGraph)
-    deterministic_node_types = [EqualityNode, AdditionNode, FixedGainNode]
     # Generate a mean field factorization
     (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
     edges_to_factor = getEdges(graph) # All top-level edges in the factor graph
@@ -52,24 +65,8 @@ function factorizeMeanField!(graph::FactorGraph)
     while length(edges_to_factor) > 0 # As long as there are edges to factor
         edge = pop!(edges_to_factor) # Pick an edge to factor
         # Check connection to equality node
-        if typeof(edge.head.node) in deterministic_node_types || typeof(edge.tail.node) in deterministic_node_types
-            # Collect all other edges that are connected to this one through equality nodes
-            edge_cluster = Set{Edge}() # Set to fill with edges in equality cluster
-            connected_edges = Set{Edge}({edge})
-            while length(connected_edges) > 0 # As long as there are unchecked edges connected through eq nodes
-                current_edge = pop!(connected_edges) # Pick one
-                push!(edge_cluster, current_edge) # Add to edge cluster
-                for node in [current_edge.head.node, current_edge.tail.node] # Check both head and tail node for deterministic type
-                    if typeof(node) in deterministic_node_types
-                        for interface in node.interfaces
-                            if !is(interface.edge, current_edge) && !(interface.edge in edge_cluster) # Is next level edge not seen yet?
-                                push!(connected_edges, interface.edge) # Add to buffer to visit sometime in the future
-                            end
-                        end
-                    end
-                end
-            end
-            factorize!(graph, edge_cluster)
+        if isDeterministic(edge.head.node) || isDeterministic(edge.tail.node)
+            factorize!(graph, extend(edge))
             # Remove all edges in edge_cluster from edges_to_factor, they have just been added to the same factor
             setdiff!(edges_to_factor, edge_cluster)
         else

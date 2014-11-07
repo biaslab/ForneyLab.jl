@@ -85,6 +85,8 @@ type GainAdditionCompositeNode <: CompositeNode
     end
 end
 
+isDeterministic(::GainAdditionCompositeNode) = true
+
 ############################################
 # GaussianDistribution methods
 ############################################

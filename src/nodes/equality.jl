@@ -40,6 +40,8 @@ type EqualityNode <: Node
     end
 end
 
+isDeterministic(::EqualityNode) = true
+
 # Overload firstFreeInterface since EqualityNode is symmetrical in its interfaces
 function firstFreeInterface(node::EqualityNode)
     # Return id of first free interface of a symmetrical node

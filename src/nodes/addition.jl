@@ -51,6 +51,8 @@ type AdditionNode <: Node
     end
 end
 
+isDeterministic(::AdditionNode) = true
+
 ############################################
 # GaussianDistribution methods
 ############################################

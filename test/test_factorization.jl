@@ -4,13 +4,6 @@
 
 facts("Factorization integration tests") do
     context("factorize!()") do
-        context("Should throw an error when a CompositeNode with explicit message passing has an edge that would be factored as external") do
-            node = initializeGainEqualityCompositeNode(eye(1), true, Any[Message(1.0), Message(1.0), Message(1.0)])
-            @fact typeof(factorize!(node.out.edge)) => Subgraph
-            node = initializeGainEqualityCompositeNode(eye(1), false, Any[Message(1.0), Message(1.0), Message(1.0)])
-            @fact_throws factorize!(node.out.edge)
-        end
-
         context("Should include argument edges in a new subgraph") do
             (driver, inhibitor, noise, add) = initializeLoopyGraph()
             factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
@@ -21,6 +14,8 @@ facts("Factorization integration tests") do
             @fact graph.factorization[2].nodes => Set{Node}({driver, inhibitor})
             @fact graph.factorization[2].internal_edges => Set{Edge}({inhibitor.out.edge})
             @fact graph.factorization[2].external_edges => Set{Edge}({add.in1.edge, add.out.edge})
+
+            @fact true => false
         end
 
         context("Should update the edge_to_subgraph mapping for the graph") do
@@ -31,6 +26,12 @@ facts("Factorization integration tests") do
             @fact graph.edge_to_subgraph[add.in1.edge] => graph.factorization[1]
             @fact graph.edge_to_subgraph[add.in2.edge] => graph.factorization[1]
             @fact graph.edge_to_subgraph[inhibitor.out.edge] => graph.factorization[2]
+
+            @fact true => false
+        end
+
+        context("Should extend the edge set to envelope deterministic nodes") do
+            @fact true => false
         end
     end
 

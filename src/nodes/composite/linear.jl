@@ -74,6 +74,7 @@ type LinearCompositeNode <: CompositeNode
     end
 end
 
+isDeterministic(::LinearCompositeNode) = false
 
 ############################################
 # Standard update functions

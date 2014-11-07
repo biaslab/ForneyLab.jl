@@ -173,6 +173,8 @@ type GaussianNode <: Node
     end
 end
 
+isDeterministic(::GaussianNode) = false
+
 
 ############################################
 # Standard update functions
