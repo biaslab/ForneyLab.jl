@@ -3,13 +3,14 @@ export setForwardMessage!, setBackwardMessage!, getForwardMessage, getBackwardMe
 
 type Edge <: AbstractEdge
     # An Edge joins two interfaces and has a direction (from tail to head).
-    # Edges are mostly useful for code readability, they are not used internally.
     # Forward messages flow in the direction of the Edge (tail to head).
-    # Edges can contain marginals, which are the product of the forward and backward message.
+    # An Edge can contain a marginal, which is the product of the forward and backward message.
+    # If distribution_type is defined, it restricts the distribution type of the marginal.
 
     tail::Interface
     head::Interface
-    marginal::Any
+    marginal::ProbabilityDistribution
+    distribution_type::DataType         
 
     function Edge(tail::Interface, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType; add_to_graph::Bool=true)
         # add_to_graph is false for edges that are internal in a composite node
