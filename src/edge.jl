@@ -14,8 +14,8 @@ type Edge <: AbstractEdge
     function Edge(tail::Interface, head::Interface, forward_message_payload_type::DataType, backward_message_payload_type::DataType; add_to_graph::Bool=true)
         # add_to_graph is false for edges that are internal in a composite node
 
-        (forward_message_payload_type <: MessagePayload) || error("Forward message payload type $(forward_message_payload_type) not supported")
-        (backward_message_payload_type <: MessagePayload) || error("Backward message payload type $(backward_message_payload_type) not supported")
+        (forward_message_payload_type <: ProbabilityDistribution) || error("Forward message payload type $(forward_message_payload_type) not supported")
+        (backward_message_payload_type <: ProbabilityDistribution) || error("Backward message payload type $(backward_message_payload_type) not supported")
         if tail.message != nothing && (typeof(tail.message.payload) != forward_message_payload_type)
             error("Existing forward message ($(typeof(tail.message))) does not match expected type Message{$(forward_message_payload_type)}")
         end

@@ -1,6 +1,6 @@
 module ForneyLab
 
-export  Node, CompositeNode, MessagePayload, ProbabilityDistribution
+export  Node, CompositeNode, ProbabilityDistribution
 export  uninformative, ==
 export  current_graph
 
@@ -18,13 +18,13 @@ import Base.show
 # Top-level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
-typealias MessagePayload Union(ProbabilityDistribution, Number, Vector, Matrix)
 abstract Node
 show(io::IO, node::Node) = println(io, "$(typeof(node)) with name $(node.name)")
 show(io::IO, nodes::Union(Set{Node}, Vector{Node})) = [show(io, node) for node in nodes]
 abstract CompositeNode <: Node
 
 # Distributions
+include("distributions/delta.jl")
 include("distributions/gaussian.jl")
 include("distributions/gamma.jl")
 include("distributions/inverse_gamma.jl")

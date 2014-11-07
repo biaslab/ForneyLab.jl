@@ -5,7 +5,7 @@ function setReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=ge
     graph.read_buffers[node] = buffer
 end
 
-function setWriteBuffer(interface::Interface, buffer::Vector=Array(MessagePayload,0), graph::FactorGraph=getCurrentGraph())
+function setWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=getCurrentGraph())
     (interface.node in getNodes(graph)) || error("The specified interface is not part of the current or specified graph")
     graph.write_buffers[interface] = buffer # Write buffer for message
 end

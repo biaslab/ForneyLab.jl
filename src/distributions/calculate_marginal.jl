@@ -164,7 +164,7 @@ function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=g
     # and store the result in the graph.approximate_marginals dictionary.
 
     # Gather internal and external messages/qs
-    required_inputs = Array(Union(Message, MessagePayload), 0)
+    required_inputs = Array(Union(Message, ProbabilityDistribution), 0)
     internal_edge_list = Array(Edge, 0)
     for interface in node.interfaces # In the order of the node's interfaces
         neighbouring_subgraph = graph.edge_to_subgraph[interface.edge]

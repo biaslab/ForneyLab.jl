@@ -17,16 +17,13 @@
 # Interface ids, (names) and supported message types:
 #   1. (in1):
 #       Message{GaussianDistribution}
-#       Message{Float64}
-#       Message{Array{Float64}}
+#       Message{DeltaDistribution}
 #   2. (in2):
 #       Message{GaussianDistribution}
-#       Message{Float64}
-#       Message{Array{Float64}}
+#       Message{DeltaDistribution}
 #   3. (out):
 #       Message{GaussianDistribution}
-#       Message{Float64}
-#       Message{Array{Float64}}
+#       Message{DeltaDistribution}
 ############################################
 
 export AdditionNode
@@ -156,19 +153,19 @@ function updateNodeMessage!(node::AdditionNode,
 end
 
 #############################################
-# Float64 and Array{Float64} methods
+# DeltaDistribution methods
 #############################################
 
 # Message towards OUT
 function updateNodeMessage!(node::AdditionNode,
                             ::Int,
-                            outbound_message_payload_type::Union(Type{Float64}, Type{Vector{Float64}}, Type{Matrix{Float64}}),
-                            msg_in1::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}),
-                            msg_in2::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}),
+                            outbound_message_payload_type::Type{DeltaDistribution},
+                            msg_in1::Message{DeltaDistribution},
+                            msg_in2::Message{DeltaDistribution},
                             msg_out::Nothing)
-    ans = msg_in1.payload + msg_in2.payload
-    msg_result = getOrCreateMessage(node.out, outbound_message_payload_type, size(ans))
-    msg_result.payload = ans
+    ans = msg_in1.payload.m + msg_in2.payload.m
+    msg_result = getOrCreateMessage(node.out, DeltaDistribution)
+    msg_result.payload.m = ans
     (typeof(msg_result.payload) == outbound_message_payload_type) || error("Output type $(typeof(msg_result)) of $(typeof(node)) node $(node.name) does not match expected output type $(outbound_message_payload_type)")
 
     return node.out.message
@@ -177,20 +174,20 @@ end
 # Message towards IN1 or IN2
 function updateNodeMessage!(node::AdditionNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Union(Type{Float64}, Type{Vector{Float64}}, Type{Matrix{Float64}}),
-                            msg_in1::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}, Nothing),
-                            msg_in2::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}, Nothing),
-                            msg_out::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}))
+                            outbound_message_payload_type::Type{DeltaDistribution},
+                            msg_in1::Union(Message{DeltaDistribution}, Nothing),
+                            msg_in2::Union(Message{DeltaDistribution}, Nothing),
+                            msg_out::Message{DeltaDistribution})
     if outbound_interface_id == 1
-        ans = msg_out.payload - msg_in2.payload
+        ans = msg_out.payload.m - msg_in2.payload.m
     elseif outbound_interface_id == 2
-        ans = msg_out.payload - msg_in1.payload
+        ans = msg_out.payload.m - msg_in1.payload.m
     else
         error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
     end
 
-    msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type, size(ans))
-    msg_result.payload = ans
+    msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution)
+    msg_result.payload.m = ans
     (typeof(msg_result.payload) == outbound_message_payload_type) || error("Output type $(typeof(msg_result)) of $(typeof(node)) node $(node.name) does not match expected output type $(outbound_message_payload_type)")
 
     return node.interfaces[outbound_interface_id].message

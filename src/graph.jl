@@ -17,7 +17,7 @@ end
 type FactorGraph
     factorization::Vector{Subgraph} # References to subgraphs
     edge_to_subgraph::Dict{Edge, Subgraph} # Fast lookup for edge to subgraph in which edge is internal; also determines the ordering of edges
-    approximate_marginals::Dict{(Node, Subgraph), MessagePayload} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
+    approximate_marginals::Dict{(Node, Subgraph), ProbabilityDistribution} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
     read_buffers::Dict{TerminalNode, Vector}
     write_buffers::Dict{Union(Edge,Interface), Vector}
     time_wraps::Vector{(TerminalNode, TerminalNode)}
@@ -33,7 +33,7 @@ end
 # Get and set current graph functions
 global current_graph = FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], 
                                    Dict{Edge, Subgraph}(), 
-                                   Dict{(Node, Subgraph), MessagePayload}(),
+                                   Dict{(Node, Subgraph), ProbabilityDistribution}(),
                                    Dict{TerminalNode, Vector}(),
                                    Dict{Union(Edge,Interface), Vector}(),
                                    Array((TerminalNode, TerminalNode), 0)) # Create an empty graph
@@ -43,7 +43,7 @@ setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a curre
 
 FactorGraph() = setCurrentGraph(FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], 
                                             Dict{Edge, Subgraph}(), 
-                                            Dict{(Node, Subgraph), MessagePayload}(),
+                                            Dict{(Node, Subgraph), ProbabilityDistribution}(),
                                             Dict{TerminalNode, Vector}(),
                                             Dict{Union(Edge,Interface), Vector}(),
                                             Array((TerminalNode, TerminalNode), 0))) # Initialize a new factor graph; automatically sets current_graph
