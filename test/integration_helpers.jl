@@ -344,10 +344,10 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
         gam_eq_nodes[section] = gam_eq_node
         y_nodes[section] = y_node
         q_y_edges[section] = Edge(g_node.out, y_node.out, GaussianDistribution)
-        q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.mean)
+        q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.mean, GaussianDistribution)
         q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.precision, GammaDistribution)
         if section > 1 # Connect sections
-            Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1])
+            Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1], GaussianDistribution)
             Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)
         end
     end

@@ -134,6 +134,7 @@ facts("Graph level integration tests") do
         @fact graph.approximate_marginals[(g_nodes[1], gam_subgraph)] => uninformative(GammaDistribution)
         @fact graph.approximate_marginals[(g_nodes[2], gam_subgraph)] => uninformative(GammaDistribution)
         @fact graph.approximate_marginals[(g_nodes[3], gam_subgraph)] => uninformative(GammaDistribution)
+        # TODO: the following tests fail
         @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => 1.0
         @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => 1.0
         @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => 1.0
