@@ -63,7 +63,7 @@ type GainEqualityCompositeNode <: CompositeNode
         # Define the internals of the composite node
         self.equality_node = EqualityNode(3, name="$(name)_internal_equality")
         self.fixed_gain_node = FixedGainNode(A, name="$(name)_internal_gain")
-        Edge(self.equality_node.interfaces[2], self.fixed_gain_node.in1, GaussianDistribution, GaussianDistribution, add_to_graph=false) # Internal edge
+        Edge(self.equality_node.interfaces[2], self.fixed_gain_node.in1, GaussianDistribution, add_to_graph=false) # Internal edge
 
         named_handle_list = [:in1, :in2, :out]
         for i = 1:length(named_handle_list)

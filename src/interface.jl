@@ -53,12 +53,20 @@ function getName(interface::Interface)
 end
 
 # Efficient get/set combinations for messages and marginals
-function getOrCreateMessage(interface::Interface, assign_payload::DataType, arr_dims::Tuple=(1, 1))
+function getOrCreateMessage(interface::Interface, assign_payload::DataType=Any, arr_dims::Tuple=(1, 1))
     # Looks for a message on interface.
     # When no message is present, it sets and returns a standard message.
     # Otherwise it returns the present message.
     # For Array types we pre-allocate the array size with arr_dims
+
     if interface.message == nothing
+        if assign_payload == Any
+            if (interface.edge != nothing) && (interface.edge.distribution_type != Any)
+                assign_payload = interface.edge.distribution_type
+            else
+                error("Cannot create a messge because no message type is defined.")
+            end
+        end
         if assign_payload <: ProbabilityDistribution 
             interface.message = Message(assign_payload())
         elseif assign_payload == Float64

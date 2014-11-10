@@ -124,13 +124,13 @@ facts("Marginal calculations for the Gaussian") do
     end
 
     context("Marginal calculation for the combination of a Gaussian and student's t-distribution") do
-        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(StudentsTDistribution())).out, GaussianDistribution, StudentsTDistribution)
+        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(StudentsTDistribution())).out, GaussianDistribution)
         calculateMarginal!(edge)
         @fact edge.marginal => GaussianDistribution(m=0.0, W=3.0) 
     end
 
     context("Marginal calculation for the combination of a Gaussian and Float64") do
-        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(3.0)).out, GaussianDistribution, Float64)
+        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(3.0)).out)
         calculateMarginal!(edge)
         @fact edge.marginal => 3.0 
     end

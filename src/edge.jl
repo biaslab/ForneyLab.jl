@@ -9,7 +9,7 @@ type Edge <: AbstractEdge
 
     tail::Interface
     head::Interface
-    marginal::ProbabilityDistribution
+    marginal::Union(ProbabilityDistribution, Float64, Vector, Matrix, Nothing) # TODO: delete Float64, Vector and Matrix when implementing DeltaDistribution
     distribution_type::DataType         
 
     function Edge(tail::Interface, head::Interface, distribution_type::DataType=Any; add_to_graph::Bool=true)
@@ -76,16 +76,23 @@ setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, messa
 getForwardMessage(edge::Edge) = edge.tail.message
 getBackwardMessage(edge::Edge) = edge.head.message
 
-function getOrCreateMarginal(edge::Edge)
+function getOrCreateMarginal(edge::Edge, distribution_type::DataType=Any)
     # Looks for a marginal on edge.
     # When no marginal is present, it sets and returns an uninformative distribution.
     # Otherwise it returns the present marginal. Used for fast marginal calculations.
     if edge.marginal==nothing
-        if edge.distribution_type <: ProbabilityDistribution 
-            edge.marginal = uninformative(edge.distribution_type)
+        if distribution_type <: ProbabilityDistribution
+            (distribution_type <: edge.distribution_type) || error("Cannot create marginal of type $(distribution_type) since the edge requires a different marginal distribution type. Edge:\n$(edge)")
+            edge.marginal = uninformative(distribution_type)
         else
-            error("Cannot create marginal of type $(edge.distribution_type) on:\n$(edge)")
+            if edge.distribution_type <: ProbabilityDistribution 
+                edge.marginal = uninformative(edge.distribution_type)
+            else
+                error("Cannot create marginal of type $(edge.distribution_type) on:\n$(edge)")
+            end
         end
     end
+
+    (typeof(edge.marginal) <: distribution_type) || error("No marginal of type $(distribution_type) on edge:\n$(edge)")
     return edge.marginal
 end
