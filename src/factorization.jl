@@ -1,9 +1,10 @@
 export factorize!, factorizeMeanField!
 
-function extend(edges::Set{Edge})
+function extend(edge_set::Set{Edge})
     # Returns the smallest legal subgraph (connected through deterministic nodes) that includes 'edges'
 
     edge_cluster = Set{Edge}() # Set to fill with edges in equality cluster
+    edges = copy(edge_set)
     while length(edges) > 0 # As long as there are unchecked edges connected through deterministic nodes
         current_edge = pop!(edges) # Pick one
         push!(edge_cluster, current_edge) # Add to edge cluster
@@ -20,11 +21,11 @@ function extend(edges::Set{Edge})
 
     return edge_cluster
 end
-extend(edge::Edge) = extend(Set{Edge}(edge))
+extend(edge::Edge) = extend(Set{Edge}([edge]))
 
-function factorize!(graph::FactorGraph, internal_edges::Set{Edge})
+function factorize!(graph::FactorGraph, edge_set::Set{Edge})
     # The set of internal edges needs to be extended to envelope deterministic nodes
-    internal_edges = extend(internal_edges)
+    internal_edges = extend(edge_set)
 
     # We do not support composite nodes with explicit message passing as node connected to an external edge. All these edges should belong to the same subgraph
     nodes = getNodes(internal_edges)
@@ -65,14 +66,10 @@ function factorizeMeanField!(graph::FactorGraph)
 
     while length(edges_to_factor) > 0 # As long as there are edges to factor
         edge = pop!(edges_to_factor) # Pick an edge to factor
-        # Check connection to equality node
-        if isDeterministic(edge.head.node) || isDeterministic(edge.tail.node)
-            factorize!(graph, extend(edge))
-            # Remove all edges in edge_cluster from edges_to_factor, they have just been added to the same factor
-            setdiff!(edges_to_factor, edge_cluster)
-        else
-            factorize!(graph, Set{Edge}({edge}))
-        end
+        edge_cluster = extend(edge)
+        factorize!(graph, edge_cluster)
+        # Remove all edges in edge_cluster from edges_to_factor, they have just been added to the same factor
+        setdiff!(edges_to_factor, edge_cluster)
     end
     return graph
 end

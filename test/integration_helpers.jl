@@ -28,6 +28,7 @@ function MockNode(message::Message, num_interfaces::Int=1)
     end
     return(self)
 end
+ForneyLab.isDeterministic(::MockNode) = false # Edge case, same as terminal node
 
 #############
 # Backgrounds
@@ -124,6 +125,54 @@ function initializeTreeGraph()
     Edge(c3.out, equ.interfaces[2])
     return (c1, c2, c3, add, equ)
 end
+
+function initializeFactoringGraph()
+    # Set up a graph to test factorize function
+    #             [T]    
+    #              |     -----
+    #              v     v   |
+    # [T]-->[A]-->[N]-->[+] [N]
+    #                    |   ^
+    #                    -----
+
+    FactorGraph()
+    t1 = TerminalNode(name="t1")
+    a1 = FixedGainNode(name="a1")
+    g1 = GaussianNode(form="moment", name="g1")
+    t2 = TerminalNode(name="t2")
+    add1 = AdditionNode(name="add1")
+    g2 = GaussianNode(name="g2", V=0.1)
+    Edge(t1.out, a1.in1)
+    Edge(a1.out, g1.mean)
+    Edge(t2.out, g1.variance, InverseGammaDistribution)
+    Edge(g1.out, add1.in1)
+    Edge(add1.out, g2.mean)
+    Edge(g2.out, add1.in2)
+    return (t1, a1, g1, t2, add1, g2)
+end
+
+function initializeFactoringGraphWithoutLoop()
+    # Set up a graph to test factorize function
+    #             [T]    
+    #              |     
+    #              v     
+    # [T]-->[A]-->[N]-->[T]
+    #                    
+    #                    
+
+    FactorGraph()
+    t1 = TerminalNode(name="t1")
+    a1 = FixedGainNode(name="a1")
+    g1 = GaussianNode(form="moment", name="g1")
+    t2 = TerminalNode(name="t2")
+    t3 = TerminalNode(name="t3")
+    Edge(t1.out, a1.in1)
+    Edge(a1.out, g1.mean)
+    Edge(t2.out, g1.variance, InverseGammaDistribution)
+    Edge(g1.out, t3.out)
+    return (t1, a1, g1, t2, t3)
+end
+
 
 function initializeAdditionNode(msgs::Array{Any})
     # Set up an addition node and prepare the messages
