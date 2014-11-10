@@ -24,11 +24,10 @@ facts("Edge integration tests") do
         @fact_throws Edge(node.interfaces[2], node.interfaces[1])
     end
 
-    context("Edge constructor should write the expected message value types to the interfaces") do
+    context("Edge constructor should write the distribution type") do
         (node1, node2) = initializePairOfMockNodes()
-        edge = Edge(node1.out, node2.out, GaussianDistribution, Float64)
-        @fact edge.tail.message_payload_type => GaussianDistribution
-        @fact edge.head.message_payload_type => Float64
+        edge = Edge(node1.out, node2.out, GaussianDistribution)
+        @fact edge.distribution_type => GaussianDistribution
     end
 
     context("Edge construction should couple interfaces to edge") do
