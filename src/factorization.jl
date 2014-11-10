@@ -20,6 +20,7 @@ function extend(edges::Set{Edge})
 
     return edge_cluster
 end
+extend(edge::Edge) = extend(Set{Edge}(edge))
 
 function factorize!(graph::FactorGraph, internal_edges::Set{Edge})
     # The set of internal edges needs to be extended to envelope deterministic nodes
