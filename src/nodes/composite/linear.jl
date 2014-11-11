@@ -56,7 +56,7 @@ type LinearCompositeNode <: CompositeNode
     noise::Interface
     out::Interface
 
-    function LinearCompositeNode(use_composite_update_rules::Bool=true; name = "unnamed", form::ASCIIString="moment")
+    function LinearCompositeNode(use_composite_update_rules::Bool=true; name=unnamedStr(), form::ASCIIString="moment")
         if use_composite_update_rules == false # Check
             error("LinearCompositeNode $(name) does not support explicit internal message passing")
         end

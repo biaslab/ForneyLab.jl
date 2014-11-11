@@ -29,7 +29,7 @@ type TerminalNode <: Node
     name::ASCIIString
     out::Interface
 
-    function TerminalNode(value=1.0; name="unnamed")
+    function TerminalNode(value=1.0; name=unnamedStr())
         if typeof(value) <: Message || typeof(value) == DataType
             error("TerminalNode $(name) can not hold value of type $(typeof(value)).")
         end

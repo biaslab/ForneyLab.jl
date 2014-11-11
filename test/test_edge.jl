@@ -55,4 +55,10 @@ facts("Edge integration tests") do
         Edge(node1.out, node2.out)
         @fact_throws Edge(node1.out, node3.out)
     end
+
+    context("Edges can be (pseudo) ordered") do
+        edge1 = Edge(TerminalNode().out, TerminalNode().out)
+        edge2 = Edge(TerminalNode().out, TerminalNode().out)
+        @fact edge1 < edge2 => true
+    end
 end

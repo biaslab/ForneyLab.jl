@@ -38,7 +38,7 @@ type AdditionNode <: Node
     in2::Interface
     out::Interface
 
-    function AdditionNode(; name="unnamed")
+    function AdditionNode(; name=unnamedStr())
         self = new(name, Array(Interface, 3))
 
         named_handle_list = [:in1, :in2, :out]

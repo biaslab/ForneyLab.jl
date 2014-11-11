@@ -21,3 +21,10 @@ huge(::Type{Float64}) = 1e12
 huge() = huge(Float64)
 tiny(::Type{Float64}) = 1e-12
 tiny() = tiny(Float64)
+
+global unnamed_counter = 0
+function unnamedStr()
+    global unnamed_counter::Int64 += 1
+    return "unnamed$(unnamed_counter)"
+end
+
