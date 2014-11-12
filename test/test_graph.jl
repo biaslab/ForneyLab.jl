@@ -37,11 +37,11 @@ facts("Graph level unit tests") do
     end
 
     context("getSubgraph(edge) should return the subgraph where edge is internal") do
-        (driver, inhibitor, noise, add) = initializeLoopyGraph()
-        factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+        (t1, a1, g1, t2, add1, g2) = initializeFactoringGraph()
+        factorize!(Set{Edge}([t2.out.edge]))
         graph = getCurrentGraph()
-        @fact getSubgraph(driver.out.edge) => graph.factorization[1]
-        @fact getSubgraph(inhibitor.out.edge) => graph.factorization[2]
+        @fact getSubgraph(t1.out.edge) => graph.factorization[1]
+        @fact getSubgraph(t2.out.edge) => graph.factorization[2]
     end
 end
 

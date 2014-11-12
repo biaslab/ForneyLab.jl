@@ -123,7 +123,7 @@ type GaussianNode <: Node
     m::Vector{Float64}
     V::Matrix{Float64}
 
-    function GaussianNode(; name="unnamed", form::ASCIIString="moment", m::Union(Float64,Vector{Float64},Nothing)=nothing, V::Union(Float64,Matrix{Float64},Nothing)=nothing)
+    function GaussianNode(; name=unnamedStr(), form::ASCIIString="moment", m::Union(Float64,Vector{Float64},Nothing)=nothing, V::Union(Float64,Matrix{Float64},Nothing)=nothing)
         if m!=nothing && V!=nothing
             error("Only one interface (mean or variance) may be fixed.")
         elseif m!=nothing || V!=nothing
@@ -172,6 +172,8 @@ type GaussianNode <: Node
         return self
     end
 end
+
+isDeterministic(::GaussianNode) = false
 
 
 ############################################

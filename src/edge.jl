@@ -96,3 +96,10 @@ function getOrCreateMarginal(edge::Edge, distribution_type::DataType=Any)
     (typeof(edge.marginal) <: distribution_type) || error("No marginal of type $(distribution_type) on edge:\n$(edge)")
     return edge.marginal
 end
+
+function Base.isless(e1::Edge, e2::Edge)
+    # Compares edges by alphabetically comparing the names in the order (head, tail)
+    str1 = "$(e1.head.node.name)$(e1.tail.node.name)"
+    str2 = "$(e2.head.node.name)$(e2.tail.node.name)"
+    return isless(str1, str2)
+end

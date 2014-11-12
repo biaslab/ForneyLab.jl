@@ -29,7 +29,7 @@ type TerminalNode <: Node
     name::ASCIIString
     out::Interface
 
-    function TerminalNode(value=1.0; name="unnamed")
+    function TerminalNode(value=1.0; name=unnamedStr())
         if typeof(value) <: Message || typeof(value) == DataType
             error("TerminalNode $(name) can not hold value of type $(typeof(value)).")
         end
@@ -41,6 +41,8 @@ type TerminalNode <: Node
         return self
     end
 end
+
+isDeterministic(::TerminalNode) = false # Edge case for deterministicness
 
 # Overload firstFreeInterface since EqualityNode is symmetrical in its interfaces
 firstFreeInterface(node::TerminalNode) = (node.out.partner==nothing) ? node.out : error("No free interface on $(typeof(node)) $(node.name)")

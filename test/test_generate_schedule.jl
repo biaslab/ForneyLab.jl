@@ -42,18 +42,18 @@ facts("generateSchedule() integration tests") do
 
 
         context("Should generate an internal and external schedule when called on a subgraph") do
-            (driver, inhibitor, noise, add) = initializeLoopyGraph()
-            factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+            (t1, a1, g1, t2, t3) = initializeFactoringGraphWithoutLoop()
+            factorize!(Set{Edge}([t2.out.edge])) # Put this edge in a different subgraph
             graph = getCurrentGraph()
             for subgraph in graph.factorization
                 generateSchedule!(subgraph)
                 @fact length(unique(subgraph.internal_schedule)) => length(subgraph.internal_schedule) # No duplicate entries in schedule
             end
             # There are multiple valid schedules because of different orderings. Validity or schedule order is not checked here.
-            @fact Set{Interface}(graph.factorization[1].internal_schedule) => Set{Interface}([noise.out, inhibitor.in1, add.in1, driver.out, add.out])
-            @fact Set{Interface}(graph.factorization[2].internal_schedule) => Set{Interface}([driver.in1, inhibitor.out])
-            @fact Set{Node}(graph.factorization[1].external_schedule) => Set{Node}([driver, inhibitor])
-            @fact Set{Node}(graph.factorization[2].external_schedule) => Set{Node}([inhibitor, driver])
+            @fact Set{Interface}(graph.factorization[1].internal_schedule) => Set{Interface}([t1.out, a1.out, t3.out])
+            @fact Set{Interface}(graph.factorization[2].internal_schedule) => Set{Interface}([t2.out, t2.out.partner])
+            @fact Set{Node}(graph.factorization[1].external_schedule) => Set{Node}([g1])
+            @fact Set{Node}(graph.factorization[2].external_schedule) => Set{Node}([g1])
         end
 
         context("Should generate a schedule that propagates messages to timewraps when called on a subgraph") do

@@ -50,7 +50,7 @@ type GainEqualityCompositeNode <: CompositeNode
     in2::Interface
     out::Interface
 
-    function GainEqualityCompositeNode(A::Union(Array{Float64},Float64)=1.0, use_composite_update_rules::Bool=true; name="unnamed", args...)
+    function GainEqualityCompositeNode(A::Union(Array{Float64},Float64)=1.0, use_composite_update_rules::Bool=true; name=unnamedStr(), args...)
         if typeof(A)==Float64
             A = fill!(Array(Float64,1,1),A)
         elseif use_composite_update_rules
@@ -84,6 +84,8 @@ type GainEqualityCompositeNode <: CompositeNode
         return self
     end
 end
+
+isDeterministic(::GainEqualityCompositeNode) = true
 
 ############################################
 # GaussianDistribution methods
