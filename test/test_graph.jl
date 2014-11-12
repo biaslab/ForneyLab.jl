@@ -110,9 +110,10 @@ facts("Graph level integration tests") do
         ForneyLab.conformSubgraph!(new_subgraph)
         @fact length(new_subgraph.nodes) => 2
         @fact length(new_subgraph.external_edges) => 1
+
     end
 
-    context("setUninformativeMarginals() should preset uninformative marginals at the appropriate places") do
+    context("setUninformativeMarginals() should set uninformative marginals at the appropriate places") do
         data = [1.0, 1.0, 1.0]
 
         # MF case
@@ -134,6 +135,7 @@ facts("Graph level integration tests") do
         @fact graph.approximate_marginals[(g_nodes[1], gam_subgraph)] => uninformative(GammaDistribution)
         @fact graph.approximate_marginals[(g_nodes[2], gam_subgraph)] => uninformative(GammaDistribution)
         @fact graph.approximate_marginals[(g_nodes[3], gam_subgraph)] => uninformative(GammaDistribution)
+
         # TODO: the following tests fail
         @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => 1.0
         @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => 1.0
