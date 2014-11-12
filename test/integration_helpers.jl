@@ -17,7 +17,7 @@ type MockNode <: Node
             self.interfaces[interface_id] = Interface(self)
         end
         self.out = self.interfaces[1]
-        self.name = "#undefined"
+        self.name = ForneyLab.unnamedStr()
         return(self)
     end
 end
