@@ -57,21 +57,21 @@ function factorize!(graph::FactorGraph, edge_set::Set{Edge})
 end
 factorize!(internal_edges::Set{Edge}) = factorize!(getCurrentGraph(), internal_edges)
 factorize!(internal_edge::Edge) = factorize!(Set{Edge}([internal_edge]))
-factorize!(internal_edges::Array{Edge, 1}) = factorize!(Set{Edge}(internal_edges))
+factorize!(graph::FactorGraph, edge::Edge) = factorize!(graph, Set{Edge}([edge]))
+factorize!(internal_edges::Array{Edge, 1}) = factorize!(getCurrentGraph(), internal_edges)
+factorize!(graph::FactorGraph, internal_edges::Array{Edge, 1}) = factorize!(graph, Set{Edge}(internal_edges))
 
 function factorizeMeanField!(graph::FactorGraph)
     # Generate a mean field factorization
     (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
-    internal_edge_set = copy(graph.factorization[1].internal_edges) # Only one subgraph, so these are all top-level edges in the factor graph
-    edges_to_factor = sort([e for e in internal_edge_set]) # Cast to array and sort
-
+    edges_to_factor = sort!([e for e in graph.factorization[1].internal_edges]) # Cast to array and sort
     while length(edges_to_factor) > 0 # As long as there are edges to factor
-        edge = pop!(edges_to_factor) # Pick an edge to factor
-        edge_cluster = extend(edge)
-        factorize!(graph, edge_cluster)
+        subgraph = factorize!(graph, edges_to_factor[end])
+
         # Remove all edges in edge_cluster from edges_to_factor, they have just been added to the same factor
-        edge_not_in_cluster = Bool[!(e in edge_cluster) for e in edges_to_factor]
-        edges_to_factor = edges_to_factor[edge_not_in_cluster]
+        for e in subgraph.internal_edges
+            splice!(edges_to_factor, findfirst(edges_to_factor, e))
+        end
     end
     return graph
 end

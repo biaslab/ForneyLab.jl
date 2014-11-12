@@ -14,13 +14,11 @@ type Edge <: AbstractEdge
 
     function Edge(tail::Interface, head::Interface, distribution_type::DataType=Any; add_to_graph::Bool=true)
         # add_to_graph is false for edges that are internal in a composite node
-
         (!is(head.node, tail.node)) || error("Cannot connect two interfaces of the same node: $(typeof(head.node)) $(head.node.name)")
         # Reset connection between possible previous partners
         (head.partner == nothing && tail.partner == nothing) || error("Previously defined edges cannot be repositioned.")
 
         self = new(tail, head, nothing, distribution_type)
-
         # Assign pointed to edge from interfaces
         tail.edge = self
         head.edge = self
