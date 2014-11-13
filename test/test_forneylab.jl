@@ -44,7 +44,6 @@ include("nodes/test_gaussian.jl")
 # Composite nodes
 include("nodes/composite/test_gain_addition.jl")
 include("nodes/composite/test_gain_equality.jl")
-include("nodes/composite/test_linear.jl")
 
 # Marginal calculations
 include("test_calculate_marginal.jl")
