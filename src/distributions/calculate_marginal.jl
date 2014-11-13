@@ -219,53 +219,10 @@ function calculateMarginal!(node::GaussianNode,
     return marg
 end
 
-function calculateMarginal!(node::LinearCompositeNode,
-                            subgraph::Subgraph,
-                            graph::FactorGraph,
-                            x_msg::Message{GaussianDistribution},
-                            a_dist::GaussianDistribution,
-                            b_dist::GaussianDistribution,
-                            gam_dist::GammaDistribution,
-                            y_msg::Message{GaussianDistribution})
-    # (Joint) marginal update function used for SVMP
-    # Definitions available in derivations notebook
-
-    marg = getOrCreateMarginal(node, subgraph, graph, GaussianDistribution)
-
-    ensureMWParametrization!(x_msg.payload)
-    ensureMWParametrization!(y_msg.payload)
-    ensureMVParametrization!(a_dist)
-    ensureMVParametrization!(b_dist)
-
-    (length(x_msg.payload.m) == 1 && length(y_msg.payload.m) == 1 && length(a_dist.m) == 1 && length(b_dist.m) == 1) || error("Structured update rule for LinearCompositeNode marginal only supports univariate input distributions.")
-
-    E_a_2 = a_dist.m[1]^2 + a_dist.V[1,1]
-    mu_a = a_dist.m[1]
-    mu_b = b_dist.m[1]
-    E_gam = gam_dist.a/gam_dist.b
-    mu_x = x_msg.payload.m[1]
-    gam_x = x_msg.payload.W[1,1]
-    mu_y = y_msg.payload.m[1]
-    gam_y = y_msg.payload.W[1,1]
-
-    A_x = (gam_y + E_gam)*(gam_x*mu_x - mu_a*mu_b*E_gam) + (E_gam*mu_b + gam_y*mu_y)*E_gam*mu_a
-    A_y = (E_gam*mu_b + gam_y*mu_y)*(E_gam*E_a_2 + gam_x) + (gam_x*mu_x - mu_a*mu_b*E_gam)*E_gam*mu_a
-    B = (E_gam*E_a_2 + gam_x)*(gam_y + E_gam) - (E_gam*mu_a)^2
-
-    W = reshape([E_gam*E_a_2+gam_x, -E_gam*mu_a, -E_gam*mu_a, gam_y + E_gam], 2, 2)
-
-    marg.m = [A_x/B, A_y/B]
-    marg.V = inv(W)
-    marg.xi = nothing
-    marg.W = nothing
-
-    return marg
-end
 
 ########################################
 # Lookup table for joint marginals
 ########################################
-
-getMarginalType(::Type{GaussianDistribution}, ::Type{GammaDistribution}) = NormalGammaDistribution
-getMarginalType(::Type{GammaDistribution}, ::Type{GaussianDistribution}) = NormalGammaDistribution
-getMarginalType(::Type{GaussianDistribution}, ::Type{GaussianDistribution}) = BiVariateGaussianDistribution
+getMarginalType(::Type{GaussianDistribution},   ::Type{GammaDistribution})      = NormalGammaDistribution
+getMarginalType(::Type{GammaDistribution},      ::Type{GaussianDistribution})   = NormalGammaDistribution
+getMarginalType(::Type{GaussianDistribution},   ::Type{GaussianDistribution})   = BiVariateGaussianDistribution
