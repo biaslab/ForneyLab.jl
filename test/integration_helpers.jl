@@ -298,7 +298,7 @@ function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rule
     FactorGraph()
     gec_node = GainEqualityCompositeNode(A, use_composite_update_rules)
     interface_count = 1
-    for msg=msgs
+    for msg=msgs # TODO: this is weird code. Is it correct??
         if msg == nothing
             Edge(MockNode().out, gec_node.interfaces[interface_count])
         else

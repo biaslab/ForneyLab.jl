@@ -11,33 +11,30 @@ type Interface
     partner::Union(Interface, Nothing)  # Partner indicates the interface to which it is connected.
     child::Union(Interface, Nothing)    # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
     message::Union(Message, Nothing)
-    message_payload_type::DataType      # Indicates the type of the message payload that is carried by the interface
-                                        # The default is a GaussianDistribution, which can be overwitten by the Edge constructor or setMessage!
     dependencies::Array{Interface, 1}   # Optional array of interfaces (of the same node) on which the outbound msg on this interface depends.
                                         # If this array is #undef, it means that the outbound msg depends on the inbound msgs on ALL OTHER interfaces of the node.
     internal_schedule::Array{Interface, 1}      # Optional schedule that should be executed to calculate outbound message on this interface.
                                                 # The internal_schedule field is used in composite nodes, and holds the schedule for internal message passing.
 
     # Sanity check for matching message types
-    function Interface(node::Node, edge::Union(AbstractEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing, message_payload_type::DataType=GaussianDistribution)
+    function Interface(node::Node, edge::Union(AbstractEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)
         if typeof(partner) == Nothing || typeof(message) == Nothing # Check if message or partner exist
-            return new(node, edge, partner, child, message, message_payload_type)
+            return new(node, edge, partner, child, message)
         elseif typeof(message) != typeof(partner.message) # Compare message types
             error("Message type of partner does not match with interface message type")
         else
-            return new(node, edge, partner, child, message, message_payload_type)
+            return new(node, edge, partner, child, message)
         end
     end
 end
-Interface(node::Node, message::Message) = Interface(node, nothing, nothing, nothing, message, GaussianDistribution)
-Interface(node::Node) = Interface(node, nothing, nothing, nothing, nothing, GaussianDistribution)
+Interface(node::Node, message::Message) = Interface(node, nothing, nothing, nothing, message)
+Interface(node::Node) = Interface(node, nothing, nothing, nothing, nothing)
 function show(io::IO, interface::Interface)
     name = getName(interface)
     (name == "") || (name = "($(name))")
     println(io, "Interface $(findfirst(interface.node.interfaces, interface)) $(name) of $(typeof(interface.node)) $(interface.node.name)")
 end
 function setMessage!(interface::Interface, message::Message)
-    interface.message_payload_type = typeof(message.payload)
     interface.message = deepcopy(message)
 end
 clearMessage!(interface::Interface) = (interface.message=nothing)

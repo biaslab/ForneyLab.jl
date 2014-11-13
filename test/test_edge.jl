@@ -61,7 +61,7 @@ facts("Edge integration tests") do
         FactorGraph()
         edge1 = Edge(TerminalNode().out, TerminalNode().out)
         edge2 = Edge(TerminalNode().out, TerminalNode().out)
-        @fact edge2 < edge1 => true
+        @fact (edge1 < edge2) => true
     end
 
     context("Edges can be sorted") do
