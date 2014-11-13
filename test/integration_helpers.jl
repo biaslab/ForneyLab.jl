@@ -184,8 +184,8 @@ function initializeAdditionNode(msgs::Array{Any})
     FactorGraph()
     add_node = AdditionNode()
     interface_count = 1
-    for msg=msgs
-        if msg!=nothing
+    for msg in msgs
+        if msg != nothing
             Edge(MockNode(msg).out, add_node.interfaces[interface_count])
         end
         interface_count += 1
@@ -203,7 +203,7 @@ function initializeEqualityNode(msgs::Array{Any})
     FactorGraph()
     eq_node = EqualityNode(length(msgs))
     interface_count = 1
-    for msg=msgs
+    for msg in msgs
         if msg!=nothing
             Edge(MockNode(msg).out, eq_node.interfaces[interface_count])
         end
@@ -250,7 +250,7 @@ function initializeGainAdditionCompositeNode(A::Array, use_composite_update_rule
     FactorGraph()
     gac_node = GainAdditionCompositeNode(A, use_composite_update_rules)
     interface_count = 1
-    for msg=msgs
+    for msg in msgs
         if msg == nothing
             Edge(MockNode().out, gac_node.interfaces[interface_count])
         else
@@ -298,7 +298,7 @@ function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rule
     FactorGraph()
     gec_node = GainEqualityCompositeNode(A, use_composite_update_rules)
     interface_count = 1
-    for msg=msgs # TODO: this is weird code. Is it correct??
+    for msg in msgs
         if msg == nothing
             Edge(MockNode().out, gec_node.interfaces[interface_count])
         else
@@ -451,8 +451,8 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     @fact node2.out.partner.message.payload => 2.0
 end
 
-function validateOutboundMessage(node::Node, outbound_interface_id::Int, outbound_type::DataType, inbound_messages::Array, correct_outbound_value)
-    msg = ForneyLab.updateNodeMessage!(node, outbound_interface_id, outbound_type, inbound_messages...)
+function validateOutboundMessage(node::Node, outbound_interface_id::Int, inbound_messages::Array, correct_outbound_value)
+    msg = ForneyLab.updateNodeMessage!(node, outbound_interface_id, inbound_messages...)
     @fact node.interfaces[outbound_interface_id].message => msg
     @fact node.interfaces[outbound_interface_id].message.payload => correct_outbound_value
 
