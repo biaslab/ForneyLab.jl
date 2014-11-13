@@ -12,10 +12,9 @@ type Edge <: AbstractEdge
     marginal::Union(ProbabilityDistribution, Float64, Vector, Matrix, Nothing) # TODO: delete Float64, Vector and Matrix when implementing DeltaDistribution
     distribution_type::DataType         
 
-    function Edge(tail::Interface, head::Interface, distribution_type::DataType=Any; add_to_graph::Bool=true)
+    function Edge(tail::Interface, head::Interface, distribution_type=Any; add_to_graph::Bool=true)
         # add_to_graph is false for edges that are internal in a composite node
-        println("Edge constructor tail node: $(tail.node)")
-        println("Edge constructor head node: $(head.node)")
+        # Cautionary note: replacing "distribution_type=Any" by "distribution_type::DataType=Any" causes segfaults (?!?)
         (!is(head.node, tail.node)) || error("Cannot connect two interfaces of the same node: $(typeof(head.node)) $(head.node.name)")
         (head.partner == nothing && tail.partner == nothing) || error("Previously defined edges cannot be repositioned.")
 
@@ -60,9 +59,9 @@ end
 # Edge constructors that accept nodes instead of a specific Interface
 # firstFreeInterface(node) should be overloaded for nodes with interface-invariant node functions
 firstFreeInterface(node::Node) = error("Cannot automatically pick a free interface on non-symmetrical $(typeof(node)) $(node.name)")
-Edge(tail_node::Node, head::Interface, distribution_type::DataType=Any; args...) = Edge(firstFreeInterface(tail_node), head, distribution_type; args...)
-Edge(tail::Interface, head_node::Node, distribution_type::DataType=Any; args...) = Edge(tail, firstFreeInterface(head_node), distribution_type; args...)
-Edge(tail_node::Node, head_node::Node, distribution_type::DataType=Any; args...) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), distribution_type; args...)
+Edge(tail_node::Node, head::Interface, distribution_type=Any; args...) = Edge(firstFreeInterface(tail_node), head, distribution_type; args...)
+Edge(tail::Interface, head_node::Node, distribution_type=Any; args...) = Edge(tail, firstFreeInterface(head_node), distribution_type; args...)
+Edge(tail_node::Node, head_node::Node, distribution_type=Any; args...) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node), distribution_type; args...)
 
 
 function show(io::IO, edge::Edge)
