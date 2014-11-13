@@ -335,28 +335,6 @@ function initializeGaussianNode(; y_type::DataType=Float64)
     return (node, edges)
 end
 
-function initializeLinearCompositeNode()
-    # Initialize a LinearComposite node
-    #
-    #         [M] noise
-    #          |
-    #   slope  v  offset
-    #  [M]-->[ L ]<--[M]
-    #        ^   |
-    #      x |   v y
-    #       [M] [M]
-
-    graph = FactorGraph()
-    node = LinearCompositeNode(form="precision")
-    Edge(MockNode(Message(GaussianDistribution())).out, node.in1)
-    Edge(MockNode(Message(GaussianDistribution())).out, node.slope)
-    Edge(MockNode(Message(GaussianDistribution())).out, node.offset)
-    Edge(MockNode(Message(GammaDistribution())).out, node.noise, GammaDistribution)
-    Edge(node.out, MockNode(Message(GaussianDistribution())).out)
-
-    return node
-end
-
 function initializeGaussianNodeChain(y::Array{Float64, 1})
     # Set up a chain of Gaussian nodes for mean-precision estimation
     #
@@ -453,86 +431,6 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     return (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge)
 end
 
-function initializeLinearCompositeNodeChain(x::Array{Float64, 1}, y::Array{Float64, 1})
-    # Set up a chain of Gaussian nodes for regression parameter estimation
-    #
-    # [a_0]-->[=]------ ... ->[=]------->[C_a]
-    #          |               |        
-    # [b_0]----|>[=]---- ... --|>[=]----->[C_b]
-    #          |  |            |  |     
-    #[gam_0]---|--|>[=]- ... --|--|>[=]-->[C_gam]
-    #          |  |  |         |  |  |  
-    #          v  v  v         v  v  v  
-    #         |-------|       |-------| 
-    #         |   L   |       |   L   | 
-    #         |-------|       |-------| 
-    #           ^   |           ^   |   
-    #           |   v           |   v   
-    #          x_1 y_1         x_n y_n
-
-    FactorGraph()
-    # prepare samples
-    length(x) == length(y) || error("x and y must have same length")
-    n_samples = length(y)
-
-    # Pre-assign arrays for later reference
-    lin_nodes = Array(LinearCompositeNode, n_samples)
-    a_eq_nodes = Array(EqualityNode, n_samples)
-    b_eq_nodes = Array(EqualityNode, n_samples)
-    gam_eq_nodes = Array(EqualityNode, n_samples)
-    x_nodes = Array(TerminalNode, n_samples)
-    y_nodes = Array(TerminalNode, n_samples)
-    a_eq_edges = Array(Edge, n_samples)
-    b_eq_edges = Array(Edge, n_samples)
-    gam_eq_edges = Array(Edge, n_samples)
-    x_edges = Array(Edge, n_samples)
-    y_edges = Array(Edge, n_samples)
-
-    # Build graph
-    for section=1:n_samples
-        lin_node = LinearCompositeNode(name="lin_node_$(section)", form="precision")
-        a_eq_node = EqualityNode(name="a_eq_node_$(section)")
-        b_eq_node = EqualityNode(name="b_eq_node_$(section)")
-        gam_eq_node = EqualityNode(name="gam_eq_node_$(section)")
-        x_node = TerminalNode(GaussianDistribution(m = x[section], W = 10000.0), name="x_node_$(section)")
-        y_node = TerminalNode(GaussianDistribution(m = y[section], W = 10000.0), name="y_node_$(section)")
-        # Save to array
-        lin_nodes[section] = lin_node
-        a_eq_nodes[section] = a_eq_node
-        b_eq_nodes[section] = b_eq_node
-        gam_eq_nodes[section] = gam_eq_node
-        x_nodes[section] = x_node
-        y_nodes[section] = y_node
-        # Connect section within
-        a_eq_edges[section] = Edge(a_eq_node.interfaces[3], lin_node.slope)
-        b_eq_edges[section] = Edge(b_eq_node.interfaces[3], lin_node.offset)
-        gam_eq_edges[section] = Edge(gam_eq_node.interfaces[3], lin_node.noise, GammaDistribution)
-        x_edges[section] = Edge(x_node.out, lin_node.in1)
-        y_edges[section] = Edge(lin_node.out, y_node.out)
-
-        if section > 1 # Connect sections
-            Edge(a_eq_nodes[section-1].interfaces[2], a_eq_nodes[section].interfaces[1])
-            Edge(b_eq_nodes[section-1].interfaces[2], b_eq_nodes[section].interfaces[1])
-            Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)
-        end
-    end
-    # Attach beginning and end nodes
-    a_0 = TerminalNode(GaussianDistribution(m=0.0, W=0.01), name="a_0") # priors
-    b_0 = TerminalNode(GaussianDistribution(m=0.0, W=0.01), name="b_0")
-    gam_0 = TerminalNode(GammaDistribution(a=0.01, b=0.01), name="gam_0")
-    C_a = TerminalNode(uninformative(GaussianDistribution), name="a_N") # uninformative
-    C_b = TerminalNode(uninformative(GaussianDistribution), name="b_N")
-    C_gam = TerminalNode(uninformative(GammaDistribution), name="gam_N")
-    # connect
-    Edge(a_0, a_eq_nodes[1].interfaces[1])
-    Edge(b_0, b_eq_nodes[1].interfaces[1])
-    Edge(gam_0, gam_eq_nodes[1].interfaces[1], GammaDistribution)
-    Edge(a_eq_nodes[end].interfaces[2], C_a.out)
-    Edge(b_eq_nodes[end].interfaces[2], C_b.out)
-    Edge(gam_eq_nodes[end].interfaces[2], C_gam.out, GammaDistribution)
-
-    return(lin_nodes, a_eq_nodes, b_eq_nodes, gam_eq_nodes, a_eq_edges, b_eq_edges, gam_eq_edges, x_edges, y_edges)
-end
 
 #############
 # Validations
