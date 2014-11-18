@@ -29,7 +29,7 @@ type TerminalNode <: Node
     name::ASCIIString
     out::Interface
 
-    function TerminalNode(value=1.0; name="unnamed")
+    function TerminalNode(value=1.0; name=unnamedStr())
         if typeof(value) <: Message || typeof(value) == DataType
             error("TerminalNode $(name) can not hold value of type $(typeof(value)).")
         end
@@ -42,16 +42,16 @@ type TerminalNode <: Node
     end
 end
 
+isDeterministic(::TerminalNode) = false # Edge case for deterministicness
+
 # Overload firstFreeInterface since EqualityNode is symmetrical in its interfaces
 firstFreeInterface(node::TerminalNode) = (node.out.partner==nothing) ? node.out : error("No free interface on $(typeof(node)) $(node.name)")
 
 function updateNodeMessage!(node::TerminalNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::DataType,
                             ::Any)
     # Calculate an outbound message. The TerminalNode does not accept incoming messages.
     # This function is not exported, and is only meant for internal use.
-    (typeof(node.value) <: outbound_message_payload_type) || error("TerminalNode $(node.name) cannot produce a message with payload type $(outbound_message_payload_type) since the node value is of type $(typeof(node.value))")
     if (typeof(node.out.message) != Message{typeof(node.value)}) || (node.out.message.payload != node.value)
         # Only create a new message if the existing one is not correct
         node.out.message = Message(node.value)

@@ -9,11 +9,6 @@ facts("EqualityNode unit tests") do
         @fact length(node.interfaces) => 3
     end
 
-   context("EqualityNode(N) should initialize an EqualityNode with N (>2) interfaces") do
-        @fact length(EqualityNode(5).interfaces) => 5
-        @fact_throws EqualityNode(2)
-    end
-
     context("EqualityNode should propagate an arbitrary message") do
         # Equality constraint node should work for arbitraty messages, although not really useful.
         # Outbound message is equal to the inbound messages if not all inbound messages are equal.
@@ -22,25 +17,21 @@ facts("EqualityNode unit tests") do
         # Equal scalars
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                Float64, 
                                 [Message(1.0), Message(1.0), nothing],
                                 1.0)
         # Unequal scalars
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                Float64, 
                                 [Message(1.0), Message(1.1), nothing],
                                 0.0)
         # Equal matrices
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                Matrix{Float64}, 
                                 [Message(ones(2,2)), Message(ones(2,2)), nothing],
                                 ones(2,2))
         # Unequal matrices (different values) should give zeros matrix
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                Matrix{Float64}, 
                                 [Message(ones(2,2)), Message(4.0*ones(2,2)), nothing],
                                 zeros(2,2))
     end
@@ -55,7 +46,6 @@ facts("EqualityNode unit tests") do
             W = inv(inbound_dist.V)
             validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(inbound_dist), Message(inbound_dist), nothing],
                                 GaussianDistribution(m=(pinv(W + W) * (W*inbound_dist.m + W*inbound_dist.m)), V=(inbound_dist.V * pinv(inbound_dist.V + inbound_dist.V) * inbound_dist.V)))
         end
@@ -64,7 +54,6 @@ facts("EqualityNode unit tests") do
             W = inbound_dist.W
             validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(inbound_dist), Message(inbound_dist), nothing],
                                 GaussianDistribution(m=(pinv(W + W) * (W*inbound_dist.m + W*inbound_dist.m)), W=(W + W)))
         end
@@ -74,7 +63,6 @@ facts("EqualityNode unit tests") do
             W = inbound_dist.W
             validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(inbound_dist), Message(inbound_dist), nothing],
                                 GaussianDistribution(xi=(xi + xi), V=(inbound_dist.V * pinv(inbound_dist.V + inbound_dist.V) * inbound_dist.V)))
         end
@@ -84,7 +72,6 @@ facts("EqualityNode unit tests") do
             W = inbound_dist.W
             validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(inbound_dist), Message(inbound_dist), nothing],
                                 GaussianDistribution(xi=(xi + xi), W=(W + W)))
         end
@@ -104,7 +91,6 @@ facts("EqualityNode unit tests") do
             W = inv(inbound_dist.V)
             validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(inbound_dist), Message(inbound_dist), nothing],
                                 GaussianDistribution(m=(pinv(W + W) * (W*inbound_dist.m + W*inbound_dist.m)), V=(inbound_dist.V * pinv(inbound_dist.V + inbound_dist.V) * inbound_dist.V)))
         end
@@ -117,7 +103,6 @@ facts("EqualityNode unit tests") do
             W = inbound_dist.W
             validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(inbound_dist), Message(inbound_dist), nothing],
                                 GaussianDistribution(m=(pinv(W + W) * (W*inbound_dist.m + W*inbound_dist.m)), W=(W+W)))
         end
@@ -130,7 +115,6 @@ facts("EqualityNode unit tests") do
             V = inbound_dist.V
             validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(inbound_dist), Message(inbound_dist), nothing],
                                 GaussianDistribution(xi=(xi + xi), V=(inbound_dist.V * pinv(inbound_dist.V + inbound_dist.V) * inbound_dist.V)))
         end
@@ -143,7 +127,6 @@ facts("EqualityNode unit tests") do
             W = inbound_dist.W
             validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(inbound_dist), Message(inbound_dist), nothing],
                                 GaussianDistribution(xi=(xi + xi), W=(W+W)))
         end
@@ -152,7 +135,6 @@ facts("EqualityNode unit tests") do
     context("EqualityNode should propagate a GammaMessage") do
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                GammaDistribution, 
                                 [Message(GammaDistribution()), Message(GammaDistribution()), nothing],
                                 GammaDistribution(a=1.0, b=2.0))
     end
@@ -160,7 +142,6 @@ facts("EqualityNode unit tests") do
     context("EqualityNode should propagate an InverseGammaMessage") do
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                InverseGammaDistribution, 
                                 [Message(InverseGammaDistribution()), Message(InverseGammaDistribution()), nothing],
                                 InverseGammaDistribution(a=3.0, b=2.0))
     end
@@ -169,17 +150,14 @@ facts("EqualityNode unit tests") do
         # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(StudentsTDistribution()), Message(GaussianDistribution()), nothing],
                                 GaussianDistribution(m=0.0, W=2.0))
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(GaussianDistribution()), Message(StudentsTDistribution()), nothing],
                                 GaussianDistribution(m=0.0, W=2.0))
         validateOutboundMessage(EqualityNode(), 
                                 2, 
-                                GaussianDistribution, 
                                 [Message(StudentsTDistribution()), nothing, Message(GaussianDistribution())],
                                 GaussianDistribution(m=0.0, W=2.0))
     end
@@ -188,17 +166,14 @@ facts("EqualityNode unit tests") do
         # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                Float64, 
                                 [Message(5.0), Message(GaussianDistribution()), nothing],
                                 5.0)
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                Float64, 
                                 [Message(GaussianDistribution()), Message(5.0), nothing],
                                 5.0)
         validateOutboundMessage(EqualityNode(), 
                                 2, 
-                                Float64, 
                                 [Message(5.0), nothing, Message(GaussianDistribution())],
                                 5.0)
     end
@@ -207,17 +182,14 @@ facts("EqualityNode unit tests") do
         # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                Float64, 
                                 [Message(5.0), Message(GammaDistribution()), nothing],
                                 5.0)
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                Float64, 
                                 [Message(GammaDistribution()), Message(5.0), nothing],
                                 5.0)
         validateOutboundMessage(EqualityNode(), 
                                 2, 
-                                Float64, 
                                 [Message(5.0), nothing, Message(GammaDistribution())],
                                 5.0)
     end

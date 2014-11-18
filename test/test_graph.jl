@@ -37,11 +37,11 @@ facts("Graph level unit tests") do
     end
 
     context("getSubgraph(edge) should return the subgraph where edge is internal") do
-        (driver, inhibitor, noise, add) = initializeLoopyGraph()
-        factorize!(Set{Edge}({inhibitor.out.edge})) # Put this edge in a different subgraph
+        (t1, a1, g1, t2, add1, g2) = initializeFactoringGraph()
+        factorize!(Set{Edge}([t2.out.edge]))
         graph = getCurrentGraph()
-        @fact getSubgraph(driver.out.edge) => graph.factorization[1]
-        @fact getSubgraph(inhibitor.out.edge) => graph.factorization[2]
+        @fact getSubgraph(t1.out.edge) => graph.factorization[1]
+        @fact getSubgraph(t2.out.edge) => graph.factorization[2]
     end
 end
 
@@ -110,9 +110,10 @@ facts("Graph level integration tests") do
         ForneyLab.conformSubgraph!(new_subgraph)
         @fact length(new_subgraph.nodes) => 2
         @fact length(new_subgraph.external_edges) => 1
+
     end
 
-    context("setUninformativeMarginals() should preset uninformative marginals at the appropriate places") do
+    context("setUninformativeMarginals() should set uninformative marginals at the appropriate places") do
         data = [1.0, 1.0, 1.0]
 
         # MF case
@@ -134,6 +135,8 @@ facts("Graph level integration tests") do
         @fact graph.approximate_marginals[(g_nodes[1], gam_subgraph)] => uninformative(GammaDistribution)
         @fact graph.approximate_marginals[(g_nodes[2], gam_subgraph)] => uninformative(GammaDistribution)
         @fact graph.approximate_marginals[(g_nodes[3], gam_subgraph)] => uninformative(GammaDistribution)
+
+        # TODO: the following tests fail
         @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => 1.0
         @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => 1.0
         @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => 1.0

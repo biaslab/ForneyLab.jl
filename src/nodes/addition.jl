@@ -35,7 +35,7 @@ type AdditionNode <: Node
     in2::Interface
     out::Interface
 
-    function AdditionNode(; name="unnamed")
+    function AdditionNode(; name=unnamedStr())
         self = new(name, Array(Interface, 3))
 
         named_handle_list = [:in1, :in2, :out]
@@ -47,6 +47,8 @@ type AdditionNode <: Node
         return self
     end
 end
+
+isDeterministic(::AdditionNode) = true
 
 ############################################
 # GaussianDistribution methods
@@ -69,7 +71,6 @@ backwardAdditionXiRule{T<:Number}(V_x::Array{T, 2}, xi_x::Array{T, 1}, V_z::Arra
 # Message towards OUT
 function updateNodeMessage!(node::AdditionNode,
                             ::Int,
-                            ::Type{GaussianDistribution},
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Nothing)
@@ -110,12 +111,11 @@ end
 # Message towards IN1 or IN2
 function updateNodeMessage!(node::AdditionNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             msg_in1::Union(Message{GaussianDistribution},Nothing),
                             msg_in2::Union(Message{GaussianDistribution},Nothing),
                             msg_out::Message{GaussianDistribution})
     (outbound_interface_id<3) || error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # Calculations for the GaussianDistribution type; Korl (2005), table 4.1
     # Backward message, one message on the incoming edge and one on the outgoing edge.
@@ -159,14 +159,12 @@ end
 # Message towards OUT
 function updateNodeMessage!(node::AdditionNode,
                             ::Int,
-                            outbound_message_payload_type::Type{DeltaDistribution},
                             msg_in1::Message{DeltaDistribution},
                             msg_in2::Message{DeltaDistribution},
                             msg_out::Nothing)
     ans = msg_in1.payload.m + msg_in2.payload.m
     msg_result = getOrCreateMessage(node.out, DeltaDistribution)
     msg_result.payload.m = ans
-    (typeof(msg_result.payload) == outbound_message_payload_type) || error("Output type $(typeof(msg_result)) of $(typeof(node)) node $(node.name) does not match expected output type $(outbound_message_payload_type)")
 
     return node.out.message
 end
@@ -174,7 +172,6 @@ end
 # Message towards IN1 or IN2
 function updateNodeMessage!(node::AdditionNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{DeltaDistribution},
                             msg_in1::Union(Message{DeltaDistribution}, Nothing),
                             msg_in2::Union(Message{DeltaDistribution}, Nothing),
                             msg_out::Message{DeltaDistribution})
@@ -188,7 +185,6 @@ function updateNodeMessage!(node::AdditionNode,
 
     msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution)
     msg_result.payload.m = ans
-    (typeof(msg_result.payload) == outbound_message_payload_type) || error("Output type $(typeof(msg_result)) of $(typeof(node)) node $(node.name) does not match expected output type $(outbound_message_payload_type)")
 
     return node.interfaces[outbound_interface_id].message
 end

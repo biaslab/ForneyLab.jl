@@ -17,7 +17,11 @@ facts("GaussianDistribution unit tests") do
     context("uninformative() should initialize an uninformative Gaussian distribution") do
         dist = uninformative(GaussianDistribution)
         @fact dist.m => [0.0]
-        @fact dist.V => reshape([1000.0],1,1)
+        @fact dist.V => reshape([huge()],1,1)
+    end
+
+    context("Uninformative Gaussians should be equal") do
+        @fact uninformative(GaussianDistribution) => uninformative(GaussianDistribution)
     end
 
     context("uninformative(Float64) should return 1") do
@@ -120,13 +124,13 @@ facts("Marginal calculations for the Gaussian") do
     end
 
     context("Marginal calculation for the combination of a Gaussian and student's t-distribution") do
-        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(StudentsTDistribution())).out, GaussianDistribution, StudentsTDistribution)
+        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(StudentsTDistribution())).out, GaussianDistribution)
         calculateMarginal!(edge)
         @fact edge.marginal => GaussianDistribution(m=0.0, W=3.0) 
     end
 
     context("Marginal calculation for the combination of a Gaussian and Float64") do
-        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(3.0)).out, GaussianDistribution, Float64)
+        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(3.0)).out)
         calculateMarginal!(edge)
         @fact edge.marginal => 3.0 
     end

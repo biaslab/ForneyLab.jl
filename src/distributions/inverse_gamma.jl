@@ -13,7 +13,7 @@ type InverseGammaDistribution <: ProbabilityDistribution
     InverseGammaDistribution(; a=1.0, b=1.0) = new(a, b)
 end
 
-uninformative(::Type{InverseGammaDistribution}) = InverseGammaDistribution(a=-0.999, b=0.001)
+uninformative(::Type{InverseGammaDistribution}) = InverseGammaDistribution(a=-1.0+tiny(), b=tiny())
 function Base.mean(dist::InverseGammaDistribution)
     if dist.a > 1.0
         return dist.b / (dist.a - 1)

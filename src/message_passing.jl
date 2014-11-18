@@ -79,9 +79,9 @@ function updateNodeMessage!(outbound_interface::Interface, graph::FactorGraph=ge
     end
 
     # Evaluate node update function
-    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id (outbound $(outbound_interface.message_payload_type)):")
+    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id:")
 
-    return updateNodeMessage!(node, outbound_interface_id, outbound_interface.message_payload_type, inbound_array...)
+    return updateNodeMessage!(node, outbound_interface_id, inbound_array...)
 end
 
 function calculateMessages!(node::Node)

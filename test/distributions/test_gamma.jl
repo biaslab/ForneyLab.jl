@@ -11,8 +11,8 @@ facts("GammaDistribution unit tests") do
 
     context("uninformative() should initialize an uninformative gamma distribution") do
         dist = uninformative(GammaDistribution)
-        @fact dist.a => 0.999
-        @fact dist.b => 0.001
+        @fact dist.a => 1.0-tiny()
+        @fact dist.b => tiny()
     end
 end
 

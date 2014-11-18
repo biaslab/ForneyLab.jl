@@ -76,8 +76,8 @@ GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
 # TODO: BiVariateGaussianDistribution should be removed
 abstract BiVariateGaussianDistribution # Only used for uninformative function
 
-uninformative(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=1000.0)
-uninformative(::Type{BiVariateGaussianDistribution}) = GaussianDistribution(m=[0.0, 0.0], V=[1000.0 0.0; 0.0 1000.0])
+uninformative(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge())
+uninformative(::Type{BiVariateGaussianDistribution}) = GaussianDistribution(m=[0.0, 0.0], V=[huge() 0.0; 0.0 huge()])
 
 function show(io::IO, dist::GaussianDistribution)
     println(io, "GaussianDistribution")
@@ -185,7 +185,7 @@ ensureXiWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureXi
 
 function ==(x::GaussianDistribution, y::GaussianDistribution)
     if is(x, y) return true end
-    eps = 1e-12
+    eps = tiny()
     # Check m or xi
     if x.m!=nothing && y.m!=nothing
         (length(x.m)==length(x.m)) || return false

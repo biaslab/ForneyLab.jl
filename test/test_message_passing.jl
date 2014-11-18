@@ -45,21 +45,6 @@ facts("Message passing integration tests") do
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean)]) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], graph.approximate_marginals[(node, sg_prec)]) => true
 
-        # Mean field factorized linear node
-        node = initializeLinearCompositeNode()
-        graph = getCurrentGraph()
-        factorizeMeanField!(graph)
-        setUninformativeMarginals!(graph)
-        sg_a = getSubgraph(node.slope.edge)
-        sg_b = getSubgraph(node.offset.edge)
-        sg_gam = getSubgraph(node.noise.edge)
-        sg_x = getSubgraph(node.in1.edge)
-        sg_y = getSubgraph(node.out.edge)
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.slope, node.out)[1], graph.approximate_marginals[(node, sg_a)]) => true
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.offset, node.out)[1], graph.approximate_marginals[(node, sg_b)]) => true
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.noise, node.out)[1], graph.approximate_marginals[(node, sg_gam)]) => true
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in1, node.out)[1], graph.approximate_marginals[(node, sg_x)]) => true
-
         # Structurally factorized
         (node, edges) = initializeGaussianNode()
         graph = getCurrentGraph()
@@ -78,9 +63,8 @@ facts("Message passing integration tests") do
     context("calculateMessage!()") do
         context("Should return and write back an output message") do
             (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(3.0))
-            Edge(terminal.out, gain.in1, Float64, Array{Float64, 2})
+            Edge(terminal.out, gain.in1, Float64)
             Edge(gain.out, MockNode().out, Array{Float64, 2})
-            gain.out.message_payload_type = Array{Float64, 2} # Expect a matrix
             @fact gain.out.message => nothing
             # Request message on node for which the input is unknown
             msg = calculateMessage!(gain.out)
@@ -94,7 +78,6 @@ facts("Message passing integration tests") do
             (node1, node2, node3) = initializeChainOfNodes()
             @fact node3.out.message => nothing
             # Request message on node for which the input is unknown
-            node3.out.message_payload_type = Array{Float64, 2} # Expect a matrix
             calculateMessage!(node3.out)
             @fact typeof(node3.out.message.payload) => Array{Float64, 2}
             @fact node3.out.message.payload => reshape([12.0], 1, 1)

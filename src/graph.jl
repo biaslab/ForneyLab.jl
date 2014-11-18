@@ -118,16 +118,20 @@ function setUninformativeMarginals!(graph::FactorGraph=getCurrentGraph())
                     push!(internal_interfaces, interface)
                 end
             end
-            # From the invertarization of internal edges and the node type we can deduce the marginal types
+            # From the distribution types of the marginals on the internal edges we can deduce the unknown marginal types
             if length(internal_interfaces) == 1
                 # Univariate
-                marginal_type = getMarginalType(internal_interfaces[1].message_payload_type, internal_interfaces[1].partner.message_payload_type)
+                if internal_interfaces[1].edge.distribution_type != Any
+                    marginal_type = internal_interfaces[1].edge.distribution_type
+                else
+                    error("Unspecified distribution type on edge:\n$(internal_interfaces[1].edge)")
+                end
             elseif length(internal_interfaces) == 0
                 error("The list of internal edges at node $(node) is empty, check your graph definition.")
             else
                 # Multivariate
-                internal_incoming_message_types = [intf.partner.message_payload_type for intf in internal_interfaces]
-                marginal_type = getMarginalType(typeof(node), internal_incoming_message_types...)
+                internal_incoming_message_types = [interface.edge.distribution_type for interface in internal_interfaces]
+                marginal_type = getMarginalType(internal_incoming_message_types...)
             end
             graph.approximate_marginals[(node, subgraph)] = uninformative(marginal_type)
         end

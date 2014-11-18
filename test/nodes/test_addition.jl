@@ -16,18 +16,15 @@ facts("AdditionNode unit tests") do
         # Forward message
         validateOutboundMessage(AdditionNode(), 
                                 3, 
-                                Float64, 
                                 [Message(2.0), Message(3.0), nothing],
                                 5.0)
         # Backward message
         validateOutboundMessage(AdditionNode(), 
                                 1, 
-                                Float64, 
                                 [nothing, Message(2.0), Message(3.0)],
                                 1.0)
         validateOutboundMessage(AdditionNode(), 
                                 2, 
-                                Float64, 
                                 [Message(2.0), nothing, Message(3.0)],
                                 1.0)
     end
@@ -36,18 +33,15 @@ facts("AdditionNode unit tests") do
         # Forward message
         validateOutboundMessage(AdditionNode(), 
                                 3, 
-                                Vector{Float64}, 
                                 [Message([1.0, 2.0]), Message([3.0, 4.0]), nothing],
                                 [4.0, 6.0])
         # Backward message
         validateOutboundMessage(AdditionNode(), 
                                 1, 
-                                Vector{Float64}, 
                                 [nothing, Message([1.0, 2.0]), Message([3.0, 4.0])],
                                 [2.0, 2.0])
         validateOutboundMessage(AdditionNode(), 
                                 2, 
-                                Vector{Float64}, 
                                 [Message([1.0, 2.0]), nothing, Message([3.0, 4.0])],
                                 [2.0, 2.0])
     end
@@ -59,18 +53,15 @@ facts("AdditionNode unit tests") do
             # Forward message
             validateOutboundMessage(AdditionNode(), 
                                     3, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=1.0, V=2.0)), Message(GaussianDistribution(m=3.0, V=4.0)), nothing],
                                     GaussianDistribution(m=4.0, V=6.0))
             # Backward message
             validateOutboundMessage(AdditionNode(), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(m=1.0, V=2.0)), Message(GaussianDistribution(m=3.0, V=4.0))],
                                     GaussianDistribution(m=2.0, V=6.0))
             validateOutboundMessage(AdditionNode(), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=1.0, V=2.0)), nothing, Message(GaussianDistribution(m=3.0, V=4.0))],
                                     GaussianDistribution(m=2.0, V=6.0))        
         end
@@ -79,18 +70,15 @@ facts("AdditionNode unit tests") do
             # Forward message
             validateOutboundMessage(AdditionNode(), 
                                     3, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=1.0, W=2.0)), Message(GaussianDistribution(m=3.0, W=4.0)), nothing],
                                     GaussianDistribution(m=4.0, W=4.0/3.0))
             # Backward message
             validateOutboundMessage(AdditionNode(), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(m=1.0, W=2.0)), Message(GaussianDistribution(m=3.0, W=4.0))],
                                     GaussianDistribution(m=2.0, W=4.0/3.0))
             validateOutboundMessage(AdditionNode(), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=1.0, W=2.0)), nothing, Message(GaussianDistribution(m=3.0, W=4.0))],
                                     GaussianDistribution(m=2.0, W=4.0/3.0))  
         end
@@ -99,18 +87,15 @@ facts("AdditionNode unit tests") do
             # Forward message
             validateOutboundMessage(AdditionNode(), 
                                     3, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(xi=1.0, V=2.0)), Message(GaussianDistribution(xi=3.0, V=4.0)), nothing],
                                     GaussianDistribution(xi=14/6, V=6.0))
             # Backward message
             validateOutboundMessage(AdditionNode(), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(xi=1.0, V=2.0)), Message(GaussianDistribution(xi=3.0, V=4.0))],
                                     GaussianDistribution(xi=10/6, V=6.0))
             validateOutboundMessage(AdditionNode(), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(xi=1.0, V=2.0)), nothing, Message(GaussianDistribution(xi=3.0, V=4.0))],
                                     GaussianDistribution(xi=10/6, V=6.0))  
         end
@@ -119,18 +104,15 @@ facts("AdditionNode unit tests") do
             # Forward message
             validateOutboundMessage(AdditionNode(), 
                                     3, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=1.0, V=0.5)), Message(GaussianDistribution(m=3.0, W=4.0)), nothing],
                                     GaussianDistribution(m=4.0, W=4.0/3.0))
             # Backward message
             validateOutboundMessage(AdditionNode(), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(m=1.0, V=0.5)), Message(GaussianDistribution(m=3.0, W=4.0))],
                                     GaussianDistribution(m=2.0, W=4.0/3.0))
             validateOutboundMessage(AdditionNode(), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=1.0, V=0.5)), nothing, Message(GaussianDistribution(m=3.0, W=4.0))],
                                     GaussianDistribution(m=2.0, W=4.0/3.0))  
         end
@@ -145,18 +127,15 @@ facts("AdditionNode unit tests") do
             # Forward message
             validateOutboundMessage(AdditionNode(), 
                                     3, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=mean, V=variance)), Message(GaussianDistribution(m=mean, V=variance)), nothing],
                                     GaussianDistribution(m=[2.0, 4.0, 6.0], V=2.0*variance))
             # Backward message
             validateOutboundMessage(AdditionNode(), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(m=mean, V=variance)), Message(GaussianDistribution(m=mean, V=variance))],
                                     GaussianDistribution(m=[0.0, 0.0, 0.0], V=2.0*variance))
             validateOutboundMessage(AdditionNode(), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=mean, V=variance)), nothing, Message(GaussianDistribution(m=mean, V=variance))],
                                     GaussianDistribution(m=[0.0, 0.0, 0.0], V=2.0*variance))
         end
@@ -169,18 +148,15 @@ facts("AdditionNode unit tests") do
             # Forward message
             validateOutboundMessage(AdditionNode(), 
                                     3, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(m=mean, W=precision)), nothing],
                                     GaussianDistribution(m=[2.0, 4.0, 6.0], W=0.5*precision))
             # Backward message
             validateOutboundMessage(AdditionNode(), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(m=mean, W=precision))],
                                     GaussianDistribution(m=[0.0, 0.0, 0.0], W=0.5*precision))
             validateOutboundMessage(AdditionNode(), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=mean, W=precision)), nothing, Message(GaussianDistribution(m=mean, W=precision))],
                                     GaussianDistribution(m=[0.0, 0.0, 0.0], W=0.5*precision))
         end
@@ -193,18 +169,15 @@ facts("AdditionNode unit tests") do
             # Forward message
             validateOutboundMessage(AdditionNode(), 
                                     3, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(xi=xi, V=variance)), Message(GaussianDistribution(xi=xi, V=variance)), nothing],
                                     GaussianDistribution(xi=[1.0, 2.0, 3.0], V=2.0*variance))
             # Backward message
             validateOutboundMessage(AdditionNode(), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(xi=xi, V=variance)), Message(GaussianDistribution(xi=xi, V=variance))],
                                     GaussianDistribution(xi=[0.0, 0.0, 0.0], V=2.0*variance))
             validateOutboundMessage(AdditionNode(), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(xi=xi, V=variance)), nothing, Message(GaussianDistribution(xi=xi, V=variance))],
                                     GaussianDistribution(xi=[0.0, 0.0, 0.0], V=2.0*variance))
         end
@@ -217,18 +190,15 @@ facts("AdditionNode unit tests") do
             # Forward message
             validateOutboundMessage(AdditionNode(), 
                                     3, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(xi=precision*mean, V=inv(precision))), nothing],
                                     GaussianDistribution(m=[2.0, 4.0, 6.0], W=0.5*precision))
             # Backward message
             validateOutboundMessage(AdditionNode(), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(m=mean, W=precision)), Message(GaussianDistribution(xi=precision*mean, V=inv(precision)))],
                                     GaussianDistribution(m=[0.0, 0.0, 0.0], W=0.5*precision))
             validateOutboundMessage(AdditionNode(), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=mean, W=precision)), nothing, Message(GaussianDistribution(xi=precision*mean, V=inv(precision)))],
                                     GaussianDistribution(m=[0.0, 0.0, 0.0], W=0.5*precision))
         end
