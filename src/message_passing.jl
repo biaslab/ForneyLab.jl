@@ -81,9 +81,6 @@ function updateNodeMessage!(outbound_interface::Interface, graph::FactorGraph=ge
     # Evaluate node update function
     printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id:")
 
-    if typeof(node)!=TerminalNode
-        error("updateNodeMessage!() not yet implemented for individual nodes")
-    end
     return updateNodeMessage!(node, outbound_interface_id, inbound_array...)
 end
 

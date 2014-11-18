@@ -36,7 +36,6 @@ facts("GainAdditionCompositeNode unit tests") do
         msg_internal = calculateMessage!(node.interfaces[3])
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing],
                                 msg_internal.payload)
 
@@ -49,7 +48,6 @@ facts("GainAdditionCompositeNode unit tests") do
         msg_internal = calculateMessage!(node.interfaces[2])
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 2, 
-                                GaussianDistribution, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))],
                                 msg_internal.payload)
     end
@@ -62,7 +60,6 @@ facts("GainAdditionCompositeNode unit tests") do
         msg_internal = calculateMessage!(node.interfaces[3])
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
                                 msg_internal.payload)
 
@@ -75,7 +72,6 @@ facts("GainAdditionCompositeNode unit tests") do
         msg_internal = calculateMessage!(node.interfaces[2])
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 2, 
-                                GaussianDistribution, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))],
                                 msg_internal.payload)
     end
@@ -88,7 +84,6 @@ facts("GainAdditionCompositeNode unit tests") do
         msg_internal = calculateMessage!(node.interfaces[3])
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
                                 msg_internal.payload)
 
@@ -101,7 +96,6 @@ facts("GainAdditionCompositeNode unit tests") do
         msg_internal = calculateMessage!(node.interfaces[2])
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 2, 
-                                GaussianDistribution, 
                                 [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))],
                                 msg_internal.payload)
     end
@@ -114,7 +108,6 @@ facts("GainAdditionCompositeNode unit tests") do
         msg_internal = calculateMessage!(node.interfaces[3])
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 3, 
-                                GaussianDistribution, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
                                 msg_internal.payload)
 
@@ -127,7 +120,6 @@ facts("GainAdditionCompositeNode unit tests") do
         msg_internal = calculateMessage!(node.interfaces[2])
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 2, 
-                                GaussianDistribution, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))],
                                 msg_internal.payload)
     end

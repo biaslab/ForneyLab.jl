@@ -108,7 +108,6 @@ backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z
 # Forward to OUT
 function updateNodeMessage!(node::GainAdditionCompositeNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             in1::Message{GaussianDistribution},
                             in2::Message{GaussianDistribution},
                             ::Nothing)
@@ -117,7 +116,7 @@ function updateNodeMessage!(node::GainAdditionCompositeNode,
         if !node.use_composite_update_rules
             node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
         else
-            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
     
             dist_1 = in1.payload
             dist_2 = in2.payload
@@ -177,7 +176,6 @@ end
 # Backward to IN2
 function updateNodeMessage!(node::GainAdditionCompositeNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             in1::Message{GaussianDistribution},
                             ::Nothing,
                             out::Message{GaussianDistribution})
@@ -186,7 +184,7 @@ function updateNodeMessage!(node::GainAdditionCompositeNode,
         if !node.use_composite_update_rules
             node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
         else
-            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
             dist_1 = in1.payload
             dist_3 = out.payload
@@ -246,7 +244,6 @@ end
 # Backward to IN1
 function updateNodeMessage!(node::GainAdditionCompositeNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             ::Nothing,
                             in2::Message{GaussianDistribution},
                             out::Message{GaussianDistribution})
