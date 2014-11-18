@@ -63,9 +63,8 @@ facts("Message passing integration tests") do
     context("calculateMessage!()") do
         context("Should return and write back an output message") do
             (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(3.0))
-            Edge(terminal.out, gain.in1, Float64, Array{Float64, 2})
+            Edge(terminal.out, gain.in1, Float64)
             Edge(gain.out, MockNode().out, Array{Float64, 2})
-            gain.out.message_payload_type = Array{Float64, 2} # Expect a matrix
             @fact gain.out.message => nothing
             # Request message on node for which the input is unknown
             msg = calculateMessage!(gain.out)
@@ -79,7 +78,6 @@ facts("Message passing integration tests") do
             (node1, node2, node3) = initializeChainOfNodes()
             @fact node3.out.message => nothing
             # Request message on node for which the input is unknown
-            node3.out.message_payload_type = Array{Float64, 2} # Expect a matrix
             calculateMessage!(node3.out)
             @fact typeof(node3.out.message.payload) => Array{Float64, 2}
             @fact node3.out.message.payload => reshape([12.0], 1, 1)

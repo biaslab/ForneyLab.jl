@@ -321,7 +321,7 @@ function initializeGaussianNode(; y_type::DataType=Float64)
     graph = FactorGraph()
     node = GaussianNode(form="precision")
     edges = Array(Edge, 3)
-    edges[1] = Edge(MockNode().out, node.mean)
+    edges[1] = Edge(MockNode().out, node.mean, GaussianDistribution)
     edges[1].tail.message = Message(GaussianDistribution())
     edges[1].head.message = Message(GaussianDistribution())
     edges[2] = Edge(MockNode().out, node.precision, GammaDistribution)
@@ -415,7 +415,7 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     gam_eq_node = EqualityNode(; name="gam_eq_node") # Equality node chain for variance
     y_node = TerminalNode(GaussianDistribution(), name="y_node") # Observed y values are stored in terminal node
     y_edge = Edge(g_node.out, y_node.out, GaussianDistribution)
-    m_edge = Edge(m_eq_node.interfaces[3], g_node.mean, GaussianDistribution, StudentsTDistribution)
+    m_edge = Edge(m_eq_node.interfaces[3], g_node.mean, GaussianDistribution)
     gam_edge = Edge(gam_eq_node.interfaces[3], g_node.precision, GammaDistribution)
 
     # Attach beginning and end nodes

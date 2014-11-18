@@ -104,8 +104,8 @@ facts("step integration tests") do
         t_out = TerminalNode(name="t_out")
         t_mean = TerminalNode(GaussianDistribution(), name="t_mean")
         t_var = TerminalNode(GammaDistribution(), name="t_var")
-        Edge(g_node.out, t_out, GaussianDistribution, Float64)
-        Edge(t_mean, g_node.mean)
+        Edge(g_node.out, t_out, GaussianDistribution)
+        Edge(t_mean, g_node.mean, GaussianDistribution)
         Edge(t_var, g_node.precision, GammaDistribution)
 
         setReadBuffer(t_out, data)
