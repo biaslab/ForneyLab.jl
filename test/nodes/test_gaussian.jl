@@ -113,7 +113,6 @@ facts("GaussianNode unit tests") do
                                         GaussianDistribution(m=0.0, W=1.0))
                 validateOutboundMessage(GaussianNode(form="moment"), 
                                         3, 
-                                        GaussianDistribution, 
                                         [GaussianDistribution(), InverseGammaDistribution(a=2.0, b=1.0), nothing],
                                         GaussianDistribution(m=0.0, V=1.0))
             end
