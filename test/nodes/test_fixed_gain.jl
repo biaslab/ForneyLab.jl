@@ -16,13 +16,11 @@ facts("FixedGainNode unit tests") do
         # Backward message
         validateOutboundMessage(FixedGainNode([2.0]), 
                                 1, 
-                                Array{Float64, 2}, 
                                 [nothing, Message(3.0)],
                                 reshape([1.5], 1, 1))
         # Forward message
         validateOutboundMessage(FixedGainNode([2.0]), 
                                 2, 
-                                Array{Float64, 2}, 
                                 [Message(3.0), nothing],
                                 reshape([6.0], 1, 1))
     end
@@ -31,13 +29,11 @@ facts("FixedGainNode unit tests") do
         # Backward message
         validateOutboundMessage(FixedGainNode([2.0]), 
                                 1, 
-                                Array{Float64, 1}, 
                                 [nothing, Message([3.0])],
                                 [1.5])
         # Forward message
         validateOutboundMessage(FixedGainNode([2.0]), 
                                 2, 
-                                Array{Float64, 1}, 
                                 [Message([3.0]), nothing],
                                 [6.0])
     end
@@ -49,13 +45,11 @@ facts("FixedGainNode unit tests") do
             # Backward message
             validateOutboundMessage(FixedGainNode([2.0]), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(m=3.0, V=5.0))],
                                     GaussianDistribution(m=1.5, V=1.25))
             # Forward message
             validateOutboundMessage(FixedGainNode([2.0]), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=3.0, V=5.0)), nothing],
                                     GaussianDistribution(m=6.0, V=20.0))
         end
@@ -63,13 +57,11 @@ facts("FixedGainNode unit tests") do
             # Backward message
             validateOutboundMessage(FixedGainNode([2.0]), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(m=3.0, V=0.0))],
                                     GaussianDistribution(m=1.5, V=0.0))
             # Forward message
             validateOutboundMessage(FixedGainNode([2.0]), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=3.0, V=0.0)), nothing],
                                     GaussianDistribution(m=6.0, V=0.0))
         end
@@ -77,13 +69,11 @@ facts("FixedGainNode unit tests") do
             # Backward message
             validateOutboundMessage(FixedGainNode([2.0]), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(m=3.0, W=2.0))],
                                     GaussianDistribution(m=1.5, W=8.0))
             # Forward message
             validateOutboundMessage(FixedGainNode([2.0]), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=3.0, W=2.0)), nothing],
                                     GaussianDistribution(m=6.0, W=0.5))
         end
@@ -91,13 +81,11 @@ facts("FixedGainNode unit tests") do
             # Backward message
             validateOutboundMessage(FixedGainNode([2.0]), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(xi=6.0, W=2.0))],
                                     GaussianDistribution(xi=12.0, W=8.0))
             # Forward message
             validateOutboundMessage(FixedGainNode([2.0]), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(xi=6.0, W=2.0)), nothing],
                                     GaussianDistribution(xi=3.0, W=0.5))
         end
@@ -117,13 +105,11 @@ facts("FixedGainNode unit tests") do
             # Backward message
             validateOutboundMessage(FixedGainNode(A), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(m=mean, V=variance))],
                                     GaussianDistribution(m=inv(A) * mean, V=inv(A) * variance * inv(A)'))
             # Forward message
             validateOutboundMessage(FixedGainNode(A), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=mean, V=variance)), nothing],
                                     GaussianDistribution(m=A * mean, V=A * variance * A'))
         end
@@ -133,13 +119,11 @@ facts("FixedGainNode unit tests") do
             # Backward message
             validateOutboundMessage(FixedGainNode(A), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(m=mean, V=variance))],
                                     GaussianDistribution(m=inv(A) * mean, V=inv(A) * variance * inv(A)'))
             # Forward message
             validateOutboundMessage(FixedGainNode(A), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=mean, V=variance)), nothing],
                                     GaussianDistribution(m=A * mean, V=A * variance * A'))
         end
@@ -151,13 +135,11 @@ facts("FixedGainNode unit tests") do
             # Backward message
             validateOutboundMessage(FixedGainNode(A), 
                                     1, 
-                                    GaussianDistribution, 
                                     [nothing, Message(GaussianDistribution(m=mean, W=precision))],
                                     GaussianDistribution(m=inv(A) * mean, W=A' * precision * A))
             # Forward message
             validateOutboundMessage(FixedGainNode(A), 
                                     2, 
-                                    GaussianDistribution, 
                                     [Message(GaussianDistribution(m=mean, W=precision)), nothing],
                                     GaussianDistribution(m=A * mean, W=inv(A)' * precision * inv(A)))
         end

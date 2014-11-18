@@ -79,11 +79,10 @@ forwardFixedGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}, V::Array{T, 2
 # Backward Gaussian to IN1
 function updateNodeMessage!(node::FixedGainNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             ::Nothing,
                             msg_out::Message{GaussianDistribution})
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # Calculations for a gaussian message type; Korl (2005), table 4.1
     if outbound_interface_id == 1
@@ -128,11 +127,10 @@ end
 # Forward Gaussian to OUT
 function updateNodeMessage!(node::FixedGainNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             msg_in1::Message{GaussianDistribution},
                             ::Nothing)
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # Calculations for a gaussian message type; Korl (2005), table 4.1
     if outbound_interface_id == 2
@@ -178,20 +176,18 @@ end
 # Backward numeric to IN1
 function updateNodeMessage!(node::FixedGainNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}}),
                             ::Nothing,
                             msg_out::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}))
     if outbound_interface_id == 1
         # Backward message
-        ans = pinv(node.A) * msg_out.payload
+        ans = node.A_inv * msg_out.payload
     else
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
 
-    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type, size(ans))
+    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], typeof(ans), size(ans))
     msg_ans.payload = ans
 
-    (typeof(msg_ans.payload) == outbound_message_payload_type) || error("Output type $(typeof(msg_ans)) of $(typeof(node)) node $(node.name) does not match expected output type $(outbound_message_payload_type)")
     return node.interfaces[outbound_interface_id].message
 
 end
@@ -199,7 +195,6 @@ end
 # Forward numeric to OUT
 function updateNodeMessage!(node::FixedGainNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Union(Type{Float64}, Type{Array{Float64, 1}}, Type{Array{Float64, 2}}),
                             msg_in1::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}),
                             ::Nothing)
     if outbound_interface_id == 2
@@ -209,9 +204,8 @@ function updateNodeMessage!(node::FixedGainNode,
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
 
-    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type, size(ans))
+    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], typeof(ans), size(ans))
     msg_ans.payload = ans
 
-    (typeof(msg_ans.payload) == outbound_message_payload_type) || error("Output type $(typeof(msg_ans)) of $(typeof(node)) node $(node.name) does not match expected output type $(outbound_message_payload_type)")
     return node.interfaces[outbound_interface_id].message
 end

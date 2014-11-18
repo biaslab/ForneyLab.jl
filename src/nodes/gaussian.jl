@@ -182,7 +182,6 @@ isDeterministic(::GaussianNode) = false
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             msg_mean::Any,
                             msg_variance::Message{InverseGammaDistribution},
                             msg_out::Any)
@@ -194,7 +193,7 @@ function updateNodeMessage!(node::GaussianNode,
     #      N | |                 | Flt     
     #        v v                 v      
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # Formulas from table 5.2 in Korl (2005)
     if is(node.interfaces[outbound_interface_id], node.out)
@@ -223,7 +222,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{InverseGammaDistribution},
                             msg_mean::Message{Float64},
                             ::Nothing,
                             msg_out::Message{Float64})
@@ -235,7 +233,7 @@ function updateNodeMessage!(node::GaussianNode,
     #     Flt|  
     #        v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.variance)
         # Backward over variance edge
@@ -252,7 +250,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             msg_variance::Message{InverseGammaDistribution},
                             msg_out::Nothing)
     # Forward with fixed mean
@@ -264,7 +261,7 @@ function updateNodeMessage!(node::GaussianNode,
     # Rule from Korl table 5.2
 
     (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     dist_out.m = deepcopy(node.m)
     dist_out.xi = nothing
@@ -276,7 +273,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{InverseGammaDistribution},
                             msg_variance::Nothing,
                             msg_out::Message{Float64})
     # Backward with fixed mean
@@ -288,7 +284,7 @@ function updateNodeMessage!(node::GaussianNode,
     # Rule from Korl table 5.2
 
     (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
 
     dist_out.a = -0.5
     dist_out.b = 0.5*(msg_out.payload - node.m[1])^2
@@ -302,7 +298,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             ::Any,
                             marg_variance::InverseGammaDistribution,
                             marg_out::Float64)
@@ -315,7 +310,7 @@ function updateNodeMessage!(node::GaussianNode,
     #        |Q~Flt  
     #        v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean) # Mean estimation from variance and sample
         y_0 = marg_out # observation
@@ -334,7 +329,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             ::Nothing,
                             marg_out::GaussianDistribution)
     # Backward variational update function with fixed variance
@@ -344,7 +338,7 @@ function updateNodeMessage!(node::GaussianNode,
     #    N
     #
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean)
         ensureMDefined!(marg_out)
@@ -361,7 +355,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             ::Nothing,
                             marg_precision::GammaDistribution,
                             marg_out::Float64)
@@ -374,7 +367,7 @@ function updateNodeMessage!(node::GaussianNode,
     #        |Q~Flt 
     #        v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean) # Mean estimation from variance and sample
         y_0 = marg_out # observation
@@ -393,7 +386,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GammaDistribution},
                             marg_mean::GaussianDistribution,
                             ::Nothing,
                             marg_out::Float64)
@@ -406,7 +398,7 @@ function updateNodeMessage!(node::GaussianNode,
     #  Q~Flt|  
     #       v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.precision) # Precision estimation from mean and sample
         y_0 = marg_out # observation
@@ -425,7 +417,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GammaDistribution},
                             marg_mean::GaussianDistribution,
                             ::Nothing,
                             marg_out::GaussianDistribution)
@@ -438,7 +429,7 @@ function updateNodeMessage!(node::GaussianNode,
     #    Q~N |  
     #        v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.precision) # Precision estimation from mean and sample
         ensureMVParametrization!(marg_mean)
@@ -459,7 +450,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{InverseGammaDistribution},
                             marg_mean::GaussianDistribution,
                             ::Nothing,
                             marg_out::Float64)
@@ -472,7 +462,7 @@ function updateNodeMessage!(node::GaussianNode,
     #   Q~Flt|  
     #        v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.variance) # Variance estimation from mean and sample
         y_0 = marg_out # observation
@@ -491,7 +481,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             marg_mean::GaussianDistribution,
                             marg_var::InverseGammaDistribution,
                             ::Nothing)
@@ -505,7 +494,7 @@ function updateNodeMessage!(node::GaussianNode,
     #      N | |  
     #        v v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.out)
         ensureMDefined!(marg_mean)
@@ -523,7 +512,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             ::Nothing,
                             marg_var::InverseGammaDistribution,
                             marg_y::GaussianDistribution)
@@ -537,7 +525,7 @@ function updateNodeMessage!(node::GaussianNode,
     #    Q~N |  
     #        v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean)
         ensureMDefined!(marg_y)
@@ -555,7 +543,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             marg_mean::GaussianDistribution,
                             ::Nothing)
     # Backward variational update function with fixed variance
@@ -565,7 +552,7 @@ function updateNodeMessage!(node::GaussianNode,
     #            N
     #
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.out)
         ensureMDefined!(marg_mean)
@@ -582,7 +569,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             marg_mean::GaussianDistribution,
                             marg_prec::GammaDistribution,
                             ::Nothing)
@@ -596,7 +582,7 @@ function updateNodeMessage!(node::GaussianNode,
     #      N | |  
     #        v v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.out)
         ensureMDefined!(marg_mean)
@@ -614,7 +600,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             ::Nothing,
                             marg_prec::GammaDistribution,
                             marg_y::GaussianDistribution)
@@ -628,7 +613,7 @@ function updateNodeMessage!(node::GaussianNode,
     #    Q~N |  
     #        v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean)
         ensureMDefined!(marg_y)
@@ -651,7 +636,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{StudentsTDistribution},
                             ::Nothing,
                             msg_prec::Message{GammaDistribution},
                             marg_out::GaussianDistribution)
@@ -664,7 +648,7 @@ function updateNodeMessage!(node::GaussianNode,
     #        | Q~N
     #        v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], StudentsTDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean)
         ensureMWParametrization!(marg_out)
@@ -685,7 +669,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GammaDistribution},
                             msg_mean::Message{GaussianDistribution},
                             ::Nothing,
                             marg_out::GaussianDistribution)
@@ -698,7 +681,7 @@ function updateNodeMessage!(node::GaussianNode,
     #        | Q~N
     #        v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.precision)
         ensureMWParametrization!(marg_out)
@@ -718,7 +701,6 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            outbound_message_payload_type::Type{GaussianDistribution},
                             marg::NormalGammaDistribution,
                             ::NormalGammaDistribution, # Same distribution as marg
                             ::Nothing)
@@ -732,7 +714,7 @@ function updateNodeMessage!(node::GaussianNode,
     #      | | N  
     #      v v
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], outbound_message_payload_type).payload
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.out)
         dist_out.m = [marg.m]
