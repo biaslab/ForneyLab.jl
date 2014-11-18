@@ -4,7 +4,6 @@
 
 function updateNodeMessage!(node::CompositeNode,
                             outbound_interface_id::Int,
-                            ::DataType,
                             inbounds...)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.

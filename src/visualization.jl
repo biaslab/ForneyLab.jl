@@ -144,8 +144,8 @@ function edgeDot(edge::Edge; is_external_edge=false)
     if is_external_edge
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", style=\"dashed\" color=\"red\"]\n"
     else
-        label =  string("FW: ", (edge.tail.message!=nothing) ? "&#9679;" : "&#9675;", "\n")
-        label *= string("BW: ", (edge.head.message!=nothing) ? "&#9679;" : "&#9675;", "\n")
+        label =  string("FW: ", (edge.tail.message!=nothing) ? "&#9679; $(typeof(edge.tail.message.payload))" : "&#9675;", "\n")
+        label *= string("BW: ", (edge.head.message!=nothing) ? "&#9679; $(typeof(edge.head.message.payload))" : "&#9675;", "\n")
         label *= "Distribution: $(edge.distribution_type)"
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", label=\"$(label)\" color=\"black\"]\n"
     end
