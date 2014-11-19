@@ -15,12 +15,10 @@
 #
 # Interface ids, (names) and supported message types:
 #   1. (in1):
-#       Message{Float64}
-#       Message{Array{Float64}}
+#       Message{DeltaDistribution}
 #       Message{GaussianDistribution}
 #   2. (out):
-#       Message{Float64}
-#       Message{Array{Float64}}
+#       Message{DeltaDistribution}
 #       Message{GaussianDistribution}
 ############################################
 
@@ -40,11 +38,8 @@ type FixedGainNode <: Node
         self = new(A, name, Array(Interface, 2))
 
         # Set up the interfaces
-        named_handle_list = [:in1, :out]
-        for i = 1:length(named_handle_list)
-            self.interfaces[i] = Interface(self) # Construct interface
-            setfield!(self, named_handle_list[i], self.interfaces[i]) # Set named interfaces
-        end
+        self.in1 = self.interfaces[1] = Interface(self)
+        self.out = self.interfaces[2] = Interface(self)
 
         # Try to precompute inv(A)
         try
@@ -173,39 +168,39 @@ function updateNodeMessage!(node::FixedGainNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-# Backward numeric to IN1
+# Backward DeltaDistribution to IN1
 function updateNodeMessage!(node::FixedGainNode,
                             outbound_interface_id::Int,
                             ::Nothing,
-                            msg_out::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}))
+                            msg_out::Message{DeltaDistribution})
     if outbound_interface_id == 1
         # Backward message
-        ans = node.A_inv * msg_out.payload
+        ans = node.A_inv * msg_out.payload.m
     else
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
 
-    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], typeof(ans), size(ans))
-    msg_ans.payload = ans
+    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution)
+    msg_ans.payload.m = ans
 
     return node.interfaces[outbound_interface_id].message
 
 end
 
-# Forward numeric to OUT
+# Forward DeltaDistribution to OUT
 function updateNodeMessage!(node::FixedGainNode,
                             outbound_interface_id::Int,
-                            msg_in1::Union(Message{Float64}, Message{Vector{Float64}}, Message{Matrix{Float64}}),
+                            msg_in1::Message{DeltaDistribution},
                             ::Nothing)
     if outbound_interface_id == 2
         # Forward message
-        ans = node.A * msg_in1.payload
+        ans = node.A * msg_in1.payload.m
     else
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
 
-    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], typeof(ans), size(ans))
-    msg_ans.payload = ans
+    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution)
+    msg_ans.payload.m = ans
 
     return node.interfaces[outbound_interface_id].message
 end
