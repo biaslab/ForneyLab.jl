@@ -13,8 +13,11 @@ export DeltaDistribution
 
 type DeltaDistribution{T} <: ProbabilityDistribution
     m::T
+
+    DeltaDistribution{T}(m::T) = new(m)
+    DeltaDistribution() = new()
 end
-DeltaDistribution() = DeltaDistribution(0.0)
+DeltaDistribution{T}(m::T) = DeltaDistribution{T}(m)
 
 show(io::IO, dist::DeltaDistribution) = println(io, "DeltaDistribution($(dist.m))")
 

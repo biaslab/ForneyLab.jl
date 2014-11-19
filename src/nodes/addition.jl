@@ -164,7 +164,7 @@ function updateNodeMessage!{T<:Any}(
                             msg_in2::Message{DeltaDistribution{T}},
                             msg_out::Nothing)
     ans = msg_in1.payload.m + msg_in2.payload.m
-    msg_result = getOrCreateMessage(node.out, DeltaDistribution)
+    msg_result = getOrCreateMessage(node.out, DeltaDistribution{T})
     msg_result.payload.m = ans
 
     return node.out.message
@@ -178,9 +178,9 @@ function updateNodeMessage!{T<:Any}(node::AdditionNode,
                             msg_out::Message{DeltaDistribution{T}})
     ans = msg_out.payload.m - msg_in1.payload.m
 
-    msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution)
+    msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution{T})
     msg_result.payload.m = ans
 
     return node.interfaces[outbound_interface_id].message
 end
-updateNodeMessage!(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{DeltaDistribution}, msg_out::Message{DeltaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_in2, nothing, msg_out)
+updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{DeltaDistribution{T}}, msg_out::Message{DeltaDistribution{T}}) = updateNodeMessage!(node, outbound_interface_id, msg_in2, nothing, msg_out)

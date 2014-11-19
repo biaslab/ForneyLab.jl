@@ -17,16 +17,16 @@ facts("AdditionNode unit tests") do
         validateOutboundMessage(AdditionNode(), 
                                 3, 
                                 [Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0)), nothing],
-                                5.0)
+                                DeltaDistribution(5.0))
         # Backward message
         validateOutboundMessage(AdditionNode(), 
                                 1, 
                                 [nothing, Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))],
-                                1.0)
+                                DeltaDistribution(1.0))
         validateOutboundMessage(AdditionNode(), 
                                 2, 
                                 [Message(DeltaDistribution(2.0)), nothing, Message(DeltaDistribution(3.0))],
-                                1.0)
+                                DeltaDistribution(1.0))
     end
 
     context("AdditionNode should add two Arrays") do
@@ -34,16 +34,16 @@ facts("AdditionNode unit tests") do
         validateOutboundMessage(AdditionNode(), 
                                 3, 
                                 [Message(DeltaDistribution([1.0, 2.0])), Message(DeltaDistribution([3.0, 4.0])), nothing],
-                                [4.0, 6.0])
+                                DeltaDistribution([4.0, 6.0]))
         # Backward message
         validateOutboundMessage(AdditionNode(), 
                                 1, 
                                 [nothing, Message(DeltaDistribution([1.0, 2.0])), Message(DeltaDistribution([3.0, 4.0]))],
-                                [2.0, 2.0])
+                                DeltaDistribution([2.0, 2.0]))
         validateOutboundMessage(AdditionNode(), 
                                 2, 
                                 [Message(DeltaDistribution([1.0, 2.0])), nothing, Message(DeltaDistribution([3.0, 4.0]))],
-                                [2.0, 2.0])
+                                DeltaDistribution([2.0, 2.0]))
     end
 
     # Tests on Gaussian messages use the update rules from Korl (2005),
