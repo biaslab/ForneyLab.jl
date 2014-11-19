@@ -31,15 +31,15 @@
 # Interface ids, (names) and supported message types:
 #   Receiving:
 #   1. (mean):
-#       Message{Float64}
+#       Message{DeltaDistribution}
 #       GaussianDistribution (marginal)
 #   2. (precision / variance):
-#       Message{Float64}
+#       Message{DeltaDistribution}
 #       GammaDistribution (marginal)
 #       InverseGammaDistribution (marginal)
 #   3. (out):
-#       Float64 (marginal)
-#       Message{Float64}
+#       DeltaDistribution (marginal)
+#       Message{DeltaDistribution}
 #
 #   Sending:
 #   1. (mean):
@@ -68,11 +68,11 @@
 # Interface ids, (names) and supported message types:
 #   Receiving:
 #   1. (precision / variance):
-#       Message{Float64}
+#       Message{DeltaDistribution}
 #       GammaDistribution (marginal)
 #       InverseGammaDistribution (marginal)
 #   2. (out):
-#       Message{Float64}
+#       Message{DeltaDistribution}
 #
 #   Sending:
 #   1. (precision / variance):
@@ -182,33 +182,26 @@ isDeterministic(::GaussianNode) = false
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            msg_mean::Any,
+                            ::Nothing,
                             msg_variance::Message{InverseGammaDistribution},
-                            msg_out::Any)
-    # Forward / point estimate / InverseGamma
+                            msg_out::Message{DeltaDistribution})
+    # Backward mean
     #                                    
-    #            IG         <--      IG  
-    #  ---->[N]<----       ---->[N]<---- 
-    #  Flt   |               N   |       
-    #      N | |                 | Flt     
-    #        v v                 v      
+    #   <--      IG  
+    #  ---->[N]<---- 
+    #    N   |       
+    #        | Dlt     
+    #        v      
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # Formulas from table 5.2 in Korl (2005)
-    if is(node.interfaces[outbound_interface_id], node.out)
-        # Forward message
-        gamma = msg_variance.payload
-        mean = msg_mean.payload
-        dist_out.m = [mean]
-        dist_out.V = reshape([gamma.b/(gamma.a-1)], 1, 1)
-        dist_out.xi = nothing
-        dist_out.W = nothing
-    elseif is(node.interfaces[outbound_interface_id], node.mean)
+    if is(node.interfaces[outbound_interface_id], node.mean)
         # Backward over mean edge
         # Rules not in Korl, but equivalent by symmetry
         gamma = msg_variance.payload
-        y = msg_out.payload
+        y = msg_out.payload.m
+        (typeof(y) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
         dist_out.m = [y]
         dist_out.V = reshape([gamma.b/(gamma.a-1)], 1, 1)
         dist_out.xi = nothing
@@ -222,23 +215,53 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            msg_mean::Message{Float64},
+                            msg_mean::Message{DeltaDistribution},
+                            msg_variance::Message{InverseGammaDistribution},
+                            ::Nothing)
+    # Forward y
+    #            IG      
+    #  ---->[N]<----     
+    #  Dlt   |           
+    #      N | |         
+    #        v v         
+
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+
+    # Formulas from table 5.2 in Korl (2005)
+    if is(node.interfaces[outbound_interface_id], node.out)
+        # Forward message
+        gamma = msg_variance.payload
+        mean = msg_mean.payload.m
+        (typeof(mean) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
+        dist_out.m = [mean]
+        dist_out.V = reshape([gamma.b/(gamma.a-1)], 1, 1)
+        dist_out.xi = nothing
+        dist_out.W = nothing
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+    end
+end
+
+function updateNodeMessage!(node::GaussianNode,
+                            outbound_interface_id::Int,
+                            msg_mean::Message{DeltaDistribution},
                             ::Nothing,
-                            msg_out::Message{Float64})
-    # Backward over variance / point estimate / InverseGamma
+                            msg_out::Message{DeltaDistribution})
+    # Backward over variance
     #
-    #   Flt      IG            
+    #   Dlt      IG            
     #  ---->[N]<----
     #        |   -->
-    #     Flt|  
+    #     Dlt|  
     #        v
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.variance)
         # Backward over variance edge
-        y = msg_out.payload
-        m = msg_mean.payload
+        y = msg_out.payload.m
+        m = msg_mean.payload.m
+        (typeof(m) <: Real && typeof(y) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
         dist_out.a = -0.5
         dist_out.b = 0.5*(y-m)^2
     else
@@ -274,10 +297,10 @@ end
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             msg_variance::Nothing,
-                            msg_out::Message{Float64})
+                            msg_out::Message{DeltaDistribution})
     # Backward with fixed mean
     #
-    # <--    Flt
+    # <--    Dlt
     # --->[N]--->
     #  IG
 
@@ -285,9 +308,11 @@ function updateNodeMessage!(node::GaussianNode,
 
     (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
+    y = msg_out.payload.m
+    (typeof(y) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
 
     dist_out.a = -0.5
-    dist_out.b = 0.5*(msg_out.payload - node.m[1])^2
+    dist_out.b = 0.5*(y - node.m[1])^2
 
     return node.interfaces[outbound_interface_id].message
 end
@@ -298,22 +323,23 @@ end
 
 function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
-                            ::Any,
+                            ::Nothing,
                             marg_variance::InverseGammaDistribution,
-                            marg_out::Float64)
+                            marg_out::DeltaDistribution)
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
     #
     #   <--     Q~IG            
     #  ---->[N]<----
     #    N   |   
-    #        |Q~Flt  
+    #        |Q~Dlt  
     #        v
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean) # Mean estimation from variance and sample
-        y_0 = marg_out # observation
+        y_0 = marg_out.m # observation
+        (typeof(y_0) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
         a = marg_variance.a # gamma message
         b = marg_variance.b
         dist_out.m = [y_0]
@@ -357,20 +383,21 @@ function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             marg_precision::GammaDistribution,
-                            marg_out::Float64)
+                            marg_out::DeltaDistribution)
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
     #
     #   <--     Q~Gam            
     #  ---->[N]<----
     #    N   |   
-    #        |Q~Flt 
+    #        |Q~Dlt 
     #        v
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean) # Mean estimation from variance and sample
-        y_0 = marg_out # observation
+        y_0 = marg_out.m # observation
+        (typeof(y_0) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
         a = marg_precision.a # gamma distribution
         b = marg_precision.b
         dist_out.m = [y_0]
@@ -421,7 +448,7 @@ function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_mean::GaussianDistribution,
                             ::Nothing,
-                            marg_out::Float64)
+                            marg_out::DeltaDistribution)
     if isdefined(node, :variance)
         # Variational update function takes the marginals as input (instead of the inbound messages)
         # Derivation for the update rule can be found in the derivations notebook.
@@ -429,13 +456,14 @@ function updateNodeMessage!(node::GaussianNode,
         #   Q~N      IG            
         #  ---->[N]<----
         #        |   -->
-        #   Q~Flt|  
+        #   Q~Dlt|  
         #        v
 
         dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
 
         if is(node.interfaces[outbound_interface_id], node.variance) # Variance estimation from mean and sample
-            y_0 = marg_out # observation
+            y_0 = marg_out.m # observation
+            (typeof(y_0) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
             ensureMVParametrization!(marg_mean)
             (length(marg_mean.V) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
             m = marg_mean.m[1] # Gaussian message
@@ -452,13 +480,14 @@ function updateNodeMessage!(node::GaussianNode,
         #   Q~N      Gam            
         #  ---->[N]<----
         #       |   -->
-        #  Q~Flt|  
+        #  Q~Dlt|  
         #       v
 
         dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaDistribution).payload
 
         if is(node.interfaces[outbound_interface_id], node.precision) # Precision estimation from mean and sample
-            y_0 = marg_out # observation
+            y_0 = marg_out.m # observation
+            (typeof(y_0) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
             ensureMWParametrization!(marg_mean)
             (length(marg_mean.W) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
             m = marg_mean.m[1] # Gaussian distribution

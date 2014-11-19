@@ -134,22 +134,21 @@ function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, 
 end
 calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal!(node, subgraph, graph, backward_dist, forward_dist)
 
-# Gaussian-Float64 combination
-# Float64 can be seen as a Gaussian with zero variance (delta peak at the mean).
-# Therefore a multiplication of a float with any Gaussian returns the float value.
-calculateMarginal(forward_dist::Float64, ::GaussianDistribution) = deepcopy(forward_dist)
-calculateMarginal(::GaussianDistribution, backward_dist::Float64) = deepcopy(backward_dist)
-function calculateMarginal!(edge::Edge, forward_dist::Float64, ::GaussianDistribution)
+# Gaussian-Delta combination
+# A multiplication of a delta distribution with any Gaussian returns the delta.
+calculateMarginal(forward_dist::DeltaDistribution, ::GaussianDistribution) = deepcopy(forward_dist)
+calculateMarginal(::GaussianDistribution, backward_dist::DeltaDistribution) = deepcopy(backward_dist)
+function calculateMarginal!(edge::Edge, forward_dist::DeltaDistribution, ::GaussianDistribution)
     return edge.marginal = deepcopy(forward_dist)
 end
-function calculateMarginal!(edge::Edge, ::GaussianDistribution, backward_dist::Float64)
+function calculateMarginal!(edge::Edge, ::GaussianDistribution, backward_dist::DeltaDistribution)
     return edge.marginal = deepcopy(backward_dist)
 end
-function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::Float64, backward_dist::GaussianDistribution)
+function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::DeltaDistribution, backward_dist::GaussianDistribution)
     # Calculation for univariate approximate marginal
     return graph.approximate_marginals[(node, subgraph)] = deepcopy(forward_dist)
 end
-function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::GaussianDistribution, backward_dist::Float64)
+function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution)
     # Calculation for univariate approximate marginal
     return graph.approximate_marginals[(node, subgraph)] = deepcopy(backward_dist)
 end
