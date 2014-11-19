@@ -24,12 +24,12 @@
 export TerminalNode
 
 type TerminalNode <: Node
-    value::Any
+    value::ProbabilityDistribution
     interfaces::Array{Interface,1}
     name::ASCIIString
     out::Interface
 
-    function TerminalNode(value=1.0; name=unnamedStr())
+    function TerminalNode(value=DeltaDistribution(1.0); name=unnamedStr())
         if typeof(value) <: Message || typeof(value) == DataType
             error("TerminalNode $(name) can not hold value of type $(typeof(value)).")
         end

@@ -50,7 +50,7 @@ function getName(interface::Interface)
 end
 
 # Efficient get/set combinations for messages and marginals
-function getOrCreateMessage(interface::Interface, assign_payload::Type{ProbabilityDistribution})
+function getOrCreateMessage{T<:ProbabilityDistribution}(interface::Interface, assign_payload::Type{T})
     # Looks for a message on interface.
     # When no message is present, it sets and returns a standard message.
     # Otherwise it returns the present message.
