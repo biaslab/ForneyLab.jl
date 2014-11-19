@@ -169,10 +169,11 @@ function updateNodeMessage!(node::FixedGainNode,
 end
 
 # Backward DeltaDistribution to IN1
-function updateNodeMessage!(node::FixedGainNode,
+function updateNodeMessage!{T<:Any}(
+                            node::FixedGainNode,
                             outbound_interface_id::Int,
                             ::Nothing,
-                            msg_out::Message{DeltaDistribution})
+                            msg_out::Message{DeltaDistribution{T}})
     if outbound_interface_id == 1
         # Backward message
         ans = node.A_inv * msg_out.payload.m
@@ -180,7 +181,7 @@ function updateNodeMessage!(node::FixedGainNode,
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
 
-    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution)
+    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution{typeof(ans)})
     msg_ans.payload.m = ans
 
     return node.interfaces[outbound_interface_id].message
@@ -188,9 +189,10 @@ function updateNodeMessage!(node::FixedGainNode,
 end
 
 # Forward DeltaDistribution to OUT
-function updateNodeMessage!(node::FixedGainNode,
+function updateNodeMessage!{T<:Any}(
+                            node::FixedGainNode,
                             outbound_interface_id::Int,
-                            msg_in1::Message{DeltaDistribution},
+                            msg_in1::Message{DeltaDistribution{T}},
                             ::Nothing)
     if outbound_interface_id == 2
         # Forward message
@@ -199,7 +201,7 @@ function updateNodeMessage!(node::FixedGainNode,
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
 
-    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution)
+    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution{typeof(ans)})
     msg_ans.payload.m = ans
 
     return node.interfaces[outbound_interface_id].message
