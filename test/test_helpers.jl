@@ -23,11 +23,11 @@ facts("Helper function unit tests") do
         @fact node.out.message => nothing
         ForneyLab.getOrCreateMessage(node.out, GaussianDistribution)
         @fact typeof(node.out.message) => Message{GaussianDistribution}
-        node2 = TerminalNode(2.0)
+        node2 = TerminalNode(DeltaDistribution(2.0))
         @fact node2.out.message => nothing
-        ForneyLab.getOrCreateMessage(node2.out, Float64)
-        @fact node2.out.message.payload => 1.0
+        ForneyLab.getOrCreateMessage(node2.out, DeltaDistribution)
+        @fact typeof(node2.out.message.payload) <: DeltaDistribution => true
         ForneyLab.updateNodeMessage!(node2, 1, nothing)
-        @fact ForneyLab.getOrCreateMessage(node2.out, Float64).payload => 2.0
+        @fact mean(ForneyLab.getOrCreateMessage(node2.out, DeltaDistribution).payload) => 2.0
     end
 end
