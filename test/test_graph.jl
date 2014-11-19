@@ -135,11 +135,9 @@ facts("Graph level integration tests") do
         @fact graph.approximate_marginals[(g_nodes[1], gam_subgraph)] => uninformative(GammaDistribution)
         @fact graph.approximate_marginals[(g_nodes[2], gam_subgraph)] => uninformative(GammaDistribution)
         @fact graph.approximate_marginals[(g_nodes[3], gam_subgraph)] => uninformative(GammaDistribution)
-
-        # TODO: the following tests fail
-        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => 1.0
-        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => 1.0
-        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => 1.0
+        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => uninformative(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => uninformative(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => uninformative(GaussianDistribution)
 
         # Structured case
         (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
@@ -158,9 +156,9 @@ facts("Graph level integration tests") do
         @fact graph.approximate_marginals[(g_nodes[1], m_gam_subgraph)] => uninformative(NormalGammaDistribution)
         @fact graph.approximate_marginals[(g_nodes[2], m_gam_subgraph)] => uninformative(NormalGammaDistribution)
         @fact graph.approximate_marginals[(g_nodes[3], m_gam_subgraph)] => uninformative(NormalGammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => 1.0
-        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => 1.0
-        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => 1.0
+        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => uninformative(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => uninformative(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => uninformative(GaussianDistribution)
     end
 
     context("getNodes() should return an array of all nodes in the graph") do
