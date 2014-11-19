@@ -365,12 +365,12 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
         g_node = GaussianNode(; name="g_node_$(section)", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
         m_eq_node = EqualityNode(; name="m_eq_$(section)") # Equality node chain for mean
         gam_eq_node = EqualityNode(; name="s_eq_$(section)") # Equality node chain for variance
-        y_node = TerminalNode(y[section], name="c_obs_$(section)") # Observed y values are stored in terminal node
+        y_node = TerminalNode(DeltaDistribution(y[section]), name="c_obs_$(section)") # Observed y values are stored in terminal node
         g_nodes[section] = g_node
         m_eq_nodes[section] = m_eq_node
         gam_eq_nodes[section] = gam_eq_node
         y_nodes[section] = y_node
-        q_y_edges[section] = Edge(g_node.out, y_node.out, Float64)
+        q_y_edges[section] = Edge(g_node.out, y_node.out, GaussianDistribution)
         q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.mean, GaussianDistribution)
         q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.precision, GammaDistribution)
         if section > 1 # Connect sections
