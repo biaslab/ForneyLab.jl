@@ -325,24 +325,24 @@ function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             marg_variance::InverseGammaDistribution,
-                            marg_out::DeltaDistribution)
+                            marg_out::GaussianDistribution)
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
     #
     #   <--     Q~IG            
     #  ---->[N]<----
     #    N   |   
-    #        |Q~Dlt  
+    #        |Q~N  
     #        v
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean) # Mean estimation from variance and sample
-        y_0 = marg_out.m # observation
-        (typeof(y_0) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
+        ensureMDefined!(marg_out)
+        length(marg_out.m) == 1 || error("VMP for Gaussian node is only implemented for univariate distributions")
         a = marg_variance.a # gamma message
         b = marg_variance.b
-        dist_out.m = [y_0]
+        dist_out.m = deepcopy(marg_out.m)
         dist_out.V = reshape([((a+1)/b)], 1, 1)
         dist_out.xi = nothing
         dist_out.W = nothing
@@ -383,24 +383,24 @@ function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             marg_precision::GammaDistribution,
-                            marg_out::DeltaDistribution)
+                            marg_out::GaussianDistribution)
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
     #
     #   <--     Q~Gam            
     #  ---->[N]<----
     #    N   |   
-    #        |Q~Dlt 
+    #        |Q~N 
     #        v
 
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean) # Mean estimation from variance and sample
-        y_0 = marg_out.m # observation
-        (typeof(y_0) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
+        ensureMDefined!(marg_out)
+        length(marg_out.m) == 1 || error("VMP for Gaussian node is only implemented for univariate distributions")
         a = marg_precision.a # gamma distribution
         b = marg_precision.b
-        dist_out.m = [y_0]
+        dist_out.m = deepcopy(marg_out.m)
         dist_out.V = nothing
         dist_out.xi = nothing
         dist_out.W = reshape([a/b], 1, 1)
@@ -448,7 +448,7 @@ function updateNodeMessage!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_mean::GaussianDistribution,
                             ::Nothing,
-                            marg_out::DeltaDistribution)
+                            marg_out::GaussianDistribution)
     if isdefined(node, :variance)
         # Variational update function takes the marginals as input (instead of the inbound messages)
         # Derivation for the update rule can be found in the derivations notebook.
@@ -456,20 +456,22 @@ function updateNodeMessage!(node::GaussianNode,
         #   Q~N      IG            
         #  ---->[N]<----
         #        |   -->
-        #   Q~Dlt|  
+        #    Q~N |  
         #        v
 
         dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
 
         if is(node.interfaces[outbound_interface_id], node.variance) # Variance estimation from mean and sample
-            y_0 = marg_out.m # observation
-            (typeof(y_0) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
+            ensureMVParametrization!(marg_out)
             ensureMVParametrization!(marg_mean)
+            (length(marg_out.V) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
             (length(marg_mean.V) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
-            m = marg_mean.m[1] # Gaussian message
-            V = marg_mean.V[1,1]
+            mu_m = marg_mean.m[1]
+            mu_y = marg_out.m[1]
+            V_m = marg_mean.V[1,1]
+            V_y = marg_out.V[1,1]
             dist_out.a = -0.5
-            dist_out.b = 0.5*(y_0-m)^2+0.5*V
+            dist_out.b = 0.5*(mu_y-mu_m)^2+0.5*(V_m+V_y)
         else
             error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
         end
@@ -480,20 +482,22 @@ function updateNodeMessage!(node::GaussianNode,
         #   Q~N      Gam            
         #  ---->[N]<----
         #       |   -->
-        #  Q~Dlt|  
+        #   Q~N |  
         #       v
 
         dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaDistribution).payload
 
         if is(node.interfaces[outbound_interface_id], node.precision) # Precision estimation from mean and sample
-            y_0 = marg_out.m # observation
-            (typeof(y_0) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
-            ensureMWParametrization!(marg_mean)
+            ensureMVParametrization!(marg_out)
+            ensureMVParametrization!(marg_mean)
+            (length(marg_out.W) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
             (length(marg_mean.W) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
-            m = marg_mean.m[1] # Gaussian distribution
-            W = marg_mean.W[1,1]
+            mu_m = marg_mean.m[1]
+            mu_y = marg_out.m[1]
+            V_m = marg_mean.V[1,1]
+            V_y = marg_out.V[1,1]
             dist_out.a = 1.5
-            dist_out.b = 0.5*(y_0-m)^2+0.5*inv(W)
+            dist_out.b = 0.5*(mu_y-mu_m)^2+0.5*(V_m+V_y)
         else
             error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
         end
