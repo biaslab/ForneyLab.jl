@@ -16,16 +16,16 @@ facts("AdditionNode unit tests") do
         # Forward message
         validateOutboundMessage(AdditionNode(), 
                                 3, 
-                                [Message(2.0), Message(3.0), nothing],
+                                [Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0)), nothing],
                                 5.0)
         # Backward message
         validateOutboundMessage(AdditionNode(), 
                                 1, 
-                                [nothing, Message(2.0), Message(3.0)],
+                                [nothing, Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))],
                                 1.0)
         validateOutboundMessage(AdditionNode(), 
                                 2, 
-                                [Message(2.0), nothing, Message(3.0)],
+                                [Message(DeltaDistribution(2.0)), nothing, Message(DeltaDistribution(3.0))],
                                 1.0)
     end
 
@@ -33,16 +33,16 @@ facts("AdditionNode unit tests") do
         # Forward message
         validateOutboundMessage(AdditionNode(), 
                                 3, 
-                                [Message([1.0, 2.0]), Message([3.0, 4.0]), nothing],
+                                [Message(DeltaDistribution([1.0, 2.0])), Message(DeltaDistribution([3.0, 4.0])), nothing],
                                 [4.0, 6.0])
         # Backward message
         validateOutboundMessage(AdditionNode(), 
                                 1, 
-                                [nothing, Message([1.0, 2.0]), Message([3.0, 4.0])],
+                                [nothing, Message(DeltaDistribution([1.0, 2.0])), Message(DeltaDistribution([3.0, 4.0]))],
                                 [2.0, 2.0])
         validateOutboundMessage(AdditionNode(), 
                                 2, 
-                                [Message([1.0, 2.0]), nothing, Message([3.0, 4.0])],
+                                [Message(DeltaDistribution([1.0, 2.0])), nothing, Message(DeltaDistribution([3.0, 4.0]))],
                                 [2.0, 2.0])
     end
 
@@ -204,7 +204,3 @@ facts("AdditionNode unit tests") do
         end
     end
 end
-
-#####################
-# Integration tests
-#####################

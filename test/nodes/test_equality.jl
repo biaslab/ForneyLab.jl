@@ -12,27 +12,27 @@ facts("EqualityNode unit tests") do
     context("EqualityNode should propagate an arbitrary message") do
         # Equality constraint node should work for arbitraty messages, although not really useful.
         # Outbound message is equal to the inbound messages if not all inbound messages are equal.
-        # Otherwise, the outbound message is Message(0.0)
+        # Otherwise, the outbound message is Message(DeltaDistribution(0.0))
 
         # Equal scalars
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                [Message(1.0), Message(1.0), nothing],
+                                [Message(DeltaDistribution(1.0)), Message(DeltaDistribution(1.0)), nothing],
                                 1.0)
         # Unequal scalars
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                [Message(1.0), Message(1.1), nothing],
+                                [Message(DeltaDistribution(1.0)), Message(DeltaDistribution(1.1)), nothing],
                                 0.0)
         # Equal matrices
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                [Message(ones(2,2)), Message(ones(2,2)), nothing],
+                                [Message(DeltaDistribution(ones(2,2))), Message(DeltaDistribution(ones(2,2))), nothing],
                                 ones(2,2))
         # Unequal matrices (different values) should give zeros matrix
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                [Message(ones(2,2)), Message(4.0*ones(2,2)), nothing],
+                                [Message(DeltaDistribution(ones(2,2))), Message(DeltaDistribution(4.0*ones(2,2))), nothing],
                                 zeros(2,2))
     end
 
@@ -162,35 +162,35 @@ facts("EqualityNode unit tests") do
                                 GaussianDistribution(m=0.0, W=2.0))
     end
 
-    context("EqualityNode should propagate combination of a Float and a Gaussian distribution") do
+    context("EqualityNode should propagate combination of a delta and a Gaussian distribution") do
         # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                [Message(5.0), Message(GaussianDistribution()), nothing],
+                                [Message(DeltaDistribution(5.0)), Message(GaussianDistribution()), nothing],
                                 5.0)
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                [Message(GaussianDistribution()), Message(5.0), nothing],
+                                [Message(GaussianDistribution()), Message(DeltaDistribution(5.0)), nothing],
                                 5.0)
         validateOutboundMessage(EqualityNode(), 
                                 2, 
-                                [Message(5.0), nothing, Message(GaussianDistribution())],
+                                [Message(DeltaDistribution(5.0)), nothing, Message(GaussianDistribution())],
                                 5.0)
     end
 
-    context("EqualityNode should propagate combination of a Float and a gamma distribution") do
+    context("EqualityNode should propagate combination of a delta and a gamma distribution") do
         # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                [Message(5.0), Message(GammaDistribution()), nothing],
+                                [Message(DeltaDistribution(5.0)), Message(GammaDistribution()), nothing],
                                 5.0)
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                [Message(GammaDistribution()), Message(5.0), nothing],
+                                [Message(GammaDistribution()), Message(DeltaDistribution(5.0)), nothing],
                                 5.0)
         validateOutboundMessage(EqualityNode(), 
                                 2, 
-                                [Message(5.0), nothing, Message(GammaDistribution())],
+                                [Message(DeltaDistribution(5.0)), nothing, Message(GammaDistribution())],
                                 5.0)
     end
 end
