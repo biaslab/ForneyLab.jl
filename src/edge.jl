@@ -9,7 +9,7 @@ type Edge <: AbstractEdge
 
     tail::Interface
     head::Interface
-    marginal::Union(ProbabilityDistribution, Float64, Vector, Matrix, Nothing) # TODO: delete Float64, Vector and Matrix when implementing DeltaDistribution
+    marginal::Union(ProbabilityDistribution, Nothing)
     distribution_type::DataType         
 
     function Edge(tail::Interface, head::Interface, distribution_type=Any; add_to_graph::Bool=true)
