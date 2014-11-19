@@ -111,46 +111,46 @@ end
 # Message towards IN1 or IN2
 function updateNodeMessage!(node::AdditionNode,
                             outbound_interface_id::Int,
-                            msg_in1::Union(Message{GaussianDistribution},Nothing),
-                            msg_in2::Union(Message{GaussianDistribution},Nothing),
+                            msg_in1::Message{GaussianDistribution},
+                            ::Nothing,
                             msg_out::Message{GaussianDistribution})
-    (outbound_interface_id<3) || error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
     dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # Calculations for the GaussianDistribution type; Korl (2005), table 4.1
     # Backward message, one message on the incoming edge and one on the outgoing edge.
-    dist_1or2 = (outbound_interface_id==1) ? msg_in2.payload : msg_in1.payload
+    dist_1 = msg_in1.payload
     dist_3 = msg_out.payload
 
     # Select parameterization
     # Order is from least to most computationally intensive
-    if dist_1or2.m != nothing && dist_1or2.V != nothing && dist_3.m != nothing && dist_3.V != nothing
-        dist_out.m = backwardAdditionMRule(dist_1or2.m, dist_3.m)
-        dist_out.V = backwardAdditionVRule(dist_1or2.V, dist_3.V)
+    if dist_1.m != nothing && dist_1.V != nothing && dist_3.m != nothing && dist_3.V != nothing
+        dist_out.m = backwardAdditionMRule(dist_1.m, dist_3.m)
+        dist_out.V = backwardAdditionVRule(dist_1.V, dist_3.V)
         dist_out.W = nothing
         dist_out.xi = nothing
-    elseif dist_1or2.m != nothing && dist_1or2.W != nothing && dist_3.m != nothing && dist_3.W != nothing
-        dist_out.m = backwardAdditionMRule(dist_1or2.m, dist_3.m)
+    elseif dist_1.m != nothing && dist_1.W != nothing && dist_3.m != nothing && dist_3.W != nothing
+        dist_out.m = backwardAdditionMRule(dist_1.m, dist_3.m)
         dist_out.V = nothing
-        dist_out.W = backwardAdditionWRule(dist_1or2.W, dist_3.W)
+        dist_out.W = backwardAdditionWRule(dist_1.W, dist_3.W)
         dist_out.xi = nothing
-    elseif dist_1or2.xi != nothing && dist_1or2.V != nothing && dist_3.xi != nothing && dist_3.V != nothing
+    elseif dist_1.xi != nothing && dist_1.V != nothing && dist_3.xi != nothing && dist_3.V != nothing
         dist_out.m = nothing
-        dist_out.V = backwardAdditionVRule(dist_1or2.V, dist_3.V)
+        dist_out.V = backwardAdditionVRule(dist_1.V, dist_3.V)
         dist_out.W = nothing
-        dist_out.xi = backwardAdditionXiRule(dist_1or2.V, dist_1or2.xi, dist_3.V, dist_3.xi)
+        dist_out.xi = backwardAdditionXiRule(dist_1.V, dist_1.xi, dist_3.V, dist_3.xi)
     else
         # Last resort: calculate (m,V) parametrization for both inbound messages
-        ensureMVParametrization!(dist_1or2)
+        ensureMVParametrization!(dist_1)
         ensureMVParametrization!(dist_3)
-        dist_out.m = backwardAdditionMRule(dist_1or2.m, dist_3.m)
-        dist_out.V = backwardAdditionVRule(dist_1or2.V, dist_3.V)
+        dist_out.m = backwardAdditionMRule(dist_1.m, dist_3.m)
+        dist_out.V = backwardAdditionVRule(dist_1.V, dist_3.V)
         dist_out.W = nothing
         dist_out.xi = nothing
     end
 
     return node.interfaces[outbound_interface_id].message
 end
+updateNodeMessage!(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{GaussianDistribution}, msg_out::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_in2, nothing, msg_out)
 
 #############################################
 # DeltaDistribution methods
@@ -172,19 +172,14 @@ end
 # Message towards IN1 or IN2
 function updateNodeMessage!(node::AdditionNode,
                             outbound_interface_id::Int,
-                            msg_in1::Union(Message{DeltaDistribution}, Nothing),
-                            msg_in2::Union(Message{DeltaDistribution}, Nothing),
+                            msg_in1::Message{DeltaDistribution},
+                            ::Nothing,
                             msg_out::Message{DeltaDistribution})
-    if outbound_interface_id == 1
-        ans = msg_out.payload.m - msg_in2.payload.m
-    elseif outbound_interface_id == 2
-        ans = msg_out.payload.m - msg_in1.payload.m
-    else
-        error("Invalid interface id ", outbound_interface_id, " for calculating message on ", typeof(node), " ", node.name)
-    end
+    ans = msg_out.payload.m - msg_in1.payload.m
 
     msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution)
     msg_result.payload.m = ans
 
     return node.interfaces[outbound_interface_id].message
 end
+updateNodeMessage!(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{DeltaDistribution}, msg_out::Message{DeltaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_in2, nothing, msg_out)

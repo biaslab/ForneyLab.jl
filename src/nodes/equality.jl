@@ -9,8 +9,7 @@
 #
 # Interface ids, (names) and supported message types:
 # 1,2,3. (none):
-#       Message{Float64}
-#       Message{Array{Float64}}
+#       Message{DeltaDistribution}
 #       Message{GaussianDistribution}
 #       Message{GammaDistribution}
 #       Message{InverseGammaDistribution}
@@ -60,72 +59,41 @@ equalityXiRule{T<:Number}(xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x+xi_y
 
 function updateNodeMessage!(node::EqualityNode,
                             outbound_interface_id::Int,
-                            msg_1::Union(Message{GaussianDistribution}, Nothing),
-                            msg_2::Union(Message{GaussianDistribution}, Nothing),
-                            msg_3::Union(Message{GaussianDistribution}, Nothing))
+                            msg_1::Message{GaussianDistribution},
+                            msg_2::Message{GaussianDistribution},
+                            ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
-    # This function is not exported, and is only meant for internal use.
     dist_result = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
-    first_incoming_id = (outbound_interface_id==1) ? 2 : 1
-    inbounds = [msg_1, msg_2, msg_3]
-    (typeof(inbounds[first_incoming_id])==Message{GaussianDistribution}) || error("EqualityNode: cannot calculate outbound Message{GaussianDistribution} from inbound $(typeof(inbounds[first_incoming_id]))")
     
-    if length(node.interfaces)>3
-        # Always calculate the (xi,W) parametrization of all incoming messages if it's not already present.
-
-        # Create accumulators for W and xi of the correct size
-        if !is(inbounds[first_incoming_id].payload.W, nothing)
-            W_sum = zeros(size(inbounds[first_incoming_id].payload.W))
-        else
-            W_sum = zeros(size(inbounds[first_incoming_id].payload.V))
-        end
-        if !is(inbounds[first_incoming_id].payload.xi, nothing)
-            xi_sum = zeros(size(inbounds[first_incoming_id].payload.xi))
-        else
-            xi_sum = zeros(size(inbounds[first_incoming_id].payload.m))
-        end
-
-        # Sum W and xi of all incoming messages
-        for interface_id = 1:length(node.interfaces)
-            (interface_id != outbound_interface_id) || continue
-            (typeof(inbounds[interface_id])==Message{GaussianDistribution}) || error("EqualityNode: cannot calculate outbound Message{GaussianDistribution} from inbound $(typeof(inbounds[interface_id]))")
-            ensureXiWParametrization!(inbounds[interface_id].payload)
-            W_sum += inbounds[interface_id].payload.W
-            xi_sum += inbounds[interface_id].payload.xi
-        end
-        dist_result.xi = xi_sum
-        dist_result.W = W_sum
-        dist_result.V = nothing
-        dist_result.m = nothing
-    else # 3 interfaces
-        dist_1 = inbounds[first_incoming_id].payload
-        dist_2 = inbounds[(outbound_interface_id==3) ? 2 : 3].payload
-        if dist_1.m != nothing && dist_1.W != nothing && dist_2.m != nothing && dist_2.W != nothing
-            dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.W)
-            dist_result.V  = nothing
-            dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
-            dist_result.xi = nothing
-        elseif dist_1.xi != nothing && dist_1.V != nothing && dist_2.xi != nothing && dist_2.V != nothing
-            dist_result.m  = nothing
-            dist_result.V  = equalityVRule(dist_1.V, dist_2.V)
-            dist_result.W  = nothing
-            dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
-        else
-            # Use (xi,W)
-            ensureXiWParametrization!(dist_1)
-            ensureXiWParametrization!(dist_2)
-            dist_result.m  = nothing
-            dist_result.V  = nothing
-            dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
-            dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
-        end
+    dist_1 = msg_1.payload
+    dist_2 = msg_2.payload
+    if dist_1.m != nothing && dist_1.W != nothing && dist_2.m != nothing && dist_2.W != nothing
+        dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.W)
+        dist_result.V  = nothing
+        dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
+        dist_result.xi = nothing
+    elseif dist_1.xi != nothing && dist_1.V != nothing && dist_2.xi != nothing && dist_2.V != nothing
+        dist_result.m  = nothing
+        dist_result.V  = equalityVRule(dist_1.V, dist_2.V)
+        dist_result.W  = nothing
+        dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
+    else
+        # Use (xi,W)
+        ensureXiWParametrization!(dist_1)
+        ensureXiWParametrization!(dist_2)
+        dist_result.m  = nothing
+        dist_result.V  = nothing
+        dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
+        dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
     end
 
     return node.interfaces[outbound_interface_id].message
 end
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{GaussianDistribution}, msg_2::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_1, msg_2, nothing)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{GaussianDistribution}, ::Nothing, msg_2::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_1, msg_2, nothing)
 
 function updateNodeMessage!(node::EqualityNode,
                             outbound_interface_id::Int,
@@ -174,48 +142,20 @@ updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_dummy::No
 updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_dummy::Nothing, msg_st::Message{StudentsTDistribution}, msg_n::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_st, msg_n, msg_dummy)
 
 ############################################
-# Float64 methods
+# DeltaDistribution methods
 ############################################
 
 function updateNodeMessage!(node::EqualityNode,
                             outbound_interface_id::Int,
-                            msg_1::Message{Float64},
-                            msg_2::Message{Float64},
+                            msg_1::Message{DeltaDistribution},
+                            msg_2::Message{DeltaDistribution},
                             ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
-    # This function is not exported, and is only meant for internal use.
 
     # Outbound message is equal to the inbound messages if both inbound messages are equal.
     # Otherwise, the outbound message is 0.0
 
-    msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], Float64)
-    if msg_1.payload == msg_2.payload
-        msg_result.payload = msg_1.payload
-    else
-        msg_result.payload = 0.0
-    end
-
-    return node.interfaces[outbound_interface_id].message
-end
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{Float64}, ::Nothing, msg_2::Message{Float64}) = updateNodeMessage!(node, outbound_interface_id, msg_1, msg_2, nothing)
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{Float64}, msg_2::Message{Float64}) = updateNodeMessage!(node, outbound_interface_id, msg_1, msg_2, nothing)
-
-############################################
-# Array methods
-############################################
-
-function updateNodeMessage!{T<:Array}(node::EqualityNode,
-                            outbound_interface_id::Int,
-                            msg_1::Message{T},
-                            msg_2::Message{T},
-                            ::Nothing)
-    # Calculate an outbound message based on the inbound messages and the node function.
-    # This function is not exported, and is only meant for internal use.
-
-    # Outbound message is equal to the inbound messages if both inbound messages are equal.
-    # Otherwise, the outbound message is zero
-
-    msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], typeof(msg_1.payload), size(msg_1.payload))
+    msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution)
     if msg_1.payload == msg_2.payload
         msg_result.payload = copy(msg_1.payload)
     else
@@ -224,8 +164,8 @@ function updateNodeMessage!{T<:Array}(node::EqualityNode,
 
     return node.interfaces[outbound_interface_id].message
 end
-updateNodeMessage!{T<:Array}(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{T}, ::Nothing, msg_2::Message{T}) = updateNodeMessage!(node, outbound_interface_id, msg_1, msg_2, nothing)
-updateNodeMessage!{T<:Array}(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{T}, msg_2::Message{T}) = updateNodeMessage!(node, outbound_interface_id, msg_1, msg_2, nothing)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{DeltaDistribution}, ::Nothing, msg_2::Message{DeltaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_1, msg_2, nothing)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{DeltaDistribution}, msg_2::Message{DeltaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_1, msg_2, nothing)
 
 
 ############################################
@@ -273,46 +213,47 @@ updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_1::Messag
 updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{GammaDistribution}, msg_2::Message{GammaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_1, msg_2, nothing)
 
 ############################################
-# Gaussian-Float combination
+# Gaussian-DeltaDistribution combination
 ############################################
 
 function updateNodeMessage!(node::EqualityNode,
                             outbound_interface_id::Int,
-                            msg_flt::Message{Float64},
+                            msg_delta::Message{DeltaDistribution},
                             msg_n::Message{GaussianDistribution},
                             ::Nothing)
     # Combination of Gaussian and float
-    return node.interfaces[outbound_interface_id].message = Message(msg_flt.payload)
+    return node.interfaces[outbound_interface_id].message = deepcopy(msg_delta)
 end
 # Call signature for messages other ways around
 # Outbound interface 3
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_n::Message{GaussianDistribution}, msg_flt::Message{Float64}, msg_dummy::Nothing) = updateNodeMessage!(node, outbound_interface_id, msg_flt, msg_n, msg_dummy)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_n::Message{GaussianDistribution}, msg_delta::Message{DeltaDistribution}, ::Nothing) = updateNodeMessage!(node, outbound_interface_id, msg_delta, msg_n, nothing)
 # Outbound interface 2
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_n::Message{GaussianDistribution}, msg_dummy::Nothing, msg_flt::Message{Float64}) = updateNodeMessage!(node, outbound_interface_id, msg_flt, msg_n, msg_dummy)
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_flt::Message{Float64}, msg_dummy::Nothing, msg_n::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_flt, msg_n, msg_dummy)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_n::Message{GaussianDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_delta, msg_n, nothing)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_delta::Message{DeltaDistribution}, ::Nothing, msg_n::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_delta, msg_n, nothing)
 # Outbound interface 1
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_dummy::Nothing, msg_n::Message{GaussianDistribution}, msg_flt::Message{Float64}) = updateNodeMessage!(node, outbound_interface_id, msg_flt, msg_n, msg_dummy)
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_dummy::Nothing, msg_flt::Message{Float64}, msg_n::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_flt, msg_n, msg_dummy)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_n::Message{GaussianDistribution}, msg_delta::Message{DeltaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_delta, msg_n, nothing)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_delta::Message{DeltaDistribution}, msg_n::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_delta, msg_n, nothing)
 
 ############################################
-# Gamma-Float combination
+# Gamma-DeltaDistribution combination
 ############################################
 
 function updateNodeMessage!(node::EqualityNode,
                             outbound_interface_id::Int,
-                            msg_flt::Message{Float64},
+                            msg_delta::Message{DeltaDistribution},
                             msg_gam::Message{GammaDistribution},
                             ::Nothing)
     # Combination of gamma and float
-    (msg_flt.payload >= 0) || error("Node $(node.name) cannot perform update for gamma-float combination for negative floats")
-    return node.interfaces[outbound_interface_id].message = Message(msg_flt.payload)
+    (typeof(msg_delta.payload.m) <: Number) || error("Node $(node.name) cannot perform update for gamma-delta combination for non-scalars")
+    (msg_delta.payload.m >= 0) || error("Node $(node.name) cannot perform update for gamma-delta combination for negative numbers")
+    return node.interfaces[outbound_interface_id].message = deepcopy(msg_delta)
 end
 # Call signature for messages other ways around
 # Outbound interface 3
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_gam::Message{GammaDistribution}, msg_flt::Message{Float64}, msg_dummy::Nothing) = updateNodeMessage!(node, outbound_interface_id, msg_flt, msg_gam, msg_dummy)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_gam::Message{GammaDistribution}, msg_delta::Message{DeltaDistribution}, ::Nothing) = updateNodeMessage!(node, outbound_interface_id, msg_delta, msg_gam, nothing)
 # Outbound interface 2
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_gam::Message{GammaDistribution}, msg_dummy::Nothing, msg_flt::Message{Float64}) = updateNodeMessage!(node, outbound_interface_id, msg_flt, msg_gam, msg_dummy)
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_flt::Message{Float64}, msg_dummy::Nothing, msg_gam::Message{GammaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_flt, msg_gam, msg_dummy)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_gam::Message{GammaDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_delta, msg_gam, nothing)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_delta::Message{DeltaDistribution}, ::Nothing, msg_gam::Message{GammaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_delta, msg_gam, nothing)
 # Outbound interface 1
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_dummy::Nothing, msg_gam::Message{GammaDistribution}, msg_flt::Message{Float64}) = updateNodeMessage!(node, outbound_interface_id, msg_flt, msg_gam, msg_dummy)
-updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, msg_dummy::Nothing, msg_flt::Message{Float64}, msg_gam::Message{GammaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_flt, msg_gam, msg_dummy)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_gam::Message{GammaDistribution}, msg_delta::Message{DeltaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_delta, msg_gam, nothing)
+updateNodeMessage!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_delta::Message{DeltaDistribution}, msg_gam::Message{GammaDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_delta, msg_gam, nothing)
