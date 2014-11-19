@@ -45,7 +45,7 @@ function initializePairOfMockNodes()
     return MockNode(), MockNode()
 end
 
-function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(2.0), msg_gain_2=Message(3.0), msg_terminal=Message(1.0))
+function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(DeltaDistribution(2.0)), msg_gain_2=Message(DeltaDistribution(3.0)), msg_terminal=Message(DeltaDistribution(1.0)))
     # Helper function for initializing an unconnected pair of nodes
     #     
     # |--[A]--|
@@ -440,18 +440,20 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     # Helper function for node comparison
 
     # Check that nodes are properly connected
-    @fact node1.interfaces[1].message.payload => 2.0
-    @fact node2.interfaces[1].message.payload => 1.0
-    @fact node1.interfaces[1].partner.message.payload => 1.0
-    @fact node2.interfaces[1].partner.message.payload => 2.0
+    @fact typeof(node1.interfaces[1].message.payload) <: DeltaDistribution => true
+    @fact typeof(node2.interfaces[1].message.payload) <: DeltaDistribution => true
+    @fact mean(node1.interfaces[1].message.payload) => 2.0
+    @fact mean(node2.interfaces[1].message.payload) => 1.0
+    @fact mean(node1.interfaces[1].partner.message.payload) => 1.0
+    @fact mean(node2.interfaces[1].partner.message.payload) => 2.0
     # Check that pointers are initiatized correctly
-    @fact node1.out.message.payload => 3.0
-    @fact node2.out.message.payload => 1.0
-    @fact node1.in1.partner.message.payload => 1.0
-    @fact node2.out.partner.message.payload => 2.0
+    @fact mean(node1.out.message.payload) => 3.0
+    @fact mean(node2.out.message.payload) => 1.0
+    @fact mean(node1.in1.partner.message.payload) => 1.0
+    @fact mean(node2.out.partner.message.payload) => 2.0
 end
 
-function validateOutboundMessage(node::Node, outbound_interface_id::Int, inbound_messages::Array, correct_outbound_value)
+function validateOutboundMessage(node::Node, outbound_interface_id::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution)
     msg = ForneyLab.updateNodeMessage!(node, outbound_interface_id, inbound_messages...)
     @fact node.interfaces[outbound_interface_id].message => msg
     @fact node.interfaces[outbound_interface_id].message.payload => correct_outbound_value

@@ -24,11 +24,6 @@ facts("GaussianDistribution unit tests") do
         @fact uninformative(GaussianDistribution) => uninformative(GaussianDistribution)
     end
 
-    context("uninformative(Float64) should return 1") do
-        dist = uninformative(Float64)
-        @fact dist => 1.0
-    end
-
     context("Underdetermined GaussianDistribution should be detected by isWellDefined()") do
         @fact isWellDefined(GaussianDistribution()) => true
         @fact isWellDefined(GaussianDistribution(m=0.0, V=1.0)) => true
@@ -129,9 +124,10 @@ facts("Marginal calculations for the Gaussian") do
         @fact edge.marginal => GaussianDistribution(m=0.0, W=3.0) 
     end
 
-    context("Marginal calculation for the combination of a Gaussian and Float64") do
-        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(3.0)).out)
+    context("Marginal calculation for the combination of a Gaussian and DeltaDistribution") do
+        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(DeltaDistribution(3.0))).out)
         calculateMarginal!(edge)
-        @fact edge.marginal => 3.0 
+        @fact typeof(edge.marginal) <: DeltaDistribution => true
+        @fact mean(edge.marginal) => 3.0 
     end
 end
