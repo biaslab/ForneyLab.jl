@@ -13,7 +13,7 @@ printVerbose(msg) = if verbose println(msg) end
 include("helpers.jl")
 
 # Other includes
-import Base.show
+import Base.show, Base.convert
 
 # Top-level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
