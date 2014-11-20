@@ -215,6 +215,7 @@ function ==(x::GaussianDistribution, y::GaussianDistribution)
     return true
 end
 
-# Converts from DeltaDistribution -> GaussianDistribution 
-convert{T<:Real}(::Type{GaussianDistribution}, delta::DeltaDistribution{T}) = GaussianDistribution(m=delta.m, V=0.0)
-convert{T<:Real}(::Type{GaussianDistribution}, delta::DeltaDistribution{Vector{T}}) = GaussianDistribution(m=delta.m, V=zeros(length(delta.m),length(delta.m)))
+# Converts from DeltaDistribution -> GaussianDistribution
+# NOTO: this introduces a small error because the variance is set >0
+convert{T<:Real}(::Type{GaussianDistribution}, delta::DeltaDistribution{T}) = GaussianDistribution(m=delta.m, V=tiny())
+convert{T<:Real}(::Type{GaussianDistribution}, delta::DeltaDistribution{Vector{T}}) = GaussianDistribution(m=delta.m, V=tiny()*eye(length(delta.m)))
