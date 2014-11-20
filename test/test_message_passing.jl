@@ -24,7 +24,7 @@ end
 facts("Message passing integration tests") do
     context("pushRequiredInbound!() should add the proper message/marginal") do
         # Composite node
-        node = initializeGainEqualityCompositeNode(eye(1), true, Any[Message(1.0), Message(2.0), Message(3.0)])
+        node = initializeGainEqualityCompositeNode(eye(1), true, Any[Message(DeltaDistribution(1.0)), Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))])
         graph = getCurrentGraph()
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in1, node.out)[1], node.in1.partner.message) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in2, node.out)[1], node.in2.partner.message) => true
@@ -62,15 +62,15 @@ facts("Message passing integration tests") do
 
     context("calculateMessage!()") do
         context("Should return and write back an output message") do
-            (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(3.0))
-            Edge(terminal.out, gain.in1, Float64)
-            Edge(gain.out, MockNode().out, Array{Float64, 2})
+            (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(DeltaDistribution(3.0)))
+            Edge(terminal.out, gain.in1)
+            Edge(gain.out, MockNode().out)
             @fact gain.out.message => nothing
             # Request message on node for which the input is unknown
             msg = calculateMessage!(gain.out)
             @fact msg => gain.out.message # Returned message should be identical to message stored on interface.
-            @fact typeof(gain.out.message.payload) => Array{Float64, 2}
-            @fact gain.out.message.payload => reshape([6.0], 1, 1)
+            @fact typeof(gain.out.message.payload) => DeltaDistribution{Array{Float64,2}}
+            @fact gain.out.message.payload => DeltaDistribution(reshape([6.0], 1, 1))
         end
 
         context("Should recursively calculate required inbound message") do
@@ -79,8 +79,8 @@ facts("Message passing integration tests") do
             @fact node3.out.message => nothing
             # Request message on node for which the input is unknown
             calculateMessage!(node3.out)
-            @fact typeof(node3.out.message.payload) => Array{Float64, 2}
-            @fact node3.out.message.payload => reshape([12.0], 1, 1)
+            @fact typeof(node3.out.message.payload) => DeltaDistribution{Array{Float64, 2}}
+            @fact node3.out.message.payload => DeltaDistribution(reshape([12.0], 1, 1))
         end
 
         context("Should throw an error when there is an unbroken loop") do

@@ -68,12 +68,12 @@ function initializeChainOfNodes()
     # [C]-->[A]-->[B]-->[M]
 
     FactorGraph()
-    node1 = TerminalNode(reshape([3.0], 1, 1))
+    node1 = TerminalNode(DeltaDistribution(reshape([3.0], 1, 1)))
     node2 = FixedGainNode([2.0])
     node3 = FixedGainNode([2.0])
-    Edge(node1.out, node2.in1, Array{Float64, 2})
-    Edge(node2.out, node3.in1, Array{Float64, 2})
-    Edge(node3.out, MockNode().out, Array{Float64, 2})
+    Edge(node1.out, node2.in1)
+    Edge(node2.out, node3.in1)
+    Edge(node3.out, MockNode().out)
     return (node1, node2, node3)
 end
 
