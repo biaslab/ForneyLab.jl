@@ -79,26 +79,26 @@ facts("step integration tests") do
     context("step should perform a time step and handle read/write buffers") do
         # out = in + delta
         g = FactorGraph()
-        node_in = TerminalNode(0.0, name="in")
+        node_in = TerminalNode(DeltaDistribution(0.0), name="in")
         node_add = AdditionNode(name="add")
         node_delta = TerminalNode(name="delta")
         node_out = TerminalNode(name="out")
-        Edge(node_in, node_add.in1, Float64)
-        Edge(node_delta, node_add.in2, Float64)
-        Edge(node_add.out, node_out, Float64)
+        Edge(node_in, node_add.in1)
+        Edge(node_delta, node_add.in2)
+        Edge(node_add.out, node_out)
         addTimeWrap(node_out, node_in)
         generateSchedule!(node_add.out)
-        deltas = [1.:10.]
+        deltas = [DeltaDistribution(n) for n in 1.:10.]
         setReadBuffer(node_delta, deltas)
         results = setWriteBuffer(node_add.out)
         while !isempty(deltas)
             step()
         end
-        @fact results => cumsum([1.:10.])
+        @fact results => [DeltaDistribution(r) for r in cumsum([1.:10.])]
     end
 
     context("step should accept and execute a number of iterations for VMP") do
-        data = [2.0]
+        data = [GaussianDistribution(m=2.0, V=tiny())]
         g = FactorGraph()
         g_node = GaussianNode(form="precision")
         t_out = TerminalNode(name="t_out")
