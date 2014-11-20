@@ -27,7 +27,7 @@ facts("Marginal calculation integration tests") do
         subgraph2 = getSubgraph(graph, edges[2])
         graph.approximate_marginals[(node, subgraph2)] = uninformative(GammaDistribution)
         subgraph3 = getSubgraph(graph, edges[3])
-        graph.approximate_marginals[(node, subgraph3)] = uninformative(Float64)
+        graph.approximate_marginals[(node, subgraph3)] = uninformative(GaussianDistribution)
         
         # Univariate marginal
         calculateMarginal!(node, subgraph1, graph)
@@ -37,7 +37,7 @@ facts("Marginal calculation integration tests") do
         @fact graph.approximate_marginals[(node, subgraph2)] => GammaDistribution(a=1.0, b=2.0)
         # Univariate marginal
         calculateMarginal!(node, subgraph3, graph)
-        @fact graph.approximate_marginals[(node, subgraph3)] => 1.0
+        @fact graph.approximate_marginals[(node, subgraph3)] => 1.0 # TODO: this is incorrect
     end
     
     context("Marginal calculation for the structurally factorized GaussianNode") do

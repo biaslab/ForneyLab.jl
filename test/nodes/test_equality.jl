@@ -18,22 +18,22 @@ facts("EqualityNode unit tests") do
         validateOutboundMessage(EqualityNode(), 
                                 3, 
                                 [Message(DeltaDistribution(1.0)), Message(DeltaDistribution(1.0)), nothing],
-                                1.0)
+                                DeltaDistribution(1.0))
         # Unequal scalars
         validateOutboundMessage(EqualityNode(), 
                                 3, 
                                 [Message(DeltaDistribution(1.0)), Message(DeltaDistribution(1.1)), nothing],
-                                0.0)
+                                DeltaDistribution(0.0))
         # Equal matrices
         validateOutboundMessage(EqualityNode(), 
                                 3, 
                                 [Message(DeltaDistribution(ones(2,2))), Message(DeltaDistribution(ones(2,2))), nothing],
-                                ones(2,2))
+                                DeltaDistribution(ones(2,2)))
         # Unequal matrices (different values) should give zeros matrix
         validateOutboundMessage(EqualityNode(), 
                                 3, 
                                 [Message(DeltaDistribution(ones(2,2))), Message(DeltaDistribution(4.0*ones(2,2))), nothing],
-                                zeros(2,2))
+                                DeltaDistribution(zeros(2,2)))
     end
 
     context("EqualityNode should propagate a univariate GaussianDistribution") do
@@ -167,15 +167,15 @@ facts("EqualityNode unit tests") do
         validateOutboundMessage(EqualityNode(), 
                                 3, 
                                 [Message(DeltaDistribution(5.0)), Message(GaussianDistribution()), nothing],
-                                5.0)
+                                DeltaDistribution(5.0))
         validateOutboundMessage(EqualityNode(), 
                                 3, 
                                 [Message(GaussianDistribution()), Message(DeltaDistribution(5.0)), nothing],
-                                5.0)
+                                DeltaDistribution(5.0))
         validateOutboundMessage(EqualityNode(), 
                                 2, 
                                 [Message(DeltaDistribution(5.0)), nothing, Message(GaussianDistribution())],
-                                5.0)
+                                DeltaDistribution(5.0))
     end
 
     context("EqualityNode should propagate combination of a delta and a gamma distribution") do
@@ -183,14 +183,14 @@ facts("EqualityNode unit tests") do
         validateOutboundMessage(EqualityNode(), 
                                 3, 
                                 [Message(DeltaDistribution(5.0)), Message(GammaDistribution()), nothing],
-                                5.0)
+                                DeltaDistribution(5.0))
         validateOutboundMessage(EqualityNode(), 
                                 3, 
                                 [Message(GammaDistribution()), Message(DeltaDistribution(5.0)), nothing],
-                                5.0)
+                                DeltaDistribution(5.0))
         validateOutboundMessage(EqualityNode(), 
                                 2, 
                                 [Message(DeltaDistribution(5.0)), nothing, Message(GammaDistribution())],
-                                5.0)
+                                DeltaDistribution(5.0))
     end
 end

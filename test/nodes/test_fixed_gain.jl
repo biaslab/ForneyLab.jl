@@ -9,33 +9,34 @@ facts("FixedGainNode unit tests") do
         @fact length(node.interfaces) => 2
         @fact node.in1 => node.interfaces[1]
         @fact node.out => node.interfaces[2]
-        @fact typeof(node.A) => Array{Float64, 2} # cast single value to matrix
+        @fact typeof(node.A) <: Array => true
+        @fact length(size(node.A)) => 2 # A should always be a matrix
     end
 
-    context("FixedGainNode should propagate a Float") do
+    context("FixedGainNode should propagate a DeltaDistribution{Real}") do
         # Backward message
         validateOutboundMessage(FixedGainNode([2.0]), 
                                 1, 
-                                [nothing, Message(3.0)],
-                                reshape([1.5], 1, 1))
+                                [nothing, Message(DeltaDistribution(3.0))],
+                                DeltaDistribution(reshape([1.5], 1, 1)))
         # Forward message
         validateOutboundMessage(FixedGainNode([2.0]), 
                                 2, 
-                                [Message(3.0), nothing],
-                                reshape([6.0], 1, 1))
+                                [Message(DeltaDistribution(3.0)), nothing],
+                                DeltaDistribution(reshape([6.0], 1, 1)))
     end
 
-    context("FixedGainNode should propagate an Array") do
+    context("FixedGainNode should propagate a DeltaDistribution{Array{T, N}}") do
         # Backward message
         validateOutboundMessage(FixedGainNode([2.0]), 
                                 1, 
-                                [nothing, Message([3.0])],
-                                [1.5])
+                                [nothing, Message(DeltaDistribution([3.0]))],
+                                DeltaDistribution([1.5]))
         # Forward message
         validateOutboundMessage(FixedGainNode([2.0]), 
                                 2, 
-                                [Message([3.0]), nothing],
-                                [6.0])
+                                [Message(DeltaDistribution([3.0])), nothing],
+                                DeltaDistribution([6.0]))
     end
 
     context("FixedGainNode should propagate a univariate GaussianDistribution") do

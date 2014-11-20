@@ -18,6 +18,7 @@ type DeltaDistribution{T} <: ProbabilityDistribution
     DeltaDistribution() = new()
 end
 DeltaDistribution{T}(m::T) = DeltaDistribution{T}(m)
+DeltaDistribution() = DeltaDistribution(1.0)
 
 show(io::IO, dist::DeltaDistribution) = println(io, "DeltaDistribution($(dist.m))")
 

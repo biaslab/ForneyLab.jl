@@ -329,7 +329,7 @@ function initializeGaussianNode(; y_type::DataType=Float64)
     edges[2].head.message = Message(GammaDistribution())
     edges[3] = Edge(node.out, MockNode().out, GaussianDistribution)
     edges[3].tail.message = Message(GaussianDistribution())
-    edges[3].head.message = Message(uninformative(y_type))
+    edges[3].head.message = Message(DeltaDistribution(1.0))
 
     # Set messages and marginals
     return (node, edges)
