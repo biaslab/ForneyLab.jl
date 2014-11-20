@@ -131,3 +131,12 @@ facts("Marginal calculations for the Gaussian") do
         @fact mean(edge.marginal) => 3.0 
     end
 end
+
+facts("GaussianDistribution converts") do
+    context("DeltaDistribution should be convertible to GaussianDistribution with 0 variance") do
+        @fact convert(GaussianDistribution, DeltaDistribution(3.0)) => GaussianDistribution(m=3.0, V=0.0) # Floating point number
+        @fact_throws convert(GaussianDistribution, DeltaDistribution(:some_discrete_type))                # Discrete mode is not supported
+        @fact_throws convert(GaussianDistribution, DeltaDistribution(ones(2,2)))                          # Matrices are not supported
+        @fact convert(GaussianDistribution, DeltaDistribution([1.0, 2.0])) => GaussianDistribution(m=[1.0, 2.0], V=zeros(2,2)) # Vector
+    end
+end

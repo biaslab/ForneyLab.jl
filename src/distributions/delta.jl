@@ -27,7 +27,6 @@ Base.var(dist::DeltaDistribution) = 0.0
 
 ==(x::DeltaDistribution, y::DeltaDistribution) = (x.m == y.m)
 
-# We can convert any object into a DeltaDistribution with that object as position of the delta
+# We can convert a lot of object types into a DeltaDistribution with that object as position of the delta
 # This is useful so we can write i.e. TerminalNode(3.0) instead of TerminalNode(DeltaDistribution(3.0))
-convert{T<:Any}(::Type{DeltaDistribution{T}}, obj::T) = DeltaDistribution(obj)
-convert(::Type{ProbabilityDistribution}, obj::Any) = DeltaDistribution(obj)
+convert{T<:Union(Number,Symbol,Array)}(::Type{ProbabilityDistribution}, obj::T) = DeltaDistribution(obj)
