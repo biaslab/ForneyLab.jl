@@ -329,8 +329,13 @@ function initializeGaussianNode(; y_type::DataType=Float64)
     edges[2].head.message = Message(GammaDistribution())
     edges[3] = Edge(node.out, MockNode().out, GaussianDistribution)
     edges[3].tail.message = Message(GaussianDistribution())
-    edges[3].head.message = Message(DeltaDistribution(1.0))
-
+    if y_type == Float64
+        edges[3].head.message = Message(DeltaDistribution(1.0))
+    elseif y_type == GaussianDistribution
+        edges[3].head.message = Message(GaussianDistribution())
+    else
+        error("Can't handle y_type $(y_type)")
+    end        
     # Set messages and marginals
     return (node, edges)
 end
