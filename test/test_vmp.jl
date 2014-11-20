@@ -26,16 +26,13 @@ facts("Naive VMP implementation integration tests") do
         # Perform vmp updates
         n_its = 50
 
-        # q(y) update
-        # We need to execute the q(y) updates only once, because sample values do not change.
-        for q_y_edge in q_y_edges
-            subgraph_y = getSubgraph(q_y_edge)
-            executeSchedule(subgraph_y)
-        end
-
         subgraph_m = getSubgraph(g_nodes[1].mean.edge)
         subgraph_gam = getSubgraph(g_nodes[1].precision.edge)
+        subgraphs_y = [getSubgraph(e) for e in q_y_edges]
         for iter = 1:n_its
+            for sg_y in subgraphs_y
+                executeSchedule(sg_y)
+            end
             # q(m) update
             executeSchedule(subgraph_m)
             # q(gam) update

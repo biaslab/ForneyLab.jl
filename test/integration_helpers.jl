@@ -370,7 +370,7 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
         g_node = GaussianNode(; name="g_node_$(section)", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
         m_eq_node = EqualityNode(; name="m_eq_$(section)") # Equality node chain for mean
         gam_eq_node = EqualityNode(; name="s_eq_$(section)") # Equality node chain for variance
-        y_node = TerminalNode(DeltaDistribution(y[section]), name="c_obs_$(section)") # Observed y values are stored in terminal node
+        y_node = TerminalNode(GaussianDistribution(m=y[section], V=tiny()), name="c_obs_$(section)") # Observed y values are stored in terminal node
         g_nodes[section] = g_node
         m_eq_nodes[section] = m_eq_node
         gam_eq_nodes[section] = gam_eq_node
@@ -386,12 +386,12 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
     # Attach beginning and end nodes
     m_0 = TerminalNode(GaussianDistribution(m=0.0, V=100.0)) # Prior
     gam_0 = TerminalNode(GammaDistribution(a=0.01, b=0.01)) # Prior
-    m_N = TerminalNode(uninformative(GaussianDistribution)) # Neutral 'one' message
-    gam_N = TerminalNode(uninformative(GammaDistribution)) # Neutral 'one' message
+    m_N = TerminalNode(uninformative(GaussianDistribution))
+    gam_N = TerminalNode(uninformative(GammaDistribution))
     Edge(m_0.out, m_eq_nodes[1].interfaces[1])
-    Edge(gam_0.out, gam_eq_nodes[1].interfaces[1], GammaDistribution)
+    Edge(gam_0.out, gam_eq_nodes[1].interfaces[1])
     Edge(m_eq_nodes[end].interfaces[2], m_N.out)
-    Edge(gam_eq_nodes[end].interfaces[2], gam_N.out, GammaDistribution)
+    Edge(gam_eq_nodes[end].interfaces[2], gam_N.out)
 
     return (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges)
 end
