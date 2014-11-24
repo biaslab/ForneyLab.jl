@@ -25,7 +25,12 @@ Import ForneyLab:
 ```jl
 using ForneyLab
 ```
-Once imported, one can create nodes and edges to build a factor graph, or create custom node and message types. There are demos available [online](http://192.71.151.86/ForneyLab.jl-demos/) to get you started.
+Once imported, one can create nodes and edges to build a factor graph, or create custom node and message types.
+
+Getting started
+===============
+
+There are [demos](https://github.com/spsbrats/ForneyLab.jl/wiki/ForneyLab-demos) available to get you started (which can also be accessed directly through [here](http://192.71.151.86/ForneyLab.jl-demos/)).
 
 Extending ForneyLab.jl
 ======================
