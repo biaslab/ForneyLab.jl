@@ -4,15 +4,13 @@ Contribution guidelines
 File structure
 --------------
 - `/demo/`: demos in iJulia notebook format (`.ipynb`)
+    + `images/`: images required in demo's
+        * `src/`: latex source files for images
 - `/src/`: all source files
-    + `ForneyLab.jl`: top-level module with general definitions and functions
-    + `helpers.jl`: generic helper functions functions
-    + `messages.jl`: all message type definitions and message-specific functions
+    + `distributions/`: distribution types and functions, including marginal calculations
     + `nodes/`: contains all node-specific files
         * `composite/`: composite node files
-            - `[node_name].jl`: node-specific definitions and methods
-        * `[node_name].jl`: node-specific definitions and methods
-- `/test/`: FactCheck test files for every file in `/src/` (identical directory tree). File format: `test_[src-filename].jl`
+- `/test/`: FactCheck test files with identical directory structure as `/src/`. File format: `test_[src-filename].jl`
 
 File and directory names are always in `snake_case`, except for `REQUIRE` and markdown files in the root directory.
 
@@ -32,7 +30,7 @@ Apart from this, there are some project-specific conventions:
 
 - The name of a subtype of `Node` always ends in `Node`. Example: `EqualityNode`.
 - The type name of a composite node always ends in `CompositeNode`. Example: `GainEqualityCompositeNode`.
-- The name of a subtype of `Message` always ends in `Message`. Example: `GaussianMessage`.
+- The name of a subtype of `ProbabilityDistribution` always ends in `Distribution`. Example: `GaussianDistribution`.
 
 Testing setup
 -------------
@@ -56,7 +54,7 @@ Alternatively, you can also use:
 Pkg.test("ForneyLab")
 ```
 
-If you add a new test file, do not forget to add the inclusion to `/test/test/test_forneylab.jl`.
+If you add a new test file, do not forget to add the inclusion to `/test/test_forneylab.jl`.
 
 To test the demos, use:
 
