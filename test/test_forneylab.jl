@@ -57,9 +57,4 @@ include("test_step.jl")
 # (S)VMP tests
 include("test_vmp.jl")
 
-try
-    # Try to load user-defined extensions tests
-    include("$(Main.FORNEYLAB_EXTENSION_DIR)/test/test_forneylab_extensions.jl")
-end
-
 end # module TestForneyLab
