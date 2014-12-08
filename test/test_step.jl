@@ -115,7 +115,7 @@ facts("step integration tests") do
         for subgraph in g.factorization
             generateSchedule!(subgraph)
         end
-        setUninformativeMarginals!()
+        setVagueMarginals!()
         step(n_iterations=10)
         @fact round(mean_out[end].W[1,1], 2) => 1.79
         @fact round(mean_out[end].xi[1], 2) => 1.57

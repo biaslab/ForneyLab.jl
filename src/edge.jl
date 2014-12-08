@@ -77,15 +77,15 @@ getBackwardMessage(edge::Edge) = edge.head.message
 
 function getOrCreateMarginal(edge::Edge, distribution_type::DataType=Any)
     # Looks for a marginal on edge.
-    # When no marginal is present, it sets and returns an uninformative distribution.
+    # When no marginal is present, it sets and returns an vague distribution.
     # Otherwise it returns the present marginal. Used for fast marginal calculations.
     if edge.marginal==nothing
         if distribution_type <: ProbabilityDistribution
             (distribution_type <: edge.distribution_type) || error("Cannot create marginal of type $(distribution_type) since the edge requires a different marginal distribution type. Edge:\n$(edge)")
-            edge.marginal = uninformative(distribution_type)
+            edge.marginal = vague(distribution_type)
         else
             if edge.distribution_type <: ProbabilityDistribution 
-                edge.marginal = uninformative(edge.distribution_type)
+                edge.marginal = vague(edge.distribution_type)
             else
                 error("Cannot create marginal of type $(edge.distribution_type) on:\n$(edge)")
             end

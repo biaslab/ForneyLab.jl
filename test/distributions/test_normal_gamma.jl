@@ -11,8 +11,8 @@ facts("NormalGammaDistribution unit tests") do
         @fact dist.b => 1.0
     end
 
-    context("uninformative() should initialize an uninformative normal-gamma distribution") do
-        dist = uninformative(NormalGammaDistribution)
+    context("vague() should initialize an vague normal-gamma distribution") do
+        dist = vague(NormalGammaDistribution)
         @fact dist.m => 0.0
         @fact dist.beta => 1.0
         @fact dist.a => 1.0-tiny()

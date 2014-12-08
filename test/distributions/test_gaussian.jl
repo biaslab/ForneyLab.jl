@@ -14,14 +14,14 @@ facts("GaussianDistribution unit tests") do
         @fact_throws GaussianDistribution(xi=0.0)
     end
 
-    context("uninformative() should initialize an uninformative Gaussian distribution") do
-        dist = uninformative(GaussianDistribution)
+    context("vague() should initialize a vague (almost uninformative) Gaussian distribution") do
+        dist = vague(GaussianDistribution)
         @fact dist.m => [0.0]
         @fact dist.V => reshape([huge()],1,1)
     end
 
-    context("Uninformative Gaussians should be equal") do
-        @fact uninformative(GaussianDistribution) => uninformative(GaussianDistribution)
+    context("Vague Gaussians should be equal") do
+        @fact vague(GaussianDistribution) => vague(GaussianDistribution)
     end
 
     context("Underdetermined GaussianDistribution should be detected by isWellDefined()") do

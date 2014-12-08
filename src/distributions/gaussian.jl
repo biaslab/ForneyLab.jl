@@ -74,7 +74,7 @@ function GaussianDistribution(; m::Union(Float64,Vector{Float64},Nothing)=nothin
 end
 GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
 
-uninformative(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge())
+vague(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge())
 
 function show(io::IO, dist::GaussianDistribution)
     println(io, "GaussianDistribution")

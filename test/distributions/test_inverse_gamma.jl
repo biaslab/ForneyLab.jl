@@ -9,10 +9,14 @@ facts("InverseGammaDistribution unit tests") do
         @fact dist.b => 0.5
     end
 
-    context("uninformative() should initialize an uninformative inverse gamma distribution") do
-        dist = uninformative(InverseGammaDistribution)
+    context("vague() should initialize a vague (almost uninformative) inverse gamma distribution") do
+        dist = vague(InverseGammaDistribution)
         @fact dist.a => -1.0+tiny()
         @fact dist.b => tiny()
+    end
+
+    context("Vague inverse gamma distributions should be equal") do
+        @fact vague(InverseGammaDistribution) => vague(InverseGammaDistribution)
     end
 end
 

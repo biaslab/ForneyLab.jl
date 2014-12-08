@@ -1,5 +1,5 @@
 export FactorGraph, Subgraph
-export getCurrentGraph, setCurrentGraph, getSubgraph, setUninformativeMarginals!, clearMessages!, getNodes, getEdges, findNodeByName
+export getCurrentGraph, setCurrentGraph, getSubgraph, setVagueMarginals!, clearMessages!, getNodes, getEdges, findNodeByName
 
 # FactorGraph and Subgraph types
 type Subgraph
@@ -57,13 +57,13 @@ end
 
 function getOrCreateMarginal(node::Node, subgraph::Subgraph, graph::FactorGraph, assign_distribution::DataType)
     # Looks for a marginal in the node-subgraph dictionary.
-    # If no marginal is present, it sets and returns an uninformative distribution.
+    # If no marginal is present, it sets and returns a vague distribution.
     # Otherwise, it returns the existing marginal. Used for fast marginal calculations.
     try
         return graph.approximate_marginals[(node, subgraph)]
     catch
         if assign_distribution <: ProbabilityDistribution 
-            return graph.approximate_marginals[(node, subgraph)] = uninformative(assign_distribution)
+            return graph.approximate_marginals[(node, subgraph)] = vague(assign_distribution)
         else
             error("Cannot create a marginal of type $(assign_distribution) since a marginal should be <: ProbabilityDistribution")
         end
@@ -107,8 +107,8 @@ function getNodesConnectedToExternalEdges(graph::FactorGraph, subgraph::Subgraph
 end
 getNodesConnectedToExternalEdges(subgraph::Subgraph) = getNodesConnectedToExternalEdges(getCurrentGraph(), subgraph)
 
-function setUninformativeMarginals!(graph::FactorGraph=getCurrentGraph())
-    # Sets the uninformative marginals in the graph's approximate marginal dictionary at the appropriate places
+function setVagueMarginals!(graph::FactorGraph=getCurrentGraph())
+    # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
     for subgraph in graph.factorization
         external_nodes = getNodesConnectedToExternalEdges(graph, subgraph)
         for node in external_nodes
@@ -133,7 +133,7 @@ function setUninformativeMarginals!(graph::FactorGraph=getCurrentGraph())
                 internal_incoming_message_types = [interface.edge.distribution_type for interface in internal_interfaces]
                 marginal_type = getMarginalType(internal_incoming_message_types...)
             end
-            graph.approximate_marginals[(node, subgraph)] = uninformative(marginal_type)
+            graph.approximate_marginals[(node, subgraph)] = vague(marginal_type)
         end
     end
 

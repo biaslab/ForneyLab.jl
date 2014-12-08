@@ -21,7 +21,7 @@ facts("Naive VMP implementation integration tests") do
             generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
 
-        setUninformativeMarginals!()
+        setVagueMarginals!()
 
         # Perform vmp updates
         n_its = 50
@@ -75,15 +75,15 @@ facts("Structured VMP implementation integration tests") do
             generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
 
-        setUninformativeMarginals!()
+        setVagueMarginals!()
 
         y_subgraph = getSubgraph(g_node.out.edge)
         m_gam_subgraph = getSubgraph(g_node.mean.edge)
         for sample = 1:n_samples
             # Reset
             y_node.value = GaussianDistribution(m = data[sample], W=10.0) # Small variance on sample
-            # Reset uninformative ('one') messages
-            setUninformativeMarginals!()
+            # Reset vague ('one') messages
+            setVagueMarginals!()
 
             # Do the VMP iterations
             for it = 1:n_its

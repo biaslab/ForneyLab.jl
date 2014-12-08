@@ -16,7 +16,7 @@ type NormalGammaDistribution <: ProbabilityDistribution
     NormalGammaDistribution(; m=0.0, beta=1.0, a=1.0, b=1.0) = new(m, beta, a, b)
 end
 
-uninformative(::Type{NormalGammaDistribution}) = NormalGammaDistribution(m=0.0, beta=1.0, a=1.0-tiny(), b=tiny())
+vague(::Type{NormalGammaDistribution}) = NormalGammaDistribution(m=0.0, beta=1.0, a=1.0-tiny(), b=tiny())
 
 function show(io::IO, dist::NormalGammaDistribution)
     println(io, typeof(dist))

@@ -1,7 +1,7 @@
 module ForneyLab
 
 export  Node, CompositeNode, ProbabilityDistribution
-export  uninformative, ==
+export  vague, ==
 export  current_graph
 
 # Verbosity
