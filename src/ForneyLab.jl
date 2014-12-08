@@ -23,6 +23,9 @@ show(io::IO, node::Node) = println(io, "$(typeof(node)) with name $(node.name)")
 show(io::IO, nodes::Union(Set{Node}, Vector{Node})) = [show(io, node) for node in nodes]
 abstract CompositeNode <: Node
 
+# Message type
+include("message.jl")
+
 # Distributions
 include("distributions/delta.jl")
 include("distributions/gaussian.jl")
@@ -32,7 +35,6 @@ include("distributions/normal_gamma.jl")
 include("distributions/students_t.jl")
 
 # Basic ForneyLab building blocks and methods
-include("message.jl")
 include("interface.jl")
 include("edge.jl")
 include("schedule.jl")

@@ -224,4 +224,3 @@ end
 ########################################
 getMarginalType(::Type{GaussianDistribution},   ::Type{GammaDistribution})      = NormalGammaDistribution
 getMarginalType(::Type{GammaDistribution},      ::Type{GaussianDistribution})   = NormalGammaDistribution
-getMarginalType(::Type{GaussianDistribution},   ::Type{GaussianDistribution})   = BiVariateGaussianDistribution

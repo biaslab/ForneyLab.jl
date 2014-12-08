@@ -12,7 +12,7 @@ facts("AdditionNode unit tests") do
         @fact node.out => node.interfaces[3]
     end
 
-    context("AdditionNode should add two Floats") do
+    context("AdditionNode should add two DeltaDistribution{Float}") do
         # Forward message
         validateOutboundMessage(AdditionNode(), 
                                 3, 
@@ -29,7 +29,7 @@ facts("AdditionNode unit tests") do
                                 DeltaDistribution(1.0))
     end
 
-    context("AdditionNode should add two Arrays") do
+    context("AdditionNode should add two DeltaDistribution{Array}") do
         # Forward message
         validateOutboundMessage(AdditionNode(), 
                                 3, 
@@ -116,6 +116,36 @@ facts("AdditionNode unit tests") do
                                     [Message(GaussianDistribution(m=1.0, V=0.5)), nothing, Message(GaussianDistribution(m=3.0, W=4.0))],
                                     GaussianDistribution(m=2.0, W=4.0/3.0))  
         end
+    end
+
+    context("AdditionNode should propagate a combination of GaussianDistribution and DeltaDistribution") do
+        # Forward message
+        validateOutboundMessage(AdditionNode(), 
+                                3, 
+                                [Message(GaussianDistribution(m=1.0, V=0.5)), Message(DeltaDistribution(3.0)), nothing],
+                                GaussianDistribution(m=4.0, V=0.5+tiny()))
+        validateOutboundMessage(AdditionNode(), 
+                                3, 
+                                [Message(DeltaDistribution(3.0)), Message(GaussianDistribution(m=1.0, V=0.5)), nothing],
+                                GaussianDistribution(m=4.0, V=0.5+tiny()))
+        #Backward message towards in1
+        validateOutboundMessage(AdditionNode(), 
+                                1, 
+                                [nothing, Message(DeltaDistribution(3.0)), Message(GaussianDistribution(m=1.0, V=0.5))],
+                                GaussianDistribution(m=-2.0, V=0.5+tiny()))
+        validateOutboundMessage(AdditionNode(), 
+                                1, 
+                                [nothing, Message(GaussianDistribution(m=1.0, V=0.5)), Message(DeltaDistribution(3.0))],
+                                GaussianDistribution(m=2.0, V=0.5+tiny()))
+        # Backward message towards in2
+        validateOutboundMessage(AdditionNode(), 
+                                2, 
+                                [Message(DeltaDistribution(3.0)), nothing, Message(GaussianDistribution(m=1.0, V=0.5))],
+                                GaussianDistribution(m=-2.0, V=0.5+tiny()))
+        validateOutboundMessage(AdditionNode(), 
+                                2, 
+                                [Message(GaussianDistribution(m=1.0, V=0.5)), nothing, Message(DeltaDistribution(3.0))],
+                                GaussianDistribution(m=2.0, V=0.5+tiny()))
     end
 
     context("AdditionNode should propagate a multivariate GaussianDistribution") do

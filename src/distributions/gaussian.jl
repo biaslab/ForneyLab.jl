@@ -73,11 +73,8 @@ function GaussianDistribution(; m::Union(Float64,Vector{Float64},Nothing)=nothin
     return GaussianDistribution(_m, _V, _W, _xi)
 end
 GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
-# TODO: BiVariateGaussianDistribution should be removed
-abstract BiVariateGaussianDistribution # Only used for uninformative function
 
 uninformative(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge())
-uninformative(::Type{BiVariateGaussianDistribution}) = GaussianDistribution(m=[0.0, 0.0], V=[huge() 0.0; 0.0 huge()])
 
 function show(io::IO, dist::GaussianDistribution)
     println(io, "GaussianDistribution")
@@ -216,6 +213,8 @@ function ==(x::GaussianDistribution, y::GaussianDistribution)
 end
 
 # Converts from DeltaDistribution -> GaussianDistribution
-# NOTO: this introduces a small error because the variance is set >0
+# NOTE: this introduces a small error because the variance is set >0
 convert{T<:Real}(::Type{GaussianDistribution}, delta::DeltaDistribution{T}) = GaussianDistribution(m=delta.m, V=tiny())
 convert{T<:Real}(::Type{GaussianDistribution}, delta::DeltaDistribution{Vector{T}}) = GaussianDistribution(m=delta.m, V=tiny()*eye(length(delta.m)))
+convert{T<:Real}(::Type{Message{GaussianDistribution}}, msg::Message{DeltaDistribution{T}}) = Message(GaussianDistribution(m=msg.payload.m, V=tiny()))
+convert{T<:Real}(::Type{Message{GaussianDistribution}}, msg::Message{DeltaDistribution{Vector{T}}}) = Message(GaussianDistribution(m=msg.payload.m, V=tiny()*eye(length(msg.payload.m))))

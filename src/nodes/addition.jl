@@ -152,6 +152,7 @@ function updateNodeMessage!(node::AdditionNode,
 end
 updateNodeMessage!(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{GaussianDistribution}, msg_out::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_in2, nothing, msg_out)
 
+
 #############################################
 # DeltaDistribution methods
 #############################################
@@ -184,3 +185,18 @@ function updateNodeMessage!{T<:Any}(node::AdditionNode,
     return node.interfaces[outbound_interface_id].message
 end
 updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{DeltaDistribution{T}}, msg_out::Message{DeltaDistribution{T}}) = updateNodeMessage!(node, outbound_interface_id, msg_in2, nothing, msg_out)
+
+
+############################################
+# Gaussian-DeltaDistribution combination
+############################################
+
+# Forward
+updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, msg_in1::Message{DeltaDistribution{T}}, msg_in2::Message{GaussianDistribution}, ::Nothing) = updateNodeMessage!(node, outbound_interface_id, convert(Message{GaussianDistribution}, msg_in1), msg_in2, nothing)
+updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, msg_in1::Message{GaussianDistribution}, msg_in2::Message{DeltaDistribution{T}}, ::Nothing) = updateNodeMessage!(node, outbound_interface_id, msg_in1, convert(Message{GaussianDistribution}, msg_in2), nothing)
+# Backward to in1
+updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{DeltaDistribution{T}}, msg_out::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, nothing, convert(Message{GaussianDistribution}, msg_in2), msg_out)
+updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{GaussianDistribution}, msg_out::Message{DeltaDistribution{T}}) = updateNodeMessage!(node, outbound_interface_id, nothing, msg_in2, convert(Message{GaussianDistribution}, msg_out))
+# Backward to in2
+updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, msg_in1::Message{DeltaDistribution{T}}, ::Nothing, msg_out::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, convert(Message{GaussianDistribution}, msg_in1), nothing, msg_out)
+updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, msg_in1::Message{GaussianDistribution}, ::Nothing, msg_out::Message{DeltaDistribution{T}}) = updateNodeMessage!(node, outbound_interface_id, msg_in1, nothing, convert(Message{GaussianDistribution}, msg_out))
