@@ -10,7 +10,7 @@ File structure
     + `distributions/`: distribution types and functions, including marginal calculations
     + `nodes/`: contains all node-specific files
         * `composite/`: composite node files
-- `/test/`: FactCheck test files with identical directory structure as `/src/`. File format: `test_[src-filename].jl`
+- `/test/`: FactCheck test files with identical directory structure as `/src/`.
 
 File and directory names are always in `snake_case`, except for `REQUIRE` and markdown files in the root directory.
 
@@ -34,8 +34,9 @@ Apart from this, there are some project-specific conventions:
 
 Testing setup
 -------------
-[FactCheck](https://github.com/zachallaun/FactCheck.jl) is used as testing framework.
-For every `.jl` file in `/src/`, there should be a corresponding FactCheck test file in `/test/`. File format: `test_[src-filename].jl`. The test file should test the behavior of the implementation in the source file as extensively as possible. In general, at least the following should be tested:
+[FactCheck](https://github.com/zachallaun/FactCheck.jl) is used as testing framework. The `/test/` directory follows the structure of the `/src/` directory.
+
+In general, at least the following should be tested:
 
 - The correctness of all defined constructors
 - Correctness of the output of all functions for all valid input types
