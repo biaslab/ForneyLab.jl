@@ -74,10 +74,10 @@ function GaussianDistribution(; m::Union(Float64,Vector{Float64},Nothing)=nothin
 end
 GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
 # TODO: BiVariateGaussianDistribution should be removed
-abstract BiVariateGaussianDistribution # Only used for uninformative function
+abstract BiVariateGaussianDistribution # Only used for vague function
 
-uninformative(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge())
-uninformative(::Type{BiVariateGaussianDistribution}) = GaussianDistribution(m=[0.0, 0.0], V=[huge() 0.0; 0.0 huge()])
+vague(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge())
+vague(::Type{BiVariateGaussianDistribution}) = GaussianDistribution(m=[0.0, 0.0], V=[huge() 0.0; 0.0 huge()])
 
 function show(io::IO, dist::GaussianDistribution)
     println(io, "GaussianDistribution")

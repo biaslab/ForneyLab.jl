@@ -39,7 +39,7 @@ facts("Message passing integration tests") do
         (node, edges) = initializeGaussianNode()
         graph = getCurrentGraph()
         factorizeMeanField!(graph)
-        setUninformativeMarginals!(graph)
+        setVagueMarginals!(graph)
         sg_mean = getSubgraph(node.mean.edge)
         sg_prec = getSubgraph(node.precision.edge)
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean)]) => true
@@ -49,7 +49,7 @@ facts("Message passing integration tests") do
         (node, edges) = initializeGaussianNode()
         graph = getCurrentGraph()
         factorize!(node.out.edge)
-        setUninformativeMarginals!(graph)
+        setVagueMarginals!(graph)
         sg_mean_prec = getSubgraph(node.mean.edge)
         sg_out = getSubgraph(node.out.edge)
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean_prec)]) => true

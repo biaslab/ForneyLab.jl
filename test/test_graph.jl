@@ -113,14 +113,14 @@ facts("Graph level integration tests") do
 
     end
 
-    context("setUninformativeMarginals() should set uninformative marginals at the appropriate places") do
+    context("setVagueMarginals() should set vague marginals at the appropriate places") do
         data = [1.0, 1.0, 1.0]
 
         # MF case
         (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
         n_sections = length(data)
         factorizeMeanField!()
-        setUninformativeMarginals!()
+        setVagueMarginals!()
         graph = getCurrentGraph()
         m_subgraph = getSubgraph(g_nodes[1].mean.edge)
         gam_subgraph = getSubgraph(g_nodes[1].precision.edge)
@@ -129,15 +129,15 @@ facts("Graph level integration tests") do
         y3_subgraph = getSubgraph(g_nodes[3].out.edge)
 
         @fact length(graph.approximate_marginals) => 9
-        @fact graph.approximate_marginals[(g_nodes[1], m_subgraph)] => uninformative(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[2], m_subgraph)] => uninformative(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[3], m_subgraph)] => uninformative(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[1], gam_subgraph)] => uninformative(GammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[2], gam_subgraph)] => uninformative(GammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[3], gam_subgraph)] => uninformative(GammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => uninformative(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => uninformative(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => uninformative(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[1], m_subgraph)] => vague(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], m_subgraph)] => vague(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], m_subgraph)] => vague(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[1], gam_subgraph)] => vague(GammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], gam_subgraph)] => vague(GammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], gam_subgraph)] => vague(GammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => vague(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => vague(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => vague(GaussianDistribution)
 
         # Structured case
         (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
@@ -145,7 +145,7 @@ facts("Graph level integration tests") do
         for edge in q_y_edges
             factorize!(Set{Edge}({edge}))
         end        
-        setUninformativeMarginals!()
+        setVagueMarginals!()
         graph = getCurrentGraph()
         m_gam_subgraph = getSubgraph(g_nodes[1].mean.edge)
         y1_subgraph = getSubgraph(g_nodes[1].out.edge)
@@ -153,12 +153,12 @@ facts("Graph level integration tests") do
         y3_subgraph = getSubgraph(g_nodes[3].out.edge)
 
         @fact length(graph.approximate_marginals) => 6
-        @fact graph.approximate_marginals[(g_nodes[1], m_gam_subgraph)] => uninformative(NormalGammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[2], m_gam_subgraph)] => uninformative(NormalGammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[3], m_gam_subgraph)] => uninformative(NormalGammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => uninformative(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => uninformative(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => uninformative(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[1], m_gam_subgraph)] => vague(NormalGammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], m_gam_subgraph)] => vague(NormalGammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], m_gam_subgraph)] => vague(NormalGammaDistribution)
+        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => vague(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => vague(GaussianDistribution)
+        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => vague(GaussianDistribution)
     end
 
     context("getNodes() should return an array of all nodes in the graph") do

@@ -11,9 +11,9 @@ facts("DeltaDistribution unit tests") do
         @fact DeltaDistribution(:something).m => :something
     end
 
-    context("There should be no such thing as uninformative(DeltaDistribution)") do
-        @fact_throws uninformative(DeltaDistribution)
-        @fact_throws uninformative(DeltaDistribution{Float64})
+    context("There should be no such thing as vague(DeltaDistribution)") do
+        @fact_throws vague(DeltaDistribution)
+        @fact_throws vague(DeltaDistribution{Float64})
     end
 
     context("Numbers, symbols, and arrays should convert to DeltaDistribution") do

@@ -38,7 +38,7 @@ clearTimeWraps!(graph::FactorGraph=getCurrentGraph()) = (graph.time_wraps = Arra
 
 function step(graph::FactorGraph=getCurrentGraph(); n_iterations::Int64=1)
     # Reset marginals
-    setUninformativeMarginals!(graph)
+    setVagueMarginals!(graph)
     # Read buffers
     for (terminal_node, read_buffer) in graph.read_buffers
         !isempty(read_buffer) || error("Read buffer for node $(terminal_node) is empty")

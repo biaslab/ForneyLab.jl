@@ -171,7 +171,7 @@ function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=g
             push!(required_inputs, interface.partner.message)
             push!(internal_edge_list, interface.edge)
         else # Edge is external
-            haskey(graph.approximate_marginals, (node, neighbouring_subgraph)) || error("A required approximate marginal for $(node.name) is not preset. Please preset an (uninformative) marginal.")
+            haskey(graph.approximate_marginals, (node, neighbouring_subgraph)) || error("A required approximate marginal for $(node.name) is not preset. Please preset an (vague) marginal.")
             push!(required_inputs, graph.approximate_marginals[(node, neighbouring_subgraph)])
         end
     end

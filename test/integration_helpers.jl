@@ -386,8 +386,8 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
     # Attach beginning and end nodes
     m_0 = TerminalNode(GaussianDistribution(m=0.0, V=100.0)) # Prior
     gam_0 = TerminalNode(GammaDistribution(a=0.01, b=0.01)) # Prior
-    m_N = TerminalNode(uninformative(GaussianDistribution))
-    gam_N = TerminalNode(uninformative(GammaDistribution))
+    m_N = TerminalNode(vague(GaussianDistribution))
+    gam_N = TerminalNode(vague(GammaDistribution))
     Edge(m_0.out, m_eq_nodes[1].interfaces[1])
     Edge(gam_0.out, gam_eq_nodes[1].interfaces[1])
     Edge(m_eq_nodes[end].interfaces[2], m_N.out)
@@ -426,8 +426,8 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     # Attach beginning and end nodes
     m_0_node = TerminalNode(GaussianDistribution(m=0.0, V=100.0)) # Prior
     gam_0_node = TerminalNode(GammaDistribution(a=0.01, b=0.01)) # Prior
-    m_N_node = TerminalNode(uninformative(GaussianDistribution)) # Neutral 'one' message
-    gam_N_node = TerminalNode(uninformative(GammaDistribution)) # Neutral 'one' message
+    m_N_node = TerminalNode(vague(GaussianDistribution)) # Neutral 'one' message
+    gam_N_node = TerminalNode(vague(GammaDistribution)) # Neutral 'one' message
     m_0_eq_edge = Edge(m_0_node.out, m_eq_node.interfaces[1], GaussianDistribution)
     gam_0_eq_edge = Edge(gam_0_node.out, gam_eq_node.interfaces[1], GammaDistribution)
     m_N_eq_edge = Edge(m_eq_node.interfaces[2], m_N_node.out, GaussianDistribution)

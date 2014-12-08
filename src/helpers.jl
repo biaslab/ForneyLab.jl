@@ -16,7 +16,7 @@ function viewFile(filename::String)
     @windows? run(`cmd /c start $filename`) : (@osx? run(`open $filename`) : (@linux? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
 end
 
-# Define what is considered big and small, mostly used for setting uninformative messages.
+# Define what is considered big and small, mostly used for setting vague messages.
 huge(::Type{Float64}) = 1e12
 huge() = huge(Float64)
 tiny(::Type{Float64}) = 1e-12
