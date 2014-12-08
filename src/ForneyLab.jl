@@ -51,9 +51,8 @@ include("nodes/composite/gain_addition.jl")
 include("nodes/composite/gain_equality.jl")
 include("nodes/composite/general.jl")
 
-# Graphs
+# Graphs and factorizations
 include("graph.jl")
-include("factorization.jl")
 
 # Methods for calculating marginals
 include("distributions/calculate_marginal.jl")
