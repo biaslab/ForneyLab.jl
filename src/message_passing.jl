@@ -1,4 +1,9 @@
-export calculateMessage!, calculateMessages!, calculateForwardMessage!, calculateBackwardMessage!, executeSchedule, clearMessages!
+export  calculateMessage!,
+        calculateMessages!,
+        calculateForwardMessage!,
+        calculateBackwardMessage!,
+        executeSchedule,
+        clearMessages!
 
 function calculateMessage!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph())
     # Calculate the outbound message on a specific interface by generating a schedule and executing it.

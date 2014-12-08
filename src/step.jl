@@ -1,4 +1,9 @@
-export setReadBuffer, setWriteBuffer, clearBuffers!, addTimeWrap, clearTimeWraps!, step
+export  setReadBuffer,
+        setWriteBuffer,
+        clearBuffers!,
+        addTimeWrap,
+        clearTimeWraps!,
+        step
 
 function setReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=getCurrentGraph())
     (node in getNodes(graph)) || error("The specified node is not part of the current or specified graph")

@@ -1,4 +1,4 @@
-export isApproxEqual, duplicated, huge, tiny
+export isApproxEqual, huge, tiny
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
