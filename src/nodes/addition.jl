@@ -70,7 +70,7 @@ backwardAdditionXiRule{T<:Number}(V_x::Array{T, 2}, xi_x::Array{T, 1}, V_z::Arra
 
 # Message towards OUT
 function updateNodeMessage!(node::AdditionNode,
-                            ::Int,
+                            outbound_interface_id::Int,
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Nothing)
@@ -105,7 +105,7 @@ function updateNodeMessage!(node::AdditionNode,
         dist_out.xi= nothing
     end
 
-    return node.out.message
+    return node.interfaces[outbound_interface_id].message
 end
 
 # Message towards IN1 or IN2
@@ -160,7 +160,7 @@ updateNodeMessage!(node::AdditionNode, outbound_interface_id::Int, ::Nothing, ms
 # Message towards OUT
 function updateNodeMessage!{T<:Any}(
                             node::AdditionNode,
-                            ::Int,
+                            outbound_interface_id::Int,
                             msg_in1::Message{DeltaDistribution{T}},
                             msg_in2::Message{DeltaDistribution{T}},
                             msg_out::Nothing)
@@ -168,7 +168,7 @@ function updateNodeMessage!{T<:Any}(
     msg_result = getOrCreateMessage(node.out, DeltaDistribution{T})
     msg_result.payload.m = ans
 
-    return node.out.message
+    return node.interfaces[outbound_interface_id].message
 end
 
 # Message towards IN1 or IN2
