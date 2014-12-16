@@ -39,8 +39,8 @@ facts("Naive VMP implementation integration tests") do
             executeSchedule(subgraph_gam)
         end
         # One last time to ensure all calculations have propagated through the equality chains
-        executeSchedule([m_eq_nodes[end].interfaces[2]])
-        executeSchedule([gam_eq_nodes[end].interfaces[2]])
+        executeSchedule([(m_eq_nodes[end].interfaces[2], "sum_product")])
+        executeSchedule([(gam_eq_nodes[end].interfaces[2], "sum_product")])
 
         # Save outcome
         ensureMVParametrization!(m_eq_nodes[end].interfaces[2].message.payload)
@@ -91,8 +91,8 @@ facts("Structured VMP implementation integration tests") do
                 executeSchedule(y_subgraph)
             end
             # Propagate through chain
-            executeSchedule([g_node.mean, m_eq_node.interfaces[2]])
-            executeSchedule([g_node.precision, gam_eq_node.interfaces[2]])
+            executeSchedule([(g_node.mean, "sum_product"), (m_eq_node.interfaces[2], "sum_product")])
+            executeSchedule([(g_node.precision, "sum_product"), (gam_eq_node.interfaces[2], "sum_product")])
 
             # Switch posterior to prior for next sample
             m_0_node.value = deepcopy(m_eq_node.interfaces[2].message.payload)

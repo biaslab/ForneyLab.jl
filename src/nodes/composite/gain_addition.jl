@@ -77,9 +77,9 @@ type GainAdditionCompositeNode <: CompositeNode
         self.interfaces[3].child = self.addition_node.out
 
         # Set internal message passing schedules
-        self.in1.internal_schedule = [self.addition_node.in1, self.fixed_gain_node.in1]
-        self.in2.internal_schedule = [self.fixed_gain_node.out, self.addition_node.in2]
-        self.out.internal_schedule = [self.fixed_gain_node.out, self.addition_node.out]
+        self.in1.internal_schedule = convert_to_schedule([self.addition_node.in1, self.fixed_gain_node.in1])
+        self.in2.internal_schedule = convert_to_schedule([self.fixed_gain_node.out, self.addition_node.in2])
+        self.out.internal_schedule = convert_to_schedule([self.fixed_gain_node.out, self.addition_node.out])
 
         return self
     end

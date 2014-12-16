@@ -13,8 +13,8 @@ type Interface
     message::Union(Message, Nothing)
     dependencies::Array{Interface, 1}   # Optional array of interfaces (of the same node) on which the outbound msg on this interface depends.
                                         # If this array is #undef, it means that the outbound msg depends on the inbound msgs on ALL OTHER interfaces of the node.
-    internal_schedule::Array{Interface, 1}      # Optional schedule that should be executed to calculate outbound message on this interface.
-                                                # The internal_schedule field is used in composite nodes, and holds the schedule for internal message passing.
+    internal_schedule::Array{(Interface, ASCIIString), 1}       # Optional schedule that should be executed to calculate outbound message on this interface.
+                                                                # The internal_schedule field is used in composite nodes, and holds the schedule for internal message passing.
 
     # Sanity check for matching message types
     function Interface(node::Node, edge::Union(AbstractEdge, Nothing)=nothing, partner::Union(Interface, Nothing)=nothing, child::Union(Interface, Nothing)=nothing, message::Union(Message, Nothing)=nothing)

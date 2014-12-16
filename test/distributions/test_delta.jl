@@ -11,6 +11,10 @@ facts("DeltaDistribution unit tests") do
         @fact DeltaDistribution(:something).m => :something
     end
 
+    context("DeltaDistribution can be sampled") do
+        @fact sample(DeltaDistribution()) => DeltaDistribution()
+    end
+
     context("There should be no such thing as vague(DeltaDistribution)") do
         @fact_throws vague(DeltaDistribution)
         @fact_throws vague(DeltaDistribution{Float64})

@@ -59,10 +59,11 @@ function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, n
 
 end
 
-function updateNodeMessage!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph())
+function updateNodeMessage!(schedule_entry::(Interface, SummaryOperation), graph::FactorGraph=getCurrentGraph())
     # Calculate the outbound message based on the inbound messages and the node update function.
     # The resulting message is stored in the specified interface and is returned.
 
+    (outbound_interface, summary_operation) = schedule_entry # Dissect schedule entry
     node = outbound_interface.node
     # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
     inbound_array = Array(Any, 0)
@@ -104,11 +105,12 @@ calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 function executeSchedule(schedule::Schedule, graph::FactorGraph=getCurrentGraph())
     # Execute a message passing schedule
     !isempty(schedule) || error("Cannot execute an empty schedule")
-    for interface in schedule
-        updateNodeMessage!(interface, graph)
+    for schedule_entry in schedule
+        updateNodeMessage!(schedule_entry, graph)
     end
     # Return the last message in the schedule
-    return schedule[end].message
+    (last_interface, last_summary_operation) = schedule[end]
+    return last_interface.message
 end
 function executeSchedule(schedule::ExternalSchedule, subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
     # Execute a marginal update schedule

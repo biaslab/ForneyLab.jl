@@ -7,7 +7,7 @@ function generateSchedule(outbound_interface::Interface, graph::FactorGraph=getC
     # When a lot of iterations of the same message passing schedule are required, it can be very beneficial
     # to generate the schedule just once using this function, and then execute the same schedule over and over.
     # This prevents having to generate the same schedule in every call to calculateMessage!().
-    return generateScheduleByDFS(outbound_interface, Array(Interface, 0), Array(Interface, 0), graph; args...)
+    return convert_to_schedule(generateScheduleByDFS(outbound_interface, Array(Interface, 0), Array(Interface, 0), graph; args...))
 end
 function generateSchedule!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph(); args...)
     schedule = generateSchedule(outbound_interface, graph; args...)
@@ -26,16 +26,17 @@ function generateSchedule(partial_schedule::Schedule, graph::FactorGraph=getCurr
 
     # Verify that all entries in partial_schedule belong to the same subgraph
     (length(partial_schedule) > 0) || error("Partial schedule should contain at least one entry")
-    for interface in partial_schedule
-        is(graph.edge_to_subgraph[interface.edge], graph.edge_to_subgraph[partial_schedule[1].edge]) || error("Not all interfaces in your partial schedule belong to the same subgraph")
+    (first_interface, sum_op) = partial_schedule[1]
+    for (interface, summary_operation) in partial_schedule
+        is(graph.edge_to_subgraph[interface.edge], graph.edge_to_subgraph[first_interface.edge]) || error("Not all interfaces in your partial schedule belong to the same subgraph")
     end
 
     schedule = Array(Interface, 0)
-    for interface_order_constraint in partial_schedule
+    for (interface_order_constraint, sum_op) in partial_schedule
         schedule = generateScheduleByDFS(interface_order_constraint, schedule, Array(Interface, 0), graph; args...)
     end
 
-    return schedule
+    return convert_to_schedule(schedule)
 end
 function generateSchedule!(partial_schedule::Schedule, graph::FactorGraph=getCurrentGraph(); args...)
     schedule = generateSchedule(partial_schedule, graph; args...)
@@ -49,7 +50,8 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
     subgraph.external_schedule = getNodesConnectedToExternalEdges(graph, subgraph)
 
     schedule_for_univariate = Array(Interface, 0)
-    internal_schedule = subgraph.internal_schedule = Array(Interface, 0)
+    internal_schedule = Array(Interface, 0)
+    subgraph.internal_schedule = Array((Interface, SummaryOperation), 0)
     # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present
     for g_node in subgraph.external_schedule # All nodes that are connected to at least one external edge
         outbound_interfaces = Array(Interface, 0) # Array that holds required outbound for the case of one internal edge connected to g_node
@@ -64,7 +66,7 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
                 try
                     internal_schedule = generateScheduleByDFS(interface.partner, internal_schedule, Array(Interface, 0), graph, stay_in_subgraph=true)
                 catch
-                    error("Cannot generate internal schedule for loopy subgraph with internal edge $(interface.edge).")
+                    error("Cannot generate internal schedule for possibly loopy subgraph with internal edge $(interface.edge).")
                 end
             end
         end
@@ -90,7 +92,7 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
     end
     
     # Schedule for univariate comes after internal schedule, because it can depend on inbounds
-    subgraph.internal_schedule = unique([internal_schedule, schedule_for_univariate, schedule_for_time_wraps])
+    subgraph.internal_schedule = convert_to_schedule(unique([internal_schedule, schedule_for_univariate, schedule_for_time_wraps]))
     
     return subgraph
 end
@@ -102,7 +104,7 @@ function generateSchedule!(graph::FactorGraph=getCurrentGraph())
     return graph
 end
 
-function generateScheduleByDFS(outbound_interface::Interface, backtrace::Schedule=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0), graph::FactorGraph=getCurrentGraph(); stay_in_subgraph=false)
+function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{Interface, 1}=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0), graph::FactorGraph=getCurrentGraph(); stay_in_subgraph=false)
     # This is a private function that performs a search through the factor graph to generate a schedule.
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
     # This is a recursive implementation of DFS. The recursive calls are stored in call_list.

@@ -1,4 +1,9 @@
 facts("generateSchedule() integration tests") do
+    context("ForneyLab.convert_to_schedule()") do
+        node = GaussianNode()
+        @fact ForneyLab.convert_to_schedule([node.out, node.mean]) => [(node.out, "sum_product"), (node.mean, "sum_product")]
+    end
+
     context("generateSchedule()") do
         (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
 
@@ -13,31 +18,28 @@ facts("generateSchedule() integration tests") do
         context("Should auto-generate a feasible schedule") do
             # Generate schedule automatically
             schedule = generateSchedule(add.in2) # Message towards noise factor
+            intf_list = [intf for (intf, sum_op) in schedule]
             # All (but just) required calculations should be in the schedule
-            @fact inhibitor.out in schedule => true
-            @fact driver.out    in schedule => true
-            @fact inhibitor.in1 in schedule => true
-            @fact driver.in1    in schedule => true
-            @fact add.in2       in schedule => true
-            @fact add.in1       in schedule => false
-            @fact add.out       in schedule => false
-            @fact noise.out     in schedule => false
+            @fact inhibitor.out in intf_list => true
+            @fact driver.out    in intf_list => true
+            @fact inhibitor.in1 in intf_list => true
+            @fact driver.in1    in intf_list => true
+            @fact add.in2       in intf_list => true
+            @fact add.in1       in intf_list => false
+            @fact add.out       in intf_list => false
+            @fact noise.out     in intf_list => false
             # Validate correct relative order in schedule
-            @fact findfirst(schedule, inhibitor.out)    < findfirst(schedule, driver.out)   => true
-            @fact findfirst(schedule, driver.out)       < findfirst(schedule, add.in2)      => true
-            @fact findfirst(schedule, driver.in1)       < findfirst(schedule, inhibitor.in1)=> true
-            @fact findfirst(schedule, inhibitor.in1)    < findfirst(schedule, add.in2)      => true
+            @fact findfirst(intf_list, inhibitor.out)    < findfirst(intf_list, driver.out)   => true
+            @fact findfirst(intf_list, driver.out)       < findfirst(intf_list, add.in2)      => true
+            @fact findfirst(intf_list, driver.in1)       < findfirst(intf_list, inhibitor.in1)=> true
+            @fact findfirst(intf_list, inhibitor.in1)    < findfirst(intf_list, add.in2)      => true
         end
 
         context("Should correctly complete a partial schedule") do
             # Generate a schedule that first passes clockwise through the cycle and then counterclockwise
-            schedule = generateSchedule([driver.out, add.in2]) # Message towards noise factor
+            schedule = generateSchedule(ForneyLab.convert_to_schedule([driver.out, add.in2])) # Message towards noise factor
             # All (but just) required calculations should be in the schedule
-            @fact schedule[1] => inhibitor.out
-            @fact schedule[2] => driver.out
-            @fact schedule[3] => driver.in1
-            @fact schedule[4] => inhibitor.in1
-            @fact schedule[5] => add.in2
+            @fact schedule => ForneyLab.convert_to_schedule([inhibitor.out, driver.out, driver.in1, inhibitor.in1, add.in2])
         end
 
 
@@ -50,8 +52,8 @@ facts("generateSchedule() integration tests") do
                 @fact length(unique(subgraph.internal_schedule)) => length(subgraph.internal_schedule) # No duplicate entries in schedule
             end
             # There are multiple valid schedules because of different orderings. Validity or schedule order is not checked here.
-            @fact Set{Interface}(graph.factorization[1].internal_schedule) => Set{Interface}([t1.out, a1.out, t3.out])
-            @fact Set{Interface}(graph.factorization[2].internal_schedule) => Set{Interface}([t2.out, t2.out.partner])
+            @fact Set{(Interface,ASCIIString)}(graph.factorization[1].internal_schedule) => Set{(Interface,ASCIIString)}(ForneyLab.convert_to_schedule([t1.out, a1.out, t3.out]))
+            @fact Set{(Interface,ASCIIString)}(graph.factorization[2].internal_schedule) => Set{(Interface,ASCIIString)}(ForneyLab.convert_to_schedule([t2.out, t2.out.partner]))
             @fact Set{Node}(graph.factorization[1].external_schedule) => Set{Node}([g1])
             @fact Set{Node}(graph.factorization[2].external_schedule) => Set{Node}([g1])
         end
@@ -62,10 +64,10 @@ facts("generateSchedule() integration tests") do
             node_t2 = TerminalNode()
             e = Edge(node_t1, node_t2)
             generateSchedule!(g.factorization[1])
-            @fact g.factorization[1].internal_schedule => Array(Interface, 0)
+            @fact g.factorization[1].internal_schedule => Array((Interface, SummaryOperation), 0)
             addTimeWrap(node_t1, node_t2)
             generateSchedule!(g.factorization[1])
-            @fact g.factorization[1].internal_schedule => [node_t1.out.partner]
+            @fact g.factorization[1].internal_schedule => ForneyLab.convert_to_schedule([node_t1.out.partner])
         end
 
         context("Should include backward messages when there is only one internal interface connected to an external node") do
@@ -82,8 +84,8 @@ facts("generateSchedule() integration tests") do
 
             y_subgraph = getSubgraph(y_edge)
             m_gam_subgraph = getSubgraph(m_edge)
-            @fact Set(y_subgraph.internal_schedule) => Set([y_edge.head, y_edge.tail])#Include outgoing interface
-            @fact Set(m_gam_subgraph.internal_schedule) => Set([m_edge.tail, gam_edge.tail, m_0_node.out, gam_0_node.out, m_N_node.out, gam_N_node.out])# Exclude outgoing interfaces
+            @fact Set(y_subgraph.internal_schedule) => Set(ForneyLab.convert_to_schedule([y_edge.head, y_edge.tail])) # Include outgoing interface
+            @fact Set(m_gam_subgraph.internal_schedule) => Set(ForneyLab.convert_to_schedule([m_edge.tail, gam_edge.tail, m_0_node.out, gam_0_node.out, m_N_node.out, gam_N_node.out])) # Exclude outgoing interfaces
         end
     end
 end
