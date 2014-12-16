@@ -18,7 +18,7 @@ facts("Helper function unit tests") do
         @fact isApproxEqual(eye(3,3), eye(3,3)+1e-9) => false
     end
 
-    context("getOrCreateMessage should assign a message to an interface if there is none and otherwise set a standard message") do
+    context("getOrCreateMessage should assign a message to an interface if there is none or of non-matching type, and otherwise set a standard message") do
         node = TerminalNode(GaussianDistribution())
         @fact node.out.message => nothing
         ForneyLab.getOrCreateMessage(node.out, GaussianDistribution)
@@ -28,6 +28,6 @@ facts("Helper function unit tests") do
         ForneyLab.getOrCreateMessage(node2.out, DeltaDistribution{Float64})
         @fact typeof(node2.out.message.payload) <: DeltaDistribution => true
         ForneyLab.updateNodeMessage!(node2, 1, nothing)
-        @fact mean(ForneyLab.getOrCreateMessage(node2.out, DeltaDistribution).payload) => 2.0
+        @fact mean(ForneyLab.getOrCreateMessage(node2.out, DeltaDistribution{Float64}).payload) => 2.0
     end
 end

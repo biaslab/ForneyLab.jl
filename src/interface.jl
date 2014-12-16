@@ -54,7 +54,7 @@ function getOrCreateMessage{T<:ProbabilityDistribution}(interface::Interface, as
     # Looks for a message on interface.
     # When no message is present, it sets and returns a standard message.
     # Otherwise it returns the present message.
-    if interface.message == nothing
+    if interface.message == nothing || typeof(interface.message.payload) != assign_payload
         interface.message = Message(assign_payload())
     end
 
