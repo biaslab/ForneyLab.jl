@@ -41,6 +41,11 @@ end
 
 isDeterministic(::LogarithmicNode) = true
 
+
+############################################
+# Standard update functions
+############################################
+
 # Forward message
 function updateNodeMessage!(node::LogarithmicNode,
                             outbound_interface_id::Int,
@@ -74,6 +79,35 @@ function updateNodeMessage!(node::LogarithmicNode,
     dist_out.V = nothing
     dist_out.W = reshape([a-1], 1, 1)
     dist_out.xi= nothing
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+
+############################################
+# DeltaDistribution update functions
+############################################
+
+# Forward message
+function updateNodeMessage!(node::LogarithmicNode,
+                            outbound_interface_id::Int,
+                            msg_in1::Message{DeltaDistribution{Float64}},
+                            msg_out::Nothing)
+    dist_out = getOrCreateMessage(node.out, DeltaDistribution{Float64}).payload
+
+    dist_out.m = log(msg_in1.payload.m)
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+# Backward message
+function updateNodeMessage!(node::LogarithmicNode,
+                            outbound_interface_id::Int,
+                            msg_in1::Nothing,
+                            msg_out::Message{DeltaDistribution{Float64}})
+    dist_out = getOrCreateMessage(node.in1, DeltaDistribution{Float64}).payload
+
+    dist_out.m = exp(msg_out.payload.m)
 
     return node.interfaces[outbound_interface_id].message
 end
