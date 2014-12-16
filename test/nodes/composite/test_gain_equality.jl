@@ -30,42 +30,42 @@ facts("GainEqualityCompositeNode unit tests") do
     context("GainEqualityCompositeNode should propagate a GaussianDistribution with (xi,W) parametrization") do
         # Forward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), nothing])
-        ForneyLab.updateNodeMessage!((node.out, "sum_product"))
+        ForneyLab.updateNodeMessage!(ScheduleEntry(node.out))
         @fact node.out.message.payload => GaussianDistribution(W=reshape([0.5, 0.25, 0.25, 0.5], 2, 2), xi=[1.0, 2.0])
         # Backward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0]))])
-        ForneyLab.updateNodeMessage!((node.in2, "sum_product"))
+        ForneyLab.updateNodeMessage!(ScheduleEntry(node.in2))
         @fact node.in2.message.payload => GaussianDistribution(W=reshape([5.0, 2.5, 2.5, 5.0], 2, 2), xi=[3.0, 6.0])
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0]))])
-        ForneyLab.updateNodeMessage!((node.in1, "sum_product"))
+        ForneyLab.updateNodeMessage!(ScheduleEntry(node.in1))
         @fact node.in1.message.payload => GaussianDistribution(W=reshape([5.0, 2.5, 2.5, 5.0], 2, 2), xi=[3.0, 6.0])
     end
 
     context("GainEqualityCompositeNode should propagate a GaussianDistribution with (m,W) parametrization") do
         # Forward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing])
-        ForneyLab.updateNodeMessage!((node.out, "sum_product"))
+        ForneyLab.updateNodeMessage!(ScheduleEntry(node.out))
         @fact node.out.message.payload => GaussianDistribution(W=reshape([0.5, 0.25, 0.25, 0.5], 2, 2), m=[2.0, 4.0])
         # Backward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0]))])
-        ForneyLab.updateNodeMessage!((node.in2, "sum_product"))
+        ForneyLab.updateNodeMessage!(ScheduleEntry(node.in2))
         @fact node.in2.message.payload => GaussianDistribution(W=reshape([5.0, 2.5, 2.5, 5.0], 2, 2), m=[0.6, 1.2])
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [nothing, Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0]))])
-        ForneyLab.updateNodeMessage!((node.in1, "sum_product"))
+        ForneyLab.updateNodeMessage!(ScheduleEntry(node.in1))
         @fact node.in1.message.payload => GaussianDistribution(W=reshape([5.0, 2.5, 2.5, 5.0], 2, 2), m=[0.6, 1.2])
     end
 
     context("GainEqualityCompositeNode should propagate a GaussianDistribution with (m,V) parametrization") do
         # Forward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing])
-        ForneyLab.updateNodeMessage!((node.out, "sum_product"))
+        ForneyLab.updateNodeMessage!(ScheduleEntry(node.out))
         @fact node.out.message.payload => GaussianDistribution(V=reshape([2.0, 1.0, 1.0, 2.0], 2, 2), m=[2.0, 4.0])
         # Backward
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), nothing, Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0]))])
-        ForneyLab.updateNodeMessage!((node.in2, "sum_product"))
+        ForneyLab.updateNodeMessage!(ScheduleEntry(node.in2))
         @fact node.in2.message.payload => GaussianDistribution(V=reshape([0.2, 0.1, 0.1, 0.2], 2, 2), m=[0.6, 1.2])
         node = initializeGainEqualityCompositeNode(2.0*eye(2), true, [nothing, Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0])), Message(GaussianDistribution(V=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), m=[1.0, 2.0]))])
-        ForneyLab.updateNodeMessage!((node.in1, "sum_product"))
+        ForneyLab.updateNodeMessage!(ScheduleEntry(node.in1))
         @fact node.in1.message.payload => GaussianDistribution(V=reshape([0.2, 0.1, 0.1, 0.2], 2, 2), m=[0.6, 1.2])
     end
 end

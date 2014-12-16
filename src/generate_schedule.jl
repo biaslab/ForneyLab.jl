@@ -26,22 +26,24 @@ function generateSchedule(partial_schedule::Schedule, graph::FactorGraph=getCurr
 
     # Verify that all entries in partial_schedule belong to the same subgraph
     (length(partial_schedule) > 0) || error("Partial schedule should contain at least one entry")
-    (first_interface, sum_op) = partial_schedule[1]
-    for (interface, summary_operation) in partial_schedule
-        is(graph.edge_to_subgraph[interface.edge], graph.edge_to_subgraph[first_interface.edge]) || error("Not all interfaces in your partial schedule belong to the same subgraph")
+    
+    for schedule_entry in partial_schedule
+        is(graph.edge_to_subgraph[schedule_entry.interface.edge], graph.edge_to_subgraph[partial_schedule[1].interface.edge]) || error("Not all interfaces in your partial schedule belong to the same subgraph")
     end
 
     schedule = Array(Interface, 0)
-    for (interface_order_constraint, sum_op) in partial_schedule
-        schedule = generateScheduleByDFS(interface_order_constraint, schedule, Array(Interface, 0), graph; args...)
+    for schedule_entry in partial_schedule
+        schedule = generateScheduleByDFS(schedule_entry.interface, schedule, Array(Interface, 0), graph; args...)
     end
 
     return convert_to_schedule(schedule)
 end
+generateSchedule(partial_list::Array{Interface, 1}, graph::FactorGraph=getCurrentGraph(); args...) = generateSchedule(convert_to_schedule(partial_list), graph; args...)
 function generateSchedule!(partial_schedule::Schedule, graph::FactorGraph=getCurrentGraph(); args...)
     schedule = generateSchedule(partial_schedule, graph; args...)
     return graph.edge_to_subgraph[partial_schedule[1].edge].internal_schedule = schedule
 end
+generateSchedule!(partial_list::Array{Interface, 1}, graph::FactorGraph=getCurrentGraph(); args...) = generateSchedule!(convert_to_schedule(partial_list), graph; args...)
 
 function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
     # Generate an internal and external schedule for the subgraph
@@ -51,7 +53,7 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
 
     schedule_for_univariate = Array(Interface, 0)
     internal_schedule = Array(Interface, 0)
-    subgraph.internal_schedule = Array((Interface, SummaryOperation), 0)
+    subgraph.internal_schedule = Array(ScheduleEntry, 0)
     # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present
     for g_node in subgraph.external_schedule # All nodes that are connected to at least one external edge
         outbound_interfaces = Array(Interface, 0) # Array that holds required outbound for the case of one internal edge connected to g_node

@@ -101,6 +101,12 @@ facts("Message passing integration tests") do
             @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
         end
 
+        context("Should handle sampling") do
+            node = initializeAdditionNode(Any[Message(GaussianDistribution()), Message(GaussianDistribution()), Message(GaussianDistribution())])
+            schedule = [ScheduleEntry(node.out, "sample")]
+            @fact typeof(executeSchedule(schedule).payload) => DeltaDistribution{Array{Float64, 1}}
+        end
+
         context("Should work as expeced in loopy graphs") do
             (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
             setMessage!(driver.out, Message(GaussianDistribution()))
