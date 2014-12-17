@@ -47,7 +47,7 @@ isDeterministic(::TerminalNode) = false # Edge case for deterministicness
 # Overload firstFreeInterface since EqualityNode is symmetrical in its interfaces
 firstFreeInterface(node::TerminalNode) = (node.out.partner==nothing) ? node.out : error("No free interface on $(typeof(node)) $(node.name)")
 
-function updateNodeMessage!(node::TerminalNode,
+function sumProduct!(node::TerminalNode,
                             outbound_interface_id::Int,
                             ::Any)
     # Calculate an outbound message. The TerminalNode does not accept incoming messages.

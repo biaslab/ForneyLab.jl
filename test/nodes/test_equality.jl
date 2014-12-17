@@ -39,7 +39,7 @@ facts("EqualityNode unit tests") do
     context("EqualityNode should propagate a univariate GaussianDistribution") do
         # The following tests on the update rules correspond to node 1 from Table 4.1 in:
         # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
-        # In the tests, we use the exact rules from Korl. The actual implementation of updateNodeMessage!() will calculate
+        # In the tests, we use the exact rules from Korl. The actual implementation of sumProduct!() will calculate
         # the (xi,W) parametrizations of the inbound messages, such that only the W and xi update rules are used in practice.
         context("EqualityNode should propagate a univariate GaussianDistribution with (m,V) parametrization") do
             inbound_dist = GaussianDistribution(m=3.0, V=5.0)
@@ -80,7 +80,7 @@ facts("EqualityNode unit tests") do
     context("EqualityNode should propagate a multivariate GaussianDistribution") do
         # The following tests on the update rules correspond to node 1 from Table 4.1 in:
         # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
-        # In the tests, we use the exact rules from Korl. The actual implementation of updateNodeMessage!() will calculate
+        # In the tests, we use the exact rules from Korl. The actual implementation of sumProduct!() will calculate
         # the (xi,W) parametrizations of the inbound messages, such that only the W and xi update rules are used in practice.
         context("EqualityNode should propagate a multivariate GaussianDistribution with (m,V) parametrization") do
             mean = [1.0:3.0]

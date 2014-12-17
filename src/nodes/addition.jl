@@ -69,7 +69,7 @@ backwardAdditionWRule{T<:Number}(W_x::Array{T, 2}, W_z::Array{T, 2}) = W_x * pin
 backwardAdditionXiRule{T<:Number}(V_x::Array{T, 2}, xi_x::Array{T, 1}, V_z::Array{T, 2}, xi_z::Array{T, 1}) = pinv(V_x + V_z) * (V_z*xi_z - V_x*xi_x)
 
 # Message towards OUT
-function updateNodeMessage!(node::AdditionNode,
+function sumProduct!(node::AdditionNode,
                             ::Int,
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
@@ -109,7 +109,7 @@ function updateNodeMessage!(node::AdditionNode,
 end
 
 # Message towards IN1 or IN2
-function updateNodeMessage!(node::AdditionNode,
+function sumProduct!(node::AdditionNode,
                             outbound_interface_id::Int,
                             msg_in1::Message{GaussianDistribution},
                             ::Nothing,
@@ -150,7 +150,7 @@ function updateNodeMessage!(node::AdditionNode,
 
     return node.interfaces[outbound_interface_id].message
 end
-updateNodeMessage!(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{GaussianDistribution}, msg_out::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, msg_in2, nothing, msg_out)
+sumProduct!(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{GaussianDistribution}, msg_out::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_id, msg_in2, nothing, msg_out)
 
 
 #############################################
@@ -158,7 +158,7 @@ updateNodeMessage!(node::AdditionNode, outbound_interface_id::Int, ::Nothing, ms
 #############################################
 
 # Message towards OUT
-function updateNodeMessage!{T<:Any}(
+function sumProduct!{T<:Any}(
                             node::AdditionNode,
                             ::Int,
                             msg_in1::Message{DeltaDistribution{T}},
@@ -172,7 +172,7 @@ function updateNodeMessage!{T<:Any}(
 end
 
 # Message towards IN1 or IN2
-function updateNodeMessage!{T<:Any}(node::AdditionNode,
+function sumProduct!{T<:Any}(node::AdditionNode,
                             outbound_interface_id::Int,
                             msg_in1::Message{DeltaDistribution{T}},
                             ::Nothing,
@@ -184,7 +184,7 @@ function updateNodeMessage!{T<:Any}(node::AdditionNode,
 
     return node.interfaces[outbound_interface_id].message
 end
-updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{DeltaDistribution{T}}, msg_out::Message{DeltaDistribution{T}}) = updateNodeMessage!(node, outbound_interface_id, msg_in2, nothing, msg_out)
+sumProduct!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{DeltaDistribution{T}}, msg_out::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_in2, nothing, msg_out)
 
 
 ############################################
@@ -192,11 +192,11 @@ updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, ::Not
 ############################################
 
 # Forward
-updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, msg_in1::Message{DeltaDistribution{T}}, msg_in2::Message{GaussianDistribution}, ::Nothing) = updateNodeMessage!(node, outbound_interface_id, convert(Message{GaussianDistribution}, msg_in1), msg_in2, nothing)
-updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, msg_in1::Message{GaussianDistribution}, msg_in2::Message{DeltaDistribution{T}}, ::Nothing) = updateNodeMessage!(node, outbound_interface_id, msg_in1, convert(Message{GaussianDistribution}, msg_in2), nothing)
+sumProduct!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, msg_in1::Message{DeltaDistribution{T}}, msg_in2::Message{GaussianDistribution}, ::Nothing) = sumProduct!(node, outbound_interface_id, convert(Message{GaussianDistribution}, msg_in1), msg_in2, nothing)
+sumProduct!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, msg_in1::Message{GaussianDistribution}, msg_in2::Message{DeltaDistribution{T}}, ::Nothing) = sumProduct!(node, outbound_interface_id, msg_in1, convert(Message{GaussianDistribution}, msg_in2), nothing)
 # Backward to in1
-updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{DeltaDistribution{T}}, msg_out::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, nothing, convert(Message{GaussianDistribution}, msg_in2), msg_out)
-updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{GaussianDistribution}, msg_out::Message{DeltaDistribution{T}}) = updateNodeMessage!(node, outbound_interface_id, nothing, msg_in2, convert(Message{GaussianDistribution}, msg_out))
+sumProduct!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{DeltaDistribution{T}}, msg_out::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_id, nothing, convert(Message{GaussianDistribution}, msg_in2), msg_out)
+sumProduct!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{GaussianDistribution}, msg_out::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, nothing, msg_in2, convert(Message{GaussianDistribution}, msg_out))
 # Backward to in2
-updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, msg_in1::Message{DeltaDistribution{T}}, ::Nothing, msg_out::Message{GaussianDistribution}) = updateNodeMessage!(node, outbound_interface_id, convert(Message{GaussianDistribution}, msg_in1), nothing, msg_out)
-updateNodeMessage!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, msg_in1::Message{GaussianDistribution}, ::Nothing, msg_out::Message{DeltaDistribution{T}}) = updateNodeMessage!(node, outbound_interface_id, msg_in1, nothing, convert(Message{GaussianDistribution}, msg_out))
+sumProduct!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, msg_in1::Message{DeltaDistribution{T}}, ::Nothing, msg_out::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_id, convert(Message{GaussianDistribution}, msg_in1), nothing, msg_out)
+sumProduct!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, msg_in1::Message{GaussianDistribution}, ::Nothing, msg_out::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_in1, nothing, convert(Message{GaussianDistribution}, msg_out))

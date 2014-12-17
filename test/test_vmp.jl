@@ -39,8 +39,8 @@ facts("Naive VMP implementation integration tests") do
             executeSchedule(subgraph_gam)
         end
         # One last time to ensure all calculations have propagated through the equality chains
-        executeSchedule([m_eq_nodes[end].interfaces[2]])
-        executeSchedule([gam_eq_nodes[end].interfaces[2]])
+        executeSchedule(ForneyLab.convert(Schedule, [m_eq_nodes[end].interfaces[2]]))
+        executeSchedule(ForneyLab.convert(Schedule, [gam_eq_nodes[end].interfaces[2]]))
 
         # Save outcome
         ensureMVParametrization!(m_eq_nodes[end].interfaces[2].message.payload)
@@ -91,8 +91,8 @@ facts("Structured VMP implementation integration tests") do
                 executeSchedule(y_subgraph)
             end
             # Propagate through chain
-            executeSchedule([g_node.mean, m_eq_node.interfaces[2]])
-            executeSchedule([g_node.precision, gam_eq_node.interfaces[2]])
+            executeSchedule(ForneyLab.convert(Schedule, [g_node.mean, m_eq_node.interfaces[2]]))
+            executeSchedule(ForneyLab.convert(Schedule, [g_node.precision, gam_eq_node.interfaces[2]]))
 
             # Switch posterior to prior for next sample
             m_0_node.value = deepcopy(m_eq_node.interfaces[2].message.payload)

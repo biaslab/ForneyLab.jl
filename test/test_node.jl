@@ -24,8 +24,8 @@ facts("General node properties unit tests") do
                 end
             end
 
-            context("$(node_type) should have at least 1 updateNodeMessage!() method") do
-                @fact contains(string(methods(ForneyLab.updateNodeMessage!)), string("::", node_type)) => true
+            context("$(node_type) should have at least 1 sumProduct!() method") do
+                @fact contains(string(methods(ForneyLab.sumProduct!)), string("::", node_type)) => true
             end
         end
     end

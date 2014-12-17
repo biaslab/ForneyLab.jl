@@ -77,9 +77,9 @@ type GainEqualityCompositeNode <: CompositeNode
         self.interfaces[3].child = self.fixed_gain_node.out
 
         # Set internal message passing schedules
-        self.in1.internal_schedule = [self.fixed_gain_node.in1, self.equality_node.interfaces[1]]
-        self.in2.internal_schedule = [self.fixed_gain_node.in1, self.equality_node.interfaces[3]]
-        self.out.internal_schedule = [self.equality_node.interfaces[2], self.fixed_gain_node.out]
+        self.in1.internal_schedule = convert(Schedule, [self.fixed_gain_node.in1, self.equality_node.interfaces[1]])
+        self.in2.internal_schedule = convert(Schedule, [self.fixed_gain_node.in1, self.equality_node.interfaces[3]])
+        self.out.internal_schedule = convert(Schedule, [self.equality_node.interfaces[2], self.fixed_gain_node.out])
 
         return self
     end
@@ -98,7 +98,7 @@ backwardGainEqualityXiRule{T<:Number}(A::Array{T, 2}, xi_x::Array{T, 1}, xi_y::A
 backwardGainEqualityVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x - V_x * A' * inv(V_y + A * V_x * A') * A * V_x
 backwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, V_x::Array{T, 2}, m_y::Array{T, 1}, V_y::Array{T, 2}) = m_x + V_x * A' * inv(V_y + A * V_x * A') * (m_y - A * m_x)
 
-function updateNodeMessage!(node::GainEqualityCompositeNode,
+function sumProduct!(node::GainEqualityCompositeNode,
                             outbound_interface_id::Int,
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
@@ -108,7 +108,7 @@ function updateNodeMessage!(node::GainEqualityCompositeNode,
     return node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
 end
 
-function updateNodeMessage!(node::GainEqualityCompositeNode,
+function sumProduct!(node::GainEqualityCompositeNode,
                             outbound_interface_id::Int,
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Nothing,
@@ -117,7 +117,7 @@ function updateNodeMessage!(node::GainEqualityCompositeNode,
     return applyBackwardRule!(node, outbound_interface_id, msg_in1, msg_out)
 end
 
-function updateNodeMessage!(node::GainEqualityCompositeNode,
+function sumProduct!(node::GainEqualityCompositeNode,
                             outbound_interface_id::Int,
                             msg_in1::Nothing,
                             msg_in2::Message{GaussianDistribution},

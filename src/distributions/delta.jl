@@ -9,7 +9,7 @@
 #   Example: DeltaDistribution(3.0)
 ############################################
 
-export DeltaDistribution
+export DeltaDistribution, sample
 
 type DeltaDistribution{T} <: ProbabilityDistribution
     m::T
@@ -24,6 +24,8 @@ show(io::IO, dist::DeltaDistribution) = println(io, "DeltaDistribution($(dist.m)
 
 Base.mean(dist::DeltaDistribution) = dist.m
 Base.var(dist::DeltaDistribution) = 0.0
+
+sample(dist::DeltaDistribution) = dist
 
 ==(x::DeltaDistribution, y::DeltaDistribution) = (x.m == y.m)
 

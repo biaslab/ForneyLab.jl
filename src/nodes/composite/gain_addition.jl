@@ -77,9 +77,9 @@ type GainAdditionCompositeNode <: CompositeNode
         self.interfaces[3].child = self.addition_node.out
 
         # Set internal message passing schedules
-        self.in1.internal_schedule = [self.addition_node.in1, self.fixed_gain_node.in1]
-        self.in2.internal_schedule = [self.fixed_gain_node.out, self.addition_node.in2]
-        self.out.internal_schedule = [self.fixed_gain_node.out, self.addition_node.out]
+        self.in1.internal_schedule = convert(Schedule, [self.addition_node.in1, self.fixed_gain_node.in1])
+        self.in2.internal_schedule = convert(Schedule, [self.fixed_gain_node.out, self.addition_node.in2])
+        self.out.internal_schedule = convert(Schedule, [self.fixed_gain_node.out, self.addition_node.out])
 
         return self
     end
@@ -106,7 +106,7 @@ backwardIn2GainAdditionWRule{T<:Number}(A::Array{T, 2}, W_y::Array{T, 2}, W_z::A
 backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z::Array{T, 1}, W_y::Array{T, 2}, W_z::Array{T, 2}) = xi_z - W_z*A*inv(W_y+A'*W_z*A)*(xi_y+A'*xi_z)
 
 # Forward to OUT
-function updateNodeMessage!(node::GainAdditionCompositeNode,
+function sumProduct!(node::GainAdditionCompositeNode,
                             outbound_interface_id::Int,
                             in1::Message{GaussianDistribution},
                             in2::Message{GaussianDistribution},
@@ -174,7 +174,7 @@ function updateNodeMessage!(node::GainAdditionCompositeNode,
 end
 
 # Backward to IN2
-function updateNodeMessage!(node::GainAdditionCompositeNode,
+function sumProduct!(node::GainAdditionCompositeNode,
                             outbound_interface_id::Int,
                             in1::Message{GaussianDistribution},
                             ::Nothing,
@@ -242,7 +242,7 @@ function updateNodeMessage!(node::GainAdditionCompositeNode,
 end
 
 # Backward to IN1
-function updateNodeMessage!(node::GainAdditionCompositeNode,
+function sumProduct!(node::GainAdditionCompositeNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             in2::Message{GaussianDistribution},
