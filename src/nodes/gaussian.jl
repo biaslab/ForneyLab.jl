@@ -180,32 +180,47 @@ isDeterministic(::GaussianNode) = false
 # Standard update functions
 ############################################
 
-function updateNodeMessage!(node::GaussianNode,
+function updateNodeMessage!{T1<:Any, T2<:Any}(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
-                            msg_variance::Message{InverseGammaDistribution},
-                            msg_out::Message{DeltaDistribution{Float64}})
-    # Backward mean
-    #                                    
-    #   <--      IG  
-    #  ---->[N]<---- 
-    #    N   |       
-    #        | Dlt     
-    #        v      
+                            msg_var_prec::Message{DeltaDistribution{T1}},
+                            msg_out::Message{DeltaDistribution{T2}})
+    # Rules from Korl table 5.2 by symmetry
+    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
+    # Here we assume the variance to be a point estimate.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    if isdefined(node, :variance)
+        # Backward over mean
+        #
+        #   N       Dlt            
+        #  ---->[N]<----
+        #  <--   |
+        #        | Dlt
+        #        v
 
-    # Formulas from table 5.2 in Korl (2005)
-    if is(node.interfaces[outbound_interface_id], node.mean)
-        # Backward over mean edge
-        # Rules not in Korl, but equivalent by symmetry
-        gamma = msg_variance.payload
-        y = msg_out.payload.m
-        (typeof(y) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
-        dist_out.m = [y]
-        dist_out.V = reshape([gamma.b/(gamma.a-1)], 1, 1)
+        (length(msg_out.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
+        dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+
+        dist_out.m = [msg_out.payload.m[1]]
         dist_out.xi = nothing
+        dist_out.V = reshape([msg_var_prec.payload.m[1]], 1, 1)
         dist_out.W = nothing
+    elseif isdefined(node, :precision)
+        # Backward over mean
+        #
+        #   N       Dlt            
+        #  ---->[N]<----
+        #  <--   |
+        #        | Dlt
+        #        v
+
+        (length(msg_out.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
+        dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+
+        dist_out.m = [msg_out.payload.m[1]]
+        dist_out.xi = nothing
+        dist_out.V = nothing
+        dist_out.W = reshape([msg_var_prec.payload.m[1]], 1, 1)
     else
         error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
@@ -213,58 +228,44 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function updateNodeMessage!{T1<:Any, T2<:Any}(node::GaussianNode,
                             outbound_interface_id::Int,
-                            msg_mean::Message{DeltaDistribution{Float64}},
-                            msg_variance::Message{InverseGammaDistribution},
-                            ::Nothing)
-    # Forward y
-    #            IG      
-    #  ---->[N]<----     
-    #  Dlt   |           
-    #      N | |         
-    #        v v         
-
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
-
-    # Formulas from table 5.2 in Korl (2005)
-    if is(node.interfaces[outbound_interface_id], node.out)
-        # Forward message
-        gamma = msg_variance.payload
-        mean = msg_mean.payload.m
-        (typeof(mean) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
-        dist_out.m = [mean]
-        dist_out.V = reshape([gamma.b/(gamma.a-1)], 1, 1)
-        dist_out.xi = nothing
-        dist_out.W = nothing
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
-    end
-
-    return node.interfaces[outbound_interface_id].message
-end
-
-function updateNodeMessage!(node::GaussianNode,
-                            outbound_interface_id::Int,
-                            msg_mean::Message{DeltaDistribution{Float64}},
+                            msg_mean::Message{DeltaDistribution{T1}},
                             ::Nothing,
-                            msg_out::Message{DeltaDistribution{Float64}})
-    # Backward over variance
-    #
-    #   Dlt      IG            
-    #  ---->[N]<----
-    #        |   -->
-    #     Dlt|  
-    #        v
+                            msg_out::Message{DeltaDistribution{T2}})
+    # Rules from Korl table 5.2
+    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
+    # Here we assume the variance to be a point estimate.
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
+    if isdefined(node, :variance)
+        # Backward over variance
+        #
+        #   Dlt      IG            
+        #  ---->[N]<----
+        #        |   -->
+        #     Dlt|  
+        #        v
 
-    if is(node.interfaces[outbound_interface_id], node.variance)
-        # Backward over variance edge
-        y = msg_out.payload.m
-        m = msg_mean.payload.m
-        (typeof(m) <: Real && typeof(y) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
+        dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
+        y = msg_out.payload.m[1]
+        length(msg_mean.payload.m) == 1 || error("Update only defined for univariate distributions")
+        m = msg_mean.payload.m[1]
         dist_out.a = -0.5
+        dist_out.b = 0.5*(y-m)^2
+    elseif isdefined(node, :precision)
+        # Backward over precision
+        #
+        #   Dlt      Gam            
+        #  ---->[N]<----
+        #        |   -->
+        #     Dlt|  
+        #        v
+
+        dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaDistribution).payload
+        y = msg_out.payload.m[1]
+        length(msg_mean.payload.m) == 1 || error("Update only defined for univariate distributions")
+        m = msg_mean.payload.m[1]
+        dist_out.a = 1.5
         dist_out.b = 0.5*(y-m)^2
     else
         error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
@@ -273,51 +274,138 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function updateNodeMessage!{T<:Any}(node::GaussianNode,
                             outbound_interface_id::Int,
-                            msg_variance::Message{InverseGammaDistribution},
+                            ::Nothing,
+                            msg_out::Message{DeltaDistribution{T}})
+    # Rules from Korl table 5.2
+    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
+    # Here we assume the variance to be a point estimate.
+
+    if isdefined(node, :variance)
+        # Backward over variance with fixed mean
+        #
+        #  Ig        Dlt               
+        #  ---->[N]---->
+        #   <--  
+
+        dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
+        y = msg_out.payload.m[1]
+        length(node.m) == 1 || error("Update only defined for univariate distributions")
+        m = node.m[1]
+        dist_out.a = -0.5
+        dist_out.b = 0.5*(y-m)^2
+    elseif isdefined(node, :precision)
+        # Backward over precision with fixed mean
+        #
+        #  Gam       Dlt               
+        #  ---->[N]---->
+        #   <--  
+
+        dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaDistribution).payload
+        y = msg_out.payload.m[1]
+        length(node.m) == 1 || error("Update only defined for univariate distributions")
+        m = node.m[1]
+        dist_out.a = 1.5
+        dist_out.b = 0.5*(y-m)^2
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+    end
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+function updateNodeMessage!{T1<:Any, T2<:Any}(node::GaussianNode,
+                            outbound_interface_id::Int,
+                            msg_mean::Message{DeltaDistribution{T1}},
+                            msg_var_prec::Message{DeltaDistribution{T2}},
+                            ::Nothing)
+    # Rules from Korl table 5.2
+    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
+    # Here we assume the variance to be a point estimate.
+
+    if isdefined(node, :variance)
+        # Forward over out
+        #
+        #   Dlt     Dlt            
+        #  ---->[N]<----
+        #        |
+        #      | |  
+        #      v v
+
+        (length(msg_mean.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
+        dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+
+        dist_out.m = [msg_mean.payload.m[1]]
+        dist_out.xi = nothing
+        dist_out.V = reshape([msg_var_prec.payload.m[1]], 1, 1)
+        dist_out.W = nothing
+    elseif isdefined(node, :precision)
+        # Forward over out
+        #
+        #   Dlt     Dlt            
+        #  ---->[N]<----
+        #        |
+        #      | |  
+        #      v v
+
+        (length(msg_mean.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
+        dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+
+        dist_out.m = [msg_mean.payload.m[1]]
+        dist_out.xi = nothing
+        dist_out.V = nothing
+        dist_out.W = reshape([msg_var_prec.payload.m[1]], 1, 1)
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+    end
+
+    return node.interfaces[outbound_interface_id].message
+end
+
+function updateNodeMessage!{T<:Any}(node::GaussianNode,
+                            outbound_interface_id::Int,
+                            msg_var_prec::Message{DeltaDistribution{T}},
                             msg_out::Nothing)
-    # Forward with fixed mean
-    #
-    # IG     -->
-    # --->[N]--->
-    #         N
-    
-    # Rule from Korl table 5.2
+    # Rules from Korl table 5.2
+    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
+    # Here we assume the variance to be a point estimate.
 
-    (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    if isdefined(node, :variance)
+        # Forward over out with fixed mean
+        #
+        #  Dlt        N               
+        #  ---->[N]---->
+        #           -->  
 
-    dist_out.m = deepcopy(node.m)
-    dist_out.xi = nothing
-    dist_out.V = reshape([msg_variance.payload.b/(msg_variance.payload.a-1)], 1, 1)
-    dist_out.W = nothing
+        (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
+        dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    return node.interfaces[outbound_interface_id].message
-end
+        dist_out.m = deepcopy(node.m)
+        dist_out.xi = nothing
+        dist_out.V = reshape([msg_var_prec.payload.m[1]], 1, 1)
+        dist_out.W = nothing
+    elseif isdefined(node, :precision)
+        # Forward over out with fixed mean
+        #
+        #  Dlt        N               
+        #  ---->[N]---->
+        #           -->  
 
-function updateNodeMessage!(node::GaussianNode,
-                            outbound_interface_id::Int,
-                            msg_variance::Nothing,
-                            msg_out::Message{DeltaDistribution{Float64}})
-    # Backward with fixed mean
-    #
-    # <--    Dlt
-    # --->[N]--->
-    #  IG
+        (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
+        dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    # Rule from Korl table 5.2
-
-    (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
-    y = msg_out.payload.m
-    (typeof(y) <: Real) || error("Update not defined for non-scalars (GaussianNode $(node.name))")
-
-    dist_out.a = -0.5
-    dist_out.b = 0.5*(y - node.m[1])^2
+        dist_out.m = deepcopy(node.m)
+        dist_out.xi = nothing
+        dist_out.V = nothing
+        dist_out.W = reshape([msg_var_prec.payload.m[1]], 1, 1)
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+    end
 
     return node.interfaces[outbound_interface_id].message
 end
+
 
 ############################################
 # Naive variational update functions
