@@ -16,13 +16,17 @@ convert(::Type{Schedule}, interfaces::Array{Interface, 1}, summary_operation::Sy
 
 function show(io::IO, schedule::Schedule)
     # Show schedules in a specific way
-    println(io, "Message passing schedule [{summary operation} update at {node type} {node name}:{outbound iface index} ({outbound iface name})]:")
+    println(io, "Message passing schedule")
+    println(io, " #  | {summary operation}      | {node type} {node name}:{outbound iface index} ({outbound iface name})")
+    println(io, " ------------------------------------------------------------------------------------------------------")
+    entry_counter = 1
     for schedule_entry in schedule
         interface = schedule_entry.interface
         summary_operation = schedule_entry.summary_operation
         
         interface_name = (getName(interface)!="") ? "($(getName(interface)))" : ""
-        println(io, " $(summary_operation) update at $(typeof(interface.node)) $(interface.node.name):$(findfirst(interface.node.interfaces, interface)) $(interface_name)")
+        println(io, " $(entry_counter)$(" "^(3-length(string(entry_counter))))| $(summary_operation)$(" "^(25-length(string(summary_operation))))| $(typeof(interface.node)) $(interface.node.name):$(findfirst(interface.node.interfaces, interface)) $(interface_name)")
+        entry_counter += 1
     end
 end
 
