@@ -63,12 +63,15 @@ function updateNodeMessage!(schedule_entry::ScheduleEntry, graph::FactorGraph=ge
     # Calculate the outbound message based on the inbound messages and the node update function.
     # The resulting message is stored in the specified interface and is returned.
 
-    outbound_interface = schedule_entry.interface # Dissect schedule entry
+    # Dissect schedule entry
+    outbound_interface = schedule_entry.interface
     summary_operation = schedule_entry.summary_operation
-    if summary_operation in ["sum_product", "sample"]
+
+    # Sumproduct update
+    if summary_operation in [:sumproduct, :sumproduct_sample]
+        # Preprocessing
         node = outbound_interface.node
-        # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
-        inbound_array = Array(Any, 0)
+        inbound_array = Array(Any, 0) # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
         outbound_interface_id = 0
         for interface_id = 1:length(node.interfaces)
             interface = node.interfaces[interface_id]
@@ -86,16 +89,17 @@ function updateNodeMessage!(schedule_entry::ScheduleEntry, graph::FactorGraph=ge
             end
         end
 
-        # Evaluate node update function
+        # Evaluate sumproduct update
         printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id:")
+        summary_message = sumProduct!(node, outbound_interface_id, inbound_array...)
 
-        summary_message = updateNodeMessage!(node, outbound_interface_id, inbound_array...)
-
-        if summary_operation == "sample"
+        # Post processing (sampling)
+        if summary_operation == :sumproduct_sample
+            # Sample and reassign
             summary_message = node.interfaces[outbound_interface_id].message = Message(sample(summary_message.payload))
         end
-    else
-        error("Unknown summary operation $(summary_operation). Please choose between 'sum_product' and 'sample'.")
+    else # Alternative summary operations are not defined
+        error("Unknown summary operation :$(summary_operation). Please choose between ':sumproduct' and ':sumproduct_sample'.")
     end
 
     return summary_message

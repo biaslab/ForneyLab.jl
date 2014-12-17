@@ -2,14 +2,14 @@ export ScheduleEntry, Schedule, ExternalSchedule, ==
 
 type ScheduleEntry
     interface::Interface
-    summary_operation::ASCIIString # Summary operation for calculating outbound messages. Default is "sum_product"
+    summary_operation::Symbol # Summary operation for calculating outbound messages. Default is :sumproduct
 
-    function ScheduleEntry(interface::Interface, summary_operation::ASCIIString)
-        summary_operation in ["sum_product", "sample"] || error("Unknown summary operation $(summary_operation). Please choose between 'sum_product' and 'sample'.")
+    function ScheduleEntry(interface::Interface, summary_operation::Symbol)
+        summary_operation in [:sumproduct, :sumproduct_sample] || error("Unknown summary operation :$(summary_operation). Please choose between ':sumproduct' and ':sumproduct_sample'.")
         return new(interface, summary_operation)
     end
 end
-ScheduleEntry(interface::Interface) = ScheduleEntry(interface, "sum_product")
+ScheduleEntry(interface::Interface) = ScheduleEntry(interface, :sumproduct)
 
 typealias Schedule Array{ScheduleEntry, 1}
 convert_to_schedule(interfaces::Array{Interface, 1}) = [ScheduleEntry(intf) for intf in interfaces] # Convert a list of interfaces to an actual schedule

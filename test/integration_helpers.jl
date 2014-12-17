@@ -367,7 +367,7 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
 
     # Build graph
     for section=1:n_samples
-        g_node = GaussianNode(; name="g_node_$(section)", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
+        g_node = GaussianNode(; name="g_node_$(section)", form="precision")
         m_eq_node = EqualityNode(; name="m_eq_$(section)") # Equality node chain for mean
         gam_eq_node = EqualityNode(; name="s_eq_$(section)") # Equality node chain for variance
         y_node = TerminalNode(GaussianDistribution(m=y[section], V=tiny()), name="c_obs_$(section)") # Observed y values are stored in terminal node
@@ -465,7 +465,7 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
 end
 
 function validateOutboundMessage(node::Node, outbound_interface_id::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution)
-    msg = ForneyLab.updateNodeMessage!(node, outbound_interface_id, inbound_messages...)
+    msg = ForneyLab.sumProduct!(node, outbound_interface_id, inbound_messages...)
     @fact node.interfaces[outbound_interface_id].message => msg
     @fact node.interfaces[outbound_interface_id].message.payload => correct_outbound_value
 

@@ -103,7 +103,7 @@ facts("Message passing integration tests") do
 
         context("Should handle sampling") do
             node = initializeAdditionNode(Any[Message(GaussianDistribution()), Message(GaussianDistribution()), Message(GaussianDistribution())])
-            schedule = [ScheduleEntry(node.out, "sample")]
+            schedule = [ScheduleEntry(node.out, :sumproduct_sample)]
             @fact typeof(executeSchedule(schedule).payload) => DeltaDistribution{Array{Float64, 1}}
         end
 

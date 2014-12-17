@@ -72,7 +72,7 @@ forwardFixedGainXiRule{T<:Number}(A_inv::Array{T, 2}, xi::Array{T, 1}) = A_inv' 
 forwardFixedGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}, V::Array{T, 2}) = pinv(A * V * A') * A * V * xi # Combination of xi and V
 
 # Backward Gaussian to IN1
-function updateNodeMessage!(node::FixedGainNode,
+function sumProduct!(node::FixedGainNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             msg_out::Message{GaussianDistribution})
@@ -120,7 +120,7 @@ function updateNodeMessage!(node::FixedGainNode,
 end
 
 # Forward Gaussian to OUT
-function updateNodeMessage!(node::FixedGainNode,
+function sumProduct!(node::FixedGainNode,
                             outbound_interface_id::Int,
                             msg_in1::Message{GaussianDistribution},
                             ::Nothing)
@@ -169,7 +169,7 @@ function updateNodeMessage!(node::FixedGainNode,
 end
 
 # Backward DeltaDistribution to IN1
-function updateNodeMessage!{T<:Any}(
+function sumProduct!{T<:Any}(
                             node::FixedGainNode,
                             outbound_interface_id::Int,
                             ::Nothing,
@@ -189,7 +189,7 @@ function updateNodeMessage!{T<:Any}(
 end
 
 # Forward DeltaDistribution to OUT
-function updateNodeMessage!{T<:Any}(
+function sumProduct!{T<:Any}(
                             node::FixedGainNode,
                             outbound_interface_id::Int,
                             msg_in1::Message{DeltaDistribution{T}},
