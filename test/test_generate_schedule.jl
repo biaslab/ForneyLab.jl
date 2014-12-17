@@ -1,7 +1,8 @@
 facts("Schedule related tests") do
-    context("ForneyLab.convert_to_schedule()") do
+    context("ForneyLab.convert(Schedule, ...)") do
         node = GaussianNode()
-        @fact ForneyLab.convert_to_schedule([node.out, node.mean]) => [ScheduleEntry(node.out, :sumproduct), ScheduleEntry(node.mean, :sumproduct)]
+        @fact ForneyLab.convert(Schedule, [node.out, node.mean]) => [ScheduleEntry(node.out, :sumproduct), ScheduleEntry(node.mean, :sumproduct)]
+        @fact ForneyLab.convert(Schedule, [node.out, node.mean], :sumproduct_sample) => [ScheduleEntry(node.out, :sumproduct_sample), ScheduleEntry(node.mean, :sumproduct_sample)]
     end
 end
 
@@ -39,9 +40,9 @@ facts("generateSchedule() integration tests") do
 
         context("Should correctly complete a partial schedule") do
             # Generate a schedule that first passes clockwise through the cycle and then counterclockwise
-            schedule = generateSchedule(ForneyLab.convert_to_schedule([driver.out, add.in2])) # Message towards noise factor
+            schedule = generateSchedule(ForneyLab.convert(Schedule, [driver.out, add.in2])) # Message towards noise factor
             # All (but just) required calculations should be in the schedule
-            @fact schedule => ForneyLab.convert_to_schedule([inhibitor.out, driver.out, driver.in1, inhibitor.in1, add.in2])
+            @fact schedule => ForneyLab.convert(Schedule, [inhibitor.out, driver.out, driver.in1, inhibitor.in1, add.in2])
         end
 
         context("Should generate an internal and external schedule when called on a subgraph") do
@@ -53,8 +54,8 @@ facts("generateSchedule() integration tests") do
                 @fact length(unique(subgraph.internal_schedule)) => length(subgraph.internal_schedule) # No duplicate entries in schedule
             end
             # There are multiple valid schedules because of different orderings. Validity or schedule order is not checked here.
-            @fact graph.factorization[1].internal_schedule => ForneyLab.convert_to_schedule([t1.out, a1.out, t3.out])
-            @fact graph.factorization[2].internal_schedule => ForneyLab.convert_to_schedule([t2.out, t2.out.partner])
+            @fact graph.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [t1.out, a1.out, t3.out])
+            @fact graph.factorization[2].internal_schedule => ForneyLab.convert(Schedule, [t2.out, t2.out.partner])
             @fact graph.factorization[1].external_schedule => [g1]
             @fact graph.factorization[2].external_schedule => [g1]
         end
@@ -68,7 +69,7 @@ facts("generateSchedule() integration tests") do
             @fact g.factorization[1].internal_schedule => Array(ScheduleEntry, 0)
             addTimeWrap(node_t1, node_t2)
             generateSchedule!(g.factorization[1])
-            @fact g.factorization[1].internal_schedule => ForneyLab.convert_to_schedule([node_t1.out.partner])
+            @fact g.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [node_t1.out.partner])
         end
 
         context("Should include backward messages when there is only one internal interface connected to an external node") do
@@ -85,8 +86,8 @@ facts("generateSchedule() integration tests") do
 
             y_subgraph = getSubgraph(y_edge)
             m_gam_subgraph = getSubgraph(m_edge)
-            @fact y_subgraph.internal_schedule => ForneyLab.convert_to_schedule([y_edge.head, y_edge.tail]) # Include outgoing interface
-            @fact m_gam_subgraph.internal_schedule => ForneyLab.convert_to_schedule([m_0_node.out, m_N_node.out, m_edge.tail, gam_0_node.out, gam_N_node.out, gam_edge.tail]) # Exclude outgoing interfaces
+            @fact y_subgraph.internal_schedule => ForneyLab.convert(Schedule, [y_edge.head, y_edge.tail]) # Include outgoing interface
+            @fact m_gam_subgraph.internal_schedule => ForneyLab.convert(Schedule, [m_0_node.out, m_N_node.out, m_edge.tail, gam_0_node.out, gam_N_node.out, gam_edge.tail]) # Exclude outgoing interfaces
         end
     end
 end

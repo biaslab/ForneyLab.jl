@@ -10,7 +10,7 @@ function generateSchedule(outbound_interface::Interface, graph::FactorGraph=getC
     # to generate the schedule just once using this function, and then execute the same schedule over and over.
     # This prevents having to generate the same schedule in every call to calculateMessage!().
 
-    return convert_to_schedule(generateScheduleByDFS(outbound_interface, Array(Interface, 0), Array(Interface, 0), graph; args...))
+    return convert(Schedule, generateScheduleByDFS(outbound_interface, Array(Interface, 0), Array(Interface, 0), graph; args...))
 end
 function generateSchedule!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph(); args...)
     schedule = generateSchedule(outbound_interface, graph; args...)
@@ -36,14 +36,14 @@ function generateSchedule(partial_schedule::Schedule, graph::FactorGraph=getCurr
         interface_list = generateScheduleByDFS(schedule_entry.interface, interface_list, Array(Interface, 0), graph; args...)
     end
 
-    return convert_to_schedule(interface_list)
+    return convert(Schedule, interface_list)
 end
-generateSchedule(partial_list::Array{Interface, 1}, graph::FactorGraph=getCurrentGraph(); args...) = generateSchedule(convert_to_schedule(partial_list), graph; args...)
+generateSchedule(partial_list::Array{Interface, 1}, graph::FactorGraph=getCurrentGraph(); args...) = generateSchedule(convert(Schedule, partial_list), graph; args...)
 function generateSchedule!(partial_schedule::Schedule, graph::FactorGraph=getCurrentGraph(); args...)
     schedule = generateSchedule(partial_schedule, graph; args...)
     return graph.edge_to_subgraph[partial_schedule[1].edge].internal_schedule = schedule
 end
-generateSchedule!(partial_list::Array{Interface, 1}, graph::FactorGraph=getCurrentGraph(); args...) = generateSchedule!(convert_to_schedule(partial_list), graph; args...)
+generateSchedule!(partial_list::Array{Interface, 1}, graph::FactorGraph=getCurrentGraph(); args...) = generateSchedule!(convert(Schedule, partial_list), graph; args...)
 
 function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
     # Generate an internal and external schedule for the subgraph
@@ -89,7 +89,7 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
     end
     
     # Schedule for univariate comes after internal schedule, because it can depend on inbounds
-    subgraph.internal_schedule = convert_to_schedule(unique([internal_interface_list, interface_list_for_univariate, interface_list_for_time_wraps]))
+    subgraph.internal_schedule = convert(Schedule, unique([internal_interface_list, interface_list_for_univariate, interface_list_for_time_wraps]))
     
     return subgraph
 end

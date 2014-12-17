@@ -1,4 +1,4 @@
-export ScheduleEntry, Schedule, ExternalSchedule, ==
+export ScheduleEntry, Schedule, ExternalSchedule
 
 type ScheduleEntry
     interface::Interface
@@ -12,11 +12,11 @@ end
 ScheduleEntry(interface::Interface) = ScheduleEntry(interface, :sumproduct)
 
 typealias Schedule Array{ScheduleEntry, 1}
-convert_to_schedule(interfaces::Array{Interface, 1}) = [ScheduleEntry(intf) for intf in interfaces] # Convert a list of interfaces to an actual schedule
+convert(::Type{Schedule}, interfaces::Array{Interface, 1}, summary_operation::Symbol = :sumproduct) = [ScheduleEntry(intf, summary_operation) for intf in interfaces] # Convert a list of interfaces to an actual schedule
 
 function show(io::IO, schedule::Schedule)
     # Show schedules in a specific way
-    println(io, "Message passing schedule [{node type} {node name}:{outbound iface index} ({outbound iface name})]:")
+    println(io, "Message passing schedule [{summary operation} update at {node type} {node name}:{outbound iface index} ({outbound iface name})]:")
     for schedule_entry in schedule
         interface = schedule_entry.interface
         summary_operation = schedule_entry.summary_operation
