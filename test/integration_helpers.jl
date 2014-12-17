@@ -441,6 +441,12 @@ end
 # Validations
 #############
 
+function ==(x::ScheduleEntry, y::ScheduleEntry)
+    if is(x, y) return true end
+    if x.interface == y.interface && x.summary_operation == y.summary_operation return true end
+    return false
+end
+
 function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     # Helper function for node comparison
 

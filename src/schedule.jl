@@ -11,12 +11,6 @@ type ScheduleEntry
 end
 ScheduleEntry(interface::Interface) = ScheduleEntry(interface, "sum_product")
 
-function ==(x::ScheduleEntry, y::ScheduleEntry)
-    if is(x, y) return true end
-    if x.interface == y.interface && x.summary_operation == y.summary_operation return true end
-    return false
-end
-
 typealias Schedule Array{ScheduleEntry, 1}
 convert_to_schedule(interfaces::Array{Interface, 1}) = [ScheduleEntry(intf) for intf in interfaces] # Convert a list of interfaces to an actual schedule
 

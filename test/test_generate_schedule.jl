@@ -1,9 +1,11 @@
-facts("generateSchedule() integration tests") do
+facts("Schedule related tests") do
     context("ForneyLab.convert_to_schedule()") do
         node = GaussianNode()
         @fact ForneyLab.convert_to_schedule([node.out, node.mean]) => [ScheduleEntry(node.out, "sum_product"), ScheduleEntry(node.mean, "sum_product")]
     end
+end
 
+facts("generateSchedule() integration tests") do
     context("generateSchedule()") do
         (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
 
