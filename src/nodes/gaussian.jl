@@ -180,11 +180,11 @@ isDeterministic(::GaussianNode) = false
 # Standard update functions
 ############################################
 
-function updateNodeMessage!{T1<:Any, T2<:Any}(node::GaussianNode,
-                            outbound_interface_id::Int,
-                            ::Nothing,
-                            msg_var_prec::Message{DeltaDistribution{T1}},
-                            msg_out::Message{DeltaDistribution{T2}})
+function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
+                                       outbound_interface_id::Int,
+                                       ::Nothing,
+                                       msg_var_prec::Message{DeltaDistribution{T1}},
+                                       msg_out::Message{DeltaDistribution{T2}})
     # Rules from Korl table 5.2 by symmetry
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
@@ -228,7 +228,7 @@ function updateNodeMessage!{T1<:Any, T2<:Any}(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!{T1<:Any, T2<:Any}(node::GaussianNode,
+function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
                             outbound_interface_id::Int,
                             msg_mean::Message{DeltaDistribution{T1}},
                             ::Nothing,
@@ -274,7 +274,7 @@ function updateNodeMessage!{T1<:Any, T2<:Any}(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!{T<:Any}(node::GaussianNode,
+function sumProduct!{T<:Any}(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             msg_out::Message{DeltaDistribution{T}})
@@ -315,7 +315,7 @@ function updateNodeMessage!{T<:Any}(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!{T1<:Any, T2<:Any}(node::GaussianNode,
+function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
                             outbound_interface_id::Int,
                             msg_mean::Message{DeltaDistribution{T1}},
                             msg_var_prec::Message{DeltaDistribution{T2}},
@@ -363,7 +363,7 @@ function updateNodeMessage!{T1<:Any, T2<:Any}(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!{T<:Any}(node::GaussianNode,
+function sumProduct!{T<:Any}(node::GaussianNode,
                             outbound_interface_id::Int,
                             msg_var_prec::Message{DeltaDistribution{T}},
                             msg_out::Nothing)
@@ -411,7 +411,7 @@ end
 # Naive variational update functions
 ############################################
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             marg_variance::InverseGammaDistribution,
@@ -443,7 +443,7 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             marg_precision::GammaDistribution,
@@ -475,7 +475,7 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_mean::GaussianDistribution,
                             ::Nothing,
@@ -508,7 +508,7 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             marg_out::GaussianDistribution)
@@ -546,7 +546,7 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_mean::GaussianDistribution,
                             ::Nothing,
@@ -610,7 +610,7 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_mean::GaussianDistribution,
                             marg_var::InverseGammaDistribution,
@@ -641,7 +641,7 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_prec::GammaDistribution,
                             ::Nothing)
@@ -666,7 +666,7 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_mean::GaussianDistribution,
                             ::Nothing)
@@ -692,7 +692,7 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_mean::GaussianDistribution,
                             marg_prec::GammaDistribution,
@@ -723,7 +723,7 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             marg_prec::GammaDistribution,
@@ -759,7 +759,7 @@ end
 # Structured variational update functions
 ############################################
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             msg_prec::Message{GammaDistribution},
@@ -792,7 +792,7 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             msg_mean::Message{GaussianDistribution},
                             ::Nothing,
@@ -824,7 +824,7 @@ function updateNodeMessage!(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
-function updateNodeMessage!(node::GaussianNode,
+function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg::NormalGammaDistribution,
                             ::NormalGammaDistribution, # Same distribution as marg

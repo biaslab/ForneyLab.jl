@@ -367,7 +367,7 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
 
     # Build graph
     for section=1:n_samples
-        g_node = GaussianNode(; name="g_node_$(section)", form="precision") # Variational flag set to true, so updateNodeMessage knows what formula to use
+        g_node = GaussianNode(; name="g_node_$(section)", form="precision")
         m_eq_node = EqualityNode(; name="m_eq_$(section)") # Equality node chain for mean
         gam_eq_node = EqualityNode(; name="s_eq_$(section)") # Equality node chain for variance
         y_node = TerminalNode(GaussianDistribution(m=y[section], V=tiny()), name="c_obs_$(section)") # Observed y values are stored in terminal node
@@ -424,10 +424,10 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     gam_edge = Edge(gam_eq_node.interfaces[3], g_node.precision, GammaDistribution)
 
     # Attach beginning and end nodes
-    m_0_node = TerminalNode(GaussianDistribution(m=0.0, V=100.0)) # Prior
-    gam_0_node = TerminalNode(GammaDistribution(a=0.01, b=0.01)) # Prior
-    m_N_node = TerminalNode(vague(GaussianDistribution)) # Neutral 'one' message
-    gam_N_node = TerminalNode(vague(GammaDistribution)) # Neutral 'one' message
+    m_0_node = TerminalNode(GaussianDistribution(m=0.0, V=100.0); name="m_0_node") # Prior
+    gam_0_node = TerminalNode(GammaDistribution(a=0.01, b=0.01); name="gam_0_node") # Prior
+    m_N_node = TerminalNode(vague(GaussianDistribution); name="m_N_node") # Neutral 'one' message
+    gam_N_node = TerminalNode(vague(GammaDistribution); name="gam_N_node") # Neutral 'one' message
     m_0_eq_edge = Edge(m_0_node.out, m_eq_node.interfaces[1], GaussianDistribution)
     gam_0_eq_edge = Edge(gam_0_node.out, gam_eq_node.interfaces[1], GammaDistribution)
     m_N_eq_edge = Edge(m_eq_node.interfaces[2], m_N_node.out, GaussianDistribution)
@@ -440,6 +440,12 @@ end
 #############
 # Validations
 #############
+
+function ==(x::ScheduleEntry, y::ScheduleEntry)
+    if is(x, y) return true end
+    if x.interface == y.interface && x.summary_operation == y.summary_operation return true end
+    return false
+end
 
 function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     # Helper function for node comparison
@@ -459,7 +465,7 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
 end
 
 function validateOutboundMessage(node::Node, outbound_interface_id::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution)
-    msg = ForneyLab.updateNodeMessage!(node, outbound_interface_id, inbound_messages...)
+    msg = ForneyLab.sumProduct!(node, outbound_interface_id, inbound_messages...)
     @fact node.interfaces[outbound_interface_id].message => msg
     @fact node.interfaces[outbound_interface_id].message.payload => correct_outbound_value
 

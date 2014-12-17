@@ -18,16 +18,25 @@ facts("Helper function unit tests") do
         @fact isApproxEqual(eye(3,3), eye(3,3)+1e-9) => false
     end
 
-    context("getOrCreateMessage should assign a message to an interface if there is none and otherwise set a standard message") do
-        node = TerminalNode(GaussianDistribution())
+    context("getOrCreateMessage should assign a message to an interface if there is none") do
+        node = TerminalNode(GaussianDistribution(m=5.0, V=1.0))
         @fact node.out.message => nothing
-        ForneyLab.getOrCreateMessage(node.out, GaussianDistribution)
-        @fact typeof(node.out.message) => Message{GaussianDistribution}
-        node2 = TerminalNode(DeltaDistribution(2.0))
-        @fact node2.out.message => nothing
-        ForneyLab.getOrCreateMessage(node2.out, DeltaDistribution{Float64})
-        @fact typeof(node2.out.message.payload) <: DeltaDistribution => true
-        ForneyLab.updateNodeMessage!(node2, 1, nothing)
-        @fact mean(ForneyLab.getOrCreateMessage(node2.out, DeltaDistribution).payload) => 2.0
+        @fact ForneyLab.getOrCreateMessage(node.out, GaussianDistribution) => Message(GaussianDistribution())
+        @fact node.out.message => Message(GaussianDistribution())
     end
+
+    context("getOrCreateMessage should return the present message is there is one and the type matches") do
+        node = TerminalNode(GaussianDistribution(m=5.0, V=1.0))
+        node.out.message = Message(GaussianDistribution(m=5.0, V=1.0))
+        @fact ForneyLab.getOrCreateMessage(node.out, GaussianDistribution) => Message(GaussianDistribution(m=5.0, V=1.0))
+        @fact node.out.message => Message(GaussianDistribution(m=5.0, V=1.0))
+    end
+
+    context("getOrCreateMessage should assign a message to an interface if the type does not match") do
+        node = TerminalNode(GaussianDistribution(m=5.0, V=1.0))
+        node.out.message = Message(GaussianDistribution(m=5.0, V=1.0))
+        @fact ForneyLab.getOrCreateMessage(node.out, DeltaDistribution) => Message(DeltaDistribution())
+        @fact node.out.message => Message(DeltaDistribution())
+    end
+
 end

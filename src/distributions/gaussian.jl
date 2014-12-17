@@ -21,7 +21,8 @@ export
     ensureXiVParametrization!,
     ensureXiWParametrization!,
     isWellDefined,
-    isConsistent
+    isConsistent,
+    sample
 
 type GaussianDistribution <: ProbabilityDistribution
     m::Union(Vector{Float64}, Nothing)    # Mean vector
@@ -91,6 +92,11 @@ end
 
 Base.mean(dist::GaussianDistribution) = ensureMDefined!(dist).m
 Base.var(dist::GaussianDistribution) = diag(ensureVDefined!(dist).V, 0)
+
+function sample(dist::GaussianDistribution)
+    ensureMVParametrization!(dist)
+    return DeltaDistribution((dist.V^0.5)*randn(length(dist.m)) + dist.m)
+end
 
 # Methods to check and convert different parametrizations
 function isWellDefined(dist::GaussianDistribution)

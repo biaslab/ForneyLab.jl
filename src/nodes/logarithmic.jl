@@ -14,8 +14,10 @@
 # Interface ids, (names) and supported message types:
 #   1. (in1):
 #       Message{GaussianDistribution}
+#       Message{DeltaDistribution}
 #   2. (out):
 #       Message{GammaDistribution}
+#       Message{DeltaDistribution}
 ############################################
 
 export LogarithmicNode
@@ -47,10 +49,10 @@ isDeterministic(::LogarithmicNode) = true
 ############################################
 
 # Forward message
-function updateNodeMessage!(node::LogarithmicNode,
-                            outbound_interface_id::Int,
-                            msg_in1::Message{GaussianDistribution},
-                            msg_out::Nothing)
+function sumProduct!(node::LogarithmicNode,
+                     outbound_interface_id::Int,
+                     msg_in1::Message{GaussianDistribution},
+                     msg_out::Nothing)
     dist_out = getOrCreateMessage(node.out, GammaDistribution).payload
 
     ensureMWParametrization!(msg_in1.payload)
@@ -66,10 +68,10 @@ function updateNodeMessage!(node::LogarithmicNode,
 end
 
 # Backward message
-function updateNodeMessage!(node::LogarithmicNode,
-                            outbound_interface_id::Int,
-                            msg_in1::Nothing,
-                            msg_out::Message{GammaDistribution})
+function sumProduct!(node::LogarithmicNode,
+                     outbound_interface_id::Int,
+                     msg_in1::Nothing,
+                     msg_out::Message{GammaDistribution})
     dist_out = getOrCreateMessage(node.in1, GaussianDistribution).payload
 
     a = msg_out.payload.a
@@ -89,10 +91,10 @@ end
 ############################################
 
 # Forward message
-function updateNodeMessage!(node::LogarithmicNode,
-                            outbound_interface_id::Int,
-                            msg_in1::Message{DeltaDistribution{Float64}},
-                            msg_out::Nothing)
+function sumProduct!(node::LogarithmicNode,
+                     outbound_interface_id::Int,
+                     msg_in1::Message{DeltaDistribution{Float64}},
+                     msg_out::Nothing)
     dist_out = getOrCreateMessage(node.out, DeltaDistribution{Float64}).payload
 
     dist_out.m = log(msg_in1.payload.m)
@@ -101,10 +103,10 @@ function updateNodeMessage!(node::LogarithmicNode,
 end
 
 # Backward message
-function updateNodeMessage!(node::LogarithmicNode,
-                            outbound_interface_id::Int,
-                            msg_in1::Nothing,
-                            msg_out::Message{DeltaDistribution{Float64}})
+function sumProduct!(node::LogarithmicNode,
+                     outbound_interface_id::Int,
+                     msg_in1::Nothing,
+                     msg_out::Message{DeltaDistribution{Float64}})
     dist_out = getOrCreateMessage(node.in1, DeltaDistribution{Float64}).payload
 
     dist_out.m = exp(msg_out.payload.m)
