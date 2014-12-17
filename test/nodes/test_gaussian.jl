@@ -107,7 +107,6 @@ facts("GaussianNode unit tests") do
                                         [nothing, GammaDistribution(a=3.0, b=1.0), GaussianDistribution(m=2.0, V=0.0)],
                                         GaussianDistribution(m=2.0, W=3.0))
                 # Inverse
-                # FAILS!!!!!!!!
                 validateOutboundMessage(GaussianNode(), 
                                         1, 
                                         [nothing, InverseGammaDistribution(a=3.0, b=1.0), GaussianDistribution(m=2.0, V=0.0)],
@@ -125,6 +124,11 @@ facts("GaussianNode unit tests") do
                                         2, 
                                         [GaussianDistribution(m=4.0, V=1.0), nothing, GaussianDistribution(m=2.0, V=0.0)],
                                         InverseGammaDistribution(a=-0.5, b=2.5))
+                # With fixed mean
+                validateOutboundMessage(GaussianNode(m=1.0; form="precision"), 
+                                        1, 
+                                        [nothing, GaussianDistribution(m=2.0, V=0.5)],
+                                        GammaDistribution(a=1.5, b=0.75))
             end
 
             context("GaussianNode should propagate a forward message") do
@@ -136,6 +140,11 @@ facts("GaussianNode unit tests") do
                                         3, 
                                         [GaussianDistribution(), InverseGammaDistribution(a=2.0, b=1.0), nothing],
                                         GaussianDistribution(m=0.0, V=1.0))
+                # With fixed mean
+                validateOutboundMessage(GaussianNode(m=1.0; form="precision"), 
+                                        2, 
+                                        [GammaDistribution(a=1.5, b=0.5), nothing],
+                                        GaussianDistribution(m=1.0, W=3.0))
             end
         end
 
