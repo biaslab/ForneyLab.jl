@@ -31,4 +31,4 @@ sample(dist::DeltaDistribution) = dist
 
 # We can convert a lot of object types into a DeltaDistribution with that object as position of the delta
 # This is useful so we can write i.e. TerminalNode(3.0) instead of TerminalNode(DeltaDistribution(3.0))
-convert{T<:Union(Number,Symbol,Array)}(::Type{ProbabilityDistribution}, obj::T) = DeltaDistribution(obj)
+convert{T<:Union(Number,Symbol,Array)}(::Type{ProbabilityDistribution}, obj::T) = DeltaDistribution(deepcopy(obj))

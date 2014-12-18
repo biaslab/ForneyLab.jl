@@ -521,8 +521,8 @@ function sumProduct!(node::GaussianNode,
         #  <--
 
         dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaDistribution).payload
-        (length(node.m) == 1 && length(marg_out.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
         ensureMVParametrization!(marg_out)
+        (length(node.m) == 1 && length(marg_out.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
         dist_out.a = 1.5
         dist_out.b = 0.5*(marg_out.m[1] - node.m[1])^2 + 0.5*marg_out.V[1,1]
     elseif isdefined(node, :mean) && is(node.interfaces[outbound_interface_id], node.mean)

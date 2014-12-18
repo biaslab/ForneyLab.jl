@@ -139,18 +139,18 @@ calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_d
 calculateMarginal(forward_dist::DeltaDistribution, ::GaussianDistribution) = deepcopy(forward_dist)
 calculateMarginal(::GaussianDistribution, backward_dist::DeltaDistribution) = deepcopy(backward_dist)
 function calculateMarginal!(edge::Edge, forward_dist::DeltaDistribution, ::GaussianDistribution)
-    return edge.marginal = deepcopy(forward_dist)
+    return edge.marginal = convert(GaussianDistribution, forward_dist)
 end
 function calculateMarginal!(edge::Edge, ::GaussianDistribution, backward_dist::DeltaDistribution)
-    return edge.marginal = deepcopy(backward_dist)
+    return edge.marginal = convert(GaussianDistribution, backward_dist)
 end
 function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::DeltaDistribution, backward_dist::GaussianDistribution)
     # Calculation for univariate approximate marginal
-    return graph.approximate_marginals[(node, subgraph)] = deepcopy(forward_dist)
+    return graph.approximate_marginals[(node, subgraph)] = convert(GaussianDistribution, forward_dist)
 end
 function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution)
     # Calculation for univariate approximate marginal
-    return graph.approximate_marginals[(node, subgraph)] = deepcopy(backward_dist)
+    return graph.approximate_marginals[(node, subgraph)] = convert(GaussianDistribution, backward_dist)
 end
 
 

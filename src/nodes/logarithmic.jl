@@ -91,11 +91,12 @@ end
 ############################################
 
 # Forward message
-function sumProduct!(node::LogarithmicNode,
+function sumProduct!{T<:Any}(node::LogarithmicNode,
                      outbound_interface_id::Int,
-                     msg_in1::Message{DeltaDistribution{Float64}},
+                     msg_in1::Message{DeltaDistribution{T}},
                      msg_out::Nothing)
-    dist_out = getOrCreateMessage(node.out, DeltaDistribution{Float64}).payload
+    length(msg_in1.payload.m) == 1 || error("LogarithmicNode only defined for univariate variables")
+    dist_out = getOrCreateMessage(node.out, DeltaDistribution{T}).payload
 
     dist_out.m = log(msg_in1.payload.m)
 
@@ -103,11 +104,12 @@ function sumProduct!(node::LogarithmicNode,
 end
 
 # Backward message
-function sumProduct!(node::LogarithmicNode,
+function sumProduct!{T<:Any}(node::LogarithmicNode,
                      outbound_interface_id::Int,
                      msg_in1::Nothing,
-                     msg_out::Message{DeltaDistribution{Float64}})
-    dist_out = getOrCreateMessage(node.in1, DeltaDistribution{Float64}).payload
+                     msg_out::Message{DeltaDistribution{T}})
+    length(msg_out.payload.m) == 1 || error("LogarithmicNode only defined for univariate variables")
+    dist_out = getOrCreateMessage(node.in1, DeltaDistribution{T}).payload
 
     dist_out.m = exp(msg_out.payload.m)
 
