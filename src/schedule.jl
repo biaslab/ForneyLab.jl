@@ -1,11 +1,11 @@
-export ScheduleEntry, Schedule, ExternalSchedule
+export ScheduleEntry, Schedule, ExternalSchedule, setSummaryOperation!
 
 type ScheduleEntry
     interface::Interface
     summary_operation::Symbol # Summary operation for calculating outbound messages. Default is :sumproduct
 
     function ScheduleEntry(interface::Interface, summary_operation::Symbol)
-        summary_operation in [:sumproduct, :sumproduct_sample] || error("Unknown summary operation :$(summary_operation). Please choose between ':sumproduct' and ':sumproduct_sample'.")
+        summary_operation in [:sumproduct, :sumproduct_sample, :sumproduct_expectation] || error("Unknown summary operation :$(summary_operation). Please choose between ':sumproduct', ':sumproduct_sample' and 'sumproduct_expectation'.")
         return new(interface, summary_operation)
     end
 end
@@ -36,5 +36,14 @@ function show(io::IO, nodes::Array{Node, 1})
     println(io, "Nodes:")
     for entry in nodes
         println(io, "Node $(entry.name) of type $(typeof(entry))")
+    end
+end
+
+function setSummaryOperation!(schedule::Schedule, interface::Interface, new_operation::Symbol)
+    for schedule_entry in schedule
+        if schedule_entry.interface == interface
+            schedule_entry.summary_operation = new_operation
+            return schedule
+        end
     end
 end

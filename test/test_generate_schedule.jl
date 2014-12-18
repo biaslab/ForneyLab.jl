@@ -3,6 +3,7 @@ facts("Schedule related tests") do
         node = GaussianNode()
         @fact ForneyLab.convert(Schedule, [node.out, node.mean]) => [ScheduleEntry(node.out, :sumproduct), ScheduleEntry(node.mean, :sumproduct)]
         @fact ForneyLab.convert(Schedule, [node.out, node.mean], :sumproduct_sample) => [ScheduleEntry(node.out, :sumproduct_sample), ScheduleEntry(node.mean, :sumproduct_sample)]
+        @fact ForneyLab.convert(Schedule, [node.out, node.mean], :sumproduct_expectation) => [ScheduleEntry(node.out, :sumproduct_expectation), ScheduleEntry(node.mean, :sumproduct_expectation)]
     end
 end
 
