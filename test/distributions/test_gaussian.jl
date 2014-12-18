@@ -131,8 +131,7 @@ facts("Marginal calculations for the Gaussian") do
     context("Marginal calculation for the combination of a Gaussian and DeltaDistribution") do
         edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(DeltaDistribution(3.0))).out)
         calculateMarginal!(edge)
-        @fact typeof(edge.marginal) <: DeltaDistribution => true
-        @fact mean(edge.marginal) => 3.0 
+        @fact edge.marginal => GaussianDistribution(m=3.0, V=tiny())
     end
 end
 

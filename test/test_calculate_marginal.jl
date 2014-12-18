@@ -37,7 +37,7 @@ facts("Marginal calculation integration tests") do
         @fact graph.approximate_marginals[(node, subgraph2)] => GammaDistribution(a=1.0, b=2.0)
         # Univariate marginal
         calculateMarginal!(node, subgraph3, graph)
-        @fact graph.approximate_marginals[(node, subgraph3)] => DeltaDistribution(1.0)
+        @fact graph.approximate_marginals[(node, subgraph3)] => GaussianDistribution(m=1.0, V=tiny())
     end
     
     context("Marginal calculation for the structurally factorized GaussianNode") do
