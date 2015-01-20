@@ -7,6 +7,10 @@ facts("GammaDistribution unit tests") do
         dist = GammaDistribution(a=2.0, b=0.5)
         @fact dist.a => 2.0
         @fact dist.b => 0.5
+        @fact mean(dist) => 4.0
+        @fact var(dist) => 8.0
+        @fact isnan(mean(GammaDistribution(a=0.0, b=0.5))) => true
+        @fact isnan(mean(GammaDistribution(a=1.0, b=0.0))) => true
     end
 
     context("vague() should initialize a vague (almost uninformative) gamma distribution") do
