@@ -34,11 +34,11 @@ type GaussianDistribution <: ProbabilityDistribution
         isWellDefined(self) || error("Cannot create GaussianDistribution, distribution is underdetermined.")
         if V != nothing
             (maximum(V) < Inf) || error("Cannot create GaussianDistribution, covariance matrix V cannot contain Inf.")
-            (isposdef(V)) || error("Cannot create GaussianDistribution, covariance matrix V should be positive definite.")
+            (isRoundedPosDef(V)) || error("Cannot create GaussianDistribution, covariance matrix V should be positive definite.")
         end
         if W != nothing
             (maximum(W) < Inf) || error("Cannot create GaussianDistribution, precision matrix W cannot contain Inf.")
-            (isposdef(W)) || error("Cannot create GaussianDistribution, precision matrix W should be positive definite.")
+            (isRoundedPosDef(W)) || error("Cannot create GaussianDistribution, precision matrix W should be positive definite.")
         end
         return self
     end

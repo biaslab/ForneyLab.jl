@@ -104,12 +104,12 @@ facts("GaussianNode unit tests") do
                 # Standard
                 validateOutboundMessage(GaussianNode(form="precision"), 
                                         1, 
-                                        [nothing, GammaDistribution(a=3.0, b=1.0), GaussianDistribution(m=2.0, V=0.0)],
+                                        [nothing, GammaDistribution(a=3.0, b=1.0), GaussianDistribution(m=2.0, V=0.1)],
                                         GaussianDistribution(m=2.0, W=3.0))
                 # Inverse
                 validateOutboundMessage(GaussianNode(), 
                                         1, 
-                                        [nothing, InverseGammaDistribution(a=3.0, b=1.0), GaussianDistribution(m=2.0, V=0.0)],
+                                        [nothing, InverseGammaDistribution(a=3.0, b=1.0), GaussianDistribution(m=2.0, V=0.1)],
                                         GaussianDistribution(m=2.0, V=4.0))
             end
 
@@ -117,13 +117,13 @@ facts("GaussianNode unit tests") do
                 # Standard
                 validateOutboundMessage(GaussianNode(form="precision"), 
                                         2, 
-                                        [GaussianDistribution(m=4.0, W=2.0), nothing, GaussianDistribution(m=2.0, V=0.0)],
-                                        GammaDistribution(a=1.5, b=2.25))
+                                        [GaussianDistribution(m=4.0, W=2.0), nothing, GaussianDistribution(m=2.0, V=0.1)],
+                                        GammaDistribution(a=1.5, b=2.3))
                 # Inverse
                 validateOutboundMessage(GaussianNode(), 
                                         2, 
-                                        [GaussianDistribution(m=4.0, V=1.0), nothing, GaussianDistribution(m=2.0, V=0.0)],
-                                        InverseGammaDistribution(a=-0.5, b=2.5))
+                                        [GaussianDistribution(m=4.0, V=1.0), nothing, GaussianDistribution(m=2.0, V=0.1)],
+                                        InverseGammaDistribution(a=-0.5, b=2.55))
                 # With fixed mean
                 validateOutboundMessage(GaussianNode(m=1.0; form="precision"), 
                                         1, 
