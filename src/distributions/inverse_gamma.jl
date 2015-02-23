@@ -10,7 +10,7 @@ export InverseGammaDistribution
 type InverseGammaDistribution <: ProbabilityDistribution
     a::Float64 # shape
     b::Float64 # rate
-    InverseGammaDistribution(; a=1.0, b=1.0) = new(a, b)
+    InverseGammaDistribution(; a=3.0, b=2.0) = new(a, b)
 end
 
 vague(::Type{InverseGammaDistribution}) = InverseGammaDistribution(a=-1.0+tiny(), b=tiny())

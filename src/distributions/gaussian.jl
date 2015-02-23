@@ -32,6 +32,14 @@ type GaussianDistribution <: ProbabilityDistribution
     function GaussianDistribution(m, V, W, xi)
         self = new(m, V, W, xi)
         isWellDefined(self) || error("Cannot create GaussianDistribution, distribution is underdetermined.")
+        if V != nothing
+            (maximum(V) < Inf) || error("Cannot create GaussianDistribution, covariance matrix V cannot contain Inf.")
+            (isRoundedPosDef(V)) || error("Cannot create GaussianDistribution, covariance matrix V should be positive definite.")
+        end
+        if W != nothing
+            (maximum(W) < Inf) || error("Cannot create GaussianDistribution, precision matrix W cannot contain Inf.")
+            (isRoundedPosDef(W)) || error("Cannot create GaussianDistribution, precision matrix W should be positive definite.")
+        end
         return self
     end
 end

@@ -18,6 +18,14 @@ facts("Helper function unit tests") do
         @fact isApproxEqual(eye(3,3), eye(3,3)+1e-9) => false
     end
 
+    context("isRoundedPosDef should check positive difiniteness with robustness for numerical errors") do
+        K = inv([4.0 3.0 2.0;
+                 3.0 4.0 3.0;
+                 2.0 3.0 4.0])
+        @fact isposdef(K) => false
+        @fact ForneyLab.isRoundedPosDef(K) => true
+    end
+
     context("getOrCreateMessage should assign a message to an interface if there is none") do
         node = TerminalNode(GaussianDistribution(m=5.0, V=1.0))
         @fact node.out.message => nothing

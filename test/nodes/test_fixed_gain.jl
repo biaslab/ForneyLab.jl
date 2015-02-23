@@ -54,18 +54,6 @@ facts("FixedGainNode unit tests") do
                                     [Message(GaussianDistribution(m=3.0, V=5.0)), nothing],
                                     GaussianDistribution(m=6.0, V=20.0))
         end
-        context("Univariate GaussianDistribution with (m,V=0) parametrization") do
-            # Backward message
-            validateOutboundMessage(FixedGainNode([2.0]), 
-                                    1, 
-                                    [nothing, Message(GaussianDistribution(m=3.0, V=0.0))],
-                                    GaussianDistribution(m=1.5, V=0.0))
-            # Forward message
-            validateOutboundMessage(FixedGainNode([2.0]), 
-                                    2, 
-                                    [Message(GaussianDistribution(m=3.0, V=0.0)), nothing],
-                                    GaussianDistribution(m=6.0, V=0.0))
-        end
         context("Univariate GaussianDistribution with (m,W) parametrization") do
             # Backward message
             validateOutboundMessage(FixedGainNode([2.0]), 
@@ -103,20 +91,6 @@ facts("FixedGainNode unit tests") do
             variance = reshape([4.0, 3.0, 2.0,
                                 3.0, 4.0, 3.0,
                                 2.0, 3.0, 4.0], 3, 3)
-            # Backward message
-            validateOutboundMessage(FixedGainNode(A), 
-                                    1, 
-                                    [nothing, Message(GaussianDistribution(m=mean, V=variance))],
-                                    GaussianDistribution(m=inv(A) * mean, V=inv(A) * variance * inv(A)'))
-            # Forward message
-            validateOutboundMessage(FixedGainNode(A), 
-                                    2, 
-                                    [Message(GaussianDistribution(m=mean, V=variance)), nothing],
-                                    GaussianDistribution(m=A * mean, V=A * variance * A'))
-        end
-        context("Multivariate GaussianDistribution with (m,V=0) parametrization") do
-            mean = [1.0:3.0]
-            variance = zeros(3, 3)
             # Backward message
             validateOutboundMessage(FixedGainNode(A), 
                                     1, 

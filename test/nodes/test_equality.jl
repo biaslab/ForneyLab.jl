@@ -143,7 +143,7 @@ facts("EqualityNode unit tests") do
         validateOutboundMessage(EqualityNode(), 
                                 3, 
                                 [Message(InverseGammaDistribution()), Message(InverseGammaDistribution()), nothing],
-                                InverseGammaDistribution(a=3.0, b=2.0))
+                                InverseGammaDistribution(a=7.0, b=4.0))
     end
 
     context("EqualityNode should propagate combination of student's t and Gaussian distribution") do

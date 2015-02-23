@@ -14,8 +14,22 @@ type GammaDistribution <: ProbabilityDistribution
 end
 
 vague(::Type{GammaDistribution}) = GammaDistribution(a=1.0-tiny(), b=tiny())
-Base.mean(dist::GammaDistribution) = dist.a / dist.b
-Base.var(dist::GammaDistribution) = dist.a / (dist.b^2)
+
+function Base.mean(dist::GammaDistribution)
+    if dist.a > 0 && dist.b > 0
+        return dist.a / dist.b
+    else 
+        return NaN
+    end
+end
+
+function Base.var(dist::GammaDistribution)
+    if dist.a > 0 && dist.b > 0
+        return dist.a / (dist.b^2)
+    else 
+        return NaN
+    end
+end
 
 function show(io::IO, dist::GammaDistribution)
     println(io, typeof(dist))

@@ -4,14 +4,19 @@
 
 facts("GaussianDistribution unit tests") do
     context("GaussianDistribution() should initialize a Gaussian distribution") do
-        @fact GaussianDistribution().V => ones(1, 1)
+        @fact GaussianDistribution().V => eye(1)
         @fact GaussianDistribution().m => [0.0]
         @fact GaussianDistribution(m=0.0, W=1.0).W => ones(1, 1)
         @fact GaussianDistribution(xi=0.0, W=1.0).W => ones(1, 1)
         @fact typeof(GaussianDistribution(m=1.0, V=1.0).V) => Array{Float64, 2} # cast single value to matrix
+        @fact GaussianDistribution(m=[0.0, 0.0], V=eye(2)).V => eye(2) # multivariate
         @fact_throws GaussianDistribution(V=1.0, W=1.0)
         @fact_throws GaussianDistribution(m=0.0, xi=0.0)
         @fact_throws GaussianDistribution(xi=0.0)
+        @fact_throws GaussianDistribution(m=[0.0, 0.0], V=[0. 0.;0. 0.])  # V should be positive definite
+        @fact_throws GaussianDistribution(m=[0.0, 0.0], V=[Inf 0.;0. 1.]) # V should be bounded
+        @fact_throws GaussianDistribution(m=[0.0, 0.0], W=[0. 0.;0. 0.])  # W should be positive definite
+        @fact_throws GaussianDistribution(m=[0.0, 0.0], W=[Inf 0.;0. 1.]) # W should be bounded
     end
 
     context("vague() should initialize a vague (almost uninformative) Gaussian distribution") do
