@@ -11,8 +11,6 @@ type Interface
     partner::Union(Interface, Nothing)  # Partner indicates the interface to which it is connected.
     child::Union(Interface, Nothing)    # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
     message::Union(Message, Nothing)
-    dependencies::Array{Interface, 1}   # Optional array of interfaces (of the same node) on which the outbound msg on this interface depends.
-                                        # If this array is #undef, it means that the outbound msg depends on the inbound msgs on ALL OTHER interfaces of the node.
     internal_schedule::Array{Any, 1}    # Optional schedule that should be executed to calculate outbound message on this interface.
                                         # The internal_schedule field is used in composite nodes, and holds the schedule for internal message passing.
 

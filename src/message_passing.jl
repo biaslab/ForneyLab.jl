@@ -24,7 +24,7 @@ end
 
 function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, node::Node, inbound_interface::Interface, outbound_interface::Interface)
     # Push the inbound message or marginal on inbound_interface, depending on the local graph structure.
-    
+
     if !haskey(graph.edge_to_subgraph, inbound_interface.edge) || !haskey(graph.edge_to_subgraph, outbound_interface.edge)
         # Inbound and/or outbound edge is not explicitly listed in the graph.
         # This is possible if one of those edges is internal to a composite node.
@@ -35,8 +35,8 @@ function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, n
         catch
             error("$(inbound_interface) is not connected to an edge.")
         end
-    end        
-    
+    end
+
     inbound_subgraph = graph.edge_to_subgraph[inbound_interface.edge]
     outbound_subgraph = graph.edge_to_subgraph[outbound_interface.edge]
 
@@ -48,7 +48,7 @@ function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, n
         catch
             error("$(inbound_interface) is not connected to an edge.")
         end
-    else 
+    else
         # A subgraph border is crossed, require marginal
         try
             push!(inbound_array, graph.approximate_marginals[(node, inbound_subgraph)])
@@ -78,11 +78,11 @@ function updateNodeMessage!(schedule_entry::ScheduleEntry, graph::FactorGraph=ge
             if interface == outbound_interface
                 outbound_interface_id = interface_id
             end
-            if (!isdefined(outbound_interface, :dependencies) && outbound_interface_id==interface_id) ||
-                (isdefined(outbound_interface, :dependencies) && !(interface in outbound_interface.dependencies))
+            if (outbound_interface_id==interface_id)
                 # Ignore this interface
+                # In the future we might want to have decent dependency checking here
                 push!(inbound_array, nothing)
-            else 
+            else
                 # Inbound message or marginal is required
                 # Put the required inbound message or edge/node marginal for the inbound interface in inbound_array
                 pushRequiredInbound!(graph, inbound_array, node, interface, outbound_interface)

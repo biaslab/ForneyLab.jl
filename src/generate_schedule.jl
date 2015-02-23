@@ -26,7 +26,7 @@ function generateSchedule(partial_schedule::Schedule, graph::FactorGraph=getCurr
 
     # Verify that all entries in partial_schedule belong to the same subgraph
     (length(partial_schedule) > 0) || error("Partial schedule should contain at least one entry")
-    
+
     for schedule_entry in partial_schedule
         is(graph.edge_to_subgraph[schedule_entry.interface.edge], graph.edge_to_subgraph[partial_schedule[1].interface.edge]) || error("Not all interfaces in your partial schedule belong to the same subgraph")
     end
@@ -72,7 +72,7 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
                 end
             end
         end
-        
+
         # For the case that g_node is connected to one internal edge,
         # the calculation reduces to the naive vmp update which requires the outbound (Dauwels, 2007)
         if length(outbound_interfaces) == 1
@@ -87,10 +87,10 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
             interface_list_for_time_wraps = [interface_list_for_time_wraps, generateScheduleByDFS(from_node.out.partner, Array(Interface, 0), Array(Interface, 0), graph, stay_in_subgraph=true)]
         end
     end
-    
+
     # Schedule for univariate comes after internal schedule, because it can depend on inbounds
     subgraph.internal_schedule = convert(Schedule, unique([internal_interface_list, interface_list_for_univariate, interface_list_for_time_wraps]))
-    
+
     return subgraph
 end
 
@@ -129,9 +129,8 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{I
         if is(interface, outbound_interface)
             outbound_interface_id = interface_id
         end
-        if (!isdefined(outbound_interface, :dependencies) && outbound_interface_id==interface_id) || # Outbound is inbound and not specified as required
-           (isdefined(outbound_interface, :dependencies) && !(interface in outbound_interface.dependencies)) || # Inbound specified as not required
-           (stay_in_subgraph && graph.edge_to_subgraph[outbound_interface.edge] != graph.edge_to_subgraph[interface.edge]) # Internal subgraph schedule generation and edges are on different subgraphs
+        if ((outbound_interface_id==interface_id) || # In the future this should be replaced by a decent dependency checking system
+            (stay_in_subgraph && graph.edge_to_subgraph[outbound_interface.edge] != graph.edge_to_subgraph[interface.edge])) # Internal subgraph schedule generation and edges are on different subgraphs
             continue
         end
         (interface.partner != nothing) || error("Disconnected interface should be connected: interface #$(interface_id) of $(typeof(node)) $(node.name)")
@@ -149,4 +148,4 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{I
     pop!(call_list)
 
     return push!(backtrace, outbound_interface)
-end   
+end
