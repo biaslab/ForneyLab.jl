@@ -1,8 +1,9 @@
 module ForneyLab
 
-export  Node, CompositeNode, ProbabilityDistribution
-export  vague, ==
-export  current_graph
+export Node, CompositeNode, ProbabilityDistribution
+export sumProduct!
+export vague, ==
+export current_graph
 
 # Verbosity
 verbose = false

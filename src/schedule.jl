@@ -4,14 +4,21 @@ type ScheduleEntry
     interface::Interface
     message_calculation_rule::Function  # Is called to calculate the message. Default is sumProduct!.
     post_processing::Function           # Optional, a function that performs post-processing on the message. Leave undefined to skip.
+    function ScheduleEntry(interface::Interface, message_calculation_rule::Function, post_processing::Union(Nothing,Function)=nothing)
+        if post_processing != nothing
+            return new(interface, message_calculation_rule, post_processing)
+        else
+            return new(interface, message_calculation_rule)
+        end
+    end
 end
 ScheduleEntry(interface::Interface) = ScheduleEntry(interface, sumProduct!)
 
 typealias Schedule Array{ScheduleEntry, 1}
 
-function convert(::Type{Schedule}, interfaces::Array{Interface, 1}, message_calculation_rule::Function=sumProduct!)
+function convert(::Type{Schedule}, interfaces::Array{Interface, 1}, message_calculation_rule::Function=sumProduct!, post_processing::Union(Nothing,Function)=nothing)
     # Convert a list of interfaces to an actual schedule
-    return ScheduleEntry[ScheduleEntry(iface, message_calculation_rule) for iface in interfaces]
+    return ScheduleEntry[ScheduleEntry(iface, message_calculation_rule, post_processing) for iface in interfaces]
 end
 
 function show(io::IO, schedule::Schedule)
