@@ -60,52 +60,41 @@ function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, n
 end
 
 function updateNodeMessage!(schedule_entry::ScheduleEntry, graph::FactorGraph=getCurrentGraph())
-    # Calculate the outbound message based on the inbound messages and the node update function.
+    # Calculate the outbound message based on the inbound messages and the message calculation rule.
     # The resulting message is stored in the specified interface and is returned.
 
-    # Dissect schedule entry
     outbound_interface = schedule_entry.interface
-    summary_operation = schedule_entry.summary_operation
 
-    # Sumproduct update
-    if summary_operation in [:sumproduct, :sumproduct_sample, :sumproduct_expectation]
-        # Preprocessing
-        node = outbound_interface.node
-        inbound_array = Array(Any, 0) # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
-        outbound_interface_id = 0
-        for interface_id = 1:length(node.interfaces)
-            interface = node.interfaces[interface_id]
-            if interface == outbound_interface
-                outbound_interface_id = interface_id
-            end
-            if (outbound_interface_id==interface_id)
-                # Ignore this interface
-                # In the future we might want to have decent dependency checking here
-                push!(inbound_array, nothing)
-            else
-                # Inbound message or marginal is required
-                # Put the required inbound message or edge/node marginal for the inbound interface in inbound_array
-                pushRequiredInbound!(graph, inbound_array, node, interface, outbound_interface)
-            end
+    # Preprocessing: collect all inbound messages
+    node = outbound_interface.node
+    inbound_array = Array(Any, 0) # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
+    outbound_interface_id = 0
+    for interface_id = 1:length(node.interfaces)
+        interface = node.interfaces[interface_id]
+        if interface == outbound_interface
+            outbound_interface_id = interface_id
         end
-
-        # Evaluate sumproduct update
-        printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id:")
-        summary_message = sumProduct!(node, outbound_interface_id, inbound_array...)
-
-        # Post processing (taking sample or expectation)
-        if summary_operation == :sumproduct_sample
-            # Sample and reassign
-            summary_message = node.interfaces[outbound_interface_id].message = Message(sample(summary_message.payload))
-        elseif summary_operation == :sumproduct_expectation
-            # Take expectation and reassign
-            summary_message = node.interfaces[outbound_interface_id].message = Message(DeltaDistribution(mean(summary_message.payload)))
+        if (outbound_interface_id==interface_id)
+            # Ignore this interface
+            # In the future we might want to have decent dependency checking here
+            push!(inbound_array, nothing)
+        else
+            # Inbound message or marginal is required
+            # Put the required inbound message or edge/node marginal for the inbound interface in inbound_array
+            pushRequiredInbound!(graph, inbound_array, node, interface, outbound_interface)
         end
-    else # Alternative summary operations are not defined
-        error("Unknown summary operation :$(summary_operation). Please choose between ':sumproduct', ':sumproduct_sample' and ':sumproduct_expectation'.")
     end
 
-    return summary_message
+    # Evaluate message calculation rule
+    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id:")
+    outbound_message = schedule_entry.message_calculation_rule(node, outbound_interface_id, inbound_array...)
+
+    # Post processing?
+    if isdefined(schedule_entry, :post_processing)
+        outbound_message = node.interfaces[outbound_interface_id].message = Message(schedule_entry.post_processing(outbound_message.payload))
+    end
+
+    return outbound_message
 end
 
 function calculateMessages!(node::Node)

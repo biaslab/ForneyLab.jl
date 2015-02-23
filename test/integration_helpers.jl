@@ -47,7 +47,7 @@ end
 
 function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(DeltaDistribution(2.0)), msg_gain_2=Message(DeltaDistribution(3.0)), msg_terminal=Message(DeltaDistribution(1.0)))
     # Helper function for initializing an unconnected pair of nodes
-    #     
+    #
     # |--[A]--|
     #
     # |--[C]
@@ -128,7 +128,7 @@ end
 
 function initializeFactoringGraph()
     # Set up a graph to test factorize function
-    #             [T]    
+    #             [T]
     #              |     -----
     #              v     v   |
     # [T]-->[A]-->[N]-->[+] [N]
@@ -153,12 +153,12 @@ end
 
 function initializeFactoringGraphWithoutLoop()
     # Set up a graph to test factorize function
-    #             [T]    
-    #              |     
-    #              v     
+    #             [T]
+    #              |
+    #              v
     # [T]-->[A]-->[N]-->[T]
-    #                    
-    #                    
+    #
+    #
 
     FactorGraph()
     t1 = TerminalNode(name="t1")
@@ -178,8 +178,8 @@ function initializeAdditionNode(msgs::Array{Any})
     # Set up an addition node and prepare the messages
     # A MockNode is connected for each argument message.
     #
-    # [M]-->[+]<--[M]   
-    #        |        
+    # [M]-->[+]<--[M]
+    #        |
 
     FactorGraph()
     add_node = AdditionNode()
@@ -197,8 +197,8 @@ function initializeEqualityNode(msgs::Array{Any})
     # Set up an equality node and prepare the messages
     # A MockNode is connected for each argument message
     #
-    # [M]-->[=]<--[M] (as many incoming edges as length(msgs))  
-    #        |        
+    # [M]-->[=]<--[M] (as many incoming edges as length(msgs))
+    #        |
 
     FactorGraph()
     eq_node = EqualityNode(length(msgs))
@@ -216,7 +216,7 @@ function initializeTerminalAndGainAddNode()
     # Initialize some nodes
     #
     #    node
-    #    [N]--| 
+    #    [N]--|
     #       out
     #
     #       c_node
@@ -265,7 +265,7 @@ function initializeTerminalAndGainEqNode()
     # Initialize some nodes
     #
     #    node
-    #    [N]--| 
+    #    [N]--|
     #       out
     #
     #       c_node
@@ -335,7 +335,7 @@ function initializeGaussianNode(; y_type::DataType=Float64)
         edges[3].head.message = Message(GaussianDistribution())
     else
         error("Can't handle y_type $(y_type)")
-    end        
+    end
     # Set messages and marginals
     return (node, edges)
 end
@@ -406,8 +406,8 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     #              |       |
     #     q(m,gam) -->[N]<--
     # - - - - - - - - -|- - - - - - - - - -
-    #                  |q(y)      
-    #                  v       
+    #                  |q(y)
+    #                  v
     #                [y_1]
 
     # Batch estimation with multiple samples will intruduce cycles in the subgraph.
@@ -443,8 +443,12 @@ end
 
 function ==(x::ScheduleEntry, y::ScheduleEntry)
     if is(x, y) return true end
-    if x.interface == y.interface && x.summary_operation == y.summary_operation return true end
-    return false
+    ((x.interface == y.interface) && (x.message_calculation_rule == y.message_calculation_rule)) || (return false)
+    (isdefined(x, :post_processing) == isdefined(y, :post_processing)) || (return false)
+    if isdefined(x, :post_processing)
+        (x.post_processing == y.post_processing) || (return false)
+    end
+    return true
 end
 
 function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
