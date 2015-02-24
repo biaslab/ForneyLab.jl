@@ -43,6 +43,20 @@ facts("Graph level unit tests") do
         @fact getSubgraph(t1.out.edge) => graph.factorization[1]
         @fact getSubgraph(t2.out.edge) => graph.factorization[2]
     end
+
+    context("node(name::String) should return node with matching name") do
+        graph_1 = FactorGraph()
+        graph_2 = FactorGraph()
+        n = MockNode(name="my_mocknode")
+        Edge(n.out, MockNode().out)
+        @fact_throws node("some_name")
+        @fact_throws node("my_mocknode", graph_1)
+        setCurrentGraph(graph_1)
+        @fact_throws node("my_mocknode")
+        @fact node("my_mocknode", graph_2) => n
+        setCurrentGraph(graph_2)
+        @fact node("my_mocknode") => n
+    end
 end
 
 #####################
@@ -74,7 +88,7 @@ facts("Graph level integration tests") do
         n_sections = length(data)
         for edge in q_y_edges
             factorize!(Set{Edge}({edge}))
-        end        
+        end
         graph = getCurrentGraph()
         m_gam_subgraph = getSubgraph(g_nodes[1].mean.edge)
         y1_subgraph = getSubgraph(g_nodes[1].out.edge)
@@ -97,7 +111,7 @@ facts("Graph level integration tests") do
         # Initialize a subgraph
         node1 = MockNode()
         node2 = MockNode(2)
-        node3 = MockNode() 
+        node3 = MockNode()
         edge1 = Edge(node1.out, node2.interfaces[1])
         edge2 = Edge(node2.interfaces[2], node3.out)
         @fact length(my_subgraph.internal_edges) => 2
@@ -144,7 +158,7 @@ facts("Graph level integration tests") do
         n_sections = length(data)
         for edge in q_y_edges
             factorize!(Set{Edge}({edge}))
-        end        
+        end
         setVagueMarginals!()
         graph = getCurrentGraph()
         m_gam_subgraph = getSubgraph(g_nodes[1].mean.edge)

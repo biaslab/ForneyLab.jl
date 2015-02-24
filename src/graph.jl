@@ -8,7 +8,7 @@ export  getCurrentGraph,
         clearMessages!,
         getNodes,
         getEdges,
-        findNodeByName,
+        node,
         factorize!,
         factorizeMeanField!
 
@@ -42,8 +42,8 @@ function show(io::IO, factor_graph::FactorGraph)
 end
 
 # Get and set current graph functions
-global current_graph = FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], 
-                                   Dict{Edge, Subgraph}(), 
+global current_graph = FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))],
+                                   Dict{Edge, Subgraph}(),
                                    Dict{(Node, Subgraph), ProbabilityDistribution}(),
                                    Dict{TerminalNode, Vector}(),
                                    Dict{Union(Edge,Interface), Vector}(),
@@ -52,8 +52,8 @@ global current_graph = FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}
 getCurrentGraph() = current_graph::FactorGraph
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
-FactorGraph() = setCurrentGraph(FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))], 
-                                            Dict{Edge, Subgraph}(), 
+FactorGraph() = setCurrentGraph(FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))],
+                                            Dict{Edge, Subgraph}(),
                                             Dict{(Node, Subgraph), ProbabilityDistribution}(),
                                             Dict{TerminalNode, Vector}(),
                                             Dict{Union(Edge,Interface), Vector}(),
@@ -73,13 +73,13 @@ function getOrCreateMarginal(node::Node, subgraph::Subgraph, graph::FactorGraph,
     try
         return graph.approximate_marginals[(node, subgraph)]
     catch
-        if assign_distribution <: ProbabilityDistribution 
+        if assign_distribution <: ProbabilityDistribution
             return graph.approximate_marginals[(node, subgraph)] = vague(assign_distribution)
         else
             error("Cannot create a marginal of type $(assign_distribution) since a marginal should be <: ProbabilityDistribution")
         end
     end
-    
+
 end
 
 function conformSubgraph!(subgraph::Subgraph)
@@ -239,15 +239,17 @@ function getEdges(nodes::Set{Node}; include_external=true)
     return edge_set
 end
 
-function findNodeByName(name::ASCIIString, graph::FactorGraph=getCurrentGraph())
+function node(name::ASCIIString, graph::FactorGraph=getCurrentGraph())
     # Returns first node found in graph with same name as argument
-    
+
     nodes = getNodes(graph, open_composites=true)
-    for node in nodes
-        if node.name == name
-            return node
+    for n in nodes
+        if n.name == name
+            return n
         end
     end
+
+    error("No node with name \"$(name)\" in this FactorGraph")
 end
 
 function extend(edge_set::Set{Edge})

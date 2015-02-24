@@ -8,21 +8,20 @@ type MockNode <: Node
     # MockNode is a node with an arbitrary function, that when created
     # initiates a message on all its interfaces.
     # Interface 1 is named "out"
+    name::ASCIIString
     interfaces::Array{Interface, 1}
     out::Interface
-    name::ASCIIString
-    function MockNode(num_interfaces::Int=1)
-        self = new(Array(Interface, num_interfaces))
+    function MockNode(num_interfaces::Int=1; name=ForneyLab.unnamedStr())
+        self = new(name, Array(Interface, num_interfaces))
         for interface_id = 1:num_interfaces
             self.interfaces[interface_id] = Interface(self)
         end
         self.out = self.interfaces[1]
-        self.name = ForneyLab.unnamedStr()
         return(self)
     end
 end
-function MockNode(message::Message, num_interfaces::Int=1)
-    self = MockNode(num_interfaces)
+function MockNode(message::Message, num_interfaces::Int=1; kwargs...)
+    self = MockNode(num_interfaces; kwargs...)
     for interface in self.interfaces
         interface.message = message
     end
