@@ -21,8 +21,21 @@ function StudentsTDistribution(; m::Union(Float64, Vector{Float64})=[0.0],
     return StudentsTDistribution(m, W, nu)
 end
 
-Base.mean(dist::StudentsTDistribution) = dist.m
-Base.var(dist::StudentsTDistribution) = dist.nu / (dist.nu - 2) * inv(dist.W)
+function Base.mean(dist::StudentsTDistribution)
+    if dist.nu > 1.0   
+        return dist.m
+    else
+        return fill!(similar(dist.m), NaN)
+    end
+end
+
+function Base.var(dist::StudentsTDistribution)
+    if dist.nu > 2.0
+        return dist.nu / (dist.nu - 2) * inv(dist.W)
+    else
+        return fill!(similar(dist.W), NaN)
+    end
+end
 
 function show(io::IO, dist::StudentsTDistribution)
     println(io, typeof(dist))

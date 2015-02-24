@@ -60,4 +60,6 @@ include("test_step.jl")
 # (S)VMP tests
 include("test_vmp.jl")
 
+exitstatus()
+
 end # module TestForneyLab

@@ -54,18 +54,10 @@ facts("TimeWrap integration tests") do
     e = Edge(node_t1, node_t2)
 
     # addTimeWrap
-    context("addTimeWrap should not register a timewrap if the nodes do not belong to the specified graph or if the nodes are the same") do
-        @fact_throws addTimeWrap(TerminalNode(), node_t1)
-        @fact_throws addTimeWrap(node_t2, TerminalNode())
-        @fact_throws addTimeWrap(node_t1, node_t1)
-    end
     context("addTimeWrap should register a timewrap for a pair of TerminalNodes") do
         time_wraps = addTimeWrap(node_t1, node_t2)
         @fact length(time_wraps) => 1
         @fact ((node_t1, node_t2) in time_wraps) => true
-    end
-    context("addTimeWrap should refuse to register multiple timewraps per TerminalNode") do
-        @fact_throws addTimeWrap(node_t1, node_t2)
     end
 
     # clearTimeWraps!
