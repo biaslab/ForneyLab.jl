@@ -55,7 +55,7 @@ type SigmoidCompositeNode <: Node
     end
 end
 
-isDeterministic(::FixedGainNode) = false
+isDeterministic(::SigmoidCompositeNode) = false
 
 ############################################
 # Standard update functions
@@ -159,7 +159,7 @@ function sumProduct!(node::SigmoidCompositeNode,
     dist_in1.m = [ (1.0/node.b) * log( node.a*(dist_out.a/dist_out.b) ) ]
     dist_in1.V = nothing
     dist_in1.xi = nothing
-    dist_in1.W = reshape([ dist_out.a^2*dist_out.b^2*node.gamma*node.b*2 / (dist_out.a+dist_out.b)^4 ],1,1)
+    dist_in1.W = reshape([ dist_out.a^2*dist_out.b^2*node.gamma*node.b^2 / (dist_out.a+dist_out.b)^4 ],1,1)
 
     return node.interfaces[outbound_interface_id].message
 end
