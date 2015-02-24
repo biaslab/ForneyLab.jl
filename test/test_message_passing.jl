@@ -32,7 +32,7 @@ facts("Message passing integration tests") do
         # Not factorized
         (node, edges) = initializeGaussianNode()
         graph = getCurrentGraph()
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], node.mean.partner.message) => true 
+        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], node.mean.partner.message) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], node.precision.partner.message) => true
 
         # Mean field factorized Gaussian node
@@ -101,9 +101,9 @@ facts("Message passing integration tests") do
             @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
         end
 
-        context("Should handle sampling") do
+        context("Should handle post-processing of messages (sample)") do
             node = initializeAdditionNode(Any[Message(GaussianDistribution()), Message(GaussianDistribution()), Message(GaussianDistribution())])
-            schedule = [ScheduleEntry(node.out, :sumproduct_sample)]
+            schedule = [ScheduleEntry(node.out, sumProduct!, sample)]
             @fact typeof(executeSchedule(schedule).payload) => DeltaDistribution{Array{Float64, 1}}
         end
 

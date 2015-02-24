@@ -1,9 +1,8 @@
 facts("Schedule related tests") do
     context("ForneyLab.convert(Schedule, ...)") do
         node = GaussianNode()
-        @fact ForneyLab.convert(Schedule, [node.out, node.mean]) => [ScheduleEntry(node.out, :sumproduct), ScheduleEntry(node.mean, :sumproduct)]
-        @fact ForneyLab.convert(Schedule, [node.out, node.mean], :sumproduct_sample) => [ScheduleEntry(node.out, :sumproduct_sample), ScheduleEntry(node.mean, :sumproduct_sample)]
-        @fact ForneyLab.convert(Schedule, [node.out, node.mean], :sumproduct_expectation) => [ScheduleEntry(node.out, :sumproduct_expectation), ScheduleEntry(node.mean, :sumproduct_expectation)]
+        @fact ForneyLab.convert(Schedule, [node.out, node.mean]) => [ScheduleEntry(node.out, sumProduct!), ScheduleEntry(node.mean, sumProduct!)]
+        @fact ForneyLab.convert(Schedule, [node.out, node.mean], sumProduct!, sample) => [ScheduleEntry(node.out, sumProduct!, sample), ScheduleEntry(node.mean, sumProduct!, sample)]
     end
 end
 
