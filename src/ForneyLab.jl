@@ -1,5 +1,7 @@
 module ForneyLab
 
+using Optim
+
 export  Node, CompositeNode, ProbabilityDistribution
 export  vague, ==
 export  current_graph
@@ -33,6 +35,7 @@ include("distributions/gamma.jl")
 include("distributions/inverse_gamma.jl")
 include("distributions/normal_gamma.jl")
 include("distributions/students_t.jl")
+include("distributions/beta.jl")
 
 # Basic ForneyLab building blocks and methods
 include("interface.jl")
@@ -50,6 +53,7 @@ include("nodes/logarithmic.jl")
 # Composite nodes
 include("nodes/composite/gain_addition.jl")
 include("nodes/composite/gain_equality.jl")
+include("nodes/composite/sigmoid.jl")
 include("nodes/composite/general.jl")
 
 # Graphs and factorizations

@@ -39,4 +39,12 @@ facts("Helper function unit tests") do
         @fact node.out.message => Message(DeltaDistribution())
     end
 
+    context("KLpq should calculate a numeric approximation to the KL divergence") do
+        x = [0:0.1:2]
+        p = vec([ones(11,1)-tiny(); zeros(10,1)+tiny()])
+        q1 = vec([ones(11,1)-tiny(); zeros(10,1)+tiny()])
+        q2 = vec([zeros(10,1)+tiny(); ones(11,1)-tiny()])
+        @fact KLpq(x, p, q1) => 0.0
+        @fact KLpq(x, p, q2) => 27.631021115875058
+    end
 end

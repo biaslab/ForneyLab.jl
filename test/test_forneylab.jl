@@ -28,6 +28,7 @@ include("distributions/test_gamma.jl")
 include("distributions/test_inverse_gamma.jl")
 include("distributions/test_normal_gamma.jl")
 include("distributions/test_students_t.jl")
+include("distributions/test_beta.jl")
 
 # Basic building blocks and methods tests
 include("test_node.jl")
@@ -46,6 +47,7 @@ include("nodes/test_logarithmic.jl")
 # Composite nodes
 include("nodes/composite/test_gain_addition.jl")
 include("nodes/composite/test_gain_equality.jl")
+include("nodes/composite/test_sigmoid.jl")
 
 # Marginal calculations
 include("test_calculate_marginal.jl")

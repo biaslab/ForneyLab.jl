@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny
+export isApproxEqual, huge, tiny, KLpq
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
@@ -28,3 +28,9 @@ function unnamedStr()
     return "unnamed$(unnamed_counter)"
 end
 
+function KLpq(x::Vector{Float64}, p::Vector{Float64}, q::Vector{Float64})
+    # Calculate the KL divergence of p and q
+    length(x) == length(p) == length(q) || error("Lengths of x, p and q must match")
+    dx = diff(x)
+    return -sum(p[1:end-1].*log(q[1:end-1]./p[1:end-1]).*dx)
+end

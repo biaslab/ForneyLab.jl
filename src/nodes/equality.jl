@@ -214,6 +214,28 @@ sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{Gamma
 sumProduct!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{GammaDistribution}, msg_2::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
 
 ############################################
+# BetaDistribution methods
+############################################
+
+function sumProduct!(node::EqualityNode,
+                            outbound_interface_id::Int,
+                            msg_1::Message{BetaDistribution},
+                            msg_2::Message{BetaDistribution},
+                            ::Nothing)
+    # Calculate an outbound message based on the inbound messages and the node function.
+    # This function is not exported, and is only meant for internal use.
+    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], BetaDistribution).payload
+
+    # Derivation available in notebook
+    dist_out.a = msg_1.payload.a + msg_2.payload.a - 1.0
+    dist_out.b = msg_1.payload.b + msg_2.payload.b - 1.0
+
+    return node.interfaces[outbound_interface_id].message
+end
+sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{BetaDistribution}, ::Nothing, msg_2::Message{BetaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{BetaDistribution}, msg_2::Message{BetaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
+
+############################################
 # Gaussian-DeltaDistribution combination
 ############################################
 

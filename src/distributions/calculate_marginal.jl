@@ -70,6 +70,28 @@ function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, 
     return inverseGammaMarginalRule!(marg, forward_dist, backward_dist)
 end
 
+# BetaDistribution
+function betaMarginalRule!(marg::BetaDistribution, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
+    # Calculate the marginal from a forward/backward message pair.
+    # We calculate the marginal by using the EqualityNode update rules; same for the functions below
+    marg.a = forward_dist.a+backward_dist.a-1.0
+    marg.b = forward_dist.b+backward_dist.b-1.0
+    return marg
+end    
+function calculateMarginal(forward_dist::BetaDistribution, backward_dist::BetaDistribution)
+    marg = BetaDistribution() # Do not overwrite an existing distribution
+    return betaMarginalRule!(marg, forward_dist, backward_dist)    
+end
+function calculateMarginal!(edge::Edge, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
+    marg = getOrCreateMarginal(edge, BetaDistribution)
+    return betaMarginalRule!(marg, forward_dist, backward_dist)
+end
+function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
+    # Calculation for univariate approximate marginal
+    marg = getOrCreateMarginal(node, subgraph, graph, BetaDistribution)
+    return betaMarginalRule!(marg, forward_dist, backward_dist)
+end
+
 # GaussianDistribution
 function gaussianMarginalRule!(marg::GaussianDistribution, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
     # Calculate the marginal from a forward/backward message pair.
