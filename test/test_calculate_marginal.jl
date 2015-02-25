@@ -19,7 +19,7 @@ facts("Marginal calculation integration tests") do
     context("Marginal calculation for naively factorized GaussianNode") do
         (node, edges) = initializeGaussianNode(y_type=Float64)
         graph = getCurrentGraph()
-        factorizeMeanField!(graph)
+        factorize!(graph)
         
         # Presetting marginals
         subgraph1 = getSubgraph(graph, edges[1])

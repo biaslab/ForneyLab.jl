@@ -20,7 +20,7 @@ function graphViz(dot_graph::String; external_viewer::Bool=false)
     end
 end
 
-graphViz(factor_graph::FactorGraph; args...) = graphViz(genDot(getNodes(factor_graph, open_composites=false), getEdges(factor_graph), time_wraps=factor_graph.time_wraps); args...)
+graphViz(factor_graph::FactorGraph; args...) = graphViz(genDot(nodes(factor_graph, open_composites=false), edges(factor_graph), time_wraps=factor_graph.time_wraps); args...)
 graphViz(; args...) = graphViz(getCurrentGraph(); args...)
 
 graphViz(subgraph::Subgraph; args...) = graphViz(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=subgraph.external_edges); args...)
@@ -35,10 +35,10 @@ function graphViz(composite_node::CompositeNode; args...)
     end
     (length(nodes) > 0) || error("CompositeNode does not contain any internal nodes.")
 
-    return graphViz(genDot(nodes, getEdges(nodes, include_external=false)); args...)
+    return graphViz(genDot(nodes, edges(nodes, include_external=false)); args...)
 end
 
-graphViz(nodes::Set{Node}; args...) = graphViz(genDot(nodes, getEdges(nodes, include_external=false)); args...)
+graphViz(nodes::Set{Node}; args...) = graphViz(genDot(nodes, edges(nodes, include_external=false)); args...)
 graphViz(nodes::Vector{Node}; args...) = graphViz(Set(nodes); args...)
 
 ####################################################
@@ -53,7 +53,7 @@ function graphPdf(dot_graph::String, filename::String)
     end
 end
 
-graphPdf(factor_graph::FactorGraph, filename::String) = graphPdf(genDot(getNodes(factor_graph, open_composites=false), getEdges(factor_graph)), filename)
+graphPdf(factor_graph::FactorGraph, filename::String) = graphPdf(genDot(nodes(factor_graph, open_composites=false), edges(factor_graph)), filename)
 graphPdf(filename::String) = graphPdf(getCurrentGraph(), filename)
 
 graphPdf(subgraph::Subgraph, filename::String) = graphPdf(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=subgraph.external_edges), filename)
@@ -68,10 +68,10 @@ function graphPdf(composite_node::CompositeNode, filename::String)
     end
     (length(nodes) > 0) || error("CompositeNode does not contain any internal nodes.")
 
-    return graphPdf(genDot(nodes, getEdges(nodes, include_external=false)), filename)
+    return graphPdf(genDot(nodes, edges(nodes, include_external=false)), filename)
 end
 
-graphPdf(nodes::Set{Node}, filename::String) = graphPdf(genDot(nodes, getEdges(nodes, include_external=false)), filename)
+graphPdf(nodes::Set{Node}, filename::String) = graphPdf(genDot(nodes, edges(nodes, include_external=false)), filename)
 graphPdf(nodes::Vector{Node}, filename::String) = graphPdf(Set(nodes), filename)
 
 

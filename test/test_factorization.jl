@@ -51,11 +51,11 @@ facts("Factorization integration tests") do
         end
     end
 
-    context("factorizeMeanField!() should output a mean field factorized graph") do
+    context("factorize!() should output a mean field factorized graph") do
         data = [1.0, 1.0, 1.0]
         (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
         graph = getCurrentGraph()
-        factorizeMeanField!(graph)
+        factorize!(graph)
         gam_set = Set{Edge}()
         for gam_eq_node in gam_eq_nodes
             for interface in gam_eq_node.interfaces

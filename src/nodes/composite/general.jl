@@ -19,7 +19,7 @@ function sumProduct!(node::CompositeNode,
             error("No internal message passing schedule is defined for calculating outbound messages on interface $(outbound_interface_id) of $(typeof(node)) $(node.name).")
         end
 
-        return node.interfaces[outbound_interface_id].message = executeSchedule(schedule)
+        return node.interfaces[outbound_interface_id].message = execute(schedule)
 
     end
 end

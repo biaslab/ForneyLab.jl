@@ -103,7 +103,7 @@ facts("step integration tests") do
         setReadBuffer(t_out, data)
         mean_out = setWriteBuffer(g_node.mean.edge)
         prec_out = setWriteBuffer(g_node.precision.edge)
-        factorizeMeanField!(g)
+        factorize!(g)
         for subgraph in g.factorization
             generateSchedule!(subgraph)
         end

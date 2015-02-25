@@ -114,9 +114,9 @@ function sumProduct!(node::GainAdditionCompositeNode,
 
     if outbound_interface_id == 3
         if !node.use_composite_update_rules
-            node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
+            node.interfaces[outbound_interface_id].message = execute(node.interfaces[outbound_interface_id].internal_schedule)
         else
-            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+            dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
     
             dist_1 = in1.payload
             dist_2 = in2.payload
@@ -182,9 +182,9 @@ function sumProduct!(node::GainAdditionCompositeNode,
 
     if outbound_interface_id == 2
         if !node.use_composite_update_rules
-            node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
+            node.interfaces[outbound_interface_id].message = execute(node.interfaces[outbound_interface_id].internal_schedule)
         else
-            dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+            dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
             dist_1 = in1.payload
             dist_3 = out.payload
@@ -250,7 +250,7 @@ function sumProduct!(node::GainAdditionCompositeNode,
 
     if outbound_interface_id == 1
         # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
-        node.interfaces[outbound_interface_id].message = executeSchedule(node.interfaces[outbound_interface_id].internal_schedule)
+        node.interfaces[outbound_interface_id].message = execute(node.interfaces[outbound_interface_id].internal_schedule)
     else
         error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
     end

@@ -14,7 +14,7 @@ facts("Naive VMP implementation integration tests") do
         n_sections = length(data)
 
         # Apply mean field factorization
-        factorizeMeanField!()
+        factorize!()
 
         graph = getCurrentGraph()
         for subgraph in graph.factorization
@@ -31,16 +31,16 @@ facts("Naive VMP implementation integration tests") do
         subgraphs_y = [getSubgraph(e) for e in q_y_edges]
         for iter = 1:n_its
             for sg_y in subgraphs_y
-                executeSchedule(sg_y)
+                execute(sg_y)
             end
             # q(m) update
-            executeSchedule(subgraph_m)
+            execute(subgraph_m)
             # q(gam) update
-            executeSchedule(subgraph_gam)
+            execute(subgraph_gam)
         end
         # One last time to ensure all calculations have propagated through the equality chains
-        executeSchedule(ForneyLab.convert(Schedule, [m_eq_nodes[end].interfaces[2]]))
-        executeSchedule(ForneyLab.convert(Schedule, [gam_eq_nodes[end].interfaces[2]]))
+        execute(ForneyLab.convert(Schedule, [m_eq_nodes[end].interfaces[2]]))
+        execute(ForneyLab.convert(Schedule, [gam_eq_nodes[end].interfaces[2]]))
 
         # Save outcome
         ensureMVParametrization!(m_eq_nodes[end].interfaces[2].message.payload)
@@ -87,12 +87,12 @@ facts("Structured VMP implementation integration tests") do
 
             # Do the VMP iterations
             for it = 1:n_its
-                executeSchedule(m_gam_subgraph)
-                executeSchedule(y_subgraph)
+                execute(m_gam_subgraph)
+                execute(y_subgraph)
             end
             # Propagate through chain
-            executeSchedule(ForneyLab.convert(Schedule, [g_node.mean, m_eq_node.interfaces[2]]))
-            executeSchedule(ForneyLab.convert(Schedule, [g_node.precision, gam_eq_node.interfaces[2]]))
+            execute(ForneyLab.convert(Schedule, [g_node.mean, m_eq_node.interfaces[2]]))
+            execute(ForneyLab.convert(Schedule, [g_node.precision, gam_eq_node.interfaces[2]]))
 
             # Switch posterior to prior for next sample
             m_0_node.value = deepcopy(m_eq_node.interfaces[2].message.payload)
