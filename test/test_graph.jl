@@ -193,7 +193,7 @@ facts("Graph level integration tests") do
 
         # Composite node test
         compnode = GainEqualityCompositeNode();
-        found_nodes = nodes(compnode, depth=1) 
+        found_nodes = nodes(compnode, depth=1)
         @fact length(found_nodes) => 2
         @fact compnode.equality_node in found_nodes => true
         @fact compnode.fixed_gain_node in found_nodes => true
@@ -205,4 +205,12 @@ facts("Graph level integration tests") do
         @fact edges(Set{Node}({testnodes[1], testnodes[2]})) => Set{Edge}({testnodes[1].in1.edge, testnodes[4].in1.edge, testnodes[4].out.edge})
     end
 
+    context("edges() called on a subgraph should return all internal edges (optionally external as well) of the subgraph") do
+        (t1, a1, g1, t2, t3) = initializeFactoringGraphWithoutLoop()
+        graph = currentGraph()
+        factorize!(graph)
+        sg = graph.factorization[1]
+        @fact edges(sg, include_external=false) => Set{Edge}({g1.variance.edge})
+        @fact edges(sg) => Set{Edge}({g1.variance.edge, g1.out.edge, g1.mean.edge})
+    end
 end

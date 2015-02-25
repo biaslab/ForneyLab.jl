@@ -10,8 +10,7 @@ export  currentGraph,
         edges,
         node,
         factorize!
-        
-# FactorGraph and Subgraph types
+
 type Subgraph
     nodes::Set{Node}
     internal_edges::Set{Edge}
@@ -19,9 +18,17 @@ type Subgraph
     internal_schedule::Schedule # Schedule for internal message passing (Dauwels step 2)
     external_schedule::ExternalSchedule # Schedule for updates on nodes connected to external edges (Dauwels step 3)
 end
+
 function show(io::IO, subgraph::Subgraph)
     graph = currentGraph()
-    println("Subgraph $(findfirst(graph.factorization, subgraph))")
+    println(io, "Subgraph $(findfirst(graph.factorization, subgraph))")
+    println(io, " # nodes: $(length(subgraph.nodes))")
+    println(io, " # internal edges: $(length(subgraph.internal_edges))")
+    println(io, " # external edges: $(length(subgraph.external_edges))")
+    println(io, "\nSee also:")
+    println(io, " draw(::SubGraph)")
+    println(io, " show(nodes(::SubGraph))")
+    println(io, " show(edges(::SubGraph))")
 end
 
 type FactorGraph
@@ -38,6 +45,11 @@ function show(io::IO, factor_graph::FactorGraph)
     println(io, "FactorGraph")
     println(io, " # nodes: $(length(nodes_top)) ($(length(nodes(factor_graph))) including child nodes)")
     println(io, " # edges (top level): $(length(edges(nodes_top)))")
+    println(io, " # factors: $(length(factor_graph.factorization))")
+    println(io, "\nSee also:")
+    println(io, " draw(::FactorGraph)")
+    println(io, " show(nodes(::FactorGraph))")
+    println(io, " show(edges(::FactorGraph))")
 end
 
 # Create an empty graph
@@ -157,7 +169,7 @@ function nodes(node::CompositeNode; depth::Integer=1)
     # Return set of child nodes up to a certain depth
     # depth = 1 only returns the direct children
     # depth = Inf returns all descendants
-    
+
     children = Set{Node}()
     composite_nodes_stack = CompositeNode[node] # Composite nodes to open
 
@@ -183,7 +195,7 @@ end
 function nodes(subgraph::Subgraph; open_composites::Bool=true)
     # Return all nodes in subgraph
     all_nodes = copy(subgraph.nodes)
-    
+
     if open_composites
         children = Set{Node}()
         for n in all_nodes
@@ -238,6 +250,14 @@ function edges(graph::FactorGraph)
     return edge_set
 end
 edges(;args...) = edges(currentGraph())
+
+function edges(subgraph::Subgraph; include_external=true)
+    if include_external
+        return union(subgraph.internal_edges, subgraph.external_edges)
+    else
+        return subgraph.internal_edges
+    end
+end
 
 function edges(nodeset::Set{Node}; include_external=true)
     # Return the set of edges connected to nodeset, including or excluding external edges
