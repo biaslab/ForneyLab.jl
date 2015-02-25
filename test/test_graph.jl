@@ -196,6 +196,15 @@ facts("Graph level integration tests") do
         @fact getEdges(Set{Node}({nodes[1], nodes[2]})) => Set{Edge}({nodes[1].in1.edge, nodes[4].in1.edge, nodes[4].out.edge})
     end
 
+    context("getEdges() called on a subgraph should return all internal edges (optionally external as well) of the subgraph") do
+        (t1, a1, g1, t2, t3) = initializeFactoringGraphWithoutLoop()
+        graph = getCurrentGraph()
+        factorizeMeanField!(graph)
+        sg = graph.factorization[1]
+        @fact getEdges(sg, include_external=false) => Set{Edge}({g1.variance.edge})
+        @fact getEdges(sg) => Set{Edge}({g1.variance.edge, g1.out.edge, g1.mean.edge})
+    end
+
     context("addChildNodes!() should add composite node's child nodes to the node array") do
         node = initializeGainEqualityCompositeNode(eye(1), false, [Message(GaussianDistribution()), Message(GaussianDistribution()), nothing])
         @fact ForneyLab.addChildNodes!(Set{Node}({node})) => Set{Node}({node, node.equality_node, node.fixed_gain_node})
