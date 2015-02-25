@@ -33,6 +33,22 @@ facts("Factorization integration tests") do
             @fact graph.edge_to_subgraph[add1.out.edge] => graph.factorization[1]
             @fact graph.edge_to_subgraph[g2.out.edge] => graph.factorization[1]
         end
+
+        context("Should not factorize a GaussianNode with fixed mean and variance") do
+            (t, gain, gauss) = initializeGaussianFactoringGraph()
+            factorize!(Set{Edge}([t.out.edge]))
+            graph = getCurrentGraph()
+            @fact length(graph.factorization) => 1
+            @fact graph.edge_to_subgraph[t.out.edge] => graph.factorization[1]
+            @fact graph.edge_to_subgraph[gauss.out.edge] => graph.factorization[1]
+        end
+
+        context("Should retain node names") do
+            (t1, gain, t2) = initializeSimpleFactoringGraph()
+            factorize!(Set{Edge}([t1.out.edge]))
+            graph = getCurrentGraph()
+            @fact node("t1") => t1
+        end
     end
 
     context("factorizeMeanField!() should output a mean field factorized graph") do
