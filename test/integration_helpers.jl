@@ -172,6 +172,29 @@ function initializeFactoringGraphWithoutLoop()
     return (t1, a1, g1, t2, t3)
 end
 
+function initializeGaussianFactoringGraph()
+    # [T]<--[A]<--[N]
+
+    FactorGraph()
+    t = TerminalNode(name="t")
+    gain = FixedGainNode(name="gain")
+    gauss = GaussianNode(m=1.0, V=0.5, name="gauss")
+    Edge(gauss.out, gain.in1)
+    Edge(gain.out, t.out)
+    return (t, gain, gauss)
+end
+
+function initializeSimpleFactoringGraph()
+    # [T]<--[A]<--[T]
+
+    FactorGraph()
+    t1 = TerminalNode(name="t1")
+    gain = FixedGainNode(name="gain")
+    t2 = TerminalNode(name="t2")
+    Edge(t2.out, gain.in1)
+    Edge(gain.out, t1.out)
+    return (t1, gain, t2)
+end
 
 function initializeAdditionNode(msgs::Array{Any})
     # Set up an addition node and prepare the messages

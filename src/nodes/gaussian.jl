@@ -91,7 +91,7 @@
 #   out = Message(GaussianDistribution(m=mean, V=variance))
 #
 #   Example:
-#       GaussianNode(name="my_node", variance=1.0)
+#       GaussianNode(name="my_node", V=1.0)
 #
 # Interface ids, (names) and supported message types:
 #   Receiving:
@@ -105,6 +105,18 @@
 #       Message{GaussianDistribution}
 #   2. (out):
 #       Message{GaussianDistribution}
+#
+############################################
+#
+# GaussianNode with fixed mean and variance:
+#
+#       out
+#   [N]----->
+#
+#   out = Message(GaussianDistribution(m=mean, V=variance))
+#
+#   Example:
+#       GaussianNode(name="my_node", m=1.0, V=1.0)
 #
 ############################################
 
@@ -125,7 +137,7 @@ type GaussianNode <: Node
 
     function GaussianNode(; name=unnamedStr(), form::ASCIIString="moment", m::Union(Float64,Vector{Float64},Nothing)=nothing, V::Union(Float64,Matrix{Float64},Nothing)=nothing)
         if m!=nothing && V!=nothing
-            error("Only one interface (mean or variance) may be fixed.")
+            total_interfaces = 1
         elseif m!=nothing || V!=nothing
             total_interfaces = 2
         else
@@ -406,6 +418,18 @@ function sumProduct!{T<:Any}(node::GaussianNode,
     return node.interfaces[outbound_interface_id].message
 end
 
+function sumProduct!(node::GaussianNode,
+                            outbound_interface_id::Int,
+                            ::Any)
+
+    # Forward over out with fixed mean and variance, effectively rendering the Gaussian node a terminal
+    #
+    #        N               
+    #  [N]---->
+    #      -->  
+
+    return node.out.message = Message(GaussianDistribution(m=deepcopy(node.m), V=deepcopy(node.V)))
+end
 
 ############################################
 # Naive variational update functions
