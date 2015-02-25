@@ -25,33 +25,33 @@ facts("Message passing integration tests") do
     context("pushRequiredInbound!() should add the proper message/marginal") do
         # Composite node
         node = initializeGainEqualityCompositeNode(eye(1), true, Any[Message(DeltaDistribution(1.0)), Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))])
-        graph = getCurrentGraph()
+        graph = currentGraph()
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in1, node.out)[1], node.in1.partner.message) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in2, node.out)[1], node.in2.partner.message) => true
 
         # Not factorized
         (node, edges) = initializeGaussianNode()
-        graph = getCurrentGraph()
+        graph = currentGraph()
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], node.mean.partner.message) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], node.precision.partner.message) => true
 
         # Mean field factorized Gaussian node
         (node, edges) = initializeGaussianNode()
-        graph = getCurrentGraph()
+        graph = currentGraph()
         factorize!(graph)
         setVagueMarginals!(graph)
-        sg_mean = getSubgraph(node.mean.edge)
-        sg_prec = getSubgraph(node.precision.edge)
+        sg_mean = subgraph(node.mean.edge)
+        sg_prec = subgraph(node.precision.edge)
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean)]) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], graph.approximate_marginals[(node, sg_prec)]) => true
 
         # Structurally factorized
         (node, edges) = initializeGaussianNode()
-        graph = getCurrentGraph()
+        graph = currentGraph()
         factorize!(node.out.edge)
         setVagueMarginals!(graph)
-        sg_mean_prec = getSubgraph(node.mean.edge)
-        sg_out = getSubgraph(node.out.edge)
+        sg_mean_prec = subgraph(node.mean.edge)
+        sg_out = subgraph(node.out.edge)
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean_prec)]) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], graph.approximate_marginals[(node, sg_mean_prec)]) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.mean)[1], node.precision.partner.message) => true

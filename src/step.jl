@@ -1,32 +1,32 @@
 export  setReadBuffer,
         setWriteBuffer,
-        clearBuffers!,
-        addTimeWrap,
-        clearTimeWraps!,
+        clearBuffers,
+        setTimeWrap,
+        clearTimeWraps,
         step
 
-function setReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=getCurrentGraph())
+function setReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=currentGraph())
     (node in nodes(graph)) || error("The specified node is not part of the current or specified graph")
     graph.read_buffers[node] = buffer
 end
 
-function setWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=getCurrentGraph())
+function setWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
     (interface.node in nodes(graph)) || error("The specified interface is not part of the current or specified graph")
     graph.write_buffers[interface] = buffer # Write buffer for message
 end
 
-function setWriteBuffer(edge::Edge, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=getCurrentGraph())
+function setWriteBuffer(edge::Edge, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
     (edge in edges(graph)) || error("The specified edge is not part of the current or specified graph")
     graph.write_buffers[edge] = buffer # Write buffer for marginal
 end
 
-function clearBuffers!(graph::FactorGraph=getCurrentGraph())
+function clearBuffers(graph::FactorGraph=currentGraph())
     graph.read_buffers = Dict{TerminalNode, Vector}()
     graph.write_buffers = Dict{Union(Edge,Interface), Vector}()
     return graph
 end
 
-function addTimeWrap(from::TerminalNode, to::TerminalNode, storage_graph::FactorGraph=getCurrentGraph())
+function setTimeWrap(from::TerminalNode, to::TerminalNode, storage_graph::FactorGraph=currentGraph())
     # (from in nodes(graph)) || error("The specified 'from' node is not part of the current or specified graph")
     # (to in nodes(graph)) || error("The specified 'to' node is not part of the current or specified graph")
     !is(from, to) || error("Cannot create time wrap: from and to must be different nodes")
@@ -39,9 +39,9 @@ function addTimeWrap(from::TerminalNode, to::TerminalNode, storage_graph::Factor
     push!(storage_graph.time_wraps, (from, to))
 end
 
-clearTimeWraps!(graph::FactorGraph=getCurrentGraph()) = (graph.time_wraps = Array((TerminalNode, TerminalNode), 0))
+clearTimeWraps(graph::FactorGraph=currentGraph()) = (graph.time_wraps = Array((TerminalNode, TerminalNode), 0))
 
-function step(graph::FactorGraph=getCurrentGraph(); n_iterations::Int64=1)
+function step(graph::FactorGraph=currentGraph(); n_iterations::Int64=1)
     # Reset marginals
     setVagueMarginals!(graph)
     # Read buffers

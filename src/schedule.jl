@@ -31,7 +31,7 @@ function show(io::IO, schedule::Schedule)
         interface = schedule_entry.interface
         msg_calc_rule = schedule_entry.message_calculation_rule
         postproc = (isdefined(schedule_entry, :post_processing)) ? string(schedule_entry.post_processing) : ""
-        interface_name = (getName(interface)!="") ? "($(getName(interface)))" : ""
+        interface_name = (name(interface)!="") ? "($(name(interface)))" : ""
 
         println(io, " $(entry_counter)$(" "^(3-length(string(entry_counter))))| $(msg_calc_rule)$(" "^(22-length(string(msg_calc_rule))))| $(postproc)$(" "^(22-length(postproc)))| $(typeof(interface.node)) $(interface.node.name):$(findfirst(interface.node.interfaces, interface)) $(interface_name)")
         entry_counter += 1

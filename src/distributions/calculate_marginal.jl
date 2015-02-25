@@ -158,7 +158,7 @@ end
 # Joint approximate marginal calculations
 ############################
 
-function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
+function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=currentGraph())
     # Calculate the approximate marginal for node from the perspective of subgraph,
     # and store the result in the graph.approximate_marginals dictionary.
 

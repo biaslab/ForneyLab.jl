@@ -1,5 +1,5 @@
 export Interface
-export clearMessage!, setMessage!, getMessage, getName
+export clearMessage!, setMessage!, message, name
 
 type Interface
     # An Interface belongs to a node and is used to send/receive messages.
@@ -28,16 +28,16 @@ end
 Interface(node::Node, message::Message) = Interface(node, nothing, nothing, nothing, message)
 Interface(node::Node) = Interface(node, nothing, nothing, nothing, nothing)
 function show(io::IO, interface::Interface)
-    name = getName(interface)
-    (name == "") || (name = "($(name))")
-    println(io, "Interface $(findfirst(interface.node.interfaces, interface)) $(name) of $(typeof(interface.node)) $(interface.node.name)")
+    iface_name = name(interface)
+    (iface_name == "") || (iface_name = "($(iface_name))")
+    println(io, "Interface $(findfirst(interface.node.interfaces, interface)) $(iface_name) of $(typeof(interface.node)) $(interface.node.name)")
 end
 function setMessage!(interface::Interface, message::Message)
     interface.message = deepcopy(message)
 end
 clearMessage!(interface::Interface) = (interface.message=nothing)
-getMessage(interface::Interface) = interface.message
-function getName(interface::Interface)
+message(interface::Interface) = interface.message
+function name(interface::Interface)
     # Return interface name
     for field in names(interface.node)
         if isdefined(interface.node, field) && is(getfield(interface.node, field), interface)

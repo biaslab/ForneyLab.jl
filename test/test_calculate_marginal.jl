@@ -18,15 +18,15 @@ facts("Marginal calculation integration tests") do
 
     context("Marginal calculation for naively factorized GaussianNode") do
         (node, edges) = initializeGaussianNode(y_type=Float64)
-        graph = getCurrentGraph()
+        graph = currentGraph()
         factorize!(graph)
         
         # Presetting marginals
-        subgraph1 = getSubgraph(graph, edges[1])
+        subgraph1 = subgraph(graph, edges[1])
         graph.approximate_marginals[(node, subgraph1)] = GaussianDistribution()
-        subgraph2 = getSubgraph(graph, edges[2])
+        subgraph2 = subgraph(graph, edges[2])
         graph.approximate_marginals[(node, subgraph2)] = GammaDistribution()
-        subgraph3 = getSubgraph(graph, edges[3])
+        subgraph3 = subgraph(graph, edges[3])
         graph.approximate_marginals[(node, subgraph3)] = GaussianDistribution()
         
         # Univariate marginal
@@ -42,7 +42,7 @@ facts("Marginal calculation integration tests") do
     
     context("Marginal calculation for the structurally factorized GaussianNode") do
         (node, edges) = initializeGaussianNode(y_type=GaussianDistribution)
-        graph = getCurrentGraph()
+        graph = currentGraph()
         factorize!(Set{Edge}([edges[3]]))
         
         # Presetting marginals

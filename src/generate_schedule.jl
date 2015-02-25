@@ -1,6 +1,6 @@
 export generateSchedule!, generateSchedule
 
-function generateSchedule(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph(); args...)
+function generateSchedule(outbound_interface::Interface, graph::FactorGraph=currentGraph(); args...)
     # Generate a schedule that can be executed to calculate the outbound message on outbound_interface.
     #
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
@@ -12,12 +12,12 @@ function generateSchedule(outbound_interface::Interface, graph::FactorGraph=getC
 
     return convert(Schedule, generateScheduleByDFS(outbound_interface, Array(Interface, 0), Array(Interface, 0), graph; args...))
 end
-function generateSchedule!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph(); args...)
+function generateSchedule!(outbound_interface::Interface, graph::FactorGraph=currentGraph(); args...)
     schedule = generateSchedule(outbound_interface, graph; args...)
     return graph.edge_to_subgraph[outbound_interface.edge].internal_schedule = schedule
 end
 
-function generateSchedule(partial_schedule::Schedule, graph::FactorGraph=getCurrentGraph(); args...)
+function generateSchedule(partial_schedule::Schedule, graph::FactorGraph=currentGraph(); args...)
     # Generate a complete schedule based on partial_schedule.
     # A partial schedule only defines the order of a subset of all required messages.
     # This function will find a valid complete schedule that satisfies the partial schedule.
@@ -38,14 +38,14 @@ function generateSchedule(partial_schedule::Schedule, graph::FactorGraph=getCurr
 
     return convert(Schedule, interface_list)
 end
-generateSchedule(partial_list::Array{Interface, 1}, graph::FactorGraph=getCurrentGraph(); args...) = generateSchedule(convert(Schedule, partial_list), graph; args...)
-function generateSchedule!(partial_schedule::Schedule, graph::FactorGraph=getCurrentGraph(); args...)
+generateSchedule(partial_list::Array{Interface, 1}, graph::FactorGraph=currentGraph(); args...) = generateSchedule(convert(Schedule, partial_list), graph; args...)
+function generateSchedule!(partial_schedule::Schedule, graph::FactorGraph=currentGraph(); args...)
     schedule = generateSchedule(partial_schedule, graph; args...)
     return graph.edge_to_subgraph[partial_schedule[1].edge].internal_schedule = schedule
 end
-generateSchedule!(partial_list::Array{Interface, 1}, graph::FactorGraph=getCurrentGraph(); args...) = generateSchedule!(convert(Schedule, partial_list), graph; args...)
+generateSchedule!(partial_list::Array{Interface, 1}, graph::FactorGraph=currentGraph(); args...) = generateSchedule!(convert(Schedule, partial_list), graph; args...)
 
-function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
+function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=currentGraph())
     # Generate an internal and external schedule for the subgraph
 
     # Set external schedule with nodes (g) connected to external edges
@@ -94,14 +94,14 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
     return subgraph
 end
 
-function generateSchedule!(graph::FactorGraph=getCurrentGraph())
+function generateSchedule!(graph::FactorGraph=currentGraph())
     for subgraph in graph.factorization
         generateSchedule!(subgraph, graph)
     end
     return graph
 end
 
-function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{Interface, 1}=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0), graph::FactorGraph=getCurrentGraph(); stay_in_subgraph=false)
+function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{Interface, 1}=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0), graph::FactorGraph=currentGraph(); stay_in_subgraph=false)
     # This is a private function that performs a search through the factor graph to generate a schedule.
     #
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
