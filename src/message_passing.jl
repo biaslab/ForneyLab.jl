@@ -4,7 +4,7 @@ export  calculateMessage!,
         execute,
         clearMessages!
 
-function calculateMessage!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph())
+function calculateMessage!(outbound_interface::Interface, graph::FactorGraph=currentGraph())
     # Calculate the outbound message on a specific interface by generating a schedule and executing it.
     # The resulting message is stored in the specified interface and returned.
 
@@ -58,7 +58,7 @@ function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, n
 
 end
 
-function execute(schedule_entry::ScheduleEntry, graph::FactorGraph=getCurrentGraph())
+function execute(schedule_entry::ScheduleEntry, graph::FactorGraph=currentGraph())
     # Calculate the outbound message based on the inbound messages and the message calculation rule.
     # The resulting message is stored in the specified interface and is returned.
 
@@ -101,7 +101,7 @@ calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
 calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
 # Execute schedules
-function execute(schedule::Any, graph::FactorGraph=getCurrentGraph())
+function execute(schedule::Any, graph::FactorGraph=currentGraph())
     # Execute a message passing schedule
     !isempty(schedule) || error("Cannot execute an empty schedule")
     for schedule_entry in schedule
@@ -110,18 +110,18 @@ function execute(schedule::Any, graph::FactorGraph=getCurrentGraph())
     # Return the last message in the schedule
     return schedule[end].interface.message
 end
-function execute(schedule::ExternalSchedule, subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
+function execute(schedule::ExternalSchedule, subgraph::Subgraph, graph::FactorGraph=currentGraph())
     # Execute a marginal update schedule
     for entry in schedule
         calculateMarginal!(entry, subgraph, graph)
     end
 end
-function execute(subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
+function execute(subgraph::Subgraph, graph::FactorGraph=currentGraph())
     execute(subgraph.internal_schedule)
     execute(subgraph.external_schedule, subgraph, graph)
 end
 
-function execute(graph::FactorGraph=getCurrentGraph())
+function execute(graph::FactorGraph=currentGraph())
     for subgraph in graph.factorization
         execute(subgraph, graph)
     end

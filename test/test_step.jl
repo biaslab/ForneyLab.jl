@@ -37,10 +37,10 @@ facts("Read/write buffer integration tests") do
         @fact_throws setWriteBuffer(e, write_buffer)
     end
 
-    # clearBuffers!
+    # clearBuffers
     setCurrentGraph(g)
-    context("clearBuffers! should deregister all read/write buffers") do
-        clearBuffers!(g)
+    context("clearBuffers should deregister all read/write buffers") do
+        clearBuffers(g)
         @fact length(g.read_buffers) => 0
         @fact length(g.write_buffers) => 0
     end
@@ -53,16 +53,16 @@ facts("TimeWrap integration tests") do
     node_t2 = TerminalNode()
     e = Edge(node_t1, node_t2)
 
-    # addTimeWrap
-    context("addTimeWrap should register a timewrap for a pair of TerminalNodes") do
-        time_wraps = addTimeWrap(node_t1, node_t2)
+    # setTimeWrap
+    context("setTimeWrap should register a timewrap for a pair of TerminalNodes") do
+        time_wraps = setTimeWrap(node_t1, node_t2)
         @fact length(time_wraps) => 1
         @fact ((node_t1, node_t2) in time_wraps) => true
     end
 
-    # clearTimeWraps!
-    context("clearTimeWraps! should deregister all time wraps") do
-        clearTimeWraps!(g)
+    # clearTimeWraps
+    context("clearTimeWraps should deregister all time wraps") do
+        clearTimeWraps(g)
         @fact length(g.time_wraps) => 0
     end
 end
@@ -78,7 +78,7 @@ facts("step integration tests") do
         Edge(node_in, node_add.in1)
         Edge(node_delta, node_add.in2)
         Edge(node_add.out, node_out)
-        addTimeWrap(node_out, node_in)
+        setTimeWrap(node_out, node_in)
         generateSchedule!(node_add.out)
         deltas = [DeltaDistribution(n) for n in 1.:10.]
         setReadBuffer(node_delta, deltas)

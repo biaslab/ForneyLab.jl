@@ -7,7 +7,7 @@ facts("Edge integration tests") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
-        graph = getCurrentGraph()
+        graph = currentGraph()
         @fact graph.edge_to_subgraph[edge] => graph.factorization[1]
     end
 

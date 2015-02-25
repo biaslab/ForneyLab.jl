@@ -69,7 +69,7 @@ facts("Connections between nodes integration tests") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
-        graph = getCurrentGraph()
+        graph = currentGraph()
         @fact edge in graph.factorization[1].internal_edges => true
         @fact node1 in graph.factorization[1].nodes => true
         @fact node2 in graph.factorization[1].nodes => true

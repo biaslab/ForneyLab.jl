@@ -16,7 +16,7 @@ facts("Naive VMP implementation integration tests") do
         # Apply mean field factorization
         factorize!()
 
-        graph = getCurrentGraph()
+        graph = currentGraph()
         for subgraph in graph.factorization
             generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
@@ -26,9 +26,9 @@ facts("Naive VMP implementation integration tests") do
         # Perform vmp updates
         n_its = 50
 
-        subgraph_m = getSubgraph(g_nodes[1].mean.edge)
-        subgraph_gam = getSubgraph(g_nodes[1].precision.edge)
-        subgraphs_y = [getSubgraph(e) for e in q_y_edges]
+        subgraph_m = subgraph(g_nodes[1].mean.edge)
+        subgraph_gam = subgraph(g_nodes[1].precision.edge)
+        subgraphs_y = [subgraph(e) for e in q_y_edges]
         for iter = 1:n_its
             for sg_y in subgraphs_y
                 execute(sg_y)
@@ -70,15 +70,15 @@ facts("Structured VMP implementation integration tests") do
         # Structured factorization
         factorize!(Set{Edge}([y_edge]))
 
-        graph = getCurrentGraph()
+        graph = currentGraph()
         for subgraph in graph.factorization
             generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
 
         setVagueMarginals!()
 
-        y_subgraph = getSubgraph(g_node.out.edge)
-        m_gam_subgraph = getSubgraph(g_node.mean.edge)
+        y_subgraph = subgraph(g_node.out.edge)
+        m_gam_subgraph = subgraph(g_node.mean.edge)
         for sample = 1:n_samples
             # Reset
             y_node.value = GaussianDistribution(m = data[sample], W=10.0) # Small variance on sample
