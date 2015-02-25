@@ -1,5 +1,7 @@
 module ForneyLab
 
+using YAML
+
 export Node, CompositeNode, ProbabilityDistribution
 export sumProduct!
 export vague, ==

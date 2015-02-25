@@ -47,4 +47,13 @@ facts("Helper function unit tests") do
         @fact node.out.message => Message(DeltaDistribution())
     end
 
+    context("truncate() should truncate a string to a specified length") do
+        @fact ForneyLab.truncate("blabla", 7) => "blabla"
+        @fact ForneyLab.truncate("blabla", 5) => "bl..."
+    end
+
+    context("pad() should pad a string with spaces to a specified length") do
+        @fact ForneyLab.pad("blabla", 7) => "blabla "
+        @fact ForneyLab.pad("blabla", 5) => "bl..."
+    end
 end

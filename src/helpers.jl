@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny
+export isApproxEqual, huge, tiny, rules
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
@@ -28,3 +28,28 @@ function unnamedStr()
     return "unnamed$(unnamed_counter)"
 end
 
+function truncate(str::ASCIIString, max::Integer)
+    # Truncate srt to max positions
+    if length(str)>max
+        return "$(str[1:max-3])..."
+    end
+    return str
+end
+
+function pad(str::ASCIIString, size::Integer)
+    # Pads str with spaces until its length reaches size
+    str_trunc = truncate(str, size)
+    return "$(str_trunc)$(repeat(" ",size-length(str_trunc)))"
+end
+
+function rules()
+    # Prints the list of node update rules
+    rule_dict = YAML.load(open("Code/ForneyLab.jl/src/update_equations.yaml"))
+    rule_list = rule_dict["rules"]
+    id="id"; reference="reference"; formula="formula"
+    println("|              id              |                    reference                     |                    formula                    |")
+    println("|------------------------------|--------------------------------------------------|-----------------------------------------------|")
+    for rule = rule_list
+        println("|$(pad(rule[id],30))|$(pad(rule[reference],50))|$(pad(rule[formula],47))|")
+    end
+end
