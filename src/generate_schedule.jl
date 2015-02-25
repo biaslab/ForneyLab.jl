@@ -49,7 +49,7 @@ function generateSchedule!(subgraph::Subgraph, graph::FactorGraph=getCurrentGrap
     # Generate an internal and external schedule for the subgraph
 
     # Set external schedule with nodes (g) connected to external edges
-    subgraph.external_schedule = getNodesConnectedToExternalEdges(graph, subgraph)
+    subgraph.external_schedule = nodesConnectedToExternalEdges(graph, subgraph)
 
     interface_list_for_univariate = Array(Interface, 0)
     internal_interface_list = Array(Interface, 0)

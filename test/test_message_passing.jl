@@ -38,7 +38,7 @@ facts("Message passing integration tests") do
         # Mean field factorized Gaussian node
         (node, edges) = initializeGaussianNode()
         graph = getCurrentGraph()
-        factorizeMeanField!(graph)
+        factorize!(graph)
         setVagueMarginals!(graph)
         sg_mean = getSubgraph(node.mean.edge)
         sg_prec = getSubgraph(node.precision.edge)

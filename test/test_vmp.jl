@@ -14,7 +14,7 @@ facts("Naive VMP implementation integration tests") do
         n_sections = length(data)
 
         # Apply mean field factorization
-        factorizeMeanField!()
+        factorize!()
 
         graph = getCurrentGraph()
         for subgraph in graph.factorization

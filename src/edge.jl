@@ -75,7 +75,7 @@ setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, messa
 getForwardMessage(edge::Edge) = edge.tail.message
 getBackwardMessage(edge::Edge) = edge.head.message
 
-function getOrCreateMarginal(edge::Edge, distribution_type::DataType=Any)
+function getOrCreateMarginal!(edge::Edge, distribution_type::DataType=Any)
     # Looks for a marginal on edge.
     # When no marginal is present, it sets and returns an vague distribution.
     # Otherwise it returns the present marginal. Used for fast marginal calculations.
