@@ -51,7 +51,7 @@ function step(graph::FactorGraph=getCurrentGraph(); n_iterations::Int64=1)
     end
     # Execute schedule
     for iteration = 1:n_iterations
-        executeSchedule(graph)
+        execute(graph)
     end
     # Write buffers
     for (component, write_buffer) in graph.write_buffers

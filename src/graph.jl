@@ -9,9 +9,8 @@ export  getCurrentGraph,
         getNodes,
         getEdges,
         node,
-        factorize!,
-        factorizeMeanField!
-
+        factorize!
+        
 # FactorGraph and Subgraph types
 type Subgraph
     nodes::Set{Node}
@@ -310,10 +309,10 @@ end
 factorize!(internal_edges::Set{Edge}) = factorize!(getCurrentGraph(), internal_edges)
 factorize!(internal_edge::Edge) = factorize!(Set{Edge}([internal_edge]))
 factorize!(graph::FactorGraph, edge::Edge) = factorize!(graph, Set{Edge}([edge]))
-factorize!(internal_edges::Array{Edge, 1}) = factorize!(getCurrentGraph(), internal_edges)
 factorize!(graph::FactorGraph, internal_edges::Array{Edge, 1}) = factorize!(graph, Set{Edge}(internal_edges))
+factorize!(internal_edges::Array{Edge, 1}) = factorize!(getCurrentGraph(), internal_edges)
 
-function factorizeMeanField!(graph::FactorGraph)
+function factorize!(graph::FactorGraph)
     # Generate a mean field factorization
     (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
     edges_to_factor = sort!([e for e in graph.factorization[1].internal_edges]) # Cast to array and sort
@@ -327,4 +326,4 @@ function factorizeMeanField!(graph::FactorGraph)
     end
     return graph
 end
-factorizeMeanField!() = factorizeMeanField!(getCurrentGraph())
+factorize!() = factorize!(getCurrentGraph())
