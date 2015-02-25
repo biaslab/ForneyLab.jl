@@ -291,7 +291,7 @@ function factorize!(graph::FactorGraph, edge_set::Set{Edge})
     for subgraph in graph.factorization
         setdiff!(subgraph.internal_edges, internal_edges) # Remove edges from existing subgraph
     end
-    new_subgraph = Subgraph(Set{Node}(), copy(internal_edges), Set{Edge}(), Array(Interface, 0), Array(Node, 0)) # Create subgraph
+    new_subgraph = Subgraph(copy(nodes), copy(internal_edges), Set{Edge}(), Array(Interface, 0), Array(Node, 0)) # Create subgraph
     push!(graph.factorization, new_subgraph) # Add to current graph
     for internal_edge in internal_edges # Point edges to new subgraph in which they are internal
         graph.edge_to_subgraph[internal_edge] = new_subgraph
