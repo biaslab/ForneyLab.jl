@@ -470,61 +470,27 @@ end
 function sumProduct!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
-                            marg_precision::GammaDistribution,
-                            marg_out::GaussianDistribution)
+                            marg_prec::GammaDistribution,
+                            marg_y::GaussianDistribution)
+    # Backward over mean, Gamma input
     # Variational update function takes the marginals as input (instead of the inbound messages)
-    # Derivation for the update rule can be found in the derivations notebook.
+    # By symmetry the rules are the same as the forward over out.
     #
-    #   <--     Q~Gam            
+    #   N       Q~Gam            
     #  ---->[N]<----
-    #    N   |   
-    #        |Q~N 
+    #   <--  |
+    #    Q~N |  
     #        v
 
     dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    if is(node.interfaces[outbound_interface_id], node.mean) # Mean estimation from variance and sample
-        ensureMDefined!(marg_out)
-        length(marg_out.m) == 1 || error("VMP for Gaussian node is only implemented for univariate distributions")
-        a = marg_precision.a # gamma distribution
-        b = marg_precision.b
-        dist_out.m = deepcopy(marg_out.m)
-        dist_out.V = nothing
+    if is(node.interfaces[outbound_interface_id], node.mean)
+        ensureMDefined!(marg_y)
+        (length(marg_y.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
+        dist_out.m = deepcopy(marg_y.m)
+        dist_out.W = reshape([marg_prec.a/marg_prec.b], 1, 1)
         dist_out.xi = nothing
-        dist_out.W = reshape([a/b], 1, 1)
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
-    end
-
-    return node.interfaces[outbound_interface_id].message
-end
-
-function sumProduct!(node::GaussianNode,
-                            outbound_interface_id::Int,
-                            marg_mean::GaussianDistribution,
-                            ::Nothing,
-                            marg_out::GaussianDistribution)
-    # Variational update function takes the marginals as input (instead of the inbound messages)
-    # Derivation for the update rule can be found in the derivations notebook.
-    #
-    #   Q~N      Gam            
-    #  ---->[N]<----
-    #        |  -->
-    #    Q~N |  
-    #        v
-
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
-
-    if isdefined(node, :precision) # Precision estimation from mean and sample
-        ensureMVParametrization!(marg_mean)
-        ensureMVParametrization!(marg_out)
-        (length(marg_mean.V) == 1 && length(marg_out.V) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
-        m = marg_mean.m[1] # Gaussian distribution
-        V_m = marg_mean.V[1,1]
-        y = marg_out.m[1] # Gaussian distribution
-        V_y = marg_out.V[1,1]
-        dist_out.a = 1.5
-        dist_out.b = 0.5*((y-m)^2+V_m+V_y)
+        dist_out.V = nothing
     else
         error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
@@ -737,37 +703,6 @@ function sumProduct!(node::GaussianNode,
         ensureMDefined!(marg_mean)
         (length(marg_mean.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
         dist_out.m = deepcopy(marg_mean.m)
-        dist_out.W = reshape([marg_prec.a/marg_prec.b], 1, 1)
-        dist_out.xi = nothing
-        dist_out.V = nothing
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
-    end
-
-    return node.interfaces[outbound_interface_id].message
-end
-
-function sumProduct!(node::GaussianNode,
-                            outbound_interface_id::Int,
-                            ::Nothing,
-                            marg_prec::GammaDistribution,
-                            marg_y::GaussianDistribution)
-    # Backward over mean, Gamma input
-    # Variational update function takes the marginals as input (instead of the inbound messages)
-    # By symmetry the rules are the same as the forward over out.
-    #
-    #   N       Q~Gam            
-    #  ---->[N]<----
-    #   <--  |
-    #    Q~N |  
-    #        v
-
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
-
-    if is(node.interfaces[outbound_interface_id], node.mean)
-        ensureMDefined!(marg_y)
-        (length(marg_y.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
-        dist_out.m = deepcopy(marg_y.m)
         dist_out.W = reshape([marg_prec.a/marg_prec.b], 1, 1)
         dist_out.xi = nothing
         dist_out.V = nothing

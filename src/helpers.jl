@@ -51,7 +51,7 @@ writemime(io::IO, ::MIME"text/latex", y::Latex) = print(io, y.s)
 
 function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
     # Prints a table or list of node update rules
-    rule_dict = YAML.load(open("Code/ForneyLab.jl/src/update_equations.yaml"))
+    rule_dict = YAML.load_file("$(Pkg.dir("ForneyLab"))/src/update_equations.yaml")
     all_rules = rule_dict["rules"]
     
     # Select node specific rules
@@ -66,13 +66,13 @@ function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
         rule_list = all_rules
     end
 
-    id="id"; reference="reference"; formula="formula"
+    id="id";  node="node"; reference="reference"; formula="formula"
     # Write rule list to output
     if format==:table
-        println("|              id              |                    reference                     |                    formula                    |")
-        println("|------------------------------|--------------------------------------------------|-----------------------------------------------|")
+        println("|                  id                    |                  node                  |                   reference                   |")
+        println("|----------------------------------------|----------------------------------------|-----------------------------------------------|")
         for rule in rule_list
-            println("|$(pad(rule[id],30))|$(pad(rule[reference],50))|$(pad(rule[formula],47))|")
+            println("|$(pad(rule[id],40))|$(pad(rule[node],40))|$(pad(rule[reference],47))|")
         end
         println("\nUse rules(NodeType) to view all rules of a specific node type; use rules(..., format=:list) to view the formulas in latex output.")
     elseif format==:list
