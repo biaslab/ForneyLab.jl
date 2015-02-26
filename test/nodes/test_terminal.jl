@@ -18,7 +18,7 @@ facts("TerminalNode unit tests") do
     context("TerminalNode should propagate a GaussianDistribution") do
         node = TerminalNode(GaussianDistribution(m=2.0, V=4.0))
         @fact node.interfaces[1].message => nothing
-        msg = ForneyLab.sumProduct!(node, 1, nothing)
+        (rule, msg) = ForneyLab.sumProduct!(node, 1, nothing)
         @fact node.interfaces[1].message => msg
         @fact typeof(node.interfaces[1].message) => Message{GaussianDistribution}
         @fact node.interfaces[1].message.payload.m => [2.0]
@@ -28,7 +28,7 @@ facts("TerminalNode unit tests") do
     context("TerminalNode should propagate a DeltaDistribution") do
         node = TerminalNode(DeltaDistribution([1.0, 2.0]))
         @fact node.interfaces[1].message => nothing
-        msg = ForneyLab.sumProduct!(node, 1, nothing)
+        (rule, msg) = ForneyLab.sumProduct!(node, 1, nothing)
         @fact node.interfaces[1].message => msg
         @fact typeof(node.interfaces[1].message) <: Message => true
         @fact typeof(node.interfaces[1].message.payload) <: DeltaDistribution => true

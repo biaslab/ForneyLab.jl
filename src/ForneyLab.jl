@@ -3,7 +3,7 @@ module ForneyLab
 using YAML
 
 export Node, CompositeNode, ProbabilityDistribution
-export sumProduct!
+export sumProduct!, setVerbose
 export vague, ==
 export current_graph
 

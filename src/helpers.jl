@@ -53,31 +53,31 @@ function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
     # Prints a table or list of node update rules
     rule_dict = YAML.load_file("$(Pkg.dir("ForneyLab"))/src/update_equations.yaml")
     all_rules = rule_dict["rules"]
-    
+
     # Select node specific rules
     if node_type != nothing
-        rule_list = Dict[]
-        for rule in all_rules
+        rule_list = Dict()
+        for (id, rule) in all_rules
             if rule["node"] == "$(node_type)"
-                push!(rule_list, rule) # Grow the list of rules
+                merge!(rule_list, {id=>rule}) # Grow the list of rules
             end
         end
     else
         rule_list = all_rules
     end
 
-    id="id";  node="node"; reference="reference"; formula="formula"
+    node="node"; reference="reference"; formula="formula"
     # Write rule list to output
     if format==:table
         println("|                  id                    |                  node                  |                   reference                   |")
         println("|----------------------------------------|----------------------------------------|-----------------------------------------------|")
-        for rule in rule_list
-            println("|$(pad(rule[id],40))|$(pad(rule[node],40))|$(pad(rule[reference],47))|")
+        for (id, rule) in rule_list
+            println("|$(pad(id,40))|$(pad(rule[node],40))|$(pad(rule[reference],47))|")
         end
         println("\nUse rules(NodeType) to view all rules of a specific node type; use rules(..., format=:list) to view the formulas in latex output.")
     elseif format==:list
-        for rule in rule_list
-            display(Latex("$(rule[id]); $(rule[reference]):"))
+        for (id, rule) in rule_list
+            display(Latex("$(id); $(rule[reference]):"))
             display(Latex(rule[formula]))
         end
     else

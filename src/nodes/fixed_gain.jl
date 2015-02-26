@@ -116,7 +116,8 @@ function sumProduct!(node::FixedGainNode,
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
     
-    return node.interfaces[outbound_interface_id].message
+    return (:fixed_gain_gaussian_backward,
+            node.interfaces[outbound_interface_id].message)
 end
 
 # Forward Gaussian to OUT
@@ -165,7 +166,8 @@ function sumProduct!(node::FixedGainNode,
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
     
-    return node.interfaces[outbound_interface_id].message
+    return (:fixed_gain_gaussian_forward,
+            node.interfaces[outbound_interface_id].message)
 end
 
 # Backward DeltaDistribution to IN1
@@ -184,8 +186,8 @@ function sumProduct!{T<:Any}(
     msg_ans = getOrCreateMessage!(node.interfaces[outbound_interface_id], DeltaDistribution{typeof(ans)})
     msg_ans.payload.m = ans
 
-    return node.interfaces[outbound_interface_id].message
-
+    return (:fixed_gain_delta_backward,
+            node.interfaces[outbound_interface_id].message)
 end
 
 # Forward DeltaDistribution to OUT
@@ -204,5 +206,6 @@ function sumProduct!{T<:Any}(
     msg_ans = getOrCreateMessage!(node.interfaces[outbound_interface_id], DeltaDistribution{typeof(ans)})
     msg_ans.payload.m = ans
 
-    return node.interfaces[outbound_interface_id].message
+    return (:fixed_gain_delta_forward,
+            node.interfaces[outbound_interface_id].message)
 end

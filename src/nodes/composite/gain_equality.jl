@@ -105,7 +105,9 @@ function sumProduct!(node::GainEqualityCompositeNode,
                             msg_out::Nothing)
     # Forward message (towards out)
     # We don't have a shortcut rule for this one, so we always use the internal nodes to calculate the outbound msg
-    return node.interfaces[outbound_interface_id].message = execute(node.interfaces[outbound_interface_id].internal_schedule)
+    node.interfaces[outbound_interface_id].message = execute(node.interfaces[outbound_interface_id].internal_schedule)
+    return (:empty,
+            node.interfaces[outbound_interface_id].message)
 end
 
 function sumProduct!(node::GainEqualityCompositeNode,
@@ -135,6 +137,8 @@ function applyBackwardRule!(node::GainEqualityCompositeNode,
     # Backward message (towards in1 or in2)
     if !node.use_composite_update_rules
         node.interfaces[outbound_interface_id].message = execute(node.interfaces[outbound_interface_id].internal_schedule)
+        return (:empty,
+                node.interfaces[outbound_interface_id].message)
     else
         dist_result = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
         dist_3 = msg_out.payload
@@ -166,7 +170,8 @@ function applyBackwardRule!(node::GainEqualityCompositeNode,
             dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
             dist_result.xi = backwardGainEqualityXiRule(node.A, dist_in.xi, dist_3.xi)
         end
+
+        return (:gain_equality_gaussian_backward,
+                node.interfaces[outbound_interface_id].message)
     end
-    # Return the outbound message
-    return node.interfaces[outbound_interface_id].message
 end

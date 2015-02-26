@@ -1,155 +1,217 @@
+# Message calculation rule database
+#
+# "mu" denotes a sumproduct messages; "nu" a variational message 
+#
+# Key format:
+# [node]_[direction]_[outbound interface]_[inbound distributions]_[other qualifiers]
+
 rules:
-  - id: equality_gaussian
+  equality_gaussian:
     node:       EqualityNode
     reference:  "Korl (2005), table 4.1"
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=(W_x+W_y)^{-1}(W_x m_x + W_y m_y), W_z=W_x+W_y)$"
 
-  - id: equality_delta
+  equality_delta:
     node:       EqualityNode
     reference:  ""
     formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$ if $m_x=m_y$, $\\delta(0)$ otherwise"
 
-  - id: equality_inverse_gamma
+  equality_inverse_gamma:
     node:       EqualityNode
     reference:  "Korl (2005), table 5.2"
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{I}g(a_z=a_x+a_y+1, b_z=b_x+b_y)$"
 
-  - id: equality_gamma
+  equality_gamma:
     node:       EqualityNode
     reference:  "Gaussian node derivations document"
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{G}am(a_z=a_x+a_y-1, b_z=b_x+b_y)$"
 
-  - id: equality_gaussian_delta
+  equality_gaussian_delta:
     node:       EqualityNode
     reference:  ""
     formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$ for $m_x \\sim \\delta$"
 
-  - id: equality_gaussian_student
+  equality_gaussian_student:
     node:       EqualityNode
     reference:  "Gaussian node derivations document"
     formula:    "$\\overrightarrow{\\mu}(z) \\approx \\mathcal{N}(m_z=(W_x+W_y)^{-1}(W_x m_x + W_y m_y), W_z=W_x+W_y)$"
 
-  - id: equality_gamma_delta
+  equality_gamma_delta:
     node:       EqualityNode
     reference:  ""
     formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$ for $m_x \\sim \\delta$ and $m_x > 0$"
 
-  - id: addition_gaussian_forward
+  addition_gaussian_forward:
     node:       AdditionNode
     reference:  "Korl (2005), table 4.1"
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=m_x+m_y, W_z=W_x(W_x+W_y)^{-1}W_y)$"
 
-  - id: addition_gaussian_backward
+  addition_gaussian_backward:
     node:       AdditionNode
     reference:  "Korl (2005), table 4.1"
     formula:    "$\\overleftarrow{\\mu}(x) = \\mathcal{N}(m_x=m_z-m_y, W_x=W_z(W_z+W_y)^{-1}W_y)$"
 
-  - id: addition_delta_forward
+  addition_delta_forward:
     node:       AdditionNode
     reference:  ""
     formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x+m_y)$"
 
-  - id: addition_delta_backward
+  addition_delta_backward:
     node:       AdditionNode
     reference:  ""
     formula:    "$\\overleftarrow{\\mu}(x) = \\delta(m_x=m_z-m_y)$"
 
-  - id: fixed_gain_gaussian_forward
+  fixed_gain_gaussian_forward:
     node:       FixedGainNode
     reference:  "Korl (2005), table 4.1"
     formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(m_y=A m_x, V_y=A V_x A^T)$"
 
-  - id: fixed_gain_gaussian_backward
+  fixed_gain_gaussian_backward:
     node:       FixedGainNode
     reference:  "Korl (2005), table 4.1"
     formula:    "$\\overleftarrow{\\mu}(x) = \\mathcal{N}(m_x=A^{-1} m_y, W_x=A^T W_y A)$"
 
-  - id: fixed_gain_delta_forward
+  fixed_gain_delta_forward:
     node:       FixedGainNode
     reference:  ""
     formula:    "$\\overrightarrow{\\mu}(y) = \\delta(m_y=A m_x)$"
 
-  - id: fixed_gain_delta_backward
+  fixed_gain_delta_backward:
     node:       FixedGainNode
     reference:  ""
     formula:    "$\\overleftarrow{\\mu}(x) = \\delta(m_x=A^{-1} m_y)$"
 
-  - id: gain_equality_gaussian_backward
+  gain_equality_gaussian_backward:
     node:       GainEqualityCompositeNode
     reference:  "Korl (2005), table 4.1"
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=m_x+V_x A^T G (m_y - Am_x), V_z=V_x - V_x A^T G A V_x)$, with $G = (V_y + AV_xA^T)^{-1}$"
 
-  - id: gain_addition_gaussian_forward
+  gain_addition_gaussian_forward:
     node:       GainEqualityCompositeNode
     reference:  "Korl (2005), table 4.1"
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=m_x+Am_y, V_z=V_x + A V_yA^T)$"
 
-  - id: terminal_forward
+  gain_addition_gaussian_backward:
+    node:       GainEqualityCompositeNode
+    reference:  "Korl (2005), table 4.1, by symmetry"
+    formula:    "$\\overrightarrow{\\mu}(x) = \\mathcal{N}(m_x=m_z-Am_y, V_x=V_z + A V_yA^T)$"
+
+  terminal_forward:
     node:       TerminalNode
     reference:  "Korl (2005), table 4.1"
     formula:    "$\\overrightarrow{\\mu}(x) =$ node value"
 
-  - id: logarithmic_forward
+  logarithmic_forward_gaussian:
     node:       LogarithmicNode
     reference:  "Logarithmic node derivations document"
     formula:    "$\\overrightarrow{\\mu}(y) \\approx \\mathcal{G}am\\left(a_y = \\gamma_x+1, b_y=\\frac{\\gamma_x}{\\operatorname{exp}(\\mu_x)}\\right)$"
 
-  - id: logarithmic_backward
+  logarithmic_backward_gaussian:
     node:       LogarithmicNode
     reference:  "Logarithmic node derivations document"
     formula:    "$\\overleftarrow{\\mu}(x) \\approx \\mathcal{N}\\left(m_x=\\operatorname{log}(\\frac{a_y-1}{b_y}), \\gamma_x=a_y-1 \\right)$, with $a_y>1$"
 
-  - id: gaussian_forward_delta
+  logarithmic_forward_delta:
+    node:       LogarithmicNode
+    reference:  "Logarithmic node derivations document"
+    formula:    "$\\overrightarrow{\\mu}(y) = \\delta(\\operatorname{log}(m_x))$"
+
+  logarithmic_backward_delta:
+    node:       LogarithmicNode
+    reference:  "Logarithmic node derivations document"
+    formula:    "$\\overleftarrow{\\mu}(x) = \\delta(\\operatorname{exp}(m_y))$"
+
+  gaussian_forward_delta_variance:
     node:       GaussianNode
     reference:  "Korl (2005), table 5.2"
     formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(m_y=m_m, V_y=m_v)$"
 
-  - id: gaussian_backward_mean_delta
+  gaussian_forward_delta_precision:
+    node:       GaussianNode
+    reference:  "Korl (2005), table 5.2"
+    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(m_y=m_m, W_y=m_{\\gamma})$"
+
+  gaussian_backward_mean_delta_variance:
     node:       GaussianNode
     reference:  "Korl (2005), table 5.2, by symmetry"
     formula:    "$\\overleftarrow{\\mu}(m) = \\mathcal{N}(m_m=m_y, V_m=m_v)$"
 
-  - id: gaussian_backward_variance_delta
+  gaussian_backward_mean_delta_precision:
+    node:       GaussianNode
+    reference:  "Korl (2005), table 5.2, by symmetry"
+    formula:    "$\\overleftarrow{\\mu}(m) = \\mathcal{N}(m_m=m_y, W_m=m_{\\gamma})$"
+
+  gaussian_backward_variance_delta:
     node:       GaussianNode
     reference:  "Korl (2005), table 5.2"
     formula:    "$\\overleftarrow{\\mu}(v) = \\mathcal{I}g\\left(a_v=-\\frac{1}{2}, b_v=\\frac{(m_y - m_m)^2}{2} \\right)$"
 
-  - id: gaussian_backward_mean_gaussian_inverse_gamma
+  gaussian_backward_precision_delta:
+    node:       GaussianNode
+    reference:  "Gaussian node derivations notebook"
+    formula:    "pending"
+
+  gaussian_backward_mean_gaussian_inverse_gamma:
     node:       GaussianNode
     reference:  "Gaussian node derivations notebook"
     formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_m=m_{q,y}, V_m=\\frac{a_{q,v}+1}{b_{q,v}}\\right)$"
 
-  - id: gaussian_backward_mean_gaussian_gamma
+  gaussian_backward_mean_gaussian_gamma:
     node:       GaussianNode
     reference:  "Gaussian node derivations notebook"
     formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_m=m_{q,y}, \\gamma_m=\\frac{a_{q,\\gamma}}{b_{q,\\gamma}}\\right)$"
 
-  - id: gaussian_backward_noise_gaussian
+  gaussian_backward_variance_gaussian:
     node:       GaussianNode
     reference:  "Gaussian node derivations notebook"
     formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2}(m_{q,y} - m_{q,m})^2+V_{q,m}+V_{q,y} \\right)$"
 
-  - id: gaussian_forward_gaussian_inverse_gamma
+  gaussian_backward_precision_gaussian:
+    node:       GaussianNode
+    reference:  "Gaussian node derivations notebook"
+    formula:    "pending"
+
+  gaussian_backward_precision_gaussian_delta:
+    node:       GaussianNode
+    reference:  "Gaussian node derivations notebook"
+    formula:    "pending"
+
+  gaussian_backward_mean_gaussian_delta:
+    node:       GaussianNode
+    reference:  "Gaussian node derivations notebook"
+    formula:    "pending"
+
+  gaussian_forward_gaussian:
+    node:       GaussianNode
+    reference:  "Gaussian node derivations notebook"
+    formula:    "pending"
+
+  gaussian_forward_gamma:
+    node:       GaussianNode
+    reference:  "Gaussian node derivations notebook"
+    formula:    "pending"
+
+  gaussian_forward_gaussian_inverse_gamma:
     node:       GaussianNode
     reference:  "Gaussian node derivations notebook"
     formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q,m}, V_y=\\frac{b_{q,v}}{a_{q,v}-1}\\right)$"
 
-  - id: gaussian_forward_gaussian_gamma
+  gaussian_forward_gaussian_gamma:
     node:       GaussianNode
     reference:  "Gaussian node derivations notebook"
     formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q,m}, \\gamma_y=\\frac{a_{q,v}}{b_{q,v}}\\right)$"
 
-  - id: gaussian_backward_mean_structured
+  gaussian_backward_mean_structured:
     node:       GaussianNode
     reference:  "Gaussian node derivations notebook"
     formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{S}t\\left(m_m=m_{q,y}, \\gamma_m=\\frac{2 \\gamma_{q,y} a_{q,\\gamma}}{2 \\gamma_{q,y} b_{q,\\gamma} + 1}, \\nu_m=2 a_{q,\\gamma}\\right)$"
 
-  - id: gaussian_backward_precision_structured
+  gaussian_backward_precision_structured:
     node:       GaussianNode
     reference:  "Gaussian node derivations notebook"
     formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2 \\gamma_{q,y}} + \\frac{(m_{q,m} - m_{q,y})^2}{2}\\right)$"
 
-  - id: gaussian_forward_structured
+  gaussian_forward_structured:
     node:       GaussianNode
     reference:  "Gaussian node derivations notebook"
     formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q,ng}, \\gamma_y=\\frac{a_{q,ng}}{b_{q,ng}}\\right)$"
