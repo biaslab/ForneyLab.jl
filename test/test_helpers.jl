@@ -48,12 +48,12 @@ facts("Helper function unit tests") do
     end
 
     context("truncate() should truncate a string to a specified length") do
-        @fact ForneyLab.truncate("blabla", 7) => "blabla"
-        @fact ForneyLab.truncate("blabla", 5) => "bl..."
+        @fact ForneyLab.truncate("spsbrats", 9) => "spsbrats"
+        @fact ForneyLab.truncate("spsbrats", 7) => "spsb..."
     end
 
     context("pad() should pad a string with spaces to a specified length") do
-        @fact ForneyLab.pad("blabla", 7) => "blabla "
-        @fact ForneyLab.pad("blabla", 5) => "bl..."
+        @fact ForneyLab.pad("spsbrats", 9) => "spsbrats "
+        @fact ForneyLab.pad("spsbrats", 7) => "spsb..."
     end
 end

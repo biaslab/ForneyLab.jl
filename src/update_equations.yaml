@@ -2,14 +2,14 @@ rules:
   - id: equality_gaussian
     node:       EqualityNode
     reference:  "Korl, table 4.1"
-    formula:    "N(m=(W_x+W_y)^#(W_x m_x + W_y m_y), W=W_x+W_y)"
+    formula:    "$\\mathcal{N}(m=(W_x+W_y)^{-1}(W_x m_x + W_y m_y), W=W_x+W_y)$"
 
   - id: addition_gaussian_forward
     node:       AdditionNode
     reference:  "Korl, table 4.1"
-    formula:    "N(m=m_x+m_y, W=W_x(W_x+W_y)^#W_y)"
+    formula:    "$\\mathcal{N}(m=m_x+m_y, W=W_x(W_x+W_y)^{-1}W_y)$"
 
   - id: addition_gaussian_backward
     node:       AdditionNode
     reference:  "Korl, table 4.1"
-    formula:    "N(m=m_x-m_y, W=W_x(W_x+W_y)^#W_y)"
+    formula:    "$\\mathcal{N}(m=m_x-m_y, W=W_x(W_x+W_y)^{-1}W_y)$"
