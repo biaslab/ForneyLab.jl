@@ -138,7 +138,6 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{I
         if interface.partner.message == nothing # Required message missing.
             if !(interface.partner in backtrace) # Don't recalculate stuff that's already in the schedule.
                 # Recursive call
-                printVerbose("Recursive call of generateSchedule! on node $(typeof(interface.partner.node)) $(interface.partner.node.name)")
                 generateScheduleByDFS(interface.partner, backtrace, call_list, graph, stay_in_subgraph=stay_in_subgraph)
             end
         end

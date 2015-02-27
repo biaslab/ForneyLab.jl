@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny, rules
+export isApproxEqual, huge, tiny, rules, format
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
@@ -10,6 +10,33 @@ huge(::Type{Float64}) = 1e12
 huge() = huge(Float64)
 tiny(::Type{Float64}) = 1./huge(Float64)
 tiny() = tiny(Float64)
+
+function format(d::Float64)
+    if 0.01 < d < 100.0 || -100 < d < -0.01 || d==0.0
+        return @sprintf("%.2f", d)
+    else
+        return @sprintf("%.2e", d)
+    end
+end
+
+function format(d::Vector{Float64})
+    s = "["
+    for d_k in d[1:end-1]
+        s*=format(d_k)
+        s*=", "
+    end
+    s*=format(d[end])
+    s*="]"
+    return s
+end
+
+function format(d::Matrix{Float64})
+    s = "["
+    for r in 1:size(d)[1]
+        s *= format(vec(d[r,:]))
+    end
+    s *= "]"
+end
 
 # isApproxEqual: check approximate equality
 isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < tiny()
