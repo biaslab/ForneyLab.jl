@@ -64,7 +64,8 @@ function sumProduct!(node::LogarithmicNode,
     dist_out.a = gam + 1
     dist_out.b = gam/(exp(mu))
 
-    return node.interfaces[outbound_interface_id].message
+    return (:logarithmic_forward_gaussian,
+            node.interfaces[outbound_interface_id].message)
 end
 
 # Backward message
@@ -82,7 +83,8 @@ function sumProduct!(node::LogarithmicNode,
     dist_out.W = reshape([a-1], 1, 1)
     dist_out.xi= nothing
 
-    return node.interfaces[outbound_interface_id].message
+    return (:logarithmic_backward_gaussian,
+            node.interfaces[outbound_interface_id].message)
 end
 
 
@@ -100,7 +102,8 @@ function sumProduct!{T<:Any}(node::LogarithmicNode,
 
     dist_out.m = log(msg_in1.payload.m)
 
-    return node.interfaces[outbound_interface_id].message
+    return (:logarithmic_forward_delta,
+            node.interfaces[outbound_interface_id].message)
 end
 
 # Backward message
@@ -113,5 +116,6 @@ function sumProduct!{T<:Any}(node::LogarithmicNode,
 
     dist_out.m = exp(msg_out.payload.m)
 
-    return node.interfaces[outbound_interface_id].message
+    return (:logarithmic_backward_delta,
+            node.interfaces[outbound_interface_id].message)
 end

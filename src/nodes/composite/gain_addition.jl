@@ -115,6 +115,8 @@ function sumProduct!(node::GainAdditionCompositeNode,
     if outbound_interface_id == 3
         if !node.use_composite_update_rules
             node.interfaces[outbound_interface_id].message = execute(node.interfaces[outbound_interface_id].internal_schedule)
+            return (:empty,
+                    node.interfaces[outbound_interface_id].message)
         else
             dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
     
@@ -165,12 +167,13 @@ function sumProduct!(node::GainAdditionCompositeNode,
                 dist_out.W  = nothing
                 dist_out.xi = nothing
             end
+
+            return (:gain_addition_gaussian_forward,
+                    node.interfaces[outbound_interface_id].message)
         end
     else
         error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
     end
-
-    return node.interfaces[outbound_interface_id].message
 end
 
 # Backward to IN2
@@ -183,6 +186,8 @@ function sumProduct!(node::GainAdditionCompositeNode,
     if outbound_interface_id == 2
         if !node.use_composite_update_rules
             node.interfaces[outbound_interface_id].message = execute(node.interfaces[outbound_interface_id].internal_schedule)
+            return (:empty,
+                    node.interfaces[outbound_interface_id].message)
         else
             dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
@@ -233,12 +238,13 @@ function sumProduct!(node::GainAdditionCompositeNode,
                 dist_out.W  = nothing
                 dist_out.xi = nothing
             end
+
+            return (:gain_addition_gaussian_backward,
+                    node.interfaces[outbound_interface_id].message)
         end
     else
         error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
     end
-
-    return node.interfaces[outbound_interface_id].message
 end
 
 # Backward to IN1
@@ -251,9 +257,9 @@ function sumProduct!(node::GainAdditionCompositeNode,
     if outbound_interface_id == 1
         # We don't have a shortcut rule for this one, so we use the internal nodes to calculate the outbound msg
         node.interfaces[outbound_interface_id].message = execute(node.interfaces[outbound_interface_id].internal_schedule)
+        return (:empty,
+                node.interfaces[outbound_interface_id].message)
     else
         error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
     end
-
-    return node.interfaces[outbound_interface_id].message
 end

@@ -85,8 +85,10 @@ function execute(schedule_entry::ScheduleEntry, graph::FactorGraph=currentGraph(
     end
 
     # Evaluate message calculation rule
-    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id:")
-    outbound_message = schedule_entry.message_calculation_rule(node, outbound_interface_id, inbound_array...)
+    (rule, outbound_message) = schedule_entry.message_calculation_rule(node, outbound_interface_id, inbound_array...)
+    if rule != :empty # Composite recursive calls to execute return :empty rule
+        printVerbose("Executed rule $(rule)") # TODO: lookup rule in table and build log
+    end
 
     # Post processing?
     if isdefined(schedule_entry, :post_processing)

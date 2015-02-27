@@ -42,14 +42,45 @@ function pad(str::ASCIIString, size::Integer)
     return "$(str_trunc)$(repeat(" ",size-length(str_trunc)))"
 end
 
-function rules()
-    # Prints the list of node update rules
-    rule_dict = YAML.load(open("Code/ForneyLab.jl/src/update_equations.yaml"))
-    rule_list = rule_dict["rules"]
-    id="id"; reference="reference"; formula="formula"
-    println("|              id              |                    reference                     |                    formula                    |")
-    println("|------------------------------|--------------------------------------------------|-----------------------------------------------|")
-    for rule = rule_list
-        println("|$(pad(rule[id],30))|$(pad(rule[reference],50))|$(pad(rule[formula],47))|")
+type Latex
+    s::String
+end
+
+import Base.writemime
+writemime(io::IO, ::MIME"text/latex", y::Latex) = print(io, y.s)
+
+function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
+    # Prints a table or list of node update rules
+    rule_dict = YAML.load_file("$(Pkg.dir("ForneyLab"))/src/update_equations.yaml")
+    all_rules = rule_dict["rules"]
+
+    # Select node specific rules
+    if node_type != nothing
+        rule_list = Dict()
+        for (id, rule) in all_rules
+            if rule["node"] == "$(node_type)"
+                merge!(rule_list, {id=>rule}) # Grow the list of rules
+            end
+        end
+    else
+        rule_list = all_rules
+    end
+
+    node="node"; reference="reference"; formula="formula"
+    # Write rule list to output
+    if format==:table
+        println("|                  id                    |                  node                  |                   reference                   |")
+        println("|----------------------------------------|----------------------------------------|-----------------------------------------------|")
+        for (id, rule) in rule_list
+            println("|$(pad(id,40))|$(pad(rule[node],40))|$(pad(rule[reference],47))|")
+        end
+        println("\nUse rules(NodeType) to view all rules of a specific node type; use rules(..., format=:list) to view the formulas in latex output.")
+    elseif format==:list
+        for (id, rule) in rule_list
+            display(Latex("$(id); $(rule[reference]):"))
+            display(Latex(rule[formula]))
+        end
+    else
+        error("Unknown format $(format), use :table or :list instead")
     end
 end
