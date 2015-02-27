@@ -4,13 +4,13 @@ using Optim
 using YAML
 
 export Node, CompositeNode, ProbabilityDistribution
-export sumProduct!, setVerbose
+export sumProduct!
 export vague, ==
 export current_graph
 
 # Verbosity
 verbose = false
-setVerbose(verbose_mode=true) = global verbose = verbose_mode
+setVerbosity(is_verbose=true) = global verbose = is_verbose
 printVerbose(msg) = if verbose println(msg) end
 
 # ForneyLab helpers
