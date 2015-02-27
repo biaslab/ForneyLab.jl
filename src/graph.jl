@@ -77,7 +77,7 @@ function Subgraph() # Construct and add to current graph
     return subgraph
 end
 
-function getOrCreateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, assign_distribution::DataType)
+function ensureMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, assign_distribution::DataType)
     # Looks for a marginal in the node-subgraph dictionary.
     # If no marginal is present, it sets and returns a vague distribution.
     # Otherwise, it returns the existing marginal. Used for fast marginal calculations.

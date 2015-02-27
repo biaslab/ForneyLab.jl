@@ -83,8 +83,8 @@ facts("Edge integration tests") do
         @fact forwardMessage(test_edge) => Message(GaussianDistribution())
         @fact backwardMessage(test_edge) => Message(GaussianDistribution(m=3.0, V=2.0))
         test_edge.marginal = GaussianDistribution(m=3.0, V=2.0)
-        @fact ForneyLab.getOrCreateMarginal!(test_edge, GaussianDistribution) => GaussianDistribution(m=3.0, V=2.0)
+        @fact ForneyLab.ensureMarginal!(test_edge, GaussianDistribution) => GaussianDistribution(m=3.0, V=2.0)
         test_edge.marginal = nothing
-        @fact ForneyLab.getOrCreateMarginal!(test_edge, GaussianDistribution) => vague(GaussianDistribution)
+        @fact ForneyLab.ensureMarginal!(test_edge, GaussianDistribution) => vague(GaussianDistribution)
     end
 end

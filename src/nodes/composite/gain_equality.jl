@@ -140,7 +140,7 @@ function applyBackwardRule!(node::GainEqualityCompositeNode,
         return (:empty,
                 node.interfaces[outbound_interface_id].message)
     else
-        dist_result = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+        dist_result = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
         dist_3 = msg_out.payload
         dist_in = msg_in.payload
 

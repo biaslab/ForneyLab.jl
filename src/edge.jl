@@ -10,7 +10,7 @@ type Edge <: AbstractEdge
     tail::Interface
     head::Interface
     marginal::Union(ProbabilityDistribution, Nothing)
-    distribution_type::DataType         
+    distribution_type::DataType
 
     function Edge(tail::Interface, head::Interface, distribution_type=Any; add_to_graph::Bool=true)
         # add_to_graph is false for edges that are internal in a composite node
@@ -75,24 +75,13 @@ setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, messa
 forwardMessage(edge::Edge) = edge.tail.message
 backwardMessage(edge::Edge) = edge.head.message
 
-function getOrCreateMarginal!(edge::Edge, distribution_type::DataType=Any)
-    # Looks for a marginal on edge.
-    # When no marginal is present, it sets and returns an vague distribution.
-    # Otherwise it returns the present marginal. Used for fast marginal calculations.
-    if edge.marginal==nothing
-        if distribution_type <: ProbabilityDistribution
-            (distribution_type <: edge.distribution_type) || error("Cannot create marginal of type $(distribution_type) since the edge requires a different marginal distribution type. Edge:\n$(edge)")
-            edge.marginal = vague(distribution_type)
-        else
-            if edge.distribution_type <: ProbabilityDistribution 
-                edge.marginal = vague(edge.distribution_type)
-            else
-                error("Cannot create marginal of type $(edge.distribution_type) on:\n$(edge)")
-            end
-        end
+function ensureMarginal!{T<:ProbabilityDistribution}(edge::Edge, distribution_type::Type{T}=edge.distribution_type)
+    # Ensure that edge carries a marginal of type distribution_type, used for in place updates
+    if edge.marginal==nothing || (typeof(edge.marginal) <: distribution_type)==false
+        (distribution_type <: edge.distribution_type) || error("Cannot create marginal of type $(distribution_type) since the edge requires a different marginal distribution type. Edge:\n$(edge)")
+        edge.marginal = vague(distribution_type)
     end
 
-    (typeof(edge.marginal) <: distribution_type) || error("No marginal of type $(distribution_type) on edge:\n$(edge)")
     return edge.marginal
 end
 

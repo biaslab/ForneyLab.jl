@@ -211,7 +211,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         #        v
 
         (length(msg_out.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
         dist_out.m = [msg_out.payload.m[1]]
         dist_out.xi = nothing
@@ -230,7 +230,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         #        v
 
         (length(msg_out.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
         dist_out.m = [msg_out.payload.m[1]]
         dist_out.xi = nothing
@@ -262,7 +262,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         #     Dlt|  
         #        v
 
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
         y = msg_out.payload.m[1]
         length(msg_mean.payload.m) == 1 || error("Update only defined for univariate distributions")
         m = msg_mean.payload.m[1]
@@ -280,7 +280,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         #     Dlt|  
         #        v
 
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
         y = msg_out.payload.m[1]
         length(msg_mean.payload.m) == 1 || error("Update only defined for univariate distributions")
         m = msg_mean.payload.m[1]
@@ -309,7 +309,7 @@ function sumProduct!{T<:Any}(node::GaussianNode,
         #  ---->[N]---->
         #   <--  
 
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
         y = msg_out.payload.m[1]
         length(node.m) == 1 || error("Update only defined for univariate distributions")
         m = node.m[1]
@@ -325,7 +325,7 @@ function sumProduct!{T<:Any}(node::GaussianNode,
         #  ---->[N]---->
         #   <--  
 
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
         y = msg_out.payload.m[1]
         length(node.m) == 1 || error("Update only defined for univariate distributions")
         m = node.m[1]
@@ -358,7 +358,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         #      v v
 
         (length(msg_mean.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
         dist_out.m = [msg_mean.payload.m[1]]
         dist_out.xi = nothing
@@ -377,7 +377,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         #      v v
 
         (length(msg_mean.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
         dist_out.m = [msg_mean.payload.m[1]]
         dist_out.xi = nothing
@@ -407,7 +407,7 @@ function sumProduct!{T<:Any}(node::GaussianNode,
         #           -->  
 
         (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
         dist_out.m = deepcopy(node.m)
         dist_out.xi = nothing
@@ -424,7 +424,7 @@ function sumProduct!{T<:Any}(node::GaussianNode,
         #           -->  
 
         (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
         dist_out.m = deepcopy(node.m)
         dist_out.xi = nothing
@@ -470,7 +470,7 @@ function sumProduct!(node::GaussianNode,
     #        |Q~N  
     #        v
 
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean) # Mean estimation from variance and sample
         ensureMDefined!(marg_out)
@@ -504,7 +504,7 @@ function sumProduct!(node::GaussianNode,
     #    Q~N |  
     #        v
 
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean)
         ensureMDefined!(marg_y)
@@ -533,7 +533,7 @@ function sumProduct!(node::GaussianNode,
         #  ---->[N]---->
         #  <--
 
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
         ensureMVParametrization!(marg_out)
         (length(node.m) == 1 && length(marg_out.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
         dist_out.a = 1.5
@@ -549,7 +549,7 @@ function sumProduct!(node::GaussianNode,
         #    N
         #
 
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
         ensureMDefined!(marg_out)
         dist_out.m = deepcopy(marg_out.m)
         dist_out.V = deepcopy(node.V)
@@ -578,7 +578,7 @@ function sumProduct!(node::GaussianNode,
         #    Q~N |  
         #        v
 
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
 
         if is(node.interfaces[outbound_interface_id], node.variance) # Variance estimation from mean and sample
             ensureMVParametrization!(marg_out)
@@ -607,7 +607,7 @@ function sumProduct!(node::GaussianNode,
         #   Q~N |  
         #       v
 
-        dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
 
         if is(node.interfaces[outbound_interface_id], node.precision) # Precision estimation from mean and sample
             ensureMVParametrization!(marg_out)
@@ -646,7 +646,7 @@ function sumProduct!(node::GaussianNode,
     #      N | |  
     #        v v
 
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.out)
         ensureMDefined!(marg_mean)
@@ -673,7 +673,7 @@ function sumProduct!(node::GaussianNode,
     #  ---->[N]---->
     #            -->
 
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.out)
         (length(node.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
@@ -700,7 +700,7 @@ function sumProduct!(node::GaussianNode,
     #            N
     #
 
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.out)
         ensureMDefined!(marg_mean)
@@ -731,7 +731,7 @@ function sumProduct!(node::GaussianNode,
     #      N | |  
     #        v v
 
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.out)
         ensureMDefined!(marg_mean)
@@ -767,7 +767,7 @@ function sumProduct!(node::GaussianNode,
     #        | Q~N
     #        v
 
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], StudentsTDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], StudentsTDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.mean)
         ensureMWParametrization!(marg_out)
@@ -801,7 +801,7 @@ function sumProduct!(node::GaussianNode,
     #        | Q~N
     #        v
 
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
 
     if isdefined(node, :precision)
         ensureMWParametrization!(marg_out)
@@ -835,7 +835,7 @@ function sumProduct!(node::GaussianNode,
     #      | | N  
     #      v v
 
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_id], node.out)
         dist_out.m = [marg.m]

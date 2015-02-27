@@ -118,7 +118,7 @@ function sumProduct!(node::GainAdditionCompositeNode,
             return (:empty,
                     node.interfaces[outbound_interface_id].message)
         else
-            dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+            dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
     
             dist_1 = in1.payload
             dist_2 = in2.payload
@@ -189,7 +189,7 @@ function sumProduct!(node::GainAdditionCompositeNode,
             return (:empty,
                     node.interfaces[outbound_interface_id].message)
         else
-            dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+            dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
             dist_1 = in1.payload
             dist_3 = out.payload
