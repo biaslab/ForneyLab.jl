@@ -47,13 +47,14 @@ function name(interface::Interface)
     return ""
 end
 
-# Efficient get/set combinations for messages and marginals
-function getOrCreateMessage!{T<:ProbabilityDistribution}(interface::Interface, assign_payload::Type{T})
-    # Looks for a message on interface.
-    # When no message is present, it sets and returns a standard message.
-    # Otherwise it returns the present message.
-    if interface.message == nothing || typeof(interface.message.payload) != assign_payload
-        interface.message = Message(assign_payload())
+function ensureMessage!{T<:ProbabilityDistribution}(interface::Interface, payload_type::Type{T})
+    # Ensure that interface carries a Message{payload_type}, used for in place updates
+    if interface.message == nothing || typeof(interface.message.payload) != payload_type
+        if payload_type <: DeltaDistribution
+            interface.message = Message(payload_type())
+        else
+            interface.message = Message(vague(payload_type))
+        end
     end
 
     return interface.message

@@ -136,7 +136,7 @@ function applyBackwardRule!(node::GainEqualityCompositeNode,
     if !node.use_composite_update_rules
         node.interfaces[outbound_interface_id].message = execute(node.interfaces[outbound_interface_id].internal_schedule)
     else
-        dist_result = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+        dist_result = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
         dist_3 = msg_out.payload
         dist_in = msg_in.payload
 

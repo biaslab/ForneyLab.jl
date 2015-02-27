@@ -63,7 +63,7 @@ function sumProduct!(node::EqualityNode,
                             msg_2::Message{GaussianDistribution},
                             ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
-    dist_result = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
@@ -104,7 +104,7 @@ function sumProduct!(node::EqualityNode,
     # Definitions available in derivations notebook
     # Same as Gaussian equality rule
 
-    dist_result = getOrCreateMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     dist_1 = GaussianDistribution(m=msg_st.payload.m, W=msg_st.payload.W) # Approximate student's with Gaussian
     dist_2 = msg_n.payload
@@ -156,7 +156,7 @@ function sumProduct!{T<:Any}(
     # Outbound message is equal to the inbound messages if both inbound messages are equal.
     # Otherwise, the outbound message is 0.0
 
-    msg_result = getOrCreateMessage!(node.interfaces[outbound_interface_id], typeof(msg_1.payload))
+    msg_result = ensureMessage!(node.interfaces[outbound_interface_id], typeof(msg_1.payload))
     if msg_1.payload == msg_2.payload
         msg_result.payload.m = copy(msg_1.payload.m)
     else
@@ -180,7 +180,7 @@ function sumProduct!(node::EqualityNode,
                             ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
 
     # Definition from Korl table 5.2
     dist_out.a = 1.0 + msg_1.payload.a + msg_2.payload.a
@@ -202,7 +202,7 @@ function sumProduct!(node::EqualityNode,
                             ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    dist_out = getOrCreateMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
 
     # Derivation available in notebook
     dist_out.a = -1.0 + msg_1.payload.a + msg_2.payload.a

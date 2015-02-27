@@ -48,3 +48,5 @@ function ==(x::StudentsTDistribution, y::StudentsTDistribution)
     if is(x, y) return true end
     return (x.m==y.m && x.W==y.W && x.nu==y.nu)
 end
+
+vague(::Type{StudentsTDistribution}) = StudentsTDistribution(m=0.0, W=tiny(), nu=huge())
