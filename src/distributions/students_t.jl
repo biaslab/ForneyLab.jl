@@ -37,14 +37,12 @@ function Base.var(dist::StudentsTDistribution)
     end
 end
 
-function show(io::IO, dist::StudentsTDistribution)
-    println(io, typeof(dist))
-    println(io, "m = $(dist.m) (location)")
-    println(io, "W = $(dist.W) (precision)")
-    println(io, "nu = $(dist.nu) (degrees of freedom)")
-end
+format(dist::StudentsTDistribution) = "St(m=$(format(dist.m)), W=$(format(dist.W)), ν=$(format(dist.nu)))"
+show(io::IO, dist::StudentsTDistribution) = println(io, format(dist))
 
 function ==(x::StudentsTDistribution, y::StudentsTDistribution)
     if is(x, y) return true end
     return (x.m==y.m && x.W==y.W && x.nu==y.nu)
 end
+
+vague(::Type{StudentsTDistribution}) = StudentsTDistribution(m=0.0, W=tiny(), nu=huge())

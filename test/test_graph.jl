@@ -17,14 +17,14 @@ facts("Graph level unit tests") do
         @fact typeof(sg) => Subgraph
         @fact typeof(sg.internal_schedule) => Schedule
         @fact typeof(sg.external_schedule) => ExternalSchedule
-        graph = getCurrentGraph()
+        graph = currentGraph()
         @fact graph.factorization[2] => sg
     end
 
-    context("getCurrentGraph() should return a current graph object") do
+    context("currentGraph() should return a current graph object") do
         FactorGraph() # Reset
-        @fact getCurrentGraph() => current_graph
-        my_graph = getCurrentGraph()  # Make local pointer to global variable
+        @fact currentGraph() => current_graph
+        my_graph = currentGraph()  # Make local pointer to global variable
         @fact typeof(my_graph) => FactorGraph
     end
 
@@ -36,12 +36,12 @@ facts("Graph level unit tests") do
         @fact my_first_graph == current_graph => true
     end
 
-    context("getSubgraph(edge) should return the subgraph where edge is internal") do
+    context("subgraph(edge) should return the subgraph where edge is internal") do
         (t1, a1, g1, t2, add1, g2) = initializeFactoringGraph()
         factorize!(Set{Edge}([t2.out.edge]))
-        graph = getCurrentGraph()
-        @fact getSubgraph(t1.out.edge) => graph.factorization[1]
-        @fact getSubgraph(t2.out.edge) => graph.factorization[2]
+        graph = currentGraph()
+        @fact subgraph(t1.out.edge) => graph.factorization[1]
+        @fact subgraph(t2.out.edge) => graph.factorization[2]
     end
 
     context("node(name::String) should return node with matching name") do
@@ -64,24 +64,24 @@ end
 #####################
 
 facts("Graph level integration tests") do
-    context("getNodesConnectedToExternalEdges() should return all nodes (g) connected to external edges") do
+    context("nodesConnectedToExternalEdges() should return all nodes (g) connected to external edges") do
         data = [1.0, 1.0, 1.0]
 
         # MF case
         (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
         n_sections = length(data)
-        factorizeMeanField!()
-        graph = getCurrentGraph()
-        m_subgraph = getSubgraph(g_nodes[1].mean.edge)
-        gam_subgraph = getSubgraph(g_nodes[1].precision.edge)
-        y1_subgraph = getSubgraph(g_nodes[1].out.edge)
-        y2_subgraph = getSubgraph(g_nodes[2].out.edge)
-        y3_subgraph = getSubgraph(g_nodes[3].out.edge)
-        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(m_subgraph)) => Set(g_nodes)
-        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(gam_subgraph)) => Set(g_nodes)
-        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
-        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])
-        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y3_subgraph)) => Set([g_nodes[3]])
+        factorize!()
+        graph = currentGraph()
+        m_subgraph = subgraph(g_nodes[1].mean.edge)
+        gam_subgraph = subgraph(g_nodes[1].precision.edge)
+        y1_subgraph = subgraph(g_nodes[1].out.edge)
+        y2_subgraph = subgraph(g_nodes[2].out.edge)
+        y3_subgraph = subgraph(g_nodes[3].out.edge)
+        @fact Set(ForneyLab.nodesConnectedToExternalEdges(m_subgraph)) => Set(g_nodes)
+        @fact Set(ForneyLab.nodesConnectedToExternalEdges(gam_subgraph)) => Set(g_nodes)
+        @fact Set(ForneyLab.nodesConnectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
+        @fact Set(ForneyLab.nodesConnectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])
+        @fact Set(ForneyLab.nodesConnectedToExternalEdges(y3_subgraph)) => Set([g_nodes[3]])
 
         # Structured case
         (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
@@ -89,15 +89,15 @@ facts("Graph level integration tests") do
         for edge in q_y_edges
             factorize!(Set{Edge}({edge}))
         end
-        graph = getCurrentGraph()
-        m_gam_subgraph = getSubgraph(g_nodes[1].mean.edge)
-        y1_subgraph = getSubgraph(g_nodes[1].out.edge)
-        y2_subgraph = getSubgraph(g_nodes[2].out.edge)
-        y3_subgraph = getSubgraph(g_nodes[3].out.edge)
-        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(m_gam_subgraph)) => Set(g_nodes)
-        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
-        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])
-        @fact Set(ForneyLab.getNodesConnectedToExternalEdges(y3_subgraph)) => Set([g_nodes[3]])
+        graph = currentGraph()
+        m_gam_subgraph = subgraph(g_nodes[1].mean.edge)
+        y1_subgraph = subgraph(g_nodes[1].out.edge)
+        y2_subgraph = subgraph(g_nodes[2].out.edge)
+        y3_subgraph = subgraph(g_nodes[3].out.edge)
+        @fact Set(ForneyLab.nodesConnectedToExternalEdges(m_gam_subgraph)) => Set(g_nodes)
+        @fact Set(ForneyLab.nodesConnectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
+        @fact Set(ForneyLab.nodesConnectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])
+        @fact Set(ForneyLab.nodesConnectedToExternalEdges(y3_subgraph)) => Set([g_nodes[3]])
     end
 
     context("conformSubGraph!() should complete a subgraph with nodes and external edges based in its internal edges") do
@@ -133,14 +133,14 @@ facts("Graph level integration tests") do
         # MF case
         (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
         n_sections = length(data)
-        factorizeMeanField!()
+        factorize!()
         setVagueMarginals!()
-        graph = getCurrentGraph()
-        m_subgraph = getSubgraph(g_nodes[1].mean.edge)
-        gam_subgraph = getSubgraph(g_nodes[1].precision.edge)
-        y1_subgraph = getSubgraph(g_nodes[1].out.edge)
-        y2_subgraph = getSubgraph(g_nodes[2].out.edge)
-        y3_subgraph = getSubgraph(g_nodes[3].out.edge)
+        graph = currentGraph()
+        m_subgraph = subgraph(g_nodes[1].mean.edge)
+        gam_subgraph = subgraph(g_nodes[1].precision.edge)
+        y1_subgraph = subgraph(g_nodes[1].out.edge)
+        y2_subgraph = subgraph(g_nodes[2].out.edge)
+        y3_subgraph = subgraph(g_nodes[3].out.edge)
 
         @fact length(graph.approximate_marginals) => 9
         @fact graph.approximate_marginals[(g_nodes[1], m_subgraph)] => vague(GaussianDistribution)
@@ -160,11 +160,11 @@ facts("Graph level integration tests") do
             factorize!(Set{Edge}({edge}))
         end
         setVagueMarginals!()
-        graph = getCurrentGraph()
-        m_gam_subgraph = getSubgraph(g_nodes[1].mean.edge)
-        y1_subgraph = getSubgraph(g_nodes[1].out.edge)
-        y2_subgraph = getSubgraph(g_nodes[2].out.edge)
-        y3_subgraph = getSubgraph(g_nodes[3].out.edge)
+        graph = currentGraph()
+        m_gam_subgraph = subgraph(g_nodes[1].mean.edge)
+        y1_subgraph = subgraph(g_nodes[1].out.edge)
+        y2_subgraph = subgraph(g_nodes[2].out.edge)
+        y3_subgraph = subgraph(g_nodes[3].out.edge)
 
         @fact length(graph.approximate_marginals) => 6
         @fact graph.approximate_marginals[(g_nodes[1], m_gam_subgraph)] => vague(NormalGammaDistribution)
@@ -175,29 +175,42 @@ facts("Graph level integration tests") do
         @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => vague(GaussianDistribution)
     end
 
-    context("getNodes() should return an array of all nodes in the graph") do
-        nodes = initializeLoopyGraph()
-        found_nodes = getNodes(getCurrentGraph())
-        @fact length(found_nodes) => length(nodes) # FactorGraph test
-        for node in nodes
+    context("nodes() should return an array of all nodes in the graph") do
+        # FactorGraph test
+        testnodes = initializeLoopyGraph()
+        found_nodes = nodes(currentGraph())
+        @fact length(found_nodes) => length(testnodes)
+        for node in testnodes
             @fact node in found_nodes => true
         end
 
-        found_nodes = getNodes(getCurrentGraph().factorization[1]) # Subgraph test
-        @fact length(found_nodes) => length(nodes)
-        for node in nodes
+        # Subgraph test
+        found_nodes = nodes(currentGraph().factorization[1])
+        @fact length(found_nodes) => length(testnodes)
+        for node in testnodes
             @fact node in found_nodes => true
         end
+
+        # Composite node test
+        compnode = GainEqualityCompositeNode();
+        found_nodes = nodes(compnode, depth=1)
+        @fact length(found_nodes) => 2
+        @fact compnode.equality_node in found_nodes => true
+        @fact compnode.fixed_gain_node in found_nodes => true
     end
 
-    context("getEdges() should get all edges internal (optionally external as well) to the argument node set") do
-        nodes = initializeLoopyGraph()
-        @fact getEdges(Set{Node}({nodes[1], nodes[2]}), include_external=false) => Set{Edge}({nodes[1].in1.edge})
-        @fact getEdges(Set{Node}({nodes[1], nodes[2]})) => Set{Edge}({nodes[1].in1.edge, nodes[4].in1.edge, nodes[4].out.edge})
+    context("edges() should get all edges internal (optionally external as well) to the argument node set") do
+        testnodes = initializeLoopyGraph()
+        @fact edges(Set{Node}({testnodes[1], testnodes[2]}), include_external=false) => Set{Edge}({testnodes[1].in1.edge})
+        @fact edges(Set{Node}({testnodes[1], testnodes[2]})) => Set{Edge}({testnodes[1].in1.edge, testnodes[4].in1.edge, testnodes[4].out.edge})
     end
 
-    context("addChildNodes!() should add composite node's child nodes to the node array") do
-        node = initializeGainEqualityCompositeNode(eye(1), false, [Message(GaussianDistribution()), Message(GaussianDistribution()), nothing])
-        @fact ForneyLab.addChildNodes!(Set{Node}({node})) => Set{Node}({node, node.equality_node, node.fixed_gain_node})
+    context("edges() called on a subgraph should return all internal edges (optionally external as well) of the subgraph") do
+        (t1, a1, g1, t2, t3) = initializeFactoringGraphWithoutLoop()
+        graph = currentGraph()
+        factorize!(graph)
+        sg = graph.factorization[1]
+        @fact edges(sg, include_external=false) => Set{Edge}({g1.variance.edge})
+        @fact edges(sg) => Set{Edge}({g1.variance.edge, g1.out.edge, g1.mean.edge})
     end
 end

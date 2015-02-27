@@ -23,11 +23,8 @@ function Base.var(dist::BetaDistribution)
     return a*b/((a+b)^2*(a+b+1))
 end
 
-function show(io::IO, dist::BetaDistribution)
-    println(io, typeof(dist))
-    println(io, "a = $(dist.a)")
-    println(io, "b = $(dist.b)")
-end
+format(dist::BetaDistribution) = "Bet(a=$(format(dist.a)), b=$(format(dist.b)))"
+show(io::IO, dist::BetaDistribution) = println(io, format(dist))
 
 ==(x::BetaDistribution, y::BetaDistribution) = (x.a==y.a && x.b==y.b)
 

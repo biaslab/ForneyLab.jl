@@ -29,10 +29,7 @@ function Base.var(dist::InverseGammaDistribution)
     end
 end
 
-function show(io::IO, dist::InverseGammaDistribution)
-    println(io, typeof(dist))
-    println(io, "a = $(dist.a) (shape)")
-    println(io, "b = $(dist.b) (rate)")
-end
+format(dist::InverseGammaDistribution) = "Ig(a=$(format(dist.a)), b=$(format(dist.b)))"
+show(io::IO, dist::InverseGammaDistribution) = println(io, format(dist))
 
 ==(x::InverseGammaDistribution, y::InverseGammaDistribution) = (x.a==y.a && x.b==y.b)

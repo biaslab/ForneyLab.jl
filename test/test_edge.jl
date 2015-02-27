@@ -7,7 +7,7 @@ facts("Edge integration tests") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
-        graph = getCurrentGraph()
+        graph = currentGraph()
         @fact graph.edge_to_subgraph[edge] => graph.factorization[1]
     end
 
@@ -75,5 +75,16 @@ facts("Edge integration tests") do
         edge_cd = Edge(node_c.out, node_d.out)
         sorted = sort!([edge_bc, edge_ab, edge_cd])
         @fact sorted => [edge_ab, edge_bc, edge_cd]
+    end
+
+    context("forwardMessage(), forwardMessage(), ensureMarginal!()") do
+        FactorGraph()
+        test_edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(GaussianDistribution(m=3.0, V=2.0))).out)
+        @fact forwardMessage(test_edge) => Message(GaussianDistribution())
+        @fact backwardMessage(test_edge) => Message(GaussianDistribution(m=3.0, V=2.0))
+        test_edge.marginal = GaussianDistribution(m=3.0, V=2.0)
+        @fact ForneyLab.ensureMarginal!(test_edge, GaussianDistribution) => GaussianDistribution(m=3.0, V=2.0)
+        test_edge.marginal = nothing
+        @fact ForneyLab.ensureMarginal!(test_edge, GaussianDistribution) => vague(GaussianDistribution)
     end
 end

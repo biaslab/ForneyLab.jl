@@ -53,7 +53,7 @@ function sumProduct!(node::LogarithmicNode,
                      outbound_interface_id::Int,
                      msg_in1::Message{GaussianDistribution},
                      msg_out::Nothing)
-    dist_out = getOrCreateMessage(node.out, GammaDistribution).payload
+    dist_out = ensureMessage!(node.out, GammaDistribution).payload
 
     ensureMWParametrization!(msg_in1.payload)
     (length(msg_in1.payload.m) == 1) || error("Forward update for LogarithmicNode only defined for univariate input")
@@ -64,7 +64,8 @@ function sumProduct!(node::LogarithmicNode,
     dist_out.a = gam + 1
     dist_out.b = gam/(exp(mu))
 
-    return node.interfaces[outbound_interface_id].message
+    return (:logarithmic_forward_gaussian,
+            node.interfaces[outbound_interface_id].message)
 end
 
 # Backward message
@@ -72,7 +73,7 @@ function sumProduct!(node::LogarithmicNode,
                      outbound_interface_id::Int,
                      msg_in1::Nothing,
                      msg_out::Message{GammaDistribution})
-    dist_out = getOrCreateMessage(node.in1, GaussianDistribution).payload
+    dist_out = ensureMessage!(node.in1, GaussianDistribution).payload
 
     a = msg_out.payload.a
     b = msg_out.payload.b
@@ -82,7 +83,8 @@ function sumProduct!(node::LogarithmicNode,
     dist_out.W = reshape([a-1], 1, 1)
     dist_out.xi= nothing
 
-    return node.interfaces[outbound_interface_id].message
+    return (:logarithmic_backward_gaussian,
+            node.interfaces[outbound_interface_id].message)
 end
 
 
@@ -96,11 +98,12 @@ function sumProduct!{T<:Any}(node::LogarithmicNode,
                      msg_in1::Message{DeltaDistribution{T}},
                      msg_out::Nothing)
     length(msg_in1.payload.m) == 1 || error("LogarithmicNode only defined for univariate variables")
-    dist_out = getOrCreateMessage(node.out, DeltaDistribution{T}).payload
+    dist_out = ensureMessage!(node.out, DeltaDistribution{T}).payload
 
     dist_out.m = log(msg_in1.payload.m)
 
-    return node.interfaces[outbound_interface_id].message
+    return (:logarithmic_forward_delta,
+            node.interfaces[outbound_interface_id].message)
 end
 
 # Backward message
@@ -109,9 +112,10 @@ function sumProduct!{T<:Any}(node::LogarithmicNode,
                      msg_in1::Nothing,
                      msg_out::Message{DeltaDistribution{T}})
     length(msg_out.payload.m) == 1 || error("LogarithmicNode only defined for univariate variables")
-    dist_out = getOrCreateMessage(node.in1, DeltaDistribution{T}).payload
+    dist_out = ensureMessage!(node.in1, DeltaDistribution{T}).payload
 
     dist_out.m = exp(msg_out.payload.m)
 
-    return node.interfaces[outbound_interface_id].message
+    return (:logarithmic_backward_delta,
+            node.interfaces[outbound_interface_id].message)
 end

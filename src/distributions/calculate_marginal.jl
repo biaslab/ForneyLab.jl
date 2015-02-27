@@ -39,12 +39,12 @@ function calculateMarginal(forward_dist::GammaDistribution, backward_dist::Gamma
     return gammaMarginalRule!(marg, forward_dist, backward_dist)    
 end
 function calculateMarginal!(edge::Edge, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
-    marg = getOrCreateMarginal(edge, GammaDistribution)
+    marg = ensureMarginal!(edge, GammaDistribution)
     return gammaMarginalRule!(marg, forward_dist, backward_dist)
 end
 function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
     # Calculation for univariate approximate marginal
-    marg = getOrCreateMarginal(node, subgraph, graph, GammaDistribution)
+    marg = ensureMarginal!(node, subgraph, graph, GammaDistribution)
     return gammaMarginalRule!(marg, forward_dist, backward_dist)
 end
 
@@ -61,12 +61,12 @@ function calculateMarginal(forward_dist::InverseGammaDistribution, backward_dist
     return inverseGammaMarginalRule!(marg, forward_dist, backward_dist)    
 end
 function calculateMarginal!(edge::Edge, forward_dist::InverseGammaDistribution, backward_dist::InverseGammaDistribution)
-    marg = getOrCreateMarginal(edge, InverseGammaDistribution)
+    marg = ensureMarginal!(edge, InverseGammaDistribution)
     return inverseGammaMarginalRule!(marg, forward_dist, backward_dist)
 end
 function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::InverseGammaDistribution, backward_dist::InverseGammaDistribution)
     # Calculation for univariate approximate marginal
-    marg = getOrCreateMarginal(node, subgraph, graph, InverseGammaDistribution)
+    marg = ensureMarginal!(node, subgraph, graph, InverseGammaDistribution)
     return inverseGammaMarginalRule!(marg, forward_dist, backward_dist)
 end
 
@@ -83,12 +83,12 @@ function calculateMarginal(forward_dist::BetaDistribution, backward_dist::BetaDi
     return betaMarginalRule!(marg, forward_dist, backward_dist)    
 end
 function calculateMarginal!(edge::Edge, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
-    marg = getOrCreateMarginal(edge, BetaDistribution)
+    marg = ensureMarginal!(edge, BetaDistribution)
     return betaMarginalRule!(marg, forward_dist, backward_dist)
 end
 function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
     # Calculation for univariate approximate marginal
-    marg = getOrCreateMarginal(node, subgraph, graph, BetaDistribution)
+    marg = ensureMarginal!(node, subgraph, graph, BetaDistribution)
     return betaMarginalRule!(marg, forward_dist, backward_dist)
 end
 
@@ -109,12 +109,12 @@ function calculateMarginal(forward_dist::GaussianDistribution, backward_dist::Ga
     return gaussianMarginalRule!(marg, forward_dist, backward_dist)    
 end
 function calculateMarginal!(edge::Edge, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
-    marg = getOrCreateMarginal(edge, GaussianDistribution)
+    marg = ensureMarginal!(edge, GaussianDistribution)
     return gaussianMarginalRule!(marg, forward_dist, backward_dist)
 end
 function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
     # Calculation for univariate approximate marginal
-    marg = getOrCreateMarginal(node, subgraph, graph, GaussianDistribution)
+    marg = ensureMarginal!(node, subgraph, graph, GaussianDistribution)
     return gaussianMarginalRule!(marg, forward_dist, backward_dist)
 end
 
@@ -145,13 +145,13 @@ function calculateMarginal(forward_dist::GaussianDistribution, backward_dist::St
 end
 calculateMarginal(forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal(backward_dist, forward_dist)
 function calculateMarginal!(edge::Edge, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
-    marg = getOrCreateMarginal(edge, GaussianDistribution)
+    marg = ensureMarginal!(edge, GaussianDistribution)
     return gaussianStudentsMarginalRule!(marg, forward_dist, backward_dist)
 end
 calculateMarginal!(edge::Edge, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal!(edge, backward_dist, forward_dist)
 function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
     # Calculation for univariate approximate marginal
-    marg = getOrCreateMarginal(node, subgraph, graph, GaussianDistribution)
+    marg = ensureMarginal!(node, subgraph, graph, GaussianDistribution)
     return gaussianStudentsMarginalRule!(marg, forward_dist, backward_dist)
 end
 calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal!(node, subgraph, graph, backward_dist, forward_dist)
@@ -180,7 +180,7 @@ end
 # Joint approximate marginal calculations
 ############################
 
-function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
+function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=currentGraph())
     # Calculate the approximate marginal for node from the perspective of subgraph,
     # and store the result in the graph.approximate_marginals dictionary.
 
@@ -222,7 +222,7 @@ function calculateMarginal!(node::GaussianNode,
     # (Joint) marginal update function used for SVMP
     # Definitions available in derivations notebook
 
-    marg = getOrCreateMarginal(node, subgraph, graph, NormalGammaDistribution)
+    marg = ensureMarginal!(node, subgraph, graph, NormalGammaDistribution)
 
     mu_m = gaus_msg.payload
     mu_gam = gam_msg.payload

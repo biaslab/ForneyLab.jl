@@ -1,11 +1,11 @@
 # Functions for visualizing graphs
-export graphViz, graphPdf
+export draw, drawPdf
 
 ####################################################
-# graphViz methods
+# draw methods
 ####################################################
 
-function graphViz(dot_graph::String; external_viewer::Bool=false)
+function graphviz(dot_graph::String; external_viewer::Bool=false)
     # Show a DOT graph
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     if external_viewer
@@ -20,13 +20,14 @@ function graphViz(dot_graph::String; external_viewer::Bool=false)
     end
 end
 
-graphViz(factor_graph::FactorGraph; args...) = graphViz(genDot(getNodes(factor_graph, open_composites=false), getEdges(factor_graph), time_wraps=factor_graph.time_wraps); args...)
-graphViz(; args...) = graphViz(getCurrentGraph(); args...)
+draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph, open_composites=false), edges(factor_graph), time_wraps=factor_graph.time_wraps); args...)
+draw(; args...) = draw(currentGraph(); args...)
 
-graphViz(subgraph::Subgraph; args...) = graphViz(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=subgraph.external_edges); args...)
+draw(subgraph::Subgraph; args...) = graphviz(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=subgraph.external_edges); args...)
 
-function graphViz(composite_node::CompositeNode; args...)
+function draw(composite_node::CompositeNode; args...)
     # Visualize the internals of composite_node
+    # TODO: use other function to get internal nodes
     nodes = Set{Node}()
     for field in names(composite_node)
         if typeof(getfield(composite_node, field)) <: Node
@@ -35,17 +36,17 @@ function graphViz(composite_node::CompositeNode; args...)
     end
     (length(nodes) > 0) || error("CompositeNode does not contain any internal nodes.")
 
-    return graphViz(genDot(nodes, getEdges(nodes, include_external=false)); args...)
+    return graphviz(genDot(nodes, edges(nodes, include_external=false)); args...)
 end
 
-graphViz(nodes::Set{Node}; args...) = graphViz(genDot(nodes, getEdges(nodes, include_external=false)); args...)
-graphViz(nodes::Vector{Node}; args...) = graphViz(Set(nodes); args...)
+draw(nodes::Set{Node}; args...) = graphviz(genDot(nodes, edges(nodes, include_external=false)); args...)
+draw(nodes::Vector{Node}; args...) = draw(Set(nodes); args...)
 
 ####################################################
-# graphPdf methods
+# writePdf methods
 ####################################################
 
-function graphPdf(dot_graph::String, filename::String)
+function dot2pdf(dot_graph::String, filename::String)
     # Generates a DOT graph and writes it to a pdf file
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     open(`dot -Tpdf -o$(filename)`, "w", STDOUT) do io
@@ -53,13 +54,14 @@ function graphPdf(dot_graph::String, filename::String)
     end
 end
 
-graphPdf(factor_graph::FactorGraph, filename::String) = graphPdf(genDot(getNodes(factor_graph, open_composites=false), getEdges(factor_graph)), filename)
-graphPdf(filename::String) = graphPdf(getCurrentGraph(), filename)
+drawPdf(factor_graph::FactorGraph, filename::String) = dot2pdf(genDot(nodes(factor_graph, open_composites=false), edges(factor_graph)), filename)
+drawPdf(filename::String) = drawPdf(currentGraph(), filename)
 
-graphPdf(subgraph::Subgraph, filename::String) = graphPdf(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=subgraph.external_edges), filename)
+drawPdf(subgraph::Subgraph, filename::String) = dot2pdf(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=subgraph.external_edges), filename)
 
-function graphPdf(composite_node::CompositeNode, filename::String)
+function drawPdf(composite_node::CompositeNode, filename::String)
     # Visualize the internals of composite_node
+    # TODO: use other function to get internal nodes
     nodes = Set{Node}()
     for field in names(composite_node)
         if typeof(getfield(composite_node, field)) <: Node
@@ -68,11 +70,11 @@ function graphPdf(composite_node::CompositeNode, filename::String)
     end
     (length(nodes) > 0) || error("CompositeNode does not contain any internal nodes.")
 
-    return graphPdf(genDot(nodes, getEdges(nodes, include_external=false)), filename)
+    return dot2pdf(genDot(nodes, edges(nodes, include_external=false)), filename)
 end
 
-graphPdf(nodes::Set{Node}, filename::String) = graphPdf(genDot(nodes, getEdges(nodes, include_external=false)), filename)
-graphPdf(nodes::Vector{Node}, filename::String) = graphPdf(Set(nodes), filename)
+drawPdf(nodes::Set{Node}, filename::String) = dot2pdf(genDot(nodes, edges(nodes, include_external=false)), filename)
+drawPdf(nodes::Vector{Node}, filename::String) = drawPdf(Set(nodes), filename)
 
 
 ####################################################
@@ -137,9 +139,9 @@ end
 function edgeDot(edge::Edge; is_external_edge=false)
     # Generate DOT code for an edge
     tail_id = findfirst(edge.tail.node.interfaces, edge.tail)
-    tail_label = "$tail_id $(getName(edge.tail))"
+    tail_label = "$tail_id $(name(edge.tail))"
     head_id = findfirst(edge.head.node.interfaces, edge.head)
-    head_label = "$head_id $(getName(edge.head))"
+    head_label = "$head_id $(name(edge.head))"
     dot = "\t$(object_id(edge.tail.node)) -> $(object_id(edge.head.node)) " 
     if is_external_edge
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", style=\"dashed\" color=\"red\"]\n"

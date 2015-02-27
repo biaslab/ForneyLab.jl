@@ -31,10 +31,7 @@ function Base.var(dist::GammaDistribution)
     end
 end
 
-function show(io::IO, dist::GammaDistribution)
-    println(io, typeof(dist))
-    println(io, "a = $(dist.a) (shape)")
-    println(io, "b = $(dist.b) (rate)")
-end
+format(dist::GammaDistribution) = "Gam(a=$(format(dist.a)), b=$(format(dist.b)))"
+show(io::IO, dist::GammaDistribution) = println(io, format(dist))
 
 ==(x::GammaDistribution, y::GammaDistribution) = (x.a==y.a && x.b==y.b)

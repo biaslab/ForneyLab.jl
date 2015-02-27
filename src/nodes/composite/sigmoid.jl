@@ -68,7 +68,7 @@ function sumProduct!(node::SigmoidCompositeNode,
 
     ensureMWParametrization!(msg_in1.payload)
     (length(msg_in1.payload.m) == 1) || error("SigmoidCompositeNode only implemented for unvariate distributions")
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], BetaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], BetaDistribution).payload
     # Numeric optimization by minimizing KL divergence between beta and the unnormalized analytic outgoing distribution
 
     # Compute the precision of the message that enters the sigmoid node
@@ -87,7 +87,8 @@ function sumProduct!(node::SigmoidCompositeNode,
     dist_out.a = a_est
     dist_out.b = b_est
 
-    return node.interfaces[outbound_interface_id].message
+    return (:sigmoid_forward,
+            node.interfaces[outbound_interface_id].message)
 end
 
 function sumProduct!(node::SigmoidCompositeNode,
@@ -95,7 +96,7 @@ function sumProduct!(node::SigmoidCompositeNode,
                      ::Nothing,
                      msg_out::Message{BetaDistribution})
 
-    dist_in1 = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_in1 = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # See sigmoid derivations notebook, calculated through Laplace aproximation
     # TODO: this Laplace approximation may be too poor
@@ -112,7 +113,8 @@ function sumProduct!(node::SigmoidCompositeNode,
     dist_in1.xi = nothing
     dist_in1.W = W_in1 
 
-    return node.interfaces[outbound_interface_id].message
+    return (:sigmoid_backward,
+            node.interfaces[outbound_interface_id].message)
 end
 
 
@@ -127,7 +129,7 @@ function sumProduct!(node::SigmoidCompositeNode,
 
     ensureMWParametrization!(dist_in1)
     (length(dist_in1.m) == 1) || error("SigmoidCompositeNode only implemented for unvariate distributions")
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], BetaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], BetaDistribution).payload
     # Numeric optimization by minimizing KL divergence between beta and the unnormalized analytic outgoing distribution
 
     # Note, the optimization objective KLBetaq is a closure that requires x and q to be set in this parent scope
@@ -143,7 +145,8 @@ function sumProduct!(node::SigmoidCompositeNode,
     dist_out.a = a_est
     dist_out.b = b_est
 
-    return node.interfaces[outbound_interface_id].message
+    return (:sigmoid_forward_variational,
+            node.interfaces[outbound_interface_id].message)
 end
 
 function sumProduct!(node::SigmoidCompositeNode,
@@ -151,7 +154,7 @@ function sumProduct!(node::SigmoidCompositeNode,
                      ::Nothing,
                      dist_out::BetaDistribution)
 
-    dist_in1 = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_in1 = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # See sigmoid derivations notebook, calculated through Laplace aproximation
     (dist_out.a > 0.0 && dist_out.b > 0.0 && node.a > 0.0 && node.gamma > 0.0) || error("Backward variational update rule for sigmoid node only defined for Beta a and b > 0 and sigmoid a > 0")
@@ -161,5 +164,6 @@ function sumProduct!(node::SigmoidCompositeNode,
     dist_in1.xi = nothing
     dist_in1.W = reshape([ dist_out.a^2*dist_out.b^2*node.gamma*node.b^2 / (dist_out.a+dist_out.b)^4 ],1,1)
 
-    return node.interfaces[outbound_interface_id].message
+    return (:sigmoid_backward_variational,
+            node.interfaces[outbound_interface_id].message)
 end

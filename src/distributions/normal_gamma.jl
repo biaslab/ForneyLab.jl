@@ -18,12 +18,7 @@ end
 
 vague(::Type{NormalGammaDistribution}) = NormalGammaDistribution(m=0.0, beta=1.0, a=1.0-tiny(), b=tiny())
 
-function show(io::IO, dist::NormalGammaDistribution)
-    println(io, typeof(dist))
-    println(io, "m = $(dist.m) (location)")
-    println(io, "beta = $(dist.beta) (precision)")
-    println(io, "a = $(dist.a) (shape)")
-    println(io, "b = $(dist.b) (rate)")
-end
+format(dist::NormalGammaDistribution) = "Ng(m=$(format(dist.m)), β=$(format(dist.beta)), a=$(format(dist.a)), b=$(format(dist.b)))"
+show(io::IO, dist::NormalGammaDistribution) = println(io, format(dist))
 
 ==(x::NormalGammaDistribution, y::NormalGammaDistribution) = (x.m==y.m && x.beta==y.beta && x.a==y.a && x.b==y.b)

@@ -25,33 +25,33 @@ facts("Message passing integration tests") do
     context("pushRequiredInbound!() should add the proper message/marginal") do
         # Composite node
         node = initializeGainEqualityCompositeNode(eye(1), true, Any[Message(DeltaDistribution(1.0)), Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))])
-        graph = getCurrentGraph()
+        graph = currentGraph()
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in1, node.out)[1], node.in1.partner.message) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in2, node.out)[1], node.in2.partner.message) => true
 
         # Not factorized
         (node, edges) = initializeGaussianNode()
-        graph = getCurrentGraph()
+        graph = currentGraph()
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], node.mean.partner.message) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], node.precision.partner.message) => true
 
         # Mean field factorized Gaussian node
         (node, edges) = initializeGaussianNode()
-        graph = getCurrentGraph()
-        factorizeMeanField!(graph)
+        graph = currentGraph()
+        factorize!(graph)
         setVagueMarginals!(graph)
-        sg_mean = getSubgraph(node.mean.edge)
-        sg_prec = getSubgraph(node.precision.edge)
+        sg_mean = subgraph(node.mean.edge)
+        sg_prec = subgraph(node.precision.edge)
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean)]) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], graph.approximate_marginals[(node, sg_prec)]) => true
 
         # Structurally factorized
         (node, edges) = initializeGaussianNode()
-        graph = getCurrentGraph()
+        graph = currentGraph()
         factorize!(node.out.edge)
         setVagueMarginals!(graph)
-        sg_mean_prec = getSubgraph(node.mean.edge)
-        sg_out = getSubgraph(node.out.edge)
+        sg_mean_prec = subgraph(node.mean.edge)
+        sg_out = subgraph(node.out.edge)
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean_prec)]) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], graph.approximate_marginals[(node, sg_mean_prec)]) => true
         @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.mean)[1], node.precision.partner.message) => true
@@ -89,13 +89,13 @@ facts("Message passing integration tests") do
         end
     end
 
-    context("executeSchedule()") do
+    context("execute()") do
         context("Should correctly execute a schedule and return the result of the last step") do
             (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
             setMessage!(add.in1, Message(GaussianDistribution(m=2.0, V=0.5)))
             setMessage!(add.out, Message(GaussianDistribution()))
             schedule = generateSchedule(add.in2)
-            dist = ensureMVParametrization!(executeSchedule(schedule).payload)
+            dist = ensureMVParametrization!(execute(schedule).payload)
             @fact dist => add.in2.message.payload
             @fact isApproxEqual(dist.m, [2.0]) => true
             @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
@@ -104,7 +104,7 @@ facts("Message passing integration tests") do
         context("Should handle post-processing of messages (sample)") do
             node = initializeAdditionNode(Any[Message(GaussianDistribution()), Message(GaussianDistribution()), Message(GaussianDistribution())])
             schedule = [ScheduleEntry(node.out, sumProduct!, sample)]
-            @fact typeof(executeSchedule(schedule).payload) => DeltaDistribution{Array{Float64, 1}}
+            @fact typeof(execute(schedule).payload) => DeltaDistribution{Array{Float64, 1}}
         end
 
         context("Should work as expeced in loopy graphs") do
@@ -112,7 +112,7 @@ facts("Message passing integration tests") do
             setMessage!(driver.out, Message(GaussianDistribution()))
             schedule = generateSchedule(driver.out)
             for count = 1:100
-                executeSchedule(schedule)
+                execute(schedule)
             end
             @fact typeof(driver.out.message) => Message{GaussianDistribution}
             @fact ensureMVParametrization!(driver.out.message.payload).m => [100.0] # For stop conditions at 100 cycles deep
@@ -127,7 +127,7 @@ facts("Message passing integration tests") do
             converged = false
             schedule = generateSchedule(driver.out)
             while !converged
-                dist = ensureMVParametrization!(executeSchedule(schedule).payload)
+                dist = ensureMVParametrization!(execute(schedule).payload)
                 converged = isApproxEqual(prev_dist.m, dist.m)
                 prev_dist = deepcopy(dist)
             end
@@ -140,7 +140,7 @@ facts("Message passing integration tests") do
         setMessage!(add.in1, Message(GaussianDistribution(m=2.0, V=0.5)))
         setMessage!(add.out, Message(GaussianDistribution()))
         schedule = generateSchedule(add.in2)
-        executeSchedule(schedule)
+        execute(schedule)
         clearMessage!(add.in2)
         @fact add.in2.message => nothing
         clearMessages!(add)

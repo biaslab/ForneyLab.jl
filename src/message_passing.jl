@@ -1,23 +1,22 @@
 export  calculateMessage!,
-        calculateMessages!,
         calculateForwardMessage!,
         calculateBackwardMessage!,
-        executeSchedule,
+        execute,
         clearMessages!
 
-function calculateMessage!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph())
+function calculateMessage!(outbound_interface::Interface, graph::FactorGraph=currentGraph())
     # Calculate the outbound message on a specific interface by generating a schedule and executing it.
     # The resulting message is stored in the specified interface and returned.
 
     # Generate a message passing schedule
-    printVerbose("Auto-generating message passing schedule...")
+    printVerbose("Auto-generating message passing schedule...\n")
     schedule = generateSchedule!(outbound_interface, graph)
     if verbose show(schedule) end
 
     # Execute the schedule
-    printVerbose("Executing above schedule...")
-    executeSchedule(schedule)
-    printVerbose("calculateMessage!() done.")
+    printVerbose("\nExecuting above schedule...\n")
+    execute(schedule)
+    printVerbose("\ncalculateMessage!() done.")
 
     return outbound_interface.message
 end
@@ -59,7 +58,7 @@ function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, n
 
 end
 
-function updateNodeMessage!(schedule_entry::ScheduleEntry, graph::FactorGraph=getCurrentGraph())
+function execute(schedule_entry::ScheduleEntry, graph::FactorGraph=currentGraph())
     # Calculate the outbound message based on the inbound messages and the message calculation rule.
     # The resulting message is stored in the specified interface and is returned.
 
@@ -86,22 +85,22 @@ function updateNodeMessage!(schedule_entry::ScheduleEntry, graph::FactorGraph=ge
     end
 
     # Evaluate message calculation rule
-    printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id:")
-    outbound_message = schedule_entry.message_calculation_rule(node, outbound_interface_id, inbound_array...)
+    (rule, outbound_message) = schedule_entry.message_calculation_rule(node, outbound_interface_id, inbound_array...)
 
     # Post processing?
     if isdefined(schedule_entry, :post_processing)
         outbound_message = node.interfaces[outbound_interface_id].message = Message(schedule_entry.post_processing(outbound_message.payload))
     end
 
-    return outbound_message
-end
-
-function calculateMessages!(node::Node)
-    # Calculate the outbound messages on all interfaces of node.
-    for interface in node.interfaces
-        calculateMessage!(interface)
+    # Print output for debugging
+    if verbose && rule != :empty # Internal composite node calls to execute return :empty rule
+        interface_name = (name(outbound_interface)!="") ? "$(name(outbound_interface))" : "$(outbound_interface_id)"
+        postproc = (isdefined(schedule_entry, :post_processing)) ? string(schedule_entry.post_processing) : ""
+        rule_field = "$(rule) $(postproc)"
+        println("|$(pad(node.name, 15))|$(pad(interface_name,10))|$(pad(rule_field,30))|$(pad(format(outbound_message.payload),71))|")
     end
+
+    return outbound_message
 end
 
 # Calculate forward/backward messages on an Edge
@@ -109,29 +108,37 @@ calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
 calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
 # Execute schedules
-function executeSchedule(schedule::Any, graph::FactorGraph=getCurrentGraph())
+function execute(schedule::Any, graph::FactorGraph=currentGraph())
     # Execute a message passing schedule
     !isempty(schedule) || error("Cannot execute an empty schedule")
+
+    # Print table header for execution log
+    if verbose
+        println("\n|     node      |interface |             rule             |                           calculated message                          |")
+        println("|---------------|----------|------------------------------|-----------------------------------------------------------------------|")
+    end
+
     for schedule_entry in schedule
-        updateNodeMessage!(schedule_entry, graph)
+        execute(schedule_entry, graph)
     end
     # Return the last message in the schedule
     return schedule[end].interface.message
 end
-function executeSchedule(schedule::ExternalSchedule, subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
+function execute(schedule::ExternalSchedule, subgraph::Subgraph, graph::FactorGraph=currentGraph())
     # Execute a marginal update schedule
     for entry in schedule
         calculateMarginal!(entry, subgraph, graph)
     end
 end
-function executeSchedule(subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
-    executeSchedule(subgraph.internal_schedule)
-    executeSchedule(subgraph.external_schedule, subgraph, graph)
+function execute(subgraph::Subgraph, graph::FactorGraph=currentGraph())
+    printVerbose("Subgraph $(findfirst(graph.factorization, subgraph)):")
+    execute(subgraph.internal_schedule)
+    execute(subgraph.external_schedule, subgraph, graph)
 end
 
-function executeSchedule(graph::FactorGraph=getCurrentGraph())
+function execute(graph::FactorGraph=currentGraph())
     for subgraph in graph.factorization
-        executeSchedule(subgraph, graph)
+        execute(subgraph, graph)
     end
 end
 
