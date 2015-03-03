@@ -54,6 +54,43 @@ facts("Naive VMP implementation integration tests") do
         @fact round(mean(gam_out), accuracy+1) => round(0.984292623332, accuracy+1)
         @fact round(var(gam_out), accuracy+1) => round(0.1933796344, accuracy+1)
     end
+
+    context("Sigmoid node variational estimation") do
+        # Data
+        y = [1 0 0 1 0 1 0 1 0 0 1 0 0 1 1]
+        data = BetaDistribution[]
+        for y_k in y
+            if y_k == 1
+                push!(data, BetaDistribution(a=1.0, b=0.0))
+            else
+                push!(data, BetaDistribution(a=0.0, b=1.0))
+            end
+        end
+
+        graph = initializeSigmoidSlice()
+
+        # Prepare for inference
+        factorize!()
+        setVagueMarginals!()
+        setTimeWrap(node("theta_k"), node("theta_k_min"))
+        setReadBuffer(node("y"), data)
+        state_buff = setWriteBuffer(node("eq").interfaces[2])
+        generateSchedule!()
+
+        # Set prior over theta
+        node("theta_k_min").value = GaussianDistribution(m=0.0, V=100.0)
+
+        # Perform inference
+        #
+        # We need to make sure that the downward variational message is computed first,
+        # otherwise the sigmoid node can't compute the upward variational message.
+        while length(data) > 0
+            step(n_iterations=5)
+        end
+
+        @fact state_buff[end].m[1] => -0.03730307502629462     
+        @fact state_buff[end].W[1,1] => 80.3323823509323      
+    end
 end
 
 facts("Structured VMP implementation integration tests") do
