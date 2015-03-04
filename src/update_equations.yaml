@@ -28,8 +28,8 @@ rules:
 
   equality_beta:
     node:       EqualityNode
-    reference:  ""
-    formula:    "pending"
+    reference:  "Sigmoid node derivations document"
+    formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{B}et(a_z=a_x+a_y-1, b_z=b_x+b_y-1)$"
 
   equality_gaussian_delta:
     node:       EqualityNode
@@ -154,7 +154,7 @@ rules:
   gaussian_backward_precision_delta:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    formula:    "pending"
+    formula:    "$\\overleftarrow{\\mu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=-\\frac{3}{2}, b_{\\gamma}=\\frac{(m_y - m_m)^2}{2} \\right)$"
 
   gaussian_backward_mean_gaussian_inverse_gamma:
     node:       GaussianNode
@@ -169,32 +169,32 @@ rules:
   gaussian_backward_variance_gaussian:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2}(m_{q,y} - m_{q,m})^2+V_{q,m}+V_{q,y} \\right)$"
+    formula:    "$\\overleftarrow{\\nu}(v) = \\mathcal{I}g\\left(a_v=-\\frac{1}{2}, b_v=\\frac{1}{2}(m_{q,y} - m_{q,m})^2+\\frac{1}{2}(V_{q,m}+V_{q,y}) \\right)$"
 
   gaussian_backward_precision_gaussian:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    formula:    "pending"
+    formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2}(m_{q,y} - m_{q,m})^2+\\frac{1}{2}(V_{q,m}+V_{q,y}) \\right)$"
 
   gaussian_backward_precision_gaussian_delta:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    formula:    "pending"
+    formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2}(m_{q,y} - m)^2+\\frac{V_{q,y}}{2} \\right)$"
 
   gaussian_backward_mean_gaussian_delta:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    formula:    "pending"
+    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_m=m_{q,y}, V_m=V \\right)$"
 
   gaussian_forward_gaussian:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    formula:    "pending"
+    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}\\left( m_m=m_{q,m}, V_m=V \\right)$"
 
   gaussian_forward_gamma:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    formula:    "pending"
+    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}\\left( m_m=m, \\gamma_m=\\frac{a_{q, \\gamma}}{b_{q, \\gamma}} \\right)$"
 
   gaussian_forward_gaussian_inverse_gamma:
     node:       GaussianNode
@@ -224,19 +224,19 @@ rules:
   sigmoid_forward:
     node:       SigmoidNode
     reference:  "Sigmoid node derivations document"
-    formula:    "Numeric KL divergence minimization"
+    formula:    "$\\overrightarrow{\\mu}(y)$: numeric KL divergence minimization"
 
   sigmoid_backward:
     node:       SigmoidNode
     reference:  "Sigmoid node derivations document"
-    formula:    "pending"
+    formula:    "$\\overleftarrow{\\mu}(x) \\approx \\mathcal{N}\\left( m_x=\\frac{1}{b}\\operatorname{log}\\left(a\\frac{a_y-1}{b_y-1}\\right), \\gamma_x=\\gamma (\\gamma+G)^{-1} G \\right)$, with $G=\\frac{a_y-1}{a_y+b_y-2}$"
 
   sigmoid_forward_variational:
     node:       SigmoidNode
     reference:  "Sigmoid node derivations document"
-    formula:    "Numeric KL divergence minimization"
+    formula:    "$\\overrightarrow{\\nu}(y)$: numeric KL divergence minimization"
 
   sigmoid_backward_variational:
     node:       SigmoidNode
     reference:  "Sigmoid node derivations document"
-    formula:    "pending"
+    formula:    "$\\overleftarrow{\\nu}(x) \\approx \\mathcal{N}\\left( m_x=\\frac{1}{b}\\operatorname{log}\\left(a\\frac{a_{q, y}}{b_{q, y}}\\right), \\gamma_x=\\frac{a_{q,y}^2 b_{q,y}^2 \\gamma b^2}{(a_{q,y} + b_{q,y})^4} \\right)$"
