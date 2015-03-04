@@ -448,7 +448,7 @@ function sumProduct!(node::GaussianNode,
     #  [N]---->
     #      -->  
     node.out.message = Message(GaussianDistribution(m=deepcopy(node.m), V=deepcopy(node.V)))
-    return (:gaussian_forward_delta_variance,
+    return (:gaussian_forward_fixed_mean_variance,
             node.interfaces[outbound_interface_id].message)
 end
 

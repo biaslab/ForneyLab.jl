@@ -228,6 +228,14 @@ rules:
                 <pre>       v y~N(m,V)</pre>
     formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(m_y=m_m, V_y=m_v)$"
 
+  gaussian_forward_fixed_mean_variance:
+    node:       GaussianNode
+    reference:  ""
+    diagram:    <pre>[N/m,v]      </pre>
+                <pre>   |         </pre>
+                <pre>   v y~N(m,V)</pre>
+    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(m_y=m, V_y=v)$"
+
   gaussian_forward_delta_precision:
     node:       GaussianNode
     reference:  "Korl (2005), table 5.2"
@@ -280,7 +288,7 @@ rules:
                 <pre>    --->[N]<---        </pre>
                 <pre>         |             </pre>
                 <pre>         v q(y)~N(m,V) </pre>
-    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_m=m_{q,y}, V_m=\\frac{a_{q,v}+1}{b_{q,v}}\\right)$"
+    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_m=m_{q(y)}, V_m=\\frac{a_{q(v)}+1}{b_{q(v)}}\\right)$"
 
   gaussian_backward_mean_gaussian_gamma:
     node:       GaussianNode
@@ -289,7 +297,7 @@ rules:
                 <pre>    --->[N]<---        </pre>
                 <pre>         |             </pre>
                 <pre>         v q(y)~N(m,γ) </pre>
-    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_m=m_{q,y}, \\gamma_m=\\frac{a_{q,\\gamma}}{b_{q,\\gamma}}\\right)$"
+    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_m=m_{q(y)}, \\gamma_m=\\frac{a_{q(\\gamma)}}{b_{q(\\gamma)}}\\right)$"
 
   gaussian_backward_variance_gaussian:
     node:       GaussianNode
@@ -298,7 +306,7 @@ rules:
                 <pre>       --->[N]<---        </pre>
                 <pre>            |             </pre>
                 <pre>            v q(y)~N(m,V) </pre>
-    formula:    "$\\overleftarrow{\\nu}(v) = \\mathcal{I}g\\left(a_v=-\\frac{1}{2}, b_v=\\frac{1}{2}(m_{q,y} - m_{q,m})^2+\\frac{1}{2}(V_{q,m}+V_{q,y}) \\right)$"
+    formula:    "$\\overleftarrow{\\nu}(v) = \\mathcal{I}g\\left(a_v=-\\frac{1}{2}, b_v=\\frac{1}{2}(m_{q(y)} - m_{q(m)})^2+\\frac{1}{2}(V_{q(m)}+V_{q(y)}) \\right)$"
 
   gaussian_backward_precision_gaussian:
     node:       GaussianNode
@@ -307,7 +315,7 @@ rules:
                 <pre>       --->[N]<---        </pre>
                 <pre>            |             </pre>
                 <pre>            v q(y)~N(m,V) </pre>
-    formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2}(m_{q,y} - m_{q,m})^2+\\frac{1}{2}(V_{q,m}+V_{q,y}) \\right)$"
+    formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2}(m_{q(y)} - m_{q(m)})^2+\\frac{1}{2}(V_{q(m)}+V_{q(y)}) \\right)$"
 
   gaussian_backward_precision_gaussian_delta:
     node:       GaussianNode
@@ -316,7 +324,7 @@ rules:
                 <pre>[N/m]<---       </pre>
                 <pre>  |             </pre>
                 <pre>  v q(y)~N(m,V) </pre>
-    formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2}(m_{q,y} - m)^2+\\frac{V_{q,y}}{2} \\right)$"
+    formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2}(m_{q(y)} - m)^2+\\frac{V_{q(y)}}{2} \\right)$"
 
   gaussian_backward_mean_gaussian_delta:
     node:       GaussianNode
@@ -325,7 +333,7 @@ rules:
                 <pre>    --->[N/V]</pre>
                 <pre>          |  </pre>
                 <pre>          v q(y)~N(m,V) </pre>
-    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_m=m_{q,y}, V_m=V \\right)$"
+    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_m=m_{q(y)}, V_m=V \\right)$"
 
   gaussian_forward_gaussian:
     node:       GaussianNode
@@ -334,7 +342,7 @@ rules:
                 <pre>       --->[N/V]</pre>
                 <pre>             |  </pre>
                 <pre>             v y~N(m,V) </pre>
-    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left( m_m=m_{q,m}, V_m=V \\right)$"
+    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left( m_m=m_{q(m)}, V_m=V \\right)$"
 
   gaussian_forward_gamma:
     node:       GaussianNode
@@ -343,7 +351,7 @@ rules:
                 <pre>[N/m]<---       </pre>
                 <pre>  |             </pre>
                 <pre>  v y~N(m,γ) </pre>
-    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}\\left( m_y=m, \\gamma_y=\\frac{a_{q, \\gamma}}{b_{q, \\gamma}} \\right)$"
+    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}\\left( m_y=m, \\gamma_y=\\frac{a_{q(\\gamma)}}{b_{q(\\gamma)}} \\right)$"
 
   gaussian_forward_gaussian_inverse_gamma:
     node:       GaussianNode
@@ -352,7 +360,7 @@ rules:
                 <pre>[N/m]<---       </pre>
                 <pre>  |             </pre>
                 <pre>  v y~N(m,V) </pre>
-    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q,m}, V_y=\\frac{b_{q,v}}{a_{q,v}-1}\\right)$"
+    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q(m)}, V_y=\\frac{b_{q(v)}}{a_{q(v)}-1}\\right)$"
 
   gaussian_forward_gaussian_gamma:
     node:       GaussianNode
@@ -361,7 +369,7 @@ rules:
                 <pre>       --->[N]<---        </pre>
                 <pre>            |             </pre>
                 <pre>            v y~N(m,γ) </pre>
-    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q,m}, \\gamma_y=\\frac{a_{q,\\gamma}}{b_{q,\\gamma}}\\right)$"
+    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q(m)}, \\gamma_y=\\frac{a_{q(\\gamma)}}{b_{q(\\gamma)}}\\right)$"
 
   gaussian_backward_mean_structured:
     node:       GaussianNode
@@ -371,40 +379,60 @@ rules:
                 <pre>              |               </pre>
                 <pre>       - - - -|- - - -        </pre>
                 <pre>              v q(y)~N(m,γ)   </pre>
-    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{S}t\\left(m_m=m_{q,y}, \\gamma_m=\\frac{2 \\gamma_{q,y} a_{q,\\gamma}}{2 \\gamma_{q,y} b_{q,\\gamma} + 1}, \\nu_m=2 a_{q,\\gamma}\\right)$"
+    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{S}t\\left(m_m=m_{q(y)}, \\gamma_m=\\frac{2 \\gamma_{q(y)} a_{q(\\gamma)}}{2 \\gamma_{q(y)} b_{q(\\gamma)} + 1}, \\nu_m=2 a_{q(\\gamma)}\\right)$"
 
   gaussian_backward_precision_structured:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    ""
-    formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2 \\gamma_{q,y}} + \\frac{(m_{q,m} - m_{q,y})^2}{2}\\right)$"
+    diagram:    <pre>  q(m)~N(m,γ)   γ~Gam(a,b) </pre>
+                <pre>         --->[N]<---          </pre>
+                <pre>              |               </pre>
+                <pre>       - - - -|- - - -        </pre>
+                <pre>              v q(y)~N(m,γ)   </pre>
+    formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2 \\gamma_{q(y)}} + \\frac{(m_{q(m)} - m_{q(y)})^2}{2}\\right)$"
 
   gaussian_forward_structured:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    ""
-    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q,ng}, \\gamma_y=\\frac{a_{q,ng}}{b_{q,ng}}\\right)$"
+    diagram:    <pre>q(m,γ)~Ng(m,β,a,b) </pre>
+                <pre>    --->[N]<---    </pre>
+                <pre>         |         </pre>
+                <pre>  - - - -|- - - -  </pre>
+                <pre>         v y~N(m,γ)</pre>
+    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q(m,\\gamma)}, \\gamma_y=\\frac{a_{q(m,\\gamma)}}{b_{q(m,\\gamma)}}\\right)$"
 
   sigmoid_forward:
-    node:       SigmoidNode
+    node:       SigmoidCompositeNode
     reference:  "Sigmoid node derivations document"
-    diagram:    ""
+    diagram:    <pre>          _________________            </pre>
+                <pre>         |                 |           </pre>
+                <pre>         | N(0,γ)|   a| |b |           </pre>
+                <pre>x~N(m,γ) |       v    v v  | y~Bet(a,b)</pre>
+                <pre>      ---|----->[+]->[ S ]-|--->       </pre>
+                <pre>         |_________________|           </pre>
     formula:    "$\\overrightarrow{\\mu}(y)$: numeric KL divergence minimization"
 
   sigmoid_backward:
-    node:       SigmoidNode
+    node:       SigmoidCompositeNode
     reference:  "Sigmoid node derivations document"
-    diagram:    ""
+    diagram:    <pre>          _________________            </pre>
+                <pre>         |                 |           </pre>
+                <pre>         | N(0,γ)|   a| |b |           </pre>
+                <pre>x~N(m,γ) |       v    v v  | y~Bet(a,b)</pre>
+                <pre>      ---|----->[+]->[ S ]-|--->       </pre>
+                <pre>         |_________________|           </pre>
     formula:    "$\\overleftarrow{\\mu}(x) \\approx \\mathcal{N}\\left( m_x=\\frac{1}{b}\\operatorname{log}\\left(a\\frac{a_y-1}{b_y-1}\\right), \\gamma_x=\\gamma (\\gamma+G)^{-1} G \\right)$, with $G=\\frac{a_y-1}{a_y+b_y-2}$"
 
   sigmoid_forward_variational:
-    node:       SigmoidNode
+    node:       SigmoidCompositeNode
     reference:  "Sigmoid node derivations document"
-    diagram:    ""
+    diagram:    <pre>q(x)~N(m,γ)         y~Bet(a,b)</pre>
+                <pre>       --->[S/a,b,γ]--->      </pre>
     formula:    "$\\overrightarrow{\\nu}(y)$: numeric KL divergence minimization"
 
   sigmoid_backward_variational:
-    node:       SigmoidNode
+    node:       SigmoidCompositeNode
     reference:  "Sigmoid node derivations document"
-    diagram:    ""
-    formula:    "$\\overleftarrow{\\nu}(x) \\approx \\mathcal{N}\\left( m_x=\\frac{1}{b}\\operatorname{log}\\left(a\\frac{a_{q, y}}{b_{q, y}}\\right), \\gamma_x=\\frac{a_{q,y}^2 b_{q,y}^2 \\gamma b^2}{(a_{q,y} + b_{q,y})^4} \\right)$"
+    diagram:    <pre>x~N(m,γ)         q(y)~Bet(a,b)</pre>
+                <pre>    --->[S/a,b,γ]--->         </pre>
+    formula:    "$\\overleftarrow{\\nu}(x) \\approx \\mathcal{N}\\left( m_x=\\frac{1}{b}\\operatorname{log}\\left(a\\frac{a_{q(y)}}{b_{q(y)}}\\right), \\gamma_x=\\frac{a_{q(y)}^2 b_{q(y)}^2 \\gamma b^2}{(a_{q(y)} + b_{q(y)})^4} \\right)$"

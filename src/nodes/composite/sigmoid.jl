@@ -4,10 +4,9 @@
 # Description:
 #   Transformation through a softened sigmoid function
 #
-#    gamma |   a | | b
 #      ----------------
-#      |   |     | |  |
-#  in1 |   v     v v  | out
+#      |   |N(0, |a|b |
+#  in1 |   vgam) v v  | out
 #   ---|->[+]-->[ S ]-|--->
 #      |              |
 #      ----------------
