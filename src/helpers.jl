@@ -79,9 +79,13 @@ end
 type Latex
     s::String
 end
+type HTML
+    s::String
+end
 
 import Base.writemime
 writemime(io::IO, ::MIME"text/latex", y::Latex) = print(io, y.s)
+writemime(io::IO, ::MIME"text/html", y::HTML) = print(io, y.s)
 
 function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
     # Prints a table or list of node update rules
@@ -100,7 +104,7 @@ function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
         rule_list = all_rules
     end
 
-    node="node"; reference="reference"; formula="formula"
+    node="node"; reference="reference"; formula="formula"; diagram="diagram"
     # Write rule list to output
     if format==:table
         println("|                  id                    |                  node                  |                   reference                   |")
@@ -111,8 +115,10 @@ function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
         println("\nUse rules(NodeType) to view all rules of a specific node type; use rules(..., format=:list) to view the formulas in latex output.")
     elseif format==:list
         for (id, rule) in rule_list
-            display(Latex("$(id); $(rule[reference]):"))
+            display(HTML("<b>$(id)</b>; $(rule[reference]):"))
+            display(HTML("<font face=\"monospace\">$(rule[diagram])</font>"))
             display(Latex(rule[formula]))
+            display(HTML("<br>"))
         end
     else
         error("Unknown format $(format), use :table or :list instead")
