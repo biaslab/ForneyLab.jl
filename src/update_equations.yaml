@@ -60,7 +60,7 @@ rules:
                 <pre>  --->[=]<---    </pre>
                 <pre>       |z~δ(m)   </pre>
                 <pre>       v         </pre>
-    formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$ for $m_x \\sim \\delta$"
+    formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$"
 
   equality_gaussian_student:
     node:       EqualityNode
@@ -78,7 +78,7 @@ rules:
                 <pre>  --->[=]<---      </pre>
                 <pre>       |z~δ(m)     </pre>
                 <pre>       v           </pre>
-    formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$ for $m_x \\sim \\delta$ and $m_x > 0$"
+    formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$ for $m_x > 0$"
 
   addition_gaussian_forward:
     node:       AdditionNode
@@ -159,7 +159,7 @@ rules:
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=m_x+V_x A^T G (m_y - Am_x), V_z=V_x - V_x A^T G A V_x)$, with $G = (V_y + AV_xA^T)^{-1}$"
 
   gain_addition_gaussian_forward:
-    node:       GainEqualityCompositeNode
+    node:       GainAdditionCompositeNode
     reference:  "Korl (2005), table 4.1"
     diagram:    <pre>              | y~N(m,V)    </pre>
                 <pre>          ____|____         </pre>
@@ -172,7 +172,7 @@ rules:
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=m_x+Am_y, V_z=V_x + A V_yA^T)$"
 
   gain_addition_gaussian_backward:
-    node:       GainEqualityCompositeNode
+    node:       GainAdditionCompositeNode
     reference:  "Korl (2005), table 4.1, by symmetry"
     diagram:    <pre>              | y~N(m,V)    </pre>
                 <pre>          ____|____         </pre>
@@ -221,7 +221,7 @@ rules:
 
   gaussian_forward_delta_variance:
     node:       GaussianNode
-    reference:  "Korl (2005), table 5.2"
+    reference:  ""
     diagram:    <pre>m~δ(m)   v~δ(m)  </pre>
                 <pre>  --->[N]<---    </pre>
                 <pre>       |         </pre>
@@ -247,7 +247,7 @@ rules:
 
   gaussian_backward_mean_delta_variance:
     node:       GaussianNode
-    reference:  "Korl (2005), table 5.2, by symmetry"
+    reference:  "From forward rule, by symmetry"
     diagram:    <pre>m~N(m,V)   v~δ(m) </pre>
                 <pre>   --->[N]<---    </pre>
                 <pre>        |         </pre>
@@ -279,7 +279,7 @@ rules:
                 <pre>  --->[N]<---      </pre>
                 <pre>       |           </pre>
                 <pre>       v y~δ(m)    </pre>
-    formula:    "$\\overleftarrow{\\mu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=-\\frac{3}{2}, b_{\\gamma}=\\frac{(m_y - m_m)^2}{2} \\right)$"
+    formula:    "$\\overleftarrow{\\mu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{(m_y - m_m)^2}{2} \\right)$"
 
   gaussian_backward_mean_gaussian_inverse_gamma:
     node:       GaussianNode
