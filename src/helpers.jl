@@ -76,16 +76,11 @@ function pad(str::ASCIIString, size::Integer)
     return "$(str_trunc)$(repeat(" ",size-length(str_trunc)))"
 end
 
-type Latex
-    s::String
+immutable HTMLString
+    s::ByteString
 end
-type HTML
-    s::String
-end
-
 import Base.writemime
-writemime(io::IO, ::MIME"text/latex", y::Latex) = print(io, y.s)
-writemime(io::IO, ::MIME"text/html", y::HTML) = print(io, y.s)
+writemime(io::IO, ::MIME"text/html", y::HTMLString) = print(io, y.s)
 
 function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
     # Prints a table or list of node update rules
@@ -115,10 +110,10 @@ function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
         println("\nUse rules(NodeType) to view all rules of a specific node type; use rules(..., format=:list) to view the formulas in latex output.")
     elseif format==:list
         for (id, rule) in rule_list
-            display(HTML("<b>$(id)</b>; $(rule[reference]):"))
-            display(HTML("<font face=\"monospace\">$(rule[diagram])</font>"))
-            display(Latex(rule[formula]))
-            display(HTML("<br>"))
+            display(HTMLString("<b>$(id)</b>; $(rule[reference]):"))
+            display(HTMLString("<font face=\"monospace\">$(rule[diagram])</font>"))
+            display(LaTeXString(rule[formula]))
+            display(HTMLString("<br>"))
         end
     else
         error("Unknown format $(format), use :table or :list instead")

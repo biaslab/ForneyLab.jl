@@ -86,8 +86,15 @@ GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
 vague(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge())
 
 function format(dist::GaussianDistribution)
-    ensureMWParametrization!(dist)
-    return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
+    if dist.m != nothing && dist.V != nothing
+        return "N(m=$(format(dist.m)), V=$(format(dist.V)))"
+    elseif dist.m != nothing && dist.W != nothing
+        return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
+    elseif dist.xi != nothing && dist.W != nothing
+        return "N(ξ=$(format(dist.xi)), W=$(format(dist.W)))"
+    else
+        return "N(ξ=$(format(dist.xi)), V=$(format(dist.V)))"
+    end        
 end
 
 show(io::IO, dist::GaussianDistribution) = println(io, format(dist))

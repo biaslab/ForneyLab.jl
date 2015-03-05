@@ -2,6 +2,7 @@ module ForneyLab
 
 using Optim
 using YAML
+using LaTeXStrings
 
 export Node, CompositeNode, ProbabilityDistribution
 export sumProduct!
