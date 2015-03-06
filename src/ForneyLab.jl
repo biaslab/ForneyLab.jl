@@ -73,4 +73,8 @@ include("step.jl")
 # Utils
 include("visualization.jl")
 
+# Functions for message post-processing
+vague(dist::ProbabilityDistribution) = vague(typeof(dist))
+mean_delta(dist::ProbabilityDistribution) = DeltaDistribution(mean(dist))
+
 end # module ForneyLab

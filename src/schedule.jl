@@ -1,4 +1,4 @@
-export ScheduleEntry, Schedule, ExternalSchedule
+export ScheduleEntry, Schedule, ExternalSchedule, set_post_processing!
 
 type ScheduleEntry
     interface::Interface
@@ -15,6 +15,15 @@ end
 ScheduleEntry(interface::Interface) = ScheduleEntry(interface, sumProduct!)
 
 typealias Schedule Array{ScheduleEntry, 1}
+
+function set_post_processing!(schedule::Schedule, interface::Interface, post_processing::Function)
+    for entry in schedule
+        if entry.interface == interface
+            entry.post_processing = post_processing # Edit in place
+            return
+        end
+    end
+end
 
 function convert(::Type{Schedule}, interfaces::Array{Interface, 1}, message_calculation_rule::Function=sumProduct!, post_processing::Union(Nothing,Function)=nothing)
     # Convert a list of interfaces to an actual schedule

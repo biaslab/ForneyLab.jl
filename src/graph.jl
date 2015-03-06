@@ -200,7 +200,7 @@ function nodes(subgraph::Subgraph; open_composites::Bool=true)
         children = Set{Node}()
         for n in all_nodes
             if typeof(n) <: CompositeNode
-                union!(children, nodes(n, depth=Inf))
+                union!(children, nodes(n, depth=typemax(Int64)))
             end
         end
         union!(all_nodes, children)
@@ -220,7 +220,7 @@ function nodes(graph::FactorGraph; open_composites::Bool=true)
         children = Set{Node}()
         for n in all_nodes
             if typeof(n) <: CompositeNode
-                union!(children, nodes(n, depth=Inf))
+                union!(children, nodes(n, depth=typemax(Int64)))
             end
         end
         union!(all_nodes, children)
