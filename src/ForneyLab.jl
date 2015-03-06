@@ -45,7 +45,7 @@ include("nodes/terminal.jl")
 include("nodes/equality.jl")
 include("nodes/fixed_gain.jl")
 include("nodes/gaussian.jl")
-include("nodes/logarithmic.jl")
+include("nodes/exponential.jl")
 
 # Composite nodes
 include("nodes/composite/gain_addition.jl")

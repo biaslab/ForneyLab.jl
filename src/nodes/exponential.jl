@@ -1,5 +1,5 @@
 ############################################
-# LogarithmicNode
+# ExponentialNode
 ############################################
 # Description:
 #   Maps a Gaussian to a gamma distribution.
@@ -9,7 +9,7 @@
 #   ----->[log]----->
 #
 #   Example:
-#       LogarithmicNode(; name="my_node")
+#       ExponentialNode(; name="my_node")
 #
 # Interface ids, (names) and supported message types:
 #   1. (in1):
@@ -20,15 +20,15 @@
 #       Message{DeltaDistribution}
 ############################################
 
-export LogarithmicNode
+export ExponentialNode
 
-type LogarithmicNode <: Node
+type ExponentialNode <: Node
     name::ASCIIString
     interfaces::Array{Interface,1}
     in1::Interface
     out::Interface
 
-    function LogarithmicNode(; name=unnamedStr())
+    function ExponentialNode(; name=unnamedStr())
         self = new(name, Array(Interface, 2))
 
         named_handle_list = [:in1, :out]
@@ -41,7 +41,7 @@ type LogarithmicNode <: Node
     end
 end
 
-isDeterministic(::LogarithmicNode) = true
+isDeterministic(::ExponentialNode) = true
 
 
 ############################################
@@ -49,14 +49,14 @@ isDeterministic(::LogarithmicNode) = true
 ############################################
 
 # Forward message
-function sumProduct!(node::LogarithmicNode,
+function sumProduct!(node::ExponentialNode,
                      outbound_interface_id::Int,
                      msg_in1::Message{GaussianDistribution},
                      msg_out::Nothing)
     dist_out = getOrCreateMessage(node.out, GammaDistribution).payload
 
     ensureMWParametrization!(msg_in1.payload)
-    (length(msg_in1.payload.m) == 1) || error("Forward update for LogarithmicNode only defined for univariate input")
+    (length(msg_in1.payload.m) == 1) || error("Forward update for ExponentialNode only defined for univariate input")
 
     gam = msg_in1.payload.W[1,1]
     mu = msg_in1.payload.m[1]
@@ -68,7 +68,7 @@ function sumProduct!(node::LogarithmicNode,
 end
 
 # Backward message
-function sumProduct!(node::LogarithmicNode,
+function sumProduct!(node::ExponentialNode,
                      outbound_interface_id::Int,
                      msg_in1::Nothing,
                      msg_out::Message{GammaDistribution})
@@ -91,27 +91,27 @@ end
 ############################################
 
 # Forward message
-function sumProduct!{T<:Any}(node::LogarithmicNode,
+function sumProduct!{T<:Any}(node::ExponentialNode,
                      outbound_interface_id::Int,
                      msg_in1::Message{DeltaDistribution{T}},
                      msg_out::Nothing)
-    length(msg_in1.payload.m) == 1 || error("LogarithmicNode only defined for univariate variables")
+    length(msg_in1.payload.m) == 1 || error("ExponentialNode only defined for univariate variables")
     dist_out = getOrCreateMessage(node.out, DeltaDistribution{T}).payload
 
-    dist_out.m = log(msg_in1.payload.m)
+    dist_out.m = exp(msg_in1.payload.m)
 
     return node.interfaces[outbound_interface_id].message
 end
 
 # Backward message
-function sumProduct!{T<:Any}(node::LogarithmicNode,
+function sumProduct!{T<:Any}(node::ExponentialNode,
                      outbound_interface_id::Int,
                      msg_in1::Nothing,
                      msg_out::Message{DeltaDistribution{T}})
-    length(msg_out.payload.m) == 1 || error("LogarithmicNode only defined for univariate variables")
+    length(msg_out.payload.m) == 1 || error("ExponentialNode only defined for univariate variables")
     dist_out = getOrCreateMessage(node.in1, DeltaDistribution{T}).payload
 
-    dist_out.m = exp(msg_out.payload.m)
+    dist_out.m = log(msg_out.payload.m)
 
     return node.interfaces[outbound_interface_id].message
 end

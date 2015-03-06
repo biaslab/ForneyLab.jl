@@ -26,11 +26,11 @@
 
         % Vertical path from bottom layer upwards
         \node[box, above of=l1_add] (l1_N) {$\mathcal{N}$};
-        \node[box, above of=l1_N] (l1_log) {log};
-        \node[box, above of=l1_log] (l2_eq) {=};
+        \node[box, above of=l1_N] (l1_exp) {exp};
+        \node[box, above of=l1_exp] (l2_eq) {=};
         \path[line] (l1_add) edge[-] (l1_N);
-        \path[line] (l1_N) edge[-] (l1_log);
-        \path[line] (l1_log) edge[-] (l2_eq);
+        \path[line] (l1_N) edge[-] (l1_exp);
+        \path[line] (l1_exp) edge[-] (l2_eq);
 
         % Second layer
         \node[box, right of=l2_eq] (x_l2_k) {$x^{(2)}_{k}$};
@@ -50,11 +50,11 @@
 
         % Vertical path from second layer upwards
         \node[box, above of=l2_add] (l2_N) {$\mathcal{N}$};
-        \node[box, above of=l2_N] (l2_log) {log};
-        \node[box, above of=l2_log] (l3_eq) {=};
+        \node[box, above of=l2_N] (l2_exp) {exp};
+        \node[box, above of=l2_exp] (l3_eq) {=};
         \path[line] (l2_add) edge[-] (l2_N);
-        \path[line] (l2_N) edge[-] (l2_log);
-        \path[line] (l2_log) edge[-] (l3_eq);
+        \path[line] (l2_N) edge[-] (l2_exp);
+        \path[line] (l2_exp) edge[-] (l3_eq);
 
         % Top layer
         \node[box, right of=l3_eq] (theta_k) {$\theta_{k}$};

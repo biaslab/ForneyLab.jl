@@ -28,14 +28,14 @@
 
         % Vertical path from bottom layer upwards precision
         \node[box, above of=l1_add] (l1_N) {$\mathcal{N}$};
-        \node[box, right of=l1_N, node distance=3.0cm] (l1_log) {log};
-        \node[box, above of=l1_log] (l2_eq) {=};
+        \node[box, right of=l1_N, node distance=3.0cm] (l1_exp) {exp};
+        \node[box, above of=l1_exp] (l2_eq) {=};
         \path[line] (l1_add) edge[-] (l1_N);
-        \path[line] (l1_N) edge[-] (l1_log);
-        \path[line] (l1_log) edge[-] (l2_eq);
+        \path[line] (l1_N) edge[-] (l1_exp);
+        \path[line] (l1_exp) edge[-] (l2_eq);
 
         % Vertical path from bottom layer upwards mean
-        \node[left of=l1_N, node distance=3.0cm] (m_bend);
+        \node[left of=l1_N, node distance=3.0cm] (m_bend) {};
         \node[box, above of=m_bend] (m_l2_eq) {=};
         \path[line] (l1_N) edge[-] (m_bend);
         \path[line] (m_bend) edge[-] (m_l2_eq);
@@ -62,19 +62,19 @@
 
         % Vertical path from second precision layer upwards
         \node[box, above of=l2_add] (l2_N) {$\mathcal{N}$};
-        \node[box, above of=l2_N] (l2_log) {log};
-        \node[box, above of=l2_log] (l3_eq) {=};
+        \node[box, above of=l2_N] (l2_exp) {exp};
+        \node[box, above of=l2_exp] (l3_eq) {=};
         \path[line] (l2_add) edge[-] (l2_N);
-        \path[line] (l2_N) edge[-] (l2_log);
-        \path[line] (l2_log) edge[-] (l3_eq);
+        \path[line] (l2_N) edge[-] (l2_exp);
+        \path[line] (l2_exp) edge[-] (l3_eq);
 
         % Vertical path from second mean layer upwards
         \node[box, above of=m_l2_add] (m_l2_N) {$\mathcal{N}$};
-        \node[box, above of=m_l2_N] (m_l2_log) {log};
-        \node[box, above of=m_l2_log] (m_l3_eq) {=};
+        \node[box, above of=m_l2_N] (m_l2_exp) {exp};
+        \node[box, above of=m_l2_exp] (m_l3_eq) {=};
         \path[line] (m_l2_add) edge[-] (m_l2_N);
-        \path[line] (m_l2_N) edge[-] (m_l2_log);
-        \path[line] (m_l2_log) edge[-] (m_l3_eq);
+        \path[line] (m_l2_N) edge[-] (m_l2_exp);
+        \path[line] (m_l2_exp) edge[-] (m_l3_eq);
 
         % Top layer for precision
         \node[right of=l3_eq, node distance=1.0cm] (theta_N_dots) {...};

@@ -68,7 +68,7 @@ function updateNodeMessage!(schedule_entry::ScheduleEntry, graph::FactorGraph=ge
     summary_operation = schedule_entry.summary_operation
 
     # Sumproduct update
-    if summary_operation in [:sumproduct, :sumproduct_sample, :sumproduct_expectation]
+    if summary_operation in [:sumproduct, :sumproduct_sample, :sumproduct_expectation, :sumproduct_obfuscate]
         # Preprocessing
         node = outbound_interface.node
         inbound_array = Array(Any, 0) # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
@@ -100,6 +100,9 @@ function updateNodeMessage!(schedule_entry::ScheduleEntry, graph::FactorGraph=ge
         elseif summary_operation == :sumproduct_expectation
             # Take expectation and reassign
             summary_message = node.interfaces[outbound_interface_id].message = Message(DeltaDistribution(mean(summary_message.payload)))
+        elseif summary_operation == :sumproduct_obfuscate
+            # Obfuscate the calculated message by returning vague
+            summary_message = node.interfaces[outbound_interface_id].message = Message(vague(typeof(summary_message.payload)))
         end
     else # Alternative summary operations are not defined
         error("Unknown summary operation :$(summary_operation). Please choose between ':sumproduct', ':sumproduct_sample' and ':sumproduct_expectation'.")
