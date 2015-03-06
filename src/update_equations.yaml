@@ -191,33 +191,33 @@ rules:
                 <pre>[T]--->  </pre>
     formula:    "$\\overrightarrow{\\mu}(x) =$ node value"
 
-  logarithmic_forward_gaussian:
-    node:       LogarithmicNode
-    reference:  "Logarithmic node derivations document"
+  exponential_forward_gaussian:
+    node:       ExponentialNode
+    reference:  "Exponential node derivations document"
     diagram:    <pre>x~N(μ,γ)     y~Gam(a,b)</pre>
-                <pre>    --->[log]--->      </pre>
+                <pre>    --->[exp]--->      </pre>
     formula:    "$\\overrightarrow{\\mu}(y) \\approx \\mathcal{G}am\\left(a_y = \\gamma_x+1, b_y=\\frac{\\gamma_x}{\\operatorname{exp}(\\mu_x)}\\right)$"
 
-  logarithmic_backward_gaussian:
-    node:       LogarithmicNode
-    reference:  "Logarithmic node derivations document"
+  exponential_backward_gaussian:
+    node:       ExponentialNode
+    reference:  "Exponential node derivations document"
     diagram:    <pre>x~N(μ,γ)     y~Gam(a,b)</pre>
-                <pre>    --->[log]--->      </pre>
+                <pre>    --->[exp]--->      </pre>
     formula:    "$\\overleftarrow{\\mu}(x) \\approx \\mathcal{N}\\left(m_x=\\operatorname{log}(\\frac{a_y-1}{b_y}), \\gamma_x=a_y-1 \\right)$, with $a_y>1$"
 
-  logarithmic_forward_delta:
-    node:       LogarithmicNode
-    reference:  "Logarithmic node derivations document"
+  exponential_forward_delta:
+    node:       ExponentialNode
+    reference:  "Exponential node derivations document"
     diagram:    <pre>x~δ(m)     y~δ(m)</pre>
-                <pre>  --->[log]--->  </pre>
-    formula:    "$\\overrightarrow{\\mu}(y) = \\delta(\\operatorname{log}(m_x))$"
+                <pre>  --->[exp]--->  </pre>
+    formula:    "$\\overrightarrow{\\mu}(y) = \\delta(\\operatorname{exp}(m_x))$"
 
-  logarithmic_backward_delta:
-    node:       LogarithmicNode
-    reference:  "Logarithmic node derivations document"
+  exponential_backward_delta:
+    node:       ExponentialNode
+    reference:  "Exponential node derivations document"
     diagram:    <pre>x~δ(m)     y~δ(m)</pre>
                 <pre>  --->[log]--->  </pre>
-    formula:    "$\\overleftarrow{\\mu}(x) = \\delta(\\operatorname{exp}(m_y))$"
+    formula:    "$\\overleftarrow{\\mu}(x) = \\delta(\\operatorname{log}(m_y))$"
 
   gaussian_forward_delta_variance:
     node:       GaussianNode
