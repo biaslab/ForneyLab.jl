@@ -77,7 +77,7 @@ function sumProduct!(node::FixedGainNode,
                             ::Nothing,
                             msg_out::Message{GaussianDistribution})
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # Calculations for a gaussian message type; Korl (2005), table 4.1
     if outbound_interface_id == 1
@@ -116,7 +116,8 @@ function sumProduct!(node::FixedGainNode,
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
     
-    return node.interfaces[outbound_interface_id].message
+    return (:fixed_gain_gaussian_backward,
+            node.interfaces[outbound_interface_id].message)
 end
 
 # Forward Gaussian to OUT
@@ -125,7 +126,7 @@ function sumProduct!(node::FixedGainNode,
                             msg_in1::Message{GaussianDistribution},
                             ::Nothing)
 
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # Calculations for a gaussian message type; Korl (2005), table 4.1
     if outbound_interface_id == 2
@@ -165,7 +166,8 @@ function sumProduct!(node::FixedGainNode,
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
     
-    return node.interfaces[outbound_interface_id].message
+    return (:fixed_gain_gaussian_forward,
+            node.interfaces[outbound_interface_id].message)
 end
 
 # Backward DeltaDistribution to IN1
@@ -181,11 +183,11 @@ function sumProduct!{T<:Any}(
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
 
-    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution{typeof(ans)})
+    msg_ans = ensureMessage!(node.interfaces[outbound_interface_id], DeltaDistribution{typeof(ans)})
     msg_ans.payload.m = ans
 
-    return node.interfaces[outbound_interface_id].message
-
+    return (:fixed_gain_delta_backward,
+            node.interfaces[outbound_interface_id].message)
 end
 
 # Forward DeltaDistribution to OUT
@@ -201,8 +203,9 @@ function sumProduct!{T<:Any}(
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
 
-    msg_ans = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution{typeof(ans)})
+    msg_ans = ensureMessage!(node.interfaces[outbound_interface_id], DeltaDistribution{typeof(ans)})
     msg_ans.payload.m = ans
 
-    return node.interfaces[outbound_interface_id].message
+    return (:fixed_gain_delta_forward,
+            node.interfaces[outbound_interface_id].message)
 end

@@ -1,12 +1,17 @@
 module ForneyLab
 
-export  Node, CompositeNode, ProbabilityDistribution
-export  vague, ==
-export  current_graph
+using Optim
+using YAML
+using LaTeXStrings
+
+export Node, CompositeNode, ProbabilityDistribution
+export sumProduct!
+export vague, ==
+export current_graph
 
 # Verbosity
 verbose = false
-setVerbose(verbose_mode=true) = global verbose = verbose_mode
+setVerbosity(is_verbose=true) = global verbose = is_verbose
 printVerbose(msg) = if verbose println(msg) end
 
 # ForneyLab helpers
@@ -33,6 +38,7 @@ include("distributions/gamma.jl")
 include("distributions/inverse_gamma.jl")
 include("distributions/normal_gamma.jl")
 include("distributions/students_t.jl")
+include("distributions/beta.jl")
 
 # Basic ForneyLab building blocks and methods
 include("interface.jl")
@@ -50,6 +56,7 @@ include("nodes/exponential.jl")
 # Composite nodes
 include("nodes/composite/gain_addition.jl")
 include("nodes/composite/gain_equality.jl")
+include("nodes/composite/sigmoid.jl")
 include("nodes/composite/general.jl")
 
 # Graphs and factorizations

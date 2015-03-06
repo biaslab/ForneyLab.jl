@@ -63,7 +63,7 @@ function sumProduct!(node::EqualityNode,
                             msg_2::Message{GaussianDistribution},
                             ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
-    dist_result = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
@@ -90,7 +90,8 @@ function sumProduct!(node::EqualityNode,
         dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
     end
 
-    return node.interfaces[outbound_interface_id].message
+    return (:equality_gaussian,
+            node.interfaces[outbound_interface_id].message)
 end
 sumProduct!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{GaussianDistribution}, msg_2::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
 sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{GaussianDistribution}, ::Nothing, msg_2::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
@@ -104,7 +105,7 @@ function sumProduct!(node::EqualityNode,
     # Definitions available in derivations notebook
     # Same as Gaussian equality rule
 
-    dist_result = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     dist_1 = GaussianDistribution(m=msg_st.payload.m, W=msg_st.payload.W) # Approximate student's with Gaussian
     dist_2 = msg_n.payload
@@ -129,7 +130,8 @@ function sumProduct!(node::EqualityNode,
         dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
     end
 
-    return node.interfaces[outbound_interface_id].message
+    return (:equality_gaussian_student,
+            node.interfaces[outbound_interface_id].message)
 end
 # Call signature for messages other ways around
 # Outbound interface 3
@@ -156,14 +158,15 @@ function sumProduct!{T<:Any}(
     # Outbound message is equal to the inbound messages if both inbound messages are equal.
     # Otherwise, the outbound message is 0.0
 
-    msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], typeof(msg_1.payload))
+    msg_result = ensureMessage!(node.interfaces[outbound_interface_id], typeof(msg_1.payload))
     if msg_1.payload == msg_2.payload
         msg_result.payload.m = copy(msg_1.payload.m)
     else
         msg_result.payload.m = zero(msg_1.payload.m)
     end
 
-    return node.interfaces[outbound_interface_id].message
+    return (:equality_delta,
+            node.interfaces[outbound_interface_id].message)
 end
 sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{DeltaDistribution{T}}, ::Nothing, msg_2::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
 sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{DeltaDistribution{T}}, msg_2::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
@@ -180,13 +183,14 @@ function sumProduct!(node::EqualityNode,
                             ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
 
     # Definition from Korl table 5.2
     dist_out.a = 1.0 + msg_1.payload.a + msg_2.payload.a
     dist_out.b = msg_1.payload.b + msg_2.payload.b
 
-    return node.interfaces[outbound_interface_id].message
+    return (:equality_inverse_gamma,
+            node.interfaces[outbound_interface_id].message)
 end
 sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{InverseGammaDistribution}, ::Nothing, msg_2::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
 sumProduct!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{InverseGammaDistribution}, msg_2::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
@@ -202,16 +206,40 @@ function sumProduct!(node::EqualityNode,
                             ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GammaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
 
     # Derivation available in notebook
     dist_out.a = -1.0 + msg_1.payload.a + msg_2.payload.a
     dist_out.b = msg_1.payload.b + msg_2.payload.b
 
-    return node.interfaces[outbound_interface_id].message
+    return (:equality_gamma,
+            node.interfaces[outbound_interface_id].message)
 end
 sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{GammaDistribution}, ::Nothing, msg_2::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
 sumProduct!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{GammaDistribution}, msg_2::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
+
+############################################
+# BetaDistribution methods
+############################################
+
+function sumProduct!(node::EqualityNode,
+                            outbound_interface_id::Int,
+                            msg_1::Message{BetaDistribution},
+                            msg_2::Message{BetaDistribution},
+                            ::Nothing)
+    # Calculate an outbound message based on the inbound messages and the node function.
+    # This function is not exported, and is only meant for internal use.
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], BetaDistribution).payload
+
+    # Derivation available in notebook
+    dist_out.a = msg_1.payload.a + msg_2.payload.a - 1.0
+    dist_out.b = msg_1.payload.b + msg_2.payload.b - 1.0
+
+    return (:equality_beta,
+            node.interfaces[outbound_interface_id].message)
+end
+sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{BetaDistribution}, ::Nothing, msg_2::Message{BetaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{BetaDistribution}, msg_2::Message{BetaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
 
 ############################################
 # Gaussian-DeltaDistribution combination
@@ -223,8 +251,10 @@ function sumProduct!{T<:Any}(
                             msg_delta::Message{DeltaDistribution{T}},
                             msg_n::Message{GaussianDistribution},
                             ::Nothing)
-    # Combination of Gaussian and float
-    return node.interfaces[outbound_interface_id].message = deepcopy(msg_delta)
+    # Combination of Gaussian and delta
+    node.interfaces[outbound_interface_id].message = deepcopy(msg_delta)
+    return (:equality_gaussian_delta,
+            node.interfaces[outbound_interface_id].message)
 end
 # Call signature for messages other ways around
 # Outbound interface 3
@@ -248,7 +278,9 @@ function sumProduct!{T<:Real}(
                             ::Nothing)
     # Combination of gamma and float
     (msg_delta.payload.m >= 0) || error("Node $(node.name) cannot perform update for gamma-delta combination for negative numbers")
-    return node.interfaces[outbound_interface_id].message = deepcopy(msg_delta)
+    node.interfaces[outbound_interface_id].message = deepcopy(msg_delta)
+    return (:equality_gamma_delta,
+            node.interfaces[outbound_interface_id].message)
 end
 # Call signature for messages other ways around
 # Outbound interface 3

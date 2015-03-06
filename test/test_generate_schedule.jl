@@ -1,9 +1,8 @@
 facts("Schedule related tests") do
     context("ForneyLab.convert(Schedule, ...)") do
         node = GaussianNode()
-        @fact ForneyLab.convert(Schedule, [node.out, node.mean]) => [ScheduleEntry(node.out, :sumproduct), ScheduleEntry(node.mean, :sumproduct)]
-        @fact ForneyLab.convert(Schedule, [node.out, node.mean], :sumproduct_sample) => [ScheduleEntry(node.out, :sumproduct_sample), ScheduleEntry(node.mean, :sumproduct_sample)]
-        @fact ForneyLab.convert(Schedule, [node.out, node.mean], :sumproduct_expectation) => [ScheduleEntry(node.out, :sumproduct_expectation), ScheduleEntry(node.mean, :sumproduct_expectation)]
+        @fact ForneyLab.convert(Schedule, [node.out, node.mean]) => [ScheduleEntry(node.out, sumProduct!), ScheduleEntry(node.mean, sumProduct!)]
+        @fact ForneyLab.convert(Schedule, [node.out, node.mean], sumProduct!, sample) => [ScheduleEntry(node.out, sumProduct!, sample), ScheduleEntry(node.mean, sumProduct!, sample)]
     end
 end
 
@@ -49,7 +48,7 @@ facts("generateSchedule() integration tests") do
         context("Should generate an internal and external schedule when called on a subgraph") do
             (t1, a1, g1, t2, t3) = initializeFactoringGraphWithoutLoop()
             factorize!(Set{Edge}([t2.out.edge])) # Put this edge in a different subgraph
-            graph = getCurrentGraph()
+            graph = currentGraph()
             for subgraph in graph.factorization
                 generateSchedule!(subgraph)
                 @fact length(unique(subgraph.internal_schedule)) => length(subgraph.internal_schedule) # No duplicate entries in schedule
@@ -68,7 +67,7 @@ facts("generateSchedule() integration tests") do
             e = Edge(node_t1, node_t2)
             generateSchedule!(g.factorization[1])
             @fact g.factorization[1].internal_schedule => Array(ScheduleEntry, 0)
-            addTimeWrap(node_t1, node_t2)
+            setTimeWrap(node_t1, node_t2)
             generateSchedule!(g.factorization[1])
             @fact g.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [node_t1.out.partner])
         end
@@ -80,13 +79,13 @@ facts("generateSchedule() integration tests") do
             # Structured factorization
             factorize!(Set{Edge}([y_edge]))
 
-            graph = getCurrentGraph()
+            graph = currentGraph()
             for subgraph in graph.factorization
                 generateSchedule!(subgraph) # Generate internal and external schedule automatically
             end
 
-            y_subgraph = getSubgraph(y_edge)
-            m_gam_subgraph = getSubgraph(m_edge)
+            y_subgraph = subgraph(y_edge)
+            m_gam_subgraph = subgraph(m_edge)
             @fact y_subgraph.internal_schedule => ForneyLab.convert(Schedule, [y_edge.head, y_edge.tail]) # Include outgoing interface
             @fact m_gam_subgraph.internal_schedule => ForneyLab.convert(Schedule, [m_0_node.out, m_N_node.out, m_edge.tail, gam_0_node.out, gam_N_node.out, gam_edge.tail]) # Exclude outgoing interfaces
         end

@@ -74,7 +74,7 @@ function sumProduct!(node::AdditionNode,
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Nothing)
-    dist_out = getOrCreateMessage(node.out, GaussianDistribution).payload
+    dist_out = ensureMessage!(node.out, GaussianDistribution).payload
     dist_1 = msg_in1.payload
     dist_2 = msg_in2.payload
 
@@ -105,7 +105,8 @@ function sumProduct!(node::AdditionNode,
         dist_out.xi= nothing
     end
 
-    return node.interfaces[outbound_interface_id].message
+    return (:addition_gaussian_forward,
+            node.interfaces[outbound_interface_id].message)
 end
 
 # Message towards IN1 or IN2
@@ -114,7 +115,7 @@ function sumProduct!(node::AdditionNode,
                             msg_in1::Message{GaussianDistribution},
                             ::Nothing,
                             msg_out::Message{GaussianDistribution})
-    dist_out = getOrCreateMessage(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     # Calculations for the GaussianDistribution type; Korl (2005), table 4.1
     # Backward message, one message on the incoming edge and one on the outgoing edge.
@@ -148,7 +149,8 @@ function sumProduct!(node::AdditionNode,
         dist_out.xi = nothing
     end
 
-    return node.interfaces[outbound_interface_id].message
+    return (:addition_gaussian_backward,
+            node.interfaces[outbound_interface_id].message)
 end
 sumProduct!(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{GaussianDistribution}, msg_out::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_id, msg_in2, nothing, msg_out)
 
@@ -165,10 +167,11 @@ function sumProduct!{T<:Any}(
                             msg_in2::Message{DeltaDistribution{T}},
                             msg_out::Nothing)
     ans = msg_in1.payload.m + msg_in2.payload.m
-    msg_result = getOrCreateMessage(node.out, DeltaDistribution{T})
+    msg_result = ensureMessage!(node.out, DeltaDistribution{T})
     msg_result.payload.m = ans
 
-    return node.interfaces[outbound_interface_id].message
+    return (:addition_delta_forward,
+            node.interfaces[outbound_interface_id].message)
 end
 
 # Message towards IN1 or IN2
@@ -179,10 +182,11 @@ function sumProduct!{T<:Any}(node::AdditionNode,
                             msg_out::Message{DeltaDistribution{T}})
     ans = msg_out.payload.m - msg_in1.payload.m
 
-    msg_result = getOrCreateMessage(node.interfaces[outbound_interface_id], DeltaDistribution{T})
+    msg_result = ensureMessage!(node.interfaces[outbound_interface_id], DeltaDistribution{T})
     msg_result.payload.m = ans
 
-    return node.interfaces[outbound_interface_id].message
+    return (:addition_delta_backward,
+            node.interfaces[outbound_interface_id].message)
 end
 sumProduct!{T<:Any}(node::AdditionNode, outbound_interface_id::Int, ::Nothing, msg_in2::Message{DeltaDistribution{T}}, msg_out::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_in2, nothing, msg_out)
 

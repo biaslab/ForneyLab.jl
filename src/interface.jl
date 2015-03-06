@@ -1,5 +1,5 @@
 export Interface
-export clearMessage!, setMessage!, getMessage, getName
+export clearMessage!, setMessage!, message, name
 
 type Interface
     # An Interface belongs to a node and is used to send/receive messages.
@@ -11,8 +11,6 @@ type Interface
     partner::Union(Interface, Nothing)  # Partner indicates the interface to which it is connected.
     child::Union(Interface, Nothing)    # An interface that belongs to a composite has a child, which is the corresponding (effectively the same) interface one lever deeper in the node hierarchy.
     message::Union(Message, Nothing)
-    dependencies::Array{Interface, 1}   # Optional array of interfaces (of the same node) on which the outbound msg on this interface depends.
-                                        # If this array is #undef, it means that the outbound msg depends on the inbound msgs on ALL OTHER interfaces of the node.
     internal_schedule::Array{Any, 1}    # Optional schedule that should be executed to calculate outbound message on this interface.
                                         # The internal_schedule field is used in composite nodes, and holds the schedule for internal message passing.
 
@@ -30,16 +28,16 @@ end
 Interface(node::Node, message::Message) = Interface(node, nothing, nothing, nothing, message)
 Interface(node::Node) = Interface(node, nothing, nothing, nothing, nothing)
 function show(io::IO, interface::Interface)
-    name = getName(interface)
-    (name == "") || (name = "($(name))")
-    println(io, "Interface $(findfirst(interface.node.interfaces, interface)) $(name) of $(typeof(interface.node)) $(interface.node.name)")
+    iface_name = name(interface)
+    (iface_name == "") || (iface_name = "($(iface_name))")
+    println(io, "Interface $(findfirst(interface.node.interfaces, interface)) $(iface_name) of $(typeof(interface.node)) $(interface.node.name)")
 end
 function setMessage!(interface::Interface, message::Message)
     interface.message = deepcopy(message)
 end
 clearMessage!(interface::Interface) = (interface.message=nothing)
-getMessage(interface::Interface) = interface.message
-function getName(interface::Interface)
+message(interface::Interface) = interface.message
+function name(interface::Interface)
     # Return interface name
     for field in names(interface.node)
         if isdefined(interface.node, field) && is(getfield(interface.node, field), interface)
@@ -49,13 +47,14 @@ function getName(interface::Interface)
     return ""
 end
 
-# Efficient get/set combinations for messages and marginals
-function getOrCreateMessage{T<:ProbabilityDistribution}(interface::Interface, assign_payload::Type{T})
-    # Looks for a message on interface.
-    # When no message is present, it sets and returns a standard message.
-    # Otherwise it returns the present message.
-    if interface.message == nothing || typeof(interface.message.payload) != assign_payload
-        interface.message = Message(assign_payload())
+function ensureMessage!{T<:ProbabilityDistribution}(interface::Interface, payload_type::Type{T})
+    # Ensure that interface carries a Message{payload_type}, used for in place updates
+    if interface.message == nothing || typeof(interface.message.payload) != payload_type
+        if payload_type <: DeltaDistribution
+            interface.message = Message(payload_type())
+        else
+            interface.message = Message(vague(payload_type))
+        end
     end
 
     return interface.message

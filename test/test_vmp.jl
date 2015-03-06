@@ -14,9 +14,9 @@ facts("Naive VMP implementation integration tests") do
         n_sections = length(data)
 
         # Apply mean field factorization
-        factorizeMeanField!()
+        factorize!()
 
-        graph = getCurrentGraph()
+        graph = currentGraph()
         for subgraph in graph.factorization
             generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
@@ -26,21 +26,21 @@ facts("Naive VMP implementation integration tests") do
         # Perform vmp updates
         n_its = 50
 
-        subgraph_m = getSubgraph(g_nodes[1].mean.edge)
-        subgraph_gam = getSubgraph(g_nodes[1].precision.edge)
-        subgraphs_y = [getSubgraph(e) for e in q_y_edges]
+        subgraph_m = subgraph(g_nodes[1].mean.edge)
+        subgraph_gam = subgraph(g_nodes[1].precision.edge)
+        subgraphs_y = [subgraph(e) for e in q_y_edges]
         for iter = 1:n_its
             for sg_y in subgraphs_y
-                executeSchedule(sg_y)
+                execute(sg_y)
             end
             # q(m) update
-            executeSchedule(subgraph_m)
+            execute(subgraph_m)
             # q(gam) update
-            executeSchedule(subgraph_gam)
+            execute(subgraph_gam)
         end
         # One last time to ensure all calculations have propagated through the equality chains
-        executeSchedule(ForneyLab.convert(Schedule, [m_eq_nodes[end].interfaces[2]]))
-        executeSchedule(ForneyLab.convert(Schedule, [gam_eq_nodes[end].interfaces[2]]))
+        execute(ForneyLab.convert(Schedule, [m_eq_nodes[end].interfaces[2]]))
+        execute(ForneyLab.convert(Schedule, [gam_eq_nodes[end].interfaces[2]]))
 
         # Save outcome
         ensureMVParametrization!(m_eq_nodes[end].interfaces[2].message.payload)
@@ -53,6 +53,43 @@ facts("Naive VMP implementation integration tests") do
         @fact round(m_out.V[1, 1], accuracy+1) => round(0.101492691239, accuracy+1)
         @fact round(mean(gam_out), accuracy+1) => round(0.984292623332, accuracy+1)
         @fact round(var(gam_out), accuracy+1) => round(0.1933796344, accuracy+1)
+    end
+
+    context("Sigmoid node variational estimation") do
+        # Data
+        y = [1 0 0 1 0 1 0 1 0 0 1 0 0 1 1]
+        data = BetaDistribution[]
+        for y_k in y
+            if y_k == 1
+                push!(data, BetaDistribution(a=1.0, b=0.0))
+            else
+                push!(data, BetaDistribution(a=0.0, b=1.0))
+            end
+        end
+
+        graph = initializeSigmoidSlice()
+
+        # Prepare for inference
+        factorize!()
+        setVagueMarginals!()
+        setTimeWrap(node("theta_k"), node("theta_k_min"))
+        setReadBuffer(node("y"), data)
+        state_buff = setWriteBuffer(node("eq").interfaces[2])
+        generateSchedule!()
+
+        # Set prior over theta
+        node("theta_k_min").value = GaussianDistribution(m=0.0, V=100.0)
+
+        # Perform inference
+        #
+        # We need to make sure that the downward variational message is computed first,
+        # otherwise the sigmoid node can't compute the upward variational message.
+        while length(data) > 0
+            step(n_iterations=5)
+        end
+
+        @fact state_buff[end].m[1] => -0.03730307502629462     
+        @fact state_buff[end].W[1,1] => 80.3323823509323      
     end
 end
 
@@ -70,15 +107,15 @@ facts("Structured VMP implementation integration tests") do
         # Structured factorization
         factorize!(Set{Edge}([y_edge]))
 
-        graph = getCurrentGraph()
+        graph = currentGraph()
         for subgraph in graph.factorization
             generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
 
         setVagueMarginals!()
 
-        y_subgraph = getSubgraph(g_node.out.edge)
-        m_gam_subgraph = getSubgraph(g_node.mean.edge)
+        y_subgraph = subgraph(g_node.out.edge)
+        m_gam_subgraph = subgraph(g_node.mean.edge)
         for sample = 1:n_samples
             # Reset
             y_node.value = GaussianDistribution(m = data[sample], W=10.0) # Small variance on sample
@@ -87,12 +124,12 @@ facts("Structured VMP implementation integration tests") do
 
             # Do the VMP iterations
             for it = 1:n_its
-                executeSchedule(m_gam_subgraph)
-                executeSchedule(y_subgraph)
+                execute(m_gam_subgraph)
+                execute(y_subgraph)
             end
             # Propagate through chain
-            executeSchedule(ForneyLab.convert(Schedule, [g_node.mean, m_eq_node.interfaces[2]]))
-            executeSchedule(ForneyLab.convert(Schedule, [g_node.precision, gam_eq_node.interfaces[2]]))
+            execute(ForneyLab.convert(Schedule, [g_node.mean, m_eq_node.interfaces[2]]))
+            execute(ForneyLab.convert(Schedule, [g_node.precision, gam_eq_node.interfaces[2]]))
 
             # Switch posterior to prior for next sample
             m_0_node.value = deepcopy(m_eq_node.interfaces[2].message.payload)

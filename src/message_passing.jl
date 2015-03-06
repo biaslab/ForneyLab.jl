@@ -1,30 +1,29 @@
 export  calculateMessage!,
-        calculateMessages!,
         calculateForwardMessage!,
         calculateBackwardMessage!,
-        executeSchedule,
+        execute,
         clearMessages!
 
-function calculateMessage!(outbound_interface::Interface, graph::FactorGraph=getCurrentGraph())
+function calculateMessage!(outbound_interface::Interface, graph::FactorGraph=currentGraph())
     # Calculate the outbound message on a specific interface by generating a schedule and executing it.
     # The resulting message is stored in the specified interface and returned.
 
     # Generate a message passing schedule
-    printVerbose("Auto-generating message passing schedule...")
+    printVerbose("Auto-generating message passing schedule...\n")
     schedule = generateSchedule!(outbound_interface, graph)
     if verbose show(schedule) end
 
     # Execute the schedule
-    printVerbose("Executing above schedule...")
-    executeSchedule(schedule)
-    printVerbose("calculateMessage!() done.")
+    printVerbose("\nExecuting above schedule...\n")
+    execute(schedule)
+    printVerbose("\ncalculateMessage!() done.")
 
     return outbound_interface.message
 end
 
 function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, node::Node, inbound_interface::Interface, outbound_interface::Interface)
     # Push the inbound message or marginal on inbound_interface, depending on the local graph structure.
-    
+
     if !haskey(graph.edge_to_subgraph, inbound_interface.edge) || !haskey(graph.edge_to_subgraph, outbound_interface.edge)
         # Inbound and/or outbound edge is not explicitly listed in the graph.
         # This is possible if one of those edges is internal to a composite node.
@@ -35,8 +34,8 @@ function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, n
         catch
             error("$(inbound_interface) is not connected to an edge.")
         end
-    end        
-    
+    end
+
     inbound_subgraph = graph.edge_to_subgraph[inbound_interface.edge]
     outbound_subgraph = graph.edge_to_subgraph[outbound_interface.edge]
 
@@ -48,7 +47,7 @@ function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, n
         catch
             error("$(inbound_interface) is not connected to an edge.")
         end
-    else 
+    else
         # A subgraph border is crossed, require marginal
         try
             push!(inbound_array, graph.approximate_marginals[(node, inbound_subgraph)])
@@ -59,63 +58,49 @@ function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, n
 
 end
 
-function updateNodeMessage!(schedule_entry::ScheduleEntry, graph::FactorGraph=getCurrentGraph())
-    # Calculate the outbound message based on the inbound messages and the node update function.
+function execute(schedule_entry::ScheduleEntry, graph::FactorGraph=currentGraph())
+    # Calculate the outbound message based on the inbound messages and the message calculation rule.
     # The resulting message is stored in the specified interface and is returned.
 
-    # Dissect schedule entry
     outbound_interface = schedule_entry.interface
-    summary_operation = schedule_entry.summary_operation
 
-    # Sumproduct update
-    if summary_operation in [:sumproduct, :sumproduct_sample, :sumproduct_expectation, :sumproduct_obfuscate]
-        # Preprocessing
-        node = outbound_interface.node
-        inbound_array = Array(Any, 0) # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
-        outbound_interface_id = 0
-        for interface_id = 1:length(node.interfaces)
-            interface = node.interfaces[interface_id]
-            if interface == outbound_interface
-                outbound_interface_id = interface_id
-            end
-            if (!isdefined(outbound_interface, :dependencies) && outbound_interface_id==interface_id) ||
-                (isdefined(outbound_interface, :dependencies) && !(interface in outbound_interface.dependencies))
-                # Ignore this interface
-                push!(inbound_array, nothing)
-            else 
-                # Inbound message or marginal is required
-                # Put the required inbound message or edge/node marginal for the inbound interface in inbound_array
-                pushRequiredInbound!(graph, inbound_array, node, interface, outbound_interface)
-            end
+    # Preprocessing: collect all inbound messages
+    node = outbound_interface.node
+    inbound_array = Array(Any, 0) # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
+    outbound_interface_id = 0
+    for interface_id = 1:length(node.interfaces)
+        interface = node.interfaces[interface_id]
+        if interface == outbound_interface
+            outbound_interface_id = interface_id
         end
-
-        # Evaluate sumproduct update
-        printVerbose("Calculate outbound message on $(typeof(node)) $(node.name) interface $outbound_interface_id:")
-        summary_message = sumProduct!(node, outbound_interface_id, inbound_array...)
-
-        # Post processing (taking sample or expectation)
-        if summary_operation == :sumproduct_sample
-            # Sample and reassign
-            summary_message = node.interfaces[outbound_interface_id].message = Message(sample(summary_message.payload))
-        elseif summary_operation == :sumproduct_expectation
-            # Take expectation and reassign
-            summary_message = node.interfaces[outbound_interface_id].message = Message(DeltaDistribution(mean(summary_message.payload)))
-        elseif summary_operation == :sumproduct_obfuscate
-            # Obfuscate the calculated message by returning vague
-            summary_message = node.interfaces[outbound_interface_id].message = Message(vague(typeof(summary_message.payload)))
+        if (outbound_interface_id==interface_id)
+            # Ignore this interface
+            # In the future we might want to have decent dependency checking here
+            push!(inbound_array, nothing)
+        else
+            # Inbound message or marginal is required
+            # Put the required inbound message or edge/node marginal for the inbound interface in inbound_array
+            pushRequiredInbound!(graph, inbound_array, node, interface, outbound_interface)
         end
-    else # Alternative summary operations are not defined
-        error("Unknown summary operation :$(summary_operation). Please choose between ':sumproduct', ':sumproduct_sample' and ':sumproduct_expectation'.")
     end
 
-    return summary_message
-end
+    # Evaluate message calculation rule
+    (rule, outbound_message) = schedule_entry.message_calculation_rule(node, outbound_interface_id, inbound_array...)
 
-function calculateMessages!(node::Node)
-    # Calculate the outbound messages on all interfaces of node.
-    for interface in node.interfaces
-        calculateMessage!(interface)
+    # Post processing?
+    if isdefined(schedule_entry, :post_processing)
+        outbound_message = node.interfaces[outbound_interface_id].message = Message(schedule_entry.post_processing(outbound_message.payload))
     end
+
+    # Print output for debugging
+    if verbose && rule != :empty # Internal composite node calls to execute return :empty rule
+        interface_name = (name(outbound_interface)!="") ? "$(name(outbound_interface))" : "$(outbound_interface_id)"
+        postproc = (isdefined(schedule_entry, :post_processing)) ? string(schedule_entry.post_processing) : ""
+        rule_field = "$(rule) $(postproc)"
+        println("|$(pad(node.name, 15))|$(pad(interface_name,10))|$(pad(rule_field,30))|$(pad(format(outbound_message.payload),71))|")
+    end
+
+    return outbound_message
 end
 
 # Calculate forward/backward messages on an Edge
@@ -123,29 +108,37 @@ calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
 calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
 # Execute schedules
-function executeSchedule(schedule::Any, graph::FactorGraph=getCurrentGraph())
+function execute(schedule::Any, graph::FactorGraph=currentGraph())
     # Execute a message passing schedule
     !isempty(schedule) || error("Cannot execute an empty schedule")
+
+    # Print table header for execution log
+    if verbose
+        println("\n|     node      |interface |             rule             |                           calculated message                          |")
+        println("|---------------|----------|------------------------------|-----------------------------------------------------------------------|")
+    end
+
     for schedule_entry in schedule
-        updateNodeMessage!(schedule_entry, graph)
+        execute(schedule_entry, graph)
     end
     # Return the last message in the schedule
     return schedule[end].interface.message
 end
-function executeSchedule(schedule::ExternalSchedule, subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
+function execute(schedule::ExternalSchedule, subgraph::Subgraph, graph::FactorGraph=currentGraph())
     # Execute a marginal update schedule
     for entry in schedule
         calculateMarginal!(entry, subgraph, graph)
     end
 end
-function executeSchedule(subgraph::Subgraph, graph::FactorGraph=getCurrentGraph())
-    executeSchedule(subgraph.internal_schedule)
-    executeSchedule(subgraph.external_schedule, subgraph, graph)
+function execute(subgraph::Subgraph, graph::FactorGraph=currentGraph())
+    printVerbose("Subgraph $(findfirst(graph.factorization, subgraph)):")
+    execute(subgraph.internal_schedule)
+    execute(subgraph.external_schedule, subgraph, graph)
 end
 
-function executeSchedule(graph::FactorGraph=getCurrentGraph())
+function execute(graph::FactorGraph=currentGraph())
     for subgraph in graph.factorization
-        executeSchedule(subgraph, graph)
+        execute(subgraph, graph)
     end
 end
 

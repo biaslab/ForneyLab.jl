@@ -1,6 +1,6 @@
 # This file contains the general ForneyLab tests.
 # Tests for specific node and message types are
-# found in test_nodes.jl and test_messages.jl 
+# found in test_nodes.jl and test_messages.jl
 
 module TestForneyLab
 
@@ -28,8 +28,10 @@ include("distributions/test_gamma.jl")
 include("distributions/test_inverse_gamma.jl")
 include("distributions/test_normal_gamma.jl")
 include("distributions/test_students_t.jl")
+include("distributions/test_beta.jl")
 
 # Basic building blocks and methods tests
+include("test_interface.jl")
 include("test_node.jl")
 include("test_edge.jl")
 include("test_graph.jl")
@@ -46,6 +48,7 @@ include("nodes/test_exponential.jl")
 # Composite nodes
 include("nodes/composite/test_gain_addition.jl")
 include("nodes/composite/test_gain_equality.jl")
+include("nodes/composite/test_sigmoid.jl")
 
 # Marginal calculations
 include("test_calculate_marginal.jl")

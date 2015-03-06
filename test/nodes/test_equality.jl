@@ -146,6 +146,13 @@ facts("EqualityNode unit tests") do
                                 InverseGammaDistribution(a=7.0, b=4.0))
     end
 
+    context("EqualityNode should propagate a BetaMessage") do
+        validateOutboundMessage(EqualityNode(), 
+                                3, 
+                                [Message(BetaDistribution(a=1.0, b=2.0)), Message(BetaDistribution(a=3.0, b=4.0)), nothing],
+                                BetaDistribution(a=3.0, b=5.0))
+    end
+
     context("EqualityNode should propagate combination of student's t and Gaussian distribution") do
         # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(), 

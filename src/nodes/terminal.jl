@@ -57,5 +57,6 @@ function sumProduct!(node::TerminalNode,
         node.out.message = Message(node.value)
     end
 
-    return node.out.message
+    return (:terminal_forward,
+            node.out.message)
 end
