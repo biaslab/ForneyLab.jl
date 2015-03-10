@@ -34,10 +34,14 @@ include("distributions/test_beta.jl")
 include("test_interface.jl")
 include("test_node.jl")
 include("test_edge.jl")
-include("test_graph.jl")
-include("test_factorization.jl")
 
-# Nodes
+# Graph, inference scheme and subgraph concepts
+include("test_subgraph.jl")
+include("test_inference_scheme.jl")
+include("test_factorization.jl")
+include("test_factor_graph.jl")
+
+# Node types
 include("nodes/test_addition.jl")
 include("nodes/test_terminal.jl")
 include("nodes/test_equality.jl")

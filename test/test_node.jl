@@ -37,6 +37,21 @@ facts("General node properties unit tests") do
     end
 end
 
+facts("node(name::String) should return node with matching name") do
+    graph_1 = FactorGraph()
+    graph_2 = FactorGraph()
+    n = MockNode(name="my_mocknode")
+    Edge(n.out, MockNode().out)
+    @fact_throws node("some_name")
+    @fact_throws node("my_mocknode", graph_1)
+    setCurrentGraph(graph_1)
+    @fact_throws node("my_mocknode")
+    @fact node("my_mocknode", graph_2) => n
+    setCurrentGraph(graph_2)
+    @fact node("my_mocknode") => n
+end
+
+
 #####################
 # Integration tests
 #####################
@@ -73,5 +88,31 @@ facts("Connections between nodes integration tests") do
         @fact edge in graph.active_scheme.factorization[1].internal_edges => true
         @fact node1 in graph.active_scheme.factorization[1].nodes => true
         @fact node2 in graph.active_scheme.factorization[1].nodes => true
+    end
+end
+
+facts("Functions for collecting nodes") do
+    context("nodes() should return an array of all nodes in the graph") do
+        # FactorGraph test
+        testnodes = initializeLoopyGraph()
+        found_nodes = nodes(currentGraph())
+        @fact length(found_nodes) => length(testnodes)
+        for node in testnodes
+            @fact node in found_nodes => true
+        end
+
+        # Subgraph test
+        found_nodes = nodes(currentGraph().active_scheme.factorization[1])
+        @fact length(found_nodes) => length(testnodes)
+        for node in testnodes
+            @fact node in found_nodes => true
+        end
+
+        # Composite node test
+        compnode = GainEqualityCompositeNode();
+        found_nodes = nodes(compnode, depth=1)
+        @fact length(found_nodes) => 2
+        @fact compnode.equality_node in found_nodes => true
+        @fact compnode.fixed_gain_node in found_nodes => true
     end
 end

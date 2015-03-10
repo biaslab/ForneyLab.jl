@@ -88,3 +88,20 @@ facts("Edge integration tests") do
         @fact ForneyLab.ensureMarginal!(test_edge, GaussianDistribution) => vague(GaussianDistribution)
     end
 end
+
+facts("Functions for collecting edges") do
+    context("edges() should get all edges internal (optionally external as well) to the argument node set") do
+        testnodes = initializeLoopyGraph()
+        @fact edges(Set{Node}({testnodes[1], testnodes[2]}), include_external=false) => Set{Edge}({testnodes[1].in1.edge})
+        @fact edges(Set{Node}({testnodes[1], testnodes[2]})) => Set{Edge}({testnodes[1].in1.edge, testnodes[4].in1.edge, testnodes[4].out.edge})
+    end
+
+    context("edges() called on a subgraph should return all internal edges (optionally external as well) of the subgraph") do
+        (t1, a1, g1, t2, t3) = initializeFactoringGraphWithoutLoop()
+        graph = currentGraph()
+        factorize!(graph)
+        sg = graph.active_scheme.factorization[1]
+        @fact edges(sg, include_external=false) => Set{Edge}({g1.variance.edge})
+        @fact edges(sg) => Set{Edge}({g1.variance.edge, g1.out.edge, g1.mean.edge})
+    end
+end
