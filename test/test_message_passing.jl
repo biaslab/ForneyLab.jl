@@ -25,39 +25,39 @@ facts("Message passing integration tests") do
     context("pushRequiredInbound!() should add the proper message/marginal") do
         # Composite node
         node = initializeGainEqualityCompositeNode(eye(1), true, Any[Message(DeltaDistribution(1.0)), Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))])
-        graph = currentGraph()
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in1, node.out)[1], node.in1.partner.message) => true
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.in2, node.out)[1], node.in2.partner.message) => true
+        scheme = currentGraph().active_scheme
+        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.in1, node.out)[1], node.in1.partner.message) => true
+        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.in2, node.out)[1], node.in2.partner.message) => true
 
         # Not factorized
         (node, edges) = initializeGaussianNode()
-        graph = currentGraph()
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], node.mean.partner.message) => true
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], node.precision.partner.message) => true
+        scheme = currentGraph().active_scheme
+        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.mean, node.out)[1], node.mean.partner.message) => true
+        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.precision, node.out)[1], node.precision.partner.message) => true
 
         # Mean field factorized Gaussian node
         (node, edges) = initializeGaussianNode()
-        graph = currentGraph()
-        factorize!(graph)
-        setVagueMarginals!(graph)
+        scheme = currentGraph().active_scheme
+        factorize!(scheme)
+        setVagueMarginals!(scheme)
         sg_mean = subgraph(node.mean.edge)
         sg_prec = subgraph(node.precision.edge)
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean)]) => true
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], graph.approximate_marginals[(node, sg_prec)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.mean, node.out)[1], scheme.approximate_marginals[(node, sg_mean)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.precision, node.out)[1], scheme.approximate_marginals[(node, sg_prec)]) => true
 
         # Structurally factorized
         (node, edges) = initializeGaussianNode()
-        graph = currentGraph()
+        scheme = currentGraph().active_scheme
         factorize!(node.out.edge)
-        setVagueMarginals!(graph)
+        setVagueMarginals!(scheme)
         sg_mean_prec = subgraph(node.mean.edge)
         sg_out = subgraph(node.out.edge)
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.out)[1], graph.approximate_marginals[(node, sg_mean_prec)]) => true
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.out)[1], graph.approximate_marginals[(node, sg_mean_prec)]) => true
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.precision, node.mean)[1], node.precision.partner.message) => true
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.mean, node.precision)[1], node.mean.partner.message) => true
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.out, node.mean)[1], graph.approximate_marginals[(node, sg_out)]) => true
-        @fact is(ForneyLab.pushRequiredInbound!(graph, Array(Any, 0), node, node.out, node.precision)[1], graph.approximate_marginals[(node, sg_out)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.mean, node.out)[1], scheme.approximate_marginals[(node, sg_mean_prec)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.precision, node.out)[1], scheme.approximate_marginals[(node, sg_mean_prec)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.precision, node.mean)[1], node.precision.partner.message) => true
+        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.mean, node.precision)[1], node.mean.partner.message) => true
+        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.out, node.mean)[1], scheme.approximate_marginals[(node, sg_out)]) => true
+        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.out, node.precision)[1], scheme.approximate_marginals[(node, sg_out)]) => true
     end
 
     context("calculateMessage!()") do

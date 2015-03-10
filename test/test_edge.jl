@@ -8,7 +8,7 @@ facts("Edge integration tests") do
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
         graph = currentGraph()
-        @fact graph.edge_to_subgraph[edge] => graph.factorization[1]
+        @fact graph.active_scheme.edge_to_subgraph[edge] => graph.active_scheme.factorization[1]
     end
 
     context("Nodes can be coupled by edges using the explicit interface names") do

@@ -70,8 +70,8 @@ facts("Connections between nodes integration tests") do
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
         graph = currentGraph()
-        @fact edge in graph.factorization[1].internal_edges => true
-        @fact node1 in graph.factorization[1].nodes => true
-        @fact node2 in graph.factorization[1].nodes => true
+        @fact edge in graph.active_scheme.factorization[1].internal_edges => true
+        @fact node1 in graph.active_scheme.factorization[1].nodes => true
+        @fact node2 in graph.active_scheme.factorization[1].nodes => true
     end
 end

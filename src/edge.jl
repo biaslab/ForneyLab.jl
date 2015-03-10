@@ -45,9 +45,16 @@ type Edge <: AbstractEdge
         # Incorporate edge and nodes in current graph
         if add_to_graph
             graph = currentGraph()
-            (length(graph.factorization) == 1) || error("Cannot create Edge in an already factorized graph; first build the graph, then define factorizations.")
-            subgraph = graph.factorization[1] # There is only one
-            graph.edge_to_subgraph[self] = subgraph # Add edge to internal mapping
+            scheme = graph.active_scheme
+            subgraph = scheme.factorization[1] # There is only one
+
+            # Add nodes to graph definition
+            push!(graph.edges, self)
+            push!(graph.nodes, tail.node) # Add node to subgraph
+            push!(graph.nodes, head.node)
+            # Add edge to inference scheme's edge mapping
+            scheme.edge_to_subgraph[self] = subgraph
+            # Add nodes to subgraph definition
             push!(subgraph.internal_edges, self) # Define edge as internal
             push!(subgraph.nodes, tail.node) # Add node to subgraph
             push!(subgraph.nodes, head.node)

@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny, KLpq, rules, format, mean_delta
+export isApproxEqual, huge, tiny, KLpq, rules, format
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr

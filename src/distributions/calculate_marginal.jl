@@ -42,9 +42,9 @@ function calculateMarginal!(edge::Edge, forward_dist::GammaDistribution, backwar
     marg = ensureMarginal!(edge, GammaDistribution)
     return gammaMarginalRule!(marg, forward_dist, backward_dist)
 end
-function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
+function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
     # Calculation for univariate approximate marginal
-    marg = ensureMarginal!(node, subgraph, graph, GammaDistribution)
+    marg = ensureMarginal!(node, subgraph, scheme, GammaDistribution)
     return gammaMarginalRule!(marg, forward_dist, backward_dist)
 end
 
@@ -64,9 +64,9 @@ function calculateMarginal!(edge::Edge, forward_dist::InverseGammaDistribution, 
     marg = ensureMarginal!(edge, InverseGammaDistribution)
     return inverseGammaMarginalRule!(marg, forward_dist, backward_dist)
 end
-function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::InverseGammaDistribution, backward_dist::InverseGammaDistribution)
+function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme, forward_dist::InverseGammaDistribution, backward_dist::InverseGammaDistribution)
     # Calculation for univariate approximate marginal
-    marg = ensureMarginal!(node, subgraph, graph, InverseGammaDistribution)
+    marg = ensureMarginal!(node, subgraph, scheme, InverseGammaDistribution)
     return inverseGammaMarginalRule!(marg, forward_dist, backward_dist)
 end
 
@@ -86,9 +86,9 @@ function calculateMarginal!(edge::Edge, forward_dist::BetaDistribution, backward
     marg = ensureMarginal!(edge, BetaDistribution)
     return betaMarginalRule!(marg, forward_dist, backward_dist)
 end
-function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
+function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
     # Calculation for univariate approximate marginal
-    marg = ensureMarginal!(node, subgraph, graph, BetaDistribution)
+    marg = ensureMarginal!(node, subgraph, scheme, BetaDistribution)
     return betaMarginalRule!(marg, forward_dist, backward_dist)
 end
 
@@ -112,9 +112,9 @@ function calculateMarginal!(edge::Edge, forward_dist::GaussianDistribution, back
     marg = ensureMarginal!(edge, GaussianDistribution)
     return gaussianMarginalRule!(marg, forward_dist, backward_dist)
 end
-function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
+function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
     # Calculation for univariate approximate marginal
-    marg = ensureMarginal!(node, subgraph, graph, GaussianDistribution)
+    marg = ensureMarginal!(node, subgraph, scheme, GaussianDistribution)
     return gaussianMarginalRule!(marg, forward_dist, backward_dist)
 end
 
@@ -149,12 +149,12 @@ function calculateMarginal!(edge::Edge, forward_dist::GaussianDistribution, back
     return gaussianStudentsMarginalRule!(marg, forward_dist, backward_dist)
 end
 calculateMarginal!(edge::Edge, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal!(edge, backward_dist, forward_dist)
-function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
+function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
     # Calculation for univariate approximate marginal
-    marg = ensureMarginal!(node, subgraph, graph, GaussianDistribution)
+    marg = ensureMarginal!(node, subgraph, scheme, GaussianDistribution)
     return gaussianStudentsMarginalRule!(marg, forward_dist, backward_dist)
 end
-calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal!(node, subgraph, graph, backward_dist, forward_dist)
+calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal!(node, subgraph, graph, backward_dist, forward_dist)
 
 # Gaussian-Delta combination
 # A multiplication of a delta distribution with any Gaussian returns the delta.
@@ -166,13 +166,13 @@ end
 function calculateMarginal!(edge::Edge, ::GaussianDistribution, backward_dist::DeltaDistribution)
     return edge.marginal = convert(GaussianDistribution, backward_dist)
 end
-function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::DeltaDistribution, backward_dist::GaussianDistribution)
+function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme, forward_dist::DeltaDistribution, backward_dist::GaussianDistribution)
     # Calculation for univariate approximate marginal
-    return graph.approximate_marginals[(node, subgraph)] = convert(GaussianDistribution, forward_dist)
+    return scheme.approximate_marginals[(node, subgraph)] = convert(GaussianDistribution, forward_dist)
 end
-function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution)
+function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution)
     # Calculation for univariate approximate marginal
-    return graph.approximate_marginals[(node, subgraph)] = convert(GaussianDistribution, backward_dist)
+    return scheme.approximate_marginals[(node, subgraph)] = convert(GaussianDistribution, backward_dist)
 end
 
 
@@ -180,21 +180,21 @@ end
 # Joint approximate marginal calculations
 ############################
 
-function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=currentGraph())
+function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme=currentGraph().active_scheme)
     # Calculate the approximate marginal for node from the perspective of subgraph,
-    # and store the result in the graph.approximate_marginals dictionary.
+    # and store the result in the scheme.approximate_marginals dictionary.
 
     # Gather internal and external messages/qs
     required_inputs = Array(Union(Message, ProbabilityDistribution), 0)
     internal_edge_list = Array(Edge, 0)
     for interface in node.interfaces # In the order of the node's interfaces
-        neighbouring_subgraph = graph.edge_to_subgraph[interface.edge]
+        neighbouring_subgraph = scheme.edge_to_subgraph[interface.edge]
         if neighbouring_subgraph == subgraph # Edge is internal
             push!(required_inputs, interface.partner.message)
             push!(internal_edge_list, interface.edge)
         else # Edge is external
-            haskey(graph.approximate_marginals, (node, neighbouring_subgraph)) || error("A required approximate marginal for $(node.name) is not preset. Please preset an (vague) marginal.")
-            push!(required_inputs, graph.approximate_marginals[(node, neighbouring_subgraph)])
+            haskey(scheme.approximate_marginals, (node, neighbouring_subgraph)) || error("A required approximate marginal for $(node.name) is not preset. Please preset an (vague) marginal.")
+            push!(required_inputs, scheme.approximate_marginals[(node, neighbouring_subgraph)])
         end
     end
 
@@ -203,26 +203,26 @@ function calculateMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph=c
         # When there is only one internal edge, the approximate marginal calculation reduces to the naive marginal update
         # The internal_edge_list contains the edge that requires the update
         internal_edge = internal_edge_list[1]
-        marg = calculateMarginal!(node, subgraph, graph, internal_edge.tail.message.payload, internal_edge.head.message.payload)
+        marg = calculateMarginal!(node, subgraph, scheme, internal_edge.tail.message.payload, internal_edge.head.message.payload)
     else
         # Update for multivariate q
         # This update involves the node function 
-        calculateMarginal!(node, subgraph, graph, required_inputs...)
+        calculateMarginal!(node, subgraph, scheme, required_inputs...)
     end
 
-    return graph.approximate_marginals[(node, subgraph)]
+    return scheme.approximate_marginals[(node, subgraph)]
 end
 
 function calculateMarginal!(node::GaussianNode,
                             subgraph::Subgraph,
-                            graph::FactorGraph,
+                            scheme::InferenceScheme,
                             gaus_msg::Message{GaussianDistribution},
                             gam_msg::Message{GammaDistribution},
                             y_dist::GaussianDistribution)
     # (Joint) marginal update function used for SVMP
     # Definitions available in derivations notebook
 
-    marg = ensureMarginal!(node, subgraph, graph, NormalGammaDistribution)
+    marg = ensureMarginal!(node, subgraph, scheme, NormalGammaDistribution)
 
     mu_m = gaus_msg.payload
     mu_gam = gam_msg.payload

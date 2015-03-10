@@ -6,19 +6,56 @@ facts("Graph level unit tests") do
     context("FactorGraph() should initialize a factor graph") do
         fg = FactorGraph()
         @fact typeof(fg) => FactorGraph
-        @fact length(fg.factorization) => 1
-        @fact typeof(fg.factorization[1]) => Subgraph
-        @fact typeof(fg.edge_to_subgraph) => Dict{Edge, Subgraph}
+        @fact length(fg.inference_schemes) => 1
+        @fact typeof(fg.active_scheme) => InferenceScheme
+        @fact fg.active_scheme => fg.inference_schemes[1]
+        @fact fg.nodes => Set{Node}()
+        @fact fg.edges => Set{Edge}()
         @fact current_graph => fg # Global should be set
     end
 
-    context("Subgraph() should initialize a subgraph and add it to the current graph") do
+    context("InferenceScheme() should initialize an InferenceScheme") do
+        fg = FactorGraph()
+        scheme = InferenceScheme()
+        @fact typeof(scheme) => InferenceScheme
+        @fact length(fg.inference_schemes) => 1 # Do not add to scheme list
+        @fact fg.active_scheme => fg.inference_schemes[1] # Do not set as active scheme
+        @fact typeof(scheme.factorization[1]) => Subgraph
+        @fact typeof(scheme.edge_to_subgraph) => Dict{Edge, Subgraph}
+        @fact typeof(scheme.approximate_marginals) => Dict{(Node, Subgraph), ProbabilityDistribution}
+        @fact typeof(scheme.read_buffers) => Dict{TerminalNode, Vector}
+        @fact typeof(scheme.write_buffers) => Dict{Union(Edge,Interface), Vector}
+        @fact typeof(scheme.time_wraps) => Vector{(TerminalNode, TerminalNode)}
+    end
+
+    context("InferenceScheme(::FactorGraph) should initialize an InferenceScheme and add it to the inference scheme array") do
+        fg = FactorGraph()
+        t1 = TerminalNode()
+        t2 = TerminalNode()
+        edge = Edge(t1.out, t2.out)
+        scheme = InferenceScheme(fg) # Build new inference scheme and add to graph
+        @fact typeof(scheme) => InferenceScheme
+        @fact length(fg.inference_schemes) => 2 # Add to scheme list
+        @fact fg.active_scheme => scheme # Set as active scheme
+        @fact scheme.factorization[1].internal_edges => Set{Edge}({edge})
+        @fact scheme.factorization[1].nodes => Set{Node}({t1, t2})
+        @fact scheme.edge_to_subgraph => {edge => scheme.factorization[1]}
+    end
+
+    context("Subgraph() should initialize a subgraph") do
+        scheme = InferenceScheme()
         sg = Subgraph()
         @fact typeof(sg) => Subgraph
         @fact typeof(sg.internal_schedule) => Schedule
         @fact typeof(sg.external_schedule) => ExternalSchedule
-        graph = currentGraph()
-        @fact graph.factorization[2] => sg
+        @fact length(scheme.factorization) => 1 # Do not add to factorization
+    end
+
+    context("Subgraph(::InferenceScheme) should initialize a subgraph and add it to the inference scheme factorization") do
+        scheme = InferenceScheme()
+        sg = Subgraph(scheme)
+        @fact typeof(sg) => Subgraph
+        @fact length(scheme.factorization) => 2 # Add to factorization
     end
 
     context("currentGraph() should return a current graph object") do
@@ -40,8 +77,8 @@ facts("Graph level unit tests") do
         (t1, a1, g1, t2, add1, g2) = initializeFactoringGraph()
         factorize!(Set{Edge}([t2.out.edge]))
         graph = currentGraph()
-        @fact subgraph(t1.out.edge) => graph.factorization[1]
-        @fact subgraph(t2.out.edge) => graph.factorization[2]
+        @fact subgraph(t1.out.edge) => graph.active_scheme.factorization[1]
+        @fact subgraph(t2.out.edge) => graph.active_scheme.factorization[2]
     end
 
     context("node(name::String) should return node with matching name") do
@@ -103,7 +140,7 @@ facts("Graph level integration tests") do
     context("conformSubGraph!() should complete a subgraph with nodes and external edges based in its internal edges") do
         my_graph = FactorGraph()
         # On empty subgraph
-        my_subgraph = my_graph.factorization[1]
+        my_subgraph = my_graph.active_scheme.factorization[1]
         @fact length(my_subgraph.internal_edges) => 0
         ForneyLab.conformSubgraph!(my_subgraph)
         @fact length(my_subgraph.nodes) => 0
@@ -142,16 +179,16 @@ facts("Graph level integration tests") do
         y2_subgraph = subgraph(g_nodes[2].out.edge)
         y3_subgraph = subgraph(g_nodes[3].out.edge)
 
-        @fact length(graph.approximate_marginals) => 9
-        @fact graph.approximate_marginals[(g_nodes[1], m_subgraph)] => vague(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[2], m_subgraph)] => vague(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[3], m_subgraph)] => vague(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[1], gam_subgraph)] => vague(GammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[2], gam_subgraph)] => vague(GammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[3], gam_subgraph)] => vague(GammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => vague(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => vague(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => vague(GaussianDistribution)
+        @fact length(graph.active_scheme.approximate_marginals) => 9
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[1], m_subgraph)] => vague(GaussianDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[2], m_subgraph)] => vague(GaussianDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[3], m_subgraph)] => vague(GaussianDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[1], gam_subgraph)] => vague(GammaDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[2], gam_subgraph)] => vague(GammaDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[3], gam_subgraph)] => vague(GammaDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[1], y1_subgraph)] => vague(GaussianDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[2], y2_subgraph)] => vague(GaussianDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[3], y3_subgraph)] => vague(GaussianDistribution)
 
         # Structured case
         (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
@@ -166,13 +203,13 @@ facts("Graph level integration tests") do
         y2_subgraph = subgraph(g_nodes[2].out.edge)
         y3_subgraph = subgraph(g_nodes[3].out.edge)
 
-        @fact length(graph.approximate_marginals) => 6
-        @fact graph.approximate_marginals[(g_nodes[1], m_gam_subgraph)] => vague(NormalGammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[2], m_gam_subgraph)] => vague(NormalGammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[3], m_gam_subgraph)] => vague(NormalGammaDistribution)
-        @fact graph.approximate_marginals[(g_nodes[1], y1_subgraph)] => vague(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[2], y2_subgraph)] => vague(GaussianDistribution)
-        @fact graph.approximate_marginals[(g_nodes[3], y3_subgraph)] => vague(GaussianDistribution)
+        @fact length(graph.active_scheme.approximate_marginals) => 6
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[1], m_gam_subgraph)] => vague(NormalGammaDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[2], m_gam_subgraph)] => vague(NormalGammaDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[3], m_gam_subgraph)] => vague(NormalGammaDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[1], y1_subgraph)] => vague(GaussianDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[2], y2_subgraph)] => vague(GaussianDistribution)
+        @fact graph.active_scheme.approximate_marginals[(g_nodes[3], y3_subgraph)] => vague(GaussianDistribution)
     end
 
     context("nodes() should return an array of all nodes in the graph") do
@@ -185,7 +222,7 @@ facts("Graph level integration tests") do
         end
 
         # Subgraph test
-        found_nodes = nodes(currentGraph().factorization[1])
+        found_nodes = nodes(currentGraph().active_scheme.factorization[1])
         @fact length(found_nodes) => length(testnodes)
         for node in testnodes
             @fact node in found_nodes => true
@@ -209,7 +246,7 @@ facts("Graph level integration tests") do
         (t1, a1, g1, t2, t3) = initializeFactoringGraphWithoutLoop()
         graph = currentGraph()
         factorize!(graph)
-        sg = graph.factorization[1]
+        sg = graph.active_scheme.factorization[1]
         @fact edges(sg, include_external=false) => Set{Edge}({g1.variance.edge})
         @fact edges(sg) => Set{Edge}({g1.variance.edge, g1.out.edge, g1.mean.edge})
     end

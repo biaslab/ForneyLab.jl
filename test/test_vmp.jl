@@ -17,7 +17,7 @@ facts("Naive VMP implementation integration tests") do
         factorize!()
 
         graph = currentGraph()
-        for subgraph in graph.factorization
+        for subgraph in graph.active_scheme.factorization
             generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
 
@@ -108,7 +108,7 @@ facts("Structured VMP implementation integration tests") do
         factorize!(Set{Edge}([y_edge]))
 
         graph = currentGraph()
-        for subgraph in graph.factorization
+        for subgraph in graph.active_scheme.factorization
             generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
 

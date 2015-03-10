@@ -49,15 +49,15 @@ facts("generateSchedule() integration tests") do
             (t1, a1, g1, t2, t3) = initializeFactoringGraphWithoutLoop()
             factorize!(Set{Edge}([t2.out.edge])) # Put this edge in a different subgraph
             graph = currentGraph()
-            for subgraph in graph.factorization
+            for subgraph in graph.active_scheme.factorization
                 generateSchedule!(subgraph)
                 @fact length(unique(subgraph.internal_schedule)) => length(subgraph.internal_schedule) # No duplicate entries in schedule
             end
             # There are multiple valid schedules because of different orderings. Validity or schedule order is not checked here.
-            @fact graph.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [t1.out, a1.out, t3.out])
-            @fact graph.factorization[2].internal_schedule => ForneyLab.convert(Schedule, [t2.out, t2.out.partner])
-            @fact graph.factorization[1].external_schedule => [g1]
-            @fact graph.factorization[2].external_schedule => [g1]
+            @fact graph.active_scheme.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [t1.out, a1.out, t3.out])
+            @fact graph.active_scheme.factorization[2].internal_schedule => ForneyLab.convert(Schedule, [t2.out, t2.out.partner])
+            @fact graph.active_scheme.factorization[1].external_schedule => [g1]
+            @fact graph.active_scheme.factorization[2].external_schedule => [g1]
         end
 
         context("Should generate a schedule that propagates messages to timewraps when called on a subgraph") do
@@ -65,11 +65,11 @@ facts("generateSchedule() integration tests") do
             node_t1 = TerminalNode()
             node_t2 = TerminalNode()
             e = Edge(node_t1, node_t2)
-            generateSchedule!(g.factorization[1])
-            @fact g.factorization[1].internal_schedule => Array(ScheduleEntry, 0)
+            generateSchedule!(g.active_scheme.factorization[1])
+            @fact g.active_scheme.factorization[1].internal_schedule => Array(ScheduleEntry, 0)
             setTimeWrap(node_t1, node_t2)
-            generateSchedule!(g.factorization[1])
-            @fact g.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [node_t1.out.partner])
+            generateSchedule!(g.active_scheme.factorization[1])
+            @fact g.active_scheme.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [node_t1.out.partner])
         end
 
         context("Should include backward messages when there is only one internal interface connected to an external node") do
@@ -80,7 +80,7 @@ facts("generateSchedule() integration tests") do
             factorize!(Set{Edge}([y_edge]))
 
             graph = currentGraph()
-            for subgraph in graph.factorization
+            for subgraph in graph.active_scheme.factorization
                 generateSchedule!(subgraph) # Generate internal and external schedule automatically
             end
 

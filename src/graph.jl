@@ -1,4 +1,5 @@
 export  FactorGraph,
+        InferenceScheme,
         Subgraph
 
 export  currentGraph,
@@ -19,20 +20,10 @@ type Subgraph
     external_schedule::ExternalSchedule # Schedule for updates on nodes connected to external edges (Dauwels step 3)
 end
 
-function show(io::IO, subgraph::Subgraph)
-    graph = currentGraph()
-    println(io, "Subgraph $(findfirst(graph.factorization, subgraph))")
-    println(io, " # nodes: $(length(subgraph.nodes))")
-    println(io, " # internal edges: $(length(subgraph.internal_edges))")
-    println(io, " # external edges: $(length(subgraph.external_edges))")
-    println(io, "\nSee also:")
-    println(io, " draw(::SubGraph)")
-    println(io, " show(nodes(::SubGraph))")
-    println(io, " show(edges(::SubGraph))")
-end
-
-type FactorGraph
-    factorization::Vector{Subgraph} # References to subgraphs
+type InferenceScheme
+    # An inference scheme holds all attributes that are required to answer one inference question
+    name::ASCIIString
+    factorization::Vector{Subgraph} # References to the graphs factorization required for anwering this inference question
     edge_to_subgraph::Dict{Edge, Subgraph} # Fast lookup for edge to subgraph in which edge is internal; also determines the ordering of edges
     approximate_marginals::Dict{(Node, Subgraph), ProbabilityDistribution} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
     read_buffers::Dict{TerminalNode, Vector}
@@ -40,52 +31,121 @@ type FactorGraph
     time_wraps::Vector{(TerminalNode, TerminalNode)}
 end
 
-function show(io::IO, factor_graph::FactorGraph)
-    nodes_top = nodes(factor_graph, open_composites=false)
-    println(io, "FactorGraph")
-    println(io, " # nodes: $(length(nodes_top)) ($(length(nodes(factor_graph))) including child nodes)")
-    println(io, " # edges (top level): $(length(edges(nodes_top)))")
-    println(io, " # factors: $(length(factor_graph.factorization))")
-    println(io, "\nSee also:")
-    println(io, " draw(::FactorGraph)")
-    println(io, " show(nodes(::FactorGraph))")
-    println(io, " show(edges(::FactorGraph))")
+type FactorGraph
+    nodes::Set{Node}
+    edges::Set{Edge}
+    inference_schemes::Array{InferenceScheme, 1}
+    active_scheme::InferenceScheme
+end
+
+function Subgraph()
+    # Construct an empty subgraph.
+    # The result is not added to the scheme factorization
+    Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
+end
+
+function InferenceScheme(;name="unnamed")
+    # Construct an empty inference scheme.
+    # The result is not added to the graph's inference scheme list
+    InferenceScheme(name,
+                    [Subgraph()],
+                    Dict{Edge, Subgraph}(), 
+                    Dict{(Node, Subgraph), ProbabilityDistribution}(),
+                    Dict{TerminalNode, Vector}(),
+                    Dict{Union(Edge,Interface), Vector}(),
+                    Array((TerminalNode, TerminalNode), 0))
 end
 
 # Create an empty graph
-global current_graph = FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))],
-                                   Dict{Edge, Subgraph}(),
-                                   Dict{(Node, Subgraph), ProbabilityDistribution}(),
-                                   Dict{TerminalNode, Vector}(),
-                                   Dict{Union(Edge,Interface), Vector}(),
-                                   Array((TerminalNode, TerminalNode), 0))
+global current_graph = FactorGraph( Set{Node}(),
+                                    Set{Edge}(),
+                                    [scheme=InferenceScheme()],
+                                    scheme)
 
 currentGraph() = current_graph::FactorGraph
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
-FactorGraph() = setCurrentGraph(FactorGraph([Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))],
-                                            Dict{Edge, Subgraph}(),
-                                            Dict{(Node, Subgraph), ProbabilityDistribution}(),
-                                            Dict{TerminalNode, Vector}(),
-                                            Dict{Union(Edge,Interface), Vector}(),
-                                            Array((TerminalNode, TerminalNode), 0))) # Initialize a new factor graph; automatically sets current_graph
+FactorGraph() = setCurrentGraph(FactorGraph(Set{Node}(),
+                                            Set{Edge}(),
+                                            [scheme=InferenceScheme()],
+                                            scheme)) # Initialize a new factor graph; automatically sets current_graph and active scheme
 
-function Subgraph() # Construct and add to current graph
-    subgraph = Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
-    graph = currentGraph()
-    push!(graph.factorization, subgraph)
+# activeScheme(graph::FactorGraph=currentGraph()) = graph.active_scheme
+# function setActiveScheme(scheme::InferenceScheme, graph::FactorGraph=currentGraph())
+#     scheme in graph.inference_schemes || error("Argument inference scheme is not in the argument graph's list of interface schemes") 
+#     graph.active_scheme = scheme
+# end
+# function setActiveScheme(name::ASCIIString, graph::FactorGraph=currentGraph())
+#     for scheme in graph.inference_schemes
+#         if name == scheme.name
+#             graph.active_scheme = scheme
+#             return scheme
+#         end
+#     end
+#     error("Inference scheme $(name) not found in argument graph's list of inference schemes")
+# end
+
+function InferenceScheme(graph::FactorGraph; name="unnamed")
+    # Initializes a new inference scheme with one subgraph, adds it to the graph and sets it as the new active scheme
+    scheme = InferenceScheme()
+
+    # Initialize only subgraph from graph definition
+    subgraph = scheme.factorization[1]
+    subgraph.nodes = nodes(graph)
+    subgraph.internal_edges = edges(graph)
+    for edge in edges(graph)
+        merge!(scheme.edge_to_subgraph, {edge=>subgraph})
+    end
+
+    push!(graph.inference_schemes, scheme) # Add scheme to graph inference scheme list
+    graph.active_scheme = scheme # Set scheme as the active scheme
+    return scheme
+end
+
+function Subgraph(scheme::InferenceScheme)
+    # Creates a new subgraph and adds it to the inference scheme factorization
+    subgraph = Subgraph()
+    push!(scheme.factorization, subgraph)
     return subgraph
 end
 
-function ensureMarginal!(node::Node, subgraph::Subgraph, graph::FactorGraph, assign_distribution::DataType)
+# TODO: review!!
+# function show(io::IO, subgraph::Subgraph)
+#     graph = currentGraph()
+#     println(io, "Subgraph $(findfirst(graph.active_scheme.factorization, subgraph))")
+#     println(io, " # nodes: $(length(subgraph.nodes))")
+#     println(io, " # internal edges: $(length(subgraph.internal_edges))")
+#     println(io, " # external edges: $(length(subgraph.external_edges))")
+#     println(io, "\nSee also:")
+#     println(io, " draw(::SubGraph)")
+#     println(io, " show(nodes(::SubGraph))")
+#     println(io, " show(edges(::SubGraph))")
+# end
+
+
+
+# function show(io::IO, factor_graph::FactorGraph)
+#     nodes_top = nodes(factor_graph, open_composites=false)
+#     println(io, "FactorGraph")
+#     println(io, " # nodes: $(length(nodes_top)) ($(length(nodes(factor_graph))) including child nodes)")
+#     println(io, " # edges (top level): $(length(edges(nodes_top)))")
+#     println(io, " # inference schemes: $(length(factor_graph.inference_schemes))")
+#     println(io, "\nSee also:")
+#     println(io, " draw(::FactorGraph)")
+#     println(io, " show(nodes(::FactorGraph))")
+#     println(io, " show(edges(::FactorGraph))")
+# end
+
+
+function ensureMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme, assign_distribution::DataType)
     # Looks for a marginal in the node-subgraph dictionary.
     # If no marginal is present, it sets and returns a vague distribution.
     # Otherwise, it returns the existing marginal. Used for fast marginal calculations.
     try
-        return graph.approximate_marginals[(node, subgraph)]
+        return scheme.approximate_marginals[(node, subgraph)]
     catch
         if assign_distribution <: ProbabilityDistribution
-            return graph.approximate_marginals[(node, subgraph)] = vague(assign_distribution)
+            return scheme.approximate_marginals[(node, subgraph)] = vague(assign_distribution)
         else
             error("Cannot create a marginal of type $(assign_distribution) since a marginal should be <: ProbabilityDistribution")
         end
@@ -108,10 +168,10 @@ function conformSubgraph!(subgraph::Subgraph)
 end
 
 # Get the subgraph in which internal_edge is internal
-subgraph(graph::FactorGraph, internal_edge::Edge) = graph.edge_to_subgraph[internal_edge]
-subgraph(internal_edge::Edge) = subgraph(currentGraph(), internal_edge)
+subgraph(scheme::InferenceScheme, internal_edge::Edge) = scheme.edge_to_subgraph[internal_edge]
+subgraph(internal_edge::Edge) = subgraph(currentGraph().active_scheme, internal_edge)
 
-function nodesConnectedToExternalEdges(graph::FactorGraph, subgraph::Subgraph)
+function nodesConnectedToExternalEdges(subgraph::Subgraph)
     # Find nodes connected to external edges
     nodes_connected_to_external = Array(Node, 0)
     for external_edge in subgraph.external_edges
@@ -126,16 +186,15 @@ function nodesConnectedToExternalEdges(graph::FactorGraph, subgraph::Subgraph)
     end
     return nodes_connected_to_external
 end
-nodesConnectedToExternalEdges(subgraph::Subgraph) = nodesConnectedToExternalEdges(currentGraph(), subgraph)
 
-function setVagueMarginals!(graph::FactorGraph=currentGraph())
+function setVagueMarginals!(scheme::InferenceScheme=currentGraph().active_scheme)
     # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
-    for subgraph in graph.factorization
-        external_nodes = nodesConnectedToExternalEdges(graph, subgraph)
+    for subgraph in scheme.factorization
+        external_nodes = nodesConnectedToExternalEdges(subgraph)
         for node in external_nodes
             internal_interfaces = Array(Interface, 0)
             for interface in node.interfaces
-                if graph.edge_to_subgraph[interface.edge] == subgraph
+                if scheme.edge_to_subgraph[interface.edge] == subgraph
                     push!(internal_interfaces, interface)
                 end
             end
@@ -154,11 +213,11 @@ function setVagueMarginals!(graph::FactorGraph=currentGraph())
                 internal_incoming_message_types = [interface.edge.distribution_type for interface in internal_interfaces]
                 marginal_type = getMarginalType(internal_incoming_message_types...)
             end
-            graph.approximate_marginals[(node, subgraph)] = vague(marginal_type)
+            scheme.approximate_marginals[(node, subgraph)] = vague(marginal_type)
         end
     end
 
-    return graph
+    return scheme
 end
 
 # Functions to clear ALL MESSAGES in the graph
@@ -211,10 +270,7 @@ end
 
 function nodes(graph::FactorGraph; open_composites::Bool=true)
     # Return all nodes in graph
-    all_nodes = Set{Node}()
-    for subgraph in graph.factorization
-        union!(all_nodes, subgraph.nodes)
-    end
+    all_nodes = copy(graph.nodes)
 
     if open_composites
         children = Set{Node}()
@@ -243,11 +299,7 @@ end
 
 function edges(graph::FactorGraph)
     # Return the set of all edges in graph
-    edge_set = Set{Edge}()
-    for subgraph in graph.factorization
-        union!(edge_set, subgraph.internal_edges)
-    end
-    return edge_set
+    return copy(graph.edges)
 end
 edges(;args...) = edges(currentGraph())
 
@@ -255,7 +307,7 @@ function edges(subgraph::Subgraph; include_external=true)
     if include_external
         return union(subgraph.internal_edges, subgraph.external_edges)
     else
-        return subgraph.internal_edges
+        return copy(subgraph.internal_edges)
     end
 end
 
@@ -313,7 +365,7 @@ function extend(edge_set::Set{Edge})
 end
 extend(edge::Edge) = extend(Set{Edge}([edge]))
 
-function factorize!(graph::FactorGraph, edge_set::Set{Edge})
+function factorize!(scheme::InferenceScheme, edge_set::Set{Edge})
     # The set of internal edges needs to be extended to envelope deterministic nodes
     internal_edges = extend(edge_set)
 
@@ -326,18 +378,18 @@ function factorize!(graph::FactorGraph, edge_set::Set{Edge})
     end
 
     # Add a subgraph containing the edges specified in internal_edges and conform
-    for subgraph in graph.factorization
+    for subgraph in scheme.factorization
         setdiff!(subgraph.internal_edges, internal_edges) # Remove edges from existing subgraph
     end
     new_subgraph = Subgraph(copy(connected_nodes), copy(internal_edges), Set{Edge}(), Array(Interface, 0), Array(Node, 0)) # Create subgraph
-    push!(graph.factorization, new_subgraph) # Add to current graph
+    push!(scheme.factorization, new_subgraph) # Add to current scheme
     for internal_edge in internal_edges # Point edges to new subgraph in which they are internal
-        graph.edge_to_subgraph[internal_edge] = new_subgraph
+        scheme.edge_to_subgraph[internal_edge] = new_subgraph
     end
-    for (subgraph_index, subgraph) in enumerate(graph.factorization)
+    for (subgraph_index, subgraph) in enumerate(scheme.factorization)
         # Remove empty subgraphs
         if length(subgraph.internal_edges) == 0
-            splice!(graph.factorization, subgraph_index)
+            splice!(scheme.factorization, subgraph_index)
             continue
         end
         # Update the external edges and node list
@@ -345,24 +397,25 @@ function factorize!(graph::FactorGraph, edge_set::Set{Edge})
     end
     return new_subgraph
 end
-factorize!(internal_edges::Set{Edge}) = factorize!(currentGraph(), internal_edges)
+factorize!(internal_edges::Set{Edge}) = factorize!(currentGraph().active_scheme, internal_edges)
 factorize!(internal_edge::Edge) = factorize!(Set{Edge}([internal_edge]))
-factorize!(graph::FactorGraph, edge::Edge) = factorize!(graph, Set{Edge}([edge]))
-factorize!(graph::FactorGraph, internal_edges::Array{Edge, 1}) = factorize!(graph, Set{Edge}(internal_edges))
-factorize!(internal_edges::Array{Edge, 1}) = factorize!(currentGraph(), internal_edges)
+factorize!(scheme::InferenceScheme, edge::Edge) = factorize!(scheme, Set{Edge}([edge]))
+factorize!(scheme::InferenceScheme, internal_edges::Array{Edge, 1}) = factorize!(scheme, Set{Edge}(internal_edges))
+factorize!(internal_edges::Array{Edge, 1}) = factorize!(currentGraph().active_scheme, internal_edges)
 
-function factorize!(graph::FactorGraph)
+function factorize!(scheme::InferenceScheme=currentGraph().active_scheme)
     # Generate a mean field factorization
-    (length(graph.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized graph.")
-    edges_to_factor = sort!([e for e in graph.factorization[1].internal_edges]) # Cast to array and sort
+    (length(scheme.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized inference scheme.")
+    edges_to_factor = sort!([e for e in scheme.factorization[1].internal_edges]) # Cast to array and sort
     while length(edges_to_factor) > 0 # As long as there are edges to factor
-        subgraph = factorize!(graph, edges_to_factor[end])
+        subgraph = factorize!(scheme, edges_to_factor[end])
 
         # Remove all edges in edge_cluster from edges_to_factor, they have just been added to the same factor
         for e in subgraph.internal_edges
             splice!(edges_to_factor, findfirst(edges_to_factor, e))
         end
     end
-    return graph
+    return scheme
 end
-factorize!() = factorize!(currentGraph())
+factorize!(graph::FactorGraph) = factorize!(graph.active_scheme)
+factorize!() = factorize!(currentGraph().active_scheme)

@@ -14,33 +14,33 @@ facts("Factorization integration tests") do
             (t1, a1, g1, t2, add1, g2) = initializeFactoringGraph()
             factorize!(Set{Edge}([t2.out.edge]))
             graph = currentGraph()
-            @fact graph.factorization[2].nodes => Set{Node}({t2, g1})
-            @fact graph.factorization[2].internal_edges => Set{Edge}({t2.out.edge})
-            @fact graph.factorization[2].external_edges => Set{Edge}({g1.mean.edge, g1.out.edge})
-            @fact graph.factorization[1].nodes => Set{Node}({t1, a1, g1, add1, g2})
-            @fact graph.factorization[1].internal_edges => Set{Edge}({t1.out.edge, a1.out.edge, g1.out.edge, add1.out.edge, g2.out.edge})
-            @fact graph.factorization[1].external_edges => Set{Edge}({t2.out.edge})
+            @fact graph.active_scheme.factorization[2].nodes => Set{Node}({t2, g1})
+            @fact graph.active_scheme.factorization[2].internal_edges => Set{Edge}({t2.out.edge})
+            @fact graph.active_scheme.factorization[2].external_edges => Set{Edge}({g1.mean.edge, g1.out.edge})
+            @fact graph.active_scheme.factorization[1].nodes => Set{Node}({t1, a1, g1, add1, g2})
+            @fact graph.active_scheme.factorization[1].internal_edges => Set{Edge}({t1.out.edge, a1.out.edge, g1.out.edge, add1.out.edge, g2.out.edge})
+            @fact graph.active_scheme.factorization[1].external_edges => Set{Edge}({t2.out.edge})
         end
 
         context("Should update the edge_to_subgraph mapping for the graph") do
             (t1, a1, g1, t2, add1, g2) = initializeFactoringGraph()
             factorize!(Set{Edge}([t2.out.edge]))
             graph = currentGraph()
-            @fact graph.edge_to_subgraph[t1.out.edge] => graph.factorization[1]
-            @fact graph.edge_to_subgraph[a1.out.edge] => graph.factorization[1]
-            @fact graph.edge_to_subgraph[g1.out.edge] => graph.factorization[1]
-            @fact graph.edge_to_subgraph[t2.out.edge] => graph.factorization[2]
-            @fact graph.edge_to_subgraph[add1.out.edge] => graph.factorization[1]
-            @fact graph.edge_to_subgraph[g2.out.edge] => graph.factorization[1]
+            @fact graph.active_scheme.edge_to_subgraph[t1.out.edge] => graph.active_scheme.factorization[1]
+            @fact graph.active_scheme.edge_to_subgraph[a1.out.edge] => graph.active_scheme.factorization[1]
+            @fact graph.active_scheme.edge_to_subgraph[g1.out.edge] => graph.active_scheme.factorization[1]
+            @fact graph.active_scheme.edge_to_subgraph[t2.out.edge] => graph.active_scheme.factorization[2]
+            @fact graph.active_scheme.edge_to_subgraph[add1.out.edge] => graph.active_scheme.factorization[1]
+            @fact graph.active_scheme.edge_to_subgraph[g2.out.edge] => graph.active_scheme.factorization[1]
         end
 
         context("Should not factorize a GaussianNode with fixed mean and variance") do
             (t, gain, gauss) = initializeGaussianFactoringGraph()
             factorize!(Set{Edge}([t.out.edge]))
             graph = currentGraph()
-            @fact length(graph.factorization) => 1
-            @fact graph.edge_to_subgraph[t.out.edge] => graph.factorization[1]
-            @fact graph.edge_to_subgraph[gauss.out.edge] => graph.factorization[1]
+            @fact length(graph.active_scheme.factorization) => 1
+            @fact graph.active_scheme.edge_to_subgraph[t.out.edge] => graph.active_scheme.factorization[1]
+            @fact graph.active_scheme.edge_to_subgraph[gauss.out.edge] => graph.active_scheme.factorization[1]
         end
 
         context("Should retain node names") do
@@ -68,7 +68,7 @@ facts("Factorization integration tests") do
                 push!(m_set, interface.edge)
             end
         end
-        @fact length(graph.factorization) => 5
+        @fact length(graph.active_scheme.factorization) => 5
 
         @fact subgraph(g_nodes[1].mean.edge).internal_edges => m_set 
         @fact subgraph(g_nodes[1].precision.edge).internal_edges => gam_set 

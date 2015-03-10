@@ -5,56 +5,48 @@ export  setReadBuffer,
         clearTimeWraps,
         step
 
-function setReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=currentGraph())
-    (node in nodes(graph)) || error("The specified node is not part of the current or specified graph")
-    graph.read_buffers[node] = buffer
+function setReadBuffer(node::TerminalNode, buffer::Vector, scheme::InferenceScheme=currentGraph().active_scheme)
+    #(node in nodes(graph)) || error("The specified node is not part of the current or specified graph")
+    scheme.read_buffers[node] = buffer
 end
 
-function setWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
-    (interface.node in nodes(graph)) || error("The specified interface is not part of the current or specified graph")
-    graph.write_buffers[interface] = buffer # Write buffer for message
+function setWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), scheme::InferenceScheme=currentGraph().active_scheme)
+    #(interface.node in nodes(graph)) || error("The specified interface is not part of the current or specified graph")
+    scheme.write_buffers[interface] = buffer # Write buffer for message
 end
 
-function setWriteBuffer(edge::Edge, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
-    (edge in edges(graph)) || error("The specified edge is not part of the current or specified graph")
-    graph.write_buffers[edge] = buffer # Write buffer for marginal
+function setWriteBuffer(edge::Edge, buffer::Vector=Array(ProbabilityDistribution,0), scheme::InferenceScheme=currentGraph().active_scheme)
+    #(edge in edges(graph)) || error("The specified edge is not part of the current or specified graph")
+    scheme.write_buffers[edge] = buffer # Write buffer for marginal
 end
 
-function clearBuffers(graph::FactorGraph=currentGraph())
-    graph.read_buffers = Dict{TerminalNode, Vector}()
-    graph.write_buffers = Dict{Union(Edge,Interface), Vector}()
-    return graph
+function clearBuffers(scheme::InferenceScheme=currentGraph().active_scheme)
+    scheme.read_buffers = Dict{TerminalNode, Vector}()
+    scheme.write_buffers = Dict{Union(Edge,Interface), Vector}()
+    return scheme
 end
 
-function setTimeWrap(from::TerminalNode, to::TerminalNode, storage_graph::FactorGraph=currentGraph())
-    # (from in nodes(graph)) || error("The specified 'from' node is not part of the current or specified graph")
-    # (to in nodes(graph)) || error("The specified 'to' node is not part of the current or specified graph")
+function setTimeWrap(from::TerminalNode, to::TerminalNode, storage_scheme::InferenceScheme=currentGraph().active_scheme)
     !is(from, to) || error("Cannot create time wrap: from and to must be different nodes")
-    # Verify that from and to are not already in a time wrap
-    # for time_wrap in graph.time_wraps
-    #     !(from in time_wrap) || error("Node $(from) is already in another time wrap")
-    #     !(to in time_wrap) || error("Node $(to) is already in another time wrap")
-    # end
-
-    push!(storage_graph.time_wraps, (from, to))
+    push!(storage_scheme.time_wraps, (from, to))
 end
 
-clearTimeWraps(graph::FactorGraph=currentGraph()) = (graph.time_wraps = Array((TerminalNode, TerminalNode), 0))
+clearTimeWraps(scheme::InferenceScheme=graph.currentGraph().active_scheme) = (scheme.time_wraps = Array((TerminalNode, TerminalNode), 0))
 
-function step(graph::FactorGraph=currentGraph(); n_iterations::Int64=1)
+function step(scheme::InferenceScheme=currentGraph().active_scheme; n_iterations::Int64=1)
     # Reset marginals
-    setVagueMarginals!(graph)
+    setVagueMarginals!(scheme)
     # Read buffers
-    for (terminal_node, read_buffer) in graph.read_buffers
+    for (terminal_node, read_buffer) in scheme.read_buffers
         !isempty(read_buffer) || error("Read buffer for node $(terminal_node) is empty")
         terminal_node.value = shift!(read_buffer) # pick the first element off the read_buffer
     end
     # Execute schedule
     for iteration = 1:n_iterations
-        execute(graph)
+        execute(scheme)
     end
     # Write buffers
-    for (component, write_buffer) in graph.write_buffers
+    for (component, write_buffer) in scheme.write_buffers
         if typeof(component) == Interface
             isdefined(component.message, :payload) || error("Cannot write message payload to buffer since there is no message present on $(component)")
             push!(write_buffer, deepcopy(component.message.payload))
@@ -63,8 +55,9 @@ function step(graph::FactorGraph=currentGraph(); n_iterations::Int64=1)
         end
     end
     # Time wrap
-    for (from, to) in graph.time_wraps
+    for (from, to) in scheme.time_wraps
         isdefined(from.out.partner.message, :payload) || error("There is no message to move to $(to) for the next timestep")
         to.value = deepcopy(from.out.partner.message.payload)
     end
 end
+step(graph::FactorGraph; n_iterations::Int64=1) = step(graph.active_scheme; n_iterations=n_iterations)

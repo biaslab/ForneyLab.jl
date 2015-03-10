@@ -6,7 +6,7 @@ using LaTeXStrings
 
 export Node, CompositeNode, ProbabilityDistribution
 export sumProduct!
-export vague, ==
+export vague, expectation, self, ==
 export current_graph
 
 # Verbosity
@@ -75,6 +75,7 @@ include("visualization.jl")
 
 # Functions for message post-processing
 vague(dist::ProbabilityDistribution) = vague(typeof(dist))
-mean_delta(dist::ProbabilityDistribution) = DeltaDistribution(mean(dist))
+expectation(dist::ProbabilityDistribution) = DeltaDistribution(mean(dist))
+self(x::Any) = x
 
 end # module ForneyLab

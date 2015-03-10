@@ -4,13 +4,13 @@ export  calculateMessage!,
         execute,
         clearMessages!
 
-function calculateMessage!(outbound_interface::Interface, graph::FactorGraph=currentGraph())
+function calculateMessage!(outbound_interface::Interface, scheme::InferenceScheme=currentGraph().active_scheme)
     # Calculate the outbound message on a specific interface by generating a schedule and executing it.
     # The resulting message is stored in the specified interface and returned.
 
     # Generate a message passing schedule
     printVerbose("Auto-generating message passing schedule...\n")
-    schedule = generateSchedule!(outbound_interface, graph)
+    schedule = generateSchedule!(outbound_interface, scheme)
     if verbose show(schedule) end
 
     # Execute the schedule
@@ -21,11 +21,11 @@ function calculateMessage!(outbound_interface::Interface, graph::FactorGraph=cur
     return outbound_interface.message
 end
 
-function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, node::Node, inbound_interface::Interface, outbound_interface::Interface)
+function pushRequiredInbound!(scheme::InferenceScheme, inbound_array::Array{Any,1}, node::Node, inbound_interface::Interface, outbound_interface::Interface)
     # Push the inbound message or marginal on inbound_interface, depending on the local graph structure.
 
-    if !haskey(graph.edge_to_subgraph, inbound_interface.edge) || !haskey(graph.edge_to_subgraph, outbound_interface.edge)
-        # Inbound and/or outbound edge is not explicitly listed in the graph.
+    if !haskey(scheme.edge_to_subgraph, inbound_interface.edge) || !haskey(scheme.edge_to_subgraph, outbound_interface.edge)
+        # Inbound and/or outbound edge is not explicitly listed in the scheme.
         # This is possible if one of those edges is internal to a composite node.
         # We will default to sum-product message passing, and consume the message on the inbound interface.
         # Composite nodes with explicit message passing will throw an error when one of their external interfaces belongs to a different subgraph, so it is safe to assume sum-product.
@@ -36,8 +36,8 @@ function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, n
         end
     end
 
-    inbound_subgraph = graph.edge_to_subgraph[inbound_interface.edge]
-    outbound_subgraph = graph.edge_to_subgraph[outbound_interface.edge]
+    inbound_subgraph = scheme.edge_to_subgraph[inbound_interface.edge]
+    outbound_subgraph = scheme.edge_to_subgraph[outbound_interface.edge]
 
     # Should we require the inbound message or marginal?
     if is(inbound_subgraph, outbound_subgraph)
@@ -50,7 +50,7 @@ function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, n
     else
         # A subgraph border is crossed, require marginal
         try
-            push!(inbound_array, graph.approximate_marginals[(node, inbound_subgraph)])
+            push!(inbound_array, scheme.approximate_marginals[(node, inbound_subgraph)])
         catch
             error("Missing approximate marginal for $(inbound_interface)")
         end
@@ -58,7 +58,7 @@ function pushRequiredInbound!(graph::FactorGraph, inbound_array::Array{Any,1}, n
 
 end
 
-function execute(schedule_entry::ScheduleEntry, graph::FactorGraph=currentGraph())
+function execute(schedule_entry::ScheduleEntry, scheme::InferenceScheme=currentGraph().active_scheme)
     # Calculate the outbound message based on the inbound messages and the message calculation rule.
     # The resulting message is stored in the specified interface and is returned.
 
@@ -80,7 +80,7 @@ function execute(schedule_entry::ScheduleEntry, graph::FactorGraph=currentGraph(
         else
             # Inbound message or marginal is required
             # Put the required inbound message or edge/node marginal for the inbound interface in inbound_array
-            pushRequiredInbound!(graph, inbound_array, node, interface, outbound_interface)
+            pushRequiredInbound!(scheme, inbound_array, node, interface, outbound_interface)
         end
     end
 
@@ -108,7 +108,7 @@ calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
 calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
 # Execute schedules
-function execute(schedule::Any, graph::FactorGraph=currentGraph())
+function execute(schedule::Any, scheme::InferenceScheme=currentGraph().active_scheme)
     # Execute a message passing schedule
     !isempty(schedule) || error("Cannot execute an empty schedule")
 
@@ -119,28 +119,29 @@ function execute(schedule::Any, graph::FactorGraph=currentGraph())
     end
 
     for schedule_entry in schedule
-        execute(schedule_entry, graph)
+        execute(schedule_entry, scheme)
     end
     # Return the last message in the schedule
     return schedule[end].interface.message
 end
-function execute(schedule::ExternalSchedule, subgraph::Subgraph, graph::FactorGraph=currentGraph())
+function execute(schedule::ExternalSchedule, subgraph::Subgraph, scheme::InferenceScheme=currentGraph().active_scheme)
     # Execute a marginal update schedule
     for entry in schedule
-        calculateMarginal!(entry, subgraph, graph)
+        calculateMarginal!(entry, subgraph, scheme)
     end
 end
-function execute(subgraph::Subgraph, graph::FactorGraph=currentGraph())
-    printVerbose("Subgraph $(findfirst(graph.factorization, subgraph)):")
+function execute(subgraph::Subgraph, scheme::InferenceScheme=currentGraph().active_scheme)
+    printVerbose("Subgraph $(findfirst(scheme.factorization, subgraph)):")
     execute(subgraph.internal_schedule)
-    execute(subgraph.external_schedule, subgraph, graph)
+    execute(subgraph.external_schedule, subgraph, scheme)
 end
 
-function execute(graph::FactorGraph=currentGraph())
-    for subgraph in graph.factorization
-        execute(subgraph, graph)
+function execute(scheme::InferenceScheme=currentGraph().active_scheme)
+    for subgraph in scheme.factorization
+        execute(subgraph, scheme)
     end
 end
+execute(graph::FactorGraph) = execute(graph.active_scheme)
 
 function clearMessages!(node::Node)
     # Clear all outbound messages on the interfaces of node
