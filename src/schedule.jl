@@ -1,4 +1,4 @@
-export ScheduleEntry, Schedule, ExternalSchedule, set_post_processing!
+export ScheduleEntry, Schedule, ExternalSchedule, setPostProcessing!
 
 type ScheduleEntry
     interface::Interface
@@ -16,7 +16,7 @@ ScheduleEntry(interface::Interface) = ScheduleEntry(interface, sumProduct!)
 
 typealias Schedule Array{ScheduleEntry, 1}
 
-function set_post_processing!(schedule::Schedule, interface::Interface, post_processing::Function)
+function setPostProcessing!(schedule::Schedule, interface::Interface, post_processing::Function)
     for entry in schedule
         if entry.interface == interface
             entry.post_processing = post_processing # Edit in place

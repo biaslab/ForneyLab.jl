@@ -10,6 +10,19 @@ function setReadBuffer(node::TerminalNode, buffer::Vector, scheme::InferenceSche
     scheme.read_buffers[node] = buffer
 end
 
+function setReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, scheme::InferenceScheme=currentGraph().active_scheme)
+    # Mini-batch assignment for read buffers.
+    # buffer is divided over nodes equally.
+    n_nodes = length(nodes)
+    n_samples_per_node = int(floor(length(buffer)/length(nodes)))
+    n_samples_per_node*n_nodes == length(buffer) || error("Buffer length must a multiple of the mini-batch node array length")
+    buffmat = reshape(buffer, n_nodes, n_samples_per_node) # samples for one node are present in the rows of buffmat
+    for k in 1:n_nodes
+        scheme.read_buffers[nodes[k]] = vec(buffmat[k,:])
+    end
+    return scheme.read_buffers[nodes[end]] # Return last node's buffer
+end
+
 function setWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), scheme::InferenceScheme=currentGraph().active_scheme)
     #(interface.node in nodes(graph)) || error("The specified interface is not part of the current or specified graph")
     scheme.write_buffers[interface] = buffer # Write buffer for message

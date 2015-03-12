@@ -19,6 +19,10 @@ facts("Read/write buffer integration tests") do
     #     @fact_throws setReadBuffer(TerminalNode(), zeros(10))
     # end
 
+    context("setReadBuffer should register a mini-batch read buffer for a TerminalNode array") do
+        @fact true=>false
+    end
+    
     # setWriteBuffer
     context("setWriteBuffer should register a write buffer for an Interface") do
         write_buffer = Array(Any, 0)

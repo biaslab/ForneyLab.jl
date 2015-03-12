@@ -3,6 +3,7 @@ export  FactorGraph,
 
 export  currentGraph,
         setCurrentGraph,
+        setActiveScheme,
         clearMessages!,
         factorize!,
         nodes,
@@ -45,7 +46,7 @@ FactorGraph() = setCurrentGraph(FactorGraph(Set{Node}(),
 
 function InferenceScheme!(graph::FactorGraph; name="unnamed")
     # Initializes a new inference scheme with one subgraph, adds it to the graph and sets it as the new active scheme
-    scheme = InferenceScheme()
+    scheme = InferenceScheme(name=name)
 
     # Initialize only subgraph from graph definition
     subgraph = scheme.factorization[1]
@@ -58,6 +59,16 @@ function InferenceScheme!(graph::FactorGraph; name="unnamed")
     push!(graph.inference_schemes, scheme) # Add scheme to graph inference scheme list
     graph.active_scheme = scheme # Set scheme as the active scheme
     return scheme
+end
+
+function setActiveScheme(name::ASCIIString, graph::FactorGraph=currentGraph())
+    for scheme in graph.inference_schemes
+        if scheme.name == name
+            graph.active_scheme = scheme
+            return scheme
+        end
+    end
+    return error("Unable to find InferenceScheme $(name) in inference scheme list")
 end
 
 function ensureMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme, assign_distribution::DataType)
