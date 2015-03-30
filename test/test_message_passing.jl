@@ -61,10 +61,9 @@ facts("Message passing integration tests") do
             (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(DeltaDistribution(3.0)))
             Edge(terminal.out, gain.in1)
             Edge(gain.out, MockNode().out)
-            scheme = InferenceScheme()
             @fact gain.out.message => nothing
             # Request message on node for which the input is unknown
-            msg = calculateMessage!(gain.out, scheme)
+            msg = calculateMessage!(gain.out)
             @fact msg => gain.out.message # Returned message should be identical to message stored on interface.
             @fact typeof(gain.out.message.payload) => DeltaDistribution{Array{Float64,2}}
             @fact gain.out.message.payload => DeltaDistribution(reshape([6.0], 1, 1))

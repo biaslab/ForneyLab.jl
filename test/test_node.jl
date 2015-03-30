@@ -3,6 +3,7 @@
 #####################
 
 facts("General node properties unit tests") do
+    FactorGraph()
     for node_type in [subtypes(Node), subtypes(CompositeNode)]
         if node_type!=CompositeNode && node_type!=MockNode
             context("$(node_type) properties should include interfaces and name") do
@@ -110,6 +111,7 @@ facts("Functions for collecting nodes") do
             @fact node in found_nodes => true
         end
 
+        FactorGraph()
         # Composite node test
         compnode = GainEqualityCompositeNode();
         found_nodes = nodes(compnode, depth=1)

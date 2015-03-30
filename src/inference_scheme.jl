@@ -21,6 +21,7 @@ currentScheme() = current_scheme::InferenceScheme
 setCurrentScheme(scheme::InferenceScheme) = global current_scheme = scheme # Set a current_scheme
 
 function InferenceScheme(graph::FactorGraph=currentGraph())
+    graph.locked = true # Inference definition has begon; lock graph stucture.
     internal_edges = graph.edges # Collect internal edges from graph
     nodes = graph.nodes # Collect nodes from graph 
     subgraph = Subgraph(nodes, internal_edges, Set{Edge}(), Array(Interface, 0), Array(Node, 0)) # Create the first factor

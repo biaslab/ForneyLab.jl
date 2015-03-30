@@ -49,6 +49,18 @@ facts("Edge integration tests") do
         @fact_throws Edge(node1.out, node3.out)
     end
 
+    context("Edge should throw an error when the user attempts to extend upon a locked graph") do
+        graph = FactorGraph()
+        node1 = TerminalNode(name="node1")
+        node2 = FixedGainNode(name="node2")
+        node3 = TerminalNode(name="node3")
+        Edge(node1.out, node2.in1)
+        @fact graph.locked => false
+        InferenceScheme() # Locks the graph structure (even though it is not done yet)
+        @fact graph.locked => true
+        @fact_throws Edge(node2.out, node3.out)
+    end
+
     context("Edges have a (pseudo) ordering") do
         FactorGraph()
         edge1 = Edge(TerminalNode().out, TerminalNode().out)

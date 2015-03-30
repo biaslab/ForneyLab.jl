@@ -17,6 +17,7 @@ type Edge <: AbstractEdge
         # Cautionary note: replacing "distribution_type=Any" by "distribution_type::DataType=Any" causes segfaults (?!?)
         (!is(head.node, tail.node)) || error("Cannot connect two interfaces of the same node: $(typeof(head.node)) $(head.node.name)")
         (head.partner == nothing && tail.partner == nothing) || error("Previously defined edges cannot be repositioned.")
+        !currentGraph().locked || error("Cannot extend upon an already locked graph. Completely define the graph before defining the inference procedure.")
 
         self = new(tail, head, nothing, distribution_type)
 

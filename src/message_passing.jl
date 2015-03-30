@@ -4,9 +4,12 @@ export  calculateMessage!,
         execute,
         clearMessages!
 
-function calculateMessage!(outbound_interface::Interface, scheme::InferenceScheme=currentScheme())
+function calculateMessage!(outbound_interface::Interface)
     # Calculate the outbound message on a specific interface by generating a schedule and executing it.
     # The resulting message is stored in the specified interface and returned.
+
+    # Lock graph structure
+    scheme = InferenceScheme()
 
     # Generate a message passing schedule
     printVerbose("Auto-generating message passing schedule...\n")
@@ -105,8 +108,8 @@ function execute(schedule_entry::ScheduleEntry, scheme::InferenceScheme)
 end
 
 # Calculate forward/backward messages on an Edge
-calculateForwardMessage!(edge::Edge, scheme::InferenceScheme=currentScheme()) = calculateMessage!(edge.tail, scheme)
-calculateBackwardMessage!(edge::Edge, scheme::InferenceScheme=currentScheme()) = calculateMessage!(edge.head, scheme)
+calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
+calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
 
 # Execute schedules
 function execute(schedule::Any, scheme::InferenceScheme)

@@ -4,6 +4,7 @@
 
 facts("GainAdditionCompositeNode unit tests") do
     context("GainAdditionCompositeNode() should initialize a GainAdditionCompositeNode with 3 interfaces") do
+        FactorGraph()
         node = GainAdditionCompositeNode()
         @fact typeof(node) => GainAdditionCompositeNode
         @fact length(node.interfaces) => 3
@@ -14,6 +15,7 @@ facts("GainAdditionCompositeNode unit tests") do
     end
 
     context("GainAdditionCompositeNode() should define an internal AdditionNode and FixedGainNode") do
+        FactorGraph()
         node = GainAdditionCompositeNode([5.0], false)
         @fact typeof(node.addition_node) => AdditionNode
         @fact typeof(node.fixed_gain_node) => FixedGainNode
@@ -21,6 +23,7 @@ facts("GainAdditionCompositeNode unit tests") do
     end
 
     context("GainAdditionCompositeNode() should point its own interfaces to the internal node interfaces") do
+        FactorGraph()
         node = GainAdditionCompositeNode([1.0], false)
         @fact node.in1.child => node.fixed_gain_node.interfaces[1]
         @fact node.in2.child => node.addition_node.interfaces[2]
@@ -34,6 +37,7 @@ facts("GainAdditionCompositeNode unit tests") do
         # Forward
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing])
         msg_internal = calculateMessage!(node.interfaces[3])
+        FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 3, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing],
@@ -46,6 +50,7 @@ facts("GainAdditionCompositeNode unit tests") do
 
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
         msg_internal = calculateMessage!(node.interfaces[2])
+        FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 2, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))],
@@ -58,6 +63,7 @@ facts("GainAdditionCompositeNode unit tests") do
         # Forward
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
         msg_internal = calculateMessage!(node.interfaces[3])
+        FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 3, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
@@ -70,6 +76,7 @@ facts("GainAdditionCompositeNode unit tests") do
 
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
         msg_internal = calculateMessage!(node.interfaces[2])
+        FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 2, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))],
@@ -82,6 +89,7 @@ facts("GainAdditionCompositeNode unit tests") do
         # Forward
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
         msg_internal = calculateMessage!(node.interfaces[3])
+        FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 3, 
                                 [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
@@ -94,6 +102,7 @@ facts("GainAdditionCompositeNode unit tests") do
 
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
         msg_internal = calculateMessage!(node.interfaces[2])
+        FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 2, 
                                 [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))],
@@ -106,6 +115,7 @@ facts("GainAdditionCompositeNode unit tests") do
         # Forward
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
         msg_internal = calculateMessage!(node.interfaces[3])
+        FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 3, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
@@ -118,6 +128,7 @@ facts("GainAdditionCompositeNode unit tests") do
 
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
         msg_internal = calculateMessage!(node.interfaces[2])
+        FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 2, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))],

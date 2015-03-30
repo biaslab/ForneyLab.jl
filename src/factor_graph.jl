@@ -11,17 +11,20 @@ export  currentGraph,
 type FactorGraph
     nodes::Set{Node}
     edges::Set{Edge}
+    locked::Bool
 end
 
 # Create an empty graph
 global current_graph = FactorGraph( Set{Node}(),
-                                    Set{Edge}())
+                                    Set{Edge}(),
+                                    false)
 
 currentGraph() = current_graph::FactorGraph
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
 FactorGraph() = setCurrentGraph(FactorGraph(Set{Node}(),
-                                            Set{Edge}())) # Initialize a new factor graph; automatically sets current_graph
+                                            Set{Edge}(),
+                                            false)) # Initialize a new factor graph; automatically sets current_graph
 
 
 function show(io::IO, factor_graph::FactorGraph)
