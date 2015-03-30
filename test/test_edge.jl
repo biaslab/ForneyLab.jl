@@ -3,14 +3,6 @@
 #####################
 
 facts("Edge integration tests") do
-    context("Edge constructor should add edge to edge_to_subgraph mapping") do
-        (node1, node2) = initializePairOfNodes()
-        # Couple the interfaces that carry GeneralMessage
-        edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
-        graph = currentGraph()
-        @fact graph.active_scheme.edge_to_subgraph[edge] => graph.active_scheme.factorization[1]
-    end
-
     context("Nodes can be coupled by edges using the explicit interface names") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
@@ -98,9 +90,9 @@ facts("Functions for collecting edges") do
 
     context("edges() called on a subgraph should return all internal edges (optionally external as well) of the subgraph") do
         (t1, a1, g1, t2, t3) = initializeFactoringGraphWithoutLoop()
-        graph = currentGraph()
-        factorize!(graph)
-        sg = graph.active_scheme.factorization[1]
+        scheme = InferenceScheme()
+        factorize!(scheme)
+        sg = scheme.factorization[1]
         @fact edges(sg, include_external=false) => Set{Edge}({g1.variance.edge})
         @fact edges(sg) => Set{Edge}({g1.variance.edge, g1.out.edge, g1.mean.edge})
     end

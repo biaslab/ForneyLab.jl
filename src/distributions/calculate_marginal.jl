@@ -180,7 +180,7 @@ end
 # Joint approximate marginal calculations
 ############################
 
-function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme=currentGraph().active_scheme)
+function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme)
     # Calculate the approximate marginal for node from the perspective of subgraph,
     # and store the result in the scheme.approximate_marginals dictionary.
 

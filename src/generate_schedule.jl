@@ -1,6 +1,6 @@
 export generateSchedule!, generateSchedule
 
-function generateSchedule(outbound_interface::Interface, scheme::InferenceScheme=currentGraph().active_scheme; args...)
+function generateSchedule(outbound_interface::Interface, scheme::InferenceScheme=currentScheme(); args...)
     # Generate a schedule that can be executed to calculate the outbound message on outbound_interface.
     #
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
@@ -12,12 +12,12 @@ function generateSchedule(outbound_interface::Interface, scheme::InferenceScheme
 
     return convert(Schedule, generateScheduleByDFS(outbound_interface, Array(Interface, 0), Array(Interface, 0), scheme; args...))
 end
-function generateSchedule!(outbound_interface::Interface, scheme::InferenceScheme=currentGraph().active_scheme; args...)
+function generateSchedule!(outbound_interface::Interface, scheme::InferenceScheme=currentScheme(); args...)
     schedule = generateSchedule(outbound_interface, scheme; args...)
     return scheme.edge_to_subgraph[outbound_interface.edge].internal_schedule = schedule
 end
 
-function generateSchedule(partial_schedule::Schedule, scheme::InferenceScheme=currentGraph().active_scheme; args...)
+function generateSchedule(partial_schedule::Schedule, scheme::InferenceScheme=currentScheme(); args...)
     # Generate a complete schedule based on partial_schedule.
     # A partial schedule only defines the order of a subset of all required messages.
     # This function will find a valid complete schedule that satisfies the partial schedule.
@@ -38,14 +38,14 @@ function generateSchedule(partial_schedule::Schedule, scheme::InferenceScheme=cu
 
     return convert(Schedule, interface_list)
 end
-generateSchedule(partial_list::Array{Interface, 1}, scheme::InferenceScheme=currentGraph().active_scheme; args...) = generateSchedule(convert(Schedule, partial_list), scheme; args...)
-function generateSchedule!(partial_schedule::Schedule, scheme::InferenceScheme=currentGraph().active_scheme; args...)
+generateSchedule(partial_list::Array{Interface, 1}, scheme::InferenceScheme=currentScheme(); args...) = generateSchedule(convert(Schedule, partial_list), scheme; args...)
+function generateSchedule!(partial_schedule::Schedule, scheme::InferenceScheme=currentScheme(); args...)
     schedule = generateSchedule(partial_schedule, scheme; args...)
     return scheme.edge_to_subgraph[partial_schedule[1].edge].internal_schedule = schedule
 end
-generateSchedule!(partial_list::Array{Interface, 1}, scheme::InferenceScheme=currentGraph().active_scheme; args...) = generateSchedule!(convert(Schedule, partial_list), scheme; args...)
+generateSchedule!(partial_list::Array{Interface, 1}, scheme::InferenceScheme=currentScheme(); args...) = generateSchedule!(convert(Schedule, partial_list), scheme; args...)
 
-function generateSchedule!(subgraph::Subgraph, scheme::InferenceScheme=currentGraph().active_scheme)
+function generateSchedule!(subgraph::Subgraph, scheme::InferenceScheme=currentScheme())
     # Generate an internal and external schedule for the subgraph
 
     # Set external schedule with nodes (g) connected to external edges
@@ -88,25 +88,31 @@ function generateSchedule!(subgraph::Subgraph, scheme::InferenceScheme=currentGr
         end
     end
 
+    # Make sure that messages are propagated to the write buffers
+    interface_list_for_write_buffers = Array(Interface, 0)
+    for entry in keys(scheme.write_buffers)
+        if typeof(entry) == Interface
+            interface_list_for_write_buffers = [interface_list_for_write_buffers, generateScheduleByDFS(entry, Array(Interface, 0), Array(Interface, 0), scheme, stay_in_subgraph=true)]
+        elseif typeof(entry) == Edge
+            interface_list_for_write_buffers = [interface_list_for_write_buffers, generateScheduleByDFS(entry.head, Array(Interface, 0), Array(Interface, 0), scheme, stay_in_subgraph=true)]
+            interface_list_for_write_buffers = [interface_list_for_write_buffers, generateScheduleByDFS(entry.tail, Array(Interface, 0), Array(Interface, 0), scheme, stay_in_subgraph=true)]
+        end
+    end
+
     # Schedule for univariate comes after internal schedule, because it can depend on inbounds
-    subgraph.internal_schedule = convert(Schedule, unique([internal_interface_list, interface_list_for_univariate, interface_list_for_time_wraps]))
+    subgraph.internal_schedule = convert(Schedule, unique([internal_interface_list, interface_list_for_univariate, interface_list_for_time_wraps, interface_list_for_write_buffers]))
 
     return subgraph
 end
 
-function generateSchedule!(scheme::InferenceScheme)
+function generateSchedule!(scheme::InferenceScheme=currentScheme())
     for subgraph in scheme.factorization
         generateSchedule!(subgraph, scheme)
     end
     return scheme
 end
 
-function generateSchedule!(graph::FactorGraph=currentGraph())
-    generateSchedule!(graph.active_scheme)
-    return graph.active_scheme
-end
-
-function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{Interface, 1}=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0), scheme::InferenceScheme=currentGraph().active_scheme; stay_in_subgraph=false)
+function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{Interface, 1}=Array(Interface, 0), call_list::Array{Interface, 1}=Array(Interface, 0), scheme::InferenceScheme=currentScheme(); stay_in_subgraph=false)
     # This is a private function that performs a search through the factor graph to generate a schedule.
     #
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.

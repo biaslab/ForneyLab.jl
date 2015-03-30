@@ -14,19 +14,6 @@ function Subgraph()
     Subgraph(Set{Node}(), Set{Edge}(), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
 end
 
-# TODO: review!!
-# function show(io::IO, subgraph::Subgraph)
-#     graph = currentGraph()
-#     println(io, "Subgraph $(findfirst(graph.active_scheme.factorization, subgraph))")
-#     println(io, " # nodes: $(length(subgraph.nodes))")
-#     println(io, " # internal edges: $(length(subgraph.internal_edges))")
-#     println(io, " # external edges: $(length(subgraph.external_edges))")
-#     println(io, "\nSee also:")
-#     println(io, " draw(::SubGraph)")
-#     println(io, " show(nodes(::SubGraph))")
-#     println(io, " show(edges(::SubGraph))")
-# end
-
 function conformSubgraph!(subgraph::Subgraph)
     # Updates external edges and nodes field based on internal edges
     subgraph.nodes = Set{Node}()

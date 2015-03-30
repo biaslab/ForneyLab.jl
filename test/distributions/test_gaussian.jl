@@ -103,12 +103,9 @@ facts("GaussianDistribution unit tests") do
 end
 
 facts("Marginal calculations for the Gaussian") do
-    
-    FactorGraph()
-
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
-        edge = Edge(TerminalNode(GaussianDistribution(m=0.0, V=1.0)),
-                    TerminalNode(GaussianDistribution(m=0.0, V=1.0)))
+        (t1, t2) = initializePairOfTerminalNodes(GaussianDistribution(m=0.0, V=1.0), GaussianDistribution(m=0.0, V=1.0))
+        edge = t1.out.edge
         calculateForwardMessage!(edge)
         calculateBackwardMessage!(edge)
         marginal_dist = calculateMarginal!(edge)
@@ -128,13 +125,15 @@ facts("Marginal calculations for the Gaussian") do
     end
 
     context("Marginal calculation for the combination of a Gaussian and student's t-distribution") do
-        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(StudentsTDistribution())).out, GaussianDistribution)
+        (t1, t2) = initializePairOfTerminalNodes(GaussianDistribution(), StudentsTDistribution())
+        edge = t1.out.edge
         calculateMarginal!(edge)
         @fact edge.marginal => GaussianDistribution(m=0.0, W=3.0) 
     end
 
     context("Marginal calculation for the combination of a Gaussian and DeltaDistribution") do
-        edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(DeltaDistribution(3.0))).out)
+        (t1, t2) = initializePairOfTerminalNodes(GaussianDistribution(), DeltaDistribution(3.0))
+        edge = t1.out.edge
         calculateMarginal!(edge)
         @fact edge.marginal => GaussianDistribution(m=3.0, V=tiny())
     end

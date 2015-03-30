@@ -21,12 +21,9 @@ facts("GammaDistribution unit tests") do
 end
 
 facts("Marginal calculations for the gamma") do
-
-    FactorGraph()
-
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
-        edge = Edge(TerminalNode(GammaDistribution(a=1.0, b=2.0)),
-                    TerminalNode(GammaDistribution(a=3.0, b=4.0)), GammaDistribution)
+        (t1, t2) = initializePairOfTerminalNodes(GammaDistribution(a=1.0, b=2.0), GammaDistribution(a=3.0, b=4.0))
+        edge = t1.out.edge
         calculateForwardMessage!(edge)
         calculateBackwardMessage!(edge)
         marginal_dist = calculateMarginal!(edge)

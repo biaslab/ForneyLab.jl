@@ -18,44 +18,44 @@ facts("Marginal calculation integration tests") do
 
     context("Marginal calculation for naively factorized GaussianNode") do
         (node, edges) = initializeGaussianNode(y_type=Float64)
-        graph = currentGraph()
-        factorize!(graph)
+        scheme = InferenceScheme()
+        factorize!(scheme)
         
         # Presetting marginals
-        subgraph1 = subgraph(graph.active_scheme, edges[1])
-        graph.active_scheme.approximate_marginals[(node, subgraph1)] = GaussianDistribution()
-        subgraph2 = subgraph(graph.active_scheme, edges[2])
-        graph.active_scheme.approximate_marginals[(node, subgraph2)] = GammaDistribution()
-        subgraph3 = subgraph(graph.active_scheme, edges[3])
-        graph.active_scheme.approximate_marginals[(node, subgraph3)] = GaussianDistribution()
+        subgraph1 = subgraph(scheme, edges[1])
+        scheme.approximate_marginals[(node, subgraph1)] = GaussianDistribution()
+        subgraph2 = subgraph(scheme, edges[2])
+        scheme.approximate_marginals[(node, subgraph2)] = GammaDistribution()
+        subgraph3 = subgraph(scheme, edges[3])
+        scheme.approximate_marginals[(node, subgraph3)] = GaussianDistribution()
         
         # Univariate marginal
-        calculateMarginal!(node, subgraph1, graph.active_scheme)
-        @fact graph.active_scheme.approximate_marginals[(node, subgraph1)] => GaussianDistribution(W=2.0, xi=0.0)
+        calculateMarginal!(node, subgraph1, scheme)
+        @fact scheme.approximate_marginals[(node, subgraph1)] => GaussianDistribution(W=2.0, xi=0.0)
         # Univariate marginal
-        calculateMarginal!(node, subgraph2, graph.active_scheme)
-        @fact graph.active_scheme.approximate_marginals[(node, subgraph2)] => GammaDistribution(a=1.0, b=2.0)
+        calculateMarginal!(node, subgraph2, scheme)
+        @fact scheme.approximate_marginals[(node, subgraph2)] => GammaDistribution(a=1.0, b=2.0)
         # Univariate marginal
-        calculateMarginal!(node, subgraph3, graph.active_scheme)
-        @fact graph.active_scheme.approximate_marginals[(node, subgraph3)] => GaussianDistribution(m=1.0, V=tiny())
+        calculateMarginal!(node, subgraph3, scheme)
+        @fact scheme.approximate_marginals[(node, subgraph3)] => GaussianDistribution(m=1.0, V=tiny())
     end
     
     context("Marginal calculation for the structurally factorized GaussianNode") do
         (node, edges) = initializeGaussianNode(y_type=GaussianDistribution)
-        graph = currentGraph()
+        scheme = InferenceScheme()
         factorize!(Set{Edge}([edges[3]]))
         
         # Presetting marginals
-        graph.active_scheme.approximate_marginals[(node, graph.active_scheme.factorization[1])] = NormalGammaDistribution()
-        graph.active_scheme.approximate_marginals[(node, graph.active_scheme.factorization[2])] = GaussianDistribution()
+        scheme.approximate_marginals[(node, scheme.factorization[1])] = NormalGammaDistribution()
+        scheme.approximate_marginals[(node, scheme.factorization[2])] = GaussianDistribution()
         
         # Joint marginal
-        subgraph = graph.active_scheme.factorization[1]
-        calculateMarginal!(node, subgraph, graph.active_scheme)
-        @fact graph.active_scheme.approximate_marginals[(node, subgraph)] => NormalGammaDistribution(m=0.0, beta=huge(), a=1.5, b=1.5)
+        subgraph = scheme.factorization[1]
+        calculateMarginal!(node, subgraph, scheme)
+        @fact scheme.approximate_marginals[(node, subgraph)] => NormalGammaDistribution(m=0.0, beta=huge(), a=1.5, b=1.5)
         # Univariate marginal
-        subgraph = graph.active_scheme.factorization[2]
-        calculateMarginal!(node, subgraph, graph.active_scheme)
-        @fact graph.active_scheme.approximate_marginals[(node, subgraph)] => GaussianDistribution(W=2.0, xi=0.0)
+        subgraph = scheme.factorization[2]
+        calculateMarginal!(node, subgraph, scheme)
+        @fact scheme.approximate_marginals[(node, subgraph)] => GaussianDistribution(W=2.0, xi=0.0)
     end
 end

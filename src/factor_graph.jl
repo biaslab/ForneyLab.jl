@@ -1,9 +1,7 @@
-export  FactorGraph,
-        InferenceScheme!
+export  FactorGraph
 
 export  currentGraph,
         setCurrentGraph,
-        setActiveScheme,
         clearMessages!,
         factorize!,
         nodes,
@@ -13,86 +11,35 @@ export  currentGraph,
 type FactorGraph
     nodes::Set{Node}
     edges::Set{Edge}
-    inference_schemes::Array{InferenceScheme, 1}
-    active_scheme::InferenceScheme
 end
 
 # Create an empty graph
 global current_graph = FactorGraph( Set{Node}(),
-                                    Set{Edge}(),
-                                    [scheme=InferenceScheme()],
-                                    scheme)
+                                    Set{Edge}())
 
 currentGraph() = current_graph::FactorGraph
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
 FactorGraph() = setCurrentGraph(FactorGraph(Set{Node}(),
-                                            Set{Edge}(),
-                                            [scheme=InferenceScheme()],
-                                            scheme)) # Initialize a new factor graph; automatically sets current_graph and active scheme
+                                            Set{Edge}())) # Initialize a new factor graph; automatically sets current_graph
 
 
-# function show(io::IO, factor_graph::FactorGraph)
-#     nodes_top = nodes(factor_graph, open_composites=false)
-#     println(io, "FactorGraph")
-#     println(io, " # nodes: $(length(nodes_top)) ($(length(nodes(factor_graph))) including child nodes)")
-#     println(io, " # edges (top level): $(length(edges(nodes_top)))")
-#     println(io, " # inference schemes: $(length(factor_graph.inference_schemes))")
-#     println(io, "\nSee also:")
-#     println(io, " draw(::FactorGraph)")
-#     println(io, " show(nodes(::FactorGraph))")
-#     println(io, " show(edges(::FactorGraph))")
-# end
-
-function InferenceScheme!(graph::FactorGraph; name="unnamed")
-    # Initializes a new inference scheme with one subgraph, adds it to the graph and sets it as the new active scheme
-    scheme = InferenceScheme(name=name)
-
-    # Initialize only subgraph from graph definition
-    subgraph = scheme.factorization[1]
-    subgraph.nodes = nodes(graph)
-    subgraph.internal_edges = edges(graph)
-    for edge in edges(graph)
-        merge!(scheme.edge_to_subgraph, {edge=>subgraph})
-    end
-
-    push!(graph.inference_schemes, scheme) # Add scheme to graph inference scheme list
-    graph.active_scheme = scheme # Set scheme as the active scheme
-    return scheme
-end
-
-function setActiveScheme(name::ASCIIString, graph::FactorGraph=currentGraph())
-    for scheme in graph.inference_schemes
-        if scheme.name == name
-            graph.active_scheme = scheme
-            return scheme
-        end
-    end
-    return error("Unable to find InferenceScheme $(name) in inference scheme list")
-end
-
-function ensureMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme, assign_distribution::DataType)
-    # Looks for a marginal in the node-subgraph dictionary.
-    # If no marginal is present, it sets and returns a vague distribution.
-    # Otherwise, it returns the existing marginal. Used for fast marginal calculations.
-    try
-        return scheme.approximate_marginals[(node, subgraph)]
-    catch
-        if assign_distribution <: ProbabilityDistribution
-            return scheme.approximate_marginals[(node, subgraph)] = vague(assign_distribution)
-        else
-            error("Cannot create a marginal of type $(assign_distribution) since a marginal should be <: ProbabilityDistribution")
-        end
-    end
-
+function show(io::IO, factor_graph::FactorGraph)
+    nodes_top = nodes(factor_graph, open_composites=false)
+    println(io, "FactorGraph")
+    println(io, " # nodes: $(length(nodes_top)) ($(length(nodes(factor_graph))) including child nodes)")
+    println(io, " # edges (top level): $(length(edges(nodes_top)))")
+    println(io, "\nSee also:")
+    println(io, " draw(::FactorGraph)")
+    println(io, " show(nodes(::FactorGraph))")
+    println(io, " show(edges(::FactorGraph))")
 end
 
 # Functions to clear ALL MESSAGES in the graph
 clearMessages!(graph::FactorGraph) = map(clearMessages!, nodes(graph, open_composites=true))
 clearMessages!() = clearMessages!(currentGraph())
 
-factorize!(graph::FactorGraph) = factorize!(graph.active_scheme)
-factorize!() = factorize!(currentGraph().active_scheme)
+factorize!() = factorize!(currentScheme())
 
 function nodes(node::CompositeNode; depth::Integer=1)
     # Return set of child nodes up to a certain depth

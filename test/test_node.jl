@@ -80,14 +80,15 @@ facts("Connections between nodes integration tests") do
         testInterfaceConnections(node1, node2)
     end
 
-    context("Edge constructor should add edge and nodes to current subgraph") do
+    context("InferenceScheme should add edge and nodes to current subgraph") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
+        scheme = InferenceScheme()
         graph = currentGraph()
-        @fact edge in graph.active_scheme.factorization[1].internal_edges => true
-        @fact node1 in graph.active_scheme.factorization[1].nodes => true
-        @fact node2 in graph.active_scheme.factorization[1].nodes => true
+        @fact edge in scheme.factorization[1].internal_edges => true
+        @fact node1 in scheme.factorization[1].nodes => true
+        @fact node2 in scheme.factorization[1].nodes => true
     end
 end
 
@@ -95,6 +96,7 @@ facts("Functions for collecting nodes") do
     context("nodes() should return an array of all nodes in the graph") do
         # FactorGraph test
         testnodes = initializeLoopyGraph()
+        scheme = InferenceScheme()
         found_nodes = nodes(currentGraph())
         @fact length(found_nodes) => length(testnodes)
         for node in testnodes
@@ -102,7 +104,7 @@ facts("Functions for collecting nodes") do
         end
 
         # Subgraph test
-        found_nodes = nodes(currentGraph().active_scheme.factorization[1])
+        found_nodes = nodes(scheme.factorization[1])
         @fact length(found_nodes) => length(testnodes)
         for node in testnodes
             @fact node in found_nodes => true

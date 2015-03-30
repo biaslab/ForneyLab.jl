@@ -20,7 +20,8 @@ function graphviz(dot_graph::String; external_viewer::Bool=false)
     end
 end
 
-draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph, open_composites=false), edges(factor_graph), time_wraps=factor_graph.active_scheme.time_wraps); args...)
+draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph, open_composites=false), edges(factor_graph), time_wraps=Array((TerminalNode, TerminalNode), 0)); args...)
+draw(scheme::InferenceScheme; args...) = graphviz(genDot(nodes(scheme.graph, open_composites=false), edges(scheme.graph), time_wraps=scheme.time_wraps); args...)
 draw(; args...) = draw(currentGraph(); args...)
 
 draw(subgraph::Subgraph; args...) = graphviz(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=subgraph.external_edges); args...)

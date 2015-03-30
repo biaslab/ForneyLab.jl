@@ -12,19 +12,13 @@ facts("InferenceScheme unit tests") do
         @fact length(scheme.factorization) => 1 # Do not add to factorization
     end
 
-    context("Subgraph!(::InferenceScheme) should initialize a subgraph and add it to the inference scheme factorization") do
-        scheme = InferenceScheme()
-        sg = Subgraph!(scheme)
-        @fact typeof(sg) => Subgraph
-        @fact length(scheme.factorization) => 2 # Add to factorization
-    end
-
     context("subgraph(edge) should return the subgraph where edge is internal") do
         (t1, a1, g1, t2, add1, g2) = initializeFactoringGraph()
+        scheme = InferenceScheme()
         factorize!(Set{Edge}([t2.out.edge]))
         graph = currentGraph()
-        @fact subgraph(t1.out.edge) => graph.active_scheme.factorization[1]
-        @fact subgraph(t2.out.edge) => graph.active_scheme.factorization[2]
+        @fact subgraph(t1.out.edge) => scheme.factorization[1]
+        @fact subgraph(t2.out.edge) => scheme.factorization[2]
     end
 end
 
@@ -72,26 +66,23 @@ facts("Subgraph integration tests") do
 
     context("conformSubGraph!() should complete a subgraph with nodes and external edges based in its internal edges") do
         my_graph = FactorGraph()
-        # On empty subgraph
-        my_subgraph = my_graph.active_scheme.factorization[1]
-        @fact length(my_subgraph.internal_edges) => 0
-        ForneyLab.conformSubgraph!(my_subgraph)
-        @fact length(my_subgraph.nodes) => 0
-        @fact length(my_subgraph.external_edges) => 0
-        # Initialize a subgraph
         node1 = MockNode()
         node2 = MockNode(2)
         node3 = MockNode()
         edge1 = Edge(node1.out, node2.interfaces[1])
         edge2 = Edge(node2.interfaces[2], node3.out)
-        @fact length(my_subgraph.internal_edges) => 2
+
+        scheme = InferenceScheme()
+        my_subgraph = scheme.factorization[1]
         ForneyLab.conformSubgraph!(my_subgraph)
+        @fact length(my_subgraph.internal_edges) => 2
         @fact length(my_subgraph.nodes) => 3
         @fact length(my_subgraph.external_edges) => 0
+
         # Subgraph with external edges
         new_subgraph = Subgraph(Set{Node}(), Set{Edge}({edge2}), Set{Edge}(), Array(Interface, 0), Array(Node, 0))
-        @fact length(new_subgraph.internal_edges) => 1
         ForneyLab.conformSubgraph!(new_subgraph)
+        @fact length(new_subgraph.internal_edges) => 1
         @fact length(new_subgraph.nodes) => 2
         @fact length(new_subgraph.external_edges) => 1
     end

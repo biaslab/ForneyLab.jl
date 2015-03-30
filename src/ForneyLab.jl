@@ -61,8 +61,8 @@ include("nodes/composite/general.jl")
 
 # Graphs and factorizations
 include("subgraph.jl")
-include("inference_scheme.jl")
 include("factor_graph.jl")
+include("inference_scheme.jl")
 
 # Methods for calculating marginals
 include("distributions/calculate_marginal.jl")

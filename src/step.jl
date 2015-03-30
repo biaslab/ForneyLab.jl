@@ -5,12 +5,12 @@ export  setReadBuffer,
         clearTimeWraps,
         step
 
-function setReadBuffer(node::TerminalNode, buffer::Vector, scheme::InferenceScheme=currentGraph().active_scheme)
+function setReadBuffer(node::TerminalNode, buffer::Vector, scheme::InferenceScheme=currentScheme())
     #(node in nodes(graph)) || error("The specified node is not part of the current or specified graph")
     scheme.read_buffers[node] = buffer
 end
 
-function setReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, scheme::InferenceScheme=currentGraph().active_scheme)
+function setReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, scheme::InferenceScheme=currentScheme())
     # Mini-batch assignment for read buffers.
     # buffer is divided over nodes equally.
     n_nodes = length(nodes)
@@ -23,30 +23,30 @@ function setReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, scheme::Infe
     return scheme.read_buffers[nodes[end]] # Return last node's buffer
 end
 
-function setWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), scheme::InferenceScheme=currentGraph().active_scheme)
+function setWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), scheme::InferenceScheme=currentScheme())
     #(interface.node in nodes(graph)) || error("The specified interface is not part of the current or specified graph")
     scheme.write_buffers[interface] = buffer # Write buffer for message
 end
 
-function setWriteBuffer(edge::Edge, buffer::Vector=Array(ProbabilityDistribution,0), scheme::InferenceScheme=currentGraph().active_scheme)
+function setWriteBuffer(edge::Edge, buffer::Vector=Array(ProbabilityDistribution,0), scheme::InferenceScheme=currentScheme())
     #(edge in edges(graph)) || error("The specified edge is not part of the current or specified graph")
     scheme.write_buffers[edge] = buffer # Write buffer for marginal
 end
 
-function clearBuffers(scheme::InferenceScheme=currentGraph().active_scheme)
+function clearBuffers(scheme::InferenceScheme=currentScheme())
     scheme.read_buffers = Dict{TerminalNode, Vector}()
     scheme.write_buffers = Dict{Union(Edge,Interface), Vector}()
     return scheme
 end
 
-function setTimeWrap(from::TerminalNode, to::TerminalNode, storage_scheme::InferenceScheme=currentGraph().active_scheme)
+function setTimeWrap(from::TerminalNode, to::TerminalNode, storage_scheme::InferenceScheme=currentScheme())
     !is(from, to) || error("Cannot create time wrap: from and to must be different nodes")
     push!(storage_scheme.time_wraps, (from, to))
 end
 
-clearTimeWraps(scheme::InferenceScheme=graph.currentGraph().active_scheme) = (scheme.time_wraps = Array((TerminalNode, TerminalNode), 0))
+clearTimeWraps(scheme::InferenceScheme=currentScheme()) = (scheme.time_wraps = Array((TerminalNode, TerminalNode), 0))
 
-function step(scheme::InferenceScheme=currentGraph().active_scheme; n_iterations::Int64=1)
+function step(scheme::InferenceScheme; n_iterations::Int64=1)
     # Reset marginals
     setVagueMarginals!(scheme)
     # Read buffers
@@ -73,4 +73,3 @@ function step(scheme::InferenceScheme=currentGraph().active_scheme; n_iterations
         to.value = deepcopy(from.out.partner.message.payload)
     end
 end
-step(graph::FactorGraph; n_iterations::Int64=1) = step(graph.active_scheme; n_iterations=n_iterations)

@@ -41,7 +41,24 @@ function initializePairOfMockNodes()
     # [M]--|
 
     FactorGraph()
-    return MockNode(), MockNode()
+    node1 = MockNode()
+    node2 = MockNode()
+    return node1, node2
+end
+
+function initializePairOfTerminalNodes(d1::ProbabilityDistribution=GaussianDistribution(), d2::ProbabilityDistribution=GaussianDistribution())
+    # Two connected TerminalNodes
+    #
+    # [T]-->[T]
+
+    FactorGraph()
+    t1 = TerminalNode(d1)
+    t2 = TerminalNode(d2)
+    Edge(t1.out, t2.out)
+    t1.out.message = Message(d1)
+    t2.out.message = Message(d2)
+    InferenceScheme()
+    return t1, t2
 end
 
 function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(DeltaDistribution(2.0)), msg_gain_2=Message(DeltaDistribution(3.0)), msg_terminal=Message(DeltaDistribution(1.0)))
@@ -73,6 +90,7 @@ function initializeChainOfNodes()
     Edge(node1.out, node2.in1)
     Edge(node2.out, node3.in1)
     Edge(node3.out, MockNode().out)
+    InferenceScheme()
     return (node1, node2, node3)
 end
 
@@ -95,6 +113,7 @@ function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
     Edge(inhibitor.out, driver.in1)
     Edge(driver.out, add.in1)
     Edge(noise.out, add.in2)
+    InferenceScheme()
     return (driver, inhibitor, noise, add)
 end
 
@@ -122,6 +141,7 @@ function initializeTreeGraph()
     Edge(add.out, equ.interfaces[1])
     Edge(c3.out, equ.interfaces[2])
     Edge(c3.out, equ.interfaces[2])
+    InferenceScheme()
     return (c1, c2, c3, add, equ)
 end
 
@@ -147,6 +167,7 @@ function initializeFactoringGraph()
     Edge(g1.out, add1.in1)
     Edge(add1.out, g2.mean)
     Edge(g2.out, add1.in2)
+    InferenceScheme()
     return (t1, a1, g1, t2, add1, g2)
 end
 
@@ -169,6 +190,7 @@ function initializeFactoringGraphWithoutLoop()
     Edge(a1.out, g1.mean)
     Edge(t2.out, g1.variance, InverseGammaDistribution)
     Edge(g1.out, t3.out)
+    InferenceScheme()
     return (t1, a1, g1, t2, t3)
 end
 
@@ -181,6 +203,7 @@ function initializeGaussianFactoringGraph()
     gauss = GaussianNode(m=1.0, V=0.5, name="gauss")
     Edge(gauss.out, gain.in1)
     Edge(gain.out, t.out)
+    InferenceScheme()
     return (t, gain, gauss)
 end
 
@@ -193,6 +216,7 @@ function initializeSimpleFactoringGraph()
     t2 = TerminalNode(name="t2")
     Edge(t2.out, gain.in1)
     Edge(gain.out, t1.out)
+    InferenceScheme()
     return (t1, gain, t2)
 end
 
@@ -212,6 +236,7 @@ function initializeAdditionNode(msgs::Array{Any})
         end
         interface_count += 1
     end
+    InferenceScheme()
     return add_node
 end
 
@@ -231,6 +256,7 @@ function initializeEqualityNode(msgs::Array{Any})
         end
         interface_count += 1
     end
+    InferenceScheme()
     return eq_node
 end
 
@@ -280,6 +306,7 @@ function initializeGainAdditionCompositeNode(A::Array, use_composite_update_rule
         end
         interface_count += 1
     end
+    InferenceScheme()
     return gac_node
 end
 
@@ -328,6 +355,7 @@ function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rule
         end
         interface_count += 1
     end
+    InferenceScheme()
     return gec_node
 end
 
@@ -358,7 +386,7 @@ function initializeGaussianNode(; y_type::DataType=Float64)
     else
         error("Can't handle y_type $(y_type)")
     end
-    # Set messages and marginals
+    InferenceScheme()
     return (node, edges)
 end
 
@@ -415,6 +443,8 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
     Edge(m_eq_nodes[end].interfaces[2], m_N.out)
     Edge(gam_eq_nodes[end].interfaces[2], gam_N.out)
 
+    InferenceScheme()
+
     return (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges)
 end
 
@@ -455,6 +485,8 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     m_N_eq_edge = Edge(m_eq_node.interfaces[2], m_N_node.out, GaussianDistribution)
     gam_N_eq_edge = Edge(gam_eq_node.interfaces[2], gam_N_node.out, GammaDistribution)
 
+    InferenceScheme()
+
     return (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge)
 end
 
@@ -471,6 +503,8 @@ function initializeSigmoidSlice()
     Edge(eq_node.interfaces[2], theta_k_node.out)
     Edge(eq_node.interfaces[3], s_node.in1, GaussianDistribution)
     Edge(s_node.out, y_node.out, BetaDistribution)
+
+    InferenceScheme()
 
     return graph
 end

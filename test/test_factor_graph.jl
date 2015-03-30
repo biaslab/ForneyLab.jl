@@ -6,9 +6,6 @@ facts("FactorGraph unit tests") do
     context("FactorGraph() should initialize a factor graph") do
         fg = FactorGraph()
         @fact typeof(fg) => FactorGraph
-        @fact length(fg.inference_schemes) => 1
-        @fact typeof(fg.active_scheme) => InferenceScheme
-        @fact fg.active_scheme => fg.inference_schemes[1]
         @fact fg.nodes => Set{Node}()
         @fact fg.edges => Set{Edge}()
         @fact current_graph => fg # Global should be set

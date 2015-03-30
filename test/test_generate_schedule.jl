@@ -47,40 +47,69 @@ facts("generateSchedule() integration tests") do
 
         context("Should generate an internal and external schedule when called on a subgraph") do
             (t1, a1, g1, t2, t3) = initializeFactoringGraphWithoutLoop()
+            scheme = InferenceScheme()
             factorize!(Set{Edge}([t2.out.edge])) # Put this edge in a different subgraph
             graph = currentGraph()
-            for subgraph in graph.active_scheme.factorization
+            for subgraph in scheme.factorization
                 generateSchedule!(subgraph)
                 @fact length(unique(subgraph.internal_schedule)) => length(subgraph.internal_schedule) # No duplicate entries in schedule
             end
             # There are multiple valid schedules because of different orderings. Validity or schedule order is not checked here.
-            @fact graph.active_scheme.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [t1.out, a1.out, t3.out])
-            @fact graph.active_scheme.factorization[2].internal_schedule => ForneyLab.convert(Schedule, [t2.out, t2.out.partner])
-            @fact graph.active_scheme.factorization[1].external_schedule => [g1]
-            @fact graph.active_scheme.factorization[2].external_schedule => [g1]
+            @fact scheme.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [t1.out, a1.out, t3.out])
+            @fact scheme.factorization[2].internal_schedule => ForneyLab.convert(Schedule, [t2.out, t2.out.partner])
+            @fact scheme.factorization[1].external_schedule => [g1]
+            @fact scheme.factorization[2].external_schedule => [g1]
         end
 
-        context("Should generate a schedule that propagates messages to timewraps when called on a subgraph") do
+        context("Should generate a schedule that propagates messages to timewraps") do
             g = FactorGraph()
             node_t1 = TerminalNode()
             node_t2 = TerminalNode()
             e = Edge(node_t1, node_t2)
-            generateSchedule!(g.active_scheme.factorization[1])
-            @fact g.active_scheme.factorization[1].internal_schedule => Array(ScheduleEntry, 0)
+            s = InferenceScheme()
+            generateSchedule!(s.factorization[1])
+            @fact s.factorization[1].internal_schedule => Array(ScheduleEntry, 0)
             setTimeWrap(node_t1, node_t2)
-            generateSchedule!(g.active_scheme.factorization[1])
-            @fact g.active_scheme.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [node_t1.out.partner])
+            generateSchedule!(s.factorization[1])
+            @fact s.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [node_t1.out.partner])
+        end
+
+        context("Should generate a schedule that propagates messages to write buffers defined on interfaces") do
+            g = FactorGraph()
+            node_t1 = TerminalNode()
+            node_t2 = TerminalNode()
+            e = Edge(node_t1, node_t2)
+            s = InferenceScheme()
+            generateSchedule!(s.factorization[1])
+            @fact s.factorization[1].internal_schedule => Array(ScheduleEntry, 0)
+            setWriteBuffer(node_t1.out)
+            generateSchedule!(s.factorization[1])
+            @fact s.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [node_t1.out])
+        end
+
+        context("Should generate a schedule that propagates messages to write buffers defined on edges") do
+            g = FactorGraph()
+            node_t1 = TerminalNode()
+            node_t2 = TerminalNode()
+            e = Edge(node_t1, node_t2)
+            s = InferenceScheme()
+            generateSchedule!(s.factorization[1])
+            @fact s.factorization[1].internal_schedule => Array(ScheduleEntry, 0)
+            setWriteBuffer(node_t1.out.edge)
+            generateSchedule!(s.factorization[1])
+            @fact s.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [node_t1.out.partner, node_t1.out])
         end
 
         context("Should include backward messages when there is only one internal interface connected to an external node") do
             data = [1.0]
             (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge) = initializeGaussianNodeChainForSvmp(data)
+            scheme = InferenceScheme()
 
             # Structured factorization
             factorize!(Set{Edge}([y_edge]))
 
             graph = currentGraph()
-            for subgraph in graph.active_scheme.factorization
+            for subgraph in scheme.factorization
                 generateSchedule!(subgraph) # Generate internal and external schedule automatically
             end
 

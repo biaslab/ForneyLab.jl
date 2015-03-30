@@ -4,7 +4,7 @@ export  calculateMessage!,
         execute,
         clearMessages!
 
-function calculateMessage!(outbound_interface::Interface, scheme::InferenceScheme=currentGraph().active_scheme)
+function calculateMessage!(outbound_interface::Interface, scheme::InferenceScheme=currentScheme())
     # Calculate the outbound message on a specific interface by generating a schedule and executing it.
     # The resulting message is stored in the specified interface and returned.
 
@@ -15,7 +15,7 @@ function calculateMessage!(outbound_interface::Interface, scheme::InferenceSchem
 
     # Execute the schedule
     printVerbose("\nExecuting above schedule...\n")
-    execute(schedule)
+    execute(schedule, scheme)
     printVerbose("\ncalculateMessage!() done.")
 
     return outbound_interface.message
@@ -58,7 +58,8 @@ function pushRequiredInbound!(scheme::InferenceScheme, inbound_array::Array{Any,
 
 end
 
-function execute(schedule_entry::ScheduleEntry, scheme::InferenceScheme=currentGraph().active_scheme)
+# TODO: combination schedule_entry - scheme seems strange here, does scheme not envelope a schedule_entry (through subgraph)?
+function execute(schedule_entry::ScheduleEntry, scheme::InferenceScheme)
     # Calculate the outbound message based on the inbound messages and the message calculation rule.
     # The resulting message is stored in the specified interface and is returned.
 
@@ -104,11 +105,11 @@ function execute(schedule_entry::ScheduleEntry, scheme::InferenceScheme=currentG
 end
 
 # Calculate forward/backward messages on an Edge
-calculateForwardMessage!(edge::Edge) = calculateMessage!(edge.tail)
-calculateBackwardMessage!(edge::Edge) = calculateMessage!(edge.head)
+calculateForwardMessage!(edge::Edge, scheme::InferenceScheme=currentScheme()) = calculateMessage!(edge.tail, scheme)
+calculateBackwardMessage!(edge::Edge, scheme::InferenceScheme=currentScheme()) = calculateMessage!(edge.head, scheme)
 
 # Execute schedules
-function execute(schedule::Any, scheme::InferenceScheme=currentGraph().active_scheme)
+function execute(schedule::Any, scheme::InferenceScheme)
     # Execute a message passing schedule
     !isempty(schedule) || error("Cannot execute an empty schedule")
 
@@ -124,24 +125,23 @@ function execute(schedule::Any, scheme::InferenceScheme=currentGraph().active_sc
     # Return the last message in the schedule
     return schedule[end].interface.message
 end
-function execute(schedule::ExternalSchedule, subgraph::Subgraph, scheme::InferenceScheme=currentGraph().active_scheme)
+function execute(schedule::ExternalSchedule, subgraph::Subgraph, scheme::InferenceScheme)
     # Execute a marginal update schedule
     for entry in schedule
         calculateMarginal!(entry, subgraph, scheme)
     end
 end
-function execute(subgraph::Subgraph, scheme::InferenceScheme=currentGraph().active_scheme)
+function execute(subgraph::Subgraph, scheme::InferenceScheme)
     printVerbose("Subgraph $(findfirst(scheme.factorization, subgraph)):")
-    execute(subgraph.internal_schedule)
+    execute(subgraph.internal_schedule, scheme)
     execute(subgraph.external_schedule, subgraph, scheme)
 end
 
-function execute(scheme::InferenceScheme=currentGraph().active_scheme)
+function execute(scheme::InferenceScheme)
     for subgraph in scheme.factorization
         execute(subgraph, scheme)
     end
 end
-execute(graph::FactorGraph) = execute(graph.active_scheme)
 
 function clearMessages!(node::Node)
     # Clear all outbound messages on the interfaces of node
