@@ -1,9 +1,9 @@
 export Subgraph
 
 type Subgraph
-    nodes::Set{Node}
+    #nodes::Set{Node}
     internal_edges::Set{Edge}
-    external_edges::Set{Edge}
+    #external_edges::Set{Edge}
     internal_schedule::Schedule # Schedule for internal message passing (Dauwels step 2)
     external_schedule::ExternalSchedule # Schedule for updates on nodes connected to external edges (Dauwels step 3)
 end
