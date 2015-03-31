@@ -24,6 +24,7 @@ function calculateMessage!(outbound_interface::Interface)
     return outbound_interface.message
 end
 
+# TODO: Refactor
 function pushRequiredInbound!(scheme::InferenceScheme, inbound_array::Array{Any,1}, node::Node, inbound_interface::Interface, outbound_interface::Interface)
     # Push the inbound message or marginal on inbound_interface, depending on the local graph structure.
 
@@ -52,8 +53,9 @@ function pushRequiredInbound!(scheme::InferenceScheme, inbound_array::Array{Any,
         end
     else
         # A subgraph border is crossed, require marginal
+        # The factor is the set of internal edges that are in the same subgraph
         try
-            push!(inbound_array, scheme.approximate_marginals[(node, inbound_subgraph)])
+            push!(inbound_array, scheme.approximate_marginals[qFactor(node, inbound_subgraph)])
         catch
             error("Missing approximate marginal for $(inbound_interface)")
         end
@@ -68,7 +70,7 @@ function execute(schedule_entry::ScheduleEntry, scheme::InferenceScheme)
 
     outbound_interface = schedule_entry.interface
 
-    # Preprocessing: collect all inbound messages
+    # Preprocessing: collect all inbound messages and build the inbound_array
     node = outbound_interface.node
     inbound_array = Array(Any, 0) # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
     outbound_interface_id = 0
@@ -76,14 +78,10 @@ function execute(schedule_entry::ScheduleEntry, scheme::InferenceScheme)
         interface = node.interfaces[interface_id]
         if interface == outbound_interface
             outbound_interface_id = interface_id
-        end
-        if (outbound_interface_id==interface_id)
-            # Ignore this interface
-            # In the future we might want to have decent dependency checking here
+            # Ignore this interface, push "nothing"
             push!(inbound_array, nothing)
         else
-            # Inbound message or marginal is required
-            # Put the required inbound message or edge/node marginal for the inbound interface in inbound_array
+            # Inbound message or marginal is required, push the required message/marginal to inbound_array
             pushRequiredInbound!(scheme, inbound_array, node, interface, outbound_interface)
         end
     end
@@ -131,7 +129,7 @@ end
 function execute(schedule::ExternalSchedule, subgraph::Subgraph, scheme::InferenceScheme)
     # Execute a marginal update schedule
     for entry in schedule
-        calculateMarginal!(entry, subgraph, scheme)
+        calculateMarginal!(entry, qFactor(entry, subgraph), scheme)
     end
 end
 function execute(subgraph::Subgraph, scheme::InferenceScheme)

@@ -20,24 +20,25 @@ facts("Marginal calculation integration tests") do
         (node, edges) = initializeGaussianNode(y_type=Float64)
         scheme = InferenceScheme()
         factorize!(scheme)
-        
+    
+        factor1 = qFactor(scheme, node, edges[1])
+        factor2 = qFactor(scheme, node, edges[2])
+        factor3 = qFactor(scheme, node, edges[3])
+
         # Presetting marginals
-        subgraph1 = subgraph(scheme, edges[1])
-        scheme.approximate_marginals[(node, subgraph1)] = GaussianDistribution()
-        subgraph2 = subgraph(scheme, edges[2])
-        scheme.approximate_marginals[(node, subgraph2)] = GammaDistribution()
-        subgraph3 = subgraph(scheme, edges[3])
-        scheme.approximate_marginals[(node, subgraph3)] = GaussianDistribution()
+        scheme.approximate_marginals[factor1] = GaussianDistribution()
+        scheme.approximate_marginals[factor2] = GammaDistribution()
+        scheme.approximate_marginals[factor3] = GaussianDistribution()
         
         # Univariate marginal
-        calculateMarginal!(node, subgraph1, scheme)
-        @fact scheme.approximate_marginals[(node, subgraph1)] => GaussianDistribution(W=2.0, xi=0.0)
+        calculateMarginal!(node, factor1, scheme)
+        @fact scheme.approximate_marginals[factor1] => GaussianDistribution(W=2.0, xi=0.0)
         # Univariate marginal
-        calculateMarginal!(node, subgraph2, scheme)
-        @fact scheme.approximate_marginals[(node, subgraph2)] => GammaDistribution(a=1.0, b=2.0)
+        calculateMarginal!(node, factor2, scheme)
+        @fact scheme.approximate_marginals[factor2] => GammaDistribution(a=1.0, b=2.0)
         # Univariate marginal
-        calculateMarginal!(node, subgraph3, scheme)
-        @fact scheme.approximate_marginals[(node, subgraph3)] => GaussianDistribution(m=1.0, V=tiny())
+        calculateMarginal!(node, factor3, scheme)
+        @fact scheme.approximate_marginals[factor3] => GaussianDistribution(m=1.0, V=tiny())
     end
     
     context("Marginal calculation for the structurally factorized GaussianNode") do
@@ -45,17 +46,20 @@ facts("Marginal calculation integration tests") do
         scheme = InferenceScheme()
         factorize!(Set{Edge}([edges[3]]))
         
+        factor1 = qFactor(scheme, node, edges[1])
+        factor2 = qFactor(scheme, node, edges[2])
+        @fact factor1 => factor2
+        factor3 = qFactor(scheme, node, edges[3])
+
         # Presetting marginals
-        scheme.approximate_marginals[(node, scheme.factorization[1])] = NormalGammaDistribution()
-        scheme.approximate_marginals[(node, scheme.factorization[2])] = GaussianDistribution()
+        scheme.approximate_marginals[factor1] = NormalGammaDistribution()
+        scheme.approximate_marginals[factor3] = GaussianDistribution()
         
         # Joint marginal
-        subgraph = scheme.factorization[1]
-        calculateMarginal!(node, subgraph, scheme)
-        @fact scheme.approximate_marginals[(node, subgraph)] => NormalGammaDistribution(m=0.0, beta=huge(), a=1.5, b=1.5)
+        calculateMarginal!(node, factor1, scheme)
+        @fact scheme.approximate_marginals[factor1] => NormalGammaDistribution(m=0.0, beta=huge(), a=1.5, b=1.5)
         # Univariate marginal
-        subgraph = scheme.factorization[2]
-        calculateMarginal!(node, subgraph, scheme)
-        @fact scheme.approximate_marginals[(node, subgraph)] => GaussianDistribution(W=2.0, xi=0.0)
+        calculateMarginal!(node, factor3, scheme)
+        @fact scheme.approximate_marginals[factor3] => GaussianDistribution(W=2.0, xi=0.0)
     end
 end

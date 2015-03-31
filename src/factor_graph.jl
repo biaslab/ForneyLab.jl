@@ -131,6 +131,8 @@ function edges(subgraph::Subgraph; include_external=true)
     end
 end
 
+edges(node::Node) = Set{Edge}([intf.edge for intf in node.interfaces])
+
 function edges(nodeset::Set{Node}; include_external=true)
     # Return the set of edges connected to nodeset, including or excluding external edges
     # An external edge has only head or tail in the interfaces belonging to nodes in nodeset
