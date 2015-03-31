@@ -180,7 +180,7 @@ end
 # Joint approximate marginal calculations
 ############################
 
-function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceScheme)
+function calculateMarginal!(node::Node, sg::Subgraph, scheme::InferenceScheme)
     # Calculate the approximate marginal for node from the perspective of subgraph,
     # and store the result in the scheme.approximate_marginals dictionary.
 
@@ -188,8 +188,8 @@ function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceSch
     required_inputs = Array(Union(Message, ProbabilityDistribution), 0)
     internal_edge_list = Array(Edge, 0)
     for interface in node.interfaces # In the order of the node's interfaces
-        neighbouring_subgraph = scheme.edge_to_subgraph[interface.edge]
-        if neighbouring_subgraph == subgraph # Edge is internal
+        neighbouring_subgraph = subgraph(scheme, interface.edge)
+        if neighbouring_subgraph == sg # Edge is internal
             push!(required_inputs, interface.partner.message)
             push!(internal_edge_list, interface.edge)
         else # Edge is external
@@ -203,14 +203,14 @@ function calculateMarginal!(node::Node, subgraph::Subgraph, scheme::InferenceSch
         # When there is only one internal edge, the approximate marginal calculation reduces to the naive marginal update
         # The internal_edge_list contains the edge that requires the update
         internal_edge = internal_edge_list[1]
-        marg = calculateMarginal!(node, subgraph, scheme, internal_edge.tail.message.payload, internal_edge.head.message.payload)
+        marg = calculateMarginal!(node, sg, scheme, internal_edge.tail.message.payload, internal_edge.head.message.payload)
     else
         # Update for multivariate q
         # This update involves the node function 
-        calculateMarginal!(node, subgraph, scheme, required_inputs...)
+        calculateMarginal!(node, sg, scheme, required_inputs...)
     end
 
-    return scheme.approximate_marginals[(node, subgraph)]
+    return scheme.approximate_marginals[(node, sg)]
 end
 
 function calculateMarginal!(node::GaussianNode,

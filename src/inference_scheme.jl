@@ -9,9 +9,13 @@ export  currentScheme,
 type InferenceScheme
     # An inference scheme holds all attributes that are required to answer one inference question
     graph::FactorGraph
+
+    # Factorizations for approximate marginals
     factorization::Vector{Subgraph} # References to the graphs factorization required for anwering this inference question
-    edge_to_subgraph::Dict{Edge, Subgraph} # Fast lookup for edge to subgraph in which edge is internal; also determines the ordering of edges
+    edge_to_subgraph::Dict{Edge, Subgraph} # Fast lookup for edge to subgraph in which edge is internal
     approximate_marginals::Dict{(Node, Subgraph), ProbabilityDistribution} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
+
+    # Connections to outside world
     read_buffers::Dict{TerminalNode, Vector}
     write_buffers::Dict{Union(Edge,Interface), Vector}
     time_wraps::Vector{(TerminalNode, TerminalNode)}

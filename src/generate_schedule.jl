@@ -14,7 +14,7 @@ function generateSchedule(outbound_interface::Interface, scheme::InferenceScheme
 end
 function generateSchedule!(outbound_interface::Interface, scheme::InferenceScheme=currentScheme(); args...)
     schedule = generateSchedule(outbound_interface, scheme; args...)
-    return scheme.edge_to_subgraph[outbound_interface.edge].internal_schedule = schedule
+    return subgraph(scheme, outbound_interface.edge).internal_schedule = schedule
 end
 
 function generateSchedule(partial_schedule::Schedule, scheme::InferenceScheme=currentScheme(); args...)
@@ -28,7 +28,7 @@ function generateSchedule(partial_schedule::Schedule, scheme::InferenceScheme=cu
     (length(partial_schedule) > 0) || error("Partial schedule should contain at least one entry")
 
     for schedule_entry in partial_schedule
-        is(scheme.edge_to_subgraph[schedule_entry.interface.edge], scheme.edge_to_subgraph[partial_schedule[1].interface.edge]) || error("Not all interfaces in your partial schedule belong to the same subgraph")
+        is(subgraph(scheme, schedule_entry.interface.edge), subgraph(scheme, partial_schedule[1].interface.edge)) || error("Not all interfaces in your partial schedule belong to the same subgraph")
     end
 
     interface_list = Array(Interface, 0)
@@ -41,24 +41,24 @@ end
 generateSchedule(partial_list::Array{Interface, 1}, scheme::InferenceScheme=currentScheme(); args...) = generateSchedule(convert(Schedule, partial_list), scheme; args...)
 function generateSchedule!(partial_schedule::Schedule, scheme::InferenceScheme=currentScheme(); args...)
     schedule = generateSchedule(partial_schedule, scheme; args...)
-    return scheme.edge_to_subgraph[partial_schedule[1].edge].internal_schedule = schedule
+    return subgraph(scheme, partial_schedule[1].edge).internal_schedule = schedule
 end
 generateSchedule!(partial_list::Array{Interface, 1}, scheme::InferenceScheme=currentScheme(); args...) = generateSchedule!(convert(Schedule, partial_list), scheme; args...)
 
-function generateSchedule!(subgraph::Subgraph, scheme::InferenceScheme=currentScheme())
+function generateSchedule!(sg::Subgraph, scheme::InferenceScheme=currentScheme())
     # Generate an internal and external schedule for the subgraph
 
     # Set external schedule with nodes (g) connected to external edges
-    subgraph.external_schedule = nodesConnectedToExternalEdges(subgraph)
+    sg.external_schedule = nodesConnectedToExternalEdges(sg)
 
     interface_list_for_univariate = Array(Interface, 0)
     internal_interface_list = Array(Interface, 0)
-    subgraph.internal_schedule = Array(ScheduleEntry, 0)
+    sg.internal_schedule = Array(ScheduleEntry, 0)
     # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present
-    for g_node in subgraph.external_schedule # All nodes that are connected to at least one external edge
+    for g_node in sg.external_schedule # All nodes that are connected to at least one external edge
         outbound_interfaces = Array(Interface, 0) # Array that holds required outbound for the case of one internal edge connected to g_node
         for interface in g_node.interfaces
-            if interface.edge in subgraph.internal_edges # edge carries incoming internal message
+            if interface.edge in sg.internal_edges # edge carries incoming internal message
                 # Store outbound interfaces for check later on
                 if !(interface in internal_interface_list) && !(interface in interface_list_for_univariate)
                     push!(outbound_interfaces, interface) # If we were to add the outbound to the schedule (for the case of univariate q), this is the one
@@ -83,7 +83,7 @@ function generateSchedule!(subgraph::Subgraph, scheme::InferenceScheme=currentSc
     # Make sure that messages are propagated to the timewraps
     interface_list_for_time_wraps = Array(Interface, 0)
     for (from_node, to_node) in scheme.time_wraps
-        if scheme.edge_to_subgraph[from_node.out.edge] == subgraph # Timewrap is the responsibility of this subgraph
+        if subgraph(scheme, from_node.out.edge) == sg # Timewrap is the responsibility of this subgraph
             interface_list_for_time_wraps = [interface_list_for_time_wraps, generateScheduleByDFS(from_node.out.partner, Array(Interface, 0), Array(Interface, 0), scheme, stay_in_subgraph=true)]
         end
     end
@@ -100,9 +100,9 @@ function generateSchedule!(subgraph::Subgraph, scheme::InferenceScheme=currentSc
     end
 
     # Schedule for univariate comes after internal schedule, because it can depend on inbounds
-    subgraph.internal_schedule = convert(Schedule, unique([internal_interface_list, interface_list_for_univariate, interface_list_for_time_wraps, interface_list_for_write_buffers]))
+    sg.internal_schedule = convert(Schedule, unique([internal_interface_list, interface_list_for_univariate, interface_list_for_time_wraps, interface_list_for_write_buffers]))
 
-    return subgraph
+    return sg
 end
 
 function generateSchedule!(scheme::InferenceScheme=currentScheme())
@@ -141,7 +141,7 @@ function generateScheduleByDFS(outbound_interface::Interface, backtrace::Array{I
             outbound_interface_id = interface_id
         end
         if ((outbound_interface_id==interface_id) || # In the future this should be replaced by a decent dependency checking system
-            (stay_in_subgraph && scheme.edge_to_subgraph[outbound_interface.edge] != scheme.edge_to_subgraph[interface.edge])) # Internal subgraph schedule generation and edges are on different subgraphs
+            (stay_in_subgraph && subgraph(scheme, outbound_interface.edge) != subgraph(scheme, interface.edge))) # Internal subgraph schedule generation and edges are on different subgraphs
             continue
         end
         (interface.partner != nothing) || error("Disconnected interface should be connected: interface #$(interface_id) of $(typeof(node)) $(node.name)")

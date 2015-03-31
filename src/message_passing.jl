@@ -39,8 +39,8 @@ function pushRequiredInbound!(scheme::InferenceScheme, inbound_array::Array{Any,
         end
     end
 
-    inbound_subgraph = scheme.edge_to_subgraph[inbound_interface.edge]
-    outbound_subgraph = scheme.edge_to_subgraph[outbound_interface.edge]
+    inbound_subgraph = subgraph(scheme, inbound_interface.edge)
+    outbound_subgraph = subgraph(scheme, outbound_interface.edge)
 
     # Should we require the inbound message or marginal?
     if is(inbound_subgraph, outbound_subgraph)
