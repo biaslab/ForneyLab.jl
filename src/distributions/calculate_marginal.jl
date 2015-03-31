@@ -193,14 +193,14 @@ function calculateMarginal!(node::Node, factor::Set{Edge}, scheme::InferenceSche
     end
 
     # Update for multivariate q
-    required_inputs = Array(Union(Message, ProbabilityDistribution), 0)
+    required_inputs = Array(Any, 0)
     local_factors = qFactors(scheme, node)
-    for i = 1:length(node.interfaces) # Iterate over all edges connected to node
-        if factor == local_factors[i] # edge is internal
-            push!(required_inputs, node.interfaces[i].partner.message)
+    for j = 1:length(node.interfaces) # Iterate over all edges connected to node
+        if factor == local_factors[j] # edge is internal
+            push!(required_inputs, node.interfaces[j].partner.message)
         else # edge is external
-            haskey(scheme.approximate_marginals, local_factors[i]) || error("A required approximate marginal for $(node.name) is not preset. Please preset an (vague) marginal.")
-            push!(required_inputs, scheme.approximate_marginals[local_factors[i]])
+            haskey(scheme.approximate_marginals, local_factors[j]) || error("A required approximate marginal for $(node.name) is not preset. Please preset an (vague) marginal.")
+            push!(required_inputs, scheme.approximate_marginals[local_factors[j]])
         end
     end
     calculateMarginal!(factor, scheme, required_inputs...)

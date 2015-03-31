@@ -24,7 +24,6 @@ function calculateMessage!(outbound_interface::Interface)
     return outbound_interface.message
 end
 
-# TODO: Refactor
 function pushRequiredInbound!(scheme::InferenceScheme, inbound_array::Array{Any,1}, node::Node, inbound_interface::Interface, outbound_interface::Interface)
     # Push the inbound message or marginal on inbound_interface, depending on the local graph structure.
 
@@ -33,32 +32,17 @@ function pushRequiredInbound!(scheme::InferenceScheme, inbound_array::Array{Any,
         # This is possible if one of those edges is internal to a composite node.
         # We will default to sum-product message passing, and consume the message on the inbound interface.
         # Composite nodes with explicit message passing will throw an error when one of their external interfaces belongs to a different subgraph, so it is safe to assume sum-product.
-        try
-            return push!(inbound_array, inbound_interface.partner.message)
-        catch
-            error("$(inbound_interface) is not connected to an edge.")
-        end
+        try return push!(inbound_array, inbound_interface.partner.message) catch error("$(inbound_interface) is not connected to an edge.") end
     end
 
-    inbound_subgraph = subgraph(scheme, inbound_interface.edge)
-    outbound_subgraph = subgraph(scheme, outbound_interface.edge)
-
     # Should we require the inbound message or marginal?
-    if is(inbound_subgraph, outbound_subgraph)
+    if is(subgraph(scheme, inbound_interface.edge), subgraph(scheme, outbound_interface.edge))
         # Both edges in same subgraph, require message
-        try
-            push!(inbound_array, inbound_interface.partner.message)
-        catch
-            error("$(inbound_interface) is not connected to an edge.")
-        end
+        try push!(inbound_array, inbound_interface.partner.message) catch error("$(inbound_interface) is not connected to an edge.") end
     else
         # A subgraph border is crossed, require marginal
         # The factor is the set of internal edges that are in the same subgraph
-        try
-            push!(inbound_array, scheme.approximate_marginals[qFactor(node, inbound_subgraph)])
-        catch
-            error("Missing approximate marginal for $(inbound_interface)")
-        end
+        try push!(inbound_array, scheme.approximate_marginals[qFactor(scheme, node, inbound_interface.edge)]) catch error("Missing approximate marginal for $(inbound_interface)") end
     end
 
 end
@@ -69,17 +53,16 @@ function execute(schedule_entry::ScheduleEntry, scheme::InferenceScheme)
     # The resulting message is stored in the specified interface and is returned.
 
     outbound_interface = schedule_entry.interface
-
     # Preprocessing: collect all inbound messages and build the inbound_array
     node = outbound_interface.node
     inbound_array = Array(Any, 0) # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
     outbound_interface_id = 0
-    for interface_id = 1:length(node.interfaces)
-        interface = node.interfaces[interface_id]
+
+    for j = 1:length(node.interfaces)
+        interface = node.interfaces[j]
         if interface == outbound_interface
-            outbound_interface_id = interface_id
-            # Ignore this interface, push "nothing"
-            push!(inbound_array, nothing)
+            outbound_interface_id = j
+            push!(inbound_array, nothing) # This interface is outbound, push "nothing"
         else
             # Inbound message or marginal is required, push the required message/marginal to inbound_array
             pushRequiredInbound!(scheme, inbound_array, node, interface, outbound_interface)
