@@ -48,7 +48,7 @@ clearTimeWraps(scheme::InferenceScheme=currentScheme()) = (scheme.time_wraps = A
 
 function step(scheme::InferenceScheme; n_iterations::Int64=1)
     # Reset marginals
-    setVagueMarginals!(scheme)
+    setVagueQDistributions!(scheme)
     # Read buffers
     for (terminal_node, read_buffer) in scheme.read_buffers
         !isempty(read_buffer) || error("Read buffer for node $(terminal_node) is empty")

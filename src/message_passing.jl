@@ -42,7 +42,7 @@ function pushRequiredInbound!(scheme::InferenceScheme, inbound_array::Array{Any,
     else
         # A subgraph border is crossed, require marginal
         # The factor is the set of internal edges that are in the same subgraph
-        try push!(inbound_array, scheme.approximate_marginals[qFactor(scheme, node, inbound_interface.edge)]) catch error("Missing approximate marginal for $(inbound_interface)") end
+        try push!(inbound_array, qDistribution(scheme, node, inbound_interface.edge)) catch error("Missing approximate marginal for $(inbound_interface)") end
     end
 
 end
@@ -112,7 +112,7 @@ end
 function execute(schedule::ExternalSchedule, subgraph::Subgraph, scheme::InferenceScheme)
     # Execute a marginal update schedule
     for entry in schedule
-        calculateMarginal!(entry, qFactor(entry, subgraph), scheme)
+        calculateQDistribution!(entry, qFactor(entry, subgraph), scheme)
     end
 end
 function execute(subgraph::Subgraph, scheme::InferenceScheme)

@@ -2,10 +2,11 @@ export  InferenceScheme
 
 export  currentScheme,
         setCurrentScheme,
-        setVagueMarginals!,
+        setVagueQDistributions!,
         factorize!,
         subgraph,
-        qFactor
+        qFactor,
+        qDistribution
 
 type InferenceScheme
     # An inference scheme holds all attributes that are required to answer one inference question
@@ -14,7 +15,7 @@ type InferenceScheme
     # Factorizations for approximate marginals
     factorization::Vector{Subgraph} # References to the graphs factorization required for anwering this inference question
     edge_to_subgraph::Dict{Edge, Subgraph} # Fast lookup for edge to subgraph in which edge is internal
-    approximate_marginals::Dict{Set{Edge}, ProbabilityDistribution} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
+    q_distributions::Dict{Set{Edge}, ProbabilityDistribution} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
 
     # Connections to outside world
     read_buffers::Dict{TerminalNode, Vector}
@@ -51,24 +52,29 @@ end
 # Get the subgraph in which internal_edge is internal
 subgraph(scheme::InferenceScheme, internal_edge::Edge) = scheme.edge_to_subgraph[internal_edge]
 subgraph(internal_edge::Edge) = currentScheme().edge_to_subgraph[internal_edge]
-# Get the local subgraph composition around node, in the order of the interfaces
-subgraphs(scheme::InferenceScheme, node::Node) = [subgraph(scheme, interface.edge) for interface in node.interfaces]
 
-# Get the factor of which edge is a part
+# Get the factor::Set{Edge} of which edge is an element
 qFactor(scheme::InferenceScheme, node::Node, edge::Edge) = intersect(edges(node), subgraph(scheme, edge).internal_edges)
 qFactor(node::Node, sg::Subgraph) = intersect(edges(node), sg.internal_edges)
-# Get the local q factor composition around node, in the order of the interfaces
+
+# Get the distributions over the factor of which edge is an element
+qDistribution(factor::Set{Edge}) = scheme.q_distributions[factor]
+qDistribution(scheme::InferenceScheme, node::Node, edge::Edge) = qDistribution(qFactor(scheme, node, edge))
+qDistribution(node::Node, sg::Subgraph) = qDistribution(qFactor(node, sg))
+
+# Local decompositions around a node
+subgraphs(scheme::InferenceScheme, node::Node) = [subgraph(scheme, interface.edge) for interface in node.interfaces]
 qFactors(scheme::InferenceScheme, node::Node) = [qFactor(scheme, node, interface.edge) for interface in node.interfaces]
 
-function ensureMarginal!(factor::Set{Edge}, scheme::InferenceScheme, assign_distribution::DataType)
+function ensureQDistribution!(factor::Set{Edge}, scheme::InferenceScheme, assign_distribution::DataType)
     # Looks for a marginal in the node-subgraph dictionary.
     # If no marginal is present, it sets and returns a vague distribution.
     # Otherwise, it returns the existing marginal. Used for fast marginal calculations.
     try
-        return scheme.approximate_marginals[factor]
+        return qDistribution(factor)
     catch
         if assign_distribution <: ProbabilityDistribution
-            return scheme.approximate_marginals[factor] = vague(assign_distribution)
+            return scheme.q_distributions[factor] = vague(assign_distribution) # Assign a q distribution
         else
             error("Cannot create a marginal of type $(assign_distribution) since a marginal should be <: ProbabilityDistribution")
         end
@@ -76,7 +82,7 @@ function ensureMarginal!(factor::Set{Edge}, scheme::InferenceScheme, assign_dist
 
 end
 
-function setVagueMarginals!(scheme::InferenceScheme=currentScheme())
+function setVagueQDistributions!(scheme::InferenceScheme=currentScheme())
     # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
     for subgraph in scheme.factorization
         external_nodes = nodesConnectedToExternalEdges(subgraph)
@@ -102,7 +108,7 @@ function setVagueMarginals!(scheme::InferenceScheme=currentScheme())
                 internal_incoming_message_types = [interface.edge.distribution_type for interface in internal_interfaces]
                 marginal_type = getMarginalType(internal_incoming_message_types...)
             end
-            scheme.approximate_marginals[qFactor(node, subgraph)] = vague(marginal_type)
+            scheme.q_distributions[qFactor(node, subgraph)] = vague(marginal_type)
         end
     end
 

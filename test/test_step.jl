@@ -107,7 +107,7 @@ facts("step integration tests") do
         for subgraph in s.factorization
             generateSchedule!(subgraph)
         end
-        setVagueMarginals!()
+        setVagueQDistributions!()
         step(s, n_iterations=10)
         @fact round(mean_out[end].W[1,1], 2) => 1.79
         @fact round(mean_out[end].xi[1], 2) => 1.57

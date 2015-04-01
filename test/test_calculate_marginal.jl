@@ -16,7 +16,7 @@ facts("Marginal calculation integration tests") do
         @fact calculateMarginal(StudentsTDistribution(m=0.0, W=1.0, nu=1.0), GaussianDistribution(m=0.0, W=1.0)) => GaussianDistribution(m=0.0, W=3.0)
     end
 
-    context("Marginal calculation for naively factorized GaussianNode") do
+    context("Q distribution calculation for naively factorized GaussianNode") do
         (node, edges) = initializeGaussianNode(y_type=Float64)
         scheme = InferenceScheme()
         factorize!(scheme)
@@ -26,22 +26,22 @@ facts("Marginal calculation integration tests") do
         factor3 = qFactor(scheme, node, edges[3])
 
         # Presetting marginals
-        scheme.approximate_marginals[factor1] = GaussianDistribution()
-        scheme.approximate_marginals[factor2] = GammaDistribution()
-        scheme.approximate_marginals[factor3] = GaussianDistribution()
+        scheme.q_distributions[factor1] = GaussianDistribution()
+        scheme.q_distributions[factor2] = GammaDistribution()
+        scheme.q_distributions[factor3] = GaussianDistribution()
         
         # Univariate marginal
-        calculateMarginal!(node, factor1, scheme)
-        @fact scheme.approximate_marginals[factor1] => GaussianDistribution(W=2.0, xi=0.0)
+        calculateQDistribution!(node, factor1, scheme)
+        @fact qDistribution(factor1) => GaussianDistribution(W=2.0, xi=0.0)
         # Univariate marginal
-        calculateMarginal!(node, factor2, scheme)
-        @fact scheme.approximate_marginals[factor2] => GammaDistribution(a=1.0, b=2.0)
+        calculateQDistribution!(node, factor2, scheme)
+        @fact qDistribution(factor2) => GammaDistribution(a=1.0, b=2.0)
         # Univariate marginal
-        calculateMarginal!(node, factor3, scheme)
-        @fact scheme.approximate_marginals[factor3] => GaussianDistribution(m=1.0, V=tiny())
+        calculateQDistribution!(node, factor3, scheme)
+        @fact qDistribution(factor3) => GaussianDistribution(m=1.0, V=tiny())
     end
     
-    context("Marginal calculation for the structurally factorized GaussianNode") do
+    context("Q distribution calculation for the structurally factorized GaussianNode") do
         (node, edges) = initializeGaussianNode(y_type=GaussianDistribution)
         scheme = InferenceScheme()
         factorize!(Set{Edge}([edges[3]]))
@@ -52,14 +52,14 @@ facts("Marginal calculation integration tests") do
         factor3 = qFactor(scheme, node, edges[3])
 
         # Presetting marginals
-        scheme.approximate_marginals[factor1] = NormalGammaDistribution()
-        scheme.approximate_marginals[factor3] = GaussianDistribution()
+        scheme.q_distributions[factor1] = NormalGammaDistribution()
+        scheme.q_distributions[factor3] = GaussianDistribution()
         
         # Joint marginal
-        calculateMarginal!(node, factor1, scheme)
-        @fact scheme.approximate_marginals[factor1] => NormalGammaDistribution(m=0.0, beta=huge(), a=1.5, b=1.5)
+        calculateQDistribution!(node, factor1, scheme)
+        @fact qDistribution(factor1) => NormalGammaDistribution(m=0.0, beta=huge(), a=1.5, b=1.5)
         # Univariate marginal
-        calculateMarginal!(node, factor3, scheme)
-        @fact scheme.approximate_marginals[factor3] => GaussianDistribution(W=2.0, xi=0.0)
+        calculateQDistribution!(node, factor3, scheme)
+        @fact qDistribution(factor3) => GaussianDistribution(W=2.0, xi=0.0)
     end
 end

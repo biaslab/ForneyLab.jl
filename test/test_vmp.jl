@@ -19,7 +19,7 @@ facts("Naive VMP implementation integration tests") do
         m_buffer = setWriteBuffer(m_eq_nodes[end].interfaces[2])
         gam_buffer = setWriteBuffer(gam_eq_nodes[end].interfaces[2])
         generateSchedule!()
-        setVagueMarginals!()
+        setVagueQDistributions!()
 
         # Perform vmp updates
         step(scheme, n_iterations=50)
@@ -50,7 +50,7 @@ facts("Naive VMP implementation integration tests") do
         scheme = InferenceScheme()
         # Prepare for inference
         factorize!()
-        setVagueMarginals!()
+        setVagueQDistributions!()
         setTimeWrap(node("theta_k"), node("theta_k_min"))
         setReadBuffer(node("y"), data)
         state_buff = setWriteBuffer(node("eq").interfaces[2])
@@ -91,7 +91,7 @@ facts("Structured VMP implementation integration tests") do
         setTimeWrap(m_N_node, m_0_node)
         setTimeWrap(gam_N_node, gam_0_node)
         generateSchedule!() # Generate internal and external schedule automatically
-        setVagueMarginals!()
+        setVagueQDistributions!()
 
         while length(y_buffer) > 0
             step(scheme, n_iterations=10)
