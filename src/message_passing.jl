@@ -112,7 +112,7 @@ end
 function execute(schedule::ExternalSchedule, subgraph::Subgraph, scheme::InferenceScheme)
     # Execute a marginal update schedule
     for entry in schedule
-        calculateQDistribution!(entry, qFactor(entry, subgraph), scheme)
+        calculateQDistribution!(entry, qFactor(scheme, entry, subgraph), scheme)
     end
 end
 function execute(subgraph::Subgraph, scheme::InferenceScheme)

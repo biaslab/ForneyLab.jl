@@ -113,8 +113,8 @@ facts("generateSchedule() integration tests") do
                 generateSchedule!(subgraph) # Generate internal and external schedule automatically
             end
 
-            y_subgraph = subgraph(y_edge)
-            m_gam_subgraph = subgraph(m_edge)
+            y_subgraph = subgraph(scheme, y_edge)
+            m_gam_subgraph = subgraph(scheme, m_edge)
             @fact y_subgraph.internal_schedule => ForneyLab.convert(Schedule, [y_edge.head, y_edge.tail]) # Include outgoing interface
             @fact m_gam_subgraph.internal_schedule => ForneyLab.convert(Schedule, [m_0_node.out, m_N_node.out, m_edge.tail, gam_0_node.out, gam_N_node.out, gam_edge.tail]) # Exclude outgoing interfaces
         end

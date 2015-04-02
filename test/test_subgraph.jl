@@ -17,8 +17,8 @@ facts("InferenceScheme unit tests") do
         scheme = InferenceScheme()
         factorize!(Set{Edge}([t2.out.edge]))
         graph = currentGraph()
-        @fact subgraph(t1.out.edge) => scheme.factorization[1]
-        @fact subgraph(t2.out.edge) => scheme.factorization[2]
+        @fact subgraph(scheme, t1.out.edge) => scheme.factorization[1]
+        @fact subgraph(scheme, t2.out.edge) => scheme.factorization[2]
     end
 end
 
@@ -36,11 +36,12 @@ facts("Subgraph integration tests") do
         n_sections = length(data)
         factorize!()
         graph = currentGraph()
-        m_subgraph = subgraph(g_nodes[1].mean.edge)
-        gam_subgraph = subgraph(g_nodes[1].precision.edge)
-        y1_subgraph = subgraph(g_nodes[1].out.edge)
-        y2_subgraph = subgraph(g_nodes[2].out.edge)
-        y3_subgraph = subgraph(g_nodes[3].out.edge)
+        scheme = currentScheme()
+        m_subgraph = subgraph(scheme, g_nodes[1].mean.edge)
+        gam_subgraph = subgraph(scheme, g_nodes[1].precision.edge)
+        y1_subgraph = subgraph(scheme, g_nodes[1].out.edge)
+        y2_subgraph = subgraph(scheme, g_nodes[2].out.edge)
+        y3_subgraph = subgraph(scheme, g_nodes[3].out.edge)
         @fact Set(ForneyLab.nodesConnectedToExternalEdges(m_subgraph)) => Set(g_nodes)
         @fact Set(ForneyLab.nodesConnectedToExternalEdges(gam_subgraph)) => Set(g_nodes)
         @fact Set(ForneyLab.nodesConnectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
@@ -54,10 +55,11 @@ facts("Subgraph integration tests") do
             factorize!(Set{Edge}({edge}))
         end
         graph = currentGraph()
-        m_gam_subgraph = subgraph(g_nodes[1].mean.edge)
-        y1_subgraph = subgraph(g_nodes[1].out.edge)
-        y2_subgraph = subgraph(g_nodes[2].out.edge)
-        y3_subgraph = subgraph(g_nodes[3].out.edge)
+        scheme = currentScheme()
+        m_gam_subgraph = subgraph(scheme, g_nodes[1].mean.edge)
+        y1_subgraph = subgraph(scheme, g_nodes[1].out.edge)
+        y2_subgraph = subgraph(scheme, g_nodes[2].out.edge)
+        y3_subgraph = subgraph(scheme, g_nodes[3].out.edge)
         @fact Set(ForneyLab.nodesConnectedToExternalEdges(m_gam_subgraph)) => Set(g_nodes)
         @fact Set(ForneyLab.nodesConnectedToExternalEdges(y1_subgraph)) => Set([g_nodes[1]])
         @fact Set(ForneyLab.nodesConnectedToExternalEdges(y2_subgraph)) => Set([g_nodes[2]])

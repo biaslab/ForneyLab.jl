@@ -189,7 +189,7 @@ function calculateQDistribution!(node::Node, factor::Set{Edge}, scheme::Inferenc
         # When there is only one internal edge, the approximate marginal calculation reduces to the naive marginal update
         internal_edge = first(factor) # Extract element
         calculateQDistribution!(factor, scheme, internal_edge.tail.message.payload, internal_edge.head.message.payload)
-        return qDistribution(factor)
+        return qDistribution(scheme, factor)
     end
 
     # Update for multivariate q
@@ -200,11 +200,11 @@ function calculateQDistribution!(node::Node, factor::Set{Edge}, scheme::Inferenc
             push!(required_inputs, node.interfaces[j].partner.message)
         else # edge is external
             haskey(scheme.q_distributions, local_factors[j]) || error("A required approximate marginal for $(node.name) is not preset. Please preset an (vague) marginal.")
-            push!(required_inputs, qDistribution(local_factors[j]))
+            push!(required_inputs, qDistribution(scheme, local_factors[j]))
         end
     end
     calculateQDistribution!(factor, scheme, required_inputs...)
-    return qDistribution(factor)
+    return qDistribution(scheme, factor)
 end
 
 function calculateQDistribution!(factor::Set{Edge},

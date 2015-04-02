@@ -23,7 +23,7 @@ end
 #####################
 
 facts("InferenceScheme integration tests") do
-    context("setVagueMarginals() should set vague marginals at the appropriate places") do
+    context("setVagueQDistributions() should set vague marginals at the appropriate places") do
         data = [1.0, 1.0, 1.0]
 
         # MF case
@@ -33,22 +33,22 @@ facts("InferenceScheme integration tests") do
         factorize!()
         setVagueQDistributions!()
         graph = currentGraph()
-        m_subgraph = subgraph(g_nodes[1].mean.edge)
-        gam_subgraph = subgraph(g_nodes[1].precision.edge)
-        y1_subgraph = subgraph(g_nodes[1].out.edge)
-        y2_subgraph = subgraph(g_nodes[2].out.edge)
-        y3_subgraph = subgraph(g_nodes[3].out.edge)
+        m_subgraph = subgraph(scheme, g_nodes[1].mean.edge)
+        gam_subgraph = subgraph(scheme, g_nodes[1].precision.edge)
+        y1_subgraph = subgraph(scheme, g_nodes[1].out.edge)
+        y2_subgraph = subgraph(scheme, g_nodes[2].out.edge)
+        y3_subgraph = subgraph(scheme, g_nodes[3].out.edge)
 
         @fact length(scheme.q_distributions) => 9
-        @fact qDistribution(g_nodes[1], m_subgraph) => vague(GaussianDistribution)
-        @fact qDistribution(g_nodes[2], m_subgraph) => vague(GaussianDistribution)
-        @fact qDistribution(g_nodes[3], m_subgraph) => vague(GaussianDistribution)
-        @fact qDistribution(g_nodes[1], gam_subgraph) => vague(GammaDistribution)
-        @fact qDistribution(g_nodes[2], gam_subgraph) => vague(GammaDistribution)
-        @fact qDistribution(g_nodes[3], gam_subgraph) => vague(GammaDistribution)
-        @fact qDistribution(g_nodes[1], y1_subgraph) => vague(GaussianDistribution)
-        @fact qDistribution(g_nodes[2], y2_subgraph) => vague(GaussianDistribution)
-        @fact qDistribution(g_nodes[3], y3_subgraph) => vague(GaussianDistribution)
+        @fact qDistribution(scheme, g_nodes[1], m_subgraph) => vague(GaussianDistribution)
+        @fact qDistribution(scheme, g_nodes[2], m_subgraph) => vague(GaussianDistribution)
+        @fact qDistribution(scheme, g_nodes[3], m_subgraph) => vague(GaussianDistribution)
+        @fact qDistribution(scheme, g_nodes[1], gam_subgraph) => vague(GammaDistribution)
+        @fact qDistribution(scheme, g_nodes[2], gam_subgraph) => vague(GammaDistribution)
+        @fact qDistribution(scheme, g_nodes[3], gam_subgraph) => vague(GammaDistribution)
+        @fact qDistribution(scheme, g_nodes[1], y1_subgraph) => vague(GaussianDistribution)
+        @fact qDistribution(scheme, g_nodes[2], y2_subgraph) => vague(GaussianDistribution)
+        @fact qDistribution(scheme, g_nodes[3], y3_subgraph) => vague(GaussianDistribution)
 
         # Structured case
         (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
@@ -59,17 +59,17 @@ facts("InferenceScheme integration tests") do
         end
         setVagueQDistributions!()
         graph = currentGraph()
-        m_gam_subgraph = subgraph(g_nodes[1].mean.edge)
-        y1_subgraph = subgraph(g_nodes[1].out.edge)
-        y2_subgraph = subgraph(g_nodes[2].out.edge)
-        y3_subgraph = subgraph(g_nodes[3].out.edge)
+        m_gam_subgraph = subgraph(scheme, g_nodes[1].mean.edge)
+        y1_subgraph = subgraph(scheme, g_nodes[1].out.edge)
+        y2_subgraph = subgraph(scheme, g_nodes[2].out.edge)
+        y3_subgraph = subgraph(scheme, g_nodes[3].out.edge)
 
         @fact length(scheme.q_distributions) => 6
-        @fact qDistribution(g_nodes[1], m_gam_subgraph) => vague(NormalGammaDistribution)
-        @fact qDistribution(g_nodes[2], m_gam_subgraph) => vague(NormalGammaDistribution)
-        @fact qDistribution(g_nodes[3], m_gam_subgraph) => vague(NormalGammaDistribution)
-        @fact qDistribution(g_nodes[1], y1_subgraph) => vague(GaussianDistribution)
-        @fact qDistribution(g_nodes[2], y2_subgraph) => vague(GaussianDistribution)
-        @fact qDistribution(g_nodes[3], y3_subgraph) => vague(GaussianDistribution)
+        @fact qDistribution(scheme, g_nodes[1], m_gam_subgraph) => vague(NormalGammaDistribution)
+        @fact qDistribution(scheme, g_nodes[2], m_gam_subgraph) => vague(NormalGammaDistribution)
+        @fact qDistribution(scheme, g_nodes[3], m_gam_subgraph) => vague(NormalGammaDistribution)
+        @fact qDistribution(scheme, g_nodes[1], y1_subgraph) => vague(GaussianDistribution)
+        @fact qDistribution(scheme, g_nodes[2], y2_subgraph) => vague(GaussianDistribution)
+        @fact qDistribution(scheme, g_nodes[3], y3_subgraph) => vague(GaussianDistribution)
     end
 end

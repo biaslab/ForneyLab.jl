@@ -73,22 +73,22 @@ facts("Factorization integration tests") do
         end
         @fact length(scheme.factorization) => 5
 
-        @fact subgraph(g_nodes[1].mean.edge).internal_edges => m_set 
-        @fact subgraph(g_nodes[1].precision.edge).internal_edges => gam_set 
-        @fact subgraph(g_nodes[1].out.edge).internal_edges => Set{Edge}([q_y_edges[1]]) 
-        @fact subgraph(g_nodes[2].out.edge).internal_edges => Set{Edge}([q_y_edges[2]])
-        @fact subgraph(g_nodes[3].out.edge).internal_edges => Set{Edge}([q_y_edges[3]])
+        @fact subgraph(scheme, g_nodes[1].mean.edge).internal_edges => m_set 
+        @fact subgraph(scheme, g_nodes[1].precision.edge).internal_edges => gam_set 
+        @fact subgraph(scheme, g_nodes[1].out.edge).internal_edges => Set{Edge}([q_y_edges[1]]) 
+        @fact subgraph(scheme, g_nodes[2].out.edge).internal_edges => Set{Edge}([q_y_edges[2]])
+        @fact subgraph(scheme, g_nodes[3].out.edge).internal_edges => Set{Edge}([q_y_edges[3]])
 
-        @fact subgraph(g_nodes[1].mean.edge).external_edges => Set{Edge}([g_nodes[1].out.edge, g_nodes[1].precision.edge, g_nodes[2].out.edge, g_nodes[2].precision.edge, g_nodes[3].out.edge, g_nodes[3].precision.edge])
-        @fact subgraph(g_nodes[1].precision.edge).external_edges => Set{Edge}([g_nodes[1].out.edge, g_nodes[1].mean.edge, g_nodes[2].out.edge, g_nodes[2].mean.edge, g_nodes[3].out.edge, g_nodes[3].mean.edge])
-        @fact subgraph(g_nodes[1].out.edge).external_edges => Set{Edge}([g_nodes[1].mean.edge, g_nodes[1].precision.edge])
-        @fact subgraph(g_nodes[2].out.edge).external_edges => Set{Edge}([g_nodes[2].mean.edge, g_nodes[2].precision.edge])
-        @fact subgraph(g_nodes[3].out.edge).external_edges => Set{Edge}([g_nodes[3].mean.edge, g_nodes[3].precision.edge])
+        @fact subgraph(scheme, g_nodes[1].mean.edge).external_edges => Set{Edge}([g_nodes[1].out.edge, g_nodes[1].precision.edge, g_nodes[2].out.edge, g_nodes[2].precision.edge, g_nodes[3].out.edge, g_nodes[3].precision.edge])
+        @fact subgraph(scheme, g_nodes[1].precision.edge).external_edges => Set{Edge}([g_nodes[1].out.edge, g_nodes[1].mean.edge, g_nodes[2].out.edge, g_nodes[2].mean.edge, g_nodes[3].out.edge, g_nodes[3].mean.edge])
+        @fact subgraph(scheme, g_nodes[1].out.edge).external_edges => Set{Edge}([g_nodes[1].mean.edge, g_nodes[1].precision.edge])
+        @fact subgraph(scheme, g_nodes[2].out.edge).external_edges => Set{Edge}([g_nodes[2].mean.edge, g_nodes[2].precision.edge])
+        @fact subgraph(scheme, g_nodes[3].out.edge).external_edges => Set{Edge}([g_nodes[3].mean.edge, g_nodes[3].precision.edge])
 
-        @fact subgraph(g_nodes[1].mean.edge).nodes => Set{Node}([m_eq_nodes, g_nodes, m_eq_nodes[1].interfaces[1].partner.node, m_eq_nodes[end].interfaces[2].partner.node])
-        @fact subgraph(g_nodes[1].precision.edge).nodes => Set{Node}([gam_eq_nodes, g_nodes, gam_eq_nodes[1].interfaces[1].partner.node, gam_eq_nodes[end].interfaces[2].partner.node])
-        @fact subgraph(g_nodes[1].out.edge).nodes => Set{Node}([g_nodes[1], g_nodes[1].out.partner.node]) 
-        @fact subgraph(g_nodes[2].out.edge).nodes => Set{Node}([g_nodes[2], g_nodes[2].out.partner.node])
-        @fact subgraph(g_nodes[3].out.edge).nodes => Set{Node}([g_nodes[3], g_nodes[3].out.partner.node])
+        @fact subgraph(scheme, g_nodes[1].mean.edge).nodes => Set{Node}([m_eq_nodes, g_nodes, m_eq_nodes[1].interfaces[1].partner.node, m_eq_nodes[end].interfaces[2].partner.node])
+        @fact subgraph(scheme, g_nodes[1].precision.edge).nodes => Set{Node}([gam_eq_nodes, g_nodes, gam_eq_nodes[1].interfaces[1].partner.node, gam_eq_nodes[end].interfaces[2].partner.node])
+        @fact subgraph(scheme, g_nodes[1].out.edge).nodes => Set{Node}([g_nodes[1], g_nodes[1].out.partner.node]) 
+        @fact subgraph(scheme, g_nodes[2].out.edge).nodes => Set{Node}([g_nodes[2], g_nodes[2].out.partner.node])
+        @fact subgraph(scheme, g_nodes[3].out.edge).nodes => Set{Node}([g_nodes[3], g_nodes[3].out.partner.node])
     end
 end

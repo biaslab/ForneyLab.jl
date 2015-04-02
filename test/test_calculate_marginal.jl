@@ -32,13 +32,13 @@ facts("Marginal calculation integration tests") do
         
         # Univariate marginal
         calculateQDistribution!(node, factor1, scheme)
-        @fact qDistribution(factor1) => GaussianDistribution(W=2.0, xi=0.0)
+        @fact qDistribution(scheme, factor1) => GaussianDistribution(W=2.0, xi=0.0)
         # Univariate marginal
         calculateQDistribution!(node, factor2, scheme)
-        @fact qDistribution(factor2) => GammaDistribution(a=1.0, b=2.0)
+        @fact qDistribution(scheme, factor2) => GammaDistribution(a=1.0, b=2.0)
         # Univariate marginal
         calculateQDistribution!(node, factor3, scheme)
-        @fact qDistribution(factor3) => GaussianDistribution(m=1.0, V=tiny())
+        @fact qDistribution(scheme, factor3) => GaussianDistribution(m=1.0, V=tiny())
     end
     
     context("Q distribution calculation for the structurally factorized GaussianNode") do
@@ -57,9 +57,9 @@ facts("Marginal calculation integration tests") do
         
         # Joint marginal
         calculateQDistribution!(node, factor1, scheme)
-        @fact qDistribution(factor1) => NormalGammaDistribution(m=0.0, beta=huge(), a=1.5, b=1.5)
+        @fact qDistribution(scheme, factor1) => NormalGammaDistribution(m=0.0, beta=huge(), a=1.5, b=1.5)
         # Univariate marginal
         calculateQDistribution!(node, factor3, scheme)
-        @fact qDistribution(factor3) => GaussianDistribution(W=2.0, xi=0.0)
+        @fact qDistribution(scheme, factor3) => GaussianDistribution(W=2.0, xi=0.0)
     end
 end

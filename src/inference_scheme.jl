@@ -43,24 +43,25 @@ function InferenceScheme(graph::FactorGraph=currentGraph())
     return scheme
 end
 
+function show(io::IO, scheme::InferenceScheme)
+    println(io, "InferenceScheme with $(length(scheme.factorization)) subgraph(s).")
+    println(io, "\nSee also:")
+    println(io, " draw(::InferenceScheme)")
+end
 
-# TODO: review!!
-# function show(io::IO, scheme::InferenceScheme)
-# 
-# end
+# TODO: These functions might be improved by implementing a faster lookup table
 
 # Get the subgraph in which internal_edge is internal
 subgraph(scheme::InferenceScheme, internal_edge::Edge) = scheme.edge_to_subgraph[internal_edge]
-subgraph(internal_edge::Edge) = currentScheme().edge_to_subgraph[internal_edge]
 
 # Get the factor::Set{Edge} of which edge is an element
 qFactor(scheme::InferenceScheme, node::Node, edge::Edge) = intersect(edges(node), subgraph(scheme, edge).internal_edges)
-qFactor(node::Node, sg::Subgraph) = intersect(edges(node), sg.internal_edges)
+qFactor(scheme::InferenceScheme, node::Node, sg::Subgraph) = intersect(edges(node), sg.internal_edges)
 
 # Get the distributions over the factor of which edge is an element
-qDistribution(factor::Set{Edge}) = scheme.q_distributions[factor]
-qDistribution(scheme::InferenceScheme, node::Node, edge::Edge) = qDistribution(qFactor(scheme, node, edge))
-qDistribution(node::Node, sg::Subgraph) = qDistribution(qFactor(node, sg))
+qDistribution(scheme::InferenceScheme, factor::Set{Edge}) = scheme.q_distributions[factor]
+qDistribution(scheme::InferenceScheme, node::Node, edge::Edge) = qDistribution(scheme, qFactor(scheme, node, edge))
+qDistribution(scheme::InferenceScheme, node::Node, sg::Subgraph) = qDistribution(scheme, qFactor(scheme, node, sg))
 
 # Local decompositions around a node
 subgraphs(scheme::InferenceScheme, node::Node) = [subgraph(scheme, interface.edge) for interface in node.interfaces]
@@ -108,7 +109,7 @@ function setVagueQDistributions!(scheme::InferenceScheme=currentScheme())
                 internal_incoming_message_types = [interface.edge.distribution_type for interface in internal_interfaces]
                 marginal_type = getMarginalType(internal_incoming_message_types...)
             end
-            scheme.q_distributions[qFactor(node, subgraph)] = vague(marginal_type)
+            scheme.q_distributions[qFactor(scheme, node, subgraph)] = vague(marginal_type)
         end
     end
 
