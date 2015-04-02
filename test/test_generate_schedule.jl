@@ -45,7 +45,7 @@ facts("generateSchedule() integration tests") do
             @fact schedule => ForneyLab.convert(Schedule, [inhibitor.out, driver.out, driver.in1, inhibitor.in1, add.in2])
         end
 
-        context("Should generate an internal and external schedule when called on a subgraph") do
+        context("Should generate an internal schedule when called on a subgraph") do
             (t1, a1, g1, t2, t3) = initializeFactoringGraphWithoutLoop()
             scheme = InferenceScheme()
             factorize!(Set{Edge}([t2.out.edge])) # Put this edge in a different subgraph
@@ -57,8 +57,6 @@ facts("generateSchedule() integration tests") do
             # There are multiple valid schedules because of different orderings. Validity or schedule order is not checked here.
             @fact scheme.factorization[1].internal_schedule => ForneyLab.convert(Schedule, [t1.out, a1.out, t3.out])
             @fact scheme.factorization[2].internal_schedule => ForneyLab.convert(Schedule, [t2.out, t2.out.partner])
-            @fact scheme.factorization[1].external_schedule => [g1]
-            @fact scheme.factorization[2].external_schedule => [g1]
         end
 
         context("Should generate a schedule that propagates messages to timewraps") do

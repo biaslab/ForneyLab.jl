@@ -3,15 +3,9 @@
 #####################
 
 facts("Read/write buffer integration tests") do
-    # Background
-    g = FactorGraph()
-    node_t1 = TerminalNode()
-    node_t2 = TerminalNode()
-    e = Edge(node_t1, node_t2)
-    s = InferenceScheme()
-
     # setReadBuffer
     context("setReadBuffer should register a read buffer for a TerminalNode") do
+        (node_t1, node_t2, e, s) = initializeBufferGraph()
         read_buffer = zeros(10)
         setReadBuffer(node_t1, read_buffer)
         @fact s.read_buffers[node_t1] => read_buffer
@@ -21,22 +15,32 @@ facts("Read/write buffer integration tests") do
     # end
 
     context("setReadBuffer should register a mini-batch read buffer for a TerminalNode array") do
-        @fact true=>false
+        data = [1.0, 1.0, 1.0]
+        (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges) = initializeGaussianNodeChain(data)
+        scheme = currentScheme()
+        more_data = [1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0]
+        setReadBuffer(y_nodes, more_data, scheme)
+        @fact scheme.read_buffers[y_nodes[1]] => [1.0, 2.0, 3.0]
+        @fact scheme.read_buffers[y_nodes[2]] => [1.0, 2.0, 3.0]
+        @fact scheme.read_buffers[y_nodes[3]] => [1.0, 2.0, 3.0]
     end
     
     # setWriteBuffer
     context("setWriteBuffer should register a write buffer for an Interface") do
+        (node_t1, node_t2, e, s) = initializeBufferGraph()
         write_buffer = Array(Any, 0)
         setWriteBuffer(node_t1.out, write_buffer)
         @fact s.write_buffers[node_t1.out] => write_buffer
     end
     context("setWriteBuffer should register a write buffer for an Edge (marginal)") do
+        (node_t1, node_t2, e, s) = initializeBufferGraph()
         write_buffer = Array(Any, 0)
         setWriteBuffer(e, write_buffer)
         @fact s.write_buffers[e] => write_buffer
     end
 
     context("clearBuffers should deregister all read/write buffers") do
+        (node_t1, node_t2, e, s) = initializeBufferGraph()
         clearBuffers(s)
         @fact length(s.read_buffers) => 0
         @fact length(s.write_buffers) => 0
@@ -44,15 +48,9 @@ facts("Read/write buffer integration tests") do
 end
 
 facts("TimeWrap integration tests") do
-    # Background
-    g = FactorGraph()
-    node_t1 = TerminalNode()
-    node_t2 = TerminalNode()
-    e = Edge(node_t1, node_t2)
-    s = InferenceScheme()
-
     # setTimeWrap
     context("setTimeWrap should register a timewrap for a pair of TerminalNodes") do
+        (node_t1, node_t2, e, s) = initializeBufferGraph()
         time_wraps = setTimeWrap(node_t1, node_t2)
         @fact length(time_wraps) => 1
         @fact ((node_t1, node_t2) in time_wraps) => true
@@ -60,6 +58,7 @@ facts("TimeWrap integration tests") do
 
     # clearTimeWraps
     context("clearTimeWraps should deregister all time wraps") do
+        (node_t1, node_t2, e, s) = initializeBufferGraph()
         clearTimeWraps(s)
         @fact length(s.time_wraps) => 0
     end

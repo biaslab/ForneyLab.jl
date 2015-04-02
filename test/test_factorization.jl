@@ -15,12 +15,8 @@ facts("Factorization integration tests") do
             scheme = InferenceScheme()
             factorize!(Set{Edge}([t2.out.edge]))
             graph = currentGraph()
-            @fact scheme.factorization[2].nodes => Set{Node}({t2, g1})
             @fact scheme.factorization[2].internal_edges => Set{Edge}({t2.out.edge})
-            @fact scheme.factorization[2].external_edges => Set{Edge}({g1.mean.edge, g1.out.edge})
-            @fact scheme.factorization[1].nodes => Set{Node}({t1, a1, g1, add1, g2})
             @fact scheme.factorization[1].internal_edges => Set{Edge}({t1.out.edge, a1.out.edge, g1.out.edge, add1.out.edge, g2.out.edge})
-            @fact scheme.factorization[1].external_edges => Set{Edge}({t2.out.edge})
         end
 
         context("Should update the edge_to_subgraph mapping for the graph") do
@@ -78,17 +74,5 @@ facts("Factorization integration tests") do
         @fact subgraph(scheme, g_nodes[1].out.edge).internal_edges => Set{Edge}([q_y_edges[1]]) 
         @fact subgraph(scheme, g_nodes[2].out.edge).internal_edges => Set{Edge}([q_y_edges[2]])
         @fact subgraph(scheme, g_nodes[3].out.edge).internal_edges => Set{Edge}([q_y_edges[3]])
-
-        @fact subgraph(scheme, g_nodes[1].mean.edge).external_edges => Set{Edge}([g_nodes[1].out.edge, g_nodes[1].precision.edge, g_nodes[2].out.edge, g_nodes[2].precision.edge, g_nodes[3].out.edge, g_nodes[3].precision.edge])
-        @fact subgraph(scheme, g_nodes[1].precision.edge).external_edges => Set{Edge}([g_nodes[1].out.edge, g_nodes[1].mean.edge, g_nodes[2].out.edge, g_nodes[2].mean.edge, g_nodes[3].out.edge, g_nodes[3].mean.edge])
-        @fact subgraph(scheme, g_nodes[1].out.edge).external_edges => Set{Edge}([g_nodes[1].mean.edge, g_nodes[1].precision.edge])
-        @fact subgraph(scheme, g_nodes[2].out.edge).external_edges => Set{Edge}([g_nodes[2].mean.edge, g_nodes[2].precision.edge])
-        @fact subgraph(scheme, g_nodes[3].out.edge).external_edges => Set{Edge}([g_nodes[3].mean.edge, g_nodes[3].precision.edge])
-
-        @fact subgraph(scheme, g_nodes[1].mean.edge).nodes => Set{Node}([m_eq_nodes, g_nodes, m_eq_nodes[1].interfaces[1].partner.node, m_eq_nodes[end].interfaces[2].partner.node])
-        @fact subgraph(scheme, g_nodes[1].precision.edge).nodes => Set{Node}([gam_eq_nodes, g_nodes, gam_eq_nodes[1].interfaces[1].partner.node, gam_eq_nodes[end].interfaces[2].partner.node])
-        @fact subgraph(scheme, g_nodes[1].out.edge).nodes => Set{Node}([g_nodes[1], g_nodes[1].out.partner.node]) 
-        @fact subgraph(scheme, g_nodes[2].out.edge).nodes => Set{Node}([g_nodes[2], g_nodes[2].out.partner.node])
-        @fact subgraph(scheme, g_nodes[3].out.edge).nodes => Set{Node}([g_nodes[3], g_nodes[3].out.partner.node])
     end
 end

@@ -1,4 +1,4 @@
-export ScheduleEntry, Schedule, ExternalSchedule, setPostProcessing!
+export ScheduleEntry, Schedule, setPostProcessing!
 
 type ScheduleEntry
     interface::Interface
@@ -47,7 +47,6 @@ function show(io::IO, schedule::Schedule)
     end
 end
 
-typealias ExternalSchedule Array{Node, 1}
 function show(io::IO, nodes::Array{Node, 1})
      # Show node array (possibly an external schedule)
     println(io, "Nodes:")

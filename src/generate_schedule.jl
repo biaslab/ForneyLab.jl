@@ -48,14 +48,11 @@ generateSchedule!(partial_list::Array{Interface, 1}, scheme::InferenceScheme=cur
 function generateSchedule!(sg::Subgraph, scheme::InferenceScheme=currentScheme())
     # Generate an internal and external schedule for the subgraph
 
-    # Set external schedule with nodes (g) connected to external edges
-    sg.external_schedule = nodesConnectedToExternalEdges(sg)
-
     interface_list_for_univariate = Array(Interface, 0)
     internal_interface_list = Array(Interface, 0)
     sg.internal_schedule = Array(ScheduleEntry, 0)
     # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present
-    for g_node in sg.external_schedule # All nodes that are connected to at least one external edge
+    for g_node in nodesConnectedToExternalEdges(sg) # All nodes that are connected to at least one external edge
         outbound_interfaces = Array(Interface, 0) # Array that holds required outbound for the case of one internal edge connected to g_node
         for interface in g_node.interfaces
             if interface.edge in sg.internal_edges # edge carries incoming internal message

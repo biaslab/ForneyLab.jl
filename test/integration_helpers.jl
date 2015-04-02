@@ -390,6 +390,16 @@ function initializeGaussianNode(; y_type::DataType=Float64)
     return (node, edges)
 end
 
+function initializeBufferGraph()
+    # Background
+    g = FactorGraph()
+    node_t1 = TerminalNode()
+    node_t2 = TerminalNode()
+    e = Edge(node_t1, node_t2)
+    s = InferenceScheme()
+    return (node_t1, node_t2, e, s)
+end
+
 function initializeGaussianNodeChain(y::Array{Float64, 1})
     # Set up a chain of Gaussian nodes for mean-precision estimation
     #

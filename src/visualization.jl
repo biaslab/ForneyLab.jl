@@ -24,7 +24,7 @@ draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph, o
 draw(scheme::InferenceScheme; args...) = graphviz(genDot(nodes(scheme.graph, open_composites=false), edges(scheme.graph), time_wraps=scheme.time_wraps); args...)
 draw(; args...) = draw(currentGraph(); args...)
 
-draw(subgraph::Subgraph; args...) = graphviz(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=subgraph.external_edges); args...)
+draw(subgraph::Subgraph; args...) = graphviz(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=externalEdges(subgraph)); args...)
 
 function draw(composite_node::CompositeNode; args...)
     # Visualize the internals of composite_node
@@ -58,7 +58,7 @@ end
 drawPdf(factor_graph::FactorGraph, filename::String) = dot2pdf(genDot(nodes(factor_graph, open_composites=false), edges(factor_graph)), filename)
 drawPdf(filename::String) = drawPdf(currentGraph(), filename)
 
-drawPdf(subgraph::Subgraph, filename::String) = dot2pdf(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=subgraph.external_edges), filename)
+drawPdf(subgraph::Subgraph, filename::String) = dot2pdf(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=externalEdges(subgraph)), filename)
 
 function drawPdf(composite_node::CompositeNode, filename::String)
     # Visualize the internals of composite_node

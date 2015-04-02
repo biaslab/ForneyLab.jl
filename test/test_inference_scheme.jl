@@ -15,6 +15,14 @@ facts("InferenceScheme unit tests") do
         @fact typeof(scheme.write_buffers) => Dict{Union(Edge,Interface), Vector}
         @fact typeof(scheme.time_wraps) => Vector{(TerminalNode, TerminalNode)}
     end
+
+    context("InferenceScheme should add edges to current subgraph") do
+        (node1, node2) = initializePairOfNodes()
+        # Couple the interfaces that carry GeneralMessage
+        edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
+        scheme = InferenceScheme()
+        @fact edge in scheme.factorization[1].internal_edges => true
+    end
 end
 
 

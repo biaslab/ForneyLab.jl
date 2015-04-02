@@ -80,17 +80,6 @@ facts("Connections between nodes integration tests") do
         edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
         testInterfaceConnections(node1, node2)
     end
-
-    context("InferenceScheme should add edge and nodes to current subgraph") do
-        (node1, node2) = initializePairOfNodes()
-        # Couple the interfaces that carry GeneralMessage
-        edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
-        scheme = InferenceScheme()
-        graph = currentGraph()
-        @fact edge in scheme.factorization[1].internal_edges => true
-        @fact node1 in scheme.factorization[1].nodes => true
-        @fact node2 in scheme.factorization[1].nodes => true
-    end
 end
 
 facts("Functions for collecting nodes") do

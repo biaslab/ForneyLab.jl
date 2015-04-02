@@ -109,16 +109,16 @@ function execute(schedule::Any, scheme::InferenceScheme)
     # Return the last message in the schedule
     return schedule[end].interface.message
 end
-function execute(schedule::ExternalSchedule, subgraph::Subgraph, scheme::InferenceScheme)
-    # Execute a marginal update schedule
-    for entry in schedule
-        calculateQDistribution!(entry, qFactor(scheme, entry, subgraph), scheme)
-    end
-end
+
 function execute(subgraph::Subgraph, scheme::InferenceScheme)
     printVerbose("Subgraph $(findfirst(scheme.factorization, subgraph)):")
+    # Execute internal schedule
     execute(subgraph.internal_schedule, scheme)
-    execute(subgraph.external_schedule, subgraph, scheme)
+    # Update q-distributions at external edges
+    g_nodes = nodesConnectedToExternalEdges(subgraph)
+    for node in g_nodes
+        calculateQDistribution!(node, qFactor(scheme, node, subgraph), scheme)
+    end
 end
 
 function execute(scheme::InferenceScheme)

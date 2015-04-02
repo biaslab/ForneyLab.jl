@@ -73,7 +73,7 @@ end
 
 function nodes(subgraph::Subgraph; open_composites::Bool=true)
     # Return all nodes in subgraph
-    all_nodes = copy(subgraph.nodes)
+    all_nodes = copy(nodes(subgraph.internal_edges))
 
     if open_composites
         children = Set{Node}()
@@ -123,11 +123,11 @@ function edges(graph::FactorGraph)
 end
 edges(;args...) = edges(currentGraph())
 
-function edges(subgraph::Subgraph; include_external=true)
+function edges(sg::Subgraph; include_external=true)
     if include_external
-        return union(subgraph.internal_edges, subgraph.external_edges)
+        return copy(edges(nodes(sg, open_composites=false)))
     else
-        return copy(subgraph.internal_edges)
+        return copy(sg.internal_edges)
     end
 end
 

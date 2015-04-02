@@ -30,7 +30,7 @@ function InferenceScheme(graph::FactorGraph=currentGraph())
     graph.locked = true # Inference definition has begon; lock graph stucture.
     internal_edges = graph.edges # Collect internal edges from graph
     nodes = graph.nodes # Collect nodes from graph 
-    subgraph = Subgraph(nodes, internal_edges, Set{Edge}(), Array(Interface, 0), Array(Node, 0)) # Create the first factor
+    subgraph = Subgraph(internal_edges, Array(Interface, 0)) # Create the first factor
     edge_to_subgraph = Dict([ie for ie in internal_edges], [subgraph for i=1:length(internal_edges)]) # Mapping for edge to subgraph
     scheme = InferenceScheme(graph,
                              [subgraph],
@@ -68,9 +68,9 @@ subgraphs(scheme::InferenceScheme, node::Node) = [subgraph(scheme, interface.edg
 qFactors(scheme::InferenceScheme, node::Node) = [qFactor(scheme, node, interface.edge) for interface in node.interfaces]
 
 function ensureQDistribution!(factor::Set{Edge}, scheme::InferenceScheme, assign_distribution::DataType)
-    # Looks for a marginal in the node-subgraph dictionary.
+    # Looks for a marginal in the q-distribution dictionary.
     # If no marginal is present, it sets and returns a vague distribution.
-    # Otherwise, it returns the existing marginal. Used for fast marginal calculations.
+    # Otherwise, it returns the existing q distribution.
     try
         return qDistribution(factor)
     catch
@@ -132,7 +132,7 @@ function factorize!(scheme::InferenceScheme, edge_set::Set{Edge})
     for subgraph in scheme.factorization
         setdiff!(subgraph.internal_edges, internal_edges) # Remove edges from existing subgraph
     end
-    new_subgraph = Subgraph(copy(connected_nodes), copy(internal_edges), Set{Edge}(), Array(Interface, 0), Array(Node, 0)) # Create subgraph
+    new_subgraph = Subgraph(copy(internal_edges), Array(Interface, 0)) # Create subgraph
     push!(scheme.factorization, new_subgraph) # Add to current scheme
     for internal_edge in internal_edges # Point edges to new subgraph in which they are internal
         scheme.edge_to_subgraph[internal_edge] = new_subgraph
@@ -143,8 +143,6 @@ function factorize!(scheme::InferenceScheme, edge_set::Set{Edge})
             splice!(scheme.factorization, subgraph_index)
             continue
         end
-        # Update the external edges and node list
-        conformSubgraph!(subgraph)
     end
     return new_subgraph
 end
