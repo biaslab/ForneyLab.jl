@@ -44,7 +44,7 @@ end
 
 isDeterministic(::TerminalNode) = false # Edge case for deterministicness
 
-# Overload firstFreeInterface since EqualityNode is symmetrical in its interfaces
+# Implement firstFreeInterface since EqualityNode is symmetrical in its interfaces
 firstFreeInterface(node::TerminalNode) = (node.out.partner==nothing) ? node.out : error("No free interface on $(typeof(node)) $(node.name)")
 
 function sumProduct!(node::TerminalNode,

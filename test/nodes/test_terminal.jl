@@ -4,10 +4,14 @@
 
 facts("TerminalNode unit tests") do
     context("TerminalNode() should initialize a TerminalNode with 1 interface") do
+        FactorGraph()
         node = TerminalNode()
         @fact typeof(node) => TerminalNode
         @fact length(node.interfaces) => 1
         @fact node.out => node.interfaces[1]
+        @fact ForneyLab.firstFreeInterface(node) => node.out
+        Edge(node, TerminalNode())
+        @fact_throws ForneyLab.firstFreeInterface(node)
     end
 
     context("TerminalNode should throw an error when its value is set to a message") do
