@@ -35,12 +35,12 @@ end
 
 isDeterministic(::EqualityNode) = true
 
-# Overload firstFreeInterface since EqualityNode is symmetrical in its interfaces
+# Implement firstFreeInterface since EqualityNode is symmetrical in its interfaces
 function firstFreeInterface(node::EqualityNode)
-    # Return id of first free interface of a symmetrical node
-    for interface_id = 1:length(node.interfaces)
-        if node.interfaces[interface_id].partner == nothing
-            return interface_id
+    # Return the first free interface of a symmetrical node
+    for interface in node.interfaces
+        if interface.partner == nothing
+            return interface
         end
     end
     error("No free interface on $(typeof(node)) $(node.name)")
