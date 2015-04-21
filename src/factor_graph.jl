@@ -1,9 +1,9 @@
-export  FactorGraph
+export  FactorGraph,
+        Algorithm
 
 export  currentGraph,
         setCurrentGraph,
         clearMessages!,
-        factorize!,
         nodes,
         edges,
         node
@@ -11,7 +11,11 @@ export  currentGraph,
 type FactorGraph
     nodes::Set{Node}
     edges::Set{Edge}
-    locked::Bool
+
+    # Connections to the outside world
+    read_buffers::Dict{TerminalNode, Vector}
+    write_buffers::Dict{Union(Edge,Interface), Vector}
+    time_wraps::Vector{(TerminalNode, TerminalNode)}
 end
 
 # Create an empty graph
@@ -24,8 +28,9 @@ setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a curre
 
 FactorGraph() = setCurrentGraph(FactorGraph(Set{Node}(),
                                             Set{Edge}(),
-                                            false)) # Initialize a new factor graph; automatically sets current_graph
-
+                                            Dict{TerminalNode, Vector}(),
+                                            Dict{Union(Edge,Interface), Vector}(),
+                                            Array((TerminalNode, TerminalNode), 0))) # Initialize a new factor graph; automatically sets current_graph
 
 function show(io::IO, factor_graph::FactorGraph)
     nodes_top = nodes(factor_graph, open_composites=false)
@@ -38,11 +43,19 @@ function show(io::IO, factor_graph::FactorGraph)
     println(io, " show(edges(::FactorGraph))")
 end
 
+type Algorithm
+    initialize::Function
+    execute::Function
+    fields::Dict{Symbol, Any}
+    initialized::Bool
+end
+Algorithm(initialize::Function, execute::Function, fields::Dict{Symbol, Any}) = Algorithm(initialize, execute, fields, false)
+
+global current_algorithm = nothing
+
 # Functions to clear ALL MESSAGES in the graph
 clearMessages!(graph::FactorGraph) = map(clearMessages!, nodes(graph, open_composites=true))
 clearMessages!() = clearMessages!(currentGraph())
-
-factorize!() = factorize!(currentScheme())
 
 function nodes(node::CompositeNode; depth::Integer=1)
     # Return set of child nodes up to a certain depth
@@ -163,26 +176,3 @@ function node(name::ASCIIString, graph::FactorGraph=currentGraph())
 
     error("No node with name \"$(name)\" in this FactorGraph")
 end
-
-function extend(edge_set::Set{Edge})
-    # Returns the smallest legal subgraph (connected through deterministic nodes) that includes 'edges'
-
-    edge_cluster = Set{Edge}() # Set to fill with edges in equality cluster
-    edges = copy(edge_set)
-    while length(edges) > 0 # As long as there are unchecked edges connected through deterministic nodes
-        current_edge = pop!(edges) # Pick one
-        push!(edge_cluster, current_edge) # Add to edge cluster
-        for node in [current_edge.head.node, current_edge.tail.node] # Check both head and tail node for deterministic type
-            if isDeterministic(node)
-                for interface in node.interfaces
-                    if !is(interface.edge, current_edge) && !(interface.edge in edge_cluster) # Is next level edge not seen yet?
-                        push!(edges, interface.edge) # Add to buffer to visit sometime in the future
-                    end
-                end
-            end
-        end
-    end
-
-    return edge_cluster
-end
-extend(edge::Edge) = extend(Set{Edge}([edge]))

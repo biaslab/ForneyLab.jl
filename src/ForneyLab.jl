@@ -59,10 +59,8 @@ include("nodes/composite/gain_equality.jl")
 include("nodes/composite/sigmoid.jl")
 include("nodes/composite/general.jl")
 
-# Graphs and factorizations
-include("subgraph.jl")
+# Graph
 include("factor_graph.jl")
-include("inference_scheme.jl")
 
 # Methods for calculating marginals
 include("distributions/calculate_marginal.jl")

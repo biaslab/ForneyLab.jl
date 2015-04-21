@@ -1,73 +1,19 @@
-export  InferenceScheme
-
-export  currentScheme,
-        setCurrentScheme,
-        setVagueQDistributions!,
-        factorize!,
-        subgraph,
-        qFactor,
-        qDistribution
-
-type InferenceScheme
-    # An inference scheme holds all attributes that are required to answer one inference question
-    graph::FactorGraph
-
-    # Factorizations for approximate marginals
-    factorization::Vector{Subgraph} # References to the graphs factorization required for anwering this inference question
-    edge_to_subgraph::Dict{Edge, Subgraph} # Fast lookup for edge to subgraph in which edge is internal
-    q_distributions::Dict{Set{Edge}, ProbabilityDistribution} # Approximate margials (q's) at nodes connected to external edges from the perspective of Subgraph
-
-    # Connections to outside world
-    read_buffers::Dict{TerminalNode, Vector}
-    write_buffers::Dict{Union(Edge,Interface), Vector}
-    time_wraps::Vector{(TerminalNode, TerminalNode)}
-end
-
-currentScheme() = current_scheme::InferenceScheme
-setCurrentScheme(scheme::InferenceScheme) = global current_scheme = scheme # Set a current_scheme
-
-function InferenceScheme(graph::FactorGraph=currentGraph())
-    graph.locked = true # Inference definition has begon; lock graph stucture.
-    internal_edges = graph.edges # Collect internal edges from graph
-    nodes = graph.nodes # Collect nodes from graph 
-    subgraph = Subgraph(internal_edges, Array(Interface, 0)) # Create the first factor
-    edge_to_subgraph = Dict([ie for ie in internal_edges], [subgraph for i=1:length(internal_edges)]) # Mapping for edge to subgraph
-    scheme = InferenceScheme(graph,
-                             [subgraph],
-                             edge_to_subgraph, 
-                             Dict{(Node, Subgraph), ProbabilityDistribution}(),
-                             Dict{TerminalNode, Vector}(),
-                             Dict{Union(Edge,Interface), Vector}(),
-                             Array((TerminalNode, TerminalNode), 0))
-    setCurrentScheme(scheme)
-    return scheme
-end
-
-function show(io::IO, scheme::InferenceScheme)
-    println(io, "InferenceScheme with $(length(scheme.factorization)) subgraph(s).")
-    println(io, "\nSee also:")
-    println(io, " draw(::InferenceScheme)")
-end
-
-# TODO: These functions might be improved by implementing a faster lookup table
-
-# Get the subgraph in which internal_edge is internal
-subgraph(scheme::InferenceScheme, internal_edge::Edge) = scheme.edge_to_subgraph[internal_edge]
+factorize!() = factorize!(currentScheme())
 
 # Get the factor::Set{Edge} of which edge is an element
-qFactor(scheme::InferenceScheme, node::Node, edge::Edge) = intersect(edges(node), subgraph(scheme, edge).internal_edges)
-qFactor(scheme::InferenceScheme, node::Node, sg::Subgraph) = intersect(edges(node), sg.internal_edges)
+#qFactor(scheme::DataAwareFactorGraph, node::Node, edge::Edge) = intersect(edges(node), subgraph(scheme, edge).internal_edges)
+qFactor(scheme::DataAwareFactorGraph, node::Node, sg::Subgraph) = intersect(edges(node), sg.internal_edges)
 
 # Get the distributions over the factor of which edge is an element
-qDistribution(scheme::InferenceScheme, factor::Set{Edge}) = scheme.q_distributions[factor]
-qDistribution(scheme::InferenceScheme, node::Node, edge::Edge) = qDistribution(scheme, qFactor(scheme, node, edge))
-qDistribution(scheme::InferenceScheme, node::Node, sg::Subgraph) = qDistribution(scheme, qFactor(scheme, node, sg))
+qDistribution(scheme::DataAwareFactorGraph, factor::Set{Edge}) = scheme.q_distributions[factor]
+qDistribution(scheme::DataAwareFactorGraph, node::Node, edge::Edge) = qDistribution(scheme, qFactor(scheme, node, edge))
+#qDistribution(scheme::DataAwareFactorGraph, node::Node, sg::Subgraph) = qDistribution(scheme, qFactor(scheme, node, sg))
 
 # Local decompositions around a node
-subgraphs(scheme::InferenceScheme, node::Node) = [subgraph(scheme, interface.edge) for interface in node.interfaces]
-qFactors(scheme::InferenceScheme, node::Node) = [qFactor(scheme, node, interface.edge) for interface in node.interfaces]
+subgraphs(scheme::DataAwareFactorGraph, node::Node) = [subgraph(scheme, interface.edge) for interface in node.interfaces]
+qFactors(scheme::DataAwareFactorGraph, node::Node) = [qFactor(scheme, node, interface.edge) for interface in node.interfaces]
 
-function ensureQDistribution!(factor::Set{Edge}, scheme::InferenceScheme, assign_distribution::DataType)
+function ensureQDistribution!(factor::Set{Edge}, scheme::DataAwareFactorGraph, assign_distribution::DataType)
     # Looks for a marginal in the q-distribution dictionary.
     # If no marginal is present, it sets and returns a vague distribution.
     # Otherwise, it returns the existing q distribution.
@@ -83,7 +29,7 @@ function ensureQDistribution!(factor::Set{Edge}, scheme::InferenceScheme, assign
 
 end
 
-function setVagueQDistributions!(scheme::InferenceScheme=currentScheme())
+function setVagueQDistributions!(scheme::DataAwareFactorGraph=currentScheme())
     # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
     for subgraph in scheme.factorization
         external_nodes = nodesConnectedToExternalEdges(subgraph)
@@ -116,7 +62,7 @@ function setVagueQDistributions!(scheme::InferenceScheme=currentScheme())
     return scheme
 end
 
-function factorize!(scheme::InferenceScheme, edge_set::Set{Edge})
+function factorize!(scheme::DataAwareFactorGraph, edge_set::Set{Edge})
     # The set of internal edges needs to be extended to envelope deterministic nodes
     internal_edges = extend(edge_set)
 
@@ -148,11 +94,11 @@ function factorize!(scheme::InferenceScheme, edge_set::Set{Edge})
 end
 factorize!(internal_edges::Set{Edge}) = factorize!(currentScheme(), internal_edges)
 factorize!(internal_edge::Edge) = factorize!(Set{Edge}([internal_edge]))
-factorize!(scheme::InferenceScheme, edge::Edge) = factorize!(scheme, Set{Edge}([edge]))
-factorize!(scheme::InferenceScheme, internal_edges::Array{Edge, 1}) = factorize!(scheme, Set{Edge}(internal_edges))
+factorize!(scheme::DataAwareFactorGraph, edge::Edge) = factorize!(scheme, Set{Edge}([edge]))
+factorize!(scheme::DataAwareFactorGraph, internal_edges::Array{Edge, 1}) = factorize!(scheme, Set{Edge}(internal_edges))
 factorize!(internal_edges::Array{Edge, 1}) = factorize!(currentScheme(), internal_edges)
 
-function factorize!(scheme::InferenceScheme=currentScheme())
+function factorize!(scheme::DataAwareFactorGraph=currentScheme())
     # Generate a mean field factorization
     (length(scheme.factorization) == 1) || error("Cannot perform mean field factorization on an already factorized inference scheme.")
     edges_to_factor = sort!([e for e in scheme.factorization[1].internal_edges]) # Cast to array and sort
