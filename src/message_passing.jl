@@ -11,13 +11,17 @@ function execute(schedule_entry::ScheduleEntry, algorithm::Algorithm)
     outbound_interface = schedule_entry.interface
     # Preprocessing: collect all inbound messages and build the inbound_array
     node = outbound_interface.node
-    inbound_array = Array(Any, 0) # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
-    outbound_interface_id = 0
 
-    # TODO: collectInbounds(...) as new call
+    if schedule_entry.message_calculation_rule == sumProduct!
+        (outbound_interface_id, inbounds) = SumProduct.collectInbounds()
+    elseif schedule_entry.message_calculation_rule == vmp!
+        (outbound_interface_id, inbounds) = VMP.collectInbounds()
+    else
+        error("Unknown message calculation rule: $(schedule_entry.message_calculation_rule)")
+    end
 
     # Evaluate message calculation rule
-    (rule, outbound_message) = schedule_entry.message_calculation_rule(node, outbound_interface_id, inbound_array...)
+    (rule, outbound_message) = schedule_entry.message_calculation_rule(node, outbound_interface_id, inbounds...)
 
     # Post processing?
     if isdefined(schedule_entry, :post_processing)

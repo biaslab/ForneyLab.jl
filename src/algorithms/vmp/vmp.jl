@@ -11,4 +11,10 @@ module VMP
     # subgraph = Subgraph(internal_edges, Array(Interface, 0)) # Create the first factor
     # edge_to_subgraph = Dict([ie for ie in internal_edges], [subgraph for i=1:length(internal_edges)]) # Mapping for edge to subgraph
 
+    # In execute:
+
+    # Reset marginals
+    #setVagueQDistributions!(algorithm)
+    # Execute internal/exernal schedules, ...
+
 end

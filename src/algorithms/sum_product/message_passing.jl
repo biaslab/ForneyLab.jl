@@ -1,3 +1,6 @@
+    # inbound_array = Array(Any, 0) # inbound_array holds the inbound messages or marginals on every interface of the node (indexed by the interface id)
+    # outbound_interface_id = 0
+
     # collectInbounds(...) as sum-product specific function.
     # for j = 1:length(node.interfaces)
     #     interface = node.interfaces[j]

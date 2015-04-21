@@ -3,6 +3,7 @@ export  setReadBuffer,
         clearBuffers,
         setTimeWrap,
         clearTimeWraps,
+        execute,
         step
 
 function setReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=current_graph)
@@ -46,31 +47,38 @@ end
 
 clearTimeWraps(graph::FactorGraph=current_graph) = (algorithm.time_wraps = Array((TerminalNode, TerminalNode), 0))
 
-# TODO: Revise
-# function step(algorithm::Algorithm; n_iterations::Int64=1)
-#     # Reset marginals
-#     setVagueQDistributions!(algorithm)
-#     # Read buffers
-#     for (terminal_node, read_buffer) in algorithm.read_buffers
-#         !isempty(read_buffer) || error("Read buffer for node $(terminal_node) is empty")
-#         terminal_node.value = shift!(read_buffer) # pick the first element off the read_buffer
-#     end
-#     # Execute schedule
-#     for iteration = 1:n_iterations
-#         execute(algorithm)
-#     end
-#     # Write buffers
-#     for (component, write_buffer) in algorithm.write_buffers
-#         if typeof(component) == Interface
-#             isdefined(component.message, :payload) || error("Cannot write message payload to buffer since there is no message present on $(component)")
-#             push!(write_buffer, deepcopy(component.message.payload))
-#         elseif typeof(component) == Edge
-#             push!(write_buffer, calculateMarginal(component))
-#         end
-#     end
-#     # Time wrap
-#     for (from, to) in algorithm.time_wraps
-#         isdefined(from.out.partner.message, :payload) || error("There is no message to move to $(to) for the next timestep")
-#         to.value = deepcopy(from.out.partner.message.payload)
-#     end
-# end
+function execute(algorithm::Algorithm, graph::FactorGraph=current_graph)
+    global current_algorithm = algorithm
+    if algorithm.initialized==false
+        algorithm.initialize(algorithm.fields)
+    end
+
+    return algorithm.execute(algorithm.fields)
+end
+
+function step(algorithm::Algorithm, graph::FactorGraph=current_graph)
+    # Read buffers
+    for (terminal_node, read_buffer) in graph.read_buffers
+        !isempty(read_buffer) || error("Read buffer for node $(terminal_node) is empty")
+        terminal_node.value = shift!(read_buffer) # pick the first element off the read_buffer
+    end
+
+    # Execute schedule
+    execute(algorithm, graph)
+
+    # Write buffers
+    for (component, write_buffer) in graph.write_buffers
+        if typeof(component) == Interface
+            isdefined(component.message, :payload) || error("Cannot write message payload to buffer since there is no message present on $(component)")
+            push!(write_buffer, deepcopy(component.message.payload))
+        elseif typeof(component) == Edge
+            push!(write_buffer, calculateMarginal(component))
+        end
+    end
+
+    # Time wraps
+    for (from, to) in graph.time_wraps
+        isdefined(from.out.partner.message, :payload) || error("There is no message to move to $(to) for the next timestep")
+        to.value = deepcopy(from.out.partner.message.payload)
+    end
+end
