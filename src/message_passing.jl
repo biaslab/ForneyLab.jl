@@ -13,9 +13,9 @@ function execute(schedule_entry::ScheduleEntry, algorithm::Algorithm)
     node = outbound_interface.node
 
     if schedule_entry.message_calculation_rule == sumProduct!
-        (outbound_interface_id, inbounds) = SumProduct.collectInbounds()
+        (outbound_interface_id, inbounds) = SumProduct.collectInbounds(outbound_interface)
     elseif schedule_entry.message_calculation_rule == vmp!
-        (outbound_interface_id, inbounds) = VMP.collectInbounds()
+        (outbound_interface_id, inbounds) = VMP.collectInbounds(outbound_interface)
     else
         error("Unknown message calculation rule: $(schedule_entry.message_calculation_rule)")
     end

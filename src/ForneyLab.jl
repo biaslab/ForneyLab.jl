@@ -5,7 +5,7 @@ using YAML
 using LaTeXStrings
 
 export Node, CompositeNode, ProbabilityDistribution
-export sumProduct!
+export sumProduct!, vmp!
 export vague, expectation, self, ==
 export current_graph
 
@@ -67,11 +67,14 @@ include("distributions/calculate_marginal.jl")
 
 # Generic methods
 include("message_passing.jl")
-include("generate_schedule.jl")
 include("step.jl")
 
 # Utils
 include("visualization.jl")
+
+# Algorithms
+include("algorithms/sum_product/sum_product.jl")
+#include("algorithms/vmp/vmp.jl")
 
 # Functions for message post-processing
 vague(dist::ProbabilityDistribution) = vague(typeof(dist))

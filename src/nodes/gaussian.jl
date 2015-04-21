@@ -456,7 +456,7 @@ end
 # Naive variational update functions
 ############################################
 
-function sumProduct!(node::GaussianNode,
+function vmp!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             marg_variance::InverseGammaDistribution,
@@ -489,7 +489,7 @@ function sumProduct!(node::GaussianNode,
             node.interfaces[outbound_interface_id].message)
 end
 
-function sumProduct!(node::GaussianNode,
+function vmp!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             marg_prec::GammaDistribution,
@@ -521,7 +521,7 @@ function sumProduct!(node::GaussianNode,
             node.interfaces[outbound_interface_id].message)
 end
 
-function sumProduct!(node::GaussianNode,
+function vmp!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             marg_out::GaussianDistribution)
@@ -563,7 +563,7 @@ function sumProduct!(node::GaussianNode,
     end
 end
 
-function sumProduct!(node::GaussianNode,
+function vmp!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_mean::GaussianDistribution,
                             ::Nothing,
@@ -631,7 +631,7 @@ function sumProduct!(node::GaussianNode,
     end
 end
 
-function sumProduct!(node::GaussianNode,
+function vmp!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_mean::GaussianDistribution,
                             marg_var::InverseGammaDistribution,
@@ -663,7 +663,7 @@ function sumProduct!(node::GaussianNode,
     end
 end
 
-function sumProduct!(node::GaussianNode,
+function vmp!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_prec::GammaDistribution,
                             ::Nothing)
@@ -689,7 +689,7 @@ function sumProduct!(node::GaussianNode,
     end
 end
 
-function sumProduct!(node::GaussianNode,
+function vmp!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_mean::GaussianDistribution,
                             ::Nothing)
@@ -716,7 +716,7 @@ function sumProduct!(node::GaussianNode,
     end
 end
 
-function sumProduct!(node::GaussianNode,
+function vmp!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg_mean::GaussianDistribution,
                             marg_prec::GammaDistribution,
@@ -753,7 +753,7 @@ end
 # Structured variational update functions
 ############################################
 
-function sumProduct!(node::GaussianNode,
+function vmp!(node::GaussianNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             msg_prec::Message{GammaDistribution},
@@ -787,7 +787,7 @@ function sumProduct!(node::GaussianNode,
     end
 end
 
-function sumProduct!(node::GaussianNode,
+function vmp!(node::GaussianNode,
                             outbound_interface_id::Int,
                             msg_mean::Message{GaussianDistribution},
                             ::Nothing,
@@ -820,7 +820,7 @@ function sumProduct!(node::GaussianNode,
     end
 end
 
-function sumProduct!(node::GaussianNode,
+function vmp!(node::GaussianNode,
                             outbound_interface_id::Int,
                             marg::NormalGammaDistribution,
                             ::NormalGammaDistribution, # Same distribution as marg

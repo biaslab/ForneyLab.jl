@@ -42,7 +42,7 @@ function show(io::IO, schedule::Schedule)
         postproc = (isdefined(schedule_entry, :post_processing)) ? string(schedule_entry.post_processing) : ""
         interface_name = (name(interface)!="") ? "($(name(interface)))" : ""
         interface_field = "$(typeof(interface.node)) $(interface.node.name):$(findfirst(interface.node.interfaces, interface)) $(interface_name)"
-        println(io, "$(pad(string(entry_counter),3))|$(pad(string(msg_calc_func),23))|$(pad(string(postproc),23))|$(pad(interface_field,78))|")
+        println(io, "$(pad(string(entry_counter),3))| $(pad(string(msg_calc_func),22))| $(pad(string(postproc),22))| $(pad(interface_field,77))|")
         entry_counter += 1
     end
 end
