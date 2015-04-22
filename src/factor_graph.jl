@@ -1,5 +1,4 @@
-export  FactorGraph,
-        Algorithm
+export  FactorGraph
 
 export  currentGraph,
         setCurrentGraph,
@@ -44,16 +43,6 @@ function show(io::IO, factor_graph::FactorGraph)
     println(io, " show(nodes(::FactorGraph))")
     println(io, " show(edges(::FactorGraph))")
 end
-
-type Algorithm
-    initialize::Function
-    execute::Function
-    fields::Dict{Symbol, Any}
-    initialized::Bool
-end
-Algorithm(initialize::Function, execute::Function, fields::Dict{Symbol, Any}) = Algorithm(initialize, execute, fields, false)
-
-global current_algorithm = nothing
 
 # Functions to clear ALL MESSAGES in the graph
 clearMessages!(graph::FactorGraph) = map(clearMessages!, nodes(graph, open_composites=true))

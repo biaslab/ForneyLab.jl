@@ -4,7 +4,7 @@ export  calculateMessage!,
         execute,
         clearMessages!
 
-function execute(schedule_entry::ScheduleEntry, algorithm::Algorithm)
+function execute(schedule_entry::ScheduleEntry)
     # Calculate the outbound message based on the inbound messages and the message calculation rule.
     # The resulting message is stored in the specified interface and is returned.
 

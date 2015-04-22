@@ -9,6 +9,10 @@ export sumProduct!, vmp!
 export vague, expectation, self, ==
 export current_graph
 
+# Export algorithm modules
+export SumProduct
+export VMP
+
 # Verbosity
 verbose = false
 setVerbosity(is_verbose=true) = global verbose = is_verbose
@@ -59,8 +63,9 @@ include("nodes/composite/gain_equality.jl")
 include("nodes/composite/sigmoid.jl")
 include("nodes/composite/general.jl")
 
-# Graph
+# Graph and algorithm
 include("factor_graph.jl")
+include("algorithm.jl")
 
 # Methods for calculating marginals
 include("distributions/calculate_marginal.jl")

@@ -52,10 +52,6 @@ end
 function execute(algorithm::Algorithm, graph::FactorGraph=current_graph)
     # Execute algorithm on graph
     global current_algorithm = algorithm
-    if algorithm.initialized==false
-        algorithm.initialize(algorithm.fields)
-    end
-
     return algorithm.execute(algorithm.fields)
 end
 
