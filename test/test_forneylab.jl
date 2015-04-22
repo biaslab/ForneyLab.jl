@@ -36,10 +36,12 @@ include("test_node.jl")
 include("test_edge.jl")
 
 # Graph, inference scheme and subgraph concepts
-include("test_subgraph.jl")
-include("test_inference_scheme.jl")
-include("test_factorization.jl")
 include("test_factor_graph.jl")
+include("test_algorithm.jl")
+
+# Algorithm tests
+include("algorithms/sum_product/test_sum_product.jl")
+#include("algorithms/vmp/test_vmp.jl")
 
 # Node types
 include("nodes/test_addition.jl")
@@ -61,9 +63,6 @@ include("test_calculate_marginal.jl")
 include("test_message_passing.jl")
 include("test_generate_schedule.jl")
 include("test_step.jl")
-
-# (S)VMP tests
-include("test_vmp.jl")
 
 exitstatus()
 

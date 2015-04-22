@@ -30,59 +30,6 @@ facts("Message passing integration tests") do
         scheme = InferenceScheme()
         @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.mean, node.out)[1], node.mean.partner.message) => true
         @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.precision, node.out)[1], node.precision.partner.message) => true
-
-        # Mean field factorized Gaussian node
-        (node, edges) = initializeGaussianNode()
-        scheme = InferenceScheme()
-        factorize!(scheme)
-        setVagueQDistributions!(scheme)
-        sg_mean = subgraph(scheme, node.mean.edge)
-        sg_prec = subgraph(scheme, node.precision.edge)
-        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.mean, node.out)[1], qDistribution(scheme, node, sg_mean)) => true
-        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.precision, node.out)[1], qDistribution(scheme, node, sg_prec)) => true
-
-        # Structurally factorized
-        (node, edges) = initializeGaussianNode()
-        scheme = InferenceScheme()
-        factorize!(node.out.edge)
-        setVagueQDistributions!(scheme)
-        sg_mean_prec = subgraph(scheme, node.mean.edge)
-        sg_out = subgraph(scheme, node.out.edge)
-        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.mean, node.out)[1], qDistribution(scheme, node, sg_mean_prec)) => true
-        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.precision, node.out)[1], qDistribution(scheme, node, sg_mean_prec)) => true
-        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.precision, node.mean)[1], node.precision.partner.message) => true
-        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.mean, node.precision)[1], node.mean.partner.message) => true
-        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.out, node.mean)[1], qDistribution(scheme, node, sg_out)) => true
-        @fact is(ForneyLab.pushRequiredInbound!(scheme, Array(Any, 0), node, node.out, node.precision)[1], qDistribution(scheme, node, sg_out)) => true
-    end
-
-    context("calculateMessage!()") do
-        context("Should return and write back an output message") do
-            (gain, terminal) = initializePairOfNodes(A=[2.0], msg_gain_1=nothing, msg_gain_2=nothing, msg_terminal=Message(DeltaDistribution(3.0)))
-            Edge(terminal.out, gain.in1)
-            Edge(gain.out, MockNode().out)
-            @fact gain.out.message => nothing
-            # Request message on node for which the input is unknown
-            msg = calculateMessage!(gain.out)
-            @fact msg => gain.out.message # Returned message should be identical to message stored on interface.
-            @fact typeof(gain.out.message.payload) => DeltaDistribution{Array{Float64,2}}
-            @fact gain.out.message.payload => DeltaDistribution(reshape([6.0], 1, 1))
-        end
-
-        context("Should recursively calculate required inbound message") do
-            # Define three nodes in series
-            (node1, node2, node3) = initializeChainOfNodes()
-            @fact node3.out.message => nothing
-            # Request message on node for which the input is unknown
-            calculateMessage!(node3.out)
-            @fact typeof(node3.out.message.payload) => DeltaDistribution{Array{Float64, 2}}
-            @fact node3.out.message.payload => DeltaDistribution(reshape([12.0], 1, 1))
-        end
-
-        context("Should throw an error when there is an unbroken loop") do
-            (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
-            @fact_throws calculateMessage!(driver.out)
-        end
     end
 
     context("execute()") do
