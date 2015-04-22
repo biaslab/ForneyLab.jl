@@ -114,3 +114,7 @@ facts("step integration tests") do
         @fact round(prec_out[end].b, 2) => 1.91
     end
 end
+
+facts("run() integration tests") do
+    @pending
+end

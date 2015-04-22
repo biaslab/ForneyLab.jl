@@ -60,6 +60,9 @@ function execute(algorithm::Algorithm, graph::FactorGraph=current_graph)
 end
 
 function step(algorithm::Algorithm, graph::FactorGraph=current_graph)
+    # Execute algorithm for 1 timestep. 
+    # Returns: result of algorithm execution
+
     # Read buffers
     for (terminal_node, read_buffer) in graph.read_buffers
         !isempty(read_buffer) || error("Read buffer for node $(terminal_node) is empty")
@@ -67,7 +70,7 @@ function step(algorithm::Algorithm, graph::FactorGraph=current_graph)
     end
 
     # Execute schedule
-    execute(algorithm, graph)
+    result = execute(algorithm, graph)
 
     # Write buffers
     for (component, write_buffer) in graph.write_buffers
@@ -83,5 +86,21 @@ function step(algorithm::Algorithm, graph::FactorGraph=current_graph)
     for (from, to) in graph.time_wraps
         isdefined(from.out.partner.message, :payload) || error("There is no message to move to $(to) for the next timestep")
         to.value = deepcopy(from.out.partner.message.payload)
+    end
+
+    return result
+end
+
+function run(algorithm::Algorithm, graph::FactorGraph=current_graph)
+    # Call step(algorithm, graph) repeatedly until at least one read buffer is exhausted
+    # Returns: result of last call to step()
+    if length(graph.read_buffers) > 0
+        while !any(isempty, values(graph.read_buffers))
+            result = step(algorithm, graph)
+        end
+        return result
+    else
+        # No read buffers, just call step once
+        return step(algorithm, graph)
     end
 end
