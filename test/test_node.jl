@@ -86,15 +86,7 @@ facts("Functions for collecting nodes") do
     context("nodes() should return an array of all nodes in the graph") do
         # FactorGraph test
         testnodes = initializeLoopyGraph()
-        scheme = InferenceScheme()
         found_nodes = nodes(currentGraph())
-        @fact length(found_nodes) => length(testnodes)
-        for node in testnodes
-            @fact node in found_nodes => true
-        end
-
-        # Subgraph test
-        found_nodes = nodes(scheme.factorization[1])
         @fact length(found_nodes) => length(testnodes)
         for node in testnodes
             @fact node in found_nodes => true

@@ -36,7 +36,7 @@ facts("GainAdditionCompositeNode unit tests") do
 
         # Forward
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing])
-        msg_internal = calculateMessage!(node.interfaces[3])
+        msg_internal = execute(SumProduct.generateSchedule(node.interfaces[3]))
         FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 3, 
@@ -45,11 +45,11 @@ facts("GainAdditionCompositeNode unit tests") do
 
         # Backward
         node = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
-        msg_internal = calculateMessage!(node.interfaces[1])
+        msg_internal = execute(SumProduct.generateSchedule(node.interfaces[1]))
         @fact msg_internal.payload => GaussianDistribution(m=[0.8, -0.2], V=[1.56 -1.44; -1.44 1.56])
 
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
-        msg_internal = calculateMessage!(node.interfaces[2])
+        msg_internal = execute(SumProduct.generateSchedule(node.interfaces[2]))
         FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 2, 
@@ -62,7 +62,7 @@ facts("GainAdditionCompositeNode unit tests") do
 
         # Forward
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
-        msg_internal = calculateMessage!(node.interfaces[3])
+        msg_internal = execute(SumProduct.generateSchedule(node.interfaces[3]))
         FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 3, 
@@ -71,11 +71,11 @@ facts("GainAdditionCompositeNode unit tests") do
 
         # Backward
         node = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = calculateMessage!(node.interfaces[1])
+        msg_internal = execute(SumProduct.generateSchedule(node.interfaces[1]))
         @fact msg_internal.payload => GaussianDistribution(m=[0.8, -0.2], W=[8.0+(2/3) 8.0; 8.0 8.0+(2/3)])
 
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = calculateMessage!(node.interfaces[2])
+        msg_internal = execute(SumProduct.generateSchedule(node.interfaces[2]))
         FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 2, 
@@ -88,7 +88,7 @@ facts("GainAdditionCompositeNode unit tests") do
 
         # Forward
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
-        msg_internal = calculateMessage!(node.interfaces[3])
+        msg_internal = execute(SumProduct.generateSchedule(node.interfaces[3]))
         FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 3, 
@@ -97,11 +97,11 @@ facts("GainAdditionCompositeNode unit tests") do
 
         # Backward
         node = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = calculateMessage!(node.interfaces[1])
+        msg_internal = execute(SumProduct.generateSchedule(node.interfaces[1]))
         @fact msg_internal.payload => GaussianDistribution(m=[0.4, -0.1], V=[0.78 -0.72; -0.72 0.78])
 
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = calculateMessage!(node.interfaces[2])
+        msg_internal = execute(SumProduct.generateSchedule(node.interfaces[2]))
         FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 2, 
@@ -114,7 +114,7 @@ facts("GainAdditionCompositeNode unit tests") do
 
         # Forward
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
-        msg_internal = calculateMessage!(node.interfaces[3])
+        msg_internal = execute(SumProduct.generateSchedule(node.interfaces[3]))
         FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 3, 
@@ -123,11 +123,11 @@ facts("GainAdditionCompositeNode unit tests") do
 
         # Backward
         node = initializeGainAdditionCompositeNode(A, true, [nothing, Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = calculateMessage!(node.interfaces[1])
+        msg_internal = execute(SumProduct.generateSchedule(node.interfaces[1]))
         @fact msg_internal.payload => GaussianDistribution(m=[0.4, -0.1], V=[0.78 -0.72; -0.72 0.78])
 
         node = initializeGainAdditionCompositeNode(A, false, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = calculateMessage!(node.interfaces[2])
+        msg_internal = execute(SumProduct.generateSchedule(node.interfaces[2]))
         FactorGraph()
         validateOutboundMessage(GainAdditionCompositeNode(A, true), 
                                 2, 

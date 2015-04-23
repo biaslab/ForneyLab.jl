@@ -1,36 +1,62 @@
 module SumProduct
 
 using ..ForneyLab
-export sumProductAlgorithm
+export Algorithm
 
-include("scheduling.jl")
+include("generate_schedule.jl")
 
 
 #--------------------------------
 # Algorithm specific constructors
 #--------------------------------
 
-function sumProductAlgorithm(outbound_interface::Interface, graph::FactorGraph=currentGraph())
+function Algorithm(graph::FactorGraph=currentGraph())
     # Generates a sumproduct algorithm to calculate the outbound message on outbound_interface
     # Uses autoscheduler and only works in acyclic graphs
-    clearMessages!(graph)
+    #clearMessages!(graph)
+    schedule = generateSchedule(graph)
+
+    # Construct the execute function and its arguments
+    exec(fields) = execute(fields[:schedule])
+    return ForneyLab.Algorithm(exec, {:schedule => schedule})
+end
+
+function Algorithm(outbound_interface::Interface, graph::FactorGraph=currentGraph())
+    # Generates a sumproduct algorithm to calculate the outbound message on outbound_interface
+    # Uses autoscheduler and only works in acyclic graphs
+    #clearMessages!(graph)
     schedule = generateSchedule(outbound_interface)
 
     # Construct the execute function and its arguments
     exec(fields) = execute(fields[:schedule])
-    return Algorithm(exec, {:schedule => schedule})
+    return ForneyLab.Algorithm(exec, {:schedule => schedule})
 end
 
-function sumProductAlgorithm(partial_list::Vector{Interface}, graph::FactorGraph=currentGraph())
+function Algorithm(partial_list::Vector{Interface}, graph::FactorGraph=currentGraph())
     # Generates a sumproduct algorithm to calculate the outbound message on outbound_interface
     # Uses autoscheduler and only works in acyclic graphs
-    clearMessages!(graph)
+    #clearMessages!(graph)
     schedule = generateSchedule(partial_list)
 
     # Construct the execute function and its arguments
     exec(fields) = execute(fields[:schedule])
-    return Algorithm(exec, {:schedule => schedule})
+    return ForneyLab.Algorithm(exec, {:schedule => schedule})
 end
+
+function Algorithm(edge::Edge, graph::FactorGraph=currentGraph())
+    # Generates a sumproduct algorithm to calculate the marginal on edge
+    # Uses autoscheduler and only works in acyclic graphs
+    #clearMessages!(graph)
+    schedule = generateSchedule([edge.head, edge.tail])
+
+    # Construct the execute function and its arguments
+    function exec(fields)
+        execute(fields[:schedule])
+        calculateMarginal!(fields[:edge])
+    end
+    return ForneyLab.Algorithm(exec, {:schedule => schedule, :edge => edge})
+end
+
 
 
 #---------------------------------------------------

@@ -49,18 +49,6 @@ facts("Edge integration tests") do
         @fact_throws Edge(node1.out, node3.out)
     end
 
-    context("Edge should throw an error when the user attempts to extend upon a locked graph") do
-        graph = FactorGraph()
-        node1 = TerminalNode(name="node1")
-        node2 = FixedGainNode(name="node2")
-        node3 = TerminalNode(name="node3")
-        Edge(node1.out, node2.in1)
-        @fact graph.locked => false
-        InferenceScheme() # Locks the graph structure (even though it is not done yet)
-        @fact graph.locked => true
-        @fact_throws Edge(node2.out, node3.out)
-    end
-
     context("Edges have a (pseudo) ordering") do
         FactorGraph()
         edge1 = Edge(TerminalNode().out, TerminalNode().out)
@@ -98,14 +86,5 @@ facts("Functions for collecting edges") do
         testnodes = initializeLoopyGraph()
         @fact edges(Set{Node}({testnodes[1], testnodes[2]}), include_external=false) => Set{Edge}({testnodes[1].in1.edge})
         @fact edges(Set{Node}({testnodes[1], testnodes[2]})) => Set{Edge}({testnodes[1].in1.edge, testnodes[4].in1.edge, testnodes[4].out.edge})
-    end
-
-    context("edges() called on a subgraph should return all internal edges (optionally external as well) of the subgraph") do
-        (t1, a1, g1, t2, t3) = initializeFactoringGraphWithoutLoop()
-        scheme = InferenceScheme()
-        factorize!(scheme)
-        sg = scheme.factorization[1]
-        @fact edges(sg, include_external=false) => Set{Edge}({g1.variance.edge})
-        @fact edges(sg) => Set{Edge}({g1.variance.edge, g1.out.edge, g1.mean.edge})
     end
 end

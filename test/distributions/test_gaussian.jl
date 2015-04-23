@@ -106,8 +106,8 @@ facts("Marginal calculations for the Gaussian") do
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
         (t1, t2) = initializePairOfTerminalNodes(GaussianDistribution(m=0.0, V=1.0), GaussianDistribution(m=0.0, V=1.0))
         edge = t1.out.edge
-        calculateForwardMessage!(edge)
-        calculateBackwardMessage!(edge)
+        t1.out.message = Message(GaussianDistribution(m=0.0, V=1.0))
+        t2.out.message = Message(GaussianDistribution(m=0.0, V=1.0))
         marginal_dist = calculateMarginal!(edge)
         @fact edge.marginal => marginal_dist
         ensureMVParametrization!(marginal_dist)

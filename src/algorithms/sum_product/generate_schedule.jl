@@ -65,7 +65,7 @@ function generateSchedule(outbound_interface::Interface; args...)
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
     # The same graph with different messages being present can (and probably will) result in a different schedule.
 
-    return convert(Schedule, generateScheduleByDFS!(outbound_interface; args...), sumProduct!)
+    return convert(Schedule, generateScheduleByDFS!(outbound_interface; args...))
 end
 
 function generateSchedule(partial_schedule::Schedule; args...)
@@ -74,7 +74,6 @@ function generateSchedule(partial_schedule::Schedule; args...)
     # This function will find a valid complete schedule that satisfies the partial schedule.
     #
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
-    (length(partial_schedule) > 0) || error("Partial schedule should contain at least one entry")
 
     interface_list = Array(Interface, 0)
     for schedule_entry in partial_schedule
@@ -85,3 +84,24 @@ function generateSchedule(partial_schedule::Schedule; args...)
 end
 
 generateSchedule(partial_list::Array{Interface, 1}; args...) = generateSchedule(convert(Schedule, partial_list); args...)
+
+function generateSchedule(graph::FactorGraph=currentGraph(); args...)
+    partial_list = Interface[]
+    
+    # Collect timewrap interfaces
+    for (from_node, to_node) in graph.time_wraps
+        push!(partial_list, from_node.out.partner)
+    end
+
+    # Collect write buffer interfaces
+    for entry in keys(graph.write_buffers)
+        if typeof(entry) == Interface
+            push!(partial_list, entry)
+        elseif typeof(entry) == Edge
+            push!(partial_list, entry.head)
+            push!(partial_list, entry.tail)
+        end
+    end
+
+    return generateSchedule(partial_list; args...)
+end

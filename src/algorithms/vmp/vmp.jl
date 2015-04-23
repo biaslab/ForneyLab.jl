@@ -2,7 +2,7 @@ module VMP
 
 using ..ForneyLab
 
-	# Algorithm
+    # Algorithm
     # # Factorizations for approximate marginals
     # factorization::Vector{Subgraph} # References to the graphs factorization required for anwering this inference question
     # edge_to_subgraph::Dict{Edge, Subgraph} # Fast lookup for edge to subgraph in which edge is internal

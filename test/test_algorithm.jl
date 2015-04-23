@@ -1,3 +1,3 @@
-facts("Algorithm() tests") do
-	@pending
+facts("ForneyLab Algorithm() tests") do
+    @pending true => false
 end

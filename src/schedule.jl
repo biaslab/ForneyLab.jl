@@ -25,10 +25,12 @@ function setPostProcessing!(schedule::Schedule, interface::Interface, post_proce
     end
 end
 
-function convert(::Type{Schedule}, interfaces::Array{Interface, 1}, message_calculation_rule::Function=sumProduct!, post_processing::Union(Nothing,Function)=nothing)
-    # Convert a list of interfaces to an actual schedule
-    return ScheduleEntry[ScheduleEntry(iface, message_calculation_rule, post_processing) for iface in interfaces]
-end
+# Convert interfaces to schedule
+convert(::Type{ScheduleEntry}, interface::Interface) = ScheduleEntry(interface, sumProduct!) # Default assumes conversion to sum product
+convert(::Type{ScheduleEntry}, interface::Interface, message_calculation_rule::Function) = ScheduleEntry(interface, message_calculation_rule)
+convert(::Type{Schedule}, interfaces::Array{Interface, 1}, message_calculation_rule::Function) = ScheduleEntry[convert(ScheduleEntry, iface, message_calculation_rule) for iface in interfaces]
+convert(::Type{ScheduleEntry}, interface::Interface, message_calculation_rule::Function, post_proc::Function) = ScheduleEntry(interface, message_calculation_rule, post_proc)
+convert(::Type{Schedule}, interfaces::Array{Interface, 1}, message_calculation_rule::Function, post_proc::Function) = ScheduleEntry[convert(ScheduleEntry, iface, message_calculation_rule, post_proc) for iface in interfaces]
 
 function show(io::IO, schedule::Schedule)
     # Show schedules in a specific way
