@@ -1,5 +1,3 @@
-export generateSchedule
-
 function generateScheduleByDFS!(outbound_interface::Interface, 
                                 backtrace::Array{Interface, 1}=Array(Interface, 0), 
                                 call_list::Array{Interface, 1}=Array(Interface, 0); 

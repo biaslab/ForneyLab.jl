@@ -1,7 +1,6 @@
 module SumProduct
 
 using ..ForneyLab
-export Algorithm
 
 include("generate_schedule.jl")
 
@@ -14,7 +13,7 @@ function Algorithm(graph::FactorGraph=currentGraph())
     # Generates a sumproduct algorithm to calculate the outbound message on outbound_interface
     # Uses autoscheduler and only works in acyclic graphs
     #clearMessages!(graph)
-    schedule = generateSchedule(graph)
+    schedule = SumProduct.generateSchedule(graph)
 
     # Construct the execute function and its arguments
     exec(fields) = execute(fields[:schedule])
@@ -25,7 +24,7 @@ function Algorithm(outbound_interface::Interface, graph::FactorGraph=currentGrap
     # Generates a sumproduct algorithm to calculate the outbound message on outbound_interface
     # Uses autoscheduler and only works in acyclic graphs
     #clearMessages!(graph)
-    schedule = generateSchedule(outbound_interface)
+    schedule = SumProduct.generateSchedule(outbound_interface)
 
     # Construct the execute function and its arguments
     exec(fields) = execute(fields[:schedule])
@@ -36,7 +35,7 @@ function Algorithm(partial_list::Vector{Interface}, graph::FactorGraph=currentGr
     # Generates a sumproduct algorithm to calculate the outbound message on outbound_interface
     # Uses autoscheduler and only works in acyclic graphs
     #clearMessages!(graph)
-    schedule = generateSchedule(partial_list)
+    schedule = SumProduct.generateSchedule(partial_list)
 
     # Construct the execute function and its arguments
     exec(fields) = execute(fields[:schedule])
@@ -47,7 +46,7 @@ function Algorithm(edge::Edge, graph::FactorGraph=currentGraph())
     # Generates a sumproduct algorithm to calculate the marginal on edge
     # Uses autoscheduler and only works in acyclic graphs
     #clearMessages!(graph)
-    schedule = generateSchedule([edge.head, edge.tail])
+    schedule = SumProduct.generateSchedule([edge.head, edge.tail])
 
     # Construct the execute function and its arguments
     function exec(fields)
@@ -56,7 +55,6 @@ function Algorithm(edge::Edge, graph::FactorGraph=currentGraph())
     end
     return ForneyLab.Algorithm(exec, {:schedule => schedule, :edge => edge})
 end
-
 
 
 #---------------------------------------------------

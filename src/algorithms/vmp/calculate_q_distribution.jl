@@ -1,3 +1,19 @@
+function ensureQDistribution!(factor::Set{Edge}, scheme::DataAwareFactorGraph, assign_distribution::DataType)
+    # Looks for a marginal in the q-distribution dictionary.
+    # If no marginal is present, it sets and returns a vague distribution.
+    # Otherwise, it returns the existing q distribution.
+    try
+        return qDistribution(factor)
+    catch
+        if assign_distribution <: ProbabilityDistribution
+            return scheme.q_distributions[factor] = vague(assign_distribution) # Assign a q distribution
+        else
+            error("Cannot create a marginal of type $(assign_distribution) since a marginal should be <: ProbabilityDistribution")
+        end
+    end
+
+end
+
 # GammaDistribution
 function calculateQDistribution!(factor::Set{Edge}, scheme::InferenceScheme, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
     # Calculation for univariate approximate marginal

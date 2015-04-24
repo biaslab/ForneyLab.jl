@@ -1,4 +1,4 @@
-export calculateMarginal, calculateMarginal!, calculateQDistribution!
+export calculateMarginal, calculateMarginal!
 
 # Functions for calculating marginals on nodes and edges.
 
