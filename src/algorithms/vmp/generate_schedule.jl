@@ -3,7 +3,7 @@
 # There are no call signatures for message passing to specific interfaces or edges;
 # when required, these should be set through write buffers or time wraps.
 
-function generateSchedule!(f::Factorization, graph::FactorGraph=current_graph)
+function generateSchedule!(f::QFactorization, graph::FactorGraph=current_graph)
     # Generate and store an internal and external schedule for each subgraph in the factorization
     for sg in f.factors
         generateSchedule!(sg, graph)

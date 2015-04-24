@@ -1,4 +1,4 @@
-function execute(subgraph::Subgraph, q_distributions::Dict{(Node, Subgraph), ProbabilityDistribution})
+function execute(subgraph::Subgraph, q_distributions::Dict{(Node, Subgraph), QDistribution})
     printVerbose("Subgraph $(findfirst(scheme.factorization, subgraph)):")
 
     # Execute internal schedule
@@ -6,11 +6,11 @@ function execute(subgraph::Subgraph, q_distributions::Dict{(Node, Subgraph), Pro
 
     # Update q-distributions at external edges
     for node in subgraph.external_schedule
-        calculateQDistribution!(q_distributions, node, subgraph)
+        calculateQDistribution!(node, subgraph)
     end
 end
 
-function execute(factorization::Factorization, q_distributions::Dict{(Node, Subgraph), ProbabilityDistribution})
+function execute(factorization::QFactorization, q_distributions::Dict{(Node, Subgraph), QDistribution})
     for subgraph in factorization.factors
         execute(subgraph, q_distributions)
     end

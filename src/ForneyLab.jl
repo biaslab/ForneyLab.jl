@@ -79,7 +79,7 @@ include("visualization.jl")
 
 # Algorithms
 include("algorithms/sum_product/sum_product.jl")
-#include("algorithms/vmp/vmp.jl")
+include("algorithms/vmp/vmp.jl")
 
 # Functions for message post-processing
 vague(dist::ProbabilityDistribution) = vague(typeof(dist))

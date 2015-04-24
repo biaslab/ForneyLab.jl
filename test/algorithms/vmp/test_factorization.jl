@@ -2,7 +2,7 @@
 # Integration tests
 #####################
 
-facts("Factorization integration tests") do
+facts("QFactorization integration tests") do
     context("extend() should extend a set of edges to envelope deterministic nodes") do
         (t1, a1, g1, t2, add1, g2) = initializeFactoringGraph()
         cluster = ForneyLab.extend(Set{Edge}([g1.out.edge, g1.mean.edge]))

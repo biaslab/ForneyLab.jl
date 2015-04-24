@@ -1,22 +1,22 @@
-type Factorization
-	factors::Array{Subgraph, 1}
-	edge_to_subgraph::Dict{Edge, Subgraph}
+type QFactorization
+    factors::Array{Subgraph, 1}
+    edge_to_subgraph::Dict{Edge, Subgraph}
 end
-function Factorization(graph::FactorGraph=current_graph)
-	# Create an initial subgraph that envelopes the entire graph
-	internal_edges = edges(graph)
-	sg = Subgraph(internal_edges, Interface[], Node[]) # Build a subgraph that contains all edges in the graph
-	edge_to_subgraph = Dict{Edge, Subgraph}()
-	for edge in internal_edges # Map all edges to the just created subgraph
-		merge!(edge_to_subgraph, {edge => sg})
-	end
-	return Factorization([sg], edge_to_subgraph) # Build the new factorization
+function QFactorization(graph::FactorGraph=current_graph)
+    # Create an initial subgraph that envelopes the entire graph
+    internal_edges = edges(graph)
+    sg = Subgraph(internal_edges, Interface[], Node[]) # Build a subgraph that contains all edges in the graph
+    edge_to_subgraph = Dict{Edge, Subgraph}()
+    for edge in internal_edges # Map all edges to the just created subgraph
+        merge!(edge_to_subgraph, {edge => sg})
+    end
+    return QFactorization([sg], edge_to_subgraph) # Build the new factorization
 end
 
 # Local decompositions around a node
-subgraphs(f::Factorization, node::Node) = [f.edge_to_subgraph[interface.edge] for interface in node.interfaces]
+subgraphs(f::QFactorization, node::Node) = [f.edge_to_subgraph[interface.edge] for interface in node.interfaces]
 
-function vagueQDistributions(f::Factorization)
+function vagueQDistributions(f::QFactorization)
     # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
     
     q_distributions = Dict::{(Node, Subgraph), ProbabilityDistribution}
@@ -45,15 +45,15 @@ function vagueQDistributions(f::Factorization)
                 marginal_type = getMarginalType(internal_incoming_message_types...)
             end
             # Build q_distributions dictionary
-            q_distributions[(node, subgraph)] = vague(marginal_type)
+            q_distributions[(node, subgraph)] = QDistribution(vague(marginal_type), intersect(edges(node), subgraph.internal_edges))
         end
     end
 
     return q_distributions
 end
 
-function factorize!(edge_set::Set{Edge}, f::Factorization=Factorization())
-	# Returns a factorization object that specifies a new q factorization with edge_set as internal edges
+function factorize!(edge_set::Set{Edge}, f::QFactorization=QFactorization())
+    # Returns a factorization object that specifies a new q factorization with edge_set as internal edges
 
     # The set of internal edges needs to be extended to envelope deterministic nodes
     internal_edges = extend(edge_set)
@@ -84,13 +84,13 @@ function factorize!(edge_set::Set{Edge}, f::Factorization=Factorization())
     end
     return f
 end
-factorize!(internal_edge::Edge, f::Factorization=Factorization()) = factorize!(Set{Edge}([internal_edge]), f)
-factorize!(internal_edges::Vector{Edge}, f::Factorization=Factorization()) = factorize!(Set{Edge}(internal_edges), f)
+factorize!(internal_edge::Edge, f::QFactorization=QFactorization()) = factorize!(Set{Edge}([internal_edge]), f)
+factorize!(internal_edges::Vector{Edge}, f::QFactorization=QFactorization()) = factorize!(Set{Edge}(internal_edges), f)
 
 function factorize(graph::FactorGraph=current_graph)
     # Generates a mean field factorization based on graph
 
-	f = Factorization(graph) # Starting point
+    f = QFactorization(graph) # Starting point
 
     edges_to_factor = sort!([e for e in f.factors[1].internal_edges]) # Cast to array and sort
     while !isempty(edges_to_factor) # As long as there are edges to factor
