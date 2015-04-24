@@ -76,11 +76,10 @@ facts("step integration tests") do
         Edge(node_delta, node_add.in2)
         Edge(node_add.out, node_out)
         setTimeWrap(node_out, node_in)
-        SumProduct.generateSchedule(node_add.out)
         deltas = [DeltaDistribution(n) for n in 1.:10.]
         setReadBuffer(node_delta, deltas)
         results = setWriteBuffer(node_add.out)
-        algo = SumProduct.Algorithm(g)
+        algo = SumProduct.Algorithm(g) # The timewraps and buffers tell the autoscheduler what should be computed
         while !isempty(deltas)
             step(algo, g)
         end
@@ -89,5 +88,23 @@ facts("step integration tests") do
 end
 
 facts("run() integration tests") do
-    @pending true => false
+    context("run() should step() until a read buffer is exhausted") do
+        # out = in + delta
+        g = FactorGraph()
+        node_in = TerminalNode(DeltaDistribution(0.0), name="in")
+        node_add = AdditionNode(name="add")
+        node_delta = TerminalNode(name="delta")
+        node_out = TerminalNode(name="out")
+        Edge(node_in, node_add.in1)
+        Edge(node_delta, node_add.in2)
+        Edge(node_add.out, node_out)
+        setTimeWrap(node_out, node_in)
+        deltas = [DeltaDistribution(n) for n in 1.:10.]
+        setReadBuffer(node_delta, deltas)
+        results = setWriteBuffer(node_add.out)
+        schedule = SumProduct.generateSchedule(node_add.out)
+        algo = Algorithm(schedule, g)
+        run(algo, g)
+        @fact results => [DeltaDistribution(r) for r in cumsum([1.:10.])]
+    end
 end

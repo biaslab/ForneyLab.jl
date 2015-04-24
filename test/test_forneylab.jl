@@ -35,13 +35,8 @@ include("test_interface.jl")
 include("test_node.jl")
 include("test_edge.jl")
 
-# Graph, inference scheme and subgraph concepts
+# Top level concepts
 include("test_factor_graph.jl")
-include("test_algorithm.jl")
-
-# Algorithm tests
-include("algorithms/sum_product/test_sum_product.jl")
-#include("algorithms/vmp/test_vmp.jl")
 
 # Node types
 include("nodes/test_addition.jl")
@@ -62,6 +57,11 @@ include("test_calculate_marginal.jl")
 # Message passing
 include("test_message_passing.jl")
 include("test_step.jl")
+
+# Algorithms
+include("test_algorithm.jl")
+include("algorithms/sum_product/test_sum_product.jl")
+#include("algorithms/vmp/test_vmp.jl")
 
 exitstatus()
 

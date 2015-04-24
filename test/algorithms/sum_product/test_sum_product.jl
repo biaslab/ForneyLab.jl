@@ -1,8 +1,4 @@
-facts("Test sumproduct specific Algorithm constructors") do
-    @pending true => false
-end
-
-facts("Test sumproduct specific collectInbounds()") do
+facts("SumProduct.collectInbounds() tests") do
     context("collectInbounds() should add the proper message/marginal") do
         # Standard
         (node, edges) = initializeGaussianNode()
