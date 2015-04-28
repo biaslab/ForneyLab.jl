@@ -12,7 +12,7 @@ include("message_passing.jl")
 # Algorithm specific constructors
 #--------------------------------
 
-function Algorithm(graph::FactorGraph=currentGraph())
+function Algorithm(graph::FactorGraph=currentGraph(); n_iterations::Int64=50)
     # Generates a vmp algorithm to calculate the messages towards write buffers and timewraps defined on graph
     # Uses a mean field factorization and autoscheduler
     factorization = factorize(graph) # Mean field factorization
@@ -20,10 +20,34 @@ function Algorithm(graph::FactorGraph=currentGraph())
     q_distributions = vagueQDistributions(factorization) # Initialize vague q distributions
 
     # Construct the algorithm execute function
-    exec(fields) = execute(factorization, q_distributions) # For all subgraphs, execute internal and external schedules
-    return ForneyLab.Algorithm(exec, {:factorization => factorization, :q_distributions => q_distributions})
+    function exec(fields)
+        for iteration = 1:fields[:n_iterations]
+            execute(fields[:factorization], fields[:q_distributions]) # For all subgraphs, execute internal and external schedules
+        end
+    end
+
+    return ForneyLab.Algorithm(exec, {:factorization => factorization, :q_distributions => q_distributions, :n_iterations => n_iterations})
 end
 
+function Algorithm(cluster_edges::Vector{Set{Edge}}, graph::FactorGraph=currentGraph(); n_iterations::Int64=50)
+    # Generates a vmp algorithm to calculate the messages towards write buffers and timewraps defined on graph
+    # Uses a structured factorization with elements in cluster_edges defining separate subgraphs
+    factorization = QFactorization(graph)
+    for cluster in cluster_edges
+        factorization = factorize!(cluster, factorization) # Structured factorization with elements in cluster_edges defining separate subgraphs
+    end
+    generateSchedule!(factorization, graph) # Generate and store internal and external schedules on factorization subgraphs
+    q_distributions = vagueQDistributions(factorization) # Initialize vague q distributions
+
+    # Construct the algorithm execute function
+    function exec(fields)
+        for iteration = 1:fields[:n_iterations]
+            execute(fields[:factorization], fields[:q_distributions]) # For all subgraphs, execute internal and external schedules
+        end
+    end
+
+    return ForneyLab.Algorithm(exec, {:factorization => factorization, :q_distributions => q_distributions, :n_iterations => n_iterations})
+end
 
 #---------------------------------------------------
 # Construct algorithm specific update-call signature
@@ -60,7 +84,8 @@ function collectInbounds(outbound_interface::Interface)
                 # A subgraph border is crossed, require marginal
                 # The factor is the set of internal edges that are in the same subgraph
                 sg = current_algorithm.fields[:factorization].edge_to_subgraph[interface.edge]
-                try push!(inbounds, current_algorithm.fields[:q_distributions][(node, sg)]) catch error("Missing approximate marginal for $(interface)") end
+                #try push!(inbounds, current_algorithm.fields[:q_distributions][(node, sg)]) catch error("Missing approximate marginal for $(interface)") end
+                push!(inbounds, current_algorithm.fields[:q_distributions][(outbound_interface.node, sg)].distribution)
             end
         end
     end

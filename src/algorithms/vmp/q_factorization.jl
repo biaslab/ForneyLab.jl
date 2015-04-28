@@ -13,15 +13,13 @@ function QFactorization(graph::FactorGraph=current_graph)
     return QFactorization([sg], edge_to_subgraph) # Build the new factorization
 end
 
-# Local decompositions around a node
-subgraphs(f::QFactorization, node::Node) = [f.edge_to_subgraph[interface.edge] for interface in node.interfaces]
-
 function vagueQDistributions(f::QFactorization)
     # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
     
-    q_distributions = Dict::{(Node, Subgraph), ProbabilityDistribution}
+    q_distributions = Dict{(Node, Subgraph), QDistribution}()
 
     for subgraph in f.factors
+        length(subgraph.external_schedule) > 0 || warning("External schedule for subgraph $(subgraph) undefined. Run generateSchedule(...) to generate internal and external schedules.")
         for node in subgraph.external_schedule
             internal_interfaces = Array(Interface, 0)
             for interface in node.interfaces
@@ -50,6 +48,32 @@ function vagueQDistributions(f::QFactorization)
     end
 
     return q_distributions
+end
+
+function calculateQDistribution!(q_distributions::Dict{(Node, Subgraph), QDistribution}, node::Node, subgraph::Subgraph, factorization::QFactorization)
+    # Calculate the approximate marginal for node from the perspective of subgraph,
+    # and store the result in the scheme.q_distributions dictionary.
+
+    q_distribution = q_distributions[(node, subgraph)]
+    if length(q_distribution.edges) == 1
+        # Update for univariate q
+        # When there is only one internal edge, the approximate marginal calculation reduces to the naive marginal update
+        internal_edge = first(q_distribution.edges) # Extract element
+        return calculateQDistribution!(q_distribution, internal_edge.tail.message.payload, internal_edge.head.message.payload)
+    end
+
+    # Update for multivariate q
+    required_inputs = Array(Any, 0)
+    for interface in node.interfaces # Iterate over all edges connected to node
+        neighbouring_subgraph = factorization.edge_to_subgraph[interface.edge]
+        if neighbouring_subgraph == subgraph # edge is internal
+            push!(required_inputs, interface.partner.message)
+        else # edge is external
+            haskey(q_distributions, (node, neighbouring_subgraph)) || error("A required q-distribution for $(node.name) is not present. Please preset (vague) q-distributions.")
+            push!(required_inputs, q_distributions[(node, neighbouring_subgraph)].distribution)
+        end
+    end
+    return calculateQDistribution!(q_distribution, node, required_inputs...)
 end
 
 function factorize!(edge_set::Set{Edge}, f::QFactorization=QFactorization())
@@ -94,10 +118,10 @@ function factorize(graph::FactorGraph=current_graph)
 
     edges_to_factor = sort!([e for e in f.factors[1].internal_edges]) # Cast to array and sort
     while !isempty(edges_to_factor) # As long as there are edges to factor
-        subgraph = factorize!(edges_to_factor[end], f)
+        factorize!(edges_to_factor[end], f)
 
         # Remove all edges in edge_cluster from edges_to_factor, they have just been added to the same factor
-        for e in subgraph.internal_edges
+        for e in f.factors[end].internal_edges
             splice!(edges_to_factor, findfirst(edges_to_factor, e))
         end
     end
@@ -113,7 +137,7 @@ function extend(edge_set::Set{Edge})
         current_edge = pop!(edges) # Pick one
         push!(edge_cluster, current_edge) # Add to edge cluster
         for node in [current_edge.head.node, current_edge.tail.node] # Check both head and tail node for deterministic type
-            if isDeterministic(node)
+            if ForneyLab.isDeterministic(node)
                 for interface in node.interfaces
                     if !is(interface.edge, current_edge) && !(interface.edge in edge_cluster) # Is next level edge not seen yet?
                         push!(edges, interface.edge) # Add to buffer to visit sometime in the future

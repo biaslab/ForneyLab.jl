@@ -31,7 +31,7 @@ function generateSchedule!(sg::Subgraph, graph::FactorGraph=current_graph)
 
                 # Extend internal_schedule to calculate the inbound message on interface
                 try
-                    internal_interface_list = SumProduct.generateScheduleByDFS(interface.partner, internal_interface_list, Array(Interface, 0), allowed_edges=sg.internal_edges)
+                    internal_interface_list = SumProduct.generateScheduleByDFS!(interface.partner, internal_interface_list, Array(Interface, 0), allowed_edges=sg.internal_edges)
                 catch
                     error("Cannot generate internal schedule for possibly loopy subgraph with internal edge $(interface.edge).")
                 end
@@ -49,7 +49,7 @@ function generateSchedule!(sg::Subgraph, graph::FactorGraph=current_graph)
     interface_list_for_time_wraps = Array(Interface, 0)
     for (from_node, to_node) in graph.time_wraps
         if from_node.out.edge in sg.internal_edges # Timewrap is the responsibility of this subgraph
-            interface_list_for_time_wraps = [interface_list_for_time_wraps, SumProduct.generateScheduleByDFS(from_node.out.partner, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
+            interface_list_for_time_wraps = [interface_list_for_time_wraps, SumProduct.generateScheduleByDFS!(from_node.out.partner, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
         end
     end
 
@@ -57,16 +57,16 @@ function generateSchedule!(sg::Subgraph, graph::FactorGraph=current_graph)
     interface_list_for_write_buffers = Array(Interface, 0)
     for entry in keys(graph.write_buffers)
         if typeof(entry) == Interface
-            interface_list_for_write_buffers = [interface_list_for_write_buffers, SumProduct.generateScheduleByDFS(entry, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
+            interface_list_for_write_buffers = [interface_list_for_write_buffers, SumProduct.generateScheduleByDFS!(entry, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
         elseif typeof(entry) == Edge
-            interface_list_for_write_buffers = [interface_list_for_write_buffers, SumProduct.generateScheduleByDFS(entry.head, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
-            interface_list_for_write_buffers = [interface_list_for_write_buffers, SumProduct.generateScheduleByDFS(entry.tail, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
+            interface_list_for_write_buffers = [interface_list_for_write_buffers, SumProduct.generateScheduleByDFS!(entry.head, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
+            interface_list_for_write_buffers = [interface_list_for_write_buffers, SumProduct.generateScheduleByDFS!(entry.tail, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
         end
     end
 
     # Schedule for univariate comes after internal schedule, because it can depend on inbounds
     sg.internal_schedule = convert(Schedule, unique([internal_interface_list, interface_list_for_univariate, interface_list_for_time_wraps, interface_list_for_write_buffers]))
-    sg.external_schedule = external_schedule
+    sg.external_schedule = Node[n for n in external_schedule] # Convert set to array
 
     return sg 
 end

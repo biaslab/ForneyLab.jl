@@ -61,7 +61,7 @@ include("test_step.jl")
 # Algorithms
 include("test_algorithm.jl")
 include("algorithms/sum_product/test_sum_product.jl")
-#include("algorithms/vmp/test_vmp.jl")
+include("algorithms/vmp/test_vmp.jl")
 
 exitstatus()
 

@@ -1,4 +1,4 @@
-export calculateMarginal, calculateMarginal!
+export calculateMarginal, calculateMarginal!, getMarginalType
 
 # Functions for calculating marginals on nodes and edges.
 
