@@ -42,27 +42,27 @@ facts("GaussianDistribution unit tests") do
         @fact isWellDefined(GaussianDistribution(m=0.0, xi=0.0, W=1.0, V=1.0)) => true
 
         dist = GaussianDistribution(m=0.0, V=1.0)
-        dist.m = nothing
+        invalidate!(dist.m)
         @fact isWellDefined(dist) => false
 
         dist = GaussianDistribution(m=0.0, V=1.0)
-        dist.V = nothing
+        invalidate!(dist.V)
         @fact isWellDefined(dist) => false
 
         dist = GaussianDistribution(xi=0.0, W=1.0)
-        dist.xi = nothing
+        invalidate!(dist.xi)
         @fact isWellDefined(dist) => false
 
         dist = GaussianDistribution(xi=0.0, W=1.0)
-        dist.W = nothing
+        invalidate!(dist.W)
         @fact isWellDefined(dist) => false
 
         dist = GaussianDistribution(m=0.0, V=1.0, W=1.0)
-        dist.m = nothing
+        invalidate!(dist.m)
         @fact isWellDefined(dist) => false
 
         dist = GaussianDistribution(m=0.0, xi=0.0, V=1.0)
-        dist.V = nothing
+        invalidate!(dist.V)
         @fact isWellDefined(dist) => false
     end
     context("Conversions between valid parametrizations of a GaussianDistribution should be consistent") do

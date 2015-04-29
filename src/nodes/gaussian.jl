@@ -135,10 +135,10 @@ type GaussianNode <: Node
     m::Vector{Float64}
     V::Matrix{Float64}
 
-    function GaussianNode(; name=unnamedStr(), form::ASCIIString="moment", m::Union(Float64,Vector{Float64},Nothing)=nothing, V::Union(Float64,Matrix{Float64},Nothing)=nothing)
-        if m!=nothing && V!=nothing
+    function GaussianNode(; name=unnamedStr(), form::ASCIIString="moment", m::Union(Float64,Vector{Float64})=[NaN], V::Union(Float64,Matrix{Float64})=reshape([NaN], 1, 1))
+        if valid(m) && valid(V)
             total_interfaces = 1
-        elseif m!=nothing || V!=nothing
+        elseif valid(m) || valid(V)
             total_interfaces = 2
         else
             total_interfaces = 3
@@ -146,7 +146,7 @@ type GaussianNode <: Node
         self = new(name, Array(Interface, total_interfaces))
         next_interface_index = 1 # Counter keeping track of constructed interfaces
 
-        if m != nothing
+        if valid(m)
             # GaussianNode with fixed mean
             self.m = (typeof(m)==Float64) ? [m] : deepcopy(m)
         else
@@ -157,7 +157,7 @@ type GaussianNode <: Node
         end
 
         # Pick a form for the variance/precision
-        if V != nothing
+        if valid(V)
             # GaussianNode with fixed variance
             self.V = (typeof(V)==Float64) ? reshape([V], 1, 1) : deepcopy(V)
         else
@@ -214,9 +214,9 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
         dist_out.m = [msg_out.payload.m[1]]
-        dist_out.xi = nothing
+        invalidate!(dist_out.xi)
         dist_out.V = reshape([msg_var_prec.payload.m[1]], 1, 1)
-        dist_out.W = nothing
+        invalidate!(dist_out.W)
 
         return (:gaussian_backward_mean_delta_variance,
                 node.interfaces[outbound_interface_id].message)
@@ -233,8 +233,8 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
         dist_out.m = [msg_out.payload.m[1]]
-        dist_out.xi = nothing
-        dist_out.V = nothing
+        invalidate!(dist_out.xi)
+        invalidate!(dist_out.V)
         dist_out.W = reshape([msg_var_prec.payload.m[1]], 1, 1)
 
         return (:gaussian_backward_mean_delta_precision,
@@ -361,9 +361,9 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
         dist_out.m = [msg_mean.payload.m[1]]
-        dist_out.xi = nothing
+        invalidate!(dist_out.xi)
         dist_out.V = reshape([msg_var_prec.payload.m[1]], 1, 1)
-        dist_out.W = nothing
+        invalidate!(dist_out.W)
 
         return (:gaussian_forward_delta_variance,
                 node.interfaces[outbound_interface_id].message)
@@ -380,8 +380,8 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
         dist_out.m = [msg_mean.payload.m[1]]
-        dist_out.xi = nothing
-        dist_out.V = nothing
+        invalidate!(dist_out.xi)
+        invalidate!(dist_out.V)
         dist_out.W = reshape([msg_var_prec.payload.m[1]], 1, 1)
 
         return (:gaussian_forward_delta_precision,
@@ -410,9 +410,9 @@ function sumProduct!{T<:Any}(node::GaussianNode,
         dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
         dist_out.m = deepcopy(node.m)
-        dist_out.xi = nothing
+        invalidate!(dist_out.xi)
         dist_out.V = reshape([msg_var_prec.payload.m[1]], 1, 1)
-        dist_out.W = nothing
+        invalidate!(dist_out.W)
 
         return (:gaussian_forward_delta_variance,
                 node.interfaces[outbound_interface_id].message)
@@ -427,8 +427,8 @@ function sumProduct!{T<:Any}(node::GaussianNode,
         dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
         dist_out.m = deepcopy(node.m)
-        dist_out.xi = nothing
-        dist_out.V = nothing
+        invalidate!(dist_out.xi)
+        invalidate!(dist_out.V)
         dist_out.W = reshape([msg_var_prec.payload.m[1]], 1, 1)
 
         return (:gaussian_forward_delta_precision,
@@ -479,8 +479,8 @@ function vmp!(node::GaussianNode,
         b = marg_variance.b
         dist_out.m = deepcopy(marg_out.m)
         dist_out.V = reshape([((a+1)/b)], 1, 1)
-        dist_out.xi = nothing
-        dist_out.W = nothing
+        invalidate!(dist_out.xi)
+        invalidate!(dist_out.W)
     else
         error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
@@ -511,8 +511,8 @@ function vmp!(node::GaussianNode,
         (length(marg_y.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
         dist_out.m = deepcopy(marg_y.m)
         dist_out.W = reshape([marg_prec.a/marg_prec.b], 1, 1)
-        dist_out.xi = nothing
-        dist_out.V = nothing
+        invalidate!(dist_out.xi)
+        invalidate!(dist_out.V)
     else
         error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
     end
@@ -553,8 +553,8 @@ function vmp!(node::GaussianNode,
         ensureMDefined!(marg_out)
         dist_out.m = deepcopy(marg_out.m)
         dist_out.V = deepcopy(node.V)
-        dist_out.xi = nothing
-        dist_out.W = nothing
+        invalidate!(dist_out.xi)
+        invalidate!(dist_out.W)
 
         return (:gaussian_backward_mean_gaussian_delta,
                 node.interfaces[outbound_interface_id].message)
@@ -653,8 +653,8 @@ function vmp!(node::GaussianNode,
         (length(marg_mean.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
         dist_out.m = deepcopy(marg_mean.m)
         dist_out.V = reshape([marg_var.b/(marg_var.a-1.0)], 1, 1)
-        dist_out.xi = nothing
-        dist_out.W = nothing
+        invalidate!(dist_out.xi)
+        invalidate!(dist_out.W)
 
         return (:gaussian_forward_gaussian_inverse_gamma,
                 node.interfaces[outbound_interface_id].message)
@@ -678,8 +678,8 @@ function vmp!(node::GaussianNode,
     if is(node.interfaces[outbound_interface_id], node.out)
         (length(node.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
         dist_out.m = deepcopy(node.m)
-        dist_out.V = nothing
-        dist_out.xi = nothing
+        invalidate!(dist_out.V)
+        invalidate!(dist_out.xi)
         dist_out.W = reshape([marg_prec.a/marg_prec.b], 1, 1)
 
         return (:gaussian_forward_gamma,
@@ -706,8 +706,8 @@ function vmp!(node::GaussianNode,
         ensureMDefined!(marg_mean)
         dist_out.m = deepcopy(marg_mean.m)
         dist_out.V = deepcopy(node.V)
-        dist_out.xi = nothing
-        dist_out.W = nothing
+        invalidate!(dist_out.xi)
+        invalidate!(dist_out.W)
 
         return (:gaussian_forward_gaussian,
                 node.interfaces[outbound_interface_id].message)
@@ -738,8 +738,8 @@ function vmp!(node::GaussianNode,
         (length(marg_mean.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
         dist_out.m = deepcopy(marg_mean.m)
         dist_out.W = reshape([marg_prec.a/marg_prec.b], 1, 1)
-        dist_out.xi = nothing
-        dist_out.V = nothing
+        invalidate!(dist_out.xi)
+        invalidate!(dist_out.V)
 
         return (:gaussian_forward_gaussian_gamma,
                 node.interfaces[outbound_interface_id].message)
@@ -840,8 +840,8 @@ function vmp!(node::GaussianNode,
     if is(node.interfaces[outbound_interface_id], node.out)
         dist_out.m = [marg.m]
         dist_out.W = reshape([marg.a/marg.b], 1, 1)
-        dist_out.xi = nothing
-        dist_out.V = nothing
+        invalidate!(dist_out.xi)
+        invalidate!(dist_out.V)
 
         return (:gaussian_forward_structured,
                 node.interfaces[outbound_interface_id].message)

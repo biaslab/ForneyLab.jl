@@ -80,20 +80,20 @@ function sumProduct!(node::AdditionNode,
 
     # Select parameterization
     # Order is from least to most computationally intensive
-    if dist_1.m != nothing && dist_1.V != nothing && dist_2.m != nothing && dist_2.V != nothing
+    if valid(dist_1.m) && valid(dist_1.V) && valid(dist_2.m) && valid(dist_2.V)
         dist_out.m = forwardAdditionMRule(dist_1.m, dist_2.m)
         dist_out.V = forwardAdditionVRule(dist_1.V, dist_2.V)
-        dist_out.W = nothing
-        dist_out.xi= nothing
-    elseif dist_1.m != nothing && dist_1.W != nothing && dist_2.m != nothing && dist_2.W != nothing
+        invalidate!(dist_out.W) 
+        invalidate!(dist_out.xi)
+    elseif valid(dist_1.m) && valid(dist_1.W) && valid(dist_2.m) && valid(dist_2.W)
         dist_out.m = forwardAdditionMRule(dist_1.m, dist_2.m)
-        dist_out.V = nothing
+        invalidate!(dist_out.V) 
         dist_out.W = forwardAdditionWRule(dist_1.W, dist_2.W)
-        dist_out.xi= nothing
-    elseif dist_1.xi != nothing && dist_1.V != nothing && dist_2.xi != nothing && dist_2.V != nothing
-        dist_out.m = nothing
+        invalidate!(dist_out.xi)
+    elseif valid(dist_1.xi) && valid(dist_1.V) && valid(dist_2.xi) && valid(dist_2.V)
+        invalidate!(dist_out.m) 
         dist_out.V = forwardAdditionVRule(dist_1.V, dist_2.V)
-        dist_out.W = nothing
+        invalidate!(dist_out.W) 
         dist_out.xi= forwardAdditionXiRule(dist_1.V, dist_1.xi, dist_2.V, dist_2.xi)
     else
         # Last resort: calculate (m,V) parametrization for both inbound messages
@@ -101,8 +101,8 @@ function sumProduct!(node::AdditionNode,
         ensureMVParametrization!(dist_2)
         dist_out.m = forwardAdditionMRule(dist_1.m, dist_2.m)
         dist_out.V = forwardAdditionVRule(dist_1.V, dist_2.V)
-        dist_out.W = nothing
-        dist_out.xi= nothing
+        invalidate!(dist_out.W) 
+        invalidate!(dist_out.xi)
     end
 
     return (:addition_gaussian_forward,
@@ -124,20 +124,20 @@ function sumProduct!(node::AdditionNode,
 
     # Select parameterization
     # Order is from least to most computationally intensive
-    if dist_1.m != nothing && dist_1.V != nothing && dist_3.m != nothing && dist_3.V != nothing
+    if valid(dist_1.m) && valid(dist_1.V) && valid(dist_3.m) && valid(dist_3.V)
         dist_out.m = backwardAdditionMRule(dist_1.m, dist_3.m)
         dist_out.V = backwardAdditionVRule(dist_1.V, dist_3.V)
-        dist_out.W = nothing
-        dist_out.xi = nothing
-    elseif dist_1.m != nothing && dist_1.W != nothing && dist_3.m != nothing && dist_3.W != nothing
+        invalidate!(dist_out.W) 
+        invalidate!(dist_out.xi) 
+    elseif valid(dist_1.m) && valid(dist_1.W) && valid(dist_3.m) && valid(dist_3.W)
         dist_out.m = backwardAdditionMRule(dist_1.m, dist_3.m)
-        dist_out.V = nothing
+        invalidate!(dist_out.V) 
         dist_out.W = backwardAdditionWRule(dist_1.W, dist_3.W)
-        dist_out.xi = nothing
-    elseif dist_1.xi != nothing && dist_1.V != nothing && dist_3.xi != nothing && dist_3.V != nothing
-        dist_out.m = nothing
+        invalidate!(dist_out.xi) 
+    elseif valid(dist_1.xi) && valid(dist_1.V) && valid(dist_3.xi) && valid(dist_3.V)
+        invalidate!(dist_out.m) 
         dist_out.V = backwardAdditionVRule(dist_1.V, dist_3.V)
-        dist_out.W = nothing
+        invalidate!(dist_out.W) 
         dist_out.xi = backwardAdditionXiRule(dist_1.V, dist_1.xi, dist_3.V, dist_3.xi)
     else
         # Last resort: calculate (m,V) parametrization for both inbound messages
@@ -145,8 +145,8 @@ function sumProduct!(node::AdditionNode,
         ensureMVParametrization!(dist_3)
         dist_out.m = backwardAdditionMRule(dist_1.m, dist_3.m)
         dist_out.V = backwardAdditionVRule(dist_1.V, dist_3.V)
-        dist_out.W = nothing
-        dist_out.xi = nothing
+        invalidate!(dist_out.W) 
+        invalidate!(dist_out.xi) 
     end
 
     return (:addition_gaussian_backward,

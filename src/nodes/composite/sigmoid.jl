@@ -108,8 +108,8 @@ function sumProduct!(node::SigmoidCompositeNode,
     W_in1 = backwardAdditionWRule(reshape([node.gamma],1,1), W_mid)
 
     dist_in1.m = [(1.0/node.b) * log(node.a*( (dist_out.a-1.0)/(dist_out.b-1.0) ))]
-    dist_in1.V = nothing
-    dist_in1.xi = nothing
+    invalidate!(dist_in1.V)
+    invalidate!(dist_in1.xi)
     dist_in1.W = W_in1 
 
     return (:sigmoid_backward,
@@ -159,8 +159,8 @@ function vmp!(node::SigmoidCompositeNode,
     (dist_out.a > 0.0 && dist_out.b > 0.0 && node.a > 0.0 && node.gamma > 0.0) || error("Backward variational update rule for sigmoid node only defined for Beta a and b > 0 and sigmoid a > 0")
 
     dist_in1.m = [ (1.0/node.b) * log( node.a*(dist_out.a/dist_out.b) ) ]
-    dist_in1.V = nothing
-    dist_in1.xi = nothing
+    invalidate!(dist_in1.V)
+    invalidate!(dist_in1.xi)
     dist_in1.W = reshape([ dist_out.a^2*dist_out.b^2*node.gamma*node.b^2 / (dist_out.a+dist_out.b)^4 ],1,1)
 
     return (:sigmoid_backward_variational,

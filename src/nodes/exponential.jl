@@ -79,9 +79,9 @@ function sumProduct!(node::ExponentialNode,
     b = msg_out.payload.b
 
     dist_out.m = [log((a-1)/b)]
-    dist_out.V = nothing
+    invalidate!(dist_out.V)
     dist_out.W = reshape([a-1], 1, 1)
-    dist_out.xi= nothing
+    invalidate!(dist_out.xi)
 
     return (:exponential_backward_gaussian,
             node.interfaces[outbound_interface_id].message)

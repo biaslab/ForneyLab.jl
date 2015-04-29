@@ -125,47 +125,47 @@ function sumProduct!(node::GainAdditionCompositeNode,
 
             # Select parameterization
             # Order is from least to most computationally intensive
-            if dist_1.m != nothing && dist_1.V != nothing && dist_2.m != nothing && dist_2.V != nothing
+            if valid(dist_1.m) && valid(dist_1.V) && valid(dist_2.m) && valid(dist_2.V)
                 dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
                 dist_out.V  = forwardGainAdditionVRule(node.A, dist_2.V, dist_1.V)
-                dist_out.W  = nothing
-                dist_out.xi = nothing
-            elseif dist_1.m != nothing && dist_1.W != nothing && dist_2.m != nothing && dist_2.W != nothing
+                invalidate!(dist_out.W) 
+                invalidate!(dist_out.xi)
+            elseif valid(dist_1.m) && valid(dist_1.W) && valid(dist_2.m) && valid(dist_2.W)
                 dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
-                dist_out.V  = nothing
+                invalidate!(dist_out.V) 
                 dist_out.W  = forwardGainAdditionWRule(node.A, dist_2.W, dist_1.W)
-                dist_out.xi = nothing
-            elseif dist_1.xi != nothing && dist_1.W != nothing && dist_2.xi != nothing && dist_2.W != nothing
-                dist_out.m  = nothing
-                dist_out.V  = nothing
+                invalidate!(dist_out.xi)
+            elseif valid(dist_1.xi) && valid(dist_1.W) && valid(dist_2.xi) && valid(dist_2.W)
+                invalidate!(dist_out.m) 
+                invalidate!(dist_out.V) 
                 dist_out.W  = forwardGainAdditionWRule(node.A, dist_2.W, dist_1.W)
                 dist_out.xi = forwardGainAdditionXiRule(node.A, dist_2.xi, dist_1.xi, dist_2.W, dist_1.W)
-            elseif (dist_1.m != nothing && dist_1.V != nothing) || (dist_2.m != nothing && dist_2.V != nothing)
+            elseif (valid(dist_1.m) && valid(dist_1.V)) || (valid(dist_2.m) && valid(dist_2.V))
                 # Fallback: at least one inbound msg is in (m,V) parametrization
                 # Convert the other one to (m,V)
                 ensureMVParametrization!(dist_1)
                 ensureMVParametrization!(dist_2)
                 dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
                 dist_out.V  = forwardGainAdditionVRule(node.A, dist_2.V, dist_1.V)
-                dist_out.W  = nothing
-                dist_out.xi = nothing
-            elseif (dist_1.m != nothing && dist_1.W != nothing) || (dist_2.m != nothing && dist_2.W != nothing)
+                invalidate!(dist_out.W) 
+                invalidate!(dist_out.xi)
+            elseif (valid(dist_1.m) && valid(dist_1.W)) || (valid(dist_2.m) && valid(dist_2.W))
                 # Fallback: at least one inbound msg is in (m,W) parametrization
                 # Convert the other one to (m,W)
                 ensureMWParametrization!(dist_1)
                 ensureMWParametrization!(dist_2)
                 dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
-                dist_out.V  = nothing
+                invalidate!(dist_out.V) 
                 dist_out.W  = forwardGainAdditionWRule(node.A, dist_2.W, dist_1.W)
-                dist_out.xi = nothing
+                invalidate!(dist_out.xi)
             else
                 # Fallback: if all else fails, convert everything to (m,V) and then use efficient rule
                 ensureMVParametrization!(dist_1)
                 ensureMVParametrization!(dist_2)
                 dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
                 dist_out.V  = forwardGainAdditionVRule(node.A, dist_2.V, dist_1.V)
-                dist_out.W  = nothing
-                dist_out.xi = nothing
+                invalidate!(dist_out.W) 
+                invalidate!(dist_out.xi)
             end
 
             return (:gain_addition_gaussian_forward,
@@ -196,47 +196,47 @@ function sumProduct!(node::GainAdditionCompositeNode,
 
             # Select parameterization
             # Order is from least to most computationally intensive
-            if dist_1.m != nothing && dist_1.V != nothing && dist_3.m != nothing && dist_3.V != nothing
+            if valid(dist_1.m) && valid(dist_1.V) && valid(dist_3.m) && valid(dist_3.V)
                 dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
                 dist_out.V  = backwardIn2GainAdditionVRule(node.A, dist_1.V, dist_3.V)
-                dist_out.W  = nothing
-                dist_out.xi = nothing
-            elseif dist_1.m != nothing && dist_1.W != nothing && dist_3.m != nothing && dist_3.W != nothing
+                invalidate!(dist_out.W) 
+                invalidate!(dist_out.xi)
+            elseif valid(dist_1.m) && valid(dist_1.W) && valid(dist_3.m) && valid(dist_3.W)
                 dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
-                dist_out.V  = nothing
+                invalidate!(dist_out.V) 
                 dist_out.W  = backwardIn2GainAdditionWRule(node.A, dist_1.W, dist_3.W)
-                dist_out.xi = nothing
-            elseif dist_1.xi != nothing && dist_1.W != nothing && dist_3.xi != nothing && dist_3.W != nothing
-                dist_out.m  = nothing
-                dist_out.V  = nothing
+                invalidate!(dist_out.xi)
+            elseif valid(dist_1.xi) && valid(dist_1.W) && valid(dist_3.xi) && valid(dist_3.W)
+                invalidate!(dist_out.m) 
+                invalidate!(dist_out.V) 
                 dist_out.W  = backwardIn2GainAdditionWRule(node.A, dist_1.W, dist_3.W)
                 dist_out.xi = backwardIn2GainAdditionXiRule(node.A, dist_1.xi, dist_3.xi, dist_1.W, dist_3.W)
-            elseif (dist_1.m != nothing && dist_1.V != nothing) || (dist_3.m != nothing && dist_3.V != nothing)
+            elseif (valid(dist_1.m) && valid(dist_1.V)) || (valid(dist_3.m) && valid(dist_3.V))
                 # Fallback: at least one inbound msg is in (m,V) parametrization
                 # Convert the other one to (m,V)
                 ensureMVParametrization!(dist_1)
                 ensureMVParametrization!(dist_3)
                 dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
                 dist_out.V  = backwardIn2GainAdditionVRule(node.A, dist_1.V, dist_3.V)
-                dist_out.W  = nothing
-                dist_out.xi = nothing
-            elseif (dist_1.m != nothing && dist_1.W != nothing) || (dist_3.m != nothing && dist_3.W != nothing)
+                invalidate!(dist_out.W) 
+                invalidate!(dist_out.xi)
+            elseif (valid(dist_1.m) && valid(dist_1.W)) || (valid(dist_3.m) && valid(dist_3.W))
                 # Fallback: at least one inbound msg is in (m,W) parametrization
                 # Convert the other one to (m,W)
                 ensureMWParametrization!(dist_1)
                 ensureMWParametrization!(dist_3)
                 dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
-                dist_out.V  = nothing
+                invalidate!(dist_out.V) 
                 dist_out.W  = backwardIn2GainAdditionWRule(node.A, dist_1.W, dist_3.W)
-                dist_out.xi = nothing
+                invalidate!(dist_out.xi)
             else
                 # Fallback: if all else fails, convert everything to (m,V) and then use efficient rule
                 ensureMVParametrization!(dist_1)
                 ensureMVParametrization!(dist_3)
                 dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
                 dist_out.V  = backwardIn2GainAdditionVRule(node.A, dist_1.V, dist_3.V)
-                dist_out.W  = nothing
-                dist_out.xi = nothing
+                invalidate!(dist_out.W) 
+                invalidate!(dist_out.xi)
             end
 
             return (:gain_addition_gaussian_backward,

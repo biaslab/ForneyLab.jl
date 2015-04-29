@@ -84,31 +84,31 @@ function sumProduct!(node::FixedGainNode,
         dist_2 = msg_out.payload
         # Select parameterization
         # Order is from least to most computationally intensive
-        if dist_2.xi != nothing && dist_2.W != nothing
-            dist_out.m = nothing
-            dist_out.V = nothing
+        if valid(dist_2.xi) && valid(dist_2.W)
+            invalidate!(dist_out.m)
+            invalidate!(dist_out.V)
             dist_out.W = backwardFixedGainWRule(node.A, dist_2.W)
             dist_out.xi = backwardFixedGainXiRule(node.A, dist_2.xi)
-        elseif dist_2.m != nothing && dist_2.W != nothing && isRoundedPosDef(node.A) && isRoundedPosDef(dist_2.W)
+        elseif valid(dist_2.m) && valid(dist_2.W) && isRoundedPosDef(node.A) && isRoundedPosDef(dist_2.W)
             dist_out.m = backwardFixedGainMRule(node.A_inv, dist_2.m) # Short version of the rule
-            dist_out.V = nothing
+            invalidate!(dist_out.V)
             dist_out.W = backwardFixedGainWRule(node.A, dist_2.W)
-            dist_out.xi = nothing
-        elseif dist_2.m != nothing && dist_2.W != nothing
+            invalidate!(dist_out.xi)
+        elseif valid(dist_2.m) && valid(dist_2.W)
             dist_out.m = backwardFixedGainMRule(node.A, dist_2.m, dist_2.W) # Long version of the rule
-            dist_out.V = nothing
+            invalidate!(dist_out.V)
             dist_out.W = backwardFixedGainWRule(node.A, dist_2.W)
-            dist_out.xi = nothing
-        elseif dist_2.m != nothing && dist_2.V != nothing && isdefined(node, :A_inv) && (dist_2.V==zeros(size(dist_2.V)) || isRoundedPosDef(dist_2.V)) # V positive definite <=> W (its inverse) is also positive definite. Border-case is an all-zero V, in which case the outbound message also has zero variance.
+            invalidate!(dist_out.xi)
+        elseif valid(dist_2.m) && valid(dist_2.V) && isdefined(node, :A_inv) && (dist_2.V==zeros(size(dist_2.V)) || isRoundedPosDef(dist_2.V)) # V positive definite <=> W (its inverse) is also positive definite. Border-case is an all-zero V, in which case the outbound message also has zero variance.
             dist_out.m = backwardFixedGainMRule(node.A_inv, dist_2.m) # Short version of the rule, only valid if A is positive definite and (W is positive definite or V is 0)
             dist_out.V = backwardFixedGainVRule(node.A_inv, dist_2.V)
-            dist_out.W = nothing
-            dist_out.xi = nothing
+            invalidate!(dist_out.W)
+            invalidate!(dist_out.xi)
         else
             # Fallback: convert inbound message to (xi,W) parametrization and then use efficient rules
             ensureXiWParametrization!(dist_2)
-            dist_out.m = nothing
-            dist_out.V = nothing
+            invalidate!(dist_out.m)
+            invalidate!(dist_out.V)
             dist_out.W = backwardFixedGainWRule(node.A, dist_2.W)
             dist_out.xi = backwardFixedGainXiRule(node.A, dist_2.xi)
         end
@@ -134,24 +134,24 @@ function sumProduct!(node::FixedGainNode,
         dist_1 = msg_in1.payload
         # Select parameterization
         # Order is from least to most computationally intensive
-        if dist_1.m != nothing && dist_1.V != nothing
+        if valid(dist_1.m) && valid(dist_1.V)
             dist_out.m = forwardFixedGainMRule(node.A, dist_1.m)
             dist_out.V = forwardFixedGainVRule(node.A, dist_1.V)
-            dist_out.W = nothing
-            dist_out.xi = nothing
-        elseif dist_1.m != nothing && dist_1.W != nothing && isdefined(node, :A_inv)
+            invalidate!(dist_out.W)
+            invalidate!(dist_out.xi)
+        elseif valid(dist_1.m) && valid(dist_1.W) && isdefined(node, :A_inv)
             dist_out.m = forwardFixedGainMRule(node.A, dist_1.m)
-            dist_out.V = nothing
+            invalidate!(dist_out.V)
             dist_out.W = forwardFixedGainWRule(node.A_inv, dist_1.W)
-            dist_out.xi = nothing
-        elseif dist_1.xi != nothing && dist_1.W != nothing && isRoundedPosDef(node.A) && isRoundedPosDef(dist_1.W) # V should be positive definite, meaning V is invertible and its inverse W is also positive definite.
-            dist_out.m = nothing
-            dist_out.V = nothing
+            invalidate!(dist_out.xi)
+        elseif valid(dist_1.xi) && valid(dist_1.W) && isRoundedPosDef(node.A) && isRoundedPosDef(dist_1.W) # V should be positive definite, meaning V is invertible and its inverse W is also positive definite.
+            invalidate!(dist_out.m)
+            invalidate!(dist_out.V)
             dist_out.W = forwardFixedGainWRule(node.A_inv, dist_1.W)
             dist_out.xi = forwardFixedGainXiRule(node.A_inv, dist_1.xi) # Short version of the rule, only valid if A and V are positive definite
-        elseif dist_1.xi != nothing && dist_1.V != nothing && dist_1.W != nothing && isdefined(node, :A_inv)
-            dist_out.m = nothing
-            dist_out.V = nothing
+        elseif valid(dist_1.xi) && valid(dist_1.V) && valid(dist_1.W) && isdefined(node, :A_inv)
+            invalidate!(dist_out.m)
+            invalidate!(dist_out.V)
             dist_out.W = forwardFixedGainWRule(node.A_inv, dist_1.W)
             dist_out.xi = forwardFixedGainXiRule(node.A_inv, dist_1.xi, dist_1.V) # Long version of the rule
         else
@@ -159,8 +159,8 @@ function sumProduct!(node::FixedGainNode,
             ensureMVParametrization!(dist_1)
             dist_out.m = forwardFixedGainMRule(node.A, dist_1.m)
             dist_out.V = forwardFixedGainVRule(node.A, dist_1.V)
-            dist_out.W = nothing
-            dist_out.xi = nothing
+            invalidate!(dist_out.W)
+            invalidate!(dist_out.xi)
         end
     else
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")

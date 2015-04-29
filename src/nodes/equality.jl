@@ -70,22 +70,22 @@ function sumProduct!(node::EqualityNode,
     
     dist_1 = msg_1.payload
     dist_2 = msg_2.payload
-    if dist_1.m != nothing && dist_1.W != nothing && dist_2.m != nothing && dist_2.W != nothing
+    if valid(dist_1.m) && valid(dist_1.W) && valid(dist_2.m) && valid(dist_2.W)
         dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.W)
-        dist_result.V  = nothing
+        invalidate!(dist_result.V) 
         dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
-        dist_result.xi = nothing
-    elseif dist_1.xi != nothing && dist_1.V != nothing && dist_2.xi != nothing && dist_2.V != nothing
-        dist_result.m  = nothing
+        invalidate!(dist_result.xi)
+    elseif valid(dist_1.xi) && valid(dist_1.V) && valid(dist_2.xi) && valid(dist_2.V)
+        invalidate!(dist_result.m) 
         dist_result.V  = equalityVRule(dist_1.V, dist_2.V)
-        dist_result.W  = nothing
+        invalidate!(dist_result.W) 
         dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
     else
         # Use (xi,W)
         ensureXiWParametrization!(dist_1)
         ensureXiWParametrization!(dist_2)
-        dist_result.m  = nothing
-        dist_result.V  = nothing
+        invalidate!(dist_result.m) 
+        invalidate!(dist_result.V) 
         dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
         dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
     end
@@ -110,22 +110,22 @@ function sumProduct!(node::EqualityNode,
     dist_1 = GaussianDistribution(m=msg_st.payload.m, W=msg_st.payload.W) # Approximate student's with Gaussian
     dist_2 = msg_n.payload
 
-    if dist_1.m != nothing && dist_1.W != nothing && dist_2.m != nothing && dist_2.W != nothing
+    if valid(dist_1.m) && valid(dist_1.W) && valid(dist_2.m) && valid(dist_2.W)
         dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.W)
-        dist_result.V  = nothing
+        invalidate!(dist_result.V) 
         dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
-        dist_result.xi = nothing
-    elseif dist_1.xi != nothing && dist_1.V != nothing && dist_2.xi != nothing && dist_2.V != nothing
-        dist_result.m  = nothing
+        invalidate!(dist_result.xi)
+    elseif valid(dist_1.xi) && valid(dist_1.V) && valid(dist_2.xi) && valid(dist_2.V)
+        invalidate!(dist_result.m) 
         dist_result.V  = equalityVRule(dist_1.V, dist_2.V)
-        dist_result.W  = nothing
+        invalidate!(dist_result.W) 
         dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
     else
         # Use (xi,W)
         ensureXiWParametrization!(dist_1)
         ensureXiWParametrization!(dist_2)
-        dist_result.m  = nothing
-        dist_result.V  = nothing
+        invalidate!(dist_result.m) 
+        invalidate!(dist_result.V) 
         dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
         dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
     end

@@ -146,27 +146,27 @@ function applyBackwardRule!(node::GainEqualityCompositeNode,
 
         # Select parameterization
         # Order is from least to most computationally intensive
-        if dist_3.xi != nothing && dist_3.W != nothing && dist_in.xi != nothing && dist_in.W != nothing
-            dist_result.m = nothing
-            dist_result.V = nothing
+        if valid(dist_3.xi) && valid(dist_3.W) && valid(dist_in.xi) && valid(dist_in.W)
+            invalidate!(dist_result.m)
+            invalidate!(dist_result.V)
             dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
             dist_result.xi = backwardGainEqualityXiRule(node.A, dist_in.xi, dist_3.xi)
-        elseif dist_3.m != nothing && dist_3.V != nothing && dist_in.m != nothing && dist_in.V != nothing
+        elseif valid(dist_3.m) && valid(dist_3.V) && valid(dist_in.m) && valid(dist_in.V)
             dist_result.m = backwardGainEqualityMRule(node.A, dist_in.m, dist_in.V, dist_3.m, dist_3.V)
             dist_result.V = backwardGainEqualityVRule(node.A, dist_in.V, dist_3.V)
-            dist_result.W = nothing
-            dist_result.xi = nothing
-        elseif dist_3.m != nothing && dist_3.W != nothing && dist_in.m != nothing && dist_in.W != nothing
+            invalidate!(dist_result.W)
+            invalidate!(dist_result.xi)
+        elseif valid(dist_3.m) && valid(dist_3.W) && valid(dist_in.m) && valid(dist_in.W)
             dist_result.m = backwardGainEqualityMRule(node.A, dist_in.m, inv(dist_in.W), dist_3.m, inv(dist_3.W))
-            dist_result.V = nothing
+            invalidate!(dist_result.V)
             dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
-            dist_result.xi = nothing
+            invalidate!(dist_result.xi)
         else
             # Fallback: convert inbound messages to (xi,W) parametrization and then use efficient rules
             ensureXiWParametrization!(dist_in)
             ensureXiWParametrization!(dist_3)
-            dist_result.m = nothing
-            dist_result.V = nothing
+            invalidate!(dist_result.m)
+            invalidate!(dist_result.V)
             dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
             dist_result.xi = backwardGainEqualityXiRule(node.A, dist_in.xi, dist_3.xi)
         end

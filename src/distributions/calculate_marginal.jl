@@ -85,8 +85,8 @@ function gaussianMarginalRule!(marg::GaussianDistribution, forward_dist::Gaussia
     ensureXiWParametrization!(backward_dist)
     marg.xi = forward_dist.xi+backward_dist.xi
     marg.W = forward_dist.W+backward_dist.W
-    marg.V = nothing
-    marg.m = nothing
+    invalidate!(marg.V)
+    invalidate!(marg.m)
     return marg
 end    
 function calculateMarginal(forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
@@ -114,8 +114,8 @@ function gaussianStudentsMarginalRule!(marg::GaussianDistribution, forward_dist:
 
     marg.m = [(l_a*nu_term*mu_a + l_b*mu_b) / (l_a*nu_term + l_b)]
     marg.W = reshape([l_a*nu_term + l_b], 1, 1)
-    marg.xi = nothing
-    marg.V = nothing
+    invalidate!(marg.xi)
+    invalidate!(marg.V)
 
     return marg
 end
