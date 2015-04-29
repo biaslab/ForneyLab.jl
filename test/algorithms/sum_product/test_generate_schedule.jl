@@ -6,7 +6,7 @@ facts("Schedule related tests") do
     end
 end
 
-facts("generateSchedule() integration tests") do
+facts("SumProduct.generateSchedule() integration tests") do
     context("generateSchedule()") do
         (driver, inhibitor, noise, add) = initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
 

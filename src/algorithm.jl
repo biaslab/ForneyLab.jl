@@ -5,10 +5,10 @@ type Algorithm
     fields::Dict{Symbol, Any}
 
     function Algorithm(execute::Function, fields::Dict)
-    	self = new(execute, fields)
-    	global current_algorithm = self
-    	return self
-	end
+        self = new(execute, fields)
+        global current_algorithm = self
+        return self
+    end
 end
 
 global current_algorithm = nothing

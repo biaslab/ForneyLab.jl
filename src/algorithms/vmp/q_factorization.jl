@@ -19,7 +19,7 @@ function vagueQDistributions(f::QFactorization)
     q_distributions = Dict{(Node, Subgraph), QDistribution}()
 
     for subgraph in f.factors
-        length(subgraph.external_schedule) > 0 || warning("External schedule for subgraph $(subgraph) undefined. Run generateSchedule(...) to generate internal and external schedules.")
+        length(subgraph.external_schedule) > 0 || warn("External schedule for subgraph $(subgraph) undefined. Run generateSchedule(...) to generate internal and external schedules.")
         for node in subgraph.external_schedule
             internal_interfaces = Array(Interface, 0)
             for interface in node.interfaces

@@ -531,8 +531,8 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     @fact mean(node2.out.partner.message.payload) => 2.0
 end
 
-function validateOutboundMessage(node::Node, outbound_interface_id::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution)
-    (rule, msg) = ForneyLab.sumProduct!(node, outbound_interface_id, inbound_messages...)
+function validateOutboundMessage(node::Node, outbound_interface_id::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution, update_function::Function=ForneyLab.sumProduct!)
+    (rule, msg) = update_function(node, outbound_interface_id, inbound_messages...)
     @fact node.interfaces[outbound_interface_id].message => msg
     @fact node.interfaces[outbound_interface_id].message.payload => correct_outbound_value
 

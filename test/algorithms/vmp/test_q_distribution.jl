@@ -5,15 +5,22 @@ facts("Calculations for q distributions") do
         f = algo.fields[:factorization]
         qs = algo.fields[:q_distributions]    
 
+        sm = f.edge_to_subgraph[node.mean.edge]
+        sp = f.edge_to_subgraph[node.precision.edge]
+        so = f.edge_to_subgraph[node.out.edge]
+
         # Univariate marginal
-        VMP.calculateQDistribution!(qs, node, f.factors[1], f)
-        @fact qs[(node, f.factors[1])].distribution => GaussianDistribution(m=1.0, V=tiny())
+        VMP.calculateQDistribution!(qs, node, so, f)
+        @fact qs[(node, sm)].distribution.m[1] => 0.0
+        @fact qs[(node, sm)].distribution.V[1,1] => huge()
+
         # Univariate marginal
-        VMP.calculateQDistribution!(qs, node, f.factors[2], f)
-        @fact qs[(node, f.factors[2])].distribution => GammaDistribution(a=1.0, b=2.0)
+        VMP.calculateQDistribution!(qs, node, sp, f)
+        @fact qs[(node, sp)].distribution => GammaDistribution(a=1.0, b=2.0)
         # Univariate marginal
-        VMP.calculateQDistribution!(qs, node, f.factors[3], f)
-        @fact qs[(node, f.factors[3])].distribution => GaussianDistribution(W=2.0, xi=0.0)
+        VMP.calculateQDistribution!(qs, node, sm, f)
+        @fact qs[(node, so)].distribution.m[1] => 1.0
+        @fact qs[(node, so)].distribution.V[1,1] => tiny()
     end
     
     context("Q distribution calculation for the structurally factorized GaussianNode") do
@@ -22,11 +29,14 @@ facts("Calculations for q distributions") do
         f = algo.fields[:factorization]
         qs = algo.fields[:q_distributions]    
         
+        spm = f.edge_to_subgraph[node.mean.edge]
+        so = f.edge_to_subgraph[node.out.edge]
+
         # Joint marginal
-        VMP.calculateQDistribution!(qs, node, f.factors[1], f)
-        @fact qs[(node, f.factors[1])].distribution => NormalGammaDistribution(m=0.0, beta=huge(), a=1.5, b=5.00000000001e11)
+        VMP.calculateQDistribution!(qs, node, spm, f)
+        @fact qs[(node, spm)].distribution => NormalGammaDistribution(m=0.0, beta=huge(), a=1.5, b=5.00000000001e11)
         # Univariate marginal
-        VMP.calculateQDistribution!(qs, node, f.factors[2], f)
-        @fact qs[(node, f.factors[2])].distribution => GaussianDistribution(W=2.0, xi=0.0)
+        VMP.calculateQDistribution!(qs, node, so, f)
+        @fact qs[(node, so)].distribution => GaussianDistribution(W=2.0, xi=0.0)
     end
 end

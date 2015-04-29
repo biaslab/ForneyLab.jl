@@ -14,8 +14,8 @@ end
 externalEdges(sg::Subgraph) = setdiff(edges(nodes(sg, open_composites=false)), sg.internal_edges) # External edges are the difference between all edges connected to nodes, and the internal edges
 nodesConnectedToExternalEdges(sg::Subgraph) = intersect(nodes(externalEdges(sg)), nodes(sg, open_composites=false)) # Nodes connected to external edges are the nodes connected to external edges that are also connected to internal edges
 
-draw(subgraph::Subgraph; args...) = graphviz(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=externalEdges(subgraph)); args...)
-drawPdf(subgraph::Subgraph, filename::String) = dot2pdf(genDot(subgraph.nodes, subgraph.internal_edges, external_edges=externalEdges(subgraph)), filename)
+draw(subgraph::Subgraph; args...) = ForneyLab.graphviz(ForneyLab.genDot(nodes(subgraph, open_composites=false), subgraph.internal_edges, external_edges=externalEdges(subgraph)); args...)
+drawPdf(subgraph::Subgraph, filename::String) = ForneyLab.dot2pdf(ForneyLab.genDot(nodes(subgraph, open_composites=false), subgraph.internal_edges, external_edges=externalEdges(subgraph)), filename)
 
 function nodes(subgraph::Subgraph; open_composites::Bool=true)
     # Return all nodes in subgraph

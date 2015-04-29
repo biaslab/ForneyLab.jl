@@ -121,10 +121,10 @@ end
 # Variational update functions
 ############################################
 
-function sumProduct!(node::SigmoidCompositeNode,
-                     outbound_interface_id::Int,
-                     dist_in1::GaussianDistribution,
-                     ::Nothing)
+function vmp!(node::SigmoidCompositeNode,
+              outbound_interface_id::Int,
+              dist_in1::GaussianDistribution,
+              ::Nothing)
 
     ensureMWParametrization!(dist_in1)
     (length(dist_in1.m) == 1) || error("SigmoidCompositeNode only implemented for unvariate distributions")
@@ -148,10 +148,10 @@ function sumProduct!(node::SigmoidCompositeNode,
             node.interfaces[outbound_interface_id].message)
 end
 
-function sumProduct!(node::SigmoidCompositeNode,
-                     outbound_interface_id::Int,
-                     ::Nothing,
-                     dist_out::BetaDistribution)
+function vmp!(node::SigmoidCompositeNode,
+              outbound_interface_id::Int,
+              ::Nothing,
+              dist_out::BetaDistribution)
 
     dist_in1 = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
