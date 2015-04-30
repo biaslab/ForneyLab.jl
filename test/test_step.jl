@@ -47,19 +47,19 @@ facts("Read/write buffer integration tests") do
     end
 end
 
-facts("TimeWrap integration tests") do
-    # setTimeWrap
-    context("setTimeWrap should register a timewrap for a pair of TerminalNodes") do
+facts("Wrap integration tests") do
+    # wrap()
+    context("wrap() should register a timewrap for a pair of TerminalNodes") do
         (node_t1, node_t2, e, g) = initializeBufferGraph()
-        time_wraps = setTimeWrap(node_t1, node_t2)
+        time_wraps = wrap(node_t1, node_t2)
         @fact length(time_wraps) => 1
         @fact ((node_t1, node_t2) in time_wraps) => true
     end
 
-    # clearTimeWraps
-    context("clearTimeWraps should deregister all time wraps") do
+    # clearWraps
+    context("clearWraps should deregister all time wraps") do
         (node_t1, node_t2, e, g) = initializeBufferGraph()
-        clearTimeWraps(g)
+        clearWraps(g)
         @fact length(g.time_wraps) => 0
     end
 end
@@ -75,7 +75,7 @@ facts("step integration tests") do
         Edge(node_in, node_add.in1)
         Edge(node_delta, node_add.in2)
         Edge(node_add.out, node_out)
-        setTimeWrap(node_out, node_in)
+        wrap(node_out, node_in)
         deltas = [DeltaDistribution(n) for n in 1.:10.]
         setReadBuffer(node_delta, deltas)
         results = setWriteBuffer(node_add.out)
@@ -98,7 +98,7 @@ facts("run() integration tests") do
         Edge(node_in, node_add.in1)
         Edge(node_delta, node_add.in2)
         Edge(node_add.out, node_out)
-        setTimeWrap(node_out, node_in)
+        wrap(node_out, node_in)
         deltas = [DeltaDistribution(n) for n in 1.:10.]
         setReadBuffer(node_delta, deltas)
         results = setWriteBuffer(node_add.out)

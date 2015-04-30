@@ -52,7 +52,7 @@ facts("SumProduct.generateSchedule() integration tests") do
             e = Edge(node_t1, node_t2)
             s1 = SumProduct.generateSchedule(g)
             @fact s1 => Array(ScheduleEntry, 0)
-            setTimeWrap(node_t1, node_t2)
+            wrap(node_t1, node_t2)
             s2 = SumProduct.generateSchedule(g)
             @fact s2 => ForneyLab.convert(Schedule, [node_t1.out.partner])
         end

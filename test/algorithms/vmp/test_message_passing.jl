@@ -73,7 +73,7 @@ facts("Naive VMP implementation integration tests") do
 
         graph = initializeSigmoidSlice()
 
-        setTimeWrap(node("theta_k"), node("theta_k_min"))
+        wrap(node("theta_k"), node("theta_k_min"))
         setReadBuffer(node("y"), data)
         state_buff = setWriteBuffer(node("eq").interfaces[2])
 
@@ -108,8 +108,8 @@ facts("Structured VMP implementation integration tests") do
         m_buffer = setWriteBuffer(m_eq_node.interfaces[2])
         gam_buffer = setWriteBuffer(gam_eq_node.interfaces[2])
         y_buffer = setReadBuffer(y_node, d_data)
-        setTimeWrap(m_N_node, m_0_node)
-        setTimeWrap(gam_N_node, gam_0_node)
+        wrap(m_N_node, m_0_node)
+        wrap(gam_N_node, gam_0_node)
 
         # Structured factorization
         algo = VMP.Algorithm(Set{Edge}([y_edge]), n_iterations=10)

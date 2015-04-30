@@ -3,6 +3,10 @@
 #####################
 
 facts("TerminalNode unit tests") do
+    context("PriorNode should be a type alias to TerminalNode") do
+        @fact PriorNode => TerminalNode
+    end
+
     context("TerminalNode() should initialize a TerminalNode with 1 interface") do
         FactorGraph()
         node = TerminalNode()

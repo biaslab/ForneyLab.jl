@@ -21,7 +21,7 @@
 #       Message{Any}
 ############################################
 
-export TerminalNode
+export TerminalNode, PriorNode
 
 type TerminalNode <: Node
     value::ProbabilityDistribution
@@ -41,6 +41,8 @@ type TerminalNode <: Node
         return self
     end
 end
+
+typealias PriorNode TerminalNode # For more overview during graph construction
 
 isDeterministic(::TerminalNode) = false # Edge case for deterministicness
 

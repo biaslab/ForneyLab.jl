@@ -1,8 +1,8 @@
 export  setReadBuffer,
         setWriteBuffer,
         clearBuffers,
-        setTimeWrap,
-        clearTimeWraps,
+        wrap,
+        clearWraps,
         execute,
         step,
         run
@@ -41,12 +41,12 @@ function clearBuffers(graph::FactorGraph=current_graph)
     graph.write_buffers = Dict{Union(Edge,Interface), Vector}()
 end
 
-function setTimeWrap(from::TerminalNode, to::TerminalNode, graph::FactorGraph=current_graph)
+function wrap(from::TerminalNode, to::TerminalNode, graph::FactorGraph=current_graph)
     !is(from, to) || error("Cannot create time wrap: from and to must be different nodes")
     push!(graph.time_wraps, (from, to))
 end
 
-function clearTimeWraps(graph::FactorGraph=current_graph)
+function clearWraps(graph::FactorGraph=current_graph)
     graph.time_wraps = Array((TerminalNode, TerminalNode), 0)
 end 
 
