@@ -3,6 +3,15 @@ type QDistribution
     edges::Set{Edge} # Edges on which the distribution is defined
 end
 
+function show(io::IO, f::QDistribution)
+    println(io, "QDistribution: $(f.distribution)")
+    println(io, "Defined on edges:")
+    for e in f.edges
+        println(" $(e)")
+    end
+end
+
+
 ############################
 # Univariate approximate marginal calculations
 ############################

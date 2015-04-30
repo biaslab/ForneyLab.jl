@@ -11,6 +11,14 @@ function Subgraph()
     Subgraph(Set{Edge}(), Array(Interface, 0), Array(Node, 0))
 end
 
+function show(io::IO, sg::Subgraph)
+    println(io, "Subgraph with $(length(sg.internal_edges)) internal edge(s) and $(length(sg.external_schedule)) node(s) connected to external edges.")
+    println(io, "\nSee also:")
+    println(io, " draw(::SubGraph)")
+    println(io, " show(nodes(::SubGraph; open_composites::Bool))")
+    println(io, " show(edges(::SubGraph; include_external::Bool))")
+end
+
 externalEdges(sg::Subgraph) = setdiff(edges(nodes(sg, open_composites=false)), sg.internal_edges) # External edges are the difference between all edges connected to nodes, and the internal edges
 nodesConnectedToExternalEdges(sg::Subgraph) = intersect(nodes(externalEdges(sg)), nodes(sg, open_composites=false)) # Nodes connected to external edges are the nodes connected to external edges that are also connected to internal edges
 

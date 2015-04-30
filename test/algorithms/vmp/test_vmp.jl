@@ -9,8 +9,7 @@ facts("VMP.collectInbounds() tests") do
 
         # Structurally factorized
         (node, edges) = initializeGaussianNode()
-        splits = [Set{Edge}({node.out.edge})] # Split off extensions of these groups into separate subgraphs
-        algo = VMP.Algorithm(splits)
+        algo = VMP.Algorithm(Set{Edge}({node.out.edge})) # Split off extensions of these groups into separate subgraphs
         @fact VMP.collectInbounds(node.mean) => (1, [nothing, Message(GammaDistribution()), vague(GaussianDistribution)])
         @fact VMP.collectInbounds(node.precision) => (2, [Message(GaussianDistribution()), nothing, vague(GaussianDistribution)])
         @fact VMP.collectInbounds(node.out) => (3, [vague(NormalGammaDistribution), vague(NormalGammaDistribution), nothing])

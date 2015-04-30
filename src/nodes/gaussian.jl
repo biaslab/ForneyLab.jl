@@ -136,9 +136,9 @@ type GaussianNode <: Node
     V::Matrix{Float64}
 
     function GaussianNode(; name=unnamedStr(), form::ASCIIString="moment", m::Union(Float64,Vector{Float64})=[NaN], V::Union(Float64,Matrix{Float64})=reshape([NaN], 1, 1))
-        if valid(m) && valid(V)
+        if isvalid(m) && isvalid(V)
             total_interfaces = 1
-        elseif valid(m) || valid(V)
+        elseif isvalid(m) || isvalid(V)
             total_interfaces = 2
         else
             total_interfaces = 3
@@ -146,7 +146,7 @@ type GaussianNode <: Node
         self = new(name, Array(Interface, total_interfaces))
         next_interface_index = 1 # Counter keeping track of constructed interfaces
 
-        if valid(m)
+        if isvalid(m)
             # GaussianNode with fixed mean
             self.m = (typeof(m)==Float64) ? [m] : deepcopy(m)
         else
@@ -157,7 +157,7 @@ type GaussianNode <: Node
         end
 
         # Pick a form for the variance/precision
-        if valid(V)
+        if isvalid(V)
             # GaussianNode with fixed variance
             self.V = (typeof(V)==Float64) ? reshape([V], 1, 1) : deepcopy(V)
         else

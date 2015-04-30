@@ -2,6 +2,9 @@ module VMP
 
 using ..ForneyLab
 
+import Base.show
+export show
+
 include("subgraph.jl")
 include("q_distribution.jl")
 include("q_factorization.jl")
@@ -29,7 +32,7 @@ function Algorithm(graph::FactorGraph=currentGraph(); n_iterations::Int64=50)
     return ForneyLab.Algorithm(exec, {:factorization => factorization, :q_distributions => q_distributions, :n_iterations => n_iterations})
 end
 
-function Algorithm(cluster_edges::Vector{Set{Edge}}, graph::FactorGraph=currentGraph(); n_iterations::Int64=50)
+function Algorithm(graph::FactorGraph, cluster_edges...; n_iterations::Int64=50)
     # Generates a vmp algorithm to calculate the messages towards write buffers and timewraps defined on graph
     # Uses a structured factorization with elements in cluster_edges defining separate subgraphs
     factorization = QFactorization(graph)
@@ -48,6 +51,8 @@ function Algorithm(cluster_edges::Vector{Set{Edge}}, graph::FactorGraph=currentG
 
     return ForneyLab.Algorithm(exec, {:factorization => factorization, :q_distributions => q_distributions, :n_iterations => n_iterations})
 end
+Algorithm(cluster_edges...; n_iterations::Int64=50) = Algorithm(currentGraph(), cluster_edges...; n_iterations=n_iterations)
+
 
 #---------------------------------------------------
 # Construct algorithm specific update-call signature

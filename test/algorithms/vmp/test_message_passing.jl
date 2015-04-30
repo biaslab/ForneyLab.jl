@@ -1,5 +1,5 @@
 facts("step() function for VMP") do
-    context("step should accept and execute a number of iterations for VMP") do
+    context("step() should accept and execute a number of iterations for VMP") do
         data = [GaussianDistribution(m=2.0, V=tiny())]
         g = FactorGraph()
         g_node = GaussianNode(form="precision")
@@ -112,7 +112,7 @@ facts("Structured VMP implementation integration tests") do
         setTimeWrap(gam_N_node, gam_0_node)
 
         # Structured factorization
-        algo = VMP.Algorithm([Set{Edge}([y_edge])], n_iterations=10)
+        algo = VMP.Algorithm(Set{Edge}([y_edge]), n_iterations=10)
 
         run(algo)
 

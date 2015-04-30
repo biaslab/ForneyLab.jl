@@ -13,6 +13,8 @@ function QFactorization(graph::FactorGraph=current_graph)
     return QFactorization([sg], edge_to_subgraph) # Build the new factorization
 end
 
+show(io::IO, f::QFactorization) = println(io, "QFactorization with $(length(f.factors)) factors")
+
 function vagueQDistributions(f::QFactorization)
     # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
     

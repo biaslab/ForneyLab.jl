@@ -84,22 +84,22 @@ function sumProduct!(node::FixedGainNode,
         dist_2 = msg_out.payload
         # Select parameterization
         # Order is from least to most computationally intensive
-        if valid(dist_2.xi) && valid(dist_2.W)
+        if isvalid(dist_2.xi) && isvalid(dist_2.W)
             invalidate!(dist_out.m)
             invalidate!(dist_out.V)
             dist_out.W = backwardFixedGainWRule(node.A, dist_2.W)
             dist_out.xi = backwardFixedGainXiRule(node.A, dist_2.xi)
-        elseif valid(dist_2.m) && valid(dist_2.W) && isRoundedPosDef(node.A) && isRoundedPosDef(dist_2.W)
+        elseif isvalid(dist_2.m) && isvalid(dist_2.W) && isRoundedPosDef(node.A) && isRoundedPosDef(dist_2.W)
             dist_out.m = backwardFixedGainMRule(node.A_inv, dist_2.m) # Short version of the rule
             invalidate!(dist_out.V)
             dist_out.W = backwardFixedGainWRule(node.A, dist_2.W)
             invalidate!(dist_out.xi)
-        elseif valid(dist_2.m) && valid(dist_2.W)
+        elseif isvalid(dist_2.m) && isvalid(dist_2.W)
             dist_out.m = backwardFixedGainMRule(node.A, dist_2.m, dist_2.W) # Long version of the rule
             invalidate!(dist_out.V)
             dist_out.W = backwardFixedGainWRule(node.A, dist_2.W)
             invalidate!(dist_out.xi)
-        elseif valid(dist_2.m) && valid(dist_2.V) && isdefined(node, :A_inv) && (dist_2.V==zeros(size(dist_2.V)) || isRoundedPosDef(dist_2.V)) # V positive definite <=> W (its inverse) is also positive definite. Border-case is an all-zero V, in which case the outbound message also has zero variance.
+        elseif isvalid(dist_2.m) && isvalid(dist_2.V) && isdefined(node, :A_inv) && (dist_2.V==zeros(size(dist_2.V)) || isRoundedPosDef(dist_2.V)) # V positive definite <=> W (its inverse) is also positive definite. Border-case is an all-zero V, in which case the outbound message also has zero variance.
             dist_out.m = backwardFixedGainMRule(node.A_inv, dist_2.m) # Short version of the rule, only valid if A is positive definite and (W is positive definite or V is 0)
             dist_out.V = backwardFixedGainVRule(node.A_inv, dist_2.V)
             invalidate!(dist_out.W)
@@ -134,22 +134,22 @@ function sumProduct!(node::FixedGainNode,
         dist_1 = msg_in1.payload
         # Select parameterization
         # Order is from least to most computationally intensive
-        if valid(dist_1.m) && valid(dist_1.V)
+        if isvalid(dist_1.m) && isvalid(dist_1.V)
             dist_out.m = forwardFixedGainMRule(node.A, dist_1.m)
             dist_out.V = forwardFixedGainVRule(node.A, dist_1.V)
             invalidate!(dist_out.W)
             invalidate!(dist_out.xi)
-        elseif valid(dist_1.m) && valid(dist_1.W) && isdefined(node, :A_inv)
+        elseif isvalid(dist_1.m) && isvalid(dist_1.W) && isdefined(node, :A_inv)
             dist_out.m = forwardFixedGainMRule(node.A, dist_1.m)
             invalidate!(dist_out.V)
             dist_out.W = forwardFixedGainWRule(node.A_inv, dist_1.W)
             invalidate!(dist_out.xi)
-        elseif valid(dist_1.xi) && valid(dist_1.W) && isRoundedPosDef(node.A) && isRoundedPosDef(dist_1.W) # V should be positive definite, meaning V is invertible and its inverse W is also positive definite.
+        elseif isvalid(dist_1.xi) && isvalid(dist_1.W) && isRoundedPosDef(node.A) && isRoundedPosDef(dist_1.W) # V should be positive definite, meaning V is invertible and its inverse W is also positive definite.
             invalidate!(dist_out.m)
             invalidate!(dist_out.V)
             dist_out.W = forwardFixedGainWRule(node.A_inv, dist_1.W)
             dist_out.xi = forwardFixedGainXiRule(node.A_inv, dist_1.xi) # Short version of the rule, only valid if A and V are positive definite
-        elseif valid(dist_1.xi) && valid(dist_1.V) && valid(dist_1.W) && isdefined(node, :A_inv)
+        elseif isvalid(dist_1.xi) && isvalid(dist_1.V) && isvalid(dist_1.W) && isdefined(node, :A_inv)
             invalidate!(dist_out.m)
             invalidate!(dist_out.V)
             dist_out.W = forwardFixedGainWRule(node.A_inv, dist_1.W)

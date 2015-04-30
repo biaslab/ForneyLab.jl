@@ -18,3 +18,11 @@ function Algorithm(schedule::Schedule, graph::FactorGraph=currentGraph())
     exec(fields) = execute(fields[:schedule])
     return Algorithm(exec, {:schedule => schedule})
 end
+
+function show(io::IO, algo::Algorithm)
+    println(io, "Algorithm with fields:")
+    for (key, val) in algo.fields
+        println(io, " $(key)::$(typeof(val))")  
+    end
+    println(io, "\nUse algorithm.fields[:field] to inspect field values.")
+end

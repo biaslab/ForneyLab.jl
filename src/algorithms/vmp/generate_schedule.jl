@@ -1,6 +1,6 @@
 # Generates schedules for the VMP algorithm.
 # VMP schedules (internal and external) are stored on the subgraphs in the factorization.
-# There are no call signatures for message passing to specific interfaces or edges;
+# There are no call signatures for message passing to specific interfaces or edges (as with sum product);
 # when required, these should be set through write buffers or time wraps.
 
 function generateSchedule!(f::QFactorization, graph::FactorGraph=current_graph)

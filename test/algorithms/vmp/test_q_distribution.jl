@@ -25,7 +25,7 @@ facts("Calculations for q distributions") do
     
     context("Q distribution calculation for the structurally factorized GaussianNode") do
         (node, edges) = initializeGaussianNode(y_type=GaussianDistribution)
-        algo = VMP.Algorithm([Set{Edge}([edges[3]])])
+        algo = VMP.Algorithm(Set{Edge}({edges[3]}))
         f = algo.fields[:factorization]
         qs = algo.fields[:q_distributions]    
         

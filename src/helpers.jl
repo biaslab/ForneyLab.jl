@@ -13,9 +13,9 @@ tiny() = tiny(Float64)
 
 # Functions for getting and setting invalid distribution parameters
 # A parameter value is invalid if the first entry is NaN
-valid(v::Vector{Float64}) = !isnan(v[1])
-valid(v::Matrix{Float64}) = !isnan(v[1,1])
-valid(v::Float64) = !isnan(v)
+isvalid(v::Vector{Float64}) = !isnan(v[1])
+isvalid(v::Matrix{Float64}) = !isnan(v[1,1])
+isvalid(v::Float64) = !isnan(v)
 function invalidate!(v::Vector{Float64})
     v[1] = NaN
     return v

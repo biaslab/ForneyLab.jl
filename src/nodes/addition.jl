@@ -80,17 +80,17 @@ function sumProduct!(node::AdditionNode,
 
     # Select parameterization
     # Order is from least to most computationally intensive
-    if valid(dist_1.m) && valid(dist_1.V) && valid(dist_2.m) && valid(dist_2.V)
+    if isvalid(dist_1.m) && isvalid(dist_1.V) && isvalid(dist_2.m) && isvalid(dist_2.V)
         dist_out.m = forwardAdditionMRule(dist_1.m, dist_2.m)
         dist_out.V = forwardAdditionVRule(dist_1.V, dist_2.V)
         invalidate!(dist_out.W) 
         invalidate!(dist_out.xi)
-    elseif valid(dist_1.m) && valid(dist_1.W) && valid(dist_2.m) && valid(dist_2.W)
+    elseif isvalid(dist_1.m) && isvalid(dist_1.W) && isvalid(dist_2.m) && isvalid(dist_2.W)
         dist_out.m = forwardAdditionMRule(dist_1.m, dist_2.m)
         invalidate!(dist_out.V) 
         dist_out.W = forwardAdditionWRule(dist_1.W, dist_2.W)
         invalidate!(dist_out.xi)
-    elseif valid(dist_1.xi) && valid(dist_1.V) && valid(dist_2.xi) && valid(dist_2.V)
+    elseif isvalid(dist_1.xi) && isvalid(dist_1.V) && isvalid(dist_2.xi) && isvalid(dist_2.V)
         invalidate!(dist_out.m) 
         dist_out.V = forwardAdditionVRule(dist_1.V, dist_2.V)
         invalidate!(dist_out.W) 
@@ -124,17 +124,17 @@ function sumProduct!(node::AdditionNode,
 
     # Select parameterization
     # Order is from least to most computationally intensive
-    if valid(dist_1.m) && valid(dist_1.V) && valid(dist_3.m) && valid(dist_3.V)
+    if isvalid(dist_1.m) && isvalid(dist_1.V) && isvalid(dist_3.m) && isvalid(dist_3.V)
         dist_out.m = backwardAdditionMRule(dist_1.m, dist_3.m)
         dist_out.V = backwardAdditionVRule(dist_1.V, dist_3.V)
         invalidate!(dist_out.W) 
         invalidate!(dist_out.xi) 
-    elseif valid(dist_1.m) && valid(dist_1.W) && valid(dist_3.m) && valid(dist_3.W)
+    elseif isvalid(dist_1.m) && isvalid(dist_1.W) && isvalid(dist_3.m) && isvalid(dist_3.W)
         dist_out.m = backwardAdditionMRule(dist_1.m, dist_3.m)
         invalidate!(dist_out.V) 
         dist_out.W = backwardAdditionWRule(dist_1.W, dist_3.W)
         invalidate!(dist_out.xi) 
-    elseif valid(dist_1.xi) && valid(dist_1.V) && valid(dist_3.xi) && valid(dist_3.V)
+    elseif isvalid(dist_1.xi) && isvalid(dist_1.V) && isvalid(dist_3.xi) && isvalid(dist_3.V)
         invalidate!(dist_out.m) 
         dist_out.V = backwardAdditionVRule(dist_1.V, dist_3.V)
         invalidate!(dist_out.W) 
