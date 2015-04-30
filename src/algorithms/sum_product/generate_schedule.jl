@@ -88,7 +88,7 @@ function generateSchedule(graph::FactorGraph=currentGraph(); args...)
     partial_list = Interface[]
     
     # Collect timewrap interfaces
-    for (from_node, to_node) in graph.time_wraps
+    for (from_node, to_node) in graph.wraps
         push!(partial_list, from_node.out.partner)
     end
 

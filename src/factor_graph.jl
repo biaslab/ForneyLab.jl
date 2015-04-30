@@ -14,7 +14,7 @@ type FactorGraph
     # Connections to the outside world
     read_buffers::Dict{TerminalNode, Vector}
     write_buffers::Dict{Union(Edge,Interface), Vector}
-    time_wraps::Vector{(TerminalNode, TerminalNode)}
+    wraps::Vector{(TerminalNode, TerminalNode)}
 end
 
 # Create an empty graph

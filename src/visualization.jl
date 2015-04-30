@@ -20,7 +20,7 @@ function graphviz(dot_graph::String; external_viewer::Bool=false)
     end
 end
 
-draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph, open_composites=false), edges(factor_graph), time_wraps=Array((TerminalNode, TerminalNode), 0)); args...)
+draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph, open_composites=false), edges(factor_graph), wraps=factor_graph.wraps; args...))
 draw(; args...) = draw(currentGraph(); args...)
 
 function draw(composite_node::CompositeNode; args...)
@@ -77,7 +77,7 @@ drawPdf(nodes::Vector{Node}, filename::String) = drawPdf(Set(nodes), filename)
 # Internal functions
 ####################################################
 
-function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Set{Edge}(), time_wraps::Array{(TerminalNode,TerminalNode),1} = Array((TerminalNode,TerminalNode),0))
+function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Set{Edge}(), wraps::Array{(TerminalNode,TerminalNode),1} = Array((TerminalNode,TerminalNode),0))
     # Return a string representing the graph in DOT format
     # External edges are edges of which only the head or tail is in the nodes set
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)
@@ -120,9 +120,9 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
         end
     end
 
-    if !isempty(time_wraps)
+    if !isempty(wraps)
         # Add edges to visualize time wraps
-        for (from, to) in time_wraps
+        for (from, to) in wraps
             dot *= "\t$(object_id(from)) -> $(object_id(to)) [style=\"dotted\" color=\"green\"]\n"             
         end
     end

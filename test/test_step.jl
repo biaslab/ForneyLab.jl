@@ -51,16 +51,16 @@ facts("Wrap integration tests") do
     # wrap()
     context("wrap() should register a timewrap for a pair of TerminalNodes") do
         (node_t1, node_t2, e, g) = initializeBufferGraph()
-        time_wraps = wrap(node_t1, node_t2)
-        @fact length(time_wraps) => 1
-        @fact ((node_t1, node_t2) in time_wraps) => true
+        wraps = wrap(node_t1, node_t2)
+        @fact length(wraps) => 1
+        @fact ((node_t1, node_t2) in wraps) => true
     end
 
     # clearWraps
     context("clearWraps should deregister all time wraps") do
         (node_t1, node_t2, e, g) = initializeBufferGraph()
         clearWraps(g)
-        @fact length(g.time_wraps) => 0
+        @fact length(g.wraps) => 0
     end
 end
 

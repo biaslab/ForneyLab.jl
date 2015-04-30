@@ -1,6 +1,6 @@
 export  setReadBuffer,
         setWriteBuffer,
-        clearBuffers,
+        emptyWriteBuffers,
         wrap,
         clearWraps,
         execute,
@@ -41,13 +41,19 @@ function clearBuffers(graph::FactorGraph=current_graph)
     graph.write_buffers = Dict{Union(Edge,Interface), Vector}()
 end
 
+function emptyWriteBuffers(graph::FactorGraph=current_graph)
+    for (k, v) in graph.write_buffers
+        empty!(v) # Clear the vector but keep the pointer
+    end
+end
+
 function wrap(from::TerminalNode, to::TerminalNode, graph::FactorGraph=current_graph)
     !is(from, to) || error("Cannot create time wrap: from and to must be different nodes")
-    push!(graph.time_wraps, (from, to))
+    push!(graph.wraps, (from, to))
 end
 
 function clearWraps(graph::FactorGraph=current_graph)
-    graph.time_wraps = Array((TerminalNode, TerminalNode), 0)
+    graph.wraps = Array((TerminalNode, TerminalNode), 0)
 end 
 
 function execute(algorithm::Algorithm, graph::FactorGraph=current_graph)
@@ -79,7 +85,7 @@ function step(algorithm::Algorithm, graph::FactorGraph=current_graph)
     end
 
     # Time wraps
-    for (from, to) in graph.time_wraps
+    for (from, to) in graph.wraps
         isdefined(from.out.partner.message, :payload) || error("There is no message to move to $(to) for the next timestep")
         to.value = deepcopy(from.out.partner.message.payload)
     end
