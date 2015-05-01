@@ -1,5 +1,6 @@
 export  setReadBuffer,
         setWriteBuffer,
+        clearBuffers,
         emptyWriteBuffers,
         wrap,
         clearWraps,
