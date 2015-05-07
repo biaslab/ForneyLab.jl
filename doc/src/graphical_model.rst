@@ -35,11 +35,7 @@ The following functions are available to get/set the currently active factor gra
 Nodes
 -----
 
-A node in a :class:`FactorGraph` is always of a subtype of::
-
-    abstract Node
-
-ForneyLab comes with a bunch of built-in nodes for commonly used functions, such as the :class:`AdditionNode` and the :class:`EqualityNode`. The :doc:`nodes` chapter describes these in more detail, as well as how to build custom nodes. It's important to know that a node should contain a couple of required fields::
+A node in a :class:`FactorGraph` is always of a subtype of ``abstract Node``. ForneyLab comes with a bunch of built-in nodes for commonly used functions, such as the :class:`AdditionNode` and the :class:`EqualityNode`. The :doc:`nodes` chapter describes these in more detail, as well as how to build custom nodes. It's important to know that a node should contain a couple of required fields::
 
     type MinimalNode <: Node
         name::ASCIIString
@@ -51,15 +47,14 @@ The ``name`` fields holds a unique name, which can be passed to the constructor 
     addition_node = AdditionNode(name="my_adder")  # Node func.: out = in1 + in2
     gain_node = FixedGainNode(3.0, name="times_3") # Node func.: out = 3.0 * in1
 
-Some node types provide named interface handles for convenience. I.e. ``gain_node.out`` is equivalent to ``gain_node.interfaces[2]``. Chapter :doc:`nodes` contains more information about the built-in node types.
-
+Some node types provide named interface handles for convenience. I.e. ``gain_node.out`` is equivalent to ``gain_node.interfaces[2]``.
 
 The ``Edge`` type
 -----------------
 
 .. type:: Edge
 
-    An ``Edge`` connects two :class:`Interface` instances of different nodes::
+    An ``Edge`` is directed and connects two :class:`Interface` instances of different nodes::
 
         type Edge <: AbstractEdge
             # [tail]------>[head]
@@ -81,15 +76,18 @@ The ``Edge`` type
 
     In such cases the constructor will automatically pick the first free interface of the node.
 
+Strictly speaking, a factor graph edge does not need to be directed. However, in ForneyLab all edges are directed to have a consistent meaning for terms like "forward message", "backward messages", and "forward pass". Apart from that, the edge direction has no functional consequences.
+
+ForneyLab does not allow half-edges: an :class:`Edge` should be connected to two nodes at all times. Open ended edges should be terminated by a :class:`TerminalNode`. 
 
 Example
 -------
 
 Consider the following simple factor graph::
 
-          | C1    | C2
-          |       |
-      X1  v   X2  v   X3
+          | C1    | C2           
+          |       |       
+      X1  v   X2  v   X3 
     ---->[+]---->[+]---->
 
 ForneyLab does not allow 'half-edges' that are connected to just one node. Instead, half-edges should be terminated by a :class:`TerminalNode`. Taking this into account, one could implement this factor graph like::
@@ -110,3 +108,36 @@ ForneyLab does not allow 'half-edges' that are connected to just one node. Inste
     Edge(adder_1.out, adder_2.in1)
     Edge(t_c2, adder_2.in2)
     Edge(adder_2.out, t_x3)
+
+Chaining factor graph sections
+------------------------------
+
+In practical situations it is common for a factor graph to be a concatination of identical sections. In such cases it might not be necessary to build the entire factor graph explictly. Instead, it is possible to just build one section, and define how the sections are chained together. This can be done in ForneyLab by defining *wraps*::
+
+    # Random walk chain
+    #          | C          
+    #          |           
+    #    X[n]  v  X[n+1]
+    # ...---->[+]-------> ...
+
+    g = FactorGraph()
+    X_prev = TerminalNode()
+    X_next = TerminalNode()
+    C = TerminalNode()
+    adder = AdditionNode()
+
+    Edge(X_prev, adder.in1)
+    Edge(C, adder.in2)
+    Edge(adder.out, X_next)
+
+    wrap(X_next, X_prev) # X_next becomes X_prev in the next section
+
+
+.. function:: wrap(from, to, graph)
+
+    Creates a wrap from :class:`TerminalNode` ``from`` to :class:`TerminalNode` ``to`` in :class:`FactorGraph` ``graph``. If ``graph`` is omitted, the currently active graph is assumed.
+
+.. function:: clearWraps(graph)
+
+    Remove all wraps from :class:`FactorGraph` ``graph``. If ``graph`` is omitted, the currently active graph is assumed.
+
