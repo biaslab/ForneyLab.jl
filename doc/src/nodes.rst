@@ -17,18 +17,6 @@ A factor graph node is always a subtype of ``abstract Node``. A node should cont
         in1::Interface
         in2::Interface
         out::Interface
-
-        function AdditionNode(; name=unnamedStr())
-            self = new(name, Array(Interface, 3))
-
-            named_handle_list = [:in1, :in2, :out]
-            for i = 1:length(named_handle_list)
-                self.interfaces[i] = Interface(self)
-                setfield!(self, named_handle_list[i], self.interfaces[i])
-            end
-
-            return self
-        end
     end
 
 The fields ``in1``, ``in2``, and ``out`` are optional 'named handles' to make accessing the interfaces convenient. The ``interfaces`` array always contains one or more :class:`Interface` instances. The calling signature of a node constructor varies, but it always includes the optional keyword argument ``name``. 
@@ -54,7 +42,7 @@ The fields ``in1``, ``in2``, and ``out`` are optional 'named handles' to make ac
 Message calculation rules
 -------------------------
 
-A factor node captures a specific *node function*, which involves the variables that are represented by the connected edges. The :class:`AdditionNode` for example captures the addition function ``out = in1 + in2``. When running a message passing algorithm on a :class:`FactorGraph`, the node function specifies how the outbound messages are calculated from the inbound messages. An outbound message is calculated according to a *message calculation rule*. Message calculation rules are implemented for specific nodes and message types using multiple dispatch. 
+A factor node captures a specific *node function*, which involves the variables that are represented by the connected edges. The :class:`AdditionNode` for example captures the addition function: ``f(in1,in2,out) = δ(in1+in2-out)``. When running a message passing algorithm on a :class:`FactorGraph`, the node function specifies how the outbound messages are calculated from the inbound messages. An outbound message is calculated according to a *message calculation rule*. Message calculation rules are implemented for specific nodes and message types using multiple dispatch. 
 
 ForneyLab supports the following message calculation rules:
 
@@ -121,3 +109,118 @@ The following built-in 'elementary' nodes are available in ForneyLab: :class:`Ad
 
 There are aso some built-in composite nodes: :class:`GainAdditionCompositeNode`, :class:`GainEqualityCompositeNode`.
 
+Elementary nodes
+~~~~~~~~~~~~~~~~
+
+.. type:: AdditionNode
+
+    ::
+
+               in2
+               |
+         in1   v  out
+        ----->[+]----->
+     
+    :Node function: ``f(in1,in2,out) = δ(in1+in2-out)``      
+    :Interfaces:    1: ``in1``, 2: ``in2``, 3: ``out``
+    :Construction:  ``AdditionNode(name="something")``
+
+    Message computation rules:
+
+    +-----------------+-----------------------------------------------------------------------------+
+    |                 | Input (↓) and output (↑) per interface                                      |
+    + Rule            +-------------------------+-------------------------+-------------------------+
+    |                 | 1                       | 2                       |  3                      |
+    +=================+=========================+=========================+=========================+
+    | sumProduct!     | ↑↓ ``Msg{Delta}``       | ↑↓ ``Msg{Delta}``       | ↑↓ ``Msg{Delta}``       | 
+    +                 +-------------------------+-------------------------+-------------------------+
+    |                 | ↑↓ ``Msg{Gaussian}``    | ↑↓ ``Msg{Gaussian}``    | ↑↓ ``Msg{Gaussian}``    | 
+    +                 +-------------------------+-------------------------+-------------------------+
+    |                 | ↑  ``Msg{Gaussian}``    | ↓  ``Msg{Gaussian}``    | ↓  ``Msg{Delta}``       | 
+    +                 +                         +-------------------------+-------------------------+
+    |                 |                         | ↓  ``Msg{Delta}``       | ↓  ``Msg{Gaussian}``    | 
+    +                 +-------------------------+-------------------------+-------------------------+
+    |                 | ↓  ``Msg{Gaussian}``    | ↑  ``Msg{Gaussian}``    | ↓  ``Msg{Delta}``       | 
+    +                 +-------------------------+                         +-------------------------+
+    |                 | ↓  ``Msg{Delta}``       |                         | ↓  ``Msg{Gaussian}``    |
+    +                 +-------------------------+-------------------------+-------------------------+
+    |                 | ↓  ``Msg{Gaussian}``    | ↓  ``Msg{Gaussian}``    | ↑  ``Msg{Gaussian}``    | 
+    +                 +-------------------------+-------------------------+                         +
+    |                 | ↓  ``Msg{Delta}``       | ↓  ``Msg{Delta}``       |                         |  
+    +-----------------+-------------------------+-------------------------+-------------------------+
+
+.. type:: EqualityNode
+
+    ::
+
+               Y
+               |
+           X   v  Z
+        ----->[=]----->
+     
+    :Node function: ``f(X,Y,Z) = δ(X-Z)δ(Y-Z)``      
+    :Interfaces:    1-3 (no names)
+    :Construction:  ``EqualityNode(name="something")``
+
+    Message computation rules (\* = approximation):
+
+    +-----------------+-----------------------------------------------------------------------------+
+    |                 | Input/output (node is symmetrical in all interfaces)                        |
+    + Rule            +-------------------------+---------------------------------------------------+
+    |                 | Outbound interface      | Inbound interfaces                                |
+    +=================+=========================+===================================================+
+    | sumProduct!     | ``Msg{Delta}``          | ``Msg{Delta}`` and ``Msg{Delta}``                 | 
+    +                 +                         +---------------------------------------------------+
+    |                 |                         | ``Msg{Delta}`` and ``Msg{Gaussian}``              |
+    +                 +                         +---------------------------------------------------+
+    |                 |                         | ``Msg{Delta}`` and ``Msg{Gamma}``                 |
+    +                 +-------------------------+-------------------------+-------------------------+
+    |                 | ``Msg{Beta}``           | ``Msg{Beta}`` and ``Msg{Beta}``                   | 
+    +                 +-------------------------+-------------------------+-------------------------+
+    |                 | ``Msg{Gamma}``          | ``Msg{Gamma}`` and ``Msg{Gamma}``                 | 
+    +                 +-------------------------+-------------------------+-------------------------+
+    |                 | ``Msg{Gaussian}``       | ``Msg{Gaussian}`` and ``Msg{Gaussian}``           | 
+    +                 +-------------------------+---------------------------------------------------+
+    |                 | ``Msg{Gaussian}`` \*    | ``Msg{Gaussian}`` and ``Msg{StudentsT}``          |
+    +                 +-------------------------+-------------------------+-------------------------+
+    |                 | ``Msg{InvGamma}``       | ``Msg{InvGamma}`` and ``Msg{InvGamma}``           | 
+    +-----------------+-------------------------+-------------------------+-------------------------+
+
+.. type:: ExponentialNode
+
+    .. note::
+
+        TODO
+
+.. type:: FixedGainNode
+
+    .. note::
+
+        TODO
+
+.. type:: GaussianNode
+
+    .. note::
+
+        TODO
+
+.. type:: TerminalNode
+
+    (alias ``PriorNode``)
+    ::
+             out
+        [T]----->
+     
+    :Node function: ``f(out) = δ(out - value)``      
+    :Interfaces:    1: `out`
+    :Construction:  ``TerminalNode(value, name="something")``
+
+    A ``TerminalNode`` is used to terminate an edge. It forces the variable represented by the connected edge to ``value``. The terminal node always emits a ``Message`` with payload ``value`` (which is a :class:`ProbabilityDistribution`). It can be used to introduce priors or data into the factor graph. 
+
+
+Composite nodes
+~~~~~~~~~~~~~~~
+
+.. note::
+
+    TODO
