@@ -70,12 +70,12 @@ function sumProduct!(node::EqualityNode,
     
     dist_1 = msg_1.payload
     dist_2 = msg_2.payload
-    if isvalid(dist_1.m) && isvalid(dist_1.W) && isvalid(dist_2.m) && isvalid(dist_2.W)
+    if isValid(dist_1.m) && isValid(dist_1.W) && isValid(dist_2.m) && isValid(dist_2.W)
         dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.W)
         invalidate!(dist_result.V) 
         dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
         invalidate!(dist_result.xi)
-    elseif isvalid(dist_1.xi) && isvalid(dist_1.V) && isvalid(dist_2.xi) && isvalid(dist_2.V)
+    elseif isValid(dist_1.xi) && isValid(dist_1.V) && isValid(dist_2.xi) && isValid(dist_2.V)
         invalidate!(dist_result.m) 
         dist_result.V  = equalityVRule(dist_1.V, dist_2.V)
         invalidate!(dist_result.W) 
@@ -110,12 +110,12 @@ function sumProduct!(node::EqualityNode,
     dist_1 = GaussianDistribution(m=msg_st.payload.m, W=msg_st.payload.W) # Approximate student's with Gaussian
     dist_2 = msg_n.payload
 
-    if isvalid(dist_1.m) && isvalid(dist_1.W) && isvalid(dist_2.m) && isvalid(dist_2.W)
+    if isValid(dist_1.m) && isValid(dist_1.W) && isValid(dist_2.m) && isValid(dist_2.W)
         dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.W)
         invalidate!(dist_result.V) 
         dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
         invalidate!(dist_result.xi)
-    elseif isvalid(dist_1.xi) && isvalid(dist_1.V) && isvalid(dist_2.xi) && isvalid(dist_2.V)
+    elseif isValid(dist_1.xi) && isValid(dist_1.V) && isValid(dist_2.xi) && isValid(dist_2.V)
         invalidate!(dist_result.m) 
         dist_result.V  = equalityVRule(dist_1.V, dist_2.V)
         invalidate!(dist_result.W) 

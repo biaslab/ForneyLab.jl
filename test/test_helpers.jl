@@ -26,6 +26,26 @@ facts("Helper function unit tests") do
         @fact ForneyLab.isRoundedPosDef(K) => true
     end
 
+    context("isValid should check validity of scalars, vectors and matrices") do
+        @fact isValid(1.0) => true
+        @fact isValid(NaN) => false
+        @fact isValid([1.0, 2.0]) => true
+        @fact isValid([1.0, NaN]) => true
+        @fact isValid([NaN, 2.0]) => false
+        @fact isValid(eye(2)) => true
+        @fact isValid([1.0 NaN; 2.0 3.0]) => true
+        @fact isValid([NaN 1.0; 2.0 3.0]) => false
+    end
+
+    context("invalidate! should invalidate vectors and matrices") do
+        A = [1.0, 2.0]
+        @fact isValid(invalidate!(A)) => false
+        @fact isValid(A) => false
+        A = [1.0 2.0; 3.0 4.0]
+        @fact isValid(invalidate!(A)) => false
+        @fact isValid(A) => false
+    end
+
     context("ensureMessage! should assign a message to an interface if there is none") do
         node = TerminalNode(GaussianDistribution(m=5.0, V=1.0))
         @fact node.out.message => nothing
