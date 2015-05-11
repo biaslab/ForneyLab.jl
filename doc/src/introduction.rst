@@ -2,7 +2,7 @@
  Introduction
 **************
 
-A factor graph is a graphical model that encodes a factorization of the joint probability distribution over all variables involved. In a Forney-style factor graph, every variable is represented by an edge. The nodes that connect the edges represent the factors. 
+A factor graph is a graphical model that encodes a factorization of the joint probability distribution over all variables involved. In a Forney-style factor graph, every variable is represented by an edge. The nodes connecting the edges represent the factors. 
 
 We will introduce the basic building blocks using a simple example. Consider the following probabilistical model (random walk):
 
@@ -32,4 +32,11 @@ The graph is directed to indicate direction of the "+" operation. Note that only
 2. Fixing some variables in the model and deriving an algorithm for inferring the values of the other variables given the fixed ones.
 3. Running the derived algorithm.
 
-In the case of our running example, we might be interested in inferring the value of X3 given the noise distributions and (an estimate of) of X1.
+In the case of our running example, we might be interested in inferring the value of X3 given the noise distributions and (an estimate of) of X1. Inference has different meanings in different contexts:
+
+- Parameter estimation / model fitting / system identification: inferring parameter values from data.
+- State estimation: inferring (hidden) states of a system from data.
+- Prediction: inferring future data (from past data and/or parameter values).
+- Smoothing: inferring past data (from future data and/or parameter values).
+
+Inference in an FFG mean any of the above, depending on which variables (edges) are fixed and which are inferred. 

@@ -41,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'ForneyLab.jl'
-AUTHORS = u"Marco Cox, Thijs van de Laar, Bert de Vries, et al."
+AUTHORS = u"Marco Cox, Thijs van de Laar, and Bert de Vries"
 copyright = u'2014-2015, '+AUTHORS
 
 # The version info for the project you're documenting, acts as replacement for
@@ -204,7 +204,7 @@ latex_documents = [
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
-latex_use_parts = True
+latex_use_parts = False
 
 # If true, show page references after internal links.
 latex_show_pagerefs = True

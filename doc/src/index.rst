@@ -3,14 +3,14 @@ ForneyLab.jl overview
 
 .. image:: images/forneylab_logo.png
 
-The *ForneyLab* package provides a framework for working with `Forney-style factor graphs <http://www.crm.sns.it/media/course/1524/Loeliger_A.pdf>`_ (FFGs). A FFG is a probabilistical graphical model that is particularly well suited for modeling signal processing systems. ForneyLab.jl provides the following:
+The *ForneyLab* package provides a framework for working with `Forney-style factor graphs <http://www.crm.sns.it/media/course/1524/Loeliger_A.pdf>`_ (FFGs). A FFG is a probabilistical graphical model that is particularly well suited for modeling signal processing systems. ForneyLab.jl provides:
 
 - Tools and data structures for building FFGs;
 - A built-in collection of commonly used factor nodes;
 - Functions to automatically generate (message passing) algorithms to perform inference in FFGs;
 - An engine to efficiently run message passing algorithms on FFGs.
 
-The reader is assumed to be familiar with Forney-style factor graphs and message passing algorithms on these types of graphs.
+The reader is assumed to be familiar with Forney-style factor graphs and message passing algorithms on these types of graphs. This documentation is written as a reference guide. Get started by checking out the `iJulia demos <https://github.com/spsbrats/ForneyLab.jl/tree/master/demo>`_.
 
 **Contents:**
 
@@ -19,7 +19,10 @@ The reader is assumed to be familiar with Forney-style factor graphs and message
 
    introduction
    graphical_model
+   distributions_messages
    nodes
+   algorithms
+   diagnostics_reporting
 
 
 .. Indices and tables
