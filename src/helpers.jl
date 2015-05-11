@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny, KLpq, rules, format, valid, invalidate!
+export isApproxEqual, huge, tiny, KLpq, rules, format, isvalid, invalidate!
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
