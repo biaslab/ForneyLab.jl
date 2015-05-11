@@ -39,4 +39,8 @@ In the case of our running example, we might be interested in inferring the valu
 - Prediction: inferring future data (from past data and/or parameter values).
 - Smoothing: inferring past data (from future data and/or parameter values).
 
-Inference in an FFG mean any of the above, depending on which variables (edges) are fixed and which are inferred. 
+Inference in a FFG can mean any of the above, depending on which variables (edges) are fixed and which ones are inferred. Inference in a FFG can often be implemented efficiently by a message passing algorithm. ForneyLab provides a framework to:
+
+- Build (hierarchical) FFGs;
+- Automatically generate message passing algorithms to solve inference problems;
+- Efficiently run message passing algorithms on FFGs.
