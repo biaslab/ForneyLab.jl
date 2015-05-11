@@ -10,7 +10,7 @@ include("generate_schedule.jl")
 #--------------------------------
 
 function Algorithm(graph::FactorGraph=currentGraph())
-    # Generates a sumproduct algorithm to calculate the outbound message on outbound_interface
+    # Generates a sumproduct algorithm
     # Uses autoscheduler and only works in acyclic graphs
     #clearMessages!(graph)
     schedule = SumProduct.generateSchedule(graph)
@@ -32,7 +32,7 @@ function Algorithm(outbound_interface::Interface, graph::FactorGraph=currentGrap
 end
 
 function Algorithm(partial_list::Vector{Interface}, graph::FactorGraph=currentGraph())
-    # Generates a sumproduct algorithm to calculate the outbound message on outbound_interface
+    # Generates a sumproduct algorithm that at least propagates to all interfaces in the argument vector.
     # Uses autoscheduler and only works in acyclic graphs
     #clearMessages!(graph)
     schedule = SumProduct.generateSchedule(partial_list)
