@@ -8,7 +8,7 @@ The *ForneyLab* package provides a framework for working with `Forney-style fact
 - Tools and data structures for building FFGs;
 - A built-in collection of commonly used factor nodes;
 - Functions to automatically generate (message passing) algorithms to perform inference in FFGs;
-- An engine to efficiently run message passing algos on FFGs.
+- An engine to efficiently run message passing algorithms on FFGs.
 
 The reader is assumed to be familiar with Forney-style factor graphs and message passing algorithms on these types of graphs.
 

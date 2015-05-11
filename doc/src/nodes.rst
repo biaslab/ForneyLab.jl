@@ -208,6 +208,7 @@ Elementary nodes
 
     (alias ``PriorNode``)
     ::
+    
              out
         [T]----->
      
