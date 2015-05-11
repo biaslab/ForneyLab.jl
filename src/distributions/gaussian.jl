@@ -32,11 +32,11 @@ type GaussianDistribution <: ProbabilityDistribution
     function GaussianDistribution(m, V, W, xi)
         self = new(m, V, W, xi)
         isWellDefined(self) || error("Cannot create GaussianDistribution, distribution is underdetermined.")
-        if isvalid(V)
+        if isValid(V)
             (maximum(V) < Inf) || error("Cannot create GaussianDistribution, covariance matrix V cannot contain Inf.")
             (isRoundedPosDef(V)) || error("Cannot create GaussianDistribution, covariance matrix V should be positive definite.")
         end
-        if isvalid(W)
+        if isValid(W)
             (maximum(W) < Inf) || error("Cannot create GaussianDistribution, precision matrix W cannot contain Inf.")
             (isRoundedPosDef(W)) || error("Cannot create GaussianDistribution, precision matrix W should be positive definite.")
         end
@@ -86,11 +86,11 @@ GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
 vague(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge())
 
 function format(dist::GaussianDistribution)
-    if isvalid(dist.m) && isvalid(dist.V)
+    if isValid(dist.m) && isValid(dist.V)
         return "N(m=$(format(dist.m)), V=$(format(dist.V)))"
-    elseif isvalid(dist.m) && isvalid(dist.W)
+    elseif isValid(dist.m) && isValid(dist.W)
         return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
-    elseif isvalid(dist.xi) && isvalid(dist.W)
+    elseif isValid(dist.xi) && isValid(dist.W)
         return "N(ξ=$(format(dist.xi)), W=$(format(dist.W)))"
     else
         return "N(ξ=$(format(dist.xi)), V=$(format(dist.V)))"
@@ -110,13 +110,13 @@ end
 # Methods to check and convert different parametrizations
 function isWellDefined(dist::GaussianDistribution)
     # Check if dist is not underdetermined
-    if ((!isvalid(dist.m) && !isvalid(dist.xi)) ||
-        (!isvalid(dist.V) && !isvalid(dist.W)))
+    if ((!isValid(dist.m) && !isValid(dist.xi)) ||
+        (!isValid(dist.V) && !isValid(dist.W)))
         return false
     end
     dimensions=0
     for field in [:m, :xi, :V, :W]
-        if isvalid(getfield(dist, field))
+        if isValid(getfield(dist, field))
             if dimensions>0
                 if maximum(size(getfield(dist, field)))!=dimensions
                     return false
@@ -130,7 +130,7 @@ function isWellDefined(dist::GaussianDistribution)
 end
 function isConsistent(dist::GaussianDistribution)
     # Check if dist is consistent in case it is overdetermined
-    if isvalid(dist.V) && isvalid(dist.W)
+    if isValid(dist.V) && isValid(dist.W)
         V_W_consistent = false
         try
            V_W_consistent = isApproxEqual(inv(dist.V), dist.W)
@@ -145,8 +145,8 @@ function isConsistent(dist::GaussianDistribution)
             return false # V and W are not consistent
         end
     end
-    if isvalid(dist.m) && isvalid(dist.xi)
-        if isvalid(dist.V)
+    if isValid(dist.m) && isValid(dist.xi)
+        if isValid(dist.V)
             if isApproxEqual(dist.V * dist.xi, dist.m) == false
                 return false # m and xi are not consistent
             end
@@ -161,20 +161,20 @@ end
 function ensureMDefined!(dist::GaussianDistribution)
     # Ensure that dist.m is defined, calculate it if needed.
     # An underdetermined dist will throw an exception, we assume dist is well defined.
-    dist.m = !isvalid(dist.m) ? ensureVDefined!(dist).V * dist.xi : dist.m
+    dist.m = !isValid(dist.m) ? ensureVDefined!(dist).V * dist.xi : dist.m
     return dist
 end
 function ensureXiDefined!(dist::GaussianDistribution)
     # Ensure that dist.xi is defined, calculate it if needed.
     # An underdetermined dist will throw an exception, we assume dist is well defined.
-    dist.xi = !isvalid(dist.xi) ? ensureWDefined!(dist).W * dist.m : dist.xi
+    dist.xi = !isValid(dist.xi) ? ensureWDefined!(dist).W * dist.m : dist.xi
     return dist
 end
 function ensureVDefined!(dist::GaussianDistribution)
     # Ensure that dist.V is defined, calculate it if needed.
     # An underdetermined dist will throw an exception, we assume dist is well defined.
     try
-        dist.V = !isvalid(dist.V) ? inv(dist.W) : dist.V
+        dist.V = !isValid(dist.V) ? inv(dist.W) : dist.V
     catch
         error("Cannot calculate V of GaussianDistribution because W is not invertible.")
     end
@@ -184,7 +184,7 @@ function ensureWDefined!(dist::GaussianDistribution)
     # Ensure that dist.W is defined, calculate it if needed.
     # An underdetermined dist will throw an exception, we assume dist is well defined.
     try
-        dist.W = !isvalid(dist.W) ? inv(dist.V) : dist.W
+        dist.W = !isValid(dist.W) ? inv(dist.V) : dist.W
     catch
         error("Cannot calculate W of GaussianDistribution because V is not invertible.")
     end
@@ -199,10 +199,10 @@ function ==(x::GaussianDistribution, y::GaussianDistribution)
     if is(x, y) return true end
     eps = tiny()
     # Check m or xi
-    if isvalid(x.m) && isvalid(y.m)
+    if isValid(x.m) && isValid(y.m)
         (length(x.m)==length(x.m)) || return false
         (maximum(abs(x.m-y.m)) < eps) || return false
-    elseif isvalid(x.xi) && isvalid(y.xi)
+    elseif isValid(x.xi) && isValid(y.xi)
         (length(x.xi)==length(x.xi)) || return false
         (maximum(abs(x.xi-y.xi)) < eps) || return false
     else
@@ -212,10 +212,10 @@ function ==(x::GaussianDistribution, y::GaussianDistribution)
     end
 
     # Check V or W
-    if isvalid(x.V) && isvalid(y.V)
+    if isValid(x.V) && isValid(y.V)
         (length(x.V)==length(x.V)) || return false
         (maximum(abs(x.V-y.V)) < eps) || return false
-    elseif isvalid(x.W) && isvalid(y.W)
+    elseif isValid(x.W) && isValid(y.W)
         (length(x.W)==length(x.W)) || return false
         (maximum(abs(x.W-y.W)) < eps) || return false
     else

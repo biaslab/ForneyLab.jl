@@ -146,17 +146,17 @@ function applyBackwardRule!(node::GainEqualityCompositeNode,
 
         # Select parameterization
         # Order is from least to most computationally intensive
-        if isvalid(dist_3.xi) && isvalid(dist_3.W) && isvalid(dist_in.xi) && isvalid(dist_in.W)
+        if isValid(dist_3.xi) && isValid(dist_3.W) && isValid(dist_in.xi) && isValid(dist_in.W)
             invalidate!(dist_result.m)
             invalidate!(dist_result.V)
             dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
             dist_result.xi = backwardGainEqualityXiRule(node.A, dist_in.xi, dist_3.xi)
-        elseif isvalid(dist_3.m) && isvalid(dist_3.V) && isvalid(dist_in.m) && isvalid(dist_in.V)
+        elseif isValid(dist_3.m) && isValid(dist_3.V) && isValid(dist_in.m) && isValid(dist_in.V)
             dist_result.m = backwardGainEqualityMRule(node.A, dist_in.m, dist_in.V, dist_3.m, dist_3.V)
             dist_result.V = backwardGainEqualityVRule(node.A, dist_in.V, dist_3.V)
             invalidate!(dist_result.W)
             invalidate!(dist_result.xi)
-        elseif isvalid(dist_3.m) && isvalid(dist_3.W) && isvalid(dist_in.m) && isvalid(dist_in.W)
+        elseif isValid(dist_3.m) && isValid(dist_3.W) && isValid(dist_in.m) && isValid(dist_in.W)
             dist_result.m = backwardGainEqualityMRule(node.A, dist_in.m, inv(dist_in.W), dist_3.m, inv(dist_3.W))
             invalidate!(dist_result.V)
             dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)

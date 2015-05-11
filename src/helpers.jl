@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny, KLpq, rules, format, valid, invalidate!
+export isApproxEqual, huge, tiny, KLpq, rules, format, isValid, invalidate!
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
@@ -11,17 +11,13 @@ huge() = huge(Float64)
 tiny(::Type{Float64}) = 1./huge(Float64)
 tiny() = tiny(Float64)
 
-# Functions for getting and setting invalid distribution parameters
-# A parameter value is invalid if the first entry is NaN
-isvalid(v::Vector{Float64}) = !isnan(v[1])
-isvalid(v::Matrix{Float64}) = !isnan(v[1,1])
-isvalid(v::Float64) = !isnan(v)
-function invalidate!(v::Vector{Float64})
+# Functions for checking validity and invalidating arrays of floats
+# An array is invalid if and only if its first entry is NaN
+isValid(v::Array{Float64}) = !isnan(v[1])
+isValid(v::Float64) = !isnan(v)
+
+function invalidate!(v::Array{Float64})
     v[1] = NaN
-    return v
-end
-function invalidate!(v::Matrix{Float64})
-    v[1,1] = NaN
     return v
 end
 
