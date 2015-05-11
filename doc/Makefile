@@ -45,6 +45,7 @@ help:
 	@echo "  changes    to make an overview of all changed/added/deprecated items"
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
+	@echo "  publish    to publish the html documentation on http://spsbrats.github.io"
 
 clean:
 	-rm -rf _build/*
@@ -165,3 +166,6 @@ doctest:
 helpdb.jl: src/*.rst
 	$(SPHINXBUILD) -b jlhelp $(ALLSPHINXOPTS) _build/jlhelp
 	mv _build/jlhelp/jlhelp.jl helpdb.jl
+
+publish: html
+	./publish.sh
