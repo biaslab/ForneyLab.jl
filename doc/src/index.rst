@@ -20,6 +20,7 @@ The reader is assumed to be familiar with Forney-style factor graphs and message
    introduction
    graphical_model
    nodes
+   diagnostics_and_reporting
 
 
 .. Indices and tables
