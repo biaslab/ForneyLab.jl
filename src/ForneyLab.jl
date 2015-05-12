@@ -6,7 +6,7 @@ using LaTeXStrings
 
 export Node, CompositeNode, ProbabilityDistribution
 export sumProduct!, vmp!
-export vague, expectation, self, ==
+export vague, self, ==
 export current_graph
 
 # Export algorithm modules
@@ -83,7 +83,6 @@ include("algorithms/vmp/vmp.jl")
 
 # Functions for message post-processing
 vague(dist::ProbabilityDistribution) = vague(typeof(dist))
-expectation(dist::ProbabilityDistribution) = DeltaDistribution(mean(dist))
 self(x::Any) = x
 
 end # module ForneyLab

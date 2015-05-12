@@ -25,7 +25,12 @@ function execute(schedule_entry::ScheduleEntry)
 
     # Post processing?
     if isdefined(schedule_entry, :post_processing)
-        outbound_message = node.interfaces[outbound_interface_id].message = Message(schedule_entry.post_processing(outbound_message.payload))
+        post_processed_output = schedule_entry.post_processing(outbound_message.payload)
+        if (typeof(post_processed_output) <: ProbabilityDistribution) == false
+            # Wrap the output in a DeltaDistribution before packing it in a Message
+            post_processed_output = DeltaDistribution(post_processed_output)
+        end
+        outbound_message = node.interfaces[outbound_interface_id].message = Message(post_processed_output)
     end
 
     # Print output for debugging

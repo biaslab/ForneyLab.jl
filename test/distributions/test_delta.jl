@@ -12,7 +12,7 @@ facts("DeltaDistribution unit tests") do
     end
 
     context("DeltaDistribution can be sampled") do
-        @fact sample(DeltaDistribution()) => DeltaDistribution()
+        @fact drawSample(DeltaDistribution(2.0)) => 2.0
     end
 
     context("There should be no such thing as vague(DeltaDistribution)") do
