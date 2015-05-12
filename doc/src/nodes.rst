@@ -9,7 +9,7 @@ This chapter describes :ref:`node-anatomy`, :ref:`msg-calc-rules`, and :ref:`bui
 The anatomy of nodes
 --------------------
 
-A factor graph node is always a subtype of ``abstract Node``. A node should contain at least the fields ``name`` and ``interfaces``. Let's look at the definition of the built-in :class:`AdditionNode`::
+A factor graph node is always a subtype of ``abstract Node``, and its name ends in "Node". A node should contain at least the fields ``name`` and ``interfaces``. Let's look at the definition of the built-in :class:`AdditionNode`::
 
     type AdditionNode <: Node
         name::ASCIIString

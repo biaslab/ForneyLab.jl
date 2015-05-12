@@ -5,7 +5,7 @@
 Building the graphical model amounts to adding nodes and edges to a :class:`FactorGraph`. This chapter introduces the main types and functions that are involved in setting up the graphical model. For some examples, have a look at the following demos: ``random_walk``, ``simple_kalman``.
 
 The ``FactorGraph`` type
-------------------------
+========================
 
 .. type:: FactorGraph
 
@@ -33,7 +33,7 @@ The following functions are available to get/set the currently active factor gra
 
 
 Nodes
------
+=====
 
 A node in a :class:`FactorGraph` is always of a subtype of ``abstract Node``. ForneyLab comes with a bunch of built-in nodes for commonly used functions, such as the :class:`AdditionNode` and the :class:`EqualityNode`. The :doc:`nodes` chapter describes these in more detail, as well as how to build custom nodes. It's important to know that a node should contain a couple of required fields::
 
@@ -50,7 +50,7 @@ The ``name`` fields holds a unique name, which can be passed to the constructor 
 Some node types provide named interface handles for convenience. I.e. ``gain_node.out`` is equivalent to ``gain_node.interfaces[2]``.
 
 The ``Edge`` type
------------------
+=================
 
 .. type:: Edge
 
@@ -81,7 +81,7 @@ Strictly speaking, a factor graph edge does not need to be directed. However, in
 ForneyLab does not allow half-edges: an :class:`Edge` should be connected to two nodes at all times. Open ended edges should be terminated by a :class:`TerminalNode`. 
 
 Example
--------
+=======
 
 Consider the following simple factor graph::
 
@@ -110,7 +110,7 @@ ForneyLab does not allow 'half-edges' that are connected to just one node. Inste
     Edge(adder_2.out, t_x3)
 
 Chaining factor graph sections
-------------------------------
+==============================
 
 In practical situations it is common for a factor graph to be a concatination of identical sections. In such cases it might not be necessary to build the entire factor graph explictly. Instead, it is possible to just build one section, and define how the sections are chained together. This can be done in ForneyLab by defining *wraps*::
 
@@ -141,3 +141,10 @@ In practical situations it is common for a factor graph to be a concatination of
 
     Remove all wraps from :class:`FactorGraph` ``graph``. If ``graph`` is omitted, the currently active graph is assumed.
 
+
+Interfacing to and from the graph
+=================================
+
+.. note::
+
+    TODO

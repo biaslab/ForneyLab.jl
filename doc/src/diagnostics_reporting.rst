@@ -15,15 +15,15 @@ Inspect objects
 Draw graphs and subgraphs
 -------------------------
 
-The `draw` function visualizes the argument object. Messages that are present at the moment of rendering are denoted with filled black circles. Setting the optional argument `external_viewer=true` renders the drawing in an external viewer. A related helper function `drawPdf(*, filename)` behaves similar to `draw` but writes the visualization to a pdf file.
+The ``draw(object)`` function visualizes the argument object. Messages that are present at the moment of rendering are denoted with filled black circles. Setting the optional keyword argument ``external_viewer=true`` will render the drawing in an external viewer. The related function ``drawPdf(object, filename)`` is similar to ``draw`` but writes the visualization to a pdf file.
 
-If you want to use graph visualizations, GraphViz needs to be installed. 
+If you want to use graph visualizations, the GraphViz package needs to be installed. 
 
 .. function:: draw(::FactorGraph)
 
-	Visualizes the argument graph. A dotted green edge indicates a `wrap`.
+	Visualizes the argument graph. A dotted green edge indicates a ``wrap``.
 
-.. function:: draw(::Subraph)
+.. function:: draw(::Subgraph)
 
 	This method is only relevant when working with variational message passing and visualizes a subgraph. A dashed red edge indicates an external edge from the perspective of the argument subgraph.
 
@@ -39,18 +39,18 @@ If you want to use graph visualizations, GraphViz needs to be installed.
 Display implemented update rules
 --------------------------------
 
-The function `rules` is used to inspect the message computation rules that are implemented in ForneyLab.
+The function ``rules`` is used to inspect the message computation rules that are implemented in ForneyLab.
 
 .. function:: rules(::Node)
 
-	Tabulates all message update rules for an argument node, together with references. Passing an optional argument `format=:list` shows the actual update functions.
+	Tabulates all message update rules for an argument node, together with references. Pass the optional keyword argument ``format=:list`` to show the actual update functions.
 
 
 Verify algorithm execution
 --------------------------
 
-Sometimes you want an overview of all the computation rules that were called. This can be accomplished by calling `setVerbosity` before algorithm execution. ForneyLab now prints a table of all update calls.
+Sometimes you want an overview of all the computation rules that were executed. This can be accomplished by enabling the vebose mode using ``setVerbosity()`` before algorithm execution. ForneyLab will print a table of all update calls in verbose mode.
 
 .. function:: setVerbosity(::Bool)
 
-	Sets the verbosity.
+	Enable/disable the verbose mode.

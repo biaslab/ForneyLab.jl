@@ -43,7 +43,7 @@ The following built-in probability distributions are available: :class:`BetaDist
 .. type:: BetaDistribution
 
     :description:   Beta distribution (univariate)
-    :parameters:    ``a > 0`` ("shape", Real scalar), ``b > 0`` ("rate", Real scalar)
+    :parameters:    ``a > 0`` ("shape", real scalar), ``b > 0`` ("rate", real scalar)
     :construction:  ``BetaDistribution(a=1.0, b=1.0)``
 
 
@@ -59,14 +59,14 @@ The following built-in probability distributions are available: :class:`BetaDist
 .. type:: GammaDistribution
 
     :description:   Gamma distribution (univariate)
-    :parameters:    ``a > 0`` ("shape", Real scalar), ``b > 0`` ("rate", Real scalar)
+    :parameters:    ``a > 0`` ("shape", real scalar), ``b > 0`` ("rate", real scalar)
     :construction:  ``GammaDistribution(a=1.0, b=1.0)``
 
 
 .. type:: GaussianDistribution
 
     :description:   Gaussian distribution (multivariate)
-    :parameters:    ``m`` ("mean", Real vector), ``V`` ("variance", Real positive definite matrix), ``W`` ("precision", Real positive definite matrix), ``xi`` ("weighted mean", Real vector)
+    :parameters:    ``m`` ("mean", real vector), ``V`` ("variance", real positive definite matrix), ``W`` ("precision", real positive definite matrix), ``xi`` ("weighted mean", real vector)
     :construction:  ``GaussianDistribution(m=0.0, V=1.0)`` or ``GaussianDistribution(xi=0.0, W=1.0)`` or any other valid parameter combination.
 
     The Gaussian distribution can be parametrized in multiple ways. Depending on the application, a specific parametrization might be attractive from a computational point of view. The following combinations are valid: ``(m,V)``, ``(m,W)``, ``(xi,V)``, ``(xi,W)``.
@@ -110,21 +110,21 @@ The following built-in probability distributions are available: :class:`BetaDist
 .. type:: InverseGammaDistribution
 
     :description:   Inverse-gamma distribution (univariate)
-    :parameters:    ``a > 0`` ("shape", Real scalar), ``b > 0`` ("scale", Real scalar)
+    :parameters:    ``a > 0`` ("shape", real scalar), ``b > 0`` ("scale", real scalar)
     :construction:  ``InverseGammaDistribution(a=1.0, b=1.0)``
 
 
 .. type:: NormalGammaDistribution
 
     :description:   Normal-gamma distribution (bivariate)
-    :parameters:    ``m`` ("location", Real scalar), ``beta > 0`` ("precision", Real scalar), ``a`` ("shape", Real scalar), ``b`` ("rate", Real scalar)
+    :parameters:    ``m`` ("location", real scalar), ``beta > 0`` ("precision", real scalar), ``a`` ("shape", real scalar), ``b`` ("rate", real scalar)
     :construction:  ``NormalGammaDistribution(m=0.0, beta=1.0, a=1.0, b=1.0)``
 
 
 .. type:: StudentsTDistribution
 
     :description:   Student's t-distribution (multivariate)
-    :parameters:    ``m`` ("mean", Real vector), ``W`` ("precision", positive definite Real matrix), ``nu`` ("degrees of freedom", Real scalar)
+    :parameters:    ``m`` ("mean", real vector), ``W`` ("precision", positive definite real matrix), ``nu`` ("degrees of freedom", real scalar)
     :construction:  ``StudentsTDistribution(m, W, nu)``
 
 
@@ -133,16 +133,30 @@ Messages
 
 .. type:: Message
 
+    ::
+
+        type Message{T<:ProbabilityDistribution}
+            payload::T
+        end
+
+    Messages are passed over edges, and carry a :class:`ProbabilityDistribution` in the ``payload`` field. A ``Message`` is usually stored on an :class:`Interface`.
 
 
 Marginals
 =========
 
+Since an :class:`Edge` represents a variable in the probabilistical model, the ``edge.marginal`` field holds the marginal distribution of the corresponding variable. There are some helper functions available to work with marginals.
+
 .. function:: calculateMarginal(edge)
 
+    If the forward and backward messages on ``edge`` are calculated according to the sum-product rule, the marginal distribution of the variable represented by ``edge`` can be calculated from these messages. ``calculateMarginal(edge)`` calculates and returns the marginal distribution from the forward and backward messages.
 
 .. function:: calculateMarginal!(edge)
 
+    Identical to ``calculateMarginal(edge)``, but the calculated marginal is also written to ``edge.marginal``. 
+
 
 .. function:: getMarginalType(distributions...)
+
+    Returns the type of the marginal distribution given the types of its factors (i.e. carried by forward/backward messages). 
 
