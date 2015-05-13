@@ -145,6 +145,45 @@ In practical situations it is common for a factor graph to be a concatination of
 Interfacing to and from the graph
 =================================
 
-.. note::
+There are several helper functions that enable the user to connect the graph with the outside world. Reading input and writing output is done through buffers. Several helper functions are available to reset buffers and messages in the graph.
 
-    TODO
+Input to the graph
+------------------
+
+Read buffers hold input data that is read into the graph from the outside world. The data is stored in a ``buffer`` vector that is coupled with a terminal ``node``. Upon each call of the :func:`step()` function, the first element of each read buffer is moved to the value field of their coupled nodes.
+
+.. function:: setReadBuffer(node::TerminalNode, buffer::Vector)
+
+    Couples the vector ``buffer`` as read buffer to the :class:`TerminalNode` ``node``.
+
+.. function:: setReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector)
+
+    Couples a read buffer to a batch of nodes. This function can be used to couple input data with a graph that models multiple (time) slices, such as a (mini-)batch. Upon each :func:`step()`, a number of elements the length of the ``nodes`` vector is moved from the ``buffer`` to the ``nodes`` value fields (in their respective order).  
+
+Output from the graph
+---------------------
+
+Write buffers push message payloads and marginals on a specific interface or edge to an output vector. Upon definition, these functions return an empty output buffer that grows upon each call to :func:`step()`.
+
+.. function:: setWriteBuffer(interface::Interface)
+
+    Writes the message payload on ``interface`` to a buffer upon each step.
+
+.. function:: setWriteBuffer(edge::Edge)
+
+    Writes the marginal distribution on ``edge`` to a buffer upon each step.
+
+Resetting the graph
+-------------------
+
+.. function:: clearBuffers()
+
+    Removes all couplings with read and write buffers.
+
+.. function:: emptyWriteBuffers()
+
+    Resets all write buffers to an empty vector. Pointers to the write buffers are preserved.
+
+.. function:: clearMessages!()
+
+    Clears all messages in the graph.
