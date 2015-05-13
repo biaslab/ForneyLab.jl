@@ -2,6 +2,11 @@
  Introduction
 **************
 
+Several pages in the documentation are accompanied with demos that showcase ForneyLab functionality in practice. Relevant demos are referenced at the beginning of a section. For example, an introductory demo is available here:
+
+.. seealso::
+    **Demo:** `Basics <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/01_basics.ipynb>`_
+
 A factor graph is a graphical model that encodes a factorization of the joint probability distribution over all variables involved. In a Forney-style factor graph, every variable is represented by an edge. The nodes connecting the edges represent the factors. 
 
 We will introduce the basic building blocks using a simple example. Consider the following probabilistical model (random walk):

@@ -50,6 +50,9 @@ An :class:`Algorithm` instance can be executed on a :class:`FactorGraph`. The fo
 Schedules
 =========
 
+.. seealso::
+    **Demo:** `Schedules in loopy graphs <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/06_loopy_graphs.ipynb>`_
+
 Algorithms executed on factor graphs are usually based on *message passing*. In message passing, a sequence of messages is calculated, where the next message usually depends on previously calculated messages. A ``Schedule`` defines a sequence of message calculations.
 
 .. type:: Schedule
@@ -90,6 +93,9 @@ ForneyLab includes commonly used inference algorithms, which are implemented in 
 The sum-product algorithm
 =========================
 
+.. seealso::
+    **Demo:** `Simple Kalman filter <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/04_simple_kalman.ipynb>`_
+
 The ``SumProduct`` submodule implements the sum-product algorithm. Most importantly, the submodule holds specific ``SumProduct.Algorithm`` constructors and an automatic scheduler for generating a sum-product message passing schedule.
 
 Upon algorithm construction the generated schedule is stored in the ``:schedule`` key of the ``algorithm.fields`` dictionary.
@@ -127,6 +133,10 @@ Automatic scheduler
 
 Variational message passing
 ===========================
+
+.. seealso::
+    | **Demo:** `Naive variational message passing <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/07_naive_variational_message_passing.ipynb>`_
+    | **Demo:** `Structured variational message passing <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/08_structured_variational_message_passing.ipynb>`_
 
 The variational message passing (VMP) submodule implements VMP as described by Dauwels in his 2007 paper "On variational message passing on factor graphs". The module is capable of conducting both mean field and structured VMP and implements several algorithm specific constructors, an auto scheduler and several helper types required for execution.
 

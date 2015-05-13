@@ -145,6 +145,9 @@ Messages
 Marginals
 =========
 
+.. seealso::
+    **Demo:** `Marginals <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/02_marginals.ipynb>`_
+
 Since an :class:`Edge` represents a variable in the probabilistical model, the ``edge.marginal`` field holds the marginal distribution of the corresponding variable. There are some helper functions available to work with marginals.
 
 .. function:: calculateMarginal(edge)

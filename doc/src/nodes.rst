@@ -240,6 +240,9 @@ Elementary nodes
 Composite nodes
 ~~~~~~~~~~~~~~~
 
+.. seealso::
+    **Demo:** `Kalman filter with composite node <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/05_kalman_composite.ipynb>`_
+
 .. note::
 
     TODO

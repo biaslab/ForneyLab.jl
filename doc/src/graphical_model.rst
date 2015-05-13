@@ -2,6 +2,9 @@
  Setting up the graphical model
 *******************************
 
+.. seealso::
+    **Demo:** `Basics <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/01_basics.ipynb>`_
+
 Building the graphical model amounts to adding nodes and edges to a :class:`FactorGraph`. This chapter introduces the main types and functions that are involved in setting up the graphical model. For some examples, have a look at the following demos: ``random_walk``, ``simple_kalman``.
 
 The ``FactorGraph`` type
@@ -112,6 +115,9 @@ ForneyLab does not allow 'half-edges' that are connected to just one node. Inste
 Chaining factor graph sections
 ==============================
 
+.. seealso::
+    **Demo:** `Random walk <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/03_random_walk.ipynb>`_
+
 In practical situations it is common for a factor graph to be a concatination of identical sections. In such cases it might not be necessary to build the entire factor graph explictly. Instead, it is possible to just build one section, and define how the sections are chained together. This can be done in ForneyLab by defining *wraps*::
 
     # Random walk chain
@@ -145,6 +151,9 @@ In practical situations it is common for a factor graph to be a concatination of
 Interfacing to and from the graph
 =================================
 
+.. seealso::
+    **Demo:** `Simple Kalman filter <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/04_simple_kalman.ipynb>`_
+
 There are several helper functions that enable the user to connect the graph with the outside world. Reading input and writing output is done through buffers. Several helper functions are available to reset buffers and messages in the graph.
 
 Input to the graph
@@ -158,20 +167,20 @@ Read buffers hold input data that is read into the graph from the outside world.
 
 .. function:: setReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector)
 
-    Couples a read buffer to a batch of nodes. This function can be used to couple input data with a graph that models multiple (time) slices, such as a (mini-)batch. Upon each :func:`step()`, a number of elements the length of the ``nodes`` vector is moved from the ``buffer`` to the ``nodes`` value fields (in their respective order).  
+    Couples a read buffer to a batch of nodes. This function can be used to couple input data with a graph that models multiple (time) slices, such as a (mini-)batch. Upon each :func:`step()`, a number of elements the length of the ``nodes`` vector is moved from the beginning of ``buffer`` to the ``nodes`` value fields (in their respective order).  
 
 Output from the graph
 ---------------------
 
 Write buffers push message payloads and marginals on a specific interface or edge to an output vector. Upon definition, these functions return an empty output buffer that grows upon each call to :func:`step()`.
 
-.. function:: setWriteBuffer(interface::Interface)
+.. function:: buffer = setWriteBuffer(interface::Interface)
 
-    Writes the message payload on ``interface`` to a buffer upon each step.
+    Pushes the message payload on ``interface`` to ``buffer`` upon each step.
 
-.. function:: setWriteBuffer(edge::Edge)
+.. function:: buffer = setWriteBuffer(edge::Edge)
 
-    Writes the marginal distribution on ``edge`` to a buffer upon each step.
+    Pushes the marginal distribution on ``edge`` to ``buffer`` upon each step.
 
 Resetting the graph
 -------------------
