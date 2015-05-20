@@ -27,4 +27,5 @@ using ForneyLab
 ```
 Once imported, one can instantiate nodes and edges to build a factor graph. It is also possible to create custom nodes and distribution types. When the factor graph has been defined, message passing can be performed on the graph. 
 
-There are [demos](https://github.com/spsbrats/ForneyLab.jl/wiki/ForneyLab-demos) available to get you started (which can also be accessed directly through [here](http://192.71.151.86/ForneyLab.jl-demos/)).
+There are [demos](https://github.com/spsbrats/ForneyLab.jl/wiki/ForneyLab-demos) available to get you started. 
+More details can be found in the [documentation](http://spsbrats.github.io/ForneyLab/documentation/).
