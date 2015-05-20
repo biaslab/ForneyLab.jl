@@ -30,7 +30,7 @@ facts("GaussianDistribution unit tests") do
     end
 
     context("GaussianDistribution can be sampled") do
-        @fact typeof(sample(GaussianDistribution(m=[1.2, 2.7], V=[2.0 -0.5; -0.5 1.5]))) => DeltaDistribution{Array{Float64, 1}}
+        @fact typeof(drawSample(GaussianDistribution(m=[1.2, 2.7], V=[2.0 -0.5; -0.5 1.5]))) => Array{Float64, 1}
     end
 
     context("Underdetermined GaussianDistribution should be detected by isWellDefined()") do
