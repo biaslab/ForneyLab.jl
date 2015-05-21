@@ -29,7 +29,6 @@
 export SigmoidNode
 
 type SigmoidNode <: Node
-    use_composite_update_rules::Bool
     a::Float64
     b::Float64
     gamma::Float64
@@ -38,10 +37,9 @@ type SigmoidNode <: Node
     in1::Interface
     out::Interface
 
-    function SigmoidNode(use_composite_update_rules::Bool=true; a=1.0, b=1.0, gamma=huge(), name=unnamedStr())
-        use_composite_update_rules == true || error("SigmoidNode $(name) does not support explicit internal message passing")
+    function SigmoidNode(; a=1.0, b=1.0, gamma=huge(), name=unnamedStr())
         gamma > 0.0 || error("Gamma for SigmoidNode $(name) must be positive")
-        self = new(use_composite_update_rules, a, b, gamma, name, Array(Interface, 2))
+        self = new(a, b, gamma, name, Array(Interface, 2))
 
         # Set up the interfaces
         param_list = [:in1, :out]

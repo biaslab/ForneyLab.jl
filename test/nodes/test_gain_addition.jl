@@ -14,22 +14,6 @@ facts("GainAdditionNode unit tests") do
         @fact typeof(node.A) => Array{Float64, 2}
     end
 
-    context("GainAdditionNode() should define an internal AdditionNode and FixedGainNode") do
-        FactorGraph()
-        node = GainAdditionNode([5.0], false)
-        @fact typeof(node.addition_node) => AdditionNode
-        @fact typeof(node.fixed_gain_node) => FixedGainNode
-        @fact node.fixed_gain_node.A => reshape([5.0], 1, 1)
-    end
-
-    context("GainAdditionNode() should point its own interfaces to the internal node interfaces") do
-        FactorGraph()
-        node = GainAdditionNode([1.0], false)
-        @fact node.in1.child => node.fixed_gain_node.interfaces[1]
-        @fact node.in2.child => node.addition_node.interfaces[2]
-        @fact node.out.child => node.addition_node.out
-    end
-
     msg_internal = Message(GaussianDistribution())
     context("GainAdditionNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result (m,V) parametrization") do
         A = reshape([2.0, 3.0, 3.0, 2.0], 2, 2)
@@ -38,7 +22,7 @@ facts("GainAdditionNode unit tests") do
         node = initializeGainAdditionNode(A, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing])
         msg_internal = execute(SumProduct.generateSchedule(node.interfaces[3]))
         FactorGraph()
-        validateOutboundMessage(GainAdditionNode(A, true), 
+        validateOutboundMessage(GainAdditionNode(A), 
                                 3, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing],
                                 msg_internal.payload)
@@ -51,7 +35,7 @@ facts("GainAdditionNode unit tests") do
         node = initializeGainAdditionNode(A, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
         msg_internal = execute(SumProduct.generateSchedule(node.interfaces[2]))
         FactorGraph()
-        validateOutboundMessage(GainAdditionNode(A, true), 
+        validateOutboundMessage(GainAdditionNode(A), 
                                 2, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))],
                                 msg_internal.payload)
@@ -64,7 +48,7 @@ facts("GainAdditionNode unit tests") do
         node = initializeGainAdditionNode(A, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
         msg_internal = execute(SumProduct.generateSchedule(node.interfaces[3]))
         FactorGraph()
-        validateOutboundMessage(GainAdditionNode(A, true), 
+        validateOutboundMessage(GainAdditionNode(A), 
                                 3, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
                                 msg_internal.payload)
@@ -77,7 +61,7 @@ facts("GainAdditionNode unit tests") do
         node = initializeGainAdditionNode(A, [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
         msg_internal = execute(SumProduct.generateSchedule(node.interfaces[2]))
         FactorGraph()
-        validateOutboundMessage(GainAdditionNode(A, true), 
+        validateOutboundMessage(GainAdditionNode(A), 
                                 2, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))],
                                 msg_internal.payload)
@@ -90,7 +74,7 @@ facts("GainAdditionNode unit tests") do
         node = initializeGainAdditionNode(A, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
         msg_internal = execute(SumProduct.generateSchedule(node.interfaces[3]))
         FactorGraph()
-        validateOutboundMessage(GainAdditionNode(A, true), 
+        validateOutboundMessage(GainAdditionNode(A), 
                                 3, 
                                 [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
                                 msg_internal.payload)
@@ -103,7 +87,7 @@ facts("GainAdditionNode unit tests") do
         node = initializeGainAdditionNode(A, [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
         msg_internal = execute(SumProduct.generateSchedule(node.interfaces[2]))
         FactorGraph()
-        validateOutboundMessage(GainAdditionNode(A, true), 
+        validateOutboundMessage(GainAdditionNode(A), 
                                 2, 
                                 [Message(GaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))],
                                 msg_internal.payload)
@@ -116,7 +100,7 @@ facts("GainAdditionNode unit tests") do
         node = initializeGainAdditionNode(A, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
         msg_internal = execute(SumProduct.generateSchedule(node.interfaces[3]))
         FactorGraph()
-        validateOutboundMessage(GainAdditionNode(A, true), 
+        validateOutboundMessage(GainAdditionNode(A), 
                                 3, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing],
                                 msg_internal.payload)
@@ -129,7 +113,7 @@ facts("GainAdditionNode unit tests") do
         node = initializeGainAdditionNode(A, [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
         msg_internal = execute(SumProduct.generateSchedule(node.interfaces[2]))
         FactorGraph()
-        validateOutboundMessage(GainAdditionNode(A, true), 
+        validateOutboundMessage(GainAdditionNode(A), 
                                 2, 
                                 [Message(GaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(GaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))],
                                 msg_internal.payload)
@@ -139,14 +123,3 @@ end
 #####################
 # Integration tests
 #####################
-
-facts("GainAdditionNode integration tests") do
-    context("Edge can connect a normal node to a GainAdditionNode") do
-        (c_node, node) = initializeTerminalAndGainAddNode()
-        Edge(node.out, c_node.in2)
-        @fact node.out.partner => c_node.in2 # Set correct partners
-        @fact c_node.in2.partner => node.out
-        @fact c_node.addition_node.in2.partner => node.out 
-        @fact c_node.in2.child => c_node.addition_node.in2 # Set child 
-    end
-end

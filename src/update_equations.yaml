@@ -80,6 +80,15 @@ rules:
                 <pre>       v           </pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$ for $m_x > 0$"
 
+  equality_inverse_gamma_delta:
+    node:       EqualityNode
+    reference:  ""
+    diagram:    <pre>x~δ(m)   y~Ig(a,b) </pre>
+                <pre>  --->[=]<---      </pre>
+                <pre>       |z~δ(m)     </pre>
+                <pre>       v           </pre>
+    formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$ for $m_x > 0$"
+
   addition_gaussian_forward:
     node:       AdditionNode
     reference:  "Korl (2005), table 4.1"
@@ -158,6 +167,20 @@ rules:
                 <pre>             v              </pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=m_x+V_x A^T G (m_y - Am_x), V_z=V_x - V_x A^T G A V_x)$, with $G = (V_y + AV_xA^T)^{-1}$"
 
+  gain_equality_gaussian_forward:
+    node:       GainEqualityNode
+    reference:  "Korl (2005), table 4.1"
+    diagram:    <pre>         _________          </pre>
+                <pre>x~N(m,V) |       | z~N(m,V) </pre>
+                <pre>    -----|->[=]<-|-----     </pre>
+                <pre>         |   |   |          </pre>
+                <pre>         |   v   |          </pre>
+                <pre>         |  [A]  |          </pre>
+                <pre>         |___|___|          </pre>
+                <pre>             | y~N(m,V)     </pre>
+                <pre>             v              </pre>
+    formula:    "$\\overrightarrow{\\mu}(y)$: Combination of update rules for equality and fixed gain."
+
   gain_addition_gaussian_forward:
     node:       GainAdditionNode
     reference:  "Korl (2005), table 4.1"
@@ -171,7 +194,20 @@ rules:
                 <pre>          |_______|         </pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=m_x+Am_y, V_z=V_x + A V_yA^T)$"
 
-  gain_addition_gaussian_backward:
+  gain_addition_gaussian_backward_in1:
+    node:       GainAdditionNode
+    reference:  "Korl (2005), table 4.1"
+    diagram:    <pre>              | y~N(m,V)    </pre>
+                <pre>          ____|____         </pre>
+                <pre>          |   v   |         </pre>
+                <pre>          |  [A]  |         </pre>
+                <pre>          |   |   |         </pre>
+                <pre> x~N(m,V) |   v   | z~N(m,V)</pre>
+                <pre>     -----|->[+]--|---->    </pre>
+                <pre>          |_______|         </pre>
+    formula:    "$\\overleftarrow{\\mu}(y)$: combination of fixed gain and addition node"
+
+  gain_addition_gaussian_backward_in2:
     node:       GainAdditionNode
     reference:  "Korl (2005), table 4.1, by symmetry"
     diagram:    <pre>              | y~N(m,V)    </pre>

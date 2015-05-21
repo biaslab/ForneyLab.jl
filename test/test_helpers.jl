@@ -7,6 +7,7 @@ facts("Helper function unit tests") do
         @fact typeof(ForneyLab.ensureMatrix([1.0])) => Array{Float64, 2} # Cast 1D to 2D array
         @fact ForneyLab.ensureMatrix([1.0]) => reshape([1.0], 1, 1)
         @fact ForneyLab.ensureMatrix(eye(2)) => eye(2)
+        @fact ForneyLab.ensureMatrix(1.0) => eye(1)
     end
 
     context("isApproxEqual should work for scalars, vectors and matrices") do

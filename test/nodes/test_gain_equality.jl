@@ -13,20 +13,6 @@ facts("GainEqualityNode unit tests") do
         @fact typeof(node.A) => Array{Float64, 2}
     end
 
-    context("GainEqualityNode() should define an internal Equality and FixedGain node") do
-        node = GainEqualityNode([5.0], false)
-        @fact typeof(node.equality_node) => EqualityNode
-        @fact typeof(node.fixed_gain_node) => FixedGainNode
-        @fact node.fixed_gain_node.A => reshape([5.0], 1, 1)
-    end
-
-    context("GainEqualityNode() should point its own interfaces to the internal node interfaces") do
-        node = GainEqualityNode([1.0], false)
-        @fact node.in1.child => node.equality_node.interfaces[1]
-        @fact node.in2.child => node.equality_node.interfaces[3]
-        @fact node.out.child => node.fixed_gain_node.out
-    end
-
     context("GainEqualityNode should propagate a GaussianDistribution with (xi,W) parametrization") do
         # Forward
         node = initializeGainEqualityNode(2.0*eye(2), [Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), Message(GaussianDistribution(W=reshape([1.0, 0.5, 0.5, 1.0], 2, 2), xi=[1.0, 2.0])), nothing])

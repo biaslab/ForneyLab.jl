@@ -42,6 +42,7 @@ type GainEqualityNode <: CompositeNode
     in1::Interface
     in2::Interface
     out::Interface
+    A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
     function GainEqualityNode(A::Union(Array{Float64},Float64)=1.0; name=unnamedStr())
         self = new(ensureMatrix(deepcopy(A)), name, Array(Interface, 3))
@@ -50,6 +51,12 @@ type GainEqualityNode <: CompositeNode
         for i = 1:length(named_handle_list)
             self.interfaces[i] = Interface(self)
             setfield!(self, named_handle_list[i], self.interfaces[i]) # Set named interface handle
+        end
+
+        try
+            self.A_inv = inv(self.A)
+        catch
+            warn("The specified multiplier for $(typeof(self)) $(self.name) is not invertible. This might cause problems. Double check that this is what you want.")
         end
 
         return self
@@ -75,7 +82,12 @@ function sumProduct!(node::GainEqualityNode,
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Nothing)
     # Forward message (towards out)
-    node.interfaces[outbound_interface_id].message = execute(convert(Schedule, node.interfaces[outbound_interface_id].internal_schedule))
+    (outbound_interface_id == 3) || error("The outbound interface id does not match with the calling signature.")
+    dist_temp = GaussianDistribution()
+    equalityGaussianRule!(dist_temp, msg_in1.payload, msg_in2.payload)
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    fixedGainGaussianForwardRule!(dist_out, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
+
     return (:gain_equality_gaussian_forward,
             node.interfaces[outbound_interface_id].message)
 end

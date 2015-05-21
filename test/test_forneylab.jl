@@ -45,11 +45,12 @@ include("nodes/test_equality.jl")
 include("nodes/test_fixed_gain.jl")
 include("nodes/test_gaussian.jl")
 include("nodes/test_exponential.jl")
+include("nodes/test_gain_addition.jl")
+include("nodes/test_gain_equality.jl")
+include("nodes/test_sigmoid.jl")
 
 # Composite nodes
-# include("nodes/composite/test_gain_addition.jl")
-# include("nodes/composite/test_gain_equality.jl")
-# include("nodes/composite/test_sigmoid.jl")
+include("nodes/test_composite.jl")
 
 # Message passing
 include("test_message_passing.jl")

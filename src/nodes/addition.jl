@@ -69,47 +69,83 @@ backwardAdditionWRule{T<:Number}(W_x::Array{T, 2}, W_z::Array{T, 2}) = W_x * pin
 backwardAdditionXiRule{T<:Number}(V_x::Array{T, 2}, xi_x::Array{T, 1}, V_z::Array{T, 2}, xi_z::Array{T, 1}) = pinv(V_x + V_z) * (V_z*xi_z - V_x*xi_x)
 
 # Message towards OUT
+
+function additionGaussianForwardRule!(dist_result::GaussianDistribution, dist_1::GaussianDistribution, dist_2::GaussianDistribution)
+    # Calculations for a gaussian message type; Korl (2005), table 4.1
+
+    if isValid(dist_1.m) && isValid(dist_1.V) && isValid(dist_2.m) && isValid(dist_2.V)
+        dist_result.m = forwardAdditionMRule(dist_1.m, dist_2.m)
+        dist_result.V = forwardAdditionVRule(dist_1.V, dist_2.V)
+        invalidate!(dist_result.W) 
+        invalidate!(dist_result.xi)
+    elseif isValid(dist_1.m) && isValid(dist_1.W) && isValid(dist_2.m) && isValid(dist_2.W)
+        dist_result.m = forwardAdditionMRule(dist_1.m, dist_2.m)
+        invalidate!(dist_result.V) 
+        dist_result.W = forwardAdditionWRule(dist_1.W, dist_2.W)
+        invalidate!(dist_result.xi)
+    elseif isValid(dist_1.xi) && isValid(dist_1.V) && isValid(dist_2.xi) && isValid(dist_2.V)
+        invalidate!(dist_result.m) 
+        dist_result.V = forwardAdditionVRule(dist_1.V, dist_2.V)
+        invalidate!(dist_result.W) 
+        dist_result.xi= forwardAdditionXiRule(dist_1.V, dist_1.xi, dist_2.V, dist_2.xi)
+    else
+        # Last resort: calculate (m,V) parametrization for both inbound messages
+        ensureMVParametrization!(dist_1)
+        ensureMVParametrization!(dist_2)
+        dist_result.m = forwardAdditionMRule(dist_1.m, dist_2.m)
+        dist_result.V = forwardAdditionVRule(dist_1.V, dist_2.V)
+        invalidate!(dist_result.W) 
+        invalidate!(dist_result.xi)
+    end
+
+    return dist_result
+end
+
 function sumProduct!(node::AdditionNode,
                             outbound_interface_id::Int,
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Nothing)
     dist_out = ensureMessage!(node.out, GaussianDistribution).payload
-    dist_1 = msg_in1.payload
-    dist_2 = msg_in2.payload
 
-    # Select parameterization
-    # Order is from least to most computationally intensive
-    if isValid(dist_1.m) && isValid(dist_1.V) && isValid(dist_2.m) && isValid(dist_2.V)
-        dist_out.m = forwardAdditionMRule(dist_1.m, dist_2.m)
-        dist_out.V = forwardAdditionVRule(dist_1.V, dist_2.V)
-        invalidate!(dist_out.W) 
-        invalidate!(dist_out.xi)
-    elseif isValid(dist_1.m) && isValid(dist_1.W) && isValid(dist_2.m) && isValid(dist_2.W)
-        dist_out.m = forwardAdditionMRule(dist_1.m, dist_2.m)
-        invalidate!(dist_out.V) 
-        dist_out.W = forwardAdditionWRule(dist_1.W, dist_2.W)
-        invalidate!(dist_out.xi)
-    elseif isValid(dist_1.xi) && isValid(dist_1.V) && isValid(dist_2.xi) && isValid(dist_2.V)
-        invalidate!(dist_out.m) 
-        dist_out.V = forwardAdditionVRule(dist_1.V, dist_2.V)
-        invalidate!(dist_out.W) 
-        dist_out.xi= forwardAdditionXiRule(dist_1.V, dist_1.xi, dist_2.V, dist_2.xi)
-    else
-        # Last resort: calculate (m,V) parametrization for both inbound messages
-        ensureMVParametrization!(dist_1)
-        ensureMVParametrization!(dist_2)
-        dist_out.m = forwardAdditionMRule(dist_1.m, dist_2.m)
-        dist_out.V = forwardAdditionVRule(dist_1.V, dist_2.V)
-        invalidate!(dist_out.W) 
-        invalidate!(dist_out.xi)
-    end
+    additionGaussianForwardRule!(dist_out, msg_in1.payload, msg_in2.payload)
 
     return (:addition_gaussian_forward,
             node.interfaces[outbound_interface_id].message)
 end
 
 # Message towards IN1 or IN2
+function additionGaussianBackwardRule!(dist_result::GaussianDistribution, dist_1::GaussianDistribution, dist_3::GaussianDistribution)
+    # Calculations for a gaussian message type; Korl (2005), table 4.1
+
+    if isValid(dist_1.m) && isValid(dist_1.V) && isValid(dist_3.m) && isValid(dist_3.V)
+        dist_result.m = backwardAdditionMRule(dist_1.m, dist_3.m)
+        dist_result.V = backwardAdditionVRule(dist_1.V, dist_3.V)
+        invalidate!(dist_result.W) 
+        invalidate!(dist_result.xi) 
+    elseif isValid(dist_1.m) && isValid(dist_1.W) && isValid(dist_3.m) && isValid(dist_3.W)
+        dist_result.m = backwardAdditionMRule(dist_1.m, dist_3.m)
+        invalidate!(dist_result.V) 
+        dist_result.W = backwardAdditionWRule(dist_1.W, dist_3.W)
+        invalidate!(dist_result.xi) 
+    elseif isValid(dist_1.xi) && isValid(dist_1.V) && isValid(dist_3.xi) && isValid(dist_3.V)
+        invalidate!(dist_result.m) 
+        dist_result.V = backwardAdditionVRule(dist_1.V, dist_3.V)
+        invalidate!(dist_result.W) 
+        dist_result.xi = backwardAdditionXiRule(dist_1.V, dist_1.xi, dist_3.V, dist_3.xi)
+    else
+        # Last resort: calculate (m,V) parametrization for both inbound messages
+        ensureMVParametrization!(dist_1)
+        ensureMVParametrization!(dist_3)
+        dist_result.m = backwardAdditionMRule(dist_1.m, dist_3.m)
+        dist_result.V = backwardAdditionVRule(dist_1.V, dist_3.V)
+        invalidate!(dist_result.W) 
+        invalidate!(dist_result.xi) 
+    end
+
+    return dist_result
+end
+
 function sumProduct!(node::AdditionNode,
                             outbound_interface_id::Int,
                             msg_in1::Message{GaussianDistribution},
@@ -117,37 +153,7 @@ function sumProduct!(node::AdditionNode,
                             msg_out::Message{GaussianDistribution})
     dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    # Calculations for the GaussianDistribution type; Korl (2005), table 4.1
-    # Backward message, one message on the incoming edge and one on the outgoing edge.
-    dist_1 = msg_in1.payload
-    dist_3 = msg_out.payload
-
-    # Select parameterization
-    # Order is from least to most computationally intensive
-    if isValid(dist_1.m) && isValid(dist_1.V) && isValid(dist_3.m) && isValid(dist_3.V)
-        dist_out.m = backwardAdditionMRule(dist_1.m, dist_3.m)
-        dist_out.V = backwardAdditionVRule(dist_1.V, dist_3.V)
-        invalidate!(dist_out.W) 
-        invalidate!(dist_out.xi) 
-    elseif isValid(dist_1.m) && isValid(dist_1.W) && isValid(dist_3.m) && isValid(dist_3.W)
-        dist_out.m = backwardAdditionMRule(dist_1.m, dist_3.m)
-        invalidate!(dist_out.V) 
-        dist_out.W = backwardAdditionWRule(dist_1.W, dist_3.W)
-        invalidate!(dist_out.xi) 
-    elseif isValid(dist_1.xi) && isValid(dist_1.V) && isValid(dist_3.xi) && isValid(dist_3.V)
-        invalidate!(dist_out.m) 
-        dist_out.V = backwardAdditionVRule(dist_1.V, dist_3.V)
-        invalidate!(dist_out.W) 
-        dist_out.xi = backwardAdditionXiRule(dist_1.V, dist_1.xi, dist_3.V, dist_3.xi)
-    else
-        # Last resort: calculate (m,V) parametrization for both inbound messages
-        ensureMVParametrization!(dist_1)
-        ensureMVParametrization!(dist_3)
-        dist_out.m = backwardAdditionMRule(dist_1.m, dist_3.m)
-        dist_out.V = backwardAdditionVRule(dist_1.V, dist_3.V)
-        invalidate!(dist_out.W) 
-        invalidate!(dist_out.xi) 
-    end
+    additionGaussianBackwardRule!(dist_out, msg_in1.payload, msg_out.payload)
 
     return (:addition_gaussian_backward,
             node.interfaces[outbound_interface_id].message)

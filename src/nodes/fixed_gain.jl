@@ -166,7 +166,6 @@ function sumProduct!(node::FixedGainNode,
                             outbound_interface_id::Int,
                             msg_in1::Message{GaussianDistribution},
                             ::Nothing)
-
     dist_2 = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if outbound_interface_id == 2
