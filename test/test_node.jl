@@ -32,8 +32,8 @@ facts("General node properties unit tests") do
     end
 
     for node_type in [subtypes(CompositeNode)]
-        context("$(node_type) should have property use_composite_update_rules") do
-            @fact node_type().use_composite_update_rules => true || false
+        context("$(node_type) should have certain properties TODO") do
+            @pending true=>false
         end
     end
 end
@@ -94,7 +94,7 @@ facts("Functions for collecting nodes") do
 
         FactorGraph()
         # Composite node test
-        compnode = GainEqualityCompositeNode();
+        compnode = GainEqualityNode();
         found_nodes = nodes(compnode, depth=1)
         @fact length(found_nodes) => 2
         @fact compnode.equality_node in found_nodes => true

@@ -107,7 +107,7 @@ Built-in nodes
 
 The following built-in 'elementary' nodes are available in ForneyLab: :class:`AdditionNode`, :class:`EqualityNode`, :class:`ExponentialNode`, :class:`FixedGainNode`, :class:`GaussianNode`, :class:`TerminalNode`.
 
-There are aso some built-in composite nodes: :class:`GainAdditionCompositeNode`, :class:`GainEqualityCompositeNode`.
+There are aso some built-in composite nodes: :class:`GainAdditionNode`, :class:`GainEqualityNode`.
 
 Elementary nodes
 ~~~~~~~~~~~~~~~~
@@ -174,6 +174,8 @@ Elementary nodes
     |                 |                         | ``Msg{Delta}`` and ``Msg{Gaussian}``              |
     +                 +                         +---------------------------------------------------+
     |                 |                         | ``Msg{Delta}`` and ``Msg{Gamma}``                 |
+    +                 +                         +---------------------------------------------------+
+    |                 |                         | ``Msg{Delta}`` and ``Msg{InvGamma}``              |
     +                 +-------------------------+-------------------------+-------------------------+
     |                 | ``Msg{Beta}``           | ``Msg{Beta}`` and ``Msg{Beta}``                   | 
     +                 +-------------------------+-------------------------+-------------------------+

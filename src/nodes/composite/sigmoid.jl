@@ -1,5 +1,5 @@
 ############################################
-# SigmoidCompositeNode
+# SigmoidNode
 ############################################
 # Description:
 #   Transformation through a softened sigmoid function
@@ -15,7 +15,7 @@
 #         with sigmoid(x; a, b) = 1/(1 + a*exp(-b*x))
 #
 #   Example:
-#       SigmoidCompositeNode(a, b; name="my_node")
+#       SigmoidNode(a, b; name="my_node")
 #
 # Interface ids, (names) and supported message types:
 #   1. (in1):
@@ -26,9 +26,9 @@
 #       BetaDistribution
 ############################################
 
-export SigmoidCompositeNode
+export SigmoidNode
 
-type SigmoidCompositeNode <: Node
+type SigmoidNode <: Node
     use_composite_update_rules::Bool
     a::Float64
     b::Float64
@@ -38,9 +38,9 @@ type SigmoidCompositeNode <: Node
     in1::Interface
     out::Interface
 
-    function SigmoidCompositeNode(use_composite_update_rules::Bool=true; a=1.0, b=1.0, gamma=huge(), name=unnamedStr())
-        use_composite_update_rules == true || error("SigmoidCompositeNode $(name) does not support explicit internal message passing")
-        gamma > 0.0 || error("Gamma for SigmoidCompositeNode $(name) must be positive")
+    function SigmoidNode(use_composite_update_rules::Bool=true; a=1.0, b=1.0, gamma=huge(), name=unnamedStr())
+        use_composite_update_rules == true || error("SigmoidNode $(name) does not support explicit internal message passing")
+        gamma > 0.0 || error("Gamma for SigmoidNode $(name) must be positive")
         self = new(use_composite_update_rules, a, b, gamma, name, Array(Interface, 2))
 
         # Set up the interfaces
@@ -54,19 +54,19 @@ type SigmoidCompositeNode <: Node
     end
 end
 
-isDeterministic(::SigmoidCompositeNode) = false
+isDeterministic(::SigmoidNode) = false
 
 ############################################
 # Standard update functions
 ############################################
 
-function sumProduct!(node::SigmoidCompositeNode,
+function sumProduct!(node::SigmoidNode,
                      outbound_interface_id::Int,
                      msg_in1::Message{GaussianDistribution},
                      ::Nothing)
 
     ensureMWParametrization!(msg_in1.payload)
-    (length(msg_in1.payload.m) == 1) || error("SigmoidCompositeNode only implemented for unvariate distributions")
+    (length(msg_in1.payload.m) == 1) || error("SigmoidNode only implemented for unvariate distributions")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_id], BetaDistribution).payload
     # Numeric optimization by minimizing KL divergence between beta and the unnormalized analytic outgoing distribution
 
@@ -90,7 +90,7 @@ function sumProduct!(node::SigmoidCompositeNode,
             node.interfaces[outbound_interface_id].message)
 end
 
-function sumProduct!(node::SigmoidCompositeNode,
+function sumProduct!(node::SigmoidNode,
                      outbound_interface_id::Int,
                      ::Nothing,
                      msg_out::Message{BetaDistribution})
@@ -121,13 +121,13 @@ end
 # Variational update functions
 ############################################
 
-function vmp!(node::SigmoidCompositeNode,
+function vmp!(node::SigmoidNode,
               outbound_interface_id::Int,
               dist_in1::GaussianDistribution,
               ::Nothing)
 
     ensureMWParametrization!(dist_in1)
-    (length(dist_in1.m) == 1) || error("SigmoidCompositeNode only implemented for unvariate distributions")
+    (length(dist_in1.m) == 1) || error("SigmoidNode only implemented for unvariate distributions")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_id], BetaDistribution).payload
     # Numeric optimization by minimizing KL divergence between beta and the unnormalized analytic outgoing distribution
 
@@ -148,7 +148,7 @@ function vmp!(node::SigmoidCompositeNode,
             node.interfaces[outbound_interface_id].message)
 end
 
-function vmp!(node::SigmoidCompositeNode,
+function vmp!(node::SigmoidNode,
               outbound_interface_id::Int,
               ::Nothing,
               dist_out::BetaDistribution)

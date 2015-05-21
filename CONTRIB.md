@@ -29,7 +29,7 @@ We use the default [Julia style conventions](http://julia.readthedocs.org/en/lat
 Apart from this, there are some project-specific conventions:
 
 - The name of a subtype of `Node` always ends in `Node`. Example: `EqualityNode`.
-- The type name of a composite node always ends in `CompositeNode`. Example: `GainEqualityCompositeNode`.
+- The type name of a composite node always ends in `CompositeNode`. Example: `GainEqualityNode`.
 - The name of a subtype of `ProbabilityDistribution` always ends in `Distribution`. Example: `GaussianDistribution`.
 
 Testing setup

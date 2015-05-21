@@ -265,12 +265,12 @@ function initializeTerminalAndGainAddNode()
     #    |    ...   |
 
     FactorGraph()
-    c_node = GainAdditionCompositeNode([1.0], false)
+    c_node = GainAdditionNode([1.0], false)
     node = TerminalNode()
     return(c_node, node)
 end
 
-function initializeGainAdditionCompositeNode(A::Array, use_composite_update_rules::Bool, msgs::Array{Any})
+function initializeGainAdditionNode(A::Array, msgs::Array{Any})
     # Set up a gain addition node and prepare the messages
     # A MockNode is connected for each argument message
     #
@@ -286,7 +286,7 @@ function initializeGainAdditionCompositeNode(A::Array, use_composite_update_rule
     #        |_______|
 
     FactorGraph()
-    gac_node = GainAdditionCompositeNode(A, use_composite_update_rules)
+    gac_node = GainAdditionNode(A)
     interface_count = 1
     for msg in msgs
         if msg == nothing
@@ -314,12 +314,12 @@ function initializeTerminalAndGainEqNode()
     #    |    ...   |
 
     FactorGraph()
-    c_node = GainEqualityCompositeNode([1.0], false)
+    c_node = GainEqualityNode([1.0], false)
     node = TerminalNode()
     return(c_node, node)
 end
 
-function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rules::Bool, msgs::Array{Any})
+function initializeGainEqualityNode(A::Array, msgs::Array{Any})
     # Set up a gain equality node and prepare the messages
     # A MockNode is connected for each argument message
     #
@@ -334,7 +334,7 @@ function initializeGainEqualityCompositeNode(A::Array, use_composite_update_rule
     #             v
 
     FactorGraph()
-    gec_node = GainEqualityCompositeNode(A, use_composite_update_rules)
+    gec_node = GainEqualityNode(A)
     interface_count = 1
     for msg in msgs
         if msg == nothing
@@ -486,7 +486,7 @@ function initializeSigmoidSlice()
     # Build graph
     graph = FactorGraph()
     y_node = TerminalNode(name="y") # Beta observarion
-    s_node = SigmoidCompositeNode(a=1.0, b=1.0, gamma=100.0, name="sigmoid")
+    s_node = SigmoidNode(a=1.0, b=1.0, gamma=100.0, name="sigmoid")
     eq_node = EqualityNode(name="eq")
     theta_k_min_node = TerminalNode(name="theta_k_min")
     theta_k_node = TerminalNode(name="theta_k")

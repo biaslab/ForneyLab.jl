@@ -1,5 +1,5 @@
 ############################################
-# GainAdditionCompositeNode
+# GainAdditionNode
 ############################################
 # Description:
 #   Composite gain-addition node.
@@ -17,7 +17,7 @@
 #
 #   out = A*in1 + in2
 #   Example:
-#       GainAdditionCompositeNode([1.0]; name="my_node")
+#       GainAdditionNode([1.0]; name="my_node")
 #   Gain A is fixed and defined through the constructor.
 #
 # Interface ids, (names) and supported message types:
@@ -29,9 +29,9 @@
 #       Message{GaussianDistribution}
 #
 ############################################
-export GainAdditionCompositeNode
+export GainAdditionNode
 
-type GainAdditionCompositeNode <: CompositeNode
+type GainAdditionNode <: CompositeNode
     # Basic node properties.
     # use_composite_update_rules is a flag for indicating use of
     # shortcut update rules. When set to true (default), the outbound
@@ -50,7 +50,7 @@ type GainAdditionCompositeNode <: CompositeNode
     in2::Interface
     out::Interface
 
-    function GainAdditionCompositeNode(A::Union(Array{Float64},Float64)=1.0, use_composite_update_rules::Bool=true; name=unnamedStr())
+    function GainAdditionNode(A::Union(Array{Float64},Float64)=1.0, use_composite_update_rules::Bool=true; name=unnamedStr())
         if typeof(A)==Float64
             A = fill!(Array(Float64,1,1),A)
         elseif use_composite_update_rules
@@ -85,7 +85,7 @@ type GainAdditionCompositeNode <: CompositeNode
     end
 end
 
-isDeterministic(::GainAdditionCompositeNode) = true
+isDeterministic(::GainAdditionNode) = true
 
 ############################################
 # GaussianDistribution methods
@@ -106,7 +106,7 @@ backwardIn2GainAdditionWRule{T<:Number}(A::Array{T, 2}, W_y::Array{T, 2}, W_z::A
 backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z::Array{T, 1}, W_y::Array{T, 2}, W_z::Array{T, 2}) = xi_z - W_z*A*inv(W_y+A'*W_z*A)*(xi_y+A'*xi_z)
 
 # Forward to OUT
-function sumProduct!(node::GainAdditionCompositeNode,
+function sumProduct!(node::GainAdditionNode,
                             outbound_interface_id::Int,
                             in1::Message{GaussianDistribution},
                             in2::Message{GaussianDistribution},
@@ -177,7 +177,7 @@ function sumProduct!(node::GainAdditionCompositeNode,
 end
 
 # Backward to IN2
-function sumProduct!(node::GainAdditionCompositeNode,
+function sumProduct!(node::GainAdditionNode,
                             outbound_interface_id::Int,
                             in1::Message{GaussianDistribution},
                             ::Nothing,
@@ -248,7 +248,7 @@ function sumProduct!(node::GainAdditionCompositeNode,
 end
 
 # Backward to IN1
-function sumProduct!(node::GainAdditionCompositeNode,
+function sumProduct!(node::GainAdditionNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             in2::Message{GaussianDistribution},

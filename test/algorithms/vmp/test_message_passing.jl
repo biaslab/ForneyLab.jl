@@ -1,28 +1,27 @@
-facts("step() function for VMP") do
-    context("step() should accept and execute a number of iterations for VMP") do
-        data = [GaussianDistribution(m=2.0, V=tiny())]
-        g = FactorGraph()
-        g_node = GaussianNode(form="precision")
-        t_out = TerminalNode(name="t_out")
-        t_mean = TerminalNode(GaussianDistribution(), name="t_mean")
-        t_var = TerminalNode(GammaDistribution(), name="t_var")
-        Edge(g_node.out, t_out, GaussianDistribution)
-        Edge(t_mean, g_node.mean, GaussianDistribution)
-        Edge(t_var, g_node.precision, GammaDistribution)
+facts("Call step() for VMP algorithm") do
+    data = [GaussianDistribution(m=2.0, V=tiny())]
+    g = FactorGraph()
+    g_node = GaussianNode(form="precision")
+    t_out = TerminalNode(name="t_out")
+    t_mean = TerminalNode(GaussianDistribution(), name="t_mean")
+    t_var = TerminalNode(GammaDistribution(), name="t_var")
+    Edge(g_node.out, t_out, GaussianDistribution)
+    Edge(t_mean, g_node.mean, GaussianDistribution)
+    Edge(t_var, g_node.precision, GammaDistribution)
 
-        setReadBuffer(t_out, data)
-        mean_out = setWriteBuffer(g_node.mean.edge)
-        prec_out = setWriteBuffer(g_node.precision.edge)
+    setReadBuffer(t_out, data)
+    mean_out = setWriteBuffer(g_node.mean.edge)
+    prec_out = setWriteBuffer(g_node.precision.edge)
 
-        algo = VMP.Algorithm(n_iterations=10)
+    algo = VMP.Algorithm(n_iterations=10)
 
-        step(algo)
+    step(algo)
 
-        @fact round(mean_out[end].W[1,1], 2) => 1.79
-        @fact round(mean_out[end].xi[1], 2) => 1.57
-        @fact prec_out[end].a => 1.5
-        @fact round(prec_out[end].b, 2) => 1.91
-    end
+    ForneyLab.ensureXiWParametrization!(mean_out[end])
+    @fact round(mean_out[end].W[1,1], 2) => 1.79
+    @fact round(mean_out[end].xi[1], 2) => 1.57
+    @fact prec_out[end].a => 1.5
+    @fact round(prec_out[end].b, 2) => 1.91
 end
 
 #####################

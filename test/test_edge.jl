@@ -33,7 +33,7 @@ facts("Edge integration tests") do
 
     context("Edge should couple standard to composite nodes") do
         FactorGraph()
-        comp_node = GainEqualityCompositeNode()
+        comp_node = GainEqualityNode()
         node = TerminalNode()
         edge = Edge(node.out, comp_node.in1)
         @fact comp_node.equality_node.interfaces[1].partner => node.out

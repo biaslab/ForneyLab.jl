@@ -3,6 +3,7 @@ export isApproxEqual, huge, tiny, KLpq, rules, format, isValid, invalidate!
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
 ensureMatrix{T<:Number}(arr::Array{T, 1}) = reshape(arr, 1, 1)
+ensureMatrix(n::Number) = fill!(Array(typeof(n),1,1), n)
 ensureMatrix(n::Nothing) = nothing
 
 # Define what is considered big and small, mostly used for setting vague messages.

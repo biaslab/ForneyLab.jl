@@ -27,120 +27,105 @@ function calculateMarginal!(edge::Edge)
 end
 
 # GammaDistribution
-function gammaMarginalRule!(marg::GammaDistribution, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
-    # Calculate the marginal from a forward/backward message pair.
-    # We calculate the marginal by using the EqualityNode update rules; same for the functions below
-    marg.a = forward_dist.a+backward_dist.a-1.0
-    marg.b = forward_dist.b+backward_dist.b
-    return marg
-end    
 function calculateMarginal(forward_dist::GammaDistribution, backward_dist::GammaDistribution)
     marg = GammaDistribution() # Do not overwrite an existing distribution
-    return gammaMarginalRule!(marg, forward_dist, backward_dist)    
+    return equalityGammaRule!(marg, forward_dist, backward_dist)    
 end
 function calculateMarginal!(edge::Edge, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
     marg = ensureMarginal!(edge, GammaDistribution)
-    return gammaMarginalRule!(marg, forward_dist, backward_dist)
+    return equalityGammaRule!(marg, forward_dist, backward_dist)
 end
 
-# InverseGammaDistribution
-function inverseGammaMarginalRule!(marg::InverseGammaDistribution, forward_dist::InverseGammaDistribution, backward_dist::InverseGammaDistribution)
-    # Calculate the marginal from a forward/backward message pair.
-    # We calculate the marginal by using the EqualityNode update rules; same for the functions below
-    marg.a = forward_dist.a+backward_dist.a+1.0
-    marg.b = forward_dist.b+backward_dist.b
-    return marg
-end    
+# InverseGammaDistribution   
 function calculateMarginal(forward_dist::InverseGammaDistribution, backward_dist::InverseGammaDistribution)
     marg = InverseGammaDistribution() # Do not overwrite an existing distribution
-    return inverseGammaMarginalRule!(marg, forward_dist, backward_dist)    
+    return equalityInverseGammaRule!(marg, forward_dist, backward_dist)    
 end
 function calculateMarginal!(edge::Edge, forward_dist::InverseGammaDistribution, backward_dist::InverseGammaDistribution)
     marg = ensureMarginal!(edge, InverseGammaDistribution)
-    return inverseGammaMarginalRule!(marg, forward_dist, backward_dist)
+    return equalityInverseGammaRule!(marg, forward_dist, backward_dist)
 end
 
 # BetaDistribution
-function betaMarginalRule!(marg::BetaDistribution, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
-    # Calculate the marginal from a forward/backward message pair.
-    # We calculate the marginal by using the EqualityNode update rules; same for the functions below
-    marg.a = forward_dist.a+backward_dist.a-1.0
-    marg.b = forward_dist.b+backward_dist.b-1.0
-    return marg
-end    
 function calculateMarginal(forward_dist::BetaDistribution, backward_dist::BetaDistribution)
     marg = BetaDistribution() # Do not overwrite an existing distribution
-    return betaMarginalRule!(marg, forward_dist, backward_dist)    
+    return equalityBetaRule!(marg, forward_dist, backward_dist)    
 end
 function calculateMarginal!(edge::Edge, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
     marg = ensureMarginal!(edge, BetaDistribution)
-    return betaMarginalRule!(marg, forward_dist, backward_dist)
+    return equalityBetaRule!(marg, forward_dist, backward_dist)
 end
 
 # GaussianDistribution
-function gaussianMarginalRule!(marg::GaussianDistribution, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
-    # Calculate the marginal from a forward/backward message pair.
-    # We calculate the marginal by using the EqualityNode update rules; same for the functions below
-    ensureXiWParametrization!(forward_dist)
-    ensureXiWParametrization!(backward_dist)
-    marg.xi = forward_dist.xi+backward_dist.xi
-    marg.W = forward_dist.W+backward_dist.W
-    invalidate!(marg.V)
-    invalidate!(marg.m)
-    return marg
-end    
 function calculateMarginal(forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
     marg = GaussianDistribution() # Do not overwrite an existing distribution
-    return gaussianMarginalRule!(marg, forward_dist, backward_dist)    
+    return equalityGaussianRule!(marg, forward_dist, backward_dist)  
 end
 function calculateMarginal!(edge::Edge, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
     marg = ensureMarginal!(edge, GaussianDistribution)
-    return gaussianMarginalRule!(marg, forward_dist, backward_dist)
+    return equalityGaussianRule!(marg, forward_dist, backward_dist)
+end
+
+# DeltaDistribution
+function calculateMarginal(forward_dist::DeltaDistribution, backward_dist::DeltaDistribution)
+    marg = DeltaDistribution() # Do not overwrite an existing distribution
+    return equalityDeltaRule!(marg, forward_dist, backward_dist)  
+end
+function calculateMarginal!(edge::Edge, forward_dist::DeltaDistribution, backward_dist::DeltaDistribution)
+    marg = ensureMarginal!(edge, DeltaDistribution)
+    return equalityDeltaRule!(marg, forward_dist, backward_dist)
 end
 
 # Gaussian-students t combination
-function gaussianStudentsMarginalRule!(marg::GaussianDistribution, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
-    # Calculate the marginal from a forward/backward message pair.
-    # We calculate the marginal by using the EqualityNode update rules; same for the functions below
-    ensureMWParametrization!(forward_dist)
-    (length(forward_dist.m) == 1 && length(forward_dist.W) == 1) || error("Marginal update for StudentsTDistribution and GaussianDistribution only supports univariate Gaussian distribution.")
-
-    # Definitions available in derivations notebook
-    l_a = backward_dist.W[1, 1] 
-    mu_a = backward_dist.m[1]
-    l_b = forward_dist.W[1, 1]
-    mu_b = forward_dist.m[1]
-    nu_term = 1 + (1/backward_dist.nu)
-
-    marg.m = [(l_a*nu_term*mu_a + l_b*mu_b) / (l_a*nu_term + l_b)]
-    marg.W = reshape([l_a*nu_term + l_b], 1, 1)
-    invalidate!(marg.xi)
-    invalidate!(marg.V)
-
-    return marg
-end
 function calculateMarginal(forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
     marg = GaussianDistribution() # Do not overwrite an existing distribution
-    return gaussianStudentsMarginalRule!(marg, forward_dist, backward_dist)    
+    return equalityGaussianStudentsTRule!(marg, forward_dist, backward_dist)    
 end
 calculateMarginal(forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal(backward_dist, forward_dist)
 function calculateMarginal!(edge::Edge, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
     marg = ensureMarginal!(edge, GaussianDistribution)
-    return gaussianStudentsMarginalRule!(marg, forward_dist, backward_dist)
+    return equalityGaussianStudentsTRule!(marg, forward_dist, backward_dist)
 end
 calculateMarginal!(edge::Edge, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal!(edge, backward_dist, forward_dist)
 
 # Gaussian-Delta combination
 # A multiplication of a delta distribution with any Gaussian returns the delta.
-calculateMarginal(forward_dist::DeltaDistribution, ::GaussianDistribution) = deepcopy(forward_dist)
-calculateMarginal(::GaussianDistribution, backward_dist::DeltaDistribution) = deepcopy(backward_dist)
-function calculateMarginal!(edge::Edge, forward_dist::DeltaDistribution, ::GaussianDistribution)
-    return edge.marginal = convert(GaussianDistribution, forward_dist)
+function calculateMarginal(forward_dist::DeltaDistribution, backward_dist::GaussianDistribution)
+    marg = DeltaDistribution()
+    return equalityGaussianDeltaRule!(marg, forward_dist, backward_dist)
 end
-function calculateMarginal!(edge::Edge, ::GaussianDistribution, backward_dist::DeltaDistribution)
-    return edge.marginal = convert(GaussianDistribution, backward_dist)
+calculateMarginal(forward_dist::GaussianDistribution, backward_dist::DeltaDistribution) = calculateMarginal(backward_dist, forward_dist)
+function calculateMarginal!(edge::Edge, forward_dist::DeltaDistribution, backward_dist::GaussianDistribution)
+    marg = ensureMarginal!(edge, DeltaDistribution)
+    return equalityGaussianDeltaRule!(marg, forward_dist, backward_dist)
 end
+calculateMarginal!(edge::Edge, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution) = calculateMarginal!(edge, backward_dist, forward_dist)
 
+# Gamma-Delta combination
+# A multiplication of a delta distribution (with a peak >= 0) with any gamma returns the delta.
+function calculateMarginal(forward_dist::DeltaDistribution, backward_dist::GammaDistribution)
+    marg = DeltaDistribution()
+    return equalityGammaDeltaRule!(marg, forward_dist, backward_dist)
+end
+calculateMarginal(forward_dist::GammaDistribution, backward_dist::DeltaDistribution) = calculateMarginal(backward_dist, forward_dist)
+function calculateMarginal!(edge::Edge, forward_dist::DeltaDistribution, backward_dist::GammaDistribution)
+    marg = ensureMarginal!(edge, DeltaDistribution)
+    return equalityGammaDeltaRule!(marg, forward_dist, backward_dist)
+end
+calculateMarginal!(edge::Edge, forward_dist::GammaDistribution, backward_dist::DeltaDistribution) = calculateMarginal!(edge, backward_dist, forward_dist)
+
+# InverseGamma-Delta combination
+# A multiplication of a delta distribution (with a peak >= 0) with any inverse gamma returns the delta.
+function calculateMarginal(forward_dist::DeltaDistribution, backward_dist::InverseGammaDistribution)
+    marg = DeltaDistribution()
+    return equalityInverseGammaDeltaRule!(marg, forward_dist, backward_dist)
+end
+calculateMarginal(forward_dist::InverseGammaDistribution, backward_dist::DeltaDistribution) = calculateMarginal(backward_dist, forward_dist)
+function calculateMarginal!(edge::Edge, forward_dist::DeltaDistribution, backward_dist::InverseGammaDistribution)
+    marg = ensureMarginal!(edge, DeltaDistribution)
+    return equalityInverseGammaDeltaRule!(marg, forward_dist, backward_dist)
+end
+calculateMarginal!(edge::Edge, forward_dist::InverseGammaDistribution, backward_dist::DeltaDistribution) = calculateMarginal!(edge, backward_dist, forward_dist)
 
 ########################################
 # Lookup table for joint marginals

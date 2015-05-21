@@ -78,7 +78,14 @@ function ensureMarginal!{T<:ProbabilityDistribution}(edge::Edge, distribution_ty
     # Ensure that edge carries a marginal of type distribution_type, used for in place updates
     if edge.marginal==nothing || (typeof(edge.marginal) <: distribution_type)==false
         (distribution_type <: edge.distribution_type) || error("Cannot create marginal of type $(distribution_type) since the edge requires a different marginal distribution type. Edge:\n$(edge)")
-        edge.marginal = vague(distribution_type)
+        try
+            # Initialize the marginal as a vague "uninformative" distribution of the specified type
+            edge.marginal = vague(distribution_type)
+        catch
+            # vague() not implemented
+            # Instead, initialize the marginal with the default distribution of the specified type
+            edge.marginal = distribution_type()
+        end
     end
 
     return edge.marginal

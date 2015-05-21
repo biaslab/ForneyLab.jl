@@ -145,7 +145,7 @@ rules:
     formula:    "$\\overleftarrow{\\mu}(x) = \\delta(m_x=A^{-1} m_y)$"
 
   gain_equality_gaussian_backward:
-    node:       GainEqualityCompositeNode
+    node:       GainEqualityNode
     reference:  "Korl (2005), table 4.1"
     diagram:    <pre>         _________          </pre>
                 <pre>x~N(m,V) |       | z~N(m,V) </pre>
@@ -159,7 +159,7 @@ rules:
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=m_x+V_x A^T G (m_y - Am_x), V_z=V_x - V_x A^T G A V_x)$, with $G = (V_y + AV_xA^T)^{-1}$"
 
   gain_addition_gaussian_forward:
-    node:       GainAdditionCompositeNode
+    node:       GainAdditionNode
     reference:  "Korl (2005), table 4.1"
     diagram:    <pre>              | y~N(m,V)    </pre>
                 <pre>          ____|____         </pre>
@@ -172,7 +172,7 @@ rules:
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=m_x+Am_y, V_z=V_x + A V_yA^T)$"
 
   gain_addition_gaussian_backward:
-    node:       GainAdditionCompositeNode
+    node:       GainAdditionNode
     reference:  "Korl (2005), table 4.1, by symmetry"
     diagram:    <pre>              | y~N(m,V)    </pre>
                 <pre>          ____|____         </pre>
@@ -402,7 +402,7 @@ rules:
     formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q(m,\\gamma)}, \\gamma_y=\\frac{a_{q(m,\\gamma)}}{b_{q(m,\\gamma)}}\\right)$"
 
   sigmoid_forward:
-    node:       SigmoidCompositeNode
+    node:       SigmoidNode
     reference:  "Sigmoid node derivations document"
     diagram:    <pre>          _________________            </pre>
                 <pre>         |                 |           </pre>
@@ -413,7 +413,7 @@ rules:
     formula:    "$\\overrightarrow{\\mu}(y)$: numeric KL divergence minimization"
 
   sigmoid_backward:
-    node:       SigmoidCompositeNode
+    node:       SigmoidNode
     reference:  "Sigmoid node derivations document"
     diagram:    <pre>          _________________            </pre>
                 <pre>         |                 |           </pre>
@@ -424,14 +424,14 @@ rules:
     formula:    "$\\overleftarrow{\\mu}(x) \\approx \\mathcal{N}\\left( m_x=\\frac{1}{b}\\operatorname{log}\\left(a\\frac{a_y-1}{b_y-1}\\right), \\gamma_x=\\gamma (\\gamma+G)^{-1} G \\right)$, with $G=\\frac{a_y-1}{a_y+b_y-2}$"
 
   sigmoid_forward_variational:
-    node:       SigmoidCompositeNode
+    node:       SigmoidNode
     reference:  "Sigmoid node derivations document"
     diagram:    <pre>q(x)~N(m,γ)         y~Bet(a,b)</pre>
                 <pre>       --->[S/a,b,γ]--->      </pre>
     formula:    "$\\overrightarrow{\\nu}(y)$: numeric KL divergence minimization"
 
   sigmoid_backward_variational:
-    node:       SigmoidCompositeNode
+    node:       SigmoidNode
     reference:  "Sigmoid node derivations document"
     diagram:    <pre>x~N(m,γ)         q(y)~Bet(a,b)</pre>
                 <pre>    --->[S/a,b,γ]--->         </pre>

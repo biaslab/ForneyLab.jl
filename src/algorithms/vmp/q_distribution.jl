@@ -18,40 +18,52 @@ end
 
 # GammaDistribution
 function calculateQDistribution!(marg::QDistribution, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
-    return ForneyLab.gammaMarginalRule!(marg.distribution, forward_dist, backward_dist)
+    return ForneyLab.equalityGammaRule!(marg.distribution, forward_dist, backward_dist)
 end
 
 # InverseGammaDistribution
 function calculateQDistribution!(marg::QDistribution, forward_dist::InverseGammaDistribution, backward_dist::InverseGammaDistribution)
-    return ForneyLab.inverseGammaMarginalRule!(marg.distribution, forward_dist, backward_dist)
+    return ForneyLab.equalityInverseGammaRule!(marg.distribution, forward_dist, backward_dist)
 end
 
 # BetaDistribution
 function calculateQDistribution!(marg::QDistribution, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
-    return ForneyLab.betaMarginalRule!(marg.distribution, forward_dist, backward_dist)
+    return ForneyLab.equalityBetaRule!(marg.distribution, forward_dist, backward_dist)
 end
 
 # GaussianDistribution
 function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
-    return ForneyLab.gaussianMarginalRule!(marg.distribution, forward_dist, backward_dist)
+    return ForneyLab.equalityGaussianRule!(marg.distribution, forward_dist, backward_dist)
 end
 
 # Gaussian-students t combination
 function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
-    return ForneyLab.gaussianStudentsMarginalRule!(marg.distribution, forward_dist, backward_dist)
+    return ForneyLab.equalityGaussianStudentsTRule!(marg.distribution, forward_dist, backward_dist)
 end
-calculateQDistribution!(marg::QDistribution, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateMarginal!(factor, graph, backward_dist, forward_dist)
+calculateQDistribution!(marg::QDistribution, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
-# Gaussian-Delta combination
-function calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution, backward_dist::GaussianDistribution)
-    # Calculation for univariate approximate marginal
-    return marg.distribution = convert(GaussianDistribution, forward_dist)
-end
+# Gaussian-delta combination
 function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution)
     # Calculation for univariate approximate marginal
-    return marg.distribution = convert(GaussianDistribution, backward_dist)
+    return marg.distribution = ForneyLab.equalityGaussianDeltaRule!(marg.distribution, forward_dist, backward_dist)
 end
+calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
+# TODO: check for need
+# # Gamma-delta combination
+# function calculateQDistribution!(marg::QDistribution, forward_dist::GammaDistribution, backward_dist::DeltaDistribution)
+#     # Calculation for univariate approximate marginal
+#     return marg.distribution = ForneyLab.equalityGammaDeltaRule!(marg.distribution, forward_dist, backward_dist)
+# end
+# calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution, backward_dist::GammaDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
+
+# TODO: check for need
+# # Inverse gamma-delta combination
+# function calculateQDistribution!(marg::QDistribution, forward_dist::InverseGammaDistribution, backward_dist::DeltaDistribution)
+#     # Calculation for univariate approximate marginal
+#     return marg.distribution = ForneyLab.equalityInverseGammaDeltaRule!(marg.distribution, forward_dist, backward_dist)
+# end
+# calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution, backward_dist::InverseGammaDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
 ############################
 # Joint approximate marginal calculations

@@ -72,46 +72,51 @@ forwardFixedGainXiRule{T<:Number}(A_inv::Array{T, 2}, xi::Array{T, 1}) = A_inv' 
 forwardFixedGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}, V::Array{T, 2}) = pinv(A * V * A') * A * V * xi # Combination of xi and V
 
 # Backward Gaussian to IN1
+function fixedGainGaussianBackwardRule!(dist_result::GaussianDistribution, dist_2::GaussianDistribution, A::Any, A_inv::Any=nothing)
+    # Calculations for a gaussian message type; Korl (2005), table 4.1
+    # dist_result = inv(A) * dist_2
+
+    if isValid(dist_2.xi) && isValid(dist_2.W)
+        invalidate!(dist_result.m)
+        invalidate!(dist_result.V)
+        dist_result.W = backwardFixedGainWRule(A, dist_2.W)
+        dist_result.xi = backwardFixedGainXiRule(A, dist_2.xi)
+    elseif isValid(dist_2.m) && isValid(dist_2.W) && isRoundedPosDef(A) && isRoundedPosDef(dist_2.W)
+        dist_result.m = backwardFixedGainMRule(A_inv, dist_2.m) # Short version of the rule
+        invalidate!(dist_result.V)
+        dist_result.W = backwardFixedGainWRule(A, dist_2.W)
+        invalidate!(dist_result.xi)
+    elseif isValid(dist_2.m) && isValid(dist_2.W)
+        dist_result.m = backwardFixedGainMRule(A, dist_2.m, dist_2.W) # Long version of the rule
+        invalidate!(dist_result.V)
+        dist_result.W = backwardFixedGainWRule(A, dist_2.W)
+        invalidate!(dist_result.xi)
+    elseif isValid(dist_2.m) && isValid(dist_2.V) && (A_inv != nothing) && (dist_2.V==zeros(size(dist_2.V)) || isRoundedPosDef(dist_2.V)) # V positive definite <=> W (its inverse) is also positive definite. Border-case is an all-zero V, in which case the outbound message also has zero variance.
+        dist_result.m = backwardFixedGainMRule(A_inv, dist_2.m) # Short version of the rule, only valid if A is positive definite and (W is positive definite or V is 0)
+        dist_result.V = backwardFixedGainVRule(A_inv, dist_2.V)
+        invalidate!(dist_result.W)
+        invalidate!(dist_result.xi)
+    else
+        # Fallback: convert inbound message to (xi,W) parametrization and then use efficient rules
+        ensureXiWParametrization!(dist_2)
+        invalidate!(dist_result.m)
+        invalidate!(dist_result.V)
+        dist_result.W = backwardFixedGainWRule(A, dist_2.W)
+        dist_result.xi = backwardFixedGainXiRule(A, dist_2.xi)
+    end   
+
+    return dist_result 
+end
+
 function sumProduct!(node::FixedGainNode,
                             outbound_interface_id::Int,
                             ::Nothing,
                             msg_out::Message{GaussianDistribution})
 
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_1 = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    # Calculations for a gaussian message type; Korl (2005), table 4.1
     if outbound_interface_id == 1
-        dist_2 = msg_out.payload
-        # Select parameterization
-        # Order is from least to most computationally intensive
-        if isValid(dist_2.xi) && isValid(dist_2.W)
-            invalidate!(dist_out.m)
-            invalidate!(dist_out.V)
-            dist_out.W = backwardFixedGainWRule(node.A, dist_2.W)
-            dist_out.xi = backwardFixedGainXiRule(node.A, dist_2.xi)
-        elseif isValid(dist_2.m) && isValid(dist_2.W) && isRoundedPosDef(node.A) && isRoundedPosDef(dist_2.W)
-            dist_out.m = backwardFixedGainMRule(node.A_inv, dist_2.m) # Short version of the rule
-            invalidate!(dist_out.V)
-            dist_out.W = backwardFixedGainWRule(node.A, dist_2.W)
-            invalidate!(dist_out.xi)
-        elseif isValid(dist_2.m) && isValid(dist_2.W)
-            dist_out.m = backwardFixedGainMRule(node.A, dist_2.m, dist_2.W) # Long version of the rule
-            invalidate!(dist_out.V)
-            dist_out.W = backwardFixedGainWRule(node.A, dist_2.W)
-            invalidate!(dist_out.xi)
-        elseif isValid(dist_2.m) && isValid(dist_2.V) && isdefined(node, :A_inv) && (dist_2.V==zeros(size(dist_2.V)) || isRoundedPosDef(dist_2.V)) # V positive definite <=> W (its inverse) is also positive definite. Border-case is an all-zero V, in which case the outbound message also has zero variance.
-            dist_out.m = backwardFixedGainMRule(node.A_inv, dist_2.m) # Short version of the rule, only valid if A is positive definite and (W is positive definite or V is 0)
-            dist_out.V = backwardFixedGainVRule(node.A_inv, dist_2.V)
-            invalidate!(dist_out.W)
-            invalidate!(dist_out.xi)
-        else
-            # Fallback: convert inbound message to (xi,W) parametrization and then use efficient rules
-            ensureXiWParametrization!(dist_2)
-            invalidate!(dist_out.m)
-            invalidate!(dist_out.V)
-            dist_out.W = backwardFixedGainWRule(node.A, dist_2.W)
-            dist_out.xi = backwardFixedGainXiRule(node.A, dist_2.xi)
-        end
+        fixedGainGaussianBackwardRule!(dist_1, msg_out.payload, node.A, isdefined(node, :A_inv) ? node.A_inv : nothing)
     else
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
@@ -121,47 +126,54 @@ function sumProduct!(node::FixedGainNode,
 end
 
 # Forward Gaussian to OUT
+function fixedGainGaussianForwardRule!(dist_result::GaussianDistribution, dist_1::GaussianDistribution, A::Any, A_inv::Any=nothing)
+    # Calculations for a gaussian message type; Korl (2005), table 4.1
+    # dist_result = A * dist_1
+
+    if isValid(dist_1.m) && isValid(dist_1.V)
+        dist_result.m = forwardFixedGainMRule(A, dist_1.m)
+        dist_result.V = forwardFixedGainVRule(A, dist_1.V)
+        invalidate!(dist_result.W)
+        invalidate!(dist_result.xi)
+    elseif isValid(dist_1.m) && isValid(dist_1.W) && (A_inv != nothing)
+        dist_result.m = forwardFixedGainMRule(A, dist_1.m)
+        invalidate!(dist_result.V)
+        dist_result.W = forwardFixedGainWRule(A_inv, dist_1.W)
+        invalidate!(dist_result.xi)
+    elseif isValid(dist_1.xi) && isValid(dist_1.W) && isRoundedPosDef(A) && isRoundedPosDef(dist_1.W) && (A_inv != nothing) # V should be positive definite, meaning V is invertible and its inverse W is also positive definite.
+        invalidate!(dist_result.m)
+        invalidate!(dist_result.V)
+        dist_result.W = forwardFixedGainWRule(A_inv, dist_1.W)
+        dist_result.xi = forwardFixedGainXiRule(A_inv, dist_1.xi) # Short version of the rule, only valid if A and V are positive definite
+    elseif isValid(dist_1.xi) && isValid(dist_1.V) && isValid(dist_1.W) && (A_inv != nothing)
+        invalidate!(dist_result.m)
+        invalidate!(dist_result.V)
+        dist_result.W = forwardFixedGainWRule(A_inv, dist_1.W)
+        dist_result.xi = forwardFixedGainXiRule(A_inv, dist_1.xi, dist_1.V) # Long version of the rule
+    else
+        # Fallback: convert inbound message to (m,V) parametrization and then use efficient rules
+        ensureMVParametrization!(dist_1)
+        dist_result.m = forwardFixedGainMRule(A, dist_1.m)
+        dist_result.V = forwardFixedGainVRule(A, dist_1.V)
+        invalidate!(dist_result.W)
+        invalidate!(dist_result.xi)
+    end
+
+    return dist_result 
+end
+
 function sumProduct!(node::FixedGainNode,
                             outbound_interface_id::Int,
                             msg_in1::Message{GaussianDistribution},
                             ::Nothing)
 
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_2 = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    # Calculations for a gaussian message type; Korl (2005), table 4.1
     if outbound_interface_id == 2
         # Forward message
         dist_1 = msg_in1.payload
-        # Select parameterization
-        # Order is from least to most computationally intensive
-        if isValid(dist_1.m) && isValid(dist_1.V)
-            dist_out.m = forwardFixedGainMRule(node.A, dist_1.m)
-            dist_out.V = forwardFixedGainVRule(node.A, dist_1.V)
-            invalidate!(dist_out.W)
-            invalidate!(dist_out.xi)
-        elseif isValid(dist_1.m) && isValid(dist_1.W) && isdefined(node, :A_inv)
-            dist_out.m = forwardFixedGainMRule(node.A, dist_1.m)
-            invalidate!(dist_out.V)
-            dist_out.W = forwardFixedGainWRule(node.A_inv, dist_1.W)
-            invalidate!(dist_out.xi)
-        elseif isValid(dist_1.xi) && isValid(dist_1.W) && isRoundedPosDef(node.A) && isRoundedPosDef(dist_1.W) # V should be positive definite, meaning V is invertible and its inverse W is also positive definite.
-            invalidate!(dist_out.m)
-            invalidate!(dist_out.V)
-            dist_out.W = forwardFixedGainWRule(node.A_inv, dist_1.W)
-            dist_out.xi = forwardFixedGainXiRule(node.A_inv, dist_1.xi) # Short version of the rule, only valid if A and V are positive definite
-        elseif isValid(dist_1.xi) && isValid(dist_1.V) && isValid(dist_1.W) && isdefined(node, :A_inv)
-            invalidate!(dist_out.m)
-            invalidate!(dist_out.V)
-            dist_out.W = forwardFixedGainWRule(node.A_inv, dist_1.W)
-            dist_out.xi = forwardFixedGainXiRule(node.A_inv, dist_1.xi, dist_1.V) # Long version of the rule
-        else
-            # Fallback: convert inbound message to (m,V) parametrization and then use efficient rules
-            ensureMVParametrization!(dist_1)
-            dist_out.m = forwardFixedGainMRule(node.A, dist_1.m)
-            dist_out.V = forwardFixedGainVRule(node.A, dist_1.V)
-            invalidate!(dist_out.W)
-            invalidate!(dist_out.xi)
-        end
+
+        fixedGainGaussianForwardRule!(dist_2, msg_in1.payload, node.A, isdefined(node, :A_inv) ? node.A_inv : nothing)
     else
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end

@@ -128,14 +128,14 @@ facts("Marginal calculations for the Gaussian") do
         (t1, t2) = initializePairOfTerminalNodes(GaussianDistribution(), StudentsTDistribution())
         edge = t1.out.edge
         calculateMarginal!(edge)
-        @fact edge.marginal => GaussianDistribution(m=0.0, W=3.0) 
+        @fact edge.marginal => GaussianDistribution(m=0.0, W=2.0) 
     end
 
     context("Marginal calculation for the combination of a Gaussian and DeltaDistribution") do
         (t1, t2) = initializePairOfTerminalNodes(GaussianDistribution(), DeltaDistribution(3.0))
         edge = t1.out.edge
         calculateMarginal!(edge)
-        @fact edge.marginal => GaussianDistribution(m=3.0, V=tiny())
+        @fact edge.marginal => DeltaDistribution(3.0)
     end
 end
 

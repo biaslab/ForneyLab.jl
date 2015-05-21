@@ -20,6 +20,11 @@ facts("DeltaDistribution unit tests") do
         @fact_throws vague(DeltaDistribution{Float64})
     end
 
+    context("Marginal calculation for two DeltaDistributions") do
+        @fact calculateMarginal(DeltaDistribution(2.0), DeltaDistribution(2.0)) => DeltaDistribution(2.0)
+        @fact calculateMarginal(DeltaDistribution(1.0), DeltaDistribution(2.0)) => DeltaDistribution(0.0)
+    end
+
     context("Numbers, symbols, and arrays should convert to DeltaDistribution") do
         @fact convert(ProbabilityDistribution, 3.0) => DeltaDistribution(3.0)
         @fact convert(ProbabilityDistribution, [3.0, 4.0]) => DeltaDistribution([3.0, 4.0])

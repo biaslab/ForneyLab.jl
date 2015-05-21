@@ -5,7 +5,7 @@ facts("SumProduct.collectInbounds() tests") do
         @fact SumProduct.collectInbounds(node.out) => (3, [node.mean.partner.message, node.precision.partner.message, nothing])
 
         # Composite node
-        node = initializeGainEqualityCompositeNode(eye(1), true, Any[Message(DeltaDistribution(1.0)), Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))])
+        node = initializeGainEqualityNode(eye(1), Any[Message(DeltaDistribution(1.0)), Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))])
         @fact SumProduct.collectInbounds(node.out) => (3, [node.in1.partner.message, node.in2.partner.message, nothing])
     end
 end

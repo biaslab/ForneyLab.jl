@@ -47,12 +47,9 @@ include("nodes/test_gaussian.jl")
 include("nodes/test_exponential.jl")
 
 # Composite nodes
-include("nodes/composite/test_gain_addition.jl")
-include("nodes/composite/test_gain_equality.jl")
-include("nodes/composite/test_sigmoid.jl")
-
-# Marginal calculations
-include("test_calculate_marginal.jl")
+# include("nodes/composite/test_gain_addition.jl")
+# include("nodes/composite/test_gain_equality.jl")
+# include("nodes/composite/test_sigmoid.jl")
 
 # Message passing
 include("test_message_passing.jl")
