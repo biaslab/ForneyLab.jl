@@ -27,9 +27,9 @@ facts("Message passing integration tests") do
             @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
         end
 
-        context("Should handle post-processing of messages (drawSample)") do
+        context("Should handle post-processing of messages (sample)") do
             node = initializeAdditionNode(Any[Message(GaussianDistribution()), Message(GaussianDistribution()), Message(GaussianDistribution())])
-            schedule = [ScheduleEntry(node.out, sumProduct!, drawSample)]
+            schedule = [ScheduleEntry(node.out, sumProduct!, sample)]
             @fact typeof(execute(schedule).payload) => DeltaDistribution{Array{Float64, 1}}
         end
 

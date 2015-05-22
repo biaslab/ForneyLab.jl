@@ -35,8 +35,8 @@ convert(::Type{Schedule}, interfaces::Array{Interface, 1}, message_calculation_r
 function show(io::IO, schedule::Schedule)
     # Show schedules in a specific way
     println(io, "Message passing schedule")
-    println(io, "#  | {message calc. func}  | {post-processing}     | {node type} {node name}:{outbound iface index} ({outbound iface name})       |")
-    println(io, "---|-----------------------|-----------------------|------------------------------------------------------------------------------|")
+    println(io, "#  | {msg calc. func}  | {post proc.}      | {node type} {node name}:{outbound iface index} ({outbound iface name})       |")
+    println(io, "---|-------------------|-------------------|------------------------------------------------------------------------------|")
     entry_counter = 1
     for schedule_entry in schedule
         interface = schedule_entry.interface
@@ -44,7 +44,7 @@ function show(io::IO, schedule::Schedule)
         postproc = (isdefined(schedule_entry, :post_processing)) ? string(schedule_entry.post_processing) : ""
         interface_name = (name(interface)!="") ? "($(name(interface)))" : ""
         interface_field = "$(typeof(interface.node)) $(interface.node.name):$(findfirst(interface.node.interfaces, interface)) $(interface_name)"
-        println(io, "$(pad(string(entry_counter),3))| $(pad(string(msg_calc_func),22))| $(pad(string(postproc),22))| $(pad(interface_field,77))|")
+        println(io, "$(pad(string(entry_counter),3))| $(pad(string(msg_calc_func),18))| $(pad(string(postproc),18))| $(pad(interface_field,77))|")
         entry_counter += 1
     end
 end
