@@ -20,24 +20,11 @@ function graphviz(dot_graph::String; external_viewer::Bool=false)
     end
 end
 
-draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph, open_composites=false), edges(factor_graph), wraps=factor_graph.wraps; args...))
+draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph), edges(factor_graph), wraps=factor_graph.wraps; args...))
 draw(; args...) = draw(currentGraph(); args...)
+draw(composite_node::CompositeNode; args...) = draw(composite_node.internal_graph; args...)
 
-function draw(composite_node::CompositeNode; args...)
-    # Visualize the internals of composite_node
-    # TODO: use other function to get internal nodes
-    nodes = Set{Node}()
-    for field in names(composite_node)
-        if typeof(getfield(composite_node, field)) <: Node
-            push!(nodes, getfield(composite_node, field))
-        end
-    end
-    (length(nodes) > 0) || error("CompositeNode does not contain any internal nodes.")
-
-    return graphviz(genDot(nodes, edges(nodes, include_external=false)); args...)
-end
-
-draw(nodes::Set{Node}; args...) = graphviz(genDot(nodes, edges(nodes, include_external=false)); args...)
+draw(nodes::Set{Node}; args...) = graphviz(genDot(nodes, edges(nodes)); args...)
 draw(nodes::Vector{Node}; args...) = draw(Set(nodes); args...)
 
 ####################################################
@@ -52,24 +39,11 @@ function dot2pdf(dot_graph::String, filename::String)
     end
 end
 
-drawPdf(factor_graph::FactorGraph, filename::String) = dot2pdf(genDot(nodes(factor_graph, open_composites=false), edges(factor_graph)), filename)
+drawPdf(factor_graph::FactorGraph, filename::String) = dot2pdf(genDot(nodes(factor_graph), edges(factor_graph)), filename)
 drawPdf(filename::String) = drawPdf(currentGraph(), filename)
+drawPdf(composite_node::CompositeNode, filename::String) = drawPdf(composite_node.internal_graph, filename)
 
-function drawPdf(composite_node::CompositeNode, filename::String)
-    # Visualize the internals of composite_node
-    # TODO: use other function to get internal nodes
-    nodes = Set{Node}()
-    for field in names(composite_node)
-        if typeof(getfield(composite_node, field)) <: Node
-            push!(nodes, getfield(composite_node, field))
-        end
-    end
-    (length(nodes) > 0) || error("CompositeNode does not contain any internal nodes.")
-
-    return dot2pdf(genDot(nodes, edges(nodes, include_external=false)), filename)
-end
-
-drawPdf(nodes::Set{Node}, filename::String) = dot2pdf(genDot(nodes, edges(nodes, include_external=false)), filename)
+drawPdf(nodes::Set{Node}, filename::String) = dot2pdf(genDot(nodes, edges(nodes)), filename)
 drawPdf(nodes::Vector{Node}, filename::String) = drawPdf(Set(nodes), filename)
 
 

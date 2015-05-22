@@ -31,7 +31,7 @@
 ############################################
 export GainAdditionNode
 
-type GainAdditionNode <: CompositeNode
+type GainAdditionNode <: Node
     # Basic node properties.
     A::Array{Float64}
     name::ASCIIString

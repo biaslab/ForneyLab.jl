@@ -27,21 +27,6 @@ type Edge <: AbstractEdge
         tail.partner = head
         head.partner = tail
 
-        # Backreferences for tail's children
-        child_interface = tail.child
-        while child_interface != nothing
-            child_interface.partner = tail.partner
-            child_interface.edge = self
-            child_interface = child_interface.child
-        end
-        # Backreferences for head's children
-        child_interface = head.child
-        while child_interface != nothing
-            child_interface.partner = head.partner
-            child_interface.edge = self
-            child_interface = child_interface.child
-        end
-
         # Incorporate edge and nodes in current graph
         if add_to_graph
             graph = currentGraph()

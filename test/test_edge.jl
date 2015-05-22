@@ -31,15 +31,6 @@ facts("Edge integration tests") do
         @fact node2.out.edge => edge
     end
 
-    context("Edge should couple standard to composite nodes") do
-        FactorGraph()
-        comp_node = GainEqualityNode()
-        node = TerminalNode()
-        edge = Edge(node.out, comp_node.in1)
-        @fact comp_node.equality_node.interfaces[1].partner => node.out
-        @fact comp_node.equality_node.interfaces[1].edge => edge
-    end
-
     context("Edge should throw an error when the user attempts to reposition") do
         FactorGraph()
         node1 = TerminalNode(name="node1")
@@ -82,9 +73,8 @@ facts("Edge integration tests") do
 end
 
 facts("Functions for collecting edges") do
-    context("edges() should get all edges internal (optionally external as well) to the argument node set") do
+    context("edges() should get all edges connected to the node set") do
         testnodes = initializeLoopyGraph()
-        @fact edges(Set{Node}({testnodes[1], testnodes[2]}), include_external=false) => Set{Edge}({testnodes[1].in1.edge})
         @fact edges(Set{Node}({testnodes[1], testnodes[2]})) => Set{Edge}({testnodes[1].in1.edge, testnodes[4].in1.edge, testnodes[4].out.edge})
     end
 end

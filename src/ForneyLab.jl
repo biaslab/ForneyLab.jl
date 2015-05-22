@@ -4,7 +4,7 @@ using Optim
 using YAML
 using LaTeXStrings
 
-export Node, CompositeNode, ProbabilityDistribution
+export Node, ProbabilityDistribution
 export sumProduct!, vmp!
 export vague, self, ==
 export current_graph
@@ -30,7 +30,6 @@ abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a M
 abstract Node
 show(io::IO, node::Node) = println(io, "$(typeof(node)) with name $(node.name)")
 show(io::IO, nodes::Union(Set{Node}, Vector{Node})) = [show(io, node) for node in nodes]
-abstract CompositeNode <: Node
 
 # Message type
 include("message.jl")
@@ -56,11 +55,11 @@ include("nodes/equality.jl")
 include("nodes/fixed_gain.jl")
 include("nodes/gaussian.jl")
 include("nodes/exponential.jl")
-
-# Composite nodes
 include("nodes/gain_addition.jl")
 include("nodes/gain_equality.jl")
 include("nodes/sigmoid.jl")
+
+# Composite nodes
 include("nodes/composite.jl")
 
 # Graph and algorithm

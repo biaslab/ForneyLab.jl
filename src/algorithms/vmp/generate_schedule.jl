@@ -49,7 +49,7 @@ function generateSchedule!(sg::Subgraph, graph::FactorGraph=current_graph)
 
     # Make sure that messages are propagated to the timewraps
     interface_list_for_wraps = Array(Interface, 0)
-    sg_nodes = nodes(sg, open_composites=false)
+    sg_nodes = nodes(sg)
     for (from_node, to_node) in graph.wraps
         if from_node in sg_nodes # Timewrap is the responsibility of this subgraph
             interface_list_for_wraps = [interface_list_for_wraps, SumProduct.generateScheduleByDFS!(from_node.out.partner, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]

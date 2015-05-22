@@ -33,7 +33,7 @@
 
 export GainEqualityNode
 
-type GainEqualityNode <: CompositeNode
+type GainEqualityNode <: Node
     # Basic node properties
     A::Array{Float64}
     name::ASCIIString
