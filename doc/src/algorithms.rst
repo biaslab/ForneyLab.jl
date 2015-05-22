@@ -51,7 +51,7 @@ Schedules
 =========
 
 .. seealso::
-    **Demo:** `Schedules in loopy graphs <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/06_loopy_graphs.ipynb>`_
+    **Demo:** `Schedules in loopy graphs <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/05_loopy_graphs.ipynb>`_
 
 Algorithms executed on factor graphs are usually based on *message passing*. In message passing, a sequence of messages is calculated, where the next message usually depends on previously calculated messages. A ``Schedule`` defines a sequence of message calculations.
 

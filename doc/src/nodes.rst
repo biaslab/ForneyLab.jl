@@ -243,7 +243,7 @@ Composite nodes
 ~~~~~~~~~~~~~~~
 
 .. seealso::
-    **Demo:** `Kalman filter with composite node <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/05_kalman_composite.ipynb>`_
+    **Demo:** `Kalman filter with composite node <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/06_composite_nodes.ipynb>`_
 
 .. note::
 
