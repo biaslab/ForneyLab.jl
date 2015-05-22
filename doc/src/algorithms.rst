@@ -13,7 +13,7 @@ Algorithms that are to be executed on a :class:`FactorGraph`, are instances of t
             fields::Dict{Symbol, Any}
         end
 
-    The ``execute`` field holds a function that contains the algorithm's code. Algorithms might require specific data structures, such as message passing schedules. Those are saved in the ``fields`` dictionary.
+    The ``execute`` field holds a function that contains the algorithm's code. Algorithms might require specific data structures, such as message passing schedules. Those are saved in the ``fields`` dictionary. The function ``execute`` receives ``fields`` as its only argument.
 
 One can construct an ``Algorithm`` object manually, or use one of the available algorithm constructors to build an ``Algorithm`` automatically. For tree-like factor graphs, it is for example possible automatically derive a sum-product message passing algorithm using::
 

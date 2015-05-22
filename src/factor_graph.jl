@@ -10,6 +10,7 @@ export  currentGraph,
 type FactorGraph
     nodes::Set{Node}
     edges::Set{Edge}
+    locked::Bool
 
     # Connections to the outside world
     read_buffers::Dict{TerminalNode, Vector}
@@ -20,6 +21,7 @@ end
 # Create an empty graph
 global current_graph = FactorGraph( Set{Node}(),
                                     Set{Edge}(),
+                                    false,
                                     Dict{TerminalNode, Vector}(),
                                     Dict{Union(Edge,Interface), Vector}(),
                                     Array((TerminalNode, TerminalNode), 0))
@@ -29,6 +31,7 @@ setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a curre
 
 FactorGraph() = setCurrentGraph(FactorGraph(Set{Node}(),
                                             Set{Edge}(),
+                                            false,
                                             Dict{TerminalNode, Vector}(),
                                             Dict{Union(Edge,Interface), Vector}(),
                                             Array((TerminalNode, TerminalNode), 0))) # Initialize a new factor graph; automatically sets current_graph
@@ -45,7 +48,6 @@ end
 
 clearMessages!(graph::FactorGraph = current_graph) = map(clearMessages!, nodes(graph))
 
-nodes(node::CompositeNode) = nodes(node.internal_graph)
 nodes(graph::FactorGraph = current_graph) = copy(graph.nodes)
 
 function nodes(edges::Set{Edge})

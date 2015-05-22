@@ -4,7 +4,7 @@ type Algorithm
     execute::Function
     fields::Dict{Symbol, Any}
 
-    function Algorithm(execute::Function, fields::Dict)
+    function Algorithm(execute::Function, fields::Dict = Dict{Symbol,Any}())
         self = new(execute, fields)
         global current_algorithm = self
         return self

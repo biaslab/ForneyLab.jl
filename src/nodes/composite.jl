@@ -1,30 +1,75 @@
-export CompositeNode
+export CompositeNode, addRule!, nodes, isDeterministic
 
-abstract CompositeNode <: Node
+type CompositeNode <: Node
+    name::ASCIIString
+    interfaces::Array{Interface,1}
+    i::Dict{Symbol,Interface}
+    internal_graph::FactorGraph
+    computation_rules::Dict{(Interface,Function),Algorithm}
+    interfaceid_to_terminalnode::Array{TerminalNode,1}
+    terminalnode_to_interface::Dict{TerminalNode,Interface}
+    deterministic::Bool
+end
 
+function CompositeNode(graph::FactorGraph, terminals...; name=unnamedStr(), deterministic=false)
+    # Convert graph into a CompositeNode.
+    # terminals... is an array of TerminalNodes in graph, that will be bound to interfaces of the CompositeNode.
+    # The names of the terminals will be used as named interface handles.
+    # This function creates a new current FactorGraph so the user can continue working in the higher level graph.
+    self = CompositeNode(name, Interface[], Dict{Symbol,Interface}(), graph, Dict{(Interface,Function),Algorithm}(), TerminalNode[], Dict{TerminalNode,Interface}(), deterministic)
+    for terminal in terminals
+        (typeof(terminal) == TerminalNode) || error("Only a TerminalNode can be bound to an Interface of the CompositeNode, not $(typeof(terminal)).")
+        if terminal in self.interfaceid_to_terminalnode
+            error("Cannot bind the same TerminalNode to multiple interfaces")
+        end
+        push!(self.interfaces, Interface(self))
+        self.i[symbol(terminal.name)] = self.interfaces[end]
+        push!(self.interfaceid_to_terminalnode, terminal)
+        self.terminalnode_to_interface[terminal] = self.interfaces[end]
+    end
+    self.internal_graph.locked = true
+    FactorGraph()
 
-# # Implementation of sumProduct!() for a general CompositeNode with an internal graph (use_composite_update_rules==false).
-# # This implementation can be used if the outbound messages can be calculated by internal message passing.
-# # The internal graph should have no loops. If it does, the user should overload sumProduct!() to set initial messages, iterate through the loop(s) and check convergence.
+    return self    
+end
 
-# function sumProduct!(node::CompositeNode,
-#                             outbound_interface_id::Int,
-#                             inbounds...)
-#     # Calculate an outbound message based on the inbound messages and the node function.
-#     # This function is not exported, and is only meant for internal use.
+isDeterministic(composite_node::CompositeNode) = composite_node.deterministic
 
-#     if node.use_composite_update_rules
-#         error("$(typeof(node)) $(node.name) is configured to use shortcut rules, but sumProduct!() with arguments $([typeof(inbound) for inbound in [inbounds...]]) is not defined for this node type.")
-#     else
-#         # Internal message passing
-#         schedule = nothing
-#         try
-#             schedule = node.interfaces[outbound_interface_id].internal_schedule
-#         catch
-#             error("No internal message passing schedule is defined for calculating outbound messages on interface $(outbound_interface_id) of $(typeof(node)) $(node.name).")
-#         end
+function addRule!(composite_node::CompositeNode, outbound_interface::Interface, message_calculation_rule::Function, algorithm::Algorithm)
+    (outbound_interface.node == composite_node) || error("The outbound interface does not belong to the specified composite node $(composite_node.name)")
+    composite_node.computation_rules[(outbound_interface,message_calculation_rule)] = algorithm
 
-#         return node.interfaces[outbound_interface_id].message = SumProduct.execute(schedule)
+    return composite_node
+end
 
-#     end
-# end
+nodes(node::CompositeNode) = nodes(node.internal_graph)
+
+function sumProduct!(node::CompositeNode,
+                     outbound_interface_id::Int,
+                     inbounds...)
+    outbound_interface = node.interfaces[outbound_interface_id]
+    internal_outbound_interface = node.interfaceid_to_terminalnode[outbound_interface_id].interfaces[1].partner
+
+    # Check if there is a computation rule defined for this case
+    if !haskey(node.computation_rules, (outbound_interface, sumProduct!))
+        # Try to automatically generate a sum-product algorithm
+        clearMessages!(node.internal_graph)
+        algo = SumProduct.Algorithm(internal_outbound_interface)
+        node.computation_rules[(outbound_interface, sumProduct!)] = algo
+    end
+
+    # Move all inbound messages to corresponding terminal nodes in the internal graph
+    for interface_id=1:length(node.interfaces)
+        if interface_id != outbound_interface_id 
+            node.interfaceid_to_terminalnode[interface_id].value = node.interfaces[interface_id].partner.message.payload
+        end
+    end
+
+    # Execute the correct algorithm
+    run(node.computation_rules[(outbound_interface, sumProduct!)], node.internal_graph)
+
+    # Move the calculated messages to the interfaces of node
+    outbound_interface.message = internal_outbound_interface.message
+
+    return(:empty, outbound_interface.message)
+end
