@@ -12,7 +12,6 @@ include("generate_schedule.jl")
 function Algorithm(graph::FactorGraph=currentGraph())
     # Generates a sumproduct algorithm
     # Uses autoscheduler and only works in acyclic graphs
-    #clearMessages!(graph)
     schedule = SumProduct.generateSchedule(graph)
 
     # Construct the execute function and its arguments
@@ -20,10 +19,9 @@ function Algorithm(graph::FactorGraph=currentGraph())
     return ForneyLab.Algorithm(exec, {:schedule => schedule})
 end
 
-function Algorithm(outbound_interface::Interface, graph::FactorGraph=currentGraph())
+function Algorithm(outbound_interface::Interface)
     # Generates a sumproduct algorithm to calculate the outbound message on outbound_interface
     # Uses autoscheduler and only works in acyclic graphs
-    #clearMessages!(graph)
     schedule = SumProduct.generateSchedule(outbound_interface)
 
     # Construct the execute function and its arguments
@@ -31,10 +29,9 @@ function Algorithm(outbound_interface::Interface, graph::FactorGraph=currentGrap
     return ForneyLab.Algorithm(exec, {:schedule => schedule})
 end
 
-function Algorithm(partial_list::Vector{Interface}, graph::FactorGraph=currentGraph())
+function Algorithm(partial_list::Vector{Interface})
     # Generates a sumproduct algorithm that at least propagates to all interfaces in the argument vector.
     # Uses autoscheduler and only works in acyclic graphs
-    #clearMessages!(graph)
     schedule = SumProduct.generateSchedule(partial_list)
 
     # Construct the execute function and its arguments
@@ -42,10 +39,9 @@ function Algorithm(partial_list::Vector{Interface}, graph::FactorGraph=currentGr
     return ForneyLab.Algorithm(exec, {:schedule => schedule})
 end
 
-function Algorithm(edge::Edge, graph::FactorGraph=currentGraph())
+function Algorithm(edge::Edge)
     # Generates a sumproduct algorithm to calculate the marginal on edge
     # Uses autoscheduler and only works in acyclic graphs
-    #clearMessages!(graph)
     schedule = SumProduct.generateSchedule([edge.head, edge.tail])
 
     # Construct the execute function and its arguments

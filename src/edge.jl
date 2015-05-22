@@ -12,11 +12,12 @@ type Edge <: AbstractEdge
     marginal::Union(ProbabilityDistribution, Nothing)
     distribution_type::DataType
 
-    function Edge(tail::Interface, head::Interface, distribution_type=Any; add_to_graph::Bool=true)
+    function Edge(tail::Interface, head::Interface, distribution_type=Any)
         # add_to_graph is false for edges that are internal in a composite node
         # Cautionary note: replacing "distribution_type=Any" by "distribution_type::DataType=Any" causes segfaults (?!?)
         (!is(head.node, tail.node)) || error("Cannot connect two interfaces of the same node: $(typeof(head.node)) $(head.node.name)")
         (head.partner == nothing && tail.partner == nothing) || error("Previously defined edges cannot be repositioned.")
+        (current_graph.locked == false) || error("Cannot extend a locked FactorGraph.")
 
         self = new(tail, head, nothing, distribution_type)
 
@@ -27,15 +28,10 @@ type Edge <: AbstractEdge
         tail.partner = head
         head.partner = tail
 
-        # Incorporate edge and nodes in current graph
-        if add_to_graph
-            graph = currentGraph()
-
-            # Add nodes and edges to graph definition
-            push!(graph.edges, self)
-            push!(graph.nodes, tail.node) # Add node to subgraph
-            push!(graph.nodes, head.node)
-        end
+        # Add nodes and edge to current_graph
+        push!(current_graph.edges, self)
+        push!(current_graph.nodes, tail.node)
+        push!(current_graph.nodes, head.node)
 
         return self
     end

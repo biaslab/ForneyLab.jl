@@ -29,7 +29,6 @@ abstract AbstractEdge # An Interface belongs to an Edge, but Interface is define
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
 abstract Node
 show(io::IO, node::Node) = println(io, "$(typeof(node)) with name $(node.name)")
-show(io::IO, nodes::Union(Set{Node}, Vector{Node})) = [show(io, node) for node in nodes]
 
 # Message type
 include("message.jl")
@@ -59,12 +58,12 @@ include("nodes/gain_addition.jl")
 include("nodes/gain_equality.jl")
 include("nodes/sigmoid.jl")
 
-# Composite nodes
-include("nodes/composite.jl")
-
 # Graph and algorithm
 include("factor_graph.jl")
 include("algorithm.jl")
+
+# Composite nodes
+include("nodes/composite.jl")
 
 # Methods for calculating marginals
 include("distributions/calculate_marginal.jl")
