@@ -2,7 +2,7 @@
  Nodes
 **************
 
-This chapter describes :ref:`node-anatomy`, :ref:`msg-calc-rules`, and :ref:`built-in-nodes`. For more details, have a look at the source files of the built-in nodes, such as ``src/nodes/addition.jl``. 
+This chapter describes :ref:`node-anatomy`, :ref:`msg-calc-rules`, :ref:`built-in-nodes`, and :ref:`composite-nodes`. For more details, have a look at the source files of the built-in nodes, such as ``src/nodes/addition.jl``. 
 
 .. _node-anatomy:
 
@@ -107,7 +107,7 @@ Built-in nodes
 
 The following built-in 'elementary' nodes are available in ForneyLab: :class:`AdditionNode`, :class:`EqualityNode`, :class:`ExponentialNode`, :class:`FixedGainNode`, :class:`GaussianNode`, :class:`TerminalNode`.
 
-There are aso some built-in composite nodes: :class:`GainAdditionNode`, :class:`GainEqualityNode`.
+There are also some built-in *combined nodes*, which combine two or more node functions into one for higher computational efficiency: :class:`GainAdditionNode`, :class:`GainEqualityNode`.
 
 Elementary nodes
 ~~~~~~~~~~~~~~~~
@@ -233,11 +233,82 @@ Elementary nodes
         [T]----->
      
     :Node function: ``f(out) = δ(out - value)``      
-    :Interfaces:    1: `out`
+    :Interfaces:    1: ``out``
     :Construction:  ``TerminalNode(value, name="something")``
 
     A ``TerminalNode`` is used to terminate an edge. It forces the variable represented by the connected edge to ``value``. The terminal node always emits a ``Message`` with payload ``value`` (which is a :class:`ProbabilityDistribution`). It can be used to introduce priors or data into the factor graph. 
 
+    Message computation rules:
+
+    +-----------------+---------------------------------------------------+
+    |                 | Input (↓) and output (↑) per interface            |
+    + Rule            +---------------------------------------------------+
+    |                 | 1                                                 |
+    +=================+===================================================+
+    | sumProduct!     | ↑↓ ``Msg{Any}``                                   |
+    +-----------------+-------------------------+-------------------------+
+
+
+Combined nodes
+~~~~~~~~~~~~~~
+
+.. type:: GainAdditionNode
+
+    Combines a :class:`FixedGainNode` with an :class:`AdditionNode` for higher computational efficiency::
+
+                 | in1
+                 |
+             ____|____
+             |   v   |
+             |  [A]  |
+             |   |   |
+         in2 |   v   | out
+        -----|->[+]--|---->
+             |_______|
+     
+    :Node function: ``f(in1,in2,out) = δ(out - A*in1 - in2)``      
+    :Interfaces:    1: ``in1``, 2: ``in2``, 3: ``out``
+    :Construction:  ``GainAdditionNode(A, name="something")``
+
+    Message computation rules:
+
+    +-----------------+-----------------------------------------------------------------------------+
+    |                 | Input (↓) and output (↑) per interface                                      |
+    + Rule            +-------------------------+-------------------------+-------------------------+
+    |                 | 1                       | 2                       |  3                      |
+    +=================+=========================+=========================+=========================+
+    | sumProduct!     | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    |   
+    +-----------------+-------------------------+-------------------------+-------------------------+
+
+.. type:: GainEqualityNode
+
+    Combines a :class:`FixedGainNode` with an :class:`EqualityNode` for higher computational efficiency::
+
+             _________
+         in1 |       | in2
+        -----|->[=]<-|-----
+             |   |   |
+             |   v   |
+             |  [A]  |
+             |___|___|
+                 | out
+                 v
+
+    :Node function: ``f(in1,in2,out) = δ(in1 - A*out)*δ(in2 - A*out)``      
+    :Interfaces:    1: ``in1``, 2: ``in2``, 3: ``out``
+    :Construction:  ``GainEqualityNode(A, name="something")``
+
+    Message computation rules:
+
+    +-----------------+-----------------------------------------------------------------------------+
+    |                 | Input (↓) and output (↑) per interface                                      |
+    + Rule            +-------------------------+-------------------------+-------------------------+
+    |                 | 1                       | 2                       |  3                      |
+    +=================+=========================+=========================+=========================+
+    | sumProduct!     | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    |   
+    +-----------------+-------------------------+-------------------------+-------------------------+
+
+.. _composite-nodes:
 
 Composite nodes
 ---------------
