@@ -22,6 +22,12 @@ facts("Edge integration tests") do
         @fact edge.distribution_type => GaussianDistribution
     end
 
+    context("Edge constructor should throw an error if the FactorGraph is locked") do
+        (node1, node2) = initializePairOfMockNodes()
+        currentGraph().locked = true
+        @fact_throws Edge(node1.out, node2.out)
+    end
+
     context("Edge construction should couple interfaces to edge") do
         (node1, node2) = initializePairOfMockNodes()
         @fact node1.out.edge => nothing

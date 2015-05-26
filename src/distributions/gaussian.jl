@@ -22,7 +22,7 @@ export
     ensureXiWParametrization!,
     isWellDefined,
     isConsistent,
-    drawSample
+    sample
 
 type GaussianDistribution <: ProbabilityDistribution
     m::Vector{Float64}   # Mean vector
@@ -102,7 +102,7 @@ show(io::IO, dist::GaussianDistribution) = println(io, format(dist))
 Base.mean(dist::GaussianDistribution) = ensureMDefined!(dist).m
 Base.var(dist::GaussianDistribution) = diag(ensureVDefined!(dist).V, 0)
 
-function drawSample(dist::GaussianDistribution)
+function sample(dist::GaussianDistribution)
     ensureMVParametrization!(dist)
     return (dist.V^0.5)*randn(length(dist.m)) + dist.m
 end

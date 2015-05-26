@@ -9,7 +9,7 @@
 #   Example: DeltaDistribution(3.0)
 ############################################
 
-export DeltaDistribution, drawSample
+export DeltaDistribution, sample
 
 type DeltaDistribution{T} <: ProbabilityDistribution
     m::T
@@ -26,7 +26,7 @@ show(io::IO, dist::DeltaDistribution) = println(io, format(dist))
 Base.mean(dist::DeltaDistribution) = dist.m
 Base.var(dist::DeltaDistribution) = 0.0
 
-drawSample(dist::DeltaDistribution) = deepcopy(dist.m)
+sample(dist::DeltaDistribution) = deepcopy(dist.m)
 
 ==(x::DeltaDistribution, y::DeltaDistribution) = (x.m == y.m)
 
