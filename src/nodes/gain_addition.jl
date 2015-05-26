@@ -2,7 +2,9 @@
 # GainAdditionNode
 ############################################
 # Description:
-#   Composite gain-addition node.
+#   Gain-addition node.
+#   Combines the node functions of the FixedGainNode
+#   and the AdditionNode for computational efficiency.
 #
 #            | in1
 #            |
@@ -42,7 +44,7 @@ type GainAdditionNode <: Node
     out::Interface
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
-    function GainAdditionNode(A::Union(Array{Float64},Float64)=1.0, use_composite_update_rules::Bool=true; name=unnamedStr())
+    function GainAdditionNode(A::Union(Array{Float64},Float64)=1.0; name=unnamedStr())
         self = new(ensureMatrix(deepcopy(A)), name, Array(Interface, 3))
 
         named_handle_list = [:in1, :in2, :out]
