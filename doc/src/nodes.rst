@@ -240,11 +240,69 @@ Elementary nodes
 
 
 Composite nodes
-~~~~~~~~~~~~~~~
+---------------
+
+It is possible to create a node that contains an internal :class:`FactorGraph` to define the node function. Such a node is called a ``CompositeNode``.
+
+.. type:: CompositeNode
+
+    A ``CompositeNode`` behave like a normal ``Node`` from the outside, but contains an *internal graph* that defines the node function. The interfaces of a ``CompositeNode`` are linked to :class:`TerminalNode` instances in its internal graph. A ``CompositeNode`` can easily be constructed from a :class:`FactorGraph`, and it allows one to build hierarchical models since the internal graph may contain other composite nodes.
+    ::
+
+        type CompositeNode <: Node
+            name::ASCIIString
+            interfaces::Array{Interface,1}
+            i::Dict{Symbol,Interface}
+            internal_graph::FactorGraph
+            # ... and some internal stuff
+        end
+
+    Field ``i`` contains named interface handles, for example ``comp_node.i[:out]`` might be identical to ``comp_node.interfaces[2]``.
+
+
+
+Wrapping a FactorGraph in a CompositeNode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The most straightforward way of constructing a ``CompositeNode`` is to first build its internal factor graph, and then wrapping this graph in a ``CompositeNode``. This can be achieved using the following constructor::
+
+    function CompositeNode(graph::FactorGraph, terminals...; name=unnamedStr(), deterministic=false)
+
+Here, ``terminals`` is an array of :class:`TerminalNode` instances in ``graph`` that should be linked to interfaces of the created ``CompositeNode``. The name of a linked ``TerminalNode`` determines the name of the corresponding :class:`Interface`. Once the ``graph`` is wrapped in a newly created ``CompositeNode``, a new empty ``FactorGraph`` is created. Example::
+
+    # Build CompositeNode with node function f(in,out) = δ(out - 3*in)
+
+    # Step 1: build internal graph
+    g = FactorGraph()
+    t_in       = TerminalNode(name="in")
+    t_constant = TerminalNode(3.0)
+    t_out      = TerminalNode(name="out")
+    adder      = AdditionNode()
+    Edge(t_in, adder.in1)
+    Edge(t_constant, adder.in2)
+    Edge(adder.out, t_out)
+
+    # Step 2: wrap graph in CompositeNode, link t_in & t_out to interfaces
+    comp_add3 = CompositeNode(g, t_in, t_out, name="add3")
+
+    # Step 3: build higher-level graph
+    t_in  = TerminalNode(name="in")
+    t_out = TerminalNode(name="out")
+    Edge(t_in, comp_add3.i[:in])
+    Edge(comp_add3.i[:out], t_out)
+
+
+Message computation rules
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since a ``CompositeNode`` behaves like a normal ``Node`` from the outside, one can just call a message calculation rule like :func:`sumProduct!` on it. The message will in general be calculated by performing message passing on the internal graph of the composite node. If no suitable custom calculation rule is defined in the ``CompositeNode``, ForneyLab will try to automatically derive a suitable :class:`Algorithm` on the internal graph to calculate the desired message. However, this might not be possible or desireable, for example if the internal graph contains loops. In such cases it is required to define a *custom message calculation rule* using the function ``addRule!()``.
+
+.. function:: addRule!(composite_node::CompositeNode, outbound_interface::Interface, message_calculation_rule::Function, algorithm::Algorithm)
+
+    Add a custom message calculation rule to ``composite_node``. The outbound interface for the rule is specified by ``outbound_interface``. The type of message calculation rule is specified in ``message_calculation_rule``, and can be any valid message calculation rule, like :func:`sumProduct!` or :func:`vmp!`. The ``algorithm`` argument contains the :class:`Algorithm` that yields the desired :class:`Message`.
+
+Note that it's possible to define so called *shortcut rules* using ``addRule!()``. One might for example implement the ``sumProduct!`` rule for a specific interface of a ``CompositeNode`` as a closed-form equation that is derived by hand instead of performing sum-product message passing on the internal factor graph. 
+
 
 .. seealso::
     **Demo:** `Kalman filter with composite node <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/06_composite_nodes.ipynb>`_
-
-.. note::
-
-    TODO
