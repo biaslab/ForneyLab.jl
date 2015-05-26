@@ -103,30 +103,30 @@ Upon algorithm construction the generated schedule is stored in the ``:schedule`
 Algorithm constructors
 ----------------------
 
-Algorithm constructors for sum product message passing only work for acyclic graphs, or for cyclic graphs with pre-set breaker messages.
+Algorithm constructors for sum-product message passing only work for acyclic graphs, or for cyclic graphs with pre-set breaker messages.
 
 .. function:: SumProduct.Algorithm(::FactorGraph)
 
-    Generates a sumproduct algorithm with a schedule towards interfaces concerning write buffers and wraps as defined by the argument graph.
+    Generates a sum-product algorithm with a schedule towards interfaces concerning write buffers and wraps as defined by the argument graph.
 
 .. function:: SumProduct.Algorithm(::Interface)
 
-    Defines a sumproduct algorithm with a schedule towards the argument interface.
+    Defines a sum-product algorithm with a schedule towards the argument interface.
 
 .. function:: SumProduct.Algorithm(::Vector{Interface})
 
-    Generates a sumproduct algorithm that at least propagates messages to all interfaces in the argument vector.
+    Generates a sum-product algorithm that at least propagates messages to all interfaces in the argument vector.
 
 .. function:: SumProduct.Algorithm(::Edge)
 
-    Defines a sumproduct algorithm with a schedule towards the forward and backward interfaces of the argument edge and calculates the corresponding marginal.
+    Defines a sum-product algorithm with a schedule towards the forward and backward interfaces of the argument edge and calculates the corresponding marginal.
 
 Automatic scheduler
 -------------------
 
 .. function:: SumProduct.generateSchedule(::FactorGraph)
 
-    Returns a sum product message passing schedule that passes messages towards interfaces concerning write buffers and wraps as defined by the argument graph. The scheduler works through depth first search and terminates when it encounters an interface that carries a message. Normally the automatic scheduler can only works for acyclic graphs, so before schedule generation cycles should be broken with breaker messages.  
+    Returns a sum-product message passing schedule that passes messages towards interfaces concerning write buffers and wraps as defined by the argument graph. The scheduler works through depth first search and terminates when it encounters an interface that carries a message. Normally the automatic scheduler can only works for acyclic graphs, so before schedule generation cycles should be broken with breaker messages.  
 
 
 .. _vmp-submodule:
