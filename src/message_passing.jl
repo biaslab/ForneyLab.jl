@@ -38,7 +38,7 @@ function execute(schedule_entry::ScheduleEntry)
         interface_name = (name(outbound_interface)!="") ? "$(name(outbound_interface))" : "$(outbound_interface_id)"
         postproc = (isdefined(schedule_entry, :post_processing)) ? string(schedule_entry.post_processing) : ""
         rule_field = "$(rule) $(postproc)"
-        println("|$(pad(node.name, 15))|$(pad(interface_name,10))|$(pad(rule_field,30))|$(pad(format(outbound_message.payload),71))|")
+        println("$(node.name) [$(interface_name)], $(rule_field): $(format(outbound_message.payload))")
     end
 
     return outbound_message
@@ -51,8 +51,8 @@ function execute(schedule::Schedule)
 
     # Print table header for execution log
     if verbose
-        println("\n|     node      |interface |             rule             |                           calculated message                          |")
-        println("|---------------|----------|------------------------------|-----------------------------------------------------------------------|")
+        println("Execution log (node [interface], rule: result)")
+        println("--------------------------------------------")
     end
 
     for schedule_entry in schedule

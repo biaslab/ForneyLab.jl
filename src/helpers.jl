@@ -113,10 +113,10 @@ function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
     node="node"; reference="reference"; formula="formula"; diagram="diagram"
     # Write rule list to output
     if format==:table
-        println("|                  id                    |                  node                  |                   reference                   |")
-        println("|----------------------------------------|----------------------------------------|-----------------------------------------------|")
+        println("Message calculation rules (node id (reference))")
+        println("-----------------------------------------------")
         for (id, rule) in rule_list
-            println("|$(pad(id,40))|$(pad(rule[node],40))|$(pad(rule[reference],47))|")
+            println("$(rule[node]) $(id) ($(rule[reference]))")
         end
         println("\nUse rules(NodeType) to view all rules of a specific node type; use rules(..., format=:list) to view the formulas in latex output.")
     elseif format==:list

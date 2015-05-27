@@ -8,6 +8,7 @@ export Node, ProbabilityDistribution
 export sumProduct!, vmp!
 export vague, self, ==
 export current_graph
+export setVerbosity
 
 # Export algorithm modules
 export SumProduct
