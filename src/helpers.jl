@@ -120,6 +120,8 @@ function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
         end
         println("\nUse rules(NodeType) to view all rules of a specific node type; use rules(..., format=:list) to view the formulas in latex output.")
     elseif format==:list
+        display(HTMLString("<p><b>Parameterizations</b><br>Student's-t distribution: St(m,W,ν)<br>Delta Distribution: δ(m)<br>Gaussian distribution (mean, variance): N(m,V), N(m,W⁻¹) for multivariate, or N(m,λ⁻¹) for univariate<br>Gamma distribution (shape, rate): Gam(a,b)<br>Inverse gamma distribution (shape, scale): Ig(a,b)<br>Beta distribution: Bet(a,b)<br>Normal-gamma distribution: Ng(m,β,a,b)</p>"))
+        display(HTMLString("<p>Parameters in the equations are denoted by the parameter character (see above list for distribution parametrizations) and a subcript with the variable it applies to.</p>"))
         for (id, rule) in rule_list
             display(HTMLString("<b>$(id)</b>; $(rule[reference]):"))
             display(HTMLString("<font face=\"monospace\">$(rule[diagram])</font>"))

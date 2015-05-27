@@ -9,216 +9,216 @@ rules:
   equality_gaussian:
     node:       EqualityNode
     reference:  "Korl (2005), table 4.1"
-    diagram:    <pre>x~N(m,W)   y~N(m,W)</pre>
-                <pre>    --->[=]<---    </pre>
-                <pre>         |z~N(m,W) </pre>
-                <pre>         v         </pre>
-    formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=(W_x+W_y)^{-1}(W_x m_x + W_y m_y), W_z=W_x+W_y)$"
+    diagram:    <pre> x~N   y~N </pre>
+                <pre>--->[=]<---</pre>
+                <pre>     |z~N  </pre>
+                <pre>     v     </pre>
+    formula:    "$W_z = W_x+W_y \\\\ \\overrightarrow{\\mu}(z) = \\mathcal{N}((W_x+W_y)^{-1}(W_x m_x + W_y m_y), W_z^{-1})$"
 
   equality_delta:
     node:       EqualityNode
     reference:  ""
-    diagram:    <pre>x~δ(m)   y~δ(m)</pre>
-                <pre>  --->[=]<---  </pre>
-                <pre>       |z~δ(m) </pre>
-                <pre>       v       </pre>
+    diagram:    <pre> x~δ   y~δ </pre>
+                <pre>--->[=]<---</pre>
+                <pre>     |z~δ  </pre>
+                <pre>     v     </pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$ if $m_x=m_y$, $\\delta(0)$ otherwise"
 
   equality_inverse_gamma:
     node:       EqualityNode
     reference:  "Korl (2005), table 5.2"
-    diagram:    <pre>x~Ig(a,b)   y~Ig(a,b)</pre>
-                <pre>     --->[=]<---     </pre>
-                <pre>          |z~Ig(a,b) </pre>
-                <pre>          v          </pre>
+    diagram:    <pre>x~Ig   y~Ig</pre>
+                <pre>--->[=]<---</pre>
+                <pre>     |z~Ig </pre>
+                <pre>     v     </pre>
                 <pre>(Ig in shape/rate parametrization)</pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{I}g(a_z=a_x+a_y+1, b_z=b_x+b_y)$"
 
   equality_gamma:
     node:       EqualityNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>x~Gam(a,b)   y~Gam(a,b)</pre>
-                <pre>      --->[=]<---      </pre>
-                <pre>           |z~Gam(a,b) </pre>
-                <pre>           v           </pre>
+    diagram:    <pre>x~Gam   y~Gam</pre>
+                <pre> --->[=]<--- </pre>
+                <pre>      |z~Gam </pre>
+                <pre>      v      </pre>
                 <pre>(Gam in shape/rate parametrization)</pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{G}am(a_z=a_x+a_y-1, b_z=b_x+b_y)$"
 
   equality_beta:
     node:       EqualityNode
     reference:  "Sigmoid node derivations document"
-    diagram:    <pre>x~Bet(a,b)   y~Bet(a,b)</pre>
-                <pre>      --->[=]<---      </pre>
-                <pre>           |z~Bet(a,b) </pre>
-                <pre>           v           </pre>
+    diagram:    <pre>x~Bet   y~Bet</pre>
+                <pre> --->[=]<--- </pre>
+                <pre>      |z~Bet </pre>
+                <pre>      v      </pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{B}et(a_z=a_x+a_y-1, b_z=b_x+b_y-1)$"
 
   equality_gaussian_delta:
     node:       EqualityNode
     reference:  ""
-    diagram:    <pre>x~δ(m)   y~N(m,W)</pre>
-                <pre>  --->[=]<---    </pre>
-                <pre>       |z~δ(m)   </pre>
-                <pre>       v         </pre>
+    diagram:    <pre> x~δ   y~N </pre>
+                <pre>--->[=]<---</pre>
+                <pre>     |z~δ  </pre>
+                <pre>     v     </pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$"
 
   equality_gaussian_student:
     node:       EqualityNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>x~N(m,W)   y~St(m,W,ν)</pre>
-                <pre>    --->[=]<---       </pre>
-                <pre>         |z~N(m,W)    </pre>
-                <pre>         v            </pre>
-    formula:    "$\\overrightarrow{\\mu}(z) \\approx \\mathcal{N}(m_z=(W_x+W_y)^{-1}(W_x m_x + W_y m_y), W_z=W_x+W_y)$"
+    diagram:    <pre> x~N   y~St  </pre>
+                <pre>--->[=]<---  </pre>
+                <pre>     |z~N    </pre>
+                <pre>     v       </pre>
+    formula:    "$W_z = W_x+W_y \\\\ \\overrightarrow{\\mu}(z) \\approx \\mathcal{N}((W_x+W_y)^{-1}(W_x m_x + W_y m_y), W_z^{-1})$"
 
   equality_gamma_delta:
     node:       EqualityNode
     reference:  ""
-    diagram:    <pre>x~δ(m)   y~Gam(a,b)</pre>
-                <pre>  --->[=]<---      </pre>
-                <pre>       |z~δ(m)     </pre>
-                <pre>       v           </pre>
+    diagram:    <pre> x~δ   y~Gam</pre>
+                <pre>--->[=]<--- </pre>
+                <pre>     |z~δ   </pre>
+                <pre>     v      </pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$ for $m_x > 0$"
 
   equality_inverse_gamma_delta:
     node:       EqualityNode
     reference:  ""
-    diagram:    <pre>x~δ(m)   y~Ig(a,b) </pre>
-                <pre>  --->[=]<---      </pre>
-                <pre>       |z~δ(m)     </pre>
-                <pre>       v           </pre>
+    diagram:    <pre> x~δ   y~Ig </pre>
+                <pre>--->[=]<--- </pre>
+                <pre>     |z~δ   </pre>
+                <pre>     v      </pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$ for $m_x > 0$"
 
   addition_gaussian_forward:
     node:       AdditionNode
     reference:  "Korl (2005), table 4.1"
-    diagram:    <pre>x~N(m,W)   y~N(m,W)</pre>
-                <pre>    --->[+]<---    </pre>
-                <pre>         |z~N(m,W) </pre>
-                <pre>         v         </pre>
-    formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=m_x+m_y, W_z=W_x(W_x+W_y)^{-1}W_y)$"
+    diagram:    <pre> x~N   y~N </pre>
+                <pre>--->[+]<---</pre>
+                <pre>     |z~N  </pre>
+                <pre>     v     </pre>
+    formula:    "$W_z=W_x(W_x+W_y)^{-1}W_y \\\\ \\overrightarrow{\\mu}(z) = \\mathcal{N}(m_x+m_y, W_z^{-1})$"
 
   addition_gaussian_backward:
     node:       AdditionNode
     reference:  "Korl (2005), table 4.1"
-    diagram:    <pre>x~N(m,W)   y~N(m,W)</pre>
-                <pre>    --->[+]<---    </pre>
-                <pre>         |z~N(m,W) </pre>
-                <pre>         v         </pre>
-    formula:    "$\\overleftarrow{\\mu}(x) = \\mathcal{N}(m_x=m_z-m_y, W_x=W_z(W_z+W_y)^{-1}W_y)$"
+    diagram:    <pre> x~N   y~N </pre>
+                <pre>--->[+]<---</pre>
+                <pre>     |z~N  </pre>
+                <pre>     v     </pre>
+    formula:    "$W_x = W_z(W_z+W_y)^{-1}W_y \\\\ \\overleftarrow{\\mu}(x) = \\mathcal{N}(m_z-m_y, W_x^{-1})$"
 
   addition_delta_forward:
     node:       AdditionNode
     reference:  ""
-    diagram:    <pre>x~δ(m)   y~δ(m)</pre>
-                <pre>  --->[+]<---  </pre>
-                <pre>       |z~δ(m) </pre>
-                <pre>       v       </pre>
+    diagram:    <pre> x~δ   y~δ  </pre>
+                <pre>--->[+]<--- </pre>
+                <pre>     |z~δ   </pre>
+                <pre>     v      </pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x+m_y)$"
 
   addition_delta_backward:
     node:       AdditionNode
     reference:  ""
-    diagram:    <pre>x~δ(m)   y~δ(m)</pre>
-                <pre>  --->[+]<---  </pre>
-                <pre>       |z~δ(m) </pre>
-                <pre>       v       </pre>
+    diagram:    <pre> x~δ   y~δ </pre>
+                <pre>--->[+]<---</pre>
+                <pre>     |z~δ  </pre>
+                <pre>     v     </pre>
     formula:    "$\\overleftarrow{\\mu}(x) = \\delta(m_x=m_z-m_y)$"
 
   fixed_gain_gaussian_forward:
     node:       FixedGainNode
     reference:  "Korl (2005), table 4.1"
-    diagram:    <pre>x~N(m,V)   y~N(m,V)</pre>
-                <pre>    --->[A]--->    </pre>
-    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(m_y=A m_x, V_y=A V_x A^T)$"
+    diagram:    <pre> x~N   y~N </pre>
+                <pre>--->[A]---></pre>
+    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(A m_x, A V_x A^T)$"
 
   fixed_gain_gaussian_backward:
     node:       FixedGainNode
     reference:  "Korl (2005), table 4.1"
-    diagram:    <pre>x~N(m,W)   y~N(m,W)</pre>
-                <pre>    --->[A]--->    </pre>
-    formula:    "$\\overleftarrow{\\mu}(x) = \\mathcal{N}(m_x=A^{-1} m_y, W_x=A^T W_y A)$"
+    diagram:    <pre> x~N   y~N </pre>
+                <pre>--->[A]---></pre>
+    formula:    "$W_x=A^T W_y A \\\\ \\overleftarrow{\\mu}(x) = \\mathcal{N}(A^{-1} m_y, W_x^{-1})$"
 
   fixed_gain_delta_forward:
     node:       FixedGainNode
     reference:  ""
-    diagram:    <pre>x~δ(m)   y~δ(m)</pre>
-                <pre>  --->[A]--->  </pre>
+    diagram:    <pre> x~δ   y~δ </pre>
+                <pre>--->[A]---></pre>
     formula:    "$\\overrightarrow{\\mu}(y) = \\delta(m_y=A m_x)$"
 
   fixed_gain_delta_backward:
     node:       FixedGainNode
     reference:  ""
-    diagram:    <pre>x~δ(m)   y~δ(m)</pre>
-                <pre>  --->[A]--->  </pre>
+    diagram:    <pre> x~δ   y~δ </pre>
+                <pre>--->[A]---></pre>
     formula:    "$\\overleftarrow{\\mu}(x) = \\delta(m_x=A^{-1} m_y)$"
 
   gain_equality_gaussian_backward:
     node:       GainEqualityNode
     reference:  "Korl (2005), table 4.1"
-    diagram:    <pre>         _________          </pre>
-                <pre>x~N(m,V) |       | z~N(m,V) </pre>
-                <pre>    -----|->[=]<-|-----     </pre>
-                <pre>         |   |   |          </pre>
-                <pre>         |   v   |          </pre>
-                <pre>         |  [A]  |          </pre>
-                <pre>         |___|___|          </pre>
-                <pre>             | y~N(m,V)     </pre>
-                <pre>             v              </pre>
-    formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=m_x+V_x A^T G (m_y - Am_x), V_z=V_x - V_x A^T G A V_x)$, with $G = (V_y + AV_xA^T)^{-1}$"
+    diagram:    <pre>    _________     </pre>
+                <pre>x~N |       | z~N </pre>
+                <pre>----|->[=]<-|-----</pre>
+                <pre>    |   |   |     </pre>
+                <pre>    |   v   |     </pre>
+                <pre>    |  [A]  |     </pre>
+                <pre>    |___|___|     </pre>
+                <pre>        | y~N     </pre>
+                <pre>        v         </pre>
+    formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_x+V_x A^T G (m_y - Am_x), V_x - V_x A^T G A V_x), G = (V_y + AV_xA^T)^{-1}$"
 
   gain_equality_gaussian_forward:
     node:       GainEqualityNode
     reference:  "Korl (2005), table 4.1"
-    diagram:    <pre>         _________          </pre>
-                <pre>x~N(m,V) |       | z~N(m,V) </pre>
-                <pre>    -----|->[=]<-|-----     </pre>
-                <pre>         |   |   |          </pre>
-                <pre>         |   v   |          </pre>
-                <pre>         |  [A]  |          </pre>
-                <pre>         |___|___|          </pre>
-                <pre>             | y~N(m,V)     </pre>
-                <pre>             v              </pre>
+    diagram:    <pre>    _________     </pre>
+                <pre>x~N |       | z~N </pre>
+                <pre>----|->[=]<-|-----</pre>
+                <pre>    |   |   |     </pre>
+                <pre>    |   v   |     </pre>
+                <pre>    |  [A]  |     </pre>
+                <pre>    |___|___|     </pre>
+                <pre>        | y~N     </pre>
+                <pre>        v         </pre>
     formula:    "$\\overrightarrow{\\mu}(y)$: Combination of update rules for equality and fixed gain."
 
   gain_addition_gaussian_forward:
     node:       GainAdditionNode
     reference:  "Korl (2005), table 4.1"
-    diagram:    <pre>              | y~N(m,V)    </pre>
-                <pre>          ____|____         </pre>
-                <pre>          |   v   |         </pre>
-                <pre>          |  [A]  |         </pre>
-                <pre>          |   |   |         </pre>
-                <pre> x~N(m,V) |   v   | z~N(m,V)</pre>
-                <pre>     -----|->[+]--|---->    </pre>
-                <pre>          |_______|         </pre>
-    formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_z=m_x+Am_y, V_z=V_x + A V_yA^T)$"
+    diagram:    <pre>         | y~N     </pre>
+                <pre>     ____|____     </pre>
+                <pre>     |   v   |     </pre>
+                <pre>     |  [A]  |     </pre>
+                <pre>     |   |   |     </pre>
+                <pre> x~N |   v   | z~N </pre>
+                <pre> ----|->[+]--|----></pre>
+                <pre>     |_______|     </pre>
+    formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{N}(m_x+Am_y, V_x + A V_yA^T)$"
 
   gain_addition_gaussian_backward_in1:
     node:       GainAdditionNode
     reference:  "Korl (2005), table 4.1"
-    diagram:    <pre>              | y~N(m,V)    </pre>
-                <pre>          ____|____         </pre>
-                <pre>          |   v   |         </pre>
-                <pre>          |  [A]  |         </pre>
-                <pre>          |   |   |         </pre>
-                <pre> x~N(m,V) |   v   | z~N(m,V)</pre>
-                <pre>     -----|->[+]--|---->    </pre>
-                <pre>          |_______|         </pre>
+    diagram:    <pre>         | y~N     </pre>
+                <pre>     ____|____     </pre>
+                <pre>     |   v   |     </pre>
+                <pre>     |  [A]  |     </pre>
+                <pre>     |   |   |     </pre>
+                <pre> x~N |   v   | z~N </pre>
+                <pre> ----|->[+]--|----></pre>
+                <pre>     |_______|     </pre>
     formula:    "$\\overleftarrow{\\mu}(y)$: combination of fixed gain and addition node"
 
   gain_addition_gaussian_backward_in2:
     node:       GainAdditionNode
     reference:  "Korl (2005), table 4.1, by symmetry"
-    diagram:    <pre>              | y~N(m,V)    </pre>
-                <pre>          ____|____         </pre>
-                <pre>          |   v   |         </pre>
-                <pre>          |  [A]  |         </pre>
-                <pre>          |   |   |         </pre>
-                <pre> x~N(m,V) |   v   | z~N(m,V)</pre>
-                <pre>     -----|->[+]--|---->    </pre>
-                <pre>          |_______|         </pre>
-    formula:    "$\\overleftarrow{\\mu}(x) = \\mathcal{N}(m_x=m_z-Am_y, V_x=V_z + A V_yA^T)$"
+    diagram:    <pre>         | y~N     </pre>
+                <pre>     ____|____     </pre>
+                <pre>     |   v   |     </pre>
+                <pre>     |  [A]  |     </pre>
+                <pre>     |   |   |     </pre>
+                <pre> x~N |   v   | z~N </pre>
+                <pre> ----|->[+]--|----></pre>
+                <pre>     |_______|     </pre>
+    formula:    "$\\overleftarrow{\\mu}(x) = \\mathcal{N}(m_z-Am_y, V_z + A V_yA^T)$"
 
   terminal_forward:
     node:       TerminalNode
@@ -230,245 +230,245 @@ rules:
   exponential_forward_gaussian:
     node:       ExponentialNode
     reference:  "Exponential node derivations document"
-    diagram:    <pre>x~N(μ,γ)     y~Gam(a,b)</pre>
-                <pre>    --->[exp]--->      </pre>
-    formula:    "$\\overrightarrow{\\mu}(y) \\approx \\mathcal{G}am\\left(a_y = \\gamma_x+1, b_y=\\frac{\\gamma_x}{\\operatorname{exp}(\\mu_x)}\\right)$"
+    diagram:    <pre> x~N     y~Gam</pre>
+                <pre>--->[exp]---> </pre>
+    formula:    "$\\overrightarrow{\\mu}(y) \\approx \\mathcal{G}am\\left(a_y = \\lambda_x+1, b_y=\\frac{\\lambda_x}{\\operatorname{exp}(m_x)}\\right)$"
 
   exponential_backward_gaussian:
     node:       ExponentialNode
     reference:  "Exponential node derivations document"
-    diagram:    <pre>x~N(μ,γ)     y~Gam(a,b)</pre>
-                <pre>    --->[exp]--->      </pre>
-    formula:    "$\\overleftarrow{\\mu}(x) \\approx \\mathcal{N}\\left(m_x=\\operatorname{log}(\\frac{a_y-1}{b_y}), \\gamma_x=a_y-1 \\right)$, with $a_y>1$"
+    diagram:    <pre> x~N     y~Gam</pre>
+                <pre>--->[exp]---> </pre>
+    formula:    "$\\lambda_x=a_y-1 \\\\ \\overleftarrow{\\mu}(x) \\approx \\mathcal{N}\\left(\\operatorname{log}(\\frac{a_y-1}{b_y}), \\lambda_x^{-1} \\right), a_y>1$"
 
   exponential_forward_delta:
     node:       ExponentialNode
     reference:  "Exponential node derivations document"
-    diagram:    <pre>x~δ(m)     y~δ(m)</pre>
-                <pre>  --->[exp]--->  </pre>
+    diagram:    <pre> x~δ     y~δ</pre>
+                <pre>--->[exp]--->  </pre>
     formula:    "$\\overrightarrow{\\mu}(y) = \\delta(\\operatorname{exp}(m_x))$"
 
   exponential_backward_delta:
     node:       ExponentialNode
     reference:  "Exponential node derivations document"
-    diagram:    <pre>x~δ(m)     y~δ(m)</pre>
-                <pre>  --->[log]--->  </pre>
+    diagram:    <pre> x~δ     y~δ </pre>
+                <pre>--->[log]---></pre>
     formula:    "$\\overleftarrow{\\mu}(x) = \\delta(\\operatorname{log}(m_y))$"
 
   gaussian_forward_delta_variance:
     node:       GaussianNode
     reference:  ""
-    diagram:    <pre>m~δ(m)   v~δ(m)  </pre>
-                <pre>  --->[N]<---    </pre>
-                <pre>       |         </pre>
-                <pre>       v y~N(m,V)</pre>
-    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(m_y=m_m, V_y=m_v)$"
+    diagram:    <pre> m~δ   v~δ </pre>
+                <pre>--->[N]<---</pre>
+                <pre>     |     </pre>
+                <pre>     v y~N </pre>
+    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(m_m, m_v)$"
 
   gaussian_forward_fixed_mean_variance:
     node:       GaussianNode
     reference:  ""
-    diagram:    <pre>[N/m,v]      </pre>
-                <pre>   |         </pre>
-                <pre>   v y~N(m,V)</pre>
-    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(m_y=m, V_y=v)$"
+    diagram:    <pre>[N/m,v] </pre>
+                <pre>   |    </pre>
+                <pre>   v y~N</pre>
+    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(m, v)$"
 
   gaussian_forward_delta_precision:
     node:       GaussianNode
     reference:  "Korl (2005), table 5.2"
-    diagram:    <pre>m~δ(m)   γ~δ(m)  </pre>
-                <pre>  --->[N]<---    </pre>
-                <pre>       |         </pre>
-                <pre>       v y~N(m,W)</pre>
-    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(m_y=m_m, W_y=m_{\\gamma})$"
+    diagram:    <pre>m~δ   λ~δ    </pre>
+                <pre>  --->[N]<---</pre>
+                <pre>       |     </pre>
+                <pre>       v y~N </pre>
+    formula:    "$W_y=m_{\\lambda} \\\\ \\overrightarrow{\\mu}(y) = \\mathcal{N}(m_m, W_y^{-1})$"
 
   gaussian_backward_mean_delta_variance:
     node:       GaussianNode
     reference:  "From forward rule, by symmetry"
-    diagram:    <pre>m~N(m,V)   v~δ(m) </pre>
-                <pre>   --->[N]<---    </pre>
-                <pre>        |         </pre>
-                <pre>        v y~δ(m)  </pre>
-    formula:    "$\\overleftarrow{\\mu}(m) = \\mathcal{N}(m_m=m_y, V_m=m_v)$"
+    diagram:    <pre> m~N   v~δ   </pre>
+                <pre>--->[N]<---  </pre>
+                <pre>     |    </pre>
+                <pre>     v y~δ</pre>
+    formula:    "$\\overleftarrow{\\mu}(m) = \\mathcal{N}(m_y, m_v)$"
 
   gaussian_backward_mean_delta_precision:
     node:       GaussianNode
     reference:  "Korl (2005), table 5.2, by symmetry"
-    diagram:    <pre>m~N(m,W)   γ~δ(m) </pre>
-                <pre>    --->[N]<---   </pre>
-                <pre>         |        </pre>
-                <pre>         v y~δ(m) </pre>
-    formula:    "$\\overleftarrow{\\mu}(m) = \\mathcal{N}(m_m=m_y, W_m=m_{\\gamma})$"
+    diagram:    <pre> m~N   λ~δ </pre>
+                <pre>--->[N]<---</pre>
+                <pre>     |     </pre>
+                <pre>     v y~δ </pre>
+    formula:    "$W_m = m_{\\lambda} \\\\ \\overleftarrow{\\mu}(m) = \\mathcal{N}(m_y, W_m^{-1})$"
 
   gaussian_backward_variance_delta:
     node:       GaussianNode
     reference:  "Korl (2005), table 5.2"
-    diagram:    <pre>m~δ(m)   v~Ig(a,b)</pre>
-                <pre>  --->[N]<---     </pre>
-                <pre>       |          </pre>
-                <pre>       v y~δ(m)   </pre>
+    diagram:    <pre> m~δ   v~Ig</pre>
+                <pre>--->[N]<---</pre>
+                <pre>     |     </pre>
+                <pre>     v y~δ </pre>
     formula:    "$\\overleftarrow{\\mu}(v) = \\mathcal{I}g\\left(a_v=-\\frac{1}{2}, b_v=\\frac{(m_y - m_m)^2}{2} \\right)$"
 
   gaussian_backward_precision_delta:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>m~δ(m)   γ~Gam(a,b)</pre>
-                <pre>  --->[N]<---      </pre>
-                <pre>       |           </pre>
-                <pre>       v y~δ(m)    </pre>
-    formula:    "$\\overleftarrow{\\mu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{(m_y - m_m)^2}{2} \\right)$"
+    diagram:    <pre> m~δ   λ~Gam</pre>
+                <pre>--->[N]<--- </pre>
+                <pre>     |      </pre>
+                <pre>     v y~δ  </pre>
+    formula:    "$\\overleftarrow{\\mu}(\\lambda) = \\mathcal{G}am\\left(a_{\\lambda}=\\frac{3}{2}, b_{\\lambda}=\\frac{(m_y - m_m)^2}{2} \\right)$"
 
   gaussian_backward_mean_gaussian_inverse_gamma:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>m~N(m,V)   q(v)~Ig(a,b) </pre>
-                <pre>    --->[N]<---        </pre>
-                <pre>         |             </pre>
-                <pre>         v q(y)~N(m,V) </pre>
-    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_m=m_{q(y)}, V_m=\\frac{a_{q(v)}+1}{b_{q(v)}}\\right)$"
+    diagram:    <pre> m~N   q(v)~Ig</pre>
+                <pre>--->[N]<---   </pre>
+                <pre>     |        </pre>
+                <pre>     v q(y)~N </pre>
+    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_{q(y)}, \\frac{a_{q(v)}+1}{b_{q(v)}}\\right)$"
 
   gaussian_backward_mean_gaussian_gamma:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>m~N(m,γ)   q(γ)~Gam(a,b) </pre>
-                <pre>    --->[N]<---        </pre>
-                <pre>         |             </pre>
-                <pre>         v q(y)~N(m,γ) </pre>
-    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_m=m_{q(y)}, \\gamma_m=\\frac{a_{q(\\gamma)}}{b_{q(\\gamma)}}\\right)$"
+    diagram:    <pre> m~N   q(λ)~Gam</pre>
+                <pre>--->[N]<---    </pre>
+                <pre>     |         </pre>
+                <pre>     v q(y)~N  </pre>
+    formula:    "$\\lambda_m=\\frac{a_{q(\\lambda)}}{b_{q(\\lambda)}} \\\\ \\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_{q(y)}, \\lambda_m^{-1}\\right)$"
 
   gaussian_backward_variance_gaussian:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>q(m)~N(m,V)   v~Ig(a,b)   </pre>
-                <pre>       --->[N]<---        </pre>
-                <pre>            |             </pre>
-                <pre>            v q(y)~N(m,V) </pre>
+    diagram:    <pre>q(m)~N   v~Ig        </pre>
+                <pre>  --->[N]<---        </pre>
+                <pre>       |             </pre>
+                <pre>       v q(y)~N(m,V) </pre>
     formula:    "$\\overleftarrow{\\nu}(v) = \\mathcal{I}g\\left(a_v=-\\frac{1}{2}, b_v=\\frac{1}{2}(m_{q(y)} - m_{q(m)})^2+\\frac{1}{2}(V_{q(m)}+V_{q(y)}) \\right)$"
 
   gaussian_backward_precision_gaussian:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>q(m)~N(m,V)   γ~Gam(a,b)  </pre>
-                <pre>       --->[N]<---        </pre>
-                <pre>            |             </pre>
-                <pre>            v q(y)~N(m,V) </pre>
-    formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2}(m_{q(y)} - m_{q(m)})^2+\\frac{1}{2}(V_{q(m)}+V_{q(y)}) \\right)$"
+    diagram:    <pre>q(m)~N   λ~Gam  </pre>
+                <pre>  --->[N]<---   </pre>
+                <pre>       |        </pre>
+                <pre>       v q(y)~N </pre>
+    formula:    "$\\overleftarrow{\\nu}(\\lambda) = \\mathcal{G}am\\left(a_{\\lambda}=\\frac{3}{2}, b_{\\lambda}=\\frac{1}{2}(m_{q(y)} - m_{q(m)})^2+\\frac{1}{2}(V_{q(m)}+V_{q(y)}) \\right)$"
 
   gaussian_backward_precision_gaussian_delta:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>     γ~Gam(a,b) </pre>
-                <pre>[N/m]<---       </pre>
-                <pre>  |             </pre>
-                <pre>  v q(y)~N(m,V) </pre>
-    formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2}(m_{q(y)} - m)^2+\\frac{V_{q(y)}}{2} \\right)$"
+    diagram:    <pre>     λ~Gam </pre>
+                <pre>[N/m]<---  </pre>
+                <pre>  |        </pre>
+                <pre>  v q(y)~N </pre>
+    formula:    "$\\overleftarrow{\\nu}(\\lambda) = \\mathcal{G}am\\left(a_{\\lambda}=\\frac{3}{2}, b_{\\lambda}=\\frac{1}{2}(m_{q(y)} - m)^2+\\frac{V_{q(y)}}{2} \\right)$"
 
   gaussian_backward_mean_gaussian_delta:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>m~N(m,V)     </pre>
-                <pre>    --->[N/V]</pre>
-                <pre>          |  </pre>
-                <pre>          v q(y)~N(m,V) </pre>
-    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_m=m_{q(y)}, V_m=V \\right)$"
+    diagram:    <pre>m~N            </pre>
+                <pre>--->[N/V]      </pre>
+                <pre>      |        </pre>
+                <pre>      v q(y)~N </pre>
+    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_{q(y)}, V \\right)$"
 
   gaussian_forward_gaussian:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>q(m)~N(m,V)     </pre>
-                <pre>       --->[N/V]</pre>
-                <pre>             |  </pre>
-                <pre>             v y~N(m,V) </pre>
-    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left( m_m=m_{q(m)}, V_m=V \\right)$"
+    diagram:    <pre>q(m)~N        </pre>
+                <pre>  --->[N/V]   </pre>
+                <pre>        |     </pre>
+                <pre>        v y~N </pre>
+    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left( m_{q(m)}, V \\right)$"
 
   gaussian_forward_gamma:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>     q(γ)~Gam(a,b) </pre>
-                <pre>[N/m]<---       </pre>
-                <pre>  |             </pre>
-                <pre>  v y~N(m,γ) </pre>
-    formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}\\left( m_y=m, \\gamma_y=\\frac{a_{q(\\gamma)}}{b_{q(\\gamma)}} \\right)$"
+    diagram:    <pre>     q(λ)~Gam </pre>
+                <pre>[N/m]<---     </pre>
+                <pre>  |           </pre>
+                <pre>  v y~N       </pre>
+    formula:    "$\\lambda_y=\\frac{a_{q(\\lambda)}}{b_{q(\\lambda)}} \\\\ \\overrightarrow{\\mu}(y) = \\mathcal{N}\\left( m, \\lambda_y^{-1} \\right)$"
 
   gaussian_forward_gaussian_inverse_gamma:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>     q(v)~Ig(a,b) </pre>
-                <pre>[N/m]<---       </pre>
-                <pre>  |             </pre>
-                <pre>  v y~N(m,V) </pre>
-    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q(m)}, V_y=\\frac{b_{q(v)}}{a_{q(v)}-1}\\right)$"
+    diagram:    <pre>     q(v)~Ig </pre>
+                <pre>[N/m]<---    </pre>
+                <pre>  |          </pre>
+                <pre>  v y~N      </pre>
+    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_{q(m)}, \\frac{b_{q(v)}}{a_{q(v)}-1}\\right)$"
 
   gaussian_forward_gaussian_gamma:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>q(m)~N(m,V)   q(γ)~Gam(a,b)  </pre>
-                <pre>       --->[N]<---        </pre>
-                <pre>            |             </pre>
-                <pre>            v y~N(m,γ) </pre>
-    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q(m)}, \\gamma_y=\\frac{a_{q(\\gamma)}}{b_{q(\\gamma)}}\\right)$"
+    diagram:    <pre>q(m)~N   q(λ)~Gam</pre>
+                <pre>  --->[N]<---    </pre>
+                <pre>       |         </pre>
+                <pre>       v y~N     </pre>
+    formula:    "$\\lambda_y=\\frac{a_{q(\\lambda)}}{b_{q(\\lambda)}} \\\\ \\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_{q(m)}, \\lambda_y^{-1}\\right)$"
 
   gaussian_backward_mean_structured:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>  m~St(m,γ,ν)   q(γ)~Gam(a,b) </pre>
-                <pre>         --->[N]<---          </pre>
-                <pre>              |               </pre>
-                <pre>       - - - -|- - - -        </pre>
-                <pre>              v q(y)~N(m,γ)   </pre>
-    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{S}t\\left(m_m=m_{q(y)}, \\gamma_m=\\frac{2 \\gamma_{q(y)} a_{q(\\gamma)}}{2 \\gamma_{q(y)} b_{q(\\gamma)} + 1}, \\nu_m=2 a_{q(\\gamma)}\\right)$"
+    diagram:    <pre>m~St   q(λ)~Gam</pre>
+                <pre>--->[N]<---    </pre>
+                <pre>     |         </pre>
+                <pre>- - -|- - -    </pre>
+                <pre>     v q(y)~N  </pre>
+    formula:    "$\\overleftarrow{\\nu}(m) = \\mathcal{S}t\\left(m_m=m_{q(y)}, \\lambda_m=\\frac{2 \\lambda_{q(y)} a_{q(\\lambda)}}{2 \\lambda_{q(y)} b_{q(\\lambda)} + 1}, \\nu_m=2 a_{q(\\lambda)}\\right)$"
 
   gaussian_backward_precision_structured:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>  q(m)~N(m,γ)   γ~Gam(a,b) </pre>
-                <pre>         --->[N]<---          </pre>
-                <pre>              |               </pre>
-                <pre>       - - - -|- - - -        </pre>
-                <pre>              v q(y)~N(m,γ)   </pre>
-    formula:    "$\\overleftarrow{\\nu}(\\gamma) = \\mathcal{G}am\\left(a_{\\gamma}=\\frac{3}{2}, b_{\\gamma}=\\frac{1}{2 \\gamma_{q(y)}} + \\frac{(m_{q(m)} - m_{q(y)})^2}{2}\\right)$"
+    diagram:    <pre>q(m)~N   λ~Gam </pre>
+                <pre>  --->[N]<---  </pre>
+                <pre>       |       </pre>
+                <pre>  - - -|- - -  </pre>
+                <pre>       v q(y)~N</pre>
+    formula:    "$\\overleftarrow{\\nu}(\\lambda) = \\mathcal{G}am\\left(a_{\\lambda}=\\frac{3}{2}, b_{\\lambda}=\\frac{1}{2 \\lambda_{q(y)}} + \\frac{(m_{q(m)} - m_{q(y)})^2}{2}\\right)$"
 
   gaussian_forward_structured:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
-    diagram:    <pre>q(m,γ)~Ng(m,β,a,b) </pre>
-                <pre>    --->[N]<---    </pre>
-                <pre>         |         </pre>
-                <pre>  - - - -|- - - -  </pre>
-                <pre>         v y~N(m,γ)</pre>
-    formula:    "$\\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_y=m_{q(m,\\gamma)}, \\gamma_y=\\frac{a_{q(m,\\gamma)}}{b_{q(m,\\gamma)}}\\right)$"
+    diagram:    <pre> q(m,λ)~Ng </pre>
+                <pre>--->[N]<---</pre>
+                <pre>     |     </pre>
+                <pre>- - -|- - -</pre>
+                <pre>     v y~N </pre>
+    formula:    "$\\lambda_y=\\frac{a_{q(m,\\lambda)}}{b_{q(m,\\lambda)}} \\\\ \\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_{q(m,\\lambda)}, \\lambda_y^{-1}\\right)$"
 
   sigmoid_forward:
     node:       SigmoidNode
     reference:  "Sigmoid node derivations document"
-    diagram:    <pre>          _________________            </pre>
-                <pre>         |                 |           </pre>
-                <pre>         | N(0,γ)|   a| |b |           </pre>
-                <pre>x~N(m,γ) |       v    v v  | y~Bet(a,b)</pre>
-                <pre>      ---|----->[+]->[ S ]-|--->       </pre>
-                <pre>         |_________________|           </pre>
+    diagram:    <pre>     ______________      </pre>
+                <pre>    |             |      </pre>
+                <pre>    |  N|   a| |b |      </pre>
+                <pre>x~N |   v    v v  | y~Bet</pre>
+                <pre> ---|->[+]->[ S ]-|--->  </pre>
+                <pre>    |_____________|      </pre>
     formula:    "$\\overrightarrow{\\mu}(y)$: numeric KL divergence minimization"
 
   sigmoid_backward:
     node:       SigmoidNode
     reference:  "Sigmoid node derivations document"
-    diagram:    <pre>          _________________            </pre>
-                <pre>         |                 |           </pre>
-                <pre>         | N(0,γ)|   a| |b |           </pre>
-                <pre>x~N(m,γ) |       v    v v  | y~Bet(a,b)</pre>
-                <pre>      ---|----->[+]->[ S ]-|--->       </pre>
-                <pre>         |_________________|           </pre>
-    formula:    "$\\overleftarrow{\\mu}(x) \\approx \\mathcal{N}\\left( m_x=\\frac{1}{b}\\operatorname{log}\\left(a\\frac{a_y-1}{b_y-1}\\right), \\gamma_x=\\gamma (\\gamma+G)^{-1} G \\right)$, with $G=\\frac{a_y-1}{a_y+b_y-2}$"
+    diagram:    <pre>     ______________      </pre>
+                <pre>    |             |      </pre>
+                <pre>    |  N|   a| |b |      </pre>
+                <pre>x~N |   v    v v  | y~Bet</pre>
+                <pre> ---|->[+]->[ S ]-|--->  </pre>
+                <pre>    |_____________|      </pre>
+    formula:    "$\\lambda_x=\\lambda (\\lambda+G)^{-1} G, G=\\frac{a_y-1}{a_y+b_y-2} \\\\ \\overleftarrow{\\mu}(x) \\approx \\mathcal{N}\\left(\\frac{1}{b}\\operatorname{log}\\left(a\\frac{a_y-1}{b_y-1}\\right), \\lambda_x^{-1}\\right)$"
 
   sigmoid_forward_variational:
     node:       SigmoidNode
     reference:  "Sigmoid node derivations document"
-    diagram:    <pre>q(x)~N(m,γ)         y~Bet(a,b)</pre>
-                <pre>       --->[S/a,b,γ]--->      </pre>
+    diagram:    <pre>q(x)~N         y~Bet</pre>
+                <pre>  --->[S/a,b,λ]---> </pre>
     formula:    "$\\overrightarrow{\\nu}(y)$: numeric KL divergence minimization"
 
   sigmoid_backward_variational:
     node:       SigmoidNode
     reference:  "Sigmoid node derivations document"
-    diagram:    <pre>x~N(m,γ)         q(y)~Bet(a,b)</pre>
-                <pre>    --->[S/a,b,γ]--->         </pre>
-    formula:    "$\\overleftarrow{\\nu}(x) \\approx \\mathcal{N}\\left( m_x=\\frac{1}{b}\\operatorname{log}\\left(a\\frac{a_{q(y)}}{b_{q(y)}}\\right), \\gamma_x=\\frac{a_{q(y)}^2 b_{q(y)}^2 \\gamma b^2}{(a_{q(y)} + b_{q(y)})^4} \\right)$"
+    diagram:    <pre> x~N         q(y)~Bet</pre>
+                <pre>--->[S/a,b,λ]--->    </pre>
+    formula:    "$\\lambda_x=\\frac{a_{q(y)}^2 b_{q(y)}^2 \\lambda b^2}{(a_{q(y)} + b_{q(y)})^4} \\\\ \\overleftarrow{\\nu}(x) \\approx \\mathcal{N}\\left(\\frac{1}{b}\\operatorname{log}\\left(a\\frac{a_{q(y)}}{b_{q(y)}}\\right), \\lambda_x^{-1}\\right)$"
