@@ -40,10 +40,12 @@ function show(io::IO, factor_graph::FactorGraph)
     println(io, "FactorGraph")
     println(io, " # nodes: $(length(nodes(factor_graph)))")
     println(io, " # edges: $(length(edges(factor_graph)))")
+    println(io, " # wraps: $(length(wraps(factor_graph)))")
     println(io, "\nSee also:")
     println(io, " draw(::FactorGraph)")
     println(io, " show(nodes(::FactorGraph))")
     println(io, " show(edges(::FactorGraph))")
+    println(io, " show(wraps(::FactorGraph))")
 end
 
 clearMessages!(graph::FactorGraph = current_graph) = map(clearMessages!, nodes(graph))
