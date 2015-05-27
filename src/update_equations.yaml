@@ -46,7 +46,7 @@ rules:
 
   equality_beta:
     node:       EqualityNode
-    reference:  "Sigmoid node derivations document"
+    reference:  ""
     diagram:    <pre>x~Bet   y~Bet</pre>
                 <pre> --->[=]<--- </pre>
                 <pre>      |z~Bet </pre>
@@ -436,39 +436,3 @@ rules:
                 <pre>- - -|- - -</pre>
                 <pre>     v y~N </pre>
     formula:    "$\\lambda_y=\\frac{a_{q(m,\\lambda)}}{b_{q(m,\\lambda)}} \\\\ \\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_{q(m,\\lambda)}, \\lambda_y^{-1}\\right)$"
-
-  sigmoid_forward:
-    node:       SigmoidNode
-    reference:  "Sigmoid node derivations document"
-    diagram:    <pre>     ______________      </pre>
-                <pre>    |             |      </pre>
-                <pre>    |  N|   a| |b |      </pre>
-                <pre>x~N |   v    v v  | y~Bet</pre>
-                <pre> ---|->[+]->[ S ]-|--->  </pre>
-                <pre>    |_____________|      </pre>
-    formula:    "$\\overrightarrow{\\mu}(y)$: numeric KL divergence minimization"
-
-  sigmoid_backward:
-    node:       SigmoidNode
-    reference:  "Sigmoid node derivations document"
-    diagram:    <pre>     ______________      </pre>
-                <pre>    |             |      </pre>
-                <pre>    |  N|   a| |b |      </pre>
-                <pre>x~N |   v    v v  | y~Bet</pre>
-                <pre> ---|->[+]->[ S ]-|--->  </pre>
-                <pre>    |_____________|      </pre>
-    formula:    "$\\lambda_x=\\lambda (\\lambda+G)^{-1} G, G=\\frac{a_y-1}{a_y+b_y-2} \\\\ \\overleftarrow{\\mu}(x) \\approx \\mathcal{N}\\left(\\frac{1}{b}\\operatorname{log}\\left(a\\frac{a_y-1}{b_y-1}\\right), \\lambda_x^{-1}\\right)$"
-
-  sigmoid_forward_variational:
-    node:       SigmoidNode
-    reference:  "Sigmoid node derivations document"
-    diagram:    <pre>q(x)~N         y~Bet</pre>
-                <pre>  --->[S/a,b,λ]---> </pre>
-    formula:    "$\\overrightarrow{\\nu}(y)$: numeric KL divergence minimization"
-
-  sigmoid_backward_variational:
-    node:       SigmoidNode
-    reference:  "Sigmoid node derivations document"
-    diagram:    <pre> x~N         q(y)~Bet</pre>
-                <pre>--->[S/a,b,λ]--->    </pre>
-    formula:    "$\\lambda_x=\\frac{a_{q(y)}^2 b_{q(y)}^2 \\lambda b^2}{(a_{q(y)} + b_{q(y)})^4} \\\\ \\overleftarrow{\\nu}(x) \\approx \\mathcal{N}\\left(\\frac{1}{b}\\operatorname{log}\\left(a\\frac{a_{q(y)}}{b_{q(y)}}\\right), \\lambda_x^{-1}\\right)$"

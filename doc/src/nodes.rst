@@ -376,4 +376,4 @@ Note that it's possible to define so called *shortcut rules* using ``addRule!()`
 
 
 .. seealso::
-    **Demo:** `Kalman filter with composite node <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/06_composite_nodes.ipynb>`_
+    **Demo:** `Composite nodes <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/06_composite_nodes.ipynb>`_
