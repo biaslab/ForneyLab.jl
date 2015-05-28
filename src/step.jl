@@ -3,6 +3,7 @@ export  setReadBuffer,
         clearBuffers,
         emptyWriteBuffers,
         wrap,
+        wraps,
         clearWraps,
         execute,
         step,
@@ -52,6 +53,8 @@ function wrap(from::TerminalNode, to::TerminalNode, graph::FactorGraph=current_g
     !is(from, to) || error("Cannot create time wrap: from and to must be different nodes")
     push!(graph.wraps, (from, to))
 end
+
+wraps(g::FactorGraph=current_graph) = g.wraps
 
 function clearWraps(graph::FactorGraph=current_graph)
     graph.wraps = Array((TerminalNode, TerminalNode), 0)

@@ -482,23 +482,6 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     return (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge)
 end
 
-function initializeSigmoidSlice()
-    # Build graph
-    graph = FactorGraph()
-    y_node = TerminalNode(name="y") # Beta observarion
-    s_node = SigmoidNode(a=1.0, b=1.0, gamma=100.0, name="sigmoid")
-    eq_node = EqualityNode(name="eq")
-    theta_k_min_node = TerminalNode(name="theta_k_min")
-    theta_k_node = TerminalNode(name="theta_k")
-
-    Edge(theta_k_min_node.out, eq_node.interfaces[1])
-    Edge(eq_node.interfaces[2], theta_k_node.out)
-    Edge(eq_node.interfaces[3], s_node.in1, GaussianDistribution)
-    Edge(s_node.out, y_node.out, BetaDistribution)
-
-    return graph
-end
-
 
 #############
 # Validations

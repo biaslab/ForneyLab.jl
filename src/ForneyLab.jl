@@ -57,7 +57,6 @@ include("nodes/gaussian.jl")
 include("nodes/exponential.jl")
 include("nodes/gain_addition.jl")
 include("nodes/gain_equality.jl")
-include("nodes/sigmoid.jl")
 
 # Graph and algorithm
 include("factor_graph.jl")

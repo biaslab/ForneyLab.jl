@@ -47,7 +47,6 @@ include("nodes/test_gaussian.jl")
 include("nodes/test_exponential.jl")
 include("nodes/test_gain_addition.jl")
 include("nodes/test_gain_equality.jl")
-include("nodes/test_sigmoid.jl")
 
 # Composite nodes
 include("nodes/test_composite.jl")
