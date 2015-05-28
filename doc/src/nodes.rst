@@ -190,9 +190,26 @@ Elementary nodes
 
 .. type:: ExponentialNode
 
-    .. note::
+    ::
 
-        TODO
+         in1        out
+        ----->[exp]----->
+
+    :Node function: ``f(in1,out) = δ(out - exp(in1))``      
+    :Interfaces:    1: ``in1``, 2: ``out``
+    :Construction:  ``ExponentialNode(name="something")``
+
+    Message computation rules (\* = approximation):
+
+    +-----------------+---------------------------------------------------+
+    |                 | Input (↓) and output (↑) per interface            |
+    + Rule            +-------------------------+-------------------------+
+    |                 | 1                       | 2                       |
+    +=================+=========================+=========================+
+    | sumProduct!     | ↑↓ ``Msg{Delta}``       | ↑↓ ``Msg{Delta}``       |
+    +                 +-------------------------+-------------------------+
+    |                 | ↑↓ ``Msg{Gaussian}`` \* | ↑↓ ``Msg{Gamma}`` \*    |
+    +-----------------+-------------------------+-------------------------+
 
 .. type:: FixedGainNode
 
@@ -220,9 +237,45 @@ Elementary nodes
 
 .. type:: GaussianNode
 
-    .. note::
+               mean
+                |
+                v  out
+         ----->[N]----->
+        precision/
+        variance
+     
+    :Node function: ``f(mean,variance,out) = N(out|mean,variance)``      
+    :Interfaces:    1: ``mean``, 2: ``variance`` or ``precision``, 3: ``out``
+    :Construction:  ``GaussianNode(name="something", form="moment", m=optional, V=optional)``
 
-        TODO
+    The ``GaussianNode`` outputs a Gaussian distribution from variable mean and variable variance or precision. Upon construction the role of the second interface is set to represent a variance or precision by setting the ``form`` argument to ``moment or ``precision`` respectively. The ``m`` and ``V`` arguments allow the user to fix the value for the mean and/or variance interface. Fixed interfaces are not explicitly created.
+
+    Message computation rules:
+
+    +-------------+-------------------------------------------------------------------------+
+    |             | Input (↓) and output (↑) per interface                                  |
+    + Rule        +---------------------+-----------------------------+---------------------+
+    |             | 1                   | 2                           |  3                  |
+    +=============+=====================+=============================+=====================+
+    | sumProduct! | ↑ ``Msg{Gaussian}`` | ↓ ``Msg{Delta}``            | ↓ ``Msg{Delta}``    |   
+    +             +---------------------+-----------------------------+---------------------+
+    |             | ↓ ``Msg{Delta}``    | ↑ ``Msg{(Inv)Gamma}``       | ↓ ``Msg{Delta}``    |   
+    +             +---------------------+-----------------------------+---------------------+
+    |             | ↓ ``Msg{Delta}``    | ↓ ``Msg{Delta}``            | ↑ ``Msg{Gaussian}`` |   
+    +-------------+---------------------+-----------------------------+---------------------+
+    | vmp!        | ↑ ``Msg{Gaussian}`` | ↓ ``(Inv)Gamma``            | ↓ ``Gaussian``      |
+    +             +---------------------+-----------------------------+---------------------+
+    |             | ↓ ``Gaussian``      | ↑ ``Msg{(Inv)Gamma}``       | ↓ ``Gaussian``      |
+    +             +---------------------+-----------------------------+---------------------+
+    |             | ↓ ``Gaussian``      | ↓ ``(Inv)Gamma``            | ↑ ``Msg{Gaussian}`` |
+    +             +---------------------+-----------------------------+---------------------+
+    |             | ↑ ``Msg{StudentsT}``| ↓ ``Msg{Gamma}``            | ↓ ``Gaussian``      |
+    +             +---------------------+-----------------------------+---------------------+
+    |             | ↓ ``Msg{Gaussian}`` | ↑ ``Msg{Gamma}``            | ↓ ``Gaussian``      |
+    +             +---------------------+-----------------------------+---------------------+
+    |             | ↓ ``NormalGamma``                                 | ↑ ``Msg{Gaussian}`` |
+    +-------------+---------------------+-----------------------------+---------------------+
+
 
 .. type:: TerminalNode
 
