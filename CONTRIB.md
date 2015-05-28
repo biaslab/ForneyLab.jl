@@ -3,16 +3,39 @@ Contribution guidelines
 
 File structure
 --------------
-- `/demo/`: demos in iJulia notebook format (`.ipynb`)
+- `/demo/`: demos in Jupyter (iJulia) notebook format (`.ipynb`)
     + `images/`: images required in demo's
         * `src/`: latex source files for images
 - `/src/`: all source files
+	+ `algorithms/`: algorithm implementations
     + `distributions/`: distribution types and functions, including marginal calculations
     + `nodes/`: contains all node-specific files
         * `composite/`: composite node files
 - `/test/`: FactCheck test files with identical directory structure as `/src/`.
 
 File and directory names are always in `snake_case`, except for `REQUIRE` and markdown files in the root directory.
+
+Pre-commit hook for demos
+-------------------------
+
+The Jupyter notebook demos should always be committed in an executed state. To make sure that a new or modified notebook is fully executed when it is committed, one might use a pre-commit hook. The script below will execute all staged demo notebooks which have been added or modified. Create file `.git/hooks/pre-commit` in your local repo, and paste the following shell script to enable the pre-commit hook:
+
+```
+#!/bin/bash
+#
+# Execute all staged added/modified Jupyter(iJulia) demos
+# Requires iPython v3.0 or higher
+
+for s in `git diff --staged --name-only --diff-filter=AM | grep "demo/.*\.ipynb"`; do 
+	echo "Executing added or modified demo: " $s
+	ipython nbconvert --to=notebook --execute $s
+	base=$(basename "$s")
+	name="${base%.*}"
+	mv $name.nbconvert.ipynb demo/$name.ipynb
+	git add demo/$name.ipynb
+done
+```
+
 
 Style conventions
 -----------------
