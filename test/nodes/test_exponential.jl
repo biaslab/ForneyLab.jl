@@ -7,8 +7,8 @@ facts("ExponentialNode unit tests") do
         node = ExponentialNode()
         @fact typeof(node) => ExponentialNode
         @fact length(node.interfaces) => 2
-        @fact node.in1 => node.interfaces[1]
-        @fact node.out => node.interfaces[2]
+        @fact node.i[:in] => node.interfaces[1]
+        @fact node.i[:out] => node.interfaces[2]
     end
 
     context("ExponentialNode should pass messages") do

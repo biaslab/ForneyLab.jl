@@ -19,9 +19,9 @@ end
 facts("Marginal calculations for the beta") do
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
         (t1, t2) = initializePairOfTerminalNodes(BetaDistribution(a=1.0, b=2.0), BetaDistribution(a=3.0, b=4.0))
-        edge = t1.out.edge
-        t1.out.message = Message(BetaDistribution(a=1.0, b=2.0))
-        t2.out.message = Message(BetaDistribution(a=3.0, b=4.0))
+        edge = t1.i[:out].edge
+        t1.i[:out].message = Message(BetaDistribution(a=1.0, b=2.0))
+        t2.i[:out].message = Message(BetaDistribution(a=3.0, b=4.0))
         marginal_dist = calculateMarginal!(edge)
         @fact edge.marginal => marginal_dist
         @fact edge.marginal.a => 3.0

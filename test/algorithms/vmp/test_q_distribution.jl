@@ -5,9 +5,9 @@ facts("Calculations for q distributions") do
         f = algo.fields[:factorization]
         qs = algo.fields[:q_distributions]    
 
-        sm = f.edge_to_subgraph[node.mean.edge]
-        sp = f.edge_to_subgraph[node.precision.edge]
-        so = f.edge_to_subgraph[node.out.edge]
+        sm = f.edge_to_subgraph[node.i[:mean].edge]
+        sp = f.edge_to_subgraph[node.i[:precision].edge]
+        so = f.edge_to_subgraph[node.i[:out].edge]
 
         # Univariate marginal
         VMP.calculateQDistribution!(qs, node, so, f)
@@ -29,8 +29,8 @@ facts("Calculations for q distributions") do
         f = algo.fields[:factorization]
         qs = algo.fields[:q_distributions]    
         
-        spm = f.edge_to_subgraph[node.mean.edge]
-        so = f.edge_to_subgraph[node.out.edge]
+        spm = f.edge_to_subgraph[node.i[:mean].edge]
+        so = f.edge_to_subgraph[node.i[:out].edge]
 
         # Joint marginal
         VMP.calculateQDistribution!(qs, node, spm, f)

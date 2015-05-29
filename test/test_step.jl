@@ -29,8 +29,8 @@ facts("Read/write buffer integration tests") do
     context("setWriteBuffer should register a write buffer for an Interface") do
         (node_t1, node_t2, e, g) = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        setWriteBuffer(node_t1.out, write_buffer)
-        @fact g.write_buffers[node_t1.out] => write_buffer
+        setWriteBuffer(node_t1.i[:out], write_buffer)
+        @fact g.write_buffers[node_t1.i[:out]] => write_buffer
     end
     context("setWriteBuffer should register a write buffer for an Edge (marginal)") do
         (node_t1, node_t2, e, g) = initializeBufferGraph()
@@ -72,13 +72,13 @@ facts("step integration tests") do
         node_add = AdditionNode(name="add")
         node_delta = TerminalNode(name="delta")
         node_out = TerminalNode(name="out")
-        Edge(node_in, node_add.in1)
-        Edge(node_delta, node_add.in2)
-        Edge(node_add.out, node_out)
+        Edge(node_in, node_add.i[:in1])
+        Edge(node_delta, node_add.i[:in2])
+        Edge(node_add.i[:out], node_out)
         wrap(node_out, node_in)
         deltas = [DeltaDistribution(n) for n in 1.:10.]
         setReadBuffer(node_delta, deltas)
-        results = setWriteBuffer(node_add.out)
+        results = setWriteBuffer(node_add.i[:out])
         algo = SumProduct.Algorithm(g) # The timewraps and buffers tell the autoscheduler what should be computed
         while !isempty(deltas)
             step(algo, g)
@@ -95,14 +95,14 @@ facts("run() integration tests") do
         node_add = AdditionNode(name="add")
         node_delta = TerminalNode(name="delta")
         node_out = TerminalNode(name="out")
-        Edge(node_in, node_add.in1)
-        Edge(node_delta, node_add.in2)
-        Edge(node_add.out, node_out)
+        Edge(node_in, node_add.i[:in1])
+        Edge(node_delta, node_add.i[:in2])
+        Edge(node_add.i[:out], node_out)
         wrap(node_out, node_in)
         deltas = [DeltaDistribution(n) for n in 1.:10.]
         setReadBuffer(node_delta, deltas)
-        results = setWriteBuffer(node_add.out)
-        schedule = SumProduct.generateSchedule(node_add.out)
+        results = setWriteBuffer(node_add.i[:out])
+        schedule = SumProduct.generateSchedule(node_add.i[:out])
         algo = Algorithm(schedule, g)
         run(algo, g)
         @fact results => [DeltaDistribution(r) for r in cumsum([1.:10.])]

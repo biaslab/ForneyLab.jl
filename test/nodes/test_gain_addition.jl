@@ -8,9 +8,9 @@ facts("GainAdditionNode unit tests") do
         node = GainAdditionNode()
         @fact typeof(node) => GainAdditionNode
         @fact length(node.interfaces) => 3
-        @fact node.in1 => node.interfaces[1]
-        @fact node.in2 => node.interfaces[2]
-        @fact node.out => node.interfaces[3]
+        @fact node.i[:in1] => node.interfaces[1]
+        @fact node.i[:in2] => node.interfaces[2]
+        @fact node.i[:out] => node.interfaces[3]
         @fact typeof(node.A) => Array{Float64, 2}
     end
 

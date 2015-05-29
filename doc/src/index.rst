@@ -1,7 +1,8 @@
+.. image:: images/brats_logo.png
+    :align: right
+
 ForneyLab.jl overview
 =====================
-
-.. image:: images/forneylab_logo.png
 
 The *ForneyLab* package provides a framework for working with `Forney-style factor graphs <http://www.crm.sns.it/media/course/1524/Loeliger_A.pdf>`_ (FFGs). A FFG is a probabilistical graphical model that is particularly well suited for modeling signal processing systems. ForneyLab.jl provides:
 

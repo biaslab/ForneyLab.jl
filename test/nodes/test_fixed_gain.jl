@@ -7,8 +7,8 @@ facts("FixedGainNode unit tests") do
         node = FixedGainNode([1.0])
         @fact typeof(node) => FixedGainNode
         @fact length(node.interfaces) => 2
-        @fact node.in1 => node.interfaces[1]
-        @fact node.out => node.interfaces[2]
+        @fact node.i[:in] => node.interfaces[1]
+        @fact node.i[:out] => node.interfaces[2]
         @fact typeof(node.A) <: Array => true
         @fact length(size(node.A)) => 2 # A should always be a matrix
     end

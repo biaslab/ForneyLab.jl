@@ -27,9 +27,9 @@ end
 facts("Marginal calculations for the inverse gamma") do
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
         (t1, t2) = initializePairOfTerminalNodes(InverseGammaDistribution(a=1.0, b=2.0), InverseGammaDistribution(a=3.0, b=4.0))
-        edge = t1.out.edge
-        t1.out.message = Message(InverseGammaDistribution(a=1.0, b=2.0))
-        t2.out.message = Message(InverseGammaDistribution(a=3.0, b=4.0))
+        edge = t1.i[:out].edge
+        t1.i[:out].message = Message(InverseGammaDistribution(a=1.0, b=2.0))
+        t2.i[:out].message = Message(InverseGammaDistribution(a=3.0, b=4.0))
         marginal_dist = calculateMarginal!(edge)
         @fact edge.marginal => marginal_dist
         @fact edge.marginal.a => 5.0
@@ -38,7 +38,7 @@ facts("Marginal calculations for the inverse gamma") do
 
     context("Marginal calculation for the combination of a InverseGamma and DeltaDistribution") do
         (t1, t2) = initializePairOfTerminalNodes(InverseGammaDistribution(), DeltaDistribution(3.0))
-        edge = t1.out.edge
+        edge = t1.i[:out].edge
         calculateMarginal!(edge)
         @fact edge.marginal => DeltaDistribution(3.0)
     end
