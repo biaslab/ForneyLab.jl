@@ -11,12 +11,13 @@ function graphviz(dot_graph::String; external_viewer::Bool=false)
     if external_viewer
         viewDotExternal(dot_graph)
     else
-        try
-            # For iJulia notebook
-            display("image/svg+xml", dot2svg(dot_graph))
-        catch
-            viewDotExternal(dot_graph)
-        end
+        display("text/html", dot2svg(dot_graph))
+        # try
+        #     # For iJulia notebook
+        #     display("image/png", dot2png(dot_graph))
+        # catch
+        #     viewDotExternal(dot_graph)
+        # end
     end
 end
 
@@ -121,6 +122,15 @@ function edgeDot(edge::Edge; is_external_edge=false)
         label *= "Distribution: $(edge.distribution_type)"
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", label=\"$(label)\" color=\"black\"]\n"
     end
+end
+
+function dot2png(dot_graph::String)
+    # Generate SVG image from DOT graph
+    validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
+    stdout, stdin, proc = readandwrite(`dot -Tpng`)
+    write(stdin, dot_graph)
+    close(stdin)
+    return readall(stdout)
 end
 
 function dot2svg(dot_graph::String)
