@@ -2,24 +2,19 @@
 # FixedGainNode
 ############################################
 # Description:
-#   Multiplication with a predefined gain matrix A:
+#   Multiplication: out = A*in
 #
-#    in1      out
+#     in      out
 #   ----->[A]----->
 #
-#   out = A * in1
+#   f(in,out) = δ(out - A*in)
 #
-#   Example:
-#       FixedGainNode([1.0]; name="my_node")
-#   Gain A may only be defined through the constructor!
+# Interfaces:
+#   1 i[:in], 2 i[:out]
 #
-# Interface ids, (names) and supported message types:
-#   1. (in1):
-#       Message{DeltaDistribution}
-#       Message{GaussianDistribution}
-#   2. (out):
-#       Message{DeltaDistribution}
-#       Message{GaussianDistribution}
+# Construction:
+#   FixedGainNode([1.0], name="my_node")
+#
 ############################################
 
 export FixedGainNode
@@ -28,18 +23,17 @@ type FixedGainNode <: Node
     A::Array
     name::ASCIIString
     interfaces::Array{Interface,1}
-    # Helper fields filled by constructor
-    in1::Interface
-    out::Interface
+    i::Dict{Symbol,Interface}
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
+
     function FixedGainNode(A::Union(Array{Float64},Float64)=1.0; name=unnamedStr())
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
         A = (typeof(A)==Float64) ? fill!(Array(Float64,1,1),A) : ensureMatrix(deepcopy(A))
-        self = new(A, name, Array(Interface, 2))
+        self = new(A, name, Array(Interface, 2), Dict{Symbol,Interface}())
 
-        # Set up the interfaces
-        self.in1 = self.interfaces[1] = Interface(self)
-        self.out = self.interfaces[2] = Interface(self)
+        for (iface_id, iface_name) in enumerate([:in, :out])
+            self.i[iface_name] = self.interfaces[iface_id] = Interface(self)
+        end
 
         # Try to precompute inv(A)
         try
@@ -47,6 +41,7 @@ type FixedGainNode <: Node
         catch
             warn("The specified multiplier for $(typeof(self)) $(self.name) is not invertible. This might cause problems. Double check that this is what you want.")
         end
+
         return self
     end
 end
@@ -71,7 +66,7 @@ forwardFixedGainWRule{T<:Number}(A_inv::Array{T, 2}, W::Array{T, 2}) = A_inv' * 
 forwardFixedGainXiRule{T<:Number}(A_inv::Array{T, 2}, xi::Array{T, 1}) = A_inv' * xi
 forwardFixedGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}, V::Array{T, 2}) = pinv(A * V * A') * A * V * xi # Combination of xi and V
 
-# Backward Gaussian to IN1
+# Backward Gaussian to IN
 function fixedGainGaussianBackwardRule!(dist_result::GaussianDistribution, dist_2::GaussianDistribution, A::Any, A_inv::Any=nothing)
     # Calculations for a gaussian message type; Korl (2005), table 4.1
     # dist_result = inv(A) * dist_2
@@ -164,15 +159,15 @@ end
 
 function sumProduct!(node::FixedGainNode,
                             outbound_interface_id::Int,
-                            msg_in1::Message{GaussianDistribution},
+                            msg_in::Message{GaussianDistribution},
                             ::Nothing)
     dist_2 = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
     if outbound_interface_id == 2
         # Forward message
-        dist_1 = msg_in1.payload
+        dist_1 = msg_in.payload
 
-        fixedGainGaussianForwardRule!(dist_2, msg_in1.payload, node.A, isdefined(node, :A_inv) ? node.A_inv : nothing)
+        fixedGainGaussianForwardRule!(dist_2, msg_in.payload, node.A, isdefined(node, :A_inv) ? node.A_inv : nothing)
     else
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end
@@ -181,7 +176,7 @@ function sumProduct!(node::FixedGainNode,
             node.interfaces[outbound_interface_id].message)
 end
 
-# Backward DeltaDistribution to IN1
+# Backward DeltaDistribution to IN
 function sumProduct!{T<:Any}(
                             node::FixedGainNode,
                             outbound_interface_id::Int,
@@ -205,11 +200,11 @@ end
 function sumProduct!{T<:Any}(
                             node::FixedGainNode,
                             outbound_interface_id::Int,
-                            msg_in1::Message{DeltaDistribution{T}},
+                            msg_in::Message{DeltaDistribution{T}},
                             ::Nothing)
     if outbound_interface_id == 2
         # Forward message
-        ans = node.A * msg_in1.payload.m
+        ans = node.A * msg_in.payload.m
     else
         error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.name)")
     end

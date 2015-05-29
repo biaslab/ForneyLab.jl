@@ -2,7 +2,7 @@
 # GainAdditionNode
 ############################################
 # Description:
-#   Gain-addition node.
+#   Gain-addition node: out = A*in1 + in2
 #   Combines the node functions of the FixedGainNode
 #   and the AdditionNode for computational efficiency.
 #
@@ -16,41 +16,29 @@
 #   -----|->[+]--|---->
 #        |_______|
 #
+#   f(in1,in2,out) = δ(out - A*in1 - in2)
 #
-#   out = A*in1 + in2
-#   Example:
-#       GainAdditionNode([1.0]; name="my_node")
-#   Gain A is fixed and defined through the constructor.
-#
-# Interface ids, (names) and supported message types:
-#   1. in1:
-#       Message{GaussianDistribution}
-#   2. in2:
-#       Message{GaussianDistribution}
-#   3. out:
-#       Message{GaussianDistribution}
+# Interfaces:
+#   1 i[:in1], 2 i[:in2], 3 i[:out]
+#   
+# Construction:
+#   GainAdditionNode([1.0], name="my_node")
 #
 ############################################
 export GainAdditionNode
 
 type GainAdditionNode <: Node
-    # Basic node properties.
     A::Array{Float64}
     name::ASCIIString
     interfaces::Array{Interface,1}
-    # Named interface handles
-    in1::Interface
-    in2::Interface
-    out::Interface
+    i::Dict{Symbol,Interface}
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
     function GainAdditionNode(A::Union(Array{Float64},Float64)=1.0; name=unnamedStr())
-        self = new(ensureMatrix(deepcopy(A)), name, Array(Interface, 3))
+        self = new(ensureMatrix(deepcopy(A)), name, Array(Interface, 3), Dict{Symbol,Interface}())
 
-        named_handle_list = [:in1, :in2, :out]
-        for i = 1:length(named_handle_list)
-            self.interfaces[i] = Interface(self)
-            setfield!(self, named_handle_list[i], self.interfaces[i]) # Init named interface handles
+        for (iface_id, iface_name) in enumerate([:in1, :in2, :out])
+            self.i[iface_name] = self.interfaces[iface_id] = Interface(self)
         end
 
         try
