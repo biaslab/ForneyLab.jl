@@ -11,13 +11,12 @@ function graphviz(dot_graph::String; external_viewer::Bool=false)
     if external_viewer
         viewDotExternal(dot_graph)
     else
-        display("text/html", dot2svg(dot_graph))
-        # try
-        #     # For iJulia notebook
-        #     display("image/png", dot2png(dot_graph))
-        # catch
-        #     viewDotExternal(dot_graph)
-        # end
+        try
+            # For iJulia notebook
+            display("text/html", "<img src=\"data:image/gif;base64,"*base64(dot2gif(dot_graph))*"\" />")
+        catch
+            viewDotExternal(dot_graph)
+        end
     end
 end
 
@@ -124,10 +123,10 @@ function edgeDot(edge::Edge; is_external_edge=false)
     end
 end
 
-function dot2png(dot_graph::String)
+function dot2gif(dot_graph::String)
     # Generate SVG image from DOT graph
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    stdout, stdin, proc = readandwrite(`dot -Tpng`)
+    stdout, stdin, proc = readandwrite(`dot -Tgif`)
     write(stdin, dot_graph)
     close(stdin)
     return readall(stdout)
