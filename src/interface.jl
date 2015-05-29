@@ -25,11 +25,14 @@ clearMessage!(interface::Interface) = (interface.message=nothing)
 message(interface::Interface) = interface.message
 function name(interface::Interface)
     # Return interface name
-    for field in names(interface.node)
-        if isdefined(interface.node, field) && is(getfield(interface.node, field), interface)
-            return string(field)
+    if isdefined(interface.node, :i)
+        for handle in keys(interface.node.i)
+            if typeof(handle)==Symbol && is(interface.node.i[handle], interface)
+                return string(handle)
+            end
         end
     end
+
     return ""
 end
 
