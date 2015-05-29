@@ -49,23 +49,23 @@ facts("Helper function unit tests") do
 
     context("ensureMessage! should assign a message to an interface if there is none") do
         node = TerminalNode(GaussianDistribution(m=5.0, V=1.0))
-        @fact node.out.message => nothing
-        @fact ForneyLab.ensureMessage!(node.out, GaussianDistribution) => Message(vague(GaussianDistribution))
-        @fact node.out.message => Message(vague(GaussianDistribution))
+        @fact node.i[:out].message => nothing
+        @fact ForneyLab.ensureMessage!(node.i[:out], GaussianDistribution) => Message(vague(GaussianDistribution))
+        @fact node.i[:out].message => Message(vague(GaussianDistribution))
     end
 
     context("ensureMessage! should return the present message is there is one and the type matches") do
         node = TerminalNode(GaussianDistribution(m=5.0, V=1.0))
-        node.out.message = Message(GaussianDistribution(m=5.0, V=1.0))
-        @fact ForneyLab.ensureMessage!(node.out, GaussianDistribution) => Message(GaussianDistribution(m=5.0, V=1.0))
-        @fact node.out.message => Message(GaussianDistribution(m=5.0, V=1.0))
+        node.i[:out].message = Message(GaussianDistribution(m=5.0, V=1.0))
+        @fact ForneyLab.ensureMessage!(node.i[:out], GaussianDistribution) => Message(GaussianDistribution(m=5.0, V=1.0))
+        @fact node.i[:out].message => Message(GaussianDistribution(m=5.0, V=1.0))
     end
 
     context("ensureMessage! should assign a message to an interface if the type does not match") do
         node = TerminalNode(GaussianDistribution(m=5.0, V=1.0))
-        node.out.message = Message(GaussianDistribution(m=5.0, V=1.0))
-        @fact ForneyLab.ensureMessage!(node.out, DeltaDistribution) => Message(DeltaDistribution())
-        @fact node.out.message => Message(DeltaDistribution())
+        node.i[:out].message = Message(GaussianDistribution(m=5.0, V=1.0))
+        @fact ForneyLab.ensureMessage!(node.i[:out], DeltaDistribution) => Message(DeltaDistribution())
+        @fact node.i[:out].message => Message(DeltaDistribution())
     end
 
     context("KLpq should calculate a numeric approximation to the KL divergence") do

@@ -12,8 +12,8 @@ facts("TerminalNode unit tests") do
         node = TerminalNode()
         @fact typeof(node) => TerminalNode
         @fact length(node.interfaces) => 1
-        @fact node.out => node.interfaces[1]
-        @fact ForneyLab.firstFreeInterface(node) => node.out
+        @fact node.i[:out] => node.interfaces[1]
+        @fact ForneyLab.firstFreeInterface(node) => node.i[:out]
         Edge(node, TerminalNode())
         @fact_throws ForneyLab.firstFreeInterface(node)
     end

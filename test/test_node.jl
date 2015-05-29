@@ -10,6 +10,7 @@ facts("General node properties unit tests") do
                 @fact typeof(node_type().interfaces) => Array{Interface, 1} # Check for interface array
                 @fact length(node_type().interfaces) >= 1 => true # Check length of interface array
                 @fact typeof(node_type().name) => ASCIIString
+                @fact typeof(node_type().i) <: Dict => true
             end
 
             context("$(node_type) constructor should assign a name") do
@@ -36,7 +37,7 @@ facts("node(name::String) should return node with matching name") do
     graph_1 = FactorGraph()
     graph_2 = FactorGraph()
     n = MockNode(name="my_mocknode")
-    Edge(n.out, MockNode().out)
+    Edge(n.i[:out], MockNode().i[:out])
     @fact_throws node("some_name")
     @fact_throws node("my_mocknode", graph_1)
     setCurrentGraph(graph_1)
@@ -63,8 +64,8 @@ facts("Connections between nodes integration tests") do
     context("Nodes can directly be coupled through interfaces by using the explicit interface names") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
-        node1.in1.partner = node2.out
-        node2.out.partner = node1.in1
+        node1.i[:in].partner = node2.i[:out]
+        node2.i[:out].partner = node1.i[:in]
         testInterfaceConnections(node1, node2)
     end
 

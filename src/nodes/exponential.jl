@@ -26,7 +26,7 @@ type ExponentialNode <: Node
     i::Dict{Symbol,Interface}
 
     function ExponentialNode(; name=unnamedStr())
-        self = new(name, Array(Interface, 2))
+        self = new(name, Array(Interface, 2), Dict{Symbol,Interface}())
 
         for (iface_id, iface_name) in enumerate([:in, :out])
             self.i[iface_name] = self.interfaces[iface_id] = Interface(self)

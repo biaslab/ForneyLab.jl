@@ -8,17 +8,17 @@ facts("GaussianNode unit tests") do
         node = GaussianNode()
         @fact typeof(node) => GaussianNode
         @fact length(node.interfaces) => 3
-        @fact node.mean => node.interfaces[1]
-        @fact node.variance => node.interfaces[2]
-        @fact node.out => node.interfaces[3]
+        @fact node.i[:mean] => node.interfaces[1]
+        @fact node.i[:variance] => node.interfaces[2]
+        @fact node.i[:out] => node.interfaces[3]
     end
 
     context("GaussianNode() should initialize a GaussianNode with precision parametrization") do
         FactorGraph()
-        node = GaussianNode(form="precision")
-        @fact node.mean => node.interfaces[1]
-        @fact node.precision => node.interfaces[2]
-        @fact node.out => node.interfaces[3]
+        node = GaussianNode(form=:precision)
+        @fact node.i[:mean] => node.interfaces[1]
+        @fact node.i[:precision] => node.interfaces[2]
+        @fact node.i[:out] => node.interfaces[3]
     end
 
     FactorGraph()
@@ -29,7 +29,7 @@ facts("GaussianNode unit tests") do
                                     2, 
                                     [Message(DeltaDistribution(0.5)), nothing],
                                     GaussianDistribution(m=2.0, V=0.5))
-            validateOutboundMessage(GaussianNode(m=2.0; form="precision"), 
+            validateOutboundMessage(GaussianNode(m=2.0; form=:precision), 
                                     2, 
                                     [Message(DeltaDistribution(0.5)), nothing],
                                     GaussianDistribution(m=2.0, W=0.5))
@@ -40,7 +40,7 @@ facts("GaussianNode unit tests") do
                                     1, 
                                     [nothing, Message(DeltaDistribution(1.0))],
                                     InverseGammaDistribution(a=-0.5, b=0.5))
-            validateOutboundMessage(GaussianNode(m=2.0; form="precision"), 
+            validateOutboundMessage(GaussianNode(m=2.0; form=:precision), 
                                     1, 
                                     [nothing, Message(DeltaDistribution(1.0))],
                                     GammaDistribution(a=1.5, b=0.5))
@@ -78,7 +78,7 @@ facts("GaussianNode unit tests") do
                                     3, 
                                     [Message(DeltaDistribution(2.0)), Message(DeltaDistribution([0.5])), nothing],
                                     GaussianDistribution(m=2.0, V=0.5))
-            validateOutboundMessage(GaussianNode(form="precision"), 
+            validateOutboundMessage(GaussianNode(form=:precision), 
                                     3, 
                                     [Message(DeltaDistribution(2.0)), Message(DeltaDistribution(0.5)), nothing],
                                     GaussianDistribution(m=2.0, W=0.5))
@@ -89,7 +89,7 @@ facts("GaussianNode unit tests") do
                                     1, 
                                     [nothing, Message(DeltaDistribution(0.5)), Message(DeltaDistribution(2.0))],
                                     GaussianDistribution(m=2.0, V=0.5))
-            validateOutboundMessage(GaussianNode(form="precision"), 
+            validateOutboundMessage(GaussianNode(form=:precision), 
                                     1, 
                                     [nothing, Message(DeltaDistribution([0.5])), Message(DeltaDistribution(2.0))],
                                     GaussianDistribution(m=2.0, W=0.5))
@@ -100,7 +100,7 @@ facts("GaussianNode unit tests") do
                                     2, 
                                     [Message(DeltaDistribution(2.0)), nothing, Message(DeltaDistribution(1.0))],
                                     InverseGammaDistribution(a=-0.5, b=0.5))
-            validateOutboundMessage(GaussianNode(form="precision"), 
+            validateOutboundMessage(GaussianNode(form=:precision), 
                                     2, 
                                     [Message(DeltaDistribution(2.0)), nothing, Message(DeltaDistribution(1.0))],
                                     GammaDistribution(a=1.5, b=0.5))
@@ -111,7 +111,7 @@ facts("GaussianNode unit tests") do
         context("Naive variational implementation (mean field)") do
             context("GaussianNode should propagate a backward message to the mean") do
                 # Standard
-                validateOutboundMessage(GaussianNode(form="precision"), 
+                validateOutboundMessage(GaussianNode(form=:precision), 
                                         1, 
                                         [nothing, GammaDistribution(a=3.0, b=1.0), GaussianDistribution(m=2.0, V=0.1)],
                                         GaussianDistribution(m=2.0, W=3.0),
@@ -126,7 +126,7 @@ facts("GaussianNode unit tests") do
 
             context("GaussianNode should propagate a backward message to the variance or precision") do
                 # Standard
-                validateOutboundMessage(GaussianNode(form="precision"), 
+                validateOutboundMessage(GaussianNode(form=:precision), 
                                         2, 
                                         [GaussianDistribution(m=4.0, W=2.0), nothing, GaussianDistribution(m=2.0, V=0.1)],
                                         GammaDistribution(a=1.5, b=2.3),
@@ -138,7 +138,7 @@ facts("GaussianNode unit tests") do
                                         InverseGammaDistribution(a=-0.5, b=2.55),
                                         ForneyLab.vmp!)
                 # With fixed mean
-                validateOutboundMessage(GaussianNode(m=1.0; form="precision"), 
+                validateOutboundMessage(GaussianNode(m=1.0; form=:precision), 
                                         1, 
                                         [nothing, GaussianDistribution(m=2.0, V=0.5)],
                                         GammaDistribution(a=1.5, b=0.75),
@@ -146,18 +146,18 @@ facts("GaussianNode unit tests") do
             end
 
             context("GaussianNode should propagate a forward message") do
-                validateOutboundMessage(GaussianNode(form="precision"), 
+                validateOutboundMessage(GaussianNode(form=:precision), 
                                         3, 
                                         [GaussianDistribution(), GammaDistribution(), nothing],
                                         GaussianDistribution(m=0.0, W=1.0),
                                         ForneyLab.vmp!)
-                validateOutboundMessage(GaussianNode(form="moment"), 
+                validateOutboundMessage(GaussianNode(form=:moment), 
                                         3, 
                                         [GaussianDistribution(), InverseGammaDistribution(a=2.0, b=1.0), nothing],
                                         GaussianDistribution(m=0.0, V=1.0),
                                         ForneyLab.vmp!)
                 # With fixed mean
-                validateOutboundMessage(GaussianNode(m=1.0; form="precision"), 
+                validateOutboundMessage(GaussianNode(m=1.0; form=:precision), 
                                         2, 
                                         [GammaDistribution(a=1.5, b=0.5), nothing],
                                         GaussianDistribution(m=1.0, W=3.0),
@@ -167,7 +167,7 @@ facts("GaussianNode unit tests") do
 
         context("Structured variational implementation") do
             context("GaussianNode should propagate a backward message to the mean") do
-                validateOutboundMessage(GaussianNode(form="precision"), 
+                validateOutboundMessage(GaussianNode(form=:precision), 
                                         1, 
                                         [nothing, Message(GammaDistribution(a=3.0, b=1.0)), GaussianDistribution(m=2.0, W=10.0)],
                                         StudentsTDistribution(m=2.0, W=60.0/21.0, nu=6.0),
@@ -175,7 +175,7 @@ facts("GaussianNode unit tests") do
             end
 
             context("GaussianNode should propagate a backward message to the precision") do
-                validateOutboundMessage(GaussianNode(form="precision"), 
+                validateOutboundMessage(GaussianNode(form=:precision), 
                                         2, 
                                         [Message(GaussianDistribution(m=4.0, W=2.0)), nothing, GaussianDistribution(m=2.0, W=10.0)],
                                         GammaDistribution(a=1.5, b=41.0/20.0),
@@ -184,7 +184,7 @@ facts("GaussianNode unit tests") do
 
             context("GaussianNode should propagate a forward message") do
                 node_marg = NormalGammaDistribution(m=4.0, beta=2.0, a=3.0, b=1.0)
-                validateOutboundMessage(GaussianNode(form="precision"), 
+                validateOutboundMessage(GaussianNode(form=:precision), 
                                         3, 
                                         [node_marg, node_marg, nothing],
                                         GaussianDistribution(m=4.0, W=3.0),

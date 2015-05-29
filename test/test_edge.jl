@@ -6,7 +6,7 @@ facts("Edge integration tests") do
     context("Nodes can be coupled by edges using the explicit interface names") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
-        edge = Edge(node2.out, node1.in1) # Edge from node 2 to node 1
+        edge = Edge(node2.i[:out], node1.i[:in]) # Edge from node 2 to node 1
         testInterfaceConnections(node1, node2)
     end
 
@@ -18,23 +18,23 @@ facts("Edge integration tests") do
 
     context("Edge constructor should write the distribution type") do
         (node1, node2) = initializePairOfMockNodes()
-        edge = Edge(node1.out, node2.out, GaussianDistribution)
+        edge = Edge(node1.i[:out], node2.i[:out], GaussianDistribution)
         @fact edge.distribution_type => GaussianDistribution
     end
 
     context("Edge constructor should throw an error if the FactorGraph is locked") do
         (node1, node2) = initializePairOfMockNodes()
         currentGraph().locked = true
-        @fact_throws Edge(node1.out, node2.out)
+        @fact_throws Edge(node1.i[:out], node2.i[:out])
     end
 
     context("Edge construction should couple interfaces to edge") do
         (node1, node2) = initializePairOfMockNodes()
-        @fact node1.out.edge => nothing
-        @fact node2.out.edge => nothing
-        edge = Edge(node1.out, node2.out)
-        @fact node1.out.edge => edge
-        @fact node2.out.edge => edge
+        @fact node1.i[:out].edge => nothing
+        @fact node2.i[:out].edge => nothing
+        edge = Edge(node1.i[:out], node2.i[:out])
+        @fact node1.i[:out].edge => edge
+        @fact node2.i[:out].edge => edge
     end
 
     context("Edge should throw an error when the user attempts to reposition") do
@@ -42,14 +42,14 @@ facts("Edge integration tests") do
         node1 = TerminalNode(name="node1")
         node2 = TerminalNode(name="node2")
         node3 = TerminalNode(name="node3")
-        Edge(node1.out, node2.out)
-        @fact_throws Edge(node1.out, node3.out)
+        Edge(node1.i[:out], node2.i[:out])
+        @fact_throws Edge(node1.i[:out], node3.i[:out])
     end
 
     context("Edges have a (pseudo) ordering") do
         FactorGraph()
-        edge1 = Edge(TerminalNode().out, TerminalNode().out)
-        edge2 = Edge(TerminalNode().out, TerminalNode().out)
+        edge1 = Edge(TerminalNode().i[:out], TerminalNode().i[:out])
+        edge2 = Edge(TerminalNode().i[:out], TerminalNode().i[:out])
         @fact (edge1 < edge2) => true
     end
 
@@ -59,16 +59,16 @@ facts("Edge integration tests") do
         node_b = FixedGainNode(name="b")
         node_c = FixedGainNode(name="c")
         node_d = TerminalNode(name="d")
-        edge_ab = Edge(node_a.out, node_b.in1)
-        edge_bc = Edge(node_b.out, node_c.in1)
-        edge_cd = Edge(node_c.out, node_d.out)
+        edge_ab = Edge(node_a.i[:out], node_b.i[:in])
+        edge_bc = Edge(node_b.i[:out], node_c.i[:in])
+        edge_cd = Edge(node_c.i[:out], node_d.i[:out])
         sorted = sort!([edge_bc, edge_ab, edge_cd])
         @fact sorted => [edge_ab, edge_bc, edge_cd]
     end
 
     context("forwardMessage(), forwardMessage(), ensureMarginal!()") do
         FactorGraph()
-        test_edge = Edge(MockNode(Message(GaussianDistribution())).out, MockNode(Message(GaussianDistribution(m=3.0, V=2.0))).out)
+        test_edge = Edge(MockNode(Message(GaussianDistribution())).i[:out], MockNode(Message(GaussianDistribution(m=3.0, V=2.0))).i[:out])
         @fact forwardMessage(test_edge) => Message(GaussianDistribution())
         @fact backwardMessage(test_edge) => Message(GaussianDistribution(m=3.0, V=2.0))
         test_edge.marginal = GaussianDistribution(m=3.0, V=2.0)
@@ -81,6 +81,6 @@ end
 facts("Functions for collecting edges") do
     context("edges() should get all edges connected to the node set") do
         testnodes = initializeLoopyGraph()
-        @fact edges(Set{Node}({testnodes[1], testnodes[2]})) => Set{Edge}({testnodes[1].in1.edge, testnodes[4].in1.edge, testnodes[4].out.edge})
+        @fact edges(Set{Node}({testnodes[1], testnodes[2]})) => Set{Edge}({testnodes[1].i[:in].edge, testnodes[4].i[:in1].edge, testnodes[4].i[:out].edge})
     end
 end
