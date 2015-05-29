@@ -5,40 +5,40 @@
 facts("QFactorization integration tests") do
     context("extend() should extend a set of edges to envelope deterministic nodes") do
         (t1, a1, g1, t2, add1, g2) = initializeFactoringGraph()
-        cluster = VMP.extend(Set{Edge}([g1.out.edge, g1.mean.edge]))
-        @fact cluster => Set{Edge}({t1.out.edge, a1.out.edge, g1.out.edge, add1.out.edge, g2.out.edge})
+        cluster = VMP.extend(Set{Edge}([g1.i[:out].edge, g1.i[:mean].edge]))
+        @fact cluster => Set{Edge}({t1.i[:out].edge, a1.i[:out].edge, g1.i[:out].edge, add1.i[:out].edge, g2.i[:out].edge})
     end
 
     context("factorize!()") do
         context("Should include argument edges in a new subgraph") do
             (t1, a1, g1, t2, add1, g2) = initializeFactoringGraph()
-            f = VMP.factorize!(Set{Edge}([t2.out.edge]))
-            @fact f.factors[2].internal_edges => Set{Edge}({t2.out.edge})
-            @fact f.factors[1].internal_edges => Set{Edge}({t1.out.edge, a1.out.edge, g1.out.edge, add1.out.edge, g2.out.edge})
+            f = VMP.factorize!(Set{Edge}([t2.i[:out].edge]))
+            @fact f.factors[2].internal_edges => Set{Edge}({t2.i[:out].edge})
+            @fact f.factors[1].internal_edges => Set{Edge}({t1.i[:out].edge, a1.i[:out].edge, g1.i[:out].edge, add1.i[:out].edge, g2.i[:out].edge})
         end
 
         context("Should update the edge_to_subgraph mapping for the graph") do
             (t1, a1, g1, t2, add1, g2) = initializeFactoringGraph()
-            f = VMP.factorize!(Set{Edge}([t2.out.edge]))
-            @fact f.edge_to_subgraph[t1.out.edge] => f.factors[1]
-            @fact f.edge_to_subgraph[a1.out.edge] => f.factors[1]
-            @fact f.edge_to_subgraph[g1.out.edge] => f.factors[1]
-            @fact f.edge_to_subgraph[t2.out.edge] => f.factors[2]
-            @fact f.edge_to_subgraph[add1.out.edge] => f.factors[1]
-            @fact f.edge_to_subgraph[g2.out.edge] => f.factors[1]
+            f = VMP.factorize!(Set{Edge}([t2.i[:out].edge]))
+            @fact f.edge_to_subgraph[t1.i[:out].edge] => f.factors[1]
+            @fact f.edge_to_subgraph[a1.i[:out].edge] => f.factors[1]
+            @fact f.edge_to_subgraph[g1.i[:out].edge] => f.factors[1]
+            @fact f.edge_to_subgraph[t2.i[:out].edge] => f.factors[2]
+            @fact f.edge_to_subgraph[add1.i[:out].edge] => f.factors[1]
+            @fact f.edge_to_subgraph[g2.i[:out].edge] => f.factors[1]
         end
 
         context("Should not factorize a GaussianNode with fixed mean and variance") do
             (t, gain, gauss) = initializeGaussianFactoringGraph()
-            f = VMP.factorize!(Set{Edge}([t.out.edge]))
+            f = VMP.factorize!(Set{Edge}([t.i[:out].edge]))
             @fact length(f.factors) => 1
-            @fact f.edge_to_subgraph[t.out.edge] => f.factors[1]
-            @fact f.edge_to_subgraph[gauss.out.edge] => f.factors[1]
+            @fact f.edge_to_subgraph[t.i[:out].edge] => f.factors[1]
+            @fact f.edge_to_subgraph[gauss.i[:out].edge] => f.factors[1]
         end
 
         context("Should retain node names") do
             (t1, gain, t2) = initializeSimpleFactoringGraph()
-            f = VMP.factorize!(Set{Edge}([t1.out.edge]))
+            f = VMP.factorize!(Set{Edge}([t1.i[:out].edge]))
             @fact node("t1") => t1
         end
     end
@@ -61,11 +61,11 @@ facts("QFactorization integration tests") do
         end
         @fact length(f.factors) => 5
 
-        @fact f.edge_to_subgraph[g_nodes[1].mean.edge].internal_edges => m_set 
-        @fact f.edge_to_subgraph[g_nodes[1].precision.edge].internal_edges => gam_set 
-        @fact f.edge_to_subgraph[g_nodes[1].out.edge].internal_edges => Set{Edge}([q_y_edges[1]]) 
-        @fact f.edge_to_subgraph[g_nodes[2].out.edge].internal_edges => Set{Edge}([q_y_edges[2]])
-        @fact f.edge_to_subgraph[g_nodes[3].out.edge].internal_edges => Set{Edge}([q_y_edges[3]])
+        @fact f.edge_to_subgraph[g_nodes[1].i[:mean].edge].internal_edges => m_set 
+        @fact f.edge_to_subgraph[g_nodes[1].i[:precision].edge].internal_edges => gam_set 
+        @fact f.edge_to_subgraph[g_nodes[1].i[:out].edge].internal_edges => Set{Edge}([q_y_edges[1]]) 
+        @fact f.edge_to_subgraph[g_nodes[2].i[:out].edge].internal_edges => Set{Edge}([q_y_edges[2]])
+        @fact f.edge_to_subgraph[g_nodes[3].i[:out].edge].internal_edges => Set{Edge}([q_y_edges[3]])
     end
 end
 
@@ -80,11 +80,11 @@ facts("vagueQDistributions() should set vague marginals at the appropriate place
     VMP.generateSchedule!(f) # Generate and store internal and external schedules on factorization subgraphs
     qs = VMP.vagueQDistributions(f) # Initialize vague q distributions
 
-    m_subgraph = f.edge_to_subgraph[g_nodes[1].mean.edge]
-    gam_subgraph = f.edge_to_subgraph[g_nodes[1].precision.edge]
-    y1_subgraph = f.edge_to_subgraph[g_nodes[1].out.edge]
-    y2_subgraph = f.edge_to_subgraph[g_nodes[2].out.edge]
-    y3_subgraph = f.edge_to_subgraph[g_nodes[3].out.edge]
+    m_subgraph = f.edge_to_subgraph[g_nodes[1].i[:mean].edge]
+    gam_subgraph = f.edge_to_subgraph[g_nodes[1].i[:precision].edge]
+    y1_subgraph = f.edge_to_subgraph[g_nodes[1].i[:out].edge]
+    y2_subgraph = f.edge_to_subgraph[g_nodes[2].i[:out].edge]
+    y3_subgraph = f.edge_to_subgraph[g_nodes[3].i[:out].edge]
 
     @fact length(qs) => 9
     @fact qs[(g_nodes[1], m_subgraph)].distribution => vague(GaussianDistribution)
@@ -109,8 +109,8 @@ facts("vagueQDistributions() should set vague marginals at the appropriate place
     VMP.generateSchedule!(f) # Generate and store internal and external schedules on factorization subgraphs
     qs = VMP.vagueQDistributions(f)
 
-    m_gam_subgraph = f.edge_to_subgraph[g_nodes[1].mean.edge]
-    y1_subgraph = f.edge_to_subgraph[g_nodes[1].out.edge]
+    m_gam_subgraph = f.edge_to_subgraph[g_nodes[1].i[:mean].edge]
+    y1_subgraph = f.edge_to_subgraph[g_nodes[1].i[:out].edge]
 
     @fact length(qs) => 2
     @fact qs[(g_nodes[1], m_gam_subgraph)].distribution => vague(NormalGammaDistribution)

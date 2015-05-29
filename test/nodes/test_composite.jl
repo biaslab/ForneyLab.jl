@@ -5,9 +5,9 @@ facts("CompositeNode integration tests") do
     t_in = TerminalNode(name="in")
     t_out = TerminalNode(name="out")
     a = AdditionNode(name="adder")
-    Edge(t_in, a.in1)
-    Edge(t_constant, a.in2)
-    Edge(a.out, t_out)
+    Edge(t_in, a.i[:in1])
+    Edge(t_constant, a.i[:in2])
+    Edge(a.i[:out], t_out)
 
     # Wrap graph into CompositeNode
     add_3 = CompositeNode(g, t_in, t_out, name="add_3")
@@ -44,7 +44,7 @@ facts("CompositeNode integration tests") do
         internal_in = node("in", add_3.internal_graph)
         internal_adder = node("adder", add_3.internal_graph)
         function custom_rule(fields)
-            return internal_adder.out.message = Message(DeltaDistribution(mean(internal_in.value)[1]+5.0))
+            return internal_adder.i[:out].message = Message(DeltaDistribution(mean(internal_in.value)[1]+5.0))
         end
         algo2 = Algorithm(custom_rule)
         addRule!(add_3, add_3.i[:out], sumProduct!, algo2)

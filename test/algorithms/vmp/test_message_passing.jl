@@ -1,17 +1,17 @@
 facts("Call step() for VMP algorithm") do
     data = [GaussianDistribution(m=2.0, V=tiny())]
     g = FactorGraph()
-    g_node = GaussianNode(form="precision")
+    g_node = GaussianNode(form=:precision)
     t_out = TerminalNode(name="t_out")
     t_mean = TerminalNode(GaussianDistribution(), name="t_mean")
     t_var = TerminalNode(GammaDistribution(), name="t_var")
-    Edge(g_node.out, t_out, GaussianDistribution)
-    Edge(t_mean, g_node.mean, GaussianDistribution)
-    Edge(t_var, g_node.precision, GammaDistribution)
+    Edge(g_node.i[:out], t_out, GaussianDistribution)
+    Edge(t_mean, g_node.i[:mean], GaussianDistribution)
+    Edge(t_var, g_node.i[:precision], GammaDistribution)
 
     setReadBuffer(t_out, data)
-    mean_out = setWriteBuffer(g_node.mean.edge)
-    prec_out = setWriteBuffer(g_node.precision.edge)
+    mean_out = setWriteBuffer(g_node.i[:mean].edge)
+    prec_out = setWriteBuffer(g_node.i[:precision].edge)
 
     algo = VMP.Algorithm(n_iterations=10)
 

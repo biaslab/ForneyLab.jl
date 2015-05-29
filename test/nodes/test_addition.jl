@@ -7,9 +7,9 @@ facts("AdditionNode unit tests") do
         node = AdditionNode()
         @fact typeof(node) => AdditionNode
         @fact length(node.interfaces) => 3
-        @fact node.in1 => node.interfaces[1]
-        @fact node.in2 => node.interfaces[2]
-        @fact node.out => node.interfaces[3]
+        @fact node.i[:in1] => node.interfaces[1]
+        @fact node.i[:in2] => node.interfaces[2]
+        @fact node.i[:out] => node.interfaces[3]
     end
 
     context("AdditionNode should add two DeltaDistribution{Float}") do

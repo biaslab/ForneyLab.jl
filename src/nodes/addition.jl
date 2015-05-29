@@ -2,28 +2,21 @@
 # AdditionNode
 ############################################
 # Description:
-#   Addition of two messages of same type.
+#   Addition: out = in1 + in2
 #
 #          in2
 #          |
 #    in1   v  out
 #   ----->[+]----->
 #
-#   out = in1 + in2
+#   f(in1,in2,out) = δ(out - in1 - in2)
 #
-#   Example:
-#       AdditionNode(; name="my_node")
+# Interfaces:
+#   1 i[:in1], 2 i[:in2], 3 i[:out]
 #
-# Interface ids, (names) and supported message types:
-#   1. (in1):
-#       Message{GaussianDistribution}
-#       Message{DeltaDistribution}
-#   2. (in2):
-#       Message{GaussianDistribution}
-#       Message{DeltaDistribution}
-#   3. (out):
-#       Message{GaussianDistribution}
-#       Message{DeltaDistribution}
+# Construction:
+#   AdditionNode(name="my_node")
+#
 ############################################
 
 export AdditionNode
@@ -31,17 +24,13 @@ export AdditionNode
 type AdditionNode <: Node
     name::ASCIIString
     interfaces::Array{Interface,1}
-    in1::Interface
-    in2::Interface
-    out::Interface
+    i::Dict{Symbol,Interface}
 
     function AdditionNode(; name=unnamedStr())
-        self = new(name, Array(Interface, 3))
+        self = new(name, Array(Interface, 3), Dict{Symbol,Interface}())
 
-        named_handle_list = [:in1, :in2, :out]
-        for i = 1:length(named_handle_list)
-            self.interfaces[i] = Interface(self)
-            setfield!(self, named_handle_list[i], self.interfaces[i])
+        for (iface_id, iface_name) in enumerate([:in1, :in2, :out])
+            self.i[iface_name] = self.interfaces[iface_id] = Interface(self)
         end
 
         return self
@@ -106,7 +95,7 @@ function sumProduct!(node::AdditionNode,
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Nothing)
-    dist_out = ensureMessage!(node.out, GaussianDistribution).payload
+    dist_out = ensureMessage!(node.i[:out], GaussianDistribution).payload
 
     additionGaussianForwardRule!(dist_out, msg_in1.payload, msg_in2.payload)
 
@@ -173,7 +162,7 @@ function sumProduct!{T<:Any}(
                             msg_in2::Message{DeltaDistribution{T}},
                             msg_out::Nothing)
     ans = msg_in1.payload.m + msg_in2.payload.m
-    msg_result = ensureMessage!(node.out, DeltaDistribution{T})
+    msg_result = ensureMessage!(node.i[:out], DeltaDistribution{T})
     msg_result.payload.m = ans
 
     return (:addition_delta_forward,

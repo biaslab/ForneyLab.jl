@@ -13,7 +13,7 @@ function graphviz(dot_graph::String; external_viewer::Bool=false)
     else
         try
             # For iJulia notebook
-            display("image/svg+xml", dot2svg(dot_graph))
+            display("text/html", "<img src=\"data:image/gif;base64,"*base64(dot2gif(dot_graph))*"\" />")
         catch
             viewDotExternal(dot_graph)
         end
@@ -121,6 +121,15 @@ function edgeDot(edge::Edge; is_external_edge=false)
         label *= "Distribution: $(edge.distribution_type)"
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", label=\"$(label)\" color=\"black\"]\n"
     end
+end
+
+function dot2gif(dot_graph::String)
+    # Generate SVG image from DOT graph
+    validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
+    stdout, stdin, proc = readandwrite(`dot -Tgif`)
+    write(stdin, dot_graph)
+    close(stdin)
+    return readall(stdout)
 end
 
 function dot2svg(dot_graph::String)
