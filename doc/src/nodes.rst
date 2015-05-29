@@ -9,17 +9,15 @@ This chapter describes :ref:`node-anatomy`, :ref:`msg-calc-rules`, :ref:`built-i
 The anatomy of nodes
 --------------------
 
-A factor graph node is always a subtype of ``abstract Node``, and its name ends in "Node". A node should contain at least the fields ``name`` and ``interfaces``. Let's look at the definition of the built-in :class:`AdditionNode`::
+A factor graph node is always a subtype of ``abstract Node``, and its name ends in "Node". A node should contain at least the fields ``name``, ``interfaces`` and ``i``. Let's look at the definition of the built-in :class:`AdditionNode`::
 
     type AdditionNode <: Node
         name::ASCIIString
         interfaces::Array{Interface,1}
-        in1::Interface
-        in2::Interface
-        out::Interface
+        i::Dict{Symbol, Interface}
     end
 
-The fields ``in1``, ``in2``, and ``out`` are optional 'named handles' to make accessing the interfaces convenient. The ``interfaces`` array always contains one or more :class:`Interface` instances. The calling signature of a node constructor varies, but it always includes the optional keyword argument ``name``. 
+The field ``i`` stores 'named handles' to make accessing the interfaces convenient, for example is we want to access the out interface we type ``node.i[:out]``. The ``interfaces`` array always contains one or more :class:`Interface` instances. The calling signature of a node constructor varies, but it always includes the optional keyword argument ``name``. 
 
 .. type:: Interface
     
@@ -30,9 +28,7 @@ The fields ``in1``, ``in2``, and ``out`` are optional 'named handles' to make ac
             node::Node # Reference to the Node it is part of
             edge::Union(AbstractEdge, Nothing) # Reference to the Edge it is part of
             partner::Union(Interface, Nothing) # Partner it is connected to
-            child::Union(Interface, Nothing)   # For composite nodes
             message::Union(Message, Nothing)   # Outbound message
-            internal_schedule::Array{Any, 1}   # For composite nodes: schedule to calc outbound msg
         end
 
     The ``message`` field may contain a :class:`Message`, which is the *outbound message* calculated according to the node function. This means that if an interface is the tail of an :class:`Edge`, its ``message`` field contains the *forward message* on that edge. Similarly, if the interface is the head of the edge, its ``message`` field contains the *backward message*. 
@@ -42,7 +38,7 @@ The fields ``in1``, ``in2``, and ``out`` are optional 'named handles' to make ac
 Message calculation rules
 -------------------------
 
-A factor node captures a specific *node function*, which involves the variables that are represented by the connected edges. The :class:`AdditionNode` for example captures the addition function: ``f(in1,in2,out) = δ(in1+in2-out)``. When running a message passing algorithm on a :class:`FactorGraph`, the node function specifies how the outbound messages are calculated from the inbound messages. An outbound message is calculated according to a *message calculation rule*. Message calculation rules are implemented for specific nodes and message types using multiple dispatch. 
+A factor node captures a specific *node function*, which involves the variables that are represented by the connected edges. The :class:`AdditionNode` for example captures the addition function: ``f(in1,in2,out) = δ(out-in1-in2)``. When running a message passing algorithm on a :class:`FactorGraph`, the node function specifies how the outbound messages are calculated from the inbound messages. An outbound message is calculated according to a *message calculation rule*. Message calculation rules are implemented for specific nodes and message types using multiple dispatch. 
 
 ForneyLab supports the following message calculation rules:
 
@@ -56,7 +52,7 @@ ForneyLab supports the following message calculation rules:
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Nothing)
-            # Calculate outbound message on interface 3 (named "out") 
+            # Calculate outbound message on interface 3 (:out) 
             # according to the sum-product rule
 
             # Save the calculated message on the interface
@@ -82,7 +78,7 @@ ForneyLab supports the following message calculation rules:
                             ::Nothing,
                             marg_prec::GammaDistribution,
                             marg_y::GaussianDistribution)
-            # Calculate outbound message on interface 1 (named "mean") 
+            # Calculate outbound message on interface 1 (:mean) 
             # according to the variational message passing rule
 
             # Save the calculated message on the interface
@@ -121,8 +117,8 @@ Elementary nodes
          in1   v  out
         ----->[+]----->
      
-    :Node function: ``f(in1,in2,out) = δ(in1+in2-out)``      
-    :Interfaces:    1: ``in1``, 2: ``in2``, 3: ``out``
+    :Node function: ``f(in1,in2,out) = δ(out-in1-in2)``      
+    :Interfaces:    1. ``i[:in1]``, 2. ``i[:in2]``, 3. ``i[:out]``
     :Construction:  ``AdditionNode(name="something")``
 
     Message computation rules:
@@ -159,7 +155,7 @@ Elementary nodes
         ----->[=]----->
      
     :Node function: ``f(X,Y,Z) = δ(X-Z)δ(Y-Z)``      
-    :Interfaces:    1-3 (no names)
+    :Interfaces:    1. ``i[1]``, 2. ``i[2]``, 3. ``i[3]``
     :Construction:  ``EqualityNode(name="something")``
 
     Message computation rules (\* = approximation):
@@ -192,11 +188,11 @@ Elementary nodes
 
     ::
 
-         in1        out
+          in        out
         ----->[exp]----->
 
-    :Node function: ``f(in1,out) = δ(out - exp(in1))``      
-    :Interfaces:    1: ``in1``, 2: ``out``
+    :Node function: ``f(in,out) = δ(out - exp(in))``      
+    :Interfaces:    1. ``i[:in]``, 2. ``i[:out]``
     :Construction:  ``ExponentialNode(name="something")``
 
     Message computation rules (\* = approximation):
@@ -215,11 +211,11 @@ Elementary nodes
 
     ::
 
-         in1      out
+          in      out
         ----->[A]----->
 
-    :Node function: ``f(in1,out) = δ(A*in1-out)``      
-    :Interfaces:    1: ``in1``, 2: ``out``
+    :Node function: ``f(in,out) = δ(A*in-out)``      
+    :Interfaces:    1 ``1[:in]``, 2. ``i[:out]``
     :Construction:  ``FixedGainNode(A::Matrix, name="something")``
 
     Message computation rules:
@@ -237,6 +233,8 @@ Elementary nodes
 
 .. type:: GaussianNode
 
+    ::
+    
                mean
                 |
                 v  out
@@ -245,10 +243,10 @@ Elementary nodes
         variance
      
     :Node function: ``f(mean,variance,out) = N(out|mean,variance)``      
-    :Interfaces:    1: ``mean``, 2: ``variance`` or ``precision``, 3: ``out``
-    :Construction:  ``GaussianNode(name="something", form="moment", m=optional, V=optional)``
+    :Interfaces:    1. ``i[:mean]``, 2. ``i[:variance]`` or ``i[:precision]``, 3. ``i[:out]``
+    :Construction:  ``GaussianNode(name="something", form=:moment, m=optional, V=optional)``
 
-    The ``GaussianNode`` outputs a Gaussian distribution from variable mean and variable variance or precision. Upon construction the role of the second interface is set to represent a variance or precision by setting the ``form`` argument to ``moment or ``precision`` respectively. The ``m`` and ``V`` arguments allow the user to fix the value for the mean and/or variance interface. Fixed interfaces are not explicitly created.
+    The ``GaussianNode`` outputs a Gaussian distribution from variable mean and variable variance or precision. Upon construction the role of the second interface is set to represent a variance or precision by setting the ``form`` argument to ``:moment or ``:precision`` respectively. The ``m`` and ``V`` arguments allow the user to fix the value for the mean and/or variance interface. Fixed interfaces are not explicitly created.
 
     Message computation rules:
 
@@ -285,8 +283,8 @@ Elementary nodes
              out
         [T]----->
      
-    :Node function: ``f(out) = δ(out - value)``      
-    :Interfaces:    1: ``out``
+    :Node function: ``f(out) = T.value``      
+    :Interfaces:    1. ``i[:out]``
     :Construction:  ``TerminalNode(value, name="something")``
 
     A ``TerminalNode`` is used to terminate an edge. It forces the variable represented by the connected edge to ``value``. The terminal node always emits a ``Message`` with payload ``value`` (which is a :class:`ProbabilityDistribution`). It can be used to introduce priors or data into the factor graph. 
@@ -320,7 +318,7 @@ Combined nodes
              |_______|
      
     :Node function: ``f(in1,in2,out) = δ(out - A*in1 - in2)``      
-    :Interfaces:    1: ``in1``, 2: ``in2``, 3: ``out``
+    :Interfaces:    1. ``i[:in1]``, 2. ``i[:in2]``, 3. ``i[:out]``
     :Construction:  ``GainAdditionNode(A, name="something")``
 
     Message computation rules:
@@ -348,7 +346,7 @@ Combined nodes
                  v
 
     :Node function: ``f(in1,in2,out) = δ(in1 - A*out)*δ(in2 - A*out)``      
-    :Interfaces:    1: ``in1``, 2: ``in2``, 3: ``out``
+    :Interfaces:    1. ``i[:in1]``, 2. ``i[:in2]``, 3. ``i[:out]``
     :Construction:  ``GainEqualityNode(A, name="something")``
 
     Message computation rules:
@@ -402,9 +400,9 @@ Here, ``terminals`` is an array of :class:`TerminalNode` instances in ``graph`` 
     t_constant = TerminalNode(3.0)
     t_out      = TerminalNode(name="out")
     adder      = AdditionNode()
-    Edge(t_in, adder.in1)
-    Edge(t_constant, adder.in2)
-    Edge(adder.out, t_out)
+    Edge(t_in, adder.i[:in1])
+    Edge(t_constant, adder.i[:in2])
+    Edge(adder.i[:out], t_out)
 
     # Step 2: wrap graph in CompositeNode, link t_in & t_out to interfaces
     comp_add3 = CompositeNode(g, t_in, t_out, name="add3")

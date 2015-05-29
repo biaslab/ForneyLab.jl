@@ -43,14 +43,16 @@ A node in a :class:`FactorGraph` is always of a subtype of ``abstract Node``. Fo
     type MinimalNode <: Node
         name::ASCIIString
         interfaces::Array{Interface,1}
+        i::Dict{Symbol, Interface}
     end
 
-The ``name`` fields holds a unique name, which can be passed to the constructor as a keyword argument. The ``interfaces`` field holds a list of :class:`Interface` objects. An :class:`Edge` connects two interfaces of different nodes to eachother. The calling signature of a node constructor depends on the specific type of the node::
+The ``name`` fields holds a unique name, which can be passed to the constructor as a keyword argument. The ``interfaces`` field holds a list of :class:`Interface` objects. An :class:`Edge` connects two interfaces of different nodes to eachother. The ``i`` field stores named handles to the interfaces, i.e. ``gain_node.i[:out]`` is equivalent to ``gain_node.interfaces[2]``.
+
+The calling signature of a node constructor depends on the specific type of the node::
 
     addition_node = AdditionNode(name="my_adder")  # Node func.: out = in1 + in2
     gain_node = FixedGainNode(3.0, name="times_3") # Node func.: out = 3.0 * in1
 
-Some node types provide named interface handles for convenience. I.e. ``gain_node.out`` is equivalent to ``gain_node.interfaces[2]``.
 
 The ``Edge`` type
 =================
@@ -71,7 +73,7 @@ The ``Edge`` type
 
     In general, an ``Edge`` is constructed by passing the tail and head interfaces as well as the distribution type::
 
-        edge = Edge(node1.out, node2.interfaces[1], GammaDistribution)
+        edge = Edge(node1.i[:out], node2.i[:in], GammaDistribution)
 
     If the distribution type is omitted, a :class:`GaussianDistribution` is assumed. For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface::
 
@@ -106,11 +108,11 @@ ForneyLab does not allow 'half-edges' that are connected to just one node. Inste
     adder_2 = AdditionNode(name="adder_2")
 
     # Create edges
-    Edge(t_x1, adder_1.in1)
-    Edge(t_c1, adder_1.in2)
-    Edge(adder_1.out, adder_2.in1)
-    Edge(t_c2, adder_2.in2)
-    Edge(adder_2.out, t_x3)
+    Edge(t_x1, adder_1.i[:in1])
+    Edge(t_c1, adder_1.i[:in2])
+    Edge(adder_1.i[:out], adder_2.i[:in1])
+    Edge(t_c2, adder_2.i[:in2])
+    Edge(adder_2.i[:out], t_x3)
 
 Chaining factor graph sections
 ==============================
@@ -132,9 +134,9 @@ In practical situations it is common for a factor graph to be a concatination of
     C = TerminalNode()
     adder = AdditionNode()
 
-    Edge(X_prev, adder.in1)
-    Edge(C, adder.in2)
-    Edge(adder.out, X_next)
+    Edge(X_prev, adder.[:in1])
+    Edge(C, adder.[:in2])
+    Edge(adder.i[:out], X_next)
 
     wrap(X_next, X_prev) # X_next becomes X_prev in the next section
 
