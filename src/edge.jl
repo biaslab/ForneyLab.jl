@@ -30,8 +30,8 @@ type Edge <: AbstractEdge
 
         # Add nodes and edge to current_graph
         push!(current_graph.edges, self)
-        push!(current_graph.nodes, tail.node)
-        push!(current_graph.nodes, head.node)
+        current_graph.nodes[tail.node.name] = tail.node
+        current_graph.nodes[head.node.name] = head.node
 
         return self
     end

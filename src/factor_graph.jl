@@ -8,7 +8,7 @@ export  currentGraph,
         node
 
 type FactorGraph
-    nodes::Set{Node}
+    nodes::Dict{ASCIIString, Node}
     edges::Set{Edge}
     locked::Bool
 
@@ -19,7 +19,7 @@ type FactorGraph
 end
 
 # Create an empty graph
-global current_graph = FactorGraph( Set{Node}(),
+global current_graph = FactorGraph( Dict{ASCIIString, Node}(),
                                     Set{Edge}(),
                                     false,
                                     Dict{TerminalNode, Vector}(),
@@ -29,7 +29,7 @@ global current_graph = FactorGraph( Set{Node}(),
 currentGraph() = current_graph::FactorGraph
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
-FactorGraph() = setCurrentGraph(FactorGraph(Set{Node}(),
+FactorGraph() = setCurrentGraph(FactorGraph(Dict{ASCIIString, Node}(),
                                             Set{Edge}(),
                                             false,
                                             Dict{TerminalNode, Vector}(),
@@ -50,7 +50,7 @@ end
 
 clearMessages!(graph::FactorGraph = current_graph) = map(clearMessages!, nodes(graph))
 
-nodes(graph::FactorGraph = current_graph) = copy(graph.nodes)
+nodes(graph::FactorGraph = current_graph) = Set{Node}(values(graph.nodes))
 
 function nodes(edges::Set{Edge})
     # Return all nodes connected to edges
@@ -67,13 +67,4 @@ edges(graph::FactorGraph = current_graph) = copy(graph.edges)
 edges(node::Node) = Set{Edge}([intf.edge for intf in node.interfaces])
 edges(nodeset::Set{Node}) = union(map(edges, nodeset)...)
 
-function node(name::ASCIIString, graph::FactorGraph=currentGraph())
-    # Return first node found in graph with same name as argument
-    for n in nodes(graph)
-        if n.name == name
-            return n
-        end
-    end
-
-    error("No node with name \"$(name)\" in this FactorGraph")
-end
+node(name::ASCIIString, graph::FactorGraph=currentGraph()) = graph.nodes[name]

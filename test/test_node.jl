@@ -30,12 +30,6 @@ facts("General node properties unit tests") do
             end
         end
     end
-
-    for node_type in [subtypes(CompositeNode)]
-        context("$(node_type) should have certain properties TODO") do
-            @pending true=>false
-        end
-    end
 end
 
 facts("node(name::String) should return node with matching name") do
@@ -83,17 +77,13 @@ facts("Connections between nodes integration tests") do
 end
 
 facts("Functions for collecting nodes") do
-    context("nodes() should return an array of all nodes in the graph") do
+    context("nodes() should return a set of all nodes in the graph") do
         # FactorGraph test
         testnodes = initializeLoopyGraph()
-        found_nodes = nodes(currentGraph())
-        @fact length(found_nodes) => length(testnodes)
-        for node in testnodes
-            @fact node in found_nodes => true
-        end
+        @fact nodes(currentGraph()) => Set{Node}(testnodes)
 
-        FactorGraph()
         # Composite node test
-        @pending true => false # nodes() should return internal nodes of a CompositeNode
+        c_node = CompositeNode(currentGraph())
+        @fact nodes(c_node) => Set{Node}(testnodes) # nodes() should return internal nodes of a CompositeNode
     end
 end
