@@ -2,7 +2,7 @@
 # GainEqualityNode
 ############################################
 # Description:
-#   Gain-equality node.
+#   Gain-equality node: A⁻¹*out = in1 = in2
 #   Combines the node functions of the FixedGainNode
 #   and the EqualityNode for computational efficiency.
 #
@@ -16,41 +16,27 @@
 #            | out
 #            v
 #
-#   out = A*in1 = A*in2
-#   Example:
-#       GainEqualityNode([1.0]; name="my_node")
-#   Gain A is fixed and defined through the constructor.
+#   f(in1,in2,out) = δ(A*in1 - out)⋅δ(A*in2 - out)
 #
-# Interface ids, (names) and supported message types:
-#   1. in1:
-#       Message{GaussianDistribution}
-#   2. in2:
-#       Message{GaussianDistribution}
-#   3. out:
-#       Message{GaussianDistribution}
+# Construction:
+#   GainEqualityNode([1.0], name="my_node")
 #
 ############################################
 
 export GainEqualityNode
 
 type GainEqualityNode <: Node
-    # Basic node properties
     A::Array{Float64}
     name::ASCIIString
     interfaces::Array{Interface,1}
-    # Named interface handles
-    in1::Interface
-    in2::Interface
-    out::Interface
+    i::Dict{Symbol,Interface}
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
     function GainEqualityNode(A::Union(Array{Float64},Float64)=1.0; name=unnamedStr())
-        self = new(ensureMatrix(deepcopy(A)), name, Array(Interface, 3))
+        self = new(ensureMatrix(deepcopy(A)), name, Array(Interface, 3), Dict{Symbol,Interface}())
 
-        named_handle_list = [:in1, :in2, :out]
-        for i = 1:length(named_handle_list)
-            self.interfaces[i] = Interface(self)
-            setfield!(self, named_handle_list[i], self.interfaces[i]) # Set named interface handle
+        for (iface_id, iface_name) in enumerate([:in1, :in2, :out])
+            self.i[iface_name] = self.interfaces[iface_id] = Interface(self)
         end
 
         try

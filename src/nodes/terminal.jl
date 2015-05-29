@@ -2,42 +2,37 @@
 # TerminalNode
 ############################################
 # Description:
-#   Simple node with just 1 interface.
-#   Always sends out a predefined message.
+#   Sends out a predefined message.
 #
-#           out
-#   [value]----->
+#       out
+#   [T]----->
 #
-#   out = value
+#   out = T.value
 #
-# One can pass the value to the constructor, and
-# modify the value directly later.
+# Interfaces:
+#   1 i[:out]
 #
-# Example:
-#   TerminalNode(GaussianDistribution(), name="myterminal")
+# Construction:
+#   TerminalNode(GaussianDistribution(), name="my_node")
 #
-# Interface ids, (names) and supported message types:
-#   1. (out):
-#       Message{Any}
 ############################################
 
 export TerminalNode, PriorNode
 
 type TerminalNode <: Node
+    name::ASCIIString
     value::ProbabilityDistribution
     interfaces::Array{Interface,1}
-    name::ASCIIString
-    out::Interface
+    i::Dict{Symbol,Interface}
 
     function TerminalNode(value=DeltaDistribution(1.0); name=unnamedStr())
         if typeof(value) <: Message || typeof(value) == DataType
             error("TerminalNode $(name) can not hold value of type $(typeof(value)).")
         end
-        self = new(deepcopy(value), Array(Interface, 1), name)
-        # Create interface
-        self.interfaces[1] = Interface(self)
-        # Init named interface handle
-        self.out = self.interfaces[1]
+        self = new(name, deepcopy(value), Array(Interface, 1), Dict{Symbol,Interface}())
+
+        self.i[:out] = self.interfaces[1] = Interface(self)
+ 
         return self
     end
 end
@@ -47,18 +42,18 @@ typealias PriorNode TerminalNode # For more overview during graph construction
 isDeterministic(::TerminalNode) = false # Edge case for deterministicness
 
 # Implement firstFreeInterface since EqualityNode is symmetrical in its interfaces
-firstFreeInterface(node::TerminalNode) = (node.out.partner==nothing) ? node.out : error("No free interface on $(typeof(node)) $(node.name)")
+firstFreeInterface(node::TerminalNode) = (node.interfaces[1].partner==nothing) ? node.interfaces[1] : error("No free interface on $(typeof(node)) $(node.name)")
 
 function sumProduct!(node::TerminalNode,
                             outbound_interface_id::Int,
                             ::Any)
     # Calculate an outbound message. The TerminalNode does not accept incoming messages.
     # This function is not exported, and is only meant for internal use.
-    if (typeof(node.out.message) != Message{typeof(node.value)}) || (node.out.message.payload != node.value)
+    if (typeof(node.interfaces[1].message) != Message{typeof(node.value)}) || (node.interfaces[1].message.payload != node.value)
         # Only create a new message if the existing one is not correct
-        node.out.message = Message(node.value)
+        node.interfaces[1].message = Message(node.value)
     end
 
     return (:terminal_forward,
-            node.out.message)
+            node.interfaces[1].message)
 end

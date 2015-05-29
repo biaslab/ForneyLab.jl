@@ -2,19 +2,21 @@
 # EqualityNode
 ############################################
 # Description:
-#   Equality constraint node with 3 (symmetrical) interfaces.
+#   Equality constraint on 3 variables: i[1] = i[2] = i[3]
 #
-#   Example:
-#       EqualityNode(name="my_equ")
+#          i[2]
+#          |
+#    i[1]  |  i[3]
+#   ------[=]-----
 #
-# Interface ids, (names) and supported message types:
-# 1,2,3. (none):
-#       Message{DeltaDistribution}
-#       Message{GaussianDistribution}
-#       Message{GammaDistribution}
-#       Message{InverseGammaDistribution}
-#       Message{NormalGammaDistribution}
-#       Message{StudentsTDistribution}
+#   f(i1,i2,i3) = δ(i1-i3)⋅δ(i2-i3)
+#
+# Interfaces:
+#   1 i[1], 2 i[2], 3 i[3]
+#
+# Construction:
+#   EqualityNode(name="my_node")
+#
 ############################################
 
 export EqualityNode
@@ -22,13 +24,15 @@ export EqualityNode
 type EqualityNode <: Node
     name::ASCIIString
     interfaces::Array{Interface,1}
+    i::Dict{Int,Interface}
 
     function EqualityNode(; name=unnamedStr())
-        self = new(name, Array(Interface, 3))
-        # Create interfaces
+        self = new(name, Array(Interface, 3), Dict{Int,Interface}())
+
         for interface_id = 1:3
-            self.interfaces[interface_id] = Interface(self)
+            self.i[interface_id] = self.interfaces[interface_id] = Interface(self)
         end
+
         return self
     end
 end

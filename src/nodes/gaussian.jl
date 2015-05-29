@@ -3,120 +3,30 @@
 ############################################
 # Description:
 #   Node converting an input mean and precision
-#   to a univariate Gaussian distribution.
+#   to a univariate Gaussian distribution:
+#   out = N(mean, variance) or
+#   out = N(mean, precision⁻¹)
 #   
-#   The GaussianNode has two different names for its second interface,
-#   namely precision and variance. These named handles are simply
-#   pointers to one and the same interface.
+#   The GaussianNode has two different roles for its second interface,
+#   namely precision and variance. This is determined by the form argument,
+#   either :moment or :precision.
 #
-#   Also the GaussianNode can accept a fixed mean. This removes the mean interface
-#   and stores the mean in the node itself.
+#   Also the GaussianNode accepts a fixed mean and/or variance. In this case
+#   the fixed interface(s) are not constructed and the interface indices shift
+#   a position.
 #
-############################################
+#           mean
+#            |
+#            v  out
+#     ----->[N]----->
+#    precision/
+#    variance
 #
-#   GaussianNode with variable mean:
+# Interfaces:
+#   1 i[:mean], 2 i[:variance] or i[:precision], 3 i[:out]
 #
-#         mean
-#          |
-#          v  out
-#   ----->[N]----->
-#  precision/
-#  variance
-#
-#   out = Message(GaussianDistribution(m=mean, W=precision))
-#
-#   Example:
-#       GaussianNode(name="my_node")
-#
-# Interface ids, (names) and supported message types:
-#   Receiving:
-#   1. (mean):
-#       Message{DeltaDistribution}
-#       GaussianDistribution (marginal)
-#   2. (precision / variance):
-#       Message{DeltaDistribution}
-#       GammaDistribution (marginal)
-#       InverseGammaDistribution (marginal)
-#   3. (out):
-#       Message{DeltaDistribution}
-#       GaussianDistribution (marginal)
-#
-#   Sending:
-#   1. (mean):
-#       Message{GaussianDistribution}
-#       Message{StudentsTDistribution}
-#   2. (precision / variance):
-#       Message{GammaDistribution}
-#       Message{InverseGammaDistribution}
-#   3. (out):
-#       Message{GaussianDistribution}
-#
-############################################
-#
-# GaussianNode with fixed mean:
-#
-#             out
-#   ----->[N]----->
-#  precision/
-#  variance
-#
-#   out = Message(GaussianDistribution(m=mean, W=precision))
-#
-#   Example:
-#       GaussianNode(name="my_node", m=1.0)
-#
-# Interface ids, (names) and supported message types:
-#   Receiving:
-#   1. (precision / variance):
-#       Message{DeltaDistribution}
-#       GammaDistribution (marginal)
-#       InverseGammaDistribution (marginal)
-#   2. (out):
-#       Message{DeltaDistribution}
-#
-#   Sending:
-#   1. (precision / variance):
-#       Message{GammaDistribution}
-#       Message{InverseGammaDistribution}
-#   2. (out):
-#       Message{GaussianDistribution}
-#
-############################################
-#
-# GaussianNode with fixed variance:
-#
-#    mean     out
-#   ----->[N]----->
-#
-#   out = Message(GaussianDistribution(m=mean, V=variance))
-#
-#   Example:
-#       GaussianNode(name="my_node", V=1.0)
-#
-# Interface ids, (names) and supported message types:
-#   Receiving:
-#   1. (mean):
-#       GaussianDistribution
-#   2. (out):
-#       GaussianDistribution
-#
-#   Sending:
-#   1. (mean):
-#       Message{GaussianDistribution}
-#   2. (out):
-#       Message{GaussianDistribution}
-#
-############################################
-#
-# GaussianNode with fixed mean and variance:
-#
-#       out
-#   [N]----->
-#
-#   out = Message(GaussianDistribution(m=mean, V=variance))
-#
-#   Example:
-#       GaussianNode(name="my_node", m=1.0, V=1.0)
+# Construction:
+#   GaussianNode(form=:moment, name="my_node", m=optional, V=optional)
 #
 ############################################
 
@@ -125,17 +35,12 @@ export GaussianNode
 type GaussianNode <: Node
     name::ASCIIString
     interfaces::Array{Interface,1}
-
-    # Helper fields filled by constructor
-    mean::Interface
-    precision::Interface
-    variance::Interface
-    out::Interface
+    i::Dict{Symbol,Interface}
     # Fixed parameters
     m::Vector{Float64}
     V::Matrix{Float64}
 
-    function GaussianNode(; name=unnamedStr(), form::ASCIIString="moment", m::Union(Float64,Vector{Float64})=[NaN], V::Union(Float64,Matrix{Float64})=reshape([NaN], 1, 1))
+    function GaussianNode(; name=unnamedStr(), form::Symbol=:moment, m::Union(Float64,Vector{Float64})=[NaN], V::Union(Float64,Matrix{Float64})=reshape([NaN], 1, 1))
         if isValid(m) && isValid(V)
             total_interfaces = 1
         elseif isValid(m) || isValid(V)
@@ -143,7 +48,7 @@ type GaussianNode <: Node
         else
             total_interfaces = 3
         end
-        self = new(name, Array(Interface, total_interfaces))
+        self = new(name, Array(Interface, total_interfaces), Dict{Symbol,Interface}())
         next_interface_index = 1 # Counter keeping track of constructed interfaces
 
         if isValid(m)
@@ -151,8 +56,7 @@ type GaussianNode <: Node
             self.m = (typeof(m)==Float64) ? [m] : deepcopy(m)
         else
             # GaussianNode with variable mean
-            self.interfaces[next_interface_index] = Interface(self) # Mean interface
-            self.mean = self.interfaces[next_interface_index]
+            self.i[:mean] = self.interfaces[next_interface_index] = Interface(self) # Mean interface
             next_interface_index += 1
         end
 
@@ -163,23 +67,20 @@ type GaussianNode <: Node
         else
             # GaussianNode with variable variance
             self.interfaces[next_interface_index] = Interface(self)
-            if form == "moment"
+            if form == :moment
                 # Parameters m, V
-                self.variance = self.interfaces[next_interface_index]
-            elseif form == "precision"
+                self.i[:variance] = self.interfaces[next_interface_index]
+            elseif form == :precision
                 # Parameters m, W
-                self.precision = self.interfaces[next_interface_index]
-            elseif form == "canonical"
-                error("Canonical form not implemented")
+                self.i[:precision] = self.interfaces[next_interface_index]
             else
-                error("Unrecognized form, $(form). Please use \"moment\", \"canonical\", or \"precision\"")
+                error("Unrecognized form, $(form). Please use :moment, or :precision")
             end
             next_interface_index += 1
         end
         
         # Out interface
-        self.interfaces[next_interface_index] = Interface(self)
-        self.out = self.interfaces[next_interface_index]
+        self.i[:out] = self.interfaces[next_interface_index] = Interface(self)
 
         return self
     end
@@ -201,7 +102,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
 
-    if isdefined(node, :variance)
+    if haskey(node.i, :variance)
         # Backward over mean
         #
         #   N       Dlt            
@@ -220,7 +121,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
 
         return (:gaussian_backward_mean_delta_variance,
                 node.interfaces[outbound_interface_id].message)
-    elseif isdefined(node, :precision)
+    elseif haskey(node.i, :precision)
         # Backward over mean
         #
         #   N       Dlt            
@@ -253,7 +154,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
 
-    if isdefined(node, :variance)
+    if haskey(node.i, :variance)
         # Backward over variance
         #
         #   Dlt      IG            
@@ -271,7 +172,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
 
         return (:gaussian_backward_variance_delta,
                 node.interfaces[outbound_interface_id].message)
-    elseif isdefined(node, :precision)
+    elseif haskey(node.i, :precision)
         # Backward over precision
         #
         #   Dlt      Gam            
@@ -302,7 +203,7 @@ function sumProduct!{T<:Any}(node::GaussianNode,
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
 
-    if isdefined(node, :variance)
+    if haskey(node.i, :variance)
         # Backward over variance with fixed mean
         #
         #  Ig        Dlt               
@@ -318,7 +219,7 @@ function sumProduct!{T<:Any}(node::GaussianNode,
 
         return (:gaussian_backward_variance_delta,
                 node.interfaces[outbound_interface_id].message)
-    elseif isdefined(node, :precision)
+    elseif haskey(node.i, :precision)
         # Backward over precision with fixed mean
         #
         #  Gam       Dlt               
@@ -348,7 +249,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
 
-    if isdefined(node, :variance)
+    if haskey(node.i, :variance)
         # Forward over out
         #
         #   Dlt     Dlt            
@@ -367,7 +268,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
 
         return (:gaussian_forward_delta_variance,
                 node.interfaces[outbound_interface_id].message)
-    elseif isdefined(node, :precision)
+    elseif haskey(node.i, :precision)
         # Forward over out
         #
         #   Dlt     Dlt            
@@ -399,7 +300,7 @@ function sumProduct!{T<:Any}(node::GaussianNode,
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
 
-    if isdefined(node, :variance)
+    if haskey(node.i, :variance)
         # Forward over out with fixed mean
         #
         #  Dlt        N               
@@ -416,7 +317,7 @@ function sumProduct!{T<:Any}(node::GaussianNode,
 
         return (:gaussian_forward_delta_variance,
                 node.interfaces[outbound_interface_id].message)
-    elseif isdefined(node, :precision)
+    elseif haskey(node.i, :precision)
         # Forward over out with fixed mean
         #
         #  Dlt        N               
@@ -447,7 +348,7 @@ function sumProduct!(node::GaussianNode,
     #        N               
     #  [N]---->
     #      -->  
-    node.out.message = Message(GaussianDistribution(m=deepcopy(node.m), V=deepcopy(node.V)))
+    node.i[:out].message = Message(GaussianDistribution(m=deepcopy(node.m), V=deepcopy(node.V)))
     return (:gaussian_forward_fixed_mean_variance,
             node.interfaces[outbound_interface_id].message)
 end
@@ -472,7 +373,7 @@ function vmp!(node::GaussianNode,
 
     dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    if is(node.interfaces[outbound_interface_id], node.mean) # Mean estimation from variance and sample
+    if is(node.interfaces[outbound_interface_id], node.i[:mean]) # Mean estimation from variance and sample
         ensureMDefined!(marg_out)
         length(marg_out.m) == 1 || error("VMP for Gaussian node is only implemented for univariate distributions")
         a = marg_variance.a # gamma message
@@ -506,7 +407,7 @@ function vmp!(node::GaussianNode,
 
     dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    if is(node.interfaces[outbound_interface_id], node.mean)
+    if is(node.interfaces[outbound_interface_id], node.i[:mean])
         ensureMDefined!(marg_y)
         (length(marg_y.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
         dist_out.m = deepcopy(marg_y.m)
@@ -526,7 +427,7 @@ function vmp!(node::GaussianNode,
                             ::Nothing,
                             marg_out::GaussianDistribution)
 
-    if isdefined(node, :precision) && is(node.interfaces[outbound_interface_id], node.precision)
+    if haskey(node.i, :precision) && is(node.interfaces[outbound_interface_id], node.i[:precision])
         # Forward variational update function with fixed mean
         #
         #   Gam     Q~N                 
@@ -541,7 +442,7 @@ function vmp!(node::GaussianNode,
 
         return (:gaussian_backward_precision_gaussian_delta,
                 node.interfaces[outbound_interface_id].message)
-    elseif isdefined(node, :mean) && is(node.interfaces[outbound_interface_id], node.mean)
+    elseif haskey(node.i, :mean) && is(node.interfaces[outbound_interface_id], node.i[:mean])
         # Backward variational update function with fixed variance
         #
         #   <--     Q~N            
@@ -568,7 +469,7 @@ function vmp!(node::GaussianNode,
                             marg_mean::GaussianDistribution,
                             ::Nothing,
                             marg_out::GaussianDistribution)
-    if isdefined(node, :variance)
+    if haskey(node.i, :variance)
         # Variational update function takes the marginals as input (instead of the inbound messages)
         # Derivation for the update rule can be found in the derivations notebook.
         #
@@ -580,7 +481,7 @@ function vmp!(node::GaussianNode,
 
         dist_out = ensureMessage!(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
 
-        if is(node.interfaces[outbound_interface_id], node.variance) # Variance estimation from mean and sample
+        if is(node.interfaces[outbound_interface_id], node.i[:variance]) # Variance estimation from mean and sample
             ensureMVParametrization!(marg_out)
             ensureMVParametrization!(marg_mean)
             (length(marg_out.V) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
@@ -597,7 +498,7 @@ function vmp!(node::GaussianNode,
         else
             error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
         end
-    elseif isdefined(node, :precision)
+    elseif haskey(node.i, :precision)
         # Variational update function takes the marginals as input (instead of the inbound messages)
         # Derivation for the update rule can be found in the derivations notebook.
         #
@@ -609,7 +510,7 @@ function vmp!(node::GaussianNode,
 
         dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
 
-        if is(node.interfaces[outbound_interface_id], node.precision) # Precision estimation from mean and sample
+        if is(node.interfaces[outbound_interface_id], node.i[:precision]) # Precision estimation from mean and sample
             ensureMVParametrization!(marg_out)
             ensureMVParametrization!(marg_mean)
             (length(marg_out.V) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
@@ -648,7 +549,7 @@ function vmp!(node::GaussianNode,
 
     dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    if is(node.interfaces[outbound_interface_id], node.out)
+    if is(node.interfaces[outbound_interface_id], node.i[:out])
         ensureMDefined!(marg_mean)
         (length(marg_mean.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
         dist_out.m = deepcopy(marg_mean.m)
@@ -675,7 +576,7 @@ function vmp!(node::GaussianNode,
 
     dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    if is(node.interfaces[outbound_interface_id], node.out)
+    if is(node.interfaces[outbound_interface_id], node.i[:out])
         (length(node.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
         dist_out.m = deepcopy(node.m)
         invalidate!(dist_out.V)
@@ -702,7 +603,7 @@ function vmp!(node::GaussianNode,
 
     dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    if is(node.interfaces[outbound_interface_id], node.out)
+    if is(node.interfaces[outbound_interface_id], node.i[:out])
         ensureMDefined!(marg_mean)
         dist_out.m = deepcopy(marg_mean.m)
         dist_out.V = deepcopy(node.V)
@@ -733,7 +634,7 @@ function vmp!(node::GaussianNode,
 
     dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    if is(node.interfaces[outbound_interface_id], node.out)
+    if is(node.interfaces[outbound_interface_id], node.i[:out])
         ensureMDefined!(marg_mean)
         (length(marg_mean.m) == 1) || error("VMP for Gaussian node is only implemented for univariate distributions")
         dist_out.m = deepcopy(marg_mean.m)
@@ -769,7 +670,7 @@ function vmp!(node::GaussianNode,
 
     dist_out = ensureMessage!(node.interfaces[outbound_interface_id], StudentsTDistribution).payload
 
-    if is(node.interfaces[outbound_interface_id], node.mean)
+    if is(node.interfaces[outbound_interface_id], node.i[:mean])
         ensureMWParametrization!(marg_out)
         length(marg_out.m) == 1 || error("SVMP update on GaussianNode only defined for univariate distributions")
         m_y = marg_out.m[1]
@@ -803,7 +704,7 @@ function vmp!(node::GaussianNode,
 
     dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
 
-    if isdefined(node, :precision)
+    if haskey(node.i, :precision)
         ensureMWParametrization!(marg_out)
         length(marg_out.m) == 1 || error("SVMP update on GaussianNode only defined for univariate distributions")
         m_y = marg_out.m[1]
@@ -837,7 +738,7 @@ function vmp!(node::GaussianNode,
 
     dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
 
-    if is(node.interfaces[outbound_interface_id], node.out)
+    if is(node.interfaces[outbound_interface_id], node.i[:out])
         dist_out.m = [marg.m]
         dist_out.W = reshape([marg.a/marg.b], 1, 1)
         invalidate!(dist_out.xi)
