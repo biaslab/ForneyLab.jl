@@ -89,7 +89,7 @@ function generateSchedule(graph::FactorGraph=currentGraph(); args...)
     
     # Collect timewrap interfaces
     for (from_node, to_node) in graph.wraps
-        push!(partial_list, from_node.i[:out].partner)
+        push!(partial_list, from_node.interfaces[1].partner)
     end
 
     # Collect write buffer interfaces
