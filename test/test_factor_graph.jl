@@ -6,8 +6,8 @@ facts("FactorGraph unit tests") do
     context("FactorGraph() should initialize a factor graph") do
         fg = FactorGraph()
         @fact typeof(fg) => FactorGraph
-        @fact fg.nodes => Dict{ASCIIString, Node}()
-        @fact fg.edges => Set{Edge}()
+        @fact fg.n => Dict{Symbol, Node}()
+        @fact fg.e => Dict{Symbol, Edge}()
         @fact current_graph => fg # Global should be set
     end
 

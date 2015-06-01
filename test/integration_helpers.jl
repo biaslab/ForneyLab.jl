@@ -8,12 +8,14 @@ type MockNode <: Node
     # MockNode is a node with an arbitrary function, that when created
     # initiates a message on all its interfaces.
     # Interface 1 is named :out
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface, 1}
     i::Dict{Symbol, Interface}
 
-    function MockNode(num_interfaces::Int=1; name=ForneyLab.unnamedStr())
-        self = new(name, Array(Interface, num_interfaces), Dict{Symbol, Interface}())
+    function MockNode(num_interfaces::Int=1; id=ForneyLab.generateNodeId())
+        self = new(id, Array(Interface, num_interfaces), Dict{Symbol, Interface}())
+        !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
+
         for interface_id = 1:num_interfaces
             self.interfaces[interface_id] = Interface(self)
         end
@@ -106,10 +108,10 @@ function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
     #  (inhibitor)
 
     FactorGraph()
-    driver      = FixedGainNode(A, name="driver")
-    inhibitor   = FixedGainNode(B, name="inhibitor")
-    noise       = TerminalNode(GaussianDistribution(m=noise_m, V=noise_V), name="noise")
-    add         = AdditionNode(name="adder")
+    driver      = FixedGainNode(A, id=:driver)
+    inhibitor   = FixedGainNode(B, id=:inhibitor)
+    noise       = TerminalNode(GaussianDistribution(m=noise_m, V=noise_V), id=:noise)
+    add         = AdditionNode(id=:adder)
     Edge(add.i[:out], inhibitor.i[:in])
     Edge(inhibitor.i[:out], driver.i[:in])
     Edge(driver.i[:out], add.i[:in1])
@@ -154,12 +156,12 @@ function initializeFactoringGraph()
     #                    -----
 
     FactorGraph()
-    t1 = TerminalNode(name="t1")
-    a1 = FixedGainNode(name="a1")
-    g1 = GaussianNode(form=:moment, name="g1")
-    t2 = TerminalNode(name="t2")
-    add1 = AdditionNode(name="add1")
-    g2 = GaussianNode(name="g2", V=0.1)
+    t1 = TerminalNode(id=:t1)
+    a1 = FixedGainNode(id=:a1)
+    g1 = GaussianNode(form=:moment, id=:g1)
+    t2 = TerminalNode(id=:t2)
+    add1 = AdditionNode(id=:add1)
+    g2 = GaussianNode(id=:g2, V=0.1)
     Edge(t1.i[:out], a1.i[:in])
     Edge(a1.i[:out], g1.i[:mean])
     Edge(t2.i[:out], g1.i[:variance], InverseGammaDistribution)
@@ -179,11 +181,11 @@ function initializeFactoringGraphWithoutLoop()
     #
 
     FactorGraph()
-    t1 = TerminalNode(name="t1")
-    a1 = FixedGainNode(name="a1")
-    g1 = GaussianNode(form=:moment, name="g1")
-    t2 = TerminalNode(name="t2")
-    t3 = TerminalNode(name="t3")
+    t1 = TerminalNode(id=:t1)
+    a1 = FixedGainNode(id=:a1)
+    g1 = GaussianNode(form=:moment, id=:g1)
+    t2 = TerminalNode(id=:t2)
+    t3 = TerminalNode(id=:t3)
     Edge(t1.i[:out], a1.i[:in])
     Edge(a1.i[:out], g1.i[:mean])
     Edge(t2.i[:out], g1.i[:variance], InverseGammaDistribution)
@@ -195,9 +197,9 @@ function initializeGaussianFactoringGraph()
     # [T]<--[A]<--[N]
 
     FactorGraph()
-    t = TerminalNode(name="t")
-    gain = FixedGainNode(name="gain")
-    gauss = GaussianNode(m=1.0, V=0.5, name="gauss")
+    t = TerminalNode(id=:t)
+    gain = FixedGainNode(id=:gain)
+    gauss = GaussianNode(m=1.0, V=0.5, id=:gauss)
     Edge(gauss.i[:out], gain.i[:in])
     Edge(gain.i[:out], t.i[:out])
     return (t, gain, gauss)
@@ -207,9 +209,9 @@ function initializeSimpleFactoringGraph()
     # [T]<--[A]<--[T]
 
     FactorGraph()
-    t1 = TerminalNode(name="t1")
-    gain = FixedGainNode(name="gain")
-    t2 = TerminalNode(name="t2")
+    t1 = TerminalNode(id=:t1)
+    gain = FixedGainNode(id=:gain)
+    t2 = TerminalNode(id=:t2)
     Edge(t2.i[:out], gain.i[:in])
     Edge(gain.i[:out], t1.i[:out])
     return (t1, gain, t2)
@@ -416,10 +418,10 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
 
     # Build graph
     for section=1:n_samples
-        g_node = GaussianNode(; name="g_node_$(section)", form=:precision)
-        m_eq_node = EqualityNode(; name="m_eq_$(section)") # Equality node chain for mean
-        gam_eq_node = EqualityNode(; name="s_eq_$(section)") # Equality node chain for variance
-        y_node = TerminalNode(GaussianDistribution(m=y[section], V=tiny()), name="c_obs_$(section)") # Observed y values are stored in terminal node
+        g_node = GaussianNode(; id=symbol("g_node_$(section)"), form=:precision)
+        m_eq_node = EqualityNode(; id=symbol("m_eq_$(section)")) # Equality node chain for mean
+        gam_eq_node = EqualityNode(; id=symbol("s_eq_$(section)")) # Equality node chain for variance
+        y_node = TerminalNode(GaussianDistribution(m=y[section], V=tiny()), id=symbol("c_obs_$(section)")) # Observed y values are stored in terminal node
         g_nodes[section] = g_node
         m_eq_nodes[section] = m_eq_node
         gam_eq_nodes[section] = gam_eq_node
@@ -464,19 +466,19 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
 
     FactorGraph()
 
-    g_node = GaussianNode(; name="g_node", form=:precision)
-    m_eq_node = EqualityNode(; name="m_eq_node") # Equality node chain for mean
-    gam_eq_node = EqualityNode(; name="gam_eq_node") # Equality node chain for variance
-    y_node = TerminalNode(GaussianDistribution(), name="y_node") # Observed y values are stored in terminal node
+    g_node = GaussianNode(; id=:g_node, form=:precision)
+    m_eq_node = EqualityNode(; id=:m_eq_node) # Equality node chain for mean
+    gam_eq_node = EqualityNode(; id=:gam_eq_node) # Equality node chain for variance
+    y_node = TerminalNode(GaussianDistribution(), id=:y_node) # Observed y values are stored in terminal node
     y_edge = Edge(g_node.i[:out], y_node.i[:out], GaussianDistribution)
     m_edge = Edge(m_eq_node.interfaces[3], g_node.i[:mean], GaussianDistribution)
     gam_edge = Edge(gam_eq_node.interfaces[3], g_node.i[:precision], GammaDistribution)
 
     # Attach beginning and end nodes
-    m_0_node = TerminalNode(GaussianDistribution(m=0.0, V=100.0); name="m_0_node") # Prior
-    gam_0_node = TerminalNode(GammaDistribution(a=0.01, b=0.01); name="gam_0_node") # Prior
-    m_N_node = TerminalNode(vague(GaussianDistribution); name="m_N_node") # Neutral 'one' message
-    gam_N_node = TerminalNode(vague(GammaDistribution); name="gam_N_node") # Neutral 'one' message
+    m_0_node = TerminalNode(GaussianDistribution(m=0.0, V=100.0); id=:m_0_node) # Prior
+    gam_0_node = TerminalNode(GammaDistribution(a=0.01, b=0.01); id=:gam_0_node) # Prior
+    m_N_node = TerminalNode(vague(GaussianDistribution); id=:m_N_node) # Neutral 'one' message
+    gam_N_node = TerminalNode(vague(GammaDistribution); id=:gam_N_node) # Neutral 'one' message
     m_0_eq_edge = Edge(m_0_node.i[:out], m_eq_node.interfaces[1], GaussianDistribution)
     gam_0_eq_edge = Edge(gam_0_node.i[:out], gam_eq_node.interfaces[1], GammaDistribution)
     m_N_eq_edge = Edge(m_eq_node.interfaces[2], m_N_node.i[:out], GaussianDistribution)

@@ -2,9 +2,9 @@ facts("Call step() for VMP algorithm") do
     data = [GaussianDistribution(m=2.0, V=tiny())]
     g = FactorGraph()
     g_node = GaussianNode(form=:precision)
-    t_out = TerminalNode(name="t_out")
-    t_mean = TerminalNode(GaussianDistribution(), name="t_mean")
-    t_var = TerminalNode(GammaDistribution(), name="t_var")
+    t_out = TerminalNode(id=:t_out)
+    t_mean = TerminalNode(GaussianDistribution(), id=:t_mean)
+    t_var = TerminalNode(GammaDistribution(), id=:t_var)
     Edge(g_node.i[:out], t_out, GaussianDistribution)
     Edge(t_mean, g_node.i[:mean], GaussianDistribution)
     Edge(t_var, g_node.i[:precision], GammaDistribution)

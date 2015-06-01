@@ -15,22 +15,23 @@
 #   1 i[:in1], 2 i[:in2], 3 i[:out]
 #
 # Construction:
-#   AdditionNode(name="my_node")
+#   AdditionNode(id=:my_node)
 #
 ############################################
 
 export AdditionNode
 
 type AdditionNode <: Node
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
 
-    function AdditionNode(; name=unnamedStr())
-        self = new(name, Array(Interface, 3), Dict{Symbol,Interface}())
+    function AdditionNode(; id=generateNodeId())
+        self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
+        !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
 
-        for (iface_id, iface_name) in enumerate([:in1, :in2, :out])
-            self.i[iface_name] = self.interfaces[iface_id] = Interface(self)
+        for (iface_id, iface_handle) in enumerate([:in1, :in2, :out])
+            self.i[iface_handle] = self.interfaces[iface_id] = Interface(self)
         end
 
         return self

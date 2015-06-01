@@ -71,7 +71,7 @@ function calculateQDistribution!(q_distributions::Dict{(Node, Subgraph), QDistri
         if neighbouring_subgraph == subgraph # edge is internal
             push!(required_inputs, interface.partner.message)
         else # edge is external
-            haskey(q_distributions, (node, neighbouring_subgraph)) || error("A required q-distribution for $(node.name) is not present. Please preset (vague) q-distributions.")
+            haskey(q_distributions, (node, neighbouring_subgraph)) || error("A required q-distribution for $(node.id) is not present. Please preset (vague) q-distributions.")
             push!(required_inputs, q_distributions[(node, neighbouring_subgraph)].distribution)
         end
     end

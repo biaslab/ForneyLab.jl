@@ -36,10 +36,10 @@ facts("QFactorization integration tests") do
             @fact f.edge_to_subgraph[gauss.i[:out].edge] => f.factors[1]
         end
 
-        context("Should retain node names") do
+        context("Should retain node ids") do
             (t1, gain, t2) = initializeSimpleFactoringGraph()
             f = VMP.factorize!(Set{Edge}([t1.i[:out].edge]))
-            @fact node("t1") => t1
+            @fact node(:t1) => t1
         end
     end
 

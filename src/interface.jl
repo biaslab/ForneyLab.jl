@@ -1,5 +1,5 @@
 export Interface
-export clearMessage!, setMessage!, message, name
+export clearMessage!, setMessage!, message, handle
 
 type Interface
     # An Interface belongs to a node and is used to send/receive messages.
@@ -14,26 +14,25 @@ end
 Interface(node::Node) = Interface(node, nothing, nothing, nothing)
 
 function show(io::IO, interface::Interface)
-    iface_name = name(interface)
-    (iface_name == "") || (iface_name = "($(iface_name))")
-    println(io, "Interface $(findfirst(interface.node.interfaces, interface)) $(iface_name) of $(typeof(interface.node)) $(interface.node.name)")
+    iface_handle = handle(interface)
+    (iface_handle == "") || (iface_handle = "($(iface_handle))")
+    println(io, "Interface $(findfirst(interface.node.interfaces, interface)) $(iface_handle) of $(typeof(interface.node)) $(interface.node.id)")
 end
 function setMessage!(interface::Interface, message::Message)
     interface.message = deepcopy(message)
 end
 clearMessage!(interface::Interface) = (interface.message=nothing)
 message(interface::Interface) = interface.message
-function name(interface::Interface)
-    # Return interface name
+function handle(interface::Interface)
+    # Return interface handle
     if isdefined(interface.node, :i)
-        for handle in keys(interface.node.i)
-            if typeof(handle)==Symbol && is(interface.node.i[handle], interface)
-                return string(handle)
+        for h in keys(interface.node.i)
+            if typeof(h)==Symbol && is(interface.node.i[h], interface)
+                return h
             end
         end
     end
-
-    return ""
+    error("Interface not found")
 end
 
 function ensureMessage!{T<:ProbabilityDistribution}(interface::Interface, payload_type::Type{T})

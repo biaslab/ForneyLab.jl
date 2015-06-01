@@ -4,18 +4,19 @@
 
 facts("General node properties unit tests") do
     FactorGraph()
+    c = 0
     for node_type in [subtypes(Node), subtypes(CompositeNode)]
         if node_type!=CompositeNode && node_type!=MockNode
-            context("$(node_type) properties should include interfaces and name") do
+            context("$(node_type) properties should include interfaces and id") do
                 @fact typeof(node_type().interfaces) => Array{Interface, 1} # Check for interface array
                 @fact length(node_type().interfaces) >= 1 => true # Check length of interface array
-                @fact typeof(node_type().name) => ASCIIString
+                @fact typeof(node_type().id) => Symbol
                 @fact typeof(node_type().i) <: Dict => true
             end
 
-            context("$(node_type) constructor should assign a name") do
-                my_node = node_type(;name="my_name")
-                @fact my_node.name => "my_name"
+            context("$(node_type) constructor should assign an id") do
+                my_node = node_type(;id=symbol("my_id_$(c)"))
+                @fact my_node.id => symbol("my_id_$(c)")
             end
 
             context("$(node_type) constructor should assign interfaces to itself") do
@@ -29,22 +30,33 @@ facts("General node properties unit tests") do
             context("$(node_type) should have at least 1 sumProduct!() method") do
                 @fact contains(string(methods(ForneyLab.sumProduct!)), string("::", node_type)) => true
             end
+
+            context("$(node_type) constructor should add node to the current graph") do
+                my_node = node_type()
+                @fact current_graph.n[my_node.id] => my_node
+            end
+
+            facts("$(node_type) constructor should check for unique id") do
+                MockNode(id=symbol("mock_$(c)"))
+                @fact_throws MockNode(id=symbol("mock_$(c)"))
+            end
         end
+        c += 1
     end
 end
 
-facts("node(name::String) should return node with matching name") do
+facts("node(id::Symbol) should return node with matching id") do
     graph_1 = FactorGraph()
     graph_2 = FactorGraph()
-    n = MockNode(name="my_mocknode")
+    n = MockNode(id=:my_mocknode)
     Edge(n.i[:out], MockNode().i[:out])
-    @fact_throws node("some_name")
-    @fact_throws node("my_mocknode", graph_1)
+    @fact_throws node(:some_id)
+    @fact_throws node(:my_mocknode, graph_1)
     setCurrentGraph(graph_1)
-    @fact_throws node("my_mocknode")
-    @fact node("my_mocknode", graph_2) => n
+    @fact_throws node(:my_mocknode)
+    @fact node(:my_mocknode, graph_2) => n
     setCurrentGraph(graph_2)
-    @fact node("my_mocknode") => n
+    @fact node(:my_mocknode) => n
 end
 
 
@@ -61,7 +73,7 @@ facts("Connections between nodes integration tests") do
         testInterfaceConnections(node1, node2)
     end
 
-    context("Nodes can directly be coupled through interfaces by using the explicit interface names") do
+    context("Nodes can directly be coupled through interfaces by using the explicit interface handles") do
         (node1, node2) = initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
         node1.i[:in].partner = node2.i[:out]

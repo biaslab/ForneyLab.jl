@@ -1,7 +1,7 @@
 export CompositeNode, addRule!, nodes, isDeterministic
 
 type CompositeNode <: Node
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
     internal_graph::FactorGraph
@@ -11,24 +11,26 @@ type CompositeNode <: Node
     deterministic::Bool
 end
 
-function CompositeNode(graph::FactorGraph, terminals...; name=unnamedStr(), deterministic=false)
+function CompositeNode(graph::FactorGraph, terminals...; id=generateNodeId(), deterministic=false)
     # Convert graph into a CompositeNode.
     # terminals... is an array of TerminalNodes in graph, that will be bound to interfaces of the CompositeNode.
-    # The names of the terminals will be used as named interface handles.
+    # The ids of the terminals will be used as interface handles.
     # This function creates a new current FactorGraph so the user can continue working in the higher level graph.
-    self = CompositeNode(name, Interface[], Dict{Symbol,Interface}(), graph, Dict{(Interface,Function),Algorithm}(), TerminalNode[], Dict{TerminalNode,Interface}(), deterministic)
+    self = CompositeNode(id, Interface[], Dict{Symbol,Interface}(), graph, Dict{(Interface,Function),Algorithm}(), TerminalNode[], Dict{TerminalNode,Interface}(), deterministic)
+
     for terminal in terminals
         (typeof(terminal) == TerminalNode) || error("Only a TerminalNode can be bound to an Interface of the CompositeNode, not $(typeof(terminal)).")
         if terminal in self.interfaceid_to_terminalnode
             error("Cannot bind the same TerminalNode to multiple interfaces")
         end
         push!(self.interfaces, Interface(self))
-        self.i[symbol(terminal.name)] = self.interfaces[end]
+        self.i[terminal.id] = self.interfaces[end]
         push!(self.interfaceid_to_terminalnode, terminal)
         self.terminalnode_to_interface[terminal] = self.interfaces[end]
     end
     self.internal_graph.locked = true
-    FactorGraph()
+    new_g = FactorGraph()
+    new_g.n[id] = self # Add newly created composite node to current graph
 
     return self    
 end
@@ -36,7 +38,7 @@ end
 isDeterministic(composite_node::CompositeNode) = composite_node.deterministic
 
 function addRule!(composite_node::CompositeNode, outbound_interface::Interface, message_calculation_rule::Function, algorithm::Algorithm)
-    (outbound_interface.node == composite_node) || error("The outbound interface does not belong to the specified composite node $(composite_node.name)")
+    (outbound_interface.node == composite_node) || error("The outbound interface does not belong to the specified composite node $(composite_node.id)")
     composite_node.computation_rules[(outbound_interface,message_calculation_rule)] = algorithm
 
     return composite_node

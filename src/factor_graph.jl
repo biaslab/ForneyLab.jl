@@ -5,11 +5,14 @@ export  currentGraph,
         clearMessages!,
         nodes,
         edges,
-        node
+        node,
+        edge,
+        n,
+        e
 
 type FactorGraph
-    nodes::Dict{ASCIIString, Node}
-    edges::Set{Edge}
+    n::Dict{Symbol, Node} # Nodes
+    e::Dict{Symbol, Edge} # Edges
     locked::Bool
 
     # Connections to the outside world
@@ -19,8 +22,8 @@ type FactorGraph
 end
 
 # Create an empty graph
-global current_graph = FactorGraph( Dict{ASCIIString, Node}(),
-                                    Set{Edge}(),
+global current_graph = FactorGraph( Dict{Symbol, Node}(),
+                                    Dict{Symbol, Edge}(),
                                     false,
                                     Dict{TerminalNode, Vector}(),
                                     Dict{Union(Edge,Interface), Vector}(),
@@ -29,8 +32,8 @@ global current_graph = FactorGraph( Dict{ASCIIString, Node}(),
 currentGraph() = current_graph::FactorGraph
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
-FactorGraph() = setCurrentGraph(FactorGraph(Dict{ASCIIString, Node}(),
-                                            Set{Edge}(),
+FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
+                                            Dict{Symbol, Edge}(),
                                             false,
                                             Dict{TerminalNode, Vector}(),
                                             Dict{Union(Edge,Interface), Vector}(),
@@ -50,7 +53,7 @@ end
 
 clearMessages!(graph::FactorGraph = current_graph) = map(clearMessages!, nodes(graph))
 
-nodes(graph::FactorGraph = current_graph) = Set{Node}(values(graph.nodes))
+nodes(graph::FactorGraph = current_graph) = Set{Node}(values(graph.n))
 
 function nodes(edges::Set{Edge})
     # Return all nodes connected to edges
@@ -63,8 +66,12 @@ function nodes(edges::Set{Edge})
     return connected_nodes
 end
 
-edges(graph::FactorGraph = current_graph) = copy(graph.edges)
+edges(graph::FactorGraph = current_graph) = Set{Edge}(values(graph.e))
 edges(node::Node) = Set{Edge}([intf.edge for intf in node.interfaces])
 edges(nodeset::Set{Node}) = union(map(edges, nodeset)...)
 
-node(name::ASCIIString, graph::FactorGraph=currentGraph()) = graph.nodes[name]
+# Search edge and node by id
+node(id::Symbol, graph::FactorGraph=currentGraph()) = graph.n[id]
+n(id::Symbol, graph::FactorGraph=currentGraph()) = node(id, graph)
+edge(id::Symbol, graph::FactorGraph=currentGraph()) = graph.e[id]
+e(id::Symbol, graph::FactorGraph=currentGraph()) = edge(id, graph)

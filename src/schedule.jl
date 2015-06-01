@@ -41,8 +41,8 @@ function show(io::IO, schedule::Schedule)
         interface = schedule_entry.interface
         msg_calc_func = schedule_entry.message_calculation_rule
         postproc = (isdefined(schedule_entry, :post_processing)) ? string(schedule_entry.post_processing) : ""
-        interface_name = (name(interface)!="") ? "$(name(interface))" : ""
-        interface_field = "$(typeof(interface.node)) $(interface.node.name) [$(findfirst(interface.node.interfaces, interface)):$(interface_name)]"
+        interface_handle = (handle(interface)!="") ? "$(handle(interface))" : ""
+        interface_field = "$(typeof(interface.node)) $(interface.node.id) [$(findfirst(interface.node.interfaces, interface)):$(interface_handle)]"
         println(io, "$(string(entry_counter)): $(interface_field), $(string(msg_calc_func)) $(string(postproc))")
         entry_counter += 1
     end
@@ -52,6 +52,6 @@ function show(io::IO, nodes::Array{Node, 1})
      # Show node array (possibly an external schedule)
     println(io, "Nodes:")
     for entry in nodes
-        println(io, "Node $(entry.name) of type $(typeof(entry))")
+        println(io, "Node $(entry.id) of type $(typeof(entry))")
     end
 end

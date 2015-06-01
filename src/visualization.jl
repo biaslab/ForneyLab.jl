@@ -20,7 +20,7 @@ function graphviz(dot_graph::String; external_viewer::Bool=false)
     end
 end
 
-draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph), edges(factor_graph), wraps=factor_graph.wraps; args...))
+draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph), edges(factor_graph), wraps=wraps(factor_graph); args...))
 draw(; args...) = draw(currentGraph(); args...)
 draw(composite_node::CompositeNode; args...) = draw(composite_node.internal_graph; args...)
 
@@ -62,12 +62,12 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
     dot *= "\tedge [fontsize=8, arrowhead=onormal];\n"
     for node in nodes
         if typeof(node)==TerminalNode
-            dot *= "\t$(object_id(node)) [label=\"$(node.name)\", style=filled, width=0.75, height=0.75]\n"
+            dot *= "\t$(object_id(node)) [label=\"$(node.id)\", style=filled, width=0.75, height=0.75]\n"
         else
             if haskey(node_type_symbols, typeof(node))
-                dot *= "\t$(object_id(node)) [label=\"$(node_type_symbols[typeof(node)])\\n$(node.name)\"]\n"
+                dot *= "\t$(object_id(node)) [label=\"$(node_type_symbols[typeof(node)])\\n$(node.id)\"]\n"
             else
-                dot *= "\t$(object_id(node)) [label=\"$(typeof(node))\\n$(node.name)\"]\n"
+                dot *= "\t$(object_id(node)) [label=\"$(typeof(node))\\n$(node.id)\"]\n"
             end
         end
     end
@@ -109,9 +109,9 @@ end
 function edgeDot(edge::Edge; is_external_edge=false)
     # Generate DOT code for an edge
     tail_id = findfirst(edge.tail.node.interfaces, edge.tail)
-    tail_label = "$tail_id $(name(edge.tail))"
+    tail_label = "$tail_id $(handle(edge.tail))"
     head_id = findfirst(edge.head.node.interfaces, edge.head)
-    head_label = "$head_id $(name(edge.head))"
+    head_label = "$head_id $(handle(edge.head))"
     dot = "\t$(object_id(edge.tail.node)) -> $(object_id(edge.head.node)) " 
     if is_external_edge
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", style=\"dashed\" color=\"red\"]\n"

@@ -22,29 +22,30 @@
 #   1 i[:in1], 2 i[:in2], 3 i[:out]
 #   
 # Construction:
-#   GainAdditionNode([1.0], name="my_node")
+#   GainAdditionNode([1.0], id=:my_node)
 #
 ############################################
 export GainAdditionNode
 
 type GainAdditionNode <: Node
     A::Array{Float64}
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
-    function GainAdditionNode(A::Union(Array{Float64},Float64)=1.0; name=unnamedStr())
-        self = new(ensureMatrix(deepcopy(A)), name, Array(Interface, 3), Dict{Symbol,Interface}())
+    function GainAdditionNode(A::Union(Array{Float64},Float64)=1.0; id=generateNodeId())
+        self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
+        !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
 
-        for (iface_id, iface_name) in enumerate([:in1, :in2, :out])
-            self.i[iface_name] = self.interfaces[iface_id] = Interface(self)
+        for (iface_id, iface_handle) in enumerate([:in1, :in2, :out])
+            self.i[iface_handle] = self.interfaces[iface_id] = Interface(self)
         end
 
         try
             self.A_inv = inv(self.A)
         catch
-            warn("The specified multiplier for $(typeof(self)) $(self.name) is not invertible. This might cause problems. Double check that this is what you want.")
+            warn("The specified multiplier for $(typeof(self)) $(self.id) is not invertible. This might cause problems. Double check that this is what you want.")
         end
 
         return self
@@ -132,7 +133,7 @@ function sumProduct!(node::GainAdditionNode,
         return (:gain_addition_gaussian_forward,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.id).")
     end
 end
 
@@ -197,7 +198,7 @@ function sumProduct!(node::GainAdditionNode,
         return (:gain_addition_gaussian_backward_in2,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.id).")
     end
 end
 
@@ -217,6 +218,6 @@ function sumProduct!(node::GainAdditionNode,
         return (:gain_addition_gaussian_backward_in1,
             node.interfaces[outbound_interface_id].message)
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.id).")
     end
 end

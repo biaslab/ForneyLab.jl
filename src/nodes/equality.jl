@@ -15,19 +15,20 @@
 #   1 i[1], 2 i[2], 3 i[3]
 #
 # Construction:
-#   EqualityNode(name="my_node")
+#   EqualityNode(id=:my_node)
 #
 ############################################
 
 export EqualityNode
 
 type EqualityNode <: Node
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Int,Interface}
 
-    function EqualityNode(; name=unnamedStr())
-        self = new(name, Array(Interface, 3), Dict{Int,Interface}())
+    function EqualityNode(; id=generateNodeId())
+        self = new(id, Array(Interface, 3), Dict{Int,Interface}())
+        !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
 
         for interface_id = 1:3
             self.i[interface_id] = self.interfaces[interface_id] = Interface(self)
@@ -47,7 +48,7 @@ function firstFreeInterface(node::EqualityNode)
             return interface
         end
     end
-    error("No free interface on $(typeof(node)) $(node.name)")
+    error("No free interface on $(typeof(node)) $(node.id)")
 end
 
 ############################################

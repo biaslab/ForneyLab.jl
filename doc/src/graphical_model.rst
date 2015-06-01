@@ -41,7 +41,7 @@ Nodes
 A node in a :class:`FactorGraph` is always of a subtype of ``abstract Node``. ForneyLab comes with a bunch of built-in nodes for commonly used functions, such as the :class:`AdditionNode` and the :class:`EqualityNode`. The :doc:`nodes` chapter describes these in more detail, as well as how to build custom nodes. It's important to know that a node should contain a couple of required fields::
 
     type MinimalNode <: Node
-        name::ASCIIString
+        id::Symbol
         interfaces::Array{Interface,1}
         i::Dict{Symbol, Interface}
     end
@@ -50,8 +50,8 @@ The ``name`` fields holds a unique name, which can be passed to the constructor 
 
 The calling signature of a node constructor depends on the specific type of the node::
 
-    addition_node = AdditionNode(name="my_adder")  # Node func.: out = in1 + in2
-    gain_node = FixedGainNode(3.0, name="times_3") # Node func.: out = 3.0 * in1
+    addition_node = AdditionNode(id="my_adder")  # Node func.: out = in1 + in2
+    gain_node = FixedGainNode(3.0, id="times_3") # Node func.: out = 3.0 * in1
 
 
 The ``Edge`` type
@@ -104,8 +104,8 @@ ForneyLab does not allow 'half-edges' that are connected to just one node. Inste
     t_c1 = TerminalNode()
     t_c2 = TerminalNode()
     t_x3 = TerminalNode()
-    adder_1 = AdditionNode(name="adder_1")
-    adder_2 = AdditionNode(name="adder_2")
+    adder_1 = AdditionNode(id="adder_1")
+    adder_2 = AdditionNode(id="adder_2")
 
     # Create edges
     Edge(t_x1, adder_1.i[:in1])

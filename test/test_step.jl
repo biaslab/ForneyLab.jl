@@ -68,10 +68,10 @@ facts("step integration tests") do
     context("step should perform a time step and handle read/write buffers") do
         # out = in + delta
         g = FactorGraph()
-        node_in = TerminalNode(DeltaDistribution(0.0), name="in")
-        node_add = AdditionNode(name="add")
-        node_delta = TerminalNode(name="delta")
-        node_out = TerminalNode(name="out")
+        node_in = TerminalNode(DeltaDistribution(0.0), id=:in)
+        node_add = AdditionNode(id=:add)
+        node_delta = TerminalNode(id=:delta)
+        node_out = TerminalNode(id=:out)
         Edge(node_in, node_add.i[:in1])
         Edge(node_delta, node_add.i[:in2])
         Edge(node_add.i[:out], node_out)
@@ -91,10 +91,10 @@ facts("run() integration tests") do
     context("run() should step() until a read buffer is exhausted") do
         # out = in + delta
         g = FactorGraph()
-        node_in = TerminalNode(DeltaDistribution(0.0), name="in")
-        node_add = AdditionNode(name="add")
-        node_delta = TerminalNode(name="delta")
-        node_out = TerminalNode(name="out")
+        node_in = TerminalNode(DeltaDistribution(0.0), id=:in)
+        node_add = AdditionNode(id=:add)
+        node_delta = TerminalNode(id=:delta)
+        node_out = TerminalNode(id=:out)
         Edge(node_in, node_add.i[:in1])
         Edge(node_delta, node_add.i[:in2])
         Edge(node_add.i[:out], node_out)

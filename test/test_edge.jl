@@ -39,9 +39,9 @@ facts("Edge integration tests") do
 
     context("Edge should throw an error when the user attempts to reposition") do
         FactorGraph()
-        node1 = TerminalNode(name="node1")
-        node2 = TerminalNode(name="node2")
-        node3 = TerminalNode(name="node3")
+        node1 = TerminalNode(id=:node1)
+        node2 = TerminalNode(id=:node2)
+        node3 = TerminalNode(id=:node3)
         Edge(node1.i[:out], node2.i[:out])
         @fact_throws Edge(node1.i[:out], node3.i[:out])
     end
@@ -53,12 +53,25 @@ facts("Edge integration tests") do
         @fact (edge1 < edge2) => true
     end
 
+    context("Edges have ids") do
+        FactorGraph()
+        TerminalNode(id=:a)
+        TerminalNode(id=:b)
+        my_edge = Edge(n(:a), n(:b), id="my_edge")
+        @fact e(:my_edge) => my_edge
+
+        TerminalNode(id=:c)
+        TerminalNode(id=:d)
+        my_edge2 = Edge(n(:c), n(:d))
+        @fact my_edge2.id => :c_d
+    end
+
     context("Edges can be sorted") do
         FactorGraph()
-        node_a = TerminalNode(name="a")
-        node_b = FixedGainNode(name="b")
-        node_c = FixedGainNode(name="c")
-        node_d = TerminalNode(name="d")
+        node_a = TerminalNode(id=:a)
+        node_b = FixedGainNode(id=:b)
+        node_c = FixedGainNode(id=:c)
+        node_d = TerminalNode(id=:d)
         edge_ab = Edge(node_a.i[:out], node_b.i[:in])
         edge_bc = Edge(node_b.i[:out], node_c.i[:in])
         edge_cd = Edge(node_c.i[:out], node_d.i[:out])

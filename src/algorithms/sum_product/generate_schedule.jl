@@ -41,7 +41,7 @@ function generateScheduleByDFS!(outbound_interface::Interface,
             continue
         end
 
-        (interface.partner != nothing) || error("Disconnected interface should be connected: interface #$(interface_id) of $(typeof(node)) $(node.name)")
+        (interface.partner != nothing) || error("Disconnected interface should be connected: interface #$(interface_id) of $(typeof(node)) $(node.id)")
 
         if interface.partner.message == nothing # Required message missing.
             if !(interface.partner in backtrace) # Don't recalculate stuff that's already in the schedule.
@@ -88,7 +88,7 @@ function generateSchedule(graph::FactorGraph=currentGraph(); args...)
     partial_list = Interface[]
     
     # Collect timewrap interfaces
-    for (from_node, to_node) in graph.wraps
+    for (from_node, to_node) in wraps(graph)
         push!(partial_list, from_node.interfaces[1].partner)
     end
 

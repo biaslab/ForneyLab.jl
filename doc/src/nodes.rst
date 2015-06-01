@@ -12,7 +12,7 @@ The anatomy of nodes
 A factor graph node is always a subtype of ``abstract Node``, and its name ends in "Node". A node should contain at least the fields ``name``, ``interfaces`` and ``i``. Let's look at the definition of the built-in :class:`AdditionNode`::
 
     type AdditionNode <: Node
-        name::ASCIIString
+        id::Symbol
         interfaces::Array{Interface,1}
         i::Dict{Symbol, Interface}
     end
@@ -119,7 +119,7 @@ Elementary nodes
      
     :Node function: ``f(in1,in2,out) = δ(out-in1-in2)``      
     :Interfaces:    1. ``i[:in1]``, 2. ``i[:in2]``, 3. ``i[:out]``
-    :Construction:  ``AdditionNode(name="something")``
+    :Construction:  ``AdditionNode(id="something")``
 
     Message computation rules:
 
@@ -156,7 +156,7 @@ Elementary nodes
      
     :Node function: ``f(X,Y,Z) = δ(X-Z)δ(Y-Z)``      
     :Interfaces:    1. ``i[1]``, 2. ``i[2]``, 3. ``i[3]``
-    :Construction:  ``EqualityNode(name="something")``
+    :Construction:  ``EqualityNode(id="something")``
 
     Message computation rules (\* = approximation):
 
@@ -193,7 +193,7 @@ Elementary nodes
 
     :Node function: ``f(in,out) = δ(out - exp(in))``      
     :Interfaces:    1. ``i[:in]``, 2. ``i[:out]``
-    :Construction:  ``ExponentialNode(name="something")``
+    :Construction:  ``ExponentialNode(id="something")``
 
     Message computation rules (\* = approximation):
 
@@ -216,7 +216,7 @@ Elementary nodes
 
     :Node function: ``f(in,out) = δ(A*in-out)``      
     :Interfaces:    1 ``1[:in]``, 2. ``i[:out]``
-    :Construction:  ``FixedGainNode(A::Matrix, name="something")``
+    :Construction:  ``FixedGainNode(A::Matrix, id="something")``
 
     Message computation rules:
 
@@ -244,7 +244,7 @@ Elementary nodes
      
     :Node function: ``f(mean,variance,out) = N(out|mean,variance)``      
     :Interfaces:    1. ``i[:mean]``, 2. ``i[:variance]`` or ``i[:precision]``, 3. ``i[:out]``
-    :Construction:  ``GaussianNode(name="something", form=:moment, m=optional, V=optional)``
+    :Construction:  ``GaussianNode(id="something", form=:moment, m=optional, V=optional)``
 
     The ``GaussianNode`` outputs a Gaussian distribution from variable mean and variable variance or precision. Upon construction the role of the second interface is set to represent a variance or precision by setting the ``form`` argument to ``:moment or ``:precision`` respectively. The ``m`` and ``V`` arguments allow the user to fix the value for the mean and/or variance interface. Fixed interfaces are not explicitly created.
 
@@ -285,7 +285,7 @@ Elementary nodes
      
     :Node function: ``f(out) = T.value``      
     :Interfaces:    1. ``i[:out]``
-    :Construction:  ``TerminalNode(value, name="something")``
+    :Construction:  ``TerminalNode(value, id="something")``
 
     A ``TerminalNode`` is used to terminate an edge. It forces the variable represented by the connected edge to ``value``. The terminal node always emits a ``Message`` with payload ``value`` (which is a :class:`ProbabilityDistribution`). It can be used to introduce priors or data into the factor graph. 
 
@@ -319,7 +319,7 @@ Combined nodes
      
     :Node function: ``f(in1,in2,out) = δ(out - A*in1 - in2)``      
     :Interfaces:    1. ``i[:in1]``, 2. ``i[:in2]``, 3. ``i[:out]``
-    :Construction:  ``GainAdditionNode(A, name="something")``
+    :Construction:  ``GainAdditionNode(A, id="something")``
 
     Message computation rules:
 
@@ -347,7 +347,7 @@ Combined nodes
 
     :Node function: ``f(in1,in2,out) = δ(in1 - A*out)*δ(in2 - A*out)``      
     :Interfaces:    1. ``i[:in1]``, 2. ``i[:in2]``, 3. ``i[:out]``
-    :Construction:  ``GainEqualityNode(A, name="something")``
+    :Construction:  ``GainEqualityNode(A, id="something")``
 
     Message computation rules:
 
@@ -372,7 +372,7 @@ It is possible to create a node that contains an internal :class:`FactorGraph` t
     ::
 
         type CompositeNode <: Node
-            name::ASCIIString
+            id::Symbol
             interfaces::Array{Interface,1}
             i::Dict{Symbol,Interface}
             internal_graph::FactorGraph
@@ -388,7 +388,7 @@ Wrapping a FactorGraph in a CompositeNode
 
 The most straightforward way of constructing a ``CompositeNode`` is to first build its internal factor graph, and then wrapping this graph in a ``CompositeNode``. This can be achieved using the following constructor::
 
-    function CompositeNode(graph::FactorGraph, terminals...; name=unnamedStr(), deterministic=false)
+    function CompositeNode(graph::FactorGraph, terminals...; id=generateNodeId(), deterministic=false)
 
 Here, ``terminals`` is an array of :class:`TerminalNode` instances in ``graph`` that should be linked to interfaces of the created ``CompositeNode``. The name of a linked ``TerminalNode`` determines the name of the corresponding :class:`Interface`. Once the ``graph`` is wrapped in a newly created ``CompositeNode``, a new empty ``FactorGraph`` is created. Example::
 
@@ -396,20 +396,20 @@ Here, ``terminals`` is an array of :class:`TerminalNode` instances in ``graph`` 
 
     # Step 1: build internal graph
     g = FactorGraph()
-    t_in       = TerminalNode(name="in")
+    t_in       = TerminalNode(id="in")
     t_constant = TerminalNode(3.0)
-    t_out      = TerminalNode(name="out")
+    t_out      = TerminalNode(id="out")
     adder      = AdditionNode()
     Edge(t_in, adder.i[:in1])
     Edge(t_constant, adder.i[:in2])
     Edge(adder.i[:out], t_out)
 
     # Step 2: wrap graph in CompositeNode, link t_in & t_out to interfaces
-    comp_add3 = CompositeNode(g, t_in, t_out, name="add3")
+    comp_add3 = CompositeNode(g, t_in, t_out, id="add3")
 
     # Step 3: build higher-level graph
-    t_in  = TerminalNode(name="in")
-    t_out = TerminalNode(name="out")
+    t_in  = TerminalNode(id="in")
+    t_out = TerminalNode(id="out")
     Edge(t_in, comp_add3.i[:in])
     Edge(comp_add3.i[:out], t_out)
 

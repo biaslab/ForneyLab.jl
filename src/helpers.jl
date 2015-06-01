@@ -61,9 +61,9 @@ function viewFile(filename::String)
 end
 
 global unnamed_counter = 0
-function unnamedStr()
+function generateNodeId()
     global unnamed_counter::Int64 += 1
-    return "unnamed$(unnamed_counter)"
+    return symbol("unnamed$(unnamed_counter)")
 end
 
 function KLpq(x::Vector{Float64}, p::Vector{Float64}, q::Vector{Float64})

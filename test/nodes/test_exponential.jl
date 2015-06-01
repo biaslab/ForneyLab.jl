@@ -16,11 +16,11 @@ facts("ExponentialNode unit tests") do
         validateOutboundMessage(ExponentialNode(), 
                                 2, 
                                 [Message(GaussianDistribution(m=1.0, W=1.0)), nothing],
-                                GammaDistribution(a=2.0, b=1.0/e))
+                                GammaDistribution(a=2.0, b=1.0/Base.e))
         # Backward message
         validateOutboundMessage(ExponentialNode(), 
                                 1, 
-                                [nothing, Message(GammaDistribution(a=2.0, b=e))],
+                                [nothing, Message(GammaDistribution(a=2.0, b=Base.e))],
                                 GaussianDistribution(m=-1.0, W=1.0))
     end
 

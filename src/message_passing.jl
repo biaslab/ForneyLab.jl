@@ -34,11 +34,11 @@ function execute(schedule_entry::ScheduleEntry)
     end
 
     # Print output for debugging
-    if verbose && rule != :empty # Internal composite node calls to execute return :empty rule
-        interface_name = (name(outbound_interface)!="") ? "$(name(outbound_interface))" : "$(outbound_interface_id)"
+    if verbose && rule != :empty
+        interface_handle = (handle(outbound_interface)!="") ? "$(handle(outbound_interface))" : "$(outbound_interface_id)"
         postproc = (isdefined(schedule_entry, :post_processing)) ? string(schedule_entry.post_processing) : ""
         rule_field = "$(rule) $(postproc)"
-        println("$(node.name) [$(interface_name)], $(rule_field): $(format(outbound_message.payload))")
+        println("$(node.id) [$(interface_handle)], $(rule_field): $(format(outbound_message.payload))")
     end
 
     return outbound_message

@@ -29,7 +29,7 @@ import Base.show, Base.convert
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
 abstract Node
-show(io::IO, node::Node) = println(io, "$(typeof(node)) with name $(node.name)")
+show(io::IO, node::Node) = println(io, "$(typeof(node)) with id $(node.id)")
 
 # Message type
 include("message.jl")

@@ -26,21 +26,21 @@
 #   1 i[:mean], 2 i[:variance] or i[:precision], 3 i[:out]
 #
 # Construction:
-#   GaussianNode(form=:moment, name="my_node", m=optional, V=optional)
+#   GaussianNode(form=:moment, id=:my_node, m=optional, V=optional)
 #
 ############################################
 
 export GaussianNode
 
 type GaussianNode <: Node
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
     # Fixed parameters
     m::Vector{Float64}
     V::Matrix{Float64}
 
-    function GaussianNode(; name=unnamedStr(), form::Symbol=:moment, m::Union(Float64,Vector{Float64})=[NaN], V::Union(Float64,Matrix{Float64})=reshape([NaN], 1, 1))
+    function GaussianNode(; id=generateNodeId(), form::Symbol=:moment, m::Union(Float64,Vector{Float64})=[NaN], V::Union(Float64,Matrix{Float64})=reshape([NaN], 1, 1))
         if isValid(m) && isValid(V)
             total_interfaces = 1
         elseif isValid(m) || isValid(V)
@@ -48,7 +48,8 @@ type GaussianNode <: Node
         else
             total_interfaces = 3
         end
-        self = new(name, Array(Interface, total_interfaces), Dict{Symbol,Interface}())
+        self = new(id, Array(Interface, total_interfaces), Dict{Symbol,Interface}())
+        !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
         next_interface_index = 1 # Counter keeping track of constructed interfaces
 
         if isValid(m)
@@ -141,7 +142,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         return (:gaussian_backward_mean_delta_precision,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end
 
@@ -191,7 +192,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         return (:gaussian_backward_precision_delta,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end
 
@@ -236,7 +237,7 @@ function sumProduct!{T<:Any}(node::GaussianNode,
         return (:gaussian_backward_precision_delta,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end
 
@@ -288,7 +289,7 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         return (:gaussian_forward_delta_precision,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end
 
@@ -335,7 +336,7 @@ function sumProduct!{T<:Any}(node::GaussianNode,
         return (:gaussian_forward_delta_precision,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end
 
@@ -383,7 +384,7 @@ function vmp!(node::GaussianNode,
         invalidate!(dist_out.xi)
         invalidate!(dist_out.W)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 
     return (:gaussian_backward_mean_gaussian_gamma,
@@ -415,7 +416,7 @@ function vmp!(node::GaussianNode,
         invalidate!(dist_out.xi)
         invalidate!(dist_out.V)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 
     return (:gaussian_backward_mean_gaussian_inverse_gamma,
@@ -460,7 +461,7 @@ function vmp!(node::GaussianNode,
         return (:gaussian_backward_mean_gaussian_delta,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end
 
@@ -496,7 +497,7 @@ function vmp!(node::GaussianNode,
             return (:gaussian_backward_variance_gaussian,
                     node.interfaces[outbound_interface_id].message)
         else
-            error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+            error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
         end
     elseif haskey(node.i, :precision)
         # Variational update function takes the marginals as input (instead of the inbound messages)
@@ -525,10 +526,10 @@ function vmp!(node::GaussianNode,
             return (:gaussian_backward_precision_gaussian,
                     node.interfaces[outbound_interface_id].message)
         else
-            error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+            error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
         end
     else
-        error("Unknown update rule for $(typeof(node)) $(node.name). Only the moment and precision form are currently supported.")
+        error("Unknown update rule for $(typeof(node)) $(node.id). Only the moment and precision form are currently supported.")
     end
 end
 
@@ -560,7 +561,7 @@ function vmp!(node::GaussianNode,
         return (:gaussian_forward_gaussian_inverse_gamma,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end
 
@@ -586,7 +587,7 @@ function vmp!(node::GaussianNode,
         return (:gaussian_forward_gamma,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end
 
@@ -613,7 +614,7 @@ function vmp!(node::GaussianNode,
         return (:gaussian_forward_gaussian,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end
 
@@ -645,7 +646,7 @@ function vmp!(node::GaussianNode,
         return (:gaussian_forward_gaussian_gamma,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end
 
@@ -684,7 +685,7 @@ function vmp!(node::GaussianNode,
         return (:gaussian_backward_mean_structured,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end
 
@@ -717,7 +718,7 @@ function vmp!(node::GaussianNode,
         return (:gaussian_backward_precision_structured,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end
 
@@ -747,6 +748,6 @@ function vmp!(node::GaussianNode,
         return (:gaussian_forward_structured,
                 node.interfaces[outbound_interface_id].message)
     else
-        error("Undefined inbound-outbound message type combination for node $(node.name) of type $(typeof(node)).")
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 end

@@ -14,22 +14,23 @@
 #   1 i[:in], 2 i[:out]
 #
 # Construction:
-#   ExponentialNode(name="my_node")
+#   ExponentialNode(id=:my_node)
 #
 ############################################
 
 export ExponentialNode
 
 type ExponentialNode <: Node
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
 
-    function ExponentialNode(; name=unnamedStr())
-        self = new(name, Array(Interface, 2), Dict{Symbol,Interface}())
+    function ExponentialNode(; id=generateNodeId())
+        self = new(id, Array(Interface, 2), Dict{Symbol,Interface}())
+        !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
 
-        for (iface_id, iface_name) in enumerate([:in, :out])
-            self.i[iface_name] = self.interfaces[iface_id] = Interface(self)
+        for (iface_id, iface_handle) in enumerate([:in, :out])
+            self.i[iface_handle] = self.interfaces[iface_id] = Interface(self)
         end
 
         return self
