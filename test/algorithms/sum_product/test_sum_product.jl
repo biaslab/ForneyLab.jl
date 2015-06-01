@@ -1,12 +1,11 @@
 facts("SumProduct.collectInbounds() tests") do
-    context("collectInbounds() should add the proper message/marginal") do
+    context("collectInbounds() should collect the required inbound messages in an array") do
         # Standard
         (node, edges) = initializeGaussianNode()
         @fact SumProduct.collectInbounds(node.i[:out]) => (3, [node.i[:mean].partner.message, node.i[:precision].partner.message, nothing])
 
-        # Composite node
-        node = initializeGainEqualityNode(eye(1), Any[Message(DeltaDistribution(1.0)), Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))])
-        @fact SumProduct.collectInbounds(node.i[:out]) => (3, [node.i[:in1].partner.message, node.i[:in2].partner.message, nothing])
+        # Include inbound message on outbound interface
+        @fact SumProduct.collectInbounds(node.i[:out], true) => (3, [node.i[:mean].partner.message, node.i[:precision].partner.message, node.i[:out].partner.message])
     end
 end
 

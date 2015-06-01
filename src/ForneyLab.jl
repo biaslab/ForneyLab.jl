@@ -5,7 +5,7 @@ using YAML
 using LaTeXStrings
 
 export Node, ProbabilityDistribution
-export sumProduct!, vmp!
+export sumProduct!, maSumProduct!, vmp!
 export vague, self, ==
 export current_graph
 export setVerbosity
@@ -36,12 +36,13 @@ include("message.jl")
 
 # Distributions
 include("distributions/delta.jl")
-include("distributions/gaussian.jl")
+include("distributions/bernoulli.jl")
+include("distributions/beta.jl")
 include("distributions/gamma.jl")
+include("distributions/gaussian.jl")
 include("distributions/inverse_gamma.jl")
 include("distributions/normal_gamma.jl")
 include("distributions/students_t.jl")
-include("distributions/beta.jl")
 
 # Basic ForneyLab building blocks and methods
 include("interface.jl")
@@ -57,6 +58,7 @@ include("nodes/gaussian.jl")
 include("nodes/exponential.jl")
 include("nodes/gain_addition.jl")
 include("nodes/gain_equality.jl")
+include("nodes/sigmoid.jl")
 
 # Graph and algorithm
 include("factor_graph.jl")

@@ -14,6 +14,8 @@ function execute(schedule_entry::ScheduleEntry)
 
     if schedule_entry.message_calculation_rule == sumProduct!
         (outbound_interface_id, inbounds) = SumProduct.collectInbounds(outbound_interface)
+    elseif schedule_entry.message_calculation_rule == sumProductApprox!
+        (outbound_interface_id, inbounds) = SumProduct.collectInbounds(outbound_interface, true)
     elseif schedule_entry.message_calculation_rule == vmp!
         (outbound_interface_id, inbounds) = VMP.collectInbounds(outbound_interface)
     else
