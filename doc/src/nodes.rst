@@ -396,22 +396,22 @@ Here, ``terminals`` is an array of :class:`TerminalNode` instances in ``graph`` 
 
     # Step 1: build internal graph
     g = FactorGraph()
-    t_in       = TerminalNode(id="in")
-    t_constant = TerminalNode(3.0)
-    t_out      = TerminalNode(id="out")
-    adder      = AdditionNode()
-    Edge(t_in, adder.i[:in1])
-    Edge(t_constant, adder.i[:in2])
-    Edge(adder.i[:out], t_out)
+    TerminalNode(id=:t_in)
+    TerminalNode(3.0, id=:t_constant)
+    TerminalNode(id=:t_out)
+    AdditionNode(id=:adder)
+    Edge(n(:t_in), n(:adder).i[:in1])
+    Edge(n(:t_constant), n(:adder).i[:in2])
+    Edge(n(:adder).i[:out], n(:t_out))
 
     # Step 2: wrap graph in CompositeNode, link t_in & t_out to interfaces
-    comp_add3 = CompositeNode(g, t_in, t_out, id="add3")
+    CompositeNode(g, t_in, t_out, id=:comp_add3)
 
     # Step 3: build higher-level graph
-    t_in  = TerminalNode(id="in")
-    t_out = TerminalNode(id="out")
-    Edge(t_in, comp_add3.i[:in])
-    Edge(comp_add3.i[:out], t_out)
+    TerminalNode(id=:in)
+    TerminalNode(id=:out)
+    Edge(n(:t_in), n(:comp_add3).i[:in])
+    Edge(n(:comp_add3).i[:out], n(:t_out))
 
 
 Message computation rules
