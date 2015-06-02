@@ -38,8 +38,8 @@ type GainAdditionNode <: Node
         self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
         !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
 
-        for (iface_id, iface_handle) in enumerate([:in1, :in2, :out])
-            self.i[iface_handle] = self.interfaces[iface_id] = Interface(self)
+        for (iface_index, iface_handle) in enumerate([:in1, :in2, :out])
+            self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
         try
@@ -74,13 +74,13 @@ backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z
 
 # Forward to OUT
 function sumProduct!(node::GainAdditionNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             in1::Message{GaussianDistribution},
                             in2::Message{GaussianDistribution},
                             ::Nothing)
 
-    if outbound_interface_id == 3
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    if outbound_interface_index == 3
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
         dist_1 = in1.payload
         dist_2 = in2.payload
@@ -131,21 +131,21 @@ function sumProduct!(node::GainAdditionNode,
         end
 
         return (:gain_addition_gaussian_forward,
-                node.interfaces[outbound_interface_id].message)
+                node.interfaces[outbound_interface_index].message)
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.id).")
+        error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
     end
 end
 
 # Backward to IN2
 function sumProduct!(node::GainAdditionNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             in1::Message{GaussianDistribution},
                             ::Nothing,
                             out::Message{GaussianDistribution})
 
-    if outbound_interface_id == 2
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    if outbound_interface_index == 2
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
         dist_1 = in1.payload
         dist_3 = out.payload
@@ -196,28 +196,28 @@ function sumProduct!(node::GainAdditionNode,
         end
 
         return (:gain_addition_gaussian_backward_in2,
-                node.interfaces[outbound_interface_id].message)
+                node.interfaces[outbound_interface_index].message)
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.id).")
+        error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
     end
 end
 
 # Backward to IN1
 function sumProduct!(node::GainAdditionNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             ::Nothing,
                             in2::Message{GaussianDistribution},
                             out::Message{GaussianDistribution})
 
-    if outbound_interface_id == 1
+    if outbound_interface_index == 1
         dist_temp = GaussianDistribution()
         additionGaussianBackwardRule!(dist_temp, in2.payload, out.payload)
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
         fixedGainGaussianBackwardRule!(dist_out, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
 
         return (:gain_addition_gaussian_backward_in1,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.id).")
+        error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
     end
 end

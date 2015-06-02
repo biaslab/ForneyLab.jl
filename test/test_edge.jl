@@ -4,10 +4,10 @@
 
 facts("Edge integration tests") do
     context("Nodes can be coupled by edges using the explicit interface names") do
-        (node1, node2) = initializePairOfNodes()
+        initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
-        edge = Edge(node2.i[:out], node1.i[:in]) # Edge from node 2 to node 1
-        testInterfaceConnections(node1, node2)
+        edge = Edge(n(:node2).i[:out], n(:node1).i[:in]) # Edge from node 2 to node 1
+        testInterfaceConnections(n(:node1), n(:node2))
     end
 
     context("Edge should throw an error when two interfaces on the same node are connected") do
@@ -17,33 +17,33 @@ facts("Edge integration tests") do
     end
 
     context("Edge constructor should write the distribution type") do
-        (node1, node2) = initializePairOfMockNodes()
-        edge = Edge(node1.i[:out], node2.i[:out], GaussianDistribution)
+        initializePairOfMockNodes()
+        edge = Edge(n(:node1).i[:out], n(:node2).i[:out], GaussianDistribution)
         @fact edge.distribution_type => GaussianDistribution
     end
 
     context("Edge constructor should throw an error if the FactorGraph is locked") do
-        (node1, node2) = initializePairOfMockNodes()
+        initializePairOfMockNodes()
         currentGraph().locked = true
-        @fact_throws Edge(node1.i[:out], node2.i[:out])
+        @fact_throws Edge(n(:node1).i[:out], n(:node2).i[:out])
     end
 
     context("Edge construction should couple interfaces to edge") do
-        (node1, node2) = initializePairOfMockNodes()
-        @fact node1.i[:out].edge => nothing
-        @fact node2.i[:out].edge => nothing
-        edge = Edge(node1.i[:out], node2.i[:out])
-        @fact node1.i[:out].edge => edge
-        @fact node2.i[:out].edge => edge
+        initializePairOfMockNodes()
+        @fact n(:node1).i[:out].edge => nothing
+        @fact n(:node2).i[:out].edge => nothing
+        edge = Edge(n(:node1).i[:out], n(:node2).i[:out])
+        @fact n(:node1).i[:out].edge => edge
+        @fact n(:node2).i[:out].edge => edge
     end
 
     context("Edge should throw an error when the user attempts to reposition") do
         FactorGraph()
-        node1 = TerminalNode(id=:node1)
-        node2 = TerminalNode(id=:node2)
-        node3 = TerminalNode(id=:node3)
-        Edge(node1.i[:out], node2.i[:out])
-        @fact_throws Edge(node1.i[:out], node3.i[:out])
+        TerminalNode(id=:node1)
+        TerminalNode(id=:node2)
+        TerminalNode(id=:node3)
+        Edge(n(:node1).i[:out], n(:node2).i[:out])
+        @fact_throws Edge(n(:node1).i[:out], n(:node3).i[:out])
     end
 
     context("Edges have a (pseudo) ordering") do
@@ -98,7 +98,7 @@ end
 
 facts("Functions for collecting edges") do
     context("edges() should get all edges connected to the node set") do
-        testnodes = initializeLoopyGraph()
-        @fact edges(Set{Node}({testnodes[1], testnodes[2]})) => Set{Edge}({testnodes[1].i[:in].edge, testnodes[4].i[:in1].edge, testnodes[4].i[:out].edge})
+        initializeLoopyGraph()
+        @fact edges(Set{Node}({n(:driver), n(:inhibitor)})) => Set{Edge}({n(:driver).i[:in].edge, n(:add).i[:in1].edge, n(:add).i[:out].edge})
     end
 end

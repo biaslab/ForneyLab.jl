@@ -32,8 +32,8 @@ type FixedGainNode <: Node
         self = new(A, id, Array(Interface, 2), Dict{Symbol,Interface}())
         !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
 
-        for (iface_id, iface_handle) in enumerate([:in, :out])
-            self.i[iface_handle] = self.interfaces[iface_id] = Interface(self)
+        for (iface_index, iface_handle) in enumerate([:in, :out])
+            self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
         # Try to precompute inv(A)
@@ -105,20 +105,20 @@ function fixedGainGaussianBackwardRule!(dist_result::GaussianDistribution, dist_
 end
 
 function sumProduct!(node::FixedGainNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             ::Nothing,
                             msg_out::Message{GaussianDistribution})
 
-    dist_1 = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
-    if outbound_interface_id == 1
+    if outbound_interface_index == 1
         fixedGainGaussianBackwardRule!(dist_1, msg_out.payload, node.A, isdefined(node, :A_inv) ? node.A_inv : nothing)
     else
-        error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.id)")
+        error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     end
     
     return (:fixed_gain_gaussian_backward,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
 
 # Forward Gaussian to OUT
@@ -159,60 +159,60 @@ function fixedGainGaussianForwardRule!(dist_result::GaussianDistribution, dist_1
 end
 
 function sumProduct!(node::FixedGainNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_in::Message{GaussianDistribution},
                             ::Nothing)
-    dist_2 = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
-    if outbound_interface_id == 2
+    if outbound_interface_index == 2
         # Forward message
         dist_1 = msg_in.payload
 
         fixedGainGaussianForwardRule!(dist_2, msg_in.payload, node.A, isdefined(node, :A_inv) ? node.A_inv : nothing)
     else
-        error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.id)")
+        error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     end
     
     return (:fixed_gain_gaussian_forward,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
 
 # Backward DeltaDistribution to IN
 function sumProduct!{T<:Any}(
                             node::FixedGainNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             ::Nothing,
                             msg_out::Message{DeltaDistribution{T}})
-    if outbound_interface_id == 1
+    if outbound_interface_index == 1
         # Backward message
         ans = node.A_inv * msg_out.payload.m
     else
-        error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.id)")
+        error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     end
 
-    msg_ans = ensureMessage!(node.interfaces[outbound_interface_id], DeltaDistribution{typeof(ans)})
+    msg_ans = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{typeof(ans)})
     msg_ans.payload.m = ans
 
     return (:fixed_gain_delta_backward,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
 
 # Forward DeltaDistribution to OUT
 function sumProduct!{T<:Any}(
                             node::FixedGainNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_in::Message{DeltaDistribution{T}},
                             ::Nothing)
-    if outbound_interface_id == 2
+    if outbound_interface_index == 2
         # Forward message
         ans = node.A * msg_in.payload.m
     else
-        error("Invalid interface id $(outbound_interface_id) for calculating message on $(typeof(node)) $(node.id)")
+        error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     end
 
-    msg_ans = ensureMessage!(node.interfaces[outbound_interface_id], DeltaDistribution{typeof(ans)})
+    msg_ans = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{typeof(ans)})
     msg_ans.payload.m = ans
 
     return (:fixed_gain_delta_forward,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end

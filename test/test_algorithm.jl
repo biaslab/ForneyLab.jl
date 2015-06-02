@@ -1,11 +1,11 @@
 facts("Generic Algorithm constructor integration tests") do
     context("Algorithm(::Schedule) should yield Algorithm that executes the passed Schedule") do
-        (t_node, gain_node_1, gain_node_2) = initializeChainOfNodes()
-        t_node.value = GaussianDistribution(m=5.0, V=2.0)
-        schedule = SumProduct.generateSchedule(gain_node_2.i[:out])
+        initializeChainOfNodes()
+        n(:node1).value = GaussianDistribution(m=5.0, V=2.0)
+        schedule = SumProduct.generateSchedule(n(:node3).i[:out])
         schedule[end].post_processing = mean
         algo = Algorithm(schedule)
         execute(algo)
-        @fact gain_node_2.i[:out].message.payload => DeltaDistribution([(mean(t_node.value)*gain_node_1.A*gain_node_2.A)[1]])
+        @fact n(:node3).i[:out].message.payload => DeltaDistribution([(mean(n(:node1).value)*n(:node2).A*n(:node3).A)[1]])
     end
 end

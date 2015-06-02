@@ -47,10 +47,10 @@ end
 nodes(node::CompositeNode) = nodes(node.internal_graph)
 
 function sumProduct!(node::CompositeNode,
-                     outbound_interface_id::Int,
+                     outbound_interface_index::Int,
                      inbounds...)
-    outbound_interface = node.interfaces[outbound_interface_id]
-    internal_outbound_interface = node.interfaceid_to_terminalnode[outbound_interface_id].interfaces[1].partner
+    outbound_interface = node.interfaces[outbound_interface_index]
+    internal_outbound_interface = node.interfaceid_to_terminalnode[outbound_interface_index].interfaces[1].partner
 
     # Check if there is a computation rule defined for this case
     if !haskey(node.computation_rules, (outbound_interface, sumProduct!))
@@ -61,9 +61,9 @@ function sumProduct!(node::CompositeNode,
     end
 
     # Move all inbound messages to corresponding terminal nodes in the internal graph
-    for interface_id=1:length(node.interfaces)
-        if interface_id != outbound_interface_id 
-            node.interfaceid_to_terminalnode[interface_id].value = node.interfaces[interface_id].partner.message.payload
+    for interface_index=1:length(node.interfaces)
+        if interface_index != outbound_interface_index 
+            node.interfaceid_to_terminalnode[interface_index].value = node.interfaces[interface_index].partner.message.payload
         end
     end
 

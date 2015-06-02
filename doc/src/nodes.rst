@@ -42,13 +42,13 @@ A factor node captures a specific *node function*, which involves the variables 
 
 ForneyLab supports the following message calculation rules:
 
-.. function:: sumProduct!(node::Node, outbound_interface_id::Int, inbound_messages...)
+.. function:: sumProduct!(node::Node, outbound_interface_index::Int, inbound_messages...)
     
     Calculates the outbound message from the incoming messages on the other interfaces according to the sum-product algorithm.
     Example implementation::
 
         function sumProduct!(node::AdditionNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Nothing)
@@ -59,7 +59,7 @@ ForneyLab supports the following message calculation rules:
 
             # Return tuple ([calculation rule name]::Symbol, outbound_message::Message)
             return (:addition_gaussian_forward,
-                    node.interfaces[outbound_interface_id].message)
+                    node.interfaces[outbound_interface_index].message)
         end
 
     The calling signature consists of:
@@ -68,13 +68,13 @@ ForneyLab supports the following message calculation rules:
     2. The id (index in node.interfaces) of the outbound interface;
     3. The inbound messages on *all* interfaces of the node (ordered by interface id). The inbound message on the outbound inferface is always ``nothing``.
 
-.. function:: vmp!(node::Node, outbound_interface_id::Int, marginals_and_messages...)
+.. function:: vmp!(node::Node, outbound_interface_index::Int, marginals_and_messages...)
 
     Similar to :func:`sumProduct!`, but on some interfaces the approximate marginals are used instead of the incoming messages. This calculation rule is used for variational message passing (vmp).
     Example implementation::
 
         function vmp!(node::GaussianNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             ::Nothing,
                             marg_prec::GammaDistribution,
                             marg_y::GaussianDistribution)
@@ -85,7 +85,7 @@ ForneyLab supports the following message calculation rules:
 
             # Return tuple ([calculation rule name]::Symbol, outbound_message::Message)
             return (:gaussian_backward_mean_gaussian_inverse_gamma,
-                    node.interfaces[outbound_interface_id].message)
+                    node.interfaces[outbound_interface_index].message)
         end                            
 
     The calling signature consists of:

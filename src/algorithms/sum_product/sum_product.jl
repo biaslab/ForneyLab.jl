@@ -63,13 +63,13 @@ function collectInbounds(outbound_interface::Interface)
     # outbound_interface: the interface on which the outbound message will be updated
     # Returns: (outbound interface id, array of inbound messages)
     
-    outbound_interface_id = 0
+    outbound_interface_index = 0
     inbounds = Array(Any, 0)
     for j = 1:length(outbound_interface.node.interfaces)
         interface = outbound_interface.node.interfaces[j]
         if is(interface, outbound_interface)
             # We don't need the inbound message on the outbound interface
-            outbound_interface_id = j
+            outbound_interface_index = j
             push!(inbounds, nothing) # This interface is outbound, push "nothing"
         else
             try 
@@ -80,7 +80,7 @@ function collectInbounds(outbound_interface::Interface)
         end
     end
 
-    return (outbound_interface_id, inbounds)
+    return (outbound_interface_index, inbounds)
 end
 
 end

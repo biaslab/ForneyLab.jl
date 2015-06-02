@@ -16,8 +16,8 @@ type MockNode <: Node
         self = new(id, Array(Interface, num_interfaces), Dict{Symbol, Interface}())
         !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
 
-        for interface_id = 1:num_interfaces
-            self.interfaces[interface_id] = Interface(self)
+        for interface_index = 1:num_interfaces
+            self.interfaces[interface_index] = Interface(self)
         end
         
         self.i[:out] = self.interfaces[1]
@@ -45,10 +45,11 @@ function initializePairOfMockNodes()
     #
     # [M]--|
 
-    FactorGraph()
-    node1 = MockNode()
-    node2 = MockNode()
-    return node1, node2
+    g = FactorGraph()
+    MockNode(id=:node1)
+    MockNode(id=:node2)
+    # return node1, node2
+    return g
 end
 
 function initializePairOfTerminalNodes(d1::ProbabilityDistribution=GaussianDistribution(), d2::ProbabilityDistribution=GaussianDistribution())
@@ -56,13 +57,14 @@ function initializePairOfTerminalNodes(d1::ProbabilityDistribution=GaussianDistr
     #
     # [T]-->[T]
 
-    FactorGraph()
-    t1 = TerminalNode(d1)
-    t2 = TerminalNode(d2)
-    Edge(t1.i[:out], t2.i[:out])
-    t1.i[:out].message = Message(d1)
-    t2.i[:out].message = Message(d2)
-    return t1, t2
+    g = FactorGraph()
+    TerminalNode(d1, id=:t1)
+    TerminalNode(d2, id=:t2)
+    Edge(n(:t1).i[:out], n(:t2).i[:out])
+    n(:t1).i[:out].message = Message(d1)
+    n(:t2).i[:out].message = Message(d2)
+    #return t1, t2
+    return g
 end
 
 function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(DeltaDistribution(2.0)), msg_gain_2=Message(DeltaDistribution(3.0)), msg_terminal=Message(DeltaDistribution(1.0)))
@@ -72,13 +74,14 @@ function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(DeltaDistribution(2
     #
     # |--[C]
 
-    FactorGraph()
-    node1 = FixedGainNode(A)
-    node1.interfaces[1].message = msg_gain_1
-    node1.interfaces[2].message = msg_gain_2
-    node2 = TerminalNode(msg_terminal.payload)
-    node2.interfaces[1].message = msg_terminal
-    return node1, node2
+    g = FactorGraph()
+    FixedGainNode(A, id=:node1)
+    n(:node1).interfaces[1].message = msg_gain_1
+    n(:node1).interfaces[2].message = msg_gain_2
+    TerminalNode(msg_terminal.payload, id=:node2)
+    n(:node2).interfaces[1].message = msg_terminal
+    # return node1, node2
+    return g
 end
 
 function initializeChainOfNodes()
@@ -87,14 +90,15 @@ function initializeChainOfNodes()
     #  1     2     3
     # [C]-->[A]-->[B]-->[M]
 
-    FactorGraph()
-    node1 = TerminalNode(DeltaDistribution(reshape([3.0], 1, 1)))
-    node2 = FixedGainNode([2.0])
-    node3 = FixedGainNode([2.0])
-    Edge(node1.i[:out], node2.i[:in])
-    Edge(node2.i[:out], node3.i[:in])
-    Edge(node3.i[:out], MockNode().i[:out])
-    return (node1, node2, node3)
+    g = FactorGraph()
+    TerminalNode(DeltaDistribution(reshape([3.0], 1, 1)), id=:node1)
+    FixedGainNode([2.0], id=:node2)
+    FixedGainNode([2.0], id=:node3)
+    Edge(n(:node1).i[:out], n(:node2).i[:in])
+    Edge(n(:node2).i[:out], n(:node3).i[:in])
+    Edge(n(:node3).i[:out], MockNode().i[:out])
+    #return (node1, node2, node3)
+    return g
 end
 
 function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
@@ -107,16 +111,17 @@ function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
     #   ---[B]<--
     #  (inhibitor)
 
-    FactorGraph()
-    driver      = FixedGainNode(A, id=:driver)
-    inhibitor   = FixedGainNode(B, id=:inhibitor)
-    noise       = TerminalNode(GaussianDistribution(m=noise_m, V=noise_V), id=:noise)
-    add         = AdditionNode(id=:adder)
-    Edge(add.i[:out], inhibitor.i[:in])
-    Edge(inhibitor.i[:out], driver.i[:in])
-    Edge(driver.i[:out], add.i[:in1])
-    Edge(noise.i[:out], add.i[:in2])
-    return (driver, inhibitor, noise, add)
+    g = FactorGraph()
+    FixedGainNode(A, id=:driver)
+    FixedGainNode(B, id=:inhibitor)
+    TerminalNode(GaussianDistribution(m=noise_m, V=noise_V), id=:noise)
+    AdditionNode(id=:add)
+    Edge(n(:add).i[:out], n(:inhibitor).i[:in])
+    Edge(n(:inhibitor).i[:out], n(:driver).i[:in])
+    Edge(n(:driver).i[:out], n(:add).i[:in1])
+    Edge(n(:noise).i[:out], n(:add).i[:in2])
+    #return (driver, inhibitor, noise, add)
+    return g
 end
 
 function initializeTreeGraph()
@@ -131,19 +136,20 @@ function initializeTreeGraph()
     #                  (c3)
     #
 
-    FactorGraph()
-    c1 = TerminalNode(GaussianDistribution())
-    c2 = TerminalNode(GaussianDistribution())
-    c3 = TerminalNode(GaussianDistribution(m=-2.0, V=3.0))
-    add = AdditionNode()
-    equ = EqualityNode()
+    g = FactorGraph()
+    TerminalNode(GaussianDistribution(), id=:c1)
+    TerminalNode(GaussianDistribution(), id=:c2)
+    TerminalNode(GaussianDistribution(m=-2.0, V=3.0), id=:c3)
+    AdditionNode(id=:add)
+    EqualityNode(id=:equ)
     # Edges from left to right
-    Edge(c1.i[:out], add.i[:in1])
-    Edge(c2.i[:out], add.i[:in2])
-    Edge(add.i[:out], equ.interfaces[1])
-    Edge(c3.i[:out], equ.interfaces[2])
-    Edge(c3.i[:out], equ.interfaces[2])
-    return (c1, c2, c3, add, equ)
+    Edge(n(:c1).i[:out], n(:add).i[:in1])
+    Edge(n(:c2).i[:out], n(:add).i[:in2])
+    Edge(n(:add).i[:out], n(:equ).interfaces[1])
+    Edge(n(:c3).i[:out], n(:equ).interfaces[2])
+    Edge(n(:c3).i[:out], n(:equ).interfaces[2])
+    #return (c1, c2, c3, add, equ)
+    return g
 end
 
 function initializeFactoringGraph()
@@ -155,20 +161,21 @@ function initializeFactoringGraph()
     #                    |   ^
     #                    -----
 
-    FactorGraph()
-    t1 = TerminalNode(id=:t1)
-    a1 = FixedGainNode(id=:a1)
-    g1 = GaussianNode(form=:moment, id=:g1)
-    t2 = TerminalNode(id=:t2)
-    add1 = AdditionNode(id=:add1)
-    g2 = GaussianNode(id=:g2, V=0.1)
-    Edge(t1.i[:out], a1.i[:in])
-    Edge(a1.i[:out], g1.i[:mean])
-    Edge(t2.i[:out], g1.i[:variance], InverseGammaDistribution)
-    Edge(g1.i[:out], add1.i[:in1])
-    Edge(add1.i[:out], g2.i[:mean])
-    Edge(g2.i[:out], add1.i[:in2])
-    return (t1, a1, g1, t2, add1, g2)
+    g = FactorGraph()
+    TerminalNode(id=:t1)
+    FixedGainNode(id=:a1)
+    GaussianNode(form=:moment, id=:g1)
+    TerminalNode(id=:t2)
+    AdditionNode(id=:add1)
+    GaussianNode(id=:g2, V=0.1)
+    Edge(n(:t1).i[:out], n(:a1).i[:in])
+    Edge(n(:a1).i[:out], n(:g1).i[:mean])
+    Edge(n(:t2).i[:out], n(:g1).i[:variance], InverseGammaDistribution)
+    Edge(n(:g1).i[:out], n(:add1).i[:in1])
+    Edge(n(:add1).i[:out], n(:g2).i[:mean])
+    Edge(n(:g2).i[:out], n(:add1).i[:in2])
+    #return (t1, a1, g1, t2, add1, g2)
+    return g
 end
 
 function initializeFactoringGraphWithoutLoop()
@@ -180,41 +187,44 @@ function initializeFactoringGraphWithoutLoop()
     #
     #
 
-    FactorGraph()
-    t1 = TerminalNode(id=:t1)
-    a1 = FixedGainNode(id=:a1)
-    g1 = GaussianNode(form=:moment, id=:g1)
-    t2 = TerminalNode(id=:t2)
-    t3 = TerminalNode(id=:t3)
-    Edge(t1.i[:out], a1.i[:in])
-    Edge(a1.i[:out], g1.i[:mean])
-    Edge(t2.i[:out], g1.i[:variance], InverseGammaDistribution)
-    Edge(g1.i[:out], t3.i[:out])
-    return (t1, a1, g1, t2, t3)
+    g = FactorGraph()
+    TerminalNode(id=:t1)
+    FixedGainNode(id=:a1)
+    GaussianNode(form=:moment, id=:g1)
+    TerminalNode(id=:t2)
+    TerminalNode(id=:t3)
+    Edge(n(:t1).i[:out], n(:a1).i[:in])
+    Edge(n(:a1).i[:out], n(:g1).i[:mean])
+    Edge(n(:t2).i[:out], n(:g1).i[:variance], InverseGammaDistribution)
+    Edge(n(:g1).i[:out], n(:t3).i[:out])
+    #return (t1, a1, g1, t2, t3)
+    return g
 end
 
 function initializeGaussianFactoringGraph()
     # [T]<--[A]<--[N]
 
-    FactorGraph()
-    t = TerminalNode(id=:t)
-    gain = FixedGainNode(id=:gain)
-    gauss = GaussianNode(m=1.0, V=0.5, id=:gauss)
-    Edge(gauss.i[:out], gain.i[:in])
-    Edge(gain.i[:out], t.i[:out])
-    return (t, gain, gauss)
+    g = FactorGraph()
+    TerminalNode(id=:t)
+    FixedGainNode(id=:gain)
+    GaussianNode(m=1.0, V=0.5, id=:gauss)
+    Edge(n(:gauss).i[:out], n(:gain).i[:in])
+    Edge(n(:gain).i[:out], n(:t).i[:out])
+    #return (t, gain, gauss)
+    return g
 end
 
 function initializeSimpleFactoringGraph()
     # [T]<--[A]<--[T]
 
-    FactorGraph()
-    t1 = TerminalNode(id=:t1)
-    gain = FixedGainNode(id=:gain)
-    t2 = TerminalNode(id=:t2)
-    Edge(t2.i[:out], gain.i[:in])
-    Edge(gain.i[:out], t1.i[:out])
-    return (t1, gain, t2)
+    g = FactorGraph()
+    TerminalNode(id=:t1)
+    FixedGainNode(id=:gain)
+    TerminalNode(id=:t2)
+    Edge(n(:t2).i[:out], n(:gain).i[:in])
+    Edge(n(:gain).i[:out], n(:t1).i[:out])
+    #return (t1, gain, t2)
+    return g
 end
 
 function initializeAdditionNode(msgs::Array{Any})
@@ -224,16 +234,17 @@ function initializeAdditionNode(msgs::Array{Any})
     # [M]-->[+]<--[M]
     #        |
 
-    FactorGraph()
-    add_node = AdditionNode()
+    g = FactorGraph()
+    AdditionNode(id=:add_node)
     interface_count = 1
     for msg in msgs
         if msg != nothing
-            Edge(MockNode(msg).i[:out], add_node.interfaces[interface_count])
+            Edge(MockNode(msg).i[:out], n(:add_node).interfaces[interface_count])
         end
         interface_count += 1
     end
-    return add_node
+    #return add_node
+    return g
 end
 
 function initializeEqualityNode(msgs::Array{Any})
@@ -243,16 +254,16 @@ function initializeEqualityNode(msgs::Array{Any})
     # [M]-->[=]<--[M] (as many incoming edges as length(msgs))
     #        |
 
-    FactorGraph()
-    eq_node = EqualityNode(length(msgs))
+    g = FactorGraph()
+    EqualityNode(length(msgs), id=:eq_node)
     interface_count = 1
     for msg in msgs
         if msg!=nothing
-            Edge(MockNode(msg).i[:out], eq_node.interfaces[interface_count])
+            Edge(MockNode(msg).i[:out], n(:eq_node).interfaces[interface_count])
         end
         interface_count += 1
     end
-    return eq_node
+    return g
 end
 
 function initializeTerminalAndGainAddNode()
@@ -269,10 +280,11 @@ function initializeTerminalAndGainAddNode()
     #    |     |
     #    | ... |
 
-    FactorGraph()
-    c_node = GainAdditionNode([1.0], false)
-    node = TerminalNode()
-    return(c_node, node)
+    g = FactorGraph()
+    GainAdditionNode([1.0], id=:c_node)
+    TerminalNode(id=:node)
+    #return(c_node, node)
+    return g
 end
 
 function initializeGainAdditionNode(A::Array, msgs::Array{Any})
@@ -290,18 +302,19 @@ function initializeGainAdditionNode(A::Array, msgs::Array{Any})
     #[M]-----|->[+]--|---->
     #        |_______|
 
-    FactorGraph()
-    gac_node = GainAdditionNode(A)
+    g = FactorGraph()
+    GainAdditionNode(A, id=:gac_node)
     interface_count = 1
     for msg in msgs
         if msg == nothing
-            Edge(MockNode().i[:out], gac_node.interfaces[interface_count])
+            Edge(MockNode().i[:out], n(:gac_node).interfaces[interface_count])
         else
-            Edge(MockNode(msg).i[:out], gac_node.interfaces[interface_count])
+            Edge(MockNode(msg).i[:out], n(:gac_node).interfaces[interface_count])
         end
         interface_count += 1
     end
-    return gac_node
+    #return gac_node
+    return g
 end
 
 function initializeTerminalAndGainEqNode()
@@ -318,10 +331,11 @@ function initializeTerminalAndGainEqNode()
     #    |     |
     #    | ... |
 
-    FactorGraph()
-    c_node = GainEqualityNode([1.0], false)
-    node = TerminalNode()
-    return(c_node, node)
+    g = FactorGraph()
+    GainEqualityNode([1.0], id=:c_node)
+    TerminalNode(id=:node)
+    #return(c_node, node)
+    return g
 end
 
 function initializeGainEqualityNode(A::Array, msgs::Array{Any})
@@ -338,18 +352,19 @@ function initializeGainEqualityNode(A::Array, msgs::Array{Any})
     #             | out
     #             v
 
-    FactorGraph()
-    gec_node = GainEqualityNode(A)
+    g = FactorGraph()
+    GainEqualityNode(A, id=:gec_node)
     interface_count = 1
     for msg in msgs
         if msg == nothing
-            Edge(MockNode().i[:out], gec_node.interfaces[interface_count])
+            Edge(MockNode().i[:out], n(:gec_node).interfaces[interface_count])
         else
-            Edge(MockNode(msg).i[:out], gec_node.interfaces[interface_count])
+            Edge(MockNode(msg).i[:out], n(:gec_node).interfaces[interface_count])
         end
         interface_count += 1
     end
-    return gec_node
+    #return gec_node
+    return g
 end
 
 function initializeGaussianNode(; y_type::DataType=Float64)
@@ -361,34 +376,35 @@ function initializeGaussianNode(; y_type::DataType=Float64)
     #         v y
     #        [M]
 
-    graph = FactorGraph()
-    node = GaussianNode(form=:precision)
-    edges = Array(Edge, 3)
-    edges[1] = Edge(MockNode().i[:out], node.i[:mean], GaussianDistribution)
-    edges[1].tail.message = Message(GaussianDistribution())
-    edges[1].head.message = Message(GaussianDistribution())
-    edges[2] = Edge(MockNode().i[:out], node.i[:precision], GammaDistribution)
-    edges[2].tail.message = Message(GammaDistribution())
-    edges[2].head.message = Message(GammaDistribution())
-    edges[3] = Edge(node.i[:out], MockNode().i[:out], GaussianDistribution)
-    edges[3].tail.message = Message(GaussianDistribution())
+    g = FactorGraph()
+    GaussianNode(form=:precision, id=:node)
+    Edge(MockNode().i[:out], n(:node).i[:mean], GaussianDistribution, id=:edge1)
+    e(:edge1).tail.message = Message(GaussianDistribution())
+    e(:edge1).head.message = Message(GaussianDistribution())
+    Edge(MockNode().i[:out], n(:node).i[:precision], GammaDistribution, id=:edge2)
+    e(:edge2).tail.message = Message(GammaDistribution())
+    e(:edge2).head.message = Message(GammaDistribution())
+    Edge(n(:node).i[:out], MockNode().i[:out], GaussianDistribution, id=:edge3)
+    e(:edge3).tail.message = Message(GaussianDistribution())
     if y_type == Float64
-        edges[3].head.message = Message(DeltaDistribution(1.0))
+        e(:edge3).head.message = Message(DeltaDistribution(1.0))
     elseif y_type == GaussianDistribution
-        edges[3].head.message = Message(GaussianDistribution())
+        e(:edge3).head.message = Message(GaussianDistribution())
     else
         error("Can't handle y_type $(y_type)")
     end
-    return (node, edges)
+    #return (node, edges)
+    return g
 end
 
 function initializeBufferGraph()
     # Background
     g = FactorGraph()
-    node_t1 = TerminalNode()
-    node_t2 = TerminalNode()
-    e = Edge(node_t1, node_t2)
-    return (node_t1, node_t2, e, g)
+    TerminalNode(id=:node_t1)
+    TerminalNode(id=:node_t2)
+    Edge(n(:node_t1), n(:node_t2), id=:e)
+    #return (node_t1, node_t2, e, g)
+    return g
 end
 
 function initializeGaussianNodeChain(y::Array{Float64, 1})
@@ -403,48 +419,36 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
     #                  v             v
     #                [y_1]         [y_2]
 
-    FactorGraph()
+    g = FactorGraph()
     # Initial settings
     n_samples = length(y) # Number of observed samples
 
-    # Pre-assign arrays for later reference
-    g_nodes = Array(GaussianNode, n_samples)
-    m_eq_nodes = Array(EqualityNode, n_samples)
-    gam_eq_nodes = Array(EqualityNode, n_samples)
-    y_nodes = Array(TerminalNode, n_samples)
-    q_gam_edges = Array(Edge, n_samples)
-    q_m_edges = Array(Edge, n_samples)
-    q_y_edges = Array(Edge, n_samples)
-
     # Build graph
-    for section=1:n_samples
-        g_node = GaussianNode(; id=symbol("g_node_$(section)"), form=:precision)
-        m_eq_node = EqualityNode(; id=symbol("m_eq_$(section)")) # Equality node chain for mean
-        gam_eq_node = EqualityNode(; id=symbol("s_eq_$(section)")) # Equality node chain for variance
-        y_node = TerminalNode(GaussianDistribution(m=y[section], V=tiny()), id=symbol("c_obs_$(section)")) # Observed y values are stored in terminal node
-        g_nodes[section] = g_node
-        m_eq_nodes[section] = m_eq_node
-        gam_eq_nodes[section] = gam_eq_node
-        y_nodes[section] = y_node
-        q_y_edges[section] = Edge(g_node.i[:out], y_node.i[:out], GaussianDistribution)
-        q_m_edges[section] = Edge(m_eq_node.interfaces[3], g_node.i[:mean], GaussianDistribution)
-        q_gam_edges[section] = Edge(gam_eq_node.interfaces[3], g_node.i[:precision], GammaDistribution)
-        if section > 1 # Connect sections
-            Edge(m_eq_nodes[section-1].interfaces[2], m_eq_nodes[section].interfaces[1], GaussianDistribution)
-            Edge(gam_eq_nodes[section-1].interfaces[2], gam_eq_nodes[section].interfaces[1], GammaDistribution)
+    for sec=1:n_samples
+        GaussianNode(form=:precision, id=s(:g,sec))
+        EqualityNode(id=s(:m_eq,sec)) # Equality node chain for mean
+        EqualityNode(id=s(:gam_eq,sec)) # Equality node chain for precision
+        TerminalNode(GaussianDistribution(m=y[sec], V=tiny()), id=s(:y,sec)) # Observed y values are stored in terminal node
+        Edge(n(s(:g,sec)).i[:out], n(s(:y,sec)).i[:out], GaussianDistribution, id=s(:q_y,sec))
+        Edge(n(s(:m_eq,sec)).i[3], n(s(:g,sec)).i[:mean], GaussianDistribution, id=s(:q_m,sec))
+        Edge(n(s(:gam_eq,sec)).i[3], n(s(:g,sec)).i[:precision], GammaDistribution, id=s(:q_gam,sec))
+        if sec > 1 # Connect sections
+            Edge(n(s(:m_eq,sec-1)).i[2], n(s(:m_eq,sec)).i[1], GaussianDistribution)
+            Edge(n(s(:gam_eq,sec-1)).i[2], n(s(:gam_eq,sec)).i[1], GammaDistribution)
         end
     end
     # Attach beginning and end nodes
-    m_0 = TerminalNode(GaussianDistribution(m=0.0, V=100.0)) # Prior
-    gam_0 = TerminalNode(GammaDistribution(a=0.01, b=0.01)) # Prior
-    m_N = TerminalNode(vague(GaussianDistribution))
-    gam_N = TerminalNode(vague(GammaDistribution))
-    Edge(m_0.i[:out], m_eq_nodes[1].interfaces[1])
-    Edge(gam_0.i[:out], gam_eq_nodes[1].interfaces[1])
-    Edge(m_eq_nodes[end].interfaces[2], m_N.i[:out])
-    Edge(gam_eq_nodes[end].interfaces[2], gam_N.i[:out])
+    TerminalNode(GaussianDistribution(m=0.0, V=100.0), id=:m0) # Prior
+    TerminalNode(GammaDistribution(a=0.01, b=0.01), id=:gam0) # Prior
+    TerminalNode(vague(GaussianDistribution), id=:mN)
+    TerminalNode(vague(GammaDistribution), id=:gamN)
+    Edge(n(:m0).i[:out], n(:m_eq1).i[1])
+    Edge(n(:gam0).i[:out], n(:gam_eq1).i[1])
+    Edge(n(s(:m_eq,n_samples)).i[2], n(:mN).i[:out])
+    Edge(n(s(:gam_eq,n_samples)).i[2], n(:gamN).i[:out])
 
-    return (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges)
+    #return (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges)
+    return g
 end
 
 function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
@@ -464,27 +468,28 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     # Batch estimation with multiple samples will intruduce cycles in the subgraph.
     # Therefore we implement a forward algorithm that uses forward estimation only.
 
-    FactorGraph()
+    g = FactorGraph()
 
-    g_node = GaussianNode(; id=:g_node, form=:precision)
-    m_eq_node = EqualityNode(; id=:m_eq_node) # Equality node chain for mean
-    gam_eq_node = EqualityNode(; id=:gam_eq_node) # Equality node chain for variance
-    y_node = TerminalNode(GaussianDistribution(), id=:y_node) # Observed y values are stored in terminal node
-    y_edge = Edge(g_node.i[:out], y_node.i[:out], GaussianDistribution)
-    m_edge = Edge(m_eq_node.interfaces[3], g_node.i[:mean], GaussianDistribution)
-    gam_edge = Edge(gam_eq_node.interfaces[3], g_node.i[:precision], GammaDistribution)
+    GaussianNode(id=:g, form=:precision)
+    EqualityNode(id=:m_eq) # Equality node chain for mean
+    EqualityNode(id=:gam_eq) # Equality node chain for variance
+    TerminalNode(GaussianDistribution(), id=:y) # Observed y values are stored in terminal node
+    Edge(n(:g).i[:out], n(:y).i[:out], GaussianDistribution, id=:y)
+    Edge(n(:m_eq).i[3], n(:g).i[:mean], GaussianDistribution, id=:m)
+    Edge(n(:gam_eq).i[3], n(:g).i[:precision], GammaDistribution, id=:gam)
 
     # Attach beginning and end nodes
-    m_0_node = TerminalNode(GaussianDistribution(m=0.0, V=100.0); id=:m_0_node) # Prior
-    gam_0_node = TerminalNode(GammaDistribution(a=0.01, b=0.01); id=:gam_0_node) # Prior
-    m_N_node = TerminalNode(vague(GaussianDistribution); id=:m_N_node) # Neutral 'one' message
-    gam_N_node = TerminalNode(vague(GammaDistribution); id=:gam_N_node) # Neutral 'one' message
-    m_0_eq_edge = Edge(m_0_node.i[:out], m_eq_node.interfaces[1], GaussianDistribution)
-    gam_0_eq_edge = Edge(gam_0_node.i[:out], gam_eq_node.interfaces[1], GammaDistribution)
-    m_N_eq_edge = Edge(m_eq_node.interfaces[2], m_N_node.i[:out], GaussianDistribution)
-    gam_N_eq_edge = Edge(gam_eq_node.interfaces[2], gam_N_node.i[:out], GammaDistribution)
+    TerminalNode(GaussianDistribution(m=0.0, V=100.0), id=:m0) # Prior
+    TerminalNode(GammaDistribution(a=0.01, b=0.01), id=:gam0) # Prior
+    TerminalNode(vague(GaussianDistribution), id=:mN) # Neutral 'one' message
+    TerminalNode(vague(GammaDistribution), id=:gamN) # Neutral 'one' message
+    Edge(n(:m0).i[:out], n(:m_eq).i[1], GaussianDistribution, id=:m0)
+    Edge(n(:gam0).i[:out], n(:gam_eq).i[1], GammaDistribution, id=:gam0)
+    Edge(n(:m_eq).i[2], n(:mN).i[:out], GaussianDistribution, id=:mN)
+    Edge(n(:gam_eq).i[2], n(:gamN).i[:out], GammaDistribution, id=:gamN)
 
-    return (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge)
+    #return (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge)
+    return g
 end
 
 
@@ -519,10 +524,10 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     @fact mean(node2.i[:out].partner.message.payload) => 2.0
 end
 
-function validateOutboundMessage(node::Node, outbound_interface_id::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution, update_function::Function=ForneyLab.sumProduct!)
-    (rule, msg) = update_function(node, outbound_interface_id, inbound_messages...)
-    @fact node.interfaces[outbound_interface_id].message => msg
-    @fact node.interfaces[outbound_interface_id].message.payload => correct_outbound_value
+function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution, update_function::Function=ForneyLab.sumProduct!)
+    (rule, msg) = update_function(node, outbound_interface_index, inbound_messages...)
+    @fact node.interfaces[outbound_interface_index].message => msg
+    @fact node.interfaces[outbound_interface_index].message.payload => correct_outbound_value
 
-    return node.interfaces[outbound_interface_id].message
+    return node.interfaces[outbound_interface_index].message
 end

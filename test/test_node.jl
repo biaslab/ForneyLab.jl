@@ -21,9 +21,9 @@ facts("General node properties unit tests") do
 
             context("$(node_type) constructor should assign interfaces to itself") do
                 my_node = node_type()
-                for interface_id in 1:length(my_node.interfaces)
+                for interface_index in 1:length(my_node.interfaces)
                     # Check if the node interfaces couple back to the same node
-                    @fact my_node.interfaces[interface_id].node => my_node
+                    @fact my_node.interfaces[interface_index].node => my_node
                 end
             end
 
@@ -71,37 +71,37 @@ end
 
 facts("Connections between nodes integration tests") do
     context("Nodes can directly be coupled through interfaces by using the interfaces array") do
-        (node1, node2) = initializePairOfNodes()
+        initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
-        node1.interfaces[1].partner = node2.interfaces[1]
-        node2.interfaces[1].partner = node1.interfaces[1]
-        testInterfaceConnections(node1, node2)
+        n(:node1).interfaces[1].partner = n(:node2).interfaces[1]
+        n(:node2).interfaces[1].partner = n(:node1).interfaces[1]
+        testInterfaceConnections(n(:node1), n(:node2))
     end
 
     context("Nodes can directly be coupled through interfaces by using the explicit interface handles") do
-        (node1, node2) = initializePairOfNodes()
+        initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
-        node1.i[:in].partner = node2.i[:out]
-        node2.i[:out].partner = node1.i[:in]
-        testInterfaceConnections(node1, node2)
+        n(:node1).i[:in].partner = n(:node2).i[:out]
+        n(:node2).i[:out].partner = n(:node1).i[:in]
+        testInterfaceConnections(n(:node1), n(:node2))
     end
 
     context("Nodes can be coupled by edges by using the interfaces array") do
-        (node1, node2) = initializePairOfNodes()
+        initializePairOfNodes()
         # Couple the interfaces that carry GeneralMessage
-        edge = Edge(node2.interfaces[1], node1.interfaces[1]) # Edge from node 2 to node 1
-        testInterfaceConnections(node1, node2)
+        edge = Edge(n(:node2).interfaces[1], n(:node1).interfaces[1]) # Edge from node 2 to node 1
+        testInterfaceConnections(n(:node1), n(:node2))
     end
 end
 
 facts("Functions for collecting nodes") do
     context("nodes() should return a set of all nodes in the graph") do
         # FactorGraph test
-        testnodes = initializeLoopyGraph()
-        @fact nodes(currentGraph()) => Set{Node}(testnodes)
+        initializeLoopyGraph()
+        @fact nodes(currentGraph()) => Set{Node}([n(:driver), n(:inhibitor), n(:noise), n(:add)])
 
         # Composite node test
         c_node = CompositeNode(currentGraph())
-        @fact nodes(c_node) => Set{Node}(testnodes) # nodes() should return internal nodes of a CompositeNode
+        @fact nodes(c_node) => Set{Node}([n(:driver, c_node.internal_graph), n(:inhibitor, c_node.internal_graph), n(:noise, c_node.internal_graph), n(:add, c_node.internal_graph)]) # nodes() should return internal nodes of a CompositeNode
     end
 end

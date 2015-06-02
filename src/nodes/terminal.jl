@@ -46,7 +46,7 @@ isDeterministic(::TerminalNode) = false # Edge case for deterministicness
 firstFreeInterface(node::TerminalNode) = (node.interfaces[1].partner==nothing) ? node.interfaces[1] : error("No free interface on $(typeof(node)) $(node.id)")
 
 function sumProduct!(node::TerminalNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             ::Any)
     # Calculate an outbound message. The TerminalNode does not accept incoming messages.
     # This function is not exported, and is only meant for internal use.

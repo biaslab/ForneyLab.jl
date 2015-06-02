@@ -4,11 +4,12 @@
 
 facts("ExponentialNode unit tests") do
     context("ExponentialNode should initialize a ExponentialNode with 2 interfaces") do
-        node = ExponentialNode()
-        @fact typeof(node) => ExponentialNode
-        @fact length(node.interfaces) => 2
-        @fact node.i[:in] => node.interfaces[1]
-        @fact node.i[:out] => node.interfaces[2]
+        FactorGraph()
+        ExponentialNode(id=:node)
+        @fact typeof(n(:node)) => ExponentialNode
+        @fact length(n(:node).interfaces) => 2
+        @fact n(:node).i[:in] => n(:node).interfaces[1]
+        @fact n(:node).i[:out] => n(:node).interfaces[2]
     end
 
     context("ExponentialNode should pass messages") do

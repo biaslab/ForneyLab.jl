@@ -104,10 +104,10 @@ end
 
 facts("Marginal calculations for the Gaussian") do
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
-        (t1, t2) = initializePairOfTerminalNodes(GaussianDistribution(m=0.0, V=1.0), GaussianDistribution(m=0.0, V=1.0))
-        edge = t1.i[:out].edge
-        t1.i[:out].message = Message(GaussianDistribution(m=0.0, V=1.0))
-        t2.i[:out].message = Message(GaussianDistribution(m=0.0, V=1.0))
+        initializePairOfTerminalNodes(GaussianDistribution(m=0.0, V=1.0), GaussianDistribution(m=0.0, V=1.0))
+        edge = n(:t1).i[:out].edge
+        n(:t1).i[:out].message = Message(GaussianDistribution(m=0.0, V=1.0))
+        n(:t2).i[:out].message = Message(GaussianDistribution(m=0.0, V=1.0))
         marginal_dist = calculateMarginal!(edge)
         @fact edge.marginal => marginal_dist
         ensureMVParametrization!(marginal_dist)
@@ -125,15 +125,15 @@ facts("Marginal calculations for the Gaussian") do
     end
 
     context("Marginal calculation for the combination of a Gaussian and student's t-distribution") do
-        (t1, t2) = initializePairOfTerminalNodes(GaussianDistribution(), StudentsTDistribution())
-        edge = t1.i[:out].edge
+        initializePairOfTerminalNodes(GaussianDistribution(), StudentsTDistribution())
+        edge = n(:t1).i[:out].edge
         calculateMarginal!(edge)
         @fact edge.marginal => GaussianDistribution(m=0.0, W=2.0) 
     end
 
     context("Marginal calculation for the combination of a Gaussian and DeltaDistribution") do
-        (t1, t2) = initializePairOfTerminalNodes(GaussianDistribution(), DeltaDistribution(3.0))
-        edge = t1.i[:out].edge
+        initializePairOfTerminalNodes(GaussianDistribution(), DeltaDistribution(3.0))
+        edge = n(:t1).i[:out].edge
         calculateMarginal!(edge)
         @fact edge.marginal => DeltaDistribution(3.0)
     end
