@@ -13,4 +13,5 @@ facts("Interface unit tests") do
     @fact message(n.i[:out]) => nothing
     @fact ForneyLab.ensureMessage!(n.i[:out], GaussianDistribution) => Message(vague(GaussianDistribution))
     @fact handle(n.interfaces[1]) => :out
+    @fact handle(EqualityNode().interfaces[1]) => 1
 end

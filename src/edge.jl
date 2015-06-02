@@ -46,7 +46,9 @@ Edge(tail_node::Node, head_node::Node, distribution_type=Any; args...) = Edge(fi
 
 function show(io::IO, edge::Edge)
     println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.id):$(findfirst(edge.tail.node.interfaces, edge.tail)) to $(typeof(edge.head.node)) $(edge.head.node.id):$(findfirst(edge.head.node.interfaces, edge.head)).")
-    (edge.distribution_type == Any) || println(io, "Marginal distribution type: $(edge.distribution_type).")
+    if edge.distribution_type != Any
+        println(io, "Marginal distribution type: $(edge.distribution_type).")
+    end
 end
 
 setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)

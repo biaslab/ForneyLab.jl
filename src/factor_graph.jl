@@ -72,6 +72,11 @@ edges(nodeset::Set{Node}) = union(map(edges, nodeset)...)
 
 # Search edge and node by id
 node(id::Symbol, graph::FactorGraph=currentGraph()) = graph.n[id]
+node(id::Symbol, c::Int, graph::FactorGraph=currentGraph()) = graph.n[s(id, c)] # Quick concatenated lookup
 n(id::Symbol, graph::FactorGraph=currentGraph()) = node(id, graph)
+n(id::Symbol, c::Int, graph::FactorGraph=currentGraph()) = node(id, c, graph)
+
 edge(id::Symbol, graph::FactorGraph=currentGraph()) = graph.e[id]
+edge(id::Symbol, c::Int, graph::FactorGraph=currentGraph()) = graph.e[s(id, c)]
 e(id::Symbol, graph::FactorGraph=currentGraph()) = edge(id, graph)
+e(id::Symbol, c::Int, graph::FactorGraph=currentGraph()) = edge(id, c, graph)

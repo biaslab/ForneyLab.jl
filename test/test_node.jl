@@ -59,6 +59,11 @@ facts("node(id::Symbol) should return node with matching id") do
     @fact node(:my_mocknode) => n
 end
 
+facts("n(id::Symbol, c::Int) should return node with matching concatenated id") do
+    FactorGraph()
+    node = MockNode(id=s(:mock,2))
+    @fact n(:mock,2) => node
+end
 
 #####################
 # Integration tests

@@ -57,13 +57,18 @@ facts("Edge integration tests") do
         FactorGraph()
         TerminalNode(id=:a)
         TerminalNode(id=:b)
-        my_edge = Edge(n(:a), n(:b), id="my_edge")
+        my_edge = Edge(n(:a), n(:b), id=:my_edge)
         @fact e(:my_edge) => my_edge
 
         TerminalNode(id=:c)
         TerminalNode(id=:d)
         my_edge2 = Edge(n(:c), n(:d))
         @fact my_edge2.id => :c_d
+
+        TerminalNode(id=:e)
+        TerminalNode(id=:f)
+        my_edge3 = Edge(n(:e), n(:f), id=s(:my_edge,3))
+        @fact e(:my_edge,3) => my_edge3
     end
 
     context("Edges can be sorted") do

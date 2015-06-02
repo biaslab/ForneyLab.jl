@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny, KLpq, rules, format, isValid, invalidate!
+export isApproxEqual, huge, tiny, KLpq, rules, format, isValid, invalidate!, s
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
@@ -21,6 +21,8 @@ function invalidate!(v::Array{Float64})
     v[1] = NaN
     return v
 end
+
+s(sym::Symbol, c::Int) = symbol(string(sym, c)) # Symbol concatenation
 
 function format(d::Float64)
     if 0.01 < d < 100.0 || -100 < d < -0.01 || d==0.0
