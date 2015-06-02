@@ -5,7 +5,7 @@ using YAML
 using LaTeXStrings
 
 export Node, ProbabilityDistribution
-export sumProduct!, maSumProduct!, vmp!
+export sumProduct!, sumProductApprox!, vmp!
 export vague, self, ==
 export current_graph
 export setVerbosity

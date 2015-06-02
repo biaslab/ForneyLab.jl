@@ -114,9 +114,33 @@ function sumProductApprox!{T<:Bool}(node::SigmoidNode,
     (outbound_interface_id == 1) || error("Invalid call")
     (node.sigmoid_func == :normal_cdf) || error("Unsupported sigmoid function") 
 
-    # TODO
-    error("Not yet implemented")
+    # Parameters of Gaussian forward message (prior) N(x|μ,σ2)
+    dist_1 = ensureMVParametrization!(msg_1.payload)
+    μ = dist_1.m[1]; σ2 = dist_1.V[1,1]
 
+    # Parameters of exact backward message Φ(v⋅x)
+    v = (msg_2.payload.m==false) ? -1 : 1
+    
+    # Find the parameters of a Gaussian distribution q(x) that approximates the 'true' marginal p(x)
+    # We find the Gaussian by moment matching, as derived in Rasmussen et al. section 3.9.
+    z = μ / (v*sqrt(1 + σ2))
+    φ(z::Real) = exp(-0.5*z^2)./sqrt(2*pi)
+    N = φ(z)
+    C = Φ(z)
+    q_m = μ + σ2*N / (C*v*sqrt(1+σ2)) # Rasmussen eqn. 3.85
+    q_v = σ2 - (σ2^2*N/((1+σ2)*C)) * (z + N/C) # Rasmussen eqn. 3.87 
+    node.interfaces[1].edge.marginal = GaussianDistribution(m=q_m, V=q_v)
+
+    # Calculate the approximate message towards i[:real]
+    dist_backward = ensureMessage!(node.interfaces[1], GaussianDistribution).payload
+    invalidate!(dist_backward.m); invalidate!(dist_backward.V)
+    ensureXiWParametrization!(node.interfaces[1].edge.marginal)
+    ensureXiWParametrization!(dist_1)
+    dist_backward.W = node.interfaces[1].edge.marginal.W - dist_1.W
+    dist_backward.xi = node.interfaces[1].edge.marginal.xi - dist_1.xi
+ 
     return (:empty,
             node.interfaces[1].message)
 end
+
+# TODO: sumProductApprox! for BernoulliDistribution instead of DeltaDistribution
