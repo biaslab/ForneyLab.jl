@@ -26,7 +26,7 @@ type FixedGainNode <: Node
     i::Dict{Symbol,Interface}
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
-    function FixedGainNode(A::Union(Array{Float64},Float64)=1.0; id=generateNodeId())
+    function FixedGainNode(A::Union(Array{Float64},Float64)=1.0; id=generateNodeId(FixedGainNode))
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
         A = (typeof(A)==Float64) ? fill!(Array(Float64,1,1),A) : ensureMatrix(deepcopy(A))
         self = new(A, id, Array(Interface, 2), Dict{Symbol,Interface}())

@@ -25,7 +25,7 @@ type ExponentialNode <: Node
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
 
-    function ExponentialNode(; id=generateNodeId())
+    function ExponentialNode(; id=generateNodeId(ExponentialNode))
         self = new(id, Array(Interface, 2), Dict{Symbol,Interface}())
         !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
 

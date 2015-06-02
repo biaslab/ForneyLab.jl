@@ -13,6 +13,7 @@ export  currentGraph,
 type FactorGraph
     n::Dict{Symbol, Node} # Nodes
     e::Dict{Symbol, Edge} # Edges
+    counters::Dict{DataType, Int} # Counters for automatic node id assignments
     locked::Bool
 
     # Connections to the outside world
@@ -24,6 +25,7 @@ end
 # Create an empty graph
 global current_graph = FactorGraph( Dict{Symbol, Node}(),
                                     Dict{Symbol, Edge}(),
+                                    Dict{DataType, Int}(),
                                     false,
                                     Dict{TerminalNode, Vector}(),
                                     Dict{Union(Edge,Interface), Vector}(),
@@ -34,6 +36,7 @@ setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a curre
 
 FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
                                             Dict{Symbol, Edge}(),
+                                            Dict{DataType, Int}(),
                                             false,
                                             Dict{TerminalNode, Vector}(),
                                             Dict{Union(Edge,Interface), Vector}(),

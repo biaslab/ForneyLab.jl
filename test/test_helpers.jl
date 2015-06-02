@@ -100,4 +100,12 @@ facts("Helper function unit tests") do
         @fact format(StudentsTDistribution()) => "St(m=[0.00], W=[[1.00]], ν=1.00)"
         @fact format(BetaDistribution()) => "Bet(a=1.00, b=1.00)"
     end
+
+    context("generateNodeId should generate a unique node id") do
+        FactorGraph()
+        node1 = MockNode()
+        node2 = MockNode()
+        @fact node1.id => :mock1
+        @fact node2.id => :mock2
+    end
 end

@@ -26,7 +26,7 @@ type AdditionNode <: Node
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
 
-    function AdditionNode(; id=generateNodeId())
+    function AdditionNode(; id=generateNodeId(AdditionNode))
         self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
         !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
 

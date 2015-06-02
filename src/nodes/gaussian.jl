@@ -40,7 +40,7 @@ type GaussianNode <: Node
     m::Vector{Float64}
     V::Matrix{Float64}
 
-    function GaussianNode(; id=generateNodeId(), form::Symbol=:moment, m::Union(Float64,Vector{Float64})=[NaN], V::Union(Float64,Matrix{Float64})=reshape([NaN], 1, 1))
+    function GaussianNode(; id=generateNodeId(GaussianNode), form::Symbol=:moment, m::Union(Float64,Vector{Float64})=[NaN], V::Union(Float64,Matrix{Float64})=reshape([NaN], 1, 1))
         if isValid(m) && isValid(V)
             total_interfaces = 1
         elseif isValid(m) || isValid(V)

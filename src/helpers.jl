@@ -62,10 +62,12 @@ function viewFile(filename::String)
     @windows? run(`cmd /c start $filename`) : (@osx? run(`open $filename`) : (@linux? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
 end
 
-global unnamed_counter = 0
-function generateNodeId()
-    global unnamed_counter::Int64 += 1
-    return symbol("unnamed$(unnamed_counter)")
+function generateNodeId(t::DataType)
+    # Automatically generates a unique node id based on the current count of nodes of that type in the graph
+    haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
+    count = current_graph.counters[t]
+    str = replace(lowercase(string(t)), "node", "")
+    return symbol("$(str)$(count)")
 end
 
 function KLpq(x::Vector{Float64}, p::Vector{Float64}, q::Vector{Float64})

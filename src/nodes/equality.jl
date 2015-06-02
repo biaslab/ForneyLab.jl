@@ -26,7 +26,7 @@ type EqualityNode <: Node
     interfaces::Array{Interface,1}
     i::Dict{Int,Interface}
 
-    function EqualityNode(; id=generateNodeId())
+    function EqualityNode(; id=generateNodeId(EqualityNode))
         self = new(id, Array(Interface, 3), Dict{Int,Interface}())
         !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
 

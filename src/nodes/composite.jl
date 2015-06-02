@@ -11,7 +11,7 @@ type CompositeNode <: Node
     deterministic::Bool
 end
 
-function CompositeNode(graph::FactorGraph, terminals...; id=generateNodeId(), deterministic=false)
+function CompositeNode(graph::FactorGraph, terminals...; id=generateNodeId(CompositeNode), deterministic=false)
     # Convert graph into a CompositeNode.
     # terminals... is an array of TerminalNodes in graph, that will be bound to interfaces of the CompositeNode.
     # The ids of the terminals will be used as interface handles.
