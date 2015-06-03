@@ -1,8 +1,10 @@
-export  FactorGraph
+export  FactorGraph, Wrap
 
 export  currentGraph,
         setCurrentGraph,
         clearMessages!,
+        clearWraps,
+        wraps,
         nodes,
         edges,
         node,
@@ -13,34 +15,34 @@ export  currentGraph,
 type FactorGraph
     n::Dict{Symbol, Node} # Nodes
     e::Dict{Symbol, Edge} # Edges
+    wraps::Vector{(TerminalNode, TerminalNode)}
     counters::Dict{DataType, Int} # Counters for automatic node id assignments
     locked::Bool
 
     # Connections to the outside world
     read_buffers::Dict{TerminalNode, Vector}
     write_buffers::Dict{Union(Edge,Interface), Vector}
-    wraps::Vector{(TerminalNode, TerminalNode)}
 end
 
 # Create an empty graph
 global current_graph = FactorGraph( Dict{Symbol, Node}(),
                                     Dict{Symbol, Edge}(),
+                                    Array((TerminalNode, TerminalNode), 0),
                                     Dict{DataType, Int}(),
                                     false,
                                     Dict{TerminalNode, Vector}(),
-                                    Dict{Union(Edge,Interface), Vector}(),
-                                    Array((TerminalNode, TerminalNode), 0))
+                                    Dict{Union(Edge,Interface), Vector}())
 
 currentGraph() = current_graph::FactorGraph
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
 
 FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
                                             Dict{Symbol, Edge}(),
+                                            Array((TerminalNode, TerminalNode), 0),
                                             Dict{DataType, Int}(),
                                             false,
                                             Dict{TerminalNode, Vector}(),
-                                            Dict{Union(Edge,Interface), Vector}(),
-                                            Array((TerminalNode, TerminalNode), 0))) # Initialize a new factor graph; automatically sets current_graph
+                                            Dict{Union(Edge,Interface), Vector}())) # Initialize a new factor graph; automatically sets current_graph
 
 function show(io::IO, factor_graph::FactorGraph)
     println(io, "FactorGraph")
@@ -89,3 +91,17 @@ n = node
 edge(id::Symbol, graph::FactorGraph=currentGraph()) = graph.e[id]
 edge(id::Symbol, c::Int, graph::FactorGraph=currentGraph()) = graph.e[s(id, c)]
 e = edge
+
+wraps(g::FactorGraph=current_graph) = g.wraps
+
+function clearWraps(graph::FactorGraph=current_graph)
+    graph.wraps = Array(Wrap, 0)
+end
+
+# Wrap type
+typealias Wrap (TerminalNode, TerminalNode)
+function Wrap(from::TerminalNode, to::TerminalNode, graph::FactorGraph=current_graph)
+    !is(from, to) || error("Cannot create wrap: from and to must be different nodes")
+    push!(graph.wraps, (from, to))
+    return (from, to)
+end

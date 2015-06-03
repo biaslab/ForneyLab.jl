@@ -2,9 +2,6 @@ export  setReadBuffer,
         setWriteBuffer,
         clearBuffers,
         emptyWriteBuffers,
-        wrap,
-        wraps,
-        clearWraps,
         execute,
         step,
         run
@@ -48,17 +45,6 @@ function emptyWriteBuffers(graph::FactorGraph=current_graph)
         empty!(v) # Clear the vector but keep the pointer
     end
 end
-
-function wrap(from::TerminalNode, to::TerminalNode, graph::FactorGraph=current_graph)
-    !is(from, to) || error("Cannot create time wrap: from and to must be different nodes")
-    push!(graph.wraps, (from, to))
-end
-
-wraps(g::FactorGraph=current_graph) = g.wraps
-
-function clearWraps(graph::FactorGraph=current_graph)
-    graph.wraps = Array((TerminalNode, TerminalNode), 0)
-end 
 
 function execute(algorithm::Algorithm, graph::FactorGraph=current_graph)
     # Execute algorithm on graph

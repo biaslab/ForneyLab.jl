@@ -73,8 +73,8 @@ facts("Structured VMP implementation integration tests") do
         m_buffer = setWriteBuffer(n(:m_eq).interfaces[2])
         gam_buffer = setWriteBuffer(n(:gam_eq).interfaces[2])
         y_buffer = setReadBuffer(n(:y), d_data)
-        wrap(n(:mN), n(:m0))
-        wrap(n(:gamN), n(:gam0))
+        Wrap(n(:mN), n(:m0))
+        Wrap(n(:gamN), n(:gam0))
 
         # Structured factorization
         algo = VMP.Algorithm(Set{Edge}([e(:y)]), n_iterations=10)

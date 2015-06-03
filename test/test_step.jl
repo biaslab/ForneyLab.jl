@@ -48,10 +48,10 @@ facts("Read/write buffer integration tests") do
 end
 
 facts("Wrap integration tests") do
-    # wrap()
-    context("wrap() should register a timewrap for a pair of TerminalNodes") do
+    # Wrap()
+    context("Wrap() should register a timewrap for a pair of TerminalNodes") do
         g = initializeBufferGraph()
-        wraps = wrap(n(:node_t1), n(:node_t2))
+        wraps = Wrap(n(:node_t1), n(:node_t2))
         @fact length(wraps) => 1
         @fact ((n(:node_t1), n(:node_t2)) in wraps) => true
     end
@@ -75,7 +75,7 @@ facts("step integration tests") do
         Edge(n(:in), n(:add).i[:in1])
         Edge(n(:delta), n(:add).i[:in2])
         Edge(n(:add).i[:out], n(:out))
-        wrap(n(:out), n(:in))
+        Wrap(n(:out), n(:in))
         deltas = [DeltaDistribution(n) for n in 1.:10.]
         setReadBuffer(n(:delta), deltas)
         results = setWriteBuffer(n(:add).i[:out])
@@ -98,7 +98,7 @@ facts("run() integration tests") do
         Edge(n(:in), n(:add).i[:in1])
         Edge(n(:delta), n(:add).i[:in2])
         Edge(n(:add).i[:out], n(:out))
-        wrap(n(:out), n(:in))
+        Wrap(n(:out), n(:in))
         deltas = [DeltaDistribution(n) for n in 1.:10.]
         setReadBuffer(n(:delta), deltas)
         results = setWriteBuffer(n(:add).i[:out])

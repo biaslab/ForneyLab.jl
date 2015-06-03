@@ -150,10 +150,10 @@ In practical situations it is common for a factor graph to be a concatination of
     Edge(n(:C), n(:adder).[:in2])
     Edge(n(:adder).i[:out], n(:X_next))
 
-    wrap(n(:X_next), n(:X_prev)) # X_next becomes X_prev in the next section
+    Wrap(n(:X_next), n(:X_prev)) # X_next becomes X_prev in the next section
 
 
-.. function:: wrap(from, to, graph)
+.. function:: Wrap(from, to, graph)
 
     Creates a wrap from :class:`TerminalNode` ``from`` to :class:`TerminalNode` ``to`` in :class:`FactorGraph` ``graph``. If ``graph`` is omitted, the currently active graph is assumed.
 
