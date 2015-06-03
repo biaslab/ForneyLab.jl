@@ -153,9 +153,9 @@ In practical situations it is common for a factor graph to be a concatination of
     Wrap(n(:X_next), n(:X_prev)) # X_next becomes X_prev in the next section
 
 
-.. function:: Wrap(from, to, graph)
+.. type:: Wrap(from::TerminlNode, to::TerminalNode)
 
-    Creates a wrap from :class:`TerminalNode` ``from`` to :class:`TerminalNode` ``to`` in :class:`FactorGraph` ``graph``. If ``graph`` is omitted, the currently active graph is assumed.
+    Constructs a wrap from ``from`` to ``to`` in the currently active graph.
 
 .. function:: clearWraps(graph)
 

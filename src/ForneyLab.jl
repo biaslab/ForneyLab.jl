@@ -58,8 +58,9 @@ include("nodes/exponential.jl")
 include("nodes/gain_addition.jl")
 include("nodes/gain_equality.jl")
 
-# Graph and algorithm
+# Graph, wraps and algorithm
 include("factor_graph.jl")
+include("wrap.jl")
 include("algorithm.jl")
 
 # Composite nodes

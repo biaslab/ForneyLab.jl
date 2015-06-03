@@ -74,10 +74,10 @@ function step(algorithm::Algorithm, graph::FactorGraph=current_graph)
         end
     end
 
-    # Time wraps
-    for (from, to) in graph.wraps
-        isdefined(from.interfaces[1].partner.message, :payload) || error("There is no message to move to $(to) for the next timestep")
-        to.value = deepcopy(from.interfaces[1].partner.message.payload)
+    # Wraps
+    for wrap in graph.wraps
+        isdefined(wrap.from.interfaces[1].partner.message, :payload) || error("There is no message to move to $(wrap.to) for the next timestep")
+        wrap.to.value = deepcopy(wrap.from.interfaces[1].partner.message.payload)
     end
 
     return result

@@ -1,7 +1,7 @@
 # Generates schedules for the VMP algorithm.
 # VMP schedules (internal and external) are stored on the subgraphs in the factorization.
 # There are no call signatures for message passing to specific interfaces or edges (as with sum product);
-# when required, these should be set through write buffers or time wraps.
+# when required, these should be set through write buffers or wraps.
 
 function generateSchedule!(f::QFactorization, graph::FactorGraph=current_graph)
     # Generate and store an internal and external schedule for each subgraph in the factorization
@@ -47,12 +47,12 @@ function generateSchedule!(sg::Subgraph, graph::FactorGraph=current_graph)
         external_nodes_interfaces = [external_nodes_interfaces, g_node.interfaces]
     end
 
-    # Make sure that messages are propagated to the timewraps
+    # Make sure that messages are propagated to the wraps
     interface_list_for_wraps = Array(Interface, 0)
     sg_nodes = nodes(sg)
-    for (from_node, to_node) in wraps(graph)
-        if from_node in sg_nodes # Timewrap is the responsibility of this subgraph
-            interface_list_for_wraps = [interface_list_for_wraps, SumProduct.generateScheduleByDFS!(from_node.interfaces[1].partner, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
+    for wrap in wraps(graph)
+        if wrap.from in sg_nodes # Timewrap is the responsibility of this subgraph
+            interface_list_for_wraps = [interface_list_for_wraps, SumProduct.generateScheduleByDFS!(wrap.from.interfaces[1].partner, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
         end
     end
 

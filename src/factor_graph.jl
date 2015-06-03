@@ -1,10 +1,8 @@
-export  FactorGraph, Wrap
+export  FactorGraph
 
 export  currentGraph,
         setCurrentGraph,
         clearMessages!,
-        clearWraps,
-        wraps,
         nodes,
         edges,
         node,
@@ -12,10 +10,12 @@ export  currentGraph,
         n,
         e
 
+abstract AbstractWrap
+
 type FactorGraph
     n::Dict{Symbol, Node} # Nodes
     e::Dict{Symbol, Edge} # Edges
-    wraps::Vector{(TerminalNode, TerminalNode)}
+    wraps::Vector{AbstractWrap}
     counters::Dict{DataType, Int} # Counters for automatic node id assignments
     locked::Bool
 
@@ -27,7 +27,7 @@ end
 # Create an empty graph
 global current_graph = FactorGraph( Dict{Symbol, Node}(),
                                     Dict{Symbol, Edge}(),
-                                    Array((TerminalNode, TerminalNode), 0),
+                                    Array(AbstractWrap, 0),
                                     Dict{DataType, Int}(),
                                     false,
                                     Dict{TerminalNode, Vector}(),
@@ -38,7 +38,7 @@ setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a curre
 
 FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
                                             Dict{Symbol, Edge}(),
-                                            Array((TerminalNode, TerminalNode), 0),
+                                            Array(AbstractWrap, 0),
                                             Dict{DataType, Int}(),
                                             false,
                                             Dict{TerminalNode, Vector}(),
@@ -91,17 +91,3 @@ n = node
 edge(id::Symbol, graph::FactorGraph=currentGraph()) = graph.e[id]
 edge(id::Symbol, c::Int, graph::FactorGraph=currentGraph()) = graph.e[s(id, c)]
 e = edge
-
-wraps(g::FactorGraph=current_graph) = g.wraps
-
-function clearWraps(graph::FactorGraph=current_graph)
-    graph.wraps = Array(Wrap, 0)
-end
-
-# Wrap type
-typealias Wrap (TerminalNode, TerminalNode)
-function Wrap(from::TerminalNode, to::TerminalNode, graph::FactorGraph=current_graph)
-    !is(from, to) || error("Cannot create wrap: from and to must be different nodes")
-    push!(graph.wraps, (from, to))
-    return (from, to)
-end

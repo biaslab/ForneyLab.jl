@@ -41,26 +41,11 @@ facts("Read/write buffer integration tests") do
 
     context("clearBuffers should deregister all read/write buffers") do
         g = initializeBufferGraph()
+        write_buffer = Array(Any, 0)
+        setWriteBuffer(e(:e), write_buffer)
         clearBuffers(g)
         @fact length(g.read_buffers) => 0
         @fact length(g.write_buffers) => 0
-    end
-end
-
-facts("Wrap integration tests") do
-    # Wrap()
-    context("Wrap() should register a timewrap for a pair of TerminalNodes") do
-        g = initializeBufferGraph()
-        wraps = Wrap(n(:node_t1), n(:node_t2))
-        @fact length(wraps) => 1
-        @fact ((n(:node_t1), n(:node_t2)) in wraps) => true
-    end
-
-    # clearWraps
-    context("clearWraps should deregister all time wraps") do
-        g = initializeBufferGraph()
-        clearWraps(g)
-        @fact length(g.wraps) => 0
     end
 end
 
