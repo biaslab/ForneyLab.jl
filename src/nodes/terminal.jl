@@ -30,8 +30,9 @@ type TerminalNode <: Node
             error("TerminalNode $(id) can not hold value of type $(typeof(value)).")
         end
         self = new(id, deepcopy(value), Array(Interface, 1), Dict{Symbol,Interface}())
-        !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
-
+        !haskey(current_graph.n, id) || error("Node id $(id) already present")
+        current_graph.n[id] = self
+ 
         self.i[:out] = self.interfaces[1] = Interface(self)
  
         return self

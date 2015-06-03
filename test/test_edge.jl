@@ -11,9 +11,18 @@ facts("Edge integration tests") do
     end
 
     context("Edge should throw an error when two interfaces on the same node are connected") do
+        FactorGraph()
         node = FixedGainNode()
         # Connect output directly to input
         @fact_throws Edge(node.interfaces[2], node.interfaces[1])
+    end
+
+    context("Edge should throw an error when a node is not in the current graph") do
+        g1 = FactorGraph()
+        node1 = MockNode()
+        g2 = FactorGraph()
+        node2 = MockNode()
+        @fact_throws Edge(node1.i[:out], node2.i[:out])
     end
 
     context("Edge constructor should write the distribution type") do
@@ -93,12 +102,5 @@ facts("Edge integration tests") do
         @fact ForneyLab.ensureMarginal!(test_edge, GaussianDistribution) => GaussianDistribution(m=3.0, V=2.0)
         test_edge.marginal = nothing
         @fact ForneyLab.ensureMarginal!(test_edge, GaussianDistribution) => vague(GaussianDistribution)
-    end
-end
-
-facts("Functions for collecting edges") do
-    context("edges() should get all edges connected to the node set") do
-        initializeLoopyGraph()
-        @fact edges(Set{Node}({n(:driver), n(:inhibitor)})) => Set{Edge}({n(:driver).i[:in].edge, n(:add).i[:in1].edge, n(:add).i[:out].edge})
     end
 end

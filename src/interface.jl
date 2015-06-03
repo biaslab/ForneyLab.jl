@@ -32,7 +32,8 @@ function handle(interface::Interface)
             end
         end
     end
-    error("Interface not found")
+    
+    return ""
 end
 
 function ensureMessage!{T<:ProbabilityDistribution}(interface::Interface, payload_type::Type{T})

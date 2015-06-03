@@ -30,8 +30,9 @@ type FixedGainNode <: Node
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
         A = (typeof(A)==Float64) ? fill!(Array(Float64,1,1),A) : ensureMatrix(deepcopy(A))
         self = new(A, id, Array(Interface, 2), Dict{Symbol,Interface}())
-        !haskey(current_graph.n, id) ? current_graph.n[id] = self : error("Node id $(id) already present")
-
+        !haskey(current_graph.n, id) || error("Node id $(id) already present")
+        current_graph.n[id] = self
+ 
         for (iface_index, iface_handle) in enumerate([:in, :out])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end

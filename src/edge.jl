@@ -19,7 +19,9 @@ type Edge <: AbstractEdge
         (!is(head.node, tail.node)) || error("Cannot connect two interfaces of the same node: $(typeof(head.node)) $(head.node.id)")
         (head.partner == nothing && tail.partner == nothing) || error("Previously defined edges cannot be repositioned.")
         (current_graph.locked == false) || error("Cannot extend a locked FactorGraph.")
-
+        (haskey(current_graph.n, tail.node.id) && haskey(current_graph.n, head.node.id)) || error("Head and tail node should belong to the current graph.")
+        (!haskey(current_graph.e, id)) || error("The edge id $(id) already exists in the current graph. Consider specifying an explicit id.")
+        
         self = new(id, tail, head, nothing, distribution_type)
 
         # Assign pointed to edge from interfaces
@@ -45,7 +47,17 @@ Edge(tail_node::Node, head_node::Node, distribution_type=Any; args...) = Edge(fi
 
 
 function show(io::IO, edge::Edge)
-    println(io, "Edge from $(typeof(edge.tail.node)) $(edge.tail.node.id):$(findfirst(edge.tail.node.interfaces, edge.tail)) to $(typeof(edge.head.node)) $(edge.head.node.id):$(findfirst(edge.head.node.interfaces, edge.head)).")
+    if (tail_handle = handle(edge.tail)) != ""
+        tail_interface = ((typeof(tail_handle)==Symbol) ? "i[:$(tail_handle)]" : "i[$(tail_handle)]")
+    else
+        tail_interface = "interfaces[$(findfirst(edge.tail.node.interfaces, edge.tail))]"
+    end
+    if (head_handle = handle(edge.head)) != ""
+        head_interface = ((typeof(head_handle)==Symbol) ? "i[:$(head_handle)]" : "i[$(head_handle)]")
+    else
+        head_interface = "interfaces[$(findfirst(edge.head.node.interfaces, edge.head))]"
+    end
+    println(io, "Edge with id $(edge.id) from $(edge.tail.node.id).$(tail_interface) to $(edge.head.node.id).$(head_interface).")
     if edge.distribution_type != Any
         println(io, "Marginal distribution type: $(edge.distribution_type).")
     end

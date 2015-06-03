@@ -45,26 +45,6 @@ facts("General node properties unit tests") do
     end
 end
 
-facts("node(id::Symbol) should return node with matching id") do
-    graph_1 = FactorGraph()
-    graph_2 = FactorGraph()
-    n = MockNode(id=:my_mocknode)
-    Edge(n.i[:out], MockNode().i[:out])
-    @fact_throws node(:some_id)
-    @fact_throws node(:my_mocknode, graph_1)
-    setCurrentGraph(graph_1)
-    @fact_throws node(:my_mocknode)
-    @fact node(:my_mocknode, graph_2) => n
-    setCurrentGraph(graph_2)
-    @fact node(:my_mocknode) => n
-end
-
-facts("n(id::Symbol, c::Int) should return node with matching concatenated id") do
-    FactorGraph()
-    node = MockNode(id=s(:mock,2))
-    @fact n(:mock,2) => node
-end
-
 #####################
 # Integration tests
 #####################
@@ -91,17 +71,5 @@ facts("Connections between nodes integration tests") do
         # Couple the interfaces that carry GeneralMessage
         edge = Edge(n(:node2).interfaces[1], n(:node1).interfaces[1]) # Edge from node 2 to node 1
         testInterfaceConnections(n(:node1), n(:node2))
-    end
-end
-
-facts("Functions for collecting nodes") do
-    context("nodes() should return a set of all nodes in the graph") do
-        # FactorGraph test
-        initializeLoopyGraph()
-        @fact nodes(currentGraph()) => Set{Node}([n(:driver), n(:inhibitor), n(:noise), n(:add)])
-
-        # Composite node test
-        c_node = CompositeNode(currentGraph())
-        @fact nodes(c_node) => Set{Node}([n(:driver, c_node.internal_graph), n(:inhibitor, c_node.internal_graph), n(:noise, c_node.internal_graph), n(:add, c_node.internal_graph)]) # nodes() should return internal nodes of a CompositeNode
     end
 end

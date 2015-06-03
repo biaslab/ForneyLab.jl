@@ -54,6 +54,14 @@ function show(io::IO, factor_graph::FactorGraph)
     println(io, " show(wraps(::FactorGraph))")
 end
 
+function generateNodeId(t::DataType)
+    # Automatically generates a unique node id based on the current count of nodes of that type in the graph
+    haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
+    count = current_graph.counters[t]
+    str = replace(lowercase(string(t)), "node", "")
+    return symbol("$(str)$(count)")
+end
+
 clearMessages!(graph::FactorGraph = current_graph) = map(clearMessages!, nodes(graph))
 
 nodes(graph::FactorGraph = current_graph) = Set{Node}(values(graph.n))
@@ -76,10 +84,8 @@ edges(nodeset::Set{Node}) = union(map(edges, nodeset)...)
 # Search edge and node by id
 node(id::Symbol, graph::FactorGraph=currentGraph()) = graph.n[id]
 node(id::Symbol, c::Int, graph::FactorGraph=currentGraph()) = graph.n[s(id, c)] # Quick concatenated lookup
-n(id::Symbol, graph::FactorGraph=currentGraph()) = node(id, graph)
-n(id::Symbol, c::Int, graph::FactorGraph=currentGraph()) = node(id, c, graph)
+n = node
 
 edge(id::Symbol, graph::FactorGraph=currentGraph()) = graph.e[id]
 edge(id::Symbol, c::Int, graph::FactorGraph=currentGraph()) = graph.e[s(id, c)]
-e(id::Symbol, graph::FactorGraph=currentGraph()) = edge(id, graph)
-e(id::Symbol, c::Int, graph::FactorGraph=currentGraph()) = edge(id, c, graph)
+e = edge

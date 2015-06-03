@@ -13,7 +13,8 @@ function graphviz(dot_graph::String; external_viewer::Bool=false)
     else
         try
             # For iJulia notebook
-            display("text/html", "<img src=\"data:image/gif;base64,"*base64(dot2gif(dot_graph))*"\" />")
+            #display("text/html", "<img src=\"data:image/gif;base64,"*base64(dot2gif(dot_graph))*"\" />")
+            display("text/html", dot2svg(dot_graph))
         catch
             viewDotExternal(dot_graph)
         end

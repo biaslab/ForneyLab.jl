@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny, KLpq, rules, format, isValid, invalidate!, s
+export isApproxEqual, huge, tiny, rules, format, isValid, invalidate!, s
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
@@ -60,21 +60,6 @@ isRoundedPosDef{T<:FloatingPoint}(arr::Array{T, 2}) = ishermitian(round(arr, int
 function viewFile(filename::String)
     # Open a file with the application associated with the file type
     @windows? run(`cmd /c start $filename`) : (@osx? run(`open $filename`) : (@linux? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
-end
-
-function generateNodeId(t::DataType)
-    # Automatically generates a unique node id based on the current count of nodes of that type in the graph
-    haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
-    count = current_graph.counters[t]
-    str = replace(lowercase(string(t)), "node", "")
-    return symbol("$(str)$(count)")
-end
-
-function KLpq(x::Vector{Float64}, p::Vector{Float64}, q::Vector{Float64})
-    # Calculate the KL divergence of p and q
-    length(x) == length(p) == length(q) || error("Lengths of x, p and q must match")
-    dx = diff(x)
-    return -sum(p[1:end-1].*log(q[1:end-1]./p[1:end-1]).*dx)
 end
 
 function truncate(str::ASCIIString, max::Integer)
