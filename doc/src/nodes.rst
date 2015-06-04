@@ -413,6 +413,12 @@ Here, ``terminals`` is an array of :class:`TerminalNode` instances in ``graph`` 
     Edge(n(:t_in), n(:comp_add3).i[:in])
     Edge(n(:comp_add3).i[:out], n(:t_out))
 
+When more instances of the composite node are required, the ``copy`` function may come in handy::
+
+    copy(n(:comp_add_3), id=:comp_add_3_copy)
+
+will create a new composite node instance with the (optional) id ``:comp_add_3_copy`` that can immediately be used for further construction.
+
 
 Message computation rules
 ~~~~~~~~~~~~~~~~~~~~~~~~~
