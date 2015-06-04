@@ -153,9 +153,21 @@ In practical situations it is common for a factor graph to be a concatination of
     Wrap(n(:X_next), n(:X_prev)) # X_next becomes X_prev in the next section
 
 
-.. type:: Wrap(from::TerminlNode, to::TerminalNode)
+.. type:: Wrap(from::TerminlNode, to::TerminalNode, id::Symbol=:something)
 
-    Constructs a wrap from ``from`` to ``to`` in the currently active graph.
+    Constructs a wrap from ``from`` to ``to`` in the currently active graph and can optionally be given an id.
+
+.. function:: wrap(id::Symbol)
+
+    Returns the ``wrap`` with the corresponding ``id``.
+
+.. function:: wraps(graph::FactorGraph)
+
+    Returns a set of all wraps present in ``graph``.
+
+.. function:: wraps(node::TerminalNode)
+
+    Returns a set of all wraps connected to ``node``. Note that a node can send, but not receive multiple wraps.
 
 .. function:: clearWraps(graph)
 

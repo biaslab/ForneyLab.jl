@@ -15,7 +15,7 @@ abstract AbstractWrap
 type FactorGraph
     n::Dict{Symbol, Node} # Nodes
     e::Dict{Symbol, Edge} # Edges
-    wraps::Vector{AbstractWrap}
+    wraps::Dict{Symbol, AbstractWrap}
     counters::Dict{DataType, Int} # Counters for automatic node id assignments
     locked::Bool
 
@@ -27,7 +27,7 @@ end
 # Create an empty graph
 global current_graph = FactorGraph( Dict{Symbol, Node}(),
                                     Dict{Symbol, Edge}(),
-                                    Array(AbstractWrap, 0),
+                                    Dict{Symbol, AbstractWrap}(),
                                     Dict{DataType, Int}(),
                                     false,
                                     Dict{TerminalNode, Vector}(),
@@ -38,7 +38,7 @@ setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a curre
 
 FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
                                             Dict{Symbol, Edge}(),
-                                            Array(AbstractWrap, 0),
+                                            Dict{Symbol, AbstractWrap}(),
                                             Dict{DataType, Int}(),
                                             false,
                                             Dict{TerminalNode, Vector}(),
@@ -84,10 +84,10 @@ edges(node::Node) = Set{Edge}([intf.edge for intf in node.interfaces])
 edges(nodeset::Set{Node}) = union(map(edges, nodeset)...)
 
 # Search edge and node by id
-node(id::Symbol, graph::FactorGraph=currentGraph()) = graph.n[id]
-node(id::Symbol, c::Int, graph::FactorGraph=currentGraph()) = graph.n[s(id, c)] # Quick concatenated lookup
+node(id::Symbol, graph::FactorGraph=current_graph) = graph.n[id]
+node(id::Symbol, c::Int, graph::FactorGraph=current_graph) = graph.n[s(id, c)] # Quick concatenated lookup
 n = node
 
-edge(id::Symbol, graph::FactorGraph=currentGraph()) = graph.e[id]
-edge(id::Symbol, c::Int, graph::FactorGraph=currentGraph()) = graph.e[s(id, c)]
+edge(id::Symbol, graph::FactorGraph=current_graph) = graph.e[id]
+edge(id::Symbol, c::Int, graph::FactorGraph=current_graph) = graph.e[s(id, c)]
 e = edge
