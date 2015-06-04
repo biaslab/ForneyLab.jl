@@ -8,6 +8,7 @@ facts("FactorGraph unit tests") do
         @fact typeof(fg) => FactorGraph
         @fact fg.n => Dict{Symbol, Node}()
         @fact fg.e => Dict{Symbol, Edge}()
+        @fact fg.wraps => Dict{Symbol, ForneyLab.AbstractWrap}()
         @fact fg.counters => Dict{DataType, Int}()
         @fact current_graph => fg # Global should be set
     end

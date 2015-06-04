@@ -84,12 +84,12 @@ end
 generateSchedule(partial_list::Array{Interface, 1}; args...) = generateSchedule(convert(Schedule, partial_list); args...)
 
 function generateSchedule(graph::FactorGraph=currentGraph(); args...)
-    # Build a sumproduct schedule to calculate all messages towards timewraps and writebuffers
+    # Build a sumproduct schedule to calculate all messages towards wraps and writebuffers
     partial_list = Interface[]
     
-    # Collect timewrap interfaces
-    for (from_node, to_node) in wraps(graph)
-        push!(partial_list, from_node.interfaces[1].partner)
+    # Collect wrap interfaces
+    for wrap in wraps(graph)
+        push!(partial_list, wrap.source.interfaces[1].partner)
     end
 
     # Collect write buffer interfaces

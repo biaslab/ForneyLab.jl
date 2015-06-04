@@ -49,7 +49,7 @@ function initializePairOfMockNodes()
     g = FactorGraph()
     MockNode(id=:node1)
     MockNode(id=:node2)
-    # return node1, node2
+
     return g
 end
 
@@ -64,7 +64,7 @@ function initializePairOfTerminalNodes(d1::ProbabilityDistribution=GaussianDistr
     Edge(n(:t1).i[:out], n(:t2).i[:out])
     n(:t1).i[:out].message = Message(d1)
     n(:t2).i[:out].message = Message(d2)
-    #return t1, t2
+
     return g
 end
 
@@ -81,7 +81,7 @@ function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(DeltaDistribution(2
     n(:node1).interfaces[2].message = msg_gain_2
     TerminalNode(msg_terminal.payload, id=:node2)
     n(:node2).interfaces[1].message = msg_terminal
-    # return node1, node2
+
     return g
 end
 
@@ -98,7 +98,7 @@ function initializeChainOfNodes()
     Edge(n(:node1).i[:out], n(:node2).i[:in])
     Edge(n(:node2).i[:out], n(:node3).i[:in])
     Edge(n(:node3).i[:out], MockNode().i[:out])
-    #return (node1, node2, node3)
+
     return g
 end
 
@@ -121,7 +121,7 @@ function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
     Edge(n(:inhibitor).i[:out], n(:driver).i[:in])
     Edge(n(:driver).i[:out], n(:add).i[:in1])
     Edge(n(:noise).i[:out], n(:add).i[:in2])
-    #return (driver, inhibitor, noise, add)
+
     return g
 end
 
@@ -149,7 +149,7 @@ function initializeTreeGraph()
     Edge(n(:add).i[:out], n(:equ).interfaces[1])
     Edge(n(:c3).i[:out], n(:equ).interfaces[2])
     Edge(n(:c3).i[:out], n(:equ).interfaces[2])
-    #return (c1, c2, c3, add, equ)
+
     return g
 end
 
@@ -175,7 +175,7 @@ function initializeFactoringGraph()
     Edge(n(:g1).i[:out], n(:add1).i[:in1])
     Edge(n(:add1).i[:out], n(:g2).i[:mean])
     Edge(n(:g2).i[:out], n(:add1).i[:in2])
-    #return (t1, a1, g1, t2, add1, g2)
+
     return g
 end
 
@@ -198,7 +198,7 @@ function initializeFactoringGraphWithoutLoop()
     Edge(n(:a1).i[:out], n(:g1).i[:mean])
     Edge(n(:t2).i[:out], n(:g1).i[:variance], InverseGammaDistribution)
     Edge(n(:g1).i[:out], n(:t3).i[:out])
-    #return (t1, a1, g1, t2, t3)
+
     return g
 end
 
@@ -211,7 +211,7 @@ function initializeGaussianFactoringGraph()
     GaussianNode(m=1.0, V=0.5, id=:gauss)
     Edge(n(:gauss).i[:out], n(:gain).i[:in])
     Edge(n(:gain).i[:out], n(:t).i[:out])
-    #return (t, gain, gauss)
+
     return g
 end
 
@@ -224,7 +224,7 @@ function initializeSimpleFactoringGraph()
     TerminalNode(id=:t2)
     Edge(n(:t2).i[:out], n(:gain).i[:in])
     Edge(n(:gain).i[:out], n(:t1).i[:out])
-    #return (t1, gain, t2)
+
     return g
 end
 
@@ -244,7 +244,7 @@ function initializeAdditionNode(msgs::Array{Any})
         end
         interface_count += 1
     end
-    #return add_node
+
     return g
 end
 
@@ -284,7 +284,7 @@ function initializeTerminalAndGainAddNode()
     g = FactorGraph()
     GainAdditionNode([1.0], id=:c_node)
     TerminalNode(id=:node)
-    #return(c_node, node)
+
     return g
 end
 
@@ -314,7 +314,7 @@ function initializeGainAdditionNode(A::Array, msgs::Array{Any})
         end
         interface_count += 1
     end
-    #return gac_node
+
     return g
 end
 
@@ -335,7 +335,7 @@ function initializeTerminalAndGainEqNode()
     g = FactorGraph()
     GainEqualityNode([1.0], id=:c_node)
     TerminalNode(id=:node)
-    #return(c_node, node)
+
     return g
 end
 
@@ -364,7 +364,7 @@ function initializeGainEqualityNode(A::Array, msgs::Array{Any})
         end
         interface_count += 1
     end
-    #return gec_node
+
     return g
 end
 
@@ -394,17 +394,33 @@ function initializeGaussianNode(; y_type::DataType=Float64)
     else
         error("Can't handle y_type $(y_type)")
     end
-    #return (node, edges)
+
     return g
 end
 
 function initializeBufferGraph()
-    # Background
     g = FactorGraph()
     TerminalNode(id=:node_t1)
     TerminalNode(id=:node_t2)
     Edge(n(:node_t1), n(:node_t2), id=:e)
-    #return (node_t1, node_t2, e, g)
+
+    return g
+end
+
+function initializeWrapGraph()
+    g = FactorGraph()
+    TerminalNode(id=:t1)
+    TerminalNode(id=:t2)
+    TerminalNode(id=:t3)
+    TerminalNode(id=:t4)
+    AdditionNode(id=:add1)
+    AdditionNode(id=:add2)
+    Edge(n(:t1), n(:add1).i[:in1])
+    Edge(n(:t2), n(:add1).i[:in2])
+    Edge(n(:t3), n(:add2).i[:in1])
+    Edge(n(:t4), n(:add2).i[:in2])
+    Edge(n(:add1).i[:out], n(:add2).i[:out])
+
     return g
 end
 
@@ -448,7 +464,6 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
     Edge(n(s(:m_eq,n_samples)).i[2], n(:mN).i[:out])
     Edge(n(s(:gam_eq,n_samples)).i[2], n(:gamN).i[:out])
 
-    #return (g_nodes, y_nodes, m_eq_nodes, gam_eq_nodes, q_m_edges, q_gam_edges, q_y_edges)
     return g
 end
 
@@ -489,7 +504,6 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
     Edge(n(:m_eq).i[2], n(:mN).i[:out], GaussianDistribution, id=:mN)
     Edge(n(:gam_eq).i[2], n(:gamN).i[:out], GammaDistribution, id=:gamN)
 
-    #return (g_node, y_node, m_0_node, gam_0_node, m_N_node, gam_N_node, m_eq_node, gam_eq_node, m_edge, gam_edge, y_edge)
     return g
 end
 

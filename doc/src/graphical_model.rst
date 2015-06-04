@@ -150,12 +150,24 @@ In practical situations it is common for a factor graph to be a concatination of
     Edge(n(:C), n(:adder).[:in2])
     Edge(n(:adder).i[:out], n(:X_next))
 
-    wrap(n(:X_next), n(:X_prev)) # X_next becomes X_prev in the next section
+    Wrap(n(:X_next), n(:X_prev)) # X_next becomes X_prev in the next section
 
 
-.. function:: wrap(from, to, graph)
+.. type:: Wrap(source::TerminlNode, sink::TerminalNode, id::Symbol=:something)
 
-    Creates a wrap from :class:`TerminalNode` ``from`` to :class:`TerminalNode` ``to`` in :class:`FactorGraph` ``graph``. If ``graph`` is omitted, the currently active graph is assumed.
+    Constructs a wrap from ``source`` to ``sink`` in the currently active graph and can optionally be given an id.
+
+.. function:: wrap(id::Symbol)
+
+    Returns the ``wrap`` with the corresponding ``id``.
+
+.. function:: wraps(graph::FactorGraph)
+
+    Returns a set of all wraps present in ``graph``. If ``graph`` is omitted, the currently active graph is assumed.
+
+.. function:: wraps(node::TerminalNode)
+
+    Returns a set of all wraps in which ``node`` is involved. Note that a node can be the source in multiple wraps, but it can be a sink at most once.
 
 .. function:: clearWraps(graph)
 

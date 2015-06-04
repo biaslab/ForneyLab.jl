@@ -2,9 +2,6 @@ export  setReadBuffer,
         setWriteBuffer,
         clearBuffers,
         emptyWriteBuffers,
-        wrap,
-        wraps,
-        clearWraps,
         execute,
         step,
         run
@@ -49,17 +46,6 @@ function emptyWriteBuffers(graph::FactorGraph=current_graph)
     end
 end
 
-function wrap(from::TerminalNode, to::TerminalNode, graph::FactorGraph=current_graph)
-    !is(from, to) || error("Cannot create time wrap: from and to must be different nodes")
-    push!(graph.wraps, (from, to))
-end
-
-wraps(g::FactorGraph=current_graph) = g.wraps
-
-function clearWraps(graph::FactorGraph=current_graph)
-    graph.wraps = Array((TerminalNode, TerminalNode), 0)
-end 
-
 function execute(algorithm::Algorithm, graph::FactorGraph=current_graph)
     # Execute algorithm on graph
     global current_algorithm = algorithm
@@ -88,10 +74,10 @@ function step(algorithm::Algorithm, graph::FactorGraph=current_graph)
         end
     end
 
-    # Time wraps
-    for (from, to) in graph.wraps
-        isdefined(from.interfaces[1].partner.message, :payload) || error("There is no message to move to $(to) for the next timestep")
-        to.value = deepcopy(from.interfaces[1].partner.message.payload)
+    # Wraps
+    for wrap in wraps(graph)
+        isdefined(wrap.source.interfaces[1].partner.message, :payload) || error("There is no message to move to $(wrap.sink) for the next timestep")
+        wrap.sink.value = deepcopy(wrap.source.interfaces[1].partner.message.payload)
     end
 
     return result
