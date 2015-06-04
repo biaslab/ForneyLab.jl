@@ -89,7 +89,7 @@ function generateSchedule(graph::FactorGraph=currentGraph(); args...)
     
     # Collect wrap interfaces
     for wrap in wraps(graph)
-        push!(partial_list, wrap.from.interfaces[1].partner)
+        push!(partial_list, wrap.source.interfaces[1].partner)
     end
 
     # Collect write buffer interfaces

@@ -51,8 +51,8 @@ function generateSchedule!(sg::Subgraph, graph::FactorGraph=current_graph)
     interface_list_for_wraps = Array(Interface, 0)
     sg_nodes = nodes(sg)
     for wrap in wraps(graph)
-        if wrap.from in sg_nodes # Timewrap is the responsibility of this subgraph
-            interface_list_for_wraps = [interface_list_for_wraps, SumProduct.generateScheduleByDFS!(wrap.from.interfaces[1].partner, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
+        if wrap.source in sg_nodes # Timewrap is the responsibility of this subgraph
+            interface_list_for_wraps = [interface_list_for_wraps, SumProduct.generateScheduleByDFS!(wrap.source.interfaces[1].partner, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
         end
     end
 

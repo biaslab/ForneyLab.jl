@@ -98,7 +98,7 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
     if !isempty(wraps)
         # Add edges to visualize time wraps
         for wrap in wraps
-            dot *= "\t$(object_id(wrap.from)) -> $(object_id(wrap.to)) [style=\"dotted\" color=\"green\"]\n"             
+            dot *= "\t$(object_id(wrap.source)) -> $(object_id(wrap.sink)) [style=\"dotted\" color=\"green\"]\n"             
         end
     end
 
