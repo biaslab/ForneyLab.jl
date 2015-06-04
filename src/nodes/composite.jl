@@ -1,4 +1,4 @@
-export CompositeNode, addRule!, nodes, isDeterministic, duplicate
+export CompositeNode, addRule!, nodes, isDeterministic
 
 type CompositeNode <: Node
     id::Symbol

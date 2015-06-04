@@ -34,6 +34,7 @@ include("distributions/test_beta.jl")
 include("test_interface.jl")
 include("test_node.jl")
 include("test_edge.jl")
+include("test_schedule.jl")
 
 # Top level concepts
 include("test_factor_graph.jl")

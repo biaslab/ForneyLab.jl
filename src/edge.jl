@@ -20,6 +20,8 @@ type Edge <: AbstractEdge
         (head.partner == nothing && tail.partner == nothing) || error("Previously defined edges cannot be repositioned.")
         (current_graph.locked == false) || error("Cannot extend a locked FactorGraph.")
         (haskey(current_graph.n, tail.node.id) && haskey(current_graph.n, head.node.id)) || error("Head and tail node should belong to the current graph.")
+        (is(node(head.node.id), head.node)) || error("Head node should belong to the current graph.")
+        (is(node(tail.node.id), tail.node)) || error("Tail node should belong to the current graph.")
         (!haskey(current_graph.e, id)) || error("The edge id $(id) already exists in the current graph. Consider specifying an explicit id.")
         
         self = new(id, tail, head, nothing, distribution_type)

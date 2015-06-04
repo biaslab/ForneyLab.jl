@@ -10,7 +10,7 @@ facts("Edge integration tests") do
         testInterfaceConnections(n(:node1), n(:node2))
     end
 
-    context("Edge should throw an error when two interfaces on the same node are connected") do
+    context("Edge should throw an error when two interfaces of the same node are connected") do
         FactorGraph()
         node = FixedGainNode()
         # Connect output directly to input
@@ -31,10 +31,13 @@ facts("Edge integration tests") do
         @fact edge.distribution_type => GaussianDistribution
     end
 
-    context("Edge constructor should throw an error if the FactorGraph is locked") do
+    context("It is not possible to add an Edge to a locked FactorGraph or to deepcopy an Edge") do
         initializePairOfMockNodes()
         currentGraph().locked = true
         @fact_throws Edge(n(:node1).i[:out], n(:node2).i[:out])
+        currentGraph().locked = false
+        testedge = Edge(n(:node1).i[:out], n(:node2).i[:out])
+        @fact_throws deepcopy(testedge)
     end
 
     context("Edge construction should couple interfaces to edge") do

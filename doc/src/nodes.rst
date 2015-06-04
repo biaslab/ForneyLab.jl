@@ -17,7 +17,7 @@ A factor graph node is always a subtype of ``abstract Node``, and its name ends 
         i::Dict{Symbol, Interface}
     end
 
-The field ``i`` stores 'named handles' to make accessing the interfaces convenient, for example is we want to access the out interface we type ``node.i[:out]``. The ``interfaces`` array always contains one or more :class:`Interface` instances. The calling signature of a node constructor varies, but it always includes the optional keyword argument ``name``. 
+The field ``i`` stores 'named handles' to make accessing the interfaces convenient, for example is we want to access the out interface we type ``node.i[:out]``. The ``interfaces`` array always contains one or more :class:`Interface` instances. The calling signature of a node constructor varies, but it always includes the optional keyword argument ``id``. A ``Node`` can be copied using ``copy(src::Node; id=:new_id)``, where ``:new_id`` will become the id of the copy. The copy contains the exact internal state of the original, but has not edges connected to it.
 
 .. type:: Interface
     
@@ -65,7 +65,7 @@ ForneyLab supports the following message calculation rules:
     The calling signature consists of:
 
     1. The node;
-    2. The id (index in node.interfaces) of the outbound interface;
+    2. The index (index in node.interfaces) of the outbound interface;
     3. The inbound messages on *all* interfaces of the node (ordered by interface id). The inbound message on the outbound inferface is always ``nothing``.
 
 .. function:: vmp!(node::Node, outbound_interface_index::Int, marginals_and_messages...)

@@ -5,13 +5,15 @@
 facts("General node properties unit tests") do
     FactorGraph()
     c = 0
-    for node_type in [subtypes(Node), subtypes(CompositeNode)]
+    for node_type in subtypes(Node)
         if node_type!=CompositeNode && node_type!=MockNode
             context("$(node_type) properties should include interfaces and id") do
-                @fact typeof(node_type().interfaces) => Array{Interface, 1} # Check for interface array
-                @fact length(node_type().interfaces) >= 1 => true # Check length of interface array
-                @fact typeof(node_type().id) => Symbol
-                @fact typeof(node_type().i) <: Dict => true
+                test_node = node_type()
+                @fact typeof(test_node.interfaces) => Array{Interface, 1} # Check for interface array
+                @fact length(test_node.interfaces) >= 1 => true # Check length of interface array
+                @fact typeof(test_node.id) => Symbol
+                @fact typeof(test_node.i) <: Dict => true
+                @fact_throws deepcopy(test_node)
             end
 
             context("$(node_type) constructor should assign an id") do
@@ -72,4 +74,21 @@ facts("Connections between nodes integration tests") do
         edge = Edge(n(:node2).interfaces[1], n(:node1).interfaces[1]) # Edge from node 2 to node 1
         testInterfaceConnections(n(:node1), n(:node2))
     end
+end
+
+facts("copy(::Node)") do
+    g1 = initializePairOfNodes()
+    test_edge = Edge(n(:node2).interfaces[1], n(:node1).interfaces[1])
+    g2 = FactorGraph() # Add a copy of node2 to a new graph
+    node2 = n(:node2, g1)
+    node2_copy = copy(node2, id=:node2_copy)
+    @fact is(node2, node2_copy) => false
+    @fact node2_copy.id => :node2_copy
+    # Edges should be removed from copy but not from original
+    @fact node2.interfaces[1].edge => test_edge
+    @fact node2_copy.interfaces[1].edge => nothing
+    @fact node2.interfaces[1].partner => n(:node1, g1).interfaces[1]
+    @fact node2_copy.interfaces[1].partner => nothing
+    @fact node2_copy in nodes(g1) => false
+    @fact node2_copy in nodes(g2) => true
 end

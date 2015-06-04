@@ -16,7 +16,7 @@ ScheduleEntry(interface::Interface) = ScheduleEntry(interface, sumProduct!)
 
 Base.deepcopy(::ScheduleEntry) = error("deepcopy(::ScheduleEntry) is not possible. You should construct a new ScheduleEntry or use copy(::ScheduleEntry).")
 
-Base.copy(src::ScheduleEntry) = ScheduleEntry(src.interface, src.message_calculation_rule, isdefined(src.post_processing) ? src.post_processing : nothing)
+Base.copy(src::ScheduleEntry) = ScheduleEntry(src.interface, src.message_calculation_rule, isdefined(src, :post_processing) ? src.post_processing : nothing)
 
 function setPostProcessing!(schedule_entry::ScheduleEntry, post_processing::Function)
     schedule_entry.post_processing = post_processing

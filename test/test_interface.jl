@@ -5,6 +5,7 @@
 facts("Interface unit tests") do
     # Test setMessage!, clearMessage!, message, ensureMessage!, handle
     n = MockNode()
+    @fact_throws deepcopy(n.i[:out])
     @fact setMessage!(n.i[:out], Message(GaussianDistribution(m=3.0, V=2.0))) => Message(GaussianDistribution(m=3.0, V=2.0))
     @fact typeof(n.i[:out].message) => Message{GaussianDistribution}
     @fact message(n.i[:out]) => n.i[:out].message
