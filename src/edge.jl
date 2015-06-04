@@ -38,6 +38,8 @@ type Edge <: AbstractEdge
     end
 end
 
+Base.deepcopy(::Edge) = error("deepcopy(::Edge) is not possible. You should construct a new Edge, or copy the entire FactorGraph using deepcopy(::FactorGraph).")
+
 # Edge constructors that accept nodes instead of a specific Interface
 # firstFreeInterface(node) should be overloaded for nodes with interface-invariant node functions
 firstFreeInterface(node::Node) = error("Cannot automatically pick a free interface on non-symmetrical $(typeof(node)) $(node.id)")

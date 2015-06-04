@@ -4,7 +4,7 @@ using Optim
 using YAML
 using LaTeXStrings
 
-export Node, ProbabilityDistribution
+export ProbabilityDistribution
 export sumProduct!, vmp!
 export vague, self, ==
 export current_graph
@@ -28,8 +28,9 @@ import Base.show, Base.convert
 # Top-level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
-abstract Node
-show(io::IO, node::Node) = println(io, "$(typeof(node)) with id $(node.id)")
+
+# Node
+include("node.jl")
 
 # Message type
 include("message.jl")
@@ -81,6 +82,5 @@ include("algorithms/vmp/vmp.jl")
 
 # Functions for message post-processing
 vague(dist::ProbabilityDistribution) = vague(typeof(dist))
-self(x::Any) = x
 
 end # module ForneyLab

@@ -26,3 +26,5 @@ function show(io::IO, algo::Algorithm)
     end
     println(io, "\nUse algorithm.fields[:field] to inspect field values.")
 end
+
+Base.deepcopy(::Algorithm) = error("deepcopy(::Algorithm) is not possible. You should construct a new Algorithm.")
