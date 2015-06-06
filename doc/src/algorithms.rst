@@ -76,7 +76,7 @@ Algorithms executed on factor graphs are usually based on *message passing*. In 
             post_processing::Function           # Optional: a function that performs post-processing on the message.
         end
 
-    When a ``ScheduleEntry`` is executed, the ``message_calculation_rule`` function is called. The ``interface`` field specifies the interface on which the outbound message should be calculated. If ``post_processing`` is defined, the payload of the calculated message is past through it. Examples of commonly used post-processing functions are :func:`sample` and :func:`mean`.
+    When a ``ScheduleEntry`` is executed, the ``message_calculation_rule`` function is called. The ``interface`` field specifies the interface on which the outbound message should be calculated. If ``post_processing`` is defined, the payload of the calculated message is passed through it. Examples of commonly used post-processing functions are :func:`sample` and :func:`mean`.
 
     .. function:: execute(schedule_entry::ScheduleEntry)
 
