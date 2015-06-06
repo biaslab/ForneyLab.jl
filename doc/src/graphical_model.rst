@@ -48,14 +48,14 @@ A node in a :class:`FactorGraph` is always of a subtype of ``abstract Node``. Fo
 
 The ``id`` fields holds a unique id, which can be passed to the constructor as a keyword argument. The ``interfaces`` field holds a list of :class:`Interface` objects. An :class:`Edge` connects two interfaces of different nodes to eachother. The ``i`` field stores named handles to the interfaces, i.e. ``gain_node.i[:out]`` is equivalent to ``gain_node.interfaces[2]``.
 
-The calling signature of a node constructor depends on the specific type of the node::
+The calling signature of a node constructor depends on the specific type of the node, e.g., 
 
     AdditionNode(id=:my_adder)  # Node func.: out = in1 + in2
     FixedGainNode(3.0, id=:times_3) # Node func.: out = 3.0 * in1
 
-Nodes in the current graph can be accessed through::
+Nodes in the current graph can be accessed through the function ``node(id::Symbol)`` (which is aliased by the function ``n(id::Symbol)``), e.g., 
 
-    node(:my_adder)
+    node(:my_adder)     
     n(:my_adder)
 
 
