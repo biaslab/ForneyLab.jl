@@ -424,6 +424,20 @@ function initializeWrapGraph()
     return g
 end
 
+function initializeCompositeGraph()
+    # Build the internal graph
+    g = FactorGraph()
+    t_constant = TerminalNode(3.0)
+    t_in = TerminalNode(id=:in)
+    t_out = TerminalNode(id=:out)
+    a = AdditionNode(id=:adder)
+    Edge(t_in, a.i[:in1])
+    Edge(t_constant, a.i[:in2])
+    Edge(a.i[:out], t_out)
+    
+    return (g, t_in, t_out)
+end
+
 function initializeGaussianNodeChain(y::Array{Float64, 1})
     # Set up a chain of Gaussian nodes for mean-precision estimation
     #

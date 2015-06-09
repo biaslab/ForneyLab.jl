@@ -1,13 +1,5 @@
 facts("CompositeNode integration tests") do
-    # Build the internal graph
-    g = FactorGraph()
-    t_constant = TerminalNode(3.0)
-    t_in = TerminalNode(id=:in)
-    t_out = TerminalNode(id=:out)
-    a = AdditionNode(id=:adder)
-    Edge(t_in, a.i[:in1])
-    Edge(t_constant, a.i[:in2])
-    Edge(a.i[:out], t_out)
+    (g, t_in, t_out) = initializeCompositeGraph()
 
     # Wrap graph into CompositeNode
     add_3 = CompositeNode(g, t_in, t_out, id=:add_3)
@@ -51,5 +43,19 @@ facts("CompositeNode integration tests") do
         algo2 = Algorithm(custom_rule)
         addRule!(add_3, add_3.i[:out], sumProduct!, algo2)
         @fact run(algo2) => Message(DeltaDistribution(15.0))
+    end
+
+    context("CompositeNode() graph argument should be optional") do
+        (g, t_in, t_out) = initializeCompositeGraph()
+        add_3_2 = CompositeNode(t_in, t_out, id=:add_3_2)
+        @fact typeof(add_3_2) => CompositeNode
+    end
+
+    context("CompositeNode should check that all terminal nodes are members of the argument graph") do
+        FactorGraph()
+        t_odd = TerminalNode()
+        Edge(t_odd, TerminalNode())
+        (g, t_in, t_out) = initializeCompositeGraph()
+        @fact_throws CompositeNode(g, t_odd1, t_out, id=:add_3)
     end
 end
