@@ -379,7 +379,7 @@ It is possible to create a node that contains an internal :class:`FactorGraph` t
             # ... and some internal stuff
         end
 
-    Field ``i`` contains named interface handles, for example ``comp_node.i[:out]`` might be identical to ``comp_node.interfaces[2]``.
+    Field ``i`` contains named interface handles, for example ``comp_node.i[:out]`` might be identical to ``comp_node.interfaces[2]``. To create multiple instances of a ``CompositeNode``, use ``copy(node::Node, id_of_copy::Symbol)``.
 
 
 
@@ -388,9 +388,9 @@ Wrapping a FactorGraph in a CompositeNode
 
 The most straightforward way of constructing a ``CompositeNode`` is to first build its internal factor graph, and then wrapping this graph in a ``CompositeNode``. This can be achieved using the following constructor::
 
-    function CompositeNode(graph::FactorGraph, terminals...; id=generateNodeId(), deterministic=false)
+    CompositeNode(graph::FactorGraph=current_graph, terminals...; id=generateNodeId(), deterministic=false)
 
-Here, ``terminals`` is an array of :class:`TerminalNode` instances in ``graph`` that should be linked to interfaces of the created ``CompositeNode``. The name of a linked ``TerminalNode`` determines the name of the corresponding :class:`Interface`. Once the ``graph`` is wrapped in a newly created ``CompositeNode``, a new empty ``FactorGraph`` is created. Example::
+Here, ``terminals`` is an array of :class:`TerminalNode` instances in ``graph`` that should be linked to interfaces of the created ``CompositeNode``. The name of a linked ``TerminalNode`` determines the name of the corresponding :class:`Interface`. Once the ``graph`` is wrapped in a newly created ``CompositeNode``, a new ``FactorGraph`` is created which contains the new ``CompositeNode`` as its only node. This new ``FactorGraph`` becomes the current graph. Example::
 
     # Build CompositeNode with node function f(in,out) = δ(out - 3*in)
 
@@ -405,7 +405,7 @@ Here, ``terminals`` is an array of :class:`TerminalNode` instances in ``graph`` 
     Edge(n(:adder).i[:out], n(:t_out))
 
     # Step 2: wrap graph in CompositeNode, link t_in & t_out to interfaces
-    CompositeNode(g, t_in, t_out, id=:comp_add3)
+    CompositeNode(g, t_in, t_out, id=:comp_add3) # Creates a new FactorGraph that contains the constructed CompositeNode
 
     # Step 3: build higher-level graph
     TerminalNode(id=:in)
@@ -413,7 +413,7 @@ Here, ``terminals`` is an array of :class:`TerminalNode` instances in ``graph`` 
     Edge(n(:t_in), n(:comp_add3).i[:in])
     Edge(n(:comp_add3).i[:out], n(:t_out))
 
-When more instances of the composite node are required, the ``copy`` function may come in handy::
+When more instances of the composite node are needed, the ``copy`` function may come in handy::
 
     copy(n(:comp_add_3), id=:comp_add_3_copy)
 
