@@ -46,16 +46,16 @@ A node in a :class:`FactorGraph` is always of a subtype of ``abstract Node``. Fo
         i::Dict{Symbol, Interface}
     end
 
-The ``id`` fields holds a unique id, which can be passed to the constructor as a keyword argument. The ``interfaces`` field holds a list of :class:`Interface` objects. An :class:`Edge` connects two interfaces of different nodes to eachother. The ``i`` field stores named handles to the interfaces, i.e. ``gain_node.i[:out]`` is equivalent to ``gain_node.interfaces[2]``.
+The ``id`` fields holds a unique id, which can be passed to the constructor as a keyword argument. The ``interfaces`` field holds a list of :class:`Interface` objects. An :class:`Edge` connects two interfaces of different nodes to each other. The ``i`` field stores named handles to the interfaces, i.e. ``gain_node.i[:out]`` is equivalent to ``gain_node.interfaces[2]``.
 
-The calling signature of a node constructor depends on the specific type of the node::
+The calling signature of a node constructor depends on the specific type of the node, e.g., 
 
     AdditionNode(id=:my_adder)  # Node func.: out = in1 + in2
     FixedGainNode(3.0, id=:times_3) # Node func.: out = 3.0 * in1
 
-Nodes in the current graph can be accessed through::
+Nodes in the current graph can be accessed through the function ``node(id::Symbol)`` (which is aliased by the function ``n(id::Symbol)``), e.g.::     
 
-    node(:my_adder)
+    node(:my_adder)     
     n(:my_adder)
 
 
@@ -81,7 +81,7 @@ The ``Edge`` type
 
         Edge(n(:node1).i[:out], n(:node2).i[:in], GammaDistribution, id=:my_edge)
 
-    If the distribution type is omitted, a :class:`GaussianDistribution` is assumed. For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface::
+    If the distribution type is omitted, a :class:`GaussianDistribution` is assumed. For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface, e.g., 
 
         Edge(TerminalNode(), EqualityNode())
 
@@ -89,9 +89,9 @@ The ``Edge`` type
 
 Strictly speaking, a factor graph edge does not need to be directed. However, in ForneyLab all edges are directed to have a consistent meaning for terms like "forward message", "backward messages", and "forward pass". Apart from that, the edge direction has no functional consequences.
 
-ForneyLab does not allow half-edges: an :class:`Edge` should be connected to two nodes at all times. Open ended edges should be terminated by a :class:`TerminalNode`. 
+ForneyLab does not allow half-edges: every :class:`Edge` should be connected to two nodes at all times. Open ended edges should be terminated by a :class:`TerminalNode`. 
 
-Nodes in the current graph can be accessed through::
+Edges in the current graph can be accessed through the function ``edge(id::Symbol)`` (which is aliased by the function ``e(id::Symbol)``), e.g.::
 
     edge(:my_edge)
     e(:my_edge)
@@ -107,7 +107,7 @@ Consider the following simple factor graph::
       X1  v   X2  v   X3 
     ---->[+]---->[+]---->
 
-ForneyLab does not allow 'half-edges' that are connected to just one node. Instead, half-edges should be terminated by a :class:`TerminalNode`. Taking this into account, one could implement this factor graph like::
+ForneyLab does not allow 'half-edges' that are connected to just one node. Instead, half-edges should be terminated by a :class:`TerminalNode`. Taking this into account, one could implement this factor graph as follows::
 
     g = FactorGraph()
 
@@ -152,10 +152,11 @@ In practical situations it is common for a factor graph to be a concatination of
 
     Wrap(n(:X_next), n(:X_prev)) # X_next becomes X_prev in the next section
 
+Note that the `Wrap` function only takes *terminal* nodes as arguments.  
 
-.. type:: Wrap(source::TerminlNode, sink::TerminalNode, id::Symbol=:something)
+.. type:: Wrap(source::TerminalNode, sink::TerminalNode, id::Symbol)
 
-    Constructs a wrap from ``source`` to ``sink`` in the currently active graph and can optionally be given an id.
+    Constructs a wrap from ``source`` to ``sink`` in the currently active graph and can optionally be given an ``id``.
 
 .. function:: wrap(id::Symbol)
 
@@ -169,7 +170,7 @@ In practical situations it is common for a factor graph to be a concatination of
 
     Returns a set of all wraps in which ``node`` is involved. Note that a node can be the source in multiple wraps, but it can be a sink at most once.
 
-.. function:: clearWraps(graph)
+.. function:: clearWraps(graph::FactorGraph)
 
     Remove all wraps from :class:`FactorGraph` ``graph``. If ``graph`` is omitted, the currently active graph is assumed.
 
@@ -193,7 +194,7 @@ Read buffers hold input data that is read into the graph from the outside world.
 
 .. function:: setReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector)
 
-    Couples a read buffer to a batch of nodes. This function can be used to couple input data with a graph that models multiple (time) slices, such as a (mini-)batch. Upon each :func:`step()`, a number of elements the length of the ``nodes`` vector is moved from the beginning of ``buffer`` to the ``nodes`` value fields (in their respective order).  
+    Couples a read buffer to a batch of nodes. This function can be used to couple input data with a graph that models multiple (time) slices, such as a (mini-)batch. Upon each :func:`step()` call, a number of elements equal to the length of the ``nodes`` vector is moved from the beginning of ``buffer`` to the ``nodes`` value fields (in their respective order). 
 
 Output from the graph
 ---------------------

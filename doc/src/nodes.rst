@@ -17,7 +17,7 @@ A factor graph node is always a subtype of ``abstract Node``, and its name ends 
         i::Dict{Symbol, Interface}
     end
 
-The field ``i`` stores 'named handles' to make accessing the interfaces convenient, for example is we want to access the out interface we type ``node.i[:out]``. The ``interfaces`` array always contains one or more :class:`Interface` instances. The calling signature of a node constructor varies, but it always includes the optional keyword argument ``id``. A ``Node`` can be copied using ``copy(src::Node; id=:new_id)``, where ``:new_id`` will become the id of the copy. The copy contains the exact internal state of the original, but has not edges connected to it.
+The field ``i`` stores 'named handles' to make accessing the interfaces convenient, for example if we want to access the out interface we type ``node.i[:out]``. The ``interfaces`` array always contains one or more :class:`Interface` instances. The calling signature of a node constructor varies, but it always includes the optional keyword argument ``id``. A ``Node`` can be copied using ``copy(src::Node; id=:new_id)``, where ``:new_id`` will become the id of the copy. The copy contains the exact internal state of the original, but has no edges connected to it.
 
 .. type:: Interface
     
@@ -368,7 +368,7 @@ It is possible to create a node that contains an internal :class:`FactorGraph` t
 
 .. type:: CompositeNode
 
-    A ``CompositeNode`` behave like a normal ``Node`` from the outside, but contains an *internal graph* that defines the node function. The interfaces of a ``CompositeNode`` are linked to :class:`TerminalNode` instances in its internal graph. A ``CompositeNode`` can easily be constructed from a :class:`FactorGraph`, and it allows one to build hierarchical models since the internal graph may contain other composite nodes.
+    A ``CompositeNode`` behaves like a normal ``Node`` from the outside, but contains an *internal graph* that defines the node function. The interfaces of a ``CompositeNode`` are linked to :class:`TerminalNode` instances in its internal graph. A ``CompositeNode`` can easily be constructed from a :class:`FactorGraph`, and it allows one to build hierarchical models since the internal graph may contain other composite nodes.
     ::
 
         type CompositeNode <: Node
