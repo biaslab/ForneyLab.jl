@@ -14,8 +14,8 @@ type MockNode <: Node
 
     function MockNode(num_interfaces::Int=1; id=ForneyLab.generateNodeId(MockNode))
         self = new(id, Array(Interface, num_interfaces), Dict{Symbol, Interface}())
-        !haskey(current_graph.n, id) || error("Node id $(id) already present")
-        current_graph.n[id] = self
+        !haskey(ForneyLab.current_graph.n, id) || error("Node id $(id) already present")
+        ForneyLab.current_graph.n[id] = self
  
         for interface_index = 1:num_interfaces
             self.interfaces[interface_index] = Interface(self)

@@ -1,4 +1,4 @@
-export  Algorithm, current_algorithm
+export  Algorithm
 
 type Algorithm
     execute::Function
@@ -10,8 +10,6 @@ type Algorithm
         return self
     end
 end
-
-global current_algorithm = nothing
 
 function Algorithm(schedule::Schedule, graph::FactorGraph=currentGraph())
     # Constructs an algorithm that executes a predifined schedule

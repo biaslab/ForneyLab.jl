@@ -2,7 +2,7 @@ type QFactorization
     factors::Array{Subgraph, 1}
     edge_to_subgraph::Dict{Edge, Subgraph}
 end
-function QFactorization(graph::FactorGraph=current_graph)
+function QFactorization(graph::FactorGraph=currentGraph())
     # Create an initial subgraph that envelopes the entire graph
     internal_edges = edges(graph)
     sg = Subgraph(internal_edges, Interface[], Node[]) # Build a subgraph that contains all edges in the graph
@@ -113,7 +113,7 @@ end
 factorize!(internal_edge::Edge, f::QFactorization=QFactorization()) = factorize!(Set{Edge}([internal_edge]), f)
 factorize!(internal_edges::Vector{Edge}, f::QFactorization=QFactorization()) = factorize!(Set{Edge}(internal_edges), f)
 
-function factorize(graph::FactorGraph=current_graph)
+function factorize(graph::FactorGraph=currentGraph())
     # Generates a mean field factorization based on graph
 
     f = QFactorization(graph) # Starting point

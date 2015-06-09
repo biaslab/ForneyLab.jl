@@ -26,9 +26,10 @@ The Jupyter notebook demos should always be committed in an executed state. To m
 # Execute all staged added/modified Jupyter(iJulia) demos
 # Requires iPython v3.0 or higher
 
-for s in `git diff --staged --name-only --diff-filter=AM | grep "demo/.*\.ipynb"`; do 
+for s in `git diff --staged --name-only --diff-filter=AM | grep ".*\.ipynb"`; do 
 	echo "Executing added or modified demo: " $s
 	ipython nbconvert --to=notebook --execute --inplace $s
+	mv $(basename "$s") demo/$(basename "$s")
 done
 ```
 
