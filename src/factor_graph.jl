@@ -24,17 +24,8 @@ type FactorGraph
     write_buffers::Dict{Union(Edge,Interface), Vector}
 end
 
-# Create an empty graph
-global current_graph = FactorGraph( Dict{Symbol, Node}(),
-                                    Dict{Symbol, Edge}(),
-                                    Dict{Symbol, AbstractWrap}(),
-                                    Dict{DataType, Int}(),
-                                    false,
-                                    Dict{TerminalNode, Vector}(),
-                                    Dict{Union(Edge,Interface), Vector}())
-
 currentGraph() = current_graph::FactorGraph
-setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
+setCurrentGraph(graph::FactorGraph) = global current_graph = graph
 
 FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
                                             Dict{Symbol, Edge}(),

@@ -1,5 +1,5 @@
 export Edge
-export setForwardMessage!, setBackwardMessage!, forwardMessage, backwardMessage, ensureMarginal!, removeEdge!
+export setForwardMessage!, setBackwardMessage!, forwardMessage, backwardMessage, ensureMarginal!
 
 type Edge <: AbstractEdge
     # An Edge joins two interfaces and has a direction (from tail to head).

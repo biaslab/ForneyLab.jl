@@ -3,7 +3,7 @@
 # There are no call signatures for message passing to specific interfaces or edges (as with sum product);
 # when required, these should be set through write buffers or wraps.
 
-function generateSchedule!(f::QFactorization, graph::FactorGraph=current_graph)
+function generateSchedule!(f::QFactorization, graph::FactorGraph=currentGraph())
     # Generate and store an internal and external schedule for each subgraph in the factorization
     for sg in f.factors
         generateSchedule!(sg, graph)
@@ -11,7 +11,7 @@ function generateSchedule!(f::QFactorization, graph::FactorGraph=current_graph)
     return f
 end
 
-function generateSchedule!(sg::Subgraph, graph::FactorGraph=current_graph)
+function generateSchedule!(sg::Subgraph, graph::FactorGraph=currentGraph())
     # Generate and store an internal and external schedule for the subgraph
 
     external_schedule = nodesConnectedToExternalEdges(sg) # All nodes that are connected to at least one external edge

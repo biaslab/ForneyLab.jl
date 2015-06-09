@@ -73,8 +73,8 @@ function collectInbounds(outbound_interface::Interface)
             outbound_interface_index = j
             push!(inbounds, nothing) # This interface is outbound, push "nothing"
         else
-            if !haskey(current_algorithm.fields[:factorization].edge_to_subgraph, interface.edge) || !haskey(current_algorithm.fields[:factorization].edge_to_subgraph, outbound_interface.edge)
-                # Inbound and/or outbound edge is not explicitly listed in the current_algorithm.fields.
+            if !haskey(ForneyLab.current_algorithm.fields[:factorization].edge_to_subgraph, interface.edge) || !haskey(ForneyLab.current_algorithm.fields[:factorization].edge_to_subgraph, outbound_interface.edge)
+                # Inbound and/or outbound edge is not explicitly listed in the ForneyLab.current_algorithm.fields.
                 # This is possible if one of those edges is internal to a composite node.
                 # We will default to sum-product message passing, and consume the message on the inbound interface.
                 # Composite nodes with explicit message passing will throw an error when one of their external interfaces belongs to a different subgraph, so it is safe to assume sum-product.
@@ -82,15 +82,15 @@ function collectInbounds(outbound_interface::Interface)
             end
 
             # Should we require the inbound message or marginal?
-            if is(current_algorithm.fields[:factorization].edge_to_subgraph[interface.edge], current_algorithm.fields[:factorization].edge_to_subgraph[outbound_interface.edge])
+            if is(ForneyLab.current_algorithm.fields[:factorization].edge_to_subgraph[interface.edge], ForneyLab.current_algorithm.fields[:factorization].edge_to_subgraph[outbound_interface.edge])
                 # Both edges in same subgraph, require message
                 try push!(inbounds, interface.partner.message) catch error("$(interface) is not connected to an edge.") end
             else
                 # A subgraph border is crossed, require marginal
                 # The factor is the set of internal edges that are in the same subgraph
-                sg = current_algorithm.fields[:factorization].edge_to_subgraph[interface.edge]
-                #try push!(inbounds, current_algorithm.fields[:q_distributions][(node, sg)]) catch error("Missing approximate marginal for $(interface)") end
-                push!(inbounds, current_algorithm.fields[:q_distributions][(outbound_interface.node, sg)].distribution)
+                sg = ForneyLab.current_algorithm.fields[:factorization].edge_to_subgraph[interface.edge]
+                #try push!(inbounds, ForneyLab.current_algorithm.fields[:q_distributions][(node, sg)]) catch error("Missing approximate marginal for $(interface)") end
+                push!(inbounds, ForneyLab.current_algorithm.fields[:q_distributions][(outbound_interface.node, sg)].distribution)
             end
         end
     end

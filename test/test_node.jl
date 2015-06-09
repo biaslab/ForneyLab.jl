@@ -35,7 +35,7 @@ facts("General node properties unit tests") do
 
             context("$(node_type) constructor should add node to the current graph") do
                 my_node = node_type()
-                @fact current_graph.n[my_node.id] => my_node
+                @fact ForneyLab.current_graph.n[my_node.id] => my_node
             end
 
             facts("$(node_type) constructor should check for unique id") do
