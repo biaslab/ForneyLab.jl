@@ -49,8 +49,8 @@ type GaussianNode <: Node
             total_interfaces = 3
         end
         self = new(id, Array(Interface, total_interfaces), Dict{Symbol,Interface}())
-        !haskey(current_graph.n, id) || error("Node id $(id) already present")
-        current_graph.n[id] = self
+        addNode!(current_graph, self)
+
         next_interface_index = 1 # Counter keeping track of constructed interfaces
 
         if isValid(m)

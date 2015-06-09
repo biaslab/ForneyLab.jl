@@ -170,10 +170,6 @@ Note that the `Wrap` function only takes *terminal* nodes as arguments.
 
     Returns a set of all wraps in which ``node`` is involved. Note that a node can be the source in multiple wraps, but it can be a sink at most once.
 
-.. function:: clearWraps(graph::FactorGraph)
-
-    Remove all wraps from :class:`FactorGraph` ``graph``. If ``graph`` is omitted, the currently active graph is assumed.
-
 
 Interfacing to and from the graph
 =================================
@@ -188,11 +184,11 @@ Input to the graph
 
 Read buffers hold input data that is read into the graph from the outside world. The data is stored in a ``buffer`` vector that is coupled with a terminal ``node``. Upon each call of the :func:`step()` function, the first element of each read buffer is moved to the value field of their coupled nodes.
 
-.. function:: setReadBuffer(node::TerminalNode, buffer::Vector)
+.. function:: attachReadBuffer(node::TerminalNode, buffer::Vector)
 
     Couples the vector ``buffer`` as read buffer to the :class:`TerminalNode` ``node``.
 
-.. function:: setReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector)
+.. function:: attachReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector)
 
     Couples a read buffer to a batch of nodes. This function can be used to couple input data with a graph that models multiple (time) slices, such as a (mini-)batch. Upon each :func:`step()` call, a number of elements equal to the length of the ``nodes`` vector is moved from the beginning of ``buffer`` to the ``nodes`` value fields (in their respective order). 
 
@@ -201,18 +197,18 @@ Output from the graph
 
 Write buffers push message payloads and marginals on a specific interface or edge to an output vector. Upon definition, these functions return an empty output buffer that grows upon each call to :func:`step()`.
 
-.. function:: buffer = setWriteBuffer(interface::Interface)
+.. function:: buffer = attachWriteBuffer(interface::Interface)
 
     Pushes the message payload on ``interface`` to ``buffer`` upon each step.
 
-.. function:: buffer = setWriteBuffer(edge::Edge)
+.. function:: buffer = attachWriteBuffer(edge::Edge)
 
     Pushes the marginal distribution on ``edge`` to ``buffer`` upon each step.
 
 Resetting the graph
 -------------------
 
-.. function:: clearBuffers()
+.. function:: detachBuffers()
 
     Removes all couplings with read and write buffers.
 

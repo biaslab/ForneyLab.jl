@@ -34,7 +34,7 @@ function Base.copy(src::Node; id::Symbol = generateNodeId(typeof(src)))
 
     # Update id of copy and add it to the current graph
     dup.id = id
-    current_graph.n[id] = dup
+    addNode!(current_graph, dup)
 
     return dup   
 end

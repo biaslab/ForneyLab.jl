@@ -91,3 +91,55 @@ n = node
 edge(id::Symbol, graph::FactorGraph=current_graph) = graph.e[id]
 edge(id::Symbol, c::Int, graph::FactorGraph=current_graph) = graph.e[s(id, c)]
 e = edge
+
+# Add/remove graph elements
+function addNode!(graph::FactorGraph, nd::Node)
+    # Add a Node to a FactorGraph
+    !graph.locked || error("Cannot add a Node to a locked graph")
+    !haskey(graph.n, nd.id) || error("Graph already contains a Node with id $(nd.id)")
+    graph.n[nd.id] = nd
+
+    return graph
+end
+
+function Base.delete!(graph::FactorGraph, nd::Node)
+    hasNode(graph, nd) || error("Graph does not contain node")
+    !graph.locked || error("Cannot delete node from locked graph")
+
+    for iface in nd.interfaces
+        if iface.edge != nothing
+            delete!(graph, iface.edge)
+        end
+        if haskey(graph.write_buffers, iface)
+            detachWriteBuffer(iface, graph)
+        end
+    end 
+    if haskey(graph.read_buffers, nd)
+        detachReadBuffer(nd, graph)
+    end
+    delete!(graph.n, nd.id)
+    if typeof(nd) == TerminalNode
+        for wr in wraps(nd)
+            delete!(graph, wr)
+        end
+    end
+
+    return graph
+end
+
+function Base.delete!(graph::FactorGraph, eg::Edge)
+    hasEdge(graph, eg) || error("Graph does not contain edge")
+    !graph.locked || error("Cannot delete node from locked graph")
+
+    delete!(graph.e, eg.id)
+    if haskey(graph.write_buffers, eg)
+        detachWriteBuffer(eg, graph)
+    end
+    
+    return graph
+end
+
+
+# Check existance of graph elements
+hasNode(graph::FactorGraph, nd::Node) = (haskey(graph.n, nd.id) && is(graph.n[nd.id], nd))
+hasEdge(graph::FactorGraph, eg::Edge) = (haskey(graph.e, eg.id) && is(graph.e[eg.id], eg))
