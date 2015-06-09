@@ -89,7 +89,7 @@ function initializeChainOfNodes()
     # Chain of three nodes
     #
     #  1     2     3
-    # [C]-->[A]-->[B]-->[M]
+    # [T]-->[A]-->[B]-->[M]
 
     g = FactorGraph()
     TerminalNode(DeltaDistribution(reshape([3.0], 1, 1)), id=:node1)

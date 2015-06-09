@@ -10,9 +10,6 @@ facts("Read/write buffer integration tests") do
         attachReadBuffer(n(:node_t1), read_buffer)
         @fact g.read_buffers[n(:node_t1)] => read_buffer
     end
-    # context("attachReadBuffer should not register a read buffer if the specified node is not in the specified graph") do
-    #     @fact_throws attachReadBuffer(TerminalNode(), zeros(10))
-    # end
 
     context("attachReadBuffer should register a mini-batch read buffer for a TerminalNode array") do
         data = [1.0, 1.0, 1.0]
@@ -24,7 +21,15 @@ facts("Read/write buffer integration tests") do
         @fact graph.read_buffers[n(:y2)] => [1.0, 2.0, 3.0]
         @fact graph.read_buffers[n(:y3)] => [1.0, 2.0, 3.0]
     end
-    
+
+    context("detachReadBuffer should detach a read buffer from a terminal node") do
+        g = initializeBufferGraph()
+        read_buffer = zeros(10)
+        attachReadBuffer(n(:node_t1), read_buffer)
+        detachReadBuffer(n(:node_t1))
+        @fact length(g.read_buffers) => 0
+    end
+
     # attachWriteBuffer
     context("attachWriteBuffer should register a write buffer for an Interface") do
         g = initializeBufferGraph()
@@ -37,6 +42,22 @@ facts("Read/write buffer integration tests") do
         write_buffer = Array(Any, 0)
         attachWriteBuffer(e(:e), write_buffer)
         @fact g.write_buffers[e(:e)] => write_buffer
+    end
+
+    # detachWriteBuffer
+    context("detachWriteBuffer should deregister a write buffer on an edge") do
+        g = initializeBufferGraph()
+        write_buffer = Array(Any, 0)
+        attachWriteBuffer(e(:e), write_buffer)
+        detachWriteBuffer(e(:e))
+        @fact length(g.write_buffers) => 0
+    end
+    context("detachWriteBuffer should deregister a write buffer on an interface") do
+        g = initializeBufferGraph()
+        write_buffer = Array(Any, 0)
+        attachWriteBuffer(n(:node_t1).i[:out], write_buffer)
+        detachWriteBuffer(n(:node_t1).i[:out])
+        @fact length(g.write_buffers) => 0
     end
 
     context("detachBuffers should deregister all read/write buffers") do
