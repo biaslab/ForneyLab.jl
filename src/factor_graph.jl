@@ -24,17 +24,8 @@ type FactorGraph
     write_buffers::Dict{Union(Edge,Interface), Vector}
 end
 
-# Create an empty graph
-global current_graph = FactorGraph( Dict{Symbol, Node}(),
-                                    Dict{Symbol, Edge}(),
-                                    Dict{Symbol, AbstractWrap}(),
-                                    Dict{DataType, Int}(),
-                                    false,
-                                    Dict{TerminalNode, Vector}(),
-                                    Dict{Union(Edge,Interface), Vector}())
-
 currentGraph() = current_graph::FactorGraph
-setCurrentGraph(graph::FactorGraph) = global current_graph = graph # Set a current_graph
+setCurrentGraph(graph::FactorGraph) = global current_graph = graph
 
 FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
                                             Dict{Symbol, Edge}(),
@@ -91,3 +82,66 @@ n = node
 edge(id::Symbol, graph::FactorGraph=current_graph) = graph.e[id]
 edge(id::Symbol, c::Int, graph::FactorGraph=current_graph) = graph.e[s(id, c)]
 e = edge
+
+# Add/remove graph elements
+function addNode!(graph::FactorGraph, nd::Node)
+    # Add a Node to a FactorGraph
+    !graph.locked || error("Cannot add a Node to a locked graph")
+    !haskey(graph.n, nd.id) || error("Graph already contains a Node with id $(nd.id)")
+    graph.n[nd.id] = nd
+
+    return graph
+end
+
+function Base.delete!(graph::FactorGraph, nd::Node)
+    hasNode(graph, nd) || error("Graph does not contain node")
+    !graph.locked || error("Cannot delete node from locked graph")
+
+    # Delete wraps
+    if typeof(nd) == TerminalNode
+        for wr in wraps(nd)
+            delete!(graph, wr)
+        end
+    end
+
+    # Detach read buffers from node
+    if haskey(graph.read_buffers, nd)
+        detachReadBuffer(nd, graph)
+    end
+
+    for iface in nd.interfaces
+        # Detach and write buffers from edges/interfaces and delete edges
+        if iface.edge != nothing
+            delete!(graph, iface.edge)
+        end
+    end
+
+    # Delete node
+    delete!(graph.n, nd.id)
+
+    return graph
+end
+
+function Base.delete!(graph::FactorGraph, eg::Edge)
+    hasEdge(graph, eg) || error("Graph does not contain edge")
+    !graph.locked || error("Cannot delete node from locked graph")
+
+    # Decouple buffers
+    haskey(graph.write_buffers, eg) && detachWriteBuffer(eg, graph)
+    haskey(graph.write_buffers, eg.head) && detachWriteBuffer(eg.head, graph)
+    haskey(graph.write_buffers, eg.tail) && detachWriteBuffer(eg.tail, graph)
+
+    # Decouple edge and interfaces
+    delete!(graph.e, eg.id)
+    eg.head.partner = nothing
+    eg.tail.partner = nothing
+    eg.head.edge = nothing
+    eg.tail.edge = nothing
+    
+    return graph
+end
+
+
+# Check existance of graph elements
+hasNode(graph::FactorGraph, nd::Node) = (haskey(graph.n, nd.id) && is(graph.n[nd.id], nd))
+hasEdge(graph::FactorGraph, eg::Edge) = (haskey(graph.e, eg.id) && is(graph.e[eg.id], eg))

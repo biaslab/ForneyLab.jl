@@ -52,7 +52,7 @@ drawPdf(nodes::Vector{Node}, filename::String) = drawPdf(Set(nodes), filename)
 # Internal functions
 ####################################################
 
-function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Set{Edge}(), wraps::Array{Wrap,1} = Array(Wrap,0))
+function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Set{Edge}(), wraps::Set{Wrap}=Set{Wrap}())
     # Return a string representing the graph in DOT format
     # External edges are edges of which only the head or tail is in the nodes set
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)

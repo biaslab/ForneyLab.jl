@@ -9,9 +9,9 @@ facts("Call step() for VMP algorithm") do
     Edge(n(:t_mean), n(:g_node).i[:mean], GaussianDistribution)
     Edge(n(:t_var), n(:g_node).i[:precision], GammaDistribution)
 
-    setReadBuffer(n(:t_out), data)
-    mean_out = setWriteBuffer(n(:g_node).i[:mean].edge)
-    prec_out = setWriteBuffer(n(:g_node).i[:precision].edge)
+    attachReadBuffer(n(:t_out), data)
+    mean_out = attachWriteBuffer(n(:g_node).i[:mean].edge)
+    prec_out = attachWriteBuffer(n(:g_node).i[:precision].edge)
 
     algo = VMP.Algorithm(n_iterations=10)
 
@@ -39,8 +39,8 @@ facts("Naive VMP implementation integration tests") do
         initializeGaussianNodeChain(data)
         n_sections = length(data)
 
-        m_buffer = setWriteBuffer(n(s(:m_eq,n_sections)).i[2])
-        gam_buffer = setWriteBuffer(n(s(:gam_eq,n_sections)).i[2])
+        m_buffer = attachWriteBuffer(n(s(:m_eq,n_sections)).i[2])
+        gam_buffer = attachWriteBuffer(n(s(:gam_eq,n_sections)).i[2])
 
         # Apply mean field factorization
         algo = VMP.Algorithm(n_iterations=20)
@@ -70,9 +70,9 @@ facts("Structured VMP implementation integration tests") do
         n_samples = length(data)
         initializeGaussianNodeChainForSvmp(data)
 
-        m_buffer = setWriteBuffer(n(:m_eq).interfaces[2])
-        gam_buffer = setWriteBuffer(n(:gam_eq).interfaces[2])
-        y_buffer = setReadBuffer(n(:y), d_data)
+        m_buffer = attachWriteBuffer(n(:m_eq).interfaces[2])
+        gam_buffer = attachWriteBuffer(n(:gam_eq).interfaces[2])
+        y_buffer = attachReadBuffer(n(:y), d_data)
         Wrap(n(:mN), n(:m0))
         Wrap(n(:gamN), n(:gam0))
 

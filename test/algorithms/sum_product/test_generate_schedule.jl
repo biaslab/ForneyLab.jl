@@ -65,7 +65,7 @@ facts("SumProduct.generateSchedule() integration tests") do
             e = Edge(n(:t1), n(:t2))
             s1 = SumProduct.generateSchedule(g)
             @fact s1 => Array(ScheduleEntry, 0)
-            setWriteBuffer(n(:t1).i[:out])
+            attachWriteBuffer(n(:t1).i[:out])
             s2 = SumProduct.generateSchedule(g)
             @fact s2 => ForneyLab.convert(Schedule, [n(:t1).i[:out]])
         end
@@ -77,7 +77,7 @@ facts("SumProduct.generateSchedule() integration tests") do
             e = Edge(n(:t1), n(:t2))
             s1 = SumProduct.generateSchedule(g)
             @fact s1 => Array(ScheduleEntry, 0)
-            setWriteBuffer(n(:t1).i[:out].edge)
+            attachWriteBuffer(n(:t1).i[:out].edge)
             s2 = SumProduct.generateSchedule(g)
             @fact s2 => ForneyLab.convert(Schedule, [n(:t1).i[:out].partner, n(:t1).i[:out]])
         end

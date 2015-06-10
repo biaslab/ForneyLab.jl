@@ -7,7 +7,6 @@ using LaTeXStrings
 export ProbabilityDistribution
 export sumProduct!, vmp!
 export vague, self, ==
-export current_graph
 export setVerbosity
 
 # Export algorithm modules
@@ -15,7 +14,6 @@ export SumProduct
 export VMP
 
 # Verbosity
-verbose = false
 setVerbosity(is_verbose=true) = global verbose = is_verbose
 printVerbose(msg) = if verbose println(msg) end
 
@@ -83,5 +81,25 @@ include("algorithms/vmp/vmp.jl")
 
 # Functions for message post-processing
 vague(dist::ProbabilityDistribution) = vague(typeof(dist))
+
+function __init__()
+    # Run-time initialization
+
+    # Module-global variable for verbosity setting
+    global verbose = false
+
+    # Create an empty FactorGraph
+    # Module-global variable current_graph keeps track of currently active FactorGraph
+    global current_graph = FactorGraph(Dict{Symbol, Node}(),
+                                        Dict{Symbol, Edge}(),
+                                        Dict{Symbol, AbstractWrap}(),
+                                        Dict{DataType, Int}(),
+                                        false,
+                                        Dict{TerminalNode, Vector}(),
+                                        Dict{Union(Edge,Interface), Vector}())
+
+    # Module-global variable to keep track of currently active Algorithm
+    global current_algorithm = nothing
+end
 
 end # module ForneyLab

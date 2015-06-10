@@ -16,12 +16,12 @@ type Edge <: AbstractEdge
     function Edge(tail::Interface, head::Interface, distribution_type=Any; id=symbol("$(tail.node.id)_$(head.node.id)"))
         # add_to_graph is false for edges that are internal in a composite node
         # Cautionary note: replacing "distribution_type=Any" by "distribution_type::DataType=Any" causes segfaults (?!?)
-        (!is(head.node, tail.node)) || error("Cannot connect two interfaces of the same node: $(typeof(head.node)) $(head.node.id)")
+        !is(head.node, tail.node) || error("Cannot connect two interfaces of the same node: $(typeof(head.node)) $(head.node.id)")
         (head.partner == nothing && tail.partner == nothing) || error("Previously defined edges cannot be repositioned.")
-        (current_graph.locked == false) || error("Cannot extend a locked FactorGraph.")
-        (is(node(head.node.id), head.node)) || error("Head node should belong to the current graph.")
-        (is(node(tail.node.id), tail.node)) || error("Tail node should belong to the current graph.")
-        (!haskey(current_graph.e, id)) || error("The edge id $(id) already exists in the current graph. Consider specifying an explicit id.")
+        !current_graph.locked || error("Cannot extend a locked FactorGraph.")
+        hasNode(current_graph, head.node) || error("Head node does not belong to the current graph.")
+        hasNode(current_graph, tail.node) || error("Tail node does not belong to the current graph.")
+        !haskey(current_graph.e, id) || error("The edge id $(id) already exists in the current graph. Consider specifying an explicit id.")
         
         self = new(id, tail, head, nothing, distribution_type)
 

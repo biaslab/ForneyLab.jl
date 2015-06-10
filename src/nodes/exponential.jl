@@ -27,8 +27,7 @@ type ExponentialNode <: Node
 
     function ExponentialNode(; id=generateNodeId(ExponentialNode))
         self = new(id, Array(Interface, 2), Dict{Symbol,Interface}())
-        !haskey(current_graph.n, id) || error("Node id $(id) already present")
-        current_graph.n[id] = self
+        addNode!(current_graph, self)
  
         for (iface_index, iface_handle) in enumerate([:in, :out])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)

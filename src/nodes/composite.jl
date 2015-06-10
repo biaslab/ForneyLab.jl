@@ -18,9 +18,8 @@ function CompositeNode(graph::FactorGraph, terminals...; id=generateNodeId(Compo
     # This function creates a new current FactorGraph so the user can continue working in the higher level graph.
     self = CompositeNode(id, Interface[], Dict{Symbol,Interface}(), graph, Dict{(Interface,Function),Algorithm}(), TerminalNode[], Dict{TerminalNode,Interface}(), deterministic)
 
-    all_nodes = nodes(graph)
     for terminal in terminals
-        terminal in all_nodes || error("$(node.id) not in graph")
+        hasNode(graph, terminal) || error("$(node.id) not in graph")
         (typeof(terminal) == TerminalNode) || error("Only a TerminalNode can be bound to an Interface of the CompositeNode, not $(typeof(terminal)).")
         if terminal in self.interfaceid_to_terminalnode
             error("Cannot bind the same TerminalNode to multiple interfaces")
@@ -32,7 +31,7 @@ function CompositeNode(graph::FactorGraph, terminals...; id=generateNodeId(Compo
     end
     self.internal_graph.locked = true
     new_g = FactorGraph()
-    new_g.n[id] = self # Add newly created composite node to current graph
+    addNode!(new_g, self) # Add newly created composite node to new current graph
 
     return self    
 end

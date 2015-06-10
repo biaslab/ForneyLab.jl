@@ -3,47 +3,68 @@
 #####################
 
 facts("Read/write buffer integration tests") do
-    # setReadBuffer
-    context("setReadBuffer should register a read buffer for a TerminalNode") do
+    # attachReadBuffer
+    context("attachReadBuffer should register a read buffer for a TerminalNode") do
         g = initializeBufferGraph()
         read_buffer = zeros(10)
-        setReadBuffer(n(:node_t1), read_buffer)
+        attachReadBuffer(n(:node_t1), read_buffer)
         @fact g.read_buffers[n(:node_t1)] => read_buffer
     end
-    # context("setReadBuffer should not register a read buffer if the specified node is not in the specified graph") do
-    #     @fact_throws setReadBuffer(TerminalNode(), zeros(10))
-    # end
 
-    context("setReadBuffer should register a mini-batch read buffer for a TerminalNode array") do
+    context("attachReadBuffer should register a mini-batch read buffer for a TerminalNode array") do
         data = [1.0, 1.0, 1.0]
         initializeGaussianNodeChain(data)
         graph = currentGraph()
         more_data = [1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0]
-        setReadBuffer([n(:y1), n(:y2), n(:y3)], more_data, graph)
+        attachReadBuffer([n(:y1), n(:y2), n(:y3)], more_data, graph)
         @fact graph.read_buffers[n(:y1)] => [1.0, 2.0, 3.0]
         @fact graph.read_buffers[n(:y2)] => [1.0, 2.0, 3.0]
         @fact graph.read_buffers[n(:y3)] => [1.0, 2.0, 3.0]
     end
-    
-    # setWriteBuffer
-    context("setWriteBuffer should register a write buffer for an Interface") do
+
+    context("detachReadBuffer should detach a read buffer from a terminal node") do
+        g = initializeBufferGraph()
+        read_buffer = zeros(10)
+        attachReadBuffer(n(:node_t1), read_buffer)
+        detachReadBuffer(n(:node_t1))
+        @fact length(g.read_buffers) => 0
+    end
+
+    # attachWriteBuffer
+    context("attachWriteBuffer should register a write buffer for an Interface") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        setWriteBuffer(n(:node_t1).i[:out], write_buffer)
+        attachWriteBuffer(n(:node_t1).i[:out], write_buffer)
         @fact g.write_buffers[n(:node_t1).i[:out]] => write_buffer
     end
-    context("setWriteBuffer should register a write buffer for an Edge (marginal)") do
+    context("attachWriteBuffer should register a write buffer for an Edge (marginal)") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        setWriteBuffer(e(:e), write_buffer)
+        attachWriteBuffer(e(:e), write_buffer)
         @fact g.write_buffers[e(:e)] => write_buffer
     end
 
-    context("clearBuffers should deregister all read/write buffers") do
+    # detachWriteBuffer
+    context("detachWriteBuffer should deregister a write buffer on an edge") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        setWriteBuffer(e(:e), write_buffer)
-        clearBuffers(g)
+        attachWriteBuffer(e(:e), write_buffer)
+        detachWriteBuffer(e(:e))
+        @fact length(g.write_buffers) => 0
+    end
+    context("detachWriteBuffer should deregister a write buffer on an interface") do
+        g = initializeBufferGraph()
+        write_buffer = Array(Any, 0)
+        attachWriteBuffer(n(:node_t1).i[:out], write_buffer)
+        detachWriteBuffer(n(:node_t1).i[:out])
+        @fact length(g.write_buffers) => 0
+    end
+
+    context("detachBuffers should deregister all read/write buffers") do
+        g = initializeBufferGraph()
+        write_buffer = Array(Any, 0)
+        attachWriteBuffer(e(:e), write_buffer)
+        detachBuffers(g)
         @fact length(g.read_buffers) => 0
         @fact length(g.write_buffers) => 0
     end
@@ -62,8 +83,8 @@ facts("step integration tests") do
         Edge(n(:add).i[:out], n(:out))
         Wrap(n(:out), n(:in))
         deltas = [DeltaDistribution(n) for n in 1.:10.]
-        setReadBuffer(n(:delta), deltas)
-        results = setWriteBuffer(n(:add).i[:out])
+        attachReadBuffer(n(:delta), deltas)
+        results = attachWriteBuffer(n(:add).i[:out])
         algo = SumProduct.Algorithm(g) # The timewraps and buffers tell the autoscheduler what should be computed
         while !isempty(deltas)
             step(algo, g)
@@ -85,8 +106,8 @@ facts("run() integration tests") do
         Edge(n(:add).i[:out], n(:out))
         Wrap(n(:out), n(:in))
         deltas = [DeltaDistribution(n) for n in 1.:10.]
-        setReadBuffer(n(:delta), deltas)
-        results = setWriteBuffer(n(:add).i[:out])
+        attachReadBuffer(n(:delta), deltas)
+        results = attachWriteBuffer(n(:add).i[:out])
         schedule = SumProduct.generateSchedule(n(:add).i[:out])
         algo = Algorithm(schedule, g)
         run(algo, g)

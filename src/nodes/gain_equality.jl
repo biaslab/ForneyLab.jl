@@ -34,8 +34,7 @@ type GainEqualityNode <: Node
 
     function GainEqualityNode(A::Union(Array{Float64},Float64)=1.0; id=generateNodeId(GainEqualityNode))
         self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
-        !haskey(current_graph.n, id) || error("Node id $(id) already present")
-        current_graph.n[id] = self
+        addNode!(current_graph, self)
  
         for (iface_index, iface_handle) in enumerate([:in1, :in2, :out])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
