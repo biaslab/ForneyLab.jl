@@ -86,4 +86,11 @@ facts("Functions for collecting nodes and edges") do
         @fact node(:my_mocknode) => mocknode
     end
 
+    context("addNode!() should add a node to a graph") do
+        FactorGraph()
+        nd = TerminalNode(id=:tnode)
+        g = FactorGraph()
+        ForneyLab.addNode!(g, nd)
+        @fact g.n[:tnode] => nd
+    end
 end

@@ -35,4 +35,10 @@ facts("Wrap integration tests") do
         @fact wraps(n(:t2)) => Set{Wrap}([wrap1, wrap2])
     end
 
+    context("delete! should remove a wrap") do
+        g = initializeWrapGraph()
+        wrap = Wrap(n(:t2), n(:t1), id=:my_wrap)
+        delete!(g, wrap)
+        @fact length(g.wraps) => 0
+    end
 end

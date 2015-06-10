@@ -97,23 +97,27 @@ function Base.delete!(graph::FactorGraph, nd::Node)
     hasNode(graph, nd) || error("Graph does not contain node")
     !graph.locked || error("Cannot delete node from locked graph")
 
-    for iface in nd.interfaces
-        if iface.edge != nothing
-            delete!(graph, iface.edge)
-        end
-        if haskey(graph.write_buffers, iface)
-            detachWriteBuffer(iface, graph)
-        end
-    end 
-    if haskey(graph.read_buffers, nd)
-        detachReadBuffer(nd, graph)
-    end
-    delete!(graph.n, nd.id)
+    # Delete wraps
     if typeof(nd) == TerminalNode
         for wr in wraps(nd)
             delete!(graph, wr)
         end
     end
+
+    # Detach read buffers from node
+    if haskey(graph.read_buffers, nd)
+        detachReadBuffer(nd, graph)
+    end
+
+    for iface in nd.interfaces
+        # Detach and write buffers from edges/interfaces and delete edges
+        if iface.edge != nothing
+            delete!(graph, iface.edge)
+        end
+    end
+
+    # Delete node
+    delete!(graph.n, nd.id)
 
     return graph
 end
@@ -122,10 +126,17 @@ function Base.delete!(graph::FactorGraph, eg::Edge)
     hasEdge(graph, eg) || error("Graph does not contain edge")
     !graph.locked || error("Cannot delete node from locked graph")
 
+    # Decouple buffers
+    haskey(graph.write_buffers, eg) && detachWriteBuffer(eg, graph)
+    haskey(graph.write_buffers, eg.head) && detachWriteBuffer(eg.head, graph)
+    haskey(graph.write_buffers, eg.tail) && detachWriteBuffer(eg.tail, graph)
+
+    # Decouple edge and interfaces
     delete!(graph.e, eg.id)
-    if haskey(graph.write_buffers, eg)
-        detachWriteBuffer(eg, graph)
-    end
+    eg.head.partner = nothing
+    eg.tail.partner = nothing
+    eg.head.edge = nothing
+    eg.tail.edge = nothing
     
     return graph
 end
