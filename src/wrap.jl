@@ -26,6 +26,7 @@ wrap(id::Symbol, g::FactorGraph=current_graph) = g.wraps[id]
 wraps(g::FactorGraph=current_graph) = Set{Wrap}(values(g.wraps))
 
 function wraps(nd::TerminalNode, g::FactorGraph=current_graph)
+    hasNode(g, nd) ||  error("The specified node does not belong to the specified or current graph")
     ws = Set{Wrap}()
     for w in values(g.wraps)
         (w.sink == nd) && push!(ws, w)
