@@ -29,7 +29,8 @@ The Jupyter notebook demos should always be committed in an executed state. To m
 for s in `git diff --staged --name-only --diff-filter=AM | grep "demo/.*\.ipynb"`; do 
 	echo "Executing added or modified demo: " $s
 	ipython nbconvert --to=notebook --execute --inplace $s
-	mv $(basename "$s") demo/$(basename "$s")
+	mv $(basename "$s") $s
+	git add $s
 done
 ```
 
