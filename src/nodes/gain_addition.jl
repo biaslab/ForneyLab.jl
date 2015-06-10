@@ -22,29 +22,30 @@
 #   1 i[:in1], 2 i[:in2], 3 i[:out]
 #   
 # Construction:
-#   GainAdditionNode([1.0], name="my_node")
+#   GainAdditionNode([1.0], id=:my_node)
 #
 ############################################
 export GainAdditionNode
 
 type GainAdditionNode <: Node
     A::Array{Float64}
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
-    function GainAdditionNode(A::Union(Array{Float64},Float64)=1.0; name=unnamedStr())
-        self = new(ensureMatrix(deepcopy(A)), name, Array(Interface, 3), Dict{Symbol,Interface}())
-
-        for (iface_id, iface_name) in enumerate([:in1, :in2, :out])
-            self.i[iface_name] = self.interfaces[iface_id] = Interface(self)
+    function GainAdditionNode(A::Union(Array{Float64},Float64)=1.0; id=generateNodeId(GainAdditionNode))
+        self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
+        addNode!(current_graph, self)
+ 
+        for (iface_index, iface_handle) in enumerate([:in1, :in2, :out])
+            self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
         try
             self.A_inv = inv(self.A)
         catch
-            warn("The specified multiplier for $(typeof(self)) $(self.name) is not invertible. This might cause problems. Double check that this is what you want.")
+            warn("The specified multiplier for $(typeof(self)) $(self.id) is not invertible. This might cause problems. Double check that this is what you want.")
         end
 
         return self
@@ -73,13 +74,13 @@ backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z
 
 # Forward to OUT
 function sumProduct!(node::GainAdditionNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             in1::Message{GaussianDistribution},
                             in2::Message{GaussianDistribution},
                             ::Nothing)
 
-    if outbound_interface_id == 3
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    if outbound_interface_index == 3
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
         dist_1 = in1.payload
         dist_2 = in2.payload
@@ -130,21 +131,21 @@ function sumProduct!(node::GainAdditionNode,
         end
 
         return (:gain_addition_gaussian_forward,
-                node.interfaces[outbound_interface_id].message)
+                node.interfaces[outbound_interface_index].message)
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+        error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
     end
 end
 
 # Backward to IN2
 function sumProduct!(node::GainAdditionNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             in1::Message{GaussianDistribution},
                             ::Nothing,
                             out::Message{GaussianDistribution})
 
-    if outbound_interface_id == 2
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    if outbound_interface_index == 2
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
         dist_1 = in1.payload
         dist_3 = out.payload
@@ -195,28 +196,28 @@ function sumProduct!(node::GainAdditionNode,
         end
 
         return (:gain_addition_gaussian_backward_in2,
-                node.interfaces[outbound_interface_id].message)
+                node.interfaces[outbound_interface_index].message)
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+        error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
     end
 end
 
 # Backward to IN1
 function sumProduct!(node::GainAdditionNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             ::Nothing,
                             in2::Message{GaussianDistribution},
                             out::Message{GaussianDistribution})
 
-    if outbound_interface_id == 1
+    if outbound_interface_index == 1
         dist_temp = GaussianDistribution()
         additionGaussianBackwardRule!(dist_temp, in2.payload, out.payload)
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
         fixedGainGaussianBackwardRule!(dist_out, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
 
         return (:gain_addition_gaussian_backward_in1,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
     else
-        error("Invalid outbound interface id $(outbound_interface_id), on $(typeof(node)) $(node.name).")
+        error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
     end
 end

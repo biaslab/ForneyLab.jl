@@ -4,10 +4,9 @@ using Optim
 using YAML
 using LaTeXStrings
 
-export Node, ProbabilityDistribution
+export ProbabilityDistribution
 export sumProduct!, sumProductApprox!, vmp!
 export vague, self, ==
-export current_graph
 export setVerbosity
 
 # Export algorithm modules
@@ -15,7 +14,6 @@ export SumProduct
 export VMP
 
 # Verbosity
-verbose = false
 setVerbosity(is_verbose=true) = global verbose = is_verbose
 printVerbose(msg) = if verbose println(msg) end
 
@@ -28,8 +26,9 @@ import Base.show, Base.convert
 # Top-level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
-abstract Node
-show(io::IO, node::Node) = println(io, "$(typeof(node)) with name $(node.name)")
+
+# Node
+include("node.jl")
 
 # Message type
 include("message.jl")
@@ -60,8 +59,9 @@ include("nodes/gain_addition.jl")
 include("nodes/gain_equality.jl")
 include("nodes/sigmoid.jl")
 
-# Graph and algorithm
+# Graph, wraps and algorithm
 include("factor_graph.jl")
+include("wrap.jl")
 include("algorithm.jl")
 
 # Composite nodes
@@ -83,6 +83,25 @@ include("algorithms/vmp/vmp.jl")
 
 # Functions for message post-processing
 vague(dist::ProbabilityDistribution) = vague(typeof(dist))
-self(x::Any) = x
+
+function __init__()
+    # Run-time initialization
+
+    # Module-global variable for verbosity setting
+    global verbose = false
+
+    # Create an empty FactorGraph
+    # Module-global variable current_graph keeps track of currently active FactorGraph
+    global current_graph = FactorGraph(Dict{Symbol, Node}(),
+                                        Dict{Symbol, Edge}(),
+                                        Dict{Symbol, AbstractWrap}(),
+                                        Dict{DataType, Int}(),
+                                        false,
+                                        Dict{TerminalNode, Vector}(),
+                                        Dict{Union(Edge,Interface), Vector}())
+
+    # Module-global variable to keep track of currently active Algorithm
+    global current_algorithm = nothing
+end
 
 end # module ForneyLab

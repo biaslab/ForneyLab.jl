@@ -14,22 +14,23 @@
 #   1 i[:in], 2 i[:out]
 #
 # Construction:
-#   ExponentialNode(name="my_node")
+#   ExponentialNode(id=:my_node)
 #
 ############################################
 
 export ExponentialNode
 
 type ExponentialNode <: Node
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
 
-    function ExponentialNode(; name=unnamedStr())
-        self = new(name, Array(Interface, 2), Dict{Symbol,Interface}())
-
-        for (iface_id, iface_name) in enumerate([:in, :out])
-            self.i[iface_name] = self.interfaces[iface_id] = Interface(self)
+    function ExponentialNode(; id=generateNodeId(ExponentialNode))
+        self = new(id, Array(Interface, 2), Dict{Symbol,Interface}())
+        addNode!(current_graph, self)
+ 
+        for (iface_index, iface_handle) in enumerate([:in, :out])
+            self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
         return self
@@ -45,7 +46,7 @@ isDeterministic(::ExponentialNode) = true
 
 # Forward message
 function sumProduct!(node::ExponentialNode,
-                     outbound_interface_id::Int,
+                     outbound_interface_index::Int,
                      msg_in::Message{GaussianDistribution},
                      msg_out::Nothing)
     dist_out = ensureMessage!(node.i[:out], GammaDistribution).payload
@@ -60,12 +61,12 @@ function sumProduct!(node::ExponentialNode,
     dist_out.b = gam/(exp(mu))
 
     return (:exponential_forward_gaussian,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
 
 # Backward message
 function sumProduct!(node::ExponentialNode,
-                     outbound_interface_id::Int,
+                     outbound_interface_index::Int,
                      msg_in::Nothing,
                      msg_out::Message{GammaDistribution})
     dist_out = ensureMessage!(node.i[:in], GaussianDistribution).payload
@@ -79,7 +80,7 @@ function sumProduct!(node::ExponentialNode,
     invalidate!(dist_out.xi)
 
     return (:exponential_backward_gaussian,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
 
 
@@ -89,7 +90,7 @@ end
 
 # Forward message
 function sumProduct!{T<:Any}(node::ExponentialNode,
-                     outbound_interface_id::Int,
+                     outbound_interface_index::Int,
                      msg_in::Message{DeltaDistribution{T}},
                      msg_out::Nothing)
     length(msg_in.payload.m) == 1 || error("ExponentialNode only defined for univariate variables")
@@ -98,12 +99,12 @@ function sumProduct!{T<:Any}(node::ExponentialNode,
     dist_out.m = exp(msg_in.payload.m)
 
     return (:exponential_forward_delta,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
 
 # Backward message
 function sumProduct!{T<:Any}(node::ExponentialNode,
-                     outbound_interface_id::Int,
+                     outbound_interface_index::Int,
                      msg_in::Nothing,
                      msg_out::Message{DeltaDistribution{T}})
     length(msg_out.payload.m) == 1 || error("ExponentialNode only defined for univariate variables")
@@ -112,5 +113,5 @@ function sumProduct!{T<:Any}(node::ExponentialNode,
     dist_out.m = log(msg_out.payload.m)
 
     return (:exponential_backward_delta,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end

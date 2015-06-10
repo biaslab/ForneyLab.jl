@@ -28,20 +28,20 @@ function generateScheduleByDFS!(outbound_interface::Interface,
     end
 
     # Check all inbound messages on the other interfaces of the node
-    outbound_interface_id = 0
-    for interface_id = 1:length(node.interfaces)
-        interface = node.interfaces[interface_id]
+    outbound_interface_index = 0
+    for interface_index = 1:length(node.interfaces)
+        interface = node.interfaces[interface_index]
         if is(interface, outbound_interface)
-            outbound_interface_id = interface_id
+            outbound_interface_index = interface_index
         end
 
-        (outbound_interface_id != interface_id) || continue
+        (outbound_interface_index != interface_index) || continue
 
         if (typeof(allowed_edges)==Set{Edge}) && !(interface.edge in allowed_edges)
             continue
         end
 
-        (interface.partner != nothing) || error("Disconnected interface should be connected: interface #$(interface_id) of $(typeof(node)) $(node.name)")
+        (interface.partner != nothing) || error("Disconnected interface should be connected: interface #$(interface_index) of $(typeof(node)) $(node.id)")
 
         if interface.partner.message == nothing # Required message missing.
             if !(interface.partner in backtrace) # Don't recalculate stuff that's already in the schedule.
@@ -84,12 +84,12 @@ end
 generateSchedule(partial_list::Array{Interface, 1}; args...) = generateSchedule(convert(Schedule, partial_list); args...)
 
 function generateSchedule(graph::FactorGraph=currentGraph(); args...)
-    # Build a sumproduct schedule to calculate all messages towards timewraps and writebuffers
+    # Build a sumproduct schedule to calculate all messages towards wraps and writebuffers
     partial_list = Interface[]
     
-    # Collect timewrap interfaces
-    for (from_node, to_node) in graph.wraps
-        push!(partial_list, from_node.interfaces[1].partner)
+    # Collect wrap interfaces
+    for wrap in wraps(graph)
+        push!(partial_list, wrap.source.interfaces[1].partner)
     end
 
     # Collect write buffer interfaces

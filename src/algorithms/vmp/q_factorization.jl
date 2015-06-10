@@ -2,7 +2,7 @@ type QFactorization
     factors::Array{Subgraph, 1}
     edge_to_subgraph::Dict{Edge, Subgraph}
 end
-function QFactorization(graph::FactorGraph=current_graph)
+function QFactorization(graph::FactorGraph=currentGraph())
     # Create an initial subgraph that envelopes the entire graph
     internal_edges = edges(graph)
     sg = Subgraph(internal_edges, Interface[], Node[]) # Build a subgraph that contains all edges in the graph
@@ -71,7 +71,7 @@ function calculateQDistribution!(q_distributions::Dict{(Node, Subgraph), QDistri
         if neighbouring_subgraph == subgraph # edge is internal
             push!(required_inputs, interface.partner.message)
         else # edge is external
-            haskey(q_distributions, (node, neighbouring_subgraph)) || error("A required q-distribution for $(node.name) is not present. Please preset (vague) q-distributions.")
+            haskey(q_distributions, (node, neighbouring_subgraph)) || error("A required q-distribution for $(node.id) is not present. Please preset (vague) q-distributions.")
             push!(required_inputs, q_distributions[(node, neighbouring_subgraph)].distribution)
         end
     end
@@ -113,7 +113,7 @@ end
 factorize!(internal_edge::Edge, f::QFactorization=QFactorization()) = factorize!(Set{Edge}([internal_edge]), f)
 factorize!(internal_edges::Vector{Edge}, f::QFactorization=QFactorization()) = factorize!(Set{Edge}(internal_edges), f)
 
-function factorize(graph::FactorGraph=current_graph)
+function factorize(graph::FactorGraph=currentGraph())
     # Generates a mean field factorization based on graph
 
     f = QFactorization(graph) # Starting point

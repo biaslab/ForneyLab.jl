@@ -1,20 +1,19 @@
-export  setReadBuffer,
-        setWriteBuffer,
-        clearBuffers,
+export  attachReadBuffer,
+        attachWriteBuffer,
+        detachReadBuffer,
+        detachWriteBuffer,
+        detachBuffers,
         emptyWriteBuffers,
-        wrap,
-        wraps,
-        clearWraps,
         execute,
         step,
         run
 
-function setReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=current_graph)
-    #(node in nodes(graph)) || error("The specified node is not part of the current or specified graph")
+function attachReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=current_graph)
+    hasNode(graph, node) || error("The specified node is not part of the current or specified graph")
     graph.read_buffers[node] = buffer
 end
 
-function setReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, graph::FactorGraph=current_graph)
+function attachReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, graph::FactorGraph=current_graph)
     # Mini-batch assignment for read buffers.
     # buffer is divided over nodes equally.
     # TODO: this function should be renamed to reflect what it does
@@ -23,22 +22,48 @@ function setReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, graph::Facto
     n_samples_per_node*n_nodes == length(buffer) || error("Buffer length must a multiple of the mini-batch node array length")
     buffmat = reshape(buffer, n_nodes, n_samples_per_node) # samples for one node are present in the rows of buffmat
     for k in 1:n_nodes
+        hasNode(graph, nodes[k]) || error("One of the specified nodes is not part of the current or specified graph")
         graph.read_buffers[nodes[k]] = vec(buffmat[k,:])
     end
+
     return graph.read_buffers[nodes[end]] # Return last node's buffer
 end
 
-function setWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=current_graph)
-    #(interface.node in nodes(graph)) || error("The specified interface is not part of the current or specified graph")
+function detachReadBuffer(nd::TerminalNode, graph::FactorGraph=current_graph)
+    hasNode(graph, nd) || error("The specified node is not part of the current or specified graph")
+    haskey(graph.read_buffers, nd) || error("There is no read buffer attached to the specified node")
+
+    delete!(graph.read_buffers, nd)
+    return graph
+end
+
+function attachWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=current_graph)
+    hasNode(graph, interface.node) || error("The specified interface is not part of the current or specified graph")
     graph.write_buffers[interface] = buffer # Write buffer for message
 end
 
-function setWriteBuffer(edge::Edge, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=current_graph)
-    #(edge in edges(graph)) || error("The specified edge is not part of the current or specified graph")
+function detachWriteBuffer(interface::Interface, graph::FactorGraph=current_graph)
+    hasNode(graph, interface.node) || error("The specified interface is not part of the current or specified graph")
+    haskey(graph.write_buffers, interface) || error("There is no write buffer attached to the specified interface")
+
+    delete!(graph.write_buffers, interface)
+    return graph
+end
+
+function attachWriteBuffer(edge::Edge, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=current_graph)
+    hasEdge(graph, edge) || error("The specified edge is not part of the current or specified graph")
     graph.write_buffers[edge] = buffer # Write buffer for marginal
 end
 
-function clearBuffers(graph::FactorGraph=current_graph)
+function detachWriteBuffer(edge::Edge, graph::FactorGraph=current_graph)
+    hasEdge(graph, edge) || error("The specified edge is not part of the current or specified graph")
+    haskey(graph.write_buffers, edge) || error("There is no write buffer attached to the specified edge")
+
+    delete!(graph.write_buffers, edge)
+    return graph
+end
+
+function detachBuffers(graph::FactorGraph=current_graph)
     graph.read_buffers = Dict{TerminalNode, Vector}()
     graph.write_buffers = Dict{Union(Edge,Interface), Vector}()
 end
@@ -48,17 +73,6 @@ function emptyWriteBuffers(graph::FactorGraph=current_graph)
         empty!(v) # Clear the vector but keep the pointer
     end
 end
-
-function wrap(from::TerminalNode, to::TerminalNode, graph::FactorGraph=current_graph)
-    !is(from, to) || error("Cannot create time wrap: from and to must be different nodes")
-    push!(graph.wraps, (from, to))
-end
-
-wraps(g::FactorGraph=current_graph) = g.wraps
-
-function clearWraps(graph::FactorGraph=current_graph)
-    graph.wraps = Array((TerminalNode, TerminalNode), 0)
-end 
 
 function execute(algorithm::Algorithm, graph::FactorGraph=current_graph)
     # Execute algorithm on graph
@@ -88,10 +102,10 @@ function step(algorithm::Algorithm, graph::FactorGraph=current_graph)
         end
     end
 
-    # Time wraps
-    for (from, to) in graph.wraps
-        isdefined(from.interfaces[1].partner.message, :payload) || error("There is no message to move to $(to) for the next timestep")
-        to.value = deepcopy(from.interfaces[1].partner.message.payload)
+    # Wraps
+    for wrap in wraps(graph)
+        isdefined(wrap.source.interfaces[1].partner.message, :payload) || error("There is no message to move to $(wrap.sink) for the next timestep")
+        wrap.sink.value = deepcopy(wrap.source.interfaces[1].partner.message.payload)
     end
 
     return result

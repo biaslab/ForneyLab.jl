@@ -15,22 +15,23 @@
 #   1 i[1], 2 i[2], 3 i[3]
 #
 # Construction:
-#   EqualityNode(name="my_node")
+#   EqualityNode(id=:my_node)
 #
 ############################################
 
 export EqualityNode
 
 type EqualityNode <: Node
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Int,Interface}
 
-    function EqualityNode(; name=unnamedStr())
-        self = new(name, Array(Interface, 3), Dict{Int,Interface}())
-
-        for interface_id = 1:3
-            self.i[interface_id] = self.interfaces[interface_id] = Interface(self)
+    function EqualityNode(; id=generateNodeId(EqualityNode))
+        self = new(id, Array(Interface, 3), Dict{Int,Interface}())
+        addNode!(current_graph, self)
+ 
+        for interface_index = 1:3
+            self.i[interface_index] = self.interfaces[interface_index] = Interface(self)
         end
 
         return self
@@ -47,7 +48,7 @@ function firstFreeInterface(node::EqualityNode)
             return interface
         end
     end
-    error("No free interface on $(typeof(node)) $(node.name)")
+    error("No free interface on $(typeof(node)) $(node.id)")
 end
 
 ############################################
@@ -89,20 +90,20 @@ function equalityGaussianRule!(dist_result::GaussianDistribution, dist_1::Gaussi
 end
 
 function sumProduct!(node::EqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_1::Message{GaussianDistribution},
                             msg_2::Message{GaussianDistribution},
                             ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
-    dist_result = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
     equalityGaussianRule!(dist_result, msg_1.payload, msg_2.payload)
 
     return (:equality_gaussian,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{GaussianDistribution}, msg_2::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{GaussianDistribution}, ::Nothing, msg_2::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_1::Message{GaussianDistribution}, msg_2::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_1::Message{GaussianDistribution}, ::Nothing, msg_2::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
 ############################################
 # Gaussian-Student's t combination
@@ -116,7 +117,7 @@ end
 equalityGaussianStudentsTRule!(dist_result::GaussianDistribution, dist_1::StudentsTDistribution, dist_2::GaussianDistribution) = equalityGaussianStudentsTRule!(dist_result, dist_2, dist_1)
 
 function sumProduct!(node::EqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_st::Message{StudentsTDistribution},
                             msg_n::Message{GaussianDistribution},
                             ::Nothing)
@@ -124,22 +125,22 @@ function sumProduct!(node::EqualityNode,
     # Definitions available in derivations notebook
     # Same as Gaussian equality rule
 
-    dist_result = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
     equalityGaussianStudentsTRule!(dist_result, msg_st.payload, msg_n.payload)
 
     return (:equality_gaussian_student,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
 # Call signature for messages other ways around
 # Outbound interface 3
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_n::Message{GaussianDistribution}, msg_st::Message{StudentsTDistribution}, ::Nothing) = sumProduct!(node, outbound_interface_id, msg_st, msg_n, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_n::Message{GaussianDistribution}, msg_st::Message{StudentsTDistribution}, ::Nothing) = sumProduct!(node, outbound_interface_index, msg_st, msg_n, nothing)
 # Outbound interface 2
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_n::Message{GaussianDistribution}, ::Nothing, msg_st::Message{StudentsTDistribution}) = sumProduct!(node, outbound_interface_id, msg_st, msg_n, nothing)
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_st::Message{StudentsTDistribution}, ::Nothing, msg_n::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_id, msg_st, msg_n, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_n::Message{GaussianDistribution}, ::Nothing, msg_st::Message{StudentsTDistribution}) = sumProduct!(node, outbound_interface_index, msg_st, msg_n, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_st::Message{StudentsTDistribution}, ::Nothing, msg_n::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_st, msg_n, nothing)
 # Outbound interface 1
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_n::Message{GaussianDistribution}, msg_st::Message{StudentsTDistribution}) = sumProduct!(node, outbound_interface_id, msg_st, msg_n, nothing)
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_st::Message{StudentsTDistribution}, msg_n::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_id, msg_st, msg_n, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_n::Message{GaussianDistribution}, msg_st::Message{StudentsTDistribution}) = sumProduct!(node, outbound_interface_index, msg_st, msg_n, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_st::Message{StudentsTDistribution}, msg_n::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_st, msg_n, nothing)
 
 ############################################
 # DeltaDistribution methods
@@ -160,21 +161,21 @@ end
 
 function sumProduct!{T<:Any}(
                             node::EqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_1::Message{DeltaDistribution{T}},
                             msg_2::Message{DeltaDistribution{T}},
                             ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
 
-    dist_result = ensureMessage!(node.interfaces[outbound_interface_id], typeof(msg_1.payload)).payload
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], typeof(msg_1.payload)).payload
 
     equalityDeltaRule!(dist_result, msg_1.payload, msg_2.payload)
 
     return (:equality_delta,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{DeltaDistribution{T}}, ::Nothing, msg_2::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{DeltaDistribution{T}}, msg_2::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
+sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, msg_1::Message{DeltaDistribution{T}}, ::Nothing, msg_2::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_1::Message{DeltaDistribution{T}}, msg_2::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
 
 ############################################
@@ -190,21 +191,21 @@ function equalityInverseGammaRule!(dist_result::InverseGammaDistribution, dist_1
 end 
 
 function sumProduct!(node::EqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_1::Message{InverseGammaDistribution},
                             msg_2::Message{InverseGammaDistribution},
                             ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], InverseGammaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], InverseGammaDistribution).payload
 
     equalityInverseGammaRule!(dist_out, msg_1.payload, msg_2.payload)
 
     return (:equality_inverse_gamma,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{InverseGammaDistribution}, ::Nothing, msg_2::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{InverseGammaDistribution}, msg_2::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_1::Message{InverseGammaDistribution}, ::Nothing, msg_2::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_1::Message{InverseGammaDistribution}, msg_2::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
 ############################################
 # GammaDistribution methods
@@ -219,21 +220,21 @@ function equalityGammaRule!(dist_result::GammaDistribution, dist_1::GammaDistrib
 end    
 
 function sumProduct!(node::EqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_1::Message{GammaDistribution},
                             msg_2::Message{GammaDistribution},
                             ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GammaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GammaDistribution).payload
 
     equalityGammaRule!(dist_out, msg_1.payload, msg_2.payload)
 
     return (:equality_gamma,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{GammaDistribution}, ::Nothing, msg_2::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{GammaDistribution}, msg_2::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_1::Message{GammaDistribution}, ::Nothing, msg_2::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_1::Message{GammaDistribution}, msg_2::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
 ############################################
 # BetaDistribution methods
@@ -248,21 +249,21 @@ function equalityBetaRule!(dist_result::BetaDistribution, dist_1::BetaDistributi
 end    
 
 function sumProduct!(node::EqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_1::Message{BetaDistribution},
                             msg_2::Message{BetaDistribution},
                             ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], BetaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], BetaDistribution).payload
 
     equalityBetaRule!(dist_out, msg_1.payload, msg_2.payload)
 
     return (:equality_beta,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, msg_1::Message{BetaDistribution}, ::Nothing, msg_2::Message{BetaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
-sumProduct!(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_1::Message{BetaDistribution}, msg_2::Message{BetaDistribution}) = sumProduct!(node, outbound_interface_id, msg_1, msg_2, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_1::Message{BetaDistribution}, ::Nothing, msg_2::Message{BetaDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_1::Message{BetaDistribution}, msg_2::Message{BetaDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
 ############################################
 # Gaussian-DeltaDistribution combination
@@ -285,27 +286,27 @@ equalityGaussianDeltaRule!(dist_result::GaussianDistribution, dist_1::DeltaDistr
 
 function sumProduct!{T<:Any}(
                             node::EqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_delta::Message{DeltaDistribution{T}},
                             msg_n::Message{GaussianDistribution},
                             ::Nothing)
     # Combination of Gaussian and delta
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], DeltaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution).payload
 
     equalityGaussianDeltaRule!(dist_out, msg_delta.payload, msg_n.payload)
 
     return (:equality_gaussian_delta,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
 # Call signature for messages other ways around
 # Outbound interface 3
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_id::Int, msg_n::Message{GaussianDistribution}, msg_delta::Message{DeltaDistribution{T}}, ::Nothing) = sumProduct!(node, outbound_interface_id, msg_delta, msg_n, nothing)
+sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, msg_n::Message{GaussianDistribution}, msg_delta::Message{DeltaDistribution{T}}, ::Nothing) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
 # Outbound interface 2
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_id::Int, msg_n::Message{GaussianDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_delta, msg_n, nothing)
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_id::Int, msg_delta::Message{DeltaDistribution{T}}, ::Nothing, msg_n::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_id, msg_delta, msg_n, nothing)
+sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, msg_n::Message{GaussianDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
+sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{DeltaDistribution{T}}, ::Nothing, msg_n::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
 # Outbound interface 1
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_n::Message{GaussianDistribution}, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_delta, msg_n, nothing)
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_delta::Message{DeltaDistribution{T}}, msg_n::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_id, msg_delta, msg_n, nothing)
+sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_n::Message{GaussianDistribution}, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
+sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_delta::Message{DeltaDistribution{T}}, msg_n::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
 
 ############################################
 # Gamma-DeltaDistribution combination
@@ -320,27 +321,27 @@ equalityGammaDeltaRule!(dist_result::DeltaDistribution, dist_1::DeltaDistributio
 
 function sumProduct!{T<:Real}(
                             node::EqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_delta::Message{DeltaDistribution{T}},
                             msg_gam::Message{GammaDistribution},
                             ::Nothing)
     # Combination of gamma and float
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], DeltaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution).payload
 
     equalityGammaDeltaRule!(dist_out, msg_delta.payload, msg_gam.payload)
 
     return (:equality_gamma_delta,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
 # Call signature for messages other ways around
 # Outbound interface 3
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_id::Int, msg_gam::Message{GammaDistribution}, msg_delta::Message{DeltaDistribution{T}}, ::Nothing) = sumProduct!(node, outbound_interface_id, msg_delta, msg_gam, nothing)
+sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, msg_gam::Message{GammaDistribution}, msg_delta::Message{DeltaDistribution{T}}, ::Nothing) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
 # Outbound interface 2
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_id::Int, msg_gam::Message{GammaDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_delta, msg_gam, nothing)
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_id::Int, msg_delta::Message{DeltaDistribution{T}}, ::Nothing, msg_gam::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_delta, msg_gam, nothing)
+sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, msg_gam::Message{GammaDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
+sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{DeltaDistribution{T}}, ::Nothing, msg_gam::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
 # Outbound interface 1
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_gam::Message{GammaDistribution}, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_delta, msg_gam, nothing)
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_delta::Message{DeltaDistribution{T}}, msg_gam::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_delta, msg_gam, nothing)
+sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_gam::Message{GammaDistribution}, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
+sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_delta::Message{DeltaDistribution{T}}, msg_gam::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
 
 ############################################
 # InverseGamma-DeltaDistribution combination
@@ -355,24 +356,24 @@ equalityInverseGammaDeltaRule!(dist_result::DeltaDistribution, dist_1::DeltaDist
 
 function sumProduct!{T<:Real}(
                             node::EqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_delta::Message{DeltaDistribution{T}},
                             msg_igam::Message{InverseGammaDistribution},
                             ::Nothing)
     # Combination of gamma and float
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], DeltaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution).payload
 
     equalityInverseGammaDeltaRule!(dist_out, msg_delta.payload, msg_igam.payload)
 
     return (:equality_inverse_gamma_delta,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
 # Call signature for messages other ways around
 # Outbound interface 3
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_id::Int, msg_igam::Message{InverseGammaDistribution}, msg_delta::Message{DeltaDistribution{T}}, ::Nothing) = sumProduct!(node, outbound_interface_id, msg_delta, msg_igam, nothing)
+sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, msg_igam::Message{InverseGammaDistribution}, msg_delta::Message{DeltaDistribution{T}}, ::Nothing) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
 # Outbound interface 2
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_id::Int, msg_igam::Message{InverseGammaDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_delta, msg_igam, nothing)
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_id::Int, msg_delta::Message{DeltaDistribution{T}}, ::Nothing, msg_igam::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_delta, msg_igam, nothing)
+sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, msg_igam::Message{InverseGammaDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
+sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{DeltaDistribution{T}}, ::Nothing, msg_igam::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
 # Outbound interface 1
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_igam::Message{InverseGammaDistribution}, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_id, msg_delta, msg_igam, nothing)
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_id::Int, ::Nothing, msg_delta::Message{DeltaDistribution{T}}, msg_igam::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_id, msg_delta, msg_igam, nothing)
+sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_igam::Message{InverseGammaDistribution}, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
+sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_delta::Message{DeltaDistribution{T}}, msg_igam::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)

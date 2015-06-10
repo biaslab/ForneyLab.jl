@@ -1,7 +1,7 @@
 export CompositeNode, addRule!, nodes, isDeterministic
 
 type CompositeNode <: Node
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
     internal_graph::FactorGraph
@@ -11,32 +11,36 @@ type CompositeNode <: Node
     deterministic::Bool
 end
 
-function CompositeNode(graph::FactorGraph, terminals...; name=unnamedStr(), deterministic=false)
+function CompositeNode(graph::FactorGraph, terminals...; id=generateNodeId(CompositeNode), deterministic=false)
     # Convert graph into a CompositeNode.
     # terminals... is an array of TerminalNodes in graph, that will be bound to interfaces of the CompositeNode.
-    # The names of the terminals will be used as named interface handles.
+    # The ids of the terminals will be used as interface handles.
     # This function creates a new current FactorGraph so the user can continue working in the higher level graph.
-    self = CompositeNode(name, Interface[], Dict{Symbol,Interface}(), graph, Dict{(Interface,Function),Algorithm}(), TerminalNode[], Dict{TerminalNode,Interface}(), deterministic)
+    self = CompositeNode(id, Interface[], Dict{Symbol,Interface}(), graph, Dict{(Interface,Function),Algorithm}(), TerminalNode[], Dict{TerminalNode,Interface}(), deterministic)
+
     for terminal in terminals
+        hasNode(graph, terminal) || error("$(node.id) not in graph")
         (typeof(terminal) == TerminalNode) || error("Only a TerminalNode can be bound to an Interface of the CompositeNode, not $(typeof(terminal)).")
         if terminal in self.interfaceid_to_terminalnode
             error("Cannot bind the same TerminalNode to multiple interfaces")
         end
         push!(self.interfaces, Interface(self))
-        self.i[symbol(terminal.name)] = self.interfaces[end]
+        self.i[terminal.id] = self.interfaces[end]
         push!(self.interfaceid_to_terminalnode, terminal)
         self.terminalnode_to_interface[terminal] = self.interfaces[end]
     end
     self.internal_graph.locked = true
-    FactorGraph()
+    new_g = FactorGraph()
+    addNode!(new_g, self) # Add newly created composite node to new current graph
 
     return self    
 end
+CompositeNode(terminals...; id=generateNodeId(CompositeNode), deterministic=false) = CompositeNode(current_graph, terminals..., id=id, deterministic=deterministic)
 
 isDeterministic(composite_node::CompositeNode) = composite_node.deterministic
 
 function addRule!(composite_node::CompositeNode, outbound_interface::Interface, message_calculation_rule::Function, algorithm::Algorithm)
-    (outbound_interface.node == composite_node) || error("The outbound interface does not belong to the specified composite node $(composite_node.name)")
+    (outbound_interface.node == composite_node) || error("The outbound interface does not belong to the specified composite node $(composite_node.id)")
     composite_node.computation_rules[(outbound_interface,message_calculation_rule)] = algorithm
 
     return composite_node
@@ -45,10 +49,10 @@ end
 nodes(node::CompositeNode) = nodes(node.internal_graph)
 
 function sumProduct!(node::CompositeNode,
-                     outbound_interface_id::Int,
+                     outbound_interface_index::Int,
                      inbounds...)
-    outbound_interface = node.interfaces[outbound_interface_id]
-    internal_outbound_interface = node.interfaceid_to_terminalnode[outbound_interface_id].interfaces[1].partner
+    outbound_interface = node.interfaces[outbound_interface_index]
+    internal_outbound_interface = node.interfaceid_to_terminalnode[outbound_interface_index].interfaces[1].partner
 
     # Check if there is a computation rule defined for this case
     if !haskey(node.computation_rules, (outbound_interface, sumProduct!))
@@ -59,9 +63,9 @@ function sumProduct!(node::CompositeNode,
     end
 
     # Move all inbound messages to corresponding terminal nodes in the internal graph
-    for interface_id=1:length(node.interfaces)
-        if interface_id != outbound_interface_id 
-            node.interfaceid_to_terminalnode[interface_id].value = node.interfaces[interface_id].partner.message.payload
+    for interface_index=1:length(node.interfaces)
+        if interface_index != outbound_interface_index 
+            node.interfaceid_to_terminalnode[interface_index].value = node.interfaces[interface_index].partner.message.payload
         end
     end
 

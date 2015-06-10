@@ -14,7 +14,18 @@ type ScheduleEntry
 end
 ScheduleEntry(interface::Interface) = ScheduleEntry(interface, sumProduct!)
 
+Base.deepcopy(::ScheduleEntry) = error("deepcopy(::ScheduleEntry) is not possible. You should construct a new ScheduleEntry or use copy(::ScheduleEntry).")
+
+Base.copy(src::ScheduleEntry) = ScheduleEntry(src.interface, src.message_calculation_rule, isdefined(src, :post_processing) ? src.post_processing : nothing)
+
+function setPostProcessing!(schedule_entry::ScheduleEntry, post_processing::Function)
+    schedule_entry.post_processing = post_processing
+    return schedule_entry
+end
+
 typealias Schedule Array{ScheduleEntry, 1}
+
+Base.deepcopy(src::Schedule) = ScheduleEntry[copy(entry) for entry in src]
 
 function setPostProcessing!(schedule::Schedule, interface::Interface, post_processing::Function)
     for entry in schedule
@@ -41,8 +52,8 @@ function show(io::IO, schedule::Schedule)
         interface = schedule_entry.interface
         msg_calc_func = schedule_entry.message_calculation_rule
         postproc = (isdefined(schedule_entry, :post_processing)) ? string(schedule_entry.post_processing) : ""
-        interface_name = (name(interface)!="") ? "$(name(interface))" : ""
-        interface_field = "$(typeof(interface.node)) $(interface.node.name) [$(findfirst(interface.node.interfaces, interface)):$(interface_name)]"
+        interface_handle = (handle(interface)!="") ? "$(handle(interface))" : ""
+        interface_field = "$(typeof(interface.node)) $(interface.node.id) [$(findfirst(interface.node.interfaces, interface)):$(interface_handle)]"
         println(io, "$(string(entry_counter)): $(interface_field), $(string(msg_calc_func)) $(string(postproc))")
         entry_counter += 1
     end
@@ -52,6 +63,6 @@ function show(io::IO, nodes::Array{Node, 1})
      # Show node array (possibly an external schedule)
     println(io, "Nodes:")
     for entry in nodes
-        println(io, "Node $(entry.name) of type $(typeof(entry))")
+        println(io, "Node $(entry.id) of type $(typeof(entry))")
     end
 end

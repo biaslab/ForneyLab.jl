@@ -64,12 +64,12 @@ function collectInbounds(outbound_interface::Interface, include_inbound_on_outbo
     # If include_inbound_on_outbound_interface is true, the inbound message on the outbound interface will also be required and included in the array.
     # Returns: (outbound interface id, array of inbound messages).
     
-    outbound_interface_id = 0
+    outbound_interface_index = 0
     inbounds = Array(Any, 0)
     for j = 1:length(outbound_interface.node.interfaces)
         interface = outbound_interface.node.interfaces[j]
         if is(interface, outbound_interface)
-            outbound_interface_id = j
+            outbound_interface_index = j
             if !include_inbound_on_outbound_interface
                 push!(inbounds, nothing)
                 continue
@@ -83,7 +83,7 @@ function collectInbounds(outbound_interface::Interface, include_inbound_on_outbo
         end
     end
 
-    return (outbound_interface_id, inbounds)
+    return (outbound_interface_index, inbounds)
 end
 
 end # module

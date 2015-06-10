@@ -36,17 +36,19 @@ export SigmoidNode
 
 type SigmoidNode <: Node
     sigmoid_func::Symbol
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
 
-    function SigmoidNode(sigmoid_func::Symbol = :normal_cdf; name = unnamedStr())
+    function SigmoidNode(sigmoid_func::Symbol=:normal_cdf; id=generateNodeId(SigmoidNode))
         (sigmoid_func == :normal_cdf) || error(":normal_cdf is the only supported sigmoid function at the moment")
         
-        self = new(sigmoid_func, name, Array(Interface, 2), Dict{Symbol,Interface}())
+        self = new(sigmoid_func, id, Array(Interface, 2), Dict{Symbol,Interface}())
         self.i[:real] = self.interfaces[1] = Interface(self)
         self.i[:bool] = self.interfaces[2] = Interface(self)
 
+        addNode!(current_graph, self)
+        
         return self
     end
 end

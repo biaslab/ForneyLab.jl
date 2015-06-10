@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny, KLpq, rules, format, isValid, invalidate!
+export isApproxEqual, huge, tiny, rules, format, isValid, invalidate!, s
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
@@ -21,6 +21,8 @@ function invalidate!(v::Array{Float64})
     v[1] = NaN
     return v
 end
+
+s(sym::Symbol, c::Int) = symbol(string(sym, c)) # Symbol concatenation
 
 function format(d::Float64)
     if 0.01 < d < 100.0 || -100 < d < -0.01 || d==0.0
@@ -58,19 +60,6 @@ isRoundedPosDef{T<:FloatingPoint}(arr::Array{T, 2}) = ishermitian(round(arr, int
 function viewFile(filename::String)
     # Open a file with the application associated with the file type
     @windows? run(`cmd /c start $filename`) : (@osx? run(`open $filename`) : (@linux? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
-end
-
-global unnamed_counter = 0
-function unnamedStr()
-    global unnamed_counter::Int64 += 1
-    return "unnamed$(unnamed_counter)"
-end
-
-function KLpq(x::Vector{Float64}, p::Vector{Float64}, q::Vector{Float64})
-    # Calculate the KL divergence of p and q
-    length(x) == length(p) == length(q) || error("Lengths of x, p and q must match")
-    dx = diff(x)
-    return -sum(p[1:end-1].*log(q[1:end-1]./p[1:end-1]).*dx)
 end
 
 function truncate(str::ASCIIString, max::Integer)

@@ -4,13 +4,14 @@
 
 facts("FixedGainNode unit tests") do
     context("FixedGainNode() should initialize a FixedGainNode with 2 interfaces") do
-        node = FixedGainNode([1.0])
-        @fact typeof(node) => FixedGainNode
-        @fact length(node.interfaces) => 2
-        @fact node.i[:in] => node.interfaces[1]
-        @fact node.i[:out] => node.interfaces[2]
-        @fact typeof(node.A) <: Array => true
-        @fact length(size(node.A)) => 2 # A should always be a matrix
+        FactorGraph()
+        FixedGainNode([1.0], id=:node)
+        @fact typeof(n(:node)) => FixedGainNode
+        @fact length(n(:node).interfaces) => 2
+        @fact n(:node).i[:in] => n(:node).interfaces[1]
+        @fact n(:node).i[:out] => n(:node).interfaces[2]
+        @fact typeof(n(:node).A) <: Array => true
+        @fact length(size(n(:node).A)) => 2 # A should always be a matrix
     end
 
     context("FixedGainNode should propagate a DeltaDistribution{Real}") do

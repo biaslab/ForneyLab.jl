@@ -4,12 +4,13 @@
 
 facts("AdditionNode unit tests") do
     context("AdditionNode() should initialize an AdditionNode with 3 interfaces") do
-        node = AdditionNode()
-        @fact typeof(node) => AdditionNode
-        @fact length(node.interfaces) => 3
-        @fact node.i[:in1] => node.interfaces[1]
-        @fact node.i[:in2] => node.interfaces[2]
-        @fact node.i[:out] => node.interfaces[3]
+        FactorGraph()
+        AdditionNode(id=:node)
+        @fact typeof(n(:node)) => AdditionNode
+        @fact length(n(:node).interfaces) => 3
+        @fact n(:node).i[:in1] => n(:node).interfaces[1]
+        @fact n(:node).i[:in2] => n(:node).interfaces[2]
+        @fact n(:node).i[:out] => n(:node).interfaces[3]
     end
 
     context("AdditionNode should add two DeltaDistribution{Float}") do

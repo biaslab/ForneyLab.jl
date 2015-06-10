@@ -19,7 +19,7 @@
 #   f(in1,in2,out) = δ(A*in1 - out)⋅δ(A*in2 - out)
 #
 # Construction:
-#   GainEqualityNode([1.0], name="my_node")
+#   GainEqualityNode([1.0], id=:my_node)
 #
 ############################################
 
@@ -27,22 +27,23 @@ export GainEqualityNode
 
 type GainEqualityNode <: Node
     A::Array{Float64}
-    name::ASCIIString
+    id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
-    function GainEqualityNode(A::Union(Array{Float64},Float64)=1.0; name=unnamedStr())
-        self = new(ensureMatrix(deepcopy(A)), name, Array(Interface, 3), Dict{Symbol,Interface}())
-
-        for (iface_id, iface_name) in enumerate([:in1, :in2, :out])
-            self.i[iface_name] = self.interfaces[iface_id] = Interface(self)
+    function GainEqualityNode(A::Union(Array{Float64},Float64)=1.0; id=generateNodeId(GainEqualityNode))
+        self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
+        addNode!(current_graph, self)
+ 
+        for (iface_index, iface_handle) in enumerate([:in1, :in2, :out])
+            self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
         try
             self.A_inv = inv(self.A)
         catch
-            warn("The specified multiplier for $(typeof(self)) $(self.name) is not invertible. This might cause problems. Double check that this is what you want.")
+            warn("The specified multiplier for $(typeof(self)) $(self.id) is not invertible. This might cause problems. Double check that this is what you want.")
         end
 
         return self
@@ -63,47 +64,47 @@ backwardGainEqualityVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Arra
 backwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, V_x::Array{T, 2}, m_y::Array{T, 1}, V_y::Array{T, 2}) = m_x + V_x * A' * inv(V_y + A * V_x * A') * (m_y - A * m_x)
 
 function sumProduct!(node::GainEqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Nothing)
     # Forward message (towards out)
-    (outbound_interface_id == 3) || error("The outbound interface id does not match with the calling signature.")
+    (outbound_interface_index == 3) || error("The outbound interface id does not match with the calling signature.")
     dist_temp = GaussianDistribution()
     equalityGaussianRule!(dist_temp, msg_in1.payload, msg_in2.payload)
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
     fixedGainGaussianForwardRule!(dist_out, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
 
     return (:gain_equality_gaussian_forward,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
 
 function sumProduct!(node::GainEqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Nothing,
                             msg_out::Message{GaussianDistribution})
     # Backward message (towards in2)
-    return applyBackwardRule!(node, outbound_interface_id, msg_in1, msg_out)
+    return applyBackwardRule!(node, outbound_interface_index, msg_in1, msg_out)
 end
 
 function sumProduct!(node::GainEqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_in1::Nothing,
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Message{GaussianDistribution})
     # Backward message (towards in1)
-    return applyBackwardRule!(node, outbound_interface_id, msg_in2, msg_out)
+    return applyBackwardRule!(node, outbound_interface_index, msg_in2, msg_out)
 end
 
 function applyBackwardRule!(node::GainEqualityNode,
-                            outbound_interface_id::Int,
+                            outbound_interface_index::Int,
                             msg_in::Message{GaussianDistribution},
                             msg_out::Message{GaussianDistribution})
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
     # Backward message (towards in1 or in2)
-    dist_result = ensureMessage!(node.interfaces[outbound_interface_id], GaussianDistribution).payload
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
     dist_3 = msg_out.payload
     dist_in = msg_in.payload
 
@@ -135,5 +136,5 @@ function applyBackwardRule!(node::GainEqualityNode,
     end
 
     return (:gain_equality_gaussian_backward,
-            node.interfaces[outbound_interface_id].message)
+            node.interfaces[outbound_interface_index].message)
 end
