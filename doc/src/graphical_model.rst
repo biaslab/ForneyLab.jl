@@ -213,7 +213,7 @@ Read buffers hold input data that is read into the graph from the outside world.
 Output from the graph
 ---------------------
 
-Write buffers allow message payloads and edge marginals to be extracted from the :class:`FactorGraph`. A write buffer is an ``Array{ProbabilityDistribution,1}, and can be attached to either an :class:`Interface` or an :class:`Edge`. Every call to :func:`step()` will result in exactly one element (message payload or marginal) being pushed onto every write buffer. The following functions are available:
+Write buffers allow message payloads and edge marginals to be extracted from the :class:`FactorGraph`. A write buffer is an ``Array{ProbabilityDistribution,1}``, and can be attached to either an :class:`Interface` or an :class:`Edge`. Every call to :func:`step()` will result in exactly one element (message payload or marginal) being pushed onto every write buffer. The following functions are available:
 
 .. function:: attachWriteBuffer(interface::Interface)
 
