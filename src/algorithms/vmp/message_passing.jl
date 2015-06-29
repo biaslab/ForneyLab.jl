@@ -1,12 +1,18 @@
 function execute(subgraph::Subgraph, q_distributions::Dict{(Node, Subgraph), QDistribution}, factorization::QFactorization)
-    ForneyLab.printVerbose("Subgraph $(subgraph):")
-
     # Execute internal schedule
     SumProduct.execute(subgraph.internal_schedule)
 
     # Update q-distributions at external edges
+    if ForneyLab.verbose
+        println(" ")
+        println("Marginals (node), result")
+        println("--------------------------------------------")
+    end
     for node in subgraph.external_schedule
-        calculateQDistribution!(q_distributions, node, subgraph, factorization)
+        d = calculateQDistribution!(q_distributions, node, subgraph, factorization)
+        if ForneyLab.verbose
+            show("($(node)) $(d)")
+        end
     end
 end
 

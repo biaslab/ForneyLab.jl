@@ -510,7 +510,7 @@ function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
 
     # Attach beginning and end nodes
     TerminalNode(GaussianDistribution(m=0.0, V=100.0), id=:m0) # Prior
-    TerminalNode(GammaDistribution(a=0.01, b=0.01), id=:gam0) # Prior
+    TerminalNode(GammaDistribution(a=1.0, b=0.01), id=:gam0) # Prior
     TerminalNode(vague(GaussianDistribution), id=:mN) # Neutral 'one' message
     TerminalNode(vague(GammaDistribution), id=:gamN) # Neutral 'one' message
     Edge(n(:m0).i[:out], n(:m_eq).i[1], GaussianDistribution, id=:m0)
