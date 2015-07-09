@@ -21,7 +21,7 @@ type Edge <: AbstractEdge
         !current_graph.locked || error("Cannot extend a locked FactorGraph.")
         hasNode(current_graph, head.node) || error("Head node does not belong to the current graph.")
         hasNode(current_graph, tail.node) || error("Tail node does not belong to the current graph.")
-        !haskey(current_graph.e, id) || error("The edge id $(id) already exists in the current graph. Consider specifying an explicit id.")
+        !haskey(current_graph.edges, id) || error("The edge id $(id) already exists in the current graph. Consider specifying an explicit id.")
         
         self = new(id, tail, head, nothing, distribution_type)
 
@@ -33,7 +33,7 @@ type Edge <: AbstractEdge
         head.partner = tail
 
         # Add edge to current_graph
-        current_graph.e[self.id] = self
+        current_graph.edges[self.id] = self
 
         return self
     end

@@ -83,8 +83,8 @@ facts("Edge integration tests") do
 
         TerminalNode(id=:e)
         TerminalNode(id=:f)
-        my_edge3 = Edge(n(:e), n(:f), id=s(:my_edge,3))
-        @fact e(:my_edge,3) => my_edge3
+        my_edge3 = Edge(n(:e), n(:f), id=:my_edge*3)
+        @fact e(:my_edge*3) => my_edge3
     end
 
     context("Edges can be sorted") do
@@ -107,7 +107,7 @@ facts("Edge integration tests") do
         attachWriteBuffer(e(:node1_node2))
 
         delete!(g, edge)
-        @fact length(g.e) => 0
+        @fact length(g.edges) => 0
         @fact n(:node1).i[:out].edge => nothing
         @fact n(:node2).i[:out].edge => nothing
         @fact n(:node1).i[:out].partner => nothing

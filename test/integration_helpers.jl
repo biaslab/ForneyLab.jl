@@ -14,8 +14,8 @@ type MockNode <: Node
 
     function MockNode(num_interfaces::Int=1; id=ForneyLab.generateNodeId(MockNode))
         self = new(id, Array(Interface, num_interfaces), Dict{Symbol, Interface}())
-        !haskey(ForneyLab.current_graph.n, id) || error("Node id $(id) already present")
-        ForneyLab.current_graph.n[id] = self
+        !haskey(ForneyLab.current_graph.nodes, id) || error("Node id $(id) already present")
+        ForneyLab.current_graph.nodes[id] = self
  
         for interface_index = 1:num_interfaces
             self.interfaces[interface_index] = Interface(self)
@@ -456,16 +456,16 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
 
     # Build graph
     for sec=1:n_samples
-        GaussianNode(form=:precision, id=s(:g,sec))
-        EqualityNode(id=s(:m_eq,sec)) # Equality node chain for mean
-        EqualityNode(id=s(:gam_eq,sec)) # Equality node chain for precision
-        TerminalNode(GaussianDistribution(m=y[sec], V=tiny()), id=s(:y,sec)) # Observed y values are stored in terminal node
-        Edge(n(s(:g,sec)).i[:out], n(s(:y,sec)).i[:out], GaussianDistribution, id=s(:q_y,sec))
-        Edge(n(s(:m_eq,sec)).i[3], n(s(:g,sec)).i[:mean], GaussianDistribution, id=s(:q_m,sec))
-        Edge(n(s(:gam_eq,sec)).i[3], n(s(:g,sec)).i[:precision], GammaDistribution, id=s(:q_gam,sec))
+        GaussianNode(form=:precision, id=:g*sec)
+        EqualityNode(id=:m_eq*sec) # Equality node chain for mean
+        EqualityNode(id=:gam_eq*sec) # Equality node chain for precision
+        TerminalNode(GaussianDistribution(m=y[sec], V=tiny()), id=:y*sec) # Observed y values are stored in terminal node
+        Edge(n(:g*sec).i[:out], n(:y*sec).i[:out], GaussianDistribution, id=:q_y*sec)
+        Edge(n(:m_eq*sec).i[3], n(:g*sec).i[:mean], GaussianDistribution, id=:q_m*sec)
+        Edge(n(:gam_eq*sec).i[3], n(:g*sec).i[:precision], GammaDistribution, id=:q_gam*sec)
         if sec > 1 # Connect sections
-            Edge(n(s(:m_eq,sec-1)).i[2], n(s(:m_eq,sec)).i[1], GaussianDistribution)
-            Edge(n(s(:gam_eq,sec-1)).i[2], n(s(:gam_eq,sec)).i[1], GammaDistribution)
+            Edge(n(:m_eq*(sec-1)).i[2], n(:m_eq*sec).i[1], GaussianDistribution)
+            Edge(n(:gam_eq*(sec-1)).i[2], n(:gam_eq*sec).i[1], GammaDistribution)
         end
     end
     # Attach beginning and end nodes
@@ -475,8 +475,8 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
     TerminalNode(vague(GammaDistribution), id=:gamN)
     Edge(n(:m0).i[:out], n(:m_eq1).i[1])
     Edge(n(:gam0).i[:out], n(:gam_eq1).i[1])
-    Edge(n(s(:m_eq,n_samples)).i[2], n(:mN).i[:out])
-    Edge(n(s(:gam_eq,n_samples)).i[2], n(:gamN).i[:out])
+    Edge(n(:m_eq*n_samples).i[2], n(:mN).i[:out])
+    Edge(n(:gam_eq*n_samples).i[2], n(:gamN).i[:out])
 
     return g
 end

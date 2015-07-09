@@ -13,8 +13,8 @@ export  currentGraph,
 abstract AbstractWrap
 
 type FactorGraph
-    n::Dict{Symbol, Node} # Nodes
-    e::Dict{Symbol, Edge} # Edges
+    nodes::Dict{Symbol, Node} # Nodes
+    edges::Dict{Symbol, Edge} # Edges
     wraps::Dict{Symbol, AbstractWrap}
     counters::Dict{DataType, Int} # Counters for automatic node id assignments
     locked::Bool
@@ -57,7 +57,7 @@ end
 
 clearMessages!(graph::FactorGraph = current_graph) = map(clearMessages!, nodes(graph))
 
-nodes(graph::FactorGraph = current_graph) = Set{Node}(values(graph.n))
+nodes(graph::FactorGraph = current_graph) = Set{Node}(values(graph.nodes))
 
 function nodes(edges::Set{Edge})
     # Return all nodes connected to edges
@@ -70,25 +70,23 @@ function nodes(edges::Set{Edge})
     return connected_nodes
 end
 
-edges(graph::FactorGraph = current_graph) = Set{Edge}(values(graph.e))
+edges(graph::FactorGraph = current_graph) = Set{Edge}(values(graph.edges))
 edges(node::Node) = Set{Edge}([intf.edge for intf in node.interfaces])
 edges(nodeset::Set{Node}) = union(map(edges, nodeset)...)
 
 # Search edge and node by id
-node(id::Symbol, graph::FactorGraph=current_graph) = graph.n[id]
-node(id::Symbol, c::Int, graph::FactorGraph=current_graph) = graph.n[s(id, c)] # Quick concatenated lookup
+node(id::Symbol, graph::FactorGraph=current_graph) = graph.nodes[id]
 n = node
 
-edge(id::Symbol, graph::FactorGraph=current_graph) = graph.e[id]
-edge(id::Symbol, c::Int, graph::FactorGraph=current_graph) = graph.e[s(id, c)]
+edge(id::Symbol, graph::FactorGraph=current_graph) = graph.edges[id]
 e = edge
 
 # Add/remove graph elements
 function addNode!(graph::FactorGraph, nd::Node)
     # Add a Node to a FactorGraph
     !graph.locked || error("Cannot add a Node to a locked graph")
-    !haskey(graph.n, nd.id) || error("Graph already contains a Node with id $(nd.id)")
-    graph.n[nd.id] = nd
+    !haskey(graph.nodes, nd.id) || error("Graph already contains a Node with id $(nd.id)")
+    graph.nodes[nd.id] = nd
 
     return graph
 end
@@ -117,7 +115,7 @@ function Base.delete!(graph::FactorGraph, nd::Node)
     end
 
     # Delete node
-    delete!(graph.n, nd.id)
+    delete!(graph.nodes, nd.id)
 
     return graph
 end
@@ -132,7 +130,7 @@ function Base.delete!(graph::FactorGraph, eg::Edge)
     haskey(graph.write_buffers, eg.tail) && detachWriteBuffer(eg.tail, graph)
 
     # Decouple edge and interfaces
-    delete!(graph.e, eg.id)
+    delete!(graph.edges, eg.id)
     eg.head.partner = nothing
     eg.tail.partner = nothing
     eg.head.edge = nothing
@@ -143,5 +141,5 @@ end
 
 
 # Check existance of graph elements
-hasNode(graph::FactorGraph, nd::Node) = (haskey(graph.n, nd.id) && is(graph.n[nd.id], nd))
-hasEdge(graph::FactorGraph, eg::Edge) = (haskey(graph.e, eg.id) && is(graph.e[eg.id], eg))
+hasNode(graph::FactorGraph, nd::Node) = (haskey(graph.nodes, nd.id) && is(graph.nodes[nd.id], nd))
+hasEdge(graph::FactorGraph, eg::Edge) = (haskey(graph.edges, eg.id) && is(graph.edges[eg.id], eg))

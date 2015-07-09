@@ -6,8 +6,8 @@ facts("FactorGraph unit tests") do
     context("FactorGraph() should initialize a factor graph") do
         fg = FactorGraph()
         @fact typeof(fg) => FactorGraph
-        @fact fg.n => Dict{Symbol, Node}()
-        @fact fg.e => Dict{Symbol, Edge}()
+        @fact fg.nodes => Dict{Symbol, Node}()
+        @fact fg.edges => Dict{Symbol, Edge}()
         @fact fg.wraps => Dict{Symbol, ForneyLab.AbstractWrap}()
         @fact fg.counters => Dict{DataType, Int}()
         @fact ForneyLab.current_graph => fg # Global should be set
@@ -91,6 +91,6 @@ facts("Functions for collecting nodes and edges") do
         nd = TerminalNode(id=:tnode)
         g = FactorGraph()
         ForneyLab.addNode!(g, nd)
-        @fact g.n[:tnode] => nd
+        @fact g.nodes[:tnode] => nd
     end
 end

@@ -39,8 +39,8 @@ facts("Naive VMP implementation integration tests") do
         initializeGaussianNodeChain(data)
         n_sections = length(data)
 
-        m_buffer = attachWriteBuffer(n(s(:m_eq,n_sections)).i[2])
-        gam_buffer = attachWriteBuffer(n(s(:gam_eq,n_sections)).i[2])
+        m_buffer = attachWriteBuffer(n(:m_eq*n_sections).i[2])
+        gam_buffer = attachWriteBuffer(n(:gam_eq*n_sections).i[2])
 
         # Apply mean field factorization
         algo = VMP.Algorithm(n_iterations=20)
