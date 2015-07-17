@@ -125,10 +125,10 @@ facts("Marginal calculations for the Gaussian") do
     end
 
     context("Marginal calculation for the combination of a Gaussian and student's t-distribution") do
-        initializePairOfTerminalNodes(GaussianDistribution(), StudentsTDistribution())
+        initializePairOfTerminalNodes(GaussianDistribution(), StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0))
         edge = n(:t1).i[:out].edge
         calculateMarginal!(edge)
-        @fact edge.marginal => GaussianDistribution(m=0.0, W=2.0) 
+        @fact edge.marginal => GaussianDistribution(m=0.5, W=2.0) 
     end
 
     context("Marginal calculation for the combination of a Gaussian and DeltaDistribution") do

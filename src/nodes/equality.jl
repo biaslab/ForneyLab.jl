@@ -111,13 +111,15 @@ sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_1::Message{Ga
 
 function equalityGaussianStudentsTRule!(dist_result::GaussianDistribution, dist_1::GaussianDistribution, dist_2::StudentsTDistribution)
     # The result of the Gaussian-Student's t equality rule applied to dist_1 and dist_2 is written to dist_result
-    # The result is a Gaussian approximation to the exact result
+    # The student's t distribution is approximated by a Gaussian by moment matching.
+    # The result is a Gaussian approximation to the exact result.
 
     ensureMWParametrization!(dist_1)
-
-    dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.lambda)
-    invalidate!(dist_result.V) 
-    dist_result.W  = equalityWRule(dist_1.W, dist_2.lambda)
+    approx_m = mean(dist_2)
+    approx_W = inv(var(dist_2))
+    dist_result.m  = equalityMRule(dist_1.m, approx_m, dist_1.W, approx_W)
+    dist_result.W  = equalityWRule(dist_1.W, approx_W)
+    invalidate!(dist_result.V)
     invalidate!(dist_result.xi)
 
     return dist_result

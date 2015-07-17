@@ -170,7 +170,7 @@ facts("GaussianNode unit tests") do
                 validateOutboundMessage(GaussianNode(form=:precision), 
                                         1, 
                                         [nothing, Message(GammaDistribution(a=3.0, b=1.0)), GaussianDistribution(m=2.0, W=10.0)],
-                                        StudentsTDistribution(2.0, 60.0/21.0, 6.0),
+                                        StudentsTDistribution(m=2.0, lambda=60.0/21.0, nu=6.0),
                                         ForneyLab.vmp!)
             end
 
