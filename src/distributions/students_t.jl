@@ -3,26 +3,27 @@
 ############################################
 # Description:
 #   Encodes a student's t-distribution.
-#   Pamameters: m (mean), W (precision), nu (degrees of freedom)
+#   Pamameters: m (mean), lambda (inverse scale), nu (degrees of freedom)
 ############################################
 export StudentsTDistribution
 
 type StudentsTDistribution <: ProbabilityDistribution
-    m::Vector{Float64} # mean
-    W::Matrix{Float64} # precision
-    nu::Float64 # degrees of freedom
-end
-function StudentsTDistribution(; m::Union(Float64, Vector{Float64})=[0.0],
-                                 W::Union(Float64, Matrix{Float64})=reshape([1.0], 1, 1),
-                                 nu::Float64=1.0)
-    m = (typeof(m)==Float64) ? [m] : deepcopy(m)
-    W = (typeof(W)==Float64) ? fill!(Array(Float64,1,1),W) : deepcopy(W)
+    m::Vector{Float64}      # mean
+    lambda::Matrix{Float64} # inverse scale
+    nu::Float64             # degrees of freedom
 
-    return StudentsTDistribution(m, W, nu)
+    function StudentsTDistribution(m::Union(Float64, Vector{Float64}) = [0.0],
+                                   lambda::Union(Float64, Matrix{Float64}) = reshape([1.0], 1, 1),
+                                   nu::Float64 = 1.0)
+        m = (typeof(m)==Float64) ? [m] : deepcopy(m)
+        lambda = (typeof(lambda)==Float64) ? fill!(Array(Float64,1,1),lambda) : deepcopy(lambda)
+
+        return new(m, lambda, nu)
+    end
 end
 
 function Base.mean(dist::StudentsTDistribution)
-    if dist.nu > 1.0   
+    if dist.nu > 1   
         return dist.m
     else
         return fill!(similar(dist.m), NaN)
@@ -30,19 +31,18 @@ function Base.mean(dist::StudentsTDistribution)
 end
 
 function Base.var(dist::StudentsTDistribution)
-    if dist.nu > 2.0
-        return dist.nu / (dist.nu - 2) * inv(dist.W)
+    if dist.nu > 2
+        return dist.nu / (dist.nu - 2) * inv(dist.lambda)
     else
-        return fill!(similar(dist.W), NaN)
+        return fill!(similar(dist.lambda), NaN)
     end
 end
 
-format(dist::StudentsTDistribution) = "St(m=$(format(dist.m)), W=$(format(dist.W)), ν=$(format(dist.nu)))"
+format(dist::StudentsTDistribution) = "St(μ=$(format(dist.m)), λ=$(format(dist.lambda)), ν=$(format(dist.nu)))"
 show(io::IO, dist::StudentsTDistribution) = println(io, format(dist))
 
 function ==(x::StudentsTDistribution, y::StudentsTDistribution)
-    if is(x, y) return true end
-    return (x.m==y.m && x.W==y.W && x.nu==y.nu)
+    return (is(x, y) || (x.m==y.m && x.lambda==y.lambda && x.nu==y.nu))
 end
 
-vague(::Type{StudentsTDistribution}) = StudentsTDistribution(m=0.0, W=tiny(), nu=huge())
+vague(::Type{StudentsTDistribution}) = StudentsTDistribution(0.0, tiny(), huge())

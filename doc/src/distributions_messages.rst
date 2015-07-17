@@ -127,8 +127,8 @@ The following built-in probability distributions are available: :class:`BetaDist
 .. type:: StudentsTDistribution
 
     :description:   Student's t-distribution (multivariate)
-    :parameters:    ``m`` ("mean", real vector), ``W`` ("precision", positive definite real matrix), ``nu`` ("degrees of freedom", real scalar)
-    :construction:  ``StudentsTDistribution(m, W, nu)``
+    :parameters:    ``m`` ("mean", real vector), ``lambda`` ("inverse scale", positive definite real matrix), ``nu`` ("degrees of freedom", real scalar)
+    :construction:  ``StudentsTDistribution(m, lambda, nu)``
     :reference:     Bishop, 2006; Pattern recognition and machine learning; appendix B 
 
 

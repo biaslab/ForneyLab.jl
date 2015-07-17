@@ -680,7 +680,7 @@ function vmp!(node::GaussianNode,
         a = msg_prec.payload.a
         b = msg_prec.payload.b
         dist_out.m = [m_y]
-        dist_out.W = reshape([(2.0*prec_y*a)/(2.0*prec_y*b + 1)], 1, 1)
+        dist_out.lambda = reshape([(2.0*prec_y*a)/(2.0*prec_y*b + 1)], 1, 1)
         dist_out.nu = 2.0*a
 
         return (:gaussian_backward_mean_structured,

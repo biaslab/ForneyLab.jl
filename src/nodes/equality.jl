@@ -115,9 +115,9 @@ function equalityGaussianStudentsTRule!(dist_result::GaussianDistribution, dist_
 
     ensureMWParametrization!(dist_1)
 
-    dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.W)
+    dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.lambda)
     invalidate!(dist_result.V) 
-    dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
+    dist_result.W  = equalityWRule(dist_1.W, dist_2.lambda)
     invalidate!(dist_result.xi)
 
     return dist_result
