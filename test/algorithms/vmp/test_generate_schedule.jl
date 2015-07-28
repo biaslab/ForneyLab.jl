@@ -1,20 +1,20 @@
 facts("VMP.generateSchedule() tests") do
     context("Should include backward messages when there is only one internal interface connected to an external node and include vmp updates") do
         data = [1.0]
-        initializeGaussianNodeChainForSvmp(data)
+        initializeGaussianNodeChain(data)
 
         # Structured factorization
-        f = VMP.factorize!(Set{Edge}([e(:y)]))
+        f = VMP.factorize!(Set{Edge}([e(:q_y1)]))
 
         graph = currentGraph()
         for subgraph in f.factors
             VMP.generateSchedule!(subgraph) # Generate internal and external schedule automatically
         end
 
-        y_subgraph = f.edge_to_subgraph[e(:y)]
-        m_gam_subgraph = f.edge_to_subgraph[e(:m)]
-        @fact y_subgraph.internal_schedule => [ForneyLab.ScheduleEntry(e(:y).head, sumProduct!), ForneyLab.ScheduleEntry(e(:y).tail, vmp!)] # Include outgoing interface
-        @fact m_gam_subgraph.internal_schedule => ForneyLab.convert(Schedule, [n(:m0).i[:out], n(:mN).i[:out], e(:m).tail, n(:gam0).i[:out], n(:gamN).i[:out], e(:gam).tail]) # Exclude outgoing interfaces
+        y_subgraph = f.edge_to_subgraph[e(:q_y1)]
+        m_gam_subgraph = f.edge_to_subgraph[e(:q_m1)]
+        @fact y_subgraph.internal_schedule => [ForneyLab.ScheduleEntry(e(:q_y1).head, sumProduct!), ForneyLab.ScheduleEntry(e(:q_y1).tail, vmp!)] # Include outgoing interface
+        @fact m_gam_subgraph.internal_schedule => ForneyLab.convert(Schedule, [n(:m0).i[:out], n(:mN).i[:out], e(:q_m1).tail, n(:gam0).i[:out], n(:gamN).i[:out], e(:q_gam1).tail]) # Exclude outgoing interfaces
     end
     context("Should generate an internal and external schedule when called on a subgraph") do
         initializeFactoringGraphWithoutLoop()

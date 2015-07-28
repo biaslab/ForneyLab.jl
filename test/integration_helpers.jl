@@ -469,54 +469,14 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
         end
     end
     # Attach beginning and end nodes
-    TerminalNode(GaussianDistribution(m=0.0, V=100.0), id=:m0) # Prior
-    TerminalNode(GammaDistribution(a=0.01, b=0.01), id=:gam0) # Prior
+    TerminalNode(vague(GaussianDistribution), id=:m0) # Prior
+    TerminalNode(GammaDistribution(a=1.0-tiny(), b=tiny()), id=:gam0) # Unifirm prior
     TerminalNode(vague(GaussianDistribution), id=:mN)
-    TerminalNode(vague(GammaDistribution), id=:gamN)
+    TerminalNode(GammaDistribution(a=1.0-tiny(), b=tiny()), id=:gamN) # Uniform
     Edge(n(:m0).i[:out], n(:m_eq1).i[1])
     Edge(n(:gam0).i[:out], n(:gam_eq1).i[1])
     Edge(n(:m_eq*n_samples).i[2], n(:mN).i[:out])
     Edge(n(:gam_eq*n_samples).i[2], n(:gamN).i[:out])
-
-    return g
-end
-
-function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
-    # Set up a chain of Gaussian nodes for joint mean-precision estimation
-    # through structured variational message passing
-    #
-    #     [gam_0]-------->[=]-->[1] gam_N
-    #                      |
-    #     [m_0]-->[=]---------->[1] m_N
-    #              |       |
-    #     q(m,gam) -->[N]<--
-    # - - - - - - - - -|- - - - - - - - - -
-    #                  |q(y)
-    #                  v
-    #                [y_1]
-
-    # Batch estimation with multiple samples will intruduce cycles in the subgraph.
-    # Therefore we implement a forward algorithm that uses forward estimation only.
-
-    g = FactorGraph()
-
-    GaussianNode(id=:g, form=:precision)
-    EqualityNode(id=:m_eq) # Equality node chain for mean
-    EqualityNode(id=:gam_eq) # Equality node chain for variance
-    TerminalNode(GaussianDistribution(), id=:y) # Observed y values are stored in terminal node
-    Edge(n(:g).i[:out], n(:y).i[:out], GaussianDistribution, id=:y)
-    Edge(n(:m_eq).i[3], n(:g).i[:mean], GaussianDistribution, id=:m)
-    Edge(n(:gam_eq).i[3], n(:g).i[:precision], GammaDistribution, id=:gam)
-
-    # Attach beginning and end nodes
-    TerminalNode(GaussianDistribution(m=0.0, V=100.0), id=:m0) # Prior
-    TerminalNode(GammaDistribution(a=1.0, b=0.01), id=:gam0) # Prior
-    TerminalNode(vague(GaussianDistribution), id=:mN) # Neutral 'one' message
-    TerminalNode(vague(GammaDistribution), id=:gamN) # Neutral 'one' message
-    Edge(n(:m0).i[:out], n(:m_eq).i[1], GaussianDistribution, id=:m0)
-    Edge(n(:gam0).i[:out], n(:gam_eq).i[1], GammaDistribution, id=:gam0)
-    Edge(n(:m_eq).i[2], n(:mN).i[:out], GaussianDistribution, id=:mN)
-    Edge(n(:gam_eq).i[2], n(:gamN).i[:out], GammaDistribution, id=:gamN)
 
     return g
 end
