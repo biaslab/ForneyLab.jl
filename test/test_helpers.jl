@@ -88,7 +88,7 @@ facts("Helper function unit tests") do
         @fact format(GaussianDistribution()) => "N(m=[0.00], V=[[1.00]])"
         @fact format(InverseGammaDistribution()) => "Ig(a=3.00, b=2.00)"
         @fact format(NormalGammaDistribution()) => "Ng(m=0.00, β=1.00, a=1.00, b=1.00)"
-        @fact format(StudentsTDistribution()) => "St(μ=[0.00], λ=[[1.00]], ν=1.00)"
+        @fact format(StudentsTDistribution()) => "St(μ=[0.00], λ=[[1.00]], ν=1.00e+12)"
         @fact format(BetaDistribution()) => "Bet(a=1.00, b=1.00)"
     end
     

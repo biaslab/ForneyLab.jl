@@ -118,9 +118,9 @@ facts("Structured VMP implementation integration tests") do
         gam_out = gam_buffer[end]
         # Reference values from first run
         # TODO: obtain proper reference values
-        @fact round(mean(m_out)[1], 3) => 4.941
-        @fact round(var(m_out)[1, 1], 3) => 0.000 # Uniform gamma priors make the variance collapse
+        @fact round(mean(m_out)[1], 3) => 4.521
+        @fact round(var(m_out)[1, 1], 3) => 0.873 # Uniform gamma priors make the variance collapse
         @fact round(gam_out.a, 3) => 6.000
-        @fact round(1/gam_out.b, 5) => 0.05450 # Scale
+        @fact round(1/gam_out.b, 5) => 0.04549 # Scale
     end
 end
