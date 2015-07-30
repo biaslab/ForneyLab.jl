@@ -167,23 +167,22 @@ function equalityDeltaRule!(dist_result::DeltaDistribution, dist_1::DeltaDistrib
     return dist_result
 end
 
-function sumProduct!{T<:Any}(
-                            node::EqualityNode,
-                            outbound_interface_index::Int,
-                            msg_1::Message{DeltaDistribution{T}},
-                            msg_2::Message{DeltaDistribution{T}},
-                            ::Nothing)
+function sumProduct!(node::EqualityNode,
+                     outbound_interface_index::Int,
+                     msg_1::Message{DeltaDistribution{Float64}},
+                     msg_2::Message{DeltaDistribution{Float64}},
+                     ::Nothing)
     # Calculate an outbound message based on the inbound messages and the node function.
 
-    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], typeof(msg_1.payload)).payload
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
 
     equalityDeltaRule!(dist_result, msg_1.payload, msg_2.payload)
 
     return (:equality_delta,
             node.interfaces[outbound_interface_index].message)
 end
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, msg_1::Message{DeltaDistribution{T}}, ::Nothing, msg_2::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_1::Message{DeltaDistribution{T}}, msg_2::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_1::Message{DeltaDistribution{Float64}}, ::Nothing, msg_2::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_1::Message{DeltaDistribution{Float64}}, msg_2::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
 
 ############################################
@@ -277,29 +276,28 @@ sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_1:
 # Gaussian-DeltaDistribution combination
 ############################################
 
-function equalityGaussianDeltaRule!(dist_result::DeltaDistribution, dist_1::GaussianDistribution, dist_2::DeltaDistribution)
+function equalityGaussianDeltaRule!(dist_result::DeltaDistribution{Float64}, dist_1::GaussianDistribution, dist_2::DeltaDistribution{Float64})
     dist_result.m = deepcopy(dist_2.m)
     return dist_result
 end
-equalityGaussianDeltaRule!(dist_result::DeltaDistribution, dist_1::DeltaDistribution, dist_2::GaussianDistribution) = equalityGaussianDeltaRule!(dist_result, dist_2, dist_1)
+equalityGaussianDeltaRule!(dist_result::DeltaDistribution{Float64}, dist_1::DeltaDistribution{Float64}, dist_2::GaussianDistribution) = equalityGaussianDeltaRule!(dist_result, dist_2, dist_1)
 
-function equalityGaussianDeltaRule!(dist_result::GaussianDistribution, dist_1::GaussianDistribution, dist_2::DeltaDistribution)
-    dist_result.m = [deepcopy(dist_2.m)]
+function equalityGaussianDeltaRule!(dist_result::GaussianDistribution, dist_1::GaussianDistribution, dist_2::DeltaDistribution{Float64})
+    dist_result.m = deepcopy(dist_2.m)
     dist_result.V = eye(length(dist_2.m))*tiny()
     invalidate!(dist_result.W) 
     invalidate!(dist_result.xi) 
     return dist_result
 end
-equalityGaussianDeltaRule!(dist_result::GaussianDistribution, dist_1::DeltaDistribution, dist_2::GaussianDistribution) = equalityGaussianDeltaRule!(dist_result, dist_2, dist_1)
+equalityGaussianDeltaRule!(dist_result::GaussianDistribution, dist_1::DeltaDistribution{Float64}, dist_2::GaussianDistribution) = equalityGaussianDeltaRule!(dist_result, dist_2, dist_1)
 
-function sumProduct!{T<:Any}(
-                            node::EqualityNode,
-                            outbound_interface_index::Int,
-                            msg_delta::Message{DeltaDistribution{T}},
-                            msg_n::Message{GaussianDistribution},
-                            ::Nothing)
+function sumProduct!(node::EqualityNode,
+                     outbound_interface_index::Int,
+                     msg_delta::Message{DeltaDistribution{Float64}},
+                     msg_n::Message{GaussianDistribution},
+                     ::Nothing)
     # Combination of Gaussian and delta
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
 
     equalityGaussianDeltaRule!(dist_out, msg_delta.payload, msg_n.payload)
 
@@ -308,33 +306,33 @@ function sumProduct!{T<:Any}(
 end
 # Call signature for messages other ways around
 # Outbound interface 3
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, msg_n::Message{GaussianDistribution}, msg_delta::Message{DeltaDistribution{T}}, ::Nothing) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_n::Message{GaussianDistribution}, msg_delta::Message{DeltaDistribution{Float64}}, ::Nothing) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
 # Outbound interface 2
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, msg_n::Message{GaussianDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{DeltaDistribution{T}}, ::Nothing, msg_n::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_n::Message{GaussianDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{DeltaDistribution{Float64}}, ::Nothing, msg_n::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
 # Outbound interface 1
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_n::Message{GaussianDistribution}, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
-sumProduct!{T<:Any}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_delta::Message{DeltaDistribution{T}}, msg_n::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_n::Message{GaussianDistribution}, msg_delta::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_delta::Message{DeltaDistribution{Float64}}, msg_n::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_n, nothing)
 
 ############################################
 # Gamma-DeltaDistribution combination
 ############################################
 
-function equalityGammaDeltaRule!(dist_result::DeltaDistribution, dist_1::GammaDistribution, dist_2::DeltaDistribution)
-    (dist_2.m >= 0) || error("Can not perform equality rule for gamma-delta combination for negative numbers")
+function equalityGammaDeltaRule!(dist_result::DeltaDistribution{Float64}, dist_1::GammaDistribution, dist_2::DeltaDistribution{Float64})
+    length(dist_2.m) == 1 || error("Equality gamma-delta update only implemented for univariate distributions")
+    (dist_2.m[1] >= 0) || error("Can not perform equality rule for gamma-delta combination for negative numbers")
     dist_result.m = deepcopy(dist_2.m)
     return dist_result
 end
-equalityGammaDeltaRule!(dist_result::DeltaDistribution, dist_1::DeltaDistribution, dist_2::GammaDistribution) = equalityGammaDeltaRule!(dist_result, dist_2, dist_1)
+equalityGammaDeltaRule!(dist_result::DeltaDistribution{Float64}, dist_1::DeltaDistribution{Float64}, dist_2::GammaDistribution) = equalityGammaDeltaRule!(dist_result, dist_2, dist_1)
 
-function sumProduct!{T<:Real}(
-                            node::EqualityNode,
-                            outbound_interface_index::Int,
-                            msg_delta::Message{DeltaDistribution{T}},
-                            msg_gam::Message{GammaDistribution},
-                            ::Nothing)
+function sumProduct!(node::EqualityNode,
+                     outbound_interface_index::Int,
+                     msg_delta::Message{DeltaDistribution{Float64}},
+                     msg_gam::Message{GammaDistribution},
+                     ::Nothing)
     # Combination of gamma and float
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
 
     equalityGammaDeltaRule!(dist_out, msg_delta.payload, msg_gam.payload)
 
@@ -343,33 +341,33 @@ function sumProduct!{T<:Real}(
 end
 # Call signature for messages other ways around
 # Outbound interface 3
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, msg_gam::Message{GammaDistribution}, msg_delta::Message{DeltaDistribution{T}}, ::Nothing) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_gam::Message{GammaDistribution}, msg_delta::Message{DeltaDistribution{Float64}}, ::Nothing) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
 # Outbound interface 2
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, msg_gam::Message{GammaDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{DeltaDistribution{T}}, ::Nothing, msg_gam::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_gam::Message{GammaDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{DeltaDistribution{Float64}}, ::Nothing, msg_gam::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
 # Outbound interface 1
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_gam::Message{GammaDistribution}, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_delta::Message{DeltaDistribution{T}}, msg_gam::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_gam::Message{GammaDistribution}, msg_delta::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_delta::Message{DeltaDistribution{Float64}}, msg_gam::Message{GammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gam, nothing)
 
 ############################################
 # InverseGamma-DeltaDistribution combination
 ############################################
 
-function equalityInverseGammaDeltaRule!(dist_result::DeltaDistribution, dist_1::InverseGammaDistribution, dist_2::DeltaDistribution)
-    (dist_2.m >= 0) || error("Can not perform equality rule for inverse gamma-delta combination for negative numbers")
+function equalityInverseGammaDeltaRule!(dist_result::DeltaDistribution{Float64}, dist_1::InverseGammaDistribution, dist_2::DeltaDistribution{Float64})
+    length(dist_2.m) == 1 || error("Equality inversegamma-delta update only implemented for univariate distributions")
+    (dist_2.m[1] >= 0) || error("Can not perform equality rule for inverse gamma-delta combination for negative numbers")
     dist_result.m = deepcopy(dist_2.m)
     return dist_result
 end
-equalityInverseGammaDeltaRule!(dist_result::DeltaDistribution, dist_1::DeltaDistribution, dist_2::InverseGammaDistribution) = equalityInverseGammaDeltaRule!(dist_result, dist_2, dist_1)
+equalityInverseGammaDeltaRule!(dist_result::DeltaDistribution{Float64}, dist_1::DeltaDistribution{Float64}, dist_2::InverseGammaDistribution) = equalityInverseGammaDeltaRule!(dist_result, dist_2, dist_1)
 
-function sumProduct!{T<:Real}(
-                            node::EqualityNode,
-                            outbound_interface_index::Int,
-                            msg_delta::Message{DeltaDistribution{T}},
-                            msg_igam::Message{InverseGammaDistribution},
-                            ::Nothing)
+function sumProduct!(node::EqualityNode,
+                     outbound_interface_index::Int,
+                     msg_delta::Message{DeltaDistribution{Float64}},
+                     msg_igam::Message{InverseGammaDistribution},
+                     ::Nothing)
     # Combination of gamma and float
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
 
     equalityInverseGammaDeltaRule!(dist_out, msg_delta.payload, msg_igam.payload)
 
@@ -378,10 +376,10 @@ function sumProduct!{T<:Real}(
 end
 # Call signature for messages other ways around
 # Outbound interface 3
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, msg_igam::Message{InverseGammaDistribution}, msg_delta::Message{DeltaDistribution{T}}, ::Nothing) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_igam::Message{InverseGammaDistribution}, msg_delta::Message{DeltaDistribution{Float64}}, ::Nothing) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
 # Outbound interface 2
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, msg_igam::Message{InverseGammaDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{DeltaDistribution{T}}, ::Nothing, msg_igam::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_igam::Message{InverseGammaDistribution}, ::Nothing, msg_delta::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{DeltaDistribution{Float64}}, ::Nothing, msg_igam::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
 # Outbound interface 1
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_igam::Message{InverseGammaDistribution}, msg_delta::Message{DeltaDistribution{T}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
-sumProduct!{T<:Real}(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_delta::Message{DeltaDistribution{T}}, msg_igam::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_igam::Message{InverseGammaDistribution}, msg_delta::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_delta::Message{DeltaDistribution{Float64}}, msg_igam::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)

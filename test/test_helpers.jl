@@ -64,7 +64,7 @@ facts("Helper function unit tests") do
     context("ensureMessage! should assign a message to an interface if the type does not match") do
         node = TerminalNode(GaussianDistribution(m=5.0, V=1.0))
         node.i[:out].message = Message(GaussianDistribution(m=5.0, V=1.0))
-        @fact ForneyLab.ensureMessage!(node.i[:out], DeltaDistribution) => Message(DeltaDistribution())
+        @fact ForneyLab.ensureMessage!(node.i[:out], DeltaDistribution{Float64}) => Message(DeltaDistribution())
         @fact node.i[:out].message => Message(DeltaDistribution())
     end
 
@@ -83,7 +83,7 @@ facts("Helper function unit tests") do
         @fact format(0.0) => "0.00"
         @fact format([7.345345456456456464564645645645, 0.00005345, -0.000145, -108.0]) => "[7.35, 5.34e-05, -1.45e-04, -1.08e+02]"
         @fact format([7.345345456456456464564645645645 0.00005345; -0.000145 -108.0]) => "[[7.35, 5.34e-05][-1.45e-04, -1.08e+02]]"
-        @fact format(DeltaDistribution()) => "δ(m=1.00)"
+        @fact format(DeltaDistribution()) => "δ(m=[1.00])"
         @fact format(GammaDistribution()) => "Gam(a=1.00, b=1.00)"
         @fact format(GaussianDistribution()) => "N(m=[0.00], V=[[1.00]])"
         @fact format(InverseGammaDistribution()) => "Ig(a=3.00, b=2.00)"

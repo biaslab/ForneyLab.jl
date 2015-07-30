@@ -12,13 +12,19 @@
 export DeltaDistribution, sample
 
 type DeltaDistribution{T} <: ProbabilityDistribution
-    m::T
-
-    DeltaDistribution{T}(m::T) = new(m)
-    DeltaDistribution() = new()
+    m::Vector{T}
 end
-DeltaDistribution{T}(m::T) = DeltaDistribution{T}(m)
-DeltaDistribution() = DeltaDistribution(1.0)
+function DeltaDistribution{T}(m::T)
+    if typeof(m) <: Vector
+        _m = m
+    elseif typeof(m) <: Number
+        _m = [m]
+    else
+        error("argument should be a vector or a number")
+    end
+    return DeltaDistribution(_m)
+end
+DeltaDistribution() = DeltaDistribution([1.0])
 
 format(dist::DeltaDistribution) = "δ(m=$(format(dist.m)))"
 show(io::IO, dist::DeltaDistribution) = println(io, format(dist))
@@ -32,4 +38,4 @@ sample(dist::DeltaDistribution) = deepcopy(dist.m)
 
 # We can convert a lot of object types into a DeltaDistribution with that object as position of the delta
 # This is useful so we can write i.e. TerminalNode(3.0) instead of TerminalNode(DeltaDistribution(3.0))
-convert{T<:Union(Number,Symbol,Array)}(::Type{ProbabilityDistribution}, obj::T) = DeltaDistribution(deepcopy(obj))
+convert{T<:Union(Number,Vector)}(::Type{ProbabilityDistribution}, obj::T) = DeltaDistribution(deepcopy(obj))

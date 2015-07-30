@@ -89,12 +89,12 @@ end
 ############################################
 
 # Forward message
-function sumProduct!{T<:Any}(node::ExponentialNode,
+function sumProduct!(node::ExponentialNode,
                      outbound_interface_index::Int,
-                     msg_in::Message{DeltaDistribution{T}},
+                     msg_in::Message{DeltaDistribution{Float64}},
                      msg_out::Nothing)
     length(msg_in.payload.m) == 1 || error("ExponentialNode only defined for univariate variables")
-    dist_out = ensureMessage!(node.i[:out], DeltaDistribution{T}).payload
+    dist_out = ensureMessage!(node.i[:out], DeltaDistribution{Float64}).payload
 
     dist_out.m = exp(msg_in.payload.m)
 
@@ -103,12 +103,12 @@ function sumProduct!{T<:Any}(node::ExponentialNode,
 end
 
 # Backward message
-function sumProduct!{T<:Any}(node::ExponentialNode,
+function sumProduct!(node::ExponentialNode,
                      outbound_interface_index::Int,
                      msg_in::Nothing,
-                     msg_out::Message{DeltaDistribution{T}})
+                     msg_out::Message{DeltaDistribution{Float64}})
     length(msg_out.payload.m) == 1 || error("ExponentialNode only defined for univariate variables")
-    dist_out = ensureMessage!(node.i[:in], DeltaDistribution{T}).payload
+    dist_out = ensureMessage!(node.i[:in], DeltaDistribution{Float64}).payload
 
     dist_out.m = log(msg_out.payload.m)
 

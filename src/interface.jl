@@ -42,8 +42,8 @@ end
 function ensureMessage!{T<:ProbabilityDistribution}(interface::Interface, payload_type::Type{T})
     # Ensure that interface carries a Message{payload_type}, used for in place updates
     if interface.message == nothing || typeof(interface.message.payload) != payload_type
-        if payload_type <: DeltaDistribution
-            interface.message = Message(payload_type())
+        if payload_type <: DeltaDistribution{Float64}
+            interface.message = Message(DeltaDistribution())
         else
             interface.message = Message(vague(payload_type))
         end

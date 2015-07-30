@@ -30,7 +30,7 @@ facts("Message passing integration tests") do
         context("Should handle post-processing of messages (sample)") do
             initializeAdditionNode(Any[Message(GaussianDistribution()), Message(GaussianDistribution()), Message(GaussianDistribution())])
             schedule = [ScheduleEntry(n(:add_node).i[:out], sumProduct!, sample)]
-            @fact typeof(execute(schedule).payload) => DeltaDistribution{Array{Float64, 1}}
+            @fact typeof(execute(schedule).payload) => DeltaDistribution{Float64}
         end
 
         context("Should work as expeced in loopy graphs") do

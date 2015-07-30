@@ -95,11 +95,11 @@ isDeterministic(::GaussianNode) = false
 # Standard update functions
 ############################################
 
-function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
-                                       outbound_interface_index::Int,
-                                       ::Nothing,
-                                       msg_var_prec::Message{DeltaDistribution{T1}},
-                                       msg_out::Message{DeltaDistribution{T2}})
+function sumProduct!(node::GaussianNode,
+                     outbound_interface_index::Int,
+                     ::Nothing,
+                     msg_var_prec::Message{DeltaDistribution{Float64}},
+                     msg_out::Message{DeltaDistribution{Float64}})
     # Rules from Korl table 5.2 by symmetry
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
@@ -116,9 +116,9 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         (length(msg_out.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
-        dist_out.m = [msg_out.payload.m[1]]
+        dist_out.m = msg_out.payload.m
         invalidate!(dist_out.xi)
-        dist_out.V = reshape([msg_var_prec.payload.m[1]], 1, 1)
+        dist_out.V = reshape(msg_var_prec.payload.m, 1, 1)
         invalidate!(dist_out.W)
 
         return (:gaussian_backward_mean_delta_variance,
@@ -135,10 +135,10 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         (length(msg_out.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
-        dist_out.m = [msg_out.payload.m[1]]
+        dist_out.m = msg_out.payload.m
         invalidate!(dist_out.xi)
         invalidate!(dist_out.V)
-        dist_out.W = reshape([msg_var_prec.payload.m[1]], 1, 1)
+        dist_out.W = reshape(msg_var_prec.payload.m, 1, 1)
 
         return (:gaussian_backward_mean_delta_precision,
                 node.interfaces[outbound_interface_index].message)
@@ -147,11 +147,11 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
     end
 end
 
-function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
-                            outbound_interface_index::Int,
-                            msg_mean::Message{DeltaDistribution{T1}},
-                            ::Nothing,
-                            msg_out::Message{DeltaDistribution{T2}})
+function sumProduct!(node::GaussianNode,
+                     outbound_interface_index::Int,
+                     msg_mean::Message{DeltaDistribution{Float64}},
+                     ::Nothing,
+                     msg_out::Message{DeltaDistribution{Float64}})
     # Rules from Korl table 5.2
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
@@ -166,8 +166,9 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         #        v
 
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], InverseGammaDistribution).payload
-        y = msg_out.payload.m[1]
         length(msg_mean.payload.m) == 1 || error("Update only defined for univariate distributions")
+        length(msg_out.payload.m) == 1 || error("Update only defined for univariate distributions")
+        y = msg_out.payload.m[1]
         m = msg_mean.payload.m[1]
         dist_out.a = -0.5
         dist_out.b = 0.5*(y-m)^2
@@ -184,8 +185,9 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         #        v
 
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GammaDistribution).payload
-        y = msg_out.payload.m[1]
         length(msg_mean.payload.m) == 1 || error("Update only defined for univariate distributions")
+        length(msg_out.payload.m) == 1 || error("Update only defined for univariate distributions")
+        y = msg_out.payload.m[1]
         m = msg_mean.payload.m[1]
         dist_out.a = 1.5
         dist_out.b = 0.5*(y-m)^2
@@ -197,10 +199,10 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
     end
 end
 
-function sumProduct!{T<:Any}(node::GaussianNode,
-                            outbound_interface_index::Int,
-                            ::Nothing,
-                            msg_out::Message{DeltaDistribution{T}})
+function sumProduct!(node::GaussianNode,
+                     outbound_interface_index::Int,
+                     ::Nothing,
+                     msg_out::Message{DeltaDistribution{Float64}})
     # Rules from Korl table 5.2
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
@@ -213,8 +215,9 @@ function sumProduct!{T<:Any}(node::GaussianNode,
         #   <--  
 
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], InverseGammaDistribution).payload
-        y = msg_out.payload.m[1]
         length(node.m) == 1 || error("Update only defined for univariate distributions")
+        length(msg_out.payload.m) == 1 || error("Update only defined for univariate distributions")
+        y = msg_out.payload.m[1]
         m = node.m[1]
         dist_out.a = -0.5
         dist_out.b = 0.5*(y-m)^2
@@ -229,8 +232,9 @@ function sumProduct!{T<:Any}(node::GaussianNode,
         #   <--  
 
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GammaDistribution).payload
-        y = msg_out.payload.m[1]
         length(node.m) == 1 || error("Update only defined for univariate distributions")
+        length(msg_out.payload.m) == 1 || error("Update only defined for univariate distributions")
+        y = msg_out.payload.m[1]
         m = node.m[1]
         dist_out.a = 1.5
         dist_out.b = 0.5*(y-m)^2
@@ -242,11 +246,11 @@ function sumProduct!{T<:Any}(node::GaussianNode,
     end
 end
 
-function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
-                            outbound_interface_index::Int,
-                            msg_mean::Message{DeltaDistribution{T1}},
-                            msg_var_prec::Message{DeltaDistribution{T2}},
-                            ::Nothing)
+function sumProduct!(node::GaussianNode,
+                     outbound_interface_index::Int,
+                     msg_mean::Message{DeltaDistribution{Float64}},
+                     msg_var_prec::Message{DeltaDistribution{Float64}},
+                     ::Nothing)
     # Rules from Korl table 5.2
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
@@ -261,11 +265,12 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         #      v v
 
         (length(msg_mean.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
+        (length(msg_var_prec.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
-        dist_out.m = [msg_mean.payload.m[1]]
+        dist_out.m = msg_mean.payload.m
         invalidate!(dist_out.xi)
-        dist_out.V = reshape([msg_var_prec.payload.m[1]], 1, 1)
+        dist_out.V = reshape(msg_var_prec.payload.m, 1, 1)
         invalidate!(dist_out.W)
 
         return (:gaussian_forward_delta_variance,
@@ -280,12 +285,13 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
         #      v v
 
         (length(msg_mean.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
+        (length(msg_var_prec.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
-        dist_out.m = [msg_mean.payload.m[1]]
+        dist_out.m = msg_mean.payload.m
         invalidate!(dist_out.xi)
         invalidate!(dist_out.V)
-        dist_out.W = reshape([msg_var_prec.payload.m[1]], 1, 1)
+        dist_out.W = reshape(msg_var_prec.payload.m, 1, 1)
 
         return (:gaussian_forward_delta_precision,
                 node.interfaces[outbound_interface_index].message)
@@ -294,10 +300,10 @@ function sumProduct!{T1<:Any, T2<:Any}(node::GaussianNode,
     end
 end
 
-function sumProduct!{T<:Any}(node::GaussianNode,
-                            outbound_interface_index::Int,
-                            msg_var_prec::Message{DeltaDistribution{T}},
-                            msg_out::Nothing)
+function sumProduct!(node::GaussianNode,
+                     outbound_interface_index::Int,
+                     msg_var_prec::Message{DeltaDistribution{Float64}},
+                     msg_out::Nothing)
     # Rules from Korl table 5.2
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
@@ -310,11 +316,12 @@ function sumProduct!{T<:Any}(node::GaussianNode,
         #           -->  
 
         (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
+        (length(msg_var_prec.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
         dist_out.m = deepcopy(node.m)
         invalidate!(dist_out.xi)
-        dist_out.V = reshape([msg_var_prec.payload.m[1]], 1, 1)
+        dist_out.V = reshape(msg_var_prec.payload.m, 1, 1)
         invalidate!(dist_out.W)
 
         return (:gaussian_forward_delta_variance,
@@ -327,12 +334,13 @@ function sumProduct!{T<:Any}(node::GaussianNode,
         #           -->  
 
         (length(node.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
+        (length(msg_var_prec.payload.m) == 1) || error("GaussianNode with fixed mean update only implemented for unvariate distributions")
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
         dist_out.m = deepcopy(node.m)
         invalidate!(dist_out.xi)
         invalidate!(dist_out.V)
-        dist_out.W = reshape([msg_var_prec.payload.m[1]], 1, 1)
+        dist_out.W = reshape(msg_var_prec.payload.m, 1, 1)
 
         return (:gaussian_forward_delta_precision,
                 node.interfaces[outbound_interface_index].message)

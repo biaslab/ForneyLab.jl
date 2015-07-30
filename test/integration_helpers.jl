@@ -92,7 +92,7 @@ function initializeChainOfNodes()
     # [T]-->[A]-->[B]-->[M]
 
     g = FactorGraph()
-    TerminalNode(DeltaDistribution(reshape([3.0], 1, 1)), id=:node1)
+    TerminalNode(DeltaDistribution(3.0), id=:node1)
     FixedGainNode([2.0], id=:node2)
     FixedGainNode([2.0], id=:node3)
     Edge(n(:node1).i[:out], n(:node2).i[:in])
@@ -502,15 +502,15 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     # Check that nodes are properly connected
     @fact typeof(node1.interfaces[1].message.payload) <: DeltaDistribution => true
     @fact typeof(node2.interfaces[1].message.payload) <: DeltaDistribution => true
-    @fact mean(node1.interfaces[1].message.payload) => 2.0
-    @fact mean(node2.interfaces[1].message.payload) => 1.0
-    @fact mean(node1.interfaces[1].partner.message.payload) => 1.0
-    @fact mean(node2.interfaces[1].partner.message.payload) => 2.0
+    @fact mean(node1.interfaces[1].message.payload) => [2.0]
+    @fact mean(node2.interfaces[1].message.payload) => [1.0]
+    @fact mean(node1.interfaces[1].partner.message.payload) => [1.0]
+    @fact mean(node2.interfaces[1].partner.message.payload) => [2.0]
     # Check that pointers are initiatized correctly
-    @fact mean(node1.i[:out].message.payload) => 3.0
-    @fact mean(node2.i[:out].message.payload) => 1.0
-    @fact mean(node1.i[:in].partner.message.payload) => 1.0
-    @fact mean(node2.i[:out].partner.message.payload) => 2.0
+    @fact mean(node1.i[:out].message.payload) => [3.0]
+    @fact mean(node2.i[:out].message.payload) => [1.0]
+    @fact mean(node1.i[:in].partner.message.payload) => [1.0]
+    @fact mean(node2.i[:out].partner.message.payload) => [2.0]
 end
 
 function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution, update_function::Function=ForneyLab.sumProduct!)

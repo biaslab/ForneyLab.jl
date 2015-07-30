@@ -19,12 +19,12 @@ facts("FixedGainNode unit tests") do
         validateOutboundMessage(FixedGainNode([2.0]), 
                                 1, 
                                 [nothing, Message(DeltaDistribution(3.0))],
-                                DeltaDistribution(reshape([1.5], 1, 1)))
+                                DeltaDistribution(1.5))
         # Forward message
         validateOutboundMessage(FixedGainNode([2.0]), 
                                 2, 
                                 [Message(DeltaDistribution(3.0)), nothing],
-                                DeltaDistribution(reshape([6.0], 1, 1)))
+                                DeltaDistribution(6.0))
     end
 
     context("FixedGainNode should propagate a DeltaDistribution{Array{T, N}}") do

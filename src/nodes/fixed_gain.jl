@@ -178,11 +178,10 @@ function sumProduct!(node::FixedGainNode,
 end
 
 # Backward DeltaDistribution to IN
-function sumProduct!{T<:Any}(
-                            node::FixedGainNode,
-                            outbound_interface_index::Int,
-                            ::Nothing,
-                            msg_out::Message{DeltaDistribution{T}})
+function sumProduct!(node::FixedGainNode,
+                     outbound_interface_index::Int,
+                     ::Nothing,
+                     msg_out::Message{DeltaDistribution{Float64}})
     if outbound_interface_index == 1
         # Backward message
         ans = node.A_inv * msg_out.payload.m
@@ -190,7 +189,7 @@ function sumProduct!{T<:Any}(
         error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     end
 
-    msg_ans = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{typeof(ans)})
+    msg_ans = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64})
     msg_ans.payload.m = ans
 
     return (:fixed_gain_delta_backward,
@@ -198,11 +197,10 @@ function sumProduct!{T<:Any}(
 end
 
 # Forward DeltaDistribution to OUT
-function sumProduct!{T<:Any}(
-                            node::FixedGainNode,
-                            outbound_interface_index::Int,
-                            msg_in::Message{DeltaDistribution{T}},
-                            ::Nothing)
+function sumProduct!(node::FixedGainNode,
+                     outbound_interface_index::Int,
+                     msg_in::Message{DeltaDistribution{Float64}},
+                     ::Nothing)
     if outbound_interface_index == 2
         # Forward message
         ans = node.A * msg_in.payload.m
@@ -210,7 +208,7 @@ function sumProduct!{T<:Any}(
         error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     end
 
-    msg_ans = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{typeof(ans)})
+    msg_ans = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64})
     msg_ans.payload.m = ans
 
     return (:fixed_gain_delta_forward,

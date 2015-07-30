@@ -30,16 +30,6 @@ facts("EqualityNode unit tests") do
                                 3, 
                                 [Message(DeltaDistribution(1.0)), Message(DeltaDistribution(1.1)), nothing],
                                 DeltaDistribution(0.0))
-        # Equal matrices
-        validateOutboundMessage(EqualityNode(), 
-                                3, 
-                                [Message(DeltaDistribution(ones(2,2))), Message(DeltaDistribution(ones(2,2))), nothing],
-                                DeltaDistribution(ones(2,2)))
-        # Unequal matrices (different values) should give zeros matrix
-        validateOutboundMessage(EqualityNode(), 
-                                3, 
-                                [Message(DeltaDistribution(ones(2,2))), Message(DeltaDistribution(4.0*ones(2,2))), nothing],
-                                DeltaDistribution(zeros(2,2)))
     end
 
     context("EqualityNode should propagate a univariate GaussianDistribution") do
