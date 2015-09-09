@@ -436,3 +436,30 @@ rules:
                 <pre>- - -|- - -</pre>
                 <pre>     v y~N </pre>
     formula:    "$\\lambda_y=\\frac{a_{q(m,\\lambda)}}{b_{q(m,\\lambda)}} \\\\ \\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_{q(m,\\lambda)}, \\lambda_y^{-1}\\right)$"
+
+  sigmoid_backward_gaussian_expectation:
+    node:       SigmoidNode
+    reference:  "Sigmoid node derivations document"
+    diagram:    <pre>  X       Y    </pre>
+                <pre><----[σ]-----  </pre>
+                <pre>               </pre>
+                <pre>f(X,Y) = σ(X⋅Y)</pre>
+    formula:    ""
+
+  sigmoid_delta_forward:
+    node:       SigmoidNode
+    reference:  "Sigmoid node derivations document"
+    diagram:    <pre>  X~δ     Y    </pre>
+                <pre>-----[σ]---->  </pre>
+                <pre>               </pre>
+                <pre>f(X,Y) = σ(X⋅Y)</pre>
+    formula:    ""
+
+  sigmoid_gaussian_forward:
+    node:       SigmoidNode
+    reference:  "Sigmoid node derivations document"
+    diagram:    <pre>  X~N     Y    </pre>
+                <pre>-----[σ]---->  </pre>
+                <pre>               </pre>
+                <pre>f(X,Y) = σ(X⋅Y)</pre>
+    formula:    ""

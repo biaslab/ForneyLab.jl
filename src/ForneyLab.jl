@@ -5,7 +5,7 @@ using YAML
 using LaTeXStrings
 
 export ProbabilityDistribution
-export sumProduct!, sumProductApprox!, vmp!
+export sumProduct!, expectation!, vmp!
 export vague, self, ==
 export setVerbosity
 
