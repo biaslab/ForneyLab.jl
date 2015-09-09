@@ -43,27 +43,27 @@ end
 calculateQDistribution!(marg::QDistribution, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
 # Gaussian-delta combination
-function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution)
+function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution{Float64})
     # Calculation for univariate approximate marginal
     return marg.distribution = ForneyLab.equalityGaussianDeltaRule!(marg.distribution, forward_dist, backward_dist)
 end
-calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
+calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
 # TODO: check for need
 # # Gamma-delta combination
-# function calculateQDistribution!(marg::QDistribution, forward_dist::GammaDistribution, backward_dist::DeltaDistribution)
+# function calculateQDistribution!(marg::QDistribution, forward_dist::GammaDistribution, backward_dist::DeltaDistribution{Float64})
 #     # Calculation for univariate approximate marginal
 #     return marg.distribution = ForneyLab.equalityGammaDeltaRule!(marg.distribution, forward_dist, backward_dist)
 # end
-# calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution, backward_dist::GammaDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
+# calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::GammaDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
 # TODO: check for need
 # # Inverse gamma-delta combination
-# function calculateQDistribution!(marg::QDistribution, forward_dist::InverseGammaDistribution, backward_dist::DeltaDistribution)
+# function calculateQDistribution!(marg::QDistribution, forward_dist::InverseGammaDistribution, backward_dist::DeltaDistribution{Float64})
 #     # Calculation for univariate approximate marginal
 #     return marg.distribution = ForneyLab.equalityInverseGammaDeltaRule!(marg.distribution, forward_dist, backward_dist)
 # end
-# calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution, backward_dist::InverseGammaDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
+# calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::InverseGammaDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
 ############################
 # Joint approximate marginal calculations

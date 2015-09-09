@@ -30,16 +30,6 @@ facts("EqualityNode unit tests") do
                                 3, 
                                 [Message(DeltaDistribution(1.0)), Message(DeltaDistribution(1.1)), nothing],
                                 DeltaDistribution(0.0))
-        # Equal matrices
-        validateOutboundMessage(EqualityNode(), 
-                                3, 
-                                [Message(DeltaDistribution(ones(2,2))), Message(DeltaDistribution(ones(2,2))), nothing],
-                                DeltaDistribution(ones(2,2)))
-        # Unequal matrices (different values) should give zeros matrix
-        validateOutboundMessage(EqualityNode(), 
-                                3, 
-                                [Message(DeltaDistribution(ones(2,2))), Message(DeltaDistribution(4.0*ones(2,2))), nothing],
-                                DeltaDistribution(zeros(2,2)))
     end
 
     context("EqualityNode should propagate a univariate GaussianDistribution") do
@@ -160,19 +150,18 @@ facts("EqualityNode unit tests") do
     end
 
     context("EqualityNode should propagate combination of student's t and Gaussian distribution") do
-        # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                [Message(StudentsTDistribution()), Message(GaussianDistribution()), nothing],
-                                GaussianDistribution(m=0.0, W=2.0))
+                                [Message(StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0)), Message(GaussianDistribution()), nothing],
+                                GaussianDistribution(m=0.5, W=2.0))
         validateOutboundMessage(EqualityNode(), 
                                 3, 
-                                [Message(GaussianDistribution()), Message(StudentsTDistribution()), nothing],
-                                GaussianDistribution(m=0.0, W=2.0))
+                                [Message(GaussianDistribution()), Message(StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0)), nothing],
+                                GaussianDistribution(m=0.5, W=2.0))
         validateOutboundMessage(EqualityNode(), 
                                 2, 
-                                [Message(StudentsTDistribution()), nothing, Message(GaussianDistribution())],
-                                GaussianDistribution(m=0.0, W=2.0))
+                                [Message(StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0)), nothing, Message(GaussianDistribution())],
+                                GaussianDistribution(m=0.5, W=2.0))
     end
 
     context("EqualityNode should propagate combination of a delta and a Gaussian distribution") do

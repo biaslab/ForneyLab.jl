@@ -21,7 +21,7 @@ type Edge <: AbstractEdge
         !current_graph.locked || error("Cannot extend a locked FactorGraph.")
         hasNode(current_graph, head.node) || error("Head node does not belong to the current graph.")
         hasNode(current_graph, tail.node) || error("Tail node does not belong to the current graph.")
-        !haskey(current_graph.e, id) || error("The edge id $(id) already exists in the current graph. Consider specifying an explicit id.")
+        !haskey(current_graph.edges, id) || error("The edge id $(id) already exists in the current graph. Consider specifying an explicit id.")
         
         self = new(id, tail, head, nothing, distribution_type)
 
@@ -33,7 +33,7 @@ type Edge <: AbstractEdge
         head.partner = tail
 
         # Add edge to current_graph
-        current_graph.e[self.id] = self
+        current_graph.edges[self.id] = self
 
         return self
     end
@@ -75,13 +75,10 @@ function ensureMarginal!{T<:ProbabilityDistribution}(edge::Edge, distribution_ty
     # Ensure that edge carries a marginal of type distribution_type, used for in place updates
     if edge.marginal==nothing || (typeof(edge.marginal) <: distribution_type)==false
         (distribution_type <: edge.distribution_type) || error("Cannot create marginal of type $(distribution_type) since the edge requires a different marginal distribution type. Edge:\n$(edge)")
-        try
-            # Initialize the marginal as a vague "uninformative" distribution of the specified type
+        if distribution_type <: DeltaDistribution{Float64}
+            edge.marginal = DeltaDistribution() # vague() not implemented
+        else
             edge.marginal = vague(distribution_type)
-        catch
-            # vague() not implemented
-            # Instead, initialize the marginal with the default distribution of the specified type
-            edge.marginal = distribution_type()
         end
     end
 

@@ -125,10 +125,10 @@ facts("Marginal calculations for the Gaussian") do
     end
 
     context("Marginal calculation for the combination of a Gaussian and student's t-distribution") do
-        initializePairOfTerminalNodes(GaussianDistribution(), StudentsTDistribution())
+        initializePairOfTerminalNodes(GaussianDistribution(), StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0))
         edge = n(:t1).i[:out].edge
         calculateMarginal!(edge)
-        @fact edge.marginal => GaussianDistribution(m=0.0, W=2.0) 
+        @fact edge.marginal => GaussianDistribution(m=0.5, W=2.0) 
     end
 
     context("Marginal calculation for the combination of a Gaussian and DeltaDistribution") do
@@ -142,15 +142,11 @@ end
 facts("GaussianDistribution converts") do
     context("DeltaDistribution should be convertible to GaussianDistribution with negligible variance") do
         @fact convert(GaussianDistribution, DeltaDistribution(3.0)) => GaussianDistribution(m=3.0, V=tiny()) # Floating point number
-        @fact_throws convert(GaussianDistribution, DeltaDistribution(:some_discrete_type))                   # Discrete mode is not supported
-        @fact_throws convert(GaussianDistribution, DeltaDistribution(ones(2,2)))                             # Matrices are not supported
         @fact convert(GaussianDistribution, DeltaDistribution([1.0, 2.0])) => GaussianDistribution(m=[1.0, 2.0], V=tiny()*eye(2)) # Vector
     end
 
     context("Message{DeltaDistribution} should be convertible to Message{GaussianDistribution} with negligible variance") do
         @fact convert(Message{GaussianDistribution}, Message(DeltaDistribution(3.0))) => Message(GaussianDistribution(m=3.0, V=tiny())) # Floating point number
-        @fact_throws convert(Message{GaussianDistribution}, Message(DeltaDistribution(:some_discrete_type)))                   # Discrete mode is not supported
-        @fact_throws convert(Message{GaussianDistribution}, Message(DeltaDistribution(ones(2,2))))                             # Matrices are not supported
         @fact convert(Message{GaussianDistribution}, Message(DeltaDistribution([1.0, 2.0]))) => Message(GaussianDistribution(m=[1.0, 2.0], V=tiny()*eye(2))) # Vector
     end
 end

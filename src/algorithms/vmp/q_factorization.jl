@@ -52,6 +52,14 @@ function vagueQDistributions(f::QFactorization)
     return q_distributions
 end
 
+function vagueQDistributions!(q_distributions::Dict{(Node,Subgraph),QDistribution})
+    # Before starting a new iteration, the q-distributions should be reset to vague
+    for q_distribution in values(q_distributions)
+        q_distribution.distribution = vague(typeof(q_distribution.distribution)) # Set to vague
+    end
+    return q_distributions
+end
+
 function calculateQDistribution!(q_distributions::Dict{(Node, Subgraph), QDistribution}, node::Node, subgraph::Subgraph, factorization::QFactorization)
     # Calculate the approximate marginal for node from the perspective of subgraph,
     # and store the result in the scheme.q_distributions dictionary.

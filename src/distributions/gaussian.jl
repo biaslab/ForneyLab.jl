@@ -229,7 +229,5 @@ end
 
 # Converts from DeltaDistribution -> GaussianDistribution
 # NOTE: this introduces a small error because the variance is set >0
-convert{T<:Real}(::Type{GaussianDistribution}, delta::DeltaDistribution{T}) = GaussianDistribution(m=delta.m, V=tiny())
-convert{T<:Real}(::Type{GaussianDistribution}, delta::DeltaDistribution{Vector{T}}) = GaussianDistribution(m=deepcopy(delta.m), V=tiny()*eye(length(delta.m)))
-convert{T<:Real}(::Type{Message{GaussianDistribution}}, msg::Message{DeltaDistribution{T}}) = Message(GaussianDistribution(m=msg.payload.m, V=tiny()))
-convert{T<:Real}(::Type{Message{GaussianDistribution}}, msg::Message{DeltaDistribution{Vector{T}}}) = Message(GaussianDistribution(m=deepcopy(msg.payload.m), V=tiny()*eye(length(msg.payload.m))))
+convert(::Type{GaussianDistribution}, delta::DeltaDistribution{Float64}) = GaussianDistribution(m=delta.m, V=tiny()*eye(length(delta.m)))
+convert(::Type{Message{GaussianDistribution}}, msg::Message{DeltaDistribution{Float64}}) = Message(GaussianDistribution(m=msg.payload.m, V=tiny()*eye(length(msg.payload.m))))

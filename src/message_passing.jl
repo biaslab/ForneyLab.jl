@@ -53,7 +53,7 @@ function execute(schedule::Schedule)
 
     # Print table header for execution log
     if verbose
-        println("Execution log (node [interface], rule: result)")
+        println("\n\nExecution log (node [interface], rule: result)")
         println("--------------------------------------------")
     end
 

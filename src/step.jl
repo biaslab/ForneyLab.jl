@@ -16,7 +16,6 @@ end
 function attachReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, graph::FactorGraph=current_graph)
     # Mini-batch assignment for read buffers.
     # buffer is divided over nodes equally.
-    # TODO: this function should be renamed to reflect what it does
     n_nodes = length(nodes)
     n_samples_per_node = int(floor(length(buffer)/length(nodes)))
     n_samples_per_node*n_nodes == length(buffer) || error("Buffer length must a multiple of the mini-batch node array length")
@@ -40,6 +39,12 @@ end
 function attachWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=current_graph)
     hasNode(graph, interface.node) || error("The specified interface is not part of the current or specified graph")
     graph.write_buffers[interface] = buffer # Write buffer for message
+end
+
+function attachWriteBuffer(interfaces::Vector{Interface}, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=current_graph)
+    # Mini-batch assignment for write buffers.
+    # After each step the batch results are appended to the buffer
+     
 end
 
 function detachWriteBuffer(interface::Interface, graph::FactorGraph=current_graph)

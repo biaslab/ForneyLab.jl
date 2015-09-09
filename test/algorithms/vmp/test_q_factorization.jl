@@ -116,3 +116,39 @@ facts("vagueQDistributions() should set vague marginals at the appropriate place
     @fact qs[(n(:g1), m_gam_subgraph)].distribution => vague(NormalGammaDistribution)
     @fact qs[(n(:g1), y1_subgraph)].distribution => vague(GaussianDistribution)
 end
+
+facts("vagueQDistributions!() should reset already present q distributions to vague") do
+    data = [1.0]
+
+    # MF case
+    initializeGaussianNodeChain(data)
+    n_sections = length(data)
+
+    algo = VMP.Algorithm()
+
+    f = algo.fields[:factorization]
+    qs = algo.fields[:q_distributions]
+
+    m_subgraph = f.edge_to_subgraph[n(:g1).i[:mean].edge]
+    gam_subgraph = f.edge_to_subgraph[n(:g1).i[:precision].edge]
+    y1_subgraph = f.edge_to_subgraph[n(:g1).i[:out].edge]
+
+    # Distributions before step() should be vague
+    @fact qs[(n(:g1), m_subgraph)].distribution => vague(GaussianDistribution)
+    @fact qs[(n(:g1), gam_subgraph)].distribution => vague(GammaDistribution)
+    @fact qs[(n(:g1), y1_subgraph)].distribution => vague(GaussianDistribution)
+
+    step(algo)
+
+    # Distributions after step() should not be vague
+    @fact qs[(n(:g1), m_subgraph)].distribution == vague(GaussianDistribution) => false
+    @fact qs[(n(:g1), gam_subgraph)].distribution == vague(GammaDistribution) => false
+    @fact qs[(n(:g1), y1_subgraph)].distribution == vague(GaussianDistribution) => false
+
+    VMP.vagueQDistributions!(qs)
+
+    # Distributions after resetting should be vague again
+    @fact qs[(n(:g1), m_subgraph)].distribution => vague(GaussianDistribution)
+    @fact qs[(n(:g1), gam_subgraph)].distribution => vague(GammaDistribution)
+    @fact qs[(n(:g1), y1_subgraph)].distribution => vague(GaussianDistribution)
+end

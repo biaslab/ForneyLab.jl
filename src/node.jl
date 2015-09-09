@@ -11,7 +11,7 @@ function Base.copy(src::Node; id::Symbol = generateNodeId(typeof(src)))
     # The copy is added to the current_graph.
     # Argument id specifies the id of the copy.
 
-    (!haskey(current_graph.n, id)) || error("The current graph already contains a node with id $(id)")
+    (!haskey(current_graph.nodes, id)) || error("The current graph already contains a node with id $(id)")
    
     # Isolate src from the rest of the graph so deepcopy will only deepcopy src itself (and not other parts of the graph it belongs to)
     src_interface_partners = Dict{Interface,Interface}()

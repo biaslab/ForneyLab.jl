@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny, rules, format, isValid, invalidate!, s
+export isApproxEqual, huge, tiny, rules, format, isValid, invalidate!, *
 
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
@@ -22,7 +22,10 @@ function invalidate!(v::Array{Float64})
     return v
 end
 
-s(sym::Symbol, c::Int) = symbol(string(sym, c)) # Symbol concatenation
+ # Symbol concatenation
+*(sym::Symbol, num::Number) = symbol(string(sym, num))
+*(num::Number, sym::Symbol) = symbol(string(num, sym))
+*(sym1::Symbol, sym2::Symbol) = symbol(string(sym1, sym2))
 
 function format(d::Float64)
     if 0.01 < d < 100.0 || -100 < d < -0.01 || d==0.0

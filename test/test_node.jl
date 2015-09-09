@@ -35,7 +35,7 @@ facts("General node properties unit tests") do
 
             context("$(node_type) constructor should add node to the current graph") do
                 my_node = node_type()
-                @fact ForneyLab.current_graph.n[my_node.id] => my_node
+                @fact ForneyLab.current_graph.nodes[my_node.id] => my_node
             end
 
             facts("$(node_type) constructor should check for unique id") do
@@ -82,14 +82,14 @@ facts("Connections between nodes integration tests") do
         rd_buff = attachReadBuffer(n(:node1), zeros(3))
 
         delete!(g, n(:node2))
-        @fact haskey(g.n, :node2) => false
-        @fact haskey(g.e, :node1_node2) => false
-        @fact haskey(g.e, :node2_node3) => false
+        @fact haskey(g.nodes, :node2) => false
+        @fact haskey(g.edges, :node1_node2) => false
+        @fact haskey(g.edges, :node2_node3) => false
         @fact length(g.write_buffers) => 0
 
         @fact length(g.read_buffers) => 1
         delete!(g, n(:node1))
-        @fact haskey(g.n, :node1) => false
+        @fact haskey(g.nodes, :node1) => false
         @fact length(g.read_buffers) => 0
     end
 end

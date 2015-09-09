@@ -14,8 +14,8 @@ type MockNode <: Node
 
     function MockNode(num_interfaces::Int=1; id=ForneyLab.generateNodeId(MockNode))
         self = new(id, Array(Interface, num_interfaces), Dict{Symbol, Interface}())
-        !haskey(ForneyLab.current_graph.n, id) || error("Node id $(id) already present")
-        ForneyLab.current_graph.n[id] = self
+        !haskey(ForneyLab.current_graph.nodes, id) || error("Node id $(id) already present")
+        ForneyLab.current_graph.nodes[id] = self
  
         for interface_index = 1:num_interfaces
             self.interfaces[interface_index] = Interface(self)
@@ -92,7 +92,7 @@ function initializeChainOfNodes()
     # [T]-->[A]-->[B]-->[M]
 
     g = FactorGraph()
-    TerminalNode(DeltaDistribution(reshape([3.0], 1, 1)), id=:node1)
+    TerminalNode(DeltaDistribution(3.0), id=:node1)
     FixedGainNode([2.0], id=:node2)
     FixedGainNode([2.0], id=:node3)
     Edge(n(:node1).i[:out], n(:node2).i[:in])
@@ -456,67 +456,27 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
 
     # Build graph
     for sec=1:n_samples
-        GaussianNode(form=:precision, id=s(:g,sec))
-        EqualityNode(id=s(:m_eq,sec)) # Equality node chain for mean
-        EqualityNode(id=s(:gam_eq,sec)) # Equality node chain for precision
-        TerminalNode(GaussianDistribution(m=y[sec], V=tiny()), id=s(:y,sec)) # Observed y values are stored in terminal node
-        Edge(n(s(:g,sec)).i[:out], n(s(:y,sec)).i[:out], GaussianDistribution, id=s(:q_y,sec))
-        Edge(n(s(:m_eq,sec)).i[3], n(s(:g,sec)).i[:mean], GaussianDistribution, id=s(:q_m,sec))
-        Edge(n(s(:gam_eq,sec)).i[3], n(s(:g,sec)).i[:precision], GammaDistribution, id=s(:q_gam,sec))
+        GaussianNode(form=:precision, id=:g*sec)
+        EqualityNode(id=:m_eq*sec) # Equality node chain for mean
+        EqualityNode(id=:gam_eq*sec) # Equality node chain for precision
+        TerminalNode(GaussianDistribution(m=y[sec], V=tiny()), id=:y*sec) # Observed y values are stored in terminal node
+        Edge(n(:g*sec).i[:out], n(:y*sec).i[:out], GaussianDistribution, id=:q_y*sec)
+        Edge(n(:m_eq*sec).i[3], n(:g*sec).i[:mean], GaussianDistribution, id=:q_m*sec)
+        Edge(n(:gam_eq*sec).i[3], n(:g*sec).i[:precision], GammaDistribution, id=:q_gam*sec)
         if sec > 1 # Connect sections
-            Edge(n(s(:m_eq,sec-1)).i[2], n(s(:m_eq,sec)).i[1], GaussianDistribution)
-            Edge(n(s(:gam_eq,sec-1)).i[2], n(s(:gam_eq,sec)).i[1], GammaDistribution)
+            Edge(n(:m_eq*(sec-1)).i[2], n(:m_eq*sec).i[1], GaussianDistribution)
+            Edge(n(:gam_eq*(sec-1)).i[2], n(:gam_eq*sec).i[1], GammaDistribution)
         end
     end
     # Attach beginning and end nodes
-    TerminalNode(GaussianDistribution(m=0.0, V=100.0), id=:m0) # Prior
-    TerminalNode(GammaDistribution(a=0.01, b=0.01), id=:gam0) # Prior
+    TerminalNode(vague(GaussianDistribution), id=:m0) # Prior
+    TerminalNode(GammaDistribution(a=1.0-tiny(), b=tiny()), id=:gam0) # Unifirm prior
     TerminalNode(vague(GaussianDistribution), id=:mN)
-    TerminalNode(vague(GammaDistribution), id=:gamN)
+    TerminalNode(GammaDistribution(a=1.0-tiny(), b=tiny()), id=:gamN) # Uniform
     Edge(n(:m0).i[:out], n(:m_eq1).i[1])
     Edge(n(:gam0).i[:out], n(:gam_eq1).i[1])
-    Edge(n(s(:m_eq,n_samples)).i[2], n(:mN).i[:out])
-    Edge(n(s(:gam_eq,n_samples)).i[2], n(:gamN).i[:out])
-
-    return g
-end
-
-function initializeGaussianNodeChainForSvmp(y::Array{Float64, 1})
-    # Set up a chain of Gaussian nodes for joint mean-precision estimation
-    # through structured variational message passing
-    #
-    #     [gam_0]-------->[=]-->[1] gam_N
-    #                      |
-    #     [m_0]-->[=]---------->[1] m_N
-    #              |       |
-    #     q(m,gam) -->[N]<--
-    # - - - - - - - - -|- - - - - - - - - -
-    #                  |q(y)
-    #                  v
-    #                [y_1]
-
-    # Batch estimation with multiple samples will intruduce cycles in the subgraph.
-    # Therefore we implement a forward algorithm that uses forward estimation only.
-
-    g = FactorGraph()
-
-    GaussianNode(id=:g, form=:precision)
-    EqualityNode(id=:m_eq) # Equality node chain for mean
-    EqualityNode(id=:gam_eq) # Equality node chain for variance
-    TerminalNode(GaussianDistribution(), id=:y) # Observed y values are stored in terminal node
-    Edge(n(:g).i[:out], n(:y).i[:out], GaussianDistribution, id=:y)
-    Edge(n(:m_eq).i[3], n(:g).i[:mean], GaussianDistribution, id=:m)
-    Edge(n(:gam_eq).i[3], n(:g).i[:precision], GammaDistribution, id=:gam)
-
-    # Attach beginning and end nodes
-    TerminalNode(GaussianDistribution(m=0.0, V=100.0), id=:m0) # Prior
-    TerminalNode(GammaDistribution(a=0.01, b=0.01), id=:gam0) # Prior
-    TerminalNode(vague(GaussianDistribution), id=:mN) # Neutral 'one' message
-    TerminalNode(vague(GammaDistribution), id=:gamN) # Neutral 'one' message
-    Edge(n(:m0).i[:out], n(:m_eq).i[1], GaussianDistribution, id=:m0)
-    Edge(n(:gam0).i[:out], n(:gam_eq).i[1], GammaDistribution, id=:gam0)
-    Edge(n(:m_eq).i[2], n(:mN).i[:out], GaussianDistribution, id=:mN)
-    Edge(n(:gam_eq).i[2], n(:gamN).i[:out], GammaDistribution, id=:gamN)
+    Edge(n(:m_eq*n_samples).i[2], n(:mN).i[:out])
+    Edge(n(:gam_eq*n_samples).i[2], n(:gamN).i[:out])
 
     return g
 end
@@ -542,15 +502,15 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     # Check that nodes are properly connected
     @fact typeof(node1.interfaces[1].message.payload) <: DeltaDistribution => true
     @fact typeof(node2.interfaces[1].message.payload) <: DeltaDistribution => true
-    @fact mean(node1.interfaces[1].message.payload) => 2.0
-    @fact mean(node2.interfaces[1].message.payload) => 1.0
-    @fact mean(node1.interfaces[1].partner.message.payload) => 1.0
-    @fact mean(node2.interfaces[1].partner.message.payload) => 2.0
+    @fact mean(node1.interfaces[1].message.payload) => [2.0]
+    @fact mean(node2.interfaces[1].message.payload) => [1.0]
+    @fact mean(node1.interfaces[1].partner.message.payload) => [1.0]
+    @fact mean(node2.interfaces[1].partner.message.payload) => [2.0]
     # Check that pointers are initiatized correctly
-    @fact mean(node1.i[:out].message.payload) => 3.0
-    @fact mean(node2.i[:out].message.payload) => 1.0
-    @fact mean(node1.i[:in].partner.message.payload) => 1.0
-    @fact mean(node2.i[:out].partner.message.payload) => 2.0
+    @fact mean(node1.i[:out].message.payload) => [3.0]
+    @fact mean(node2.i[:out].message.payload) => [1.0]
+    @fact mean(node1.i[:in].partner.message.payload) => [1.0]
+    @fact mean(node2.i[:out].partner.message.payload) => [2.0]
 end
 
 function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution, update_function::Function=ForneyLab.sumProduct!)

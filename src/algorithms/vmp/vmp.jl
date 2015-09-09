@@ -24,6 +24,7 @@ function Algorithm(graph::FactorGraph=currentGraph(); n_iterations::Int64=50)
 
     # Construct the algorithm execute function
     function exec(fields)
+        vagueQDistributions!(fields[:q_distributions]) # Reset q distributions before next step
         for iteration = 1:fields[:n_iterations]
             execute(fields[:factorization], fields[:q_distributions]) # For all subgraphs, execute internal and external schedules
         end
@@ -44,6 +45,7 @@ function Algorithm(graph::FactorGraph, cluster_edges...; n_iterations::Int64=50)
 
     # Construct the algorithm execute function
     function exec(fields)
+        vagueQDistributions!(fields[:q_distributions]) # Reset q distributions before next step
         for iteration = 1:fields[:n_iterations]
             execute(fields[:factorization], fields[:q_distributions]) # For all subgraphs, execute internal and external schedules
         end

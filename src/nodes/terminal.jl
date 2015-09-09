@@ -25,7 +25,7 @@ type TerminalNode <: Node
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
 
-    function TerminalNode(value=DeltaDistribution(1.0); id=generateNodeId(TerminalNode))
+    function TerminalNode(value=DeltaDistribution(); id=generateNodeId(TerminalNode))
         if typeof(value) <: Message || typeof(value) == DataType
             error("TerminalNode $(id) can not hold value of type $(typeof(value)).")
         end
