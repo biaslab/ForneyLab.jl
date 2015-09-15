@@ -13,7 +13,7 @@ type GammaDistribution <: ProbabilityDistribution
     GammaDistribution(; a=1.0, b=1.0) = new(a, b)
 end
 
-vague(::Type{GammaDistribution}) = GammaDistribution(a=tiny(), b=tiny()) # Scale invariant (Jeffrey's) prior
+vague(::Type{GammaDistribution}) = GammaDistribution(a=tiny, b=tiny) # Scale invariant (Jeffrey's) prior
 
 function Base.mean(dist::GammaDistribution)
     if dist.a > 0 && dist.b > 0

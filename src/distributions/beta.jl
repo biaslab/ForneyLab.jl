@@ -13,7 +13,7 @@ type BetaDistribution <: ProbabilityDistribution
     BetaDistribution(; a=1.0, b=1.0) = new(a, b)
 end
 
-vague(::Type{BetaDistribution}) = BetaDistribution(a=tiny(), b=tiny())
+vague(::Type{BetaDistribution}) = BetaDistribution(a=tiny, b=tiny)
 function Base.mean(dist::BetaDistribution)
     (a > 0 && b > 0) || return NaN
     return a/(a+b)

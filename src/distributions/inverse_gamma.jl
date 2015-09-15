@@ -13,7 +13,7 @@ type InverseGammaDistribution <: ProbabilityDistribution
     InverseGammaDistribution(; a=3.0, b=2.0) = new(a, b)
 end
 
-vague(::Type{InverseGammaDistribution}) = InverseGammaDistribution(a=tiny(), b=tiny()) # Jeffrey's prior
+vague(::Type{InverseGammaDistribution}) = InverseGammaDistribution(a=tiny, b=tiny) # Jeffrey's prior
 function Base.mean(dist::InverseGammaDistribution)
     if dist.a > 1.0
         return dist.b / (dist.a - 1)

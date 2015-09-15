@@ -6,11 +6,10 @@ ensureMatrix{T<:Number}(arr::Array{T, 1}) = reshape(arr, 1, 1)
 ensureMatrix(n::Number) = fill!(Array(typeof(n),1,1), n)
 ensureMatrix(n::Nothing) = nothing
 
-# Define what is considered big and small, mostly used for setting vague messages.
-huge(::Type{Float64}) = 1e12
-huge() = huge(Float64)
-tiny(::Type{Float64}) = 1./huge(Float64)
-tiny() = tiny(Float64)
+# Constants to define smallest/largest supported numbers.
+# Used for clipping quantities to ensure numerical stability.
+const huge = 1e12
+const tiny = 1e-12
 
 # Functions for checking validity and invalidating arrays of floats
 # An array is invalid if and only if its first entry is NaN
@@ -55,10 +54,10 @@ function format(d::Matrix{Float64})
 end
 
 # isApproxEqual: check approximate equality
-isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < tiny()
+isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < tiny
 
 # isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from.
-isRoundedPosDef{T<:FloatingPoint}(arr::Array{T, 2}) = ishermitian(round(arr, int(log(10, huge())))) && isposdef(arr, :L)
+isRoundedPosDef{T<:FloatingPoint}(arr::Array{T, 2}) = ishermitian(round(arr, int(log(10, huge)))) && isposdef(arr, :L)
 
 function viewFile(filename::String)
     # Open a file with the application associated with the file type

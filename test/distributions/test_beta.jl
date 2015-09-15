@@ -11,8 +11,8 @@ facts("BetaDistribution unit tests") do
 
     context("vague() should initialize a vague (almost uninformative) beta distribution") do
         dist = vague(BetaDistribution)
-        @fact dist.a => tiny()
-        @fact dist.b => tiny()
+        @fact dist.a => tiny
+        @fact dist.b => tiny
     end
 end
 
