@@ -150,9 +150,11 @@ function backwardGaussianExpectationRule!(  node::SigmoidNode,
     invalidate!(dist_backward.m); invalidate!(dist_backward.V)
     ensureXiWParametrization!(marginal)
     ensureXiWParametrization!(dist_context)
-    dist_backward.W = marginal.W - dist_context.W
+    dist_backward.W = marginal.W - dist_context.
+    clamp(dist_backward.W[1,1], tiny(), huge())
     dist_backward.xi = marginal.xi - dist_context.xi
- 
+    clamp(dist_backward.xi[1], tiny(), huge())
+
     return (:sigmoid_backward_gaussian_expectation, dist_backward)
 end
 
