@@ -459,7 +459,7 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
         GaussianNode(form=:precision, id=:g*sec)
         EqualityNode(id=:m_eq*sec) # Equality node chain for mean
         EqualityNode(id=:gam_eq*sec) # Equality node chain for precision
-        TerminalNode(GaussianDistribution(m=y[sec], V=tiny()), id=:y*sec) # Observed y values are stored in terminal node
+        TerminalNode(GaussianDistribution(m=y[sec], V=tiny), id=:y*sec) # Observed y values are stored in terminal node
         Edge(n(:g*sec).i[:out], n(:y*sec).i[:out], GaussianDistribution, id=:q_y*sec)
         Edge(n(:m_eq*sec).i[3], n(:g*sec).i[:mean], GaussianDistribution, id=:q_m*sec)
         Edge(n(:gam_eq*sec).i[3], n(:g*sec).i[:precision], GammaDistribution, id=:q_gam*sec)
@@ -470,9 +470,9 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
     end
     # Attach beginning and end nodes
     TerminalNode(vague(GaussianDistribution), id=:m0) # Prior
-    TerminalNode(GammaDistribution(a=1.0-tiny(), b=tiny()), id=:gam0) # Unifirm prior
+    TerminalNode(GammaDistribution(a=1.0-tiny, b=tiny), id=:gam0) # Unifirm prior
     TerminalNode(vague(GaussianDistribution), id=:mN)
-    TerminalNode(GammaDistribution(a=1.0-tiny(), b=tiny()), id=:gamN) # Uniform
+    TerminalNode(GammaDistribution(a=1.0-tiny, b=tiny), id=:gamN) # Uniform
     Edge(n(:m0).i[:out], n(:m_eq1).i[1])
     Edge(n(:gam0).i[:out], n(:gam_eq1).i[1])
     Edge(n(:m_eq*n_samples).i[2], n(:mN).i[:out])

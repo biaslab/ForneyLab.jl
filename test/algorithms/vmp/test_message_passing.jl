@@ -1,5 +1,5 @@
 facts("Call step() for VMP algorithm") do
-    data = [GaussianDistribution(m=2.0, V=tiny())]
+    data = [GaussianDistribution(m=2.0, V=tiny)]
     g = FactorGraph()
     GaussianNode(form=:precision,id=:g_node)
     TerminalNode(id=:t_out)

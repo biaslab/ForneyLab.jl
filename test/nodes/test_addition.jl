@@ -124,29 +124,29 @@ facts("AdditionNode unit tests") do
         validateOutboundMessage(AdditionNode(), 
                                 3, 
                                 [Message(GaussianDistribution(m=1.0, V=0.5)), Message(DeltaDistribution(3.0)), nothing],
-                                GaussianDistribution(m=4.0, V=0.5+tiny()))
+                                GaussianDistribution(m=4.0, V=0.5+tiny))
         validateOutboundMessage(AdditionNode(), 
                                 3, 
                                 [Message(DeltaDistribution(3.0)), Message(GaussianDistribution(m=1.0, V=0.5)), nothing],
-                                GaussianDistribution(m=4.0, V=0.5+tiny()))
+                                GaussianDistribution(m=4.0, V=0.5+tiny))
         #Backward message towards in1
         validateOutboundMessage(AdditionNode(), 
                                 1, 
                                 [nothing, Message(DeltaDistribution(3.0)), Message(GaussianDistribution(m=1.0, V=0.5))],
-                                GaussianDistribution(m=-2.0, V=0.5+tiny()))
+                                GaussianDistribution(m=-2.0, V=0.5+tiny))
         validateOutboundMessage(AdditionNode(), 
                                 1, 
                                 [nothing, Message(GaussianDistribution(m=1.0, V=0.5)), Message(DeltaDistribution(3.0))],
-                                GaussianDistribution(m=2.0, V=0.5+tiny()))
+                                GaussianDistribution(m=2.0, V=0.5+tiny))
         # Backward message towards in2
         validateOutboundMessage(AdditionNode(), 
                                 2, 
                                 [Message(DeltaDistribution(3.0)), nothing, Message(GaussianDistribution(m=1.0, V=0.5))],
-                                GaussianDistribution(m=-2.0, V=0.5+tiny()))
+                                GaussianDistribution(m=-2.0, V=0.5+tiny))
         validateOutboundMessage(AdditionNode(), 
                                 2, 
                                 [Message(GaussianDistribution(m=1.0, V=0.5)), nothing, Message(DeltaDistribution(3.0))],
-                                GaussianDistribution(m=2.0, V=0.5+tiny()))
+                                GaussianDistribution(m=2.0, V=0.5+tiny))
     end
 
     context("AdditionNode should propagate a multivariate GaussianDistribution") do

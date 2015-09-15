@@ -16,7 +16,7 @@ type NormalGammaDistribution <: ProbabilityDistribution
     NormalGammaDistribution(; m=0.0, beta=1.0, a=1.0, b=1.0) = new(m, beta, a, b)
 end
 
-vague(::Type{NormalGammaDistribution}) = NormalGammaDistribution(m=0.0, beta=1.0, a=1.0-tiny(), b=tiny())
+vague(::Type{NormalGammaDistribution}) = NormalGammaDistribution(m=0.0, beta=1.0, a=1.0-tiny, b=tiny)
 
 format(dist::NormalGammaDistribution) = "Ng(m=$(format(dist.m)), β=$(format(dist.beta)), a=$(format(dist.a)), b=$(format(dist.b)))"
 show(io::IO, dist::NormalGammaDistribution) = println(io, format(dist))

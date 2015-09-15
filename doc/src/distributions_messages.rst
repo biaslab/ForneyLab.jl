@@ -16,7 +16,7 @@ The name of a subtype of ``ProbabilityDistribution`` should end in "Distribution
 
     Creates a vague 'non-informative' ``ProbabilityDistribution`` of type ``distribution_type``. For the :class:`GaussianDistribution` this means for example a distribution with maximum variance::
 
-        non_informative_gaussian = vague(GaussianDistribution) # identical to GaussianDistribution(m=0.0, V=huge())
+        non_informative_gaussian = vague(GaussianDistribution) # identical to GaussianDistribution(m=0.0, V=huge)
 
 Moreover, the following optional methods might be implemented:
 

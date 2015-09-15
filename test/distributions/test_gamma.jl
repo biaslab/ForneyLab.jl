@@ -15,8 +15,8 @@ facts("GammaDistribution unit tests") do
 
     context("vague() should initialize a vague (almost uninformative) gamma distribution") do
         dist = vague(GammaDistribution)
-        @fact dist.a => tiny()
-        @fact dist.b => tiny()
+        @fact dist.a => tiny
+        @fact dist.b => tiny
     end
 end
 

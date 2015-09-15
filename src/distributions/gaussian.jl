@@ -83,7 +83,7 @@ function GaussianDistribution(; m::Union(Float64,Vector{Float64})=[NaN],
 end
 GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
 
-vague(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge())
+vague(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge)
 
 function format(dist::GaussianDistribution)
     if isValid(dist.m) && isValid(dist.V)
@@ -197,7 +197,7 @@ ensureXiWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureXi
 
 function ==(x::GaussianDistribution, y::GaussianDistribution)
     if is(x, y) return true end
-    eps = tiny()
+    eps = tiny
     # Check m or xi
     if isValid(x.m) && isValid(y.m)
         (length(x.m)==length(x.m)) || return false
@@ -229,5 +229,5 @@ end
 
 # Converts from DeltaDistribution -> GaussianDistribution
 # NOTE: this introduces a small error because the variance is set >0
-convert(::Type{GaussianDistribution}, delta::DeltaDistribution{Float64}) = GaussianDistribution(m=delta.m, V=tiny()*eye(length(delta.m)))
-convert(::Type{Message{GaussianDistribution}}, msg::Message{DeltaDistribution{Float64}}) = Message(GaussianDistribution(m=msg.payload.m, V=tiny()*eye(length(msg.payload.m))))
+convert(::Type{GaussianDistribution}, delta::DeltaDistribution{Float64}) = GaussianDistribution(m=delta.m, V=tiny*eye(length(delta.m)))
+convert(::Type{Message{GaussianDistribution}}, msg::Message{DeltaDistribution{Float64}}) = Message(GaussianDistribution(m=msg.payload.m, V=tiny*eye(length(msg.payload.m))))

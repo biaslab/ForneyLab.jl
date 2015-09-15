@@ -286,7 +286,7 @@ equalityGaussianDeltaRule!(dist_result::DeltaDistribution{Float64}, dist_1::Delt
 
 function equalityGaussianDeltaRule!(dist_result::GaussianDistribution, dist_1::GaussianDistribution, dist_2::DeltaDistribution{Float64})
     dist_result.m = deepcopy(dist_2.m)
-    dist_result.V = eye(length(dist_2.m))*tiny()
+    dist_result.V = eye(length(dist_2.m))*tiny
     invalidate!(dist_result.W) 
     invalidate!(dist_result.xi) 
     return dist_result

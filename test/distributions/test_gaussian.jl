@@ -22,7 +22,7 @@ facts("GaussianDistribution unit tests") do
     context("vague() should initialize a vague (almost uninformative) Gaussian distribution") do
         dist = vague(GaussianDistribution)
         @fact dist.m => [0.0]
-        @fact dist.V => reshape([huge()],1,1)
+        @fact dist.V => reshape([huge],1,1)
     end
 
     context("Vague Gaussians should be equal") do
@@ -141,12 +141,12 @@ end
 
 facts("GaussianDistribution converts") do
     context("DeltaDistribution should be convertible to GaussianDistribution with negligible variance") do
-        @fact convert(GaussianDistribution, DeltaDistribution(3.0)) => GaussianDistribution(m=3.0, V=tiny()) # Floating point number
-        @fact convert(GaussianDistribution, DeltaDistribution([1.0, 2.0])) => GaussianDistribution(m=[1.0, 2.0], V=tiny()*eye(2)) # Vector
+        @fact convert(GaussianDistribution, DeltaDistribution(3.0)) => GaussianDistribution(m=3.0, V=tiny) # Floating point number
+        @fact convert(GaussianDistribution, DeltaDistribution([1.0, 2.0])) => GaussianDistribution(m=[1.0, 2.0], V=tiny*eye(2)) # Vector
     end
 
     context("Message{DeltaDistribution} should be convertible to Message{GaussianDistribution} with negligible variance") do
-        @fact convert(Message{GaussianDistribution}, Message(DeltaDistribution(3.0))) => Message(GaussianDistribution(m=3.0, V=tiny())) # Floating point number
-        @fact convert(Message{GaussianDistribution}, Message(DeltaDistribution([1.0, 2.0]))) => Message(GaussianDistribution(m=[1.0, 2.0], V=tiny()*eye(2))) # Vector
+        @fact convert(Message{GaussianDistribution}, Message(DeltaDistribution(3.0))) => Message(GaussianDistribution(m=3.0, V=tiny)) # Floating point number
+        @fact convert(Message{GaussianDistribution}, Message(DeltaDistribution([1.0, 2.0]))) => Message(GaussianDistribution(m=[1.0, 2.0], V=tiny*eye(2))) # Vector
     end
 end
