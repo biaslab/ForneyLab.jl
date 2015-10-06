@@ -25,6 +25,12 @@ facts("GaussianDistribution unit tests") do
         @fact dist.V => reshape([huge],1,1)
     end
 
+    context("isProper() should indicate whether a Gaussian distribution is proper") do
+        @fact isProper(GaussianDistribution()) => true
+        @fact isProper(GaussianDistribution(m=0.0, V=-1.0)) => false
+        @fact isProper(GaussianDistribution(m=0.0, W=-1.0)) => false
+    end
+
     context("Vague Gaussians should be equal") do
         @fact vague(GaussianDistribution) => vague(GaussianDistribution)
     end
@@ -87,13 +93,17 @@ facts("GaussianDistribution unit tests") do
         # Univariate
         @fact mean(GaussianDistribution(m=1.0, V=1.0)) => [1.0]
         @fact mean(GaussianDistribution(xi=1.0, V=2.0)) => [2.0]
+        @fact isValid(mean(GaussianDistribution(xi=1.0, V=-2.0))) => false
         @fact var(GaussianDistribution(m=1.0, V=2.0)) => [2.0]
         @fact var(GaussianDistribution(m=1.0, W=2.0)) => [0.5]
+        @fact isValid(var(GaussianDistribution(m=1.0, W=-2.0))) => false
         # Multivariate
         @fact mean(GaussianDistribution(m=[1.0, 2.0], V=eye(2))) => [1.0, 2.0]
         @fact mean(GaussianDistribution(xi=[1.0, 2.0], V=2.0*eye(2))) => [2.0, 4.0]
+        @fact isValid(mean(GaussianDistribution(xi=[1.0, 2.0], V=-2.0*eye(2)))) => false
         @fact var(GaussianDistribution(m=[1.0, 2.0], V=diagm([2.0, 4.0]))) => [2.0, 4.0]
         @fact var(GaussianDistribution(m=[1.0, 2.0], W=diagm([2.0, 4.0]))) => [0.5, 0.25]
+        @fact isValid(var(GaussianDistribution(m=[1.0, 2.0], W=diagm([-2.0, 4.0])))) => false
     end
     context("Inconsistent overdetermined GaussianDistribution should be detected by isConsistent()") do
         @fact isConsistent(GaussianDistribution(m=0.0, xi=1.0, W=1.0)) => false
