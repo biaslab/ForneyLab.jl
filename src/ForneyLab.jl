@@ -4,7 +4,7 @@ using Optim
 using YAML
 using LaTeXStrings
 
-export ProbabilityDistribution
+export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution
 export sumProduct!, vmp!
 export vague, self, ==, isProper, sample
 export setVerbosity
@@ -23,9 +23,11 @@ include("helpers.jl")
 # Other includes
 import Base.show, Base.convert
 
-# Top-level abstracts
+# High level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
+abstract UnivariateProbabilityDistribution <: ProbabilityDistribution
+abstract MultivariateProbabilityDistribution <: ProbabilityDistribution
 
 # Node
 include("node.jl")
@@ -33,14 +35,18 @@ include("node.jl")
 # Message type
 include("message.jl")
 
-# Distributions
-include("distributions/delta.jl")
-include("distributions/gaussian.jl")
-include("distributions/gamma.jl")
-include("distributions/inverse_gamma.jl")
-include("distributions/normal_gamma.jl")
-include("distributions/students_t.jl")
-include("distributions/beta.jl")
+# Univariate distributions
+include("distributions/univariate/delta.jl")
+include("distributions/univariate/gaussian.jl")
+include("distributions/univariate/gamma.jl")
+include("distributions/univariate/inverse_gamma.jl")
+include("distributions/univariate/students_t.jl")
+include("distributions/univariate/beta.jl")
+
+# Multivariate distributions
+include("distributions/multivariate/mv_delta.jl")
+include("distributions/multivariate/mv_gaussian.jl")
+include("distributions/multivariate/normal_gamma.jl")
 
 # Basic ForneyLab building blocks and methods
 include("interface.jl")

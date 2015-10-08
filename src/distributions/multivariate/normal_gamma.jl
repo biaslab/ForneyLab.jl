@@ -2,12 +2,12 @@
 # NormalGammaDistribution
 ############################################
 # Description:
-#   Encodes a normal-gamma PDF.
+#   Encodes a normal-gamma distribution.
 #   Pamameters: m (location), beta (precision) scalars a (shape) and b (rate).
 ############################################
 export NormalGammaDistribution
 
-type NormalGammaDistribution <: ProbabilityDistribution
+type NormalGammaDistribution <: MultivariateProbabilityDistribution
     # All univariate, so parameters are floats
     m::Float64    # location
     beta::Float64 # precision

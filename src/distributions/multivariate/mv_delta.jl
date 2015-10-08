@@ -1,0 +1,42 @@
+############################################
+# MvDeltaDistribution
+############################################
+# Description:
+#   Encodes a multivariate delta distribution.
+#   p(x) = 1 if x==m
+#        = 0 otherwise
+#   Can be used to carry samples/observations.
+#   Example: MvDeltaDistribution([1.0, 3.0])
+############################################
+
+export MvDeltaDistribution
+
+type MvDeltaDistribution{T} <: MultivariateProbabilityDistribution
+    m::Vector{T}
+
+    function MvDeltaDistribution{T}(m::Vector{T})
+        return new(deepcopy(m))
+    end
+end
+
+MvDeltaDistribution() = MvDeltaDistribution{Float64}(ones(1))
+
+format(dist::MvDeltaDistribution) = "δ(m=$(format(dist.m)))"
+
+show(io::IO, dist::MvDeltaDistribution) = println(io, format(dist))
+
+isProper(dist::MvDeltaDistribution) = true
+
+Base.mean(dist::MvDeltaDistribution) = dist.m
+
+Base.var(dist::MvDeltaDistribution) = zeros(length(dist.m))
+
+Base.cov(dist::MvDeltaDistribution) = zeros(length(dist.m), length(dist.m))
+
+sample(dist::MvDeltaDistribution) = dist.m
+
+==(x::MvDeltaDistribution, y::MvDeltaDistribution) = (x.m == y.m)
+
+# We can convert a lot of object types into a MvDeltaDistribution with that object as position of the delta.
+# This is useful so we can write i.e. TerminalNode([1.0, 3.0]) instead of TerminalNode(MvDeltaDistribution([1.0, 3.0])).
+convert{T<:Number}(::Type{ProbabilityDistribution}, obj::Vector{T}) = MvDeltaDistribution(obj)

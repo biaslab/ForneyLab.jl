@@ -7,7 +7,7 @@
 ############################################
 export InverseGammaDistribution
 
-type InverseGammaDistribution <: ProbabilityDistribution
+type InverseGammaDistribution <: UnivariateProbabilityDistribution
     a::Float64 # shape
     b::Float64 # scale
 end

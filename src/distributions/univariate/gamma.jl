@@ -7,7 +7,7 @@
 ############################################
 export GammaDistribution
 
-type GammaDistribution <: ProbabilityDistribution
+type GammaDistribution <: UnivariateProbabilityDistribution
     a::Float64 # shape
     b::Float64 # rate
 end

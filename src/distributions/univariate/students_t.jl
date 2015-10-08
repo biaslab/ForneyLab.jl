@@ -7,38 +7,35 @@
 ############################################
 export StudentsTDistribution
 
-type StudentsTDistribution <: ProbabilityDistribution
-    m::Vector{Float64}      # mean
-    lambda::Matrix{Float64} # inverse scale
-    nu::Float64             # degrees of freedom
+type StudentsTDistribution <: UnivariateProbabilityDistribution
+    m::Float64      # mean
+    lambda::Float64 # inverse scale
+    nu::Float64     # degrees of freedom
 end
 
-function StudentsTDistribution(; m::Union(Float64, Vector{Float64}) = [0.0],
-                                 lambda::Union(Float64, Matrix{Float64}) = reshape([1.0], 1, 1),
+function StudentsTDistribution(; m::Float64 = 0.0,
+                                 lambda::Float64 = 1.0,
                                  nu::Float64 = huge)
-    m = (typeof(m)==Float64) ? [m] : deepcopy(m)
-    lambda = (typeof(lambda)==Float64) ? fill!(Array(Float64,1,1),lambda) : deepcopy(lambda)
-
     return StudentsTDistribution(m, lambda, nu)
 end
 
-isProper(dist::StudentsTDistribution) = (isRoundedPosDef(dist.lambda) && (dist.nu >= tiny))
+isProper(dist::StudentsTDistribution) = (realmin(Float64) < abs(dist.lambda) < realmax(Float64)) && (dist.nu > realmin(Float64))
 
 function Base.mean(dist::StudentsTDistribution)
     if isProper(dist) && dist.nu > 1
         return dist.m
     else
-        return fill!(similar(dist.m), NaN)
+        return NaN
     end
 end
 
 function Base.var(dist::StudentsTDistribution)
     if isProper(dist) && dist.nu > 2
-        return dist.nu / (dist.nu - 2) * inv(dist.lambda)
-    elseif isProper(dist) && dist.nu > 1
-        return diagm(fill!(similar(dist.m), huge))
+        return dist.nu / ((dist.nu - 2) * dist.lambda)
+    elseif isProper(dist) && dist.nu > 1 # 1 < ν ≤ 2
+        return huge
     else
-        return fill!(similar(dist.lambda), NaN)
+        return NaN
     end
 end
 
