@@ -14,23 +14,9 @@ type GammaDistribution <: ProbabilityDistribution
 end
 
 vague(::Type{GammaDistribution}) = GammaDistribution(a=tiny, b=tiny) # Scale invariant (Jeffrey's) prior
-
-function Base.mean(dist::GammaDistribution)
-    if dist.a > 0 && dist.b > 0
-        return dist.a / dist.b
-    else 
-        return NaN
-    end
-end
-
-function Base.var(dist::GammaDistribution)
-    if dist.a > 0 && dist.b > 0
-        return dist.a / (dist.b^2)
-    else 
-        return NaN
-    end
-end
-
+isProper(dist::GammaDistribution) = (dist.a >= tiny && dist.b >= tiny)
+Base.mean(dist::GammaDistribution) = isProper(dist) ? dist.a/dist.b : NaN
+Base.var(dist::GammaDistribution) = isProper(dist) ? dist.a / (dist.b^2) : NaN
 format(dist::GammaDistribution) = "Gam(a=$(format(dist.a)), b=$(format(dist.b)))"
 show(io::IO, dist::GammaDistribution) = println(io, format(dist))
 

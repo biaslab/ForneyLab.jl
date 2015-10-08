@@ -28,7 +28,7 @@ DeltaDistribution() = DeltaDistribution([1.0])
 
 format(dist::DeltaDistribution) = "δ(m=$(format(dist.m)))"
 show(io::IO, dist::DeltaDistribution) = println(io, format(dist))
-
+isProper(dist::DeltaDistribution) = true
 Base.mean(dist::DeltaDistribution) = dist.m
 Base.var(dist::DeltaDistribution) = 0.0
 

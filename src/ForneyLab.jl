@@ -6,7 +6,7 @@ using LaTeXStrings
 
 export ProbabilityDistribution
 export sumProduct!, vmp!
-export vague, self, ==
+export vague, self, ==, isProper, sample
 export setVerbosity
 
 # Export algorithm modules

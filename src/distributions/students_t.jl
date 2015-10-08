@@ -22,8 +22,10 @@ function StudentsTDistribution(; m::Union(Float64, Vector{Float64}) = [0.0],
     return StudentsTDistribution(m, lambda, nu)
 end
 
+isProper(dist::StudentsTDistribution) = (isRoundedPosDef(dist.lambda) && (dist.nu >= tiny))
+
 function Base.mean(dist::StudentsTDistribution)
-    if dist.nu > 1   
+    if isProper(dist) && dist.nu > 1
         return dist.m
     else
         return fill!(similar(dist.m), NaN)
@@ -31,9 +33,9 @@ function Base.mean(dist::StudentsTDistribution)
 end
 
 function Base.var(dist::StudentsTDistribution)
-    if dist.nu > 2
+    if isProper(dist) && dist.nu > 2
         return dist.nu / (dist.nu - 2) * inv(dist.lambda)
-    elseif dist.nu > 1
+    elseif isProper(dist) && dist.nu > 1
         return diagm(fill!(similar(dist.m), huge))
     else
         return fill!(similar(dist.lambda), NaN)

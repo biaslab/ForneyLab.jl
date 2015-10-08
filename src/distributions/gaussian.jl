@@ -21,9 +21,7 @@ export
     ensureXiVParametrization!,
     ensureXiWParametrization!,
     isWellDefined,
-    isConsistent,
-    isProper,
-    sample
+    isConsistent
 
 type GaussianDistribution <: ProbabilityDistribution
     m::Vector{Float64}   # Mean vector
