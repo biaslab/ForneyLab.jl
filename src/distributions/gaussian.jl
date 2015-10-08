@@ -28,6 +28,7 @@ type GaussianDistribution <: ProbabilityDistribution
     V::Matrix{Float64}   # Covariance matrix
     W::Matrix{Float64}   # Weight matrix
     xi::Vector{Float64}  # Weighted mean vector: xi=W*m
+
     function GaussianDistribution(m, V, W, xi)
         (size(m) == size(xi)) || error("Cannot create GaussianDistribution: m and xi should have the same size")
         (size(V) == size(W)) || error("Cannot create GaussianDistribution: V and W should have the same size")
@@ -108,6 +109,7 @@ function GaussianDistribution(; m::Union(Float64,Vector{Float64})=[NaN],
 
     return GaussianDistribution(_m, _V, _W, _xi)
 end
+
 GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
 
 vague(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge)
@@ -249,8 +251,11 @@ function ensureWDefined!(dist::GaussianDistribution)
 end
 
 ensureMVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureMDefined!(dist))
+
 ensureMWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureMDefined!(dist))
+
 ensureXiVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureXiDefined!(dist))
+
 ensureXiWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
 
 function ==(x::GaussianDistribution, y::GaussianDistribution)
@@ -288,4 +293,5 @@ end
 # Converts from DeltaDistribution -> GaussianDistribution
 # NOTE: this introduces a small error because the variance is set >0
 convert(::Type{GaussianDistribution}, delta::DeltaDistribution{Float64}) = GaussianDistribution(m=delta.m, V=tiny*eye(length(delta.m)))
+
 convert(::Type{Message{GaussianDistribution}}, msg::Message{DeltaDistribution{Float64}}) = Message(GaussianDistribution(m=msg.payload.m, V=tiny*eye(length(msg.payload.m))))

@@ -43,6 +43,7 @@ function Base.var(dist::StudentsTDistribution)
 end
 
 format(dist::StudentsTDistribution) = "St(μ=$(format(dist.m)), λ=$(format(dist.lambda)), ν=$(format(dist.nu)))"
+
 show(io::IO, dist::StudentsTDistribution) = println(io, format(dist))
 
 function ==(x::StudentsTDistribution, y::StudentsTDistribution)

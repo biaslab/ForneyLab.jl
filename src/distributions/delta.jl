@@ -14,6 +14,7 @@ export DeltaDistribution, sample
 type DeltaDistribution{T} <: ProbabilityDistribution
     m::Vector{T}
 end
+
 function DeltaDistribution{T}(m::T)
     if typeof(m) <: Vector
         _m = m
@@ -24,12 +25,17 @@ function DeltaDistribution{T}(m::T)
     end
     return DeltaDistribution(_m)
 end
+
 DeltaDistribution() = DeltaDistribution([1.0])
 
 format(dist::DeltaDistribution) = "δ(m=$(format(dist.m)))"
+
 show(io::IO, dist::DeltaDistribution) = println(io, format(dist))
+
 isProper(dist::DeltaDistribution) = true
+
 Base.mean(dist::DeltaDistribution) = dist.m
+
 Base.var(dist::DeltaDistribution) = 0.0
 
 sample(dist::DeltaDistribution) = deepcopy(dist.m)
