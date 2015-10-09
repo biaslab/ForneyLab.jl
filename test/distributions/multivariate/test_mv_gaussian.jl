@@ -104,7 +104,7 @@ facts("MvGaussianDistribution unit tests") do
     end
 end
 
-facts("Marginal calculations for the Gaussian") do
+facts("Marginal calculations for the MvGaussian") do
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
         initializePairOfTerminalNodes(MvGaussianDistribution(m=[0.0], V=[1.0]), MvGaussianDistribution(m=[0.0], V=[1.0]))
         edge = n(:t1).i[:out].edge
@@ -141,5 +141,14 @@ facts("MvGaussianDistribution converts") do
 
     context("Message{DeltaDistribution} should be convertible to Message{MvGaussianDistribution} with negligible variance") do
         @fact convert(Message{MvGaussianDistribution}, Message(DeltaDistribution([1.0, 2.0]))) => Message(MvGaussianDistribution(m=[1.0, 2.0], V=tiny*eye(2))) # Vector
+    end
+
+    context("GaussianDistribution should be convertible to MvGaussianDistribution") do
+        @fact convert(MvGaussianDistribution, GaussianDistribution(m=1.0, V=2.0)) => MvGaussianDistribution(m=[1.0], V=2.0*eye(1))
+    end
+
+    context("MvGaussianDistribution should be convertible to GaussianDistribution") do
+        @fact convert(GaussianDistribution, MvGaussianDistribution(m=1.0, V=2.0)) => GaussianDistribution(m=1.0, V=2.0)
+        @fact_throws convert(GaussianDistribution, MvGaussianDistribution(m=ones(2), V=eye(2)))
     end
 end

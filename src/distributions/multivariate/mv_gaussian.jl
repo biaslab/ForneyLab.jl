@@ -18,7 +18,7 @@ export
     isWellDefined,
     isConsistent
 
-type MvGaussianDistribution <: ProbabilityDistribution
+type MvGaussianDistribution <: MultivariateProbabilityDistribution
     m::Vector{Float64}   # Mean vector
     V::Matrix{Float64}   # Covariance matrix
     W::Matrix{Float64}   # Weight matrix
@@ -256,8 +256,16 @@ function ==(x::MvGaussianDistribution, y::MvGaussianDistribution)
     return true
 end
 
-# Converts from DeltaDistribution -> MvGaussianDistribution
+# Convert DeltaDistribution -> MvGaussianDistribution
 # NOTE: this introduces a small error because the variance is set >0
 convert(::Type{MvGaussianDistribution}, delta::MvDeltaDistribution{Float64}) = MvGaussianDistribution(m=delta.m, V=tiny*eye(length(delta.m)))
-
 convert(::Type{Message{MvGaussianDistribution}}, msg::Message{MvDeltaDistribution{Float64}}) = Message(MvGaussianDistribution(m=msg.payload.m, V=tiny*eye(length(msg.payload.m))))
+
+# Convert GaussianDistribution -> MvGaussianDistribution
+convert(::Type{MvGaussianDistribution}, d::GaussianDistribution) = MvGaussianDistribution(m=d.m, V=d.V, W=d.W, xi=d.xi)
+
+# Convert MvGaussianDistribution -> GaussianDistribution
+function convert(::Type{GaussianDistribution}, d::MvGaussianDistribution)
+    (length(d.m) ==1) || error("Can only convert MvGaussianDistribution to GaussianDistribution if it has dimensionality 1")
+    GaussianDistribution(m=d.m[1], V=d.V[1,1], W=d.W[1,1], xi=d.xi[1])
+end
