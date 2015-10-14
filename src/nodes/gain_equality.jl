@@ -35,7 +35,7 @@ type GainEqualityNode <: Node
     function GainEqualityNode(A::Union(Array{Float64},Float64)=1.0; id=generateNodeId(GainEqualityNode))
         self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(current_graph, self)
- 
+
         for (iface_index, iface_handle) in enumerate([:in1, :in2, :out])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
@@ -71,7 +71,7 @@ function sumProduct!(node::GainEqualityNode,
     # Forward message (towards out)
     (outbound_interface_index == 3) || error("The outbound interface id does not match with the calling signature.")
     dist_temp = GaussianDistribution()
-    equalityGaussianRule!(dist_temp, msg_in1.payload, msg_in2.payload)
+    equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
     fixedGainGaussianForwardRule!(dist_out, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
 

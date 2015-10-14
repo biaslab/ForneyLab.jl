@@ -27,9 +27,8 @@ type MvGaussianDistribution <: MultivariateProbabilityDistribution
     function MvGaussianDistribution(m, V, W, xi)
         (size(m) == size(xi)) || error("Cannot create MvGaussianDistribution: m and xi should have the same size")
         (size(V) == size(W)) || error("Cannot create MvGaussianDistribution: V and W should have the same size")
+        (length(m) == size(V,1) == size(V,2)) || error("Cannot create MvGaussianDistribution: inconsistent parameter dimensions")
 
-        self = new(m, V, W, xi)
-        isWellDefined(self) || error("Cannot create MvGaussianDistribution, distribution is underdetermined.")
         if isValid(V)
             (maximum(abs(V)) < realmax(Float64)) || error("Cannot create MvGaussianDistribution, covariance matrix V cannot contain Inf.")
             all(abs(diag(V)) .> realmin(Float64)) || error("Cannot create MvGaussianDistribution, diagonal of covariance matrix V should be non-zero.")
@@ -38,6 +37,9 @@ type MvGaussianDistribution <: MultivariateProbabilityDistribution
             (maximum(abs(W)) < realmax(Float64)) || error("Cannot create MvGaussianDistribution, precision matrix W cannot contain Inf.")
             all(abs(diag(W)) .> realmin(Float64)) || error("Cannot create MvGaussianDistribution, diagonal of precision matrix W should be non-zero.")
         end
+
+        self = new(m, V, W, xi)
+        isWellDefined(self) || error("Cannot create MvGaussianDistribution, distribution is underdetermined.")
 
         return self
     end
@@ -262,7 +264,7 @@ convert(::Type{MvGaussianDistribution}, delta::MvDeltaDistribution{Float64}) = M
 convert(::Type{Message{MvGaussianDistribution}}, msg::Message{MvDeltaDistribution{Float64}}) = Message(MvGaussianDistribution(m=msg.payload.m, V=tiny*eye(length(msg.payload.m))))
 
 # Convert GaussianDistribution -> MvGaussianDistribution
-convert(::Type{MvGaussianDistribution}, d::GaussianDistribution) = MvGaussianDistribution(m=d.m, V=d.V, W=d.W, xi=d.xi)
+convert(::Type{MvGaussianDistribution}, d::GaussianDistribution) = MvGaussianDistribution(m=[d.m], V=d.V*eye(1), W=d.W*eye(1), xi=[d.xi])
 
 # Convert MvGaussianDistribution -> GaussianDistribution
 function convert(::Type{GaussianDistribution}, d::MvGaussianDistribution)

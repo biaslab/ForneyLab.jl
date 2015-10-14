@@ -13,11 +13,9 @@ export MvDeltaDistribution
 
 type MvDeltaDistribution{T} <: MultivariateProbabilityDistribution
     m::Vector{T}
-
-    function MvDeltaDistribution{T}(m::Vector{T})
-        return new(deepcopy(m))
-    end
 end
+
+MvDeltaDistribution{T<:Any}(m::Vector{T}) = MvDeltaDistribution{T}(deepcopy(m))
 
 MvDeltaDistribution() = MvDeltaDistribution{Float64}(ones(1))
 
