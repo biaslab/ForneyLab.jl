@@ -20,18 +20,18 @@
 export FixedGainNode
 
 type FixedGainNode <: Node
-    A::Array
+    A::Matrix{Float64}
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
-    A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
+    A_inv::Matrix{Float64} # holds pre-computed inv(A) if possible
 
     function FixedGainNode(A::Union(Array{Float64},Float64)=1.0; id=generateNodeId(FixedGainNode))
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
         A = (typeof(A)==Float64) ? fill!(Array(Float64,1,1),A) : ensureMatrix(deepcopy(A))
         self = new(A, id, Array(Interface, 2), Dict{Symbol,Interface}())
         addNode!(current_graph, self)
- 
+
         for (iface_index, iface_handle) in enumerate([:in, :out])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
@@ -53,6 +53,73 @@ isDeterministic(::FixedGainNode) = true
 # GaussianDistribution methods
 ############################################
 
+# Backward Gaussian to IN
+function sumProduct!(   node::FixedGainNode,
+                        outbound_interface_index::Int,
+                        ::Nothing,
+                        msg_out::Message{GaussianDistribution})
+
+    (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
+    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+    dist_2 = ensureXiWParametrization!(msg_out.payload)
+    dist_1.xi = node.A[1,1] * dist_2.xi
+    dist_1.W = (node.A[1,1])^2 * dist_2.W
+    dist_1.m = dist_1.V = NaN
+
+    return (:fixed_gain_gaussian_backward,
+            node.interfaces[outbound_interface_index].message)
+end
+
+# Forward Gaussian to OUT
+function sumProduct!(   node::FixedGainNode,
+                        outbound_interface_index::Int,
+                        msg_in::Message{GaussianDistribution},
+                        ::Nothing)
+    (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
+    dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+    dist_1 = ensureMVParametrization!(msg_in.payload)
+    dist_2.m = node.A[1,1] * dist_1.m
+    dist_2.V = (node.A[1,1])^2 * dist_1.V
+    dist_2.xi = dist_2.W = NaN
+
+    return (:fixed_gain_gaussian_forward,
+            node.interfaces[outbound_interface_index].message)
+end
+
+############################################
+# DeltaDistribution methods
+############################################
+
+# Backward DeltaDistribution to IN
+function sumProduct!(node::FixedGainNode,
+                     outbound_interface_index::Int,
+                     ::Nothing,
+                     msg_out::Message{DeltaDistribution{Float64}})
+    (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
+    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
+    dist_1.m = node.A_inv[1,1] * msg_out.payload.m
+
+    return (:fixed_gain_delta_backward,
+            node.interfaces[outbound_interface_index].message)
+end
+
+# Forward DeltaDistribution to OUT
+function sumProduct!(node::FixedGainNode,
+                     outbound_interface_index::Int,
+                     msg_in::Message{DeltaDistribution{Float64}},
+                     ::Nothing)
+    (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
+    dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
+    dist_2.m = node.A[1,1] * msg_in.payload.m
+
+    return (:fixed_gain_delta_forward,
+            node.interfaces[outbound_interface_index].message)
+end
+
+############################################
+# MvGaussianDistribution methods
+############################################
+
 # Rule set for backward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
 backwardFixedGainMRule{T<:Number}(A_inv::Array{T, 2}, m::Array{T, 1}) = A_inv * m
 backwardFixedGainMRule{T<:Number}(A::Array{T, 2}, m::Array{T, 1}, W::Array{T, 2}) = pinv(A' * W * A) * A' * W * m
@@ -68,7 +135,7 @@ forwardFixedGainXiRule{T<:Number}(A_inv::Array{T, 2}, xi::Array{T, 1}) = A_inv' 
 forwardFixedGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}, V::Array{T, 2}) = pinv(A * V * A') * A * V * xi # Combination of xi and V
 
 # Backward Gaussian to IN
-function fixedGainGaussianBackwardRule!(dist_result::GaussianDistribution, dist_2::GaussianDistribution, A::Any, A_inv::Any=nothing)
+function fixedGainGaussianBackwardRule!(dist_result::MvGaussianDistribution, dist_2::MvGaussianDistribution, A::Any, A_inv::Any=nothing)
     # Calculations for a gaussian message type; Korl (2005), table 4.1
     # dist_result = inv(A) * dist_2
 
@@ -99,30 +166,30 @@ function fixedGainGaussianBackwardRule!(dist_result::GaussianDistribution, dist_
         invalidate!(dist_result.V)
         dist_result.W = backwardFixedGainWRule(A, dist_2.W)
         dist_result.xi = backwardFixedGainXiRule(A, dist_2.xi)
-    end   
+    end
 
-    return dist_result 
+    return dist_result
 end
 
 function sumProduct!(node::FixedGainNode,
                             outbound_interface_index::Int,
                             ::Nothing,
-                            msg_out::Message{GaussianDistribution})
+                            msg_out::Message{MvGaussianDistribution})
 
-    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
 
     if outbound_interface_index == 1
         fixedGainGaussianBackwardRule!(dist_1, msg_out.payload, node.A, isdefined(node, :A_inv) ? node.A_inv : nothing)
     else
         error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     end
-    
+
     return (:fixed_gain_gaussian_backward,
             node.interfaces[outbound_interface_index].message)
 end
 
 # Forward Gaussian to OUT
-function fixedGainGaussianForwardRule!(dist_result::GaussianDistribution, dist_1::GaussianDistribution, A::Any, A_inv::Any=nothing)
+function fixedGainGaussianForwardRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDistribution, A::Any, A_inv::Any=nothing)
     # Calculations for a gaussian message type; Korl (2005), table 4.1
     # dist_result = A * dist_1
 
@@ -155,14 +222,14 @@ function fixedGainGaussianForwardRule!(dist_result::GaussianDistribution, dist_1
         invalidate!(dist_result.xi)
     end
 
-    return dist_result 
+    return dist_result
 end
 
 function sumProduct!(node::FixedGainNode,
                             outbound_interface_index::Int,
-                            msg_in::Message{GaussianDistribution},
+                            msg_in::Message{MvGaussianDistribution},
                             ::Nothing)
-    dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+    dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
 
     if outbound_interface_index == 2
         # Forward message
@@ -172,44 +239,37 @@ function sumProduct!(node::FixedGainNode,
     else
         error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     end
-    
+
     return (:fixed_gain_gaussian_forward,
             node.interfaces[outbound_interface_index].message)
 end
 
-# Backward DeltaDistribution to IN
+
+############################################
+# MvDeltaDistribution methods
+############################################
+
+# Backward MvDeltaDistribution to IN
 function sumProduct!(node::FixedGainNode,
                      outbound_interface_index::Int,
                      ::Nothing,
-                     msg_out::Message{DeltaDistribution{Float64}})
-    if outbound_interface_index == 1
-        # Backward message
-        ans = node.A_inv * msg_out.payload.m
-    else
-        error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    end
-
-    msg_ans = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64})
-    msg_ans.payload.m = ans
+                     msg_out::Message{MvDeltaDistribution{Float64}})
+    (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
+    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
+    dist_1.m = node.A_inv * msg_out.payload.m
 
     return (:fixed_gain_delta_backward,
             node.interfaces[outbound_interface_index].message)
 end
 
-# Forward DeltaDistribution to OUT
+# Forward MvDeltaDistribution to OUT
 function sumProduct!(node::FixedGainNode,
                      outbound_interface_index::Int,
-                     msg_in::Message{DeltaDistribution{Float64}},
+                     msg_in::Message{MvDeltaDistribution{Float64}},
                      ::Nothing)
-    if outbound_interface_index == 2
-        # Forward message
-        ans = node.A * msg_in.payload.m
-    else
-        error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    end
-
-    msg_ans = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64})
-    msg_ans.payload.m = ans
+    (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
+    dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
+    dist_2.m = node.A * msg_in.payload.m
 
     return (:fixed_gain_delta_forward,
             node.interfaces[outbound_interface_index].message)
