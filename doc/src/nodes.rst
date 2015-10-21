@@ -2,7 +2,7 @@
  Nodes
 **************
 
-This chapter describes :ref:`node-anatomy`, :ref:`msg-calc-rules`, :ref:`built-in-nodes`, and :ref:`composite-nodes`. For more details, have a look at the source files of the built-in nodes, such as ``src/nodes/addition.jl``. 
+This chapter describes :ref:`node-anatomy`, :ref:`msg-calc-rules`, :ref:`built-in-nodes`, and :ref:`composite-nodes`. For more details, have a look at the source files of the built-in nodes, such as ``src/nodes/addition.jl``.
 
 .. _node-anatomy:
 
@@ -20,7 +20,7 @@ A factor graph node is always a subtype of ``abstract Node``, and its name ends 
 The field ``i`` stores 'named handles' to make accessing the interfaces convenient, for example if we want to access the out interface we type ``node.i[:out]``. The ``interfaces`` array always contains one or more :class:`Interface` instances. The calling signature of a node constructor varies, but it always includes the optional keyword argument ``id``. A ``Node`` can be copied using ``copy(src::Node; id=:new_id)``, where ``:new_id`` will become the id of the copy. The copy contains the exact internal state of the original, but has no edges connected to it.
 
 .. type:: Interface
-    
+
     An Interface belongs to a node and can be partnered to another ``Interface`` to form an :class:`Edge`. It can be viewed as an half-edge that can be combined with another half-edge to form a complete :class:`Edge`.
     ::
 
@@ -31,19 +31,19 @@ The field ``i`` stores 'named handles' to make accessing the interfaces convenie
             message::Union(Message, Nothing)   # Outbound message
         end
 
-    The ``message`` field may contain a :class:`Message`, which is the *outbound message* calculated according to the node function. This means that if an interface is the tail of an :class:`Edge`, its ``message`` field contains the *forward message* on that edge. Similarly, if the interface is the head of the edge, its ``message`` field contains the *backward message*. 
+    The ``message`` field may contain a :class:`Message`, which is the *outbound message* calculated according to the node function. This means that if an interface is the tail of an :class:`Edge`, its ``message`` field contains the *forward message* on that edge. Similarly, if the interface is the head of the edge, its ``message`` field contains the *backward message*.
 
 .. _msg-calc-rules:
 
 Message calculation rules
 -------------------------
 
-A factor node captures a specific *node function*, which involves the variables that are represented by the connected edges. The :class:`AdditionNode` for example captures the addition function: ``f(in1,in2,out) = δ(out-in1-in2)``. When running a message passing algorithm on a :class:`FactorGraph`, the node function specifies how the outbound messages are calculated from the inbound messages. An outbound message is calculated according to a *message calculation rule*. Message calculation rules are implemented for specific nodes and message types using multiple dispatch. 
+A factor node captures a specific *node function*, which involves the variables that are represented by the connected edges. The :class:`AdditionNode` for example captures the addition function: ``f(in1,in2,out) = δ(out-in1-in2)``. When running a message passing algorithm on a :class:`FactorGraph`, the node function specifies how the outbound messages are calculated from the inbound messages. An outbound message is calculated according to a *message calculation rule*. Message calculation rules are implemented for specific nodes and message types using multiple dispatch.
 
 ForneyLab supports the following message calculation rules:
 
 .. function:: sumProduct!(node::Node, outbound_interface_index::Int, inbound_messages...)
-    
+
     Calculates the outbound message from the incoming messages on the other interfaces according to the sum-product algorithm.
     Example implementation::
 
@@ -52,7 +52,7 @@ ForneyLab supports the following message calculation rules:
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Nothing)
-            # Calculate outbound message on interface 3 (:out) 
+            # Calculate outbound message on interface 3 (:out)
             # according to the sum-product rule
 
             # Save the calculated message on the interface
@@ -78,7 +78,7 @@ ForneyLab supports the following message calculation rules:
                             ::Nothing,
                             marg_prec::GammaDistribution,
                             marg_y::GaussianDistribution)
-            # Calculate outbound message on interface 1 (:mean) 
+            # Calculate outbound message on interface 1 (:mean)
             # according to the variational message passing rule
 
             # Save the calculated message on the interface
@@ -86,7 +86,7 @@ ForneyLab supports the following message calculation rules:
             # Return tuple ([calculation rule name]::Symbol, outbound_message::Message)
             return (:gaussian_backward_mean_gaussian_inverse_gamma,
                     node.interfaces[outbound_interface_index].message)
-        end                            
+        end
 
     The calling signature consists of:
 
@@ -116,8 +116,8 @@ Elementary nodes
                |
          in1   v  out
         ----->[+]----->
-     
-    :Node function: ``f(in1,in2,out) = δ(out-in1-in2)``      
+
+    :Node function: ``f(in1,in2,out) = δ(out-in1-in2)``
     :Interfaces:    1. ``i[:in1]``, 2. ``i[:in2]``, 3. ``i[:out]``
     :Construction:  ``AdditionNode(id="something")``
 
@@ -128,21 +128,21 @@ Elementary nodes
     + Rule            +-------------------------+-------------------------+-------------------------+
     |                 | 1                       | 2                       |  3                      |
     +=================+=========================+=========================+=========================+
-    | sumProduct!     | ↓↑ ``Msg{Delta}``       | ↓↑ ``Msg{Delta}``       | ↓↑ ``Msg{Delta}``       | 
+    | sumProduct!     | ↓↑ ``Msg{Delta}``       | ↓↑ ``Msg{Delta}``       | ↓↑ ``Msg{Delta}``       |
     +                 +-------------------------+-------------------------+-------------------------+
-    |                 | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    | 
+    |                 | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    |
     +                 +-------------------------+-------------------------+-------------------------+
-    |                 | ↑  ``Msg{Gaussian}``    | ↓  ``Msg{Gaussian}``    | ↓  ``Msg{Delta}``       | 
+    |                 | ↑  ``Msg{Gaussian}``    | ↓  ``Msg{Gaussian}``    | ↓  ``Msg{Delta}``       |
     +                 +                         +-------------------------+-------------------------+
-    |                 |                         | ↓  ``Msg{Delta}``       | ↓  ``Msg{Gaussian}``    | 
+    |                 |                         | ↓  ``Msg{Delta}``       | ↓  ``Msg{Gaussian}``    |
     +                 +-------------------------+-------------------------+-------------------------+
-    |                 | ↓  ``Msg{Gaussian}``    | ↑  ``Msg{Gaussian}``    | ↓  ``Msg{Delta}``       | 
+    |                 | ↓  ``Msg{Gaussian}``    | ↑  ``Msg{Gaussian}``    | ↓  ``Msg{Delta}``       |
     +                 +-------------------------+                         +-------------------------+
     |                 | ↓  ``Msg{Delta}``       |                         | ↓  ``Msg{Gaussian}``    |
     +                 +-------------------------+-------------------------+-------------------------+
-    |                 | ↓  ``Msg{Gaussian}``    | ↓  ``Msg{Gaussian}``    | ↑  ``Msg{Gaussian}``    | 
+    |                 | ↓  ``Msg{Gaussian}``    | ↓  ``Msg{Gaussian}``    | ↑  ``Msg{Gaussian}``    |
     +                 +-------------------------+-------------------------+                         +
-    |                 | ↓  ``Msg{Delta}``       | ↓  ``Msg{Delta}``       |                         |  
+    |                 | ↓  ``Msg{Delta}``       | ↓  ``Msg{Delta}``       |                         |
     +-----------------+-------------------------+-------------------------+-------------------------+
 
 .. type:: EqualityNode
@@ -153,8 +153,8 @@ Elementary nodes
                |
            X   v  Z
         ----->[=]----->
-     
-    :Node function: ``f(X,Y,Z) = δ(X-Z)δ(Y-Z)``      
+
+    :Node function: ``f(X,Y,Z) = δ(X-Z)δ(Y-Z)``
     :Interfaces:    1. ``i[1]``, 2. ``i[2]``, 3. ``i[3]``
     :Construction:  ``EqualityNode(id="something")``
 
@@ -165,7 +165,7 @@ Elementary nodes
     + Rule            +-------------------------+---------------------------------------------------+
     |                 | Outbound interface      | Inbound interfaces                                |
     +=================+=========================+===================================================+
-    | sumProduct!     | ``Msg{Delta}``          | ``Msg{Delta}`` and ``Msg{Delta}``                 | 
+    | sumProduct!     | ``Msg{Delta}``          | ``Msg{Delta}`` and ``Msg{Delta}``                 |
     +                 +                         +---------------------------------------------------+
     |                 |                         | ``Msg{Delta}`` and ``Msg{Gaussian}``              |
     +                 +                         +---------------------------------------------------+
@@ -173,15 +173,15 @@ Elementary nodes
     +                 +                         +---------------------------------------------------+
     |                 |                         | ``Msg{Delta}`` and ``Msg{InvGamma}``              |
     +                 +-------------------------+-------------------------+-------------------------+
-    |                 | ``Msg{Beta}``           | ``Msg{Beta}`` and ``Msg{Beta}``                   | 
+    |                 | ``Msg{Beta}``           | ``Msg{Beta}`` and ``Msg{Beta}``                   |
     +                 +-------------------------+-------------------------+-------------------------+
-    |                 | ``Msg{Gamma}``          | ``Msg{Gamma}`` and ``Msg{Gamma}``                 | 
+    |                 | ``Msg{Gamma}``          | ``Msg{Gamma}`` and ``Msg{Gamma}``                 |
     +                 +-------------------------+-------------------------+-------------------------+
-    |                 | ``Msg{Gaussian}``       | ``Msg{Gaussian}`` and ``Msg{Gaussian}``           | 
+    |                 | ``Msg{Gaussian}``       | ``Msg{Gaussian}`` and ``Msg{Gaussian}``           |
     +                 +-------------------------+---------------------------------------------------+
     |                 | ``Msg{Gaussian}`` \*    | ``Msg{Gaussian}`` and ``Msg{StudentsT}``          |
     +                 +-------------------------+-------------------------+-------------------------+
-    |                 | ``Msg{InvGamma}``       | ``Msg{InvGamma}`` and ``Msg{InvGamma}``           | 
+    |                 | ``Msg{InvGamma}``       | ``Msg{InvGamma}`` and ``Msg{InvGamma}``           |
     +-----------------+-------------------------+-------------------------+-------------------------+
 
 .. type:: ExponentialNode
@@ -191,7 +191,7 @@ Elementary nodes
           in        out
         ----->[exp]----->
 
-    :Node function: ``f(in,out) = δ(out - exp(in))``      
+    :Node function: ``f(in,out) = δ(out - exp(in))``
     :Interfaces:    1. ``i[:in]``, 2. ``i[:out]``
     :Construction:  ``ExponentialNode(id="something")``
 
@@ -214,7 +214,7 @@ Elementary nodes
           in      out
         ----->[A]----->
 
-    :Node function: ``f(in,out) = δ(A*in-out)``      
+    :Node function: ``f(in,out) = δ(A*in-out)``
     :Interfaces:    1 ``1[:in]``, 2. ``i[:out]``
     :Construction:  ``FixedGainNode(A::Matrix, id="something")``
 
@@ -234,15 +234,15 @@ Elementary nodes
 .. type:: GaussianNode
 
     ::
-    
+
                mean
                 |
                 v  out
          ----->[N]----->
         precision/
         variance
-     
-    :Node function: ``f(mean,variance,out) = N(out|mean,variance)``      
+
+    :Node function: ``f(mean,variance,out) = N(out|mean,variance)``
     :Interfaces:    1. ``i[:mean]``, 2. ``i[:variance]`` or ``i[:precision]``, 3. ``i[:out]``
     :Construction:  ``GaussianNode(id="something", form=:moment, m=optional, V=optional)``
 
@@ -255,11 +255,11 @@ Elementary nodes
     + Rule        +---------------------+-----------------------------+---------------------+
     |             | 1                   | 2                           |  3                  |
     +=============+=====================+=============================+=====================+
-    | sumProduct! | ↑ ``Msg{Gaussian}`` | ↓ ``Msg{Delta}``            | ↓ ``Msg{Delta}``    |   
+    | sumProduct! | ↑ ``Msg{Gaussian}`` | ↓ ``Msg{Delta}``            | ↓ ``Msg{Delta}``    |
     +             +---------------------+-----------------------------+---------------------+
-    |             | ↓ ``Msg{Delta}``    | ↑ ``Msg{(Inv)Gamma}``       | ↓ ``Msg{Delta}``    |   
+    |             | ↓ ``Msg{Delta}``    | ↑ ``Msg{(Inv)Gamma}``       | ↓ ``Msg{Delta}``    |
     +             +---------------------+-----------------------------+---------------------+
-    |             | ↓ ``Msg{Delta}``    | ↓ ``Msg{Delta}``            | ↑ ``Msg{Gaussian}`` |   
+    |             | ↓ ``Msg{Delta}``    | ↓ ``Msg{Delta}``            | ↑ ``Msg{Gaussian}`` |
     +-------------+---------------------+-----------------------------+---------------------+
     | vmp!        | ↑ ``Msg{Gaussian}`` | ↓ ``(Inv)Gamma``            | ↓ ``Gaussian``      |
     +             +---------------------+-----------------------------+---------------------+
@@ -282,12 +282,12 @@ Elementary nodes
 
              out
         [T]----->
-     
-    :Node function: ``f(out) = T.value``      
+
+    :Node function: ``f(out) = T.value``
     :Interfaces:    1. ``i[:out]``
     :Construction:  ``TerminalNode(value, id="something")``
 
-    A ``TerminalNode`` is used to terminate an edge. It forces the variable represented by the connected edge to ``value``. The terminal node always emits a ``Message`` with payload ``value`` (which is a :class:`ProbabilityDistribution`). It can be used to introduce priors or data into the factor graph. 
+    A ``TerminalNode`` is used to terminate an edge. It forces the variable represented by the connected edge to ``value``. The terminal node always emits a ``Message`` with payload ``value`` (which is a :class:`ProbabilityDistribution`). It can be used to introduce priors or data into the factor graph.
 
     Message computation rules:
 
@@ -316,8 +316,8 @@ Combined nodes
          in2 |   v   | out
         -----|->[+]--|---->
              |_______|
-     
-    :Node function: ``f(in1,in2,out) = δ(out - A*in1 - in2)``      
+
+    :Node function: ``f(in1,in2,out) = δ(out - A*in1 - in2)``
     :Interfaces:    1. ``i[:in1]``, 2. ``i[:in2]``, 3. ``i[:out]``
     :Construction:  ``GainAdditionNode(A, id="something")``
 
@@ -328,7 +328,7 @@ Combined nodes
     + Rule            +-------------------------+-------------------------+-------------------------+
     |                 | 1                       | 2                       |  3                      |
     +=================+=========================+=========================+=========================+
-    | sumProduct!     | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    |   
+    | sumProduct!     | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    |
     +-----------------+-------------------------+-------------------------+-------------------------+
 
 .. type:: GainEqualityNode
@@ -345,7 +345,7 @@ Combined nodes
                  | out
                  v
 
-    :Node function: ``f(in1,in2,out) = δ(in1 - A*out)*δ(in2 - A*out)``      
+    :Node function: ``f(in1,in2,out) = δ(in1 - A*out)*δ(in2 - A*out)``
     :Interfaces:    1. ``i[:in1]``, 2. ``i[:in2]``, 3. ``i[:out]``
     :Construction:  ``GainEqualityNode(A, id="something")``
 
@@ -356,7 +356,7 @@ Combined nodes
     + Rule            +-------------------------+-------------------------+-------------------------+
     |                 | 1                       | 2                       |  3                      |
     +=================+=========================+=========================+=========================+
-    | sumProduct!     | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    |   
+    | sumProduct!     | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    | ↓↑ ``Msg{Gaussian}``    |
     +-----------------+-------------------------+-------------------------+-------------------------+
 
 .. _composite-nodes:
@@ -429,7 +429,7 @@ Since a ``CompositeNode`` behaves like a normal ``Node`` from the outside, one c
 
     Add a custom message calculation rule to ``composite_node``. The outbound interface for the rule is specified by ``outbound_interface``. The type of message calculation rule is specified in ``message_calculation_rule``, and can be any valid message calculation rule, like :func:`sumProduct!` or :func:`vmp!`. The ``algorithm`` argument contains the :class:`Algorithm` that yields the desired :class:`Message`.
 
-Note that it's possible to define so called *shortcut rules* using ``addRule!()``. One might for example implement the ``sumProduct!`` rule for a specific interface of a ``CompositeNode`` as a closed-form equation that is derived by hand instead of performing sum-product message passing on the internal factor graph. 
+Note that it's possible to define so called *shortcut rules* using ``addRule!()``. One might for example implement the ``sumProduct!`` rule for a specific interface of a ``CompositeNode`` as a closed-form equation that is derived by hand instead of performing sum-product message passing on the internal factor graph.
 
 
 .. seealso::
