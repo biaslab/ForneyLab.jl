@@ -59,8 +59,10 @@ function format(dist::GaussianDistribution)
         return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
     elseif !isnan(dist.xi) && !isnan(dist.W)
         return "N(ξ=$(format(dist.xi)), W=$(format(dist.W)))"
-    else
+    elseif !isnan(dist.xi) && !isnan(dist.V)
         return "N(ξ=$(format(dist.xi)), V=$(format(dist.V)))"
+    else
+        return "N(underdetermined)"
     end
 end
 
@@ -147,8 +149,12 @@ ensureXiVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureXi
 ensureXiWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
 
 function ==(x::GaussianDistribution, y::GaussianDistribution)
-    if is(x, y) return true end
-
+    if is(x, y)
+        return true
+    end
+    if !isWellDefined(x) || !isWellDefined(y)
+        return false
+    end
     # Check m or xi
     if !(isnan(x.m) || isnan(y.m))
         isApproxEqual(x.m, y.m) || return false

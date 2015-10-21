@@ -89,8 +89,10 @@ function format(dist::MvGaussianDistribution)
         return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
     elseif isValid(dist.xi) && isValid(dist.W)
         return "N(ξ=$(format(dist.xi)), W=$(format(dist.W)))"
-    else
+    elseif isValid(dist.xi) && isValid(dist.V)
         return "N(ξ=$(format(dist.xi)), V=$(format(dist.V)))"
+    else
+        return "N(underdetermined)"
     end
 end
 
@@ -227,8 +229,12 @@ ensureXiVParametrization!(dist::MvGaussianDistribution) = ensureVDefined!(ensure
 ensureXiWParametrization!(dist::MvGaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
 
 function ==(x::MvGaussianDistribution, y::MvGaussianDistribution)
-    if is(x, y) return true end
-    eps = tiny
+    if is(x, y)
+        return true
+    end
+    if !isWellDefined(x) || !isWellDefined(y)
+        return false
+    end
     # Check m or xi
     if isValid(x.m) && isValid(y.m)
         (length(x.m)==length(x.m)) || return false
