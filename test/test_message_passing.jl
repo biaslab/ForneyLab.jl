@@ -41,7 +41,7 @@ facts("Message passing integration tests") do
                 execute(schedule)
             end
             @fact typeof(n(:driver).i[:out].message) => Message{GaussianDistribution}
-            @fact ensureMVParametrization!(n(:driver).i[:out].message.payload).m => [100.0] # For stop conditions at 100 cycles deep
+            @fact ensureMVParametrization!(n(:driver).i[:out].message.payload).m => 100.0 # For stop conditions at 100 cycles deep
         end
 
         context("Should be called repeatedly until convergence") do
@@ -57,7 +57,7 @@ facts("Message passing integration tests") do
                 converged = isApproxEqual(prev_dist.m, dist.m)
                 prev_dist = deepcopy(dist)
             end
-            @fact isApproxEqual(n(:driver).i[:out].message.payload.m, [0.0]) => true
+            @fact isApproxEqual(n(:driver).i[:out].message.payload.m, 0.0) => true
         end
     end
 

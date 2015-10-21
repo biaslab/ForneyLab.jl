@@ -89,13 +89,16 @@ facts("MvGaussianDistribution unit tests") do
         @fact isConsistent(ensureMWParametrization!(MvGaussianDistribution(xi=[2.0], W=eye(1)))) => true
         @fact isConsistent(ensureXiVParametrization!(MvGaussianDistribution(xi=[2.0], W=eye(1)))) => true
     end
-    context("mean(MvGaussianDistribution) and var(MvGaussianDistribution) should return correct result") do
+    context("mean(d), var(d), cov(d) should return correct results") do
         @fact mean(MvGaussianDistribution(m=[1.0, 2.0], V=eye(2))) => [1.0, 2.0]
         @fact mean(MvGaussianDistribution(xi=[1.0, 2.0], V=2.0*eye(2))) => [2.0, 4.0]
         @fact isValid(mean(MvGaussianDistribution(xi=[1.0, 2.0], V=-2.0*eye(2)))) => false
         @fact var(MvGaussianDistribution(m=[1.0, 2.0], V=diagm([2.0, 4.0]))) => [2.0, 4.0]
         @fact var(MvGaussianDistribution(m=[1.0, 2.0], W=diagm([2.0, 4.0]))) => [0.5, 0.25]
         @fact isValid(var(MvGaussianDistribution(m=[1.0, 2.0], W=diagm([-2.0, 4.0])))) => false
+        @fact cov(MvGaussianDistribution(m=[1.0, 2.0], V=[2.0 1.0;1.0 2.0])) => [2.0 1.0;1.0 2.0]
+        @fact cov(MvGaussianDistribution(m=[1.0, 2.0], W=[2.0 1.0;1.0 2.0])) => inv([2.0 1.0;1.0 2.0])
+        @fact isValid(cov(MvGaussianDistribution(m=[1.0, 2.0], W=diagm([-2.0, 4.0])))) => false
     end
     context("Inconsistent overdetermined MvGaussianDistribution should be detected by isConsistent()") do
         @fact isConsistent(MvGaussianDistribution(m=[0.0], xi=[1.0], W=eye(1))) => false
