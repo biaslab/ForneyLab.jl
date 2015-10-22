@@ -47,4 +47,9 @@ function ==(x::StudentsTDistribution, y::StudentsTDistribution)
     return (is(x, y) || (x.m==y.m && x.lambda==y.lambda && x.nu==y.nu))
 end
 
-vague(::Type{StudentsTDistribution}) = StudentsTDistribution(m=0.0, lambda=tiny, nu=huge)
+# The choice of nu influences the robustness of the estimation.
+# nu -> 0 and nu -> Inf imply higher and lower robustness respectively
+# see also (Fonseca, 2008; Objective Bayesian analysis for the Student-t regression model)
+# and (Lange, 1989; Robust statistical modeling using the t distribution).
+# The value for nu = 4 is taken from the latter reference as a value that has worked well in practice.
+vague(::Type{StudentsTDistribution}) = StudentsTDistribution(m=0.0, lambda=tiny, nu=4.0)

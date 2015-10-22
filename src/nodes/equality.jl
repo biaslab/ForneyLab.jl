@@ -106,8 +106,19 @@ function equalityRule!(dist_result::GaussianDistribution, dist_gauss_in::Gaussia
     # The result is a Gaussian approximation to the exact result.
 
     ensureXiWParametrization!(dist_gauss_in)
-    approx_W = inv(var(dist_stud_in))
-    approx_xi = approx_W * mean(dist_stud_in)
+    if 0.0 < dist_stud_in.nu <= 1.0
+        # The mean and variance for the Student's t are undefined for nu <= 1.
+        # However, since we apply a gaussian approximation we assume variance is huge in this case,
+        # so the second incoming message dominates.
+        approx_V = huge 
+        approx_m = dist_stud_in.m
+    else
+        approx_V = var(dist_stud_in)
+        approx_m = mean(dist_stud_in)
+    end
+
+    approx_W = inv(approx_V)
+    approx_xi = approx_W * approx_m
     dist_result.xi  = dist_gauss_in.xi + approx_xi
     dist_result.W  = dist_gauss_in.W + approx_W
     dist_result.V = NaN
