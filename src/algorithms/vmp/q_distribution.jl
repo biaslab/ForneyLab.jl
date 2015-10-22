@@ -18,34 +18,34 @@ end
 
 # GammaDistribution
 function calculateQDistribution!(marg::QDistribution, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
-    return ForneyLab.equalityGammaRule!(marg.distribution, forward_dist, backward_dist)
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
 # InverseGammaDistribution
 function calculateQDistribution!(marg::QDistribution, forward_dist::InverseGammaDistribution, backward_dist::InverseGammaDistribution)
-    return ForneyLab.equalityInverseGammaRule!(marg.distribution, forward_dist, backward_dist)
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
 # BetaDistribution
 function calculateQDistribution!(marg::QDistribution, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
-    return ForneyLab.equalityBetaRule!(marg.distribution, forward_dist, backward_dist)
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
 # GaussianDistribution
 function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
-    return ForneyLab.equalityGaussianRule!(marg.distribution, forward_dist, backward_dist)
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
 # Gaussian-students t combination
 function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
-    return ForneyLab.equalityGaussianStudentsTRule!(marg.distribution, forward_dist, backward_dist)
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 calculateQDistribution!(marg::QDistribution, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
 # Gaussian-delta combination
 function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution{Float64})
     # Calculation for univariate approximate marginal
-    return marg.distribution = ForneyLab.equalityGaussianDeltaRule!(marg.distribution, forward_dist, backward_dist)
+    return marg.distribution = ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
@@ -53,7 +53,7 @@ calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Flo
 # # Gamma-delta combination
 # function calculateQDistribution!(marg::QDistribution, forward_dist::GammaDistribution, backward_dist::DeltaDistribution{Float64})
 #     # Calculation for univariate approximate marginal
-#     return marg.distribution = ForneyLab.equalityGammaDeltaRule!(marg.distribution, forward_dist, backward_dist)
+#     return marg.distribution = ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 # end
 # calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::GammaDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
@@ -61,7 +61,7 @@ calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Flo
 # # Inverse gamma-delta combination
 # function calculateQDistribution!(marg::QDistribution, forward_dist::InverseGammaDistribution, backward_dist::DeltaDistribution{Float64})
 #     # Calculation for univariate approximate marginal
-#     return marg.distribution = ForneyLab.equalityInverseGammaDeltaRule!(marg.distribution, forward_dist, backward_dist)
+#     return marg.distribution = ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 # end
 # calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::InverseGammaDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
@@ -81,7 +81,7 @@ function calculateQDistribution!(q_dist::QDistribution,
 
     mu_m = gaus_msg.payload
     mu_gam = gam_msg.payload
-    
+
     ForneyLab.ensureMDefined!(mu_m)
     ForneyLab.ensureMWParametrization!(y_dist)
 

@@ -7,7 +7,7 @@
 ############################################
 export BetaDistribution
 
-type BetaDistribution <: ProbabilityDistribution
+type BetaDistribution <: UnivariateProbabilityDistribution
     a::Float64 # shape
     b::Float64 # rate
 end
