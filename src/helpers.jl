@@ -1,5 +1,6 @@
 export isApproxEqual, huge, tiny, rules, format, isValid, invalidate!, *
 
+import Base.*, Base.==
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
 ensureMatrix{T<:Number}(arr::Array{T, 1}) = reshape(arr, 1, 1)

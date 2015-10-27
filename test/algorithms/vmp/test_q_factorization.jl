@@ -138,7 +138,7 @@ facts("vagueQDistributions!() should reset already present q distributions to va
     @fact qs[(n(:g1), gam_subgraph)].distribution --> vague(GammaDistribution)
     @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(GaussianDistribution)
 
-    ForneyLab.step(algo)
+    step(algo)
 
     # Distributions after step() should not be vague
     @fact qs[(n(:g1), m_subgraph)].distribution == vague(GaussianDistribution) --> false

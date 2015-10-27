@@ -8,6 +8,9 @@ export  attachReadBuffer,
         step,
         run
 
+import Base.run
+import Base.step
+
 function attachReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=current_graph)
     hasNode(graph, node) || error("The specified node is not part of the current or specified graph")
     graph.read_buffers[node] = buffer

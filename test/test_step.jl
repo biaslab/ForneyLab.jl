@@ -87,7 +87,7 @@ facts("step integration tests") do
         results = attachWriteBuffer(n(:add).i[:out])
         algo = SumProduct.Algorithm(g) # The timewraps and buffers tell the autoscheduler what should be computed
         while !isempty(deltas)
-            ForneyLab.step(algo, g)
+            step(algo, g)
         end
         @fact results --> [DeltaDistribution(r) for r in cumsum(collect(1.:10.))]
     end
@@ -110,7 +110,7 @@ facts("run() integration tests") do
         results = attachWriteBuffer(n(:add).i[:out])
         schedule = SumProduct.generateSchedule(n(:add).i[:out])
         algo = Algorithm(schedule, g)
-        ForneyLab.run(algo, g)
+        run(algo, g)
         @fact results --> [DeltaDistribution(r) for r in cumsum(collect(1.:10.))]
     end
 end

@@ -27,9 +27,9 @@ facts("CompositeNode integration tests") do
 
         # Verify algorithm execution
         algo = SumProduct.Algorithm(add_3.i[:out])
-        @fact ForneyLab.run(algo) --> Message(DeltaDistribution(8.0))
+        @fact run(algo) --> Message(DeltaDistribution(8.0))
         t_in.value = 10.0
-        @fact ForneyLab.run(algo) --> Message(DeltaDistribution(13.0))
+        @fact run(algo) --> Message(DeltaDistribution(13.0))
     end
 
     context("addRule!() should add a computation rule to a composite node") do
@@ -42,7 +42,7 @@ facts("CompositeNode integration tests") do
         end
         algo2 = Algorithm(custom_rule)
         addRule!(add_3, add_3.i[:out], sumProduct!, algo2)
-        @fact ForneyLab.run(algo2) --> Message(DeltaDistribution(15.0))
+        @fact run(algo2) --> Message(DeltaDistribution(15.0))
     end
 
     context("CompositeNode() graph argument should be optional") do

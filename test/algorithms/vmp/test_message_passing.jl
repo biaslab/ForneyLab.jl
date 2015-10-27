@@ -15,7 +15,7 @@ facts("Call step() for VMP algorithm") do
 
     algo = VMP.Algorithm(n_iterations=10)
 
-    ForneyLab.step(algo)
+    step(algo)
 
     ForneyLab.ensureXiWParametrization!(mean_out[end])
     @fact round(mean_out[end].W[1,1], 2) --> 1.79
@@ -46,7 +46,7 @@ facts("Naive VMP implementation integration tests") do
         algo = VMP.Algorithm(n_iterations=50)
 
         # Perform vmp updates
-        ForneyLab.step(algo)
+        step(algo)
 
         # Check the results against the outcome of similar Infer.NET script
         m_out = m_buffer[end]
@@ -77,7 +77,7 @@ facts("Naive VMP implementation integration tests") do
         algo = VMP.Algorithm(n_iterations=50)
 
         # Perform vmp updates
-        ForneyLab.run(algo)
+        run(algo)
 
         # Check the results against the outcome of Infer.NET
         m_out = m_buffer[end]
@@ -112,7 +112,7 @@ facts("Structured VMP implementation integration tests") do
         # Structured factorization
         algo = VMP.Algorithm(Set{Edge}([ForneyLab.e(:q_y1)]), n_iterations=10)
 
-        ForneyLab.run(algo)
+        run(algo)
 
         m_out = m_buffer[end]
         gam_out = gam_buffer[end]
