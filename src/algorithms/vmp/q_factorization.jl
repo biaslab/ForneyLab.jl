@@ -17,8 +17,8 @@ show(io::IO, f::QFactorization) = println(io, "QFactorization with $(length(f.fa
 
 function vagueQDistributions(f::QFactorization)
     # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
-    
-    q_distributions = Dict{(Node, Subgraph), QDistribution}()
+
+    q_distributions = Dict{Tuple{Node, Subgraph}, QDistribution}()
 
     for subgraph in f.factors
         length(subgraph.external_schedule) > 0 || warn("External schedule for subgraph $(subgraph) undefined. Run generateSchedule(...) to generate internal and external schedules.")

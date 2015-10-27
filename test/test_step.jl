@@ -40,16 +40,16 @@ facts("Read/write buffer integration tests") do
     context("attachWriteBuffer should register a write buffer for an Edge (marginal)") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        attachWriteBuffer(e(:e), write_buffer)
-        @fact g.write_buffers[e(:e)] --> write_buffer
+        attachWriteBuffer(ForneyLab.e(:e), write_buffer)
+        @fact g.write_buffers[ForneyLab.e(:e)] --> write_buffer
     end
 
     # detachWriteBuffer
     context("detachWriteBuffer should deregister a write buffer on an edge") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        attachWriteBuffer(e(:e), write_buffer)
-        detachWriteBuffer(e(:e))
+        attachWriteBuffer(ForneyLab.e(:e), write_buffer)
+        detachWriteBuffer(ForneyLab.e(:e))
         @fact length(g.write_buffers) --> 0
     end
     context("detachWriteBuffer should deregister a write buffer on an interface") do
@@ -63,7 +63,7 @@ facts("Read/write buffer integration tests") do
     context("detachBuffers should deregister all read/write buffers") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        attachWriteBuffer(e(:e), write_buffer)
+        attachWriteBuffer(ForneyLab.e(:e), write_buffer)
         detachBuffers(g)
         @fact length(g.read_buffers) --> 0
         @fact length(g.write_buffers) --> 0
@@ -82,14 +82,14 @@ facts("step integration tests") do
         Edge(n(:delta), n(:add).i[:in2])
         Edge(n(:add).i[:out], n(:out))
         Wrap(n(:out), n(:in))
-        deltas = [DeltaDistribution(n) for n in 1.:10.]
+        deltas = [DeltaDistribution(n) for n in collect(1.:10.)]
         attachReadBuffer(n(:delta), deltas)
         results = attachWriteBuffer(n(:add).i[:out])
         algo = SumProduct.Algorithm(g) # The timewraps and buffers tell the autoscheduler what should be computed
         while !isempty(deltas)
-            step(algo, g)
+            ForneyLab.step(algo, g)
         end
-        @fact results --> [DeltaDistribution(r) for r in cumsum([1.:10.])]
+        @fact results --> [DeltaDistribution(r) for r in cumsum(collect(1.:10.))]
     end
 end
 
@@ -105,12 +105,12 @@ facts("run() integration tests") do
         Edge(n(:delta), n(:add).i[:in2])
         Edge(n(:add).i[:out], n(:out))
         Wrap(n(:out), n(:in))
-        deltas = [DeltaDistribution(n) for n in 1.:10.]
+        deltas = [DeltaDistribution(n) for n in collect(1.:10.)]
         attachReadBuffer(n(:delta), deltas)
         results = attachWriteBuffer(n(:add).i[:out])
         schedule = SumProduct.generateSchedule(n(:add).i[:out])
         algo = Algorithm(schedule, g)
-        run(algo, g)
-        @fact results --> [DeltaDistribution(r) for r in cumsum([1.:10.])]
+        ForneyLab.run(algo, g)
+        @fact results --> [DeltaDistribution(r) for r in cumsum(collect(1.:10.))]
     end
 end

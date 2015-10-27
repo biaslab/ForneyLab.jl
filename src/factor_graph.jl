@@ -51,7 +51,7 @@ function generateNodeId(t::DataType)
     # Automatically generates a unique node id based on the current count of nodes of that type in the graph
     haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
     count = current_graph.counters[t]
-    str = replace(lowercase(string(t)), "node", "")
+    str = replace(lowercase(split(string(t),'.')[end]), "node", "")
     return symbol("$(str)$(count)")
 end
 

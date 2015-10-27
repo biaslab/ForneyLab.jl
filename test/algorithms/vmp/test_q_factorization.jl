@@ -6,15 +6,15 @@ facts("QFactorization integration tests") do
     context("extend() should extend a set of edges to envelope deterministic nodes") do
         initializeFactoringGraph()
         cluster = VMP.extend(Set{Edge}([n(:g1).i[:out].edge, n(:g1).i[:mean].edge]))
-        @fact cluster --> Set{Edge}({n(:t1).i[:out].edge, n(:a1).i[:out].edge, n(:g1).i[:out].edge, n(:add1).i[:out].edge, n(:g2).i[:out].edge})
+        @fact cluster --> Set{Edge}(Edge[n(:t1).i[:out].edge, n(:a1).i[:out].edge, n(:g1).i[:out].edge, n(:add1).i[:out].edge, n(:g2).i[:out].edge])
     end
 
     context("factorize!()") do
         context("Should include argument edges in a new subgraph") do
             initializeFactoringGraph()
             f = VMP.factorize!(Set{Edge}([n(:t2).i[:out].edge]))
-            @fact f.factors[2].internal_edges --> Set{Edge}({n(:t2).i[:out].edge})
-            @fact f.factors[1].internal_edges --> Set{Edge}({n(:t1).i[:out].edge, n(:a1).i[:out].edge, n(:g1).i[:out].edge, n(:add1).i[:out].edge, n(:g2).i[:out].edge})
+            @fact f.factors[2].internal_edges --> Set{Edge}(Edge[n(:t2).i[:out].edge])
+            @fact f.factors[1].internal_edges --> Set{Edge}(Edge[n(:t1).i[:out].edge, n(:a1).i[:out].edge, n(:g1).i[:out].edge, n(:add1).i[:out].edge, n(:g2).i[:out].edge])
         end
 
         context("Should update the edge_to_subgraph mapping for the graph") do
@@ -44,7 +44,7 @@ facts("QFactorization integration tests") do
     end
 
     context("factorize() should output a mean field factorized graph") do
-        data = [1.0, 1.0, 1.0]
+        data = Float64[1.0, 1.0, 1.0]
         initializeGaussianNodeChain(data)
         f = VMP.factorize()
         gam_set = Set{Edge}()
@@ -61,11 +61,11 @@ facts("QFactorization integration tests") do
         end
         @fact length(f.factors) --> 5
 
-        @fact f.edge_to_subgraph[n(:g1).i[:mean].edge].internal_edges --> m_set 
-        @fact f.edge_to_subgraph[n(:g1).i[:precision].edge].internal_edges --> gam_set 
-        @fact f.edge_to_subgraph[n(:g1).i[:out].edge].internal_edges --> Set{Edge}([e(:q_y1)]) 
-        @fact f.edge_to_subgraph[n(:g2).i[:out].edge].internal_edges --> Set{Edge}([e(:q_y2)])
-        @fact f.edge_to_subgraph[n(:g3).i[:out].edge].internal_edges --> Set{Edge}([e(:q_y3)])
+        @fact f.edge_to_subgraph[n(:g1).i[:mean].edge].internal_edges --> m_set
+        @fact f.edge_to_subgraph[n(:g1).i[:precision].edge].internal_edges --> gam_set
+        @fact f.edge_to_subgraph[n(:g1).i[:out].edge].internal_edges --> Set{Edge}([ForneyLab.e(:q_y1)])
+        @fact f.edge_to_subgraph[n(:g2).i[:out].edge].internal_edges --> Set{Edge}([ForneyLab.e(:q_y2)])
+        @fact f.edge_to_subgraph[n(:g3).i[:out].edge].internal_edges --> Set{Edge}([ForneyLab.e(:q_y3)])
     end
 end
 
@@ -103,8 +103,8 @@ facts("vagueQDistributions() should set vague marginals at the appropriate place
     n_sections = length(data)
 
     f = VMP.QFactorization()
-    for edge in [e(:q_y1)]
-        f = VMP.factorize!(Set{Edge}({edge}), f)
+    for edge in [ForneyLab.e(:q_y1)]
+        f = VMP.factorize!(Set{Edge}(Edge[edge]), f)
     end
     VMP.generateSchedule!(f) # Generate and store internal and external schedules on factorization subgraphs
     qs = VMP.vagueQDistributions(f)
@@ -138,7 +138,7 @@ facts("vagueQDistributions!() should reset already present q distributions to va
     @fact qs[(n(:g1), gam_subgraph)].distribution --> vague(GammaDistribution)
     @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(GaussianDistribution)
 
-    step(algo)
+    ForneyLab.step(algo)
 
     # Distributions after step() should not be vague
     @fact qs[(n(:g1), m_subgraph)].distribution == vague(GaussianDistribution) --> false

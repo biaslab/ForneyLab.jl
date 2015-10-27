@@ -44,7 +44,7 @@ function generateSchedule!(sg::Subgraph, graph::FactorGraph=currentGraph())
         end
 
         # Store the interfaces connected to external nodes. These need to be calculated with a vmp update rule instead of sumproduct.
-        external_nodes_interfaces = [external_nodes_interfaces, g_node.interfaces]
+        external_nodes_interfaces = [external_nodes_interfaces; g_node.interfaces]
     end
 
     # Make sure that messages are propagated to the wraps
@@ -52,7 +52,7 @@ function generateSchedule!(sg::Subgraph, graph::FactorGraph=currentGraph())
     sg_nodes = nodes(sg)
     for wrap in wraps(graph)
         if wrap.source in sg_nodes # Timewrap is the responsibility of this subgraph
-            interface_list_for_wraps = [interface_list_for_wraps, SumProduct.generateScheduleByDFS!(wrap.source.interfaces[1].partner, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
+            interface_list_for_wraps = [interface_list_for_wraps; SumProduct.generateScheduleByDFS!(wrap.source.interfaces[1].partner, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
         end
     end
 
@@ -61,18 +61,18 @@ function generateSchedule!(sg::Subgraph, graph::FactorGraph=currentGraph())
     for entry in keys(graph.write_buffers)
         if typeof(entry) == Interface
             if entry.edge in sg.internal_edges # Interface is the responsibility of sg
-                interface_list_for_write_buffers = [interface_list_for_write_buffers, SumProduct.generateScheduleByDFS!(entry, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
+                interface_list_for_write_buffers = [interface_list_for_write_buffers; SumProduct.generateScheduleByDFS!(entry, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
             end
         elseif typeof(entry) == Edge
             if entry in sg.internal_edges # Edge is the responsibility of sg
-                interface_list_for_write_buffers = [interface_list_for_write_buffers, SumProduct.generateScheduleByDFS!(entry.head, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
-                interface_list_for_write_buffers = [interface_list_for_write_buffers, SumProduct.generateScheduleByDFS!(entry.tail, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
+                interface_list_for_write_buffers = [interface_list_for_write_buffers; SumProduct.generateScheduleByDFS!(entry.head, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
+                interface_list_for_write_buffers = [interface_list_for_write_buffers; SumProduct.generateScheduleByDFS!(entry.tail, Array(Interface, 0), Array(Interface, 0), allowed_edges=sg.internal_edges)]
             end
         end
     end
 
     # Convert the interface list to a schedule. The schedule for univariate comes after the internal schedule, because it can depend on inbound messages calculated earlier
-    schedule = convert(Schedule, unique([internal_interface_list, interface_list_for_univariate, interface_list_for_wraps, interface_list_for_write_buffers]))
+    schedule = convert(Schedule, unique([internal_interface_list; interface_list_for_univariate; interface_list_for_wraps; interface_list_for_write_buffers]))
     # Convert to a vmp update when a schedule entry interface belongs to an external node
     for entry in schedule
         if entry.interface in external_nodes_interfaces
@@ -84,5 +84,5 @@ function generateSchedule!(sg::Subgraph, graph::FactorGraph=currentGraph())
     sg.internal_schedule = schedule
     sg.external_schedule = Node[n for n in external_schedule] # Convert set to array
 
-    return sg 
+    return sg
 end

@@ -17,7 +17,7 @@ function attachReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, graph::Fa
     # Mini-batch assignment for read buffers.
     # buffer is divided over nodes equally.
     n_nodes = length(nodes)
-    n_samples_per_node = int(floor(length(buffer)/length(nodes)))
+    n_samples_per_node = round(Int, floor(length(buffer)/length(nodes)))
     n_samples_per_node*n_nodes == length(buffer) || error("Buffer length must a multiple of the mini-batch node array length")
     buffmat = reshape(buffer, n_nodes, n_samples_per_node) # samples for one node are present in the rows of buffmat
     for k in 1:n_nodes

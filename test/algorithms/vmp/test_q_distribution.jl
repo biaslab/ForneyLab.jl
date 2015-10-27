@@ -3,7 +3,7 @@ facts("Calculations for q distributions") do
         initializeGaussianNode(y_type=Float64)
         algo = VMP.Algorithm()
         f = algo.fields[:factorization]
-        qs = algo.fields[:q_distributions]    
+        qs = algo.fields[:q_distributions]
 
         sm = f.edge_to_subgraph[n(:node).i[:mean].edge]
         sp = f.edge_to_subgraph[n(:node).i[:precision].edge]
@@ -22,13 +22,13 @@ facts("Calculations for q distributions") do
         @fact qs[(n(:node), so)].distribution.m[1] --> 1.0
         @fact qs[(n(:node), so)].distribution.V[1,1] --> tiny
     end
-    
+
     context("Q distribution calculation for the structurally factorized GaussianNode") do
         initializeGaussianNode(y_type=GaussianDistribution)
-        algo = VMP.Algorithm(Set{Edge}({e(:edge3)}))
+        algo = VMP.Algorithm(Set{Edge}(Edge[ForneyLab.e(:edge3)]))
         f = algo.fields[:factorization]
-        qs = algo.fields[:q_distributions]    
-        
+        qs = algo.fields[:q_distributions]
+
         spm = f.edge_to_subgraph[n(:node).i[:mean].edge]
         so = f.edge_to_subgraph[n(:node).i[:out].edge]
 

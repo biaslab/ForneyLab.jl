@@ -22,9 +22,9 @@ facts("Message passing integration tests") do
             setMessage!(n(:add).i[:out], Message(GaussianDistribution()))
             schedule = SumProduct.generateSchedule(n(:add).i[:in2])
             dist = ensureMVParametrization!(execute(schedule).payload)
-            @fact dist  n(:add).i[:in2].message.payload
-            @fact isApproxEqual(dist.m, [2.0])  true
-            @fact isApproxEqual(dist.V, reshape([1.5], 1, 1))  true
+            @fact dist --> n(:add).i[:in2].message.payload
+            @fact isApproxEqual(dist.m, [2.0]) --> true
+            @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) --> true
         end
 
         context("Should handle post-processing of messages (sample)") do
