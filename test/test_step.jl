@@ -8,7 +8,7 @@ facts("Read/write buffer integration tests") do
         g = initializeBufferGraph()
         read_buffer = zeros(10)
         attachReadBuffer(n(:node_t1), read_buffer)
-        @fact g.read_buffers[n(:node_t1)] => read_buffer
+        @fact g.read_buffers[n(:node_t1)] --> read_buffer
     end
 
     context("attachReadBuffer should register a mini-batch read buffer for a TerminalNode array") do
@@ -17,9 +17,9 @@ facts("Read/write buffer integration tests") do
         graph = currentGraph()
         more_data = [1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0]
         attachReadBuffer([n(:y1), n(:y2), n(:y3)], more_data, graph)
-        @fact graph.read_buffers[n(:y1)] => [1.0, 2.0, 3.0]
-        @fact graph.read_buffers[n(:y2)] => [1.0, 2.0, 3.0]
-        @fact graph.read_buffers[n(:y3)] => [1.0, 2.0, 3.0]
+        @fact graph.read_buffers[n(:y1)] --> [1.0, 2.0, 3.0]
+        @fact graph.read_buffers[n(:y2)] --> [1.0, 2.0, 3.0]
+        @fact graph.read_buffers[n(:y3)] --> [1.0, 2.0, 3.0]
     end
 
     context("detachReadBuffer should detach a read buffer from a terminal node") do
@@ -27,7 +27,7 @@ facts("Read/write buffer integration tests") do
         read_buffer = zeros(10)
         attachReadBuffer(n(:node_t1), read_buffer)
         detachReadBuffer(n(:node_t1))
-        @fact length(g.read_buffers) => 0
+        @fact length(g.read_buffers) --> 0
     end
 
     # attachWriteBuffer
@@ -35,13 +35,13 @@ facts("Read/write buffer integration tests") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
         attachWriteBuffer(n(:node_t1).i[:out], write_buffer)
-        @fact g.write_buffers[n(:node_t1).i[:out]] => write_buffer
+        @fact g.write_buffers[n(:node_t1).i[:out]] --> write_buffer
     end
     context("attachWriteBuffer should register a write buffer for an Edge (marginal)") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
         attachWriteBuffer(e(:e), write_buffer)
-        @fact g.write_buffers[e(:e)] => write_buffer
+        @fact g.write_buffers[e(:e)] --> write_buffer
     end
 
     # detachWriteBuffer
@@ -50,14 +50,14 @@ facts("Read/write buffer integration tests") do
         write_buffer = Array(Any, 0)
         attachWriteBuffer(e(:e), write_buffer)
         detachWriteBuffer(e(:e))
-        @fact length(g.write_buffers) => 0
+        @fact length(g.write_buffers) --> 0
     end
     context("detachWriteBuffer should deregister a write buffer on an interface") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
         attachWriteBuffer(n(:node_t1).i[:out], write_buffer)
         detachWriteBuffer(n(:node_t1).i[:out])
-        @fact length(g.write_buffers) => 0
+        @fact length(g.write_buffers) --> 0
     end
 
     context("detachBuffers should deregister all read/write buffers") do
@@ -65,8 +65,8 @@ facts("Read/write buffer integration tests") do
         write_buffer = Array(Any, 0)
         attachWriteBuffer(e(:e), write_buffer)
         detachBuffers(g)
-        @fact length(g.read_buffers) => 0
-        @fact length(g.write_buffers) => 0
+        @fact length(g.read_buffers) --> 0
+        @fact length(g.write_buffers) --> 0
     end
 end
 
@@ -89,7 +89,7 @@ facts("step integration tests") do
         while !isempty(deltas)
             step(algo, g)
         end
-        @fact results => [DeltaDistribution(r) for r in cumsum([1.:10.])]
+        @fact results --> [DeltaDistribution(r) for r in cumsum([1.:10.])]
     end
 end
 
@@ -111,6 +111,6 @@ facts("run() integration tests") do
         schedule = SumProduct.generateSchedule(n(:add).i[:out])
         algo = Algorithm(schedule, g)
         run(algo, g)
-        @fact results => [DeltaDistribution(r) for r in cumsum([1.:10.])]
+        @fact results --> [DeltaDistribution(r) for r in cumsum([1.:10.])]
     end
 end

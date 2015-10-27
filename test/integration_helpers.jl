@@ -500,23 +500,23 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     # Helper function for node comparison
 
     # Check that nodes are properly connected
-    @fact typeof(node1.interfaces[1].message.payload) <: DeltaDistribution => true
-    @fact typeof(node2.interfaces[1].message.payload) <: DeltaDistribution => true
-    @fact mean(node1.interfaces[1].message.payload) => 2.0
-    @fact mean(node2.interfaces[1].message.payload) => 1.0
-    @fact mean(node1.interfaces[1].partner.message.payload) => 1.0
-    @fact mean(node2.interfaces[1].partner.message.payload) => 2.0
+    @fact typeof(node1.interfaces[1].message.payload) <: DeltaDistribution --> true
+    @fact typeof(node2.interfaces[1].message.payload) <: DeltaDistribution --> true
+    @fact mean(node1.interfaces[1].message.payload) --> 2.0
+    @fact mean(node2.interfaces[1].message.payload) --> 1.0
+    @fact mean(node1.interfaces[1].partner.message.payload) --> 1.0
+    @fact mean(node2.interfaces[1].partner.message.payload) --> 2.0
     # Check that pointers are initiatized correctly
-    @fact mean(node1.i[:out].message.payload) => 3.0
-    @fact mean(node2.i[:out].message.payload) => 1.0
-    @fact mean(node1.i[:in].partner.message.payload) => 1.0
-    @fact mean(node2.i[:out].partner.message.payload) => 2.0
+    @fact mean(node1.i[:out].message.payload) --> 3.0
+    @fact mean(node2.i[:out].message.payload) --> 1.0
+    @fact mean(node1.i[:in].partner.message.payload) --> 1.0
+    @fact mean(node2.i[:out].partner.message.payload) --> 2.0
 end
 
 function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution, update_function::Function=ForneyLab.sumProduct!)
     (rule, msg) = update_function(node, outbound_interface_index, inbound_messages...)
-    @fact node.interfaces[outbound_interface_index].message => msg
-    @fact node.interfaces[outbound_interface_index].message.payload => correct_outbound_value
+    @fact node.interfaces[outbound_interface_index].message --> msg
+    @fact node.interfaces[outbound_interface_index].message.payload --> correct_outbound_value
 
     return node.interfaces[outbound_interface_index].message
 end

@@ -44,7 +44,7 @@ end
 function attachWriteBuffer(interfaces::Vector{Interface}, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=current_graph)
     # Mini-batch assignment for write buffers.
     # After each step the batch results are appended to the buffer
-     
+
 end
 
 function detachWriteBuffer(interface::Interface, graph::FactorGraph=current_graph)
@@ -70,7 +70,7 @@ end
 
 function detachBuffers(graph::FactorGraph=current_graph)
     graph.read_buffers = Dict{TerminalNode, Vector}()
-    graph.write_buffers = Dict{Union(Edge,Interface), Vector}()
+    graph.write_buffers = Dict{Union{Edge,Interface}, Vector}()
 end
 
 function emptyWriteBuffers(graph::FactorGraph=current_graph)
@@ -86,7 +86,7 @@ function execute(algorithm::Algorithm, graph::FactorGraph=current_graph)
 end
 
 function step(algorithm::Algorithm, graph::FactorGraph=current_graph)
-    # Execute algorithm for 1 timestep. 
+    # Execute algorithm for 1 timestep.
 
     # Read buffers
     for (terminal_node, read_buffer) in graph.read_buffers

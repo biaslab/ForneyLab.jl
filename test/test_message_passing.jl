@@ -5,7 +5,7 @@
 facts("Message passing unit tests") do
     context("Should throw an error if one or more interfaces have no partner") do
         FixedGainNode(id=:node)
-        @fact_throws execute(ForneyLab.convert(Schedule, [n(:node).i[:out]]))
+        @fact_throws execute(ForneyLab.convert(Schedule, [ForneyLab.n(:node).i[:out]]))
     end
 end
 
@@ -22,15 +22,15 @@ facts("Message passing integration tests") do
             setMessage!(n(:add).i[:out], Message(GaussianDistribution()))
             schedule = SumProduct.generateSchedule(n(:add).i[:in2])
             dist = ensureMVParametrization!(execute(schedule).payload)
-            @fact dist => n(:add).i[:in2].message.payload
-            @fact isApproxEqual(dist.m, [2.0]) => true
-            @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) => true
+            @fact dist  n(:add).i[:in2].message.payload
+            @fact isApproxEqual(dist.m, [2.0])  true
+            @fact isApproxEqual(dist.V, reshape([1.5], 1, 1))  true
         end
 
         context("Should handle post-processing of messages (sample)") do
             initializeAdditionNode(Any[Message(GaussianDistribution()), Message(GaussianDistribution()), Message(GaussianDistribution())])
             schedule = [ScheduleEntry(n(:add_node).i[:out], sumProduct!, sample)]
-            @fact typeof(execute(schedule).payload) => DeltaDistribution{Float64}
+            @fact typeof(execute(schedule).payload) --> DeltaDistribution{Float64}
         end
 
         context("Should work as expeced in loopy graphs") do
@@ -40,8 +40,8 @@ facts("Message passing integration tests") do
             for count = 1:100
                 execute(schedule)
             end
-            @fact typeof(n(:driver).i[:out].message) => Message{GaussianDistribution}
-            @fact ensureMVParametrization!(n(:driver).i[:out].message.payload).m => 100.0 # For stop conditions at 100 cycles deep
+            @fact typeof(n(:driver).i[:out].message) --> Message{GaussianDistribution}
+            @fact ensureMVParametrization!(n(:driver).i[:out].message.payload).m --> 100.0 # For stop conditions at 100 cycles deep
         end
 
         context("Should be called repeatedly until convergence") do
@@ -57,7 +57,7 @@ facts("Message passing integration tests") do
                 converged = isApproxEqual(prev_dist.m, dist.m)
                 prev_dist = deepcopy(dist)
             end
-            @fact isApproxEqual(n(:driver).i[:out].message.payload.m, 0.0) => true
+            @fact isApproxEqual(n(:driver).i[:out].message.payload.m, 0.0) --> true
         end
     end
 
@@ -68,9 +68,9 @@ facts("Message passing integration tests") do
         schedule = SumProduct.generateSchedule(n(:add).i[:in2])
         execute(schedule)
         clearMessage!(n(:add).i[:in2])
-        @fact n(:add).i[:in2].message => nothing
+        @fact n(:add).i[:in2].message --> nothing
         clearMessages!(n(:add))
-        @fact n(:add).i[:in1].message => nothing
-        @fact n(:add).i[:out].message => nothing
+        @fact n(:add).i[:in1].message --> nothing
+        @fact n(:add).i[:out].message --> nothing
     end
 end

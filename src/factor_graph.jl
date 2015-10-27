@@ -21,7 +21,7 @@ type FactorGraph
 
     # Connections to the outside world
     read_buffers::Dict{TerminalNode, Vector}
-    write_buffers::Dict{Union(Edge,Interface), Vector}
+    write_buffers::Dict{Union{Edge,Interface}, Vector}
 end
 
 currentGraph() = current_graph::FactorGraph
@@ -135,7 +135,7 @@ function Base.delete!(graph::FactorGraph, eg::Edge)
     eg.tail.partner = nothing
     eg.head.edge = nothing
     eg.tail.edge = nothing
-    
+
     return graph
 end
 
