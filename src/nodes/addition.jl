@@ -50,7 +50,10 @@ function sumProduct!(node::AdditionNode,
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Nothing)
-    (isProper(msg_in1.payload) && isProper(msg_in2.payload)) || error("Improper input distributions are not supported")
+    # Check well convergence of calculation rule in case of improper inputs
+    if ensureMWParametrization!(msg_in1.payload).W + ensureMWParametrization!(msg_in2.payload).W <= 0
+        error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s)")
+    end
     dist_out = ensureMessage!(node.i[:out], GaussianDistribution).payload
     dist_out.m = ensureMVParametrization!(msg_in1.payload).m + ensureMVParametrization!(msg_in2.payload).m
     dist_out.V = msg_in1.payload.V + msg_in2.payload.V
@@ -67,7 +70,10 @@ function sumProduct!(   node::AdditionNode,
                         msg_in1::Message{GaussianDistribution},
                         ::Nothing,
                         msg_out::Message{GaussianDistribution})
-    (isProper(msg_in1.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
+    # Check well convergence of calculation rule in case of improper inputs
+    if ensureMWParametrization!(msg_in1.payload).W + ensureMWParametrization!(msg_out.payload).W <= 0
+        error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s)")
+    end
     dist_result = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
     dist_result.m = ensureMVParametrization!(msg_out.payload).m - ensureMVParametrization!(msg_in1.payload).m
     dist_result.V = msg_in1.payload.V + msg_out.payload.V

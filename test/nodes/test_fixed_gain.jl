@@ -78,6 +78,18 @@ facts("FixedGainNode unit tests") do
                                     [Message(GaussianDistribution(xi=6.0, W=2.0)), nothing],
                                     GaussianDistribution(xi=3.0, W=0.5))
         end
+        context("Improper distributions") do
+            # Backward message
+            validateOutboundMessage(FixedGainNode(2.0),
+                                    1,
+                                    [nothing, Message(GaussianDistribution(m=3.0, V=-5.0))],
+                                    GaussianDistribution(m=1.5, V=-1.25))
+            # Forward message
+            validateOutboundMessage(FixedGainNode(2.0),
+                                    2,
+                                    [Message(GaussianDistribution(m=3.0, V=-5.0)), nothing],
+                                    GaussianDistribution(m=6.0, V=-20.0))
+        end
     end
 
     context("FixedGainNode should provide sumProduct! for MvGaussianDistribution") do

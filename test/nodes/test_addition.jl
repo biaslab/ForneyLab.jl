@@ -117,6 +117,25 @@ facts("AdditionNode unit tests") do
                                     [Message(GaussianDistribution(m=1.0, V=0.5)), nothing, Message(GaussianDistribution(m=3.0, W=4.0))],
                                     GaussianDistribution(m=2.0, W=4.0/3.0))
         end
+        context("Support for improper GaussianDistributions") do
+            # Forward message
+            validateOutboundMessage(AdditionNode(),
+                                    3,
+                                    [Message(GaussianDistribution(m=1.0, V=1.0)), Message(GaussianDistribution(m=2.0, V=-2.0)), nothing],
+                                    GaussianDistribution(m=3.0, V=-1.0))
+            # Backward message
+            validateOutboundMessage(AdditionNode(),
+                                    1,
+                                    [nothing, Message(GaussianDistribution(m=2.0, V=-2.0)), Message(GaussianDistribution(m=3.0, V=1.0))],
+                                    GaussianDistribution(m=1.0, V=-1.0))
+            validateOutboundMessage(AdditionNode(),
+                                    2,
+                                    [Message(GaussianDistribution(m=1.0, V=-2.0)), nothing, Message(GaussianDistribution(m=3.0, V=1.0))],
+                                    GaussianDistribution(m=2.0, V=-1.0))
+            addition_node = AdditionNode()
+            @fact_throws sumProduct!(addition_node, 3, [Message(GaussianDistribution(m=1.0, V=-1.0)), Message(GaussianDistribution(m=2.0, V=-2.0)), nothing])
+            @fact_throws sumProduct!(addition_node, 1, [nothing, Message(GaussianDistribution(m=1.0, V=-1.0)), Message(GaussianDistribution(m=2.0, V=-2.0))])
+        end
     end
 
     context("AdditionNode should provide sumProduct! for combinations of GaussianDistribution and DeltaDistribution") do

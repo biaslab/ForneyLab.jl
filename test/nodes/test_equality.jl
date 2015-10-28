@@ -33,13 +33,20 @@ facts("EqualityNode unit tests") do
     end
 
     context("EqualityNode should provide sumProduct! for GaussianDistribution") do
-        inbound_dist = GaussianDistribution(xi=0.6, W=0.2)
-        xi = inbound_dist.xi
-        W = inbound_dist.W
-        validateOutboundMessage(EqualityNode(),
-                                3,
-                                [Message(inbound_dist), Message(inbound_dist), nothing],
-                                GaussianDistribution(xi=(xi + xi), W=(W + W)))
+        context("Proper input distributions") do
+            inbound_dist = GaussianDistribution(xi=0.6, W=0.2)
+            validateOutboundMessage(EqualityNode(),
+                                    3,
+                                    [Message(inbound_dist), Message(inbound_dist), nothing],
+                                    GaussianDistribution(xi=(0.6 + 0.6), W=(0.2 + 0.2)))
+        end
+        context("Improper input distributions") do
+            inbound_dist = GaussianDistribution(xi=0.6, W=0.2)
+            validateOutboundMessage(EqualityNode(),
+                                    3,
+                                    [Message(GaussianDistribution(xi=0.6, W=1.0)), Message(GaussianDistribution(xi=0.6, W=-0.2)), nothing],
+                                    GaussianDistribution(xi=1.2, W=0.8))
+        end
     end
 
     context("EqualityNode should provide sumProduct! for MvGaussianDistribution") do

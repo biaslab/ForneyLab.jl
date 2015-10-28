@@ -59,7 +59,6 @@ function equalityRule!(dist_result::GaussianDistribution, dist_1::GaussianDistri
     # The result of the Gaussian equality rule applied to dist_1 and dist_2 is written to dist_result
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
-    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     ensureXiWParametrization!(dist_1)
     ensureXiWParametrization!(dist_2)
     dist_result.m = NaN
