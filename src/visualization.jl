@@ -56,7 +56,7 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
     # Return a string representing the graph in DOT format
     # External edges are edges of which only the head or tail is in the nodes set
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)
-    node_type_symbols = Dict{Node, AbstractString}(AdditionNode => "+",
+    node_type_symbols = Dict{DataType, AbstractString}(AdditionNode => "+",
                             EqualityNode => "=")
     dot = "digraph G{splines=true;sep=\"+25,25\";overlap=scalexy;nodesep=1.6;compound=true;\n"
     dot *= "\tnode [shape=box, width=1.0, height=1.0, fontsize=9];\n"
@@ -72,7 +72,7 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
             end
         end
     end
-    
+
     for edge in edges
         dot *= edgeDot(edge)
     end
@@ -98,12 +98,12 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
     if !isempty(wraps)
         # Add edges to visualize time wraps
         for wrap in wraps
-            dot *= "\t$(object_id(wrap.source)) -> $(object_id(wrap.sink)) [style=\"dotted\" color=\"green\"]\n"             
+            dot *= "\t$(object_id(wrap.source)) -> $(object_id(wrap.sink)) [style=\"dotted\" color=\"green\"]\n"
         end
     end
 
     dot *= "}";
-    
+
     return dot
 end
 
@@ -113,7 +113,7 @@ function edgeDot(edge::Edge; is_external_edge=false)
     tail_label = "$tail_id $(handle(edge.tail))"
     head_id = findfirst(edge.head.node.interfaces, edge.head)
     head_label = "$head_id $(handle(edge.head))"
-    dot = "\t$(object_id(edge.tail.node)) -> $(object_id(edge.head.node)) " 
+    dot = "\t$(object_id(edge.tail.node)) -> $(object_id(edge.head.node)) "
     if is_external_edge
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", style=\"dashed\" color=\"red\"]\n"
     else
