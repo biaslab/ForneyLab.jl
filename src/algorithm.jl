@@ -14,7 +14,7 @@ end
 function Algorithm(schedule::Schedule, graph::FactorGraph=currentGraph())
     # Constructs an algorithm that executes a predifined schedule
     exec(fields) = execute(fields[:schedule])
-    return Algorithm(exec, Dict{Any,Any}(:schedule => schedule))
+    return Algorithm(exec, Dict{Symbol,Any}(:schedule => schedule))
 end
 
 function show(io::IO, algo::Algorithm)

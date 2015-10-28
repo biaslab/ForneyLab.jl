@@ -33,7 +33,7 @@ FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
                                             Dict{DataType, Int}(),
                                             false,
                                             Dict{TerminalNode, Vector}(),
-                                            Dict{Union(Edge,Interface), Vector}())) # Initialize a new factor graph; automatically sets current_graph
+                                            Dict{Union{Edge,Interface}, Vector}())) # Initialize a new factor graph; automatically sets current_graph
 
 function show(io::IO, factor_graph::FactorGraph)
     println(io, "FactorGraph")
