@@ -14,21 +14,27 @@ include("test_helpers.jl") # Tests for ForneyLab helper methods
 
 # Probability distribution test
 facts("General ProbabilityDistribution unit tests") do
-    for probdist_type in subtypes(ProbabilityDistribution)
+    for probdist_type in [subtypes(UnivariateProbabilityDistribution), subtypes(MultivariateProbabilityDistribution)]
         context("$(probdist_type) should have a default constructor and a == operator") do
             @fact probdist_type()==probdist_type() => true
+        end
+        context("$(probdist_type) should provide a isProper method") do
+            @fact isProper(probdist_type()) => true
         end
     end
 end
 
 # Distribution tests
-include("distributions/test_delta.jl")
-include("distributions/test_gaussian.jl")
-include("distributions/test_gamma.jl")
-include("distributions/test_inverse_gamma.jl")
-include("distributions/test_normal_gamma.jl")
-include("distributions/test_students_t.jl")
-include("distributions/test_beta.jl")
+include("distributions/univariate/test_delta.jl")
+include("distributions/univariate/test_gaussian.jl")
+include("distributions/univariate/test_gamma.jl")
+include("distributions/univariate/test_inverse_gamma.jl")
+include("distributions/univariate/test_students_t.jl")
+include("distributions/univariate/test_beta.jl")
+
+include("distributions/multivariate/test_mv_delta.jl")
+include("distributions/multivariate/test_mv_gaussian.jl")
+include("distributions/multivariate/test_normal_gamma.jl")
 
 # Basic building blocks and methods tests
 include("test_interface.jl")

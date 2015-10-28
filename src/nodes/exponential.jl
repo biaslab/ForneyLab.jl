@@ -28,7 +28,7 @@ type ExponentialNode <: Node
     function ExponentialNode(; id=generateNodeId(ExponentialNode))
         self = new(id, Array(Interface, 2), Dict{Symbol,Interface}())
         addNode!(current_graph, self)
- 
+
         for (iface_index, iface_handle) in enumerate([:in, :out])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
@@ -45,39 +45,40 @@ isDeterministic(::ExponentialNode) = true
 ############################################
 
 # Forward message
-function sumProduct!(node::ExponentialNode,
-                     outbound_interface_index::Int,
-                     msg_in::Message{GaussianDistribution},
-                     msg_out::Nothing)
+function sumProduct!(   node::ExponentialNode,
+                        outbound_interface_index::Int,
+                        msg_in::Message{GaussianDistribution},
+                        msg_out::Nothing)
+    isProper(msg_in.payload) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.i[:out], GammaDistribution).payload
 
     ensureMWParametrization!(msg_in.payload)
-    (length(msg_in.payload.m) == 1) || error("Forward update for ExponentialNode only defined for univariate input")
 
-    gam = msg_in.payload.W[1,1]
-    mu = msg_in.payload.m[1]
+    gam = msg_in.payload.W
+    mu = msg_in.payload.m
 
     dist_out.a = gam + 1
-    dist_out.b = gam/(exp(mu))
+    dist_out.b = gam / exp(mu)
 
     return (:exponential_forward_gaussian,
             node.interfaces[outbound_interface_index].message)
 end
 
 # Backward message
-function sumProduct!(node::ExponentialNode,
-                     outbound_interface_index::Int,
-                     msg_in::Nothing,
-                     msg_out::Message{GammaDistribution})
+function sumProduct!(   node::ExponentialNode,
+                        outbound_interface_index::Int,
+                        msg_in::Nothing,
+                        msg_out::Message{GammaDistribution})
+    isProper(msg_out.payload) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.i[:in], GaussianDistribution).payload
 
     a = msg_out.payload.a
     b = msg_out.payload.b
 
-    dist_out.m = [log((a-1)/b)]
-    invalidate!(dist_out.V)
-    dist_out.W = reshape([a-1], 1, 1)
-    invalidate!(dist_out.xi)
+    dist_out.m = log((a-1)/b)
+    dist_out.V = NaN
+    dist_out.W = a-1
+    dist_out.xi = NaN
 
     return (:exponential_backward_gaussian,
             node.interfaces[outbound_interface_index].message)
@@ -89,11 +90,10 @@ end
 ############################################
 
 # Forward message
-function sumProduct!(node::ExponentialNode,
-                     outbound_interface_index::Int,
-                     msg_in::Message{DeltaDistribution{Float64}},
-                     msg_out::Nothing)
-    length(msg_in.payload.m) == 1 || error("ExponentialNode only defined for univariate variables")
+function sumProduct!(   node::ExponentialNode,
+                        outbound_interface_index::Int,
+                        msg_in::Message{DeltaDistribution{Float64}},
+                        msg_out::Nothing)
     dist_out = ensureMessage!(node.i[:out], DeltaDistribution{Float64}).payload
 
     dist_out.m = exp(msg_in.payload.m)
@@ -103,11 +103,10 @@ function sumProduct!(node::ExponentialNode,
 end
 
 # Backward message
-function sumProduct!(node::ExponentialNode,
-                     outbound_interface_index::Int,
-                     msg_in::Nothing,
-                     msg_out::Message{DeltaDistribution{Float64}})
-    length(msg_out.payload.m) == 1 || error("ExponentialNode only defined for univariate variables")
+function sumProduct!(   node::ExponentialNode,
+                        outbound_interface_index::Int,
+                        msg_in::Nothing,
+                        msg_out::Message{DeltaDistribution{Float64}})
     dist_out = ensureMessage!(node.i[:in], DeltaDistribution{Float64}).payload
 
     dist_out.m = log(msg_out.payload.m)

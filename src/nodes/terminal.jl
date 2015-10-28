@@ -31,9 +31,9 @@ type TerminalNode <: Node
         end
         self = new(id, deepcopy(value), Array(Interface, 1), Dict{Symbol,Interface}())
         addNode!(current_graph, self)
- 
+
         self.i[:out] = self.interfaces[1] = Interface(self)
- 
+
         return self
     end
 end
@@ -45,9 +45,9 @@ isDeterministic(::TerminalNode) = false # Edge case for deterministicness
 # Implement firstFreeInterface since EqualityNode is symmetrical in its interfaces
 firstFreeInterface(node::TerminalNode) = (node.interfaces[1].partner==nothing) ? node.interfaces[1] : error("No free interface on $(typeof(node)) $(node.id)")
 
-function sumProduct!(node::TerminalNode,
-                            outbound_interface_index::Int,
-                            ::Any)
+function sumProduct!(   node::TerminalNode,
+                        outbound_interface_index::Int,
+                        ::Any)
     # Calculate an outbound message. The TerminalNode does not accept incoming messages.
     # This function is not exported, and is only meant for internal use.
     if (typeof(node.interfaces[1].message) != Message{typeof(node.value)}) || (node.interfaces[1].message.payload != node.value)

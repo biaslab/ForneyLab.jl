@@ -31,18 +31,18 @@ facts("TerminalNode unit tests") do
         (rule, msg) = ForneyLab.sumProduct!(n(:node), 1, nothing)
         @fact n(:node).interfaces[1].message => msg
         @fact typeof(n(:node).interfaces[1].message) => Message{GaussianDistribution}
-        @fact n(:node).interfaces[1].message.payload.m => [2.0]
-        @fact n(:node).interfaces[1].message.payload.V => reshape([4.0], 1, 1)
+        @fact n(:node).interfaces[1].message.payload.m => 2.0
+        @fact n(:node).interfaces[1].message.payload.V => 4.0
     end
 
     context("TerminalNode should propagate a DeltaDistribution") do
         FactorGraph()
-        TerminalNode(DeltaDistribution([1.0, 2.0]), id=:node)
+        TerminalNode(DeltaDistribution(2.0), id=:node)
         @fact n(:node).interfaces[1].message => nothing
         (rule, msg) = ForneyLab.sumProduct!(n(:node), 1, nothing)
         @fact n(:node).interfaces[1].message => msg
         @fact typeof(n(:node).interfaces[1].message) <: Message => true
         @fact typeof(n(:node).interfaces[1].message.payload) <: DeltaDistribution => true
-        @fact n(:node).interfaces[1].message.payload.m => [1.0, 2.0]
+        @fact n(:node).interfaces[1].message.payload.m => 2.0
     end
 end

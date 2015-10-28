@@ -20,7 +20,7 @@
 #
 # Interfaces:
 #   1 i[:in1], 2 i[:in2], 3 i[:out]
-#   
+#
 # Construction:
 #   GainAdditionNode([1.0], id=:my_node)
 #
@@ -37,7 +37,7 @@ type GainAdditionNode <: Node
     function GainAdditionNode(A::Union(Array{Float64},Float64)=1.0; id=generateNodeId(GainAdditionNode))
         self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(current_graph, self)
- 
+
         for (iface_index, iface_handle) in enumerate([:in1, :in2, :out])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
@@ -54,8 +54,76 @@ end
 
 isDeterministic(::GainAdditionNode) = true
 
+
 ############################################
 # GaussianDistribution methods
+############################################
+
+# Forward to OUT
+function sumProduct!(   node::GainAdditionNode,
+                        outbound_interface_index::Int,
+                        in1::Message{GaussianDistribution},
+                        in2::Message{GaussianDistribution},
+                        ::Nothing)
+    (outbound_interface_index == 3) || error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
+    (isProper(in1.payload) && isProper(in2.payload)) || error("Improper input distributions are not supported")
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+    dist_1 = ensureMVParametrization!(in1.payload)
+    dist_2 = ensureMVParametrization!(in2.payload)
+    dist_out.m = dist_2.m + node.A[1,1]*dist_1.m
+    dist_out.V = dist_2.V + node.A[1,1]^2 * dist_1.V
+    dist_out.xi = dist_out.W = NaN
+
+    return (:gain_addition_gaussian_forward,
+            node.interfaces[outbound_interface_index].message)
+end
+
+# Backward to IN2
+function sumProduct!(   node::GainAdditionNode,
+                        outbound_interface_index::Int,
+                        in1::Message{GaussianDistribution},
+                        ::Nothing,
+                        out::Message{GaussianDistribution})
+    (outbound_interface_index == 2) || error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
+    (isProper(in1.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+    dist_1 = ensureMVParametrization!(in1.payload)
+    dist_3 = ensureMVParametrization!(out.payload)
+    dist_out.m  = dist_3.m - node.A[1,1]*dist_1.m
+    dist_out.V  = dist_3.V + node.A[1,1]^2 * dist_1.V
+    dist_out.xi = dist_out.W = NaN
+
+    return (:gain_addition_gaussian_backward_in2,
+            node.interfaces[outbound_interface_index].message)
+end
+
+# Backward to IN1
+function sumProduct!(   node::GainAdditionNode,
+                        outbound_interface_index::Int,
+                        ::Nothing,
+                        in2::Message{GaussianDistribution},
+                        out::Message{GaussianDistribution})
+    (outbound_interface_index == 1) || error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
+    (isProper(in2.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")
+    dist_temp = GaussianDistribution()
+
+    dist_temp.m = ensureMVParametrization!(out.payload).m - ensureMVParametrization!(in2.payload).m
+    dist_temp.V = in2.payload.V + out.payload.V
+    dist_temp.W = dist_temp.xi = NaN
+
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+    ensureXiWParametrization!(dist_temp)
+    dist_out.xi = node.A[1,1] * dist_temp.xi
+    dist_out.W = (node.A[1,1])^2 * dist_temp.W
+    dist_out.m = dist_out.V = NaN
+
+    return (:gain_addition_gaussian_backward_in1,
+        node.interfaces[outbound_interface_index].message)
+end
+
+
+############################################
+# MvGaussianDistribution methods
 ############################################
 
 # Rule set for forward propagation ({in1,in2}-->out)
@@ -75,12 +143,12 @@ backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z
 # Forward to OUT
 function sumProduct!(node::GainAdditionNode,
                             outbound_interface_index::Int,
-                            in1::Message{GaussianDistribution},
-                            in2::Message{GaussianDistribution},
+                            in1::Message{MvGaussianDistribution},
+                            in2::Message{MvGaussianDistribution},
                             ::Nothing)
-
+    (isProper(in1.payload) && isProper(in2.payload)) || error("Improper input distributions are not supported")
     if outbound_interface_index == 3
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
 
         dist_1 = in1.payload
         dist_2 = in2.payload
@@ -90,16 +158,16 @@ function sumProduct!(node::GainAdditionNode,
         if isValid(dist_1.m) && isValid(dist_1.V) && isValid(dist_2.m) && isValid(dist_2.V)
             dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
             dist_out.V  = forwardGainAdditionVRule(node.A, dist_2.V, dist_1.V)
-            invalidate!(dist_out.W) 
+            invalidate!(dist_out.W)
             invalidate!(dist_out.xi)
         elseif isValid(dist_1.m) && isValid(dist_1.W) && isValid(dist_2.m) && isValid(dist_2.W)
             dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
-            invalidate!(dist_out.V) 
+            invalidate!(dist_out.V)
             dist_out.W  = forwardGainAdditionWRule(node.A, dist_2.W, dist_1.W)
             invalidate!(dist_out.xi)
         elseif isValid(dist_1.xi) && isValid(dist_1.W) && isValid(dist_2.xi) && isValid(dist_2.W)
-            invalidate!(dist_out.m) 
-            invalidate!(dist_out.V) 
+            invalidate!(dist_out.m)
+            invalidate!(dist_out.V)
             dist_out.W  = forwardGainAdditionWRule(node.A, dist_2.W, dist_1.W)
             dist_out.xi = forwardGainAdditionXiRule(node.A, dist_2.xi, dist_1.xi, dist_2.W, dist_1.W)
         elseif (isValid(dist_1.m) && isValid(dist_1.V)) || (isValid(dist_2.m) && isValid(dist_2.V))
@@ -109,7 +177,7 @@ function sumProduct!(node::GainAdditionNode,
             ensureMVParametrization!(dist_2)
             dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
             dist_out.V  = forwardGainAdditionVRule(node.A, dist_2.V, dist_1.V)
-            invalidate!(dist_out.W) 
+            invalidate!(dist_out.W)
             invalidate!(dist_out.xi)
         elseif (isValid(dist_1.m) && isValid(dist_1.W)) || (isValid(dist_2.m) && isValid(dist_2.W))
             # Fallback: at least one inbound msg is in (m,W) parametrization
@@ -117,7 +185,7 @@ function sumProduct!(node::GainAdditionNode,
             ensureMWParametrization!(dist_1)
             ensureMWParametrization!(dist_2)
             dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
-            invalidate!(dist_out.V) 
+            invalidate!(dist_out.V)
             dist_out.W  = forwardGainAdditionWRule(node.A, dist_2.W, dist_1.W)
             invalidate!(dist_out.xi)
         else
@@ -126,7 +194,7 @@ function sumProduct!(node::GainAdditionNode,
             ensureMVParametrization!(dist_2)
             dist_out.m  = forwardGainAdditionMRule(node.A, dist_2.m, dist_1.m)
             dist_out.V  = forwardGainAdditionVRule(node.A, dist_2.V, dist_1.V)
-            invalidate!(dist_out.W) 
+            invalidate!(dist_out.W)
             invalidate!(dist_out.xi)
         end
 
@@ -140,12 +208,12 @@ end
 # Backward to IN2
 function sumProduct!(node::GainAdditionNode,
                             outbound_interface_index::Int,
-                            in1::Message{GaussianDistribution},
+                            in1::Message{MvGaussianDistribution},
                             ::Nothing,
-                            out::Message{GaussianDistribution})
-
+                            out::Message{MvGaussianDistribution})
+    (isProper(in1.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")
     if outbound_interface_index == 2
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
 
         dist_1 = in1.payload
         dist_3 = out.payload
@@ -155,16 +223,16 @@ function sumProduct!(node::GainAdditionNode,
         if isValid(dist_1.m) && isValid(dist_1.V) && isValid(dist_3.m) && isValid(dist_3.V)
             dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
             dist_out.V  = backwardIn2GainAdditionVRule(node.A, dist_1.V, dist_3.V)
-            invalidate!(dist_out.W) 
+            invalidate!(dist_out.W)
             invalidate!(dist_out.xi)
         elseif isValid(dist_1.m) && isValid(dist_1.W) && isValid(dist_3.m) && isValid(dist_3.W)
             dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
-            invalidate!(dist_out.V) 
+            invalidate!(dist_out.V)
             dist_out.W  = backwardIn2GainAdditionWRule(node.A, dist_1.W, dist_3.W)
             invalidate!(dist_out.xi)
         elseif isValid(dist_1.xi) && isValid(dist_1.W) && isValid(dist_3.xi) && isValid(dist_3.W)
-            invalidate!(dist_out.m) 
-            invalidate!(dist_out.V) 
+            invalidate!(dist_out.m)
+            invalidate!(dist_out.V)
             dist_out.W  = backwardIn2GainAdditionWRule(node.A, dist_1.W, dist_3.W)
             dist_out.xi = backwardIn2GainAdditionXiRule(node.A, dist_1.xi, dist_3.xi, dist_1.W, dist_3.W)
         elseif (isValid(dist_1.m) && isValid(dist_1.V)) || (isValid(dist_3.m) && isValid(dist_3.V))
@@ -174,7 +242,7 @@ function sumProduct!(node::GainAdditionNode,
             ensureMVParametrization!(dist_3)
             dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
             dist_out.V  = backwardIn2GainAdditionVRule(node.A, dist_1.V, dist_3.V)
-            invalidate!(dist_out.W) 
+            invalidate!(dist_out.W)
             invalidate!(dist_out.xi)
         elseif (isValid(dist_1.m) && isValid(dist_1.W)) || (isValid(dist_3.m) && isValid(dist_3.W))
             # Fallback: at least one inbound msg is in (m,W) parametrization
@@ -182,7 +250,7 @@ function sumProduct!(node::GainAdditionNode,
             ensureMWParametrization!(dist_1)
             ensureMWParametrization!(dist_3)
             dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
-            invalidate!(dist_out.V) 
+            invalidate!(dist_out.V)
             dist_out.W  = backwardIn2GainAdditionWRule(node.A, dist_1.W, dist_3.W)
             invalidate!(dist_out.xi)
         else
@@ -191,7 +259,7 @@ function sumProduct!(node::GainAdditionNode,
             ensureMVParametrization!(dist_3)
             dist_out.m  = backwardIn2GainAdditionMRule(node.A, dist_1.m, dist_3.m)
             dist_out.V  = backwardIn2GainAdditionVRule(node.A, dist_1.V, dist_3.V)
-            invalidate!(dist_out.W) 
+            invalidate!(dist_out.W)
             invalidate!(dist_out.xi)
         end
 
@@ -206,13 +274,13 @@ end
 function sumProduct!(node::GainAdditionNode,
                             outbound_interface_index::Int,
                             ::Nothing,
-                            in2::Message{GaussianDistribution},
-                            out::Message{GaussianDistribution})
-
+                            in2::Message{MvGaussianDistribution},
+                            out::Message{MvGaussianDistribution})
+    (isProper(in2.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")
     if outbound_interface_index == 1
-        dist_temp = GaussianDistribution()
+        dist_temp = MvGaussianDistribution()
         additionGaussianBackwardRule!(dist_temp, in2.payload, out.payload)
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
         fixedGainGaussianBackwardRule!(dist_out, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
 
         return (:gain_addition_gaussian_backward_in1,

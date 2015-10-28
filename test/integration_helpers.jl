@@ -16,11 +16,11 @@ type MockNode <: Node
         self = new(id, Array(Interface, num_interfaces), Dict{Symbol, Interface}())
         !haskey(ForneyLab.current_graph.nodes, id) || error("Node id $(id) already present")
         ForneyLab.current_graph.nodes[id] = self
- 
+
         for interface_index = 1:num_interfaces
             self.interfaces[interface_index] = Interface(self)
         end
-        
+
         self.i[:out] = self.interfaces[1]
 
         return(self)
@@ -434,7 +434,7 @@ function initializeCompositeGraph()
     Edge(t_in, a.i[:in1])
     Edge(t_constant, a.i[:in2])
     Edge(a.i[:out], t_out)
-    
+
     return (g, t_in, t_out)
 end
 
@@ -502,15 +502,15 @@ function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
     # Check that nodes are properly connected
     @fact typeof(node1.interfaces[1].message.payload) <: DeltaDistribution => true
     @fact typeof(node2.interfaces[1].message.payload) <: DeltaDistribution => true
-    @fact mean(node1.interfaces[1].message.payload) => [2.0]
-    @fact mean(node2.interfaces[1].message.payload) => [1.0]
-    @fact mean(node1.interfaces[1].partner.message.payload) => [1.0]
-    @fact mean(node2.interfaces[1].partner.message.payload) => [2.0]
+    @fact mean(node1.interfaces[1].message.payload) => 2.0
+    @fact mean(node2.interfaces[1].message.payload) => 1.0
+    @fact mean(node1.interfaces[1].partner.message.payload) => 1.0
+    @fact mean(node2.interfaces[1].partner.message.payload) => 2.0
     # Check that pointers are initiatized correctly
-    @fact mean(node1.i[:out].message.payload) => [3.0]
-    @fact mean(node2.i[:out].message.payload) => [1.0]
-    @fact mean(node1.i[:in].partner.message.payload) => [1.0]
-    @fact mean(node2.i[:out].partner.message.payload) => [2.0]
+    @fact mean(node1.i[:out].message.payload) => 3.0
+    @fact mean(node2.i[:out].message.payload) => 1.0
+    @fact mean(node1.i[:in].partner.message.payload) => 1.0
+    @fact mean(node2.i[:out].partner.message.payload) => 2.0
 end
 
 function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution, update_function::Function=ForneyLab.sumProduct!)
