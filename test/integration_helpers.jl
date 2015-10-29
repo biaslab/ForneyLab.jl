@@ -1,5 +1,7 @@
 # This file contains intgration helper functions for constructing and validating context graphs
 
+import Base.==
+
 #############
 # Mocks
 #############

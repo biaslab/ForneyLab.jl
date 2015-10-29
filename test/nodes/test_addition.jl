@@ -2,6 +2,11 @@
 # Unit tests
 #####################
 
+include("../../src/ForneyLab.jl")
+using ForneyLab
+using FactCheck
+include("../integration_helpers.jl")
+
 facts("AdditionNode unit tests") do
     context("AdditionNode() should initialize an AdditionNode with 3 interfaces") do
         FactorGraph()

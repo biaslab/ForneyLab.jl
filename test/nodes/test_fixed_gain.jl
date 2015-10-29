@@ -1,6 +1,10 @@
 #####################
 # Unit tests
 #####################
+include("../../src/ForneyLab.jl")   
+using ForneyLab                     
+using FactCheck
+include("../integration_helpers.jl")
 
 facts("FixedGainNode unit tests") do
     context("FixedGainNode() should initialize a FixedGainNode with 2 interfaces") do

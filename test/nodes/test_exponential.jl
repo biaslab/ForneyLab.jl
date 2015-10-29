@@ -1,6 +1,10 @@
 #####################
 # Unit tests
 #####################
+include("../../src/ForneyLab.jl")   
+using ForneyLab                     
+using FactCheck
+include("../integration_helpers.jl")
 
 facts("ExponentialNode unit tests") do
     context("ExponentialNode should initialize a ExponentialNode with 2 interfaces") do

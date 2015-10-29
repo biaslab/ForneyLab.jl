@@ -1,6 +1,10 @@
 #####################
 # Unit tests
 #####################
+include("../../src/ForneyLab.jl")   
+using ForneyLab                     
+using FactCheck                     
+include("../integration_helpers.jl")
 
 facts("TerminalNode unit tests") do
     context("PriorNode should be a type alias to TerminalNode") do

@@ -1,3 +1,8 @@
+include("../../src/ForneyLab.jl")   
+using ForneyLab                     
+using FactCheck                     
+include("../integration_helpers.jl")
+
 facts("CompositeNode integration tests") do
     (g, t_in, t_out) = initializeCompositeGraph()
 
