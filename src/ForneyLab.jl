@@ -102,7 +102,7 @@ function __init__()
                                         Dict{DataType, Int}(),
                                         false,
                                         Dict{TerminalNode, Vector}(),
-                                        Dict{Union(Edge,Interface), Vector}())
+                                        Dict{Union{Edge,Interface}, Vector}())
 
     # Module-global variable to keep track of currently active Algorithm
     global current_algorithm = nothing

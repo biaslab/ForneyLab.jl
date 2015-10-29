@@ -1,10 +1,11 @@
 export isApproxEqual, huge, tiny, rules, format, isValid, invalidate!, *
 
+import Base.*, Base.==
 # ensureMatrix: ensure that the input is a 2D array or nothing
 ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
 ensureMatrix{T<:Number}(arr::Array{T, 1}) = reshape(arr, 1, 1)
 ensureMatrix(n::Number) = fill!(Array(typeof(n),1,1), n)
-ensureMatrix(n::Nothing) = nothing
+ensureMatrix(n::Void) = nothing
 
 # Constants to define smallest/largest supported numbers.
 # Used for clipping quantities to ensure numerical stability.
@@ -57,9 +58,9 @@ end
 isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < tiny
 
 # isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from.
-isRoundedPosDef{T<:FloatingPoint}(arr::Array{T, 2}) = ishermitian(round(arr, int(log(10, huge)))) && isposdef(arr, :L)
+isRoundedPosDef{T<:AbstractFloat}(arr::Array{T, 2}) = ishermitian(round(arr, round(Int, log(10, huge)))) && isposdef(arr, :L)
 
-function viewFile(filename::String)
+function viewFile(filename::AbstractString)
     # Open a file with the application associated with the file type
     @windows? run(`cmd /c start $filename`) : (@osx? run(`open $filename`) : (@linux? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
 end
@@ -84,7 +85,7 @@ end
 import Base.writemime
 writemime(io::IO, ::MIME"text/html", y::HTMLString) = print(io, y.s)
 
-function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
+function rules(node_type::Union{DataType, Void}=nothing; format=:table)
     # Prints a table or list of node update rules
     rule_dict = YAML.load_file("$(Pkg.dir("ForneyLab"))/src/update_equations.yaml")
     all_rules = rule_dict["rules"]
@@ -94,7 +95,7 @@ function rules(node_type::Union(DataType, Nothing)=nothing; format=:table)
         rule_list = Dict()
         for (id, rule) in all_rules
             if rule["node"] == "$(node_type)"
-                merge!(rule_list, {id=>rule}) # Grow the list of rules
+                merge!(rule_list, Dict{Any,Any}(id=>rule)) # Grow the list of rules
             end
         end
     else

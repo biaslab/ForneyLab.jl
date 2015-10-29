@@ -5,7 +5,7 @@ type CompositeNode <: Node
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
     internal_graph::FactorGraph
-    computation_rules::Dict{(Interface,Function),Algorithm}
+    computation_rules::Dict{Tuple{Interface,Function},Algorithm}
     interfaceid_to_terminalnode::Array{TerminalNode,1}
     terminalnode_to_interface::Dict{TerminalNode,Interface}
     deterministic::Bool
@@ -16,7 +16,7 @@ function CompositeNode(graph::FactorGraph, terminals...; id=generateNodeId(Compo
     # terminals... is an array of TerminalNodes in graph, that will be bound to interfaces of the CompositeNode.
     # The ids of the terminals will be used as interface handles.
     # This function creates a new current FactorGraph so the user can continue working in the higher level graph.
-    self = CompositeNode(id, Interface[], Dict{Symbol,Interface}(), graph, Dict{(Interface,Function),Algorithm}(), TerminalNode[], Dict{TerminalNode,Interface}(), deterministic)
+    self = CompositeNode(id, Interface[], Dict{Symbol,Interface}(), graph, Dict{Tuple{Interface,Function},Algorithm}(), TerminalNode[], Dict{TerminalNode,Interface}(), deterministic)
 
     for terminal in terminals
         hasNode(graph, terminal) || error("$(node.id) not in graph")
@@ -33,7 +33,7 @@ function CompositeNode(graph::FactorGraph, terminals...; id=generateNodeId(Compo
     new_g = FactorGraph()
     addNode!(new_g, self) # Add newly created composite node to new current graph
 
-    return self    
+    return self
 end
 CompositeNode(terminals...; id=generateNodeId(CompositeNode), deterministic=false) = CompositeNode(current_graph, terminals..., id=id, deterministic=deterministic)
 
@@ -64,7 +64,7 @@ function sumProduct!(node::CompositeNode,
 
     # Move all inbound messages to corresponding terminal nodes in the internal graph
     for interface_index=1:length(node.interfaces)
-        if interface_index != outbound_interface_index 
+        if interface_index != outbound_interface_index
             node.interfaceid_to_terminalnode[interface_index].value = node.interfaces[interface_index].partner.message.payload
         end
     end

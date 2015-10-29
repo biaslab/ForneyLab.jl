@@ -16,7 +16,7 @@ function Algorithm(graph::FactorGraph=currentGraph())
 
     # Construct the execute function and its arguments
     exec(fields) = execute(fields[:schedule])
-    return ForneyLab.Algorithm(exec, {:schedule => schedule})
+    return ForneyLab.Algorithm(exec, Dict{Any,Any}(:schedule => schedule))
 end
 
 function Algorithm(outbound_interface::Interface)
@@ -26,7 +26,7 @@ function Algorithm(outbound_interface::Interface)
 
     # Construct the execute function and its arguments
     exec(fields) = execute(fields[:schedule])
-    return ForneyLab.Algorithm(exec, {:schedule => schedule})
+    return ForneyLab.Algorithm(exec, Dict{Any,Any}(:schedule => schedule))
 end
 
 function Algorithm(partial_list::Vector{Interface})
@@ -36,7 +36,7 @@ function Algorithm(partial_list::Vector{Interface})
 
     # Construct the execute function and its arguments
     exec(fields) = execute(fields[:schedule])
-    return ForneyLab.Algorithm(exec, {:schedule => schedule})
+    return ForneyLab.Algorithm(exec, Dict{Any,Any}(:schedule => schedule))
 end
 
 function Algorithm(edge::Edge)
@@ -49,7 +49,7 @@ function Algorithm(edge::Edge)
         execute(fields[:schedule])
         calculateMarginal!(fields[:edge])
     end
-    return ForneyLab.Algorithm(exec, {:schedule => schedule, :edge => edge})
+    return ForneyLab.Algorithm(exec, Dict{Any,Any}(:schedule => schedule, :edge => edge))
 end
 
 
@@ -62,7 +62,7 @@ function collectInbounds(outbound_interface::Interface)
     # This array is used to call the node update function (sumProduct!)
     # outbound_interface: the interface on which the outbound message will be updated
     # Returns: (outbound interface id, array of inbound messages)
-    
+
     outbound_interface_index = 0
     inbounds = Array(Any, 0)
     for j = 1:length(outbound_interface.node.interfaces)
@@ -72,10 +72,10 @@ function collectInbounds(outbound_interface::Interface)
             outbound_interface_index = j
             push!(inbounds, nothing) # This interface is outbound, push "nothing"
         else
-            try 
-                push!(inbounds, interface.partner.message) 
-            catch 
-                error("Cannot collect inbound message on $(interface). Make sure there is an inbound message present at this interface.") 
+            try
+                push!(inbounds, interface.partner.message)
+            catch
+                error("Cannot collect inbound message on $(interface). Make sure there is an inbound message present at this interface.")
             end
         end
     end
