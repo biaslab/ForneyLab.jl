@@ -25,6 +25,7 @@ facts("General ProbabilityDistribution unit tests") do
 end
 
 # Distribution tests
+include("distributions/univariate/test_bernoulli.jl")
 include("distributions/univariate/test_delta.jl")
 include("distributions/univariate/test_gaussian.jl")
 include("distributions/univariate/test_gamma.jl")

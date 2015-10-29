@@ -171,4 +171,19 @@ facts("EqualityNode unit tests") do
                                 [Message(DeltaDistribution(5.0)), nothing, Message(GammaDistribution())],
                                 DeltaDistribution(5.0))
     end
+
+    context("EqualityNode should provide sumProduct! for BernoulliDistribution") do
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(BernoulliDistribution(0.2)), Message(BernoulliDistribution(0.4)), nothing],
+                                BernoulliDistribution(1/7))
+        validateOutboundMessage(EqualityNode(),
+                                1,
+                                [nothing, Message(BernoulliDistribution(0.2)), Message(BernoulliDistribution(0.4))],
+                                BernoulliDistribution(1/7))
+        validateOutboundMessage(EqualityNode(),
+                                2,
+                                [Message(BernoulliDistribution(0.2)), nothing, Message(BernoulliDistribution(0.4))],
+                                BernoulliDistribution(1/7))
+    end
 end

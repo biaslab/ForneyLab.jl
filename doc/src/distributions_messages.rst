@@ -48,7 +48,8 @@ Built-in distributions
 Univariate distributions
 ------------------------
 
-Built-in univariate distributions: :class:`BetaDistribution`, :class:`DeltaDistribution`, :class:`GammaDistribution`, :class:`GaussianDistribution`, :class:`InverseGammaDistribution`, :class:`StudentsTDistribution`.
+Built-in continuous univariate distributions: :class:`BetaDistribution`, :class:`DeltaDistribution`, :class:`GammaDistribution`, :class:`GaussianDistribution`, :class:`InverseGammaDistribution`, :class:`StudentsTDistribution`.
+Discrete univariate distributions: :class:`BernoulliDistribution`.
 
 
 .. type:: BetaDistribution
@@ -134,6 +135,13 @@ Built-in univariate distributions: :class:`BetaDistribution`, :class:`DeltaDistr
     :parameters:    ``m`` ("mean", real vector), ``lambda`` ("inverse scale", positive definite real matrix), ``nu`` ("degrees of freedom", real scalar)
     :construction:  ``StudentsTDistribution(m, lambda, nu)``
     :reference:     Bishop, 2006; Pattern recognition and machine learning; appendix B
+
+
+.. type:: BernoulliDistribution
+
+    :description:   Bernoulli distribution over X ∈ {false,true} (``Pr{X=true} = p``)
+    :parameters:    ``p`` (real scalar, 0 ≤ p ≤ 1)
+    :construction:  ``BernoulliDistribution(p)``
 
 
 Multivariate distributions
@@ -231,4 +239,3 @@ Since an :class:`Edge` represents a variable in the probabilistic model, the ``e
 .. function:: getMarginalType(distributions...)
 
     Returns the type of the marginal distribution given the types of its factors (i.e. carried by forward/backward messages).
-

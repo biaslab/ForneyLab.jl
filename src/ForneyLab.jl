@@ -37,7 +37,7 @@ include("message.jl")
 
 # Univariate distributions
 include("distributions/univariate/delta.jl")
-include("distributions/bernoulli.jl")
+include("distributions/univariate/bernoulli.jl")
 include("distributions/univariate/gaussian.jl")
 include("distributions/univariate/gamma.jl")
 include("distributions/univariate/inverse_gamma.jl")

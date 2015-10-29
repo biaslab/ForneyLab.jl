@@ -127,6 +127,16 @@ function calculateMarginal!(edge::Edge, forward_dist::DeltaDistribution{Float64}
 end
 calculateMarginal!(edge::Edge, forward_dist::InverseGammaDistribution, backward_dist::DeltaDistribution{Float64}) = calculateMarginal!(edge, backward_dist, forward_dist)
 
+# BernoulliDistribution
+function calculateMarginal(forward_dist::BernoulliDistribution, backward_dist::BernoulliDistribution)
+    marg = BernoulliDistribution()
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+function calculateMarginal!(edge::Edge, forward_dist::BernoulliDistribution, backward_dist::BernoulliDistribution)
+    marg = ensureMarginal!(edge, BernoulliDistribution)
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+
 # MvDeltaDistribution
 function calculateMarginal(forward_dist::MvDeltaDistribution{Float64}, backward_dist::MvDeltaDistribution{Float64})
     marg = MvDeltaDistribution() # Do not overwrite an existing distribution

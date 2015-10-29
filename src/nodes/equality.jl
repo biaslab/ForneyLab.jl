@@ -596,3 +596,41 @@ sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_delta::Messag
 # Outbound interface 1
 sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_igam::Message{InverseGammaDistribution}, msg_delta::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
 sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Nothing, msg_delta::Message{DeltaDistribution{Float64}}, msg_igam::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
+
+############################################
+# BernoulliDistribution methods
+############################################
+
+function equalityRule!(dist_result::BernoulliDistribution, dist_1::BernoulliDistribution, dist_2::BernoulliDistribution)
+    # The result of the Bernoulli equality rule applied to dist_1 and dist_2 is written to dist_result
+    norm = dist_1.p * dist_2.p + (1 - dist_1.p) * (1 - dist_2.p)
+    (norm > 0) || error("equalityRule! for BernoulliDistribution is not wel l-defined (invalid normalization constant)")
+    dist_result.p = (dist_1.p * dist_2.p) / norm
+    return dist_result
+end
+
+function sumProduct!(   node::EqualityNode,
+                        outbound_interface_index::Int,
+                        msg_1::Message{BernoulliDistribution},
+                        msg_2::Message{BernoulliDistribution},
+                        ::Nothing)
+    # Calculate an outbound message based on the inbound messages and the node function.
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], BernoulliDistribution).payload
+
+    equalityRule!(dist_result, msg_1.payload, msg_2.payload)
+
+    return (:equality_bernoulli,
+            node.interfaces[outbound_interface_index].message)
+end
+
+sumProduct!(node::EqualityNode,
+            outbound_interface_index::Int,
+            ::Nothing,
+            msg_1::Message{BernoulliDistribution},
+            msg_2::Message{BernoulliDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+
+sumProduct!(node::EqualityNode,
+            outbound_interface_index::Int,
+            msg_1::Message{BernoulliDistribution},
+            ::Nothing,
+            msg_2::Message{BernoulliDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
