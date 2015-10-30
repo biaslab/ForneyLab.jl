@@ -4,7 +4,7 @@ type ScheduleEntry
     interface::Interface
     message_calculation_rule::Function  # Is called to calculate the message. Default is sumProduct!.
     post_processing::Function           # Optional, a function that performs post-processing on the message. Leave undefined to skip.
-    function ScheduleEntry(interface::Interface, message_calculation_rule::Function, post_processing::Union(Nothing,Function)=nothing)
+    function ScheduleEntry(interface::Interface, message_calculation_rule::Function, post_processing::Union{Void,Function}=nothing)
         if post_processing != nothing
             return new(interface, message_calculation_rule, post_processing)
         else

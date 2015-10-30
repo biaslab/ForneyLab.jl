@@ -21,7 +21,7 @@ type FactorGraph
 
     # Connections to the outside world
     read_buffers::Dict{TerminalNode, Vector}
-    write_buffers::Dict{Union(Edge,Interface), Vector}
+    write_buffers::Dict{Union{Edge,Interface}, Vector}
 end
 
 currentGraph() = current_graph::FactorGraph
@@ -33,7 +33,7 @@ FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
                                             Dict{DataType, Int}(),
                                             false,
                                             Dict{TerminalNode, Vector}(),
-                                            Dict{Union(Edge,Interface), Vector}())) # Initialize a new factor graph; automatically sets current_graph
+                                            Dict{Union{Edge,Interface}, Vector}())) # Initialize a new factor graph; automatically sets current_graph
 
 function show(io::IO, factor_graph::FactorGraph)
     println(io, "FactorGraph")
@@ -51,7 +51,7 @@ function generateNodeId(t::DataType)
     # Automatically generates a unique node id based on the current count of nodes of that type in the graph
     haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
     count = current_graph.counters[t]
-    str = replace(lowercase(string(t)), "node", "")
+    str = replace(lowercase(split(string(t),'.')[end]), "node", "")
     return symbol("$(str)$(count)")
 end
 
@@ -135,7 +135,7 @@ function Base.delete!(graph::FactorGraph, eg::Edge)
     eg.tail.partner = nothing
     eg.head.edge = nothing
     eg.tail.edge = nothing
-    
+
     return graph
 end
 

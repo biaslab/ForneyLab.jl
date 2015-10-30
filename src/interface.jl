@@ -7,9 +7,9 @@ type Interface
     # An Interface can be seen as a half-edge, that connects to a partner Interface to form a complete edge.
     # A message from node a to node b is stored at the Interface of node a that connects to an Interface of node b.
     node::Node
-    edge::Union(AbstractEdge, Nothing)
-    partner::Union(Interface, Nothing)
-    message::Union(Message, Nothing)
+    edge::Union{AbstractEdge, Void}
+    partner::Union{Interface, Void}
+    message::Union{Message, Void}
 end
 Interface(node::Node) = Interface(node, nothing, nothing, nothing)
 

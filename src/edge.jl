@@ -10,7 +10,7 @@ type Edge <: AbstractEdge
     id::Symbol
     tail::Interface
     head::Interface
-    marginal::Union(ProbabilityDistribution, Nothing)
+    marginal::Union{ProbabilityDistribution, Void}
     distribution_type::DataType
 
     function Edge(tail::Interface, head::Interface, distribution_type=Any; id=symbol("$(tail.node.id)_$(head.node.id)"))
@@ -22,7 +22,7 @@ type Edge <: AbstractEdge
         hasNode(current_graph, head.node) || error("Head node does not belong to the current graph.")
         hasNode(current_graph, tail.node) || error("Tail node does not belong to the current graph.")
         !haskey(current_graph.edges, id) || error("The edge id $(id) already exists in the current graph. Consider specifying an explicit id.")
-        
+
         self = new(id, tail, head, nothing, distribution_type)
 
         # Assign pointed to edge from interfaces

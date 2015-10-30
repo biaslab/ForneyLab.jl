@@ -18,10 +18,10 @@ facts("Call step() for VMP algorithm") do
     step(algo)
 
     ForneyLab.ensureXiWParametrization!(mean_out[end])
-    @fact round(mean_out[end].W[1,1], 2) => 1.79
-    @fact round(mean_out[end].xi[1], 2) => 1.57
-    @fact prec_out[end].a => 1.5
-    @fact round(prec_out[end].b, 2) => 1.91
+    @fact round(mean_out[end].W[1,1], 2) --> 1.79
+    @fact round(mean_out[end].xi[1], 2) --> 1.57
+    @fact prec_out[end].a --> 1.5
+    @fact round(prec_out[end].b, 2) --> 1.91
 end
 
 #####################
@@ -52,10 +52,10 @@ facts("Naive VMP implementation integration tests") do
         m_out = m_buffer[end]
         gam_out = gam_buffer[end]
 
-        @fact round(mean(m_out)[1], 3) => 4.381 
-        @fact round(var(m_out)[1, 1], 5) => 0.08313
-        @fact round(gam_out.a, 3)  => 6.000
-        @fact round(1/gam_out.b, 4) => 0.2005 # Scale
+        @fact round(mean(m_out)[1], 3) --> 4.381
+        @fact round(var(m_out)[1, 1], 5) --> 0.08313
+        @fact round(gam_out.a, 3)  --> 6.000
+        @fact round(1/gam_out.b, 4) --> 0.2005 # Scale
     end
 
     context("Gaussian node mean precision online estimation") do
@@ -82,10 +82,10 @@ facts("Naive VMP implementation integration tests") do
         # Check the results against the outcome of Infer.NET
         m_out = m_buffer[end]
         gam_out = gam_buffer[end]
-        @fact round(mean(m_out)[1], 3) => 4.941
-        @fact round(var(m_out)[1, 1], 3) => 0.000 # Infer.net works with uniform gamma priors and initialization, which makes the variance collapse, (Jeffrey's prior solves this)
-        @fact round(gam_out.a, 3) => 6.000
-        @fact round(1/gam_out.b, 4) => 0.1628 # Scale
+        @fact round(mean(m_out)[1], 3) --> 4.941
+        @fact round(var(m_out)[1, 1], 3) --> 0.000 # Infer.net works with uniform gamma priors and initialization, which makes the variance collapse, (Jeffrey's prior solves this)
+        @fact round(gam_out.a, 3) --> 6.000
+        @fact round(1/gam_out.b, 4) --> 0.1628 # Scale
     end
 end
 
@@ -110,7 +110,7 @@ facts("Structured VMP implementation integration tests") do
         gam_buffer = attachWriteBuffer(n(:gam_eq1).i[2])
 
         # Structured factorization
-        algo = VMP.Algorithm(Set{Edge}([e(:q_y1)]), n_iterations=10)
+        algo = VMP.Algorithm(Set{Edge}([ForneyLab.e(:q_y1)]), n_iterations=10)
 
         run(algo)
 
@@ -118,9 +118,9 @@ facts("Structured VMP implementation integration tests") do
         gam_out = gam_buffer[end]
         # Reference values from first run
         # TODO: obtain proper reference values
-        @fact round(mean(m_out)[1], 3) => 4.521
-        @fact round(var(m_out)[1, 1], 3) => 0.873 # Uniform gamma priors make the variance collapse
-        @fact round(gam_out.a, 3) => 6.000
-        @fact round(1/gam_out.b, 5) => 0.04549 # Scale
+        @fact round(mean(m_out)[1], 3) --> 4.521
+        @fact round(var(m_out)[1, 1], 3) --> 0.873 # Uniform gamma priors make the variance collapse
+        @fact round(gam_out.a, 3) --> 6.000
+        @fact round(1/gam_out.b, 5) --> 0.04549 # Scale
     end
 end

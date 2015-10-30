@@ -2,7 +2,7 @@ facts("SumProduct.collectInbounds() tests") do
     context("collectInbounds() should collect the required inbound messages in an array") do
         # Standard
         initializeGaussianNode()
-        @fact SumProduct.collectInbounds(n(:node).i[:out]) => (3, [n(:node).i[:mean].partner.message, n(:node).i[:precision].partner.message, nothing])
+        @fact SumProduct.collectInbounds(n(:node).i[:out]) --> (3, [n(:node).i[:mean].partner.message, n(:node).i[:precision].partner.message, nothing])
 
 
         # Include inbound message on outbound interface
@@ -10,7 +10,7 @@ facts("SumProduct.collectInbounds() tests") do
 
         # Composite node
         initializeGainEqualityNode(eye(1), Any[Message(DeltaDistribution(1.0)), Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))])
-        @fact SumProduct.collectInbounds(n(:gec_node).i[:out]) => (3, [n(:gec_node).i[:in1].partner.message, n(:gec_node).i[:in2].partner.message, nothing])
+        @fact SumProduct.collectInbounds(n(:gec_node).i[:out]) --> (3, [n(:gec_node).i[:in1].partner.message, n(:gec_node).i[:in2].partner.message, nothing])
     end
 end
 

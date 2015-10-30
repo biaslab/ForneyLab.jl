@@ -23,7 +23,7 @@ externalEdges(sg::Subgraph) = setdiff(edges(nodes(sg)), sg.internal_edges) # Ext
 nodesConnectedToExternalEdges(sg::Subgraph) = intersect(nodes(externalEdges(sg)), nodes(sg)) # Nodes connected to external edges are the nodes connected to external edges that are also connected to internal edges
 
 draw(subgraph::Subgraph; args...) = ForneyLab.graphviz(ForneyLab.genDot(nodes(subgraph), subgraph.internal_edges, external_edges=externalEdges(subgraph)); args...)
-drawPdf(subgraph::Subgraph, filename::String) = ForneyLab.dot2pdf(ForneyLab.genDot(nodes(subgraph), subgraph.internal_edges, external_edges=externalEdges(subgraph)), filename)
+drawPdf(subgraph::Subgraph, filename::AbstractString) = ForneyLab.dot2pdf(ForneyLab.genDot(nodes(subgraph), subgraph.internal_edges, external_edges=externalEdges(subgraph)), filename)
 
 nodes(subgraph::Subgraph) = copy(nodes(subgraph.internal_edges))
 

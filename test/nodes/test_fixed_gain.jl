@@ -6,12 +6,12 @@ facts("FixedGainNode unit tests") do
     context("FixedGainNode() should initialize a FixedGainNode with 2 interfaces") do
         FactorGraph()
         FixedGainNode([1.0], id=:node)
-        @fact typeof(n(:node)) => FixedGainNode
-        @fact length(n(:node).interfaces) => 2
-        @fact n(:node).i[:in] => n(:node).interfaces[1]
-        @fact n(:node).i[:out] => n(:node).interfaces[2]
-        @fact typeof(n(:node).A) <: Array => true
-        @fact length(size(n(:node).A)) => 2 # A should always be a matrix
+        @fact typeof(n(:node)) --> FixedGainNode
+        @fact length(n(:node).interfaces) --> 2
+        @fact n(:node).i[:in] --> n(:node).interfaces[1]
+        @fact n(:node).i[:out] --> n(:node).interfaces[2]
+        @fact typeof(n(:node).A) <: Array --> true
+        @fact length(size(n(:node).A)) --> 2 # A should always be a matrix
     end
 
     context("FixedGainNode should provide sumProduct! for DeltaDistribution{Float64}") do
@@ -99,7 +99,7 @@ facts("FixedGainNode unit tests") do
                 2.0 3.0 2.0;
                 1.0 2.0 3.0]
         context("(m,V) parametrization") do
-            mean = [1.0:3.0]
+            mean = collect(1.0:3.0)
             variance = [4.0 3.0 2.0;
                         3.0 4.0 3.0;
                         2.0 3.0 4.0]
@@ -115,7 +115,7 @@ facts("FixedGainNode unit tests") do
                                     MvGaussianDistribution(m=A * mean, V=A * variance * A'))
         end
         context("(m,W) parametrization") do
-            mean = [1.0:3.0]
+            mean = collect(1.0:3.0)
             precision = inv([   4.0 3.0 2.0;
                                 3.0 4.0 3.0;
                                 2.0 3.0 4.0])

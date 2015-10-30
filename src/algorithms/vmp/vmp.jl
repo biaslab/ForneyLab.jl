@@ -30,7 +30,7 @@ function Algorithm(graph::FactorGraph=currentGraph(); n_iterations::Int64=50)
         end
     end
 
-    return ForneyLab.Algorithm(exec, {:factorization => factorization, :q_distributions => q_distributions, :n_iterations => n_iterations})
+    return ForneyLab.Algorithm(exec, Dict{Symbol, Any}(:factorization => factorization, :q_distributions => q_distributions, :n_iterations => n_iterations))
 end
 
 function Algorithm(graph::FactorGraph, cluster_edges...; n_iterations::Int64=50)
@@ -51,7 +51,7 @@ function Algorithm(graph::FactorGraph, cluster_edges...; n_iterations::Int64=50)
         end
     end
 
-    return ForneyLab.Algorithm(exec, {:factorization => factorization, :q_distributions => q_distributions, :n_iterations => n_iterations})
+    return ForneyLab.Algorithm(exec, Dict{Symbol, Any}(:factorization => factorization, :q_distributions => q_distributions, :n_iterations => n_iterations))
 end
 Algorithm(cluster_edges...; n_iterations::Int64=50) = Algorithm(currentGraph(), cluster_edges...; n_iterations=n_iterations)
 

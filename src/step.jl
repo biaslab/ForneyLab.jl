@@ -8,6 +8,9 @@ export  attachReadBuffer,
         step,
         run
 
+import Base.run
+import Base.step
+
 function attachReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=current_graph)
     hasNode(graph, node) || error("The specified node is not part of the current or specified graph")
     graph.read_buffers[node] = buffer
@@ -17,7 +20,7 @@ function attachReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, graph::Fa
     # Mini-batch assignment for read buffers.
     # buffer is divided over nodes equally.
     n_nodes = length(nodes)
-    n_samples_per_node = int(floor(length(buffer)/length(nodes)))
+    n_samples_per_node = round(Int, floor(length(buffer)/length(nodes)))
     n_samples_per_node*n_nodes == length(buffer) || error("Buffer length must a multiple of the mini-batch node array length")
     buffmat = reshape(buffer, n_nodes, n_samples_per_node) # samples for one node are present in the rows of buffmat
     for k in 1:n_nodes
@@ -44,7 +47,7 @@ end
 function attachWriteBuffer(interfaces::Vector{Interface}, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=current_graph)
     # Mini-batch assignment for write buffers.
     # After each step the batch results are appended to the buffer
-     
+
 end
 
 function detachWriteBuffer(interface::Interface, graph::FactorGraph=current_graph)
@@ -70,7 +73,7 @@ end
 
 function detachBuffers(graph::FactorGraph=current_graph)
     graph.read_buffers = Dict{TerminalNode, Vector}()
-    graph.write_buffers = Dict{Union(Edge,Interface), Vector}()
+    graph.write_buffers = Dict{Union{Edge,Interface}, Vector}()
 end
 
 function emptyWriteBuffers(graph::FactorGraph=current_graph)
@@ -86,7 +89,7 @@ function execute(algorithm::Algorithm, graph::FactorGraph=current_graph)
 end
 
 function step(algorithm::Algorithm, graph::FactorGraph=current_graph)
-    # Execute algorithm for 1 timestep. 
+    # Execute algorithm for 1 timestep.
 
     # Read buffers
     for (terminal_node, read_buffer) in graph.read_buffers

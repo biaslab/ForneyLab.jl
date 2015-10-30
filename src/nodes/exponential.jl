@@ -48,7 +48,7 @@ isDeterministic(::ExponentialNode) = true
 function sumProduct!(   node::ExponentialNode,
                         outbound_interface_index::Int,
                         msg_in::Message{GaussianDistribution},
-                        msg_out::Nothing)
+                        msg_out::Void)
     isProper(msg_in.payload) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.i[:out], GammaDistribution).payload
 
@@ -67,7 +67,7 @@ end
 # Backward message
 function sumProduct!(   node::ExponentialNode,
                         outbound_interface_index::Int,
-                        msg_in::Nothing,
+                        msg_in::Void,
                         msg_out::Message{GammaDistribution})
     isProper(msg_out.payload) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.i[:in], GaussianDistribution).payload
@@ -93,7 +93,7 @@ end
 function sumProduct!(   node::ExponentialNode,
                         outbound_interface_index::Int,
                         msg_in::Message{DeltaDistribution{Float64}},
-                        msg_out::Nothing)
+                        msg_out::Void)
     dist_out = ensureMessage!(node.i[:out], DeltaDistribution{Float64}).payload
 
     dist_out.m = exp(msg_in.payload.m)
@@ -105,7 +105,7 @@ end
 # Backward message
 function sumProduct!(   node::ExponentialNode,
                         outbound_interface_index::Int,
-                        msg_in::Nothing,
+                        msg_in::Void,
                         msg_out::Message{DeltaDistribution{Float64}})
     dist_out = ensureMessage!(node.i[:in], DeltaDistribution{Float64}).payload
 

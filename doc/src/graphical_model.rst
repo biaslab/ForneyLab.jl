@@ -71,7 +71,7 @@ The ``Edge`` type
             id::Symbol
             tail::Interface
             head::Interface
-            marginal::Union(ProbabilityDistribution, Nothing)
+            marginal::Union(ProbabilityDistribution, Void)
             distribution_type::DataType
         end
 

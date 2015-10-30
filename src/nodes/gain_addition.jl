@@ -34,7 +34,7 @@ type GainAdditionNode <: Node
     i::Dict{Symbol,Interface}
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
-    function GainAdditionNode(A::Union(Array{Float64},Float64)=1.0; id=generateNodeId(GainAdditionNode))
+    function GainAdditionNode(A::Union{Array{Float64},Float64}=1.0; id=generateNodeId(GainAdditionNode))
         self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(current_graph, self)
 
@@ -64,7 +64,7 @@ function sumProduct!(   node::GainAdditionNode,
                         outbound_interface_index::Int,
                         in1::Message{GaussianDistribution},
                         in2::Message{GaussianDistribution},
-                        ::Nothing)
+                        ::Void)
     (outbound_interface_index == 3) || error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
     (isProper(in1.payload) && isProper(in2.payload)) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
@@ -82,7 +82,7 @@ end
 function sumProduct!(   node::GainAdditionNode,
                         outbound_interface_index::Int,
                         in1::Message{GaussianDistribution},
-                        ::Nothing,
+                        ::Void,
                         out::Message{GaussianDistribution})
     (outbound_interface_index == 2) || error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
     (isProper(in1.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")
@@ -100,7 +100,7 @@ end
 # Backward to IN1
 function sumProduct!(   node::GainAdditionNode,
                         outbound_interface_index::Int,
-                        ::Nothing,
+                        ::Void,
                         in2::Message{GaussianDistribution},
                         out::Message{GaussianDistribution})
     (outbound_interface_index == 1) || error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
@@ -145,7 +145,7 @@ function sumProduct!(node::GainAdditionNode,
                             outbound_interface_index::Int,
                             in1::Message{MvGaussianDistribution},
                             in2::Message{MvGaussianDistribution},
-                            ::Nothing)
+                            ::Void)
     (isProper(in1.payload) && isProper(in2.payload)) || error("Improper input distributions are not supported")
     if outbound_interface_index == 3
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
@@ -209,7 +209,7 @@ end
 function sumProduct!(node::GainAdditionNode,
                             outbound_interface_index::Int,
                             in1::Message{MvGaussianDistribution},
-                            ::Nothing,
+                            ::Void,
                             out::Message{MvGaussianDistribution})
     (isProper(in1.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")
     if outbound_interface_index == 2
@@ -273,7 +273,7 @@ end
 # Backward to IN1
 function sumProduct!(node::GainAdditionNode,
                             outbound_interface_index::Int,
-                            ::Nothing,
+                            ::Void,
                             in2::Message{MvGaussianDistribution},
                             out::Message{MvGaussianDistribution})
     (isProper(in2.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")

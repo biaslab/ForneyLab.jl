@@ -26,9 +26,9 @@ The field ``i`` stores 'named handles' to make accessing the interfaces convenie
 
         type Interface
             node::Node # Reference to the Node it is part of
-            edge::Union(AbstractEdge, Nothing) # Reference to the Edge it is part of
-            partner::Union(Interface, Nothing) # Partner it is connected to
-            message::Union(Message, Nothing)   # Outbound message
+            edge::Union(AbstractEdge, Void) # Reference to the Edge it is part of
+            partner::Union(Interface, Void) # Partner it is connected to
+            message::Union(Message, Void)   # Outbound message
         end
 
     The ``message`` field may contain a :class:`Message`, which is the *outbound message* calculated according to the node function. This means that if an interface is the tail of an :class:`Edge`, its ``message`` field contains the *forward message* on that edge. Similarly, if the interface is the head of the edge, its ``message`` field contains the *backward message*.
@@ -51,7 +51,7 @@ ForneyLab supports the following message calculation rules:
                             outbound_interface_index::Int,
                             msg_in1::Message{GaussianDistribution},
                             msg_in2::Message{GaussianDistribution},
-                            msg_out::Nothing)
+                            msg_out::Void)
             # Calculate outbound message on interface 3 (:out)
             # according to the sum-product rule
 
@@ -75,7 +75,7 @@ ForneyLab supports the following message calculation rules:
 
         function vmp!(node::GaussianNode,
                             outbound_interface_index::Int,
-                            ::Nothing,
+                            ::Void,
                             marg_prec::GammaDistribution,
                             marg_y::GaussianDistribution)
             # Calculate outbound message on interface 1 (:mean)
