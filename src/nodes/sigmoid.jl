@@ -27,7 +27,7 @@ export SigmoidNode
 ####################
 
 # Cummulative Gaussian (CDF of standard normal distribution)
-Φ(x::Union(Float64, Vector{Float64})) = 0.5*erfc(-x./sqrt(2.))
+Φ(x::Union{Float64, Vector{Float64}}) = 0.5*erfc(-x./sqrt(2.))
 
 
 ####################
@@ -42,13 +42,13 @@ type SigmoidNode <: Node
 
     function SigmoidNode(sigmoid_func::Symbol=:normal_cdf; id=generateNodeId(SigmoidNode))
         (sigmoid_func == :normal_cdf) || error(":normal_cdf is the only supported sigmoid function at the moment")
-        
+
         self = new(sigmoid_func, id, Array(Interface, 2), Dict{Symbol,Interface}())
         self.i[:real] = self.interfaces[1] = Interface(self)
         self.i[:bool] = self.interfaces[2] = Interface(self)
 
         addNode!(current_graph, self)
-        
+
         return self
     end
 end
@@ -60,7 +60,7 @@ end
 function sumProduct!{T<:Real}(node::SigmoidNode,
                               outbound_interface_id::Int,
                               msg_1::Message{DeltaDistribution{T}},
-                              ::Nothing)
+                              ::Void)
     # Generate Bernoulli message from incoming Delta message.
     (outbound_interface_id == 2) || error("Invalid call")
     dist_1 = msg_1.payload
@@ -79,7 +79,7 @@ end
 function sumProduct!(node::SigmoidNode,
                      outbound_interface_id::Int,
                      msg_1::Message{GaussianDistribution},
-                     ::Nothing)
+                     ::Void)
     # Generate Bernoulli message from incoming Gaussian message.
     (outbound_interface_id == 2) || error("Invalid call")
     dist_1 = ensureMVParametrization!(msg_1.payload)
@@ -100,7 +100,7 @@ end
 ############################################################
 
 function backwardGaussianExpectationRule!(  node::SigmoidNode,
-                                            msg_context::Message{GaussianDistribution}, 
+                                            msg_context::Message{GaussianDistribution},
                                             p::Float64)
     # Write back and return approximate backward message (Gaussian) on i[:real] for Bernoulli[p] input.
     # The approximate bw message encodes an 'expectation' under the context of the incoming message N(.|μ,σ2).
@@ -109,15 +109,15 @@ function backwardGaussianExpectationRule!(  node::SigmoidNode,
     #  2. Combine exact outbound msg on i[:real] with exact inbound msg ('context') to find exact marginal
     #  3. Approximate the exact (non Gaussian) marginal with a Gaussian one
     #  4. Calculate back the Gaussian outbound msg on i[:real] that yields this approximate Gaussian marginal.
-    # NOTE: this calculation results in an implicit cycle in the factor graph since the outbound expectation message depends on the inbound message (context).    
-    
-    (node.sigmoid_func == :normal_cdf) || error("Unsupported sigmoid function") 
+    # NOTE: this calculation results in an implicit cycle in the factor graph since the outbound expectation message depends on the inbound message (context).
+
+    (node.sigmoid_func == :normal_cdf) || error("Unsupported sigmoid function")
     (0<=p<=1) || error("Bernoulli parameter p should be ∈ [0,1].")
 
     # Collect parameters of incoming messages (Gaussian and Bernoulli)
     dist_context = ensureMVParametrization!(msg_context.payload)
     μ = dist_context.m[1]; σ2 = dist_context.V[1,1]
-    
+
     # Calculate first and second moment (m_1, m_2) of the 'true' marginal p(x) on edge connected to i[:real]
     # p(x) = f(x) / m_0
     # f(x) = (1-p)*N(x|μ,σ2) + (2p-1)*Φ(x)*N(x|μ,σ2)
@@ -165,7 +165,7 @@ function expectation!{T<:Bool}(node::SigmoidNode,
     (outbound_interface_id == 1) || error("Invalid call")
 
     p = (msg_2.payload.m==false) ? 0. : 1.
- 
+
     return backwardGaussianExpectationRule!(node, msg_1, p)
 end
 

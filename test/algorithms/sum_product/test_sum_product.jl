@@ -6,7 +6,7 @@ facts("SumProduct.collectInbounds() tests") do
 
 
         # Include inbound message on outbound interface
-        @fact SumProduct.collectInbounds(n(:node).i[:out], true) => (3, [n(:node).i[:mean].partner.message, n(:node).i[:precision].partner.message, n(:node).i[:out].partner.message])
+        @fact SumProduct.collectInbounds(n(:node).i[:out], true) --> (3, [n(:node).i[:mean].partner.message, n(:node).i[:precision].partner.message, n(:node).i[:out].partner.message])
 
         # Composite node
         initializeGainEqualityNode(eye(1), Any[Message(DeltaDistribution(1.0)), Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))])
