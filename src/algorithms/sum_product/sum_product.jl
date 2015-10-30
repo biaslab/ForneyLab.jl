@@ -57,7 +57,7 @@ end
 # Construct algorithm specific update-call signature
 #---------------------------------------------------
 
-function collectInbounds(outbound_interface::Interface, include_inbound_on_outbound_interface::Bool=false)
+function collectInbounds(outbound_interface::Interface)
     # Sum-product specific method to collect all required inbound messages in an array.
     # This array is used to call the node update function (sumProduct!).
     # outbound_interface: the interface on which the outbound message will be updated.
@@ -70,10 +70,8 @@ function collectInbounds(outbound_interface::Interface, include_inbound_on_outbo
         interface = outbound_interface.node.interfaces[j]
         if is(interface, outbound_interface)
             outbound_interface_index = j
-            if !include_inbound_on_outbound_interface
-                push!(inbounds, nothing)
-                continue
-            end
+            push!(inbounds, nothing)
+            continue
         end
 
         try

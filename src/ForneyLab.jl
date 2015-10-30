@@ -5,13 +5,14 @@ using YAML
 using LaTeXStrings
 
 export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution
-export sumProduct!, expectation!, vmp!
+export sumProduct!, ep!, vmp!
 export vague, self, ==, isProper, sample
 export setVerbosity
 
 # Export algorithm modules
 export SumProduct
 export VMP
+export ExpectationPropagation
 
 # Verbosity
 setVerbosity(is_verbose=true) = global verbose = is_verbose
@@ -86,6 +87,7 @@ include("visualization.jl")
 # Algorithms
 include("algorithms/sum_product/sum_product.jl")
 include("algorithms/vmp/vmp.jl")
+include("algorithms/expectation_propagation/expectation_propagation.jl")
 
 # Functions for message post-processing
 vague(dist::ProbabilityDistribution) = vague(typeof(dist))

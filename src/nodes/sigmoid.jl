@@ -10,7 +10,7 @@
 #   f(X,Y) = σ(X⋅Y)
 #
 # Interfaces:
-#   1 i[:real], 2 i[:bool]
+#   1 i[:real], 2 i[:bin]
 #
 # Construction:
 #   SigmoidNode(:normal_cdf, name="my_node")
@@ -45,7 +45,7 @@ type SigmoidNode <: Node
 
         self = new(sigmoid_func, id, Array(Interface, 2), Dict{Symbol,Interface}())
         self.i[:real] = self.interfaces[1] = Interface(self)
-        self.i[:bool] = self.interfaces[2] = Interface(self)
+        self.i[:bin] = self.interfaces[2] = Interface(self)
 
         addNode!(current_graph, self)
 
@@ -96,27 +96,45 @@ function sumProduct!(node::SigmoidNode,
 end
 
 ############################################################
-# Backward messages (expectation)
+# Backward messages (expectation propagation)
 ############################################################
 
-function backwardGaussianExpectationRule!(  node::SigmoidNode,
-                                            msg_context::Message{GaussianDistribution},
-                                            p::Float64)
-    # Write back and return approximate backward message (Gaussian) on i[:real] for Bernoulli[p] input.
-    # The approximate bw message encodes an 'expectation' under the context of the incoming message N(.|μ,σ2).
-    # Procedure:
+function ep!{T<:Bool}(
+                    node::SigmoidNode,
+                    outbound_interface_id::Int,
+                    msg_cavity::Message{GaussianDistribution},
+                    msg_bin::Message{DeltaDistribution{T}})
+    # Convert incoming DeltaDistribution to BernoulliDistribution
+    (outbound_interface_id == 1) || error("Invalid call")
+    #msg_bin.payload = BernoulliDistribution(msg_bin.payload.m)
+    ep!(node, 1, msg_cavity, Message(BernoulliDistribution(msg_bin.payload.m)))
+end
+
+function ep!(
+            node::SigmoidNode,
+            outbound_interface_id::Int,
+            msg_cavity::Message{GaussianDistribution},
+            msg_bin::Message{BernoulliDistribution})
+    # Calculate approximate (Gaussian) message towards i[:real]
+    # The approximate message is an 'expectation' under the context (cavity distribution) encoded by incoming message msg_1.
+    # Propagating the resulting approximate msg through the factor graph results in the expectation propagation (EP) algorithm.
+    # Approximation procedure:
     #  1. Calculate exact (non-Gaussian) message towards i[:real]
-    #  2. Combine exact outbound msg on i[:real] with exact inbound msg ('context') to find exact marginal
-    #  3. Approximate the exact (non Gaussian) marginal with a Gaussian one
+    #  2. Combine exact outbound msg on i[:real] with exact inbound msg (cavity distribution) to find exact marginal
+    #  3. Approximate the exact (non-Gaussian) marginal with a Gaussian one using moment matching
     #  4. Calculate back the Gaussian outbound msg on i[:real] that yields this approximate Gaussian marginal.
-    # NOTE: this calculation results in an implicit cycle in the factor graph since the outbound expectation message depends on the inbound message (context).
-
+    # IMPORTANT NOTES:
+    #  - This calculation results in an implicit cycle in the factor graph since the outbound message depends on the inbound message (cavity dist.)
+    #  - The outbound message is not guaranteed to be a proper Gaussian (variance/precision parameters might be negative)
+    (outbound_interface_id == 1) || error("Invalid call")
     (node.sigmoid_func == :normal_cdf) || error("Unsupported sigmoid function")
-    (0<=p<=1) || error("Bernoulli parameter p should be ∈ [0,1].")
+    isProper(msg_bin.payload) || error("ep!: Incoming Bernoulli distribution should be proper")
+    isProper(msg_cavity.payload) || error("ep!: Cavity distribution is improper")
 
-    # Collect parameters of incoming messages (Gaussian and Bernoulli)
-    dist_context = ensureMVParametrization!(msg_context.payload)
-    μ = dist_context.m[1]; σ2 = dist_context.V[1,1]
+    # Shordhand notations
+    p = msg_bin.payload.p
+    dist_cavity = ensureMVParametrization!(msg_cavity.payload)
+    μ = dist_cavity.m; σ2 = dist_cavity.V
 
     # Calculate first and second moment (m_1, m_2) of the 'true' marginal p(x) on edge connected to i[:real]
     # p(x) = f(x) / m_0
@@ -125,7 +143,6 @@ function backwardGaussianExpectationRule!(  node::SigmoidNode,
     #      = (1-p)*f1(x)     + (2p-1)*Φ(z)*f2(x)
     # See paper for detailed derivation
 
-    # Shorthand symbols
     z = μ / sqrt(1 + σ2)
     N = exp(-0.5*z^2)./sqrt(2*pi) # N(z|0,1)
     C = Φ(z)
@@ -139,41 +156,19 @@ function backwardGaussianExpectationRule!(  node::SigmoidNode,
     m_1 = ((1-p)*μ + (2*p-1)*C*m2_1)/m_0
     m_2 = ((1-p)*(μ^2+σ2) + (2*p-1)*C*m2_2)/m_0
 
-    # Save Gaussian marginal with the same moments (moment matching)
+    # Save Gaussian marginal with identical first and second moments (moment matching approximation)
     marginal = ensureMarginal!(node.interfaces[1].edge, GaussianDistribution)
-    invalidate!(marginal.W); invalidate!(marginal.xi)
-    marginal.m[1] = m_1
-    marginal.V[1,1] = m_2 - m_1^2
+    marginal.m = m_1
+    marginal.V = m_2 - m_1^2 # This is guaranteed to be positive
+    marginal.W = marginal.xi = NaN
 
     # Calculate the approximate message towards i[:real]
     dist_backward = ensureMessage!(node.interfaces[1], GaussianDistribution).payload
-    invalidate!(dist_backward.m); invalidate!(dist_backward.V)
     ensureXiWParametrization!(marginal)
-    ensureXiWParametrization!(dist_context)
-    dist_backward.W = marginal.W - dist_context.
-    clamp(dist_backward.W[1,1], tiny, huge)
-    dist_backward.xi = marginal.xi - dist_context.xi
-    clamp(dist_backward.xi[1], tiny, huge)
+    ensureXiWParametrization!(dist_cavity)
+    dist_backward.W = marginal.W - dist_cavity.W # This can be < 0, yielding improper Gaussian bw msg
+    dist_backward.xi = marginal.xi - dist_cavity.xi
+    dist_backward.m = dist_backward.V = NaN
 
     return (:sigmoid_backward_gaussian_expectation, dist_backward)
-end
-
-function expectation!{T<:Bool}(node::SigmoidNode,
-                                outbound_interface_id::Int,
-                                msg_1::Message{GaussianDistribution},
-                                msg_2::Message{DeltaDistribution{T}})
-    (outbound_interface_id == 1) || error("Invalid call")
-
-    p = (msg_2.payload.m==false) ? 0. : 1.
-
-    return backwardGaussianExpectationRule!(node, msg_1, p)
-end
-
-function expectation!(node::SigmoidNode,
-                      outbound_interface_id::Int,
-                      msg_1::Message{GaussianDistribution},
-                      msg_2::Message{BernoulliDistribution})
-    (outbound_interface_id == 1) || error("Invalid call")
-
-    return backwardGaussianExpectationRule!(node, msg_1, msg_2.payload.p)
 end

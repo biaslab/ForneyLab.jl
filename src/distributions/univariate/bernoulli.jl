@@ -29,4 +29,4 @@ show(io::IO, dist::BernoulliDistribution) = println(io, format(dist))
 ==(x::BernoulliDistribution, y::BernoulliDistribution) = isApproxEqual(x.p, y.p)
 
 # Converts from DeltaDistribution{Bool} -> BernoulliDistribution
-convert{T<:Bool}(::Type{BernoulliDistribution}, delta::DeltaDistribution{T}) = BernoulliDistribution(float(delta.m))
+Base.convert{T<:Bool}(::Type{BernoulliDistribution}, delta::DeltaDistribution{T}) = BernoulliDistribution(float(delta.m))
