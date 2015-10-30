@@ -5,7 +5,7 @@ export draw, drawPdf
 # draw methods
 ####################################################
 
-function graphviz(dot_graph::String; external_viewer::Bool=false)
+function graphviz(dot_graph::AbstractString; external_viewer::Bool=false)
     # Show a DOT graph
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     if external_viewer
@@ -32,7 +32,7 @@ draw(nodes::Vector{Node}; args...) = draw(Set(nodes); args...)
 # writePdf methods
 ####################################################
 
-function dot2pdf(dot_graph::String, filename::String)
+function dot2pdf(dot_graph::AbstractString, filename::AbstractString)
     # Generates a DOT graph and writes it to a pdf file
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     open(`dot -Tpdf -o$(filename)`, "w", STDOUT) do io
@@ -40,12 +40,12 @@ function dot2pdf(dot_graph::String, filename::String)
     end
 end
 
-drawPdf(factor_graph::FactorGraph, filename::String) = dot2pdf(genDot(nodes(factor_graph), edges(factor_graph)), filename)
-drawPdf(filename::String) = drawPdf(currentGraph(), filename)
-drawPdf(composite_node::CompositeNode, filename::String) = drawPdf(composite_node.internal_graph, filename)
+drawPdf(factor_graph::FactorGraph, filename::AbstractString) = dot2pdf(genDot(nodes(factor_graph), edges(factor_graph)), filename)
+drawPdf(filename::AbstractString) = drawPdf(currentGraph(), filename)
+drawPdf(composite_node::CompositeNode, filename::AbstractString) = drawPdf(composite_node.internal_graph, filename)
 
-drawPdf(nodes::Set{Node}, filename::String) = dot2pdf(genDot(nodes, edges(nodes)), filename)
-drawPdf(nodes::Vector{Node}, filename::String) = drawPdf(Set(nodes), filename)
+drawPdf(nodes::Set{Node}, filename::AbstractString) = dot2pdf(genDot(nodes, edges(nodes)), filename)
+drawPdf(nodes::Vector{Node}, filename::AbstractString) = drawPdf(Set(nodes), filename)
 
 
 ####################################################
@@ -56,8 +56,8 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
     # Return a string representing the graph in DOT format
     # External edges are edges of which only the head or tail is in the nodes set
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)
-    node_type_symbols = {   AdditionNode => "+",
-                            EqualityNode => "="}
+    node_type_symbols = Dict{DataType, AbstractString}(AdditionNode => "+",
+                            EqualityNode => "=")
     dot = "digraph G{splines=true;sep=\"+25,25\";overlap=scalexy;nodesep=1.6;compound=true;\n"
     dot *= "\tnode [shape=box, width=1.0, height=1.0, fontsize=9];\n"
     dot *= "\tedge [fontsize=8, arrowhead=onormal];\n"
@@ -72,7 +72,7 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
             end
         end
     end
-    
+
     for edge in edges
         dot *= edgeDot(edge)
     end
@@ -98,12 +98,12 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
     if !isempty(wraps)
         # Add edges to visualize time wraps
         for wrap in wraps
-            dot *= "\t$(object_id(wrap.source)) -> $(object_id(wrap.sink)) [style=\"dotted\" color=\"green\"]\n"             
+            dot *= "\t$(object_id(wrap.source)) -> $(object_id(wrap.sink)) [style=\"dotted\" color=\"green\"]\n"
         end
     end
 
     dot *= "}";
-    
+
     return dot
 end
 
@@ -113,7 +113,7 @@ function edgeDot(edge::Edge; is_external_edge=false)
     tail_label = "$tail_id $(handle(edge.tail))"
     head_id = findfirst(edge.head.node.interfaces, edge.head)
     head_label = "$head_id $(handle(edge.head))"
-    dot = "\t$(object_id(edge.tail.node)) -> $(object_id(edge.head.node)) " 
+    dot = "\t$(object_id(edge.tail.node)) -> $(object_id(edge.head.node)) "
     if is_external_edge
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", style=\"dashed\" color=\"red\"]\n"
     else
@@ -124,7 +124,7 @@ function edgeDot(edge::Edge; is_external_edge=false)
     end
 end
 
-function dot2gif(dot_graph::String)
+function dot2gif(dot_graph::AbstractString)
     # Generate SVG image from DOT graph
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     stdout, stdin, proc = readandwrite(`dot -Tgif`)
@@ -133,7 +133,7 @@ function dot2gif(dot_graph::String)
     return readall(stdout)
 end
 
-function dot2svg(dot_graph::String)
+function dot2svg(dot_graph::AbstractString)
     # Generate SVG image from DOT graph
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     stdout, stdin, proc = readandwrite(`dot -Tsvg`)
@@ -151,9 +151,9 @@ function validateGraphVizInstalled()
     end
 end
 
-viewDotExternal(dot_graph::String) = (@windows? viewDotExternalImage(dot_graph::String) : viewDotExternalInteractive(dot_graph::String))
+viewDotExternal(dot_graph::AbstractString) = (@windows? viewDotExternalImage(dot_graph::AbstractString) : viewDotExternalInteractive(dot_graph::AbstractString))
 
-function viewDotExternalInteractive(dot_graph::String)
+function viewDotExternalInteractive(dot_graph::AbstractString)
     # View a DOT graph in interactive viewer
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
     open(`dot -Tx11`, "w", STDOUT) do io
@@ -161,7 +161,7 @@ function viewDotExternalInteractive(dot_graph::String)
     end
 end
 
-function viewDotExternalImage(dot_graph::String)
+function viewDotExternalImage(dot_graph::AbstractString)
     # Write the image to a file and open it with the default image viewer
     svg = dot2svg(dot_graph)
     filename = tempname()*".svg"

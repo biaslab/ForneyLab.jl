@@ -26,7 +26,7 @@ type FixedGainNode <: Node
     i::Dict{Symbol,Interface}
     A_inv::Matrix{Float64} # holds pre-computed inv(A) if possible
 
-    function FixedGainNode(A::Union(Array{Float64},Float64)=1.0; id=generateNodeId(FixedGainNode))
+    function FixedGainNode(A::Union{Array{Float64},Float64}=1.0; id=generateNodeId(FixedGainNode))
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
         A = (typeof(A)==Float64) ? fill!(Array(Float64,1,1),A) : ensureMatrix(deepcopy(A))
         self = new(A, id, Array(Interface, 2), Dict{Symbol,Interface}())
@@ -56,7 +56,7 @@ isDeterministic(::FixedGainNode) = true
 # Backward Gaussian to IN
 function sumProduct!(   node::FixedGainNode,
                         outbound_interface_index::Int,
-                        ::Nothing,
+                        ::Void,
                         msg_out::Message{GaussianDistribution})
     (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
@@ -73,7 +73,7 @@ end
 function sumProduct!(   node::FixedGainNode,
                         outbound_interface_index::Int,
                         msg_in::Message{GaussianDistribution},
-                        ::Nothing)
+                        ::Void)
     (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
     dist_1 = ensureMVParametrization!(msg_in.payload)
@@ -92,7 +92,7 @@ end
 # Backward DeltaDistribution to IN
 function sumProduct!(node::FixedGainNode,
                      outbound_interface_index::Int,
-                     ::Nothing,
+                     ::Void,
                      msg_out::Message{DeltaDistribution{Float64}})
     (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
@@ -106,7 +106,7 @@ end
 function sumProduct!(node::FixedGainNode,
                      outbound_interface_index::Int,
                      msg_in::Message{DeltaDistribution{Float64}},
-                     ::Nothing)
+                     ::Void)
     (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
     dist_2.m = node.A[1,1] * msg_in.payload.m
@@ -172,7 +172,7 @@ end
 
 function sumProduct!(node::FixedGainNode,
                             outbound_interface_index::Int,
-                            ::Nothing,
+                            ::Void,
                             msg_out::Message{MvGaussianDistribution})
     isProper(msg_out.payload) || error("Improper input distributions are not supported")
     dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
@@ -227,7 +227,7 @@ end
 function sumProduct!(node::FixedGainNode,
                             outbound_interface_index::Int,
                             msg_in::Message{MvGaussianDistribution},
-                            ::Nothing)
+                            ::Void)
     isProper(msg_in.payload) || error("Improper input distributions are not supported")
     dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
 
@@ -252,7 +252,7 @@ end
 # Backward MvDeltaDistribution to IN
 function sumProduct!(node::FixedGainNode,
                      outbound_interface_index::Int,
-                     ::Nothing,
+                     ::Void,
                      msg_out::Message{MvDeltaDistribution{Float64}})
     (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
@@ -266,7 +266,7 @@ end
 function sumProduct!(node::FixedGainNode,
                      outbound_interface_index::Int,
                      msg_in::Message{MvDeltaDistribution{Float64}},
-                     ::Nothing)
+                     ::Void)
     (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
     dist_2.m = node.A * msg_in.payload.m

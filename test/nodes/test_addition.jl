@@ -6,11 +6,11 @@ facts("AdditionNode unit tests") do
     context("AdditionNode() should initialize an AdditionNode with 3 interfaces") do
         FactorGraph()
         AdditionNode(id=:node)
-        @fact typeof(n(:node)) => AdditionNode
-        @fact length(n(:node).interfaces) => 3
-        @fact n(:node).i[:in1] => n(:node).interfaces[1]
-        @fact n(:node).i[:in2] => n(:node).interfaces[2]
-        @fact n(:node).i[:out] => n(:node).interfaces[3]
+        @fact typeof(n(:node)) --> AdditionNode
+        @fact length(n(:node).interfaces) --> 3
+        @fact n(:node).i[:in1] --> n(:node).interfaces[1]
+        @fact n(:node).i[:in2] --> n(:node).interfaces[2]
+        @fact n(:node).i[:out] --> n(:node).interfaces[3]
     end
 
     context("AdditionNode should provide sumProduct! for DeltaDistribution{Float64}") do
@@ -170,7 +170,7 @@ facts("AdditionNode unit tests") do
 
     context("AdditionNode should provide sumProduct! for MvGaussianDistribution") do
         context("MvGaussianDistribution with (m,V) parametrization") do
-            mean = [1.0:3.0]
+            mean = collect(1.0:3.0)
             variance = reshape([4.0, 3.0, 2.0,
                                 3.0, 4.0, 3.0,
                                 2.0, 3.0, 4.0], 3, 3)
@@ -191,7 +191,7 @@ facts("AdditionNode unit tests") do
         end
 
         context("MvGaussianDistribution with (m,W) parametrization") do
-            mean = [1.0:3.0]
+            mean = collect(1.0:3.0)
             precision = reshape([4.0, 3.0, 2.0,
                                  3.0, 4.0, 3.0,
                                  2.0, 3.0, 4.0], 3, 3)
@@ -212,7 +212,7 @@ facts("AdditionNode unit tests") do
         end
 
         context("MvGaussianDistribution with (xi,V) parametrization") do
-            xi = [1.0:3.0]
+            xi = collect(1.0:3.0)
             variance = reshape([4.0, 3.0, 2.0,
                                 3.0, 4.0, 3.0,
                                 2.0, 3.0, 4.0], 3, 3)
@@ -233,7 +233,7 @@ facts("AdditionNode unit tests") do
         end
 
         context("MvGaussianDistribution with different parametrizations") do
-            mean = [1.0:3.0]
+            mean = collect(1.0:3.0)
             precision = reshape([4.0, 3.0, 2.0,
                                  3.0, 4.0, 3.0,
                                  2.0, 3.0, 4.0], 3, 3)

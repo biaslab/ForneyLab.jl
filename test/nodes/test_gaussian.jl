@@ -6,19 +6,19 @@ facts("GaussianNode unit tests") do
     context("GaussianNode() should initialize a GaussianNode with 3 interfaces") do
         FactorGraph()
         GaussianNode(id=:node)
-        @fact typeof(n(:node)) => GaussianNode
-        @fact length(n(:node).interfaces) => 3
-        @fact n(:node).i[:mean] => n(:node).interfaces[1]
-        @fact n(:node).i[:variance] => n(:node).interfaces[2]
-        @fact n(:node).i[:out] => n(:node).interfaces[3]
+        @fact typeof(n(:node)) --> GaussianNode
+        @fact length(n(:node).interfaces) --> 3
+        @fact n(:node).i[:mean] --> n(:node).interfaces[1]
+        @fact n(:node).i[:variance] --> n(:node).interfaces[2]
+        @fact n(:node).i[:out] --> n(:node).interfaces[3]
     end
 
     context("GaussianNode() should initialize a GaussianNode with precision parametrization") do
         FactorGraph()
         GaussianNode(form=:precision, id=:node)
-        @fact n(:node).i[:mean] => n(:node).interfaces[1]
-        @fact n(:node).i[:precision] => n(:node).interfaces[2]
-        @fact n(:node).i[:out] => n(:node).interfaces[3]
+        @fact n(:node).i[:mean] --> n(:node).interfaces[1]
+        @fact n(:node).i[:precision] --> n(:node).interfaces[2]
+        @fact n(:node).i[:out] --> n(:node).interfaces[3]
     end
 
     FactorGraph()

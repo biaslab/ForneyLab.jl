@@ -8,7 +8,7 @@ function QFactorization(graph::FactorGraph=currentGraph())
     sg = Subgraph(internal_edges, Interface[], Node[]) # Build a subgraph that contains all edges in the graph
     edge_to_subgraph = Dict{Edge, Subgraph}()
     for edge in internal_edges # Map all edges to the just created subgraph
-        merge!(edge_to_subgraph, {edge => sg})
+        merge!(edge_to_subgraph, Dict{Edge, Subgraph}(edge => sg))
     end
     return QFactorization([sg], edge_to_subgraph) # Build the new factorization
 end
@@ -17,8 +17,8 @@ show(io::IO, f::QFactorization) = println(io, "QFactorization with $(length(f.fa
 
 function vagueQDistributions(f::QFactorization)
     # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
-    
-    q_distributions = Dict{(Node, Subgraph), QDistribution}()
+
+    q_distributions = Dict{Tuple{Node, Subgraph}, QDistribution}()
 
     for subgraph in f.factors
         length(subgraph.external_schedule) > 0 || warn("External schedule for subgraph $(subgraph) undefined. Run generateSchedule(...) to generate internal and external schedules.")
@@ -52,7 +52,7 @@ function vagueQDistributions(f::QFactorization)
     return q_distributions
 end
 
-function vagueQDistributions!(q_distributions::Dict{(Node,Subgraph),QDistribution})
+function vagueQDistributions!(q_distributions::Dict{Tuple{Node,Subgraph},QDistribution})
     # Before starting a new iteration, the q-distributions should be reset to vague
     for q_distribution in values(q_distributions)
         q_distribution.distribution = vague(typeof(q_distribution.distribution)) # Set to vague
@@ -60,7 +60,7 @@ function vagueQDistributions!(q_distributions::Dict{(Node,Subgraph),QDistributio
     return q_distributions
 end
 
-function calculateQDistribution!(q_distributions::Dict{(Node, Subgraph), QDistribution}, node::Node, subgraph::Subgraph, factorization::QFactorization)
+function calculateQDistribution!(q_distributions::Dict{Tuple{Node, Subgraph}, QDistribution}, node::Node, subgraph::Subgraph, factorization::QFactorization)
     # Calculate the approximate marginal for node from the perspective of subgraph,
     # and store the result in the scheme.q_distributions dictionary.
 

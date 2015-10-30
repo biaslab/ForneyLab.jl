@@ -40,7 +40,7 @@ type GaussianNode <: Node
     m::Vector{Float64}
     V::Matrix{Float64}
 
-    function GaussianNode(; id=generateNodeId(GaussianNode), form::Symbol=:moment, m::Union(Float64,Vector{Float64})=[NaN], V::Union(Float64,Matrix{Float64})=reshape([NaN], 1, 1))
+    function GaussianNode(; id=generateNodeId(GaussianNode), form::Symbol=:moment, m::Union{Float64,Vector{Float64}}=[NaN], V::Union{Float64,Matrix{Float64}}=reshape([NaN], 1, 1))
         if isValid(m) && isValid(V)
             total_interfaces = 1
         elseif isValid(m) || isValid(V)
@@ -97,7 +97,7 @@ isDeterministic(::GaussianNode) = false
 
 function sumProduct!(node::GaussianNode,
                      outbound_interface_index::Int,
-                     ::Nothing,
+                     ::Void,
                      msg_var_prec::Message{DeltaDistribution{Float64}},
                      msg_out::Message{DeltaDistribution{Float64}})
     # Rules from Korl table 5.2 by symmetry
@@ -148,7 +148,7 @@ end
 function sumProduct!(node::GaussianNode,
                      outbound_interface_index::Int,
                      msg_mean::Message{DeltaDistribution{Float64}},
-                     ::Nothing,
+                     ::Void,
                      msg_out::Message{DeltaDistribution{Float64}})
     # Rules from Korl table 5.2
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
@@ -195,7 +195,7 @@ end
 
 function sumProduct!(node::GaussianNode,
                      outbound_interface_index::Int,
-                     ::Nothing,
+                     ::Void,
                      msg_out::Message{DeltaDistribution{Float64}})
     # Rules from Korl table 5.2
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
@@ -240,7 +240,7 @@ function sumProduct!(   node::GaussianNode,
                         outbound_interface_index::Int,
                         msg_mean::Message{DeltaDistribution{Float64}},
                         msg_var_prec::Message{DeltaDistribution{Float64}},
-                        ::Nothing)
+                        ::Void)
     # Rules from Korl table 5.2
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
@@ -289,7 +289,7 @@ end
 function sumProduct!(   node::GaussianNode,
                         outbound_interface_index::Int,
                         msg_var_prec::Message{DeltaDistribution{Float64}},
-                        msg_out::Nothing)
+                        msg_out::Void)
     # Rules from Korl table 5.2
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
@@ -351,7 +351,7 @@ end
 
 function vmp!(  node::GaussianNode,
                 outbound_interface_index::Int,
-                ::Nothing,
+                ::Void,
                 marg_variance::InverseGammaDistribution,
                 marg_out::GaussianDistribution)
     # Variational update function takes the marginals as input (instead of the inbound messages)
@@ -383,7 +383,7 @@ end
 
 function vmp!(  node::GaussianNode,
                 outbound_interface_index::Int,
-                ::Nothing,
+                ::Void,
                 marg_prec::GammaDistribution,
                 marg_y::GaussianDistribution)
     # Backward over mean, Gamma input
@@ -414,7 +414,7 @@ end
 
 function vmp!(  node::GaussianNode,
                 outbound_interface_index::Int,
-                ::Nothing,
+                ::Void,
                 marg_out::GaussianDistribution)
     isProper(marg_out) || error("Improper input distributions are not supported")
     if haskey(node.i, :precision) && is(node.interfaces[outbound_interface_index], node.i[:precision])
@@ -456,7 +456,7 @@ end
 function vmp!(  node::GaussianNode,
                 outbound_interface_index::Int,
                 marg_mean::GaussianDistribution,
-                ::Nothing,
+                ::Void,
                 marg_out::GaussianDistribution)
     (isProper(marg_mean) && isProper(marg_out)) || error("Improper input distributions are not supported")
     if haskey(node.i, :variance)
@@ -522,7 +522,7 @@ function vmp!(  node::GaussianNode,
                 outbound_interface_index::Int,
                 marg_mean::GaussianDistribution,
                 marg_var::InverseGammaDistribution,
-                ::Nothing)
+                ::Void)
     # Forward over out, InverseGamma input
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
@@ -552,7 +552,7 @@ end
 function vmp!(  node::GaussianNode,
                 outbound_interface_index::Int,
                 marg_prec::GammaDistribution,
-                ::Nothing)
+                ::Void)
     # Forward variational update function with fixed mean
     #
     #  Q~Gam      N
@@ -577,7 +577,7 @@ end
 function vmp!(  node::GaussianNode,
                 outbound_interface_index::Int,
                 marg_mean::GaussianDistribution,
-                ::Nothing)
+                ::Void)
     # Forward variational update function with fixed variance
     #
     #   Q~N     -->
@@ -605,7 +605,7 @@ function vmp!(  node::GaussianNode,
                 outbound_interface_index::Int,
                 marg_mean::GaussianDistribution,
                 marg_prec::GammaDistribution,
-                ::Nothing)
+                ::Void)
     # Forward over out, Gamma input
     # Variational update function takes the marginals as input (instead of the inbound messages)
     # Derivation for the update rule can be found in the derivations notebook.
@@ -639,7 +639,7 @@ end
 
 function vmp!(  node::GaussianNode,
                 outbound_interface_index::Int,
-                ::Nothing,
+                ::Void,
                 msg_prec::Message{GammaDistribution},
                 marg_out::GaussianDistribution)
     # Backward message over the mean
@@ -673,7 +673,7 @@ end
 function vmp!(  node::GaussianNode,
                 outbound_interface_index::Int,
                 msg_mean::Message{GaussianDistribution},
-                ::Nothing,
+                ::Void,
                 marg_out::GaussianDistribution)
     # Backward message over the precision
     #
@@ -706,7 +706,7 @@ function vmp!(  node::GaussianNode,
                 outbound_interface_index::Int,
                 marg::NormalGammaDistribution,
                 ::NormalGammaDistribution, # Same distribution as marg
-                ::Nothing)
+                ::Void)
     # Forward message over out.
     # This update function has two argments instead of three because it uses the node's joint marginal over the mean and precision.
     #

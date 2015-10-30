@@ -6,9 +6,9 @@ facts("EqualityNode unit tests") do
    context("EqualityNode() should initialize an EqualityNode with 3 interfaces") do
         FactorGraph()
         EqualityNode(id=:node)
-        @fact typeof(n(:node)) => EqualityNode
-        @fact length(n(:node).interfaces) => 3
-        @fact ForneyLab.firstFreeInterface(n(:node)) => n(:node).interfaces[1]
+        @fact typeof(n(:node)) --> EqualityNode
+        @fact length(n(:node).interfaces) --> 3
+        @fact ForneyLab.firstFreeInterface(n(:node)) --> n(:node).interfaces[1]
         for i=1:3
             Edge(n(:node), TerminalNode())
         end
@@ -55,7 +55,7 @@ facts("EqualityNode unit tests") do
         # In the tests, we use the exact rules from Korl. The actual implementation of sumProduct!() will calculate
         # the (xi,W) parametrizations of the inbound messages, such that only the W and xi update rules are used in practice.
         context("MvGaussianDistribution with (m,V) parametrization") do
-            mean = [1.0:3.0]
+            mean = collect(1.0:3.0)
             variance = reshape([4.0, 3.0, 2.0,
                                 3.0, 4.0, 3.0,
                                 2.0, 3.0, 4.0], 3, 3)
@@ -67,7 +67,7 @@ facts("EqualityNode unit tests") do
                                 MvGaussianDistribution(m=(pinv(W + W) * (W*inbound_dist.m + W*inbound_dist.m)), V=(inbound_dist.V * pinv(inbound_dist.V + inbound_dist.V) * inbound_dist.V)))
         end
         context("MvGaussianDistribution with (m,W) parametrization") do
-            mean = [1.0:3.0]
+            mean = collect(1.0:3.0)
             precision = inv(reshape([   4.0, 3.0, 2.0,
                                         3.0, 4.0, 3.0,
                                         2.0, 3.0, 4.0], 3, 3))
@@ -82,7 +82,7 @@ facts("EqualityNode unit tests") do
             variance = reshape([4.0, 3.0, 2.0,
                                 3.0, 4.0, 3.0,
                                 2.0, 3.0, 4.0], 3, 3)
-            inbound_dist = MvGaussianDistribution(xi=inv(variance)*[1.0:3.0], V=variance)
+            inbound_dist = MvGaussianDistribution(xi=inv(variance)*collect(1.0:3.0), V=variance)
             xi = inbound_dist.xi
             V = inbound_dist.V
             validateOutboundMessage(EqualityNode(),
@@ -94,7 +94,7 @@ facts("EqualityNode unit tests") do
             precision = inv(reshape([   4.0, 3.0, 2.0,
                                         3.0, 4.0, 3.0,
                                         2.0, 3.0, 4.0], 3, 3))
-            inbound_dist = MvGaussianDistribution(xi=precision*[1.0:3.0], W=precision)
+            inbound_dist = MvGaussianDistribution(xi=precision*collect(1.0:3.0), W=precision)
             xi = inbound_dist.xi
             W = inbound_dist.W
             validateOutboundMessage(EqualityNode(),

@@ -1,4 +1,4 @@
-function execute(subgraph::Subgraph, q_distributions::Dict{(Node, Subgraph), QDistribution}, factorization::QFactorization)
+function execute(subgraph::Subgraph, q_distributions::Dict{Tuple{Node, Subgraph}, QDistribution}, factorization::QFactorization)
     # Execute internal schedule
     SumProduct.execute(subgraph.internal_schedule)
 
@@ -16,7 +16,7 @@ function execute(subgraph::Subgraph, q_distributions::Dict{(Node, Subgraph), QDi
     end
 end
 
-function execute(factorization::QFactorization, q_distributions::Dict{(Node, Subgraph), QDistribution})
+function execute(factorization::QFactorization, q_distributions::Dict{Tuple{Node, Subgraph}, QDistribution})
     for subgraph in factorization.factors
         execute(subgraph, q_distributions, factorization)
     end

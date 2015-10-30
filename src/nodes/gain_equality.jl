@@ -32,7 +32,7 @@ type GainEqualityNode <: Node
     i::Dict{Symbol,Interface}
     A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
 
-    function GainEqualityNode(A::Union(Array{Float64},Float64)=1.0; id=generateNodeId(GainEqualityNode))
+    function GainEqualityNode(A::Union{Array{Float64},Float64}=1.0; id=generateNodeId(GainEqualityNode))
         self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(current_graph, self)
 
@@ -60,7 +60,7 @@ function sumProduct!(   node::GainEqualityNode,
                         outbound_interface_index::Int,
                         msg_in1::Message{GaussianDistribution},
                         msg_in2::Message{GaussianDistribution},
-                        msg_out::Nothing)
+                        msg_out::Void)
     # Forward message (towards out)
     (outbound_interface_index == 3) || error("The outbound interface id does not match with the calling signature.")
     (isProper(msg_in1.payload) && isProper(msg_in2.payload)) || error("Improper input distributions are not supported")
@@ -79,7 +79,7 @@ end
 function sumProduct!(node::GainEqualityNode,
                             outbound_interface_index::Int,
                             msg_in1::Message{GaussianDistribution},
-                            msg_in2::Nothing,
+                            msg_in2::Void,
                             msg_out::Message{GaussianDistribution})
     # Backward message (towards in2)
     (isProper(msg_in1.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
@@ -88,7 +88,7 @@ end
 
 function sumProduct!(node::GainEqualityNode,
                             outbound_interface_index::Int,
-                            msg_in1::Nothing,
+                            msg_in1::Void,
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Message{GaussianDistribution})
     # Backward message (towards in1)
@@ -130,7 +130,7 @@ function sumProduct!(node::GainEqualityNode,
                             outbound_interface_index::Int,
                             msg_in1::Message{MvGaussianDistribution},
                             msg_in2::Message{MvGaussianDistribution},
-                            msg_out::Nothing)
+                            msg_out::Void)
     # Forward message (towards out)
     (outbound_interface_index == 3) || error("The outbound interface id does not match with the calling signature.")
     (isProper(msg_in1.payload) && isProper(msg_in2.payload)) || error("Improper input distributions are not supported")
@@ -146,7 +146,7 @@ end
 function sumProduct!(node::GainEqualityNode,
                             outbound_interface_index::Int,
                             msg_in1::Message{MvGaussianDistribution},
-                            msg_in2::Nothing,
+                            msg_in2::Void,
                             msg_out::Message{MvGaussianDistribution})
     # Backward message (towards in2)
     (isProper(msg_in1.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
@@ -155,7 +155,7 @@ end
 
 function sumProduct!(node::GainEqualityNode,
                             outbound_interface_index::Int,
-                            msg_in1::Nothing,
+                            msg_in1::Void,
                             msg_in2::Message{MvGaussianDistribution},
                             msg_out::Message{MvGaussianDistribution})
     # Backward message (towards in1)
