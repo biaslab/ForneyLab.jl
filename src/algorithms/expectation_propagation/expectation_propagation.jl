@@ -28,76 +28,57 @@ function Algorithm(
     # If this function returns true, the algorithm stops
 
     # Algorithm overview:
-    # 1. Calculate all required messages that do not depend on the sites
-    # 2. Init all sites with vague messages
-    # 3. Calculate all cavity distributions
-    # 4. Approximate all site distributions
-    # 5. Check stopping criteria, goto 3
+    # 1. Init all sites with vague messages
+    # 2. For all sites i=1:N
+    #   2a. Calculate cavity distribution i
+    #   2b. Calculate site distribution i
+    # 3. Check stopping criteria, goto 2
 
     (length(sites) > 0) || error("Specify at least one site")
 
     # Build schedule for step 1
-    pre_sites_interfaces = Vector{Interface}()
-    for site in sites
-        pre_site_interfaces = SumProduct.generateScheduleByDFS!(site)
-        for idx=1:length(pre_site_interfaces)
-            if pre_site_interfaces[idx] in sites
-                pre_sites_interfaces = vcat(pre_sites_interfaces, pre_site_interfaces[1:idx-1])
-                break
-            end
+    total_schedule = Vector{Interface}()
+    for i = 1:length(sites)
+        site = sites[i]
+        # Prepend sites b/c of vague initialization
+        total_schedule = vcat(sites, total_schedule)
+        # Add schedule for cavity distribution to total_schedule
+        total_schedule = SumProduct.generateScheduleByDFS!(site.partner, total_schedule)
+        total_schedule = total_schedule[length(sites)+1:end] # Strip sites prepend
+        # Build list of other sites, prepend to total schedule
+        if i < length(sites)
+            other_sites = vcat(sites[1:i-1], sites[i+1:end])
+        else
+            other_sites = sites[1:i-1]
         end
+        total_schedule = vcat(other_sites, total_schedule)
+        total_schedule = SumProduct.generateScheduleByDFS!(site, total_schedule)
+        total_schedule = total_schedule[length(sites):end] # Strip other sites prepend
     end
 
-    # Build schedule for step 3
-    cavity_interfaces = [site.partner for site in sites]
-    cavities_dependencies = vcat(pre_sites_interfaces, sites) # init with schedule that has already been executed once we reach step 3
-    pre_cavities_schedule_length = length(cavities_dependencies)
-    for cavity_interface in [site.partner for site in sites]
-        cavities_dependencies = SumProduct.generateScheduleByDFS!(cavity_interface, cavities_dependencies)
-    end
-    if pre_cavities_schedule_length < length(cavities_dependencies)
-        # Get rid of the init prefix from step 1 and 2
-        cavities_dependencies = cavities_dependencies[pre_cavities_schedule_length+1:end]
-    else
-        error("Cannot construct a schedule for the cavity distributions")
-    end
-
-    # Build schedule for sites
-    ep_dependencies = vcat(pre_sites_interfaces, cavities_dependencies)
-    pre_ep_schedule_length = length(ep_dependencies)
-    for site in sites
-        ep_dependencies = SumProduct.generateScheduleByDFS!(site, ep_dependencies)
-    end
-    sites_schedule = convert(Schedule, ep_dependencies[pre_ep_schedule_length+1:end], ep!)
-    for ep_schedule_entry in sites_schedule
-        if !(ep_schedule_entry.interface in sites)
-            ep_schedule_entry.message_calculation_rule = sumProduct!
+    schedule = convert(Schedule, total_schedule, sumProduct!)
+    for schedule_entry in schedule
+        if schedule_entry.interface in sites
+            schedule_entry.message_calculation_rule = ep!
         end
     end
 
     fields = Dict{Symbol,Any}(
                 :sites => sites,
-                :pre_sites_schedule => convert(Schedule, pre_sites_interfaces, sumProduct!),
-                :cavities_schedule => convert(Schedule, cavities_dependencies, sumProduct!),
-                :sites_schedule => sites_schedule,
+                :schedule => schedule,
                 :num_iterations => num_iterations,
                 :callback => callback
                 )
 
     function exec(fields)
-        # 1. Calculate all required messages that do not depend on the sites
-        execute(fields[:pre_sites_schedule])
-        # 2. Init all sites with vague messages
+        # Init all sites with vague messages
         for site in fields[:sites]
             site.message = Message(vague(site.edge.distribution_type))
         end
 
         for iteration_count = 1:fields[:num_iterations]
-            # 3. Calculate all cavity distributions
-            execute(fields[:cavities_schedule])
-            # 4. Approximate all site distributions
-            execute(fields[:sites_schedule])
-            # 5. Check stopping criteria
+            execute(fields[:schedule])
+            # Check stopping criteria
             if fields[:callback]()
                 break
             end
