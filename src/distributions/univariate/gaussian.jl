@@ -18,6 +18,7 @@ export
     ensureMWParametrization!,
     ensureXiVParametrization!,
     ensureXiWParametrization!,
+    ensureParameters!,
     isWellDefined,
     isConsistent
 
@@ -147,6 +148,33 @@ ensureMWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureMDe
 ensureXiVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureXiDefined!(dist))
 
 ensureXiWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
+
+function ensureParameters!(d::GaussianDistribution, params::Tuple{Symbol})
+    for param in params
+        ensureParameter!(d, Val{param})
+    end
+    return d
+end
+
+function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:m}})
+    dist.m = isnan(dist.m) ? ensureParameter!(dist, :v).V * dist.xi : dist.m
+    return dist
+end
+
+function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:V}})
+    dist.V = isnan(dist.V) ? 1/dist.W : dist.V
+    return dist
+end
+
+function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:Xi}})
+    dist.xi = isnan(dist.xi) ? ensureWDefined!(dist).W * dist.m : dist.xi
+    return dist
+end
+
+function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:W}})
+    dist.W = isnan(dist.W) ? 1/dist.V : dist.W
+    return dist
+end
 
 function ==(x::GaussianDistribution, y::GaussianDistribution)
     if is(x, y)
