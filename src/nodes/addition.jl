@@ -51,7 +51,7 @@ function sumProduct!(node::AdditionNode,
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Void)
     dist_out = ensureMessage!(node.i[:out], GaussianDistribution).payload
-    dist_out.m = ensureMVParametrization!(msg_in1.payload).m + ensureMVParametrization!(msg_in2.payload).m
+    dist_out.m = ensureParameters!(msg_in1.payload, (:m, :V)).m + ensureParameters!(msg_in2.payload, (:m, :V)).m
     dist_out.V = msg_in1.payload.V + msg_in2.payload.V
     dist_out.W = NaN
     dist_out.xi = NaN
@@ -67,7 +67,7 @@ function sumProduct!(   node::AdditionNode,
                         ::Void,
                         msg_out::Message{GaussianDistribution})
     dist_result = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-    dist_result.m = ensureMVParametrization!(msg_out.payload).m - ensureMVParametrization!(msg_in1.payload).m
+    dist_result.m = ensureParameters!(msg_out.payload, (:m, :V)).m - ensureParameters!(msg_in1.payload, (:m, :V)).m
     dist_result.V = msg_in1.payload.V + msg_out.payload.V
     dist_result.W = NaN
     dist_result.xi = NaN
@@ -203,8 +203,8 @@ function additionGaussianForwardRule!(dist_result::MvGaussianDistribution, dist_
         dist_result.xi= forwardAdditionXiRule(dist_1.V, dist_1.xi, dist_2.V, dist_2.xi)
     else
         # Last resort: calculate (m,V) parametrization for both inbound messages
-        ensureMVParametrization!(dist_1)
-        ensureMVParametrization!(dist_2)
+        ensureParameters!(dist_1, (:m, :V))
+        ensureParameters!(dist_2. (:m, :V))
         dist_result.m = forwardAdditionMRule(dist_1.m, dist_2.m)
         dist_result.V = forwardAdditionVRule(dist_1.V, dist_2.V)
         invalidate!(dist_result.W)
@@ -248,8 +248,8 @@ function additionGaussianBackwardRule!(dist_result::MvGaussianDistribution, dist
         dist_result.xi = backwardAdditionXiRule(dist_1.V, dist_1.xi, dist_3.V, dist_3.xi)
     else
         # Last resort: calculate (m,V) parametrization for both inbound messages
-        ensureMVParametrization!(dist_1)
-        ensureMVParametrization!(dist_3)
+        ensureParameters!(dist_1, (:m, :V))
+        ensureParameters!(dist_3, (:m, :V))
         dist_result.m = backwardAdditionMRule(dist_1.m, dist_3.m)
         dist_result.V = backwardAdditionVRule(dist_1.V, dist_3.V)
         invalidate!(dist_result.W)

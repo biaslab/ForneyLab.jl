@@ -66,7 +66,7 @@ function sumProduct!(   node::GainEqualityNode,
     dist_temp = GaussianDistribution()
     equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-    dist_temp = ensureMVParametrization!(dist_temp)
+    dist_temp = ensureParameters!(dist_temp, (:m, :V))
     dist_out.m = node.A[1,1] * dist_temp.m
     dist_out.V = (node.A[1,1])^2 * dist_temp.V
     dist_out.xi = dist_out.W = NaN
@@ -101,8 +101,8 @@ function applyBackwardRule!(node::GainEqualityNode,
     # This function is not exported, and is only meant for internal use.
     # Backward message (towards in1 or in2)
     dist_result = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-    dist_3 = ensureXiWParametrization!(msg_out.payload)
-    dist_in = ensureXiWParametrization!(msg_in.payload)
+    dist_3 = ensureParameters!(msg_out.payload, (:xi, :W))
+    dist_in = ensureParameters!(msg_in.payload, (:xi, :W))
 
     dist_result.m = dist_result.V = NaN
     dist_result.W = dist_in.W + node.A[1,1]^2 * dist_3.W
@@ -187,8 +187,8 @@ function applyBackwardRule!(node::GainEqualityNode,
         invalidate!(dist_result.xi)
     else
         # Fallback: convert inbound messages to (xi,W) parametrization and then use efficient rules
-        ensureXiWParametrization!(dist_in)
-        ensureXiWParametrization!(dist_3)
+        ensureParameters!(dist_in, (:xi, :W))
+        ensureParameters!(dist_3, (:xi, :W))
         invalidate!(dist_result.m)
         invalidate!(dist_result.V)
         dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)

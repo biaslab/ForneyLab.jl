@@ -60,8 +60,8 @@ function equalityRule!(dist_result::GaussianDistribution, dist_1::GaussianDistri
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
     (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityGaussianRule! should be proper Gaussians")
-    ensureXiWParametrization!(dist_1)
-    ensureXiWParametrization!(dist_2)
+    ensureParameters!(dist_1, (:xi, :W))
+    ensureParameters!(dist_2, (:xi, :W))
     dist_result.m = NaN
     dist_result.V = NaN
     dist_result.W  = dist_1.W + dist_2.W
@@ -105,7 +105,7 @@ function equalityRule!(dist_result::GaussianDistribution, dist_gauss_in::Gaussia
     # The student's t distribution is approximated by a Gaussian by moment matching.
     # The result is a Gaussian approximation to the exact result.
 
-    ensureXiWParametrization!(dist_gauss_in)
+    ensureParameters!(dist_gauss_in, (:xi, :W))
     if 0.0 < dist_stud_in.nu <= 1.0
         # The mean and variance for the Student's t are undefined for nu <= 1.
         # However, since we apply a gaussian approximation we assume variance is huge in this case,
@@ -436,8 +436,8 @@ function equalityRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDi
         dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
     else
         # Use (xi,W)
-        ensureXiWParametrization!(dist_1)
-        ensureXiWParametrization!(dist_2)
+        ensureParameters!(dist_1, (:xi, :W))
+        ensureParameters!(dist_2, (:xi, :W))
         invalidate!(dist_result.m)
         invalidate!(dist_result.V)
         dist_result.W  = equalityWRule(dist_1.W, dist_2.W)

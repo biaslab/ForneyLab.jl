@@ -69,9 +69,9 @@ end
 
 show(io::IO, dist::GaussianDistribution) = println(io, format(dist))
 
-Base.mean(dist::GaussianDistribution) = isProper(dist) ? ensureMDefined!(dist).m : NaN
+Base.mean(dist::GaussianDistribution) = isProper(dist) ? ensureParameter!(dist, Type{Val{:m}}).m : NaN
 
-Base.var(dist::GaussianDistribution) = isProper(dist) ? ensureVDefined!(dist).V : NaN
+Base.var(dist::GaussianDistribution) = isProper(dist) ? ensureParameter!(dist, Type{Val{:V}}).V : NaN
 
 function isProper(dist::GaussianDistribution)
     if isWellDefined(dist)
@@ -153,7 +153,7 @@ function ensureParameters!(dist::GaussianDistribution, params::Tuple{Symbol})
     for param in params
         ensureParameter!(dist, Val{param})
     end
-    return d
+    return dist
 end
 
 function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:m}})
@@ -189,7 +189,7 @@ function ==(x::GaussianDistribution, y::GaussianDistribution)
     elseif !(isnan(x.xi) || isnan(y.xi))
         isApproxEqual(x.xi, y.xi) || return false
     else
-        ensureMDefined!(x); ensureMDefined!(y);
+        ensureParameters!(x, (:m,)); ensureParameters!(y, (:m,));
         isApproxEqual(x.m, y.m) || return false
     end
 
@@ -199,7 +199,7 @@ function ==(x::GaussianDistribution, y::GaussianDistribution)
     elseif !(isnan(x.W) || isnan(y.W))
         isApproxEqual(x.W, y.W) || return false
     else
-        ensureVDefined!(x); ensureVDefined!(y);
+        ensureParameters!(x, (:V,)); ensureParameters!(y, (:V,));
         isApproxEqual(x.V, y.V) || return false
     end
 
