@@ -149,9 +149,9 @@ ensureXiVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureXi
 
 ensureXiWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
 
-function ensureParameters!(d::GaussianDistribution, params::Tuple{Symbol})
+function ensureParameters!(dist::GaussianDistribution, params::Tuple{Symbol})
     for param in params
-        ensureParameter!(d, Val{param})
+        ensureParameter!(dist, Val{param})
     end
     return d
 end
@@ -166,7 +166,7 @@ function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:V}})
     return dist
 end
 
-function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:Xi}})
+function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:xi}})
     dist.xi = isnan(dist.xi) ? ensureWDefined!(dist).W * dist.m : dist.xi
     return dist
 end

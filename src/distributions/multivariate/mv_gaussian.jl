@@ -228,6 +228,33 @@ ensureXiVParametrization!(dist::MvGaussianDistribution) = ensureVDefined!(ensure
 
 ensureXiWParametrization!(dist::MvGaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
 
+function ensureParameters!(dist::MvGaussianDistribution, params::Tuple{Symbol})
+    for param in params
+        dist = ensureParameter!(dist, Val{param})
+    end
+    return dist
+end
+
+function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:m}})
+    dist.m = !isValid(dist.m) ? ensureVDefined!(dist).V * dist.xi : dist.m  
+    return dist
+end
+
+function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:xi}})
+    dist.xi = !isValid(dist.xi) ? ensureWDefined!(dist).W * dist.m : dist.xi
+    return dist
+end
+
+function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:W}})
+    dist.W = !isValid(dist.W) ? inv(dist.V) : dist.W
+    return dist
+end
+
+function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:V}})
+    dist.V = !isValid(dist.V) ? inv(dist.W) : dist.V
+    return dist
+end
+
 function ==(x::MvGaussianDistribution, y::MvGaussianDistribution)
     if is(x, y)
         return true
