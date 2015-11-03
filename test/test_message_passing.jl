@@ -21,7 +21,7 @@ facts("Message passing integration tests") do
             setMessage!(n(:add).i[:in1], Message(GaussianDistribution(m=2.0, V=0.5)))
             setMessage!(n(:add).i[:out], Message(GaussianDistribution()))
             schedule = SumProduct.generateSchedule(n(:add).i[:in2])
-            dist = ensureMVParametrization!(execute(schedule).payload)
+            dist = ensureParameters!(execute(schedule).payload, (:m, :V))
             @fact dist --> n(:add).i[:in2].message.payload
             @fact isApproxEqual(dist.m, [2.0]) --> true
             @fact isApproxEqual(dist.V, reshape([1.5], 1, 1)) --> true
@@ -41,7 +41,7 @@ facts("Message passing integration tests") do
                 execute(schedule)
             end
             @fact typeof(n(:driver).i[:out].message) --> Message{GaussianDistribution}
-            @fact ensureMVParametrization!(n(:driver).i[:out].message.payload).m --> 100.0 # For stop conditions at 100 cycles deep
+            @fact ensureParameters!(n(:driver).i[:out].message.payload, (:m, :V)).m --> 100.0 # For stop conditions at 100 cycles deep
         end
 
         context("Should be called repeatedly until convergence") do
@@ -53,7 +53,7 @@ facts("Message passing integration tests") do
             converged = false
             schedule = SumProduct.generateSchedule(n(:driver).i[:out])
             while !converged
-                dist = ensureMVParametrization!(execute(schedule).payload)
+                dist = ensureParameters!(execute(schedule).payload, (:m, :V))
                 converged = isApproxEqual(prev_dist.m, dist.m)
                 prev_dist = deepcopy(dist)
             end

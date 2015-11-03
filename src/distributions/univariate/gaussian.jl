@@ -14,10 +14,6 @@
 
 export
     GaussianDistribution,
-    ensureMVParametrization!,
-    ensureMWParametrization!,
-    ensureXiVParametrization!,
-    ensureXiWParametrization!,
     ensureParameters!,
     isWellDefined,
     isConsistent
@@ -84,7 +80,7 @@ end
 
 function sample(dist::GaussianDistribution)
     isProper(dist) || error("Cannot sample from improper distribution")
-    ensureMVParametrization!(dist)
+    ensureParameters!(dist, (:m, :V))
     return sqrt(dist.V)*randn() + dist.m
 end
 
@@ -116,38 +112,6 @@ function isConsistent(dist::GaussianDistribution)
     end
     return true # all validations passed
 end
-
-function ensureMDefined!(dist::GaussianDistribution)
-    # Ensure that dist.m is defined, calculate it if needed.
-    dist.m = isnan(dist.m) ? ensureVDefined!(dist).V * dist.xi : dist.m
-    return dist
-end
-
-function ensureXiDefined!(dist::GaussianDistribution)
-    # Ensure that dist.xi is defined, calculate it if needed.
-    dist.xi = isnan(dist.xi) ? ensureWDefined!(dist).W * dist.m : dist.xi
-    return dist
-end
-
-function ensureVDefined!(dist::GaussianDistribution)
-    # Ensure that dist.V is defined, calculate it if needed.
-    dist.V = isnan(dist.V) ? 1/dist.W : dist.V
-    return dist
-end
-
-function ensureWDefined!(dist::GaussianDistribution)
-    # Ensure that dist.W is defined, calculate it if needed.
-    dist.W = isnan(dist.W) ? 1/dist.V : dist.W
-    return dist
-end
-
-ensureMVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureMDefined!(dist))
-
-ensureMWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureMDefined!(dist))
-
-ensureXiVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureXiDefined!(dist))
-
-ensureXiWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
 
 function ensureParameters!(dist::GaussianDistribution, params::Tuple{Symbol, Vararg{Symbol}})
     for param in params

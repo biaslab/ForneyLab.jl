@@ -11,10 +11,6 @@
 
 export
     MvGaussianDistribution,
-    ensureMVParametrization!,
-    ensureMWParametrization!,
-    ensureXiVParametrization!,
-    ensureXiWParametrization!,
     ensureParameters!,
     isWellDefined,
     isConsistent
@@ -192,42 +188,6 @@ function isConsistent(dist::MvGaussianDistribution)
     end
     return true # all validations passed
 end
-
-function ensureMDefined!(dist::MvGaussianDistribution)
-    # Ensure that dist.m is defined, calculate it if needed.
-    # An underdetermined dist will throw an exception, we assume dist is well defined.
-    dist.m = !isValid(dist.m) ? ensureVDefined!(dist).V * dist.xi : dist.m
-    return dist
-end
-
-function ensureXiDefined!(dist::MvGaussianDistribution)
-    # Ensure that dist.xi is defined, calculate it if needed.
-    # An underdetermined dist will throw an exception, we assume dist is well defined.
-    dist.xi = !isValid(dist.xi) ? ensureWDefined!(dist).W * dist.m : dist.xi
-    return dist
-end
-
-function ensureVDefined!(dist::MvGaussianDistribution)
-    # Ensure that dist.V is defined, calculate it if needed.
-    # An underdetermined dist will throw an exception, we assume dist is well defined.
-    dist.V = !isValid(dist.V) ? inv(dist.W) : dist.V
-    return dist
-end
-
-function ensureWDefined!(dist::MvGaussianDistribution)
-    # Ensure that dist.W is defined, calculate it if needed.
-    # An underdetermined dist will throw an exception, we assume dist is well defined.
-    dist.W = !isValid(dist.W) ? inv(dist.V) : dist.W
-    return dist
-end
-
-ensureMVParametrization!(dist::MvGaussianDistribution) = ensureVDefined!(ensureMDefined!(dist))
-
-ensureMWParametrization!(dist::MvGaussianDistribution) = ensureWDefined!(ensureMDefined!(dist))
-
-ensureXiVParametrization!(dist::MvGaussianDistribution) = ensureVDefined!(ensureXiDefined!(dist))
-
-ensureXiWParametrization!(dist::MvGaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
 
 function ensureParameters!(dist::MvGaussianDistribution, params::Tuple{Symbol, Vararg{Symbol}})
     for param in params
