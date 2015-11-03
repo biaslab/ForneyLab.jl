@@ -101,7 +101,7 @@ show(io::IO, dist::MvGaussianDistribution) = println(io, format(dist))
 
 function Base.mean(dist::MvGaussianDistribution)
     if isProper(dist)
-        return ensureParameter!(dist, Type{Val{:m}}).m
+        return ensureParameter!(dist, Val{:m}).m
     else
         return fill!(similar(dist.m), NaN)
     end
@@ -109,7 +109,7 @@ end
 
 function Base.cov(dist::MvGaussianDistribution)
     if isProper(dist)
-        return ensureParameter!(dist, Type{Val{:V}}).V
+        return ensureParameter!(dist, Val{:V}).V
     else
         return fill!(similar(dist.V), NaN)
     end
@@ -117,7 +117,7 @@ end
 
 function Base.var(dist::MvGaussianDistribution)
     if isProper(dist)
-        return diag(ensureParameter!(dist, Type{Val{:V}}).V)
+        return diag(ensureParameter!(dist, Val{:V}).V)
     else
         return fill!(similar(dist.m), NaN)
     end
@@ -229,7 +229,7 @@ ensureXiVParametrization!(dist::MvGaussianDistribution) = ensureVDefined!(ensure
 
 ensureXiWParametrization!(dist::MvGaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
 
-function ensureParameters!(dist::MvGaussianDistribution, params::Tuple{Symbol})
+function ensureParameters!(dist::MvGaussianDistribution, params::Tuple{Symbol, Vararg{Symbol}})
     for param in params
         ensureParameter!(dist, Val{param})
     end
@@ -237,12 +237,12 @@ function ensureParameters!(dist::MvGaussianDistribution, params::Tuple{Symbol})
 end
 
 function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:m}})
-    dist.m = !isValid(dist.m) ? ensureVDefined!(dist).V * dist.xi : dist.m  
+    dist.m = !isValid(dist.m) ? ensureParameter!(dist, Val{:V}).V * dist.xi : dist.m  
     return dist
 end
 
 function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:xi}})
-    dist.xi = !isValid(dist.xi) ? ensureWDefined!(dist).W * dist.m : dist.xi
+    dist.xi = !isValid(dist.xi) ? ensureParameter!(dist, Val{:W}).W * dist.m : dist.xi
     return dist
 end
 
@@ -271,7 +271,7 @@ function ==(x::MvGaussianDistribution, y::MvGaussianDistribution)
         (length(x.xi)==length(x.xi)) || return false
         isApproxEqual(x.xi,y.xi) || return false
     else
-        ensureParameter!(x, Type{Val{:m}}); ensureParameter!(y, Type{Val{:m}});
+        ensureParameter!(x, Val{:m}); ensureParameter!(y, Val{:m});
         (length(x.m)==length(x.m)) || return false
         isApproxEqual(x.m,y.m) || return false
     end
@@ -284,7 +284,7 @@ function ==(x::MvGaussianDistribution, y::MvGaussianDistribution)
         (length(x.W)==length(x.W)) || return false
         isApproxEqual(x.W,y.W) || return false
     else
-        ensureParameter!(x, Type{Val{:V}}); ensureParameter!(y, Type{Val{:v}});
+        ensureParameter!(x, Val{:V}); ensureParameter!(y, Val{:V});
         (length(x.V)==length(x.V)) || return false
         isApproxEqual(x.V,y.V) || return false
     end

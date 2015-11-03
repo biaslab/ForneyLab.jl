@@ -204,7 +204,7 @@ function additionGaussianForwardRule!(dist_result::MvGaussianDistribution, dist_
     else
         # Last resort: calculate (m,V) parametrization for both inbound messages
         ensureParameters!(dist_1, (:m, :V))
-        ensureParameters!(dist_2. (:m, :V))
+        ensureParameters!(dist_2, (:m, :V))
         dist_result.m = forwardAdditionMRule(dist_1.m, dist_2.m)
         dist_result.V = forwardAdditionVRule(dist_1.V, dist_2.V)
         invalidate!(dist_result.W)

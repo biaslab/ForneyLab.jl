@@ -618,7 +618,7 @@ function vmp!(  node::GaussianNode,
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_index], node.i[:out])
-        ensureParameter!(marg_mean, (:m,))
+        ensureParameters!(marg_mean, (:m,))
         dist_out.m = marg_mean.m
         dist_out.W = marg_prec.a / marg_prec.b
         dist_out.xi = NaN
