@@ -125,7 +125,6 @@ function ep!(
     #  4. Calculate back the Gaussian outbound msg on i[:real] that yields this approximate Gaussian marginal.
     # IMPORTANT NOTES:
     #  - This calculation results in an implicit cycle in the factor graph since the outbound message depends on the inbound message (cavity dist.)
-    #  - The outbound message is not guaranteed to be a proper Gaussian (variance/precision parameters might be negative)
     (outbound_interface_id == 1) || error("Invalid call")
     (node.sigmoid_func == :normal_cdf) || error("Unsupported sigmoid function")
     isProper(msg_bin.payload) || error("ep!: Incoming Bernoulli distribution should be proper")
@@ -149,7 +148,7 @@ function ep!(
 
     # Moments of f2 = 1/C * Φ(x)*N(x|μ,σ2)
     m2_1 = μ + σ2*N / (C*sqrt(1+σ2))  # First moment of f2 (Rasmussen eqn. 3.85)
-    m2_2 = 2*μ*m2_1 - μ^2 + σ2 - (σ2^2*z*N) / (C*sqrt(1+σ2))  # Second moment of f2 (Rasmussen eqn. 3.86)
+    m2_2 = 2*μ*m2_1 - μ^2 + σ2 - (σ2^2*z*N) / (C*(1+σ2))  # Second moment of f2 (Rasmussen eqn. 3.86)
 
     # Moments of f(x) (exact marginal)
     m_0 = 1 - p + (2*p-1)*C
@@ -170,5 +169,5 @@ function ep!(
     dist_backward.xi = marginal.xi - dist_cavity.xi
     dist_backward.m = dist_backward.V = NaN
 
-    return (:sigmoid_backward_gaussian_expectation, dist_backward)
+    return (:sigmoid_backward_gaussian_expectation, node.interfaces[1].message)
 end
