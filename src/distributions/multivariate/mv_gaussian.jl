@@ -189,6 +189,9 @@ function isConsistent(dist::MvGaussianDistribution)
     return true # all validations passed
 end
 
+# In all ensureParameter! methods we check if the required parameter defined and, if not, calculate it.
+# We assume that the distribution is well-defined, otherwise we would've gotten the message upon creating.   
+
 function ensureParameters!(dist::MvGaussianDistribution, params::Tuple{Symbol, Vararg{Symbol}})
     for param in params
         ensureParameter!(dist, Val{param})

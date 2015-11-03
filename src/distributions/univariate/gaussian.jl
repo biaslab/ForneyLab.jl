@@ -120,6 +120,9 @@ function ensureParameters!(dist::GaussianDistribution, params::Tuple{Symbol, Var
     return dist
 end
 
+# In all ensureParameter! methods we check if the required parameter defined and, if not, calculate it.
+# We assume that the distribution is well-defined, otherwise we would've gotten the message upon creating.
+
 function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:m}})
     dist.m = isnan(dist.m) ? ensureParameter!(dist, Val{:V}).V * dist.xi : dist.m
     return dist
