@@ -67,21 +67,21 @@ facts("GaussianDistribution unit tests") do
     end
     context("Conversions between valid parametrizations of a GaussianDistribution should be consistent") do
         # Defined as (m,V)
-        @fact isConsistent(ensureMWParametrization!(GaussianDistribution(m=0.0, V=1.0))) --> true
-        @fact isConsistent(ensureXiVParametrization!(GaussianDistribution(m=0.0, V=1.0))) --> true
-        @fact isConsistent(ensureXiWParametrization!(GaussianDistribution(m=0.0, V=1.0))) --> true
+        @fact isConsistent(ensureParameters!(GaussianDistribution(m=0.0, V=1.0), (:m, :W))) --> true
+        @fact isConsistent(ensureParameters!(GaussianDistribution(m=0.0, V=1.0), (:xi, :V))) --> true
+        @fact isConsistent(ensureParameters!(GaussianDistribution(m=0.0, V=1.0), (:xi, :W))) --> true
         # Defined as (m,W)
-        @fact isConsistent(ensureMVParametrization!(GaussianDistribution(m=0.0, W=1.0))) --> true
-        @fact isConsistent(ensureXiVParametrization!(GaussianDistribution(m=0.0, W=1.0))) --> true
-        @fact isConsistent(ensureXiWParametrization!(GaussianDistribution(m=0.0, W=1.0))) --> true
+        @fact isConsistent(ensureParameters!(GaussianDistribution(m=0.0, W=1.0), (:m, :V))) --> true
+        @fact isConsistent(ensureParameters!(GaussianDistribution(m=0.0, W=1.0), (:xi, :V))) --> true
+        @fact isConsistent(ensureParameters!(GaussianDistribution(m=0.0, W=1.0), (:xi, :W))) --> true
         # Defined as (xi,V)
-        @fact isConsistent(ensureMVParametrization!(GaussianDistribution(xi=2.0, V=1.0))) --> true
-        @fact isConsistent(ensureMWParametrization!(GaussianDistribution(xi=2.0, V=1.0))) --> true
-        @fact isConsistent(ensureXiWParametrization!(GaussianDistribution(xi=2.0, V=1.0))) --> true
+        @fact isConsistent(ensureParameters!(GaussianDistribution(xi=2.0, V=1.0), (:m, :V))) --> true
+        @fact isConsistent(ensureParameters!(GaussianDistribution(xi=2.0, V=1.0), (:m, :W))) --> true
+        @fact isConsistent(ensureParameters!(GaussianDistribution(xi=2.0, V=1.0), (:xi, :W))) --> true
         # Defined as (xi,W)
-        @fact isConsistent(ensureMVParametrization!(GaussianDistribution(xi=2.0, W=1.0))) --> true
-        @fact isConsistent(ensureMWParametrization!(GaussianDistribution(xi=2.0, W=1.0))) --> true
-        @fact isConsistent(ensureXiVParametrization!(GaussianDistribution(xi=2.0, W=1.0))) --> true
+        @fact isConsistent(ensureParameters!(GaussianDistribution(xi=2.0, W=1.0), (:m, :V))) --> true
+        @fact isConsistent(ensureParameters!(GaussianDistribution(xi=2.0, W=1.0), (:m, :W))) --> true
+        @fact isConsistent(ensureParameters!(GaussianDistribution(xi=2.0, W=1.0), (:xi, :V))) --> true
     end
     context("mean(GaussianDistribution) and var(GaussianDistribution) should return correct result") do
         @fact mean(GaussianDistribution(m=1.0, V=1.0)) --> 1.0
@@ -106,7 +106,7 @@ facts("Marginal calculations for the Gaussian") do
         n(:t2).i[:out].message = Message(GaussianDistribution(m=0.0, V=1.0))
         marginal_dist = calculateMarginal!(edge)
         @fact edge.marginal --> marginal_dist
-        ensureMVParametrization!(marginal_dist)
+        ensureParameters!(marginal_dist, (:m, :V))
         @fact edge.marginal.m --> 0.0
         @fact isApproxEqual(edge.marginal.V, 0.5) --> true
     end
@@ -115,7 +115,7 @@ facts("Marginal calculations for the Gaussian") do
         marginal_dist = calculateMarginal(
                                 GaussianDistribution(m=0.0, V=1.0),
                                 GaussianDistribution(m=0.0, V=1.0))
-        ensureMVParametrization!(marginal_dist)
+        ensureParameters!(marginal_dist, (:m, :V))
         @fact marginal_dist.m --> 0.0
         @fact isApproxEqual(marginal_dist.V, 0.5) --> true
     end

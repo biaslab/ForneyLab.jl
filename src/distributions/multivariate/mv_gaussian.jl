@@ -11,10 +11,7 @@
 
 export
     MvGaussianDistribution,
-    ensureMVParametrization!,
-    ensureMWParametrization!,
-    ensureXiVParametrization!,
-    ensureXiWParametrization!,
+    ensureParameters!,
     isWellDefined,
     isConsistent
 
@@ -100,7 +97,7 @@ show(io::IO, dist::MvGaussianDistribution) = println(io, format(dist))
 
 function Base.mean(dist::MvGaussianDistribution)
     if isProper(dist)
-        return ensureMDefined!(dist).m
+        return ensureParameter!(dist, Val{:m}).m
     else
         return fill!(similar(dist.m), NaN)
     end
@@ -108,7 +105,7 @@ end
 
 function Base.cov(dist::MvGaussianDistribution)
     if isProper(dist)
-        return ensureVDefined!(dist).V
+        return ensureParameter!(dist, Val{:V}).V
     else
         return fill!(similar(dist.V), NaN)
     end
@@ -116,7 +113,7 @@ end
 
 function Base.var(dist::MvGaussianDistribution)
     if isProper(dist)
-        return diag(ensureVDefined!(dist).V)
+        return diag(ensureParameter!(dist, Val{:V}).V)
     else
         return fill!(similar(dist.m), NaN)
     end
@@ -135,7 +132,7 @@ end
 
 function sample(dist::MvGaussianDistribution)
     isProper(dist) || error("Cannot sample from improper distribution")
-    ensureMVParametrization!(dist)
+    ensureParameters!(dist, (:m, :V))
     return (dist.V^0.5)*randn(length(dist.m)) + dist.m
 end
 
@@ -192,41 +189,43 @@ function isConsistent(dist::MvGaussianDistribution)
     return true # all validations passed
 end
 
-function ensureMDefined!(dist::MvGaussianDistribution)
-    # Ensure that dist.m is defined, calculate it if needed.
-    # An underdetermined dist will throw an exception, we assume dist is well defined.
-    dist.m = !isValid(dist.m) ? ensureVDefined!(dist).V * dist.xi : dist.m
+# In all ensureParameter! methods we check if the required parameter defined and, if not, calculate it.
+# We assume that the distribution is well-defined, otherwise we would've gotten the message upon creating.
+
+function ensureParameters!(dist::MvGaussianDistribution, params::Tuple{Symbol, Vararg{Symbol}})
+    for param in params
+        ensureParameter!(dist, Val{param})
+    end
     return dist
 end
 
-function ensureXiDefined!(dist::MvGaussianDistribution)
-    # Ensure that dist.xi is defined, calculate it if needed.
-    # An underdetermined dist will throw an exception, we assume dist is well defined.
-    dist.xi = !isValid(dist.xi) ? ensureWDefined!(dist).W * dist.m : dist.xi
+function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:m}})
+    if !isValid(dist.m)
+        dist.m = ensureParameter!(dist, Val{:V}).V * dist.xi
+    end
     return dist
 end
 
-function ensureVDefined!(dist::MvGaussianDistribution)
-    # Ensure that dist.V is defined, calculate it if needed.
-    # An underdetermined dist will throw an exception, we assume dist is well defined.
-    dist.V = !isValid(dist.V) ? inv(dist.W) : dist.V
+function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:xi}})
+    if !isValid(dist.xi)
+        dist.xi = ensureParameter!(dist, Val{:W}).W * dist.m
+    end
     return dist
 end
 
-function ensureWDefined!(dist::MvGaussianDistribution)
-    # Ensure that dist.W is defined, calculate it if needed.
-    # An underdetermined dist will throw an exception, we assume dist is well defined.
-    dist.W = !isValid(dist.W) ? inv(dist.V) : dist.W
+function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:W}})
+    if !isValid(dist.W)
+        dist.W = inv(dist.V)
+    end
     return dist
 end
 
-ensureMVParametrization!(dist::MvGaussianDistribution) = ensureVDefined!(ensureMDefined!(dist))
-
-ensureMWParametrization!(dist::MvGaussianDistribution) = ensureWDefined!(ensureMDefined!(dist))
-
-ensureXiVParametrization!(dist::MvGaussianDistribution) = ensureVDefined!(ensureXiDefined!(dist))
-
-ensureXiWParametrization!(dist::MvGaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
+function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:V}})
+    if !isValid(dist.V)
+        dist.V = inv(dist.W)
+    end
+    return dist
+end
 
 function ==(x::MvGaussianDistribution, y::MvGaussianDistribution)
     if is(x, y)
@@ -243,7 +242,7 @@ function ==(x::MvGaussianDistribution, y::MvGaussianDistribution)
         (length(x.xi)==length(x.xi)) || return false
         isApproxEqual(x.xi,y.xi) || return false
     else
-        ensureMDefined!(x); ensureMDefined!(y);
+        ensureParameter!(x, Val{:m}); ensureParameter!(y, Val{:m});
         (length(x.m)==length(x.m)) || return false
         isApproxEqual(x.m,y.m) || return false
     end
@@ -256,7 +255,7 @@ function ==(x::MvGaussianDistribution, y::MvGaussianDistribution)
         (length(x.W)==length(x.W)) || return false
         isApproxEqual(x.W,y.W) || return false
     else
-        ensureVDefined!(x); ensureVDefined!(y);
+        ensureParameter!(x, Val{:V}); ensureParameter!(y, Val{:V});
         (length(x.V)==length(x.V)) || return false
         isApproxEqual(x.V,y.V) || return false
     end

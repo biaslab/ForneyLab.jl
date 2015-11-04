@@ -73,21 +73,21 @@ facts("MvGaussianDistribution unit tests") do
     end
     context("Conversions between valid parametrizations of a MvGaussianDistribution should be consistent") do
         # Defined as (m,V)
-        @fact isConsistent(ensureMWParametrization!(MvGaussianDistribution(m=[0.0], V=eye(1)))) --> true
-        @fact isConsistent(ensureXiVParametrization!(MvGaussianDistribution(m=[0.0], V=eye(1)))) --> true
-        @fact isConsistent(ensureXiWParametrization!(MvGaussianDistribution(m=[0.0], V=eye(1)))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussianDistribution(m=[0.0], V=eye(1)), (:m, :W))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussianDistribution(m=[0.0], V=eye(1)), (:xi, :V))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussianDistribution(m=[0.0], V=eye(1)), (:xi, :W))) --> true
         # Defined as (m,W)
-        @fact isConsistent(ensureMVParametrization!(MvGaussianDistribution(m=[0.0], W=eye(1)))) --> true
-        @fact isConsistent(ensureXiVParametrization!(MvGaussianDistribution(m=[0.0], W=eye(1)))) --> true
-        @fact isConsistent(ensureXiWParametrization!(MvGaussianDistribution(m=[0.0], W=eye(1)))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussianDistribution(m=[0.0], W=eye(1)), (:m, :V))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussianDistribution(m=[0.0], W=eye(1)), (:xi, :V))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussianDistribution(m=[0.0], W=eye(1)), (:xi, :W))) --> true
         # Defined as (xi,V)
-        @fact isConsistent(ensureMVParametrization!(MvGaussianDistribution(xi=[2.0], V=eye(1)))) --> true
-        @fact isConsistent(ensureMWParametrization!(MvGaussianDistribution(xi=[2.0], V=eye(1)))) --> true
-        @fact isConsistent(ensureXiWParametrization!(MvGaussianDistribution(xi=[2.0], V=eye(1)))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussianDistribution(xi=[2.0], V=eye(1)), (:m, :V))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussianDistribution(xi=[2.0], V=eye(1)), (:m, :W))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussianDistribution(xi=[2.0], V=eye(1)), (:xi, :W))) --> true
         # Defined as (xi,W)
-        @fact isConsistent(ensureMVParametrization!(MvGaussianDistribution(xi=[2.0], W=eye(1)))) --> true
-        @fact isConsistent(ensureMWParametrization!(MvGaussianDistribution(xi=[2.0], W=eye(1)))) --> true
-        @fact isConsistent(ensureXiVParametrization!(MvGaussianDistribution(xi=[2.0], W=eye(1)))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussianDistribution(xi=[2.0], W=eye(1)), (:m, :V))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussianDistribution(xi=[2.0], W=eye(1)), (:m, :W))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussianDistribution(xi=[2.0], W=eye(1)), (:xi, :V))) --> true
     end
     context("mean(d), var(d), cov(d) should return correct results") do
         @fact mean(MvGaussianDistribution(m=[1.0, 2.0], V=eye(2))) --> [1.0, 2.0]
@@ -115,7 +115,7 @@ facts("Marginal calculations for the MvGaussian") do
         n(:t2).i[:out].message = Message(MvGaussianDistribution(m=[0.0], V=eye(1)))
         marginal_dist = calculateMarginal!(edge)
         @fact edge.marginal --> marginal_dist
-        ensureMVParametrization!(marginal_dist)
+        ensureParameters!(marginal_dist, (:m, :V))
         @fact edge.marginal.m --> [0.0]
         @fact isApproxEqual(edge.marginal.V, reshape([0.5], 1, 1)) --> true
     end
@@ -124,7 +124,7 @@ facts("Marginal calculations for the MvGaussian") do
         marginal_dist = calculateMarginal(
                                 MvGaussianDistribution(m=[0.0], V=eye(1)),
                                 MvGaussianDistribution(m=[0.0], V=eye(1)))
-        ensureMVParametrization!(marginal_dist)
+        ensureParameters!(marginal_dist, (:m, :V))
         @fact marginal_dist.m --> [0.0]
         @fact isApproxEqual(marginal_dist.V, reshape([0.5], 1, 1)) --> true
     end

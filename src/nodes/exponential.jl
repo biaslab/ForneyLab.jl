@@ -51,7 +51,7 @@ function sumProduct!(   node::ExponentialNode,
                         msg_out::Void)
     dist_out = ensureMessage!(node.i[:out], GammaDistribution).payload
 
-    ensureMWParametrization!(msg_in.payload)
+    ensureParameters!(msg_in.payload, (:m, :W))
 
     gam = msg_in.payload.W
     mu = msg_in.payload.m

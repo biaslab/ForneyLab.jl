@@ -14,10 +14,7 @@
 
 export
     GaussianDistribution,
-    ensureMVParametrization!,
-    ensureMWParametrization!,
-    ensureXiVParametrization!,
-    ensureXiWParametrization!,
+    ensureParameters!,
     isWellDefined,
     isConsistent
 
@@ -68,9 +65,9 @@ end
 
 show(io::IO, dist::GaussianDistribution) = println(io, format(dist))
 
-Base.mean(dist::GaussianDistribution) = isProper(dist) ? ensureMDefined!(dist).m : NaN
+Base.mean(dist::GaussianDistribution) = isProper(dist) ? ensureParameter!(dist, Val{:m}).m : NaN
 
-Base.var(dist::GaussianDistribution) = isProper(dist) ? ensureVDefined!(dist).V : NaN
+Base.var(dist::GaussianDistribution) = isProper(dist) ? ensureParameter!(dist, Val{:V}).V : NaN
 
 function isProper(dist::GaussianDistribution)
     if isWellDefined(dist)
@@ -83,7 +80,7 @@ end
 
 function sample(dist::GaussianDistribution)
     isProper(dist) || error("Cannot sample from improper distribution")
-    ensureMVParametrization!(dist)
+    ensureParameters!(dist, (:m, :V))
     return sqrt(dist.V)*randn() + dist.m
 end
 
@@ -116,37 +113,43 @@ function isConsistent(dist::GaussianDistribution)
     return true # all validations passed
 end
 
-function ensureMDefined!(dist::GaussianDistribution)
-    # Ensure that dist.m is defined, calculate it if needed.
-    dist.m = isnan(dist.m) ? ensureVDefined!(dist).V * dist.xi : dist.m
+function ensureParameters!(dist::GaussianDistribution, params::Tuple{Symbol, Vararg{Symbol}})
+    for param in params
+        ensureParameter!(dist, Val{param})
+    end
     return dist
 end
 
-function ensureXiDefined!(dist::GaussianDistribution)
-    # Ensure that dist.xi is defined, calculate it if needed.
-    dist.xi = isnan(dist.xi) ? ensureWDefined!(dist).W * dist.m : dist.xi
+# In all ensureParameter! methods we check if the required parameter defined and, if not, calculate it.
+# We assume that the distribution is well-defined, otherwise we would've gotten the message upon creating.
+
+function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:m}})
+    if isnan(dist.m)
+        dist.m = ensureParameter!(dist, Val{:V}).V * dist.xi
+    end
     return dist
 end
 
-function ensureVDefined!(dist::GaussianDistribution)
-    # Ensure that dist.V is defined, calculate it if needed.
-    dist.V = isnan(dist.V) ? 1/dist.W : dist.V
+function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:V}})
+    if isnan(dist.V)
+        dist.V = 1/dist.W
+    end
     return dist
 end
 
-function ensureWDefined!(dist::GaussianDistribution)
-    # Ensure that dist.W is defined, calculate it if needed.
-    dist.W = isnan(dist.W) ? 1/dist.V : dist.W
+function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:xi}})
+    if isnan(dist.xi)
+        dist.xi = ensureParameter!(dist, Val{:W}).W * dist.m
+    end
     return dist
 end
 
-ensureMVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureMDefined!(dist))
-
-ensureMWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureMDefined!(dist))
-
-ensureXiVParametrization!(dist::GaussianDistribution) = ensureVDefined!(ensureXiDefined!(dist))
-
-ensureXiWParametrization!(dist::GaussianDistribution) = ensureWDefined!(ensureXiDefined!(dist))
+function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:W}})
+    if isnan(dist.W)
+        dist.W = 1/dist.V
+    end
+    return dist
+end
 
 function ==(x::GaussianDistribution, y::GaussianDistribution)
     if is(x, y)
@@ -161,7 +164,7 @@ function ==(x::GaussianDistribution, y::GaussianDistribution)
     elseif !(isnan(x.xi) || isnan(y.xi))
         isApproxEqual(x.xi, y.xi) || return false
     else
-        ensureMDefined!(x); ensureMDefined!(y);
+        ensureParameter!(x, Val{:m}); ensureParameter!(y, Val{:m});
         isApproxEqual(x.m, y.m) || return false
     end
 
@@ -171,7 +174,7 @@ function ==(x::GaussianDistribution, y::GaussianDistribution)
     elseif !(isnan(x.W) || isnan(y.W))
         isApproxEqual(x.W, y.W) || return false
     else
-        ensureVDefined!(x); ensureVDefined!(y);
+        ensureParameter!(x, Val{:V}); ensureParameter!(y, Val{:V});
         isApproxEqual(x.V, y.V) || return false
     end
 
