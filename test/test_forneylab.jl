@@ -71,6 +71,7 @@ include("test_step.jl")
 include("test_algorithm.jl")
 include("algorithms/sum_product/test_sum_product.jl")
 include("algorithms/vmp/test_vmp.jl")
+include("algorithms/expectation_propagation/test_expectation_propagation.jl")
 
 exitstatus()
 

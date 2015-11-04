@@ -51,7 +51,7 @@ function sumProduct!(node::AdditionNode,
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Void)
     # Check well convergence of calculation rule in case of improper inputs
-    if ensureMWParametrization!(msg_in1.payload).W + ensureMWParametrization!(msg_in2.payload).W <= 0
+    if ensureParameters!(msg_in1.payload, (:m, :W)).W + ensureParameters!(msg_in2.payload, (:m, :W)).W <= 0
         error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s)")
     end
     dist_out = ensureMessage!(node.i[:out], GaussianDistribution).payload
@@ -71,7 +71,7 @@ function sumProduct!(   node::AdditionNode,
                         ::Void,
                         msg_out::Message{GaussianDistribution})
     # Check well convergence of calculation rule in case of improper inputs
-    if ensureMWParametrization!(msg_in1.payload).W + ensureMWParametrization!(msg_out.payload).W <= 0
+    if ensureParameters!(msg_in1.payload, (:m, :W)).W + ensureParameters!(msg_out.payload, (:m, :W)).W <= 0
         error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s)")
     end
     dist_result = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload

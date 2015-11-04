@@ -82,7 +82,7 @@ function sumProduct!(node::SigmoidNode,
                      ::Void)
     # Generate Bernoulli message from incoming Gaussian message.
     (outbound_interface_id == 2) || error("Invalid call")
-    dist_1 = ensureMVParametrization!(msg_1.payload)
+    dist_1 = ensureParameters!(msg_1.payload, (:m, :V))
     (length(dist_1.m) == 1) || error("Only univariate messages are supported")
     dist_2 = ensureMessage!(node.interfaces[2], BernoulliDistribution).payload
 
@@ -132,7 +132,7 @@ function ep!(
 
     # Shordhand notations
     p = msg_bin.payload.p
-    dist_cavity = ensureMVParametrization!(msg_cavity.payload)
+    dist_cavity = ensureParameters!(msg_cavity.payload, (:m, :V))
     μ = dist_cavity.m; σ2 = dist_cavity.V
 
     # Calculate first and second moment (m_1, m_2) of the 'true' marginal p(x) on edge connected to i[:real]
@@ -163,8 +163,8 @@ function ep!(
 
     # Calculate the approximate message towards i[:real]
     dist_backward = ensureMessage!(node.interfaces[1], GaussianDistribution).payload
-    ensureXiWParametrization!(marginal)
-    ensureXiWParametrization!(dist_cavity)
+    ensureParameters!(marginal, (:xi, :W))
+    ensureParameters!(dist_cavity, (:xi, :W))
     dist_backward.W = marginal.W - dist_cavity.W # This can be < 0, yielding improper Gaussian bw msg
     if dist_backward.W < 0
         dist_backward.W = clamp(dist_backward.W, -1*huge, -1*tiny)
