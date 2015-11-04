@@ -6,26 +6,14 @@ using ..ForneyLab
 # Algorithm constructors
 #--------------------------------
 
-# function Algorithm(graph::FactorGraph=currentGraph())
-#
-# end
-
-# function Algorithm(outbound_interface::Interface)
-#
-# end
-#
-# function Algorithm(edge::Edge)
-#
-# end
-
 function Algorithm(
             sites::Vector{Interface};
-            num_iterations::Int64 = 100000,
+            num_iterations::Int64 = 100,
             callback::Function = () -> false)
-    # Build an EP message passing algorithm for the specified sites
-    # num_iterations specifies the maximum number of iterations
-    # After each iteration, callback is called
-    # If this function returns true, the algorithm stops
+    # Build an EP message passing algorithm for the specified sites.
+    # num_iterations specifies the maximum number of iterations.
+    # After each iteration, callback is called to allow for convergence checks.
+    # If the callback returns true, the algorithm is terminated.
 
     # Algorithm overview:
     # 1. Init all sites with vague messages

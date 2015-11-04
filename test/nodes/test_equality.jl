@@ -6,7 +6,6 @@ facts("EqualityNode unit tests") do
    context("EqualityNode() should initialize an EqualityNode with 3 interfaces") do
         FactorGraph()
         EqualityNode(id=:node)
-        @fact typeof(n(:node)) --> EqualityNode
         @fact length(n(:node).interfaces) --> 3
         @fact ForneyLab.firstFreeInterface(n(:node)) --> n(:node).interfaces[1]
         for i=1:3

@@ -6,7 +6,6 @@ facts("ExponentialNode unit tests") do
     context("ExponentialNode should initialize a ExponentialNode with 2 interfaces") do
         FactorGraph()
         ExponentialNode(id=:node)
-        @fact typeof(n(:node)) --> ExponentialNode
         @fact length(n(:node).interfaces) --> 2
         @fact n(:node).i[:in] --> n(:node).interfaces[1]
         @fact n(:node).i[:out] --> n(:node).interfaces[2]

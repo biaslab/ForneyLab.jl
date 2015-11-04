@@ -87,7 +87,7 @@ function sumProduct!(node::SigmoidNode,
     dist_2 = ensureMessage!(node.interfaces[2], BernoulliDistribution).payload
 
     if node.sigmoid_func == :normal_cdf
-        dist_2.p = Φ(dist_1.m[1]/sqrt(1+dist_1.V[1,1]))
+        dist_2.p = Φ(dist_1.m / sqrt(1+dist_1.V))
     else
         error("Unsupported sigmoid function")
     end
@@ -166,6 +166,11 @@ function ep!(
     ensureXiWParametrization!(marginal)
     ensureXiWParametrization!(dist_cavity)
     dist_backward.W = marginal.W - dist_cavity.W # This can be < 0, yielding improper Gaussian bw msg
+    if dist_backward.W < 0
+        dist_backward.W = clamp(dist_backward.W, -1*huge, -1*tiny)
+    else
+        dist_backward.W = clamp(dist_backward.W, tiny, huge)
+    end
     dist_backward.xi = marginal.xi - dist_cavity.xi
     dist_backward.m = dist_backward.V = NaN
 

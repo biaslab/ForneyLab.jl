@@ -6,7 +6,6 @@ facts("FixedGainNode unit tests") do
     context("FixedGainNode() should initialize a FixedGainNode with 2 interfaces") do
         FactorGraph()
         FixedGainNode([1.0], id=:node)
-        @fact typeof(n(:node)) --> FixedGainNode
         @fact length(n(:node).interfaces) --> 2
         @fact n(:node).i[:in] --> n(:node).interfaces[1]
         @fact n(:node).i[:out] --> n(:node).interfaces[2]

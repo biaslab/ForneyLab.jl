@@ -10,7 +10,6 @@ facts("TerminalNode unit tests") do
     context("TerminalNode() should initialize a TerminalNode with 1 interface") do
         FactorGraph()
         TerminalNode(id=:node)
-        @fact typeof(n(:node)) --> TerminalNode
         @fact length(n(:node).interfaces) --> 1
         @fact n(:node).i[:out] --> n(:node).interfaces[1]
         @fact ForneyLab.firstFreeInterface(n(:node)) --> n(:node).i[:out]
