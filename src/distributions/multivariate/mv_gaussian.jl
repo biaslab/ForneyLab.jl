@@ -190,7 +190,7 @@ function isConsistent(dist::MvGaussianDistribution)
 end
 
 # In all ensureParameter! methods we check if the required parameter defined and, if not, calculate it.
-# We assume that the distribution is well-defined, otherwise we would've gotten the message upon creating.   
+# We assume that the distribution is well-defined, otherwise we would've gotten the message upon creating.
 
 function ensureParameters!(dist::MvGaussianDistribution, params::Tuple{Symbol, Vararg{Symbol}})
     for param in params
@@ -200,22 +200,30 @@ function ensureParameters!(dist::MvGaussianDistribution, params::Tuple{Symbol, V
 end
 
 function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:m}})
-    dist.m = !isValid(dist.m) ? ensureParameter!(dist, Val{:V}).V * dist.xi : dist.m  
+    if !isValid(dist.m)
+        dist.m = ensureParameter!(dist, Val{:V}).V * dist.xi
+    end
     return dist
 end
 
 function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:xi}})
-    dist.xi = !isValid(dist.xi) ? ensureParameter!(dist, Val{:W}).W * dist.m : dist.xi
+    if !isValid(dist.xi)
+        dist.xi = ensureParameter!(dist, Val{:W}).W * dist.m
+    end
     return dist
 end
 
 function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:W}})
-    dist.W = !isValid(dist.W) ? inv(dist.V) : dist.W
+    if !isValid(dist.W)
+        dist.W = inv(dist.V)
+    end
     return dist
 end
 
 function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:V}})
-    dist.V = !isValid(dist.V) ? inv(dist.W) : dist.V
+    if !isValid(dist.V)
+        dist.V = inv(dist.W)
+    end
     return dist
 end
 

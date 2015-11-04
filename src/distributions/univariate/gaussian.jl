@@ -124,22 +124,30 @@ end
 # We assume that the distribution is well-defined, otherwise we would've gotten the message upon creating.
 
 function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:m}})
-    dist.m = isnan(dist.m) ? ensureParameter!(dist, Val{:V}).V * dist.xi : dist.m
+    if isnan(dist.m)
+        dist.m = ensureParameter!(dist, Val{:V}).V * dist.xi
+    end
     return dist
 end
 
 function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:V}})
-    dist.V = isnan(dist.V) ? 1/dist.W : dist.V
+    if isnan(dist.V)
+        dist.V = 1/dist.W
+    end
     return dist
 end
 
 function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:xi}})
-    dist.xi = isnan(dist.xi) ? ensureParameter!(dist, Val{:W}).W * dist.m : dist.xi
+    if isnan(dist.xi)
+        dist.xi = ensureParameter!(dist, Val{:W}).W * dist.m
+    end
     return dist
 end
 
 function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:W}})
-    dist.W = isnan(dist.W) ? 1/dist.V : dist.W
+    if isnan(dist.W)
+        dist.W = 1/dist.V
+    end
     return dist
 end
 
