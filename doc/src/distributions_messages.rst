@@ -94,21 +94,10 @@ Discrete univariate distributions: :class:`BernoulliDistribution`.
 
     The following functions are available to facilitate parameter conversions:
 
-    .. function:: ensureMVParametrization!(dist::GaussianDistribution)
+    .. function:: ensureParameters!(dist::GaussianDistribution, params::Tuple{Symbol})
 
-        Make sure ``dist.m`` and ``dist.V`` are defined and valid. Calculate from other parameters if required.
-
-    .. function:: ensureMWParametrization!(dist::GaussianDistribution)
-
-        Make sure ``dist.m`` and ``dist.W`` are defined and valid. Calculate from other parameters if required.
-
-    .. function:: ensureXiVParametrization!(dist::GaussianDistribution)
-
-        Make sure ``dist.xi`` and ``dist.V`` are defined and valid. Calculate from other parameters if required.
-
-    .. function:: ensureXiWParametrization!(dist::GaussianDistribution)
-
-        Make sure ``dist.xi`` and ``dist.W`` are defined and valid. Calculate from other parameters if required.
+        Make sure that the specified parameters of ``dist`` are set and valid. Calculate them from the other (valid) parameters if required.
+        Example: ``ensureParameters!(dist, (:m,:V))`` to make sure that ``dist.m`` and ``dist.V`` are set.
 
     .. function:: isWellDefined(dist::GaussianDistribution)
 
@@ -169,21 +158,10 @@ Built-in multivariate distributions: :class:`MvDeltaDistribution`, :class:`MvGau
 
     The following functions are available to facilitate parameter conversions:
 
-    .. function:: ensureMVParametrization!(dist::MvGaussianDistribution)
+    .. function:: ensureParameters!(dist::MvGaussianDistribution, params::Tuple{Symbol})
 
-        Make sure ``dist.m`` and ``dist.V`` are defined and valid. Calculate from other parameters if required.
-
-    .. function:: ensureMWParametrization!(dist::MvGaussianDistribution)
-
-        Make sure ``dist.m`` and ``dist.W`` are defined and valid. Calculate from other parameters if required.
-
-    .. function:: ensureXiVParametrization!(dist::MvGaussianDistribution)
-
-        Make sure ``dist.xi`` and ``dist.V`` are defined and valid. Calculate from other parameters if required.
-
-    .. function:: ensureXiWParametrization!(dist::MvGaussianDistribution)
-
-        Make sure ``dist.xi`` and ``dist.W`` are defined and valid. Calculate from other parameters if required.
+        Make sure that the specified parameters of ``dist`` are set and valid. Calculate them from the other (valid) parameters if required.
+        Example: ``ensureParameters!(dist, (:m,:V))`` to make sure that ``dist.m`` and ``dist.V`` are set.
 
     .. function:: isWellDefined(dist::MvGaussianDistribution)
 

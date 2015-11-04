@@ -60,7 +60,7 @@ function sumProduct!(   node::FixedGainNode,
                         msg_out::Message{GaussianDistribution})
     (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-    dist_2 = ensureXiWParametrization!(msg_out.payload)
+    dist_2 = ensureParameters!(msg_out.payload, (:xi, :W))
     dist_1.xi = node.A[1,1] * dist_2.xi
     dist_1.W = (node.A[1,1])^2 * dist_2.W
     dist_1.m = dist_1.V = NaN
@@ -76,7 +76,7 @@ function sumProduct!(   node::FixedGainNode,
                         ::Void)
     (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-    dist_1 = ensureMVParametrization!(msg_in.payload)
+    dist_1 = ensureParameters!(msg_in.payload, (:m, :V))
     dist_2.m = node.A[1,1] * dist_1.m
     dist_2.V = (node.A[1,1])^2 * dist_1.V
     dist_2.xi = dist_2.W = NaN
@@ -160,7 +160,7 @@ function fixedGainGaussianBackwardRule!(dist_result::MvGaussianDistribution, dis
         invalidate!(dist_result.xi)
     else
         # Fallback: convert inbound message to (xi,W) parametrization and then use efficient rules
-        ensureXiWParametrization!(dist_2)
+        ensureParameters!(dist_2, (:xi, :W))
         invalidate!(dist_result.m)
         invalidate!(dist_result.V)
         dist_result.W = backwardFixedGainWRule(A, dist_2.W)
@@ -214,7 +214,7 @@ function fixedGainGaussianForwardRule!(dist_result::MvGaussianDistribution, dist
         dist_result.xi = forwardFixedGainXiRule(A_inv, dist_1.xi, dist_1.V) # Long version of the rule
     else
         # Fallback: convert inbound message to (m,V) parametrization and then use efficient rules
-        ensureMVParametrization!(dist_1)
+        ensureParameters!(dist_1, (:m, :V))
         dist_result.m = forwardFixedGainMRule(A, dist_1.m)
         dist_result.V = forwardFixedGainVRule(A, dist_1.V)
         invalidate!(dist_result.W)

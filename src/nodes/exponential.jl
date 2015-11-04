@@ -52,7 +52,7 @@ function sumProduct!(   node::ExponentialNode,
     isProper(msg_in.payload) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.i[:out], GammaDistribution).payload
 
-    ensureMWParametrization!(msg_in.payload)
+    ensureParameters!(msg_in.payload, (:m, :W))
 
     gam = msg_in.payload.W
     mu = msg_in.payload.m
