@@ -341,45 +341,6 @@ sumProduct!(node::EqualityNode,
             msg_2::Message{BetaDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
 ############################################
-# LogNormalDistribution methods
-############################################
-
-function equalityRule!(dist_result::LogNormalDistribution, dist_1::LogNormalDistribution, dist_2::LogNormalDistribution)
-    # The result of the beta equality rule applied to dist_1 and dist_2 is written to dist_result
-    # Derivation available in notebook
-    dist_result.m = dist_1.m + dist_2.m
-    dist_result.s = dist_1.s + dist_2.s
-    return dist_result
-end
-
-function sumProduct!(node::EqualityNode,
-                            outbound_interface_index::Int,
-                            msg_1::Message{LogNormalDistribution},
-                            msg_2::Message{LogNormalDistribution},
-                            ::Void)
-    # Calculate an outbound message based on the inbound messages and the node function.
-    # This function is not exported, and is only meant for internal use.
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], LogNormalDistribution).payload
-
-    equalityRule!(dist_out, msg_1.payload, msg_2.payload)
-
-    return (:equality_log_normal,
-            node.interfaces[outbound_interface_index].message)
-end
-
-sumProduct!(node::EqualityNode,
-            outbound_interface_index::Int,
-            msg_1::Message{LogNormalDistribution},
-            ::Void,
-            msg_2::Message{LogNormalDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
-
-sumProduct!(node::EqualityNode,
-            outbound_interface_index::Int,
-            ::Void,
-            msg_1::Message{LogNormalDistribution},
-            msg_2::Message{LogNormalDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
-
-############################################
 # Gaussian-DeltaDistribution combination
 ############################################
 

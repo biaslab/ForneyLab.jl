@@ -53,15 +53,6 @@ rules:
                 <pre>      v      </pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{B}et(a_z=a_x+a_y-1, b_z=b_x+b_y-1)$"
 
-  equality_log_normal:
-    node:       EqualityNode
-    reference:  ""
-    diagram:    <pre>x~logN   y~logN</pre>
-                <pre>  --->[=]<---  </pre>
-                <pre>       |z~logN </pre>
-                <pre>       v       </pre>
-    formula:    "$\\overrightarrow{\\mu}(z) = log\\mathcal{N}(m_z=m_x+m_y, s_z=s_x+s_y)$"
-
   equality_gaussian_delta:
     node:       EqualityNode
     reference:  ""
