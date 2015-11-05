@@ -16,13 +16,13 @@ facts("ExponentialNode unit tests") do
         # Forward message
         validateOutboundMessage(ExponentialNode(),
                                 2,
-                                [Message(GaussianDistribution(m=1.0, W=1.0)), nothing],
-                                GammaDistribution(a=2.0, b=1.0/Base.e))
+                                [Message(GaussianDistribution(m=2.0, V=3.0)), nothing],
+                                LogNormalDistribution(m=2.0, s=3.0))
         # Backward message
         validateOutboundMessage(ExponentialNode(),
                                 1,
-                                [nothing, Message(GammaDistribution(a=2.0, b=Base.e))],
-                                GaussianDistribution(m=-1.0, W=1.0))
+                                [nothing, Message(LogNormalDistribution(m=2.0, s=3.0))],
+                                GaussianDistribution(m=2.0, V=3.0))
     end
 
     context("ExponentialNode should pass delta messages") do

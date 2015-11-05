@@ -118,6 +118,13 @@ facts("EqualityNode unit tests") do
                                 BetaDistribution(a=3.0, b=5.0))
     end
 
+    context("EqualityNode should provide sumProduct! for LogNormalDistribution") do
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(LogNormalDistribution(m=1.0, s=2.0)), Message(LogNormalDistribution(m=3.0, s=4.0)), nothing],
+                                LogNormalDistribution(m=4.0, s=6.0))
+    end
+
     context("EqualityNode should provide sumProduct! for combination of student's t and Gaussian distribution") do
         validateOutboundMessage(EqualityNode(),
                                 3,
@@ -162,6 +169,22 @@ facts("EqualityNode unit tests") do
         validateOutboundMessage(EqualityNode(),
                                 2,
                                 [Message(DeltaDistribution(5.0)), nothing, Message(GammaDistribution())],
+                                DeltaDistribution(5.0))
+    end
+
+    context("EqualityNode should provide sumProduct! for combination of DeltaDistribution and a LogNormalDistribution") do
+        # Just test the original and a permutation of the arguments
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(DeltaDistribution(5.0)), Message(LogNormalDistribution()), nothing],
+                                DeltaDistribution(5.0))
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(LogNormalDistribution()), Message(DeltaDistribution(5.0)), nothing],
+                                DeltaDistribution(5.0))
+        validateOutboundMessage(EqualityNode(),
+                                2,
+                                [Message(DeltaDistribution(5.0)), nothing, Message(LogNormalDistribution())],
                                 DeltaDistribution(5.0))
     end
 end

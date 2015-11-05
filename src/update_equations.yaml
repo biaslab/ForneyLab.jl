@@ -53,6 +53,15 @@ rules:
                 <pre>      v      </pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{B}et(a_z=a_x+a_y-1, b_z=b_x+b_y-1)$"
 
+  equality_log_normal:
+    node:       EqualityNode
+    reference:  ""
+    diagram:    <pre>x~logN   y~logN</pre>
+                <pre>  --->[=]<---  </pre>
+                <pre>       |z~logN </pre>
+                <pre>       v       </pre>
+    formula:    "$\\overrightarrow{\\mu}(z) = log\\mathcal{N}(m_z=m_x+m_y, s_z=s_x+s_y)$"
+
   equality_gaussian_delta:
     node:       EqualityNode
     reference:  ""
@@ -70,6 +79,15 @@ rules:
                 <pre>     |z~N    </pre>
                 <pre>     v       </pre>
     formula:    "$W_z = W_x+W_y \\\\ \\overrightarrow{\\mu}(z) \\approx \\mathcal{N}((W_x+W_y)^{-1}(W_x m_x + W_y m_y), W_z^{-1})$"
+
+  equality_log_normal_delta:
+    node:       EqualityNode
+    reference:  ""
+    diagram:    <pre> x~δ   y~LogN </pre>
+                <pre>--->[=]<---   </pre>
+                <pre>     |z~δ     </pre>
+                <pre>     v        </pre>
+    formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$ for $m_x > 0$"
 
   equality_gamma_delta:
     node:       EqualityNode
@@ -230,16 +248,16 @@ rules:
   exponential_forward_gaussian:
     node:       ExponentialNode
     reference:  "Exponential node derivations document"
-    diagram:    <pre> x~N     y~Gam</pre>
-                <pre>--->[exp]---> </pre>
-    formula:    "$\\overrightarrow{\\mu}(y) \\approx \\mathcal{G}am\\left(a_y = \\lambda_x+1, b_y=\\frac{\\lambda_x}{\\operatorname{exp}(m_x)}\\right)$"
+    diagram:    <pre> x~N     y~logN </pre>
+                <pre>--->[exp]--->   </pre>
+    formula:    "$\\overrightarrow{\\mu}(y) = log\\mathcal{N}\\left(m = m_x, s = V_x\\right)$"
 
   exponential_backward_gaussian:
     node:       ExponentialNode
     reference:  "Exponential node derivations document"
-    diagram:    <pre> x~N     y~Gam</pre>
-                <pre>--->[exp]---> </pre>
-    formula:    "$\\lambda_x=a_y-1 \\\\ \\overleftarrow{\\mu}(x) \\approx \\mathcal{N}\\left(\\operatorname{log}(\\frac{a_y-1}{b_y}), \\lambda_x^{-1} \\right), a_y>1$"
+    diagram:    <pre> x~N     y~logN </pre>
+                <pre>--->[exp]--->   </pre>
+    formula:    "$\\overleftarrow{\\mu}(x) \\approx \\mathcal{N}\\left(m = m_y, V = s_y\\right)$"
 
   exponential_forward_delta:
     node:       ExponentialNode

@@ -341,6 +341,45 @@ sumProduct!(node::EqualityNode,
             msg_2::Message{BetaDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
 ############################################
+# LogNormalDistribution methods
+############################################
+
+function equalityRule!(dist_result::LogNormalDistribution, dist_1::LogNormalDistribution, dist_2::LogNormalDistribution)
+    # The result of the beta equality rule applied to dist_1 and dist_2 is written to dist_result
+    # Derivation available in notebook
+    dist_result.m = dist_1.m + dist_2.m
+    dist_result.s = dist_1.s + dist_2.s
+    return dist_result
+end
+
+function sumProduct!(node::EqualityNode,
+                            outbound_interface_index::Int,
+                            msg_1::Message{LogNormalDistribution},
+                            msg_2::Message{LogNormalDistribution},
+                            ::Void)
+    # Calculate an outbound message based on the inbound messages and the node function.
+    # This function is not exported, and is only meant for internal use.
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], LogNormalDistribution).payload
+
+    equalityRule!(dist_out, msg_1.payload, msg_2.payload)
+
+    return (:equality_log_normal,
+            node.interfaces[outbound_interface_index].message)
+end
+
+sumProduct!(node::EqualityNode,
+            outbound_interface_index::Int,
+            msg_1::Message{LogNormalDistribution},
+            ::Void,
+            msg_2::Message{LogNormalDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+
+sumProduct!(node::EqualityNode,
+            outbound_interface_index::Int,
+            ::Void,
+            msg_1::Message{LogNormalDistribution},
+            msg_2::Message{LogNormalDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+
+############################################
 # Gaussian-DeltaDistribution combination
 ############################################
 
@@ -519,13 +558,50 @@ sumProduct!(node::EqualityNode,
 
 
 ############################################
+# LogNormal-DeltaDistribution combination
+############################################
+
+function equalityRule!(dist_result::DeltaDistribution{Float64}, dist_1::LogNormalDistribution, dist_2::DeltaDistribution{Float64})
+    (dist_2.m >= 0) || error("Can not perform equality rule for log-normal-delta combination for negative numbers")
+    dist_result.m = dist_2.m
+    return dist_result
+end
+
+equalityRule!(  dist_result::DeltaDistribution{Float64},
+                dist_1::DeltaDistribution{Float64},
+                dist_2::LogNormalDistribution) = equalityRule!(dist_result, dist_2, dist_1)
+
+function sumProduct!(node::EqualityNode,
+                     outbound_interface_index::Int,
+                     msg_delta::Message{DeltaDistribution{Float64}},
+                     msg_logn::Message{LogNormalDistribution},
+                     ::Void)
+    # Combination of gamma and float
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
+
+    equalityRule!(dist_out, msg_delta.payload, msg_logn.payload)
+
+    return (:equality_log_normal_delta,
+            node.interfaces[outbound_interface_index].message)
+end
+# Call signature for messages other ways around
+# Outbound interface 3
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_logn::Message{LogNormalDistribution}, msg_delta::Message{DeltaDistribution{Float64}}, ::Void) = sumProduct!(node, outbound_interface_index, msg_delta, msg_logn, nothing)
+# Outbound interface 2
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_logn::Message{LogNormalDistribution}, ::Void, msg_delta::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_logn, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{DeltaDistribution{Float64}}, ::Void, msg_logn::Message{LogNormalDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_logn, nothing)
+# Outbound interface 1
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_logn::Message{LogNormalDistribution}, msg_delta::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_logn, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_delta::Message{DeltaDistribution{Float64}}, msg_logn::Message{LogNormalDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_logn, nothing)
+
+
+############################################
 # Gamma-DeltaDistribution combination
 ############################################
 
 function equalityRule!(dist_result::DeltaDistribution{Float64}, dist_1::GammaDistribution, dist_2::DeltaDistribution{Float64})
-    length(dist_2.m) == 1 || error("Equality gamma-delta update only implemented for univariate distributions")
-    (dist_2.m[1] >= 0) || error("Can not perform equality rule for gamma-delta combination for negative numbers")
-    dist_result.m = deepcopy(dist_2.m)
+    (dist_2.m >= 0) || error("Can not perform equality rule for gamma-delta combination for negative numbers")
+    dist_result.m = dist_2.m
     return dist_result
 end
 
@@ -561,9 +637,8 @@ sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_delta
 ############################################
 
 function equalityRule!(dist_result::DeltaDistribution{Float64}, dist_1::InverseGammaDistribution, dist_2::DeltaDistribution{Float64})
-    length(dist_2.m) == 1 || error("Equality inversegamma-delta update only implemented for univariate distributions")
-    (dist_2.m[1] >= 0) || error("Can not perform equality rule for inverse gamma-delta combination for negative numbers")
-    dist_result.m = deepcopy(dist_2.m)
+    (dist_2.m >= 0) || error("Can not perform equality rule for inverse gamma-delta combination for negative numbers")
+    dist_result.m = dist_2.m
     return dist_result
 end
 equalityRule!(  dist_result::DeltaDistribution{Float64},

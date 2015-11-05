@@ -42,6 +42,7 @@ include("distributions/univariate/gamma.jl")
 include("distributions/univariate/inverse_gamma.jl")
 include("distributions/univariate/students_t.jl")
 include("distributions/univariate/beta.jl")
+include("distributions/univariate/log_normal.jl")
 
 # Multivariate distributions
 include("distributions/multivariate/mv_delta.jl")
