@@ -195,7 +195,7 @@ Elementary nodes
     :Interfaces:    1. ``i[:in]``, 2. ``i[:out]``
     :Construction:  ``ExponentialNode(id="something")``
 
-    Message computation rules (\* = approximation):
+    Message computation rules:
 
     +-----------------+---------------------------------------------------+
     |                 | Input (↓) and output (↑) per interface            |
@@ -204,7 +204,7 @@ Elementary nodes
     +=================+=========================+=========================+
     | sumProduct!     | ↑↓ ``Msg{Delta}``       | ↑↓ ``Msg{Delta}``       |
     +                 +-------------------------+-------------------------+
-    |                 | ↑↓ ``Msg{Gaussian}`` \* | ↑↓ ``Msg{Gamma}`` \*    |
+    |                 | ↑↓ ``Msg{Gaussian}``    | ↑↓ ``Msg{LogNormal}``   |
     +-----------------+-------------------------+-------------------------+
 
 .. type:: FixedGainNode

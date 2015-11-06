@@ -519,13 +519,50 @@ sumProduct!(node::EqualityNode,
 
 
 ############################################
+# LogNormal-DeltaDistribution combination
+############################################
+
+function equalityRule!(dist_result::DeltaDistribution{Float64}, dist_1::LogNormalDistribution, dist_2::DeltaDistribution{Float64})
+    (dist_2.m >= 0) || error("Can not perform equality rule for log-normal-delta combination for negative numbers")
+    dist_result.m = dist_2.m
+    return dist_result
+end
+
+equalityRule!(  dist_result::DeltaDistribution{Float64},
+                dist_1::DeltaDistribution{Float64},
+                dist_2::LogNormalDistribution) = equalityRule!(dist_result, dist_2, dist_1)
+
+function sumProduct!(node::EqualityNode,
+                     outbound_interface_index::Int,
+                     msg_delta::Message{DeltaDistribution{Float64}},
+                     msg_logn::Message{LogNormalDistribution},
+                     ::Void)
+    # Combination of gamma and float
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
+
+    equalityRule!(dist_out, msg_delta.payload, msg_logn.payload)
+
+    return (:equality_log_normal_delta,
+            node.interfaces[outbound_interface_index].message)
+end
+# Call signature for messages other ways around
+# Outbound interface 3
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_logn::Message{LogNormalDistribution}, msg_delta::Message{DeltaDistribution{Float64}}, ::Void) = sumProduct!(node, outbound_interface_index, msg_delta, msg_logn, nothing)
+# Outbound interface 2
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_logn::Message{LogNormalDistribution}, ::Void, msg_delta::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_logn, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{DeltaDistribution{Float64}}, ::Void, msg_logn::Message{LogNormalDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_logn, nothing)
+# Outbound interface 1
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_logn::Message{LogNormalDistribution}, msg_delta::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_logn, nothing)
+sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_delta::Message{DeltaDistribution{Float64}}, msg_logn::Message{LogNormalDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_logn, nothing)
+
+
+############################################
 # Gamma-DeltaDistribution combination
 ############################################
 
 function equalityRule!(dist_result::DeltaDistribution{Float64}, dist_1::GammaDistribution, dist_2::DeltaDistribution{Float64})
-    length(dist_2.m) == 1 || error("Equality gamma-delta update only implemented for univariate distributions")
-    (dist_2.m[1] >= 0) || error("Can not perform equality rule for gamma-delta combination for negative numbers")
-    dist_result.m = deepcopy(dist_2.m)
+    (dist_2.m >= 0) || error("Can not perform equality rule for gamma-delta combination for negative numbers")
+    dist_result.m = dist_2.m
     return dist_result
 end
 
@@ -561,9 +598,8 @@ sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_delta
 ############################################
 
 function equalityRule!(dist_result::DeltaDistribution{Float64}, dist_1::InverseGammaDistribution, dist_2::DeltaDistribution{Float64})
-    length(dist_2.m) == 1 || error("Equality inversegamma-delta update only implemented for univariate distributions")
-    (dist_2.m[1] >= 0) || error("Can not perform equality rule for inverse gamma-delta combination for negative numbers")
-    dist_result.m = deepcopy(dist_2.m)
+    (dist_2.m >= 0) || error("Can not perform equality rule for inverse gamma-delta combination for negative numbers")
+    dist_result.m = dist_2.m
     return dist_result
 end
 equalityRule!(  dist_result::DeltaDistribution{Float64},

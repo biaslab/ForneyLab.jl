@@ -33,6 +33,7 @@ include("distributions/univariate/test_gamma.jl")
 include("distributions/univariate/test_inverse_gamma.jl")
 include("distributions/univariate/test_students_t.jl")
 include("distributions/univariate/test_beta.jl")
+include("distributions/univariate/test_log_normal.jl")
 
 include("distributions/multivariate/test_mv_delta.jl")
 include("distributions/multivariate/test_mv_gaussian.jl")

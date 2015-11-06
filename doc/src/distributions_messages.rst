@@ -74,6 +74,11 @@ Built-in univariate distributions: :class:`BetaDistribution`, :class:`DeltaDistr
     :construction:  ``GammaDistribution(a=1.0, b=1.0)``
     :reference:     Bishop, 2006; Pattern recognition and machine learning; appendix B
 
+.. type:: LogNormalDistribution
+
+    :description:   Log-normal distribution (univariate)
+    :parameters:    ``m`` ("location", real scalar), ``s > 0`` ("squared scale" (s = σ²), real scalar)
+    :construction:  ``LogNormalDistribution(m=0.0, s=1.0)``
 
 .. type:: GaussianDistribution
 
