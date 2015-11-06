@@ -17,4 +17,16 @@ facts("LogNormalDistribution unit tests") do
         @fact dist.m --> 0.0
         @fact dist.s --> huge
     end
+
+    context("approximateWithGamma() should approximate a log-normal distribution with moment matching") do
+        d = approximateWithLogNormal(GammaDistribution(a=1.0, b=5.0))
+        @fact d.m --> -1.956011502714073
+        @fact d.s --> 0.6931471805599453
+    end
+
+    context("approximateWithLogNormal() should approximate a gamma distribution with moment matching") do
+        d = approximateWithGamma(LogNormalDistribution(m=-1.956011502714073, s=0.6931471805599453))
+        @fact d.a --> 1.0
+        @fact d.b --> 5.0
+    end
 end
