@@ -67,6 +67,16 @@ function calculateMarginal!(edge::Edge, forward_dist::LogNormalDistribution, bac
     return equalityRule!(marg, forward_dist, backward_dist)
 end
 
+# BernoulliDistribution
+function calculateMarginal(forward_dist::BernoulliDistribution, backward_dist::BernoulliDistribution)
+    marg = BernoulliDistribution()
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+function calculateMarginal!(edge::Edge, forward_dist::BernoulliDistribution, backward_dist::BernoulliDistribution)
+    marg = ensureMarginal!(edge, BernoulliDistribution)
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+
 # GaussianDistribution
 function calculateMarginal(forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
     marg = GaussianDistribution() # Do not overwrite an existing distribution

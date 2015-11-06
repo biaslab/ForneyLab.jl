@@ -6,7 +6,6 @@ facts("GainEqualityNode unit tests") do
     context("GainEqualityNode() should initialize a GainEqualityNode with 3 interfaces") do
         FactorGraph()
         GainEqualityNode(id=:node)
-        @fact typeof(n(:node)) --> GainEqualityNode
         @fact length(n(:node).interfaces) --> 3
         @fact n(:node).i[:in1] --> n(:node).interfaces[1]
         @fact n(:node).i[:in2] --> n(:node).interfaces[2]

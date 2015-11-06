@@ -6,7 +6,6 @@ facts("FixedGainNode unit tests") do
     context("FixedGainNode() should initialize a FixedGainNode with 2 interfaces") do
         FactorGraph()
         FixedGainNode([1.0], id=:node)
-        @fact typeof(n(:node)) --> FixedGainNode
         @fact length(n(:node).interfaces) --> 2
         @fact n(:node).i[:in] --> n(:node).interfaces[1]
         @fact n(:node).i[:out] --> n(:node).interfaces[2]
@@ -77,6 +76,18 @@ facts("FixedGainNode unit tests") do
                                     2,
                                     [Message(GaussianDistribution(xi=6.0, W=2.0)), nothing],
                                     GaussianDistribution(xi=3.0, W=0.5))
+        end
+        context("Improper distributions") do
+            # Backward message
+            validateOutboundMessage(FixedGainNode(2.0),
+                                    1,
+                                    [nothing, Message(GaussianDistribution(m=3.0, V=-5.0))],
+                                    GaussianDistribution(m=1.5, V=-1.25))
+            # Forward message
+            validateOutboundMessage(FixedGainNode(2.0),
+                                    2,
+                                    [Message(GaussianDistribution(m=3.0, V=-5.0)), nothing],
+                                    GaussianDistribution(m=6.0, V=-20.0))
         end
     end
 

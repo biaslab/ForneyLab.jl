@@ -27,6 +27,7 @@ facts("General ProbabilityDistribution unit tests") do
 end
 
 # Distribution tests
+include("distributions/univariate/test_bernoulli.jl")
 include("distributions/univariate/test_delta.jl")
 include("distributions/univariate/test_gaussian.jl")
 include("distributions/univariate/test_gamma.jl")
@@ -58,6 +59,7 @@ include("nodes/test_gaussian.jl")
 include("nodes/test_exponential.jl")
 include("nodes/test_gain_addition.jl")
 include("nodes/test_gain_equality.jl")
+include("nodes/test_sigmoid.jl")
 
 # Composite nodes
 include("nodes/test_composite.jl")
@@ -70,6 +72,7 @@ include("test_step.jl")
 include("test_algorithm.jl")
 include("algorithms/sum_product/test_sum_product.jl")
 include("algorithms/vmp/test_vmp.jl")
+include("algorithms/expectation_propagation/test_expectation_propagation.jl")
 
 exitstatus()
 

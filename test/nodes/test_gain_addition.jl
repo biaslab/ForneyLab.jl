@@ -6,7 +6,6 @@ facts("GainAdditionNode unit tests") do
     context("GainAdditionNode() should initialize a GainAdditionNode with 3 interfaces") do
         FactorGraph()
         GainAdditionNode(id=:node)
-        @fact typeof(n(:node)) --> GainAdditionNode
         @fact length(n(:node).interfaces) --> 3
         @fact n(:node).i[:in1] --> n(:node).interfaces[1]
         @fact n(:node).i[:in2] --> n(:node).interfaces[2]

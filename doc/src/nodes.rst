@@ -94,6 +94,16 @@ ForneyLab supports the following message calculation rules:
     2. The id (index in node.interfaces) of the outbound interface;
     3. The messages or marginals on *all* interfaces of the node (ordered by interface id). The inbound message/marginal on the outbound inferface is always ``nothing``.
 
+.. function:: ep!(node::Node, outbound_interface_index::Int, inbound_messages...)
+
+    Similar to :func:`sumProduct!`, but also the inbound message on the outbound interface is consumed (this messages carries the cavity distrubution). This calculation rule is used in the expectation propagation algorithm.
+
+    The calling signature consists of:
+
+    1. The node;
+    2. The id (index in node.interfaces) of the outbound interface;
+    3. The inbound messages on *all* interfaces of the node (ordered by interface id).
+
 Not all message calculation rules have to be implemented for every node, just the ones that will be used. Similarly, the message calculation rule does not have to be implemented for a specific outbound interface of a specific node if that outbound message never has to be calculated.
 
 .. _built-in-nodes:
@@ -101,7 +111,7 @@ Not all message calculation rules have to be implemented for every node, just th
 Built-in nodes
 --------------
 
-The following built-in 'elementary' nodes are available in ForneyLab: :class:`AdditionNode`, :class:`EqualityNode`, :class:`ExponentialNode`, :class:`FixedGainNode`, :class:`GaussianNode`, :class:`TerminalNode`.
+The following built-in 'elementary' nodes are available in ForneyLab: :class:`AdditionNode`, :class:`EqualityNode`, :class:`ExponentialNode`, :class:`FixedGainNode`, :class:`GaussianNode`, :class:`SigmoidNode`, :class:`TerminalNode`.
 
 There are also some built-in *combined nodes*, which combine two or more node functions into one for higher computational efficiency: :class:`GainAdditionNode`, :class:`GainEqualityNode`.
 
@@ -180,6 +190,8 @@ Elementary nodes
     |                 | ``Msg{Gaussian}``       | ``Msg{Gaussian}`` and ``Msg{Gaussian}``           |
     +                 +-------------------------+---------------------------------------------------+
     |                 | ``Msg{Gaussian}`` \*    | ``Msg{Gaussian}`` and ``Msg{StudentsT}``          |
+    +                 +-------------------------+-------------------------+-------------------------+
+    |                 | ``Msg{Bernoulli}``      | ``Msg{Bernoulli}`` and ``Msg{Bernoulli}``         |
     +                 +-------------------------+-------------------------+-------------------------+
     |                 | ``Msg{InvGamma}``       | ``Msg{InvGamma}`` and ``Msg{InvGamma}``           |
     +-----------------+-------------------------+-------------------------+-------------------------+
@@ -273,6 +285,36 @@ Elementary nodes
     +             +---------------------+-----------------------------+---------------------+
     |             | ↓ ``NormalGamma``                                 | ↑ ``Msg{Gaussian}`` |
     +-------------+---------------------+-----------------------------+---------------------+
+
+
+.. type:: SigmoidNode
+
+    ::
+
+         real     bin
+        ----->[σ]----->
+
+    :Node function: ``f(real,bin) = σ(real ⋅ bin)``
+    :Interfaces:    1. ``i[:real]``, 2. ``i[:bin]``
+    :Construction:  ``SigmoidNode(id="something")``
+
+    The SigmoidNode links a real-valued variable to a binary (∈ {-1,+1}) one.
+
+    Message computation rules:
+
+    +-----------------+---------------------------------------------------+
+    |                 | Input (↓) and output (↑) per interface            |
+    + Rule            +-------------------------+-------------------------+
+    |                 | 1                       | 2                       |
+    +=================+=========================+=========================+
+    | sumProduct!     |  ↓ ``Msg{Delta}``       | ↑  ``Msg{Bernoulli}``   |
+    +                 +-------------------------+-------------------------+
+    |                 |  ↓ ``Msg{Gaussian}`` \* | ↑  ``Msg{Bernoulli}``   |
+    +-----------------+-------------------------+-------------------------+
+    | ep!             | ↑  ``Msg{Gaussian}``    |  ↓ ``Msg{Delta{Bool}}`` |
+    +                 +-------------------------+-------------------------+
+    |                 | ↑  ``Msg{Gaussian}``    |  ↓ ``Msg{Bernoulli}``   |
+    +-----------------+-------------------------+-------------------------+
 
 
 .. type:: TerminalNode

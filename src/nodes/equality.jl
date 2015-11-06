@@ -59,7 +59,6 @@ function equalityRule!(dist_result::GaussianDistribution, dist_1::GaussianDistri
     # The result of the Gaussian equality rule applied to dist_1 and dist_2 is written to dist_result
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
-    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityGaussianRule! should be proper Gaussians")
     ensureParameters!(dist_1, (:xi, :W))
     ensureParameters!(dist_2, (:xi, :W))
     dist_result.m = NaN
@@ -104,13 +103,14 @@ function equalityRule!(dist_result::GaussianDistribution, dist_gauss_in::Gaussia
     # The result of the Gaussian-Student's t equality rule applied to dist_gauss_in and dist_stud_in is written to dist_result
     # The student's t distribution is approximated by a Gaussian by moment matching.
     # The result is a Gaussian approximation to the exact result.
+    (isProper(dist_gauss_in) && isProper(dist_stud_in)) || error("Inputs of equalityRule! should be proper distributions")
 
     ensureParameters!(dist_gauss_in, (:xi, :W))
     if 0.0 < dist_stud_in.nu <= 1.0
         # The mean and variance for the Student's t are undefined for nu <= 1.
         # However, since we apply a gaussian approximation we assume variance is huge in this case,
         # so the second incoming message dominates.
-        approx_V = huge 
+        approx_V = huge
         approx_m = dist_stud_in.m
     else
         approx_V = var(dist_stud_in)
@@ -230,6 +230,7 @@ sumProduct!(node::EqualityNode,
 function equalityRule!(dist_result::InverseGammaDistribution, dist_1::InverseGammaDistribution, dist_2::InverseGammaDistribution)
     # The result of the inverse gamma equality rule applied to dist_1 and dist_2 is written to dist_result
     # Definition from Korl table 5.2
+    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     dist_result.a = dist_1.a+dist_2.a+1.0
     dist_result.b = dist_1.b+dist_2.b
     return dist_result
@@ -269,6 +270,7 @@ sumProduct!(node::EqualityNode,
 function equalityRule!(dist_result::GammaDistribution, dist_1::GammaDistribution, dist_2::GammaDistribution)
     # The result of the gamma equality rule applied to dist_1 and dist_2 is written to dist_result
     # Derivation available in notebook
+    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     dist_result.a = dist_1.a+dist_2.a-1.0
     dist_result.b = dist_1.b+dist_2.b
     return dist_result
@@ -308,6 +310,7 @@ sumProduct!(node::EqualityNode,
 function equalityRule!(dist_result::BetaDistribution, dist_1::BetaDistribution, dist_2::BetaDistribution)
     # The result of the beta equality rule applied to dist_1 and dist_2 is written to dist_result
     # Derivation available in notebook
+    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     dist_result.a = dist_1.a+dist_2.a-1.0
     dist_result.b = dist_1.b+dist_2.b-1.0
     return dist_result
@@ -424,6 +427,7 @@ function equalityRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDi
     # The result of the Gaussian equality rule applied to dist_1 and dist_2 is written to dist_result
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
+    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     if isValid(dist_1.m) && isValid(dist_1.W) && isValid(dist_2.m) && isValid(dist_2.W)
         dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.W)
         invalidate!(dist_result.V)
@@ -628,3 +632,41 @@ sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_delta::Messag
 # Outbound interface 1
 sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_igam::Message{InverseGammaDistribution}, msg_delta::Message{DeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
 sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_delta::Message{DeltaDistribution{Float64}}, msg_igam::Message{InverseGammaDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_igam, nothing)
+
+############################################
+# BernoulliDistribution methods
+############################################
+
+function equalityRule!(dist_result::BernoulliDistribution, dist_1::BernoulliDistribution, dist_2::BernoulliDistribution)
+    # The result of the Bernoulli equality rule applied to dist_1 and dist_2 is written to dist_result
+    norm = dist_1.p * dist_2.p + (1 - dist_1.p) * (1 - dist_2.p)
+    (norm > 0) || error("equalityRule! for BernoulliDistribution is not wel l-defined (invalid normalization constant)")
+    dist_result.p = (dist_1.p * dist_2.p) / norm
+    return dist_result
+end
+
+function sumProduct!(   node::EqualityNode,
+                        outbound_interface_index::Int,
+                        msg_1::Message{BernoulliDistribution},
+                        msg_2::Message{BernoulliDistribution},
+                        ::Void)
+    # Calculate an outbound message based on the inbound messages and the node function.
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], BernoulliDistribution).payload
+
+    equalityRule!(dist_result, msg_1.payload, msg_2.payload)
+
+    return (:equality_bernoulli,
+            node.interfaces[outbound_interface_index].message)
+end
+
+sumProduct!(node::EqualityNode,
+            outbound_interface_index::Int,
+            ::Void,
+            msg_1::Message{BernoulliDistribution},
+            msg_2::Message{BernoulliDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+
+sumProduct!(node::EqualityNode,
+            outbound_interface_index::Int,
+            msg_1::Message{BernoulliDistribution},
+            ::Void,
+            msg_2::Message{BernoulliDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)

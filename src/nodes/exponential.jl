@@ -49,8 +49,9 @@ function sumProduct!(   node::ExponentialNode,
                         outbound_interface_index::Int,
                         msg_in::Message{GaussianDistribution},
                         msg_out::Void)
-    dist_out = ensureMessage!(node.i[:out], LogNormalDistribution).payload
 
+    isProper(msg_in.payload) || error("Improper input distributions are not supported")
+    dist_out = ensureMessage!(node.i[:out], LogNormalDistribution).payload
     ensureParameters!(msg_in.payload, (:m, :V))
 
     dist_out.m = msg_in.payload.m
@@ -65,6 +66,8 @@ function sumProduct!(   node::ExponentialNode,
                         outbound_interface_index::Int,
                         msg_in::Void,
                         msg_out::Message{LogNormalDistribution})
+
+    isProper(msg_out.payload) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.i[:in], GaussianDistribution).payload
 
     dist_out.m = msg_out.payload.m

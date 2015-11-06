@@ -66,7 +66,7 @@ function sumProduct!(   node::GainAdditionNode,
                         in2::Message{GaussianDistribution},
                         ::Void)
     (outbound_interface_index == 3) || error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
-
+    (isProper(in1.payload) && isProper(in2.payload)) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
     dist_1 = ensureParameters!(in1.payload, (:m, :V))
     dist_2 = ensureParameters!(in2.payload, (:m, :V))
@@ -85,7 +85,7 @@ function sumProduct!(   node::GainAdditionNode,
                         ::Void,
                         out::Message{GaussianDistribution})
     (outbound_interface_index == 2) || error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
-
+    (isProper(in1.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
     dist_1 = ensureParameters!(in1.payload, (:m, :V))
     dist_3 = ensureParameters!(out.payload, (:m, :V))
@@ -104,7 +104,7 @@ function sumProduct!(   node::GainAdditionNode,
                         in2::Message{GaussianDistribution},
                         out::Message{GaussianDistribution})
     (outbound_interface_index == 1) || error("Invalid outbound interface id $(outbound_interface_index), on $(typeof(node)) $(node.id).")
-
+    (isProper(in2.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")
     dist_temp = GaussianDistribution()
 
     dist_temp.m = ensureParameters!(out.payload, (:m, :V)).m - ensureParameters!(in2.payload, (:m, :V)).m
@@ -146,7 +146,7 @@ function sumProduct!(node::GainAdditionNode,
                             in1::Message{MvGaussianDistribution},
                             in2::Message{MvGaussianDistribution},
                             ::Void)
-
+    (isProper(in1.payload) && isProper(in2.payload)) || error("Improper input distributions are not supported")
     if outbound_interface_index == 3
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
 
@@ -211,7 +211,7 @@ function sumProduct!(node::GainAdditionNode,
                             in1::Message{MvGaussianDistribution},
                             ::Void,
                             out::Message{MvGaussianDistribution})
-
+    (isProper(in1.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")
     if outbound_interface_index == 2
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
 
@@ -276,7 +276,7 @@ function sumProduct!(node::GainAdditionNode,
                             ::Void,
                             in2::Message{MvGaussianDistribution},
                             out::Message{MvGaussianDistribution})
-
+    (isProper(in2.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")
     if outbound_interface_index == 1
         dist_temp = MvGaussianDistribution()
         additionGaussianBackwardRule!(dist_temp, in2.payload, out.payload)
