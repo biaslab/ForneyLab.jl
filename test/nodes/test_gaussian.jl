@@ -1,10 +1,6 @@
 #####################
 # Unit tests
 #####################
-include("../../src/ForneyLab.jl")   
-using ForneyLab                     
-using FactCheck                     
-include("../integration_helpers.jl")
 
 facts("GaussianNode unit tests") do
     context("GaussianNode() should initialize a GaussianNode with 3 interfaces") do

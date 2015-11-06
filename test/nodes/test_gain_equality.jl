@@ -1,10 +1,6 @@
 #####################
 # Unit tests
 #####################
-include("../../src/ForneyLab.jl")   
-using ForneyLab                     
-using FactCheck                     
-include("../integration_helpers.jl")
 
 facts("GainEqualityNode unit tests") do
     context("GainEqualityNode() should initialize a GainEqualityNode with 3 interfaces") do

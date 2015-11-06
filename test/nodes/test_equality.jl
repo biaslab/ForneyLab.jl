@@ -1,10 +1,6 @@
 #####################
 # Unit tests
 #####################
-include("../../src/ForneyLab.jl")   
-using ForneyLab                     
-using FactCheck                     
-include("../integration_helpers.jl")
 
 facts("EqualityNode unit tests") do
    context("EqualityNode() should initialize an EqualityNode with 3 interfaces") do
