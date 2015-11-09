@@ -13,8 +13,7 @@ function collect_test_files(path::AbstractString, files::Set{AbstractString}, ex
                                                                                  && contains(x, "test_")
                                                                                  && ismatch(regex, x)
                                                                                  && !(x in exclude)),
-                                                                           object_names)])
-        
+                                                                           object_names)])        
         return union(files, dir_files)
     elseif isfile(path)
         return Set{AbstractString}(path)
@@ -29,6 +28,36 @@ function collect_test_files_in_paths(paths, files::Set{AbstractString}, exclude:
         end
     end
     return files
+end
+
+abstract TestRunner
+
+function setUp(runner::TestRunner)
+end
+
+function tearDown(runner::TestRunner)
+end
+
+type ForneyLabTestRunner<:TestRunner
+    files::Set{AbstractString}
+end
+
+function setUp(runner::ForneyLabTestRunner)
+    current_graph = FactorGraph()
+    current_algorithm = nothing
+end
+
+function tearDown(runner::ForneyLabTestRunner)
+    current_graph = nothing
+    current_algorithm = nothing
+end
+
+function run_tests(runner::ForneyLabTestRunner)
+    for test_file in runner.files
+        setUp(runner)
+        include(test_file)
+        tearDown(runner)
+    end
 end
 
 using ArgParse
@@ -64,10 +93,8 @@ function main(args)
 
     test_files = collect_test_files_in_paths(paths, Set{AbstractString}(), exclude, Regex(regex))
 
-    for test_file in test_files
-        include(test_file)
-    end
-
+    fl_test_runner = ForneyLabTestRunner(test_files)
+    run_tests(fl_test_runner)
 end
 
 main(ARGS)
