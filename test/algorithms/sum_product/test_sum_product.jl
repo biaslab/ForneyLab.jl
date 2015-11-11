@@ -1,5 +1,5 @@
 facts("SumProduct.collectInbounds() tests") do
-    context("collectInbounds() should add the proper message/marginal") do
+    context("collectInbounds() should collect the required inbound messages in an array") do
         # Standard
         initializeGaussianNode()
         @fact SumProduct.collectInbounds(n(:node).i[:out]) --> (3, [n(:node).i[:mean].partner.message, n(:node).i[:precision].partner.message, nothing])

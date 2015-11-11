@@ -63,10 +63,11 @@ function sumProduct!(   node::GainEqualityNode,
                         msg_out::Void)
     # Forward message (towards out)
     (outbound_interface_index == 3) || error("The outbound interface id does not match with the calling signature.")
+    (isProper(msg_in1.payload) && isProper(msg_in2.payload)) || error("Improper input distributions are not supported")
     dist_temp = GaussianDistribution()
     equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-    dist_temp = ensureMVParametrization!(dist_temp)
+    dist_temp = ensureParameters!(dist_temp, (:m, :V))
     dist_out.m = node.A[1,1] * dist_temp.m
     dist_out.V = (node.A[1,1])^2 * dist_temp.V
     dist_out.xi = dist_out.W = NaN
@@ -81,6 +82,7 @@ function sumProduct!(node::GainEqualityNode,
                             msg_in2::Void,
                             msg_out::Message{GaussianDistribution})
     # Backward message (towards in2)
+    (isProper(msg_in1.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
     return applyBackwardRule!(node, outbound_interface_index, msg_in1, msg_out)
 end
 
@@ -90,6 +92,7 @@ function sumProduct!(node::GainEqualityNode,
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Message{GaussianDistribution})
     # Backward message (towards in1)
+    (isProper(msg_in2.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
     return applyBackwardRule!(node, outbound_interface_index, msg_in2, msg_out)
 end
 
@@ -101,8 +104,8 @@ function applyBackwardRule!(node::GainEqualityNode,
     # This function is not exported, and is only meant for internal use.
     # Backward message (towards in1 or in2)
     dist_result = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-    dist_3 = ensureXiWParametrization!(msg_out.payload)
-    dist_in = ensureXiWParametrization!(msg_in.payload)
+    dist_3 = ensureParameters!(msg_out.payload, (:xi, :W))
+    dist_in = ensureParameters!(msg_in.payload, (:xi, :W))
 
     dist_result.m = dist_result.V = NaN
     dist_result.W = dist_in.W + node.A[1,1]^2 * dist_3.W
@@ -130,6 +133,7 @@ function sumProduct!(node::GainEqualityNode,
                             msg_out::Void)
     # Forward message (towards out)
     (outbound_interface_index == 3) || error("The outbound interface id does not match with the calling signature.")
+    (isProper(msg_in1.payload) && isProper(msg_in2.payload)) || error("Improper input distributions are not supported")
     dist_temp = MvGaussianDistribution()
     equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
@@ -145,6 +149,7 @@ function sumProduct!(node::GainEqualityNode,
                             msg_in2::Void,
                             msg_out::Message{MvGaussianDistribution})
     # Backward message (towards in2)
+    (isProper(msg_in1.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
     return applyBackwardRule!(node, outbound_interface_index, msg_in1, msg_out)
 end
 
@@ -154,6 +159,7 @@ function sumProduct!(node::GainEqualityNode,
                             msg_in2::Message{MvGaussianDistribution},
                             msg_out::Message{MvGaussianDistribution})
     # Backward message (towards in1)
+    (isProper(msg_in2.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
     return applyBackwardRule!(node, outbound_interface_index, msg_in2, msg_out)
 end
 
@@ -187,8 +193,8 @@ function applyBackwardRule!(node::GainEqualityNode,
         invalidate!(dist_result.xi)
     else
         # Fallback: convert inbound messages to (xi,W) parametrization and then use efficient rules
-        ensureXiWParametrization!(dist_in)
-        ensureXiWParametrization!(dist_3)
+        ensureParameters!(dist_in, (:xi, :W))
+        ensureParameters!(dist_3, (:xi, :W))
         invalidate!(dist_result.m)
         invalidate!(dist_result.V)
         dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)

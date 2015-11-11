@@ -27,6 +27,7 @@ function calculateMarginal!(edge::Edge)
     return edge.marginal
 end
 
+# GammaDistribution
 function calculateMarginal(forward_dist::GammaDistribution, backward_dist::GammaDistribution)
     marg = GammaDistribution() # Do not overwrite an existing distribution
     return equalityRule!(marg, forward_dist, backward_dist)
@@ -53,6 +54,26 @@ function calculateMarginal(forward_dist::BetaDistribution, backward_dist::BetaDi
 end
 function calculateMarginal!(edge::Edge, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
     marg = ensureMarginal!(edge, BetaDistribution)
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+
+# LogNormalDistribution
+function calculateMarginal(forward_dist::LogNormalDistribution, backward_dist::LogNormalDistribution)
+    marg = LogNormalDistribution() # Do not overwrite an existing distribution
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+function calculateMarginal!(edge::Edge, forward_dist::LogNormalDistribution, backward_dist::LogNormalDistribution)
+    marg = ensureMarginal!(edge, LogNormalDistribution)
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+
+# BernoulliDistribution
+function calculateMarginal(forward_dist::BernoulliDistribution, backward_dist::BernoulliDistribution)
+    marg = BernoulliDistribution()
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+function calculateMarginal!(edge::Edge, forward_dist::BernoulliDistribution, backward_dist::BernoulliDistribution)
+    marg = ensureMarginal!(edge, BernoulliDistribution)
     return equalityRule!(marg, forward_dist, backward_dist)
 end
 
@@ -126,6 +147,19 @@ function calculateMarginal!(edge::Edge, forward_dist::DeltaDistribution{Float64}
     return equalityRule!(marg, forward_dist, backward_dist)
 end
 calculateMarginal!(edge::Edge, forward_dist::InverseGammaDistribution, backward_dist::DeltaDistribution{Float64}) = calculateMarginal!(edge, backward_dist, forward_dist)
+
+# LogNormal-Delta combination
+# A multiplication of a delta distribution (with a peak >= 0) with any log-normal returns the delta.
+function calculateMarginal(forward_dist::DeltaDistribution{Float64}, backward_dist::LogNormalDistribution)
+    marg = DeltaDistribution()
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+calculateMarginal(forward_dist::LogNormalDistribution, backward_dist::DeltaDistribution{Float64}) = calculateMarginal(backward_dist, forward_dist)
+function calculateMarginal!(edge::Edge, forward_dist::DeltaDistribution{Float64}, backward_dist::LogNormalDistribution)
+    marg = ensureMarginal!(edge, DeltaDistribution{Float64})
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+calculateMarginal!(edge::Edge, forward_dist::LogNormalDistribution, backward_dist::DeltaDistribution{Float64}) = calculateMarginal!(edge, backward_dist, forward_dist)
 
 # MvDeltaDistribution
 function calculateMarginal(forward_dist::MvDeltaDistribution{Float64}, backward_dist::MvDeltaDistribution{Float64})

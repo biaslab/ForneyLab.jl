@@ -10,6 +10,8 @@ module TestForneyLab
 using FactCheck
 using ForneyLab
 
+import Base.==
+
 # Test style and helpers
 include("test_style.jl") # Test style conventions on source files
 include("integration_helpers.jl") # Helper file for integration tests, contains backgrounds and validations
@@ -17,12 +19,14 @@ include("test_helpers.jl") # Tests for ForneyLab helper methods
 
 # Distribution tests
 include("test_distributions.jl")
+include("distributions/univariate/test_bernoulli.jl")
 include("distributions/univariate/test_delta.jl")
 include("distributions/univariate/test_gaussian.jl")
 include("distributions/univariate/test_gamma.jl")
 include("distributions/univariate/test_inverse_gamma.jl")
 include("distributions/univariate/test_students_t.jl")
 include("distributions/univariate/test_beta.jl")
+include("distributions/univariate/test_log_normal.jl")
 
 include("distributions/multivariate/test_mv_delta.jl")
 include("distributions/multivariate/test_mv_gaussian.jl")
@@ -47,6 +51,7 @@ include("nodes/test_gaussian.jl")
 include("nodes/test_exponential.jl")
 include("nodes/test_gain_addition.jl")
 include("nodes/test_gain_equality.jl")
+include("nodes/test_sigmoid.jl")
 
 # Composite nodes
 include("nodes/test_composite.jl")
@@ -59,6 +64,7 @@ include("test_step.jl")
 include("test_algorithm.jl")
 include("algorithms/sum_product/test_sum_product.jl")
 include("algorithms/vmp/test_vmp.jl")
+include("algorithms/expectation_propagation/test_expectation_propagation.jl")
 
 exitstatus()
 

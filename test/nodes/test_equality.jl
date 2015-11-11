@@ -6,7 +6,6 @@ facts("EqualityNode unit tests") do
    context("EqualityNode() should initialize an EqualityNode with 3 interfaces") do
         FactorGraph()
         EqualityNode(id=:node)
-        @fact typeof(n(:node)) --> EqualityNode
         @fact length(n(:node).interfaces) --> 3
         @fact ForneyLab.firstFreeInterface(n(:node)) --> n(:node).interfaces[1]
         for i=1:3
@@ -33,13 +32,20 @@ facts("EqualityNode unit tests") do
     end
 
     context("EqualityNode should provide sumProduct! for GaussianDistribution") do
-        inbound_dist = GaussianDistribution(xi=0.6, W=0.2)
-        xi = inbound_dist.xi
-        W = inbound_dist.W
-        validateOutboundMessage(EqualityNode(),
-                                3,
-                                [Message(inbound_dist), Message(inbound_dist), nothing],
-                                GaussianDistribution(xi=(xi + xi), W=(W + W)))
+        context("Proper input distributions") do
+            inbound_dist = GaussianDistribution(xi=0.6, W=0.2)
+            validateOutboundMessage(EqualityNode(),
+                                    3,
+                                    [Message(inbound_dist), Message(inbound_dist), nothing],
+                                    GaussianDistribution(xi=(0.6 + 0.6), W=(0.2 + 0.2)))
+        end
+        context("Improper input distributions") do
+            inbound_dist = GaussianDistribution(xi=0.6, W=0.2)
+            validateOutboundMessage(EqualityNode(),
+                                    3,
+                                    [Message(GaussianDistribution(xi=0.6, W=1.0)), Message(GaussianDistribution(xi=0.6, W=-0.2)), nothing],
+                                    GaussianDistribution(xi=1.2, W=0.8))
+        end
     end
 
     context("EqualityNode should provide sumProduct! for MvGaussianDistribution") do
@@ -118,6 +124,21 @@ facts("EqualityNode unit tests") do
                                 BetaDistribution(a=3.0, b=5.0))
     end
 
+    context("EqualityNode should provide sumProduct! for BernoulliDistribution") do
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(BernoulliDistribution(0.2)), Message(BernoulliDistribution(0.4)), nothing],
+                                BernoulliDistribution(1/7))
+        validateOutboundMessage(EqualityNode(),
+                                1,
+                                [nothing, Message(BernoulliDistribution(0.2)), Message(BernoulliDistribution(0.4))],
+                                BernoulliDistribution(1/7))
+        validateOutboundMessage(EqualityNode(),
+                                2,
+                                [Message(BernoulliDistribution(0.2)), nothing, Message(BernoulliDistribution(0.4))],
+                                BernoulliDistribution(1/7))
+    end
+
     context("EqualityNode should provide sumProduct! for combination of student's t and Gaussian distribution") do
         validateOutboundMessage(EqualityNode(),
                                 3,
@@ -162,6 +183,22 @@ facts("EqualityNode unit tests") do
         validateOutboundMessage(EqualityNode(),
                                 2,
                                 [Message(DeltaDistribution(5.0)), nothing, Message(GammaDistribution())],
+                                DeltaDistribution(5.0))
+    end
+
+    context("EqualityNode should provide sumProduct! for combination of DeltaDistribution and a LogNormalDistribution") do
+        # Just test the original and a permutation of the arguments
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(DeltaDistribution(5.0)), Message(LogNormalDistribution()), nothing],
+                                DeltaDistribution(5.0))
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(LogNormalDistribution()), Message(DeltaDistribution(5.0)), nothing],
+                                DeltaDistribution(5.0))
+        validateOutboundMessage(EqualityNode(),
+                                2,
+                                [Message(DeltaDistribution(5.0)), nothing, Message(LogNormalDistribution())],
                                 DeltaDistribution(5.0))
     end
 end

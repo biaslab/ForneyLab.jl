@@ -17,7 +17,7 @@ facts("Call step() for VMP algorithm") do
 
     step(algo)
 
-    ForneyLab.ensureXiWParametrization!(mean_out[end])
+    ForneyLab.ensureParameters!(mean_out[end], (:xi, :W))
     @fact round(mean_out[end].W[1,1], 2) --> 1.79
     @fact round(mean_out[end].xi[1], 2) --> 1.57
     @fact prec_out[end].a --> 1.5

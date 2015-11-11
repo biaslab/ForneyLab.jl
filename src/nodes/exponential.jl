@@ -2,7 +2,7 @@
 # ExponentialNode
 ############################################
 # Description:
-#   Maps a Gaussian to a gamma distribution.
+#   Maps a Gaussian to a log-normal distribution.
 #   Derivations can be found in the derivations document.
 #
 #    in         out
@@ -49,15 +49,13 @@ function sumProduct!(   node::ExponentialNode,
                         outbound_interface_index::Int,
                         msg_in::Message{GaussianDistribution},
                         msg_out::Void)
-    dist_out = ensureMessage!(node.i[:out], GammaDistribution).payload
 
-    ensureMWParametrization!(msg_in.payload)
+    isProper(msg_in.payload) || error("Improper input distributions are not supported")
+    dist_out = ensureMessage!(node.i[:out], LogNormalDistribution).payload
+    ensureParameters!(msg_in.payload, (:m, :V))
 
-    gam = msg_in.payload.W
-    mu = msg_in.payload.m
-
-    dist_out.a = gam + 1
-    dist_out.b = gam / exp(mu)
+    dist_out.m = msg_in.payload.m
+    dist_out.s = msg_in.payload.V
 
     return (:exponential_forward_gaussian,
             node.interfaces[outbound_interface_index].message)
@@ -67,15 +65,14 @@ end
 function sumProduct!(   node::ExponentialNode,
                         outbound_interface_index::Int,
                         msg_in::Void,
-                        msg_out::Message{GammaDistribution})
+                        msg_out::Message{LogNormalDistribution})
+
+    isProper(msg_out.payload) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.i[:in], GaussianDistribution).payload
 
-    a = msg_out.payload.a
-    b = msg_out.payload.b
-
-    dist_out.m = log((a-1)/b)
-    dist_out.V = NaN
-    dist_out.W = a-1
+    dist_out.m = msg_out.payload.m
+    dist_out.V = msg_out.payload.s
+    dist_out.W = NaN
     dist_out.xi = NaN
 
     return (:exponential_backward_gaussian,

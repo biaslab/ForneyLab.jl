@@ -30,7 +30,7 @@ An :class:`Algorithm` instance can be executed on a :class:`FactorGraph`. The fo
 
 .. function:: execute(algorithm, graph)
 
-    Executes ``algorithm`` on ``graph``. 
+    Executes ``algorithm`` on ``graph``.
 
 
 .. function:: step(algorithm, graph)
@@ -46,7 +46,7 @@ An :class:`Algorithm` instance can be executed on a :class:`FactorGraph`. The fo
 
     Calls ``step(algorithm, graph)`` repeatedly until a read-buffer is exhausted.
 
-    
+
 Schedules
 =========
 
@@ -86,7 +86,7 @@ Algorithms executed on factor graphs are usually based on *message passing*. In 
 Built-in algorithm generators
 =============================
 
-ForneyLab includes commonly used inference algorithms, which are implemented in submodules. Currently, the following algorithm submodules are available: :ref:`sumproduct-submodule`, :ref:`vmp-submodule`.
+ForneyLab includes commonly used inference algorithms, which are implemented in submodules. Currently, the following algorithm submodules are available: :ref:`sumproduct-submodule`, :ref:`vmp-submodule`, :ref:`expectation_propagation-submodule`.
 
 .. _sumproduct-submodule:
 
@@ -126,7 +126,7 @@ Automatic scheduler
 
 .. function:: SumProduct.generateSchedule(::FactorGraph)
 
-    Returns a sum-product message passing schedule that passes messages towards interfaces concerning write buffers and wraps as defined by the argument graph. The scheduler works through depth first search and terminates when it encounters an interface that carries a message. Normally the automatic scheduler can only works for acyclic graphs, so before schedule generation cycles should be broken with breaker messages.  
+    Returns a sum-product message passing schedule that passes messages towards interfaces concerning write buffers and wraps as defined by the argument graph. The scheduler works through depth first search and terminates when it encounters an interface that carries a message. Normally the automatic scheduler can only works for acyclic graphs, so before schedule generation cycles should be broken with breaker messages.
 
 
 .. _vmp-submodule:
@@ -160,7 +160,7 @@ Automatic scheduler
 
 .. function:: VMP.generateSchedule!(::Subgraph)
 
-    Generates and stores an (internal and external) schedule for VMP on the argument subgraph. Messages within a subgraph are propagated towards wraps, write buffers and external edges. 
+    Generates and stores an (internal and external) schedule for VMP on the argument subgraph. Messages within a subgraph are propagated towards wraps, write buffers and external edges.
 
 VMP specific types
 ------------------
@@ -193,3 +193,20 @@ VMP specific types
             edges::Set{Edge} # Edges on which the distribution is defined
         end
 
+.. _expectation_propagation-submodule:
+
+The expectation propagation algorithm
+=====================================
+
+The ``ExpectationPropagation`` submodule provides an Algorithm constructor that automatically derives an expectation propagation message passing algorithm. The expectation propagation (EP) algorithm is similar to (loopy) belief propagation as implemented by the sum-product algorithm. For some nodes, the exact sum-product messages cannot be expressed analytically in the desired form, rendering the sum-product algorithm unusable. In these cases, the EP algorithm provides a solution by projecting the 'difficult' messages on the family of desired distributions. The interfaces that generate the 'difficult' messages are called sites. The outbound messages on the sites are called "expectations", and represent local approximations to the 'true' messages. The inbound messages on the sites are called "cavity distributions", and they capture the effect of the rest of the graph (usually prior + other sites) on the marginal. Since the expectation message depends on the cavity distribution, the EP algorithm creates implicit loops in the factor graph. Because of this, the EP message passing schedule has to be executed multiple times for the messages to converge.
+
+The expectation messages on the sites are calculated by the :func:`ep!` message calculation rule. This message computation rule should be implemented for all nodes connected to sites. In contrast to :func:`sumProduct!`, :func:`ep!` also consumes the inbound message on the outbound interface (site). 
+
+
+.. function:: ExpectationPropagation.Algorithm(sites::Vector{Interface}; ...)
+
+    Generates an EP algorithm to incrementally approximate the marginal distributions of the variables (edges) connected to the specified 'sites'. The generated message passing schedule will respect the order of the sites.
+    The following optional keyword arguments may be passed:
+
+    - ``num_iterations``: a positive integer indicating the maximum number of iterations (default=100).
+    - ``callback``: a function that is called after each iteration. This function can be used for example to check converge or to collect intermediate results. If the callback function returns ``true``, the algorithm is terminated.

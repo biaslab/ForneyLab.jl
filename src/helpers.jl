@@ -27,6 +27,10 @@ end
 *(num::Number, sym::Symbol) = symbol(string(num, sym))
 *(sym1::Symbol, sym2::Symbol) = symbol(string(sym1, sym2))
 
+function format(d::Bool)
+    string(d)
+end
+
 function format(d::Float64)
     if 0.01 < d < 100.0 || -100 < d < -0.01 || d==0.0
         return @sprintf("%.2f", d)

@@ -48,7 +48,8 @@ Built-in distributions
 Univariate distributions
 ------------------------
 
-Built-in univariate distributions: :class:`BetaDistribution`, :class:`DeltaDistribution`, :class:`GammaDistribution`, :class:`GaussianDistribution`, :class:`InverseGammaDistribution`, :class:`StudentsTDistribution`.
+Built-in continuous univariate distributions: :class:`BetaDistribution`, :class:`DeltaDistribution`, :class:`GammaDistribution`, :class:`GaussianDistribution`, :class:`InverseGammaDistribution`, :class:`StudentsTDistribution`.
+Discrete univariate distributions: :class:`BernoulliDistribution`.
 
 
 .. type:: BetaDistribution
@@ -74,6 +75,11 @@ Built-in univariate distributions: :class:`BetaDistribution`, :class:`DeltaDistr
     :construction:  ``GammaDistribution(a=1.0, b=1.0)``
     :reference:     Bishop, 2006; Pattern recognition and machine learning; appendix B
 
+.. type:: LogNormalDistribution
+
+    :description:   Log-normal distribution (univariate)
+    :parameters:    ``m`` ("location", real scalar), ``s > 0`` ("squared scale" (s = σ²), real scalar)
+    :construction:  ``LogNormalDistribution(m=0.0, s=1.0)``
 
 .. type:: GaussianDistribution
 
@@ -93,21 +99,10 @@ Built-in univariate distributions: :class:`BetaDistribution`, :class:`DeltaDistr
 
     The following functions are available to facilitate parameter conversions:
 
-    .. function:: ensureMVParametrization!(dist::GaussianDistribution)
+    .. function:: ensureParameters!(dist::GaussianDistribution, params::Tuple{Symbol})
 
-        Make sure ``dist.m`` and ``dist.V`` are defined and valid. Calculate from other parameters if required.
-
-    .. function:: ensureMWParametrization!(dist::GaussianDistribution)
-
-        Make sure ``dist.m`` and ``dist.W`` are defined and valid. Calculate from other parameters if required.
-
-    .. function:: ensureXiVParametrization!(dist::GaussianDistribution)
-
-        Make sure ``dist.xi`` and ``dist.V`` are defined and valid. Calculate from other parameters if required.
-
-    .. function:: ensureXiWParametrization!(dist::GaussianDistribution)
-
-        Make sure ``dist.xi`` and ``dist.W`` are defined and valid. Calculate from other parameters if required.
+        Make sure that the specified parameters of ``dist`` are set and valid. Calculate them from the other (valid) parameters if required.
+        Example: ``ensureParameters!(dist, (:m,:V))`` to make sure that ``dist.m`` and ``dist.V`` are set.
 
     .. function:: isWellDefined(dist::GaussianDistribution)
 
@@ -136,6 +131,13 @@ Built-in univariate distributions: :class:`BetaDistribution`, :class:`DeltaDistr
     :reference:     Bishop, 2006; Pattern recognition and machine learning; appendix B
 
 
+.. type:: BernoulliDistribution
+
+    :description:   Bernoulli distribution over X ∈ {false,true} (``Pr{X=true} = p``)
+    :parameters:    ``p`` (real scalar, 0 ≤ p ≤ 1)
+    :construction:  ``BernoulliDistribution(p)``
+
+
 Multivariate distributions
 --------------------------
 
@@ -161,21 +163,10 @@ Built-in multivariate distributions: :class:`MvDeltaDistribution`, :class:`MvGau
 
     The following functions are available to facilitate parameter conversions:
 
-    .. function:: ensureMVParametrization!(dist::MvGaussianDistribution)
+    .. function:: ensureParameters!(dist::MvGaussianDistribution, params::Tuple{Symbol})
 
-        Make sure ``dist.m`` and ``dist.V`` are defined and valid. Calculate from other parameters if required.
-
-    .. function:: ensureMWParametrization!(dist::MvGaussianDistribution)
-
-        Make sure ``dist.m`` and ``dist.W`` are defined and valid. Calculate from other parameters if required.
-
-    .. function:: ensureXiVParametrization!(dist::MvGaussianDistribution)
-
-        Make sure ``dist.xi`` and ``dist.V`` are defined and valid. Calculate from other parameters if required.
-
-    .. function:: ensureXiWParametrization!(dist::MvGaussianDistribution)
-
-        Make sure ``dist.xi`` and ``dist.W`` are defined and valid. Calculate from other parameters if required.
+        Make sure that the specified parameters of ``dist`` are set and valid. Calculate them from the other (valid) parameters if required.
+        Example: ``ensureParameters!(dist, (:m,:V))`` to make sure that ``dist.m`` and ``dist.V`` are set.
 
     .. function:: isWellDefined(dist::MvGaussianDistribution)
 
@@ -231,4 +222,3 @@ Since an :class:`Edge` represents a variable in the probabilistic model, the ``e
 .. function:: getMarginalType(distributions...)
 
     Returns the type of the marginal distribution given the types of its factors (i.e. carried by forward/backward messages).
-
