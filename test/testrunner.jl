@@ -1,28 +1,28 @@
 using ForneyLab
 using FactCheck
 
-function collect_test_files(path::AbstractString, files::Set{AbstractString}, exclude::Set{AbstractString}, regex=r".*")
+function collectTestFiles(path::AbstractString, files::Set{AbstractString}, exclude::Set{AbstractString}, regex=r".*")
     path = abspath(path)
     if isdir(path)
         object_names = readdir(path)
         dirs = filter(x -> isdir(joinpath(path, x)), object_names)
         for dir_name in dirs
-            files = union(files, collect_test_files(joinpath(path, dir_name), files, exclude, regex))
+            files = union(files, collectTestFiles(joinpath(path, dir_name), files, exclude, regex))
         end
         dir_files = Set{AbstractString}([joinpath(path, x) for x in filter(x -> (isfile(joinpath(path, x))
                                                                                  && contains(x, "test_")
                                                                                  && ismatch(regex, x)
                                                                                  && !(x in exclude)),
-                                                                           object_names)])        
+                                                                           object_names)])
         return union(files, dir_files)
     elseif isfile(path)
         return Set{AbstractString}(path)
     end
 end
 
-function collect_test_files_in_paths(paths, files::Set{AbstractString}, exclude::Set{AbstractString}, regex=r".*")
+function collectTestFilesInPaths(paths, files::Set{AbstractString}, exclude::Set{AbstractString}, regex=r".*")
     for path in paths
-        test_files_in_path = collect_test_files(path, files, exclude, regex)
+        test_files_in_path = collectTestFiles(path, files, exclude, regex)
         if test_files_in_path != nothing
             files = union(files, test_files_in_path)
         end
@@ -58,6 +58,7 @@ function run_tests(runner::ForneyLabTestRunner)
         include(test_file)
         tearDown(runner)
     end
+    exitstatus()
 end
 
 using ArgParse
@@ -72,7 +73,7 @@ function main(args)
         default = Any["./"]
         arg_type = AbstractString
         help = "Paths to look for test files in"
-        
+
         "--regex", "-r"
         default = ".*"
         arg_type = AbstractString
@@ -91,7 +92,7 @@ function main(args)
     paths = parsed_args["paths"]
     exclude = Set{AbstractString}(parsed_args["exclude"])
 
-    test_files = collect_test_files_in_paths(paths, Set{AbstractString}(), exclude, Regex(regex))
+    test_files = collectTestFilesInPaths(paths, Set{AbstractString}(), exclude, Regex(regex))
 
     fl_test_runner = ForneyLabTestRunner(test_files)
     run_tests(fl_test_runner)
