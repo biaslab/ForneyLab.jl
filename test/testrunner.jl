@@ -52,7 +52,7 @@ function tearDown(runner::ForneyLabTestRunner)
     current_algorithm = nothing
 end
 
-function run_tests(runner::ForneyLabTestRunner)
+function runTests(runner::ForneyLabTestRunner)
     for test_file in runner.files
         setUp(runner)
         include(test_file)
@@ -95,7 +95,7 @@ function main(args)
     test_files = collectTestFilesInPaths(paths, Set{AbstractString}(), exclude, Regex(regex))
 
     fl_test_runner = ForneyLabTestRunner(test_files)
-    run_tests(fl_test_runner)
+    runTests(fl_test_runner)
 end
 
 main(ARGS)
