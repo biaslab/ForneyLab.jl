@@ -26,7 +26,7 @@ The Jupyter notebook demos should always be committed in an executed state. To m
 # Execute all staged added/modified Jupyter(iJulia) demos
 # Requires iPython v3.0 or higher
 
-for s in `git diff --staged --name-only --diff-filter=AM | grep "demo/.*\.ipynb"`; do 
+for s in `git diff --staged --name-only --diff-filter=AM | grep "demo/.*\.ipynb"`; do
 	echo "Executing added or modified demo: " $s
 	ipython nbconvert --to=notebook --execute --inplace $s
 	mv $(basename "$s") $s
@@ -41,7 +41,7 @@ We use the default [Julia style conventions](http://julia.readthedocs.org/en/lat
 
 - Indentation: 4 spaces
 - Type names in `UpperCamelCase`
-- Method names in `lowerCamelCase` (different from Julia default)
+- Function names in `lowerCamelCase` (different from the official Julia convention)
 - Variable names and function arguments in `snake_case`
 - File and directory names in `snake_case`
 - The name of a method that writes back in its argument(s) end in `!`
@@ -55,16 +55,9 @@ Apart from this, there are some project-specific conventions:
 
 Testing setup
 -------------
-[FactCheck](https://github.com/zachallaun/FactCheck.jl) is used as testing framework. The `/test/` directory follows the structure of the `/src/` directory.
+[FactCheck](https://github.com/zachallaun/FactCheck.jl) is used as testing framework. The `/test/` directory follows the structure of the `/src/` directory. Every test file should have the following filename format: `test_*.jl`.
+The test coverage should be as complete as possible. Please make sure you write tests for every piece of code you add.
 
-In general, at least the following should be tested:
-
-- The correctness of all defined constructors
-- Correctness of the output of all functions for all valid input types
-- Exceptions for invalid input arguments
-- Triggering all possible exceptions
-
-The main testing file `test_forneylab.jl` performs some tests on all available node types.
 **Before each commit, confirm that all tests pass**. Pull requests that break tests or that do not include sufficient tests will not be merged. The tests are evaluated by simply running or including `test/runtests.jl`:
 
 ```jl
@@ -76,9 +69,13 @@ Alternatively, you can also use:
 Pkg.test("ForneyLab")
 ```
 
-If you add a new test file, do not forget to add the inclusion to `/test/test_forneylab.jl`.
+It is possible to run just a subset of the tests, using `test/testrunner.jl`. One can filter based on the path or filenames. Run `julia test/testrunner.jl --help` for more info. For example, to only run the distributions tests, use:
 
-To test the demos, use:
+```
+julia test/testrunner.jl --path="test/distributions/"
+```
+
+The demo tests (`test/test_demos.jl`) are ignored by default. To run them, use:
 
 ```jl
 include("test/test_demos.jl")

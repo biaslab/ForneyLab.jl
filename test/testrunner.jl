@@ -81,9 +81,9 @@ function main(args)
 
         "--exclude", "-e"
         nargs = '*'
-        default = Any["test_forneylab.jl", "test_demos.jl"]
+        default = Any["test_demos.jl"]
         arg_type = AbstractString
-        help = "Files to exclude (for example, test_forneylab.jl)"
+        help = "Files to exclude (for example, test_node.jl)"
     end
 
     parsed_args = parse_args(s)
