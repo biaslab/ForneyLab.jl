@@ -138,6 +138,7 @@ function sumProduct!(   node::GainNode,
 
   return (:gain_gaussian_backward,
           node.interfaces[outbound_interface_index].message)
+end
 
 ############################################
 # DeltaDistribution methods
