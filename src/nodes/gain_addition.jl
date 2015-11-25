@@ -3,7 +3,7 @@
 ############################################
 # Description:
 #   Gain-addition node: out = A*in1 + in2
-#   Combines the node functions of the FixedGainNode
+#   Combines the node functions of the GainNode
 #   and the AdditionNode for computational efficiency.
 #
 #            | in1

@@ -3,7 +3,7 @@
 ############################################
 # Description:
 #   Gain-equality node: A⁻¹*out = in1 = in2
-#   Combines the node functions of the FixedGainNode
+#   Combines the node functions of the GainNode
 #   and the EqualityNode for computational efficiency.
 #
 #        _________
