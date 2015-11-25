@@ -39,7 +39,7 @@ type GainNode <: Node
     function GainNode(A::Union{Array{Float64},Float64}=1.0; id=generateNodeId(GainNode))
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
         A = (typeof(A)==Float64) ? fill!(Array(Float64,1,1),A) : ensureMatrix(deepcopy(A))
-        self = new(A, id, Array(Interface, 2), Dict{Symbol,Interface}())
+        self = new(A, id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(current_graph, self)
 
         for (iface_index, iface_handle) in enumerate([:in, :out, :gain])
@@ -56,15 +56,6 @@ type GainNode <: Node
         return self
     end
 
-    function GainNode(id=generateNodeId(GainNode))
-      self = new(nothing, id, Array(Interface, 2), Dict{Symbol,Interface}())
-      addNode!(current_graph, self)
-
-      for (iface_index, iface_handle) in enumerate([:in, :out, :gain])
-          self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
-      end
-      return self
-    end
 end
 
 isDeterministic(::GainNode) = true
