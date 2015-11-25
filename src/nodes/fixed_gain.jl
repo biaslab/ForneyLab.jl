@@ -1,38 +1,48 @@
 ############################################
-# FixedGainNode
+# GainNode
 ############################################
 # Description:
-#   Multiplication: out = A*in
+#   Multiplication:
+#         If the message at the edge "gain" exists, then:
+#              out = gain * in
+#         Otherwise:
+#              out = A*in
 #
-#     in      out
+#         gain
+#          |
+#     in   V   out
 #   ----->[A]----->
 #
-#   f(in,out) = δ(out - A*in)
 #
+#                       | δ(out - A*in), if gain = nothing
+#     f(in,out,gain) =  |
+#                       | δ(out - gain*in), otherwise
 # Interfaces:
-#   1 i[:in], 2 i[:out]
+#   1 i[:in], 2 i[:out], 3 i[:gain]
 #
 # Construction:
-#   FixedGainNode([1.0], id=:my_node)
+#    GainNode([1.0], id=:my_node)
+#     or
+#    GainNode(id=:my_node)
 #
 ############################################
 
-export FixedGainNode
+export GainNode
 
-type FixedGainNode <: Node
+type GainNode <: Node
     A::Matrix{Float64}
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
     A_inv::Matrix{Float64} # holds pre-computed inv(A) if possible
 
-    function FixedGainNode(A::Union{Array{Float64},Float64}=1.0; id=generateNodeId(FixedGainNode))
+    function GainNode(A::Union{Array{Float64},Float64}=1.0; id=generateNodeId(GainNode))
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
         A = (typeof(A)==Float64) ? fill!(Array(Float64,1,1),A) : ensureMatrix(deepcopy(A))
         self = new(A, id, Array(Interface, 2), Dict{Symbol,Interface}())
         addNode!(current_graph, self)
 
-        for (iface_index, iface_handle) in enumerate([:in, :out])
+        for (iface_index, iface_handle) in enumerate([:in, :out, :gain])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
@@ -45,16 +55,26 @@ type FixedGainNode <: Node
 
         return self
     end
+
+    function GainNode(id=generateNodeId(GainNode))
+      self = new(nothing, id, Array(Interface, 2), Dict{Symbol,Interface}())
+      addNode!(current_graph, self)
+
+      for (iface_index, iface_handle) in enumerate([:in, :out, :gain])
+          self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
+      end
+      return self
+    end
 end
 
-isDeterministic(::FixedGainNode) = true
+isDeterministic(::GainNode) = true
 
 ############################################
 # GaussianDistribution methods
 ############################################
 
 # Backward Gaussian to IN
-function sumProduct!(   node::FixedGainNode,
+function sumProduct!(   node::GainNode,
                         outbound_interface_index::Int,
                         ::Void,
                         msg_out::Message{GaussianDistribution})
@@ -65,12 +85,12 @@ function sumProduct!(   node::FixedGainNode,
     dist_1.W = (node.A[1,1])^2 * dist_2.W
     dist_1.m = dist_1.V = NaN
 
-    return (:fixed_gain_gaussian_backward,
+    return (:gain_gaussian_backward,
             node.interfaces[outbound_interface_index].message)
 end
 
 # Forward Gaussian to OUT
-function sumProduct!(   node::FixedGainNode,
+function sumProduct!(   node::GainNode,
                         outbound_interface_index::Int,
                         msg_in::Message{GaussianDistribution},
                         ::Void)
@@ -81,16 +101,50 @@ function sumProduct!(   node::FixedGainNode,
     dist_2.V = (node.A[1,1])^2 * dist_1.V
     dist_2.xi = dist_2.W = NaN
 
-    return (:fixed_gain_gaussian_forward,
+    return (:gain_gaussian_forward,
             node.interfaces[outbound_interface_index].message)
 end
+
+#Forward Gaussian to OUT if gain is present on the edge
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Int,
+                        msg_in::Message{GaussianDistribution},
+                        msg_gain::Message{DeltaDistribution},
+                        ::Void)
+  (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
+
+  dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+  dist_1 = ensureParameters!(msg_in.payload, (:m, :V))
+  dist_2.m = gain.m * dist_1.m
+  dist_2.V = (gain.m)^2 * dist_1.V
+  dist_2.xi = dist_2.W = NaN
+
+  return (:gain_gaussian_forward,
+          node.interfaces[outbound_interface_index].message)
+end
+
+#Backward Gaussian to IN if gain is present on the edge
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Int,
+                        msg_in::Message{GaussianDistribution},
+                        msg_gain::Message{DeltaDistribution},
+                        ::Void)
+  (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
+  dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+  dist_2 = ensureParameters!(msg_out.payload, (:xi, :W))
+  dist_1.xi = gain.m * dist_2.xi
+  dist_1.W = (gain.m)^2 * dist_2.W
+  dist_1.m = dist_1.V = NaN
+
+  return (:gain_gaussian_backward,
+          node.interfaces[outbound_interface_index].message)
 
 ############################################
 # DeltaDistribution methods
 ############################################
 
 # Backward DeltaDistribution to IN
-function sumProduct!(node::FixedGainNode,
+function sumProduct!(node::GainNode,
                      outbound_interface_index::Int,
                      ::Void,
                      msg_out::Message{DeltaDistribution{Float64}})
@@ -98,12 +152,12 @@ function sumProduct!(node::FixedGainNode,
     dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
     dist_1.m = node.A_inv[1,1] * msg_out.payload.m
 
-    return (:fixed_gain_delta_backward,
+    return (:gain_delta_backward,
             node.interfaces[outbound_interface_index].message)
 end
 
 # Forward DeltaDistribution to OUT
-function sumProduct!(node::FixedGainNode,
+function sumProduct!(node::GainNode,
                      outbound_interface_index::Int,
                      msg_in::Message{DeltaDistribution{Float64}},
                      ::Void)
@@ -111,7 +165,7 @@ function sumProduct!(node::FixedGainNode,
     dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
     dist_2.m = node.A[1,1] * msg_in.payload.m
 
-    return (:fixed_gain_delta_forward,
+    return (:gain_delta_forward,
             node.interfaces[outbound_interface_index].message)
 end
 
@@ -170,7 +224,7 @@ function fixedGainGaussianBackwardRule!(dist_result::MvGaussianDistribution, dis
     return dist_result
 end
 
-function sumProduct!(node::FixedGainNode,
+function sumProduct!(node::GainNode,
                             outbound_interface_index::Int,
                             ::Void,
                             msg_out::Message{MvGaussianDistribution})
@@ -224,7 +278,7 @@ function fixedGainGaussianForwardRule!(dist_result::MvGaussianDistribution, dist
     return dist_result
 end
 
-function sumProduct!(node::FixedGainNode,
+function sumProduct!(node::GainNode,
                             outbound_interface_index::Int,
                             msg_in::Message{MvGaussianDistribution},
                             ::Void)
@@ -250,7 +304,7 @@ end
 ############################################
 
 # Backward MvDeltaDistribution to IN
-function sumProduct!(node::FixedGainNode,
+function sumProduct!(node::GainNode,
                      outbound_interface_index::Int,
                      ::Void,
                      msg_out::Message{MvDeltaDistribution{Float64}})
@@ -263,7 +317,7 @@ function sumProduct!(node::FixedGainNode,
 end
 
 # Forward MvDeltaDistribution to OUT
-function sumProduct!(node::FixedGainNode,
+function sumProduct!(node::GainNode,
                      outbound_interface_index::Int,
                      msg_in::Message{MvDeltaDistribution{Float64}},
                      ::Void)
