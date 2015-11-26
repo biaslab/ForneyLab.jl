@@ -3,7 +3,7 @@
 #####################
 
 facts("GainNode unit tests") do
-    context("GainNode() should initialize a GainNode with 2 interfaces") do
+    context("GainNode(A) should initialize a GainNode with 2 interfaces") do
         FactorGraph()
         GainNode([1.0], id=:node)
         @fact length(n(:node).interfaces) --> 2
@@ -11,6 +11,15 @@ facts("GainNode unit tests") do
         @fact n(:node).i[:out] --> n(:node).interfaces[2]
         @fact typeof(n(:node).A) <: Array --> true
         @fact length(size(n(:node).A)) --> 2 # A should always be a matrix
+    end
+
+    context("GainNode() should initialize a GainNode with 3 interfaces") do
+        FactorGraph()
+        GainNode(id=:node)
+        @fact length(n(:node).interfaces) --> 3
+        @fact n(:node).i[:in] --> n(:node).interfaces[1]
+        @fact n(:node).i[:out] --> n(:node).interfaces[2]
+        @fact n(:node).i[:gain] --> n(:node).interfaces[3]
     end
 
     context("GainNode should provide sumProduct! for DeltaDistribution{Float64}") do

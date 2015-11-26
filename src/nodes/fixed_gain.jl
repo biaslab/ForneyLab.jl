@@ -30,27 +30,31 @@
 export GainNode
 
 type GainNode <: Node
-    A::Matrix{Float64}
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
+    A::Matrix{Float64}
     A_inv::Matrix{Float64} # holds pre-computed inv(A) if possible
 
-    function GainNode(A::Union{Array{Float64},Float64}=1.0; id=generateNodeId(GainNode))
+    function GainNode(A::Union{Array{Float64},Float64, Void}=nothing; id=generateNodeId(GainNode))
         # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
-        A = (typeof(A)==Float64) ? fill!(Array(Float64,1,1),A) : ensureMatrix(deepcopy(A))
-        self = new(A, id, Array(Interface, 3), Dict{Symbol,Interface}())
-        addNode!(current_graph, self)
-
-        for (iface_index, iface_handle) in enumerate([:in, :out, :gain])
-            self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
+        if A != nothing
+          A = (typeof(A)==Float64) ? fill!(Array(Float64,1,1),A) : ensureMatrix(deepcopy(A))
+          self = new(id, Array(Interface, 2), Dict{Symbol,Interface}(), A)
+          # Try to precompute inv(A)
+          try
+              self.A_inv = inv(self.A)
+          catch
+              warn("The specified multiplier for $(typeof(self)) $(self.id) is not invertible. This might cause problems. Double check that this is what you want.")
+          end
+        else
+          self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
         end
 
-        # Try to precompute inv(A)
-        try
-            self.A_inv = inv(self.A)
-        catch
-            warn("The specified multiplier for $(typeof(self)) $(self.id) is not invertible. This might cause problems. Double check that this is what you want.")
+        addNode!(current_graph, self)
+
+        for (iface_index, iface_handle) in enumerate([:in, :out, :gain][1:length(self.interfaces)])
+          self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
         return self
@@ -100,14 +104,16 @@ end
 function sumProduct!(   node::GainNode,
                         outbound_interface_index::Int,
                         msg_in::Message{GaussianDistribution},
-                        msg_gain::Message{DeltaDistribution},
-                        ::Void)
+                        ::Void,
+                        msg_gain::Message{DeltaDistribution})
   (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
 
   dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
   dist_1 = ensureParameters!(msg_in.payload, (:m, :V))
-  dist_2.m = gain.m * dist_1.m
-  dist_2.V = (gain.m)^2 * dist_1.V
+  gain_dist = msg_gain.payload
+
+  dist_2.m = gain_dist.m * dist_1.m
+  dist_2.V = (gain_dist.m)^2 * dist_1.V
   dist_2.xi = dist_2.W = NaN
 
   return (:gain_gaussian_forward,
@@ -117,14 +123,17 @@ end
 #Backward Gaussian to IN if gain is present on the edge
 function sumProduct!(   node::GainNode,
                         outbound_interface_index::Int,
-                        msg_in::Message{GaussianDistribution},
-                        msg_gain::Message{DeltaDistribution},
-                        ::Void)
+                        ::Void,
+                        msg_out::Message{GaussianDistribution},
+                        msg_gain::Message{DeltaDistribution})
+
   (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
   dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
   dist_2 = ensureParameters!(msg_out.payload, (:xi, :W))
-  dist_1.xi = gain.m * dist_2.xi
-  dist_1.W = (gain.m)^2 * dist_2.W
+  gain_dist = msg_gain.payload
+
+  dist_1.xi = gain_dist.m * dist_2.xi
+  dist_1.W = (gain_dist.m)^2 * dist_2.W
   dist_1.m = dist_1.V = NaN
 
   return (:gain_gaussian_backward,
