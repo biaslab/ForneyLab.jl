@@ -105,7 +105,7 @@ function sumProduct!(   node::GainNode,
                         outbound_interface_index::Int,
                         msg_in::Message{GaussianDistribution},
                         ::Void,
-                        msg_gain::Message{DeltaDistribution})
+                        msg_gain::Message{DeltaDistribution{Float64}})
   (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
 
   dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
@@ -125,7 +125,7 @@ function sumProduct!(   node::GainNode,
                         outbound_interface_index::Int,
                         ::Void,
                         msg_out::Message{GaussianDistribution},
-                        msg_gain::Message{DeltaDistribution})
+                        msg_gain::Message{DeltaDistribution{Float64}})
 
   (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
   dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
