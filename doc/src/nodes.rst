@@ -229,7 +229,7 @@ Elementary nodes
        ----->[A]----->
 
 
-    :Node function: ``f(in,out,gain) = δ(out - gain*in)``, where gain is either A or message on the
+    :Node function: ``f(in,out,gain) = δ(out - gain*in)``, where ``gain`` is either provided upon construction of the node and is a fixed value or is supplied via gain interface.
     :Interfaces:    1 ``i[:in]``, 2. ``i[:out]``, 3. ``i[:gain]``
     :Construction:  ``GainNode(A::Matrix, id="something")`` or ``GainNode(id="something")``
 

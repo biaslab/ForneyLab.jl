@@ -14,9 +14,9 @@
 #   ----->[A]----->
 #
 #
-#                       | δ(out - A*in), if gain = nothing
-#     f(in,out,gain) =  |
-#                       | δ(out - gain*in), otherwise
+#
+#     f(in,out,gain) =  δ(out - gain*in), where gain is either provided upon construction of the node and is a fixed value or is supplied via gain interface.
+#
 # Interfaces:
 #   1 i[:in], 2 i[:out], 3 i[:gain]
 #
