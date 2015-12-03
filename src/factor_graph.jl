@@ -3,6 +3,9 @@ export  FactorGraph
 export  currentGraph,
         setCurrentGraph,
         clearMessages!,
+        addNode!,
+        hasNode,
+        hasEdge,
         nodes,
         edges,
         node,
@@ -24,7 +27,16 @@ type FactorGraph
     write_buffers::Dict{Union{Edge,Interface}, Vector}
 end
 
-currentGraph() = current_graph::FactorGraph
+function currentGraph()
+    # Return currently active FactorGraph.
+    # Create one if there is none.
+    try
+        return current_graph
+    catch
+        return FactorGraph()
+    end
+end
+
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph
 
 FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
@@ -49,15 +61,16 @@ end
 
 function generateNodeId(t::DataType)
     # Automatically generates a unique node id based on the current count of nodes of that type in the graph
+    current_graph = currentGraph()
     haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
     count = current_graph.counters[t]
     str = replace(lowercase(split(string(t),'.')[end]), "node", "")
     return symbol("$(str)$(count)")
 end
 
-clearMessages!(graph::FactorGraph = current_graph) = map(clearMessages!, nodes(graph))
+clearMessages!(graph::FactorGraph = currentGraph()) = map(clearMessages!, nodes(graph))
 
-nodes(graph::FactorGraph = current_graph) = Set{Node}(values(graph.nodes))
+nodes(graph::FactorGraph = currentGraph()) = Set{Node}(values(graph.nodes))
 
 function nodes(edges::Set{Edge})
     # Return all nodes connected to edges
@@ -70,15 +83,15 @@ function nodes(edges::Set{Edge})
     return connected_nodes
 end
 
-edges(graph::FactorGraph = current_graph) = Set{Edge}(values(graph.edges))
+edges(graph::FactorGraph = currentGraph()) = Set{Edge}(values(graph.edges))
 edges(node::Node) = Set{Edge}([intf.edge for intf in node.interfaces])
 edges(nodeset::Set{Node}) = union(map(edges, nodeset)...)
 
 # Search edge and node by id
-node(id::Symbol, graph::FactorGraph=current_graph) = graph.nodes[id]
+node(id::Symbol, graph::FactorGraph = currentGraph()) = graph.nodes[id]
 n = node
 
-edge(id::Symbol, graph::FactorGraph=current_graph) = graph.edges[id]
+edge(id::Symbol, graph::FactorGraph = currentGraph()) = graph.edges[id]
 e = edge
 
 # Add/remove graph elements

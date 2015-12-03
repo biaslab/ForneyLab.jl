@@ -430,7 +430,7 @@ Wrapping a FactorGraph in a CompositeNode
 
 The most straightforward way of constructing a ``CompositeNode`` is to first build its internal factor graph, and then wrapping this graph in a ``CompositeNode``. This can be achieved using the following constructor::
 
-    CompositeNode(graph::FactorGraph=current_graph, terminals...; id=generateNodeId(), deterministic=false)
+    CompositeNode(graph::FactorGraph=currentGraph(), terminals...; id=generateNodeId(), deterministic=false)
 
 Here, ``terminals`` is an array of :class:`TerminalNode` instances in ``graph`` that should be linked to interfaces of the created ``CompositeNode``. The name of a linked ``TerminalNode`` determines the name of the corresponding :class:`Interface`. Once the ``graph`` is wrapped in a newly created ``CompositeNode``, a new ``FactorGraph`` is created which contains the new ``CompositeNode`` as its only node. This new ``FactorGraph`` becomes the current graph. Example::
 
