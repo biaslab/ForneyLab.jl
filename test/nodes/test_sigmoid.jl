@@ -47,6 +47,7 @@ facts("SigmoidNode unit tests") do
         ensureParameters!(sig_node.i[:real].message.payload, (:m, :V))
         @fact sig_node.i[:real].message.payload.m --> roughly(-1.7724, atol=1e-4)
         @fact sig_node.i[:real].message.payload.V --> roughly(2.1415, atol=1e-4)
+        ensureParameters!(sig_node.i[:real].edge.marginal, (:m, :V))
         mean_marg_hard = sig_node.i[:real].edge.marginal.m
 
         # Backward message, BernoulliDistribution on i[:bin]
@@ -54,6 +55,7 @@ facts("SigmoidNode unit tests") do
         n(:t_bin).value = BernoulliDistribution(0.5) # uninformative data
         ForneyLab.ep!(sig_node, 1, Message(n(:t_real).value), Message(n(:t_bin).value))
         ensureParameters!(sig_node.i[:real].message.payload, (:m, :V))
+        ensureParameters!(sig_node.i[:real].edge.marginal, (:m, :V))
         @fact sig_node.i[:real].message.payload.m --> roughly(0.0, atol=1e-4)
         @fact sig_node.i[:real].message.payload.V --> greater_than(huge/2)
         @fact sig_node.i[:real].message.payload.V --> less_than(Inf)
@@ -64,6 +66,7 @@ facts("SigmoidNode unit tests") do
         n(:t_bin).value = BernoulliDistribution(0.2) # softbit
         ForneyLab.ep!(sig_node, 1, Message(n(:t_real).value), Message(n(:t_bin).value))
         ensureParameters!(sig_node.i[:real].message.payload, (:m, :V))
+        ensureParameters!(sig_node.i[:real].edge.marginal, (:m, :V))
         @fact sig_node.i[:real].message.payload.m --> roughly(-2.9540, atol=1e-4)
         @fact sig_node.i[:real].message.payload.V --> roughly(7.7266, atol=1e-4)
         @fact sig_node.i[:real].edge.marginal.m --> greater_than(mean_marg_hard) # softbit should result in posterior closer to prior compared to 'hard' bit
