@@ -106,7 +106,6 @@ function ep!{T<:Bool}(
                     msg_bin::Message{DeltaDistribution{T}})
     # Convert incoming DeltaDistribution to BernoulliDistribution
     (outbound_interface_id == 1) || error("Invalid call")
-    #msg_bin.payload = BernoulliDistribution(msg_bin.payload.m)
     ep!(node, 1, msg_cavity, Message(BernoulliDistribution(msg_bin.payload.m)))
 end
 
@@ -119,12 +118,13 @@ function ep!(
     # The approximate message is an 'expectation' under the context (cavity distribution) encoded by incoming message msg_1.
     # Propagating the resulting approximate msg through the factor graph results in the expectation propagation (EP) algorithm.
     # Approximation procedure:
-    #  1. Calculate exact (non-Gaussian) message towards i[:real]
-    #  2. Combine exact outbound msg on i[:real] with exact inbound msg (cavity distribution) to find exact marginal
-    #  3. Approximate the exact (non-Gaussian) marginal with a Gaussian one using moment matching
+    #  1. Calculate exact (non-Gaussian) message towards i[:real].
+    #  2. Combine exact outbound msg on i[:real] with exact inbound msg (cavity distribution) to find exact marginal.
+    #  3. Approximate the exact (non-Gaussian) marginal with a Gaussian one using moment matching.
     #  4. Calculate back the Gaussian outbound msg on i[:real] that yields this approximate Gaussian marginal.
     # IMPORTANT NOTES:
-    #  - This calculation results in an implicit cycle in the factor graph since the outbound message depends on the inbound message (cavity dist.)
+    #  - This calculation results in an implicit cycle in the factor graph since the outbound message depends on the inbound message (cavity dist.).
+    #  - The outbound message is not guaranteed to be proper iff 0 < msg_bin.payload.p < 1: variance/precision parameters might be negative.
     (outbound_interface_id == 1) || error("Invalid call")
     (node.sigmoid_func == :normal_cdf) || error("Unsupported sigmoid function")
     isProper(msg_bin.payload) || error("ep!: Incoming Bernoulli distribution should be proper")
@@ -135,37 +135,35 @@ function ep!(
     dist_cavity = ensureParameters!(msg_cavity.payload, (:m, :V))
     μ = dist_cavity.m; σ2 = dist_cavity.V
 
-    # Calculate first and second moment (m_1, m_2) of the 'true' marginal p(x) on edge connected to i[:real]
-    # p(x) = f(x) / m_0
+    # Calculate first and second moment (mp_1, mp_2) of the 'true' marginal p(x) on edge connected to i[:real]
+    # p(x) = f(x) / Z
     # f(x) = (1-p)*N(x|μ,σ2) + (2p-1)*Φ(x)*N(x|μ,σ2)
     #      = (1-p)*N(x|μ,σ2) + (2p-1)*Φ(z)*(Φ(x)*N(x|μ,σ2)/Φ(z))
-    #      = (1-p)*f1(x)     + (2p-1)*Φ(z)*f2(x)
+    #      = (1-p)*N(x|μ,σ2) + (2p-1)*Φ(z)*g(x)
     # See paper for detailed derivation
 
     z = μ / sqrt(1 + σ2)
-    N = exp(-0.5*z^2)./sqrt(2*pi) # N(z|0,1)
-    C = Φ(z)
+    N = exp(-0.5*z^2)./sqrt(2*pi) # 𝓝(z)
 
-    # Moments of f2 = 1/C * Φ(x)*N(x|μ,σ2)
-    m2_1 = μ + σ2*N / (C*sqrt(1+σ2))  # First moment of f2 (Rasmussen eqn. 3.85)
-    m2_2 = 2*μ*m2_1 - μ^2 + σ2 - (σ2^2*z*N) / (C*(1+σ2))  # Second moment of f2 (Rasmussen eqn. 3.86)
+    # Moments of g(x)
+    mg_1 = Φ(z)*μ + σ2*N / sqrt(1+σ2)  # First moment of g
+    mg_2 = 2*μ*mg_1 + Φ(z)*(σ2 - μ^2) - σ2^2*z*N / (1+σ2)  # Second moment of g
 
     # Moments of f(x) (exact marginal)
-    m_0 = 1 - p + (2*p-1)*C
-    m_1 = ((1-p)*μ + (2*p-1)*C*m2_1)/m_0
-    m_2 = ((1-p)*(μ^2+σ2) + (2*p-1)*C*m2_2)/m_0
+    Z = 1 - p + (2*p-1)*Φ(z)
+    mp_1 = ((1-p)*μ + (2*p-1)*mg_1) / Z
+    mp_2 = ((1-p)*(μ^2+σ2) + (2*p-1)*mg_2) / Z
 
     # Save Gaussian marginal with identical first and second moments (moment matching approximation)
     marginal = ensureMarginal!(node.interfaces[1].edge, GaussianDistribution)
-    marginal.m = m_1
-    marginal.V = m_2 - m_1^2 # This is guaranteed to be positive
-    marginal.W = marginal.xi = NaN
+    marginal.W = clamp(1/(mp_2 - mp_1^2), tiny, huge) # This quantity is guaranteed to be positive
+    marginal.xi = marginal.W * mp_1
+    marginal.m = marginal.V = NaN
 
     # Calculate the approximate message towards i[:real]
     dist_backward = ensureMessage!(node.interfaces[1], GaussianDistribution).payload
-    ensureParameters!(marginal, (:xi, :W))
     ensureParameters!(dist_cavity, (:xi, :W))
-    dist_backward.W = marginal.W - dist_cavity.W # This can be < 0, yielding improper Gaussian bw msg
+    dist_backward.W = marginal.W - dist_cavity.W # This can be < 0, yielding an improper Gaussian msg
     if dist_backward.W < 0
         dist_backward.W = clamp(dist_backward.W, -1*huge, -1*tiny)
     else
