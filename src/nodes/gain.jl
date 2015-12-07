@@ -15,10 +15,10 @@
 #     f(in,out,gain) =  δ(out - gain*in), where gain is either provided upon construction of the node and is a fixed value or is supplied via gain interface.
 #
 # Interfaces:
-#   1 i[:in], 2 i[:out], 3 i[:gain]
+#   1 i[:in], 2 i[:out], 3 i[:gain] (optional)
 #
 # Construction:
-#    GainNode([1.0], id=:my_node)
+#    GainNode(gain=[1.0], id=:my_node)
 #     or
 #    GainNode(id=:my_node)
 #
@@ -34,24 +34,25 @@ type GainNode <: Node
     gain_inv::Matrix{Float64} # holds pre-computed inv(gain) if possible
 
     function GainNode(;gain::Union{Array{Float64},Float64, Void}=nothing, id=generateNodeId(GainNode))
-        # Deepcopy A to avoid an unexpected change of the input argument gain. Ensure that gain is a matrix.
         if gain != nothing
-          gain = (typeof(gain)==Float64) ? fill!(Array(Float64,1,1),gain) : ensureMatrix(deepcopy(gain))
-          self = new(id, Array(Interface, 2), Dict{Symbol,Interface}(), gain)
-          # Try to precompute inv(gain)
-          try
-              self.gain_inv = inv(self.gain)
-          catch
-              warn("The specified multiplier for $(typeof(self)) $(self.id) is not invertible. This might cause problems. Double check that this is what you want.")
-          end
+            # Fixed gain; no gain interface.
+            # Deepcopy gain to avoid an unexpected change of the input argument gain. Ensure that gain is a matrix.
+            gain = (typeof(gain)==Float64) ? fill!(Array(Float64,1,1),gain) : ensureMatrix(deepcopy(gain))
+            self = new(id, Array(Interface, 2), Dict{Symbol,Interface}(), gain)
+            # Try to precompute inv(gain)
+            try
+                self.gain_inv = inv(self.gain)
+            catch
+                warn("The specified gain for $(typeof(self)) $(self.id) is not invertible. This might cause problems. Double check that this is what you want.")
+            end
         else
-          self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
+            self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
         end
 
         addNode!(current_graph, self)
 
         for (iface_index, iface_handle) in enumerate([:in, :out, :gain][1:length(self.interfaces)])
-          self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
+            self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
         return self
@@ -97,7 +98,7 @@ function sumProduct!(   node::GainNode,
             node.interfaces[outbound_interface_index].message)
 end
 
-#Forward Gaussian to OUT if gain is present on the edge
+# Forward Gaussian to OUT if gain is present on the edge
 function sumProduct!(   node::GainNode,
                         outbound_interface_index::Int,
                         msg_in::Message{GaussianDistribution},
@@ -117,7 +118,7 @@ function sumProduct!(   node::GainNode,
           node.interfaces[outbound_interface_index].message)
 end
 
-#Backward Gaussian to IN if gain is present on the edge
+# Backward Gaussian to IN if gain is present on the edge
 function sumProduct!(   node::GainNode,
                         outbound_interface_index::Int,
                         ::Void,
