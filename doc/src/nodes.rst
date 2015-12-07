@@ -231,7 +231,9 @@ Elementary nodes
 
     :Node function: ``f(in,out,gain) = δ(out - gain*in)``, where ``gain`` is either provided upon construction of the node and is a fixed value or is supplied via gain interface.
     :Interfaces:    1 ``i[:in]``, 2. ``i[:out]``, 3. ``i[:gain]``
-    :Construction:  ``GainNode(A::Matrix, id="something")`` or ``GainNode(id="something")``
+    :Construction:  ``GainNode(gain=[2.0], id="something")`` or ``GainNode(id="something")``
+
+    The ``GainNode`` implements the the multiplication of a random variable with a non-random variable (encoded by a ``DeltaDistribution``).
 
     Message computation rules:
 
@@ -472,7 +474,7 @@ will create a new composite node instance with the (optional) id ``:comp_add_3_c
 Message computation rules
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since a ``CompositeNode`` behaves like a normal ``Node`` from the outside, one can just call a message calculation rule like :func:`sumProduct!` on it. The message will in general be calculated by performing message passing on the internal graph of the composite node. If no suitable custom calculation rule is defined in the ``CompositeNode``, ForneyLab will try to automatically derive a suitable :class:`Algorithm` on the internal graph to calculate the desired message. However, this might not be possible or desireable, for example if the internal graph contains loops. In such cases it is required to define a *custom message calculation rule* using the function ``addRule!()``.
+Since a ``CompositeNode`` behaves like a normal ``Node`` from the outside, one can just call a message calculation rule like :func:`sumProduct!` on it. The message will in general be calculated by performing message passing on the internal graph of the composite node. If no suitable custom calculation rule is defined in the ``CompositeNode``, ForneyLab will try to automatically derive a suitable :class:`Algorithm` on the internal graph to calculate the desired message. However, this might not be possible or desirable, for example if the internal graph contains loops. In such cases it is required to define a *custom message calculation rule* using the function ``addRule!()``.
 
 .. function:: addRule!(composite_node::CompositeNode, outbound_interface::Interface, message_calculation_rule::Function, algorithm::Algorithm)
 

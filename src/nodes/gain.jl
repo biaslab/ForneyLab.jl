@@ -3,10 +3,7 @@
 ############################################
 # Description:
 #   Multiplication:
-#         If the message at the edge "gain" exists, then:
-#              out = gain * in
-#         Otherwise:
-#              out = A*in
+#         out = gain * in
 #
 #         gain
 #          |
@@ -34,14 +31,14 @@ type GainNode <: Node
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
     gain::Matrix{Float64}
-    gain_inv::Matrix{Float64} # holds pre-computed inv(A) if possible
+    gain_inv::Matrix{Float64} # holds pre-computed inv(gain) if possible
 
     function GainNode(;gain::Union{Array{Float64},Float64, Void}=nothing, id=generateNodeId(GainNode))
-        # Deepcopy A to avoid an unexpected change of the input argument A. Ensure that A is a matrix.
+        # Deepcopy A to avoid an unexpected change of the input argument gain. Ensure that gain is a matrix.
         if gain != nothing
           gain = (typeof(gain)==Float64) ? fill!(Array(Float64,1,1),gain) : ensureMatrix(deepcopy(gain))
           self = new(id, Array(Interface, 2), Dict{Symbol,Interface}(), gain)
-          # Try to precompute inv(A)
+          # Try to precompute inv(gain)
           try
               self.gain_inv = inv(self.gain)
           catch
