@@ -5,7 +5,7 @@ facts("CompositeNode integration tests") do
     add_3 = CompositeNode(g, t_in, t_out, id=:add_3)
 
     context("CompositeNode() should construct a composite node from a FactorGraph") do
-        @fact ForneyLab.current_graph.nodes[:add_3] --> add_3
+        @fact currentGraph().nodes[:add_3] --> add_3
         @fact n(:add_3) --> add_3
         @fact add_3.i[:in] --> add_3.interfaces[1]
         @fact add_3.i[:out] --> add_3.interfaces[2]

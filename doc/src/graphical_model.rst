@@ -20,15 +20,11 @@ The ``FactorGraph`` type
             # and some internal stuff for attaching buffers etc...
         end
 
-    Upon loading ForneyLab, an empty `FactorGraph` is constructed.
-    To create a new one, use ``FactorGraph()``. 
-    There is always one *currently active* ``FactorGraph`` instance. A newly constructed :class:`Node` or :class:`Edge` is always added to the current :class:`FactorGraph`. 
-
 The following functions are available to get/set the currently active ``FactorGraph``:
 
 .. function:: currentGraph()
 
-    Returns the currently active :class:`FactorGraph` instance.
+    Returns the currently active :class:`FactorGraph` instance. A new ``FactorGraph`` is constructed if there is none.
 
 .. function:: setCurrentGraph(graph::FactorGraph)
 
@@ -53,9 +49,9 @@ The calling signature of a node constructor depends on the specific type of the 
     AdditionNode(id=:my_adder)  # Node func.: out = in1 + in2
     FixedGainNode(3.0, id=:times_3) # Node func.: out = 3.0 * in1
 
-A ``Node`` constructor always adds the constructed node to the current graph. To delete a ``Node`` from a :class:`FactorGraph`, use ``delete!(graph::FactorGraph, node::Node)``. Nodes in the current graph can be accessed through the function ``node(id::Symbol)`` (which is aliased by the function ``n(id::Symbol)``), e.g.::     
+A ``Node`` constructor always adds the constructed node to the current graph. To delete a ``Node`` from a :class:`FactorGraph`, use ``delete!(graph::FactorGraph, node::Node)``. Nodes in the current graph can be accessed through the function ``node(id::Symbol)`` (which is aliased by the function ``n(id::Symbol)``), e.g.::
 
-    node(:my_adder)     
+    node(:my_adder)
     n(:my_adder)
 
 
@@ -75,13 +71,13 @@ The ``Edge`` type
             distribution_type::DataType
         end
 
-    An edge represents a variable, so the ``marginal`` field may contain the marginal :class:`ProbabilityDistribution` over that variable. The ``distribution_type`` field indicates the allowed distribution type of the variable. 
+    An edge represents a variable, so the ``marginal`` field may contain the marginal :class:`ProbabilityDistribution` over that variable. The ``distribution_type`` field indicates the allowed distribution type of the variable.
 
     In general, an ``Edge`` is constructed by passing the tail and head interfaces as well as the distribution type::
 
         Edge(n(:node1).i[:out], n(:node2).i[:in], GammaDistribution, id=:my_edge)
 
-    If the distribution type is omitted, a :class:`GaussianDistribution` is assumed. For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface, e.g., 
+    If the distribution type is omitted, a :class:`GaussianDistribution` is assumed. For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface, e.g.,
 
         Edge(TerminalNode(), EqualityNode())
 
@@ -91,12 +87,12 @@ The ``Edge`` type
 
     .. function:: delete!(graph::FactorGraph, edge::Edge)
 
-        Delete the specified ``Edge`` from ``graph``.    
+        Delete the specified ``Edge`` from ``graph``.
 
 
 Strictly speaking, a factor graph edge does not need to be directed. However, in ForneyLab all edges are directed to have a consistent meaning for terms like "forward message", "backward messages", and "forward pass". Apart from that, the edge direction has no functional consequences.
 
-ForneyLab does not allow half-edges: every :class:`Edge` should be connected to two nodes at all times. Open ended edges should be terminated by a :class:`TerminalNode`. 
+ForneyLab does not allow half-edges: every :class:`Edge` should be connected to two nodes at all times. Open ended edges should be terminated by a :class:`TerminalNode`.
 
 Edges in the current graph can be accessed through the function ``edge(id::Symbol)`` (which is aliased by the function ``e(id::Symbol)``), e.g.::
 
@@ -109,9 +105,9 @@ Example
 
 Consider the following simple factor graph::
 
-          | C1    | C2           
-          |       |       
-      X1  v   X2  v   X3 
+          | C1    | C2
+          |       |
+      X1  v   X2  v   X3
     ---->[+]---->[+]---->
 
 ForneyLab does not allow 'half-edges' that are connected to just one node. Instead, half-edges should be terminated by a :class:`TerminalNode`. Taking this into account, one could implement this factor graph as follows::
@@ -142,8 +138,8 @@ Chaining factor graph sections
 In practical situations it is common for a factor graph to be a concatination of identical sections. In such cases it might not be necessary to build the entire factor graph explictly. Instead, it is possible to just build one section, and define how the sections are chained together. This can be done in ForneyLab by defining *wraps*::
 
     # Random walk chain
-    #          | C          
-    #          |           
+    #          | C
+    #          |
     #    X[n]  v  X[n+1]
     # ...---->[+]-------> ...
 
@@ -162,21 +158,21 @@ In practical situations it is common for a factor graph to be a concatination of
 
 .. type:: Wrap
 
-    A ``Wrap`` is a special kind of :class:`Edge` that connects to :class:`TerminalNode` instances such that the involved :class:`FactorGraph` is 'folded'. Inbound messages towards the *source* terminal of a ``Wrap`` will be tranferred to the *sink* of that ``Wrap`` by the :func:`step` function. 
+    A ``Wrap`` is a special kind of :class:`Edge` that connects to :class:`TerminalNode` instances such that the involved :class:`FactorGraph` is 'folded'. Inbound messages towards the *source* terminal of a ``Wrap`` will be tranferred to the *sink* of that ``Wrap`` by the :func:`step` function.
 
     .. function:: Wrap(source::TerminalNode, sink::TerminalNode; id::Symbol)
 
         Constructs a wrap from ``source`` to ``sink`` in the currently active graph. The keyword argument ``id`` is optional.
 
-    .. function:: wrap(id::Symbol, graph::FactorGraph=current_graph)
+    .. function:: wrap(id::Symbol, graph::FactorGraph=currentGraph())
 
         Returns the ``Wrap`` in ``graph`` with the specified ``id``.
 
-    .. function:: wraps(graph::FactorGraph, graph::FactorGraph=current_graph)
+    .. function:: wraps(graph::FactorGraph, graph::FactorGraph=currentGraph())
 
         Returns a set of all ``Wrap`` instances present in ``graph``.
 
-    .. function:: wraps(node::TerminalNode, graph::FactorGraph=current_graph)
+    .. function:: wraps(node::TerminalNode, graph::FactorGraph=currentGraph())
 
         Returns a set of all ``Wrap`` instances in which ``node`` is involved. Note that a node can be the source in multiple wraps, but it can be a sink at most once.
 
@@ -204,7 +200,7 @@ Read buffers hold input data that is read into the graph from the outside world.
 
 .. function:: attachReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector)
 
-    Attaches a read buffer to a batch of nodes. This function can be used to couple input data with a graph that models multiple (time) slices, such as a (mini-)batch. On each call to :func:`step()`, a number of elements equal to the length of the ``nodes`` vector is moved from the beginning of ``buffer`` to the value fields of ``nodes`` (in their respective order). 
+    Attaches a read buffer to a batch of nodes. This function can be used to couple input data with a graph that models multiple (time) slices, such as a (mini-)batch. On each call to :func:`step()`, a number of elements equal to the length of the ``nodes`` vector is moved from the beginning of ``buffer`` to the value fields of ``nodes`` (in their respective order).
 
 .. function:: detachReadBuffer(node::TerminalNode)
 
@@ -234,14 +230,14 @@ Write buffers allow message payloads and edge marginals to be extracted from the
 Resetting the graph
 -------------------
 
-.. function:: detachBuffers(graph::FactorGraph=current_graph)
+.. function:: detachBuffers(graph::FactorGraph=currentGraph())
 
     Detaches all read and write buffers.
 
-.. function:: emptyWriteBuffers(graph::FactorGraph=current_graph)
+.. function:: emptyWriteBuffers(graph::FactorGraph=currentGraph())
 
     Truncates the contents of all write buffers.
 
-.. function:: clearMessages!(graph::FactorGraph=current_graph)
+.. function:: clearMessages!(graph::FactorGraph=currentGraph())
 
     Clears all messages in the graph.

@@ -8,11 +8,11 @@ show(io::IO, node::Node) = println(io, "$(typeof(node)) with id $(node.id)")
 
 function Base.copy(src::Node; id::Symbol = generateNodeId(typeof(src)))
     # Create an independent copy of src with no edges connected to it.
-    # The copy is added to the current_graph.
+    # The copy is added to the currently active graph.
     # Argument id specifies the id of the copy.
 
-    (!haskey(current_graph.nodes, id)) || error("The current graph already contains a node with id $(id)")
-   
+    (!haskey(currentGraph().nodes, id)) || error("The current graph already contains a node with id $(id)")
+
     # Isolate src from the rest of the graph so deepcopy will only deepcopy src itself (and not other parts of the graph it belongs to)
     src_interface_partners = Dict{Interface,Interface}()
     src_interface_edges = Dict{Interface,Edge}()
@@ -22,7 +22,7 @@ function Base.copy(src::Node; id::Symbol = generateNodeId(typeof(src)))
         src_interface_edges[src_interface] = src_interface.edge
         src_interface.edge = nothing
     end
-    
+
     # Deepcopy src
     dup = Base.deepcopy_internal(src, ObjectIdDict()) # deepcopy(src) does not work since deepcopy(::Node) is forbidden
 
@@ -34,7 +34,7 @@ function Base.copy(src::Node; id::Symbol = generateNodeId(typeof(src)))
 
     # Update id of copy and add it to the current graph
     dup.id = id
-    addNode!(current_graph, dup)
+    addNode!(currentGraph(), dup)
 
-    return dup   
+    return dup
 end

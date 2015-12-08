@@ -47,7 +47,7 @@ type SigmoidNode <: Node
         self.i[:real] = self.interfaces[1] = Interface(self)
         self.i[:bin] = self.interfaces[2] = Interface(self)
 
-        addNode!(current_graph, self)
+        addNode!(currentGraph(), self)
 
         return self
     end
