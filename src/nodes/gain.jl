@@ -236,7 +236,7 @@ function sumProduct!(node::GainNode,
         error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     end
 
-    return (:fixed_gain_gaussian_backward,
+    return (:gain_gaussian_backward,
             node.interfaces[outbound_interface_index].message)
 end
 
@@ -286,15 +286,58 @@ function sumProduct!(node::GainNode,
 
     if outbound_interface_index == 2
         # Forward message
-        dist_1 = msg_in.payload
-
         fixedGainGaussianForwardRule!(dist_2, msg_in.payload, node.gain, isdefined(node, :gain_inv) ? node.gain_inv : nothing)
     else
         error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
     end
 
-    return (:fixed_gain_gaussian_forward,
+    return (:gain_gaussian_forward,
             node.interfaces[outbound_interface_index].message)
+end
+
+# Backward Gaussian to IN if gain is present on the edge
+function sumProduct!(node::GainNode,
+                     outbound_interface_index::Int,
+                     ::Void,
+                     msg_out::Message{MvGaussianDistribution},
+                     msg_gain::Message{MvDeltaDistribution{Float64}})
+
+    isProper(msg_out.payload) || error("Improper input distributions are not supported")
+    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
+
+    if outbound_interface_index == 1
+        gain_dist = msg_gain.payload
+        # We always pass nothing to this rule since we can't cache the inversed gain in this case.
+        fixedGainGaussianBackwardRule!(dist_1, msg_out.payload, gain_dist.m, nothing)
+     else
+        error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
+     end
+
+     return (:gain_gaussian_forward,
+             node.interfaces[outbound_interface_index].message)
+end
+
+# Forward Gaussian to OUT if gain is present on the edge
+function sumProduct!(node::GainNode,
+                     outbound_interface_index::Int,
+                     msg_in::Message{MvGaussianDistribution},
+                     ::Void,
+                     msg_gain::Message{MvDeltaDistribution{Float64}})
+
+     isProper(msg_in.payload) || error("Improper input distributions are not supported")
+     dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
+
+     if outbound_interface_index == 2
+         # Forward message
+         gain_dist = msg_gain.payload
+         # We always pass nothing to this rule since we can't cache the inversed gain in this case.
+         fixedGainGaussianForwardRule!(dist_2, msg_in.payload, gain_dist.m, nothing)
+     else
+         error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
+     end
+
+     return (:gain_gaussian_forward,
+             node.interfaces[outbound_interface_index].message)
 end
 
 
@@ -311,7 +354,7 @@ function sumProduct!(node::GainNode,
     dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
     dist_1.m = node.gain_inv * msg_out.payload.m
 
-    return (:fixed_gain_delta_backward,
+    return (:gain_delta_backward,
             node.interfaces[outbound_interface_index].message)
 end
 
@@ -324,6 +367,6 @@ function sumProduct!(node::GainNode,
     dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
     dist_2.m = node.gain * msg_in.payload.m
 
-    return (:fixed_gain_delta_forward,
+    return (:gain_delta_forward,
             node.interfaces[outbound_interface_index].message)
 end
