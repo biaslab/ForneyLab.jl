@@ -281,7 +281,7 @@ function sumProduct!(node::GainAdditionNode,
         dist_temp = MvGaussianDistribution()
         additionGaussianBackwardRule!(dist_temp, in2.payload, out.payload)
         dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
-        fixedGainGaussianBackwardRule!(dist_out, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
+        gainGaussianBackwardRule!(dist_out, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
 
         return (:gain_addition_gaussian_backward_in1,
             node.interfaces[outbound_interface_index].message)
