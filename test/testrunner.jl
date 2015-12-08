@@ -43,12 +43,10 @@ type ForneyLabTestRunner<:TestRunner
 end
 
 function setUp(runner::ForneyLabTestRunner)
-    current_graph = FactorGraph()
     current_algorithm = nothing
 end
 
 function tearDown(runner::ForneyLabTestRunner)
-    current_graph = nothing
     current_algorithm = nothing
 end
 

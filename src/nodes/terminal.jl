@@ -30,7 +30,7 @@ type TerminalNode <: Node
             error("TerminalNode $(id) can not hold value of type $(typeof(value)).")
         end
         self = new(id, deepcopy(value), Array(Interface, 1), Dict{Symbol,Interface}())
-        addNode!(current_graph, self)
+        addNode!(currentGraph(), self)
 
         self.i[:out] = self.interfaces[1] = Interface(self)
 

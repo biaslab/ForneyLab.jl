@@ -11,12 +11,12 @@ export  attachReadBuffer,
 import Base.run
 import Base.step
 
-function attachReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=current_graph)
+function attachReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=currentGraph())
     hasNode(graph, node) || error("The specified node is not part of the current or specified graph")
     graph.read_buffers[node] = buffer
 end
 
-function attachReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, graph::FactorGraph=current_graph)
+function attachReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, graph::FactorGraph=currentGraph())
     # Mini-batch assignment for read buffers.
     # buffer is divided over nodes equally.
     n_nodes = length(nodes)
@@ -31,7 +31,7 @@ function attachReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, graph::Fa
     return graph.read_buffers[nodes[end]] # Return last node's buffer
 end
 
-function detachReadBuffer(nd::TerminalNode, graph::FactorGraph=current_graph)
+function detachReadBuffer(nd::TerminalNode, graph::FactorGraph=currentGraph())
     hasNode(graph, nd) || error("The specified node is not part of the current or specified graph")
     haskey(graph.read_buffers, nd) || error("There is no read buffer attached to the specified node")
 
@@ -39,18 +39,18 @@ function detachReadBuffer(nd::TerminalNode, graph::FactorGraph=current_graph)
     return graph
 end
 
-function attachWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=current_graph)
+function attachWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
     hasNode(graph, interface.node) || error("The specified interface is not part of the current or specified graph")
     graph.write_buffers[interface] = buffer # Write buffer for message
 end
 
-function attachWriteBuffer(interfaces::Vector{Interface}, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=current_graph)
+function attachWriteBuffer(interfaces::Vector{Interface}, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
     # Mini-batch assignment for write buffers.
     # After each step the batch results are appended to the buffer
 
 end
 
-function detachWriteBuffer(interface::Interface, graph::FactorGraph=current_graph)
+function detachWriteBuffer(interface::Interface, graph::FactorGraph=currentGraph())
     hasNode(graph, interface.node) || error("The specified interface is not part of the current or specified graph")
     haskey(graph.write_buffers, interface) || error("There is no write buffer attached to the specified interface")
 
@@ -58,12 +58,12 @@ function detachWriteBuffer(interface::Interface, graph::FactorGraph=current_grap
     return graph
 end
 
-function attachWriteBuffer(edge::Edge, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=current_graph)
+function attachWriteBuffer(edge::Edge, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
     hasEdge(graph, edge) || error("The specified edge is not part of the current or specified graph")
     graph.write_buffers[edge] = buffer # Write buffer for marginal
 end
 
-function detachWriteBuffer(edge::Edge, graph::FactorGraph=current_graph)
+function detachWriteBuffer(edge::Edge, graph::FactorGraph=currentGraph())
     hasEdge(graph, edge) || error("The specified edge is not part of the current or specified graph")
     haskey(graph.write_buffers, edge) || error("There is no write buffer attached to the specified edge")
 
@@ -71,24 +71,24 @@ function detachWriteBuffer(edge::Edge, graph::FactorGraph=current_graph)
     return graph
 end
 
-function detachBuffers(graph::FactorGraph=current_graph)
+function detachBuffers(graph::FactorGraph=currentGraph())
     graph.read_buffers = Dict{TerminalNode, Vector}()
     graph.write_buffers = Dict{Union{Edge,Interface}, Vector}()
 end
 
-function emptyWriteBuffers(graph::FactorGraph=current_graph)
+function emptyWriteBuffers(graph::FactorGraph=currentGraph())
     for (k, v) in graph.write_buffers
         empty!(v) # Clear the vector but keep the pointer
     end
 end
 
-function execute(algorithm::Algorithm, graph::FactorGraph=current_graph)
+function execute(algorithm::Algorithm, graph::FactorGraph=currentGraph())
     # Execute algorithm on graph
     global current_algorithm = algorithm
     return algorithm.execute(algorithm.fields)
 end
 
-function step(algorithm::Algorithm, graph::FactorGraph=current_graph)
+function step(algorithm::Algorithm, graph::FactorGraph=currentGraph())
     # Execute algorithm for 1 timestep.
 
     # Read buffers
@@ -119,7 +119,7 @@ function step(algorithm::Algorithm, graph::FactorGraph=current_graph)
     return result
 end
 
-function run(algorithm::Algorithm, graph::FactorGraph=current_graph)
+function run(algorithm::Algorithm, graph::FactorGraph=currentGraph())
     # Call step(algorithm, graph) repeatedly until at least one read buffer is exhausted
     if length(graph.read_buffers) > 0
         while !any(isempty, values(graph.read_buffers))

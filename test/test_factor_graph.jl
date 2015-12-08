@@ -3,7 +3,7 @@
 #####################
 
 facts("FactorGraph unit tests") do
-    context("FactorGraph() should initialize a factor graph") do
+    context("FactorGraph() should construct a factor graph") do
         fg = FactorGraph()
         @fact typeof(fg) --> FactorGraph
         @fact fg.nodes --> Dict{Symbol, Node}()
@@ -13,19 +13,18 @@ facts("FactorGraph unit tests") do
         @fact ForneyLab.current_graph --> fg # Global should be set
     end
 
-    context("currentGraph() should return a current graph object") do
-        FactorGraph() # Reset
+    context("currentGraph() should return the current graph and create one if necessary") do
+        @fact typeof(currentGraph()) --> FactorGraph
         @fact currentGraph() --> ForneyLab.current_graph
-        my_graph = currentGraph()  # Make local pointer to global variable
-        @fact typeof(my_graph) --> FactorGraph
+        @fact is(currentGraph(), currentGraph()) --> true # Create new graph only if necessary
     end
 
     context("setCurrentGraph() should set a new current graph object") do
-        my_first_graph = FactorGraph() # Reset
-        my_second_graph = FactorGraph()
-        @fact my_first_graph == ForneyLab.current_graph --> false
-        setCurrentGraph(my_first_graph)
-        @fact my_first_graph == ForneyLab.current_graph --> true
+        graph1 = FactorGraph()
+        graph2 = FactorGraph()
+        @fact currentGraph() --> graph2
+        setCurrentGraph(graph1)
+        @fact currentGraph() --> graph1
     end
 
     context("generateNodeId should generate a unique node id") do

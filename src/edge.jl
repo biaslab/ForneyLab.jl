@@ -16,6 +16,7 @@ type Edge <: AbstractEdge
     function Edge(tail::Interface, head::Interface, distribution_type=Any; id=symbol("$(tail.node.id)_$(head.node.id)"))
         # add_to_graph is false for edges that are internal in a composite node
         # Cautionary note: replacing "distribution_type=Any" by "distribution_type::DataType=Any" causes segfaults (?!?)
+        current_graph = currentGraph()
         !is(head.node, tail.node) || error("Cannot connect two interfaces of the same node: $(typeof(head.node)) $(head.node.id)")
         (head.partner == nothing && tail.partner == nothing) || error("Previously defined edges cannot be repositioned.")
         !current_graph.locked || error("Cannot extend a locked FactorGraph.")
