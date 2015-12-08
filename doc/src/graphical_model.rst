@@ -20,10 +20,6 @@ The ``FactorGraph`` type
             # and some internal stuff for attaching buffers etc...
         end
 
-    Upon loading ForneyLab, an empty `FactorGraph` is constructed.
-    To create a new one, use ``FactorGraph()``.
-    There is always one *currently active* ``FactorGraph`` instance. A newly constructed :class:`Node` or :class:`Edge` is always added to the current :class:`FactorGraph`.
-
 The following functions are available to get/set the currently active ``FactorGraph``:
 
 .. function:: currentGraph()
