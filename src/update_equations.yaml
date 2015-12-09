@@ -284,7 +284,7 @@ rules:
   gaussian_forward_delta_precision:
     node:       GaussianNode
     reference:  "Korl (2005), table 5.2"
-    diagram:    <pre>m~δ   λ~δ    </pre>
+    diagram:    <pre>m~δ       λ~δ</pre>
                 <pre>  --->[N]<---</pre>
                 <pre>       |     </pre>
                 <pre>       v y~N </pre>
@@ -344,6 +344,15 @@ rules:
                 <pre>     v q(y)~N  </pre>
     formula:    "$\\lambda_m=\\frac{a_{q(\\lambda)}}{b_{q(\\lambda)}} \\\\ \\overleftarrow{\\nu}(m) = \\mathcal{N}\\left(m_{q(y)}, \\lambda_m^{-1}\\right)$"
 
+  gaussian_backward_mean_gaussian_log_gamma:
+    node:       GaussianNode
+    reference:  "Gaussian node derivations document"
+    diagram:    <pre> m~N   q(log(λ))~N</pre>
+                <pre>--->[N]<---       </pre>
+                <pre>     |            </pre>
+                <pre>     v q(y)~N     </pre>
+    formula:    ""
+
   gaussian_backward_variance_gaussian:
     node:       GaussianNode
     reference:  "Gaussian node derivations document"
@@ -361,6 +370,15 @@ rules:
                 <pre>       |        </pre>
                 <pre>       v q(y)~N </pre>
     formula:    "$\\overleftarrow{\\nu}(\\lambda) = \\mathcal{G}am\\left(a_{\\lambda}=\\frac{3}{2}, b_{\\lambda}=\\frac{1}{2}(m_{q(y)} - m_{q(m)})^2+\\frac{1}{2}(V_{q(m)}+V_{q(y)}) \\right)$"
+
+  gaussian_backward_log_precision_gaussian:
+    node:       GaussianNode
+    reference:  "Gaussian node derivations document"
+    diagram:    <pre>q(m)~N   λ~N    </pre>
+                <pre>  --->[N]<---   </pre>
+                <pre>       |        </pre>
+                <pre>       v q(y)~N </pre>
+    formula:    ""
 
   gaussian_backward_precision_gaussian_delta:
     node:       GaussianNode
@@ -415,6 +433,15 @@ rules:
                 <pre>       |         </pre>
                 <pre>       v y~N     </pre>
     formula:    "$\\lambda_y=\\frac{a_{q(\\lambda)}}{b_{q(\\lambda)}} \\\\ \\overrightarrow{\\nu}(y) = \\mathcal{N}\\left(m_{q(m)}, \\lambda_y^{-1}\\right)$"
+
+  gaussian_forward_gaussian_log_gamma:
+    node:       GaussianNode
+    reference:  "Gaussian node derivations document"
+    diagram:    <pre>q(m)~N   q(log(λ))~N</pre>
+                <pre>  --->[N]<---       </pre>
+                <pre>       |            </pre>
+                <pre>       v y~N        </pre>
+    formula:    ""
 
   gaussian_backward_mean_structured:
     node:       GaussianNode

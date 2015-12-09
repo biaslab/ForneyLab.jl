@@ -20,10 +20,11 @@
 #            v  out
 #     ----->[N]----->
 #    precision/
+#    log-precision/
 #    variance
 #
 # Interfaces:
-#   1 i[:mean], 2 i[:variance] or i[:precision], 3 i[:out]
+#   1 i[:mean], 2 i[:precision] / i[:log_precision] / i[:variance], 3 i[:out]
 #
 # Construction:
 #   GaussianNode(form=:moment, id=:my_node, m=optional, V=optional)
@@ -75,8 +76,11 @@ type GaussianNode <: Node
             elseif form == :precision
                 # Parameters m, W
                 self.i[:precision] = self.interfaces[next_interface_index]
+            elseif form == :log_precision
+                # Parameters m, log(W)
+                self.i[:log_precision] = self.interfaces[next_interface_index]
             else
-                error("Unrecognized form, $(form). Please use :moment, or :precision")
+                error("Unrecognized form, $(form). Please use :moment, :precision of :log_precision")
             end
             next_interface_index += 1
         end
@@ -377,7 +381,7 @@ function vmp!(  node::GaussianNode,
         error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 
-    return (:gaussian_backward_mean_gaussian_gamma,
+    return (:gaussian_backward_mean_gaussian_inverse_gamma,
             node.interfaces[outbound_interface_index].message)
 end
 
@@ -408,7 +412,39 @@ function vmp!(  node::GaussianNode,
         error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
     end
 
-    return (:gaussian_backward_mean_gaussian_inverse_gamma,
+    return (:gaussian_backward_mean_gaussian_gamma,
+            node.interfaces[outbound_interface_index].message)
+end
+
+function vmp!(  node::GaussianNode,
+                outbound_interface_index::Int,
+                ::Void,
+                marg_log_prec::GaussianDistribution,
+                marg_y::GaussianDistribution)
+    # Backward over mean, Gaussian precision input
+    # Variational update function takes the marginals as input (instead of the inbound messages)
+    # By symmetry the rules are the same as the forward over out.
+    #
+    #   N       Q~N (log-precision)
+    #  ---->[N]<----
+    #   <--  |
+    #    Q~N |
+    #        v
+    (isProper(marg_log_prec) && isProper(marg_y)) || error("Improper input distributions are not supported")
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+
+    if is(node.interfaces[outbound_interface_index], node.i[:mean])
+        ensureParameters!(marg_y, (:m,))
+        ensureParameters!(marg_log_prec, (:m, :V))
+        dist_out.m = marg_y.m
+        dist_out.V = exp(-marg_log_prec.m - 0.5*marg_log_prec.V)
+        dist_out.xi = NaN
+        dist_out.W = NaN
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
+    end
+
+    return (:gaussian_backward_mean_gaussian_log_gamma,
             node.interfaces[outbound_interface_index].message)
 end
 
@@ -509,6 +545,31 @@ function vmp!(  node::GaussianNode,
             dist_out.b = 0.5*(mu_y-mu_m)^2+0.5*(V_m+V_y)
 
             return (:gaussian_backward_precision_gaussian,
+                    node.interfaces[outbound_interface_index].message)
+        else
+            error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
+        end
+    elseif haskey(node.i, :log_precision)
+        # Variational update function takes the marginals as input (instead of the inbound messages)
+        # Derivation for the update rule can be found in the derivations notebook.
+        #
+        #   Q~N      N (log-precision)
+        #  ---->[N]<----
+        #       |   -->
+        #   Q~N |
+        #       v
+
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+
+        if is(node.interfaces[outbound_interface_index], node.i[:log_precision])
+            ensureParameters!(marg_out, (:m, :V))
+            ensureParameters!(marg_mean, (:m, :V))
+            dist_out.m = log(marg_mean.m^2 + marg_mean.V - 2.0*marg_mean.m*marg_out.m + marg_out.m^2 + marg_out.V)
+            dist_out.V = 2.0
+            dist_out.xi = NaN
+            dist_out.W = NaN
+
+            return (:gaussian_backward_log_precision_gaussian,
                     node.interfaces[outbound_interface_index].message)
         else
             error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
@@ -632,6 +693,36 @@ function vmp!(  node::GaussianNode,
     end
 end
 
+function vmp!(  node::GaussianNode,
+                outbound_interface_index::Int,
+                marg_mean::GaussianDistribution,
+                marg_log_prec::GaussianDistribution,
+                ::Void)
+    # Forward over out, Gaussian input
+    # Derivation for the update rule can be found in the derivations notebook.
+    #
+    #   Q~N     Q~N (log-precision)
+    #  ---->[N]<----
+    #        |
+    #      N | |
+    #        v v
+    (isProper(marg_mean) && isProper(marg_log_prec)) || error("Improper input distributions are not supported")
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+
+    if is(node.interfaces[outbound_interface_index], node.i[:out])
+        ensureParameters!(marg_mean, (:m,))
+        ensureParameters!(marg_log_prec, (:m,:V))
+        dist_out.m = marg_mean.m
+        dist_out.V = exp(-marg_log_prec.m - 0.5*marg_log_prec.V)
+        dist_out.xi = NaN
+        dist_out.W = NaN
+
+        return (:gaussian_forward_gaussian_log_gamma,
+                node.interfaces[outbound_interface_index].message)
+    else
+        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
+    end
+end
 
 ############################################
 # Structured variational update functions
