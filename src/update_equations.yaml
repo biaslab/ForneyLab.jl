@@ -1,6 +1,6 @@
 # Message calculation rule database
 #
-# "mu" denotes a sumproduct messages; "nu" a variational message 
+# "mu" denotes a sumproduct messages; "nu" a variational message
 #
 # Key format:
 # [node]_[direction]_[outbound interface]_[inbound distributions]_[other qualifiers]
@@ -134,28 +134,28 @@ rules:
                 <pre>     v     </pre>
     formula:    "$\\overleftarrow{\\mu}(x) = \\delta(m_x=m_z-m_y)$"
 
-  fixed_gain_gaussian_forward:
+  gain_gaussian_forward:
     node:       FixedGainNode
     reference:  "Korl (2005), table 4.1"
     diagram:    <pre> x~N   y~N </pre>
                 <pre>--->[A]---></pre>
     formula:    "$\\overrightarrow{\\mu}(y) = \\mathcal{N}(A m_x, A V_x A^T)$"
 
-  fixed_gain_gaussian_backward:
+  gain_gaussian_backward:
     node:       FixedGainNode
     reference:  "Korl (2005), table 4.1"
     diagram:    <pre> x~N   y~N </pre>
                 <pre>--->[A]---></pre>
     formula:    "$W_x=A^T W_y A \\\\ \\overleftarrow{\\mu}(x) = \\mathcal{N}(A^{-1} m_y, W_x^{-1})$"
 
-  fixed_gain_delta_forward:
+  gain_delta_forward:
     node:       FixedGainNode
     reference:  ""
     diagram:    <pre> x~δ   y~δ </pre>
                 <pre>--->[A]---></pre>
     formula:    "$\\overrightarrow{\\mu}(y) = \\delta(m_y=A m_x)$"
 
-  fixed_gain_delta_backward:
+  gain_delta_backward:
     node:       FixedGainNode
     reference:  ""
     diagram:    <pre> x~δ   y~δ </pre>

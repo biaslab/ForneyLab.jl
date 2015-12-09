@@ -3,7 +3,7 @@
 ############################################
 # Description:
 #   Gain-equality node: A⁻¹*out = in1 = in2
-#   Combines the node functions of the FixedGainNode
+#   Combines the node functions of the GainNode
 #   and the EqualityNode for computational efficiency.
 #
 #        _________
@@ -137,7 +137,7 @@ function sumProduct!(node::GainEqualityNode,
     dist_temp = MvGaussianDistribution()
     equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
-    fixedGainGaussianForwardRule!(dist_out, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
+    gainGaussianForwardRule!(dist_out, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
 
     return (:gain_equality_gaussian_forward,
             node.interfaces[outbound_interface_index].message)

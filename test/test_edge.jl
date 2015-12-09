@@ -12,7 +12,7 @@ facts("Edge integration tests") do
 
     context("Edge should throw an error when two interfaces of the same node are connected") do
         FactorGraph()
-        node = FixedGainNode()
+        node = GainNode()
         # Connect output directly to input
         @fact_throws Edge(node.interfaces[2], node.interfaces[1])
     end
@@ -90,8 +90,8 @@ facts("Edge integration tests") do
     context("Edges can be sorted") do
         FactorGraph()
         node_a = TerminalNode(id=:a)
-        node_b = FixedGainNode(id=:b)
-        node_c = FixedGainNode(id=:c)
+        node_b = GainNode(id=:b)
+        node_c = GainNode(id=:c)
         node_d = TerminalNode(id=:d)
         edge_ab = Edge(node_a.i[:out], node_b.i[:in])
         edge_bc = Edge(node_b.i[:out], node_c.i[:in])

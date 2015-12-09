@@ -111,7 +111,7 @@ Not all message calculation rules have to be implemented for every node, just th
 Built-in nodes
 --------------
 
-The following built-in 'elementary' nodes are available in ForneyLab: :class:`AdditionNode`, :class:`EqualityNode`, :class:`ExponentialNode`, :class:`FixedGainNode`, :class:`GaussianNode`, :class:`SigmoidNode`, :class:`TerminalNode`.
+The following built-in 'elementary' nodes are available in ForneyLab: :class:`AdditionNode`, :class:`EqualityNode`, :class:`ExponentialNode`, :class:`GainNode`, :class:`GaussianNode`, :class:`SigmoidNode`, :class:`TerminalNode`.
 
 There are also some built-in *combined nodes*, which combine two or more node functions into one for higher computational efficiency: :class:`GainAdditionNode`, :class:`GainEqualityNode`.
 
@@ -219,28 +219,37 @@ Elementary nodes
     |                 | ↑↓ ``Msg{Gaussian}``    | ↑↓ ``Msg{LogNormal}``   |
     +-----------------+-------------------------+-------------------------+
 
-.. type:: FixedGainNode
+.. type:: GainNode
 
     ::
 
-          in      out
-        ----->[A]----->
+            gain
+              |
+         in   V   out
+       ----->[A]----->
 
-    :Node function: ``f(in,out) = δ(A*in-out)``
-    :Interfaces:    1 ``1[:in]``, 2. ``i[:out]``
-    :Construction:  ``FixedGainNode(A::Matrix, id="something")``
+
+    :Node function: ``f(in,out,gain) = δ(out - gain*in)``, where ``gain`` is either provided upon construction of the node and is a fixed value or is supplied via gain interface.
+    :Interfaces:    1 ``i[:in]``, 2. ``i[:out]``, 3. ``i[:gain]``
+    :Construction:  ``GainNode(gain=[2.0], id="something")`` or ``GainNode(id="something")``
+
+    The ``GainNode`` implements the the multiplication of a random variable with a non-random variable (encoded by a ``DeltaDistribution``).
 
     Message computation rules:
 
-    +-----------------+---------------------------------------------------+
-    |                 | Input (↓) and output (↑) per interface            |
-    + Rule            +-------------------------+-------------------------+
-    |                 | 1                       | 2                       |
-    +=================+=========================+=========================+
-    | sumProduct!     | ↑↓ ``Msg{Delta}``       | ↑↓ ``Msg{Delta}``       |
-    +                 +-------------------------+-------------------------+
-    |                 | ↑↓ ``Msg{Gaussian}``    | ↑↓ ``Msg{Gaussian}``    |
-    +-----------------+-------------------------+-------------------------+
+    +-----------------+-----------------------------------------------------------------------------+
+    |                 | Input (↓) and output (↑) per interface                                      |
+    + Rule            +-------------------------+-------------------------+-------------------------+
+    |                 | 1                       | 2                       | 3.                      |
+    +=================+=========================+=========================+=========================+
+    | sumProduct!     | ↑↓ ``Msg{Delta}``       | ↑↓ ``Msg{Delta}``       |                         |
+    +                 +-------------------------+-------------------------+-------------------------+
+    |                 | ↑↓ ``Msg{Gaussian}``    | ↑↓ ``Msg{Gaussian}``    |                         |
+    +                 +-------------------------+-------------------------+-------------------------+
+    |                 | ↑  ``Msg{Gaussian}``    | ↑  ``Msg{Gaussian}``    | ↑  ``Msg{Delta}``       |
+    +                 +-------------------------+-------------------------+-------------------------+
+    |                 | ↓  ``Msg{Gaussian}``    | ↓  ``Msg{Gaussian}``    | ↑  ``Msg{Delta}``       |
+    +-----------------+-------------------------+-------------------------+-------------------------+
 
 
 .. type:: GaussianNode
@@ -258,7 +267,7 @@ Elementary nodes
     :Interfaces:    1. ``i[:mean]``, 2. ``i[:variance]`` or ``i[:precision]``, 3. ``i[:out]``
     :Construction:  ``GaussianNode(id="something", form=:moment, m=optional, V=optional)``
 
-    The ``GaussianNode`` outputs a Gaussian distribution from variable mean and variable variance or precision. Upon construction the role of the second interface is set to represent a variance or precision by setting the ``form`` argument to ``:moment or ``:precision`` respectively. The ``m`` and ``V`` arguments allow the user to fix the value for the mean and/or variance interface. Fixed interfaces are not explicitly created.
+    The ``GaussianNode`` outputs a Gaussian distribution from variable mean and variable variance or precision. Upon construction the role of the second interface is set to represent a variance or precision by setting the ``form`` argument to ``:moment`` or ``:precision`` respectively. The ``m`` and ``V`` arguments allow the user to fix the value for the mean and/or variance interface. Fixed interfaces are not explicitly created.
 
     Message computation rules:
 
@@ -347,7 +356,7 @@ Combined nodes
 
 .. type:: GainAdditionNode
 
-    Combines a :class:`FixedGainNode` with an :class:`AdditionNode` for higher computational efficiency::
+    Combines a :class:`GainNode` with an :class:`AdditionNode` for higher computational efficiency::
 
                  | in1
                  |
@@ -375,7 +384,7 @@ Combined nodes
 
 .. type:: GainEqualityNode
 
-    Combines a :class:`FixedGainNode` with an :class:`EqualityNode` for higher computational efficiency::
+    Combines a :class:`GainNode` with an :class:`EqualityNode` for higher computational efficiency::
 
              _________
          in1 |       | in2
@@ -465,7 +474,7 @@ will create a new composite node instance with the (optional) id ``:comp_add_3_c
 Message computation rules
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since a ``CompositeNode`` behaves like a normal ``Node`` from the outside, one can just call a message calculation rule like :func:`sumProduct!` on it. The message will in general be calculated by performing message passing on the internal graph of the composite node. If no suitable custom calculation rule is defined in the ``CompositeNode``, ForneyLab will try to automatically derive a suitable :class:`Algorithm` on the internal graph to calculate the desired message. However, this might not be possible or desireable, for example if the internal graph contains loops. In such cases it is required to define a *custom message calculation rule* using the function ``addRule!()``.
+Since a ``CompositeNode`` behaves like a normal ``Node`` from the outside, one can just call a message calculation rule like :func:`sumProduct!` on it. The message will in general be calculated by performing message passing on the internal graph of the composite node. If no suitable custom calculation rule is defined in the ``CompositeNode``, ForneyLab will try to automatically derive a suitable :class:`Algorithm` on the internal graph to calculate the desired message. However, this might not be possible or desirable, for example if the internal graph contains loops. In such cases it is required to define a *custom message calculation rule* using the function ``addRule!()``.
 
 .. function:: addRule!(composite_node::CompositeNode, outbound_interface::Interface, message_calculation_rule::Function, algorithm::Algorithm)
 
