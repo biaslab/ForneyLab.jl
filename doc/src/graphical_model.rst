@@ -20,15 +20,11 @@ The ``FactorGraph`` type
             # and some internal stuff for attaching buffers etc...
         end
 
-    Upon loading ForneyLab, an empty `FactorGraph` is constructed.
-    To create a new one, use ``FactorGraph()``.
-    There is always one *currently active* ``FactorGraph`` instance. A newly constructed :class:`Node` or :class:`Edge` is always added to the current :class:`FactorGraph`.
-
 The following functions are available to get/set the currently active ``FactorGraph``:
 
 .. function:: currentGraph()
 
-    Returns the currently active :class:`FactorGraph` instance.
+    Returns the currently active :class:`FactorGraph` instance. A new ``FactorGraph`` is constructed if there is none.
 
 .. function:: setCurrentGraph(graph::FactorGraph)
 
@@ -168,15 +164,15 @@ In practical situations it is common for a factor graph to be a concatination of
 
         Constructs a wrap from ``source`` to ``sink`` in the currently active graph. The keyword argument ``id`` is optional.
 
-    .. function:: wrap(id::Symbol, graph::FactorGraph=current_graph)
+    .. function:: wrap(id::Symbol, graph::FactorGraph=currentGraph())
 
         Returns the ``Wrap`` in ``graph`` with the specified ``id``.
 
-    .. function:: wraps(graph::FactorGraph, graph::FactorGraph=current_graph)
+    .. function:: wraps(graph::FactorGraph, graph::FactorGraph=currentGraph())
 
         Returns a set of all ``Wrap`` instances present in ``graph``.
 
-    .. function:: wraps(node::TerminalNode, graph::FactorGraph=current_graph)
+    .. function:: wraps(node::TerminalNode, graph::FactorGraph=currentGraph())
 
         Returns a set of all ``Wrap`` instances in which ``node`` is involved. Note that a node can be the source in multiple wraps, but it can be a sink at most once.
 
@@ -234,14 +230,14 @@ Write buffers allow message payloads and edge marginals to be extracted from the
 Resetting the graph
 -------------------
 
-.. function:: detachBuffers(graph::FactorGraph=current_graph)
+.. function:: detachBuffers(graph::FactorGraph=currentGraph())
 
     Detaches all read and write buffers.
 
-.. function:: emptyWriteBuffers(graph::FactorGraph=current_graph)
+.. function:: emptyWriteBuffers(graph::FactorGraph=currentGraph())
 
     Truncates the contents of all write buffers.
 
-.. function:: clearMessages!(graph::FactorGraph=current_graph)
+.. function:: clearMessages!(graph::FactorGraph=currentGraph())
 
     Clears all messages in the graph.

@@ -28,7 +28,7 @@ type EqualityNode <: Node
 
     function EqualityNode(; id=generateNodeId(EqualityNode))
         self = new(id, Array(Interface, 3), Dict{Int,Interface}())
-        addNode!(current_graph, self)
+        addNode!(currentGraph(), self)
 
         for interface_index = 1:3
             self.i[interface_index] = self.interfaces[interface_index] = Interface(self)

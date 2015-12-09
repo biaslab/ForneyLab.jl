@@ -49,7 +49,7 @@ type GaussianNode <: Node
             total_interfaces = 3
         end
         self = new(id, Array(Interface, total_interfaces), Dict{Symbol,Interface}())
-        addNode!(current_graph, self)
+        addNode!(currentGraph(), self)
 
         next_interface_index = 1 # Counter keeping track of constructed interfaces
 
