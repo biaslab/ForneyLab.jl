@@ -13,7 +13,7 @@ facts("Call step() for VMP algorithm") do
     mean_out = attachWriteBuffer(n(:g_node).i[:mean].edge)
     prec_out = attachWriteBuffer(n(:g_node).i[:precision].edge)
 
-    algo = VMP.Algorithm(n_iterations=10)
+    algo = VariationalBayes(n_iterations=10)
 
     step(algo)
 
@@ -43,7 +43,7 @@ facts("Naive VMP implementation integration tests") do
         gam_buffer = attachWriteBuffer(n(:gam_eq*n_sections).i[2])
 
         # Apply mean field factorization
-        algo = VMP.Algorithm(n_iterations=50)
+        algo = VariationalBayes(n_iterations=50)
 
         # Perform vmp updates
         step(algo)
@@ -74,7 +74,7 @@ facts("Naive VMP implementation integration tests") do
         gam_buffer = attachWriteBuffer(n(:gam_eq1).i[2])
 
         # Apply mean field factorization
-        algo = VMP.Algorithm(n_iterations=50)
+        algo = VariationalBayes(n_iterations=50)
 
         # Perform vmp updates
         run(algo)
@@ -110,7 +110,7 @@ facts("Structured VMP implementation integration tests") do
         gam_buffer = attachWriteBuffer(n(:gam_eq1).i[2])
 
         # Structured factorization
-        algo = VMP.Algorithm(Set{Edge}([ForneyLab.e(:q_y1)]), n_iterations=10)
+        algo = VariationalBayes(Set{Edge}([ForneyLab.e(:q_y1)]), n_iterations=10)
 
         run(algo)
 

@@ -9,11 +9,6 @@ export sumProduct!, ep!, vmp!
 export vague, self, ==, isProper, sample
 export setVerbosity
 
-# Export algorithm modules
-export SumProduct
-export VMP
-export ExpectationPropagation
-
 # Verbosity
 verbose = false
 setVerbosity(is_verbose=true) = global verbose = is_verbose
@@ -71,7 +66,7 @@ include("nodes/sigmoid.jl")
 # Graph, wraps and algorithm
 include("factor_graph.jl")
 include("wrap.jl")
-include("algorithm.jl")
+include("inference_algorithm.jl")
 
 # Composite nodes
 include("nodes/composite.jl")
@@ -86,16 +81,16 @@ include("step.jl")
 # Utils
 include("visualization.jl")
 
-# Algorithms
+# InferenceAlgorithms
 include("algorithms/sum_product/sum_product.jl")
-include("algorithms/vmp/vmp.jl")
+include("algorithms/variational_bayes/variational_bayes.jl")
 include("algorithms/expectation_propagation/expectation_propagation.jl")
 
 # Functions for message post-processing
 vague(dist::ProbabilityDistribution) = vague(typeof(dist))
 
 function __init__()
-    # Module-global variable to keep track of currently active Algorithm
+    # Module-global variable to keep track of currently active InferenceAlgorithm
     global current_algorithm = nothing
 end
 

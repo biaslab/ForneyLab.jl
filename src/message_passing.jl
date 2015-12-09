@@ -12,15 +12,7 @@ function execute(schedule_entry::ScheduleEntry)
     # Preprocessing: collect all inbound messages and build the inbound_array
     node = outbound_interface.node
 
-    if schedule_entry.message_calculation_rule == sumProduct!
-        (outbound_interface_index, inbounds) = SumProduct.collectInbounds(outbound_interface)
-    elseif schedule_entry.message_calculation_rule == ep!
-        (outbound_interface_index, inbounds) = ExpectationPropagation.collectInbounds(outbound_interface)
-    elseif schedule_entry.message_calculation_rule == vmp!
-        (outbound_interface_index, inbounds) = VMP.collectInbounds(outbound_interface)
-    else
-        error("Unknown message calculation rule: $(schedule_entry.message_calculation_rule)")
-    end
+    (outbound_interface_index, inbounds) = collectInbounds(outbound_interface, Val{symbol(schedule_entry.message_calculation_rule)})
 
     # Evaluate message calculation rule
     (rule, outbound_message) = schedule_entry.message_calculation_rule(node, outbound_interface_index, inbounds...)

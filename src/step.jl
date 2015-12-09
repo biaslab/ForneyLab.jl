@@ -82,13 +82,13 @@ function emptyWriteBuffers(graph::FactorGraph=currentGraph())
     end
 end
 
-function execute(algorithm::Algorithm, graph::FactorGraph=currentGraph())
+function execute(algorithm::InferenceAlgorithm, graph::FactorGraph=currentGraph())
     # Execute algorithm on graph
     global current_algorithm = algorithm
-    return algorithm.execute(algorithm.fields)
+    return algorithm.execute(algorithm)
 end
 
-function step(algorithm::Algorithm, graph::FactorGraph=currentGraph())
+function step(algorithm::InferenceAlgorithm, graph::FactorGraph=currentGraph())
     # Execute algorithm for 1 timestep.
 
     # Read buffers
@@ -119,7 +119,7 @@ function step(algorithm::Algorithm, graph::FactorGraph=currentGraph())
     return result
 end
 
-function run(algorithm::Algorithm, graph::FactorGraph=currentGraph())
+function run(algorithm::InferenceAlgorithm, graph::FactorGraph=currentGraph())
     # Call step(algorithm, graph) repeatedly until at least one read buffer is exhausted
     if length(graph.read_buffers) > 0
         while !any(isempty, values(graph.read_buffers))

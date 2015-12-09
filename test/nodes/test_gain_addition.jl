@@ -19,7 +19,7 @@ facts("GainAdditionNode unit tests") do
 
         # Forward
         initializeGainAdditionNode(A, [Message(GaussianDistribution(m=0.0, V=1.0)), Message(GaussianDistribution(m=1.0, V=2.0)), nothing])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[3]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[3]))
         FactorGraph()
         validateOutboundMessage(GainAdditionNode(A),
                                 3,
@@ -28,11 +28,11 @@ facts("GainAdditionNode unit tests") do
 
         # Backward
         initializeGainAdditionNode(A,[nothing, Message(GaussianDistribution(m=0.0, V=2.0)), Message(GaussianDistribution(m=1.0, V=2.0))])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[1]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[1]))
         @fact msg_internal.payload --> GaussianDistribution(m=0.5, V=1.0)
 
         initializeGainAdditionNode(A, [Message(GaussianDistribution(m=0.0, V=2.0)), nothing, Message(GaussianDistribution(m=1.0, V=2.0))])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[2]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[2]))
         FactorGraph()
         validateOutboundMessage(GainAdditionNode(A),
                                 2,
@@ -46,7 +46,7 @@ facts("GainAdditionNode unit tests") do
 
         # Forward
         initializeGainAdditionNode(A, [Message(MvGaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(MvGaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2))), nothing])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[3]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[3]))
         FactorGraph()
         validateOutboundMessage(GainAdditionNode(A),
                                 3,
@@ -55,11 +55,11 @@ facts("GainAdditionNode unit tests") do
 
         # Backward
         initializeGainAdditionNode(A,[nothing, Message(MvGaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(MvGaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[1]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[1]))
         @fact msg_internal.payload --> MvGaussianDistribution(m=[0.8, -0.2], V=[1.56 -1.44; -1.44 1.56])
 
         initializeGainAdditionNode(A, [Message(MvGaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(MvGaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2,2)))])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[2]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[2]))
         FactorGraph()
         validateOutboundMessage(GainAdditionNode(A),
                                 2,
@@ -72,7 +72,7 @@ facts("GainAdditionNode unit tests") do
 
         # Forward
         initializeGainAdditionNode(A, [Message(MvGaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(MvGaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[3]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[3]))
         FactorGraph()
         validateOutboundMessage(GainAdditionNode(A),
                                 3,
@@ -81,11 +81,11 @@ facts("GainAdditionNode unit tests") do
 
         # Backward
         initializeGainAdditionNode(A,[nothing, Message(MvGaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), Message(MvGaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[1]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[1]))
         @fact msg_internal.payload --> MvGaussianDistribution(m=[0.8, -0.2], W=[8.0+(2/3) 8.0; 8.0 8.0+(2/3)])
 
         initializeGainAdditionNode(A, [Message(MvGaussianDistribution(m=[0.0, 0.0], W=eye(2,2))), nothing, Message(MvGaussianDistribution(m=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[2]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[2]))
         FactorGraph()
         validateOutboundMessage(GainAdditionNode(A),
                                 2,
@@ -98,7 +98,7 @@ facts("GainAdditionNode unit tests") do
 
         # Forward
         initializeGainAdditionNode(A, [Message(MvGaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(MvGaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[3]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[3]))
         FactorGraph()
         validateOutboundMessage(GainAdditionNode(A),
                                 3,
@@ -107,11 +107,11 @@ facts("GainAdditionNode unit tests") do
 
         # Backward
         initializeGainAdditionNode(A,[nothing, Message(MvGaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), Message(MvGaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[1]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[1]))
         @fact msg_internal.payload --> MvGaussianDistribution(m=[0.4, -0.1], V=[0.78 -0.72; -0.72 0.78])
 
         initializeGainAdditionNode(A, [Message(MvGaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(MvGaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[2]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[2]))
         FactorGraph()
         validateOutboundMessage(GainAdditionNode(A),
                                 2,
@@ -124,7 +124,7 @@ facts("GainAdditionNode unit tests") do
 
         # Forward
         initializeGainAdditionNode(A, [Message(MvGaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(MvGaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2))), nothing])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[3]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[3]))
         FactorGraph()
         validateOutboundMessage(GainAdditionNode(A),
                                 3,
@@ -133,11 +133,11 @@ facts("GainAdditionNode unit tests") do
 
         # Backward
         initializeGainAdditionNode(A,[nothing, Message(MvGaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), Message(MvGaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[1]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[1]))
         @fact msg_internal.payload --> MvGaussianDistribution(m=[0.4, -0.1], V=[0.78 -0.72; -0.72 0.78])
 
         initializeGainAdditionNode(A, [Message(MvGaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(MvGaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))])
-        msg_internal = execute(SumProduct.generateSchedule(n(:gac_node).interfaces[2]))
+        msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[2]))
         FactorGraph()
         validateOutboundMessage(GainAdditionNode(A),
                                 2,

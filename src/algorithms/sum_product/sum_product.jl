@@ -1,55 +1,49 @@
-module SumProduct
+export SumProduct
 
-using ..ForneyLab
+include("scheduler.jl")
 
-include("generate_schedule.jl")
-
+type SumProduct <: InferenceAlgorithm
+    execute::Function
+    schedule::Schedule
+end
 
 #--------------------------------
-# Algorithm specific constructors
+# SumProduct constructors
 #--------------------------------
 
-function Algorithm(graph::FactorGraph=currentGraph())
-    # Generates a sumproduct algorithm
-    # Uses autoscheduler and only works in acyclic graphs
-    schedule = SumProduct.generateSchedule(graph)
-
-    # Construct the execute function and its arguments
-    exec(fields) = execute(fields[:schedule])
-    return ForneyLab.Algorithm(exec, Dict{Any,Any}(:schedule => schedule))
+function SumProduct(graph::FactorGraph=currentGraph())
+    # Generates a SumProduct algorithm that propagates messages to all wraps and write buffers.
+    # Only works in acyclic graphs.
+    schedule = generateSumProductSchedule(graph)
+    exec(algorithm) = execute(algorithm.schedule)
+    return SumProduct(exec, schedule)
 end
 
-function Algorithm(outbound_interface::Interface)
-    # Generates a sumproduct algorithm to calculate the outbound message on outbound_interface
-    # Uses autoscheduler and only works in acyclic graphs
-    schedule = SumProduct.generateSchedule(outbound_interface)
-
-    # Construct the execute function and its arguments
-    exec(fields) = execute(fields[:schedule])
-    return ForneyLab.Algorithm(exec, Dict{Any,Any}(:schedule => schedule))
+function SumProduct(outbound_interface::Interface)
+    # Generates a SumProduct algorithm to calculate the outbound message on outbound_interface.
+    # Only works in acyclic graphs.
+    schedule = generateSumProductSchedule(outbound_interface)
+    exec(algorithm) = execute(algorithm.schedule)
+    return SumProduct(exec, schedule)
 end
 
-function Algorithm(partial_list::Vector{Interface})
-    # Generates a sumproduct algorithm that at least propagates to all interfaces in the argument vector.
-    # Uses autoscheduler and only works in acyclic graphs
-    schedule = SumProduct.generateSchedule(partial_list)
-
-    # Construct the execute function and its arguments
-    exec(fields) = execute(fields[:schedule])
-    return ForneyLab.Algorithm(exec, Dict{Any,Any}(:schedule => schedule))
+function SumProduct(partial_list::Vector{Interface})
+    # Generates a SumProduct algorithm that at least propagates to all interfaces in the argument vector.
+    # Only works in acyclic graphs.
+    schedule = generateSumProductSchedule(partial_list)
+    exec(algorithm) = execute(algorithm.schedule)
+    return SumProduct(exec, schedule)
 end
 
-function Algorithm(edge::Edge)
-    # Generates a sumproduct algorithm to calculate the marginal on edge
-    # Uses autoscheduler and only works in acyclic graphs
-    schedule = SumProduct.generateSchedule([edge.head, edge.tail])
-
-    # Construct the execute function and its arguments
-    function exec(fields)
-        execute(fields[:schedule])
-        calculateMarginal!(fields[:edge])
+function SumProduct(edge::Edge)
+    # Generates a SumProduct algorithm to calculate the marginal on edge
+    # Only works in acyclic graphs.
+    schedule = generateSumProductSchedule([edge.head, edge.tail])
+    function exec(algorithm)
+        execute(algorithm.schedule)
+        calculateMarginal!(edge)
     end
-    return ForneyLab.Algorithm(exec, Dict{Any,Any}(:schedule => schedule, :edge => edge))
+    return SumProduct(exec, schedule)
 end
 
 
@@ -57,7 +51,7 @@ end
 # Construct algorithm specific update-call signature
 #---------------------------------------------------
 
-function collectInbounds(outbound_interface::Interface)
+function collectInbounds(outbound_interface::Interface, ::Type{Val{symbol("ForneyLab.sumProduct!")}})
     # Sum-product specific method to collect all required inbound messages in an array.
     # This array is used to call the node update function (sumProduct!).
     # outbound_interface: the interface on which the outbound message will be updated.
@@ -83,5 +77,3 @@ function collectInbounds(outbound_interface::Interface)
 
     return (outbound_interface_index, inbounds)
 end
-
-end # module

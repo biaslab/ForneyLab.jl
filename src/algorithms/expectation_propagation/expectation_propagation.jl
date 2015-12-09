@@ -1,12 +1,18 @@
-module ExpectationPropagation
+export ExpectationPropagation
 
-using ..ForneyLab
+type ExpectationPropagation <: InferenceAlgorithm
+    execute::Function
+    schedule::Schedule
+    sites::Vector{Interface}
+    num_iterations::Int64
+    callback::Function
+end
 
-#--------------------------------
-# Algorithm constructors
-#--------------------------------
+#------------------------------------
+# ExpectationPropagation constructors
+#------------------------------------
 
-function Algorithm(
+function ExpectationPropagation(
             sites::Vector{Interface};
             num_iterations::Int64 = 100,
             callback::Function = () -> false)
@@ -15,7 +21,7 @@ function Algorithm(
     # After each iteration, callback is called to allow for convergence checks.
     # If the callback returns true, the algorithm is terminated.
 
-    # Algorithm overview:
+    # InferenceAlgorithm overview:
     # 1. Init all sites with vague messages
     # 2. For all sites i=1:N
     #   2a. Calculate cavity distribution i
@@ -31,7 +37,7 @@ function Algorithm(
         # Prepend sites b/c of vague initialization
         total_schedule = vcat(sites, total_schedule)
         # Add schedule for cavity distribution to total_schedule
-        total_schedule = SumProduct.generateScheduleByDFS!(site.partner, total_schedule)
+        total_schedule = generateScheduleByDFS!(site.partner, total_schedule)
         total_schedule = total_schedule[length(sites)+1:end] # Strip sites prepend
         # Build list of other sites, prepend to total schedule
         if i < length(sites)
@@ -40,7 +46,7 @@ function Algorithm(
             other_sites = sites[1:i-1]
         end
         total_schedule = vcat(other_sites, total_schedule)
-        total_schedule = SumProduct.generateScheduleByDFS!(site, total_schedule)
+        total_schedule = generateScheduleByDFS!(site, total_schedule)
         total_schedule = total_schedule[length(sites):end] # Strip other sites prepend
     end
 
@@ -51,30 +57,21 @@ function Algorithm(
         end
     end
 
-    fields = Dict{Symbol,Any}(
-                :sites => sites,
-                :schedule => schedule,
-                :num_iterations => num_iterations,
-                :callback => callback
-                )
-
-    function exec(fields)
+    function exec(algorithm)
         # Init all sites with vague messages
-        for site in fields[:sites]
+        for site in algorithm.sites
             site.message = Message(vague(site.edge.distribution_type))
         end
-
-        for iteration_count = 1:fields[:num_iterations]
-            execute(fields[:schedule])
+        for iteration_count = 1:algorithm.num_iterations
+            execute(algorithm.schedule)
             # Check stopping criteria
-            if fields[:callback]()
+            if algorithm.callback()
                 break
             end
         end
-
     end
 
-    return ForneyLab.Algorithm(exec, fields)
+    return ExpectationPropagation(exec, schedule, sites, num_iterations, callback)
 end
 
 
@@ -82,7 +79,7 @@ end
 # Construct algorithm specific update-call signature
 #---------------------------------------------------
 
-function collectInbounds(outbound_interface::Interface)
+function collectInbounds(outbound_interface::Interface, ::Type{Val{symbol("ForneyLab.ep!")}})
     # EP specific method to collect all required inbound messages in an array.
     # This array is used to call the node update function (ep!).
     # outbound_interface: the interface on which the outbound message will be updated.
@@ -105,5 +102,3 @@ function collectInbounds(outbound_interface::Interface)
 
     return (outbound_interface_index, inbounds)
 end
-
-end # module

@@ -1,6 +1,6 @@
 function execute(subgraph::Subgraph, q_distributions::Dict{Tuple{Node, Subgraph}, QDistribution}, factorization::QFactorization)
     # Execute internal schedule
-    SumProduct.execute(subgraph.internal_schedule)
+    execute(subgraph.internal_schedule)
 
     # Update q-distributions at external edges
     if ForneyLab.verbose

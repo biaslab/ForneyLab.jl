@@ -1,14 +1,14 @@
-facts("VMP.generateSchedule() tests") do
+facts("ForneyLab.generateVariationalBayesSchedule() tests") do
     context("Should include backward messages when there is only one internal interface connected to an external node and include vmp updates") do
         data = [1.0]
         initializeGaussianNodeChain(data)
 
         # Structured factorization
-        f = VMP.factorize!(Set{Edge}([ForneyLab.e(:q_y1)]))
+        f = ForneyLab.factorize!(Set{Edge}([ForneyLab.e(:q_y1)]))
 
         graph = currentGraph()
         for subgraph in f.factors
-            VMP.generateSchedule!(subgraph) # Generate internal and external schedule automatically
+            ForneyLab.generateVariationalBayesSchedule!(subgraph) # Generate internal and external schedule automatically
         end
 
         y_subgraph = f.edge_to_subgraph[ForneyLab.e(:q_y1)]
@@ -18,9 +18,9 @@ facts("VMP.generateSchedule() tests") do
     end
     context("Should generate an internal and external schedule when called on a subgraph") do
         initializeFactoringGraphWithoutLoop()
-        f = VMP.factorize!(Set{Edge}([n(:t2).i[:out].edge])) # Put this edge in a different subgraph
+        f = ForneyLab.factorize!(Set{Edge}([n(:t2).i[:out].edge])) # Put this edge in a different subgraph
         for subgraph in f.factors
-            VMP.generateSchedule!(subgraph)
+            ForneyLab.generateVariationalBayesSchedule!(subgraph)
             @fact length(unique(subgraph.internal_schedule)) --> length(subgraph.internal_schedule) # No duplicate entries in schedule
         end
         # There are multiple valid schedules because of different orderings. Validity or schedule order is not checked here.

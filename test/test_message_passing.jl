@@ -20,7 +20,7 @@ facts("Message passing integration tests") do
             initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
             setMessage!(n(:add).i[:in1], Message(GaussianDistribution(m=2.0, V=0.5)))
             setMessage!(n(:add).i[:out], Message(GaussianDistribution()))
-            schedule = SumProduct.generateSchedule(n(:add).i[:in2])
+            schedule = ForneyLab.generateSumProductSchedule(n(:add).i[:in2])
             dist = ensureParameters!(execute(schedule).payload, (:m, :V))
             @fact dist --> n(:add).i[:in2].message.payload
             @fact isApproxEqual(dist.m, [2.0]) --> true
@@ -36,7 +36,7 @@ facts("Message passing integration tests") do
         context("Should work as expeced in loopy graphs") do
             initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
             setMessage!(n(:driver).i[:out], Message(GaussianDistribution()))
-            schedule = SumProduct.generateSchedule(n(:driver).i[:out])
+            schedule = ForneyLab.generateSumProductSchedule(n(:driver).i[:out])
             for count = 1:100
                 execute(schedule)
             end
@@ -51,7 +51,7 @@ facts("Message passing integration tests") do
             setMessage!(n(:driver).i[:out], breaker_message)
             prev_dist = deepcopy(breaker_message.payload)
             converged = false
-            schedule = SumProduct.generateSchedule(n(:driver).i[:out])
+            schedule = ForneyLab.generateSumProductSchedule(n(:driver).i[:out])
             while !converged
                 dist = ensureParameters!(execute(schedule).payload, (:m, :V))
                 converged = isApproxEqual(prev_dist.m, dist.m)
@@ -65,7 +65,7 @@ facts("Message passing integration tests") do
         initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
         setMessage!(n(:add).i[:in1], Message(GaussianDistribution(m=2.0, V=0.5)))
         setMessage!(n(:add).i[:out], Message(GaussianDistribution()))
-        schedule = SumProduct.generateSchedule(n(:add).i[:in2])
+        schedule = ForneyLab.generateSumProductSchedule(n(:add).i[:in2])
         execute(schedule)
         clearMessage!(n(:add).i[:in2])
         @fact n(:add).i[:in2].message --> nothing
