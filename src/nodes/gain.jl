@@ -49,7 +49,7 @@ type GainNode <: Node
             self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
         end
 
-        addNode!(current_graph, self)
+        addNode!(currentGraph(), self)
 
         for (iface_index, iface_handle) in enumerate([:in, :out, :gain][1:length(self.interfaces)])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
