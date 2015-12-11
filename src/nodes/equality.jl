@@ -103,7 +103,6 @@ function equalityRule!(dist_result::GaussianDistribution, dist_gauss_in::Gaussia
     # The result of the Gaussian-Student's t equality rule applied to dist_gauss_in and dist_stud_in is written to dist_result
     # The student's t distribution is approximated by a Gaussian by moment matching.
     # The result is a Gaussian approximation to the exact result.
-    (isProper(dist_gauss_in) && isProper(dist_stud_in)) || error("Inputs of equalityRule! should be proper distributions")
 
     ensureParameters!(dist_gauss_in, (:xi, :W))
     if 0.0 < dist_stud_in.nu <= 1.0
@@ -123,6 +122,7 @@ function equalityRule!(dist_result::GaussianDistribution, dist_gauss_in::Gaussia
     dist_result.W  = dist_gauss_in.W + approx_W
     dist_result.V = NaN
     dist_result.m = NaN
+    isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
 
     return dist_result
 end
@@ -230,9 +230,9 @@ sumProduct!(node::EqualityNode,
 function equalityRule!(dist_result::InverseGammaDistribution, dist_1::InverseGammaDistribution, dist_2::InverseGammaDistribution)
     # The result of the inverse gamma equality rule applied to dist_1 and dist_2 is written to dist_result
     # Definition from Korl table 5.2
-    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     dist_result.a = dist_1.a+dist_2.a+1.0
     dist_result.b = dist_1.b+dist_2.b
+    isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
     return dist_result
 end
 
@@ -270,9 +270,9 @@ sumProduct!(node::EqualityNode,
 function equalityRule!(dist_result::GammaDistribution, dist_1::GammaDistribution, dist_2::GammaDistribution)
     # The result of the gamma equality rule applied to dist_1 and dist_2 is written to dist_result
     # Derivation available in notebook
-    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     dist_result.a = dist_1.a+dist_2.a-1.0
     dist_result.b = dist_1.b+dist_2.b
+    isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
     return dist_result
 end
 
@@ -310,9 +310,9 @@ sumProduct!(node::EqualityNode,
 function equalityRule!(dist_result::BetaDistribution, dist_1::BetaDistribution, dist_2::BetaDistribution)
     # The result of the beta equality rule applied to dist_1 and dist_2 is written to dist_result
     # Derivation available in notebook
-    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     dist_result.a = dist_1.a+dist_2.a-1.0
     dist_result.b = dist_1.b+dist_2.b-1.0
+    isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
     return dist_result
 end
 
@@ -427,7 +427,6 @@ function equalityRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDi
     # The result of the Gaussian equality rule applied to dist_1 and dist_2 is written to dist_result
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
-    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     if isValid(dist_1.m) && isValid(dist_1.W) && isValid(dist_2.m) && isValid(dist_2.W)
         dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.W)
         invalidate!(dist_result.V)
@@ -447,6 +446,7 @@ function equalityRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDi
         dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
         dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
     end
+    isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
 
     return dist_result
 end
@@ -640,7 +640,7 @@ sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_delta
 function equalityRule!(dist_result::BernoulliDistribution, dist_1::BernoulliDistribution, dist_2::BernoulliDistribution)
     # The result of the Bernoulli equality rule applied to dist_1 and dist_2 is written to dist_result
     norm = dist_1.p * dist_2.p + (1 - dist_1.p) * (1 - dist_2.p)
-    (norm > 0) || error("equalityRule! for BernoulliDistribution is not wel l-defined (invalid normalization constant)")
+    (norm > 0) || error("equalityRule! for BernoulliDistribution is not well-defined (invalid normalization constant)")
     dist_result.p = (dist_1.p * dist_2.p) / norm
     return dist_result
 end
