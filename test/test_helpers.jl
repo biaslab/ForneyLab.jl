@@ -49,7 +49,7 @@ facts("Helper function unit tests") do
 
     context("ensureMessage! should assign a message to an interface if there is none") do
         node = TerminalNode(GaussianDistribution(m=5.0, V=1.0))
-        @fact node.i[:out].message --> nothing
+        @fact node.i[:out].message --> EmptyMessage()
         @fact ForneyLab.ensureMessage!(node.i[:out], GaussianDistribution) --> Message(vague(GaussianDistribution))
         @fact node.i[:out].message --> Message(vague(GaussianDistribution))
     end

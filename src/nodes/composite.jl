@@ -70,7 +70,10 @@ function sumProduct!(node::CompositeNode,
     end
 
     # Execute the correct algorithm
-    run(node.computation_rules[(outbound_interface, sumProduct!)], node.internal_graph)
+    parent_graph = currentGraph()
+    setCurrentGraph(node.internal_graph)
+    run(node.computation_rules[(outbound_interface, sumProduct!)])
+    setCurrentGraph(parent_graph)
 
     # Move the calculated messages to the interfaces of node
     outbound_interface.message = internal_outbound_interface.message

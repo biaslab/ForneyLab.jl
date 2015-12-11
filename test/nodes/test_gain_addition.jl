@@ -17,6 +17,8 @@ facts("GainAdditionNode unit tests") do
     context("GainAdditionNode should be able to pass GaussianDistributions: using shortcut rules or internal graph should yield same result") do
         A = [2.0]
 
+        # TODO: validateOutboundMessage only, remove first three lines, since there is no internal graph anymore
+
         # Forward
         initializeGainAdditionNode(A, [Message(GaussianDistribution(m=0.0, V=1.0)), Message(GaussianDistribution(m=1.0, V=2.0)), nothing])
         msg_internal = execute(ForneyLab.generateSumProductSchedule(n(:gac_node).interfaces[3]))

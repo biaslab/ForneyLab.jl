@@ -9,13 +9,10 @@ function execute(schedule_entry::ScheduleEntry)
     # The resulting message is stored in the specified interface and is returned.
 
     outbound_interface = schedule_entry.interface
-    # Preprocessing: collect all inbound messages and build the inbound_array
     node = outbound_interface.node
 
-    (outbound_interface_index, inbounds) = collectInbounds(outbound_interface, Val{symbol(schedule_entry.message_calculation_rule)})
-
     # Evaluate message calculation rule
-    (rule, outbound_message) = schedule_entry.message_calculation_rule(node, outbound_interface_index, inbounds...)
+    (rule, outbound_message) = schedule_entry.execute()
 
     # Post processing?
     if isdefined(schedule_entry, :post_processing)
@@ -59,12 +56,12 @@ end
 function clearMessages!(node::Node)
     # Clear all outbound messages on the interfaces of node
     for interface in node.interfaces
-        interface.message = nothing
+        clearMessage!(interface)
     end
 end
 
 function clearMessages!(edge::Edge)
     # Clear all messages on an edge.
-    edge.head.message = nothing
-    edge.tail.message = nothing
+    clearMessage!(edge.head.message)
+    clearMessage!(edge.tail.message)
 end

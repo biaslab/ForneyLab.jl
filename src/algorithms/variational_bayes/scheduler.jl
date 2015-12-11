@@ -72,7 +72,7 @@ function generateVariationalBayesSchedule!(sg::Subgraph, graph::FactorGraph=curr
     end
 
     # Convert the interface list to a schedule. The schedule for univariate comes after the internal schedule, because it can depend on inbound messages calculated earlier
-    schedule = convert(Schedule, unique([internal_interface_list; interface_list_for_univariate; interface_list_for_wraps; interface_list_for_write_buffers]))
+    schedule = convert(Schedule, unique([internal_interface_list; interface_list_for_univariate; interface_list_for_wraps; interface_list_for_write_buffers]), sumProduct!)
     # Convert to a vmp update when a schedule entry interface belongs to an external node
     for entry in schedule
         if entry.interface in external_nodes_interfaces

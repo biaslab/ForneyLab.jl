@@ -1,7 +1,7 @@
 function generateScheduleByDFS!(outbound_interface::Interface,
-                                backtrace::Array{Interface, 1}=Array(Interface, 0),
-                                call_list::Array{Interface, 1}=Array(Interface, 0);
-                                allowed_edges=false)
+                                backtrace::Vector{Interface} = Interface[],
+                                call_list::Vector{Interface} = Interface[];
+                                allowed_edges = false)
     # Private function to generate a sum product schedule by doing a DFS through the graph.
     # The graph is passed implicitly through the outbound_interface.
     #
@@ -12,7 +12,7 @@ function generateScheduleByDFS!(outbound_interface::Interface,
     # call_list: holds the recursive calls
     # allowed_edges: either false or Set{Edge}. If a set is passed, the search will be restricted to edges in this set.
     #
-    # Returns: Array{Interface, 1} (not an actual Schedule yet)
+    # Returns: Vector{Interface} (not an actual Schedule yet)
 
     node = outbound_interface.node
 
@@ -43,7 +43,7 @@ function generateScheduleByDFS!(outbound_interface::Interface,
 
         (interface.partner != nothing) || error("Disconnected interface should be connected: interface #$(interface_index) of $(typeof(node)) $(node.id)")
 
-        if interface.partner.message == nothing # Required message missing.
+        if typeof(interface.partner.message) == EmptyMessage # Required message missing.
             if !(interface.partner in backtrace) # Don't recalculate stuff that's already in the schedule.
                 # Recursive call
                 generateScheduleByDFS!(interface.partner, backtrace, call_list, allowed_edges=allowed_edges)
@@ -63,7 +63,7 @@ function generateSumProductSchedule(outbound_interface::Interface; args...)
     # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
     # The same graph with different messages being present can (and probably will) result in a different schedule.
 
-    return convert(Schedule, generateScheduleByDFS!(outbound_interface; args...))
+    return convert(Schedule, generateScheduleByDFS!(outbound_interface; args...), sumProduct!)
 end
 
 function generateSumProductSchedule(partial_schedule::Schedule; args...)
@@ -78,10 +78,10 @@ function generateSumProductSchedule(partial_schedule::Schedule; args...)
         interface_list = generateScheduleByDFS!(schedule_entry.interface, interface_list; args...)
     end
 
-    return convert(Schedule, interface_list)
+    return convert(Schedule, interface_list, sumProduct!)
 end
 
-generateSumProductSchedule(partial_list::Array{Interface, 1}; args...) = generateSumProductSchedule(convert(Schedule, partial_list); args...)
+generateSumProductSchedule(partial_list::Array{Interface, 1}; args...) = generateSumProductSchedule(convert(Schedule, partial_list, sumProduct!); args...)
 
 function generateSumProductSchedule(graph::FactorGraph=currentGraph(); args...)
     # Build a sumproduct schedule to calculate all messages towards wraps and writebuffers

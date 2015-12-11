@@ -89,9 +89,4 @@ include("algorithms/expectation_propagation/expectation_propagation.jl")
 # Functions for message post-processing
 vague(dist::ProbabilityDistribution) = vague(typeof(dist))
 
-function __init__()
-    # Module-global variable to keep track of currently active InferenceAlgorithm
-    global current_algorithm = nothing
-end
-
 end # module ForneyLab

@@ -2,21 +2,25 @@ export ScheduleEntry, Schedule, setPostProcessing!
 
 type ScheduleEntry
     interface::Interface
-    message_calculation_rule::Function  # Is called to calculate the message. Default is sumProduct!.
-    post_processing::Function           # Optional, a function that performs post-processing on the message. Leave undefined to skip.
-    function ScheduleEntry(interface::Interface, message_calculation_rule::Function, post_processing::Union{Void,Function}=nothing)
-        if post_processing != nothing
-            return new(interface, message_calculation_rule, post_processing)
-        else
-            return new(interface, message_calculation_rule)
-        end
+    message_calculation_rule::Function  # For example sumProduct! or vmp!.
+    execute::Function
+    post_processing::Function
+
+    function ScheduleEntry(interface::Interface, message_calculation_rule::Function)
+        return self = new(interface, message_calculation_rule)
     end
 end
-ScheduleEntry(interface::Interface) = ScheduleEntry(interface, sumProduct!)
+
+function ScheduleEntry(interface::Interface, message_calculation_rule::Function, post_processing::Function)
+    schedule_entry = ScheduleEntry(interface, message_calculation_rule)
+    schedule_entry.post_processing = post_processing
+
+    return schedule_entry
+end
 
 Base.deepcopy(::ScheduleEntry) = error("deepcopy(::ScheduleEntry) is not possible. You should construct a new ScheduleEntry or use copy(::ScheduleEntry).")
 
-Base.copy(src::ScheduleEntry) = ScheduleEntry(src.interface, src.message_calculation_rule, isdefined(src, :post_processing) ? src.post_processing : nothing)
+Base.copy(src::ScheduleEntry) = ScheduleEntry(src.interface, src.message_calculation_rule, isdefined(src, :post_processing) ? src.post_processing : (x)->x)
 
 function setPostProcessing!(schedule_entry::ScheduleEntry, post_processing::Function)
     schedule_entry.post_processing = post_processing
@@ -56,13 +60,5 @@ function show(io::IO, schedule::Schedule)
         interface_field = "$(typeof(interface.node)) $(interface.node.id) [$(findfirst(interface.node.interfaces, interface)):$(interface_handle)]"
         println(io, "$(string(entry_counter)): $(interface_field), $(string(msg_calc_func)) $(string(postproc))")
         entry_counter += 1
-    end
-end
-
-function show(io::IO, nodes::Array{Node, 1})
-     # Show node array (possibly an external schedule)
-    println(io, "Nodes:")
-    for entry in nodes
-        println(io, "Node $(entry.id) of type $(typeof(entry))")
     end
 end

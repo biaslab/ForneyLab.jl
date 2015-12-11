@@ -14,10 +14,6 @@ type VariationalBayes <: InferenceAlgorithm
     n_iterations::Int64
 end
 
-#------------------------------
-# VariationalBayes constructors
-#------------------------------
-
 function VariationalBayes(graph::FactorGraph=currentGraph(); n_iterations::Int64=50)
     # Generates a VariationalBayes algorithm that propagates messages to all write buffers and wraps.
     # Uses a mean field factorization and autoscheduler
@@ -32,8 +28,13 @@ function VariationalBayes(graph::FactorGraph=currentGraph(); n_iterations::Int64
         end
     end
 
-    global current_algorithm = VariationalBayes(exec, factorization, q_distributions, n_iterations)
-    return current_algorithm
+    algo = VariationalBayes(exec, factorization, q_distributions, n_iterations)
+
+    for factor in algo.factorization.factors
+        compile!(factor.subgraph.internal_schedule, algo)
+    end
+
+    return algo
 end
 
 function VariationalBayes(graph::FactorGraph, cluster_edges...; n_iterations::Int64=50)
@@ -53,24 +54,23 @@ function VariationalBayes(graph::FactorGraph, cluster_edges...; n_iterations::In
         end
     end
 
-    global current_algorithm = VariationalBayes(exec, factorization, q_distributions, n_iterations)
-    return current_algorithm
+    algo = VariationalBayes(exec, factorization, q_distributions, n_iterations)
+    for factor in algo.factorization.factors
+        compile!(factor.subgraph.internal_schedule, algo)
+    end
+
+    return algo
 end
 VariationalBayes(cluster_edges...; n_iterations::Int64=50) = VariationalBayes(currentGraph(), cluster_edges...; n_iterations=n_iterations)
 
+function compile!(schedule_entry::ScheduleEntry, ::Type{Val{symbol("ForneyLab.vmp!")}}, algo::VariationalBayes)
+    # Compile ScheduleEntry objects for SumProduct algorithm
+    # Generates schedule_entry.execute function
 
-#---------------------------------------------------
-# Construct algorithm specific update-call signature
-#---------------------------------------------------
-
-function collectInbounds(outbound_interface::Interface, ::Type{Val{symbol("ForneyLab.vmp!")}})
-    # VMP specific method to collect all required inbound messages and marginals in an array.
-    # This array is used to call the node update function (vmp!)
-    # outbound_interface: the interface on which the outbound message will be updated
-    # Returns: (outbound interface id, array of inbound messages and marginals)
-
+    # Collect references to all required inbound messages for executing message computation rule
+    outbound_interface = schedule_entry.interface
     outbound_interface_index = 0
-    inbounds = Array(Any, 0)
+    inbounds = Any[]
     for j = 1:length(outbound_interface.node.interfaces)
         interface = outbound_interface.node.interfaces[j]
         if is(interface, outbound_interface)
@@ -78,26 +78,30 @@ function collectInbounds(outbound_interface::Interface, ::Type{Val{symbol("Forne
             outbound_interface_index = j
             push!(inbounds, nothing) # This interface is outbound, push "nothing"
         else
-            if !haskey(ForneyLab.current_algorithm.factorization.edge_to_subgraph, interface.edge) || !haskey(ForneyLab.current_algorithm.factorization.edge_to_subgraph, outbound_interface.edge)
-                # Inbound and/or outbound edge is not explicitly listed in the ForneyLab.current_algorithm.fields.
+            if !haskey(algo.factorization.edge_to_subgraph, interface.edge) || !haskey(algo.factorization.edge_to_subgraph, outbound_interface.edge)
+                # Inbound and/or outbound edge is not explicitly listed in the algo.fields.
                 # This is possible if one of those edges is internal to a composite node.
                 # We will default to sum-product message passing, and consume the message on the inbound interface.
                 # Composite nodes with explicit message passing will throw an error when one of their external interfaces belongs to a different subgraph, so it is safe to assume sum-product.
-                try return push!(inbounds, interface.partner.message) catch error("$(interface) is not connected to an edge.") end
+                try push!(inbounds, interface.partner.message) catch error("$(interface) is not connected to an edge.") end
+                break
             end
 
             # Should we require the inbound message or marginal?
-            if is(ForneyLab.current_algorithm.factorization.edge_to_subgraph[interface.edge], ForneyLab.current_algorithm.factorization.edge_to_subgraph[outbound_interface.edge])
+            if is(algo.factorization.edge_to_subgraph[interface.edge], algo.factorization.edge_to_subgraph[outbound_interface.edge])
                 # Both edges in same subgraph, require message
                 try push!(inbounds, interface.partner.message) catch error("$(interface) is not connected to an edge.") end
             else
                 # A subgraph border is crossed, require marginal
                 # The factor is the set of internal edges that are in the same subgraph
-                sg = ForneyLab.current_algorithm.factorization.edge_to_subgraph[interface.edge]
-                push!(inbounds, ForneyLab.current_algorithm.q_distributions[(outbound_interface.node, sg)].distribution)
+                sg = algo.factorization.edge_to_subgraph[interface.edge]
+                push!(inbounds, algo.q_distributions[(outbound_interface.node, sg)].distribution)
             end
         end
     end
 
-    return (outbound_interface_index, inbounds)
+    # Assign the "compiled" update rule as an anomynous function to the schedule entry execute field
+    schedule_entry.execute = ( () -> vmp!(node, outbound_interface_index, inbounds...) )
+
+    return schedule_entry
 end
