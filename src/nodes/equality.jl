@@ -122,7 +122,7 @@ function equalityRule!(dist_result::GaussianDistribution, dist_gauss_in::Gaussia
     dist_result.W  = dist_gauss_in.W + approx_W
     dist_result.V = NaN
     dist_result.m = NaN
-    isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
+    # isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
 
     return dist_result
 end
@@ -232,7 +232,7 @@ function equalityRule!(dist_result::InverseGammaDistribution, dist_1::InverseGam
     # Definition from Korl table 5.2
     dist_result.a = dist_1.a+dist_2.a+1.0
     dist_result.b = dist_1.b+dist_2.b
-    isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
+    # isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
     return dist_result
 end
 
@@ -272,7 +272,7 @@ function equalityRule!(dist_result::GammaDistribution, dist_1::GammaDistribution
     # Derivation available in notebook
     dist_result.a = dist_1.a+dist_2.a-1.0
     dist_result.b = dist_1.b+dist_2.b
-    isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
+    # isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
     return dist_result
 end
 
@@ -312,7 +312,7 @@ function equalityRule!(dist_result::BetaDistribution, dist_1::BetaDistribution, 
     # Derivation available in notebook
     dist_result.a = dist_1.a+dist_2.a-1.0
     dist_result.b = dist_1.b+dist_2.b-1.0
-    isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
+    # isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
     return dist_result
 end
 
@@ -446,7 +446,7 @@ function equalityRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDi
         dist_result.W  = equalityWRule(dist_1.W, dist_2.W)
         dist_result.xi = equalityXiRule(dist_1.xi, dist_2.xi)
     end
-    isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
+    # isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
 
     return dist_result
 end

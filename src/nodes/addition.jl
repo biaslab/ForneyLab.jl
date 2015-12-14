@@ -51,9 +51,9 @@ function sumProduct!(node::AdditionNode,
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Void)
     # Check well convergence of calculation rule in case of improper inputs
-    if ensureParameters!(msg_in1.payload, (:m, :W)).W + ensureParameters!(msg_in2.payload, (:m, :W)).W <= 0
-        error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s)")
-    end
+    # if ensureParameters!(msg_in1.payload, (:m, :W)).W + ensureParameters!(msg_in2.payload, (:m, :W)).W <= 0
+    #     error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s) ($(format(msg_in1.payload)), $(format(msg_in2.payload))")
+    # end
     dist_out = ensureMessage!(node.i[:out], GaussianDistribution).payload
     dist_out.m = ensureParameters!(msg_in1.payload, (:m, :V)).m + ensureParameters!(msg_in2.payload, (:m, :V)).m
     dist_out.V = msg_in1.payload.V + msg_in2.payload.V
@@ -71,9 +71,9 @@ function sumProduct!(   node::AdditionNode,
                         ::Void,
                         msg_out::Message{GaussianDistribution})
     # Check well convergence of calculation rule in case of improper inputs
-    if ensureParameters!(msg_in1.payload, (:m, :W)).W + ensureParameters!(msg_out.payload, (:m, :W)).W <= 0
-        error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s)")
-    end
+    # if ensureParameters!(msg_in1.payload, (:m, :W)).W + ensureParameters!(msg_out.payload, (:m, :W)).W <= 0
+    #     error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s)")
+    # end
     dist_result = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
     dist_result.m = ensureParameters!(msg_out.payload, (:m, :V)).m - ensureParameters!(msg_in1.payload, (:m, :V)).m
     dist_result.V = msg_in1.payload.V + msg_out.payload.V
@@ -193,7 +193,7 @@ backwardAdditionXiRule{T<:Number}(V_x::Array{T, 2}, xi_x::Array{T, 1}, V_z::Arra
 
 function additionGaussianForwardRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDistribution, dist_2::MvGaussianDistribution)
     # Calculations for a gaussian message type; Korl (2005), table 4.1
-    (isProper(dist_1) && isProper(dist_2)) || error("Improper input distributions are not supported")
+    # (isProper(dist_1) && isProper(dist_2)) || error("Improper input distributions are not supported")
 
     if isValid(dist_1.m) && isValid(dist_1.V) && isValid(dist_2.m) && isValid(dist_2.V)
         dist_result.m = forwardAdditionMRule(dist_1.m, dist_2.m)
@@ -239,7 +239,7 @@ end
 # Message towards IN1 or IN2
 function additionGaussianBackwardRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDistribution, dist_3::MvGaussianDistribution)
     # Calculations for a gaussian message type; Korl (2005), table 4.1
-    (isProper(dist_1) && isProper(dist_3)) || error("Improper input distributions are not supported")
+    # (isProper(dist_1) && isProper(dist_3)) || error("Improper input distributions are not supported")
 
     if isValid(dist_1.m) && isValid(dist_1.V) && isValid(dist_3.m) && isValid(dist_3.V)
         dist_result.m = backwardAdditionMRule(dist_1.m, dist_3.m)

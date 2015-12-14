@@ -366,7 +366,7 @@ function vmp!(  node::GaussianNode,
     #    N   |
     #        |Q~N
     #        v
-    (isProper(marg_variance) && isProper(marg_out)) || error("Improper input distributions are not supported")
+    # (isProper(marg_variance) && isProper(marg_out)) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_index], node.i[:mean]) # Mean estimation from variance and sample
@@ -399,7 +399,7 @@ function vmp!(  node::GaussianNode,
     #   <--  |
     #    Q~N |
     #        v
-    (isProper(marg_prec) && isProper(marg_y)) || error("Improper input distributions are not supported")
+    # (isProper(marg_prec) && isProper(marg_y)) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_index], node.i[:mean])
@@ -430,7 +430,7 @@ function vmp!(  node::GaussianNode,
     #   <--  |
     #    Q~N |
     #        v
-    (isProper(marg_log_prec) && isProper(marg_y)) || error("Improper input distributions are not supported")
+    # (isProper(marg_log_prec) && isProper(marg_y)) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_index], node.i[:mean])
@@ -453,7 +453,7 @@ function vmp!(  node::GaussianNode,
                 outbound_interface_index::Int,
                 ::Void,
                 marg_out::GaussianDistribution)
-    isProper(marg_out) || error("Improper input distributions are not supported")
+    # isProper(marg_out) || error("Improper input distributions are not supported")
     if haskey(node.i, :precision) && is(node.interfaces[outbound_interface_index], node.i[:precision])
         # Backward variational update function with fixed mean
         #
@@ -525,7 +525,7 @@ function vmp!(  node::GaussianNode,
                 marg_mean::GaussianDistribution,
                 ::Void,
                 marg_out::GaussianDistribution)
-    (isProper(marg_mean) && isProper(marg_out)) || error("Improper input distributions are not supported")
+    # (isProper(marg_mean) && isProper(marg_out)) || error("Improper input distributions are not supported")
     if haskey(node.i, :variance)
         # Variational update function takes the marginals as input (instead of the inbound messages)
         # Derivation for the update rule can be found in the derivations notebook.
@@ -624,7 +624,7 @@ function vmp!(  node::GaussianNode,
     #        |
     #      N | |
     #        v v
-    (isProper(marg_mean) && isProper(marg_var)) || error("Improper input distributions are not supported")
+    # (isProper(marg_mean) && isProper(marg_var)) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_index], node.i[:out])
@@ -650,7 +650,7 @@ function vmp!(  node::GaussianNode,
     #  Q~Gam      N
     #  ---->[N]---->
     #            -->
-    isProper(marg_prec) || error("Improper input distributions are not supported")
+    # isProper(marg_prec) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_index], node.i[:out])
@@ -675,7 +675,7 @@ function vmp!(  node::GaussianNode,
     #  Q~Ig      N
     #  ---->[N]---->
     #            -->
-    isProper(marg_var) || error("Improper input distributions are not supported")
+    # isProper(marg_var) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_index], node.i[:out])
@@ -696,7 +696,7 @@ function vmp!(  node::GaussianNode,
                 marg_in::GaussianDistribution,
                 ::Void)
 
-    isProper(marg_in) || error("Improper input distributions are not supported")
+    # isProper(marg_in) || error("Improper input distributions are not supported")
 
     if haskey(node.i, :log_variance) && is(node.interfaces[outbound_interface_index], node.i[:out])
         # Forward variational update function with fixed mean
@@ -752,7 +752,7 @@ function vmp!(  node::GaussianNode,
     #        |
     #      N | |
     #        v v
-    (isProper(marg_mean) && isProper(marg_prec)) || error("Improper input distributions are not supported")
+    # (isProper(marg_mean) && isProper(marg_prec)) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_index], node.i[:out])
@@ -782,7 +782,7 @@ function vmp!(  node::GaussianNode,
     #        |
     #      N | |
     #        v v
-    (isProper(marg_mean) && isProper(marg_log_prec)) || error("Improper input distributions are not supported")
+    # (isProper(marg_mean) && isProper(marg_log_prec)) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_index], node.i[:out])
@@ -818,7 +818,7 @@ function vmp!(  node::GaussianNode,
     # - - - - - - - -
     #        | Q~N
     #        v
-    (isProper(msg_prec.payload) && isProper(marg_out)) || error("Improper input distributions are not supported")
+    # (isProper(msg_prec.payload) && isProper(marg_out)) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], StudentsTDistribution).payload
 
     if is(node.interfaces[outbound_interface_index], node.i[:mean])
@@ -851,7 +851,7 @@ function vmp!(  node::GaussianNode,
     # - - - - - - - -
     #        | Q~N
     #        v
-    (isProper(msg_mean.payload) && isProper(marg_out)) || error("Improper input distributions are not supported")
+    # (isProper(msg_mean.payload) && isProper(marg_out)) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GammaDistribution).payload
 
     if haskey(node.i, :precision)
@@ -884,7 +884,7 @@ function vmp!(  node::GaussianNode,
     # - - - - - - - -
     #      | | N
     #      v v
-    isProper(marg) || error("Improper input distributions are not supported")
+    # isProper(marg) || error("Improper input distributions are not supported")
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
     if is(node.interfaces[outbound_interface_index], node.i[:out])
