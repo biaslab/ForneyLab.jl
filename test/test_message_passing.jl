@@ -4,6 +4,7 @@
 
 facts("Message passing unit tests") do
     context("Should throw an error if one or more interfaces have no partner") do
+        FactorGraph()
         FixedGainNode(id=:node)
         @fact_throws execute(ForneyLab.convert(Schedule, [ForneyLab.n(:node).i[:out]]))
     end

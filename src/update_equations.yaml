@@ -44,6 +44,15 @@ rules:
                 <pre>(Gam in shape/rate parametrization)</pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\mathcal{G}am(a_z=a_x+a_y-1, b_z=b_x+b_y)$"
 
+  equality_wishart:
+    node:       EqualityNode
+    reference:  "Gaussian node derivations document"
+    diagram:    <pre> x~W     y~W </pre>
+                <pre> --->[=]<--- </pre>
+                <pre>      |z~W   </pre>
+                <pre>      v      </pre>
+    formula:    ""
+
   equality_beta:
     node:       EqualityNode
     reference:  ""
@@ -61,6 +70,15 @@ rules:
                 <pre>     |z~δ  </pre>
                 <pre>     v     </pre>
     formula:    "$\\overrightarrow{\\mu}(z) = \\delta(m_z=m_x)$"
+
+  equality_wishart_delta:
+    node:       EqualityNode
+    reference:  ""
+    diagram:    <pre> x~δ   y~W </pre>
+                <pre>--->[=]<---</pre>
+                <pre>     |z~δ  </pre>
+                <pre>     v     </pre>
+    formula:    ""
 
   equality_gaussian_student:
     node:       EqualityNode

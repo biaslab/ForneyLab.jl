@@ -181,6 +181,16 @@ function calculateMarginal!(edge::Edge, forward_dist::MvGaussianDistribution, ba
     return equalityRule!(marg, forward_dist, backward_dist)
 end
 
+# WishartDistribution
+function calculateMarginal(forward_dist::WishartDistribution, backward_dist::WishartDistribution)
+    marg = deepcopy(forward_dist)
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+function calculateMarginal!(edge::Edge, forward_dist::WishartDistribution, backward_dist::WishartDistribution)
+    marg = ensureMarginal!(edge, WishartDistribution)
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+
 # MvGaussian-MvDelta combination
 function calculateMarginal(forward_dist::MvDeltaDistribution{Float64}, backward_dist::MvGaussianDistribution)
     marg = deepcopy(forward_dist)
@@ -195,6 +205,21 @@ function calculateMarginal!(edge::Edge, forward_dist::MvDeltaDistribution{Float6
 end
 
 calculateMarginal!(edge::Edge, forward_dist::MvGaussianDistribution, backward_dist::MvDeltaDistribution{Float64}) = calculateMarginal!(edge, backward_dist, forward_dist)
+
+# Wishart-MvDelta combination
+function calculateMarginal(forward_dist::MvDeltaDistribution{Float64}, backward_dist::WishartDistribution)
+    marg = deepcopy(forward_dist)
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+
+calculateMarginal(forward_dist::WishartDistribution, backward_dist::MvDeltaDistribution{Float64}) = calculateMarginal(backward_dist, forward_dist)
+
+function calculateMarginal!(edge::Edge, forward_dist::MvDeltaDistribution{Float64}, backward_dist::WishartDistribution)
+    marg = ensureMarginal!(edge, MvDeltaDistribution{Float64})
+    return equalityRule!(marg, forward_dist, backward_dist)
+end
+
+calculateMarginal!(edge::Edge, forward_dist::WishartDistribution, backward_dist::MvDeltaDistribution{Float64}) = calculateMarginal!(edge, backward_dist, forward_dist)
 
 
 ########################################

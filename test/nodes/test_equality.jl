@@ -170,6 +170,38 @@ facts("EqualityNode unit tests") do
                                 DeltaDistribution(5.0))
     end
 
+    context("EqualityNode should provide sumProduct! for combination of MvDeltaDistribution and a MvGaussianDistribution") do
+        # Just test the original and a permutation of the arguments
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(MvDeltaDistribution([4.0, 5.0])), Message(MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.5; 0.5 1.0])), nothing],
+                                MvDeltaDistribution([4.0, 5.0]))
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.5; 0.5 1.0])), Message(MvDeltaDistribution([4.0, 5.0])), nothing],
+                                MvDeltaDistribution([4.0, 5.0]))
+        validateOutboundMessage(EqualityNode(),
+                                2,
+                                [Message(MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.5; 0.5 1.0])), nothing, Message(MvDeltaDistribution([4.0, 5.0]))],
+                                MvDeltaDistribution([4.0, 5.0]))
+    end
+
+    context("EqualityNode should provide sumProduct! for combination of MvDeltaDistribution and a WishartDistribution") do
+        # Just test the original and a permutation of the arguments
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(MvDeltaDistribution([4.0, 5.0])), Message(WishartDistribution(V=[1.0 0.5; 0.5 1.0], nu=2.0)), nothing],
+                                MvDeltaDistribution([4.0, 5.0]))
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(WishartDistribution(V=[1.0 0.5; 0.5 1.0], nu=2.0)), Message(MvDeltaDistribution([4.0, 5.0])), nothing],
+                                MvDeltaDistribution([4.0, 5.0]))
+        validateOutboundMessage(EqualityNode(),
+                                2,
+                                [Message(WishartDistribution(V=[1.0 0.5; 0.5 1.0], nu=2.0)), nothing, Message(MvDeltaDistribution([4.0, 5.0]))],
+                                MvDeltaDistribution([4.0, 5.0]))
+    end
+
     context("EqualityNode should provide sumProduct! for combination of DeltaDistribution and a GammaDistribution") do
         # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(),

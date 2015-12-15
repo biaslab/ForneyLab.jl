@@ -36,6 +36,16 @@ function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDist
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
+# MvGaussianDistribution
+function calculateQDistribution!(marg::QDistribution, forward_dist::MvGaussianDistribution, backward_dist::MvGaussianDistribution)
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
+end
+
+# WishartDistribution
+function calculateQDistribution!(marg::QDistribution, forward_dist::WishartDistribution, backward_dist::WishartDistribution)
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
+end
+
 # Gaussian-students t combination
 function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
@@ -48,6 +58,13 @@ function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDist
     return marg.distribution = ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
+
+# MvGaussian-MvDelta combination
+function calculateQDistribution!(marg::QDistribution, forward_dist::MvGaussianDistribution, backward_dist::MvDeltaDistribution{Float64})
+    # Calculation for univariate approximate marginal
+    return marg.distribution = ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
+end
+calculateQDistribution!(marg::QDistribution, forward_dist::MvDeltaDistribution{Float64}, backward_dist::MvGaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
 # TODO: check for need
 # # Gamma-delta combination

@@ -5,6 +5,7 @@
 #   Encodes a multivariate Gaussian distribution.
 #   Define (mean (m) or weighted mean (xi))
 #   and (covariance (V) or precision (W)).
+#
 #   Example:
 #       MvGaussianDistribution(m=[1.0,3.0], V=[2.0, 0.0; 0.0, 2.0])
 ############################################
@@ -236,27 +237,27 @@ function ==(x::MvGaussianDistribution, y::MvGaussianDistribution)
     end
     # Check m or xi
     if isValid(x.m) && isValid(y.m)
-        (length(x.m)==length(x.m)) || return false
+        (length(x.m)==length(y.m)) || return false
         isApproxEqual(x.m,y.m) || return false
     elseif isValid(x.xi) && isValid(y.xi)
-        (length(x.xi)==length(x.xi)) || return false
+        (length(x.xi)==length(y.xi)) || return false
         isApproxEqual(x.xi,y.xi) || return false
     else
         ensureParameter!(x, Val{:m}); ensureParameter!(y, Val{:m});
-        (length(x.m)==length(x.m)) || return false
+        (length(x.m)==length(y.m)) || return false
         isApproxEqual(x.m,y.m) || return false
     end
 
     # Check V or W
     if isValid(x.V) && isValid(y.V)
-        (length(x.V)==length(x.V)) || return false
+        (length(x.V)==length(y.V)) || return false
         isApproxEqual(x.V,y.V) || return false
     elseif isValid(x.W) && isValid(y.W)
-        (length(x.W)==length(x.W)) || return false
+        (length(x.W)==length(y.W)) || return false
         isApproxEqual(x.W,y.W) || return false
     else
         ensureParameter!(x, Val{:V}); ensureParameter!(y, Val{:V});
-        (length(x.V)==length(x.V)) || return false
+        (length(x.V)==length(y.V)) || return false
         isApproxEqual(x.V,y.V) || return false
     end
 
