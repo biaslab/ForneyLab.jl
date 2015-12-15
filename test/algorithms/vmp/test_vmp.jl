@@ -15,10 +15,3 @@ facts("VMP.collectInbounds() tests") do
         @fact VMP.collectInbounds(n(:node).i[:out]) --> (3, [vague(NormalGammaDistribution), vague(NormalGammaDistribution), nothing])
     end
 end
-
-# Test VMP specific functionality
-include("test_q_distribution.jl")
-include("test_q_factorization.jl")
-include("test_subgraph.jl")
-include("test_generate_schedule.jl")
-include("test_message_passing.jl")

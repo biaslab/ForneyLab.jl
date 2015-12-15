@@ -482,6 +482,48 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
     return g
 end
 
+function initializeMvGaussianNodeChain(y::Array{Float64, 2})
+    # Set up a chain of Gaussian nodes for mean-precision estimation
+    #
+    #     [gam_0]-------->[=]---------->[=]---->    -->[gam_N]
+    #                      |             |     etc...
+    #     [m_0]-->[=]---------->[=]------------>    -->[m_N]
+    #          q(m)| q(gam)|     |       |
+    #              -->[N]<--     -->[N]<--
+    #                  | q(y)        |
+    #                  v             v
+    #                [y_1]         [y_2]
+
+    g = FactorGraph()
+    # Initial settings
+    n_samples = size(y, 1) # Number of observed samples
+
+    # Build graph
+    for sec=1:n_samples
+        GaussianNode(form=:precision, id=:g*sec)
+        EqualityNode(id=:m_eq*sec) # Equality node chain for mean
+        EqualityNode(id=:gam_eq*sec) # Equality node chain for precision
+        TerminalNode(MvGaussianDistribution(m=vec(y[sec, :]), V=tiny*eye(2)), id=:y*sec) # Observed y values are stored in terminal node
+        Edge(n(:g*sec).i[:out], n(:y*sec).i[:out], MvGaussianDistribution, id=:q_y*sec)
+        Edge(n(:m_eq*sec).i[3], n(:g*sec).i[:mean], MvGaussianDistribution, id=:q_m*sec)
+        Edge(n(:gam_eq*sec).i[3], n(:g*sec).i[:precision], WishartDistribution, id=:q_gam*sec)
+        if sec > 1 # Connect sections
+            Edge(n(:m_eq*(sec-1)).i[2], n(:m_eq*sec).i[1], MvGaussianDistribution)
+            Edge(n(:gam_eq*(sec-1)).i[2], n(:gam_eq*sec).i[1], WishartDistribution)
+        end
+    end
+    # Attach beginning and end nodes
+    TerminalNode(vague(MvGaussianDistribution, dim=2), id=:m0) # Prior
+    TerminalNode(vague(WishartDistribution, dim=2), id=:gam0) # Unifirm prior
+    TerminalNode(vague(MvGaussianDistribution, dim=2), id=:mN)
+    TerminalNode(vague(WishartDistribution, dim=2), id=:gamN) # Uniform
+    Edge(n(:m0).i[:out], n(:m_eq1).i[1])
+    Edge(n(:gam0).i[:out], n(:gam_eq1).i[1])
+    Edge(n(:m_eq*n_samples).i[2], n(:mN).i[:out])
+    Edge(n(:gam_eq*n_samples).i[2], n(:gamN).i[:out])
+
+    return g
+end
 
 #############
 # Validations

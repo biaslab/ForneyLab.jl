@@ -9,6 +9,3 @@ facts("SumProduct.collectInbounds() tests") do
         @fact SumProduct.collectInbounds(n(:gec_node).i[:out]) --> (3, [n(:gec_node).i[:in1].partner.message, n(:gec_node).i[:in2].partner.message, nothing])
     end
 end
-
-# Test SumProduct specific functionality
-include("test_generate_schedule.jl")

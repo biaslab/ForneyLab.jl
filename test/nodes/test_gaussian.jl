@@ -115,6 +115,12 @@ facts("GaussianNode unit tests") do
                                         [nothing, GammaDistribution(a=3.0, b=1.0), GaussianDistribution(m=2.0, V=0.1)],
                                         GaussianDistribution(m=2.0, W=3.0),
                                         ForneyLab.vmp!)
+                # Mv Precision
+                validateOutboundMessage(GaussianNode(form=:precision),
+                                        1,
+                                        [nothing, WishartDistribution(V=[1.0 0.0; 0.0 2.0], nu=2.0), MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.0; 0.0 2.0])],
+                                        MvGaussianDistribution(m=[1.0, 2.0], W=[2.0 0.0; 0.0 4.0]),
+                                        ForneyLab.vmp!)
                 # Log-Variance
                 validateOutboundMessage(GaussianNode(form=:log_variance),
                                         1,
@@ -135,6 +141,12 @@ facts("GaussianNode unit tests") do
                                         2,
                                         [GaussianDistribution(m=4.0, W=2.0), nothing, GaussianDistribution(m=2.0, V=0.1)],
                                         GammaDistribution(a=1.5, b=2.3),
+                                        ForneyLab.vmp!)
+                # MvPrecision
+                validateOutboundMessage(GaussianNode(form=:precision),
+                                        2,
+                                        [MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.0; 0.0 2.0]), nothing, MvGaussianDistribution(m=[3.0, 4.0], V=[1.0 0.0; 0.0 2.0])],
+                                        WishartDistribution(V=[1.0/6.0 0.0; 0.0 1.0/8.0], nu=3.0),
                                         ForneyLab.vmp!)
                 # Log-Variance
                 validateOutboundMessage(GaussianNode(form=:log_variance),
@@ -172,11 +184,19 @@ facts("GaussianNode unit tests") do
                                         [GaussianDistribution(), GammaDistribution(), nothing],
                                         GaussianDistribution(m=0.0, W=1.0),
                                         ForneyLab.vmp!)
+                # Mv Precision
+                validateOutboundMessage(GaussianNode(form=:precision),
+                                        3,
+                                        [MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.0; 0.0 2.0]), WishartDistribution(V=[1.0 0.0; 0.0 2.0], nu=2.0), nothing],
+                                        MvGaussianDistribution(m=[1.0, 2.0], W=[2.0 0.0; 0.0 4.0]),
+                                        ForneyLab.vmp!)
+                # Log variance
                 validateOutboundMessage(GaussianNode(form=:log_variance),
                                         3,
                                         [GaussianDistribution(m=2.0, V=0.1), GaussianDistribution(m=3.0, V=2.0), nothing],
                                         GaussianDistribution(m=2.0, V=exp(4.0)),
                                         ForneyLab.vmp!)
+                # Variance
                 validateOutboundMessage(GaussianNode(form=:moment),
                                         3,
                                         [GaussianDistribution(), InverseGammaDistribution(a=2.0, b=1.0), nothing],

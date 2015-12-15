@@ -31,7 +31,7 @@ function vagueQDistributions(f::QFactorization)
             end
             # From the distribution types of the marginals on the internal edges we can deduce the unknown marginal types
             if length(internal_interfaces) == 1
-                # Univariate
+                # Approximate marginal over single edge
                 if internal_interfaces[1].edge.distribution_type != Any
                     marginal_type = internal_interfaces[1].edge.distribution_type
                 else
@@ -40,7 +40,7 @@ function vagueQDistributions(f::QFactorization)
             elseif length(internal_interfaces) == 0
                 error("The list of internal edges at node $(node) is empty, check your graph definition.")
             else
-                # Multivariate
+                # Approximate marginal over multiple edges
                 internal_incoming_message_types = [interface.edge.distribution_type for interface in internal_interfaces]
                 marginal_type = getMarginalType(internal_incoming_message_types...)
             end

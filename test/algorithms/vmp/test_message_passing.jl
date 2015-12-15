@@ -58,6 +58,33 @@ facts("Naive VMP implementation integration tests") do
         @fact round(1/gam_out.b, 4) --> 0.2005 # Scale
     end
 
+    context("Gaussian node mean precision batch estimation for multivariate distributions") do
+        # Fixed observations drawn from N(5.0, 2.0)
+        data_1 = [4.9411489951651735,4.4083330961647595,3.535639074214823,2.1690761263145855,4.740705436131505,5.407175878845115,3.6458623443189957,5.132115496214244,4.485471215629411,5.342809672818667]
+        # Fixed observations drawn from N(2.0, 0.5)
+        data_2 = [2.317991577739536,2.8244768760034407,1.2501129068467165,2.5729664094889424,3.05374531248249,1.5149856277603246,2.3119227037528614,2.0264643318813644,1.6248999854457278,0.7425070466631876]
+        data = hcat(data_1, data_2)
+        
+        initializeMvGaussianNodeChain(data)
+        n_sections = size(data, 1)
+
+        m_buffer = attachWriteBuffer(n(:m_eq*n_sections).i[2])
+        gam_buffer = attachWriteBuffer(n(:gam_eq*n_sections).i[2])
+
+        # Apply mean field factorization
+        algo = VMP.Algorithm(n_iterations=50)
+
+        # Perform vmp updates
+        step(algo)
+
+        # Check the results against the outcome of similar Infer.NET script
+        m_out = m_buffer[end]
+        gam_out = gam_buffer[end]
+
+        # TODO: Initializing the vague multivariate recognition distributions
+        @fact true --> false
+    end
+
     context("Gaussian node mean precision online estimation") do
         # Integration test for the VMP implementation by trying to estimate the mean and precision of a Gaussian
         # and comparing the outcome against the outcome of the Infer.NET framework
