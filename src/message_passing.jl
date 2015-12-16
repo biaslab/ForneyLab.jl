@@ -8,11 +8,10 @@ function execute(schedule_entry::ScheduleEntry)
     # Calculate the outbound message based on the inbound messages and the message calculation rule.
     # The resulting message is stored in the specified interface and is returned.
 
-    outbound_interface = schedule_entry.interface
-    node = outbound_interface.node
+    outbound_interface = schedule_entry.node.interfaces[schedule_entry.outbound_interface_id]
 
     # Evaluate message calculation rule
-    (rule, outbound_message) = schedule_entry.execute()
+    (rule, outbound_message) = schedule_entry.rule(schedule_entry.node, Val{schedule_entry.outbound_interface_id}, schedule_entry.rule_arguments...)
 
     # Post processing?
     if isdefined(schedule_entry, :post_processing)
@@ -21,7 +20,7 @@ function execute(schedule_entry::ScheduleEntry)
             # Wrap the output in a DeltaDistribution before packing it in a Message
             post_processed_output = DeltaDistribution(post_processed_output)
         end
-        outbound_message = node.interfaces[outbound_interface_index].message = Message(post_processed_output)
+        outbound_message = outbound_interface.message = Message(post_processed_output)
     end
 
     # Print output for debugging
