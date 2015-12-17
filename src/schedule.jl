@@ -3,16 +3,14 @@ export ScheduleEntry, Schedule, setPostProcessing!
 type ScheduleEntry
     node::Node
     outbound_interface_id::Int64
-    rule::Function  # For example sumProduct! or vmp!.
-    rule_arguments::Vector{DataType}
+    rule::Function  # Refers to the general message calculation rule; for example sumProduct! or vmp!.
+    inbound_types::Vector{DataType}
+    outbound_type::Type{ProbabilityDistribution}
+    execute::Function # Compiled rule call: () -> rule(node, Val{outbound_interface_id}, rule_arguments...)
     post_processing::Function
 
     function ScheduleEntry(node::Node, outbound_interface_id::Int64, rule::Function)
         return self = new(node, outbound_interface_id, rule)
-    end
-
-    function ScheduleEntry(node::Node, outbound_interface_id::Int64, rule::Function, rule_arguments::Vector{DataType})
-        return self = new(node, outbound_interface_id, rule, rule_arguments)
     end
 end
 
@@ -27,8 +25,11 @@ Base.deepcopy(::ScheduleEntry) = error("deepcopy(::ScheduleEntry) is not possibl
 
 function Base.copy(src::ScheduleEntry)
     duplicate = ScheduleEntry(src.node, src.outbound_interface_id, src.rule)
-    if isdefined(src, :rule_arguments)
-        duplicate.rule_arguments = copy(src.rule_arguments)
+    if isdefined(src, :inbound_types)
+        duplicate.inbound_types = copy(src.inbound_types)
+    end
+    if isdefined(src, :outbound_type)
+        duplicate.outbound_type = src.outbound_type
     end
     if isdefined(src, :post_processing)
         duplicate.post_processing = src.post_processing
@@ -71,8 +72,8 @@ function show(io::IO, schedule_entry::ScheduleEntry)
     interface = node.interfaces[schedule_entry.outbound_interface_id]
     interface_handle = (handle(interface)!="") ? "($(handle(interface)))" : ""
     println(io, replace("$(schedule_entry.rule) on $(typeof(node)) $(interface.node.id) interface $(schedule_entry.outbound_interface_id) $(interface_handle)", "ForneyLab.", ""))
-    if isdefined(schedule_entry, :rule_arguments)
-        println(io, replace("$(schedule_entry.rule_arguments[1:end-1]) -> $(schedule_entry.rule_arguments[end])", "ForneyLab.", ""))
+    if isdefined(schedule_entry, :inbound_types) && isdefined(schedule_entry, :outbound_type)
+        println(io, replace("$(schedule_entry.inbound_types) -> Message{$(schedule_entry.outbound_type)}", "ForneyLab.", ""))
     end
     if isdefined(schedule_entry, :post_processing)
         println(io, replace("Post processing: $(schedule_entry.post_processing)", "ForneyLab.", ""))

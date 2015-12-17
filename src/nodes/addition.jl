@@ -45,50 +45,75 @@ isDeterministic(::AdditionNode) = true
 ############################################
 
 # Message towards OUT
-function sumProduct!(node::AdditionNode,
-                            outbound_interface_index::Int,
-                            msg_in1::Message{GaussianDistribution},
-                            msg_in2::Message{GaussianDistribution},
-                            msg_out::Void)
-    # Check well convergence of calculation rule in case of improper inputs
+function sumProduct!(   node::AdditionNode,
+                        outbound_interface_index::Type{Val{3}},
+                        msg_in1::Message{GaussianDistribution},
+                        msg_in2::Message{GaussianDistribution},
+                        msg_out::Any,
+                        outbound_dist::GaussianDistribution)
+
+    # Check convergence of calculation rule in case of improper inputs
     if ensureParameters!(msg_in1.payload, (:m, :W)).W + ensureParameters!(msg_in2.payload, (:m, :W)).W <= 0
         error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s)")
     end
-    dist_out = ensureMessage!(node.i[:out], GaussianDistribution).payload
-    dist_out.m = ensureParameters!(msg_in1.payload, (:m, :V)).m + ensureParameters!(msg_in2.payload, (:m, :V)).m
-    dist_out.V = msg_in1.payload.V + msg_in2.payload.V
-    dist_out.W = NaN
-    dist_out.xi = NaN
+    dist_in1 = ensureParameters!(msg_in1.payload, (:m, :V))
+    dist_in2 = ensureParameters!(msg_in2.payload, (:m, :V))
+    outbound_dist.m = dist_in1.m + dist_in2.m
+    outbound_dist.V = dist_in1.V + dist_in2.V
+    outbound_dist.W = NaN
+    outbound_dist.xi = NaN
 
     return (:addition_gaussian_forward,
-            node.interfaces[outbound_interface_index].message)
+            node.interfaces[3].message)
 end
 
-# Message towards IN1 or IN2
+# Message towards IN2
 function sumProduct!(   node::AdditionNode,
-                        outbound_interface_index::Int,
+                        outbound_interface_index::Type{Val{2}},
                         msg_in1::Message{GaussianDistribution},
-                        ::Void,
-                        msg_out::Message{GaussianDistribution})
-    # Check well convergence of calculation rule in case of improper inputs
+                        msg_in2::Any,
+                        msg_out::Message{GaussianDistribution},
+                        outbound_dist::GaussianDistribution)
+
+    # Check convergence of calculation rule in case of improper inputs
     if ensureParameters!(msg_in1.payload, (:m, :W)).W + ensureParameters!(msg_out.payload, (:m, :W)).W <= 0
         error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s)")
     end
-    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-    dist_result.m = ensureParameters!(msg_out.payload, (:m, :V)).m - ensureParameters!(msg_in1.payload, (:m, :V)).m
-    dist_result.V = msg_in1.payload.V + msg_out.payload.V
-    dist_result.W = NaN
-    dist_result.xi = NaN
+    dist_in1 = ensureParameters!(msg_in1.payload, (:m, :V))
+    dist_out = ensureParameters!(msg_out.payload, (:m, :V))
+    outbound_dist.m = dist_in1.m - dist_out.m
+    outbound_dist.V = dist_in1.V + dist_out.V
+    outbound_dist.W = NaN
+    outbound_dist.xi = NaN
 
     return (:addition_gaussian_backward,
-            node.interfaces[outbound_interface_index].message)
+            node.interfaces[2].message)
 end
 
-sumProduct!(node::AdditionNode,
-            outbound_interface_index::Int,
-            ::Void,
-            msg_in2::Message{GaussianDistribution},
-            msg_out::Message{GaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_in2, nothing, msg_out)
+# Message towards IN1
+function sumProduct!(   node::AdditionNode,
+                        outbound_interface_index::Type{Val{1}},
+                        msg_in1::Any,
+                        msg_in2::Message{GaussianDistribution},
+                        msg_out::Message{GaussianDistribution},
+                        outbound_dist::GaussianDistribution)
+
+    outbound_interface_index = outbound_interface_index.parameters[1]
+
+    # Check convergence of calculation rule in case of improper inputs
+    if ensureParameters!(msg_in2.payload, (:m, :W)).W + ensureParameters!(msg_out.payload, (:m, :W)).W <= 0
+        error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s)")
+    end
+    dist_in2 = ensureParameters!(msg_in2.payload, (:m, :V))
+    dist_out = ensureParameters!(msg_out.payload, (:m, :V))
+    outbound_dist.m = dist_in2.m - dist_out.m
+    outbound_dist.V = dist_in2.V + dist_out.V
+    outbound_dist.W = NaN
+    outbound_dist.xi = NaN
+
+    return (:addition_gaussian_backward,
+            node.interfaces[1].message)
+end
 
 
 #############################################

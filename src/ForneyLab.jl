@@ -8,6 +8,7 @@ export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateP
 export sumProduct!, ep!, vmp!
 export vague, self, ==, isProper, sample
 export setVerbosity
+export prepare!
 
 # Verbosity
 verbose = false

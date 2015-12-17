@@ -11,7 +11,7 @@ function execute(schedule_entry::ScheduleEntry)
     outbound_interface = schedule_entry.node.interfaces[schedule_entry.outbound_interface_id]
 
     # Evaluate message calculation rule
-    (rule, outbound_message) = schedule_entry.rule(schedule_entry.node, Val{schedule_entry.outbound_interface_id}, schedule_entry.rule_arguments...)
+    (rule, outbound_message) = schedule_entry.execute()
 
     # Post processing?
     if isdefined(schedule_entry, :post_processing)

@@ -15,7 +15,7 @@ end
 
 show(io::IO, f::QFactorization) = println(io, "QFactorization with $(length(f.factors)) factors")
 
-function vagueQDistributions(f::QFactorization)
+function vagueQDistributions(f::QFactorization) # Initialize
     # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
 
     q_distributions = Dict{Tuple{Node, Subgraph}, QDistribution}()
@@ -52,7 +52,7 @@ function vagueQDistributions(f::QFactorization)
     return q_distributions
 end
 
-function vagueQDistributions!(q_distributions::Dict{Tuple{Node,Subgraph},QDistribution})
+function vagueQDistributions!(q_distributions::Dict{Tuple{Node,Subgraph},QDistribution}) # Reset
     # Before starting a new iteration, the q-distributions should be reset to vague
     for q_distribution in values(q_distributions)
         q_distribution.distribution = vague(typeof(q_distribution.distribution)) # Set to vague

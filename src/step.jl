@@ -84,11 +84,14 @@ end
 
 function execute(algorithm::InferenceAlgorithm)
     # Call algorithm's execute function with itself as argument
+    # prepare!(algorithm) should always be called before the first call to execute(algorithm)
+
     return algorithm.execute(algorithm)
 end
 
 function step(algorithm::InferenceAlgorithm)
     # Execute algorithm for 1 timestep.
+    # prepare!(algorithm) should always be called before the first call to step(algorithm)
 
     # Read buffers
     for (terminal_node, read_buffer) in currentGraph().read_buffers
@@ -118,6 +121,7 @@ end
 
 function run(algorithm::InferenceAlgorithm)
     # Call step(algorithm) repeatedly until at least one read buffer is exhausted
+    prepare!(algorithm)
     if length(currentGraph().read_buffers) > 0
         while !any(isempty, values(currentGraph().read_buffers))
             step(algorithm)
