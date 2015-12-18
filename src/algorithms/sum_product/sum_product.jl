@@ -72,13 +72,13 @@ function inferDistributionTypes!(algo::SumProduct)
                 push!(inbound_types, Void)
             else
                 interface = entry.node.interfaces[i]
-                push!(inbound_types, schedule_entries[interface].outbound_type)
+                push!(inbound_types, Message{schedule_entries[interface.partner].outbound_type})
             end
         end
 
         # Find all compatible calculation rules
-        available_rules = methods(sumProduct!, [typeof(entry.node), Type{Val{entry.outbound_interface_id}}, inbound_types, Any])
-        outbound_types = [rule.sig.types[end].parameters[1] for rule in available_rules]
+        available_rules = methods(sumProduct!, [typeof(entry.node); Type{Val{entry.outbound_interface_id}}; inbound_types; Any])
+        outbound_types = [rule.sig.types[end] for rule in available_rules]
 
         # The oubound outbound_types should contain just one element (there should be just one available)
         if length(outbound_types) == 0
@@ -87,12 +87,15 @@ function inferDistributionTypes!(algo::SumProduct)
             error("Multiple outbound type possibilities ($(outbound_types)) for inbound types $(inbound_types).\n$(entry)")
         elseif outbound_types[1] == Any
             # The computation rule produces Any, which indicates that the node is parametrized by its outbound type (e.g. a TerminalNode)
-            (entry.node.parameters[1] <: ProbabilityDistribution) || error("$(typeof(entry.node)) $(entry.node.id) must be parametrized by a ProbabilityDistribution")
-            entry.outbound_type = entry.node.parameters[1]
-        else
+            (typeof(entry.node).parameters[1] <: ProbabilityDistribution) || error("$(typeof(entry.node)) $(entry.node.id) must be parametrized by a ProbabilityDistribution")
+            entry.outbound_type = typeof(entry.node).parameters[1]
+        elseif outbound_types[1] <: ProbabilityDistribution
             entry.outbound_type = outbound_types[1]
+        else
+            error("Unknown output of message calculation rule: $(outbound_types[1])\n$(entry)")
         end
 
+        entry.inbound_types = inbound_types # Save inbound types on schedule entry
         schedule_entries[outbound_interface] = entry # Assign schedule entry to lookup dictionary
     end
 

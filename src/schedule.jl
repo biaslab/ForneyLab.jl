@@ -5,7 +5,7 @@ type ScheduleEntry
     outbound_interface_id::Int64
     rule::Function  # Refers to the general message calculation rule; for example sumProduct! or vmp!.
     inbound_types::Vector{DataType}
-    outbound_type::Type{ProbabilityDistribution}
+    outbound_type::DataType
     execute::Function # Compiled rule call: () -> rule(node, Val{outbound_interface_id}, rule_arguments...)
     post_processing::Function
 
