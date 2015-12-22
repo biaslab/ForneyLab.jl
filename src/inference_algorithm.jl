@@ -17,4 +17,4 @@ function compile!(schedule::Schedule, algorithm::InferenceAlgorithm)
     return schedule
 end
 
-compile!(schedule_entry::ScheduleEntry, algorithm::InferenceAlgorithm) = compile!(schedule_entry, Val{symbol(schedule_entry.message_calculation_rule)}, algorithm)
+compile!(schedule_entry::ScheduleEntry, algorithm::InferenceAlgorithm) = compile!(schedule_entry, Val{symbol(schedule_entry.rule)}, algorithm)

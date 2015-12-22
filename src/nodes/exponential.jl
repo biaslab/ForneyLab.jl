@@ -44,39 +44,35 @@ isDeterministic(::ExponentialNode) = true
 # Standard update functions
 ############################################
 
-# Forward message
 function sumProduct!(   node::ExponentialNode,
-                        outbound_interface_index::Int,
+                        outbound_interface_index::Type{Val{2}},
                         msg_in::Message{GaussianDistribution},
-                        msg_out::Void)
+                        msg_out::Any,
+                        outbound_dist::LogNormalDistribution)
 
     isProper(msg_in.payload) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.i[:out], LogNormalDistribution).payload
     ensureParameters!(msg_in.payload, (:m, :V))
 
-    dist_out.m = msg_in.payload.m
-    dist_out.s = msg_in.payload.V
+    outbound_dist.m = msg_in.payload.m
+    outbound_dist.s = msg_in.payload.V
 
-    return (:exponential_forward_gaussian,
-            node.interfaces[outbound_interface_index].message)
+    return outbound_dist
 end
 
-# Backward message
 function sumProduct!(   node::ExponentialNode,
-                        outbound_interface_index::Int,
-                        msg_in::Void,
-                        msg_out::Message{LogNormalDistribution})
+                        outbound_interface_index::Type{Val{1}},
+                        msg_in::Any,
+                        msg_out::Message{LogNormalDistribution},
+                        outbound_dist::GaussianDistribution)
 
     isProper(msg_out.payload) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.i[:in], GaussianDistribution).payload
 
-    dist_out.m = msg_out.payload.m
-    dist_out.V = msg_out.payload.s
-    dist_out.W = NaN
-    dist_out.xi = NaN
+    outbound_dist.m = msg_out.payload.m
+    outbound_dist.V = msg_out.payload.s
+    outbound_dist.W = NaN
+    outbound_dist.xi = NaN
 
-    return (:exponential_backward_gaussian,
-            node.interfaces[outbound_interface_index].message)
+    return outbound_dist
 end
 
 
@@ -84,28 +80,22 @@ end
 # DeltaDistribution update functions
 ############################################
 
-# Forward message
 function sumProduct!(   node::ExponentialNode,
-                        outbound_interface_index::Int,
+                        outbound_interface_index::Type{Val{2}},
                         msg_in::Message{DeltaDistribution{Float64}},
-                        msg_out::Void)
-    dist_out = ensureMessage!(node.i[:out], DeltaDistribution{Float64}).payload
+                        msg_out::Any,
+                        outbound_dist::DeltaDistribution{Float64})
 
-    dist_out.m = exp(msg_in.payload.m)
-
-    return (:exponential_forward_delta,
-            node.interfaces[outbound_interface_index].message)
+    outbound_dist.m = exp(msg_in.payload.m)
+    return outbound_dist
 end
 
-# Backward message
 function sumProduct!(   node::ExponentialNode,
-                        outbound_interface_index::Int,
-                        msg_in::Void,
-                        msg_out::Message{DeltaDistribution{Float64}})
-    dist_out = ensureMessage!(node.i[:in], DeltaDistribution{Float64}).payload
+                        outbound_interface_index::Type{Val{1}},
+                        msg_in::Any,
+                        msg_out::Message{DeltaDistribution{Float64}},
+                        outbound_dist::DeltaDistribution{Float64})
 
-    dist_out.m = log(msg_out.payload.m)
-
-    return (:exponential_backward_delta,
-            node.interfaces[outbound_interface_index].message)
+    outbound_dist.m = log(msg_out.payload.m)
+    return outbound_dist
 end

@@ -48,10 +48,9 @@ function sumProduct!(   node::TerminalNode,
                         outbound_interface_index::Type{Val{1}},
                         ::Any,
                         ::Any)
+
     # Send out node.value
     ensureMessage!(node.interfaces[1], typeof(node.value))
     node.interfaces[1].message.payload = node.value
-
-    return (:terminal_forward,
-            node.interfaces[1].message)
+    return node.interfaces[1].message.payload
 end

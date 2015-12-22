@@ -109,7 +109,7 @@ function prepare!(algo::SumProduct)
     end
 
     # Compile the schedule (define schedule_entry.execute)
-    compile!(algo.schedule)
+    compile!(algo.schedule, algo)
 
     return algo
 end
@@ -133,7 +133,7 @@ function compile!(schedule_entry::ScheduleEntry, ::Type{Val{symbol("ForneyLab.su
         end
     end
     # Add outbound distribution to rule_arguments
-    push!(rule_arguments, interface.message.payload)
+    push!(rule_arguments, node.interfaces[outbound_interface_id].message.payload)
 
     # Assign the "compiled" computation rule as an anomynous function to schedule entry.execute
     schedule_entry.execute = ( () -> sumProduct!(node, Val{outbound_interface_id}, rule_arguments...) )

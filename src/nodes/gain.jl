@@ -62,158 +62,176 @@ end
 
 isDeterministic(::GainNode) = true
 
+
 ############################################
 # GaussianDistribution methods
 ############################################
 
-# Backward Gaussian to IN
 function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Int,
-                        ::Void,
-                        msg_out::Message{GaussianDistribution})
-    (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-    dist_2 = ensureParameters!(msg_out.payload, (:xi, :W))
-    dist_1.xi = node.gain[1,1] * dist_2.xi
-    dist_1.W = (node.gain[1,1])^2 * dist_2.W
-    dist_1.m = dist_1.V = NaN
+                        outbound_interface_index::Type{Val{1}},
+                        msg_in::Any,
+                        msg_out::Message{GaussianDistribution},
+                        outbound_dist::GaussianDistribution)
+
+    dist_out = ensureParameters!(msg_out.payload, (:xi, :W))
+
+    outbound_dist.m = NaN
+    outbound_dist.V = NaN
+    outbound_dist.xi = node.gain[1,1] * dist_out.xi
+    outbound_dist.W = (node.gain[1,1])^2 * dist_out.W
+
+    return outbound_dist
+end
+
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_in::Message{GaussianDistribution},
+                        msg_out::Any,
+                        outbound_dist::GaussianDistribution)
+
+    dist_in = ensureParameters!(msg_in.payload, (:m, :V))
+
+    outbound_dist.m = node.gain[1,1] * dist_in.m
+    outbound_dist.V = (node.gain[1,1])^2 * dist_in.V
+    outbound_dist.xi = NaN
+    outbound_dist.W = NaN
+
+    return outbound_dist
+end
+
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_in::Message{GaussianDistribution},
+                        msg_out::Any,
+                        msg_gain::Message{DeltaDistribution{Float64}},
+                        outbound_dist::GaussianDistribution)
+
+    dist_in = ensureParameters!(msg_in.payload, (:m, :V))
+    gain_dist = msg_gain.payload
+
+    outbound_dist.m = gain_dist.m * dist_in.m
+    outbound_dist.V = (gain_dist.m)^2 * dist_in.V
+    outbound_dist.xi = NaN
+    outbound_dist.W = NaN
+
+    return outbound_dist
+end
+
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{1}},
+                        msg_in::Any,
+                        msg_out::Message{GaussianDistribution},
+                        msg_gain::Message{DeltaDistribution{Float64}},
+                        outbound_dist::GaussianDistribution)
+
+    dist_out = ensureParameters!(msg_out.payload, (:xi, :W))
+    gain_dist = msg_gain.payload
+
+    outbound_dist.m = NaN
+    outbound_dist.V = NaN
+    outbound_dist.xi = gain_dist.m * dist_out.xi
+    outbound_dist.W = (gain_dist.m)^2 * dist_out.W
 
     return (:gain_gaussian_backward,
-            node.interfaces[outbound_interface_index].message)
-end
-
-# Forward Gaussian to OUT
-function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Int,
-                        msg_in::Message{GaussianDistribution},
-                        ::Void)
-    (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-    dist_1 = ensureParameters!(msg_in.payload, (:m, :V))
-    dist_2.m = node.gain[1,1] * dist_1.m
-    dist_2.V = (node.gain[1,1])^2 * dist_1.V
-    dist_2.xi = dist_2.W = NaN
-
-    return (:gain_gaussian_forward,
-            node.interfaces[outbound_interface_index].message)
-end
-
-# Forward Gaussian to OUT if gain is present on the edge
-function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Int,
-                        msg_in::Message{GaussianDistribution},
-                        ::Void,
-                        msg_gain::Message{DeltaDistribution{Float64}})
-  (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-
-  dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-  dist_1 = ensureParameters!(msg_in.payload, (:m, :V))
-  gain_dist = msg_gain.payload
-
-  dist_2.m = gain_dist.m * dist_1.m
-  dist_2.V = (gain_dist.m)^2 * dist_1.V
-  dist_2.xi = dist_2.W = NaN
-
-  return (:gain_gaussian_forward,
           node.interfaces[outbound_interface_index].message)
 end
 
-# Backward Gaussian to IN if gain is present on the edge
-function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Int,
-                        ::Void,
-                        msg_out::Message{GaussianDistribution},
-                        msg_gain::Message{DeltaDistribution{Float64}})
-
-  (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-  dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-  dist_2 = ensureParameters!(msg_out.payload, (:xi, :W))
-  gain_dist = msg_gain.payload
-
-  dist_1.xi = gain_dist.m * dist_2.xi
-  dist_1.W = (gain_dist.m)^2 * dist_2.W
-  dist_1.m = dist_1.V = NaN
-
-  return (:gain_gaussian_backward,
-          node.interfaces[outbound_interface_index].message)
-end
 
 ############################################
 # DeltaDistribution methods
 ############################################
 
-# Backward DeltaDistribution to IN
-function sumProduct!(node::GainNode,
-                     outbound_interface_index::Int,
-                     ::Void,
-                     msg_out::Message{DeltaDistribution{Float64}})
-    (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
-    dist_1.m = node.gain_inv[1,1] * msg_out.payload.m
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Tyoe{Val{1}},
+                        msg_in::Any,
+                        msg_out::Message{DeltaDistribution{Float64}},
+                        outbound_dist::DeltaDistribution{Float64})
 
-    return (:gain_delta_backward,
-            node.interfaces[outbound_interface_index].message)
+    outbound_dist.m = node.gain_inv[1,1] * msg_out.payload.m
+    return outbound_dist
 end
 
 function sumProduct!(node::GainNode,
-                     outbound_interface_index::Int,
-                     ::Void,
+                     outbound_interface_index::Type{Val{1}},
+                     msg_in::Any,
                      msg_out::Message{DeltaDistribution{Float64}},
-                     msg_gain::Message{DeltaDistribution{Float64}})
-    (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
-    dist_1.m = msg_out.payload.m / msg_gain.payload.m
+                     msg_gain::Message{DeltaDistribution{Float64}},
+                     outbound_dist::DeltaDistribution{Float64})
 
-    return (:gain_delta_backward,
-            node.interfaces[outbound_interface_index].message)
+    outbound_dist.m = msg_out.payload.m / msg_gain.payload.m
+    return outbound_dist
 end
 
 # Forward DeltaDistribution to OUT
 function sumProduct!(node::GainNode,
-                     outbound_interface_index::Int,
+                     outbound_interface_index::Type{Val{2}},
                      msg_in::Message{DeltaDistribution{Float64}},
-                     ::Void)
-    (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
-    dist_2.m = node.gain[1,1] * msg_in.payload.m
+                     msg_out::Any,
+                     outbound_dist::DeltaDistribution{Float64})
 
-    return (:gain_delta_forward,
-            node.interfaces[outbound_interface_index].message)
+    outbound_dist.m = node.gain[1,1] * msg_in.payload.m
+    return outbound_dist
 end
 
 function sumProduct!(node::GainNode,
-                     outbound_interface_index::Int,
+                     outbound_interface_index::Type{Val{2}},
                      msg_in::Message{DeltaDistribution{Float64}},
-                     ::Void,
-                     msg_gain::Message{DeltaDistribution{Float64}})
-    (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
-    dist_2.m = msg_gain.payload.m * msg_in.payload.m
+                     msg_out::Any,
+                     msg_gain::Message{DeltaDistribution{Float64}},
+                     outbound_dist::DeltaDistribution{Float64})
 
-    return (:gain_delta_forward,
-            node.interfaces[outbound_interface_index].message)
+    outbound_dist.m = msg_gain.payload.m * msg_in.payload.m
+    return outbound_dist
 end
+
 
 ############################################
 # MvGaussianDistribution methods
 ############################################
 
-# Rule set for backward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-backwardGainMRule{T<:Number}(A_inv::Array{T, 2}, m::Array{T, 1}) = A_inv * m
-backwardGainMRule{T<:Number}(A::Array{T, 2}, m::Array{T, 1}, W::Array{T, 2}) = pinv(A' * W * A) * A' * W * m
-backwardGainVRule{T<:Number}(A_inv::Array{T, 2}, V::Array{T, 2}) = A_inv * V * A_inv'
-backwardGainWRule{T<:Number}(A::Array{T, 2}, W::Array{T, 2}) = A' * W * A
-backwardGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}) = A' * xi
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{1}},
+                        msg_in::Any,
+                        msg_out::Message{MvGaussianDistribution},
+                        outbound_dist::MvGaussianDistribution)
 
-# Rule set for forward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-forwardGainMRule{T<:Number}(A::Array{T, 2}, m::Array{T, 1}) = A * m
-forwardGainVRule{T<:Number}(A::Array{T, 2}, V::Array{T, 2}) = A * V * A'
-forwardGainWRule{T<:Number}(A_inv::Array{T, 2}, W::Array{T, 2}) = A_inv' * W * A_inv
-forwardGainXiRule{T<:Number}(A_inv::Array{T, 2}, xi::Array{T, 1}) = A_inv' * xi
-forwardGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}, V::Array{T, 2}) = pinv(A * V * A') * A * V * xi # Combination of xi and V
+    isProper(msg_out.payload) || error("Improper input distributions are not supported")
+    return gainBackwardRule!(outbound_dist, msg_out.payload, node.gain, isdefined(node, :gain_inv) ? node.gain_inv : nothing)
+end
 
-# Backward Gaussian to IN
-function gainGaussianBackwardRule!(dist_result::MvGaussianDistribution, dist_2::MvGaussianDistribution, A::Any, A_inv::Any=nothing)
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_in::Message{MvGaussianDistribution},
+                        msg_out::Any,
+                        outbound_dist::MvGaussianDistribution)
+
+    isProper(msg_in.payload) || error("Improper input distributions are not supported")
+    return gainForwardRule!(outbound_dist, msg_in.payload, node.gain, isdefined(node, :gain_inv) ? node.gain_inv : nothing)
+end
+
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{1}},
+                        msg_in::Any,
+                        msg_out::Message{MvGaussianDistribution},
+                        msg_gain::Message{DeltaDistribution{Matrix{Float64}}},
+                        outbound_dist::MvGaussianDistribution)
+
+    isProper(msg_out.payload) || error("Improper input distributions are not supported")
+    return gainBackwardRule!(outbound_dist, msg_out.payload, msg_gain.payload.m)
+end
+
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_in::Message{MvGaussianDistribution},
+                        msg_out::Any,
+                        msg_gain::Message{DeltaDistribution{Matrix{Float64}}},
+                        outbound_dist::MvGaussianDistribution)
+
+    isProper(msg_in.payload) || error("Improper input distributions are not supported")
+    return gainForwardRule!(outbound_dist, msg_in.payload, msg_gain.payload.m)
+end
+
+function gainBackwardRule!(dist_result::MvGaussianDistribution, dist_2::MvGaussianDistribution, A::Any, A_inv::Any=nothing)
     # Calculations for a gaussian message type; Korl (2005), table 4.1
     # dist_result = inv(A) * dist_2
 
@@ -249,25 +267,7 @@ function gainGaussianBackwardRule!(dist_result::MvGaussianDistribution, dist_2::
     return dist_result
 end
 
-function sumProduct!(node::GainNode,
-                            outbound_interface_index::Int,
-                            ::Void,
-                            msg_out::Message{MvGaussianDistribution})
-    isProper(msg_out.payload) || error("Improper input distributions are not supported")
-    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
-
-    if outbound_interface_index == 1
-        gainGaussianBackwardRule!(dist_1, msg_out.payload, node.gain, isdefined(node, :gain_inv) ? node.gain_inv : nothing)
-    else
-        error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    end
-
-    return (:gain_gaussian_backward,
-            node.interfaces[outbound_interface_index].message)
-end
-
-# Forward Gaussian to OUT
-function gainGaussianForwardRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDistribution, A::Any, gain_inv::Any=nothing)
+function gainForwardRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDistribution, A::Any, gain_inv::Any=nothing)
     # Calculations for a gaussian message type; Korl (2005), table 4.1
     # dist_result = A * dist_1
 
@@ -303,119 +303,64 @@ function gainGaussianForwardRule!(dist_result::MvGaussianDistribution, dist_1::M
     return dist_result
 end
 
-function sumProduct!(node::GainNode,
-                            outbound_interface_index::Int,
-                            msg_in::Message{MvGaussianDistribution},
-                            ::Void)
-    isProper(msg_in.payload) || error("Improper input distributions are not supported")
-    dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
+# Rule set for backward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
+backwardGainMRule{T<:Number}(A_inv::Array{T, 2}, m::Array{T, 1}) = A_inv * m
+backwardGainMRule{T<:Number}(A::Array{T, 2}, m::Array{T, 1}, W::Array{T, 2}) = pinv(A' * W * A) * A' * W * m
+backwardGainVRule{T<:Number}(A_inv::Array{T, 2}, V::Array{T, 2}) = A_inv * V * A_inv'
+backwardGainWRule{T<:Number}(A::Array{T, 2}, W::Array{T, 2}) = A' * W * A
+backwardGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}) = A' * xi
 
-    if outbound_interface_index == 2
-        # Forward message
-        gainGaussianForwardRule!(dist_2, msg_in.payload, node.gain, isdefined(node, :gain_inv) ? node.gain_inv : nothing)
-    else
-        error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    end
-
-    return (:gain_gaussian_forward,
-            node.interfaces[outbound_interface_index].message)
-end
-
-# Backward Gaussian to IN if gain is present on the edge
-function sumProduct!(node::GainNode,
-                     outbound_interface_index::Int,
-                     ::Void,
-                     msg_out::Message{MvGaussianDistribution},
-                     msg_gain::Message{DeltaDistribution{Matrix{Float64}}})
-
-    isProper(msg_out.payload) || error("Improper input distributions are not supported")
-    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
-
-    if outbound_interface_index == 1
-        # We don't pass the inverse gain because we can't cache it if the gain comes in as a message.
-        gainGaussianBackwardRule!(dist_1, msg_out.payload, msg_gain.payload.m)
-     else
-        error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-     end
-
-     return (:gain_gaussian_forward,
-             node.interfaces[outbound_interface_index].message)
-end
-
-# Forward Gaussian to OUT if gain is present on the edge
-function sumProduct!(node::GainNode,
-                     outbound_interface_index::Int,
-                     msg_in::Message{MvGaussianDistribution},
-                     ::Void,
-                     msg_gain::Message{DeltaDistribution{Matrix{Float64}}})
-
-     isProper(msg_in.payload) || error("Improper input distributions are not supported")
-     dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
-
-     if outbound_interface_index == 2
-         # We don't pass the inverse gain because we can't cache it if the gain comes in as a message.
-         gainGaussianForwardRule!(dist_2, msg_in.payload, msg_gain.payload.m)
-     else
-         error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-     end
-
-     return (:gain_gaussian_forward,
-             node.interfaces[outbound_interface_index].message)
-end
+# Rule set for forward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
+forwardGainMRule{T<:Number}(A::Array{T, 2}, m::Array{T, 1}) = A * m
+forwardGainVRule{T<:Number}(A::Array{T, 2}, V::Array{T, 2}) = A * V * A'
+forwardGainWRule{T<:Number}(A_inv::Array{T, 2}, W::Array{T, 2}) = A_inv' * W * A_inv
+forwardGainXiRule{T<:Number}(A_inv::Array{T, 2}, xi::Array{T, 1}) = A_inv' * xi
+forwardGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}, V::Array{T, 2}) = pinv(A * V * A') * A * V * xi # Combination of xi and V
 
 
 ############################################
 # MvDeltaDistribution methods
 ############################################
 
-# Backward MvDeltaDistribution to IN
-function sumProduct!(node::GainNode,
-                     outbound_interface_index::Int,
-                     ::Void,
-                     msg_out::Message{MvDeltaDistribution{Float64}})
-    (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
-    dist_1.m = node.gain_inv * msg_out.payload.m
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{1}},
+                        msg_in::Any,
+                        msg_out::Message{MvDeltaDistribution{Float64}},
+                        outbound_dist::MvDeltaDistribution{Float64})
 
-    return (:gain_delta_backward,
-            node.interfaces[outbound_interface_index].message)
+    outbound_dist.m = node.gain_inv * msg_out.payload.m
+    return outbound_dist
 end
 
-function sumProduct!(node::GainNode,
-                     outbound_interface_index::Int,
-                     ::Void,
-                     msg_out::Message{MvDeltaDistribution{Float64}},
-                     msg_gain::Message{DeltaDistribution{Matrix{Float64}}})
-    (outbound_interface_index == 1) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    dist_1 = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
-    dist_1.m = inv(msg_gain.payload.m) * msg_out.payload.m
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{1}},
+                        msg_in::Any,
+                        msg_out::Message{MvDeltaDistribution{Float64}},
+                        msg_gain::Message{DeltaDistribution{Matrix{Float64}}},
+                        outbound_dist::MvDeltaDistribution{Float64})
 
-    return (:gain_delta_backward,
-            node.interfaces[outbound_interface_index].message)
+    outbound_dist.m = inv(msg_gain.payload.m) * msg_out.payload.m
+    return outbound_dist
 end
 
 # Forward MvDeltaDistribution to OUT
 function sumProduct!(node::GainNode,
-                     outbound_interface_index::Int,
+                     outbound_interface_index::Type{Val{2}},
                      msg_in::Message{MvDeltaDistribution{Float64}},
-                     ::Void)
-    (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
-    dist_2.m = node.gain * msg_in.payload.m
+                     msg_out::Any,
+                     outbound_dist::MvDeltaDistribution{Float64})
 
-    return (:gain_delta_forward,
-            node.interfaces[outbound_interface_index].message)
+    outbound_dist.m = node.gain * msg_in.payload.m
+    return outbound_dist
 end
 
-function sumProduct!(node::GainNode,
-                     outbound_interface_index::Int,
-                     msg_in::Message{MvDeltaDistribution{Float64}},
-                     ::Void,
-                     msg_gain::Message{DeltaDistribution{Matrix{Float64}}})
-    (outbound_interface_index == 2) || error("Invalid interface id $(outbound_interface_index) for calculating message on $(typeof(node)) $(node.id)")
-    dist_2 = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
-    dist_2.m = msg_gain.payload.m * msg_in.payload.m
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_in::Message{MvDeltaDistribution{Float64}},
+                        msg_out::Any,
+                        msg_gain::Message{DeltaDistribution{Matrix{Float64}}},
+                        outbound_dist::MvDeltaDistribution{Float64})
 
-    return (:gain_delta_forward,
-            node.interfaces[outbound_interface_index].message)
+    outbound_dist.m = msg_gain.payload.m * msg_in.payload.m
+    return outbound_dist
 end
