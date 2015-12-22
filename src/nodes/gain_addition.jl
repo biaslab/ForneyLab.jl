@@ -42,11 +42,8 @@ type GainAdditionNode <: Node
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
-        try
-            self.A_inv = inv(self.A)
-        catch
-            warn("The specified multiplier for $(typeof(self)) $(self.id) is not invertible. This might cause problems. Double check that this is what you want.")
-        end
+        # Precompute inverse of A
+        try self.A_inv = inv(self.A) end
 
         return self
     end
@@ -141,14 +138,14 @@ backwardIn2GainAdditionWRule{T<:Number}(A::Array{T, 2}, W_y::Array{T, 2}, W_z::A
 backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z::Array{T, 1}, W_y::Array{T, 2}, W_z::Array{T, 2}) = xi_z - W_z*A*inv(W_y+A'*W_z*A)*(xi_y+A'*xi_z)
 
 # Forward to OUT
-function sumProduct!(node::GainAdditionNode,
-                            outbound_interface_index::Int,
-                            in1::Message{MvGaussianDistribution},
-                            in2::Message{MvGaussianDistribution},
-                            ::Void)
+function sumProduct!{T<:MvGaussianDistribution}(node::GainAdditionNode,
+                                                outbound_interface_index::Int,
+                                                in1::Message{T},
+                                                in2::Message{T},
+                                                ::Void)
     (isProper(in1.payload) && isProper(in2.payload)) || error("Improper input distributions are not supported")
     if outbound_interface_index == 3
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution{size(node.A, 1)}).payload
 
         dist_1 = in1.payload
         dist_2 = in2.payload
@@ -206,14 +203,14 @@ function sumProduct!(node::GainAdditionNode,
 end
 
 # Backward to IN2
-function sumProduct!(node::GainAdditionNode,
-                            outbound_interface_index::Int,
-                            in1::Message{MvGaussianDistribution},
-                            ::Void,
-                            out::Message{MvGaussianDistribution})
+function sumProduct!{T<:MvGaussianDistribution}(node::GainAdditionNode,
+                                                outbound_interface_index::Int,
+                                                in1::Message{T},
+                                                ::Void,
+                                                out::Message{T})
     (isProper(in1.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")
     if outbound_interface_index == 2
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution{size(node.A_inv, 1)}).payload
 
         dist_1 = in1.payload
         dist_3 = out.payload
@@ -271,16 +268,16 @@ function sumProduct!(node::GainAdditionNode,
 end
 
 # Backward to IN1
-function sumProduct!(node::GainAdditionNode,
-                            outbound_interface_index::Int,
-                            ::Void,
-                            in2::Message{MvGaussianDistribution},
-                            out::Message{MvGaussianDistribution})
+function sumProduct!{T<:MvGaussianDistribution}(node::GainAdditionNode,
+                                                outbound_interface_index::Int,
+                                                ::Void,
+                                                in2::Message{T},
+                                                out::Message{T})
     (isProper(in2.payload) && isProper(out.payload)) || error("Improper input distributions are not supported")
     if outbound_interface_index == 1
-        dist_temp = MvGaussianDistribution()
+        dist_temp = vague(MvGaussianDistribution{size(node.A, 1)})
         additionGaussianBackwardRule!(dist_temp, in2.payload, out.payload)
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
+        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution{size(node.A_inv, 1)}).payload
         fixedGainGaussianBackwardRule!(dist_out, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
 
         return (:gain_addition_gaussian_backward_in1,

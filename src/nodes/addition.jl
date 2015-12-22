@@ -223,12 +223,12 @@ function additionGaussianForwardRule!(dist_result::MvGaussianDistribution, dist_
     return dist_result
 end
 
-function sumProduct!(   node::AdditionNode,
-                        outbound_interface_index::Int,
-                        msg_in1::Message{MvGaussianDistribution},
-                        msg_in2::Message{MvGaussianDistribution},
-                        msg_out::Void)
-    dist_out = ensureMessage!(node.i[:out], MvGaussianDistribution).payload
+function sumProduct!{T<:MvGaussianDistribution}(node::AdditionNode,
+                                                outbound_interface_index::Int,
+                                                msg_in1::Message{T},
+                                                msg_in2::Message{T},
+                                                msg_out::Void)
+    dist_out = ensureMessage!(node.i[:out], MvGaussianDistribution{dimensions(msg_in1)}).payload
 
     additionGaussianForwardRule!(dist_out, msg_in1.payload, msg_in2.payload)
 
@@ -269,19 +269,20 @@ function additionGaussianBackwardRule!(dist_result::MvGaussianDistribution, dist
     return dist_result
 end
 
-function sumProduct!(   node::AdditionNode,
-                        outbound_interface_index::Int,
-                        msg_in1::Message{MvGaussianDistribution},
-                        ::Void,
-                        msg_out::Message{MvGaussianDistribution})
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
+function sumProduct!{T<:MvGaussianDistribution}(node::AdditionNode,
+                                                outbound_interface_index::Int,
+                                                msg_in1::Message{T},
+                                                ::Void,
+                                                msg_out::Message{T})
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution{dimensions(msg_out)}).payload
 
     additionGaussianBackwardRule!(dist_out, msg_in1.payload, msg_out.payload)
 
     return (:addition_gaussian_backward,
             node.interfaces[outbound_interface_index].message)
 end
-sumProduct!(node::AdditionNode, outbound_interface_index::Int, ::Void, msg_in2::Message{MvGaussianDistribution}, msg_out::Message{MvGaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_in2, nothing, msg_out)
+
+sumProduct!{T<:MvGaussianDistribution}(node::AdditionNode, outbound_interface_index::Int, ::Void, msg_in2::Message{T}, msg_out::Message{T}) = sumProduct!(node, outbound_interface_index, msg_in2, nothing, msg_out)
 
 
 #############################################
@@ -289,13 +290,13 @@ sumProduct!(node::AdditionNode, outbound_interface_index::Int, ::Void, msg_in2::
 #############################################
 
 # Message towards OUT
-function sumProduct!(   node::AdditionNode,
-                        outbound_interface_index::Int,
-                        msg_in1::Message{MvDeltaDistribution{Float64}},
-                        msg_in2::Message{MvDeltaDistribution{Float64}},
-                        msg_out::Void)
+function sumProduct!{T<:MvDeltaDistribution{Float64}}(  node::AdditionNode,
+                                                        outbound_interface_index::Int,
+                                                        msg_in1::Message{T},
+                                                        msg_in2::Message{T},
+                                                        msg_out::Void)
     ans = msg_in1.payload.m + msg_in2.payload.m
-    msg_result = ensureMessage!(node.i[:out], MvDeltaDistribution{Float64})
+    msg_result = ensureMessage!(node.i[:out], MvDeltaDistribution{Float64, length(ans)})
     msg_result.payload.m = ans
 
     return (:addition_delta_forward,
@@ -303,20 +304,19 @@ function sumProduct!(   node::AdditionNode,
 end
 
 # Message towards IN1 or IN2
-function sumProduct!(   node::AdditionNode,
-                        outbound_interface_index::Int,
-                        msg_in1::Message{MvDeltaDistribution{Float64}},
-                        ::Void,
-                        msg_out::Message{MvDeltaDistribution{Float64}})
+function sumProduct!{T<:MvDeltaDistribution{Float64}}(  node::AdditionNode,
+                                                        outbound_interface_index::Int,
+                                                        msg_in1::Message{T},
+                                                        ::Void,
+                                                        msg_out::Message{T})
     ans = msg_out.payload.m - msg_in1.payload.m
-
-    msg_result = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64})
+    msg_result = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64, length(ans)})
     msg_result.payload.m = ans
 
     return (:addition_delta_backward,
             node.interfaces[outbound_interface_index].message)
 end
-sumProduct!(node::AdditionNode, outbound_interface_index::Int, ::Void, msg_in2::Message{MvDeltaDistribution{Float64}}, msg_out::Message{MvDeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_in2, nothing, msg_out)
+sumProduct!{T<:MvDeltaDistribution{Float64}}(node::AdditionNode, outbound_interface_index::Int, ::Void, msg_in2::Message{T}, msg_out::Message{T}) = sumProduct!(node, outbound_interface_index, msg_in2, nothing, msg_out)
 
 
 ############################################
@@ -324,11 +324,11 @@ sumProduct!(node::AdditionNode, outbound_interface_index::Int, ::Void, msg_in2::
 ############################################
 
 # Forward
-sumProduct!(node::AdditionNode, outbound_interface_index::Int, msg_in1::Message{MvDeltaDistribution{Float64}}, msg_in2::Message{MvGaussianDistribution}, ::Void) = sumProduct!(node, outbound_interface_index, convert(Message{MvGaussianDistribution}, msg_in1), msg_in2, nothing)
-sumProduct!(node::AdditionNode, outbound_interface_index::Int, msg_in1::Message{MvGaussianDistribution}, msg_in2::Message{MvDeltaDistribution{Float64}}, ::Void) = sumProduct!(node, outbound_interface_index, msg_in1, convert(Message{MvGaussianDistribution}, msg_in2), nothing)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(node::AdditionNode, outbound_interface_index::Int, msg_in1::Message{TD}, msg_in2::Message{TG}, ::Void) = sumProduct!(node, outbound_interface_index, convert(Message{MvGaussianDistribution}, msg_in1), msg_in2, nothing)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(node::AdditionNode, outbound_interface_index::Int, msg_in1::Message{TG}, msg_in2::Message{TD}, ::Void) = sumProduct!(node, outbound_interface_index, msg_in1, convert(Message{MvGaussianDistribution}, msg_in2), nothing)
 # Backward to in1
-sumProduct!(node::AdditionNode, outbound_interface_index::Int, ::Void, msg_in2::Message{MvDeltaDistribution{Float64}}, msg_out::Message{MvGaussianDistribution}) = sumProduct!(node, outbound_interface_index, nothing, convert(Message{MvGaussianDistribution}, msg_in2), msg_out)
-sumProduct!(node::AdditionNode, outbound_interface_index::Int, ::Void, msg_in2::Message{MvGaussianDistribution}, msg_out::Message{MvDeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, nothing, msg_in2, convert(Message{MvGaussianDistribution}, msg_out))
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(node::AdditionNode, outbound_interface_index::Int, ::Void, msg_in2::Message{TD}, msg_out::Message{TG}) = sumProduct!(node, outbound_interface_index, nothing, convert(Message{MvGaussianDistribution}, msg_in2), msg_out)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(node::AdditionNode, outbound_interface_index::Int, ::Void, msg_in2::Message{TG}, msg_out::Message{TD}) = sumProduct!(node, outbound_interface_index, nothing, msg_in2, convert(Message{MvGaussianDistribution}, msg_out))
 # Backward to in2
-sumProduct!(node::AdditionNode, outbound_interface_index::Int, msg_in1::Message{MvDeltaDistribution{Float64}}, ::Void, msg_out::Message{MvGaussianDistribution}) = sumProduct!(node, outbound_interface_index, convert(Message{MvGaussianDistribution}, msg_in1), nothing, msg_out)
-sumProduct!(node::AdditionNode, outbound_interface_index::Int, msg_in1::Message{MvGaussianDistribution}, ::Void, msg_out::Message{MvDeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_in1, nothing, convert(Message{MvGaussianDistribution}, msg_out))
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(node::AdditionNode, outbound_interface_index::Int, msg_in1::Message{TD}, ::Void, msg_out::Message{TG}) = sumProduct!(node, outbound_interface_index, convert(Message{MvGaussianDistribution}, msg_in1), nothing, msg_out)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(node::AdditionNode, outbound_interface_index::Int, msg_in1::Message{TG}, ::Void, msg_out::Message{TD}) = sumProduct!(node, outbound_interface_index, msg_in1, nothing, convert(Message{MvGaussianDistribution}, msg_out))

@@ -451,13 +451,13 @@ function equalityRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDi
     return dist_result
 end
 
-function sumProduct!(   node::EqualityNode,
-                        outbound_interface_index::Int,
-                        msg_1::Message{MvGaussianDistribution},
-                        msg_2::Message{MvGaussianDistribution},
-                        ::Void)
+function sumProduct!{T<:MvGaussianDistribution}(node::EqualityNode,
+                                                outbound_interface_index::Int,
+                                                msg_1::Message{T},
+                                                msg_2::Message{T},
+                                                ::Void)
     # Calculate an outbound message based on the inbound messages and the node function.
-    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution{dimensions(msg_1)}).payload
 
     equalityRule!(dist_result, msg_1.payload, msg_2.payload)
 
@@ -465,17 +465,17 @@ function sumProduct!(   node::EqualityNode,
             node.interfaces[outbound_interface_index].message)
 end
 
-sumProduct!(node::EqualityNode,
-            outbound_interface_index::Int,
-            ::Void,
-            msg_1::Message{MvGaussianDistribution},
-            msg_2::Message{MvGaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!{T<:MvGaussianDistribution}( node::EqualityNode,
+                                        outbound_interface_index::Int,
+                                        ::Void,
+                                        msg_1::Message{T},
+                                        msg_2::Message{T}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
-sumProduct!(node::EqualityNode,
-            outbound_interface_index::Int,
-            msg_1::Message{MvGaussianDistribution},
-            ::Void,
-            msg_2::Message{MvGaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!{T<:MvGaussianDistribution}( node::EqualityNode,
+                                        outbound_interface_index::Int,
+                                        msg_1::Message{T},
+                                        ::Void,
+                                        msg_2::Message{T}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
 ############################################
 # MvDeltaDistribution methods
@@ -494,14 +494,14 @@ function equalityRule!(dist_result::MvDeltaDistribution, dist_1::MvDeltaDistribu
     return dist_result
 end
 
-function sumProduct!(node::EqualityNode,
-                     outbound_interface_index::Int,
-                     msg_1::Message{MvDeltaDistribution{Float64}},
-                     msg_2::Message{MvDeltaDistribution{Float64}},
-                     ::Void)
+function sumProduct!{T<:MvDeltaDistribution{Float64}}(  node::EqualityNode,
+                                                        outbound_interface_index::Int,
+                                                        msg_1::Message{T},
+                                                        msg_2::Message{T},
+                                                        ::Void)
     # Calculate an outbound message based on the inbound messages and the node function.
 
-    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
+    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64, dimensions(msg_1)}).payload
 
     equalityRule!(dist_result, msg_1.payload, msg_2.payload)
 
@@ -509,17 +509,17 @@ function sumProduct!(node::EqualityNode,
             node.interfaces[outbound_interface_index].message)
 end
 
-sumProduct!(node::EqualityNode,
-            outbound_interface_index::Int,
-            msg_1::Message{MvDeltaDistribution{Float64}},
-            ::Void,
-            msg_2::Message{MvDeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!{T<:MvDeltaDistribution{Float64}}(   node::EqualityNode,
+                                                outbound_interface_index::Int,
+                                                msg_1::Message{T},
+                                                ::Void,
+                                                msg_2::Message{T}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
-sumProduct!(node::EqualityNode,
-            outbound_interface_index::Int,
-            ::Void,
-            msg_1::Message{MvDeltaDistribution{Float64}},
-            msg_2::Message{MvDeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!{T<:MvDeltaDistribution{Float64}}(   node::EqualityNode,
+                                                outbound_interface_index::Int,
+                                                ::Void,
+                                                msg_1::Message{T},
+                                                msg_2::Message{T}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
 
 ############################################
@@ -541,7 +541,7 @@ function sumProduct!(node::EqualityNode,
                      msg_delta::Message{DeltaDistribution{Float64}},
                      msg_logn::Message{LogNormalDistribution},
                      ::Void)
-    # Combination of gamma and float
+    # Combination of log normal and delta
     dist_out = ensureMessage!(node.interfaces[outbound_interface_index], DeltaDistribution{Float64}).payload
 
     equalityRule!(dist_out, msg_delta.payload, msg_logn.payload)
@@ -571,14 +571,14 @@ function equalityRule!(dist_result::WishartDistribution, dist_1::WishartDistribu
     return dist_result
 end
 
-function sumProduct!(node::EqualityNode,
-                            outbound_interface_index::Int,
-                            msg_1::Message{WishartDistribution},
-                            msg_2::Message{WishartDistribution},
-                            ::Void)
+function sumProduct!{T<:WishartDistribution}(   node::EqualityNode,
+                                                outbound_interface_index::Int,
+                                                msg_1::Message{T},
+                                                msg_2::Message{T},
+                                                ::Void)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], WishartDistribution).payload
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], WishartDistribution{dimensions(msg_1)}).payload
 
     equalityRule!(dist_out, msg_1.payload, msg_2.payload)
 
@@ -586,17 +586,17 @@ function sumProduct!(node::EqualityNode,
             node.interfaces[outbound_interface_index].message)
 end
 
-sumProduct!(node::EqualityNode,
-            outbound_interface_index::Int,
-            msg_1::Message{WishartDistribution},
-            ::Void,
-            msg_2::Message{WishartDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!{T<:WishartDistribution}(node::EqualityNode,
+                                    outbound_interface_index::Int,
+                                    msg_1::Message{T},
+                                    ::Void,
+                                    msg_2::Message{T}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
-sumProduct!(node::EqualityNode,
-            outbound_interface_index::Int,
-            ::Void,
-            msg_1::Message{WishartDistribution},
-            msg_2::Message{WishartDistribution}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
+sumProduct!{T<:WishartDistribution}(node::EqualityNode,
+                                    outbound_interface_index::Int,
+                                    ::Void,
+                                    msg_1::Message{T},
+                                    msg_2::Message{T}) = sumProduct!(node, outbound_interface_index, msg_1, msg_2, nothing)
 
 
 ############################################
@@ -686,12 +686,12 @@ equalityRule!(  dist_result::MvDeltaDistribution{Float64},
                 dist_1::MvDeltaDistribution{Float64},
                 dist_2::MvGaussianDistribution) = equalityRule!(dist_result, dist_2, dist_1)
 
-function sumProduct!(node::EqualityNode,
-                     outbound_interface_index::Int,
-                     msg_delta::Message{MvDeltaDistribution{Float64}},
-                     msg_gauss::Message{MvGaussianDistribution},
-                     ::Void)
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
+function sumProduct!{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}( node::EqualityNode,
+                                                                                    outbound_interface_index::Int,
+                                                                                    msg_delta::Message{TD},
+                                                                                    msg_gauss::Message{TG},
+                                                                                    ::Void)
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64, dimensions(msg_delta)}).payload
 
     equalityRule!(dist_out, msg_delta.payload, msg_gauss.payload)
 
@@ -700,13 +700,13 @@ function sumProduct!(node::EqualityNode,
 end
 # Call signature for messages other ways around
 # Outbound interface 3
-sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_gauss::Message{MvGaussianDistribution}, msg_delta::Message{MvDeltaDistribution{Float64}}, ::Void) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(node::EqualityNode, outbound_interface_index::Int, msg_gauss::Message{TG}, msg_delta::Message{TD}, ::Void) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
 # Outbound interface 2
-sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_gauss::Message{MvGaussianDistribution}, ::Void, msg_delta::Message{MvDeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
-sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{MvDeltaDistribution{Float64}}, ::Void, msg_gauss::Message{MvGaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(node::EqualityNode, outbound_interface_index::Int, msg_gauss::Message{TG}, ::Void, msg_delta::Message{TD}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{TD}, ::Void, msg_gauss::Message{TG}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
 # Outbound interface 1
-sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_gauss::Message{MvGaussianDistribution}, msg_delta::Message{MvDeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
-sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_delta::Message{MvDeltaDistribution{Float64}}, msg_gauss::Message{MvGaussianDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_gauss::Message{TG}, msg_delta::Message{TD}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_delta::Message{TD}, msg_gauss::Message{TG}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
 
 
 ############################################
@@ -723,12 +723,12 @@ equalityRule!(  dist_result::MvDeltaDistribution{Float64},
                 dist_1::MvDeltaDistribution{Float64},
                 dist_2::WishartDistribution) = equalityRule!(dist_result, dist_2, dist_1)
 
-function sumProduct!(node::EqualityNode,
-                     outbound_interface_index::Int,
-                     msg_delta::Message{MvDeltaDistribution{Float64}},
-                     msg_gauss::Message{WishartDistribution},
-                     ::Void)
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64}).payload
+function sumProduct!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode,
+                                                                                outbound_interface_index::Int,
+                                                                                msg_delta::Message{TD},
+                                                                                msg_gauss::Message{TW},
+                                                                                ::Void)
+    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvDeltaDistribution{Float64, dimensions(msg_delta)}).payload
 
     equalityRule!(dist_out, msg_delta.payload, msg_gauss.payload)
 
@@ -737,13 +737,13 @@ function sumProduct!(node::EqualityNode,
 end
 # Call signature for messages other ways around
 # Outbound interface 3
-sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_gauss::Message{WishartDistribution}, msg_delta::Message{MvDeltaDistribution{Float64}}, ::Void) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Int, msg_gauss::Message{TW}, msg_delta::Message{TD}, ::Void) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
 # Outbound interface 2
-sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_gauss::Message{WishartDistribution}, ::Void, msg_delta::Message{MvDeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
-sumProduct!(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{MvDeltaDistribution{Float64}}, ::Void, msg_gauss::Message{WishartDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Int, msg_gauss::Message{TW}, ::Void, msg_delta::Message{TD}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Int, msg_delta::Message{TD}, ::Void, msg_gauss::Message{TW}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
 # Outbound interface 1
-sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_gauss::Message{WishartDistribution}, msg_delta::Message{MvDeltaDistribution{Float64}}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
-sumProduct!(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_delta::Message{MvDeltaDistribution{Float64}}, msg_gauss::Message{WishartDistribution}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_gauss::Message{TW}, msg_delta::Message{TD}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Int, ::Void, msg_delta::Message{TD}, msg_gauss::Message{TW}) = sumProduct!(node, outbound_interface_index, msg_delta, msg_gauss, nothing)
 
 
 ############################################

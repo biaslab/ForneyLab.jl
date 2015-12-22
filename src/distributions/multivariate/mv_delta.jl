@@ -11,13 +11,13 @@
 
 export MvDeltaDistribution
 
-type MvDeltaDistribution{T} <: MultivariateProbabilityDistribution
+type MvDeltaDistribution{T, dims} <: MultivariateProbabilityDistribution
     m::Vector{T}
 end
 
-MvDeltaDistribution{T<:Any}(m::Vector{T}) = MvDeltaDistribution{T}(deepcopy(m))
+MvDeltaDistribution{T<:Any}(m::Vector{T}) = MvDeltaDistribution{T, length(m)}(deepcopy(m))
 
-MvDeltaDistribution() = MvDeltaDistribution{Float64}(ones(1))
+MvDeltaDistribution() = MvDeltaDistribution{Float64, 1}(ones(1))
 
 format(dist::MvDeltaDistribution) = "δ(m=$(format(dist.m)))"
 

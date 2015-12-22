@@ -16,7 +16,7 @@ export
     isWellDefined,
     isConsistent
 
-type MvGaussianDistribution <: MultivariateProbabilityDistribution
+type MvGaussianDistribution{dims} <: MultivariateProbabilityDistribution
     m::Vector{Float64}   # Mean vector
     V::Matrix{Float64}   # Covariance matrix
     W::Matrix{Float64}   # Weight matrix
@@ -36,7 +36,7 @@ type MvGaussianDistribution <: MultivariateProbabilityDistribution
             all(abs(diag(W)) .> realmin(Float64)) || error("Cannot create MvGaussianDistribution, diagonal of precision matrix W should be non-zero.")
         end
 
-        self = new(m, V, W, xi)
+        self = new{length(m)}(m, V, W, xi)
         isWellDefined(self) || error("Cannot create MvGaussianDistribution, distribution is underdetermined.")
 
         return self
@@ -44,9 +44,9 @@ type MvGaussianDistribution <: MultivariateProbabilityDistribution
 end
 
 function MvGaussianDistribution(; m::Vector{Float64}=[NaN],
-                                V::Matrix{Float64}=reshape([NaN], 1, 1),
-                                W::Matrix{Float64}=reshape([NaN], 1, 1),
-                                xi::Vector{Float64}=[NaN])
+                                  V::Matrix{Float64}=reshape([NaN], 1, 1),
+                                  W::Matrix{Float64}=reshape([NaN], 1, 1),
+                                  xi::Vector{Float64}=[NaN])
     # Ensure _m and _xi have the same size
     _m = copy(m)
     _xi = copy(xi)
@@ -73,12 +73,12 @@ function MvGaussianDistribution(; m::Vector{Float64}=[NaN],
         end
     end
 
-    return MvGaussianDistribution(_m, _V, _W, _xi)
+    return MvGaussianDistribution{length(_m)}(_m, _V, _W, _xi)
 end
 
 MvGaussianDistribution() = MvGaussianDistribution(m=zeros(1), V=ones(1,1))
 
-vague(::Type{MvGaussianDistribution}; dim=1) = MvGaussianDistribution(m=zeros(dim), V=huge*eye(dim))
+vague{dims}(::Type{MvGaussianDistribution{dims}}) = MvGaussianDistribution(m=zeros(dims), V=huge*eye(dims))
 
 function format(dist::MvGaussianDistribution)
     if isValid(dist.m) && isValid(dist.V)
@@ -267,13 +267,12 @@ end
 # Convert DeltaDistribution -> MvGaussianDistribution
 # NOTE: this introduces a small error because the variance is set >0
 convert(::Type{MvGaussianDistribution}, delta::MvDeltaDistribution{Float64}) = MvGaussianDistribution(m=delta.m, V=tiny*eye(length(delta.m)))
-convert(::Type{Message{MvGaussianDistribution}}, msg::Message{MvDeltaDistribution{Float64}}) = Message(MvGaussianDistribution(m=msg.payload.m, V=tiny*eye(length(msg.payload.m))))
+convert{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(::Type{Message{TG}}, msg::Message{TD}) = Message(MvGaussianDistribution(m=msg.payload.m, V=tiny*eye(length(msg.payload.m))))
 
 # Convert GaussianDistribution -> MvGaussianDistribution
 convert(::Type{MvGaussianDistribution}, d::GaussianDistribution) = MvGaussianDistribution(m=[d.m], V=d.V*eye(1), W=d.W*eye(1), xi=[d.xi])
 
 # Convert MvGaussianDistribution -> GaussianDistribution
-function convert(::Type{GaussianDistribution}, d::MvGaussianDistribution)
-    (length(d.m) ==1) || error("Can only convert MvGaussianDistribution to GaussianDistribution if it has dimensionality 1")
+function convert(::Type{GaussianDistribution}, d::MvGaussianDistribution{1})
     GaussianDistribution(m=d.m[1], V=d.V[1,1], W=d.W[1,1], xi=d.xi[1])
 end

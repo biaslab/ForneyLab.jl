@@ -2,6 +2,8 @@
 # Unit tests
 #####################
 
+# TODO: non-square A
+
 facts("FixedGainNode unit tests") do
     context("FixedGainNode() should initialize a FixedGainNode with 2 interfaces") do
         FactorGraph()
@@ -130,4 +132,28 @@ facts("FixedGainNode unit tests") do
                                     MvGaussianDistribution(m=A * mean, W=inv(A)' * precision * inv(A)))
         end
     end
+
+    # context("FixedGainNode should prodive sumProduct! for non-square A") do
+    #     A = [1.0 0.5; -0.5 2.0; 0.5 1.0]
+    #     # Backward message
+    #     validateOutboundMessage(FixedGainNode(A),
+    #                             1,
+    #                             [nothing, Message(MvDeltaDistribution([30.0, 10.0, 5.0]))],
+    #                             MvDeltaDistribution(...))
+    #     # Forward message
+    #     validateOutboundMessage(FixedGainNode(A),
+    #                             2,
+    #                             [Message(MvDeltaDistribution([30.0, 10.0])), nothing],
+    #                             MvDeltaDistribution(...))
+    #     # Backward message
+    #     validateOutboundMessage(FixedGainNode(A),
+    #                             1,
+    #                             [nothing, Message(MvGaussianDistribution(m=[30.0, 10.0, 5.0], V=2.0*eye(3)))],
+    #                             MvGaussianDistribution(...))
+    #     # Forward message
+    #     validateOutboundMessage(FixedGainNode(A),
+    #                             2,
+    #                             [Message(MvGaussianDistribution(m=[30.0, 10.0], V=2.0*eye(2))), nothing],
+    #                             MvGaussianDistribution(...))
+    # end
 end

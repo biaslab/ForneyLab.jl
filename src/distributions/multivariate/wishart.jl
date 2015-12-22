@@ -18,23 +18,18 @@ export
     WishartDistribution,
     isProper
 
-type WishartDistribution <: MultivariateProbabilityDistribution
+type WishartDistribution{dims} <: MultivariateProbabilityDistribution
     V::Matrix{Float64}  # Scale matrix
     nu::Float64         # Degrees of freedom
 end
 
-WishartDistribution(; V::Matrix{Float64} = [1.0].', nu::Float64 = 1.0) = WishartDistribution(V, nu)
+WishartDistribution(; V::Matrix{Float64} = [1.0].', nu::Float64 = 1.0) = WishartDistribution{size(V, 1)}(deepcopy(V), nu)
+
 WishartDistribution() = WishartDistribution(V = [1.0].', nu = 1.0)
 
-vague(::Type{WishartDistribution}; dim=1) = WishartDistribution(V = huge*eye(dim), nu = tiny) # Scale invariant (Jeffrey's) prior in each dimension
+vague{dims}(::Type{WishartDistribution{dims}}) = WishartDistribution(V = huge*eye(dims), nu = Float64(dims)) # Least informative distribution
 
-function format(dist::WishartDistribution)
-    if isProper(dist)
-        return "W(V=$(format(dist.V)), ν=$(format(dist.nu)))"
-    else
-        return "W(underdetermined)"
-    end
-end
+format(dist::WishartDistribution) = "W(V=$(format(dist.V)), ν=$(format(dist.nu)))"
 
 show(io::IO, dist::WishartDistribution) = println(io, format(dist))
 
@@ -46,7 +41,7 @@ function Base.mean(dist::WishartDistribution)
     end
 end
 
-function Base.cov(dist::WishartDistribution)
+function Base.var(dist::WishartDistribution)
     d = size(dist.V, 1)
     M = fill!(similar(dist.V), NaN)
     if isProper(dist)
@@ -58,14 +53,6 @@ function Base.cov(dist::WishartDistribution)
         return M
     else
         return M
-    end
-end
-
-function Base.var(dist::WishartDistribution)
-    if isProper(dist)
-        return dist.nu*2.0*diag(dist.V).^2
-    else
-        return fill!(zeros(d), NaN)
     end
 end
 
@@ -90,7 +77,6 @@ end
 convert(::Type{WishartDistribution}, d::GammaDistribution) = WishartDistribution(V = [1.0/(2.0*d.b)].', nu = 2.0*d.a)
 
 # Convert WishartDistribution -> GammaDistribution
-function convert(::Type{GammaDistribution}, d::WishartDistribution)
-    (length(d.V) == 1) || error("Can only convert WishartDistribution to GammaDistribution if it has dimensionality 1")
+function convert(::Type{GammaDistribution}, d::WishartDistribution{1})
     GammaDistribution(a = d.nu/2.0, b = 1.0/(2.0*d.V[1, 1]))
 end

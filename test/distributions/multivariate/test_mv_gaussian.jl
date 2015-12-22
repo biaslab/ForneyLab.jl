@@ -6,9 +6,11 @@ facts("MvGaussianDistribution unit tests") do
     context("MvGaussianDistribution() should initialize a Gaussian distribution") do
         @fact MvGaussianDistribution().V --> eye(1)
         @fact MvGaussianDistribution().m --> [0.0]
+        @fact typeof(MvGaussianDistribution(m=[0.0], W=eye(1))) --> MvGaussianDistribution{1}
         @fact MvGaussianDistribution(m=[0.0], W=eye(1)).W --> eye(1)
         @fact MvGaussianDistribution(xi=[0.0], W=eye(1)).W --> eye(1)
         @fact typeof(MvGaussianDistribution(m=[1.0], V=eye(1)).V) --> Array{Float64, 2} # cast single value to matrix
+        @fact typeof(MvGaussianDistribution(m=[0.0, 0.0], V=eye(2))) --> MvGaussianDistribution{2} # multivariate
         @fact MvGaussianDistribution(m=[0.0, 0.0], V=eye(2)).V --> eye(2) # multivariate
         @fact_throws MvGaussianDistribution(V=eye(1), W=eye(1))
         @fact_throws MvGaussianDistribution(m=[0.0], xi=[0.0])
@@ -20,11 +22,11 @@ facts("MvGaussianDistribution unit tests") do
     end
 
     context("vague() should initialize a vague (almost uninformative) Gaussian distribution") do
-        dist = vague(MvGaussianDistribution)
+        dist = vague(MvGaussianDistribution{1})
         @fact dist.m --> [0.0]
         @fact dist.V --> reshape([huge],1,1)
 
-        dist = vague(MvGaussianDistribution, dim=2)
+        dist = vague(MvGaussianDistribution{2})
         @fact dist.m --> zeros(2)
         @fact dist.V --> huge*eye(2)
     end
@@ -131,11 +133,11 @@ facts("Marginal calculations for the MvGaussian") do
 end
 
 facts("MvGaussianDistribution converts") do
-    context("DeltaDistribution should be convertible to MvGaussianDistribution with tiny variance") do
+    context("MvDeltaDistribution should be convertible to MvGaussianDistribution with tiny variance") do
         @fact convert(MvGaussianDistribution, MvDeltaDistribution([1.0, 2.0])) --> MvGaussianDistribution(m=[1.0, 2.0], V=tiny*eye(2)) # Vector
     end
 
-    context("Message{DeltaDistribution} should be convertible to Message{MvGaussianDistribution} with tiny variance") do
+    context("Message{MvDeltaDistribution} should be convertible to Message{MvGaussianDistribution} with tiny variance") do
         @fact convert(Message{MvGaussianDistribution}, Message(MvDeltaDistribution([1.0, 2.0]))) --> Message(MvGaussianDistribution(m=[1.0, 2.0], V=tiny*eye(2))) # Vector
     end
 

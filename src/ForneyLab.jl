@@ -37,6 +37,10 @@ include("node.jl")
 # Message type
 include("message.jl")
 
+# Extract dimensionality from message or distribution
+dimensions{T<:MultivariateProbabilityDistribution}(message::Message{T}) = typeof(message.payload).parameters[end]
+dimensions(distribution::MultivariateProbabilityDistribution) = typeof(distribution).parameters[end]
+
 # Univariate distributions
 include("distributions/univariate/delta.jl")
 include("distributions/univariate/bernoulli.jl")

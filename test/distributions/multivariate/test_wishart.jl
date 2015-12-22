@@ -5,6 +5,7 @@
 facts("WishartDistribution unit tests") do
     context("WishartDistribution() should initialize a Wishart distribution") do
         dist = WishartDistribution(V=[2.0 1.0; 1.0 2.0], nu=3.0)
+        @fact typeof(dist) --> WishartDistribution{2}
         @fact dist.V --> [2.0 1.0; 1.0 2.0]
         @fact dist.nu --> 3.0
         @fact mean(dist) --> 3.0*[2.0 1.0; 1.0 2.0]
@@ -13,11 +14,11 @@ facts("WishartDistribution unit tests") do
     end
 
     context("vague() should initialize a vague (almost uninformative) Wishart distribution") do
-        dist = vague(WishartDistribution)
+        dist = vague(WishartDistribution{1})
         @fact dist.V --> [huge].'
         @fact dist.nu --> tiny
 
-        dist = vague(WishartDistribution, dim=2)
+        dist = vague(WishartDistribution{2})
         @fact dist.V --> huge*eye(2)
         @fact dist.nu --> tiny
     end
