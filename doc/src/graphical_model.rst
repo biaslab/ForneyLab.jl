@@ -47,7 +47,7 @@ The ``id`` field holds a unique id, which can be passed to the constructor as a 
 The calling signature of a node constructor depends on the specific type of the node, e.g.::
 
     AdditionNode(id=:my_adder)  # Node func.: out = in1 + in2
-    FixedGainNode(3.0, id=:times_3) # Node func.: out = 3.0 * in1
+    GainNode(3.0, id=:times_3) # Node func.: out = 3.0 * in1
 
 A ``Node`` constructor always adds the constructed node to the current graph. To delete a ``Node`` from a :class:`FactorGraph`, use ``delete!(graph::FactorGraph, node::Node)``. Nodes in the current graph can be accessed through the function ``node(id::Symbol)`` (which is aliased by the function ``n(id::Symbol)``), e.g.::
 

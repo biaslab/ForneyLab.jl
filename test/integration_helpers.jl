@@ -77,7 +77,7 @@ function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(DeltaDistribution(2
     # |--[C]
 
     g = FactorGraph()
-    FixedGainNode(A, id=:node1)
+    GainNode(gain=A, id=:node1)
     n(:node1).interfaces[1].message = msg_gain_1
     n(:node1).interfaces[2].message = msg_gain_2
     TerminalNode(msg_terminal.payload, id=:node2)
@@ -94,8 +94,8 @@ function initializeChainOfNodes()
 
     g = FactorGraph()
     TerminalNode(DeltaDistribution(3.0), id=:node1)
-    FixedGainNode([2.0], id=:node2)
-    FixedGainNode([2.0], id=:node3)
+    GainNode(gain=[2.0], id=:node2)
+    GainNode(gain=[2.0], id=:node3)
     Edge(n(:node1).i[:out], n(:node2).i[:in])
     Edge(n(:node2).i[:out], n(:node3).i[:in])
     Edge(n(:node3).i[:out], MockNode().i[:out])
@@ -114,8 +114,8 @@ function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
     #  (inhibitor)
 
     g = FactorGraph()
-    FixedGainNode(A, id=:driver)
-    FixedGainNode(B, id=:inhibitor)
+    GainNode(gain=A, id=:driver)
+    GainNode(gain=B, id=:inhibitor)
     TerminalNode(GaussianDistribution(m=noise_m, V=noise_V), id=:noise)
     AdditionNode(id=:add)
     Edge(n(:add).i[:out], n(:inhibitor).i[:in])
@@ -165,7 +165,7 @@ function initializeFactoringGraph()
 
     g = FactorGraph()
     TerminalNode(id=:t1)
-    FixedGainNode(id=:a1)
+    GainNode(gain=[1.0], id=:a1)
     GaussianNode(form=:moment, id=:g1)
     TerminalNode(id=:t2)
     AdditionNode(id=:add1)
@@ -191,7 +191,7 @@ function initializeFactoringGraphWithoutLoop()
 
     g = FactorGraph()
     TerminalNode(id=:t1)
-    FixedGainNode(id=:a1)
+    GainNode(gain=[1.0], id=:a1)
     GaussianNode(form=:moment, id=:g1)
     TerminalNode(id=:t2)
     TerminalNode(id=:t3)
@@ -208,7 +208,7 @@ function initializeGaussianFactoringGraph()
 
     g = FactorGraph()
     TerminalNode(id=:t)
-    FixedGainNode(id=:gain)
+    GainNode(gain=[1.0], id=:gain)
     GaussianNode(m=1.0, V=0.5, id=:gauss)
     Edge(n(:gauss).i[:out], n(:gain).i[:in])
     Edge(n(:gain).i[:out], n(:t).i[:out])
@@ -221,7 +221,7 @@ function initializeSimpleFactoringGraph()
 
     g = FactorGraph()
     TerminalNode(id=:t1)
-    FixedGainNode(id=:gain)
+    GainNode(gain=[1.0], id=:gain)
     TerminalNode(id=:t2)
     Edge(n(:t2).i[:out], n(:gain).i[:in])
     Edge(n(:gain).i[:out], n(:t1).i[:out])
@@ -497,7 +497,7 @@ function ==(x::ScheduleEntry, y::ScheduleEntry)
     return true
 end
 
-function testInterfaceConnections(node1::FixedGainNode, node2::TerminalNode)
+function testInterfaceConnections(node1::GainNode, node2::TerminalNode)
     # Helper function for node comparison
 
     # Check that nodes are properly connected
