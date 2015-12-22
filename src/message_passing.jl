@@ -8,22 +8,10 @@ function execute(schedule_entry::ScheduleEntry)
     # Calculate the outbound message based on the inbound messages and the message calculation rule.
     # The resulting message is stored in the specified interface and is returned.
 
-    outbound_interface = schedule_entry.interface
-    # Preprocessing: collect all inbound messages and build the inbound_array
-    node = outbound_interface.node
-
-    if schedule_entry.message_calculation_rule == sumProduct!
-        (outbound_interface_index, inbounds) = SumProduct.collectInbounds(outbound_interface)
-    elseif schedule_entry.message_calculation_rule == ep!
-        (outbound_interface_index, inbounds) = ExpectationPropagation.collectInbounds(outbound_interface)
-    elseif schedule_entry.message_calculation_rule == vmp!
-        (outbound_interface_index, inbounds) = VMP.collectInbounds(outbound_interface)
-    else
-        error("Unknown message calculation rule: $(schedule_entry.message_calculation_rule)")
-    end
+    outbound_interface = schedule_entry.node.interfaces[schedule_entry.outbound_interface_id]
 
     # Evaluate message calculation rule
-    (rule, outbound_message) = schedule_entry.message_calculation_rule(node, outbound_interface_index, inbounds...)
+    (rule, outbound_message) = schedule_entry.execute()
 
     # Post processing?
     if isdefined(schedule_entry, :post_processing)
@@ -32,7 +20,7 @@ function execute(schedule_entry::ScheduleEntry)
             # Wrap the output in a DeltaDistribution before packing it in a Message
             post_processed_output = DeltaDistribution(post_processed_output)
         end
-        outbound_message = node.interfaces[outbound_interface_index].message = Message(post_processed_output)
+        outbound_message = outbound_interface.message = Message(post_processed_output)
     end
 
     # Print output for debugging
@@ -67,12 +55,12 @@ end
 function clearMessages!(node::Node)
     # Clear all outbound messages on the interfaces of node
     for interface in node.interfaces
-        interface.message = nothing
+        clearMessage!(interface)
     end
 end
 
 function clearMessages!(edge::Edge)
     # Clear all messages on an edge.
-    edge.head.message = nothing
-    edge.tail.message = nothing
+    clearMessage!(edge.head.message)
+    clearMessage!(edge.tail.message)
 end

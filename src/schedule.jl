@@ -1,22 +1,42 @@
 export ScheduleEntry, Schedule, setPostProcessing!
 
 type ScheduleEntry
-    interface::Interface
-    message_calculation_rule::Function  # Is called to calculate the message. Default is sumProduct!.
-    post_processing::Function           # Optional, a function that performs post-processing on the message. Leave undefined to skip.
-    function ScheduleEntry(interface::Interface, message_calculation_rule::Function, post_processing::Union{Void,Function}=nothing)
-        if post_processing != nothing
-            return new(interface, message_calculation_rule, post_processing)
-        else
-            return new(interface, message_calculation_rule)
-        end
+    node::Node
+    outbound_interface_id::Int64
+    rule::Function  # Refers to the general message calculation rule; for example sumProduct! or vmp!.
+    inbound_types::Vector{DataType}
+    outbound_type::DataType
+    execute::Function # Compiled rule call: () -> rule(node, Val{outbound_interface_id}, rule_arguments...)
+    post_processing::Function
+
+    function ScheduleEntry(node::Node, outbound_interface_id::Int64, rule::Function)
+        return self = new(node, outbound_interface_id, rule)
     end
 end
-ScheduleEntry(interface::Interface) = ScheduleEntry(interface, sumProduct!)
+
+function ScheduleEntry(node::Node, outbound_interface_id::Int64, rule::Function, post_processing::Function)
+    schedule_entry = ScheduleEntry(node, outbound_interface_id, rule)
+    schedule_entry.post_processing = post_processing
+
+    return schedule_entry
+end
 
 Base.deepcopy(::ScheduleEntry) = error("deepcopy(::ScheduleEntry) is not possible. You should construct a new ScheduleEntry or use copy(::ScheduleEntry).")
 
-Base.copy(src::ScheduleEntry) = ScheduleEntry(src.interface, src.message_calculation_rule, isdefined(src, :post_processing) ? src.post_processing : nothing)
+function Base.copy(src::ScheduleEntry)
+    duplicate = ScheduleEntry(src.node, src.outbound_interface_id, src.rule)
+    if isdefined(src, :inbound_types)
+        duplicate.inbound_types = copy(src.inbound_types)
+    end
+    if isdefined(src, :outbound_type)
+        duplicate.outbound_type = src.outbound_type
+    end
+    if isdefined(src, :post_processing)
+        duplicate.post_processing = src.post_processing
+    end
+
+    return duplicate
+end
 
 function setPostProcessing!(schedule_entry::ScheduleEntry, post_processing::Function)
     schedule_entry.post_processing = post_processing
@@ -29,40 +49,43 @@ Base.deepcopy(src::Schedule) = ScheduleEntry[copy(entry) for entry in src]
 
 function setPostProcessing!(schedule::Schedule, interface::Interface, post_processing::Function)
     for entry in schedule
-        if entry.interface == interface
+        if is(entry.node.interfaces[entry.outbound_interface_id], interface)
             entry.post_processing = post_processing # Edit in place
-            return
+            return schedule
         end
     end
 end
 
 # Convert interfaces to schedule
-convert(::Type{ScheduleEntry}, interface::Interface) = ScheduleEntry(interface, sumProduct!) # Default assumes conversion to sum product
-convert(::Type{ScheduleEntry}, interface::Interface, message_calculation_rule::Function) = ScheduleEntry(interface, message_calculation_rule)
-convert(::Type{Schedule}, interfaces::Array{Interface, 1}, message_calculation_rule::Function) = ScheduleEntry[convert(ScheduleEntry, iface, message_calculation_rule) for iface in interfaces]
-convert(::Type{ScheduleEntry}, interface::Interface, message_calculation_rule::Function, post_proc::Function) = ScheduleEntry(interface, message_calculation_rule, post_proc)
-convert(::Type{Schedule}, interfaces::Array{Interface, 1}, message_calculation_rule::Function, post_proc::Function) = ScheduleEntry[convert(ScheduleEntry, iface, message_calculation_rule, post_proc) for iface in interfaces]
+function convert(::Type{ScheduleEntry}, interface::Interface, rule::Function = sumProduct!)
+    node = interface.node
+    interface_id = findfirst(node.interfaces, interface)
+    return ScheduleEntry(node, interface_id, rule)
+end
 
-function show(io::IO, schedule::Schedule)
-    # Show schedules in a specific way
-    println(io, "Message passing schedule (entry: node [interface], rule)")
-    println(io, "------------------------------------------------------")
-    entry_counter = 1
-    for schedule_entry in schedule
-        interface = schedule_entry.interface
-        msg_calc_func = schedule_entry.message_calculation_rule
-        postproc = (isdefined(schedule_entry, :post_processing)) ? string(schedule_entry.post_processing) : ""
-        interface_handle = (handle(interface)!="") ? "$(handle(interface))" : ""
-        interface_field = "$(typeof(interface.node)) $(interface.node.id) [$(findfirst(interface.node.interfaces, interface)):$(interface_handle)]"
-        println(io, "$(string(entry_counter)): $(interface_field), $(string(msg_calc_func)) $(string(postproc))")
-        entry_counter += 1
+function convert(::Type{Schedule}, interfaces::Vector{Interface}, rule::Function)
+    return ScheduleEntry[convert(ScheduleEntry, interface, rule) for interface in interfaces]
+end
+
+function show(io::IO, schedule_entry::ScheduleEntry)
+    node = schedule_entry.node
+    interface = node.interfaces[schedule_entry.outbound_interface_id]
+    interface_handle = (handle(interface)!="") ? "($(handle(interface)))" : ""
+    println(io, replace("$(schedule_entry.rule) on $(typeof(node)) $(interface.node.id) interface $(schedule_entry.outbound_interface_id) $(interface_handle)", "ForneyLab.", ""))
+    if isdefined(schedule_entry, :inbound_types) && isdefined(schedule_entry, :outbound_type)
+        println(io, replace("$(schedule_entry.inbound_types) -> Message{$(schedule_entry.outbound_type)}", "ForneyLab.", ""))
+    end
+    if isdefined(schedule_entry, :post_processing)
+        println(io, replace("Post processing: $(schedule_entry.post_processing)", "ForneyLab.", ""))
     end
 end
 
-function show(io::IO, nodes::Array{Node, 1})
-     # Show node array (possibly an external schedule)
-    println(io, "Nodes:")
-    for entry in nodes
-        println(io, "Node $(entry.id) of type $(typeof(entry))")
+function show(io::IO, schedule::Schedule)
+    println(io, "Message passing schedule")
+    println(io, "-----------------------------------------------")
+    for i=1:length(schedule)
+        println("$(i).")
+        show(schedule[i])
+        println("")
     end
 end

@@ -64,7 +64,7 @@ function generateNodeId(t::DataType)
     current_graph = currentGraph()
     haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
     count = current_graph.counters[t]
-    str = replace(lowercase(split(string(t),'.')[end]), "node", "")
+    str = replace(lowercase(split(string(t.name),'.')[end]), "node", "")
     return symbol("$(str)$(count)")
 end
 

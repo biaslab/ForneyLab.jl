@@ -41,7 +41,7 @@ facts("ExpectationPropagation algorithm integration tests") do
 
     generating_distribution = GaussianDistribution(m=-0.5, V=0.1)
     edge(:X1).tail.message = Message(generating_distribution)
-    run(SumProduct.Algorithm(n(:sig1).i[:bin]))
+    run(SumProduct(n(:sig1).i[:bin]))
     bin_dist = n(:sig1).i[:bin].message.payload
     samples = Vector{Float64}()
     for section = 1:NUM_SECTIONS
@@ -60,27 +60,27 @@ facts("ExpectationPropagation algorithm integration tests") do
     # Define callback function to collect the posterior dist. of X after each iteration
     X_marg = Vector{GaussianDistribution}()
     function log_results()
-        run(SumProduct.Algorithm(edge(:X_marg).tail))
+        run(SumProduct(edge(:X_marg).tail))
         push!(X_marg, deepcopy(ensureParameters!(edge(:X_marg).tail.message.payload, (:m, :V))))
         return (length(X_marg) >= 5) # terminate the EP algorithm after 5 iterations
     end
 
-    ep_algo = ExpectationPropagation.Algorithm(sites, num_iterations=10, callback=log_results)
+    ep_algo = ExpectationPropagation(sites, num_iterations=10, callback=log_results)
 
-    context("Algorithm construction") do
-        @fact ep_algo.fields[:num_iterations] --> 10
-        @fact is(ep_algo.fields[:callback], log_results) --> true
-        @fact typeof(ep_algo.fields[:schedule]) --> Schedule
-        for schedule_entry in ep_algo.fields[:schedule]
+    context("ExpectationPropagation construction") do
+        @fact ep_algo.num_iterations --> 10
+        @fact is(ep_algo.callback, log_results) --> true
+        @fact typeof(ep_algo.schedule) --> Schedule
+        for schedule_entry in ep_algo.schedule
             if schedule_entry.interface in sites
-                @fact is(schedule_entry.message_calculation_rule, ForneyLab.ep!) --> true
+                @fact is(schedule_entry.message_calculation_rule, ep!) --> true
             else
-                @fact is(schedule_entry.message_calculation_rule, ForneyLab.sumProduct!) --> true
+                @fact is(schedule_entry.message_calculation_rule, sumProduct!) --> true
             end
         end
     end
 
-    #show(ep_algo.fields[:schedule])
+    #show(ep_algo.schedule)
     run(ep_algo)
 
     ###############
@@ -88,7 +88,7 @@ facts("ExpectationPropagation algorithm integration tests") do
     ###############
     context("Inference results") do
         @fact length(X_marg) --> 5
-        run(SumProduct.Algorithm(n(:sig1).i[:bin]))
+        run(SumProduct(n(:sig1).i[:bin]))
         predictive = n(:sig1).i[:bin].message.payload
         @fact predictive.p --> roughly(mean(samples), atol=0.1)
     end

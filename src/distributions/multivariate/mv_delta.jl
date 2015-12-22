@@ -38,3 +38,5 @@ sample(dist::MvDeltaDistribution) = dist.m
 # We can convert a lot of object types into a MvDeltaDistribution with that object as position of the delta.
 # This is useful so we can write i.e. TerminalNode([1.0, 3.0]) instead of TerminalNode(MvDeltaDistribution([1.0, 3.0])).
 convert{T<:Number}(::Type{ProbabilityDistribution}, obj::Vector{T}) = MvDeltaDistribution(obj)
+
+convert{T<:Number}(::Type{MvDeltaDistribution}, obj::Vector{T}) = MvDeltaDistribution(obj)

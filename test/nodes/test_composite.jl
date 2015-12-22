@@ -26,7 +26,7 @@ facts("CompositeNode integration tests") do
         Edge(add_3.i[:out], t_out)
 
         # Verify algorithm execution
-        algo = SumProduct.Algorithm(add_3.i[:out])
+        algo = SumProduct(add_3.i[:out])
         @fact run(algo) --> Message(DeltaDistribution(8.0))
         t_in.value = 10.0
         @fact run(algo) --> Message(DeltaDistribution(13.0))
@@ -37,10 +37,10 @@ facts("CompositeNode integration tests") do
         # A call to sumProduct!(add_3, ...) should yield te result of the custom rule
         internal_in = node(:in, add_3.internal_graph)
         internal_adder = node(:adder, add_3.internal_graph)
-        function custom_rule(fields)
+        function exec(::InferenceAlgorithm)
             return internal_adder.i[:out].message = Message(DeltaDistribution(mean(internal_in.value)[1]+5.0))
         end
-        algo2 = Algorithm(custom_rule)
+        algo2 = GenericAlgorithm(exec)
         addRule!(add_3, add_3.i[:out], sumProduct!, algo2)
         @fact run(algo2) --> Message(DeltaDistribution(15.0))
     end

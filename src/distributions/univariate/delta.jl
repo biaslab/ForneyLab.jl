@@ -34,3 +34,5 @@ sample(dist::DeltaDistribution) = dist.m
 # We can convert a lot of object types into a DeltaDistribution with that object as position of the delta.
 # This is useful so we can write i.e. TerminalNode(3.0) instead of TerminalNode(DeltaDistribution(3.0)).
 convert(::Type{ProbabilityDistribution}, obj::Number) = DeltaDistribution(obj)
+
+convert(::Type{DeltaDistribution}, obj::Number) = DeltaDistribution(obj)

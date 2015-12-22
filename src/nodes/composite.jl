@@ -5,7 +5,7 @@ type CompositeNode <: Node
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
     internal_graph::FactorGraph
-    computation_rules::Dict{Tuple{Interface,Function},Algorithm}
+    computation_rules::Dict{Tuple{Interface,Function},InferenceAlgorithm}
     interfaceid_to_terminalnode::Array{TerminalNode,1}
     terminalnode_to_interface::Dict{TerminalNode,Interface}
     deterministic::Bool
@@ -16,7 +16,7 @@ function CompositeNode(graph::FactorGraph, terminals...; id=generateNodeId(Compo
     # terminals... is an array of TerminalNodes in graph, that will be bound to interfaces of the CompositeNode.
     # The ids of the terminals will be used as interface handles.
     # This function creates a new current FactorGraph so the user can continue working in the higher level graph.
-    self = CompositeNode(id, Interface[], Dict{Symbol,Interface}(), graph, Dict{Tuple{Interface,Function},Algorithm}(), TerminalNode[], Dict{TerminalNode,Interface}(), deterministic)
+    self = CompositeNode(id, Interface[], Dict{Symbol,Interface}(), graph, Dict{Tuple{Interface,Function},InferenceAlgorithm}(), TerminalNode[], Dict{TerminalNode,Interface}(), deterministic)
 
     for terminal in terminals
         hasNode(graph, terminal) || error("$(node.id) not in graph")
@@ -39,7 +39,7 @@ CompositeNode(terminals...; id=generateNodeId(CompositeNode), deterministic=fals
 
 isDeterministic(composite_node::CompositeNode) = composite_node.deterministic
 
-function addRule!(composite_node::CompositeNode, outbound_interface::Interface, message_calculation_rule::Function, algorithm::Algorithm)
+function addRule!(composite_node::CompositeNode, outbound_interface::Interface, message_calculation_rule::Function, algorithm::InferenceAlgorithm)
     (outbound_interface.node == composite_node) || error("The outbound interface does not belong to the specified composite node $(composite_node.id)")
     composite_node.computation_rules[(outbound_interface,message_calculation_rule)] = algorithm
 
@@ -58,7 +58,7 @@ function sumProduct!(node::CompositeNode,
     if !haskey(node.computation_rules, (outbound_interface, sumProduct!))
         # Try to automatically generate a sum-product algorithm
         clearMessages!(node.internal_graph)
-        algo = SumProduct.Algorithm(internal_outbound_interface)
+        algo = SumProduct(internal_outbound_interface)
         node.computation_rules[(outbound_interface, sumProduct!)] = algo
     end
 
@@ -70,7 +70,10 @@ function sumProduct!(node::CompositeNode,
     end
 
     # Execute the correct algorithm
-    run(node.computation_rules[(outbound_interface, sumProduct!)], node.internal_graph)
+    parent_graph = currentGraph()
+    setCurrentGraph(node.internal_graph)
+    run(node.computation_rules[(outbound_interface, sumProduct!)])
+    setCurrentGraph(parent_graph)
 
     # Move the calculated messages to the interfaces of node
     outbound_interface.message = internal_outbound_interface.message
