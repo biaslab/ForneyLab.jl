@@ -67,7 +67,7 @@ function inferDistributionTypes!(algo::SumProduct)
         # Generate array of inbound types
         outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
         inbound_types = []
-        for i=1:length(entry.node.interfaces)
+        for i = 1:length(entry.node.interfaces)
             if i == entry.outbound_interface_id
                 push!(inbound_types, Void)
             else
@@ -80,7 +80,8 @@ function inferDistributionTypes!(algo::SumProduct)
         available_rules = methods(sumProduct!, [typeof(entry.node); Type{Val{entry.outbound_interface_id}}; inbound_types; Any])
         outbound_types = [rule.sig.types[end] for rule in available_rules]
 
-        # The oubound outbound_types should contain just one element (there should be just one available)
+        # Assign the outbound type to the schedule entry
+        # The outbound outbound_types should contain just one element (there should be just one available)
         if length(outbound_types) == 0
             error("No calculation rule available for inbound types $(inbound_types).\n$(entry)")
         elseif length(outbound_types) > 1
