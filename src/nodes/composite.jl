@@ -48,13 +48,16 @@ end
 
 nodes(node::CompositeNode) = nodes(node.internal_graph)
 
-function sumProduct!(node::CompositeNode,
-                     outbound_interface_index::Int,
-                     inbounds...)
+function sumProduct!{T<:Val}(node::CompositeNode,
+                     outbound_interface_index::Type{T},
+                     args...)
+
+    outbound_dist = args[end]
+    outbound_interface_index = outbound_interface_index.parameters{1}
     outbound_interface = node.interfaces[outbound_interface_index]
     internal_outbound_interface = node.interfaceid_to_terminalnode[outbound_interface_index].interfaces[1].partner
 
-    # Check if there is a computation rule defined for this case
+    # Check if there is already a computation rule defined for this outbound interface
     if !haskey(node.computation_rules, (outbound_interface, sumProduct!))
         # Try to automatically generate a sum-product algorithm
         clearMessages!(node.internal_graph)
@@ -69,14 +72,15 @@ function sumProduct!(node::CompositeNode,
         end
     end
 
-    # Execute the correct algorithm
+    # Execute the internal graph algorithm
     parent_graph = currentGraph()
     setCurrentGraph(node.internal_graph)
     run(node.computation_rules[(outbound_interface, sumProduct!)])
+    # reset the graph
     setCurrentGraph(parent_graph)
 
     # Move the calculated messages to the interfaces of node
     outbound_interface.message = internal_outbound_interface.message
 
-    return(:empty, outbound_interface.message)
+    return outbound_dist
 end

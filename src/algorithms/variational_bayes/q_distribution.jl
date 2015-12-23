@@ -12,62 +12,66 @@ function show(io::IO, f::QDistribution)
 end
 
 
-############################
-# Univariate approximate marginal calculations
-############################
-
+############################################
 # GammaDistribution
+############################################
+
 function calculateQDistribution!(marg::QDistribution, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
+
+############################################
 # InverseGammaDistribution
+############################################
+
 function calculateQDistribution!(marg::QDistribution, forward_dist::InverseGammaDistribution, backward_dist::InverseGammaDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
+
+############################################
 # BetaDistribution
+############################################
+
 function calculateQDistribution!(marg::QDistribution, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
+
+############################################
 # GaussianDistribution
+############################################
+
 function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
+
+############################################
 # Gaussian-students t combination
+############################################
+
 function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 calculateQDistribution!(marg::QDistribution, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
+
+############################################
 # Gaussian-delta combination
+############################################
+
 function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution{Float64})
     # Calculation for univariate approximate marginal
     return marg.distribution = ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
-# TODO: check for need
-# # Gamma-delta combination
-# function calculateQDistribution!(marg::QDistribution, forward_dist::GammaDistribution, backward_dist::DeltaDistribution{Float64})
-#     # Calculation for univariate approximate marginal
-#     return marg.distribution = ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
-# end
-# calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::GammaDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
-# TODO: check for need
-# # Inverse gamma-delta combination
-# function calculateQDistribution!(marg::QDistribution, forward_dist::InverseGammaDistribution, backward_dist::DeltaDistribution{Float64})
-#     # Calculation for univariate approximate marginal
-#     return marg.distribution = ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
-# end
-# calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::InverseGammaDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
-
-############################
-# Joint approximate marginal calculations
-############################
+############################################
+# Joint marginals
+############################################
 
 function calculateQDistribution!(q_dist::QDistribution,
                                  node::GaussianNode,

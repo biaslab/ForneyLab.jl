@@ -142,7 +142,7 @@ end
 ############################################
 
 function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Tyoe{Val{1}},
+                        outbound_interface_index::Type{Val{1}},
                         msg_in::Any,
                         msg_out::Message{DeltaDistribution{Float64}},
                         outbound_dist::DeltaDistribution{Float64})
@@ -151,34 +151,34 @@ function sumProduct!(   node::GainNode,
     return outbound_dist
 end
 
-function sumProduct!(node::GainNode,
-                     outbound_interface_index::Type{Val{1}},
-                     msg_in::Any,
-                     msg_out::Message{DeltaDistribution{Float64}},
-                     msg_gain::Message{DeltaDistribution{Float64}},
-                     outbound_dist::DeltaDistribution{Float64})
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{1}},
+                        msg_in::Any,
+                        msg_out::Message{DeltaDistribution{Float64}},
+                        msg_gain::Message{DeltaDistribution{Float64}},
+                        outbound_dist::DeltaDistribution{Float64})
 
     outbound_dist.m = msg_out.payload.m / msg_gain.payload.m
     return outbound_dist
 end
 
 # Forward DeltaDistribution to OUT
-function sumProduct!(node::GainNode,
-                     outbound_interface_index::Type{Val{2}},
-                     msg_in::Message{DeltaDistribution{Float64}},
-                     msg_out::Any,
-                     outbound_dist::DeltaDistribution{Float64})
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_in::Message{DeltaDistribution{Float64}},
+                        msg_out::Any,
+                        outbound_dist::DeltaDistribution{Float64})
 
     outbound_dist.m = node.gain[1,1] * msg_in.payload.m
     return outbound_dist
 end
 
-function sumProduct!(node::GainNode,
-                     outbound_interface_index::Type{Val{2}},
-                     msg_in::Message{DeltaDistribution{Float64}},
-                     msg_out::Any,
-                     msg_gain::Message{DeltaDistribution{Float64}},
-                     outbound_dist::DeltaDistribution{Float64})
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_in::Message{DeltaDistribution{Float64}},
+                        msg_out::Any,
+                        msg_gain::Message{DeltaDistribution{Float64}},
+                        outbound_dist::DeltaDistribution{Float64})
 
     outbound_dist.m = msg_gain.payload.m * msg_in.payload.m
     return outbound_dist
@@ -343,12 +343,11 @@ function sumProduct!(   node::GainNode,
     return outbound_dist
 end
 
-# Forward MvDeltaDistribution to OUT
-function sumProduct!(node::GainNode,
-                     outbound_interface_index::Type{Val{2}},
-                     msg_in::Message{MvDeltaDistribution{Float64}},
-                     msg_out::Any,
-                     outbound_dist::MvDeltaDistribution{Float64})
+function sumProduct!(   node::GainNode,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_in::Message{MvDeltaDistribution{Float64}},
+                        msg_out::Any,
+                        outbound_dist::MvDeltaDistribution{Float64})
 
     outbound_dist.m = node.gain * msg_in.payload.m
     return outbound_dist

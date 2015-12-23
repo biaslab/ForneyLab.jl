@@ -92,269 +92,232 @@ isDeterministic(::GaussianNode) = false
 
 
 ############################################
-# Standard update functions
+# Sumproduct update functions
 ############################################
 
-function sumProduct!(node::GaussianNode,
-                     outbound_interface_index::Int,
-                     ::Void,
-                     msg_var_prec::Message{DeltaDistribution{Float64}},
-                     msg_out::Message{DeltaDistribution{Float64}})
+function sumProduct!(   node::GaussianNode,
+                        outbound_interface_index::Type{Val{1}},
+                        msg_mean::Any,
+                        msg_var_prec::Message{DeltaDistribution{Float64}},
+                        msg_out::Message{DeltaDistribution{Float64}},
+                        outbound_dist::GaussianDistribution)
+
     # Rules from Korl table 5.2 by symmetry
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
+    #
+    #   N       Dlt
+    #  ---->[N]<----
+    #  <--   |
+    #        | Dlt
+    #        v
 
     if haskey(node.i, :variance)
-        # Backward over mean
-        #
-        #   N       Dlt
-        #  ---->[N]<----
-        #  <--   |
-        #        | Dlt
-        #        v
-
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-
-        dist_out.m = msg_out.payload.m
-        dist_out.xi = NaN
-        dist_out.V = msg_var_prec.payload.m
-        dist_out.W = NaN
-
-        return (:gaussian_backward_mean_delta_variance,
-                node.interfaces[outbound_interface_index].message)
+        outbound_dist.m = msg_out.payload.m
+        outbound_dist.xi = NaN
+        outbound_dist.V = msg_var_prec.payload.m
+        outbound_dist.W = NaN
     elseif haskey(node.i, :precision)
-        # Backward over mean
-        #
-        #   N       Dlt
-        #  ---->[N]<----
-        #  <--   |
-        #        | Dlt
-        #        v
-
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-
-        dist_out.m = msg_out.payload.m
-        dist_out.xi = NaN
-        dist_out.V = NaN
-        dist_out.W = msg_var_prec.payload.m
-
-        return (:gaussian_backward_mean_delta_precision,
-                node.interfaces[outbound_interface_index].message)
+        outbound_dist.m = msg_out.payload.m
+        outbound_dist.xi = NaN
+        outbound_dist.V = NaN
+        outbound_dist.W = msg_var_prec.payload.m
     else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
+        error("Unknown form $(node.form)")
     end
-end
 
-function sumProduct!(node::GaussianNode,
-                     outbound_interface_index::Int,
-                     msg_mean::Message{DeltaDistribution{Float64}},
-                     ::Void,
-                     msg_out::Message{DeltaDistribution{Float64}})
-    # Rules from Korl table 5.2
-    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
-    # Here we assume the variance to be a point estimate.
-
-    if haskey(node.i, :variance)
-        # Backward over variance
-        #
-        #   Dlt      IG
-        #  ---->[N]<----
-        #        |   -->
-        #     Dlt|
-        #        v
-
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], InverseGammaDistribution).payload
-        y = msg_out.payload.m
-        m = msg_mean.payload.m
-        dist_out.a = -0.5
-        dist_out.b = 0.5*(y-m)^2
-
-        return (:gaussian_backward_variance_delta,
-                node.interfaces[outbound_interface_index].message)
-    elseif haskey(node.i, :precision)
-        # Backward over precision
-        #
-        #   Dlt      Gam
-        #  ---->[N]<----
-        #        |   -->
-        #     Dlt|
-        #        v
-
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GammaDistribution).payload
-        y = msg_out.payload.m
-        m = msg_mean.payload.m
-        dist_out.a = 1.5
-        dist_out.b = 0.5*(y-m)^2
-
-        return (:gaussian_backward_precision_delta,
-                node.interfaces[outbound_interface_index].message)
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
-end
-
-function sumProduct!(node::GaussianNode,
-                     outbound_interface_index::Int,
-                     ::Void,
-                     msg_out::Message{DeltaDistribution{Float64}})
-    # Rules from Korl table 5.2
-    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
-    # Here we assume the variance to be a point estimate.
-
-    if haskey(node.i, :variance)
-        # Backward over variance with fixed mean
-        #
-        #  Ig        Dlt
-        #  ---->[N]---->
-        #   <--
-
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], InverseGammaDistribution).payload
-        y = msg_out.payload.m
-        m = node.m[1]
-        dist_out.a = -0.5
-        dist_out.b = 0.5*(y-m)^2
-
-        return (:gaussian_backward_variance_delta,
-                node.interfaces[outbound_interface_index].message)
-    elseif haskey(node.i, :precision)
-        # Backward over precision with fixed mean
-        #
-        #  Gam       Dlt
-        #  ---->[N]---->
-        #   <--
-
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GammaDistribution).payload
-        y = msg_out.payload.m
-        m = node.m[1]
-        dist_out.a = 1.5
-        dist_out.b = 0.5*(y-m)^2
-
-        return (:gaussian_backward_precision_delta,
-                node.interfaces[outbound_interface_index].message)
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
+    return outbound_dist
 end
 
 function sumProduct!(   node::GaussianNode,
-                        outbound_interface_index::Int,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_mean::Message{DeltaDistribution{Float64}},
+                        msg_var::Any,
+                        msg_out::Message{DeltaDistribution{Float64}},
+                        outbound_dist::InverseGammaDistribution)
+
+    # Rules from Korl table 5.2
+    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
+    # Here we assume the variance to be a point estimate.
+    #
+    #   Dlt      IG
+    #  ---->[N]<----
+    #        |   -->
+    #     Dlt|
+    #        v
+
+    y = msg_out.payload.m
+    m = msg_mean.payload.m
+    outbound_dist.a = -0.5
+    outbound_dist.b = 0.5*(y-m)^2
+
+    return outbound_dist
+end
+
+function sumProduct!(   node::GaussianNode,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_mean::Message{DeltaDistribution{Float64}},
+                        msg_prec::Any,
+                        msg_out::Message{DeltaDistribution{Float64}},
+                        outbound_dist::GammaDistribution)
+
+    #   Dlt      Gam
+    #  ---->[N]<----
+    #        |   -->
+    #     Dlt|
+    #        v
+
+    y = msg_out.payload.m
+    m = msg_mean.payload.m
+    outbound_dist.a = 1.5
+    outbound_dist.b = 0.5*(y-m)^2
+
+    return outbound_dist
+end
+
+function sumProduct!(   node::GaussianNode,
+                        outbound_interface_index::Type{Val{3}},
                         msg_mean::Message{DeltaDistribution{Float64}},
                         msg_var_prec::Message{DeltaDistribution{Float64}},
-                        ::Void)
+                        msg_out::Any,
+                        outbound_dist::GaussianDistribution)
+
     # Rules from Korl table 5.2
     # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
     # Here we assume the variance to be a point estimate.
+    #
+    #   Dlt     Dlt
+    #  ---->[N]<----
+    #        |
+    #      | | N
+    #      v v
 
     if haskey(node.i, :variance)
-        # Forward over out
-        #
-        #   Dlt     Dlt
-        #  ---->[N]<----
-        #        |
-        #      | |
-        #      v v
-
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-
-        dist_out.m = msg_mean.payload.m
-        dist_out.xi = NaN
-        dist_out.V = msg_var_prec.payload.m
-        dist_out.W = NaN
-
-        return (:gaussian_forward_delta_variance,
-                node.interfaces[outbound_interface_index].message)
+        outbound_dist.m = msg_mean.payload.m
+        outbound_dist.xi = NaN
+        outbound_dist.V = msg_var_prec.payload.m
+        outbound_dist.W = NaN
     elseif haskey(node.i, :precision)
-        # Forward over out
-        #
-        #   Dlt     Dlt
-        #  ---->[N]<----
-        #        |
-        #      | |
-        #      v v
-
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-
-        dist_out.m = msg_mean.payload.m
-        dist_out.xi = NaN
-        dist_out.V = NaN
-        dist_out.W = msg_var_prec.payload.m
-
-        return (:gaussian_forward_delta_precision,
-                node.interfaces[outbound_interface_index].message)
+        outbound_dist.m = msg_mean.payload.m
+        outbound_dist.xi = NaN
+        outbound_dist.V = NaN
+        outbound_dist.W = msg_var_prec.payload.m
     else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
+        error("Unknown form $(node.form)")
     end
+
+    return outbound_dist
 end
 
-function sumProduct!(   node::GaussianNode,
-                        outbound_interface_index::Int,
-                        msg_var_prec::Message{DeltaDistribution{Float64}},
-                        msg_out::Void)
-    # Rules from Korl table 5.2
-    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
-    # Here we assume the variance to be a point estimate.
 
-    if haskey(node.i, :variance)
-        # Forward over out with fixed mean
-        #
-        #  Dlt        N
-        #  ---->[N]---->
-        #           -->
-
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-
-        dist_out.m = node.m[1]
-        dist_out.xi = NaN
-        dist_out.V = msg_var_prec.payload.m
-        dist_out.W = NaN
-
-        return (:gaussian_forward_delta_variance,
-                node.interfaces[outbound_interface_index].message)
-    elseif haskey(node.i, :precision)
-        # Forward over out with fixed mean
-        #
-        #  Dlt        N
-        #  ---->[N]---->
-        #           -->
-
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-
-        dist_out.m = node.m[1]
-        dist_out.xi = NaN
-        dist_out.V = NaN
-        dist_out.W = msg_var_prec.payload.m
-
-        return (:gaussian_forward_delta_precision,
-                node.interfaces[outbound_interface_index].message)
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
-end
+############################################
+# Sumproduct update functions with fixed values
+############################################
 
 function sumProduct!(   node::GaussianNode,
-                        outbound_interface_index::Int,
-                        ::Any)
+                        outbound_interface_index::Type{Val{1}},
+                        msg_out::Any,
+                        outbound_dist::GaussianDistribution)
 
-    # Forward over out with fixed mean and variance, effectively rendering the Gaussian node a terminal
+    # Fixed mean and variance, effectively rendering the Gaussian node a terminal
     #
     #        N
     #  [N]---->
     #      -->
-    node.i[:out].message = Message(GaussianDistribution(m=node.m[1], V=node.V[1,1]))
-    return (:gaussian_forward_fixed_mean_variance,
-            node.interfaces[outbound_interface_index].message)
+
+    outbound_dist.m = node.m[1]
+    outbound_dist.V = node.V[1,1]
+    outbound_dist.xi = NaN
+    outbound_dist.W = NaN
+
+    return outbound_dist
 end
+
+function sumProduct!(   node::GaussianNode,
+                        outbound_interface_index::Type{Val{1}},
+                        msg_var::Any,
+                        msg_out::Message{DeltaDistribution{Float64}},
+                        outbound_dist::InverseGammaDistribution)
+
+    # Rules from Korl table 5.2
+    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
+    # Fixed variance
+    #
+    #  Ig        Dlt
+    #  ---->[N]---->
+    #   <--
+
+    y = msg_out.payload.m
+    m = node.m[1]
+    outbound_dist.a = -0.5
+    outbound_dist.b = 0.5*(y-m)^2
+
+    return outbound_dist
+end
+
+function sumProduct!(   node::GaussianNode,
+                        outbound_interface_index::Type{Val{1}},
+                        msg_prec::Any,
+                        msg_out::Message{DeltaDistribution{Float64}},
+                        outbound_dist::GammaDistribution)
+
+    # Fixed mean
+    #
+    #  Gam       Dlt
+    #  ---->[N]---->
+    #   <--
+
+    y = msg_out.payload.m
+    m = node.m[1]
+    outbound_dist.a = 1.5
+    outbound_dist.b = 0.5*(y-m)^2
+
+    return outbound_dist
+end
+
+function sumProduct!(   node::GaussianNode,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_var_prec::Message{DeltaDistribution{Float64}},
+                        msg_out::Any,
+                        outbound_dist::GaussianDistribution)
+
+    # Rules from Korl table 5.2
+    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
+    # Fixed variance
+    #
+    #  Dlt        N
+    #  ---->[N]---->
+    #           -->
+
+    if haskey(node.i, :variance)
+        outbound_dist.m = node.m[1]
+        outbound_dist.xi = NaN
+        outbound_dist.V = msg_var_prec.payload.m
+        outbound_dist.W = NaN
+    elseif haskey(node.i, :precision)
+        outbound_dist.m = node.m[1]
+        outbound_dist.xi = NaN
+        outbound_dist.V = NaN
+        outbound_dist.W = msg_var_prec.payload.m
+    else
+        error("Unknown form $(node.form)")
+    end
+
+    return outbound_dist
+end
+
 
 ############################################
 # Naive variational update functions
 ############################################
 
 function vmp!(  node::GaussianNode,
-                outbound_interface_index::Int,
-                ::Void,
+                outbound_interface_index::Type{Val{1}},
+                marg_mean::Any,
                 marg_variance::InverseGammaDistribution,
-                marg_out::GaussianDistribution)
-    # Variational update function takes the marginals as input (instead of the inbound messages)
+                marg_out::GaussianDistribution,
+                outbound_dist::GaussianDistribution)
+
     # Derivation for the update rule can be found in the derivations notebook.
     #
     #   <--     Q~IG
@@ -362,274 +325,226 @@ function vmp!(  node::GaussianNode,
     #    N   |
     #        |Q~N
     #        v
+
     (isProper(marg_variance) && isProper(marg_out)) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+    ensureParameters!(marg_out, (:m,))
 
-    if is(node.interfaces[outbound_interface_index], node.i[:mean]) # Mean estimation from variance and sample
-        ensureParameters!(marg_out, (:m,))
-        a = marg_variance.a # gamma message
-        b = marg_variance.b
-        dist_out.m = marg_out.m
-        dist_out.V = (a+1)/b
-        dist_out.xi = NaN
-        dist_out.W = NaN
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
+    outbound_dist.m = marg_out.m
+    outbound_dist.V = (marg_variance.a + 1)/marg_variance.b
+    outbound_dist.xi = NaN
+    outbound_dist.W = NaN
 
-    return (:gaussian_backward_mean_gaussian_gamma,
-            node.interfaces[outbound_interface_index].message)
+    return outbound_dist
 end
 
 function vmp!(  node::GaussianNode,
-                outbound_interface_index::Int,
-                ::Void,
+                outbound_interface_index::Type{Val{1}},
+                marg_mean::Any,
                 marg_prec::GammaDistribution,
-                marg_y::GaussianDistribution)
-    # Backward over mean, Gamma input
-    # Variational update function takes the marginals as input (instead of the inbound messages)
-    # By symmetry the rules are the same as the forward over out.
-    #
+                marg_y::GaussianDistribution,
+                outbound_dist::GaussianDistribution)
+
     #   N       Q~Gam
     #  ---->[N]<----
     #   <--  |
     #    Q~N |
     #        v
+
     (isProper(marg_prec) && isProper(marg_y)) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+    ensureParameters!(marg_y, (:m,))
 
-    if is(node.interfaces[outbound_interface_index], node.i[:mean])
-        ensureParameters!(marg_y, (:m,))
-        dist_out.m = marg_y.m
-        dist_out.W = marg_prec.a / marg_prec.b
-        dist_out.xi = NaN
-        dist_out.V = NaN
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
+    outbound_dist.m = marg_y.m
+    outbound_dist.W = marg_prec.a / marg_prec.b
+    outbound_dist.xi = NaN
+    outbound_dist.V = NaN
 
-    return (:gaussian_backward_mean_gaussian_inverse_gamma,
-            node.interfaces[outbound_interface_index].message)
+    return outbound_dist
 end
 
 function vmp!(  node::GaussianNode,
-                outbound_interface_index::Int,
-                ::Void,
-                marg_out::GaussianDistribution)
-    isProper(marg_out) || error("Improper input distributions are not supported")
-    if haskey(node.i, :precision) && is(node.interfaces[outbound_interface_index], node.i[:precision])
-        # Forward variational update function with fixed mean
-        #
-        #   Gam     Q~N
-        #  ---->[N]---->
-        #  <--
-
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GammaDistribution).payload
-        ensureParameters!(marg_out, (:m, :V))
-        dist_out.a = 1.5
-        dist_out.b = 0.5*(marg_out.m - node.m[1])^2 + 0.5*marg_out.V
-
-        return (:gaussian_backward_precision_gaussian_delta,
-                node.interfaces[outbound_interface_index].message)
-    elseif haskey(node.i, :mean) && is(node.interfaces[outbound_interface_index], node.i[:mean])
-        # Backward variational update function with fixed variance
-        #
-        #   <--     Q~N
-        #  ---->[N]---->
-        #    N
-        #
-
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-        ensureParameters!(marg_out, (:m,))
-        dist_out.m = marg_out.m
-        dist_out.V = node.V[1,1]
-        dist_out.xi = NaN
-        dist_out.W = NaN
-
-        return (:gaussian_backward_mean_gaussian_delta,
-                node.interfaces[outbound_interface_index].message)
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
-end
-
-function vmp!(  node::GaussianNode,
-                outbound_interface_index::Int,
+                outbound_interface_index::Type{Val{2}},
                 marg_mean::GaussianDistribution,
-                ::Void,
-                marg_out::GaussianDistribution)
-    (isProper(marg_mean) && isProper(marg_out)) || error("Improper input distributions are not supported")
-    if haskey(node.i, :variance)
-        # Variational update function takes the marginals as input (instead of the inbound messages)
-        # Derivation for the update rule can be found in the derivations notebook.
-        #
-        #   Q~N      IG
-        #  ---->[N]<----
-        #        |   -->
-        #    Q~N |
-        #        v
+                marg_var::Any,
+                marg_out::GaussianDistribution,
+                outbound_dist::InverseGammaDistribution)
 
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], InverseGammaDistribution).payload
+    #   Q~N      IG
+    #  ---->[N]<----
+    #        |   -->
+    #    Q~N |
+    #        v
 
-        if is(node.interfaces[outbound_interface_index], node.i[:variance]) # Variance estimation from mean and sample
-            ensureParameters!(marg_out, (:m, :V))
-            ensureParameters!(marg_mean, (:m, :V))
-            mu_m = marg_mean.m
-            mu_y = marg_out.m
-            V_m = marg_mean.V
-            V_y = marg_out.V
-            dist_out.a = -0.5
-            dist_out.b = 0.5*(mu_y-mu_m)^2+0.5*(V_m+V_y)
+    ensureParameters!(marg_out, (:m, :V))
+    ensureParameters!(marg_mean, (:m, :V))
 
-            return (:gaussian_backward_variance_gaussian,
-                    node.interfaces[outbound_interface_index].message)
-        else
-            error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-        end
-    elseif haskey(node.i, :precision)
-        # Variational update function takes the marginals as input (instead of the inbound messages)
-        # Derivation for the update rule can be found in the derivations notebook.
-        #
-        #   Q~N      Gam
-        #  ---->[N]<----
-        #       |   -->
-        #   Q~N |
-        #       v
+    outbound_dist.a = -0.5
+    outbound_dist.b = 0.5*(marg_out.m - marg_mean.m)^2 + 0.5*(marg_mean.V + marg_out.V)
 
-        dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GammaDistribution).payload
-
-        if is(node.interfaces[outbound_interface_index], node.i[:precision]) # Precision estimation from mean and sample
-            ensureParameters!(marg_out, (:m, :V))
-            ensureParameters!(marg_mean, (:m, :V))
-            mu_m = marg_mean.m
-            mu_y = marg_out.m
-            V_m = marg_mean.V
-            V_y = marg_out.V
-            dist_out.a = 1.5
-            dist_out.b = 0.5*(mu_y-mu_m)^2+0.5*(V_m+V_y)
-
-            return (:gaussian_backward_precision_gaussian,
-                    node.interfaces[outbound_interface_index].message)
-        else
-            error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-        end
-    else
-        error("Unknown update rule for $(typeof(node)) $(node.id). Only the moment and precision form are currently supported.")
-    end
+    return outbound_dist
 end
 
 function vmp!(  node::GaussianNode,
-                outbound_interface_index::Int,
+                outbound_interface_index::Type{Val{2}},
+                marg_mean::GaussianDistribution,
+                marg_prec::Any,
+                marg_out::GaussianDistribution,
+                outbound_dist::GammaDistribution)
+
+    #   Q~N      Gam
+    #  ---->[N]<----
+    #        |   -->
+    #    Q~N |
+    #        v
+
+    ensureParameters!(marg_out, (:m, :V))
+    ensureParameters!(marg_mean, (:m, :V))
+
+    outbound_dist.a = 1.5
+    outbound_dist.b = 0.5*(marg_out.m - marg_mean.m)^2 + 0.5*(marg_mean.V + marg_out.V)
+
+    return outbound_dist
+end
+
+function vmp!(  node::GaussianNode,
+                outbound_interface_index::Type{Val{3}},
                 marg_mean::GaussianDistribution,
                 marg_var::InverseGammaDistribution,
-                ::Void)
-    # Forward over out, InverseGamma input
-    # Variational update function takes the marginals as input (instead of the inbound messages)
-    # Derivation for the update rule can be found in the derivations notebook.
-    #
+                marg_out::Any,
+                outbound_dist::GaussianDistribution)
+
     #   Q~N     Q~IG
     #  ---->[N]<----
     #        |
     #      N | |
     #        v v
+
     (isProper(marg_mean) && isProper(marg_var)) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+    ensureParameters!(marg_mean, (:m,))
 
-    if is(node.interfaces[outbound_interface_index], node.i[:out])
-        ensureParameters!(marg_mean, (:m,))
-        dist_out.m = marg_mean.m
-        dist_out.V = marg_var.b / (marg_var.a-1.0)
-        dist_out.xi = NaN
-        dist_out.W = NaN
+    outbound_dist.m = marg_mean.m
+    outbound_dist.V = marg_var.b / (marg_var.a-1.0)
+    outbound_dist.xi = NaN
+    outbound_dist.W = NaN
 
-        return (:gaussian_forward_gaussian_inverse_gamma,
-                node.interfaces[outbound_interface_index].message)
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
+    return outbound_dist
 end
 
 function vmp!(  node::GaussianNode,
-                outbound_interface_index::Int,
-                marg_prec::GammaDistribution,
-                ::Void)
-    # Forward variational update function with fixed mean
-    #
-    #  Q~Gam      N
-    #  ---->[N]---->
-    #            -->
-    isProper(marg_prec) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-
-    if is(node.interfaces[outbound_interface_index], node.i[:out])
-        dist_out.m = node.m[1]
-        dist_out.V = NaN
-        dist_out.xi = NaN
-        dist_out.W = marg_prec.a / marg_prec.b
-
-        return (:gaussian_forward_gamma,
-                node.interfaces[outbound_interface_index].message)
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
-end
-
-function vmp!(  node::GaussianNode,
-                outbound_interface_index::Int,
-                marg_mean::GaussianDistribution,
-                ::Void)
-    # Forward variational update function with fixed variance
-    #
-    #   Q~N     -->
-    #  ---->[N]---->
-    #            N
-    #
-    isProper(marg_mean) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-
-    if is(node.interfaces[outbound_interface_index], node.i[:out])
-        ensureParameters!(marg_mean, (:m,))
-        dist_out.m = marg_mean.m
-        dist_out.V = node.V[1,1]
-        dist_out.xi = NaN
-        dist_out.W = NaN
-
-        return (:gaussian_forward_gaussian,
-                node.interfaces[outbound_interface_index].message)
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
-end
-
-function vmp!(  node::GaussianNode,
-                outbound_interface_index::Int,
+                outbound_interface_index::Type{Val{3}},
                 marg_mean::GaussianDistribution,
                 marg_prec::GammaDistribution,
-                ::Void)
-    # Forward over out, Gamma input
-    # Variational update function takes the marginals as input (instead of the inbound messages)
-    # Derivation for the update rule can be found in the derivations notebook.
-    #
+                marg_out::Any,
+                outbound_dist::GaussianDistribution)
+
     #   Q~N     Q~Gam
     #  ---->[N]<----
     #        |
     #      N | |
     #        v v
+
     (isProper(marg_mean) && isProper(marg_prec)) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
+    ensureParameters!(marg_mean, (:m,))
 
-    if is(node.interfaces[outbound_interface_index], node.i[:out])
-        ensureParameters!(marg_mean, (:m,))
-        dist_out.m = marg_mean.m
-        dist_out.W = marg_prec.a / marg_prec.b
-        dist_out.xi = NaN
-        dist_out.V = NaN
+    outbound_dist.m = marg_mean.m
+    outbound_dist.W = marg_prec.a / marg_prec.b
+    outbound_dist.xi = NaN
+    outbound_dist.V = NaN
 
-        return (:gaussian_forward_gaussian_gamma,
-                node.interfaces[outbound_interface_index].message)
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
+    return outbound_dist
+end
+
+
+############################################
+# Naive variational update functions with fixed values
+############################################
+
+function vmp!(  node::GaussianNode,
+                outbound_interface_index::Type{Val{1}},
+                marg_prec::Any,
+                marg_out::GaussianDistribution,
+                outbound_dist::GammaDistribution)
+
+    # Fixed mean
+    #
+    #   Gam     Q~N
+    #  ---->[N]---->
+    #  <--
+
+    isProper(marg_out) || error("Improper input distributions are not supported")
+    ensureParameters!(marg_out, (:m, :V))
+
+    outbound_dist.a = 1.5
+    outbound_dist.b = 0.5*(marg_out.m - node.m[1])^2 + 0.5*marg_out.V
+
+    return outbound_dist
+end
+
+function vmp!(  node::GaussianNode,
+                outbound_interface_index::Type{Val{1}},
+                marg_mean::Any,
+                marg_out::GaussianDistribution,
+                outbound_dist::GaussianDistribution)
+
+    # Fixed variance
+    #
+    #   <--     Q~N
+    #  ---->[N]---->
+    #    N
+
+    isProper(marg_out) || error("Improper input distributions are not supported")
+    ensureParameters!(marg_out, (:m,))
+
+    outbound_dist.m = marg_out.m
+    outbound_dist.V = node.V[1,1]
+    outbound_dist.xi = NaN
+    outbound_dist.W = NaN
+
+    return outbound_dist
+end
+
+function vmp!(  node::GaussianNode,
+                outbound_interface_index::Type{Val{2}},
+                marg_prec::GammaDistribution,
+                marg_out::Any,
+                outbound_dist::GaussianDistribution)
+
+    # Fixed mean
+    #
+    #  Q~Gam      N
+    #  ---->[N]---->
+    #            -->
+
+    isProper(marg_prec) || error("Improper input distributions are not supported")
+
+    outbound_dist.m = node.m[1]
+    outbound_dist.V = NaN
+    outbound_dist.xi = NaN
+    outbound_dist.W = marg_prec.a / marg_prec.b
+
+    return outbound_dist
+end
+
+function vmp!(  node::GaussianNode,
+                outbound_interface_index::Type{Val{2}},
+                marg_mean::GaussianDistribution,
+                marg_out::Any,
+                outbound_dist::GaussianDistribution)
+
+    # Fixed variance
+    #
+    #   Q~N     -->
+    #  ---->[N]---->
+    #            N
+    
+    isProper(marg_mean) || error("Improper input distributions are not supported")
+    ensureParameters!(marg_mean, (:m,))
+
+    outbound_dist.m = marg_mean.m
+    outbound_dist.V = node.V[1,1]
+    outbound_dist.xi = NaN
+    outbound_dist.W = NaN
+
+    return outbound_dist
 end
 
 
@@ -638,96 +553,73 @@ end
 ############################################
 
 function vmp!(  node::GaussianNode,
-                outbound_interface_index::Int,
-                ::Void,
+                outbound_interface_index::Type{Val{1}},
+                msg_mean::Any,
                 msg_prec::Message{GammaDistribution},
-                marg_out::GaussianDistribution)
-    # Backward message over the mean
-    #
+                marg_out::GaussianDistribution,
+                outbound_dist::StudentsTDistribution)
+
     #   <--     Gam
     #  ---->[N]<----
     #   St   |
     # - - - - - - - -
     #        | Q~N
     #        v
+
     (isProper(msg_prec.payload) && isProper(marg_out)) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], StudentsTDistribution).payload
+    ensureParameters!(marg_out, (:m, :W))
 
-    if is(node.interfaces[outbound_interface_index], node.i[:mean])
-        ensureParameters!(marg_out, (:m, :W))
-        m_y = marg_out.m
-        prec_y = marg_out.W
-        a = msg_prec.payload.a
-        b = msg_prec.payload.b
-        dist_out.m = m_y
-        dist_out.lambda = (2.0*prec_y*a) / (2.0*prec_y*b + 1)
-        dist_out.nu = 2.0*a
+    outbound_dist.m = marg_out.m
+    outbound_dist.lambda = (2.0*marg_out.W*msg_prec.payload.a)/(2.0*prec_y*msg_prec.payload.b + 1)
+    outbound_dist.nu = 2.0*msg_prec.payload.a
 
-        return (:gaussian_backward_mean_structured,
-                node.interfaces[outbound_interface_index].message)
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
+    return outbound_dist
 end
 
 function vmp!(  node::GaussianNode,
-                outbound_interface_index::Int,
+                outbound_interface_index::Type{Val{2}},
                 msg_mean::Message{GaussianDistribution},
-                ::Void,
-                marg_out::GaussianDistribution)
-    # Backward message over the precision
-    #
+                msg_prec::Any,
+                marg_out::GaussianDistribution,
+                outbound_dist::GammaDistribution)
+
     #    N      Gam
     #  ---->[N]<----
     #        |   -->
     # - - - - - - - -
     #        | Q~N
     #        v
+
     (isProper(msg_mean.payload) && isProper(marg_out)) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GammaDistribution).payload
+    ensureParameters!(marg_out, (:m, :W))
+    ensureParameters!(msg_mean.payload, (:m,))
 
-    if haskey(node.i, :precision)
-        ensureParameters!(marg_out, (:m, :W))
-        m_y = marg_out.m
-        prec_y = marg_out.W
-        ensureParameters!(msg_mean.payload, (:m,))
-        m_m = msg_mean.payload.m
-        dist_out.a = 1.5
-        dist_out.b = 0.5*((1.0/prec_y) + (m_m - m_y)^2)
+    outbound_dist.a = 1.5
+    outbound_dist.b = 0.5*((1.0/marg_out.W) + (msg_mean.payload.m - marg_out.m)^2)
 
-        return (:gaussian_backward_precision_structured,
-                node.interfaces[outbound_interface_index].message)
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
+    return outbound_dist
 end
 
 function vmp!(  node::GaussianNode,
-                outbound_interface_index::Int,
+                outbound_interface_index::Type{Val{3}},
                 marg::NormalGammaDistribution,
                 ::NormalGammaDistribution, # Same distribution as marg
-                ::Void)
-    # Forward message over out.
-    # This update function has two argments instead of three because it uses the node's joint marginal over the mean and precision.
-    #
+                marg_out::Any,
+                outbound_dist::GaussianDistribution)
+
     #      Q~NGam
     #  ---->[N]<----
     #        |
     # - - - - - - - -
     #      | | N
     #      v v
+
     isProper(marg) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
 
-    if is(node.interfaces[outbound_interface_index], node.i[:out])
-        dist_out.m = marg.m
-        dist_out.W = marg.a / marg.b
-        dist_out.xi = NaN
-        dist_out.V = NaN
+    outbound_dist.m = marg.m
+    outbound_dist.W = marg.a / marg.b
+    outbound_dist.xi = NaN
+    outbound_dist.V = NaN
 
-        return (:gaussian_forward_structured,
-                node.interfaces[outbound_interface_index].message)
-    else
-        error("Undefined inbound-outbound message type combination for node $(node.id) of type $(typeof(node)).")
-    end
+    return outbound_dist
 end

@@ -37,6 +37,8 @@ end
 
 TerminalNode(value::ProbabilityDistribution; id=generateNodeId(TerminalNode)) = TerminalNode{typeof(value)}(value, id=id)
 
+TerminalNode(; id=generateNodeId(TerminalNode)) = TerminalNode{GaussianDistribution}(vague(GaussianDistribution), id=id)
+
 typealias PriorNode TerminalNode # For more overview during graph construction
 
 isDeterministic(::TerminalNode) = false # Edge case for deterministicness
@@ -46,8 +48,8 @@ firstFreeInterface(node::TerminalNode) = (node.interfaces[1].partner==nothing) ?
 
 function sumProduct!(   node::TerminalNode,
                         outbound_interface_index::Type{Val{1}},
-                        ::Any,
-                        ::Any)
+                        msg_out::Any,
+                        outbound_dist::Any)
 
     # Send out node.value
     ensureMessage!(node.interfaces[1], typeof(node.value))

@@ -52,72 +52,141 @@ end
 
 isDeterministic(::GainEqualityNode) = true
 
+
 ############################################
 # GaussianDistribution methods
 ############################################
 
 function sumProduct!(   node::GainEqualityNode,
-                        outbound_interface_index::Int,
+                        outbound_interface_index::Type{Val{3}},
                         msg_in1::Message{GaussianDistribution},
                         msg_in2::Message{GaussianDistribution},
-                        msg_out::Void)
-    # Forward message (towards out)
-    (outbound_interface_index == 3) || error("The outbound interface id does not match with the calling signature.")
+                        msg_out::Any,
+                        outbound_dist::GaussianDistribution)
+
     (isProper(msg_in1.payload) && isProper(msg_in2.payload)) || error("Improper input distributions are not supported")
     dist_temp = GaussianDistribution()
     equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
     dist_temp = ensureParameters!(dist_temp, (:m, :V))
-    dist_out.m = node.A[1,1] * dist_temp.m
-    dist_out.V = (node.A[1,1])^2 * dist_temp.V
-    dist_out.xi = dist_out.W = NaN
 
-    return (:gain_equality_gaussian_forward,
-            node.interfaces[outbound_interface_index].message)
+    outbound_dist.m = node.A[1,1] * dist_temp.m
+    outbound_dist.V = (node.A[1,1])^2 * dist_temp.V
+    outbound_dist.xi = NaN
+    outbound_dist.W = NaN
+
+    return outbound_dist
 end
 
-function sumProduct!(node::GainEqualityNode,
-                            outbound_interface_index::Int,
-                            msg_in1::Message{GaussianDistribution},
-                            msg_in2::Void,
-                            msg_out::Message{GaussianDistribution})
-    # Backward message (towards in2)
+function sumProduct!(   node::GainEqualityNode,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_in1::Message{GaussianDistribution},
+                        msg_in2::Any,
+                        msg_out::Message{GaussianDistribution},
+                        outbound_dist::GaussianDistribution)
+
     (isProper(msg_in1.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
-    return applyBackwardRule!(node, outbound_interface_index, msg_in1, msg_out)
+    return gainEqualityBackwardRule!(outbound_dist, msg_in1.payload, msg_out.payload, node.A)
 end
 
 function sumProduct!(node::GainEqualityNode,
                             outbound_interface_index::Int,
                             msg_in1::Void,
                             msg_in2::Message{GaussianDistribution},
-                            msg_out::Message{GaussianDistribution})
+                            msg_out::Message{GaussianDistribution},
+                            outbound_dist::GaussianDistribution)
     # Backward message (towards in1)
     (isProper(msg_in2.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
-    return applyBackwardRule!(node, outbound_interface_index, msg_in2, msg_out)
+    return gainEqualityBackwardRule!(outbound_dist, msg_in2.payload, msg_out.payload, node.A)
 end
 
-function applyBackwardRule!(node::GainEqualityNode,
-                            outbound_interface_index::Int,
-                            msg_in::Message{GaussianDistribution},
-                            msg_out::Message{GaussianDistribution})
+function gainEqualityBackwardRule!(dist_result::GaussianDistribution, dist_in::GaussianDistribution, dist_out::GaussianDistribution, A::Any)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
     # Backward message (towards in1 or in2)
-    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], GaussianDistribution).payload
-    dist_3 = ensureParameters!(msg_out.payload, (:xi, :W))
-    dist_in = ensureParameters!(msg_in.payload, (:xi, :W))
+    ensureParameters!(dist_out, (:xi, :W))
+    ensureParameters!(dist_in, (:xi, :W))
 
-    dist_result.m = dist_result.V = NaN
-    dist_result.W = dist_in.W + node.A[1,1]^2 * dist_3.W
-    dist_result.xi = dist_in.xi + node.A[1,1] * dist_3.xi
+    dist_result.m = NaN
+    dist_result.V = NaN
+    dist_result.W = dist_in.W + A[1,1]^2 * dist_out.W
+    dist_result.xi = dist_in.xi + A[1,1] * dist_out.xi
 
-    return (:gain_equality_gaussian_backward,
-            node.interfaces[outbound_interface_index].message)
+    return dist_result
 end
+
 
 ############################################
 # MvGaussianDistribution methods
 ############################################
+
+function sumProduct!(   node::GainEqualityNode,
+                        outbound_interface_index::Type{Val{3}},
+                        msg_in1::Message{MvGaussianDistribution},
+                        msg_in2::Message{MvGaussianDistribution},
+                        msg_out::Any,
+                        outbound_dist::MvGaussianDistribution)
+
+    (isProper(msg_in1.payload) && isProper(msg_in2.payload)) || error("Improper input distributions are not supported")
+    dist_temp = MvGaussianDistribution()
+    equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
+    return gainForwardRule!(outbound_dist, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
+end
+
+function sumProduct!(   node::GainEqualityNode,
+                        outbound_interface_index::Type{Val{2}},
+                        msg_in1::Message{MvGaussianDistribution},
+                        msg_in2::Any,
+                        msg_out::Message{MvGaussianDistribution},
+                        outbound_dist::MvGaussianDistribution)
+
+    (isProper(msg_in1.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
+    return gainEqualityBackwardRule!(outbound_dist, outbound_interface_index, msg_in1.payload, msg_out.payload, node.A)
+end
+
+function sumProduct!(node::GainEqualityNode,
+                            outbound_interface_index::Int,
+                            msg_in1::Void,
+                            msg_in2::Message{MvGaussianDistribution},
+                            msg_out::Message{MvGaussianDistribution})
+
+    (isProper(msg_in2.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
+    return gainEqualityBackwardRule!(outbound_dist, outbound_interface_index, msg_in2.payload, msg_out.payload, node.A)
+end
+
+function gainEqualityBackwardRule!(dist_result::MvGaussianDistribution,
+                            dist_in::MvGaussianDistribution,
+                            dist_out::MvGaussianDistribution,
+                            A::Any)
+
+    # Select parameterization
+    # Order is from least to most computationally intensive
+    if isValid(dist_out.xi) && isValid(dist_out.W) && isValid(dist_in.xi) && isValid(dist_in.W)
+        invalidate!(dist_result.m)
+        invalidate!(dist_result.V)
+        dist_result.W = backwardGainEqualityWRule(A, dist_in.W, dist_out.W)
+        dist_result.xi = backwardGainEqualityXiRule(A, dist_in.xi, dist_out.xi)
+    elseif isValid(dist_out.m) && isValid(dist_out.V) && isValid(dist_in.m) && isValid(dist_in.V)
+        dist_result.m = backwardGainEqualityMRule(A, dist_in.m, dist_in.V, dist_out.m, dist_out.V)
+        dist_result.V = backwardGainEqualityVRule(A, dist_in.V, dist_out.V)
+        invalidate!(dist_result.W)
+        invalidate!(dist_result.xi)
+    elseif isValid(dist_out.m) && isValid(dist_out.W) && isValid(dist_in.m) && isValid(dist_in.W)
+        dist_result.m = backwardGainEqualityMRule(A, dist_in.m, inv(dist_in.W), dist_out.m, inv(dist_out.W))
+        invalidate!(dist_result.V)
+        dist_result.W = backwardGainEqualityWRule(A, dist_in.W, dist_out.W)
+        invalidate!(dist_result.xi)
+    else
+        # Fallback: convert inbound messages to (xi,W) parametrization and then use efficient rules
+        ensureParameters!(dist_in, (:xi, :W))
+        ensureParameters!(dist_out, (:xi, :W))
+        invalidate!(dist_result.m)
+        invalidate!(dist_result.V)
+        dist_result.W = backwardGainEqualityWRule(A, dist_in.W, dist_out.W)
+        dist_result.xi = backwardGainEqualityXiRule(A, dist_in.xi, dist_out.xi)
+    end
+
+    return dist_result
+end
 
 # Rule set for backward propagation ({in2,out}-->in1 or {in1,out}-->in2)
 # From: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
@@ -125,82 +194,3 @@ backwardGainEqualityWRule{T<:Number}(A::Array{T, 2}, W_x::Array{T, 2}, W_y::Arra
 backwardGainEqualityXiRule{T<:Number}(A::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x + A' * xi_y
 backwardGainEqualityVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x - V_x * A' * inv(V_y + A * V_x * A') * A * V_x
 backwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, V_x::Array{T, 2}, m_y::Array{T, 1}, V_y::Array{T, 2}) = m_x + V_x * A' * inv(V_y + A * V_x * A') * (m_y - A * m_x)
-
-function sumProduct!(node::GainEqualityNode,
-                            outbound_interface_index::Int,
-                            msg_in1::Message{MvGaussianDistribution},
-                            msg_in2::Message{MvGaussianDistribution},
-                            msg_out::Void)
-    # Forward message (towards out)
-    (outbound_interface_index == 3) || error("The outbound interface id does not match with the calling signature.")
-    (isProper(msg_in1.payload) && isProper(msg_in2.payload)) || error("Improper input distributions are not supported")
-    dist_temp = MvGaussianDistribution()
-    equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
-    dist_out = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
-    gainGaussianForwardRule!(dist_out, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
-
-    return (:gain_equality_gaussian_forward,
-            node.interfaces[outbound_interface_index].message)
-end
-
-function sumProduct!(node::GainEqualityNode,
-                            outbound_interface_index::Int,
-                            msg_in1::Message{MvGaussianDistribution},
-                            msg_in2::Void,
-                            msg_out::Message{MvGaussianDistribution})
-    # Backward message (towards in2)
-    (isProper(msg_in1.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
-    return applyBackwardRule!(node, outbound_interface_index, msg_in1, msg_out)
-end
-
-function sumProduct!(node::GainEqualityNode,
-                            outbound_interface_index::Int,
-                            msg_in1::Void,
-                            msg_in2::Message{MvGaussianDistribution},
-                            msg_out::Message{MvGaussianDistribution})
-    # Backward message (towards in1)
-    (isProper(msg_in2.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
-    return applyBackwardRule!(node, outbound_interface_index, msg_in2, msg_out)
-end
-
-function applyBackwardRule!(node::GainEqualityNode,
-                            outbound_interface_index::Int,
-                            msg_in::Message{MvGaussianDistribution},
-                            msg_out::Message{MvGaussianDistribution})
-    # Calculate an outbound message based on the inbound messages and the node function.
-    # This function is not exported, and is only meant for internal use.
-    # Backward message (towards in1 or in2)
-    dist_result = ensureMessage!(node.interfaces[outbound_interface_index], MvGaussianDistribution).payload
-    dist_3 = msg_out.payload
-    dist_in = msg_in.payload
-
-    # Select parameterization
-    # Order is from least to most computationally intensive
-    if isValid(dist_3.xi) && isValid(dist_3.W) && isValid(dist_in.xi) && isValid(dist_in.W)
-        invalidate!(dist_result.m)
-        invalidate!(dist_result.V)
-        dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
-        dist_result.xi = backwardGainEqualityXiRule(node.A, dist_in.xi, dist_3.xi)
-    elseif isValid(dist_3.m) && isValid(dist_3.V) && isValid(dist_in.m) && isValid(dist_in.V)
-        dist_result.m = backwardGainEqualityMRule(node.A, dist_in.m, dist_in.V, dist_3.m, dist_3.V)
-        dist_result.V = backwardGainEqualityVRule(node.A, dist_in.V, dist_3.V)
-        invalidate!(dist_result.W)
-        invalidate!(dist_result.xi)
-    elseif isValid(dist_3.m) && isValid(dist_3.W) && isValid(dist_in.m) && isValid(dist_in.W)
-        dist_result.m = backwardGainEqualityMRule(node.A, dist_in.m, inv(dist_in.W), dist_3.m, inv(dist_3.W))
-        invalidate!(dist_result.V)
-        dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
-        invalidate!(dist_result.xi)
-    else
-        # Fallback: convert inbound messages to (xi,W) parametrization and then use efficient rules
-        ensureParameters!(dist_in, (:xi, :W))
-        ensureParameters!(dist_3, (:xi, :W))
-        invalidate!(dist_result.m)
-        invalidate!(dist_result.V)
-        dist_result.W = backwardGainEqualityWRule(node.A, dist_in.W, dist_3.W)
-        dist_result.xi = backwardGainEqualityXiRule(node.A, dist_in.xi, dist_3.xi)
-    end
-
-    return (:gain_equality_gaussian_backward,
-            node.interfaces[outbound_interface_index].message)
-end
