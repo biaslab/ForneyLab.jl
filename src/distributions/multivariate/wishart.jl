@@ -27,7 +27,7 @@ WishartDistribution(; V::Matrix{Float64} = [1.0].', nu::Float64 = 1.0) = Wishart
 
 WishartDistribution() = WishartDistribution(V = [1.0].', nu = 1.0)
 
-vague{dims}(::Type{WishartDistribution{dims}}) = WishartDistribution(V = huge*eye(dims), nu = Float64(dims)) # Least informative distribution
+vague{dims}(::Type{WishartDistribution{dims}}) = WishartDistribution(V = huge*eye(dims), nu = tiny)
 
 format(dist::WishartDistribution) = "W(V=$(format(dist.V)), ν=$(format(dist.nu)))"
 

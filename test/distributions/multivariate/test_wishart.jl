@@ -9,8 +9,7 @@ facts("WishartDistribution unit tests") do
         @fact dist.V --> [2.0 1.0; 1.0 2.0]
         @fact dist.nu --> 3.0
         @fact mean(dist) --> 3.0*[2.0 1.0; 1.0 2.0]
-        @fact var(dist) --> [24.0, 24.0]
-        @fact cov(dist) --> [24.0 15.0; 15.0 24.0]
+        @fact var(dist) --> [24.0 15.0; 15.0 24.0]
     end
 
     context("vague() should initialize a vague (almost uninformative) Wishart distribution") do

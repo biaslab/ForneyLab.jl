@@ -146,7 +146,7 @@ facts("GaussianNode unit tests") do
                 validateOutboundMessage(GaussianNode(form=:precision),
                                         2,
                                         [MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.0; 0.0 2.0]), nothing, MvGaussianDistribution(m=[3.0, 4.0], V=[1.0 0.0; 0.0 2.0])],
-                                        WishartDistribution(V=[1.0/6.0 0.0; 0.0 1.0/8.0], nu=3.0),
+                                        WishartDistribution(V=[0.25 -0.125; -0.125 0.1875], nu=4.0),
                                         ForneyLab.vmp!)
                 # Log-Variance
                 validateOutboundMessage(GaussianNode(form=:log_variance),

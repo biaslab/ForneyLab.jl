@@ -435,8 +435,6 @@ function vmp!(  node::GaussianNode,
 
     if is(node.interfaces[outbound_interface_index], node.i[:mean])
         ensureParameters!(marg_y, (:m,:W))
-        (diagm(diag(marg_prec.V)) == marg_prec.V) || error("Wishart update rule only implemented for diagonal matrices")
-        (diagm(diag(marg_y.W)) == marg_y.W) || error("Wishart update rule only implemented for diagonal matrices")
         dist_out.m = marg_y.m
         dist_out.W = marg_prec.nu*marg_prec.V
         invalidate!(dist_out.xi)
@@ -664,14 +662,8 @@ function vmp!(  node::GaussianNode,
         if is(node.interfaces[outbound_interface_index], node.i[:precision]) # Precision estimation from mean and sample
             ensureParameters!(marg_out, (:m, :V))
             ensureParameters!(marg_mean, (:m, :V))
-            (diagm(diag(marg_out.V)) == marg_out.V) || error("Wishart update rule only implemented for diagonal matrices")
-            (diagm(diag(marg_mean.V)) == marg_mean.V) || error("Wishart update rule only implemented for diagonal matrices")
-            mu_m = marg_mean.m
-            mu_y = marg_out.m
-            V_m = marg_mean.V
-            V_y = marg_out.V
-            dist_out.nu = 3.0
-            dist_out.V = diagm(1./((mu_y - mu_m).^2 + diag(V_m) + diag(V_y)))
+            dist_out.nu = 2.0 + dimensions(marg_mean)
+            dist_out.V = inv( marg_out.V + marg_mean.V + (marg_out.m - marg_mean.m)*(marg_out.m - marg_mean.m)' )
 
             return (:mv_gaussian_backward_precision_mv_gaussian,
                     node.interfaces[outbound_interface_index].message)
@@ -860,8 +852,6 @@ function vmp!(  node::GaussianNode,
 
     if is(node.interfaces[outbound_interface_index], node.i[:out])
         ensureParameters!(marg_mean, (:m,:W))
-        (diagm(diag(marg_prec.V)) == marg_prec.V) || error("Wishart update rule only implemented for diagonal matrices")
-        (diagm(diag(marg_mean.W)) == marg_mean.W) || error("Wishart update rule only implemented for diagonal matrices")
         dist_out.m = marg_mean.m
         dist_out.W = marg_prec.nu*marg_prec.V
         invalidate!(dist_out.xi)

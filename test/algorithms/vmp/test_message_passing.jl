@@ -77,12 +77,14 @@ facts("Naive VMP implementation integration tests") do
         # Perform vmp updates
         step(algo)
 
-        # Check the results against the outcome of similar Infer.NET script
         m_out = m_buffer[end]
         gam_out = gam_buffer[end]
 
-        # TODO: Initializing the vague multivariate recognition distributions
-        @fact true --> false
+        # TODO: obtain proper reference values
+        @fact round(mean(m_out), 5) --> [4.38083, 2.02401]
+        @fact round(cov(m_out), 5) --> [0.15241 -0.03349; -0.03349 0.08052]
+        @fact round(mean(gam_out), 5)  --> [1.03159 0.42907; 0.42907 1.95259]
+        @fact round(var(gam_out), 5) --> [0.21283  0.21984; 0.21984 0.76252]
     end
 
     context("Gaussian node mean precision online estimation") do
