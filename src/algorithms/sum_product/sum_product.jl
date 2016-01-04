@@ -72,7 +72,11 @@ function inferDistributionTypes!(algo::SumProduct)
                 push!(inbound_types, Void)
             else
                 interface = entry.node.interfaces[i]
-                push!(inbound_types, Message{schedule_entries[interface.partner].outbound_type})
+                if interface.partner.message == nothing
+                    push!(inbound_types, Message{schedule_entries[interface.partner].outbound_type})
+                else # A breaker message is pre-set on the partner interface
+                    push!(inbound_types, typeof(interface.partner.message))
+                end
             end
         end
 

@@ -83,15 +83,15 @@ function sumProduct!(   node::SigmoidNode,
                         outbound_dist::BernoulliDistribution)
 
     # Generate Bernoulli message from incoming Gaussian message.
-    dist_real = ensureParameters!(msg_1.payload, (:m, :V))
+    dist_real = ensureParameters!(msg_real.payload, (:m, :V))
 
     if node.sigmoid_func == :normal_cdf
-        ourbound_dist.p = Φ(dist_real.m / sqrt(1+dist_real.V))
+        outbound_dist.p = Φ(dist_real.m / sqrt(1+dist_real.V))
     else
         error("Unsupported sigmoid function")
     end
 
-    return ourbound_dist
+    return outbound_dist
 end
 
 
@@ -116,7 +116,7 @@ function ep!(   node::SigmoidNode,
                 outbound_dist::GaussianDistribution)
 
     # Calculate approximate (Gaussian) message towards i[:real]
-    # The approximate message is an 'expectation' under the context (cavity distribution) encoded by incoming message msg_1.
+    # The approximate message is an 'expectation' under the context (cavity distribution) encoded by incoming message msg_cavity.
     # Propagating the resulting approximate msg through the factor graph results in the expectation propagation (EP) algorithm.
     # Approximation procedure:
     #  1. Calculate exact (non-Gaussian) message towards i[:real].

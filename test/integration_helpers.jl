@@ -515,7 +515,7 @@ function testInterfaceConnections(node1::GainNode, node2::TerminalNode)
 end
 
 function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution, update_function::Function=ForneyLab.sumProduct!)
-    (rule, msg) = update_function(node, outbound_interface_index, inbound_messages...)
+    msg = update_function(node, Val{outbound_interface_index}, inbound_messages..., typeof(correct_outbound_value)())
     @fact node.interfaces[outbound_interface_index].message --> msg
     @fact node.interfaces[outbound_interface_index].message.payload --> correct_outbound_value
 
