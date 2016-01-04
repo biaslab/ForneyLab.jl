@@ -183,6 +183,8 @@ end
 
 # Converts from DeltaDistribution -> GaussianDistribution
 # NOTE: this introduces a small error because the variance is set >0
+convert(::Type{GaussianDistribution}, flt::Float64) = GaussianDistribution(m=flt, V=tiny)
+
 convert(::Type{GaussianDistribution}, delta::DeltaDistribution{Float64}) = GaussianDistribution(m=delta.m, V=tiny)
 
 convert(::Type{Message{GaussianDistribution}}, msg::Message{DeltaDistribution{Float64}}) = Message(GaussianDistribution(m=msg.payload.m, V=tiny))

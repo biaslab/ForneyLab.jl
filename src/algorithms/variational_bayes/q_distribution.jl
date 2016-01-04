@@ -89,8 +89,6 @@ function calculateQDistribution!(q_dist::QDistribution,
     ForneyLab.ensureParameters!(mu_m, (:m,))
     ForneyLab.ensureParameters!(y_dist, (:m, :W))
 
-    (length(mu_m.m) == 1 && length(y_dist.m) == 1)|| error("Update rule for NormalGammaDistribution marginal only supports univariate distributions.")
-
     marg.m = mu_m.m[1]
     marg.beta = huge
     marg.a = mu_gam.a + 0.5

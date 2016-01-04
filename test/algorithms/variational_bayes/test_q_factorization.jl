@@ -69,7 +69,7 @@ facts("QFactorization integration tests") do
     end
 end
 
-facts("vagueQDistributions() should set vague marginals at the appropriate places") do
+facts("initializeVagueQDistributions() should set vague marginals at the appropriate places") do
     data = [1.0, 1.0, 1.0]
 
     # MF case
@@ -78,7 +78,7 @@ facts("vagueQDistributions() should set vague marginals at the appropriate place
 
     f = ForneyLab.factorize()
     ForneyLab.generateVariationalBayesSchedule!(f) # Generate and store internal and external schedules on factorization subgraphs
-    qs = ForneyLab.vagueQDistributions(f) # Initialize vague q distributions
+    qs = ForneyLab.initializeVagueQDistributions(f) # Initialize vague q distributions
 
     m_subgraph = f.edge_to_subgraph[n(:g1).i[:mean].edge]
     gam_subgraph = f.edge_to_subgraph[n(:g1).i[:precision].edge]
@@ -107,7 +107,7 @@ facts("vagueQDistributions() should set vague marginals at the appropriate place
         f = ForneyLab.factorize!(Set{Edge}(Edge[edge]), f)
     end
     ForneyLab.generateVariationalBayesSchedule!(f) # Generate and store internal and external schedules on factorization subgraphs
-    qs = ForneyLab.vagueQDistributions(f)
+    qs = ForneyLab.initializeVagueQDistributions(f)
 
     m_gam_subgraph = f.edge_to_subgraph[n(:g1).i[:mean].edge]
     y1_subgraph = f.edge_to_subgraph[n(:g1).i[:out].edge]
@@ -117,7 +117,7 @@ facts("vagueQDistributions() should set vague marginals at the appropriate place
     @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(GaussianDistribution)
 end
 
-facts("vagueQDistributions!() should reset already present q distributions to vague") do
+facts("resetQDistributions!() should reset already present q distributions to vague") do
     data = [1.0]
 
     # MF case
@@ -145,7 +145,7 @@ facts("vagueQDistributions!() should reset already present q distributions to va
     @fact qs[(n(:g1), gam_subgraph)].distribution == vague(GammaDistribution) --> false
     @fact qs[(n(:g1), y1_subgraph)].distribution == vague(GaussianDistribution) --> false
 
-    ForneyLab.vagueQDistributions!(qs)
+    ForneyLab.resetQDistributions!(qs)
 
     # Distributions after resetting should be vague again
     @fact qs[(n(:g1), m_subgraph)].distribution --> vague(GaussianDistribution)

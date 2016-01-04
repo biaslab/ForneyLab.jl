@@ -32,7 +32,7 @@
 
 export GaussianNode
 
-type GaussianNode <: Node
+type GaussianNode{node_form} <: Node
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
@@ -40,52 +40,56 @@ type GaussianNode <: Node
     m::Vector{Float64}
     V::Matrix{Float64}
 
-    function GaussianNode(; id=generateNodeId(GaussianNode), form::Symbol=:moment, m::Union{Float64,Vector{Float64}}=[NaN], V::Union{Float64,Matrix{Float64}}=reshape([NaN], 1, 1))
-        if isValid(m) && isValid(V)
-            total_interfaces = 1
-        elseif isValid(m) || isValid(V)
-            total_interfaces = 2
-        else
-            total_interfaces = 3
-        end
-        self = new(id, Array(Interface, total_interfaces), Dict{Symbol,Interface}())
-        addNode!(currentGraph(), self)
-
-        next_interface_index = 1 # Counter keeping track of constructed interfaces
-
-        if isValid(m)
-            # GaussianNode with fixed mean
-            self.m = (typeof(m)==Float64) ? [m] : deepcopy(m)
-        else
-            # GaussianNode with variable mean
-            self.i[:mean] = self.interfaces[next_interface_index] = Interface(self) # Mean interface
-            next_interface_index += 1
-        end
-
-        # Pick a form for the variance/precision
-        if isValid(V)
-            # GaussianNode with fixed variance
-            self.V = (typeof(V)==Float64) ? reshape([V], 1, 1) : deepcopy(V)
-        else
-            # GaussianNode with variable variance
-            self.interfaces[next_interface_index] = Interface(self)
-            if form == :moment
-                # Parameters m, V
-                self.i[:variance] = self.interfaces[next_interface_index]
-            elseif form == :precision
-                # Parameters m, W
-                self.i[:precision] = self.interfaces[next_interface_index]
-            else
-                error("Unrecognized form, $(form). Please use :moment, or :precision")
-            end
-            next_interface_index += 1
-        end
-
-        # Out interface
-        self.i[:out] = self.interfaces[next_interface_index] = Interface(self)
-
-        return self
+    function GaussianNode(id::Symbol, interfaces::Array{Interface,1}, i::Dict{Symbol,Interface})
+        new(id, interfaces, i)
     end
+end
+
+function GaussianNode(; id=generateNodeId(GaussianNode), form::Symbol=:moment, m::Union{Float64,Vector{Float64}}=[NaN], V::Union{Float64,Matrix{Float64}}=reshape([NaN], 1, 1))
+    if isValid(m) && isValid(V)
+        total_interfaces = 1
+    elseif isValid(m) || isValid(V)
+        total_interfaces = 2
+    else
+        total_interfaces = 3
+    end
+    self = GaussianNode{Val{form}}(id, Array(Interface, total_interfaces), Dict{Symbol,Interface}())
+    addNode!(currentGraph(), self)
+
+    next_interface_index = 1 # Counter keeping track of constructed interfaces
+
+    if isValid(m)
+        # GaussianNode with fixed mean
+        self.m = (typeof(m)==Float64) ? [m] : deepcopy(m)
+    else
+        # GaussianNode with variable mean
+        self.i[:mean] = self.interfaces[next_interface_index] = Interface(self) # Mean interface
+        next_interface_index += 1
+    end
+
+    # Pick a form for the variance/precision
+    if isValid(V)
+        # GaussianNode with fixed variance
+        self.V = (typeof(V)==Float64) ? reshape([V], 1, 1) : deepcopy(V)
+    else
+        # GaussianNode with variable variance
+        self.interfaces[next_interface_index] = Interface(self)
+        if form == :moment
+            # Parameters m, V
+            self.i[:variance] = self.interfaces[next_interface_index]
+        elseif form == :precision
+            # Parameters m, W
+            self.i[:precision] = self.interfaces[next_interface_index]
+        else
+            error("Unrecognized form, $(form). Please use :moment, or :precision")
+        end
+        next_interface_index += 1
+    end
+
+    # Out interface
+    self.i[:out] = self.interfaces[next_interface_index] = Interface(self)
+
+    return self
 end
 
 isDeterministic(::GaussianNode) = false
@@ -95,16 +99,14 @@ isDeterministic(::GaussianNode) = false
 # Sumproduct update functions
 ############################################
 
-function sumProduct!(   node::GaussianNode,
+function sumProduct!(   node::GaussianNode{Val{:moment}},
                         outbound_interface_index::Type{Val{1}},
                         msg_mean::Any,
                         msg_var_prec::Message{DeltaDistribution{Float64}},
                         msg_out::Message{DeltaDistribution{Float64}},
                         outbound_dist::GaussianDistribution)
 
-    # Rules from Korl table 5.2 by symmetry
-    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
-    # Here we assume the variance to be a point estimate.
+    # Rules from Korl table 5.2
     #
     #   N       Dlt
     #  ---->[N]<----
@@ -112,24 +114,38 @@ function sumProduct!(   node::GaussianNode,
     #        | Dlt
     #        v
 
-    if haskey(node.i, :variance)
-        outbound_dist.m = msg_out.payload.m
-        outbound_dist.xi = NaN
-        outbound_dist.V = msg_var_prec.payload.m
-        outbound_dist.W = NaN
-    elseif haskey(node.i, :precision)
-        outbound_dist.m = msg_out.payload.m
-        outbound_dist.xi = NaN
-        outbound_dist.V = NaN
-        outbound_dist.W = msg_var_prec.payload.m
-    else
-        error("Unknown form $(node.form)")
-    end
+    outbound_dist.m = msg_out.payload.m
+    outbound_dist.xi = NaN
+    outbound_dist.V = msg_var_prec.payload.m
+    outbound_dist.W = NaN
 
     return outbound_dist
 end
 
-function sumProduct!(   node::GaussianNode,
+function sumProduct!(   node::GaussianNode{Val{:precision}},
+                        outbound_interface_index::Type{Val{1}},
+                        msg_mean::Any,
+                        msg_var_prec::Message{DeltaDistribution{Float64}},
+                        msg_out::Message{DeltaDistribution{Float64}},
+                        outbound_dist::GaussianDistribution)
+
+    # Rules from Korl table 5.2
+    #
+    #   N       Dlt
+    #  ---->[N]<----
+    #  <--   |
+    #        | Dlt
+    #        v
+
+    outbound_dist.m = msg_out.payload.m
+    outbound_dist.xi = NaN
+    outbound_dist.V = NaN
+    outbound_dist.W = msg_var_prec.payload.m
+
+    return outbound_dist
+end
+
+function sumProduct!(   node::GaussianNode{Val{:moment}},
                         outbound_interface_index::Type{Val{2}},
                         msg_mean::Message{DeltaDistribution{Float64}},
                         msg_var::Any,
@@ -137,8 +153,6 @@ function sumProduct!(   node::GaussianNode,
                         outbound_dist::InverseGammaDistribution)
 
     # Rules from Korl table 5.2
-    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
-    # Here we assume the variance to be a point estimate.
     #
     #   Dlt      IG
     #  ---->[N]<----
@@ -154,7 +168,7 @@ function sumProduct!(   node::GaussianNode,
     return outbound_dist
 end
 
-function sumProduct!(   node::GaussianNode,
+function sumProduct!(   node::GaussianNode{Val{:precision}},
                         outbound_interface_index::Type{Val{2}},
                         msg_mean::Message{DeltaDistribution{Float64}},
                         msg_prec::Any,
@@ -175,7 +189,7 @@ function sumProduct!(   node::GaussianNode,
     return outbound_dist
 end
 
-function sumProduct!(   node::GaussianNode,
+function sumProduct!(   node::GaussianNode{Val{:moment}},
                         outbound_interface_index::Type{Val{3}},
                         msg_mean::Message{DeltaDistribution{Float64}},
                         msg_var_prec::Message{DeltaDistribution{Float64}},
@@ -183,8 +197,6 @@ function sumProduct!(   node::GaussianNode,
                         outbound_dist::GaussianDistribution)
 
     # Rules from Korl table 5.2
-    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
-    # Here we assume the variance to be a point estimate.
     #
     #   Dlt     Dlt
     #  ---->[N]<----
@@ -192,29 +204,43 @@ function sumProduct!(   node::GaussianNode,
     #      | | N
     #      v v
 
-    if haskey(node.i, :variance)
-        outbound_dist.m = msg_mean.payload.m
-        outbound_dist.xi = NaN
-        outbound_dist.V = msg_var_prec.payload.m
-        outbound_dist.W = NaN
-    elseif haskey(node.i, :precision)
-        outbound_dist.m = msg_mean.payload.m
-        outbound_dist.xi = NaN
-        outbound_dist.V = NaN
-        outbound_dist.W = msg_var_prec.payload.m
-    else
-        error("Unknown form $(node.form)")
-    end
+    outbound_dist.m = msg_mean.payload.m
+    outbound_dist.xi = NaN
+    outbound_dist.V = msg_var_prec.payload.m
+    outbound_dist.W = NaN
+
+    return outbound_dist
+end
+
+function sumProduct!(   node::GaussianNode{Val{:precision}},
+                        outbound_interface_index::Type{Val{3}},
+                        msg_mean::Message{DeltaDistribution{Float64}},
+                        msg_var_prec::Message{DeltaDistribution{Float64}},
+                        msg_out::Any,
+                        outbound_dist::GaussianDistribution)
+
+    # Rules from Korl table 5.2
+    #
+    #   Dlt     Dlt
+    #  ---->[N]<----
+    #        |
+    #      | | N
+    #      v v
+
+    outbound_dist.m = msg_mean.payload.m
+    outbound_dist.xi = NaN
+    outbound_dist.V = NaN
+    outbound_dist.W = msg_var_prec.payload.m
 
     return outbound_dist
 end
 
 
-############################################
-# Sumproduct update functions with fixed values
-############################################
+#############################################
+# Sumproduct update functions with fixed mean
+#############################################
 
-function sumProduct!(   node::GaussianNode,
+function sumProduct!(   node::GaussianNode{Val{:moment}},
                         outbound_interface_index::Type{Val{1}},
                         msg_out::Any,
                         outbound_dist::GaussianDistribution)
@@ -233,15 +259,14 @@ function sumProduct!(   node::GaussianNode,
     return outbound_dist
 end
 
-function sumProduct!(   node::GaussianNode,
+function sumProduct!(   node::GaussianNode{Val{:moment}},
                         outbound_interface_index::Type{Val{1}},
                         msg_var::Any,
                         msg_out::Message{DeltaDistribution{Float64}},
                         outbound_dist::InverseGammaDistribution)
 
     # Rules from Korl table 5.2
-    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
-    # Fixed variance
+    # Fixed mean
     #
     #  Ig        Dlt
     #  ---->[N]---->
@@ -255,7 +280,7 @@ function sumProduct!(   node::GaussianNode,
     return outbound_dist
 end
 
-function sumProduct!(   node::GaussianNode,
+function sumProduct!(   node::GaussianNode{Val{:precision}},
                         outbound_interface_index::Type{Val{1}},
                         msg_prec::Any,
                         msg_out::Message{DeltaDistribution{Float64}},
@@ -275,33 +300,44 @@ function sumProduct!(   node::GaussianNode,
     return outbound_dist
 end
 
-function sumProduct!(   node::GaussianNode,
+function sumProduct!(   node::GaussianNode{Val{:moment}},
                         outbound_interface_index::Type{Val{2}},
-                        msg_var_prec::Message{DeltaDistribution{Float64}},
+                        msg_var::Message{DeltaDistribution{Float64}},
                         msg_out::Any,
                         outbound_dist::GaussianDistribution)
 
     # Rules from Korl table 5.2
-    # Note that in the way Korl wrote this it is an approximation; the actual result would be a student's t.
-    # Fixed variance
+    # Fixed mean
     #
     #  Dlt        N
     #  ---->[N]---->
     #           -->
 
-    if haskey(node.i, :variance)
-        outbound_dist.m = node.m[1]
-        outbound_dist.xi = NaN
-        outbound_dist.V = msg_var_prec.payload.m
-        outbound_dist.W = NaN
-    elseif haskey(node.i, :precision)
-        outbound_dist.m = node.m[1]
-        outbound_dist.xi = NaN
-        outbound_dist.V = NaN
-        outbound_dist.W = msg_var_prec.payload.m
-    else
-        error("Unknown form $(node.form)")
-    end
+    outbound_dist.m = node.m[1]
+    outbound_dist.xi = NaN
+    outbound_dist.V = msg_var.payload.m
+    outbound_dist.W = NaN
+
+    return outbound_dist
+end
+
+function sumProduct!(   node::GaussianNode{Val{:precision}},
+                        outbound_interface_index::Type{Val{2}},
+                        msg_prec::Message{DeltaDistribution{Float64}},
+                        msg_out::Any,
+                        outbound_dist::GaussianDistribution)
+
+    # Rules from Korl table 5.2
+    # Fixed mean
+    #
+    #  Dlt        N
+    #  ---->[N]---->
+    #           -->
+
+    outbound_dist.m = node.m[1]
+    outbound_dist.xi = NaN
+    outbound_dist.V = NaN
+    outbound_dist.W = msg_prec.payload.m
 
     return outbound_dist
 end
@@ -311,7 +347,7 @@ end
 # Naive variational update functions
 ############################################
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:moment}},
                 outbound_interface_index::Type{Val{1}},
                 marg_mean::Any,
                 marg_variance::InverseGammaDistribution,
@@ -337,7 +373,7 @@ function vmp!(  node::GaussianNode,
     return outbound_dist
 end
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:precision}},
                 outbound_interface_index::Type{Val{1}},
                 marg_mean::Any,
                 marg_prec::GammaDistribution,
@@ -361,7 +397,7 @@ function vmp!(  node::GaussianNode,
     return outbound_dist
 end
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:moment}},
                 outbound_interface_index::Type{Val{2}},
                 marg_mean::GaussianDistribution,
                 marg_var::Any,
@@ -383,7 +419,7 @@ function vmp!(  node::GaussianNode,
     return outbound_dist
 end
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:precision}},
                 outbound_interface_index::Type{Val{2}},
                 marg_mean::GaussianDistribution,
                 marg_prec::Any,
@@ -405,7 +441,7 @@ function vmp!(  node::GaussianNode,
     return outbound_dist
 end
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:moment}},
                 outbound_interface_index::Type{Val{3}},
                 marg_mean::GaussianDistribution,
                 marg_var::InverseGammaDistribution,
@@ -429,7 +465,7 @@ function vmp!(  node::GaussianNode,
     return outbound_dist
 end
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:precision}},
                 outbound_interface_index::Type{Val{3}},
                 marg_mean::GaussianDistribution,
                 marg_prec::GammaDistribution,
@@ -454,11 +490,11 @@ function vmp!(  node::GaussianNode,
 end
 
 
-############################################
-# Naive variational update functions with fixed values
-############################################
+##########################################################
+# Naive variational update functions with fixed interfaces
+##########################################################
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:precision}},
                 outbound_interface_index::Type{Val{1}},
                 marg_prec::Any,
                 marg_out::GaussianDistribution,
@@ -479,7 +515,7 @@ function vmp!(  node::GaussianNode,
     return outbound_dist
 end
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:moment}},
                 outbound_interface_index::Type{Val{1}},
                 marg_mean::Any,
                 marg_out::GaussianDistribution,
@@ -502,7 +538,7 @@ function vmp!(  node::GaussianNode,
     return outbound_dist
 end
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:precision}},
                 outbound_interface_index::Type{Val{2}},
                 marg_prec::GammaDistribution,
                 marg_out::Any,
@@ -524,7 +560,7 @@ function vmp!(  node::GaussianNode,
     return outbound_dist
 end
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:moment}},
                 outbound_interface_index::Type{Val{2}},
                 marg_mean::GaussianDistribution,
                 marg_out::Any,
@@ -552,7 +588,7 @@ end
 # Structured variational update functions
 ############################################
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:precision}},
                 outbound_interface_index::Type{Val{1}},
                 msg_mean::Any,
                 msg_prec::Message{GammaDistribution},
@@ -570,13 +606,13 @@ function vmp!(  node::GaussianNode,
     ensureParameters!(marg_out, (:m, :W))
 
     outbound_dist.m = marg_out.m
-    outbound_dist.lambda = (2.0*marg_out.W*msg_prec.payload.a)/(2.0*prec_y*msg_prec.payload.b + 1)
+    outbound_dist.lambda = (2.0*marg_out.W*msg_prec.payload.a)/(2.0*marg_out.W*msg_prec.payload.b + 1)
     outbound_dist.nu = 2.0*msg_prec.payload.a
 
     return outbound_dist
 end
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:precision}},
                 outbound_interface_index::Type{Val{2}},
                 msg_mean::Message{GaussianDistribution},
                 msg_prec::Any,
@@ -600,7 +636,7 @@ function vmp!(  node::GaussianNode,
     return outbound_dist
 end
 
-function vmp!(  node::GaussianNode,
+function vmp!(  node::GaussianNode{Val{:precision}},
                 outbound_interface_index::Type{Val{3}},
                 marg::NormalGammaDistribution,
                 ::NormalGammaDistribution, # Same distribution as marg

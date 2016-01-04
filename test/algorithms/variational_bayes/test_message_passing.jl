@@ -14,7 +14,7 @@ facts("Call step() for VMP algorithm") do
     prec_out = attachWriteBuffer(n(:g_node).i[:precision].edge)
 
     algo = VariationalBayes(n_iterations=10)
-
+    prepare!(algo)
     step(algo)
 
     ForneyLab.ensureParameters!(mean_out[end], (:xi, :W))
@@ -39,14 +39,14 @@ facts("Naive VMP implementation integration tests") do
         initializeGaussianNodeChain(data)
         n_sections = length(data)
 
-        m_buffer = attachWriteBuffer(n(:m_eq*n_sections).i[2])
+        m_buffer = attachWriteBuffer(n(:m_eq*n_sections).i[2]) # Propagate to the end
         gam_buffer = attachWriteBuffer(n(:gam_eq*n_sections).i[2])
 
         # Apply mean field factorization
         algo = VariationalBayes(n_iterations=50)
 
         # Perform vmp updates
-        step(algo)
+        run(algo)
 
         # Check the results against the outcome of similar Infer.NET script
         m_out = m_buffer[end]
@@ -100,11 +100,6 @@ facts("Structured VMP implementation integration tests") do
         Wrap(n(:mN), n(:m0))
         Wrap(n(:gamN), n(:gam0))
 
-        # n(:mN).value = vague(GaussianDistribution)
-        # n(:m0).value = vague(GaussianDistribution)
-        # n(:gamN).value = vague(GammaDistribution)
-        # n(:gam0).value = vague(GammaDistribution)
-
         attachReadBuffer(n(:y1), d_data)
         m_buffer = attachWriteBuffer(n(:m_eq1).i[2])
         gam_buffer = attachWriteBuffer(n(:gam_eq1).i[2])
@@ -118,9 +113,9 @@ facts("Structured VMP implementation integration tests") do
         gam_out = gam_buffer[end]
         # Reference values from first run
         # TODO: obtain proper reference values
-        @fact round(mean(m_out)[1], 3) --> 4.521
-        @fact round(var(m_out)[1, 1], 3) --> 0.873 # Uniform gamma priors make the variance collapse
+        @fact round(mean(m_out)[1], 3) --> 4.495
+        @fact round(var(m_out)[1, 1], 3) --> 0.596 # Uniform gamma priors make the variance collapse
         @fact round(gam_out.a, 3) --> 6.000
-        @fact round(1/gam_out.b, 5) --> 0.04549 # Scale
+        @fact round(1/gam_out.b, 5) --> 0.06207 # Scale
     end
 end

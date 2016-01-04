@@ -43,7 +43,7 @@ function generateScheduleByDFS!(outbound_interface::Interface,
 
         (interface.partner != nothing) || error("Disconnected interface should be connected: interface #$(interface_index) of $(typeof(node)) $(node.id)")
 
-        if typeof(interface.partner.message) == EmptyMessage # Required message missing.
+        if interface.partner.message == nothing # Required message missing, no breaker message is set
             if !(interface.partner in backtrace) # Don't recalculate stuff that's already in the schedule.
                 # Recursive call
                 generateScheduleByDFS!(interface.partner, backtrace, call_list, allowed_edges=allowed_edges)
