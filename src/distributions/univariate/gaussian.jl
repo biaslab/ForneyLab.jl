@@ -47,7 +47,13 @@ end
 
 GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
 
-vague(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge)
+function vague!(dist::GaussianDistribution)
+    dist.m = 0.0
+    dist.V = huge
+    dist.W = NaN
+    dist.xi = NaN
+    return dist
+end
 
 function format(dist::GaussianDistribution)
     if !isnan(dist.m) && !isnan(dist.V)

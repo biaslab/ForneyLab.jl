@@ -12,7 +12,10 @@ type BernoulliDistribution <: UnivariateProbabilityDistribution
 end
 BernoulliDistribution() = BernoulliDistribution(0.5)
 
-vague(::Type{BernoulliDistribution}) = BernoulliDistribution(0.5)
+function vague!(dist::BernoulliDistribution)
+    dist.p = 0.5
+    return dist
+end
 
 isProper(dist::BernoulliDistribution) = (0 <= dist.p <= 1)
 

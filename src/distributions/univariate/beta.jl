@@ -14,7 +14,11 @@ end
 
 BetaDistribution(; a=1.0, b=1.0) = BetaDistribution(a, b)
 
-vague(::Type{BetaDistribution}) = BetaDistribution(a=tiny, b=tiny)
+function vague!(dist::BetaDistribution)
+    dist.a = tiny
+    dist.b = tiny
+    return dist
+end
 
 isProper(dist::BetaDistribution) = (dist.a >= tiny && dist.b >= tiny)
 

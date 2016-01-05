@@ -49,14 +49,14 @@ function ExpectationPropagation(
     schedule = convert(Schedule, total_schedule, sumProduct!)
     for schedule_entry in schedule
         if schedule_entry.interface in sites
-            schedule_entry.message_calculation_rule = ep!
+            schedule_entry.rule = ep!
         end
     end
 
     function exec(algorithm)
         # Init all sites with vague messages
         for site in algorithm.sites
-            site.message = Message(vague(site.edge.distribution_type))
+            site.message = Message(vague!(site.edge.distribution_type))
         end
         for iteration_count = 1:algorithm.num_iterations
             execute(algorithm.schedule)

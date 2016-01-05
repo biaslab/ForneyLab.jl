@@ -177,7 +177,7 @@ sumProduct!(node::AdditionNode,
             msg_in1::Any,
             msg_in2::Message{GaussianDistribution},
             msg_out::Message{DeltaDistribution{Float64}},
-            outbound_dist::GaussianDistribution) = sumProduct!(node, outbound_interface_index, mag_in1, msg_in2, convert(Message{GaussianDistribution}, msg_out), outbound_dist)
+            outbound_dist::GaussianDistribution) = sumProduct!(node, outbound_interface_index, msg_in1, msg_in2, convert(Message{GaussianDistribution}, msg_out), outbound_dist)
 
 sumProduct!(node::AdditionNode,
             outbound_interface_index::Type{Val{2}},
@@ -383,7 +383,7 @@ sumProduct!(node::AdditionNode,
             msg_in1::Any,
             msg_in2::Message{MvGaussianDistribution},
             msg_out::Message{MvDeltaDistribution{Float64}},
-            outbound_dist::MvGaussianDistribution) = sumProduct!(node, outbound_interface_index, mag_in1, msg_in2, convert(Message{MvGaussianDistribution}, msg_out), outbound_dist)
+            outbound_dist::MvGaussianDistribution) = sumProduct!(node, outbound_interface_index, msg_in1, msg_in2, convert(Message{MvGaussianDistribution}, msg_out), outbound_dist)
 
 sumProduct!(node::AdditionNode,
             outbound_interface_index::Type{Val{2}},

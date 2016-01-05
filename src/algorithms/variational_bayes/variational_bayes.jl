@@ -85,22 +85,14 @@ function inferDistributionTypes!(algo::VariationalBayes)
                         # We will default to sum-product message passing, and consume the message on the inbound interface.
                         # Composite nodes with explicit message passing will throw an error when one of their external interfaces belongs to a different subgraph,
                         # so it is safe to assume sumproduct.
-                        if interface.partner.message == nothing
-                            push!(inbound_types, Message{schedule_entries[interface.partner].outbound_type})
-                        else # A breaker message is set on the partner interface
-                            push!(inbound_types, typeof(interface.partner.message))
-                        end
+                        push!(inbound_types, Message{schedule_entries[interface.partner].outbound_type})
                         break
                     end
 
                     # Should we require the inbound message or marginal?
                     if is(algo.factorization.edge_to_subgraph[interface.edge], algo.factorization.edge_to_subgraph[outbound_interface.edge])
                         # Both edges in same subgraph, require message
-                        if interface.partner.message == nothing
-                            push!(inbound_types, Message{schedule_entries[interface.partner].outbound_type})
-                        else # A breaker message is set on the partner interface
-                            push!(inbound_types, typeof(interface.partner.message))
-                        end
+                        push!(inbound_types, Message{schedule_entries[interface.partner].outbound_type})
                     else
                         # A subgraph border is crossed, require marginal
                         # The factor is the set of internal edges that are in the same subgraph

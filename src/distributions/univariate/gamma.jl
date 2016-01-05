@@ -14,7 +14,11 @@ end
 
 GammaDistribution(; a=1.0, b=1.0) = GammaDistribution(a, b)
 
-vague(::Type{GammaDistribution}) = GammaDistribution(a=tiny, b=tiny) # Scale invariant (Jeffrey's) prior
+function vague!(dist::GammaDistribution)
+    dist.a = tiny
+    dist.b = tiny
+    return dist
+end
 
 isProper(dist::GammaDistribution) = (dist.a >= tiny && dist.b >= tiny)
 

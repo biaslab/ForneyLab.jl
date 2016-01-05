@@ -103,7 +103,7 @@ function ep!{T<:Bool}(  node::SigmoidNode,
                         outbound_interface_id::Type{Val{1}},
                         msg_cavity::Message{GaussianDistribution},
                         msg_bin::Message{DeltaDistribution{T}},
-                        outbound_dist::BernoulliDistribution)
+                        outbound_dist::GaussianDistribution)
 
     # Convert incoming DeltaDistribution to BernoulliDistribution
     return ep!(node, Val{1}, msg_cavity, Message(BernoulliDistribution(msg_bin.payload.m)), outbound_dist)

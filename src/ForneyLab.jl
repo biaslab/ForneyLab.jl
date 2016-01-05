@@ -87,7 +87,6 @@ include("algorithms/sum_product/sum_product.jl")
 include("algorithms/variational_bayes/variational_bayes.jl")
 include("algorithms/expectation_propagation/expectation_propagation.jl")
 
-# Functions for message post-processing
-vague(dist::ProbabilityDistribution) = vague(typeof(dist))
+vague{T<:ProbabilityDistribution}(dist_type::Type{T}) = vague!(T())
 
 end # module ForneyLab

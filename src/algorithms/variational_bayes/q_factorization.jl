@@ -55,13 +55,7 @@ end
 function resetQDistributions!(q_distributions::Dict{Tuple{Node,Subgraph},QDistribution}) # Reset
     # Before starting a new iteration, the q-distributions should be reset to vague
     for q_distribution in values(q_distributions)
-        dist = q_distribution.distribution
-        dist_vague = vague(typeof(dist)) # Create vague distribution as reference
-
-        # In order to retain correct pointer presets to distribution, alter each field of the q-distribution in-place.
-        for field in fieldnames(dist)
-            setfield!(dist, field, getfield(dist_vague, field))
-        end
+        vague!(q_distribution.distribution)
     end
     return q_distributions
 end

@@ -14,7 +14,11 @@ end
 
 LogNormalDistribution(; m=0.0, s=1.0) = LogNormalDistribution(m, s)
 
-vague(::Type{LogNormalDistribution}) = LogNormalDistribution(m=0.0, s=huge) # Scale invariant (Jeffrey's) prior
+function vague!(dist::LogNormalDistribution)
+    dist.m = 0.0
+    dist.s = huge
+    return dist
+end
 
 isProper(dist::LogNormalDistribution) = dist.s > tiny
 
