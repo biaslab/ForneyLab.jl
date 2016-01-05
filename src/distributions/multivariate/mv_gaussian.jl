@@ -77,7 +77,14 @@ end
 
 MvGaussianDistribution() = MvGaussianDistribution(m=zeros(1), V=ones(1,1))
 
-vague(::Type{MvGaussianDistribution}; dim=1) = MvGaussianDistribution(m=zeros(dim), V=huge*eye(dim))
+function vague!(dist::MvGaussianDistribution; dim=1)
+    dim = length(dist.m)
+    dist.m = zeros(dim)
+    dist.V = huge*eye(dim)
+    invalidate!(dist.W)
+    invalidate!(dist.xi)
+    return dist
+end
 
 function format(dist::MvGaussianDistribution)
     if isValid(dist.m) && isValid(dist.V)

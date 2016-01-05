@@ -521,7 +521,7 @@ function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbo
     elseif typeof(correct_outbound_value) <: MvDeltaDistribution
         outbound_dist = MvDeltaDistribution()
     else
-        outbound_dist = vague(correct_outbound_value)
+        outbound_dist = vague(typeof(correct_outbound_value))
     end
 
     # Perform the update and verify the result

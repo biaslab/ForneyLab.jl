@@ -56,7 +56,7 @@ function ExpectationPropagation(
     function exec(algorithm)
         # Init all sites with vague messages
         for site in algorithm.sites
-            site.message = Message(vague!(site.edge.distribution_type))
+            vague!(site.message.payload)
         end
         for iteration_count = 1:algorithm.num_iterations
             execute(algorithm.schedule)
