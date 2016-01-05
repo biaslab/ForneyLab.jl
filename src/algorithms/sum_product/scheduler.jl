@@ -75,7 +75,8 @@ function generateSumProductSchedule(partial_schedule::Schedule; args...)
 
     interface_list = Array(Interface, 0)
     for schedule_entry in partial_schedule
-        interface_list = generateScheduleByDFS!(schedule_entry.interface, interface_list; args...)
+        outbound_interface = schedule_entry.node.interfaces[schedule_entry.outbound_interface_id]
+        interface_list = generateScheduleByDFS!(outbound_interface, interface_list; args...)
     end
 
     return convert(Schedule, interface_list, sumProduct!)

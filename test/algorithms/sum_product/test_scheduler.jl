@@ -3,7 +3,6 @@ facts("Schedule related tests") do
         FactorGraph()
         GaussianNode(id=:node)
         @fact ForneyLab.convert(Schedule, [n(:node).i[:out], n(:node).i[:mean]]) --> [ScheduleEntry(n(:node).i[:out], sumProduct!), ScheduleEntry(n(:node).i[:mean], sumProduct!)]
-        @fact ForneyLab.convert(Schedule, [n(:node).i[:out], n(:node).i[:mean]], sumProduct!, sample) --> [ScheduleEntry(n(:node).i[:out], sumProduct!, sample), ScheduleEntry(n(:node).i[:mean], sumProduct!, sample)]
     end
 end
 
@@ -22,7 +21,7 @@ facts("ForneyLab.generateSumProductSchedule() integration tests") do
         context("Should auto-generate a feasible schedule") do
             # Generate schedule automatically
             schedule = ForneyLab.generateSumProductSchedule(n(:add).i[:in2]) # Message towards noise factor
-            intf_list = [schedule_entry.interface for schedule_entry in schedule]
+            intf_list = [schedule_entry.node.interfaces[schedule_entry.outbound_interface_id] for schedule_entry in schedule]
             # All (but just) required calculations should be in the schedule
             @fact n(:inhibitor).i[:out] in intf_list --> true
             @fact n(:driver).i[:out]    in intf_list --> true

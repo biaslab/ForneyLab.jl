@@ -16,7 +16,7 @@ function attachReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph
     graph.read_buffers[node] = buffer
 end
 
-function attachReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, graph::FactorGraph=currentGraph())
+function attachReadBuffer{T<:ProbabilityDistribution}(nodes::Vector{TerminalNode{T}}, buffer::Vector, graph::FactorGraph=currentGraph())
     # Mini-batch assignment for read buffers.
     # buffer is divided over nodes equally.
     n_nodes = length(nodes)
@@ -43,12 +43,6 @@ function attachWriteBuffer(interface::Interface, buffer::Vector=Array(Probabilit
     hasNode(graph, interface.node) || error("The specified interface is not part of the current or specified graph")
     graph.write_buffers[interface] = buffer # Write buffer for message
 end
-
-# function attachWriteBuffer(interfaces::Vector{Interface}, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
-#     # Mini-batch assignment for write buffers.
-#     # After each step the batch results are appended to the buffer
-
-# end
 
 function detachWriteBuffer(interface::Interface, graph::FactorGraph=currentGraph())
     hasNode(graph, interface.node) || error("The specified interface is not part of the current or specified graph")

@@ -11,6 +11,7 @@ function execute(schedule_entry::ScheduleEntry)
     outbound_interface = schedule_entry.node.interfaces[schedule_entry.outbound_interface_id]
 
     # Evaluate message calculation rule
+    isdefined(schedule_entry, :execute) || error("Execute function not defined for schedule entry; maybe you forgot to prepare the schedule?")
     outbound_dist = schedule_entry.execute()
 
     # Post processing?

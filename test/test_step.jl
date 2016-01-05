@@ -76,8 +76,8 @@ facts("step integration tests") do
         g = FactorGraph()
         TerminalNode(DeltaDistribution(0.0), id=:in)
         AdditionNode(id=:add)
-        TerminalNode(id=:delta)
-        TerminalNode(id=:out)
+        TerminalNode(DeltaDistribution(), id=:delta)
+        TerminalNode(DeltaDistribution(), id=:out)
         Edge(n(:in), n(:add).i[:in1])
         Edge(n(:delta), n(:add).i[:in2])
         Edge(n(:add).i[:out], n(:out))
@@ -86,6 +86,7 @@ facts("step integration tests") do
         attachReadBuffer(n(:delta), deltas)
         results = attachWriteBuffer(n(:add).i[:out])
         algo = SumProduct(g) # The timewraps and buffers tell the autoscheduler what should be computed
+        prepare!(algo)
         while !isempty(deltas)
             step(algo)
         end
@@ -99,8 +100,8 @@ facts("run() integration tests") do
         g = FactorGraph()
         TerminalNode(DeltaDistribution(0.0), id=:in)
         AdditionNode(id=:add)
-        TerminalNode(id=:delta)
-        TerminalNode(id=:out)
+        TerminalNode(DeltaDistribution(), id=:delta)
+        TerminalNode(DeltaDistribution(), id=:out)
         Edge(n(:in), n(:add).i[:in1])
         Edge(n(:delta), n(:add).i[:in2])
         Edge(n(:add).i[:out], n(:out))
@@ -108,8 +109,7 @@ facts("run() integration tests") do
         deltas = [DeltaDistribution(n) for n in collect(1.:10.)]
         attachReadBuffer(n(:delta), deltas)
         results = attachWriteBuffer(n(:add).i[:out])
-        schedule = ForneyLab.generateSumProductSchedule(n(:add).i[:out])
-        algo = SumProduct((algorithm) -> execute(algorithm.schedule), schedule)
+        algo = SumProduct()
         run(algo)
         @fact results --> [DeltaDistribution(r) for r in cumsum(collect(1.:10.))]
     end

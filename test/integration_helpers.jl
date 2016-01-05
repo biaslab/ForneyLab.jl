@@ -515,9 +515,16 @@ function testInterfaceConnections(node1::GainNode, node2::TerminalNode)
 end
 
 function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution, update_function::Function=ForneyLab.sumProduct!)
-    msg = update_function(node, Val{outbound_interface_index}, inbound_messages..., typeof(correct_outbound_value)())
-    @fact node.interfaces[outbound_interface_index].message --> msg
-    @fact node.interfaces[outbound_interface_index].message.payload --> correct_outbound_value
+    # Preset an outbound distribution on which the update may operate
+    if typeof(correct_outbound_value) <: DeltaDistribution
+        outbound_dist = DeltaDistribution()
+    elseif typeof(correct_outbound_value) <: MvDeltaDistribution
+        outbound_dist = MvDeltaDistribution()
+    else
+        outbound_dist = vague(correct_outbound_value)
+    end
 
-    return node.interfaces[outbound_interface_index].message
+    # Perform the update and verify the result
+    dist = update_function(node, Val{outbound_interface_index}, inbound_messages..., outbound_dist)
+    @fact dist --> correct_outbound_value
 end
