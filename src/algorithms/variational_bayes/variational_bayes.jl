@@ -14,6 +14,11 @@ type VariationalBayes <: InferenceAlgorithm
     n_iterations::Int64
 end
 
+
+############################################
+# VariationalBayes algorithm constructors
+############################################
+
 function VariationalBayes(graph::FactorGraph=currentGraph(); n_iterations::Int64=50)
     # Generates a VariationalBayes algorithm that propagates messages to all write buffers and wraps.
     # Uses a mean field factorization and autoscheduler
@@ -58,6 +63,11 @@ function VariationalBayes(graph::FactorGraph, cluster_edges...; n_iterations::In
 end
 VariationalBayes(cluster_edges...; n_iterations::Int64=50) = VariationalBayes(currentGraph(), cluster_edges...; n_iterations=n_iterations)
 
+
+############################################
+# Type inference and preparation 
+############################################
+
 function inferDistributionTypes!(algo::VariationalBayes)
     # Infer the payload types for all messages in the internal schedules
 
@@ -72,7 +82,7 @@ function inferDistributionTypes!(algo::VariationalBayes)
             outbound_interface_id = entry.outbound_interface_id
             outbound_interface = node.interfaces[outbound_interface_id]
 
-            inferInboundTypes!(entry, node, outbound_interface_id, schedule_entries, algo) # VariationalBayes algorithm specific collection of inbound types
+            collectInboundTypes!(entry, node, outbound_interface_id, schedule_entries, algo) # VariationalBayes algorithm specific collection of inbound types
             inferOutboundType!(entry, node, outbound_interface_id, entry.inbound_types, [sumProduct!, vmp!]) # The VariationalBayes algorithm allows access to sumProduct! and vmp! update rules
 
             schedule_entries[outbound_interface] = entry # Assign schedule entry to lookup dictionary
@@ -82,28 +92,15 @@ function inferDistributionTypes!(algo::VariationalBayes)
     return algo
 end
 
-function inferInboundTypes!(entry::ScheduleEntry, node::Node, outbound_interface_id::Int64, schedule_entries::Dict{Interface, ScheduleEntry}, algo::VariationalBayes)
+function collectInboundTypes!(entry::ScheduleEntry, node::Node, outbound_interface_id::Int64, schedule_entries::Dict{Interface, ScheduleEntry}, algo::VariationalBayes)
     entry.inbound_types = []
     outbound_interface = node.interfaces[outbound_interface_id]
 
     # Collect references to all required inbound messages for executing message computation rule
-    for i = 1:length(node.interfaces)
-        if i == outbound_interface_id
-            push!(entry.inbound_types, Void) # This interface is outbound
+    for (id, interface) in enumerate(node.interfaces)
+        if id == outbound_interface_id
+            push!(entry.inbound_types, Void) # This interface is outbound, push Void
         else
-            interface = node.interfaces[i]
-
-            # TODO: check applicability
-            # if !haskey(algo.factorization.edge_to_subgraph, interface.edge) || !haskey(algo.factorization.edge_to_subgraph, outbound_interface.edge)
-            #     # Inbound and/or outbound edge is not explicitly listed in the factorization edge list.
-            #     # This is possible if one of those edges is internal to a composite node.
-            #     # We will default to sum-product message passing, and consume the message on the inbound interface.
-            #     # Composite nodes with explicit message passing will throw an error when one of their external interfaces belongs to a different subgraph,
-            #     # so it is safe to assume sumproduct.
-            #     push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
-            #     break
-            # end
-
             # Should we require the inbound message or marginal?
             if is(algo.factorization.edge_to_subgraph[interface.edge], algo.factorization.edge_to_subgraph[outbound_interface.edge])
                 # Both edges in same subgraph, require message
@@ -146,22 +143,10 @@ function compile!(schedule_entry::ScheduleEntry, ::Type{Val{symbol("ForneyLab.vm
 
     rule_arguments = []
     # Add inbound messages to rule_arguments
-    for j = 1:length(node.interfaces)
-        interface = node.interfaces[j]
-        if j == outbound_interface_id
-            # Inbound on outbound_interface is irrelevant
+    for (id, interface) in enumerate(node.interfaces)
+        if id == outbound_interface_id
             push!(rule_arguments, nothing) # This interface is outbound, push "nothing"
         else
-            # TODO: check applicability
-            # if !haskey(algo.factorization.edge_to_subgraph, interface.edge) || !haskey(algo.factorization.edge_to_subgraph, outbound_interface.edge)
-            #     # Inbound and/or outbound edge is not explicitly listed in the algo.fields.
-            #     # This is possible if one of those edges is internal to a composite node.
-            #     # We will default to sum-product message passing, and consume the message on the inbound interface.
-            #     # Composite nodes with explicit message passing will throw an error when one of their external interfaces belongs to a different subgraph, so it is safe to assume sum-product.
-            #     push!(rule_arguments, interface.partner.message)
-            #     break
-            # end
-
             # Should we require the inbound message or marginal?
             if is(algo.factorization.edge_to_subgraph[interface.edge], algo.factorization.edge_to_subgraph[outbound_interface.edge])
                 # Both edges in same subgraph, require message

@@ -82,7 +82,7 @@ function generateVariationalBayesSchedule!(sg::Subgraph, graph::FactorGraph=curr
 
     # Store schedules
     sg.internal_schedule = schedule
-    sg.external_schedule = Node[n for n in external_schedule] # Convert set to array
+    sg.external_schedule = collect(external_schedule) # Convert set to array
 
     return sg
 end

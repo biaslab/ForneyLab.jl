@@ -52,21 +52,21 @@ function sumProduct!{   T<:Val}(node::CompositeNode,
                         outbound_interface_id::Type{T},
                         args...)
 
-    outbound_dist = args[end]
+    outbound_dist = args[end] # Dummy declaration, just to be clear on which one the outbound distribution is 
     outbound_interface_id = outbound_interface_id.parameters[1]
     outbound_interface = node.interfaces[outbound_interface_id]
 
     # Move all inbound messages to corresponding terminal nodes in the internal graph
-    for interface_index=1:length(node.interfaces)
-        if interface_index != outbound_interface_id
-            node.interfaceid_to_terminalnode[interface_index].value = node.interfaces[interface_index].partner.message.payload
+    for (id, interface) in enumerate(node.interfaces)
+        if id != outbound_interface_id
+            node.interfaceid_to_terminalnode[id].value = interface.partner.message.payload
         end
     end
 
     # Execute the internal graph algorithm
     parent_graph = currentGraph()
     setCurrentGraph(node.internal_graph)
-    run(node.computation_rules[outbound_interface])
+    run(node.computation_rules[outbound_interface]) # Executes an in-place operation on outbound_dist
     # reset the graph
     setCurrentGraph(parent_graph)
 
@@ -74,5 +74,5 @@ function sumProduct!{   T<:Val}(node::CompositeNode,
     internal_outbound_interface = node.interfaceid_to_terminalnode[outbound_interface_id].interfaces[1].partner
     outbound_interface.message = internal_outbound_interface.message
 
-    return outbound_dist
+    return outbound_dist # Return the altered outbound_dist
 end

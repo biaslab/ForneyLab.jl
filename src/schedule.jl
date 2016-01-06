@@ -89,3 +89,52 @@ function show(io::IO, schedule::Schedule)
         println("")
     end
 end
+
+function generateScheduleByDFS!(outbound_interface::Interface,
+                                backtrace::Vector{Interface} = Interface[],
+                                call_list::Vector{Interface} = Interface[];
+                                allowed_edges = false)
+    # Private function to generate a sum product schedule by doing a DFS through the graph.
+    # The graph is passed implicitly through the outbound_interface.
+    #
+    # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
+    #
+    # outbound_interface: find a schedule to calculate the outbound message on this interface
+    # backtrace: backtrace for recursive implementation of DFS
+    # call_list: holds the recursive calls
+    # allowed_edges: either false or Set{Edge}. If a set is passed, the search will be restricted to edges in this set.
+    #
+    # Returns: Vector{Interface} (not an actual Schedule yet)
+
+    node = outbound_interface.node
+
+    # Apply stopping condition for recursion. When the same interface is called twice, this is indicative of an unbroken loop.
+    if outbound_interface in call_list
+        # Notify the user to break the loop with an initial message
+        error("Loop detected around $(outbound_interface) Consider setting an initial message somewhere in this loop.")
+    elseif outbound_interface in backtrace
+        # This outbound_interface is already in the schedule
+        return backtrace
+    else # Stopping condition not satisfied
+        push!(call_list, outbound_interface)
+    end
+
+    # Check all inbound messages on the other interfaces of the node
+    for (id, interface) in enumerate(node.interfaces)
+        is(interface, outbound_interface) && continue # Skip the outbound interface
+        ( (typeof(allowed_edges)==Set{Edge}) && !(interface.edge in allowed_edges) ) && continue # Skip if the interface's edge is outside the allowed search set
+
+        (interface.partner != nothing) || error("Disconnected interface should be connected: interface #$(interface_index) of $(typeof(node)) $(node.id)")
+
+        if interface.partner.message == nothing # Required message missing, no breaker message is set
+            if !(interface.partner in backtrace) # Don't recalculate stuff that's already in the schedule.
+                generateScheduleByDFS!(interface.partner, backtrace, call_list, allowed_edges=allowed_edges) # Recursive call
+            end
+        end
+    end
+
+    # Update call_list and backtrace
+    pop!(call_list)
+
+    return push!(backtrace, outbound_interface)
+end
