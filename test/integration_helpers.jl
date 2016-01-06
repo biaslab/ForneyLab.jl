@@ -428,9 +428,9 @@ end
 function initializeCompositeGraph()
     # Build the internal graph
     g = FactorGraph()
-    t_constant = TerminalNode(3.0)
-    t_in = TerminalNode(id=:in)
-    t_out = TerminalNode(id=:out)
+    t_constant = TerminalNode(DeltaDistribution(3.0))
+    t_in = TerminalNode(DeltaDistribution(), id=:in)
+    t_out = TerminalNode(DeltaDistribution(), id=:out)
     a = AdditionNode(id=:adder)
     Edge(t_in, a.i[:in1])
     Edge(t_constant, a.i[:in2])

@@ -20,15 +20,15 @@ facts("CompositeNode integration tests") do
         @fact add_3.id --> :add_3
 
         # Connect to higher level graph
-        t_in = TerminalNode(5.0) # Use same variable name as a test
-        t_out = TerminalNode()
+        t_in = TerminalNode(DeltaDistribution(5.0)) # Use same variable name as a test
+        t_out = TerminalNode(DeltaDistribution())
         Edge(t_in, add_3.i[:in])
         Edge(add_3.i[:out], t_out)
 
         # Verify algorithm execution
         algo = SumProduct(add_3.i[:out])
         @fact run(algo) --> Message(DeltaDistribution(8.0))
-        t_in.value = 10.0
+        t_in.value = DeltaDistribution(10.0)
         @fact run(algo) --> Message(DeltaDistribution(13.0))
     end
 
@@ -41,7 +41,7 @@ facts("CompositeNode integration tests") do
             return internal_adder.i[:out].message = Message(DeltaDistribution(mean(internal_in.value)[1]+5.0))
         end
         algo2 = GenericAlgorithm(exec)
-        addRule!(add_3, add_3.i[:out], sumProduct!, algo2)
+        addRule!(add_3, add_3.i[:out], algo2)
         @fact run(algo2) --> Message(DeltaDistribution(15.0))
     end
 
