@@ -74,26 +74,22 @@ function inferDistributionTypes!(algo::SumProduct)
     schedule_entries = Dict{Interface, ScheduleEntry}()
 
     for entry in algo.schedule
-        # Generate array of inbound types
-        node = entry.node
-        outbound_interface_id = entry.outbound_interface_id
-        outbound_interface = node.interfaces[outbound_interface_id]
+        collectInboundTypes!(entry, schedule_entries, algo) # SumProduct specific collection of inbound types
+        inferOutboundType!(entry, [sumProduct!]) # For the SumProduct algorithm, the only allowed update rule is the sumProduct! rule
 
-        collectInboundTypes!(entry, node, outbound_interface_id, schedule_entries, algo) # SumProduct specific collection of inbound types
-        inferOutboundType!(entry, node, outbound_interface_id, entry.inbound_types, [sumProduct!]) # For the SumProduct algorithm, the only allowed update rule is the sumProduct! rule
-
+        outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
         schedule_entries[outbound_interface] = entry # Assign schedule entry to lookup dictionary
     end
 
     return algo
 end
 
-function collectInboundTypes!(entry::ScheduleEntry, node::Node, outbound_interface_id::Int64, schedule_entries::Dict{Interface, ScheduleEntry}, ::SumProduct)
+function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Interface, ScheduleEntry}, ::SumProduct)
     # Infers inbound types for node relative to the outbound interface
     entry.inbound_types = []
 
-    for (id, interface) in enumerate(node.interfaces)
-        if id == outbound_interface_id
+    for (id, interface) in enumerate(entry.node.interfaces)
+        if id == entry.outbound_interface_id
             push!(entry.inbound_types, Void) # Outbound interface, push Void
         else
             if interface.partner.message == nothing
@@ -122,14 +118,10 @@ end
 function compile!(entry::ScheduleEntry, ::Type{Val{symbol(sumProduct!)}}, ::InferenceAlgorithm)
     # Generate entry.execute for schedule entry with sumProduct! update rule
 
-    # Collect references to all required inbound messages for executing message computation rule
-    node = entry.node
-    outbound_interface_id = entry.outbound_interface_id
-
     inbound_rule_arguments = []
     # Add inbound messages to inbound_rule_arguments
-    for (id, interface) in enumerate(node.interfaces)
-        if id == outbound_interface_id
+    for (id, interface) in enumerate(entry.node.interfaces)
+        if id == entry.outbound_interface_id
             # Inbound on outbound_interface is irrelevant
             push!(inbound_rule_arguments, nothing)
         else

@@ -18,11 +18,3 @@ facts("Clear message tests") do
         @fact n(:add_node).i[:out].message --> nothing
     end
 end
-
-#####################
-# Integration tests
-#####################
-
-facts("Post-processing tests") do
-    @fact true --> false
-end

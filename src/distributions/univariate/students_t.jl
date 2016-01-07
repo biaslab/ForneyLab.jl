@@ -29,6 +29,8 @@ function Base.mean(dist::StudentsTDistribution)
     end
 end
 
+Base.mean(::Type{DeltaDistribution{Float64}}, d::StudentsTDistribution) = DeltaDistribution(mean(d)) # Definition for post-processing
+
 function Base.var(dist::StudentsTDistribution)
     if isProper(dist) && dist.nu > 2
         return dist.nu / ((dist.nu - 2) * dist.lambda)

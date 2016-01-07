@@ -77,14 +77,10 @@ function inferDistributionTypes!(algo::VariationalBayes)
         schedule_entries = Dict{Interface, ScheduleEntry}()
 
         for entry in schedule
-            # Generate array of inbound types
-            node = entry.node
-            outbound_interface_id = entry.outbound_interface_id
-            outbound_interface = node.interfaces[outbound_interface_id]
+            collectInboundTypes!(entry, schedule_entries, algo) # VariationalBayes algorithm specific collection of inbound types
+            inferOutboundType!(entry, [sumProduct!, vmp!]) # The VariationalBayes algorithm allows access to sumProduct! and vmp! update rules
 
-            collectInboundTypes!(entry, node, outbound_interface_id, schedule_entries, algo) # VariationalBayes algorithm specific collection of inbound types
-            inferOutboundType!(entry, node, outbound_interface_id, entry.inbound_types, [sumProduct!, vmp!]) # The VariationalBayes algorithm allows access to sumProduct! and vmp! update rules
-
+            outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
             schedule_entries[outbound_interface] = entry # Assign schedule entry to lookup dictionary
         end
     end
@@ -92,13 +88,13 @@ function inferDistributionTypes!(algo::VariationalBayes)
     return algo
 end
 
-function collectInboundTypes!(entry::ScheduleEntry, node::Node, outbound_interface_id::Int64, schedule_entries::Dict{Interface, ScheduleEntry}, algo::VariationalBayes)
+function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Interface, ScheduleEntry}, algo::VariationalBayes)
     entry.inbound_types = []
-    outbound_interface = node.interfaces[outbound_interface_id]
+    outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
 
     # Collect references to all required inbound messages for executing message computation rule
-    for (id, interface) in enumerate(node.interfaces)
-        if id == outbound_interface_id
+    for (id, interface) in enumerate(entry.node.interfaces)
+        if id == entry.outbound_interface_id
             push!(entry.inbound_types, Void) # This interface is outbound, push Void
         else
             # Should we require the inbound message or marginal?
@@ -109,7 +105,7 @@ function collectInboundTypes!(entry::ScheduleEntry, node::Node, outbound_interfa
                 # A subgraph border is crossed, require marginal
                 # The factor is the set of internal edges that are in the same subgraph
                 sg = algo.factorization.edge_to_subgraph[interface.edge]
-                push!(entry.inbound_types, typeof(algo.q_distributions[(node, sg)].distribution))
+                push!(entry.inbound_types, typeof(algo.q_distributions[(entry.node, sg)].distribution))
             end
         end
     end

@@ -1,5 +1,7 @@
-function inferOutboundType!(entry::ScheduleEntry, node::Node, outbound_interface_id::Int64, inbound_types::Vector, allowed_rules::Vector{Function})
+function inferOutboundType!(entry::ScheduleEntry, node::Node, allowed_rules::Vector{Function})
     # Infers the outbound type from node and all available information on inbounds and post-processing
+    inbound_types = entry.inbound_types
+    outbound_interface_id = entry.outbound_interface_id
 
     # Find all compatible calculation rules for the SumProduct algorithm
     outbound_types = []
@@ -36,8 +38,9 @@ function inferOutboundType!(entry::ScheduleEntry, node::Node, outbound_interface
     return entry
 end
 
-function inferOutboundType!(entry::ScheduleEntry, node::CompositeNode, outbound_interface_id::Int64, ::Vector, ::Vector{Function})
+function inferOutboundType!(entry::ScheduleEntry, node::CompositeNode, ::Vector{Function})
     # Infer outbound type of composite node
+    outbound_interface_id = entry.outbound_interface_id
     outbound_interface = node.interfaces[outbound_interface_id]
 
     # Check if there is already a computation rule defined for this outbound interface
@@ -68,10 +71,15 @@ function inferOutboundType!(entry::ScheduleEntry, node::CompositeNode, outbound_
     return entry
 end
 
+inferOutboundType!(entry::ScheduleEntry, allowed_rules::Vector{Function}) = inferOutboundType!(entry, entry.node, allowed_rules)
+
 function inferOutboundTypeAfterPostProcessing(entry::ScheduleEntry)
+    outbound_types = []
     available_post_processing_rules = methods(entry.post_processing, [Any, entry.intermediate_outbound_type])
     for post_processing_rule in available_post_processing_rules
-        push!(outbound_types, post_processing_rule.sig.types[1]) # Push the found outbound type (first entry) on the stack
+        outbound_type = post_processing_rule.sig.types[1].parameters[1]
+        (outbound_type <: ProbabilityDistribution) || continue # Skip when result is not a distribution
+        push!(outbound_types, outbound_type) # Push the found outbound type (first entry) on the stack
     end
 
     if length(outbound_types) == 0
@@ -85,15 +93,15 @@ function inferOutboundTypeAfterPostProcessing(entry::ScheduleEntry)
     return outbound_type
 end
 
-function buildExecute!(entry::ScheduleEntry, rule_arguments::Vector{DataType})
+function buildExecute!(entry::ScheduleEntry, rule_arguments::Vector)
     # Constructs the execute function with optional post processing folded in
     # Additionally, this function completes the rule arguments for the update function call with the pointer to the outbound distribution
 
     if !isdefined(entry, :post_processing)
         # Add outbound distribution to rule_arguments
-        push!(rule_arguments, node.interfaces[outbound_interface_id].message.payload)
+        push!(rule_arguments, entry.node.interfaces[entry.outbound_interface_id].message.payload)
         # No post-processing; assign the "compiled" computation rule as an anomynous function to entry.execute
-        entry.execute = ( () -> sumProduct!(node, Val{outbound_interface_id}, rule_arguments...) )
+        entry.execute = ( () -> entry.rule(entry.node, Val{entry.outbound_interface_id}, rule_arguments...) )
     else
         # Fold the post-processing operation into entry.execute()
         # Note that the distribution type after execute() in general does not correspond with the distribution type after post_processing().
@@ -104,12 +112,12 @@ function buildExecute!(entry::ScheduleEntry, rule_arguments::Vector{DataType})
         push!(rule_arguments, entry.intermediate_outbound_type()); # Append a dummy distribution for sumProduct! to fill
 
         entry.execute = ( () -> ( # Anonymous function for message passing and post-processing
-            intermediate_outbound_distribution = sumProduct!(node, Val{outbound_interface_id}, rule_arguments...); # In-place operation on previously created dummy distribution
-            new_outbound_distribution = entry.post_process(entry.outbound_type, intermediate_outbound_distribution); # Not an in-place operation
+            intermediate_outbound_distribution = entry.rule(entry.node, Val{entry.outbound_interface_id}, rule_arguments...); # In-place operation on previously created dummy distribution
+            new_outbound_distribution = entry.post_processing(entry.outbound_type, intermediate_outbound_distribution); # Not an in-place operation
             original_outbound_distribution = entry.node.interfaces[entry.outbound_interface_id].message.payload; # Get original pointer to outbound distribution on interface
             
             # Duplicate parameters of new into original
-            for field in fieldnames(source);
+            for field in fieldnames(new_outbound_distribution);
                 setfield!(original_outbound_distribution, field, deepcopy(getfield(new_outbound_distribution, field)));
             end;
             

@@ -25,9 +25,13 @@ isProper(dist::DeltaDistribution) = true
 
 Base.mean(dist::DeltaDistribution) = dist.m
 
+Base.mean(::Type{DeltaDistribution{Float64}}, d::DeltaDistribution) = deepcopy(d) # Definition for post-processing
+
 Base.var(dist::DeltaDistribution) = 0.0
 
 sample(dist::DeltaDistribution) = dist.m
+
+sample(::Type{DeltaDistribution{Float64}}, d::DeltaDistribution) = deepcopy(d) # Definition for post-processing
 
 ==(x::DeltaDistribution, y::DeltaDistribution) = (x.m == y.m)
 

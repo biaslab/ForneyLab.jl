@@ -51,8 +51,10 @@ function sumProduct!(   node::TerminalNode,
                         msg_out::Any,
                         outbound_dist::Any)
 
-    # Send out node.value
-    ensureMessage!(node.interfaces[1], typeof(node.value))
-    node.interfaces[1].message.payload = node.value
-    return node.interfaces[1].message.payload
+    # Fill the fields of outbound_dist with node.value
+    for field in fieldnames(outbound_dist)
+        setfield!(outbound_dist, field, deepcopy(getfield(node.value, field)))
+    end
+    
+    return outbound_dist
 end

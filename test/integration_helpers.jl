@@ -439,6 +439,20 @@ function initializeCompositeGraph()
     return (g, t_in, t_out)
 end
 
+function initializeCompositeNode()
+    # Build the internal graph
+    g = FactorGraph()
+    t_constant = TerminalNode(GaussianDistribution(m=3.0, V=1.0))
+    t_in = TerminalNode(GaussianDistribution(), id=:in)
+    t_out = TerminalNode(GaussianDistribution(), id=:out)
+    a = AdditionNode(id=:adder)
+    Edge(t_in, a.i[:in1])
+    Edge(t_constant, a.i[:in2])
+    Edge(a.i[:out], t_out)
+
+    return add_3 = CompositeNode(g, t_in, t_out, id=:add_3)
+end
+
 function initializeGaussianNodeChain(y::Array{Float64, 1})
     # Set up a chain of Gaussian nodes for mean-precision estimation
     #

@@ -7,8 +7,8 @@ type ScheduleEntry
     inbound_types::Vector{DataType}
     intermediate_outbound_type::DataType # Outbound type after update rule
     outbound_type::DataType # Outbound type after (optional) post-processing
-    execute::Function # Compiled rule call: () -> rule(node, Val{outbound_interface_id}, rule_arguments...). Upon compilation execute() incorporates post-processing.
     post_processing::Function
+    execute::Function # Compiled rule call: () -> rule(node, Val{outbound_interface_id}, rule_arguments...). Upon compilation execute() incorporates post-processing.
 
     function ScheduleEntry(node::Node, outbound_interface_id::Int64, rule::Function)
         return self = new(node, outbound_interface_id, rule)

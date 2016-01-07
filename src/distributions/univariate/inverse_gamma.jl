@@ -30,6 +30,8 @@ function Base.mean(dist::InverseGammaDistribution)
     end
 end
 
+Base.mean(::Type{DeltaDistribution{Float64}}, d::InverseGammaDistribution) = DeltaDistribution(mean(d)) # Definition for post-processing
+
 function Base.var(dist::InverseGammaDistribution)
     if isProper(dist) && dist.a > 2.0
         return (dist.b^2) / ( ( (dist.a-1)^2 ) * (dist.a-2) )

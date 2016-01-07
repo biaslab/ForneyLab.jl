@@ -21,6 +21,8 @@ isProper(dist::BernoulliDistribution) = (0 <= dist.p <= 1)
 
 Base.mean(dist::BernoulliDistribution) = dist.p
 
+Base.mean(::Type{DeltaDistribution{Float64}}, d::BernoulliDistribution) = DeltaDistribution(mean(d)) # Definition for post-processing
+
 Base.var(dist::BernoulliDistribution) = dist.p*(1-dist.p)
 
 sample(dist::BernoulliDistribution) = (rand() < dist.p)
