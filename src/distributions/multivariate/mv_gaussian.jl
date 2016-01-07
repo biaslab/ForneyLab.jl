@@ -110,6 +110,8 @@ function Base.mean(dist::MvGaussianDistribution)
     end
 end
 
+Base.mean(::Type{MvDeltaDistribution{Float64}}, d::MvGaussianDistribution) = MvDeltaDistribution(mean(d)) # Definition for post-processing
+
 function Base.cov(dist::MvGaussianDistribution)
     if isProper(dist)
         return ensureParameter!(dist, Val{:V}).V
@@ -142,6 +144,8 @@ function sample(dist::MvGaussianDistribution)
     ensureParameters!(dist, (:m, :V))
     return (dist.V^0.5)*randn(length(dist.m)) + dist.m
 end
+
+sample(::Type{MvDeltaDistribution{Float64}}, d::MvGaussianDistribution) = MvDeltaDistribution(sample(d)) # Definition for post-processing
 
 # Methods to check and convert different parametrizations
 function isWellDefined(dist::MvGaussianDistribution)

@@ -5,8 +5,9 @@ type ScheduleEntry
     outbound_interface_id::Int64
     rule::Function  # Refers to the general message calculation rule; for example sumProduct! or vmp!.
     inbound_types::Vector{DataType}
-    outbound_type::DataType
-    execute::Function # Compiled rule call: () -> rule(node, Val{outbound_interface_id}, rule_arguments...)
+    intermediate_outbound_type::DataType # Outbound type after update rule
+    outbound_type::DataType # Outbound type after (optional) post-processing
+    execute::Function # Compiled rule call: () -> rule(node, Val{outbound_interface_id}, rule_arguments...). Upon compilation execute() incorporates post-processing.
     post_processing::Function
 
     function ScheduleEntry(node::Node, outbound_interface_id::Int64, rule::Function)
@@ -25,15 +26,11 @@ Base.deepcopy(::ScheduleEntry) = error("deepcopy(::ScheduleEntry) is not possibl
 
 function Base.copy(src::ScheduleEntry)
     duplicate = ScheduleEntry(src.node, src.outbound_interface_id, src.rule)
-    if isdefined(src, :inbound_types)
-        duplicate.inbound_types = copy(src.inbound_types)
-    end
-    if isdefined(src, :outbound_type)
-        duplicate.outbound_type = src.outbound_type
-    end
-    if isdefined(src, :post_processing)
-        duplicate.post_processing = src.post_processing
-    end
+
+    isdefined(src, :inbound_types) && (duplicate.inbound_types = copy(src.inbound_types))
+    isdefined(src, :intermediate_outbound_type) && (duplicate.outbound_type = src.intermediate_outbound_type)
+    isdefined(src, :outbound_type) && (duplicate.outbound_type = src.outbound_type)
+    isdefined(src, :post_processing) && (duplicate.post_processing = src.post_processing)
 
     return duplicate
 end

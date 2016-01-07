@@ -113,34 +113,29 @@ function prepare!(algo::SumProduct)
         ensureMessage!(entry.node.interfaces[entry.outbound_interface_id], entry.outbound_type)
     end
 
-    # Compile the schedule (define schedule_entry.execute)
+    # Compile the schedule (define entry.execute)
     compile!(algo.schedule, algo)
 
     return algo
 end
 
-function compile!(schedule_entry::ScheduleEntry, ::Type{Val{symbol(sumProduct!)}}, ::InferenceAlgorithm)
-    # Generate schedule_entry.execute for schedule entry with sumProduct! update rule
+function compile!(entry::ScheduleEntry, ::Type{Val{symbol(sumProduct!)}}, ::InferenceAlgorithm)
+    # Generate entry.execute for schedule entry with sumProduct! update rule
 
     # Collect references to all required inbound messages for executing message computation rule
-    node = schedule_entry.node
-    outbound_interface_id = schedule_entry.outbound_interface_id
+    node = entry.node
+    outbound_interface_id = entry.outbound_interface_id
 
-    rule_arguments = []
-    # Add inbound messages to rule_arguments
+    inbound_rule_arguments = []
+    # Add inbound messages to inbound_rule_arguments
     for (id, interface) in enumerate(node.interfaces)
         if id == outbound_interface_id
             # Inbound on outbound_interface is irrelevant
-            push!(rule_arguments, nothing)
+            push!(inbound_rule_arguments, nothing)
         else
-            push!(rule_arguments, interface.partner.message)
+            push!(inbound_rule_arguments, interface.partner.message)
         end
     end
-    # Add outbound distribution to rule_arguments
-    push!(rule_arguments, node.interfaces[outbound_interface_id].message.payload)
 
-    # Assign the "compiled" computation rule as an anomynous function to schedule entry.execute
-    schedule_entry.execute = ( () -> sumProduct!(node, Val{outbound_interface_id}, rule_arguments...) )
-
-    return schedule_entry
+    return buildExecute!(entry, inbound_rule_arguments)
 end

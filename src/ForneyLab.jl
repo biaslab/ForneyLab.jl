@@ -87,6 +87,9 @@ include("algorithms/sum_product/sum_product.jl")
 include("algorithms/variational_bayes/variational_bayes.jl")
 include("algorithms/expectation_propagation/expectation_propagation.jl")
 
+# Shared preparation methods for inference algorithms
+include("algorithms/preparation.jl")
+
 vague{T<:ProbabilityDistribution}(dist_type::Type{T}) = vague!(T())
 
 end # module ForneyLab

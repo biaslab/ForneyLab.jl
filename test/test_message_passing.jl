@@ -2,7 +2,7 @@
 # Unit tests
 #####################
 
-facts("Message passing tests") do
+facts("Clear message tests") do
     context("clearMessage!() and clearMessages!() should clear messages") do
         initializeAdditionNode(Any[Message(GaussianDistribution()), Message(GaussianDistribution()), Message(GaussianDistribution())])
         n(:add_node).i[:in1].message = Message(GaussianDistribution())
@@ -17,4 +17,12 @@ facts("Message passing tests") do
         @fact n(:add_node).i[:in1].message --> nothing
         @fact n(:add_node).i[:out].message --> nothing
     end
+end
+
+#####################
+# Integration tests
+#####################
+
+facts("Post-processing tests") do
+    @fact true --> false
 end

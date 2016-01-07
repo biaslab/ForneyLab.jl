@@ -133,37 +133,32 @@ function prepare!(algo::VariationalBayes)
     return algo
 end
 
-function compile!(schedule_entry::ScheduleEntry, ::Type{Val{symbol("ForneyLab.vmp!")}}, algo::VariationalBayes)
-    # Generate schedule_entry.execute for schedule entry with vmp update rule
+function compile!(entry::ScheduleEntry, ::Type{Val{symbol(vmp!)}}, algo::VariationalBayes)
+    # Generate entry.execute for schedule entry with vmp update rule
 
     # Collect references to all required inbound messages for executing message computation rule
-    node = schedule_entry.node
-    outbound_interface_id = schedule_entry.outbound_interface_id
+    node = entry.node
+    outbound_interface_id = entry.outbound_interface_id
     outbound_interface = node.interfaces[outbound_interface_id]
 
-    rule_arguments = []
-    # Add inbound messages to rule_arguments
+    inbound_rule_arguments = []
+    # Add inbound messages to inbound_rule_arguments
     for (id, interface) in enumerate(node.interfaces)
         if id == outbound_interface_id
-            push!(rule_arguments, nothing) # This interface is outbound, push "nothing"
+            push!(inbound_rule_arguments, nothing) # This interface is outbound, push "nothing"
         else
             # Should we require the inbound message or marginal?
             if is(algo.factorization.edge_to_subgraph[interface.edge], algo.factorization.edge_to_subgraph[outbound_interface.edge])
                 # Both edges in same subgraph, require message
-                push!(rule_arguments, interface.partner.message)
+                push!(inbound_rule_arguments, interface.partner.message)
             else
                 # A subgraph border is crossed, require marginal
                 # The factor is the set of internal edges that are in the same subgraph
                 sg = algo.factorization.edge_to_subgraph[interface.edge]
-                push!(rule_arguments, algo.q_distributions[(node, sg)].distribution)
+                push!(inbound_rule_arguments, algo.q_distributions[(node, sg)].distribution)
             end
         end
     end
-    # Add outbound distribution to rule_arguments
-    push!(rule_arguments, node.interfaces[outbound_interface_id].message.payload)
 
-    # Assign the "compiled" update rule as an anomynous function to the schedule entry execute field
-    schedule_entry.execute = ( () -> vmp!(node, Val{outbound_interface_id}, rule_arguments...) )
-
-    return schedule_entry
+    return buildExecute!(entry, inbound_rule_arguments)
 end

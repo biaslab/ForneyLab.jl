@@ -73,7 +73,7 @@ function ExpectationPropagation(
     return algo
 end
 
-function compile!(schedule_entry::ScheduleEntry, ::Type{Val{symbol("ForneyLab.ep!")}}, ::InferenceAlgorithm)
+function compile!(schedule_entry::ScheduleEntry, ::Type{Val{symbol(ep!)}}, ::InferenceAlgorithm)
     # Compile ScheduleEntry objects for SumProduct algorithm
     # Generates schedule_entry.execute function
 
