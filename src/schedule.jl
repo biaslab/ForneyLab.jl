@@ -1,4 +1,4 @@
-export ScheduleEntry, Schedule, setPostProcessing!
+export ScheduleEntry, Schedule
 
 type ScheduleEntry
     node::Node
@@ -35,23 +35,9 @@ function Base.copy(src::ScheduleEntry)
     return duplicate
 end
 
-function setPostProcessing!(schedule_entry::ScheduleEntry, post_processing::Function)
-    schedule_entry.post_processing = post_processing
-    return schedule_entry
-end
-
 typealias Schedule Array{ScheduleEntry, 1}
 
 Base.deepcopy(src::Schedule) = ScheduleEntry[copy(entry) for entry in src]
-
-function setPostProcessing!(schedule::Schedule, interface::Interface, post_processing::Function)
-    for entry in schedule
-        if is(entry.node.interfaces[entry.outbound_interface_id], interface)
-            entry.post_processing = post_processing # Edit in place
-            return schedule
-        end
-    end
-end
 
 # Convert interfaces to schedule
 function convert(::Type{ScheduleEntry}, interface::Interface, rule::Function = sumProduct!)

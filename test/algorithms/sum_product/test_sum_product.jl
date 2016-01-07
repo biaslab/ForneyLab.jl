@@ -40,13 +40,11 @@ facts("SumProduct message passing tests") do
         context("Should handle post-processing of messages (sample)") do
             initializeAdditionNode(Any[Message(GaussianDistribution()), Message(GaussianDistribution()), Message(GaussianDistribution())])
 
-            algo = SumProduct(n(:add_node).i[:out])
-            setPostProcessing!(algo.schedule, n(:add_node).i[:out], sample)
+            algo = SumProduct(n(:add_node).i[:out], post_processing_functions=Dict{Interface, Function}(n(:add_node).i[:out] => sample))
             prepare!(algo)
             msg = execute(algo.schedule)
-            dist = ensureParameters!(msg.payload, (:m, :V))
 
-            @fact typeof(dist) --> DeltaDistribution{Float64}
+            @fact typeof(msg.payload) --> DeltaDistribution{Float64}
         end
     end
 end

@@ -1,3 +1,7 @@
+###########################################
+# Shared methods for algorithm construction
+###########################################
+
 function inferOutboundType!(entry::ScheduleEntry, node::Node, allowed_rules::Vector{Function})
     # Infers the outbound type from node and all available information on inbounds and post-processing
     inbound_types = entry.inbound_types
@@ -92,6 +96,11 @@ function inferOutboundTypeAfterPostProcessing(entry::ScheduleEntry)
 
     return outbound_type
 end
+
+
+#######################################################
+# Shared methods for algorithm preparation/compilation
+#######################################################
 
 function buildExecute!(entry::ScheduleEntry, rule_arguments::Vector)
     # Constructs the execute function with optional post processing folded in

@@ -5,6 +5,7 @@ include("scheduler.jl")
 type SumProduct <: InferenceAlgorithm
     execute::Function
     schedule::Schedule
+    post_processing_functions::Dict{Interface, Function} # Sites for post-processing
 end
 
 
@@ -12,43 +13,46 @@ end
 # SumProduct algorithm constructors
 ############################################
 
-function SumProduct(graph::FactorGraph=currentGraph())
+function SumProduct(graph::FactorGraph=currentGraph(); post_processing_functions=Dict{Interface, Function}())
     # Generates a SumProduct algorithm that propagates messages to all wraps and write buffers.
     # Only works in acyclic graphs.
     schedule = generateSumProductSchedule(graph)
     exec(algorithm) = execute(algorithm.schedule)
 
-    algo = SumProduct(exec, schedule)
+    algo = SumProduct(exec, schedule, post_processing_functions)
+    setPostProcessing!(algo)
     inferDistributionTypes!(algo)
 
     return algo
 end
 
-function SumProduct(outbound_interface::Interface)
+function SumProduct(outbound_interface::Interface; post_processing_functions=Dict{Interface, Function}())
     # Generates a SumProduct algorithm to calculate the outbound message on outbound_interface.
     # Only works in acyclic graphs.
     schedule = generateSumProductSchedule(outbound_interface)
     exec(algorithm) = execute(algorithm.schedule)
 
-    algo = SumProduct(exec, schedule)
+    algo = SumProduct(exec, schedule, post_processing_functions)
+    setPostProcessing!(algo)
     inferDistributionTypes!(algo)
 
     return algo
 end
 
-function SumProduct(partial_list::Vector{Interface})
+function SumProduct(partial_list::Vector{Interface}; post_processing_functions=Dict{Interface, Function}())
     # Generates a SumProduct algorithm that at least propagates to all interfaces in the argument vector.
     # Only works in acyclic graphs.
     schedule = generateSumProductSchedule(partial_list)
     exec(algorithm) = execute(algorithm.schedule)
 
-    algo = SumProduct(exec, schedule)
+    algo = SumProduct(exec, schedule, post_processing_functions)
+    setPostProcessing!(algo)
     inferDistributionTypes!(algo)
 
     return algo
 end
 
-function SumProduct(edge::Edge)
+function SumProduct(edge::Edge; post_processing_functions=Dict{Interface, Function}())
     # Generates a SumProduct algorithm to calculate the marginal on edge
     # Only works in acyclic graphs.
     schedule = generateSumProductSchedule([edge.head, edge.tail])
@@ -57,7 +61,8 @@ function SumProduct(edge::Edge)
         calculateMarginal!(edge)
     end
 
-    algo = SumProduct(exec, schedule)
+    algo = SumProduct(exec, schedule, post_processing_functions)
+    setPostProcessing!(algo)
     inferDistributionTypes!(algo)
 
     return algo
@@ -67,6 +72,17 @@ end
 ############################################
 # Type inference and preparation 
 ############################################
+
+function setPostProcessing!(algo::SumProduct)
+    for entry in algo.schedule
+        outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
+        if haskey(algo.post_processing_functions, outbound_interface) # Entry interface is amongst post processing sites
+            entry.post_processing = algo.post_processing_functions[outbound_interface] # Assign post-processing function to schedule entry
+        end
+    end
+
+    return algo
+end
 
 function inferDistributionTypes!(algo::SumProduct)
     # Infer the payload types for all messages in algo.schedule
