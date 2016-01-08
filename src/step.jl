@@ -116,6 +116,7 @@ end
 function run(algorithm::InferenceAlgorithm)
     # Call step(algorithm) repeatedly until at least one read buffer is exhausted
     prepare!(algorithm)
+    
     if length(currentGraph().read_buffers) > 0
         while !any(isempty, values(currentGraph().read_buffers))
             step(algorithm)

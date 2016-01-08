@@ -185,38 +185,42 @@ facts("GainNode unit tests") do
                                 3.0 4.0 3.0;
                                 2.0 3.0 4.0])
             # Backward message
-            (rule,msg) = ForneyLab.sumProduct!(
+            dist = ForneyLab.sumProduct!(
                                         GainNode(gain=A),
-                                        1,
-                                        nothing, Message(MvGaussianDistribution(m=mean, W=precision)))
-            ensureParameters!(msg.payload, (:m, :W))
-            @fact msg.payload.m --> roughly(inv(A) * mean)
-            @fact msg.payload.W --> roughly(A' * precision * A)
+                                        Val{1},
+                                        nothing, Message(MvGaussianDistribution(m=mean, W=precision)),
+                                        MvGaussianDistribution(m=zeros(3), V=eye(3)))
+            ensureParameters!(dist, (:m, :W))
+            @fact dist.m --> roughly(inv(A) * mean)
+            @fact dist.W --> roughly(A' * precision * A)
 
-            (rule,msg) = ForneyLab.sumProduct!(
+            dist = ForneyLab.sumProduct!(
                                         GainNode(),
-                                        1,
-                                        nothing, Message(MvGaussianDistribution(m=mean, W=precision)), Message(DeltaDistribution(A)))
-            ensureParameters!(msg.payload, (:m, :W))
-            @fact msg.payload.m --> roughly(inv(A) * mean)
-            @fact msg.payload.W --> roughly(A' * precision * A)
+                                        Val{1},
+                                        nothing, Message(MvGaussianDistribution(m=mean, W=precision)), Message(DeltaDistribution(A)),
+                                        MvGaussianDistribution(m=zeros(3), V=eye(3)))
+            ensureParameters!(dist, (:m, :W))
+            @fact dist.m --> roughly(inv(A) * mean)
+            @fact dist.W --> roughly(A' * precision * A)
 
             # Forward message
-            (rule,msg) = ForneyLab.sumProduct!(
+            dist = ForneyLab.sumProduct!(
                                         GainNode(gain=A),
-                                        2,
-                                        Message(MvGaussianDistribution(m=mean, W=precision)), nothing)
-            ensureParameters!(msg.payload, (:m, :W))
-            @fact msg.payload.m --> roughly(A * mean)
-            @fact msg.payload.W --> roughly(inv(A)' * precision * inv(A))
+                                        Val{2},
+                                        Message(MvGaussianDistribution(m=mean, W=precision)), nothing,
+                                        MvGaussianDistribution(m=zeros(3), V=eye(3)))
+            ensureParameters!(dist, (:m, :W))
+            @fact dist.m --> roughly(A * mean)
+            @fact dist.W --> roughly(inv(A)' * precision * inv(A))
 
-            (rule,msg) = ForneyLab.sumProduct!(
+            dist = ForneyLab.sumProduct!(
                                         GainNode(),
-                                        2,
-                                        Message(MvGaussianDistribution(m=mean, W=precision)), nothing, Message(DeltaDistribution(A)))
-            ensureParameters!(msg.payload, (:m, :W))
-            @fact msg.payload.m --> roughly(A * mean)
-            @fact msg.payload.W --> roughly(inv(A)' * precision * inv(A))
+                                        Val{2},
+                                        Message(MvGaussianDistribution(m=mean, W=precision)), nothing, Message(DeltaDistribution(A)),
+                                        MvGaussianDistribution(m=zeros(3), V=eye(3)))
+            ensureParameters!(dist, (:m, :W))
+            @fact dist.m --> roughly(A * mean)
+            @fact dist.W --> roughly(inv(A)' * precision * inv(A))
         end
     end
 end

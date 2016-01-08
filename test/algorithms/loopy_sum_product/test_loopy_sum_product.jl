@@ -1,38 +1,46 @@
 facts("LoopySumProduct message passing tests") do
     context("LoopySumProduct execute()") do
         context("Should correctly execute a schedule and return the result of the last step") do
-            initializeAdditionNode([GaussianDistribution(), GaussianDistribution(), GaussianDistribution()])
+            initializeAdditionNode()
 
             algo = LoopySumProduct(n(:add_node).i[:out])
             prepare!(algo)
-            msg = execute(algo.schedule)
+            execute(algo)
 
-            @fact msg.payload --> GaussianDistribution(m=2.0, V=2.0)
+            @fact n(:add_node).i[:out].message.payload --> GaussianDistribution(m=0.0, V=2.0)
         end
 
         context("Should correctly execute a schedule and return the result of the last step with preset messages") do
-            initializeLoopyGraph(A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
-            
-            algo = LoopySumProduct( n(:add).i[:in2],
-                                    breaker_messages = Dict(n(:add).i[:in1] => Message(GaussianDistribution(m=2.0, V=0.5)), 
-                                                            n(:add).i[:out] => Message(GaussianDistribution())))
-            prepare!(algo)
-            msg = execute(algo.schedule)
-            dist = ensureParameters!(msg.payload, (:m, :V))
+            FactorGraph()
+            GainNode(gain=1.0, id=:g1)
+            GainNode(gain=2.0, id=:g2)
+            Edge(n(:g1).i[:out], n(:g2).i[:in])
+            Edge(n(:g2).i[:out], n(:g1).i[:in])
 
-            @fact is(dist, n(:add).i[:in2].message.payload) --> true
-            @fact isApproxEqual(dist.m, [2.0]) --> true
-            @fact isApproxEqual(dist.V, [1.5].') --> true
+            algo = LoopySumProduct( n(:g2).i[:out],
+                                    breaker_messages=Dict(n(:g2).i[:out] => Message(GaussianDistribution(m=1.0, V=1.0))),
+                                    n_iterations=5)
+            prepare!(algo)
+            execute(algo)
+            @fact n(:g2).i[:out].message.payload --> GaussianDistribution(m=32.0, V=1024.0)
         end
 
         context("Should handle post-processing of messages (sample)") do
-            initializeAdditionNode([GaussianDistribution(), GaussianDistribution(), GaussianDistribution()])
+            # TODO: upon sampling in the loop, distribution types are unstable over iterations! (disallow?) Sampling outside the loop might work.
 
-            algo = LoopySumProduct(n(:add_node).i[:out], post_processing_functions=Dict{Interface, Function}(n(:add_node).i[:out] => sample))
+            FactorGraph()
+            GainNode(gain=1.0, id=:g1)
+            GainNode(gain=2.0, id=:g2)
+            Edge(n(:g1).i[:out], n(:g2).i[:in])
+            Edge(n(:g2).i[:out], n(:g1).i[:in])
+
+            algo = LoopySumProduct( n(:g2).i[:out],
+                                    breaker_messages=Dict(n(:g2).i[:out] => Message(GaussianDistribution(m=1.0, V=1.0))),
+                                    n_iterations=5,
+                                    post_processing_functions = Dict(n(:g1).i[:out] => sample))
             prepare!(algo)
-            msg = execute(algo.schedule)
-
-            @fact typeof(msg.payload) --> DeltaDistribution{Float64}
+            execute(algo)
+            @fact typeof(n(:g2).i[:out].message.payload) --> DeltaDistribution{Float64}
         end
     end
 end

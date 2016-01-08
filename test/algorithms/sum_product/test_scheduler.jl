@@ -20,7 +20,9 @@ facts("ForneyLab.generateSumProductSchedule() integration tests") do
 
         context("Should auto-generate a feasible schedule") do
             # Generate schedule automatically
-            schedule = ForneyLab.generateSumProductSchedule(n(:add).i[:in2]) # Message towards noise factor
+            # Message towards noise factor
+            schedule = ForneyLab.generateSumProductSchedule(n(:add).i[:in2], breaker_sites = Set([n(:add).i[:in1], n(:add).i[:out]]))
+            
             intf_list = [schedule_entry.node.interfaces[schedule_entry.outbound_interface_id] for schedule_entry in schedule]
             # All (but just) required calculations should be in the schedule
             @fact n(:inhibitor).i[:out] in intf_list --> true
@@ -40,7 +42,8 @@ facts("ForneyLab.generateSumProductSchedule() integration tests") do
 
         context("Should correctly complete a partial schedule") do
             # Generate a schedule that first passes clockwise through the cycle and then counterclockwise
-            schedule = ForneyLab.generateSumProductSchedule(ForneyLab.convert(Schedule, [n(:driver).i[:out], n(:add).i[:in2]])) # Message towards noise factor
+            partial = ForneyLab.convert(Schedule, [n(:driver).i[:out], n(:add).i[:in2]])
+            schedule = ForneyLab.generateSumProductSchedule(partial, breaker_sites = Set([n(:add).i[:in1], n(:add).i[:out]])) # Message towards noise factor
             # All (but just) required calculations should be in the schedule
             @fact schedule --> ForneyLab.convert(Schedule, [n(:inhibitor).i[:out], n(:driver).i[:out], n(:driver).i[:in], n(:inhibitor).i[:in], n(:add).i[:in2]])
         end

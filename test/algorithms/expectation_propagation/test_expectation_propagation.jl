@@ -1,4 +1,6 @@
 facts("ExpectationPropagation algorithm integration tests") do
+    # TODO: Still some mistake around here
+
     # Perform expectation propagation in a graph consisting
     # of SigmoidNode sections:
     #

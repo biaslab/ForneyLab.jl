@@ -3,7 +3,6 @@ export LoopySumProduct
 type LoopySumProduct <: AbstractSumProduct
     execute::Function
     schedule::Schedule
-    post_processing_functions::Dict{Interface, Function} # Sites for post-processing
     breaker_messages::Dict{Interface, Message} # Sites for breaker message initializations
     n_iterations::Int64
 end
@@ -15,8 +14,9 @@ end
 
 function LoopySumProduct(graph::FactorGraph=currentGraph(); post_processing_functions=Dict{Interface, Function}(), breaker_messages=Dict{Interface, Message}(), n_iterations=50)
     # Generates a LoopySumProduct algorithm that propagates messages to all wraps and write buffers.
-    # Only works in acyclic graphs.
+
     schedule = generateSumProductSchedule(graph, breaker_sites=Set(keys(breaker_messages)))
+    setPostProcessing!(schedule, post_processing_functions)
 
     function exec(algorithm)
         resetBreakerMessages(algorithm)
@@ -25,8 +25,7 @@ function LoopySumProduct(graph::FactorGraph=currentGraph(); post_processing_func
         end
     end
 
-    algo = LoopySumProduct(exec, schedule, post_processing_functions, breaker_messages, n_iterations)
-    setPostProcessing!(algo)
+    algo = LoopySumProduct(exec, schedule, breaker_messages, n_iterations)
     inferDistributionTypes!(algo)
 
     return algo
@@ -34,8 +33,9 @@ end
 
 function LoopySumProduct(outbound_interface::Interface; post_processing_functions=Dict{Interface, Function}(), breaker_messages=Dict{Interface, Message}(), n_iterations=50)
     # Generates a LoopySumProduct algorithm to calculate the outbound message on outbound_interface.
-    # Only works in acyclic graphs.
+
     schedule = generateSumProductSchedule(outbound_interface, breaker_sites=Set(keys(breaker_messages)))
+    setPostProcessing!(schedule, post_processing_functions)
 
     function exec(algorithm)
         resetBreakerMessages(algorithm)
@@ -44,8 +44,7 @@ function LoopySumProduct(outbound_interface::Interface; post_processing_function
         end
     end
 
-    algo = LoopySumProduct(exec, schedule, post_processing_functions, breaker_messages, n_iterations)
-    setPostProcessing!(algo)
+    algo = LoopySumProduct(exec, schedule, breaker_messages, n_iterations)
     inferDistributionTypes!(algo)
 
     return algo
@@ -75,6 +74,22 @@ function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Inter
     end
 
     return entry
+end
+
+function prepare!(algo::LoopySumProduct)
+    # Populate the graph with vague messages of the correct types
+    for (interface, message) in algo.breaker_messages # Preset breaker messages
+        ensureMessage!(interface, typeof(message.payload))
+    end
+
+    for entry in algo.schedule # Preset other messages
+        ensureMessage!(entry.node.interfaces[entry.outbound_interface_id], entry.outbound_type)
+    end
+
+    # Compile the schedule (define entry.execute)
+    compile!(algo.schedule, algo)
+
+    return algo
 end
 
 function resetBreakerMessages(algo::LoopySumProduct)

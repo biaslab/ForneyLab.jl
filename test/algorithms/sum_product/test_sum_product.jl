@@ -1,33 +1,30 @@
-facts("collectInbounds() tests") do
-    context("collectInbounds() should collect the required inbound messages in an array") do
+facts("SumProduct collect inbound type tests") do
+    context("SumProduct should collect the proper inbound types") do
         # Standard
-        initializeGaussianNode()
-        @fact ForneyLab.collectInbounds(n(:node).i[:out], Val{symbol(sumProduct!)}) --> (3, [n(:node).i[:mean].partner.message, n(:node).i[:precision].partner.message, nothing])
-
-        # Composite node
-        initializeGainEqualityNode(eye(1), Any[Message(DeltaDistribution(1.0)), Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))])
-        @fact ForneyLab.collectInbounds(n(:gec_node).i[:out], Val{symbol(sumProduct!)}) --> (3, [n(:gec_node).i[:in1].partner.message, n(:gec_node).i[:in2].partner.message, nothing])
+        initializeAdditionNode()
+        algo = SumProduct(n(:add_node).i[:out])
+        @fact algo.schedule[3].inbound_types --> [Message{GaussianDistribution}, Message{GaussianDistribution}, Void]
     end
 end
 
 facts("SumProduct message passing tests") do
     context("SumProduct execute()") do
         context("Should correctly execute a schedule and return the result of the last step") do
-            initializeAdditionNode(Any[Message(GaussianDistribution()), Message(GaussianDistribution()), Message(GaussianDistribution())])
+            initializeAdditionNode()
 
             algo = SumProduct(n(:add_node).i[:out])
             prepare!(algo)
-            msg = execute(algo.schedule)
+            msg = execute(algo)
 
-            @fact msg.payload --> GaussianDistribution(m=2.0, V=2.0)
+            @fact msg.payload --> GaussianDistribution(m=0.0, V=2.0)
         end
 
         context("Should handle post-processing of messages (sample)") do
-            initializeAdditionNode(Any[Message(GaussianDistribution()), Message(GaussianDistribution()), Message(GaussianDistribution())])
+            initializeAdditionNode()
 
-            algo = SumProduct(n(:add_node).i[:out], post_processing_functions=Dict{Interface, Function}(n(:add_node).i[:out] => sample))
+            algo = SumProduct(n(:add_node).i[:out], post_processing_functions=Dict(n(:add_node).i[:out] => sample))
             prepare!(algo)
-            msg = execute(algo.schedule)
+            msg = execute(algo)
 
             @fact typeof(msg.payload) --> DeltaDistribution{Float64}
         end

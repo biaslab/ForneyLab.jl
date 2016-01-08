@@ -1,4 +1,4 @@
-export ScheduleEntry, Schedule
+export ScheduleEntry, Schedule, setPostProcessing!
 
 type ScheduleEntry
     node::Node
@@ -48,6 +48,20 @@ end
 
 function convert(::Type{Schedule}, interfaces::Vector{Interface}, rule::Function)
     return ScheduleEntry[convert(ScheduleEntry, interface, rule) for interface in interfaces]
+end
+
+function setPostProcessing!(schedule::Schedule, post_processing_functions::Dict{Interface,Function})
+    # Set post-processing functions for schedule entries
+    if length(post_processing_functions) > 0
+        for entry in schedule
+            outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
+            if haskey(post_processing_functions, outbound_interface)
+                entry.post_processing = post_processing_functions[outbound_interface]
+            end
+        end
+    end
+
+    return schedule
 end
 
 function show(io::IO, schedule_entry::ScheduleEntry)

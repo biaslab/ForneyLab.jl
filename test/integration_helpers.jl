@@ -120,34 +120,6 @@ function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
     return g
 end
 
-function initializeTreeGraph()
-    # Set up some tree graph
-    #
-    #          (c2)
-    #           |
-    #           v
-    # (c1)---->[+]---->[=]----->
-    #                   ^    y
-    #                   |
-    #                  (c3)
-    #
-
-    g = FactorGraph()
-    TerminalNode(GaussianDistribution(), id=:c1)
-    TerminalNode(GaussianDistribution(), id=:c2)
-    TerminalNode(GaussianDistribution(m=-2.0, V=3.0), id=:c3)
-    AdditionNode(id=:add)
-    EqualityNode(id=:equ)
-    # Edges from left to right
-    Edge(n(:c1).i[:out], n(:add).i[:in1])
-    Edge(n(:c2).i[:out], n(:add).i[:in2])
-    Edge(n(:add).i[:out], n(:equ).interfaces[1])
-    Edge(n(:c3).i[:out], n(:equ).interfaces[2])
-    Edge(n(:c3).i[:out], n(:equ).interfaces[2])
-
-    return g
-end
-
 function initializeFactoringGraph()
     # Set up a graph to test factorize function
     #             [T]
@@ -223,7 +195,7 @@ function initializeSimpleFactoringGraph()
     return g
 end
 
-function initializeAdditionNode(values::Array{ProbabilityDistribution})
+function initializeAdditionNode(values=[GaussianDistribution(), GaussianDistribution(), GaussianDistribution()])
     # Set up an addition node    #
     # [T]-->[+]<--[T]
     #        |
@@ -233,111 +205,6 @@ function initializeAdditionNode(values::Array{ProbabilityDistribution})
     AdditionNode(id=:add_node)
     for (id, value) in enumerate(values)
         Edge(TerminalNode(value).i[:out], n(:add_node).interfaces[id])
-    end
-
-    return g
-end
-
-function initializeEqualityNode(values::Array{ProbabilityDistribution})
-    # Set up an equality node
-    #
-    # [T]-->[=]<--[T] (as many incoming edges as length(msgs))
-    #        |
-    #       [T]
-
-    g = FactorGraph()
-    EqualityNode(length(msgs), id=:eq_node)
-    for (id, value) in enumerate(values)
-        Edge(TerminalNode(value).i[:out], n(:eq_node).interfaces[id])
-    end
-
-    return g
-end
-
-function initializeTerminalAndGainAddNode()
-    # Initialize some nodes
-    #
-    #    node
-    #    [N]--|
-    #       out
-    #
-    #     c_node
-    #    -------
-    #    |     |
-    # |--|-[+]-|--|
-    #    |     |
-    #    | ... |
-
-    g = FactorGraph()
-    GainAdditionNode([1.0], id=:c_node)
-    TerminalNode(id=:node)
-
-    return g
-end
-
-function initializeGainAdditionNode(A::Array, values::Array{ProbabilityDistribution})
-    # Set up a gain addition node
-    #
-    #           [T]
-    #            | in1
-    #            |
-    #        ____|____
-    #        |   v   |
-    #        |  [A]  |
-    #        |   |   |
-    #    in2 |   v   | out
-    #[T]-----|->[+]--|---->[T]
-    #        |_______|
-
-    g = FactorGraph()
-    GainAdditionNode(A, id=:gac_node)
-    for (id, value) in enumerate(values)
-        Edge(TerminalNode(value).i[:out], n(:gac_node).interfaces[id])
-    end
-
-    return g
-end
-
-function initializeTerminalAndGainEqNode()
-    # Initialize some nodes
-    #
-    #    node
-    #    [N]--|
-    #       out
-    #
-    #     c_node
-    #    -------
-    #    |     |
-    # |--|-[=]-|--|
-    #    |     |
-    #    | ... |
-
-    g = FactorGraph()
-    GainEqualityNode([1.0], id=:c_node)
-    TerminalNode(id=:node)
-
-    return g
-end
-
-function initializeGainEqualityNode(A::Array, values::Array{ProbabilityDistribution})
-    # Set up a gain equality node and prepare the messages
-    # A MockNode is connected for each argument message
-    #
-    #         _________
-    #     in1 |       | in2
-    # [T]-----|->[=]<-|-----[T]
-    #         |   |   |
-    #         |   v   |
-    #         |  [A]  |
-    #         |___|___|
-    #             | out
-    #             v
-    #            [T]
-
-    g = FactorGraph()
-    GainEqualityNode(A, id=:gec_node)
-    for (id, value) in enumerate(values)
-        Edge(TerminalNode(value).i[:out], n(:gec_node).interfaces[id])
     end
 
     return g

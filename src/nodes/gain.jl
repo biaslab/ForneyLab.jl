@@ -57,7 +57,6 @@ type GainNode <: Node
 
         return self
     end
-
 end
 
 isDeterministic(::GainNode) = true
@@ -132,8 +131,7 @@ function sumProduct!(   node::GainNode,
     outbound_dist.xi = gain_dist.m * dist_out.xi
     outbound_dist.W = (gain_dist.m)^2 * dist_out.W
 
-    return (:gain_gaussian_backward,
-          node.interfaces[outbound_interface_index].message)
+    return outbound_dist
 end
 
 

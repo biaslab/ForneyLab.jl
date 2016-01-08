@@ -117,7 +117,9 @@ facts("Edge integration tests") do
 
     context("forwardMessage(), forwardMessage(), ensureMarginal!()") do
         FactorGraph()
-        test_edge = Edge(MockNode(Message(GaussianDistribution())).i[:out], MockNode(Message(GaussianDistribution(m=3.0, V=2.0))).i[:out])
+        test_edge = Edge(MockNode().i[:out], MockNode().i[:out])
+        test_edge.head.message = Message(GaussianDistribution(m=3.0, V=2.0))
+        test_edge.tail.message = Message(GaussianDistribution())
         @fact forwardMessage(test_edge) --> Message(GaussianDistribution())
         @fact backwardMessage(test_edge) --> Message(GaussianDistribution(m=3.0, V=2.0))
         test_edge.marginal = GaussianDistribution(m=3.0, V=2.0)

@@ -79,9 +79,9 @@ end
 # DeltaDistribution methods
 ############################################
 
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{DeltaDistribution}, msg_3::Message{DeltaDistribution}, outbound_dist::DeltaDistribution) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{DeltaDistribution}, msg_2::Any, msg_3::Message{DeltaDistribution}, outbound_dist::DeltaDistribution) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{DeltaDistribution}, msg_2::Message{DeltaDistribution}, msg_3::Any, outbound_dist::DeltaDistribution) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
+sumProduct!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{DeltaDistribution{T}}, msg_3::Message{DeltaDistribution{T}}, outbound_dist::DeltaDistribution{T}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
+sumProduct!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{DeltaDistribution{T}}, msg_2::Any, msg_3::Message{DeltaDistribution{T}}, outbound_dist::DeltaDistribution{T}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
+sumProduct!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{DeltaDistribution{T}}, msg_2::Message{DeltaDistribution{T}}, msg_3::Any, outbound_dist::DeltaDistribution{T}) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
 
 function equalityRule!(dist_result::DeltaDistribution, dist_1::DeltaDistribution, dist_2::DeltaDistribution)
     # The result of the delta equality rule applied to dist_1 and dist_2 is written to dist_result
