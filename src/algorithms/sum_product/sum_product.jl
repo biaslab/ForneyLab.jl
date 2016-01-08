@@ -2,7 +2,9 @@ export SumProduct
 
 include("scheduler.jl")
 
-type SumProduct <: InferenceAlgorithm
+abstract AbstractSumProduct <: InferenceAlgorithm
+
+type SumProduct <: AbstractSumProduct
     execute::Function
     schedule::Schedule
     post_processing_functions::Dict{Interface, Function} # Sites for post-processing
@@ -73,7 +75,7 @@ end
 # Type inference and preparation 
 ############################################
 
-function setPostProcessing!(algo::SumProduct)
+function setPostProcessing!(algo::AbstractSumProduct)
     for entry in algo.schedule
         outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
         if haskey(algo.post_processing_functions, outbound_interface) # Entry interface is amongst post processing sites
@@ -84,7 +86,7 @@ function setPostProcessing!(algo::SumProduct)
     return algo
 end
 
-function inferDistributionTypes!(algo::SumProduct)
+function inferDistributionTypes!(algo::AbstractSumProduct)
     # Infer the payload types for all messages in algo.schedule
     # Fill schedule_entry.inbound_types and schedule_entry.outbound_type
     schedule_entries = Dict{Interface, ScheduleEntry}()
@@ -108,18 +110,14 @@ function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Inter
         if id == entry.outbound_interface_id
             push!(entry.inbound_types, Void) # Outbound interface, push Void
         else
-            if interface.partner.message == nothing
-                push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
-            else # A breaker message is pre-set on the partner interface, push message type
-                push!(entry.inbound_types, typeof(interface.partner.message))
-            end
+            push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
         end
     end
 
     return entry
 end
 
-function prepare!(algo::SumProduct)
+function prepare!(algo::AbstractSumProduct)
     # Populate the graph with vague messages of the correct types
     for entry in algo.schedule
         ensureMessage!(entry.node.interfaces[entry.outbound_interface_id], entry.outbound_type)

@@ -52,9 +52,5 @@ function sumProduct!(   node::TerminalNode,
                         outbound_dist::Any)
 
     # Fill the fields of outbound_dist with node.value
-    for field in fieldnames(outbound_dist)
-        setfield!(outbound_dist, field, deepcopy(getfield(node.value, field)))
-    end
-    
-    return outbound_dist
+    return injectParameters!(outbound_dist, node.value)
 end

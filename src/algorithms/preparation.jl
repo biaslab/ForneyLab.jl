@@ -126,13 +126,21 @@ function buildExecute!(entry::ScheduleEntry, rule_arguments::Vector)
             original_outbound_distribution = entry.node.interfaces[entry.outbound_interface_id].message.payload; # Get original pointer to outbound distribution on interface
             
             # Duplicate parameters of new into original
-            for field in fieldnames(new_outbound_distribution);
-                setfield!(original_outbound_distribution, field, deepcopy(getfield(new_outbound_distribution, field)));
-            end;
+            injectParameters!(original_outbound_distribution, new_outbound_distribution);
             
             return original_outbound_distribution
         ))
     end
 
     return entry
+end
+
+function injectParameters!{T<:ProbabilityDistribution}(destination::T, source::T)
+    # Fill the parameters of a destination distribution with the copied parameters of the source
+
+    for field in fieldnames(source)
+        setfield!(destination, field, deepcopy(getfield(source, field)))
+    end
+
+    return destination
 end

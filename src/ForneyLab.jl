@@ -84,6 +84,7 @@ include("visualization.jl")
 
 # InferenceAlgorithms
 include("algorithms/sum_product/sum_product.jl")
+include("algorithms/loopy_sum_product/loopy_sum_product.jl")
 include("algorithms/variational_bayes/variational_bayes.jl")
 include("algorithms/expectation_propagation/expectation_propagation.jl")
 

@@ -7,9 +7,9 @@ import Base.==
 #############
 
 type MockNode <: Node
-    # MockNode is a node with an arbitrary function, that when created
-    # initiates a message on all its interfaces.
-    # Interface 1 is named :out
+    # MockNode is an arbitrary node without update functions
+    # The last interface is called :out
+
     id::Symbol
     interfaces::Array{Interface, 1}
     i::Dict{Symbol, Interface}
@@ -22,18 +22,12 @@ type MockNode <: Node
             self.interfaces[interface_index] = Interface(self)
         end
 
-        self.i[:out] = self.interfaces[1]
+        self.i[:out] = self.interfaces[end]
 
         return(self)
     end
 end
-function MockNode(message::Message, num_interfaces::Int=1; kwargs...)
-    self = MockNode(num_interfaces; kwargs...)
-    for interface in self.interfaces
-        interface.message = message
-    end
-    return(self)
-end
+
 ForneyLab.isDeterministic(::MockNode) = false # Edge case, same as terminal node
 
 #############
@@ -229,42 +223,34 @@ function initializeSimpleFactoringGraph()
     return g
 end
 
-function initializeAdditionNode(msgs::Array{Any})
-    # Set up an addition node and prepare the messages
-    # A MockNode is connected for each argument message.
-    #
-    # [M]-->[+]<--[M]
+function initializeAdditionNode(values::Array{ProbabilityDistribution})
+    # Set up an addition node    #
+    # [T]-->[+]<--[T]
     #        |
+    #       [T]
 
     g = FactorGraph()
     AdditionNode(id=:add_node)
-    interface_count = 1
-    for msg in msgs
-        if msg != nothing
-            Edge(MockNode(msg).i[:out], n(:add_node).interfaces[interface_count])
-        end
-        interface_count += 1
+    for (id, value) in enumerate(values)
+        Edge(TerminalNode(value).i[:out], n(:add_node).interfaces[id])
     end
 
     return g
 end
 
-function initializeEqualityNode(msgs::Array{Any})
-    # Set up an equality node and prepare the messages
-    # A MockNode is connected for each argument message
+function initializeEqualityNode(values::Array{ProbabilityDistribution})
+    # Set up an equality node
     #
-    # [M]-->[=]<--[M] (as many incoming edges as length(msgs))
+    # [T]-->[=]<--[T] (as many incoming edges as length(msgs))
     #        |
+    #       [T]
 
     g = FactorGraph()
     EqualityNode(length(msgs), id=:eq_node)
-    interface_count = 1
-    for msg in msgs
-        if msg!=nothing
-            Edge(MockNode(msg).i[:out], n(:eq_node).interfaces[interface_count])
-        end
-        interface_count += 1
+    for (id, value) in enumerate(values)
+        Edge(TerminalNode(value).i[:out], n(:eq_node).interfaces[id])
     end
+
     return g
 end
 
@@ -289,11 +275,10 @@ function initializeTerminalAndGainAddNode()
     return g
 end
 
-function initializeGainAdditionNode(A::Array, msgs::Array{Any})
-    # Set up a gain addition node and prepare the messages
-    # A MockNode is connected for each argument message
+function initializeGainAdditionNode(A::Array, values::Array{ProbabilityDistribution})
+    # Set up a gain addition node
     #
-    #           [M]
+    #           [T]
     #            | in1
     #            |
     #        ____|____
@@ -301,19 +286,13 @@ function initializeGainAdditionNode(A::Array, msgs::Array{Any})
     #        |  [A]  |
     #        |   |   |
     #    in2 |   v   | out
-    #[M]-----|->[+]--|---->
+    #[T]-----|->[+]--|---->[T]
     #        |_______|
 
     g = FactorGraph()
     GainAdditionNode(A, id=:gac_node)
-    interface_count = 1
-    for msg in msgs
-        if msg == nothing
-            Edge(MockNode().i[:out], n(:gac_node).interfaces[interface_count])
-        else
-            Edge(MockNode(msg).i[:out], n(:gac_node).interfaces[interface_count])
-        end
-        interface_count += 1
+    for (id, value) in enumerate(values)
+        Edge(TerminalNode(value).i[:out], n(:gac_node).interfaces[id])
     end
 
     return g
@@ -340,61 +319,44 @@ function initializeTerminalAndGainEqNode()
     return g
 end
 
-function initializeGainEqualityNode(A::Array, msgs::Array{Any})
+function initializeGainEqualityNode(A::Array, values::Array{ProbabilityDistribution})
     # Set up a gain equality node and prepare the messages
     # A MockNode is connected for each argument message
     #
     #         _________
     #     in1 |       | in2
-    # [M]-----|->[=]<-|-----[M]
+    # [T]-----|->[=]<-|-----[T]
     #         |   |   |
     #         |   v   |
     #         |  [A]  |
     #         |___|___|
     #             | out
     #             v
+    #            [T]
 
     g = FactorGraph()
     GainEqualityNode(A, id=:gec_node)
-    interface_count = 1
-    for msg in msgs
-        if msg == nothing
-            Edge(MockNode().i[:out], n(:gec_node).interfaces[interface_count])
-        else
-            Edge(MockNode(msg).i[:out], n(:gec_node).interfaces[interface_count])
-        end
-        interface_count += 1
+    for (id, value) in enumerate(values)
+        Edge(TerminalNode(value).i[:out], n(:gec_node).interfaces[id])
     end
 
     return g
 end
 
-function initializeGaussianNode(; y_type::DataType=Float64)
+function initializeGaussianNode(; y::ProbabilityDistribution=GaussianDistribution())
     # Initialize a Gaussian node
     #
     #    mean   precision
-    #  [M]-->[N]<--[M]
+    #  [T]-->[N]<--[T]
     #         |
     #         v y
-    #        [M]
+    #        [T]
 
     g = FactorGraph()
     GaussianNode(form=:precision, id=:node)
-    Edge(MockNode().i[:out], n(:node).i[:mean], GaussianDistribution, id=:edge1)
-    ForneyLab.e(:edge1).tail.message = Message(GaussianDistribution())
-    ForneyLab.e(:edge1).head.message = Message(GaussianDistribution())
-    Edge(MockNode().i[:out], n(:node).i[:precision], GammaDistribution, id=:edge2)
-    ForneyLab.e(:edge2).tail.message = Message(GammaDistribution())
-    ForneyLab.e(:edge2).head.message = Message(GammaDistribution())
-    Edge(n(:node).i[:out], MockNode().i[:out], GaussianDistribution, id=:edge3)
-    ForneyLab.e(:edge3).tail.message = Message(GaussianDistribution())
-    if y_type == Float64
-        ForneyLab.e(:edge3).head.message = Message(DeltaDistribution(1.0))
-    elseif y_type == GaussianDistribution
-        ForneyLab.e(:edge3).head.message = Message(GaussianDistribution())
-    else
-        error("Can't handle y_type $(y_type)")
-    end
+    Edge(TerminalNode(GaussianDistribution()).i[:out], n(:node).i[:mean], GaussianDistribution, id=:edge1)
+    Edge(TerminalNode(GammaDistribution()).i[:out], n(:node).i[:precision], GammaDistribution, id=:edge2)
+    Edge(n(:node).i[:out], TerminalNode(y).i[:out], GaussianDistribution, id=:edge3)
 
     return g
 end

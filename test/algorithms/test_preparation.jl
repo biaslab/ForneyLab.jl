@@ -3,6 +3,16 @@
 #####################
 
 facts("Shared preparation methods for inference algorithms") do
+    context("injectParameters!() should fill the parameters of a destination distribution with the parameters of a source distribution") do
+        source = GaussianDistribution(m=4.0, V=5.0)
+        destination = GaussianDistribution()
+        ForneyLab.injectParameters!(destination, source)
+        @fact destination.m --> 4.0
+        @fact destination.V --> 5.0
+        @fact is(destination, source) --> false
+        @fact_throws ForneyLab.injectParameters!(destination, DeltaDistribution(4.0))
+    end
+
     FactorGraph()
 
     context("inferOutboundTypeAfterPostProcessing() should infer the correct outbound type after post-processing") do

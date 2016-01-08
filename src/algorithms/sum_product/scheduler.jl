@@ -1,8 +1,5 @@
 function generateSumProductSchedule(outbound_interface::Interface; args...)
     # Generate a sum-product Schedule that can be executed to calculate the outbound message on outbound_interface.
-    #
-    # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
-    # The same graph with different messages being present can (and probably will) result in a different schedule.
 
     return convert(Schedule, generateScheduleByDFS!(outbound_interface; args...), sumProduct!)
 end
@@ -11,8 +8,6 @@ function generateSumProductSchedule(partial_schedule::Schedule; args...)
     # Generate a complete schedule based on partial_schedule.
     # A partial schedule only defines the order of a subset of all required messages.
     # This function will find a valid complete schedule that satisfies the partial schedule.
-    #
-    # IMPORTANT: the resulting schedule depends on the current messages stored in the factor graph.
 
     interface_list = Array(Interface, 0)
     for schedule_entry in partial_schedule
