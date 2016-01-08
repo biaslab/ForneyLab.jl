@@ -24,9 +24,10 @@ facts("MvGaussianDistribution unit tests") do
         @fact dist.m --> [0.0]
         @fact dist.V --> reshape([huge],1,1)
 
-        dist = vague(MvGaussianDistribution, dim=2)
-        @fact dist.m --> zeros(2)
-        @fact dist.V --> huge*eye(2)
+        @fact true --> false
+        # dist = vague(MvGaussianDistribution, dim=2)
+        # @fact dist.m --> zeros(2)
+        # @fact dist.V --> huge*eye(2)
     end
 
     context("isProper() should indicate whether a Gaussian distribution is proper") do

@@ -11,7 +11,8 @@ end
 function ExpectationPropagation(
             sites::Vector{Interface};
             num_iterations::Int64 = 100,
-            callback::Function = () -> false)
+            callback::Function = ( () -> false ),
+            post_processing_functions = Dict{Interface, Function}())
     # Build an EP message passing algorithm for the specified sites.
     # num_iterations specifies the maximum number of iterations.
     # After each iteration, callback is called to allow for convergence checks.
@@ -26,7 +27,7 @@ function ExpectationPropagation(
 
     (length(sites) > 0) || error("Specify at least one site")
 
-    # Build schedule for step 1
+    # Build schedule
     total_schedule = Vector{Interface}()
     for i = 1:length(sites)
         site = sites[i]
@@ -52,12 +53,15 @@ function ExpectationPropagation(
             schedule_entry.rule = ep!
         end
     end
+    setPostProcessing!(schedule, post_processing_functions)
 
+    # Build execute function
     function exec(algorithm)
         # Init all sites with vague messages
         for site in algorithm.sites
             vague!(site.message.payload)
         end
+        # Execute schedule until stopping criterium is met
         for iteration_count = 1:algorithm.num_iterations
             execute(algorithm.schedule)
             # Check stopping criteria
@@ -68,30 +72,64 @@ function ExpectationPropagation(
     end
 
     algo = ExpectationPropagation(exec, schedule, sites, num_iterations, callback)
+    inferDistributionTypes!(algo)
+
+    return algo
+end
+
+############################################
+# Type inference and preparation
+############################################
+
+function inferDistributionTypes!(algo::ExpectationPropagation)
+    # Infer the payload types for all messages in algo.schedule
+    # Fill schedule_entry.inbound_types and schedule_entry.outbound_type
+    schedule_entries = Dict{Interface, ScheduleEntry}() # Lookup table from interface to schedule entry
+
+    for entry in algo.schedule
+        collectInboundTypes!(entry, schedule_entries, algo) # Fill entry.inbound_types
+        inferOutboundType!(entry, [sumProduct!, ep!]) # Infer the outbound message type, fill entry.outbound_type
+
+        outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
+        schedule_entries[outbound_interface] = entry # Add entry to lookup table
+    end
+
+    return algo
+end
+
+function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Interface, ScheduleEntry}, ::ExpectationPropagation)
+    # Look up the types of the inbound messages for entry.
+    # Fill entry.inbound_types
+    entry.inbound_types = []
+
+    for (id, interface) in enumerate(entry.node.interfaces)
+        if (id == entry.outbound_interface_id) && (entry.rule == sumProduct!)
+            # Incoming msg on outbound interface is always Void for sumProduct! rule
+            push!(entry.inbound_types, Void)
+        else
+            push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
+        end
+    end
+
+    return entry
+end
+
+function prepare!(algo::ExpectationPropagation)
+    # Populate the graph with vague messages of the correct types
+    for entry in algo.schedule
+        ensureMessage!(entry.node.interfaces[entry.outbound_interface_id], entry.outbound_type)
+    end
+
+    # Compile the schedule
     compile!(algo.schedule, algo)
 
     return algo
 end
 
-function compile!(schedule_entry::ScheduleEntry, ::Type{Val{symbol(ep!)}}, ::InferenceAlgorithm)
-    # Compile ScheduleEntry objects for SumProduct algorithm
-    # Generates schedule_entry.execute function
+function compile!(entry::ScheduleEntry, ::Type{Val{symbol(ep!)}}, ::InferenceAlgorithm)
+    # Generate entry.execute for schedule entry with ep! calculation rule
 
-    # Collect references to all required inbound messages for executing message computation rule
-    outbound_interface = schedule_entry.interface
-    node = outbound_interface.node
-    outbound_interface_index = 0
-    inbounds = Message[]
-    for j = 1:length(node.interfaces)
-        interface = node.interfaces[j]
-        if is(interface, outbound_interface)
-            outbound_interface_index = j
-        end
-        push!(inbounds, interface.partner.message)
-    end
+    inbound_messages = [interface.partner.message for interface in entry.node.interfaces]
 
-    # Assign the "compiled" update rule as an anomynous function to the schedule entry execute field
-    schedule_entry.execute = ( () -> ep!(node, outbound_interface_index, inbounds...) )
-
-    return schedule_entry
+    return buildExecute!(entry, inbound_messages)
 end

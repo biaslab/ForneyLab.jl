@@ -3,7 +3,6 @@ export LoopySumProduct
 type LoopySumProduct <: AbstractSumProduct
     execute::Function
     schedule::Schedule
-    post_processing_functions::Dict{Interface, Function} # Sites for post-processing
     breaker_messages::Dict{Interface, Message} # Sites for breaker message initializations
     n_iterations::Int64
 end
@@ -17,6 +16,7 @@ function LoopySumProduct(graph::FactorGraph=currentGraph(); post_processing_func
     # Generates a LoopySumProduct algorithm that propagates messages to all wraps and write buffers.
     # Only works in acyclic graphs.
     schedule = generateSumProductSchedule(graph, breaker_sites=Set(keys(breaker_messages)))
+    setPostProcessing!(schedule, post_processing_functions)
 
     function exec(algorithm)
         resetBreakerMessages(algorithm)
@@ -25,8 +25,7 @@ function LoopySumProduct(graph::FactorGraph=currentGraph(); post_processing_func
         end
     end
 
-    algo = LoopySumProduct(exec, schedule, post_processing_functions, breaker_messages, n_iterations)
-    setPostProcessing!(algo)
+    algo = LoopySumProduct(exec, schedule, breaker_messages, n_iterations)
     inferDistributionTypes!(algo)
 
     return algo
@@ -36,6 +35,7 @@ function LoopySumProduct(outbound_interface::Interface; post_processing_function
     # Generates a LoopySumProduct algorithm to calculate the outbound message on outbound_interface.
     # Only works in acyclic graphs.
     schedule = generateSumProductSchedule(outbound_interface, breaker_sites=Set(keys(breaker_messages)))
+    setPostProcessing!(schedule, post_processing_functions)
 
     function exec(algorithm)
         resetBreakerMessages(algorithm)
@@ -44,8 +44,7 @@ function LoopySumProduct(outbound_interface::Interface; post_processing_function
         end
     end
 
-    algo = LoopySumProduct(exec, schedule, post_processing_functions, breaker_messages, n_iterations)
-    setPostProcessing!(algo)
+    algo = LoopySumProduct(exec, schedule, breaker_messages, n_iterations)
     inferDistributionTypes!(algo)
 
     return algo

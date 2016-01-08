@@ -57,7 +57,6 @@ type GainNode <: Node
 
         return self
     end
-
 end
 
 isDeterministic(::GainNode) = true

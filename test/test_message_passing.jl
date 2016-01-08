@@ -4,7 +4,7 @@
 
 facts("Clear message tests") do
     context("clearMessage!() and clearMessages!() should clear messages") do
-        initializeAdditionNode(Any[Message(GaussianDistribution()), Message(GaussianDistribution()), Message(GaussianDistribution())])
+        initializeAdditionNode()
         n(:add_node).i[:in1].message = Message(GaussianDistribution())
         n(:add_node).i[:in2].message = Message(GaussianDistribution())
         n(:add_node).i[:out].message = Message(GaussianDistribution())

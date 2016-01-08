@@ -23,25 +23,15 @@ facts("TerminalNode unit tests") do
         @fact_throws TerminalNode(Message(DeltaDistribution(1.0)))
     end
 
-    context("TerminalNode should propagate a GaussianDistribution") do
-        FactorGraph()
-        TerminalNode(GaussianDistribution(m=2.0, V=4.0), id=:node)
-        @fact n(:node).interfaces[1].message --> nothing
-        (rule, msg) = ForneyLab.sumProduct!(n(:node), 1, nothing)
-        @fact n(:node).interfaces[1].message --> msg
-        @fact typeof(n(:node).interfaces[1].message) --> Message{GaussianDistribution}
-        @fact n(:node).interfaces[1].message.payload.m --> 2.0
-        @fact n(:node).interfaces[1].message.payload.V --> 4.0
-    end
+    context("TerminalNode should propagate distributions") do
+        validateOutboundMessage(TerminalNode(GaussianDistribution(m=4.0, V=5.0)),
+                                1,
+                                [nothing],
+                                GaussianDistribution(m=4.0, V=5.0))
 
-    context("TerminalNode should propagate a DeltaDistribution") do
-        FactorGraph()
-        TerminalNode(DeltaDistribution(2.0), id=:node)
-        @fact n(:node).interfaces[1].message --> nothing
-        (rule, msg) = ForneyLab.sumProduct!(n(:node), 1, nothing)
-        @fact n(:node).interfaces[1].message --> msg
-        @fact typeof(n(:node).interfaces[1].message) <: Message --> true
-        @fact typeof(n(:node).interfaces[1].message.payload) <: DeltaDistribution --> true
-        @fact n(:node).interfaces[1].message.payload.m --> 2.0
+        validateOutboundMessage(TerminalNode(DeltaDistribution(4.0)),
+                                1,
+                                [nothing],
+                                DeltaDistribution(4.0))
     end
 end

@@ -12,7 +12,6 @@ type VariationalBayes <: InferenceAlgorithm
     factorization::QFactorization
     q_distributions::Dict{Tuple{Node,Subgraph},QDistribution}
     n_iterations::Int64
-    post_processing_functions::Dict{Interface, Function} # Sites for post-processing
 end
 
 
@@ -27,6 +26,10 @@ function VariationalBayes(graph::FactorGraph=currentGraph(); n_iterations::Int64
     generateVariationalBayesSchedule!(factorization, graph) # Generate and store internal and external schedules on factorization subgraphs
     q_distributions = initializeVagueQDistributions(factorization) # Initialize vague q distributions
 
+    for factor in factorization.factors
+        setPostProcessing!(factor.internal_schedule, post_processing_functions)
+    end
+
     function exec(algorithm)
         resetQDistributions!(algorithm.q_distributions) # Reset q distributions before next step
         for iteration = 1:algorithm.n_iterations
@@ -34,8 +37,7 @@ function VariationalBayes(graph::FactorGraph=currentGraph(); n_iterations::Int64
         end
     end
 
-    algo = VariationalBayes(exec, factorization, q_distributions, n_iterations, post_processing_functions)
-    setPostProcessing!(algo)
+    algo = VariationalBayes(exec, factorization, q_distributions, n_iterations)
     inferDistributionTypes!(algo)
 
     return algo
@@ -51,6 +53,10 @@ function VariationalBayes(graph::FactorGraph, cluster_edges...; n_iterations::In
     generateVariationalBayesSchedule!(factorization, graph) # Generate and store internal and external schedules on factorization subgraphs
     q_distributions = initializeVagueQDistributions(factorization) # Initialize vague q distributions
 
+    for factor in factorization.factors
+        setPostProcessing!(factor.internal_schedule, post_processing_functions)
+    end
+
     function exec(algorithm)
         resetQDistributions!(algorithm.q_distributions) # Reset q distributions before next step
         for iteration = 1:algorithm.n_iterations
@@ -58,8 +64,7 @@ function VariationalBayes(graph::FactorGraph, cluster_edges...; n_iterations::In
         end
     end
 
-    algo = VariationalBayes(exec, factorization, q_distributions, n_iterations, post_processing_functions)
-    setPostProcessing!(algo)
+    algo = VariationalBayes(exec, factorization, q_distributions, n_iterations)
     inferDistributionTypes!(algo)
 
     return algo
@@ -68,21 +73,8 @@ VariationalBayes(cluster_edges...; n_iterations::Int64=50, post_processing_funct
 
 
 ############################################
-# Type inference and preparation 
+# Type inference and preparation
 ############################################
-
-function setPostProcessing!(algo::VariationalBayes)
-    for factor in algo.factorization.factors
-        for entry in factor.internal_schedule
-            outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
-            if haskey(algo.post_processing_functions, outbound_interface) # Entry interface is amongst post processing sites
-                entry.post_processing = algo.post_processing_functions[outbound_interface] # Assign post-processing function to schedule entry
-            end
-        end
-    end
-
-    return algo
-end
 
 function inferDistributionTypes!(algo::VariationalBayes)
     # Infer the payload types for all messages in the internal schedules

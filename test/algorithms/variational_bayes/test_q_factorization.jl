@@ -138,6 +138,7 @@ facts("resetQDistributions!() should reset already present q distributions to va
     @fact qs[(n(:g1), gam_subgraph)].distribution --> vague(GammaDistribution)
     @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(GaussianDistribution)
 
+    prepare!(algo)
     step(algo)
 
     # Distributions after step() should not be vague

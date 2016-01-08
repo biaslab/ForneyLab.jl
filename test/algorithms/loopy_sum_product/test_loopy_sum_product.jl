@@ -1,13 +1,13 @@
 facts("LoopySumProduct message passing tests") do
     context("LoopySumProduct execute()") do
         context("Should correctly execute a schedule and return the result of the last step") do
-            initializeAdditionNode([GaussianDistribution(), GaussianDistribution(), GaussianDistribution()])
+            initializeAdditionNode()
 
             algo = LoopySumProduct(n(:add_node).i[:out])
             prepare!(algo)
             msg = execute(algo.schedule)
 
-            @fact msg.payload --> GaussianDistribution(m=2.0, V=2.0)
+            @fact msg.payload --> GaussianDistribution(m=0.0, V=2.0)
         end
 
         context("Should correctly execute a schedule and return the result of the last step with preset messages") do
@@ -15,20 +15,20 @@ facts("LoopySumProduct message passing tests") do
             
             algo = LoopySumProduct( n(:add).i[:in2],
                                     breaker_messages = Dict(n(:add).i[:in1] => Message(GaussianDistribution(m=2.0, V=0.5)), 
-                                                            n(:add).i[:out] => Message(GaussianDistribution())))
+                                                            n(:add).i[:out] => Message(GaussianDistribution())),
+                                    n_iterations = 10)
             prepare!(algo)
             msg = execute(algo.schedule)
             dist = ensureParameters!(msg.payload, (:m, :V))
 
             @fact is(dist, n(:add).i[:in2].message.payload) --> true
-            @fact isApproxEqual(dist.m, [2.0]) --> true
-            @fact isApproxEqual(dist.V, [1.5].') --> true
+            @fact dist --> GaussianDistribution(m=2.0, V=1.5)
         end
 
         context("Should handle post-processing of messages (sample)") do
-            initializeAdditionNode([GaussianDistribution(), GaussianDistribution(), GaussianDistribution()])
+            initializeAdditionNode()
 
-            algo = LoopySumProduct(n(:add_node).i[:out], post_processing_functions=Dict{Interface, Function}(n(:add_node).i[:out] => sample))
+            algo = LoopySumProduct(n(:add_node).i[:out], post_processing_functions=Dict(n(:add_node).i[:out] => sample))
             prepare!(algo)
             msg = execute(algo.schedule)
 

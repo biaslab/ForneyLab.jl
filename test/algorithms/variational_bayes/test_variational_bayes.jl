@@ -9,7 +9,7 @@ facts("VariationalBayes collect inbound type tests") do
 
         # Structurally factorized
         initializeGaussianNode()
-        algo = VariationalBayes(Set{Edge}(n(:node).i[:out].edge)) # Split off extensions of these groups into separate subgraphs
+        algo = VariationalBayes(Set([n(:node).i[:out].edge])) # Split off extensions of these groups into separate subgraphs
         @fact algo.factorization.factors[2].internal_schedule[2].inbound_types --> [NormalGammaDistribution, NormalGammaDistribution, Void]
     end
 end

@@ -78,7 +78,7 @@ facts("GainAdditionNode unit tests") do
                                 MvGaussianDistribution(m=[1.0, 2.0], V=[13.5 12.0; 12.0 13.5]))
     end
 
-    context("GainAdditionNode should be able to pass MvGaussianDistributions: using shortcut rules or internal graph should yield same result (xi,W) parametrization") do
+    context("GainAdditionNode should be able to pass MvGaussianDistributions: (xi,W) parametrization") do
         A = [2.0 3.0; 3.0 2.0]
 
         # Forward
@@ -96,7 +96,7 @@ facts("GainAdditionNode unit tests") do
         validateOutboundMessage(GainAdditionNode(A),
                                 2,
                                 [Message(MvGaussianDistribution(xi=[0.0, 0.0], W=eye(2,2))), nothing, Message(MvGaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))],
-                                MvGaussianDistribution(m=[1.0, 2.0], V=[13.5 12.0; 12.0 13.5]))
+                                MvGaussianDistribution(m=[0.5, 1.0], V=[13.5 12.0; 12.0 13.5]))
     end
 
     context("GainAdditionNode should be able to pass MvGaussianDistributions: (different parametrizations)") do
