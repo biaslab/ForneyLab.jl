@@ -9,7 +9,7 @@ end
 Base.deepcopy(::InferenceAlgorithm) = error("deepcopy(::InferenceAlgorithm) is not possible. You should construct a new InferenceAlgorithm.")
 
 function compile!(schedule::Schedule, algorithm::InferenceAlgorithm)
-    # Generate execute functions for all schedule entries
+    # Generate entry.execute for every entry in schedule
     for schedule_entry in schedule
         compile!(schedule_entry, algorithm)
     end
@@ -17,4 +17,6 @@ function compile!(schedule::Schedule, algorithm::InferenceAlgorithm)
     return schedule
 end
 
-compile!(schedule_entry::ScheduleEntry, algorithm::InferenceAlgorithm) = compile!(schedule_entry, Val{symbol(schedule_entry.rule)}, algorithm)
+function compile!(schedule_entry::ScheduleEntry, algorithm::InferenceAlgorithm)
+    return compile!(schedule_entry, Val{symbol(schedule_entry.rule)}, algorithm)
+end
