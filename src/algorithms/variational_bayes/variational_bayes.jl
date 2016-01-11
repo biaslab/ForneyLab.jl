@@ -14,6 +14,11 @@ type VariationalBayes <: InferenceAlgorithm
     n_iterations::Int64
 end
 
+function show(algo::VariationalBayes)
+    println("VariationalBayes inference algorithm")
+    println("    number of factors: $(length(algo.factorization.factors))")
+    println("    number of iterations: $(algo.n_iterations)")
+end
 
 ############################################
 # VariationalBayes algorithm constructors

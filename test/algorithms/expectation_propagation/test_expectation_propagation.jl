@@ -63,11 +63,11 @@ facts("ExpectationPropagation algorithm integration tests") do
         return (length(X_marg) >= 5) # terminate the EP algorithm after 5 iterations
     end
 
-    ep_algo = ExpectationPropagation(sites, num_iterations=10, callback=log_results)
+    ep_algo = ExpectationPropagation(sites, n_iterations=10, callback=log_results)
 
     sitelist = [site for (site, distribution) in sites]
     context("ExpectationPropagation construction") do
-        @fact ep_algo.num_iterations --> 10
+        @fact ep_algo.n_iterations --> 10
         @fact is(ep_algo.callback, log_results) --> true
         @fact typeof(ep_algo.schedule) --> Schedule
         for entry in ep_algo.schedule
@@ -79,7 +79,6 @@ facts("ExpectationPropagation algorithm integration tests") do
         end
     end
 
-    #show(ep_algo.schedule)
     run(ep_algo)
 
     ###############

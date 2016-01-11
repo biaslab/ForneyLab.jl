@@ -1,20 +1,31 @@
+import Base.show
 export ExpectationPropagation
 
 type ExpectationPropagation <: InferenceAlgorithm
     execute::Function
     schedule::Schedule
     sites::Vector{Interface}
-    num_iterations::Int64
+    n_iterations::Int64
     callback::Function
 end
 
+function show(algo::ExpectationPropagation)
+    println("ExpectationPropagation inference algorithm")
+    println("    # sites: $(length(algo.sites))")
+    println("    max. number of iterations: $(algo.n_iterations)")
+    println("    callback function: $(algo.callback)")
+    println("Use show(algo.schedule) to view the message passing schedule.")
+end
+
 function ExpectationPropagation(
-            sites::Vector{Tuple{Interface,DataType}};
-            num_iterations::Int64 = 100,
+            sites::Vector{Tuple{Interface, DataType}};
+            n_iterations::Int64 = 100,
             callback::Function = ( () -> false ),
             post_processing_functions = Dict{Interface, Function}())
     # Build an EP message passing algorithm for the specified sites.
-    # num_iterations specifies the maximum number of iterations.
+    # sites is a list of (interface, recognition_distribution) tuples,
+    # where recognition_distribution <: ProbabilityDistribution.
+    # n_iterations specifies the maximum number of iterations.
     # After each iteration, callback is called to allow for convergence checks.
     # If the callback returns true, the algorithm is terminated.
 
@@ -39,13 +50,13 @@ function ExpectationPropagation(
         # Add schedule for cavity distribution to total_schedule
         total_schedule = generateScheduleByDFS!(site.partner, total_schedule)
         total_schedule = total_schedule[length(sitelist)+1:end] # Strip sitelist prepend
-        # Build list of other sitelist, prepend to total schedule
+        # Build list of other sites, prepend to total schedule
         if i < length(sitelist)
-            other_sitelist = vcat(sitelist[1:i-1], sitelist[i+1:end])
+            other_sites = vcat(sitelist[1:i-1], sitelist[i+1:end])
         else
-            other_sitelist = sitelist[1:i-1]
+            other_sites = sitelist[1:i-1]
         end
-        total_schedule = vcat(other_sitelist, total_schedule)
+        total_schedule = vcat(other_sites, total_schedule)
         total_schedule = generateScheduleByDFS!(site, total_schedule)
         total_schedule = total_schedule[length(sitelist):end] # Strip other sitelist prepend
     end
@@ -65,7 +76,7 @@ function ExpectationPropagation(
             vague!(site.message.payload)
         end
         # Execute schedule until stopping criterium is met
-        for iteration_count = 1:algorithm.num_iterations
+        for iteration_count = 1:algorithm.n_iterations
             execute(algorithm.schedule)
             # Check stopping criteria
             if algorithm.callback()
@@ -74,7 +85,7 @@ function ExpectationPropagation(
         end
     end
 
-    algo = ExpectationPropagation(exec, schedule, sitelist, num_iterations, callback)
+    algo = ExpectationPropagation(exec, schedule, sitelist, n_iterations, callback)
     inferDistributionTypes!(algo, recognition_distributions)
 
     return algo
@@ -100,8 +111,8 @@ function inferDistributionTypes!(algo::ExpectationPropagation, recognition_distr
     return algo
 end
 
-function collectInboundTypes!(  entry::ScheduleEntry, 
-                                schedule_entries::Dict{Interface, ScheduleEntry},  
+function collectInboundTypes!(  entry::ScheduleEntry,
+                                schedule_entries::Dict{Interface, ScheduleEntry},
                                 recognition_distributions::Dict{Interface,DataType},
                                 algo::ExpectationPropagation)
     # Look up the types of the inbound messages for entry.
