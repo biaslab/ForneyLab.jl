@@ -9,7 +9,7 @@ facts("General node properties unit tests") do
         if node_type!=CompositeNode && node_type!=MockNode
             context("$(node_type) properties should include interfaces and id") do
                 test_node = node_type()
-                @fact typeof(test_node) --> node_type
+                @fact typeof(test_node) <: node_type --> true
                 @fact typeof(test_node.interfaces) --> Array{Interface, 1} # Check for interface array
                 @fact length(test_node.interfaces) >= 1 --> true # Check length of interface array
                 @fact typeof(test_node.id) --> Symbol
@@ -28,10 +28,6 @@ facts("General node properties unit tests") do
                     # Check if the node interfaces couple back to the same node
                     @fact my_node.interfaces[interface_index].node --> my_node
                 end
-            end
-
-            context("$(node_type) should have at least 1 sumProduct!() method") do
-                @fact contains(string(methods(ForneyLab.sumProduct!)), string("::", node_type)) --> true
             end
 
             context("$(node_type) constructor should add node to the current graph") do

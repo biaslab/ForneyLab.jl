@@ -15,7 +15,7 @@ end
 
 show(io::IO, f::QFactorization) = println(io, "QFactorization with $(length(f.factors)) factors")
 
-function initializeVagueQDistributions(f::QFactorization) # Initialize
+function initializeVagueQDistributions(f::QFactorization, recognition_distribution_types::Dict{Edge, DataType}) # Initialize
     # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
 
     q_distributions = Dict{Tuple{Node, Subgraph}, QDistribution}()
@@ -32,17 +32,13 @@ function initializeVagueQDistributions(f::QFactorization) # Initialize
             # From the distribution types of the marginals on the internal edges we can deduce the unknown marginal types
             if length(internal_interfaces) == 1
                 # Univariate
-                if internal_interfaces[1].edge.distribution_type != Any
-                    marginal_type = internal_interfaces[1].edge.distribution_type
-                else
-                    error("Unspecified distribution type on edge:\n$(internal_interfaces[1].edge)")
-                end
+                marginal_type = recognition_distribution_types[internal_interfaces[1].edge]
             elseif length(internal_interfaces) == 0
                 error("The list of internal edges at node $(node) is empty, check your graph definition.")
             else
                 # Multivariate
-                internal_incoming_message_types = [interface.edge.distribution_type for interface in internal_interfaces]
-                marginal_type = getMarginalType(internal_incoming_message_types...)
+                internal_edges_distribution_types = [recognition_distribution_types[interface.edge] for interface in internal_interfaces]
+                marginal_type = getMarginalType(internal_edges_distribution_types...)
             end
             # Build q_distributions dictionary
             q_distributions[(node, subgraph)] = QDistribution(vague(marginal_type), intersect(edges(node), subgraph.internal_edges))

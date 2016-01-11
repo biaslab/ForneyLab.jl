@@ -19,12 +19,12 @@ end
 # VariationalBayes algorithm constructors
 ############################################
 
-function VariationalBayes(graph::FactorGraph=currentGraph(); n_iterations::Int64=50, post_processing_functions=Dict{Interface, Function}())
+function VariationalBayes(recognition_distribution_types::Dict{Edge, DataType}, graph::FactorGraph=currentGraph(); n_iterations::Int64=50, post_processing_functions=Dict{Interface, Function}())
     # Generates a VariationalBayes algorithm that propagates messages to all write buffers and wraps.
     # Uses a mean field factorization and autoscheduler
     factorization = factorize(graph) # Mean field factorization
     generateVariationalBayesSchedule!(factorization, graph) # Generate and store internal and external schedules on factorization subgraphs
-    q_distributions = initializeVagueQDistributions(factorization) # Initialize vague q distributions
+    q_distributions = initializeVagueQDistributions(factorization, recognition_distribution_types) # Initialize vague q distributions
 
     for factor in factorization.factors
         setPostProcessing!(factor.internal_schedule, post_processing_functions)
@@ -43,7 +43,7 @@ function VariationalBayes(graph::FactorGraph=currentGraph(); n_iterations::Int64
     return algo
 end
 
-function VariationalBayes(graph::FactorGraph, cluster_edges...; n_iterations::Int64=50, post_processing_functions=Dict{Interface, Function}())
+function VariationalBayes(recognition_distribution_types::Dict{Edge, DataType}, graph::FactorGraph, cluster_edges...; n_iterations::Int64=50, post_processing_functions=Dict{Interface, Function}())
     # Generates a vmp algorithm to calculate the messages towards write buffers and timewraps defined on graph
     # Uses a structured factorization with elements in cluster_edges defining separate subgraphs
     factorization = QFactorization(graph)
@@ -51,7 +51,7 @@ function VariationalBayes(graph::FactorGraph, cluster_edges...; n_iterations::In
         factorization = factorize!(cluster, factorization) # Structured factorization with elements in cluster_edges defining separate subgraphs
     end
     generateVariationalBayesSchedule!(factorization, graph) # Generate and store internal and external schedules on factorization subgraphs
-    q_distributions = initializeVagueQDistributions(factorization) # Initialize vague q distributions
+    q_distributions = initializeVagueQDistributions(factorization, recognition_distribution_types) # Initialize vague q distributions
 
     for factor in factorization.factors
         setPostProcessing!(factor.internal_schedule, post_processing_functions)
@@ -69,7 +69,7 @@ function VariationalBayes(graph::FactorGraph, cluster_edges...; n_iterations::In
 
     return algo
 end
-VariationalBayes(cluster_edges...; n_iterations::Int64=50, post_processing_functions=Dict{Interface, Function}()) = VariationalBayes(currentGraph(), cluster_edges...; n_iterations=n_iterations, post_processing_functions=post_processing_functions)
+VariationalBayes(recognition_distribution_types::Dict{Edge, DataType}, cluster_edges...; n_iterations::Int64=50, post_processing_functions=Dict{Interface, Function}()) = VariationalBayes(recognition_distribution_types, currentGraph(), cluster_edges...; n_iterations=n_iterations, post_processing_functions=post_processing_functions)
 
 
 ############################################

@@ -27,6 +27,8 @@ Base.var(dist::BernoulliDistribution) = dist.p*(1-dist.p)
 
 sample(dist::BernoulliDistribution) = (rand() < dist.p)
 
+sample(::Type{DeltaDistribution{Bool}}, d::BernoulliDistribution) = DeltaDistribution(sample(d)) # Definition for post-processing
+
 format(dist::BernoulliDistribution) = "Bernoulli(p=$(format(dist.p)))"
 
 show(io::IO, dist::BernoulliDistribution) = println(io, format(dist))

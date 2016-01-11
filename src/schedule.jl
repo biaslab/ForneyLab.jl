@@ -70,7 +70,7 @@ function show(io::IO, schedule_entry::ScheduleEntry)
     interface_handle = (handle(interface)!="") ? "($(handle(interface)))" : ""
     println(io, replace("$(schedule_entry.rule) on $(typeof(node)) $(interface.node.id) interface $(schedule_entry.outbound_interface_id) $(interface_handle)", "ForneyLab.", ""))
     if isdefined(schedule_entry, :inbound_types) && isdefined(schedule_entry, :outbound_type)
-        println(io, replace("$(schedule_entry.inbound_types) -> Message{$(schedule_entry.outbound_type)}", "ForneyLab.", ""))
+        println(io, replace("$(schedule_entry.inbound_types) -> Message{$(schedule_entry.intermediate_outbound_type)}", "ForneyLab.", ""))
     end
     if isdefined(schedule_entry, :post_processing)
         println(io, replace("Post processing: $(schedule_entry.post_processing)", "ForneyLab.", ""))

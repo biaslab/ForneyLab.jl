@@ -80,21 +80,18 @@ inferOutboundType!(entry::ScheduleEntry, allowed_rules::Vector{Function}) = infe
 function inferOutboundTypeAfterPostProcessing(entry::ScheduleEntry)
     outbound_types = []
     available_post_processing_rules = methods(entry.post_processing, [Any, entry.intermediate_outbound_type])
+
+    length(available_post_processing_rules) > 0 || error("No post processing available as $(entry.post_processing) on $(entry.intermediate_outbound_type). Please make sure all post-processing functions fit the signature: function{T}(::Type{T<:ProbabilityDistribution}, d::ProbabilityDistribution)")
+
     for post_processing_rule in available_post_processing_rules
         outbound_type = post_processing_rule.sig.types[1].parameters[1]
         (outbound_type <: ProbabilityDistribution) || continue # Skip when result is not a distribution
         push!(outbound_types, outbound_type) # Push the found outbound type (first entry) on the stack
     end
 
-    if length(outbound_types) == 0
-        error("No post processing available as $(entry.post_processing) on $(outbound_type). Please make sure all post-processing functions fit the signature: function{T}(::Type{T<:ProbabilityDistribution}, d::ProbabilityDistribution)")
-    elseif length(outbound_types) > 1
-        error("Multiple post processing possibilities for $(entry.post_processing): ($(outbound_types)).")
-    else
-        outbound_type = outbound_types[1] # Assign new outbound type to schedule entry
-    end
+    length(outbound_types) <= 1 || error("Multiple post processing possibilities for $(entry.post_processing): ($(outbound_types)).")
 
-    return outbound_type
+    return outbound_types[1]
 end
 
 

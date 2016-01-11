@@ -39,4 +39,8 @@ sample(::Type{DeltaDistribution{Float64}}, d::DeltaDistribution) = deepcopy(d) #
 # This is useful so we can write i.e. TerminalNode(3.0) instead of TerminalNode(DeltaDistribution(3.0)).
 convert(::Type{ProbabilityDistribution}, obj::Number) = DeltaDistribution(obj)
 
+convert(::Type{ProbabilityDistribution}, obj::Bool) = DeltaDistribution(obj)
+
 convert(::Type{DeltaDistribution}, obj::Number) = DeltaDistribution(obj)
+
+convert(::Type{DeltaDistribution}, obj::Bool) = DeltaDistribution(obj)

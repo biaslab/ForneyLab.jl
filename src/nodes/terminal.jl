@@ -25,7 +25,7 @@ type TerminalNode{value_type<:ProbabilityDistribution} <: Node
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function TerminalNode{T}(value::T=DeltaDistribution(); id=generateNodeId(TerminalNode))
+    function TerminalNode{T<:ProbabilityDistribution}(value::T; id=generateNodeId(TerminalNode))
         self = new(id, deepcopy(value), Vector{Interface}(1), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
 
@@ -36,6 +36,12 @@ type TerminalNode{value_type<:ProbabilityDistribution} <: Node
 end
 
 TerminalNode(value::ProbabilityDistribution; id=generateNodeId(TerminalNode)) = TerminalNode{typeof(value)}(value, id=id)
+
+TerminalNode(num::Number; id=generateNodeId(TerminalNode)) = TerminalNode{DeltaDistribution{Float64}}(convert(DeltaDistribution, num), id=id)
+
+TerminalNode(bool::Bool; id=generateNodeId(TerminalNode)) = TerminalNode{DeltaDistribution{Bool}}(convert(DeltaDistribution, bool), id=id)
+
+TerminalNode{T<:Number}(vect::Vector{T}; id=generateNodeId(TerminalNode)) = TerminalNode{MvDeltaDistribution{Float64}}(convert(MvDeltaDistribution, vect), id=id)
 
 TerminalNode(; id=generateNodeId(TerminalNode)) = TerminalNode{GaussianDistribution}(vague(GaussianDistribution), id=id)
 
