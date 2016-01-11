@@ -4,17 +4,17 @@ facts("ForneyLab.generateVariationalBayesSchedule() tests") do
         initializeGaussianNodeChain(data)
 
         # Structured factorization
-        f = ForneyLab.factorize!(Set{Edge}([ForneyLab.e(:q_y1)]))
+        f = ForneyLab.factorize!(Set{Edge}([edge(:q_y1)]))
 
         graph = currentGraph()
         for subgraph in f.factors
             ForneyLab.generateVariationalBayesSchedule!(subgraph) # Generate internal and external schedule automatically
         end
 
-        y_subgraph = f.edge_to_subgraph[ForneyLab.e(:q_y1)]
-        m_gam_subgraph = f.edge_to_subgraph[ForneyLab.e(:q_m1)]
-        @fact y_subgraph.internal_schedule --> [ForneyLab.ScheduleEntry(ForneyLab.e(:q_y1).head, sumProduct!), ForneyLab.ScheduleEntry(ForneyLab.e(:q_y1).tail, vmp!)] # Include outgoing interface
-        @fact m_gam_subgraph.internal_schedule --> ForneyLab.convert(Schedule, [n(:m0).i[:out], n(:mN).i[:out], ForneyLab.e(:q_m1).tail, n(:gam0).i[:out], n(:gamN).i[:out], ForneyLab.e(:q_gam1).tail]) # Exclude outgoing interfaces
+        y_subgraph = f.edge_to_subgraph[edge(:q_y1)]
+        m_gam_subgraph = f.edge_to_subgraph[edge(:q_m1)]
+        @fact y_subgraph.internal_schedule --> [ForneyLab.ScheduleEntry(edge(:q_y1).head, sumProduct!), ForneyLab.ScheduleEntry(edge(:q_y1).tail, vmp!)] # Include outgoing interface
+        @fact m_gam_subgraph.internal_schedule --> ForneyLab.convert(Schedule, [n(:m0).i[:out], n(:mN).i[:out], edge(:q_m1).tail, n(:gam0).i[:out], n(:gamN).i[:out], ForneyLab.e(:q_gam1).tail]) # Exclude outgoing interfaces
     end
     context("Should generate an internal and external schedule when called on a subgraph") do
         initializeFactoringGraphWithoutLoop()
