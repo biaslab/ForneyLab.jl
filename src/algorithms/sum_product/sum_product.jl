@@ -1,3 +1,4 @@
+import Base.show
 export SumProduct
 
 include("scheduler.jl")
@@ -9,6 +10,11 @@ type SumProduct <: AbstractSumProduct
     schedule::Schedule
 end
 
+function show(algo::SumProduct)
+    println("SumProduct inference algorithm")
+    println("    message passing schedule length: $(length(algo.schedule))")
+    println("Use show(algo.schedule) to view the message passing schedule.")
+end
 
 ############################################
 # SumProduct algorithm constructors

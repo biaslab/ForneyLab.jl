@@ -1,3 +1,4 @@
+import Base.show
 export LoopySumProduct
 
 type LoopySumProduct <: AbstractSumProduct
@@ -7,6 +8,12 @@ type LoopySumProduct <: AbstractSumProduct
     n_iterations::Int64
 end
 
+function show(algo::LoopySumProduct)
+    println("LoopySumProduct inference algorithm")
+    println("    message passing schedule length: $(length(algo.schedule))")
+    println("    number of iterations: $(algo.n_iterations)")
+    println("Use show(algo.schedule) to view the message passing schedule.")
+end
 
 ############################################
 # LoopySumProduct algorithm constructors
@@ -52,7 +59,7 @@ end
 
 
 ############################################
-# Type inference and breaker message reset 
+# Type inference and breaker message reset
 ############################################
 
 # Most methods are inherited from SumProduct
