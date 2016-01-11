@@ -42,39 +42,6 @@ function inferOutboundType!(entry::ScheduleEntry, node::Node, allowed_rules::Vec
     return entry
 end
 
-function inferOutboundType!(entry::ScheduleEntry, node::CompositeNode, ::Vector{Function})
-    # Infer outbound type of composite node
-    outbound_interface_id = entry.outbound_interface_id
-    outbound_interface = node.interfaces[outbound_interface_id]
-
-    # Check if there is already a computation rule defined for this outbound interface
-    if !haskey(node.computation_rules, outbound_interface)
-        # Try to automatically generate a sum-product algorithm
-        clearMessages!(node.internal_graph)
-        internal_outbound_interface = node.interfaceid_to_terminalnode[outbound_interface_id].interfaces[1].partner
-        composite_algo = SumProduct(internal_outbound_interface)
-        node.computation_rules[outbound_interface] = composite_algo
-    end
-
-    # Fetch the algorithm that corresponds with outbound interface (either preset or just constructed)
-    composite_algo = node.computation_rules[outbound_interface]
-    (typeof(composite_algo) <: SumProduct) || error("Only sum product algorithms are currently supported on composite nodes")
-
-    if !isdefined(composite_algo.schedule[end], :outbound_type) # Are the distribution types already inferred?
-        inferDistributionTypes!(composite_algo) # Infer types on algorithm coupled to outbound interface of the composite node
-    end
-
-    entry.intermediate_outbound_type = composite_algo.schedule[end].outbound_type # The last entry in the sum-product schedule holds the intermediate outbound type for this outbound interface on the composite node
-
-    if isdefined(entry, :post_processing)
-        entry.outbound_type = inferOutboundTypeAfterPostProcessing(entry) # If post-processing is defined, entry.outbound_type might differ from entry.intermediate_outbound_type
-    else
-        entry.outbound_type = entry.intermediate_outbound_type # No post-processing
-    end
-
-    return entry
-end
-
 inferOutboundType!(entry::ScheduleEntry, allowed_rules::Vector{Function}) = inferOutboundType!(entry, entry.node, allowed_rules)
 
 function inferOutboundTypeAfterPostProcessing(entry::ScheduleEntry)

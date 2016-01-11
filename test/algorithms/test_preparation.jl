@@ -57,25 +57,6 @@ facts("Shared preparation methods for inference algorithms") do
         @fact entry.outbound_type --> GammaDistribution
     end
 
-    context("inferOutboundType!() should infer the correct outbound type for a composite node") do
-        node = initializeCompositeNode()
-        entry = ScheduleEntry(node, 2, sumProduct!)
-        entry.inbound_types = [GaussianDistribution, Void]
-        ForneyLab.inferOutboundType!(entry, [sumProduct!, vmp!])
-        @fact entry.intermediate_outbound_type --> GaussianDistribution
-        @fact entry.outbound_type --> GaussianDistribution
-    end
-
-    context("inferOutboundType!() should infer the correct outbound type for a composite node with post-processing") do
-        node = initializeCompositeNode()
-        entry = ScheduleEntry(node, 2, sumProduct!)
-        entry.inbound_types = [GaussianDistribution, Void]
-        entry.post_processing = mean
-        ForneyLab.inferOutboundType!(entry, [sumProduct!, vmp!])
-        @fact entry.intermediate_outbound_type --> GaussianDistribution
-        @fact entry.outbound_type --> DeltaDistribution{Float64}
-    end
-
     context("buildExecute!() should pre-compile the execute field of the schedule entry") do
         # Without post-processing
         node = AdditionNode()

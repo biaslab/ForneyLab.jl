@@ -23,7 +23,7 @@ end
 
 draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph), edges(factor_graph), wraps=wraps(factor_graph); args...))
 draw(; args...) = draw(currentGraph(); args...)
-draw(composite_node::CompositeNode; args...) = draw(composite_node.internal_graph; args...)
+# draw(composite_node::CompositeNode; args...) = draw(composite_node.internal_graph; args...)
 
 draw(nodes::Set{Node}; args...) = graphviz(genDot(nodes, edges(nodes)); args...)
 draw(nodes::Vector{Node}; args...) = draw(Set(nodes); args...)
@@ -42,7 +42,7 @@ end
 
 drawPdf(factor_graph::FactorGraph, filename::AbstractString) = dot2pdf(genDot(nodes(factor_graph), edges(factor_graph)), filename)
 drawPdf(filename::AbstractString) = drawPdf(currentGraph(), filename)
-drawPdf(composite_node::CompositeNode, filename::AbstractString) = drawPdf(composite_node.internal_graph, filename)
+# drawPdf(composite_node::CompositeNode, filename::AbstractString) = drawPdf(composite_node.internal_graph, filename)
 
 drawPdf(nodes::Set{Node}, filename::AbstractString) = dot2pdf(genDot(nodes, edges(nodes)), filename)
 drawPdf(nodes::Vector{Node}, filename::AbstractString) = drawPdf(Set(nodes), filename)
