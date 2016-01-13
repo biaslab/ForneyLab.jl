@@ -33,17 +33,3 @@ format(dist::LogNormalDistribution) = "logN(μ=$(format(dist.m)), σ²=$(format(
 show(io::IO, dist::LogNormalDistribution) = println(io, format(dist))
 
 ==(x::LogNormalDistribution, y::LogNormalDistribution) = (x.m==y.m && x.s==y.s)
-
-# Post-processing functions for approximations
-# Approximations are computed with moment matching
-function approximateWithGamma(d::LogNormalDistribution)
-    a = 1/(exp(d.s) - 1)
-    b = exp(-(d.m + 0.5*d.s))/(exp(d.s)-1)
-    return GammaDistribution(a=a, b=b)
-end
-
-function approximateWithLogNormal(d::GammaDistribution)
-    m = (3/2)*log(d.a) - 0.5*log(1 + d.a) - log(d.b)
-    s = log(1 + d.a) - log(d.a)
-    return LogNormalDistribution(m=m, s=s)
-end

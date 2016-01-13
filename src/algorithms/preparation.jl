@@ -2,29 +2,104 @@
 # Shared methods for algorithm construction
 ###########################################
 
+parameters{T<:ProbabilityDistribution}(message_type::Type{Message{T}}) = message_type.parameters[1].parameters
+
+parameters{T<:ProbabilityDistribution}(distribution_type::Type{T}) = distribution_type.parameters
+
+parameters(type_var::TypeVar) = type_var.ub.parameters
+
+function parameters(data_type::DataType)
+    # Extract parameters of type ForneyLab.Message{T<:ForneyLab.MvGaussianDistribution{dims}}
+    # TODO: find more specific calling signature
+    if data_type <: Message
+        return data_type.parameters[1].ub.parameters
+    else
+        error("parameters function not valid for $(data_type)")
+    end
+end
+
+function extractParameters(rule_signature::SimpleVector, call_signature::Vector{DataType})
+    # Constructs a dictionary of parameter variables in rule_signature mapped to values in call_signature
+    params_dict = Dict()
+    for p in 3:length(rule_signature)-1 # Loop of indices of inbound types
+        if call_signature[p] != Void # Skip irrelevant inbounds
+            rule_params = parameters(rule_signature[p])
+            call_params = parameters(call_signature[p])
+            for r in 1:length(rule_params) # Iterate over all found parameters and add them to the dictionary
+                push!(params_dict, rule_params[r] => call_params[r])
+            end
+        end
+    end
+
+    return params_dict
+end
+
+function paramify(arr::Vector{Any})
+    # Converts arr to a nice string for parameterized type construction
+    str = ""
+    for param in arr
+        str *= "$(param), "
+    end
+    return str[1:end-2] # Chop off last comma
+end
+
+function extractOutboundType(outbound_arg)
+    # Acceps the update rule argument of the outbound and returns a DataType with the parameterized outbound distribution type
+    if typeof(outbound_arg) == TypeVar
+        return outbound_arg.ub
+    elseif typeof(outbound_arg) == DataType
+        return outbound_arg
+    else
+        error("outbound_arg of unrecognized type: $(typeof(outbound_arg))")
+    end
+end
+
+function collectAllOutboundTypes(allowed_rules::Vector{Function}, call_signature::Vector{DataType})
+    # Collects all outbound types for the update functions in allowed_rules that respond to signature
+
+    outbound_types = []
+    for update_function in allowed_rules
+        available_rules = methods(update_function, call_signature)
+        for rule in available_rules
+
+            rule_signature = rule.sig.types
+            outbound_type = extractOutboundType(rule_signature[end])
+            if outbound_type == Any # Is the outbound type parameterized by the node? (e.g. TerminalNode)
+                push!(outbound_types, call_signature[1].parameters[1])
+            elseif isempty(parameters(outbound_type)) # Are there no type variables defined for the outbound type?
+                push!(outbound_types, outbound_type) # Simply push the found outbound type on the stack
+            else  # Outbound type has parameters that need to be inferred
+                params_dict = extractParameters(rule_signature, call_signature) # Extract parameters and values of inbound types
+                outbound_params = parameters(outbound_type) # Extract parameters of outbound type
+
+                # Construct new outbound type definition with substituted values
+                param_values = Any[]
+                for param in outbound_params
+                    push!(param_values, params_dict[param])
+                end
+
+                substituted_outbound_type = eval(parse("$(outbound_type.name){$(paramify(param_values))}")) # Construct the type definition of the substituted outbund type
+                push!(outbound_types, substituted_outbound_type) 
+            end
+        end
+    end
+
+    return outbound_types
+end
+
 function inferOutboundType!(entry::ScheduleEntry, node::Node, allowed_rules::Vector{Function})
     # Infers the outbound type from node and all available information on inbounds and post-processing
     inbound_types = entry.inbound_types
     outbound_interface_id = entry.outbound_interface_id
 
-    # Find all compatible calculation rules for the SumProduct algorithm
-    outbound_types = []
-    for update_function in allowed_rules
-        available_rules = methods(update_function, [typeof(node); Type{Val{outbound_interface_id}}; inbound_types; Any])
-        for rule in available_rules
-            push!(outbound_types, rule.sig.types[end]) # Push the found outbound type on the stack
-        end
-    end
+    # Find all outbound types compatible with allowed_rules
+    outbound_types = collectAllOutboundTypes(allowed_rules, [typeof(node); Type{Val{outbound_interface_id}}; inbound_types; Any])
 
     # The outbound outbound_types should contain just one element (there should be just one available update rule)
     if length(outbound_types) == 0
         error("No calculation rule available for inbound types $(inbound_types) on node $(node)")
     elseif length(outbound_types) > 1
         error("Multiple outbound type possibilities ($(outbound_types)) for inbound types $(inbound_types) on node $(node)")
-    elseif outbound_types[1] == Any
-        # The computation rule produces Any, which indicates that the node is parametrized by its outbound type (e.g. a TerminalNode)
-        (typeof(node).parameters[1] <: ProbabilityDistribution) || error("$(typeof(node)) $(node.id) must be parametrized by a ProbabilityDistribution")
-        entry.intermediate_outbound_type = typeof(node).parameters[1]
     elseif outbound_types[1] <: ProbabilityDistribution
         # There is only one possible outbound type and it is a probability distribution
         entry.intermediate_outbound_type = outbound_types[1]

@@ -11,7 +11,7 @@ function execute(subgraph::Subgraph, q_distributions::Dict{Tuple{Node, Subgraph}
     for node in subgraph.external_schedule
         d = calculateQDistribution!(q_distributions, node, subgraph, factorization)
         if ForneyLab.verbose
-            show("($(node)) $(d)")
+            println("$(node.id) : $(format(d))")
         end
     end
 end

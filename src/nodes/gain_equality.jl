@@ -40,11 +40,8 @@ type GainEqualityNode <: Node
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
-        try
-            self.A_inv = inv(self.A)
-        catch
-            warn("The specified multiplier for $(typeof(self)) $(self.id) is not invertible. This might cause problems. Double check that this is what you want.")
-        end
+        # Precompute inverse of A
+        try self.A_inv = inv(self.A) end
 
         return self
     end
@@ -89,7 +86,7 @@ function sumProduct!(   node::GainEqualityNode,
 end
 
 function sumProduct!(node::GainEqualityNode,
-                            outbound_interface_index::Int,
+                            outbound_interface_index::Type{Val{1}},
                             msg_in1::Void,
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Message{GaussianDistribution},
@@ -119,38 +116,39 @@ end
 # MvGaussianDistribution methods
 ############################################
 
-function sumProduct!(   node::GainEqualityNode,
-                        outbound_interface_index::Type{Val{3}},
-                        msg_in1::Message{MvGaussianDistribution},
-                        msg_in2::Message{MvGaussianDistribution},
-                        msg_out::Any,
-                        outbound_dist::MvGaussianDistribution)
+function sumProduct!{T<:MvGaussianDistribution}(node::GainEqualityNode,
+                                                outbound_interface_index::Type{Val{3}},
+                                                msg_in1::Message{T},
+                                                msg_in2::Message{T},
+                                                msg_out::Any,
+                                                outbound_dist::T)
 
     (isProper(msg_in1.payload) && isProper(msg_in2.payload)) || error("Improper input distributions are not supported")
-    dist_temp = MvGaussianDistribution()
+    dist_temp = vague(MvGaussianDistribution{size(node.A, 2)})
     equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
     return gainForwardRule!(outbound_dist, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
 end
 
-function sumProduct!(   node::GainEqualityNode,
-                        outbound_interface_index::Type{Val{2}},
-                        msg_in1::Message{MvGaussianDistribution},
-                        msg_in2::Any,
-                        msg_out::Message{MvGaussianDistribution},
-                        outbound_dist::MvGaussianDistribution)
+function sumProduct!{T<:MvGaussianDistribution}(node::GainEqualityNode,
+                                                outbound_interface_index::Type{Val{2}},
+                                                msg_in1::Message{T},
+                                                msg_in2::Any,
+                                                msg_out::Message{T},
+                                                outbound_dist::T)
 
     (isProper(msg_in1.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
-    return gainEqualityBackwardRule!(outbound_dist, outbound_interface_index, msg_in1.payload, msg_out.payload, node.A)
+    return gainEqualityBackwardRule!(outbound_dist, msg_in1.payload, msg_out.payload, node.A)
 end
 
-function sumProduct!(node::GainEqualityNode,
-                            outbound_interface_index::Int,
-                            msg_in1::Void,
-                            msg_in2::Message{MvGaussianDistribution},
-                            msg_out::Message{MvGaussianDistribution})
+function sumProduct!{T<:MvGaussianDistribution}(node::GainEqualityNode,
+                                                outbound_interface_index::Type{Val{1}},
+                                                msg_in1::Void,
+                                                msg_in2::Message{T},
+                                                msg_out::Message{T},
+                                                outbound_dist::T)
 
     (isProper(msg_in2.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
-    return gainEqualityBackwardRule!(outbound_dist, outbound_interface_index, msg_in2.payload, msg_out.payload, node.A)
+    return gainEqualityBackwardRule!(outbound_dist, msg_in2.payload, msg_out.payload, node.A)
 end
 
 function gainEqualityBackwardRule!(dist_result::MvGaussianDistribution,

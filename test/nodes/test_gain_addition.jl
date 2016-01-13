@@ -2,6 +2,8 @@
 # Unit tests
 #####################
 
+# TODO: non-square A and verify results agains formulas
+
 facts("GainAdditionNode unit tests") do
     context("GainAdditionNode() should initialize a GainAdditionNode with 3 interfaces") do
         FactorGraph()
@@ -13,23 +15,20 @@ facts("GainAdditionNode unit tests") do
         @fact typeof(n(:node).A) --> Array{Float64, 2}
     end
 
-    # TODO: verify outcomes
+    # TODO: double check outcomes
 
     context("GainAdditionNode should be able to pass GaussianDistributions") do
-        A = [2.0]
-
-        # Forward
+        # Forward message
+        A = 2.0
         validateOutboundMessage(GainAdditionNode(A),
                                 3,
                                 [Message(GaussianDistribution(m=0.0, V=1.0)), Message(GaussianDistribution(m=1.0, V=2.0)), nothing],
                                 GaussianDistribution(m=1.0, V=6.0))
-
         # Backward
         validateOutboundMessage(GainAdditionNode(A),
                                 1,
                                 [nothing, Message(GaussianDistribution(m=0.0, V=2.0)), Message(GaussianDistribution(m=1.0, V=2.0))],
                                 GaussianDistribution(m=0.5, V=1.0))
-
         validateOutboundMessage(GainAdditionNode(A),
                                 2,
                                 [Message(GaussianDistribution(m=0.0, V=2.0)), nothing, Message(GaussianDistribution(m=1.0, V=2.0))],
@@ -119,4 +118,22 @@ facts("GainAdditionNode unit tests") do
                                 [Message(MvGaussianDistribution(m=[0.0, 0.0], V=eye(2,2))), nothing, Message(MvGaussianDistribution(xi=[1.0, 2.0], W=2.0*eye(2,2)))],
                                 MvGaussianDistribution(m=[0.5, 1.0], V=[13.5 12.0; 12.0 13.5]))
     end
+
+    # context("GainAdditionNode should provide sumProduct! for non-square A") do
+    #     # Forward message
+    #     A = [2.0 3.0; 3.0 2.0; 1.0 2.0]
+    #     validateOutboundMessage(GainAdditionNode(A),
+    #                             3,
+    #                             [Message(MvGaussianDistribution(m=[0.0, 0.0], V=eye(2))), Message(MvGaussianDistribution(m=[1.0, 2.0, 3.0], V=2.0*eye(3))), nothing],
+    #                             MvGaussianDistribution()) # 3D
+    #     # Backward messages
+    #     validateOutboundMessage(GainAdditionNode(A),
+    #                             1,
+    #                             [nothing, Message(MvGaussianDistribution(m=[0.0, 0.0, 1.0], V=eye(3))), Message(MvGaussianDistribution(m=[1.0, 2.0], V=2.0*eye(2)))],
+    #                             MvGaussianDistribution()) # 2D
+    #     validateOutboundMessage(GainAdditionNode(A),
+    #                             2,
+    #                             [Message(MvGaussianDistribution(m=[0.0, 0.0], V=eye(2))), nothing, Message(MvGaussianDistribution(m=[1.0, 2.0, 3.0], V=2.0*eye(3)))],
+    #                             MvGaussianDistribution()) # 3D
+    # end
 end

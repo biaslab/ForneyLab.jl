@@ -261,13 +261,14 @@ Elementary nodes
                 v  out
          ----->[N]----->
         precision/
-        variance
+        log-precision/
+        variance/
 
     :Node function: ``f(mean,variance,out) = N(out|mean,variance)``
-    :Interfaces:    1. ``i[:mean]``, 2. ``i[:variance]`` or ``i[:precision]``, 3. ``i[:out]``
+    :Interfaces:    1. ``i[:mean]``, 2. ``i[:variance]``, ``i[:log_variance]``, or ``i[:precision]``, 3. ``i[:out]``
     :Construction:  ``GaussianNode(id="something", form=:moment, m=optional, V=optional)``
 
-    The ``GaussianNode`` outputs a Gaussian distribution from variable mean and variable variance or precision. Upon construction the role of the second interface is set to represent a variance or precision by setting the ``form`` argument to ``:moment`` or ``:precision`` respectively. The ``m`` and ``V`` arguments allow the user to fix the value for the mean and/or variance interface. Fixed interfaces are not explicitly created.
+    The ``GaussianNode`` outputs a Gaussian distribution from variable mean and variable variance or precision. Upon construction the role of the second interface is set to represent a variance, precision or log-precision by setting the ``form`` argument to ``:moment``, ``:precision`` or ``:log_variance`` respectively. The ``m`` and ``V`` arguments allow the user to fix the value for the mean and/or variance interface. Fixed interfaces are not explicitly created.
 
     Message computation rules:
 
@@ -284,9 +285,15 @@ Elementary nodes
     +-------------+---------------------+-----------------------------+---------------------+
     | vmp!        | ↑ ``Msg{Gaussian}`` | ↓ ``(Inv)Gamma``            | ↓ ``Gaussian``      |
     +             +---------------------+-----------------------------+---------------------+
+    |             | ↑ ``Msg{Gaussian}`` | ↓ ``Gaussian``              | ↓ ``Gaussian``      |
+    +             +---------------------+-----------------------------+---------------------+
     |             | ↓ ``Gaussian``      | ↑ ``Msg{(Inv)Gamma}``       | ↓ ``Gaussian``      |
     +             +---------------------+-----------------------------+---------------------+
+    |             | ↓ ``Gaussian``      | ↑ ``Msg{Gaussian}``         | ↓ ``Gaussian``      |
+    +             +---------------------+-----------------------------+---------------------+
     |             | ↓ ``Gaussian``      | ↓ ``(Inv)Gamma``            | ↑ ``Msg{Gaussian}`` |
+    +             +---------------------+-----------------------------+---------------------+
+    |             | ↓ ``Gaussian``      | ↓ ``Gaussian``              | ↑ ``Msg{Gaussian}`` |
     +             +---------------------+-----------------------------+---------------------+
     |             | ↑ ``Msg{StudentsT}``| ↓ ``Msg{Gamma}``            | ↓ ``Gaussian``      |
     +             +---------------------+-----------------------------+---------------------+

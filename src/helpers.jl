@@ -22,7 +22,7 @@ function invalidate!(v::Array{Float64})
     return v
 end
 
- # Symbol concatenation
+# Symbol concatenation
 *(sym::Symbol, num::Number) = symbol(string(sym, num))
 *(num::Number, sym::Symbol) = symbol(string(num, sym))
 *(sym1::Symbol, sym2::Symbol) = symbol(string(sym1, sym2))

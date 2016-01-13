@@ -6,7 +6,7 @@ using LaTeXStrings
 
 export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution
 export sumProduct!, ep!, vmp!
-export vague, self, ==, isProper, sample
+export vague, self, ==, isProper, sample, dimensions
 export setVerbosity
 export prepare!
 
@@ -33,6 +33,18 @@ include("node.jl")
 # Message type
 include("message.jl")
 
+# Extract dimensionality from message or distribution (note exception for normal-gamma in normal_gamma.jl)
+dimensions{T<:MultivariateProbabilityDistribution}(message::Message{T}) = typeof(message.payload).parameters[end]
+dimensions(distribution::MultivariateProbabilityDistribution) = typeof(distribution).parameters[end]
+dimensions{T<:MultivariateProbabilityDistribution}(message_type::Type{Message{T}}) = message_type.parameters[1].parameters[end]
+dimensions{T<:MultivariateProbabilityDistribution}(distribution_type::Type{T}) = distribution_type.parameters[end]
+
+dimensions{T<:UnivariateProbabilityDistribution}(message::Message{T}) = 1
+dimensions(distribution::UnivariateProbabilityDistribution) = 1
+dimensions{T<:UnivariateProbabilityDistribution}(message_type::Type{Message{T}}) = 1
+dimensions{T<:UnivariateProbabilityDistribution}(distribution_type::Type{T}) = 1
+
+
 # Univariate distributions
 include("distributions/univariate/delta.jl")
 include("distributions/univariate/bernoulli.jl")
@@ -47,6 +59,7 @@ include("distributions/univariate/log_normal.jl")
 include("distributions/multivariate/mv_delta.jl")
 include("distributions/multivariate/mv_gaussian.jl")
 include("distributions/multivariate/normal_gamma.jl")
+include("distributions/multivariate/wishart.jl")
 
 # Basic ForneyLab building blocks and methods
 include("interface.jl")
@@ -91,6 +104,6 @@ include("algorithms/expectation_propagation/expectation_propagation.jl")
 # Shared preparation methods for inference algorithms
 include("algorithms/preparation.jl")
 
-vague{T<:ProbabilityDistribution}(dist_type::Type{T}) = vague!(T())
+vague{T<:UnivariateProbabilityDistribution}(dist_type::Type{T}) = vague!(T())
 
 end # module ForneyLab

@@ -108,9 +108,9 @@ sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::M
 function equalityRule!(dist_result::InverseGammaDistribution, dist_1::InverseGammaDistribution, dist_2::InverseGammaDistribution)
     # The result of the inverse gamma equality rule applied to dist_1 and dist_2 is written to dist_result
     # Definition from Korl table 5.2
-    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     dist_result.a = dist_1.a+dist_2.a+1.0
     dist_result.b = dist_1.b+dist_2.b
+    # isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
     return dist_result
 end
 
@@ -126,9 +126,9 @@ sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::M
 function equalityRule!(dist_result::GammaDistribution, dist_1::GammaDistribution, dist_2::GammaDistribution)
     # The result of the gamma equality rule applied to dist_1 and dist_2 is written to dist_result
     # Derivation available in notebook
-    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     dist_result.a = dist_1.a+dist_2.a-1.0
     dist_result.b = dist_1.b+dist_2.b
+    # isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
     return dist_result
 end
 
@@ -144,9 +144,9 @@ sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::M
 function equalityRule!(dist_result::BetaDistribution, dist_1::BetaDistribution, dist_2::BetaDistribution)
     # The result of the beta equality rule applied to dist_1 and dist_2 is written to dist_result
     # Derivation available in notebook
-    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     dist_result.a = dist_1.a+dist_2.a-1.0
     dist_result.b = dist_1.b+dist_2.b-1.0
+    # isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
     return dist_result
 end
 
@@ -172,15 +172,14 @@ end
 # MvGaussianDistribution methods
 ############################################
 
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{MvGaussianDistribution}, msg_3::Message{MvGaussianDistribution}, outbound_dist::MvGaussianDistribution) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{MvGaussianDistribution}, msg_2::Any, msg_3::Message{MvGaussianDistribution}, outbound_dist::MvGaussianDistribution) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{MvGaussianDistribution}, msg_2::Message{MvGaussianDistribution}, msg_3::Any, outbound_dist::MvGaussianDistribution) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
+sumProduct!{T<:MvGaussianDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{T}, msg_3::Message{T}, outbound_dist::T) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
+sumProduct!{T<:MvGaussianDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{T}, msg_2::Any, msg_3::Message{T}, outbound_dist::T) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
+sumProduct!{T<:MvGaussianDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{T}, msg_2::Message{T}, msg_3::Any, outbound_dist::T) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
 
 function equalityRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDistribution, dist_2::MvGaussianDistribution)
     # The result of the Gaussian equality rule applied to dist_1 and dist_2 is written to dist_result
     # The following update rules correspond to node 1 from Table 4.1 in:
     # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
-    (isProper(dist_1) && isProper(dist_2)) || error("Inputs of equalityRule! should be proper distributions")
     if isValid(dist_1.m) && isValid(dist_1.W) && isValid(dist_2.m) && isValid(dist_2.W)
         dist_result.m  = equalityMRule(dist_1.m, dist_2.m, dist_1.W, dist_2.W)
         invalidate!(dist_result.V)
@@ -204,7 +203,6 @@ function equalityRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDi
     return dist_result
 end
 
-# Rule set
 # From: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
 equalityMRule{T<:Number}(m_x::Array{T, 1}, m_y::Array{T, 1}, W_x::Array{T, 2}, W_y::Array{T, 2}) = pinv(W_x+W_y)*(W_x*m_x+W_y*m_y)
 equalityVRule{T<:Number}(V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x*pinv(V_x+V_y)*V_y
@@ -216,9 +214,9 @@ equalityXiRule{T<:Number}(xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x+xi_y
 # MvDeltaDistribution methods
 ############################################
 
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{MvDeltaDistribution}, msg_3::Message{MvDeltaDistribution}, outbound_dist::MvDeltaDistribution) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{MvDeltaDistribution}, msg_2::Any, msg_3::Message{MvDeltaDistribution}, outbound_dist::MvDeltaDistribution) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{MvDeltaDistribution}, msg_2::Message{MvDeltaDistribution}, msg_3::Any, outbound_dist::MvDeltaDistribution) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
+sumProduct!{T<:MvDeltaDistribution{Float64}}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{T}, msg_3::Message{T}, outbound_dist::T) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
+sumProduct!{T<:MvDeltaDistribution{Float64}}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{T}, msg_2::Any, msg_3::Message{T}, outbound_dist::T) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
+sumProduct!{T<:MvDeltaDistribution{Float64}}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{T}, msg_2::Message{T}, msg_3::Any, outbound_dist::T) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
 
 function equalityRule!(dist_result::MvDeltaDistribution, dist_1::MvDeltaDistribution, dist_2::MvDeltaDistribution)
     # The result of the delta equality rule applied to dist_1 and dist_2 is written to dist_result
@@ -295,15 +293,32 @@ end
 # MvGaussian-MvDeltaDistribution combination
 ############################################
 
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{MvGaussianDistribution}, msg_3::Message{MvDeltaDistribution{Float64}}, outbound_dist::MvDeltaDistribution{Float64}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{MvDeltaDistribution{Float64}}, msg_3::Message{MvGaussianDistribution}, outbound_dist::MvDeltaDistribution{Float64}) = return equalityRule!(outbound_dist, msg_3.payload, msg_2.payload)
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{MvGaussianDistribution}, msg_2::Any, msg_3::Message{MvDeltaDistribution{Float64}}, outbound_dist::MvDeltaDistribution{Float64}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{MvDeltaDistribution{Float64}}, msg_2::Any, msg_3::Message{MvGaussianDistribution}, outbound_dist::MvDeltaDistribution{Float64}) = return equalityRule!(outbound_dist, msg_3.payload, msg_1.payload)
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{MvGaussianDistribution}, msg_2::Message{MvDeltaDistribution{Float64}}, msg_3::Any, outbound_dist::MvDeltaDistribution{Float64}) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
-sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{MvDeltaDistribution{Float64}}, msg_2::Message{MvGaussianDistribution}, msg_3::Any, outbound_dist::MvDeltaDistribution{Float64}) = return equalityRule!(outbound_dist, msg_2.payload, msg_1.payload)
+sumProduct!{TG<:MvGaussianDistribution, TD<:MvDeltaDistribution{Float64}}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{TG}, msg_3::Message{TD}, outbound_dist::TD) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
+sumProduct!{TG<:MvGaussianDistribution, TD<:MvDeltaDistribution{Float64}}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{TD}, msg_3::Message{TG}, outbound_dist::TD) = return equalityRule!(outbound_dist, msg_3.payload, msg_2.payload)
+sumProduct!{TG<:MvGaussianDistribution, TD<:MvDeltaDistribution{Float64}}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{TG}, msg_2::Any, msg_3::Message{TD}, outbound_dist::TD) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
+sumProduct!{TG<:MvGaussianDistribution, TD<:MvDeltaDistribution{Float64}}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{TD}, msg_2::Any, msg_3::Message{TG}, outbound_dist::TD) = return equalityRule!(outbound_dist, msg_3.payload, msg_1.payload)
+sumProduct!{TG<:MvGaussianDistribution, TD<:MvDeltaDistribution{Float64}}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{TG}, msg_2::Message{TD}, msg_3::Any, outbound_dist::TD) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
+sumProduct!{TG<:MvGaussianDistribution, TD<:MvDeltaDistribution{Float64}}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{TD}, msg_2::Message{TG}, msg_3::Any, outbound_dist::TD) = return equalityRule!(outbound_dist, msg_2.payload, msg_1.payload)
 
 function equalityRule!(dist_result::MvDeltaDistribution{Float64}, ::MvGaussianDistribution, dist_delta::MvDeltaDistribution{Float64})
     dist_result.m = deepcopy(dist_delta.m)
+    return dist_result
+end
+
+
+############################################
+# WishartDistribution methods
+############################################
+
+sumProduct!{T<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{T}, msg_3::Message{T}, outbound_dist::T) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
+sumProduct!{T<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{T}, msg_2::Any, msg_3::Message{T}, outbound_dist::T) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
+sumProduct!{T<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{T}, msg_2::Message{T}, msg_3::Any, outbound_dist::T) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
+
+function equalityRule!(dist_result::WishartDistribution, dist_1::WishartDistribution, dist_2::WishartDistribution)
+    # Derivation available in notebook
+    dist_result.V = inv(inv(dist_1.V) + inv(dist_2.V))
+    dist_result.nu = dist_1.nu + dist_2.nu - size(dist_1.V, 1) - 1.0
+
     return dist_result
 end
 
@@ -357,6 +372,25 @@ sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::M
 
 function equalityRule!(dist_result::DeltaDistribution{Float64}, dist_1::InverseGammaDistribution, dist_2::DeltaDistribution{Float64})
     (dist_2.m >= 0) || error("Can not perform equality rule for inverse gamma-delta combination for negative numbers")
+    dist_result.m = dist_2.m
+    return dist_result
+end
+
+
+############################################
+# Wishart-MvDeltaDistribution combination
+############################################
+
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{TW}, msg_3::Message{TD}, outbound_dist::TD) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, msg_1::Any, msg_2::Message{TD}, msg_3::Message{TW}, outbound_dist::TD) = return equalityRule!(outbound_dist, msg_3.payload, msg_2.payload)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{TW}, msg_2::Any, msg_3::Message{TD}, outbound_dist::TD) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, msg_1::Message{TD}, msg_2::Any, msg_3::Message{TW}, outbound_dist::TD) = return equalityRule!(outbound_dist, msg_3.payload, msg_1.payload)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{TW}, msg_2::Message{TD}, msg_3::Any, outbound_dist::TD) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
+sumProduct!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, msg_1::Message{TD}, msg_2::Message{TW}, msg_3::Any, outbound_dist::TD) = return equalityRule!(outbound_dist, msg_2.payload, msg_1.payload)
+
+function equalityRule!(dist_result::MvDeltaDistribution{Float64}, dist_1::WishartDistribution, dist_2::MvDeltaDistribution{Float64})
+    (sum(dist_2.m .< 0) == 0) || error("Can not perform equality rule for wishart-delta combination for negative numbers")
+    (size(dist_1.V, 1) == length(dist_2.m)) || error("Dimensions for Wishart and delta must agree")
     dist_result.m = dist_2.m
     return dist_result
 end

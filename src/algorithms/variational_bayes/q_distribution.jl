@@ -49,6 +49,24 @@ end
 
 
 ############################################
+# MvGaussianDistribution
+############################################
+
+function calculateQDistribution!(marg::QDistribution, forward_dist::MvGaussianDistribution, backward_dist::MvGaussianDistribution)
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
+end
+
+
+############################################
+# WishartDistribution
+############################################
+
+function calculateQDistribution!(marg::QDistribution, forward_dist::WishartDistribution, backward_dist::WishartDistribution)
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
+end
+
+
+############################################
 # Gaussian-students t combination
 ############################################
 
@@ -64,14 +82,25 @@ calculateQDistribution!(marg::QDistribution, forward_dist::StudentsTDistribution
 
 function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution{Float64})
     # Calculation for univariate approximate marginal
-    return marg.distribution = ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
 
 
 ############################################
-# Joint marginals
+# MvGaussian-MvDelta combination
 ############################################
+
+function calculateQDistribution!(marg::QDistribution, forward_dist::MvGaussianDistribution, backward_dist::MvDeltaDistribution{Float64})
+    # Calculation for univariate approximate marginal
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
+end
+calculateQDistribution!(marg::QDistribution, forward_dist::MvDeltaDistribution{Float64}, backward_dist::MvGaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
+
+
+############################
+# Joint marginals
+############################
 
 function calculateQDistribution!(q_dist::QDistribution,
                                  node::GaussianNode,
@@ -89,10 +118,10 @@ function calculateQDistribution!(q_dist::QDistribution,
     ForneyLab.ensureParameters!(mu_m, (:m,))
     ForneyLab.ensureParameters!(y_dist, (:m, :W))
 
-    marg.m = mu_m.m[1]
+    marg.m = mu_m.m
     marg.beta = huge
     marg.a = mu_gam.a + 0.5
-    marg.b = (1.0/(2.0*y_dist.W[1, 1])) + mu_gam.b
+    marg.b = (1.0/(2.0*y_dist.W)) + mu_gam.b
 
     return marg
 end

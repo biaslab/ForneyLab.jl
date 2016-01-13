@@ -187,43 +187,43 @@ end
 # MvGaussianDistribution methods
 ############################################
 
-function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Type{Val{1}},
-                        msg_in::Any,
-                        msg_out::Message{MvGaussianDistribution},
-                        outbound_dist::MvGaussianDistribution)
+function sumProduct!{T<:MvGaussianDistribution}(node::GainNode,
+                                                outbound_interface_index::Type{Val{1}},
+                                                msg_in::Any,
+                                                msg_out::Message{T},
+                                                outbound_dist::T)
 
     isProper(msg_out.payload) || error("Improper input distributions are not supported")
     return gainBackwardRule!(outbound_dist, msg_out.payload, node.gain, isdefined(node, :gain_inv) ? node.gain_inv : nothing)
 end
 
-function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Type{Val{2}},
-                        msg_in::Message{MvGaussianDistribution},
-                        msg_out::Any,
-                        outbound_dist::MvGaussianDistribution)
+function sumProduct!{T<:MvGaussianDistribution}(node::GainNode,
+                                                outbound_interface_index::Type{Val{2}},
+                                                msg_in::Message{T},
+                                                msg_out::Any,
+                                                outbound_dist::T)
 
     isProper(msg_in.payload) || error("Improper input distributions are not supported")
     return gainForwardRule!(outbound_dist, msg_in.payload, node.gain, isdefined(node, :gain_inv) ? node.gain_inv : nothing)
 end
 
-function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Type{Val{1}},
-                        msg_in::Any,
-                        msg_out::Message{MvGaussianDistribution},
-                        msg_gain::Message{DeltaDistribution{Matrix{Float64}}},
-                        outbound_dist::MvGaussianDistribution)
+function sumProduct!{T<:MvGaussianDistribution}(node::GainNode,
+                                                outbound_interface_index::Type{Val{1}},
+                                                msg_in::Any,
+                                                msg_out::Message{T},
+                                                msg_gain::Message{DeltaDistribution{Matrix{Float64}}},
+                                                outbound_dist::T)
 
     isProper(msg_out.payload) || error("Improper input distributions are not supported")
     return gainBackwardRule!(outbound_dist, msg_out.payload, msg_gain.payload.m)
 end
 
-function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Type{Val{2}},
-                        msg_in::Message{MvGaussianDistribution},
-                        msg_out::Any,
-                        msg_gain::Message{DeltaDistribution{Matrix{Float64}}},
-                        outbound_dist::MvGaussianDistribution)
+function sumProduct!{T<:MvGaussianDistribution}(node::GainNode,
+                                                outbound_interface_index::Type{Val{2}},
+                                                msg_in::Message{T},
+                                                msg_out::Any,
+                                                msg_gain::Message{DeltaDistribution{Matrix{Float64}}},
+                                                outbound_dist::T)
 
     isProper(msg_in.payload) || error("Improper input distributions are not supported")
     return gainForwardRule!(outbound_dist, msg_in.payload, msg_gain.payload.m)
@@ -320,43 +320,43 @@ forwardGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}, V::Array{T, 2}) = 
 # MvDeltaDistribution methods
 ############################################
 
-function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Type{Val{1}},
-                        msg_in::Any,
-                        msg_out::Message{MvDeltaDistribution{Float64}},
-                        outbound_dist::MvDeltaDistribution{Float64})
+function sumProduct!{T<:MvDeltaDistribution{Float64}}(  node::GainNode,
+                                                        outbound_interface_index::Type{Val{1}},
+                                                        msg_in::Any,
+                                                        msg_out::Message{T},
+                                                        outbound_dist::T)
 
     outbound_dist.m = node.gain_inv * msg_out.payload.m
     return outbound_dist
 end
 
-function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Type{Val{1}},
-                        msg_in::Any,
-                        msg_out::Message{MvDeltaDistribution{Float64}},
-                        msg_gain::Message{DeltaDistribution{Matrix{Float64}}},
-                        outbound_dist::MvDeltaDistribution{Float64})
+function sumProduct!{T<:MvDeltaDistribution{Float64}}(  node::GainNode,
+                                                        outbound_interface_index::Type{Val{1}},
+                                                        msg_in::Any,
+                                                        msg_out::Message{T},
+                                                        msg_gain::Message{DeltaDistribution{Matrix{Float64}}},
+                                                        outbound_dist::T)
 
     outbound_dist.m = inv(msg_gain.payload.m) * msg_out.payload.m
     return outbound_dist
 end
 
-function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Type{Val{2}},
-                        msg_in::Message{MvDeltaDistribution{Float64}},
-                        msg_out::Any,
-                        outbound_dist::MvDeltaDistribution{Float64})
+function sumProduct!{T<:MvDeltaDistribution{Float64}}(  node::GainNode,
+                                                        outbound_interface_index::Type{Val{2}},
+                                                        msg_in::Message{T},
+                                                        msg_out::Any,
+                                                        outbound_dist::T)
 
     outbound_dist.m = node.gain * msg_in.payload.m
     return outbound_dist
 end
 
-function sumProduct!(   node::GainNode,
-                        outbound_interface_index::Type{Val{2}},
-                        msg_in::Message{MvDeltaDistribution{Float64}},
-                        msg_out::Any,
-                        msg_gain::Message{DeltaDistribution{Matrix{Float64}}},
-                        outbound_dist::MvDeltaDistribution{Float64})
+function sumProduct!{T<:MvDeltaDistribution{Float64}}(  node::GainNode,
+                                                        outbound_interface_index::Type{Val{2}},
+                                                        msg_in::Message{T},
+                                                        msg_out::Any,
+                                                        msg_gain::Message{DeltaDistribution{Matrix{Float64}}},
+                                                        outbound_dist::T)
 
     outbound_dist.m = msg_gain.payload.m * msg_in.payload.m
     return outbound_dist
