@@ -37,13 +37,13 @@ facts("SigmoidNode unit tests") do
 
         # Backward message, DeltaDistribution on i[:bin]
         n(:t_bin).value = DeltaDistribution(true)
-        dist_out = ForneyLab.ep!(sig_node, Val{1}, Message(n(:t_real).value), Message(n(:t_bin).value), GaussianDistribution())
+        dist_out = ForneyLab.ep!(sig_node, Val{1}, GaussianDistribution(), Message(n(:t_real).value), Message(n(:t_bin).value))
         ensureParameters!(dist_out, (:m, :V))
         @fact dist_out.m --> roughly(1.7724, atol=1e-4)
         @fact dist_out.V --> roughly(2.1415, atol=1e-4)
 
         n(:t_bin).value = DeltaDistribution(false)
-        dist_out = ForneyLab.ep!(sig_node, Val{1}, Message(n(:t_real).value), Message(n(:t_bin).value), GaussianDistribution())
+        dist_out = ForneyLab.ep!(sig_node, Val{1}, GaussianDistribution(), Message(n(:t_real).value), Message(n(:t_bin).value))
         ensureParameters!(dist_out, (:m, :V))
         @fact dist_out.m --> roughly(-1.7724, atol=1e-4)
         @fact dist_out.V --> roughly(2.1415, atol=1e-4)
@@ -60,7 +60,7 @@ facts("SigmoidNode unit tests") do
         Edge(sig_node.i[:bin], TerminalNode(BernoulliDistribution(), id=:t_bin))
 
         n(:t_bin).value = BernoulliDistribution(0.5) # uninformative data
-        dist_out = ForneyLab.ep!(sig_node, Val{1}, Message(n(:t_real).value), Message(n(:t_bin).value), GaussianDistribution())
+        dist_out = ForneyLab.ep!(sig_node, Val{1}, GaussianDistribution(), Message(n(:t_real).value), Message(n(:t_bin).value))
         ensureParameters!(dist_out, (:m, :V))
         ensureParameters!(sig_node.i[:real].edge.marginal, (:m, :V))
         @fact dist_out.m --> roughly(0.0, atol=1e-4)
@@ -71,7 +71,7 @@ facts("SigmoidNode unit tests") do
 
         # Backward message, BernoulliDistribution on i[:bin]
         n(:t_bin).value = BernoulliDistribution(0.2) # softbit
-        dist_out = ForneyLab.ep!(sig_node, Val{1}, Message(n(:t_real).value), Message(n(:t_bin).value), GaussianDistribution())
+        dist_out = ForneyLab.ep!(sig_node, Val{1}, GaussianDistribution(), Message(n(:t_real).value), Message(n(:t_bin).value))
         ensureParameters!(dist_out, (:m, :V))
         ensureParameters!(sig_node.i[:real].edge.marginal, (:m, :V))
         @fact dist_out.m --> roughly(-2.9540, atol=1e-4)

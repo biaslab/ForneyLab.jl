@@ -396,6 +396,6 @@ function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbo
     end
 
     # Perform the update and verify the result
-    dist = update_function(node, Val{outbound_interface_index}, inbound_messages..., outbound_dist)
+    dist = update_function(node, Val{outbound_interface_index}, outbound_dist, inbound_messages...)
     @fact dist --> correct_outbound_value
 end

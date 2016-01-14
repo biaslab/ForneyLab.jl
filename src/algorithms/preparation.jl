@@ -18,15 +18,16 @@ function parameters(data_type::DataType)
     end
 end
 
-function extractParameters(rule_signature::SimpleVector, call_signature::Vector{DataType})
-    # Constructs a dictionary of parameter variables in rule_signature mapped to values in call_signature
+function extractParameters(method_signature::SimpleVector, call_signature::Vector{DataType})
+    # Constructs a dictionary of parameter variables in method_signature mapped to values in call_signature
+
     params_dict = Dict()
-    for p in 3:length(rule_signature)-1 # Loop of indices of inbound types
+    for p in 4:length(method_signature) # Loop of indices of inbound types
         if call_signature[p] != Void # Skip irrelevant inbounds
-            rule_params = parameters(rule_signature[p])
+            method_params = parameters(method_signature[p])
             call_params = parameters(call_signature[p])
-            for r in 1:length(rule_params) # Iterate over all found parameters and add them to the dictionary
-                push!(params_dict, rule_params[r] => call_params[r])
+            for r in 1:length(method_params) # Iterate over all found parameters for that specific inbound and the pairs to the dictionary
+                push!(params_dict, method_params[r] => call_params[r])
             end
         end
     end
@@ -54,34 +55,44 @@ function extractOutboundType(outbound_arg)
     end
 end
 
-function collectAllOutboundTypes(allowed_rules::Vector{Function}, call_signature::Vector{DataType})
-    # Collects all outbound types for the update functions in allowed_rules that respond to signature
+function buildOutboundTypesForRule!{T<:Node}(outbound_types::Vector{DataType}, rule::Function, call_signature::Vector, ::Type{T})
+    # Find the available methods for the update function 'rule' that satisfy 'call_signature' and push the result to 'outbound_types'
+    # Note the ::Type{T<:Node} argument, so for specific node types this function may be overloaded
 
-    outbound_types = []
-    for update_function in allowed_rules
-        available_rules = methods(update_function, call_signature)
-        for rule in available_rules
+    available_methods = methods(rule, call_signature)
+    for method in available_methods
 
-            rule_signature = rule.sig.types
-            outbound_type = extractOutboundType(rule_signature[end])
-            if outbound_type == Any # Is the outbound type parameterized by the node? (e.g. TerminalNode)
-                push!(outbound_types, call_signature[1].parameters[1])
-            elseif isempty(parameters(outbound_type)) # Are there no type variables defined for the outbound type?
-                push!(outbound_types, outbound_type) # Simply push the found outbound type on the stack
-            else  # Outbound type has parameters that need to be inferred
-                params_dict = extractParameters(rule_signature, call_signature) # Extract parameters and values of inbound types
-                outbound_params = parameters(outbound_type) # Extract parameters of outbound type
+        method_signature = method.sig.types
+        outbound_type = extractOutboundType(method_signature[3]) # Third entry is always the outbound distribution
 
-                # Construct new outbound type definition with substituted values
-                param_values = Any[]
-                for param in outbound_params
-                    push!(param_values, params_dict[param])
-                end
+        if outbound_type == Any # Is the outbound type parameterized by the node? (e.g. TerminalNode)
+            push!(outbound_types, call_signature[1].parameters[1])
+        elseif isempty(parameters(outbound_type)) # Are there no type variables defined for the outbound type?
+            push!(outbound_types, outbound_type) # Simply push the found outbound type on the stack
+        else  # Outbound type has parameters that need to be inferred
+            params_dict = extractParameters(method_signature, call_signature) # Extract parameters and values of inbound types
+            outbound_params = parameters(outbound_type) # Extract parameters of outbound type
 
-                substituted_outbound_type = eval(parse("$(outbound_type.name){$(paramify(param_values))}")) # Construct the type definition of the substituted outbund type
-                push!(outbound_types, substituted_outbound_type) 
+            # Construct new outbound type definition with substituted values
+            param_values = Any[]
+            for param in outbound_params
+                push!(param_values, params_dict[param])
             end
+
+            substituted_outbound_type = eval(parse("$(outbound_type.name){$(paramify(param_values))}")) # Construct the type definition of the substituted outbund type
+            push!(outbound_types, substituted_outbound_type) 
         end
+    end
+
+    return outbound_types
+end    
+
+function collectAllOutboundTypes(allowed_rules::Vector{Function}, call_signature::Vector)
+    # Collects all outbound types for the update functions in allowed_rules that respond to call_signature
+
+    outbound_types = DataType[]
+    for rule in allowed_rules
+        buildOutboundTypesForRule!(outbound_types, rule, call_signature, call_signature[1])
     end
 
     return outbound_types
@@ -93,7 +104,7 @@ function inferOutboundType!(entry::ScheduleEntry, node::Node, allowed_rules::Vec
     outbound_interface_id = entry.outbound_interface_id
 
     # Find all outbound types compatible with allowed_rules
-    outbound_types = collectAllOutboundTypes(allowed_rules, [typeof(node); Type{Val{outbound_interface_id}}; inbound_types; Any])
+    outbound_types = collectAllOutboundTypes(allowed_rules, [typeof(node); Type{Val{outbound_interface_id}}; Any; inbound_types])
 
     # The outbound outbound_types should contain just one element (there should be just one available update rule)
     if length(outbound_types) == 0
@@ -111,7 +122,7 @@ function inferOutboundType!(entry::ScheduleEntry, node::Node, allowed_rules::Vec
     if isdefined(entry, :post_processing)
         entry.outbound_type = inferOutboundTypeAfterPostProcessing(entry) # If post-processing is defined, entry.outbound_type might differ from entry.intermediate_outbound_type
     else
-        entry.outbound_type = entry.intermediate_outbound_type # No post-processing
+        entry.outbound_type = entry.intermediate_outbound_type # No post-processing, outbound type remains unaltered
     end
 
     return entry
@@ -141,15 +152,15 @@ end
 # Shared methods for algorithm preparation/compilation
 #######################################################
 
-function buildExecute!(entry::ScheduleEntry, rule_arguments::Vector)
+function buildExecute!(entry::ScheduleEntry, inbound_arguments::Vector)
     # Constructs the execute function with optional post processing folded in
     # Additionally, this function completes the rule arguments for the update function call with the pointer to the outbound distribution
 
     if !isdefined(entry, :post_processing)
-        # Add outbound distribution to rule_arguments
-        push!(rule_arguments, entry.node.interfaces[entry.outbound_interface_id].message.payload)
+        # Create pointer to outbound distribution
+        outbound_dist = entry.node.interfaces[entry.outbound_interface_id].message.payload
         # No post-processing; assign the "compiled" computation rule as an anomynous function to entry.execute
-        entry.execute = ( () -> entry.rule(entry.node, Val{entry.outbound_interface_id}, rule_arguments...) )
+        entry.execute = ( () -> entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments...) )
     else
         # Fold the post-processing operation into entry.execute()
         # Note that the distribution type after execute() in general does not correspond with the distribution type after post_processing().
@@ -157,10 +168,10 @@ function buildExecute!(entry::ScheduleEntry, rule_arguments::Vector)
         # Then we repopulate the fields of the original distribution with the fields of the duplicate.
         # This approach ensures that the distribution pointers remain valid.
 
-        push!(rule_arguments, entry.intermediate_outbound_type()); # Append a dummy distribution for sumProduct! to fill
+        outbound_dist = entry.intermediate_outbound_type() # Create a dummy distribution for sumProduct! to fill (is accessed from the entry.execute closure)
 
         entry.execute = ( () -> ( # Anonymous function for message passing and post-processing
-            intermediate_outbound_distribution = entry.rule(entry.node, Val{entry.outbound_interface_id}, rule_arguments...); # In-place operation on previously created dummy distribution
+            intermediate_outbound_distribution = entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments...); # In-place operation on previously created dummy distribution
             new_outbound_distribution = entry.post_processing(entry.outbound_type, intermediate_outbound_distribution); # Not an in-place operation
             original_outbound_distribution = entry.node.interfaces[entry.outbound_interface_id].message.payload; # Get original pointer to outbound distribution on interface
             

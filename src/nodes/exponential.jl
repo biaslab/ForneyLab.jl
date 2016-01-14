@@ -46,9 +46,9 @@ isDeterministic(::ExponentialNode) = true
 
 function sumProduct!(   node::ExponentialNode,
                         outbound_interface_index::Type{Val{2}},
+                        outbound_dist::LogNormalDistribution,
                         msg_in::Message{GaussianDistribution},
-                        msg_out::Any,
-                        outbound_dist::LogNormalDistribution)
+                        msg_out::Any)
 
     isProper(msg_in.payload) || error("Improper input distributions are not supported")
     ensureParameters!(msg_in.payload, (:m, :V))
@@ -61,9 +61,9 @@ end
 
 function sumProduct!(   node::ExponentialNode,
                         outbound_interface_index::Type{Val{1}},
+                        outbound_dist::GaussianDistribution,
                         msg_in::Any,
-                        msg_out::Message{LogNormalDistribution},
-                        outbound_dist::GaussianDistribution)
+                        msg_out::Message{LogNormalDistribution})
 
     isProper(msg_out.payload) || error("Improper input distributions are not supported")
 
@@ -82,9 +82,9 @@ end
 
 function sumProduct!(   node::ExponentialNode,
                         outbound_interface_index::Type{Val{2}},
+                        outbound_dist::DeltaDistribution{Float64},
                         msg_in::Message{DeltaDistribution{Float64}},
-                        msg_out::Any,
-                        outbound_dist::DeltaDistribution{Float64})
+                        msg_out::Any)
 
     outbound_dist.m = exp(msg_in.payload.m)
     return outbound_dist
@@ -92,9 +92,9 @@ end
 
 function sumProduct!(   node::ExponentialNode,
                         outbound_interface_index::Type{Val{1}},
+                        outbound_dist::DeltaDistribution{Float64},
                         msg_in::Any,
-                        msg_out::Message{DeltaDistribution{Float64}},
-                        outbound_dist::DeltaDistribution{Float64})
+                        msg_out::Message{DeltaDistribution{Float64}})
 
     outbound_dist.m = log(msg_out.payload.m)
     return outbound_dist

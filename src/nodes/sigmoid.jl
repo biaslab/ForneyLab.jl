@@ -60,9 +60,9 @@ end
 
 function sumProduct!{T<:Real}(  node::SigmoidNode,
                                 outbound_interface_id::Type{Val{2}},
+                                outbound_dist::BernoulliDistribution,
                                 msg_real::Message{DeltaDistribution{T}},
-                                msg_bin::Any,
-                                outbound_dist::BernoulliDistribution)
+                                msg_bin::Any)
 
     # Generate Bernoulli message from incoming Delta message.
     dist_real = msg_real.payload
@@ -78,9 +78,9 @@ end
 
 function sumProduct!(   node::SigmoidNode,
                         outbound_interface_id::Type{Val{2}},
+                        outbound_dist::BernoulliDistribution,
                         msg_real::Message{GaussianDistribution},
-                        msg_bin::Any,
-                        outbound_dist::BernoulliDistribution)
+                        msg_bin::Any)
 
     # Generate Bernoulli message from incoming Gaussian message.
     dist_real = ensureParameters!(msg_real.payload, (:m, :V))
@@ -101,19 +101,19 @@ end
 
 function ep!{T<:Bool}(  node::SigmoidNode,
                         outbound_interface_id::Type{Val{1}},
+                        outbound_dist::GaussianDistribution,
                         msg_cavity::Message{GaussianDistribution},
-                        msg_bin::Message{DeltaDistribution{T}},
-                        outbound_dist::GaussianDistribution)
+                        msg_bin::Message{DeltaDistribution{T}})
 
     # Convert incoming DeltaDistribution to BernoulliDistribution
-    return ep!(node, Val{1}, msg_cavity, Message(BernoulliDistribution(msg_bin.payload.m)), outbound_dist)
+    return ep!(node, Val{1}, outbound_dist, msg_cavity, Message(BernoulliDistribution(msg_bin.payload.m)))
 end
 
 function ep!(   node::SigmoidNode,
                 outbound_interface_id::Type{Val{1}},
+                outbound_dist::GaussianDistribution,
                 msg_cavity::Message{GaussianDistribution},
-                msg_bin::Message{BernoulliDistribution},
-                outbound_dist::GaussianDistribution)
+                msg_bin::Message{BernoulliDistribution})
 
     # Calculate approximate (Gaussian) message towards i[:real]
     # The approximate message is an 'expectation' under the context (cavity distribution) encoded by incoming message msg_cavity.

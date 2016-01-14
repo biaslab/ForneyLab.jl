@@ -54,8 +54,8 @@ firstFreeInterface(node::TerminalNode) = (node.interfaces[1].partner==nothing) ?
 
 function sumProduct!(   node::TerminalNode,
                         outbound_interface_index::Type{Val{1}},
-                        msg_out::Any,
-                        outbound_dist::Any)
+                        outbound_dist::Any,
+                        msg_out::Any)
 
     # Fill the fields of outbound_dist with node.value
     return injectParameters!(outbound_dist, node.value)

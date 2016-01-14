@@ -188,8 +188,8 @@ facts("GainNode unit tests") do
             dist = ForneyLab.sumProduct!(
                                         GainNode(gain=A),
                                         Val{1},
-                                        nothing, Message(MvGaussianDistribution(m=mean, W=precision)),
-                                        MvGaussianDistribution(m=zeros(3), V=eye(3)))
+                                        MvGaussianDistribution(m=zeros(3), V=eye(3)),
+                                        nothing, Message(MvGaussianDistribution(m=mean, W=precision)))
             ensureParameters!(dist, (:m, :W))
             @fact dist.m --> roughly(inv(A) * mean)
             @fact dist.W --> roughly(A' * precision * A)
@@ -197,8 +197,8 @@ facts("GainNode unit tests") do
             dist = ForneyLab.sumProduct!(
                                         GainNode(),
                                         Val{1},
-                                        nothing, Message(MvGaussianDistribution(m=mean, W=precision)), Message(DeltaDistribution(A)),
-                                        MvGaussianDistribution(m=zeros(3), V=eye(3)))
+                                        MvGaussianDistribution(m=zeros(3), V=eye(3)),
+                                        nothing, Message(MvGaussianDistribution(m=mean, W=precision)), Message(DeltaDistribution(A)))
             ensureParameters!(dist, (:m, :W))
             @fact dist.m --> roughly(inv(A) * mean)
             @fact dist.W --> roughly(A' * precision * A)
@@ -207,8 +207,8 @@ facts("GainNode unit tests") do
             dist = ForneyLab.sumProduct!(
                                         GainNode(gain=A),
                                         Val{2},
-                                        Message(MvGaussianDistribution(m=mean, W=precision)), nothing,
-                                        MvGaussianDistribution(m=zeros(3), V=eye(3)))
+                                        MvGaussianDistribution(m=zeros(3), V=eye(3)),
+                                        Message(MvGaussianDistribution(m=mean, W=precision)), nothing)
             ensureParameters!(dist, (:m, :W))
             @fact dist.m --> roughly(A * mean)
             @fact dist.W --> roughly(inv(A)' * precision * inv(A))
@@ -216,8 +216,8 @@ facts("GainNode unit tests") do
             dist = ForneyLab.sumProduct!(
                                         GainNode(),
                                         Val{2},
-                                        Message(MvGaussianDistribution(m=mean, W=precision)), nothing, Message(DeltaDistribution(A)),
-                                        MvGaussianDistribution(m=zeros(3), V=eye(3)))
+                                        MvGaussianDistribution(m=zeros(3), V=eye(3)),
+                                        Message(MvGaussianDistribution(m=mean, W=precision)), nothing, Message(DeltaDistribution(A)))
             ensureParameters!(dist, (:m, :W))
             @fact dist.m --> roughly(A * mean)
             @fact dist.W --> roughly(inv(A)' * precision * inv(A))

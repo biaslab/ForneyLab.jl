@@ -58,10 +58,10 @@ isDeterministic(::GainAdditionNode) = true
 
 function sumProduct!(   node::GainAdditionNode,
                         outbound_interface_index::Type{Val{3}},
+                        outbound_dist::GaussianDistribution,
                         msg_in1::Message{GaussianDistribution},
                         msg_in2::Message{GaussianDistribution},
-                        msg_out::Any,
-                        outbound_dist::GaussianDistribution)
+                        msg_out::Any)
 
     (isProper(msg_in1.payload) && isProper(msg_in2.payload)) || error("Improper input distributions are not supported")
     dist_1 = ensureParameters!(msg_in1.payload, (:m, :V))
@@ -77,10 +77,10 @@ end
 
 function sumProduct!(   node::GainAdditionNode,
                         outbound_interface_index::Type{Val{2}},
+                        outbound_dist::GaussianDistribution,
                         msg_in1::Message{GaussianDistribution},
                         msg_in2::Any,
-                        msg_out::Message{GaussianDistribution},
-                        outbound_dist::GaussianDistribution)
+                        msg_out::Message{GaussianDistribution})
 
     (isProper(msg_in1.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
     dist_1 = ensureParameters!(msg_in1.payload, (:m, :V))
@@ -96,10 +96,10 @@ end
 
 function sumProduct!(   node::GainAdditionNode,
                         outbound_interface_index::Type{Val{1}},
+                        outbound_dist::GaussianDistribution,
                         msg_in1::Void,
                         msg_in2::Message{GaussianDistribution},
-                        msg_out::Message{GaussianDistribution},
-                        outbound_dist::GaussianDistribution)
+                        msg_out::Message{GaussianDistribution})
 
     (isProper(msg_in2.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
     dist_out = ensureParameters!(msg_out.payload, (:m, :V))
@@ -124,10 +124,10 @@ end
 
 function sumProduct!{T<:MvGaussianDistribution}(node::GainAdditionNode,
                                                 outbound_interface_index::Type{Val{3}},
+                                                outbound_dist::T,
                                                 msg_in1::Message{T},
                                                 msg_in2::Message{T},
-                                                msg_out::Any,
-                                                outbound_dist::T)
+                                                msg_out::Any)
 
     (isProper(msg_in1.payload) && isProper(msg_in2.payload)) || error("Improper input distributions are not supported")
     return gainAdditionForwardRule!(outbound_dist, msg_in1.payload, msg_in2.payload, node.A)
@@ -135,10 +135,10 @@ end
 
 function sumProduct!{T<:MvGaussianDistribution}(node::GainAdditionNode,
                                                 outbound_interface_index::Type{Val{2}},
+                                                outbound_dist::T,
                                                 msg_in1::Message{T},
                                                 msg_in2::Any,
-                                                msg_out::Message{T},
-                                                outbound_dist::T)
+                                                msg_out::Message{T})
 
     (isProper(msg_in1.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
     return gainAdditionBackwardIn2Rule!(outbound_dist, msg_in1.payload, msg_out.payload, node.A)
@@ -146,10 +146,10 @@ end
 
 function sumProduct!{T<:MvGaussianDistribution}(node::GainAdditionNode,
                                                 outbound_interface_index::Type{Val{1}},
+                                                outbound_dist::T,
                                                 msg_in1::Any,
                                                 msg_in2::Message{T},
-                                                msg_out::Message{T},
-                                                outbound_dist::T)
+                                                msg_out::Message{T})
 
     (isProper(msg_in2.payload) && isProper(msg_out.payload)) || error("Improper input distributions are not supported")
     dist_temp = vague(MvGaussianDistribution{size(node.A, 1)})

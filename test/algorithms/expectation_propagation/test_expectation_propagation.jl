@@ -88,7 +88,7 @@ facts("ExpectationPropagation algorithm integration tests") do
     context("Inference results") do
         @fact length(X_marg) --> 5
         predictive = BernoulliDistribution()
-        sumProduct!(n(:sig1), Val{2}, n(:equ1).interfaces[2].message, nothing, predictive)
+        sumProduct!(n(:sig1), Val{2}, predictive, n(:equ1).interfaces[2].message, nothing)
         @fact predictive.p --> roughly(mean([sample.m for sample in samples]), atol=0.1)
     end
 end
