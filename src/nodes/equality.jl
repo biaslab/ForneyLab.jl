@@ -288,6 +288,15 @@ function equalityRule!(dist_result::DeltaDistribution{Float64}, ::GaussianDistri
     return dist_result
 end
 
+function equalityRule!(dist_result::GaussianDistribution, ::GaussianDistribution, dist_delta::DeltaDistribution{Float64})
+    dist_result.m = dist_delta.m
+    dist_result.V = tiny
+    dist_result.xi = NaN
+    dist_result.W = NaN
+
+    return dist_result
+end
+
 
 ############################################
 # MvGaussian-MvDeltaDistribution combination
@@ -299,6 +308,15 @@ sumProduct!{TG<:MvGaussianDistribution, TD<:MvDeltaDistribution{Float64}}(node::
 sumProduct!{TG<:MvGaussianDistribution, TD<:MvDeltaDistribution{Float64}}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::TD, msg_1::Message{TD}, msg_2::Any, msg_3::Message{TG}) = return equalityRule!(outbound_dist, msg_3.payload, msg_1.payload)
 sumProduct!{TG<:MvGaussianDistribution, TD<:MvDeltaDistribution{Float64}}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::TD, msg_1::Message{TG}, msg_2::Message{TD}, msg_3::Any) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
 sumProduct!{TG<:MvGaussianDistribution, TD<:MvDeltaDistribution{Float64}}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::TD, msg_1::Message{TD}, msg_2::Message{TG}, msg_3::Any) = return equalityRule!(outbound_dist, msg_2.payload, msg_1.payload)
+
+function equalityRule!(dist_result::MvDeltaDistribution{Float64}, ::MvGaussianDistribution, dist_delta::MvDeltaDistribution{Float64})
+    dist_result.m = deepcopy(dist_delta.m)
+    dist_result.V = tiny*eye(length(dist_delta.m))
+    invalidate!(dist_result.xi)
+    invalidate!(dist_result.W)
+
+    return dist_result
+end
 
 function equalityRule!(dist_result::MvDeltaDistribution{Float64}, ::MvGaussianDistribution, dist_delta::MvDeltaDistribution{Float64})
     dist_result.m = deepcopy(dist_delta.m)

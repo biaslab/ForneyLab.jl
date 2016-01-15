@@ -289,7 +289,7 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
         GaussianNode(form=:precision, id=:g*sec)
         EqualityNode(id=:m_eq*sec) # Equality node chain for mean
         EqualityNode(id=:gam_eq*sec) # Equality node chain for precision
-        TerminalNode(GaussianDistribution(m=y[sec], V=tiny), id=:y*sec) # Observed y values are stored in terminal node
+        TerminalNode(y[sec], id=:y*sec) # Observed y values are stored in terminal node
         Edge(n(:g*sec).i[:out], n(:y*sec).i[:out], GaussianDistribution, id=:q_y*sec)
         Edge(n(:m_eq*sec).i[3], n(:g*sec).i[:mean], GaussianDistribution, id=:q_m*sec)
         Edge(n(:gam_eq*sec).i[3], n(:g*sec).i[:precision], GammaDistribution, id=:q_gam*sec)
@@ -385,17 +385,26 @@ function testInterfaceConnections(node1::GainNode, node2::TerminalNode)
     @fact mean(node2.i[:out].partner.message.payload) --> 2.0
 end
 
-function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbound_messages::Array, correct_outbound_value::ProbabilityDistribution, update_function::Function=ForneyLab.sumProduct!)
+function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbound_messages::Array, correct_outbound_dist::ProbabilityDistribution, update_function::Function=ForneyLab.sumProduct!)
     # Preset an outbound distribution on which the update may operate
-    if typeof(correct_outbound_value) <: DeltaDistribution
+    if typeof(correct_outbound_dist) <: DeltaDistribution
         outbound_dist = DeltaDistribution()
-    elseif typeof(correct_outbound_value) <: MvDeltaDistribution
-        outbound_dist = MvDeltaDistribution(zeros(dimensions(correct_outbound_value)))
+    elseif typeof(correct_outbound_dist) <: MvDeltaDistribution
+        outbound_dist = MvDeltaDistribution(zeros(dimensions(correct_outbound_dist)))
     else
-        outbound_dist = vague(typeof(correct_outbound_value))
+        outbound_dist = vague(typeof(correct_outbound_dist))
     end
 
     # Perform the update and verify the result
     dist = update_function(node, Val{outbound_interface_index}, outbound_dist, inbound_messages...)
-    @fact dist --> correct_outbound_value
+    @fact dist --> correct_outbound_dist
+
+    if dist != correct_outbound_dist
+        # Print full parameters if distribution is incorrect
+        println("Occured:")
+        for name in fieldnames(outbound_dist)
+            println("$(name): $(getfield(outbound_dist, name))")
+        end
+        println("")
+    end
 end

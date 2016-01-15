@@ -27,6 +27,13 @@ end
 *(num::Number, sym::Symbol) = symbol(string(num, sym))
 *(sym1::Symbol, sym2::Symbol) = symbol(string(sym1, sym2))
 
+*(sym::Symbol, rng::Range) = Symbol[sym*k for k in rng]
+*(rng::Range, sym::Symbol) = Symbol[k*sym for k in rng]
+*{T<:Number}(sym::Symbol, vec::Vector{T}) = Symbol[sym*k for k in vec]
+*{T<:Number}(vec::Vector{T}, sym::Symbol) = Symbol[k*sym for k in vec]
+*(sym1::Symbol, sym2::Vector{Symbol}) = Symbol[sym1*s2 for s2 in sym2]
+*(sym1::Vector{Symbol}, sym2::Symbol) = Symbol[s1*sym2 for s1 in sym1]
+
 function format(d::Bool)
     string(d)
 end

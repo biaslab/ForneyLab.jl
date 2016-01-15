@@ -16,7 +16,7 @@ function attachReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph
     graph.read_buffers[node] = buffer
 end
 
-function attachReadBuffer{T<:ProbabilityDistribution}(nodes::Vector{TerminalNode{T}}, buffer::Vector, graph::FactorGraph=currentGraph())
+function attachReadBuffer{T<:Node}(nodes::Vector{T}, buffer::Vector, graph::FactorGraph=currentGraph())
     # Mini-batch assignment for read buffers.
     # buffer is divided over nodes equally.
     n_nodes = length(nodes)
@@ -25,6 +25,7 @@ function attachReadBuffer{T<:ProbabilityDistribution}(nodes::Vector{TerminalNode
     buffmat = reshape(buffer, n_nodes, n_samples_per_node) # samples for one node are present in the rows of buffmat
     for k in 1:n_nodes
         hasNode(graph, nodes[k]) || error("One of the specified nodes is not part of the current or specified graph")
+        (typeof(nodes[k]) <: TerminalNode) || error("$(nodes[k]) is not a TerminalNode")
         graph.read_buffers[nodes[k]] = vec(buffmat[k,:])
     end
 

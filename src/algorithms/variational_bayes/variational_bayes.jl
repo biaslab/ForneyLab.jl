@@ -107,19 +107,17 @@ function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Inter
 
     # Collect references to all required inbound messages for executing message computation rule
     for (id, interface) in enumerate(entry.node.interfaces)
+        # Should we require the inbound message or marginal?
         if id == entry.outbound_interface_id
-            push!(entry.inbound_types, Void) # This interface is outbound, push Void
+            push!(entry.inbound_types, Void)
+        elseif is(algo.factorization.edge_to_subgraph[interface.edge], algo.factorization.edge_to_subgraph[outbound_interface.edge]) && !is(interface, outbound_interface)
+            # Both edges in same subgraph, require message
+            push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
         else
-            # Should we require the inbound message or marginal?
-            if is(algo.factorization.edge_to_subgraph[interface.edge], algo.factorization.edge_to_subgraph[outbound_interface.edge])
-                # Both edges in same subgraph, require message
-                push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
-            else
-                # A subgraph border is crossed, require marginal
-                # The factor is the set of internal edges that are in the same subgraph
-                sg = algo.factorization.edge_to_subgraph[interface.edge]
-                push!(entry.inbound_types, typeof(algo.q_distributions[(entry.node, sg)].distribution))
-            end
+            # A subgraph border is crossed, require marginal
+            # The factor is the set of internal edges that are in the same subgraph
+            sg = algo.factorization.edge_to_subgraph[interface.edge]
+            push!(entry.inbound_types, typeof(algo.q_distributions[(entry.node, sg)].distribution))
         end
     end
 
@@ -152,20 +150,20 @@ function compile!(entry::ScheduleEntry, ::Type{Val{symbol(vmp!)}}, algo::Variati
 
     inbound_rule_arguments = []
     # Add inbound messages to inbound_rule_arguments
-    for (id, interface) in enumerate(node.interfaces)
-        if id == outbound_interface_id
-            push!(inbound_rule_arguments, nothing) # This interface is outbound, push "nothing"
+    for (id, interface) in enumerate(entry.node.interfaces)
+        # Should we require the inbound message or marginal?
+        if id == entry.outbound_interface_id
+            # Require marginal because it is available (not used for vmp update)
+            sg = algo.factorization.edge_to_subgraph[interface.edge]
+            push!(inbound_rule_arguments, algo.q_distributions[(node, sg)].distribution)
+        elseif is(algo.factorization.edge_to_subgraph[interface.edge], algo.factorization.edge_to_subgraph[outbound_interface.edge])
+            # Both edges in same subgraph, require message
+            push!(inbound_rule_arguments, interface.partner.message)
         else
-            # Should we require the inbound message or marginal?
-            if is(algo.factorization.edge_to_subgraph[interface.edge], algo.factorization.edge_to_subgraph[outbound_interface.edge])
-                # Both edges in same subgraph, require message
-                push!(inbound_rule_arguments, interface.partner.message)
-            else
-                # A subgraph border is crossed, require marginal
-                # The factor is the set of internal edges that are in the same subgraph
-                sg = algo.factorization.edge_to_subgraph[interface.edge]
-                push!(inbound_rule_arguments, algo.q_distributions[(node, sg)].distribution)
-            end
+            # A subgraph border is crossed, require marginal
+            # The factor is the set of internal edges that are in the same subgraph
+            sg = algo.factorization.edge_to_subgraph[interface.edge]
+            push!(inbound_rule_arguments, algo.q_distributions[(node, sg)].distribution)
         end
     end
 

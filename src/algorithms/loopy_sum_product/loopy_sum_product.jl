@@ -70,13 +70,11 @@ function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Inter
 
     for (id, interface) in enumerate(entry.node.interfaces)
         if id == entry.outbound_interface_id
-            push!(entry.inbound_types, Void) # Outbound interface, push Void
+            push!(entry.inbound_types, Void)
+        elseif haskey(algo.breaker_messages, interface.partner) # A breaker message is pre-set on the partner interface, push breaker message type
+            push!(entry.inbound_types, typeof(algo.breaker_messages[interface.partner]))
         else
-            if haskey(algo.breaker_messages, interface.partner) # A breaker message is pre-set on the partner interface, push message type
-                push!(entry.inbound_types, typeof(algo.breaker_messages[interface.partner]))
-            else
-                push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
-            end
+            push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
         end
     end
 

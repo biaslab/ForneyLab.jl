@@ -55,9 +55,9 @@ function extractOutboundType(outbound_arg)
     end
 end
 
-function buildOutboundTypesForRule!{T<:Node}(outbound_types::Vector{DataType}, rule::Function, call_signature::Vector, ::Type{T})
+function buildOutboundTypesForRule!(outbound_types::Vector{DataType}, rule::Function, call_signature::Vector, node::Node)
     # Find the available methods for the update function 'rule' that satisfy 'call_signature' and push the result to 'outbound_types'
-    # Note the ::Type{T<:Node} argument, so for specific node types this function may be overloaded
+    # Note the node::Node argument, so for specific node types this function may be overloaded
 
     available_methods = methods(rule, call_signature)
     for method in available_methods
@@ -65,8 +65,8 @@ function buildOutboundTypesForRule!{T<:Node}(outbound_types::Vector{DataType}, r
         method_signature = method.sig.types
         outbound_type = extractOutboundType(method_signature[3]) # Third entry is always the outbound distribution
 
-        if outbound_type == Any # Is the outbound type parameterized by the node? (e.g. TerminalNode)
-            push!(outbound_types, call_signature[1].parameters[1])
+        if typeof(node) <: TerminalNode
+            push!(outbound_types, typeof(node.value))
         elseif isempty(parameters(outbound_type)) # Are there no type variables defined for the outbound type?
             push!(outbound_types, outbound_type) # Simply push the found outbound type on the stack
         else  # Outbound type has parameters that need to be inferred
@@ -87,12 +87,12 @@ function buildOutboundTypesForRule!{T<:Node}(outbound_types::Vector{DataType}, r
     return outbound_types
 end    
 
-function collectAllOutboundTypes(allowed_rules::Vector{Function}, call_signature::Vector)
+function collectAllOutboundTypes(allowed_rules::Vector{Function}, call_signature::Vector, node::Node)
     # Collects all outbound types for the update functions in allowed_rules that respond to call_signature
 
     outbound_types = DataType[]
     for rule in allowed_rules
-        buildOutboundTypesForRule!(outbound_types, rule, call_signature, call_signature[1])
+        buildOutboundTypesForRule!(outbound_types, rule, call_signature, node)
     end
 
     return outbound_types
@@ -104,7 +104,7 @@ function inferOutboundType!(entry::ScheduleEntry, node::Node, allowed_rules::Vec
     outbound_interface_id = entry.outbound_interface_id
 
     # Find all outbound types compatible with allowed_rules
-    outbound_types = collectAllOutboundTypes(allowed_rules, [typeof(node); Type{Val{outbound_interface_id}}; Any; inbound_types])
+    outbound_types = collectAllOutboundTypes(allowed_rules, [typeof(node); Type{Val{outbound_interface_id}}; Any; inbound_types], node)
 
     # The outbound outbound_types should contain just one element (there should be just one available update rule)
     if length(outbound_types) == 0

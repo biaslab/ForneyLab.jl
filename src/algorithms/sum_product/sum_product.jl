@@ -102,7 +102,7 @@ function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Inter
 
     for (id, interface) in enumerate(entry.node.interfaces)
         if id == entry.outbound_interface_id
-            push!(entry.inbound_types, Void) # Outbound interface, push Void
+            push!(entry.inbound_types, Void)
         else
             push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
         end
@@ -130,7 +130,6 @@ function compile!(entry::ScheduleEntry, ::Type{Val{symbol(sumProduct!)}}, ::Infe
     # Add inbound messages to inbound_rule_arguments
     for (id, interface) in enumerate(entry.node.interfaces)
         if id == entry.outbound_interface_id
-            # Inbound on outbound_interface is irrelevant
             push!(inbound_rule_arguments, nothing)
         else
             push!(inbound_rule_arguments, interface.partner.message)

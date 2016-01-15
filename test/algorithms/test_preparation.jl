@@ -36,35 +36,37 @@ facts("Shared preparation methods for inference algorithms") do
     end
 
     context("collectAllOutboundTypes() should return outbound types of applicable update rules") do
-        call_signature = [TerminalNode{GaussianDistribution}, Type{Val{1}}, Any, Void]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature) --> [GaussianDistribution]
+        FactorGraph()
 
-        call_signature = [TerminalNode{MvDeltaDistribution{Float64, 2}}, Type{Val{1}}, Any, Void]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature) --> [MvDeltaDistribution{Float64, 2}]
+        call_signature = [TerminalNode, Type{Val{1}}, Any, Void]
+        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature, TerminalNode()) --> [GaussianDistribution]
+
+        call_signature = [TerminalNode, Type{Val{1}}, Any, Void]
+        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature, TerminalNode([1.0, 1.0])) --> [MvDeltaDistribution{Float64, 2}]
 
         call_signature = [EqualityNode, Type{Val{2}}, Any, Message{GaussianDistribution}, Void, Message{GaussianDistribution}]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature) --> [GaussianDistribution]
+        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature, EqualityNode()) --> [GaussianDistribution]
 
         call_signature = [EqualityNode, Type{Val{3}}, Any, Message{MvGaussianDistribution{2}}, Message{MvDeltaDistribution{Float64, 2}}, Void]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature) --> [MvDeltaDistribution{Float64, 2}]
+        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature, EqualityNode()) --> [MvDeltaDistribution{Float64, 2}]
 
         call_signature = [AdditionNode, Type{Val{2}}, Any, Message{MvGaussianDistribution{2}}, Void, Message{MvGaussianDistribution{2}}]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature) --> [MvGaussianDistribution{2}]
+        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature, AdditionNode()) --> [MvGaussianDistribution{2}]
 
         call_signature = [AdditionNode, Type{Val{2}}, Any, Message{MvDeltaDistribution{Float64, 2}}, Void, Message{MvDeltaDistribution{Float64, 2}}]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature) --> [MvDeltaDistribution{Float64, 2}]
+        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature, AdditionNode()) --> [MvDeltaDistribution{Float64, 2}]
 
-        call_signature = [GaussianNode, Type{Val{2}}, Any, MvGaussianDistribution{2}, Void, MvGaussianDistribution{2}]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!, vmp!], call_signature) --> [WishartDistribution{2}]
+        call_signature = [GaussianNode{Val{:precision}}, Type{Val{2}}, Any, MvGaussianDistribution{2}, Void, MvGaussianDistribution{2}]
+        @fact ForneyLab.collectAllOutboundTypes([sumProduct!, vmp!], call_signature, GaussianNode(form=:precision)) --> [WishartDistribution{2}]
 
-        call_signature = [GaussianNode, Type{Val{3}}, Any, NormalGammaDistribution, NormalGammaDistribution, Void]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!, vmp!], call_signature) --> [GaussianDistribution]
+        call_signature = [GaussianNode{Val{:precision}}, Type{Val{3}}, Any, NormalGammaDistribution, NormalGammaDistribution, Void]
+        @fact ForneyLab.collectAllOutboundTypes([sumProduct!, vmp!], call_signature, GaussianNode(form=:precision)) --> [GaussianDistribution]
 
-        call_signature = [GaussianNode, Type{Val{1}}, Any, Void, Message{GammaDistribution}, GaussianDistribution]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!, vmp!], call_signature) --> [StudentsTDistribution]
+        call_signature = [GaussianNode{Val{:precision}}, Type{Val{1}}, Any, Void, Message{GammaDistribution}, GaussianDistribution]
+        @fact ForneyLab.collectAllOutboundTypes([sumProduct!, vmp!], call_signature, GaussianNode(form=:precision)) --> [StudentsTDistribution]
 
         call_signature = [SigmoidNode, Type{Val{1}}, Any, Message{GaussianDistribution}, Message{DeltaDistribution{Bool}}]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!, ep!], call_signature) --> [GaussianDistribution]
+        @fact ForneyLab.collectAllOutboundTypes([sumProduct!, ep!], call_signature, SigmoidNode()) --> [GaussianDistribution]
     end
 
     FactorGraph()

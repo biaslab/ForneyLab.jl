@@ -83,15 +83,17 @@ function nodes(edges::Set{Edge})
     return connected_nodes
 end
 
-edges(graph::FactorGraph = currentGraph()) = Set{Edge}(values(graph.edges))
+edges(graph::FactorGraph=currentGraph()) = Set{Edge}(values(graph.edges))
 edges(node::Node) = Set{Edge}([intf.edge for intf in node.interfaces])
 edges(nodeset::Set{Node}) = union(map(edges, nodeset)...)
 
 # Search edge and node by id
-node(id::Symbol, graph::FactorGraph = currentGraph()) = graph.nodes[id]
+node(id::Symbol, graph::FactorGraph=currentGraph()) = graph.nodes[id]
+node(ids::Vector{Symbol}, graph::FactorGraph=currentGraph()) = Node[node(id, graph) for id in ids]
 n = node
 
 edge(id::Symbol, graph::FactorGraph = currentGraph()) = graph.edges[id]
+edge(ids::Vector{Symbol}, graph::FactorGraph=currentGraph()) = Edge[edge(id, graph) for id in ids]
 e = edge
 
 # Add/remove graph elements
