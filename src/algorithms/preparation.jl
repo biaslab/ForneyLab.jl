@@ -55,9 +55,11 @@ function extractOutboundType(outbound_arg)
     end
 end
 
-function buildOutboundTypesForRule!(outbound_types::Vector{DataType}, rule::Function, call_signature::Vector, node::Node)
+function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::Node)
     # Find the available methods for the update function 'rule' that satisfy 'call_signature' and push the result to 'outbound_types'
     # Note the node::Node argument, so for specific node types this function may be overloaded
+
+    outbound_types = DataType[]
 
     available_methods = methods(rule, call_signature)
     for method in available_methods
@@ -85,26 +87,16 @@ function buildOutboundTypesForRule!(outbound_types::Vector{DataType}, rule::Func
     end
 
     return outbound_types
-end    
-
-function collectAllOutboundTypes(allowed_rules::Vector{Function}, call_signature::Vector, node::Node)
-    # Collects all outbound types for the update functions in allowed_rules that respond to call_signature
-
-    outbound_types = DataType[]
-    for rule in allowed_rules
-        buildOutboundTypesForRule!(outbound_types, rule, call_signature, node)
-    end
-
-    return outbound_types
 end
 
-function inferOutboundType!(entry::ScheduleEntry, node::Node, allowed_rules::Vector{Function})
+function inferOutboundType!(entry::ScheduleEntry)
     # Infers the outbound type from node and all available information on inbounds and post-processing
     inbound_types = entry.inbound_types
     outbound_interface_id = entry.outbound_interface_id
+    node = entry.node
 
-    # Find all outbound types compatible with allowed_rules
-    outbound_types = collectAllOutboundTypes(allowed_rules, [typeof(node); Type{Val{outbound_interface_id}}; Any; inbound_types], node)
+    # Find all outbound types compatible with entry.rule
+    outbound_types = collectAllOutboundTypes(entry.rule, [typeof(node); Type{Val{outbound_interface_id}}; Any; inbound_types], node)
 
     # The outbound outbound_types should contain just one element (there should be just one available update rule)
     if length(outbound_types) == 0
@@ -127,8 +119,6 @@ function inferOutboundType!(entry::ScheduleEntry, node::Node, allowed_rules::Vec
 
     return entry
 end
-
-inferOutboundType!(entry::ScheduleEntry, allowed_rules::Vector{Function}) = inferOutboundType!(entry, entry.node, allowed_rules)
 
 function inferOutboundTypeAfterPostProcessing(entry::ScheduleEntry)
     outbound_types = []

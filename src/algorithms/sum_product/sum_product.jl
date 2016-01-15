@@ -87,7 +87,7 @@ function inferDistributionTypes!(algo::AbstractSumProduct)
 
     for entry in algo.schedule
         collectInboundTypes!(entry, schedule_entries, algo) # SumProduct specific collection of inbound types
-        inferOutboundType!(entry, [sumProduct!]) # For the SumProduct algorithm, the only allowed update rule is the sumProduct! rule
+        inferOutboundType!(entry) # For the SumProduct algorithm, the only allowed update rule is the sumProduct! rule
 
         outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
         schedule_entries[outbound_interface] = entry # Assign schedule entry to lookup dictionary

@@ -39,34 +39,34 @@ facts("Shared preparation methods for inference algorithms") do
         FactorGraph()
 
         call_signature = [TerminalNode, Type{Val{1}}, Any, Void]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature, TerminalNode()) --> [GaussianDistribution]
+        @fact ForneyLab.collectAllOutboundTypes(sumProduct!, call_signature, TerminalNode()) --> [GaussianDistribution]
 
         call_signature = [TerminalNode, Type{Val{1}}, Any, Void]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature, TerminalNode([1.0, 1.0])) --> [MvDeltaDistribution{Float64, 2}]
+        @fact ForneyLab.collectAllOutboundTypes(sumProduct!, call_signature, TerminalNode([1.0, 1.0])) --> [MvDeltaDistribution{Float64, 2}]
 
         call_signature = [EqualityNode, Type{Val{2}}, Any, Message{GaussianDistribution}, Void, Message{GaussianDistribution}]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature, EqualityNode()) --> [GaussianDistribution]
+        @fact ForneyLab.collectAllOutboundTypes(sumProduct!, call_signature, EqualityNode()) --> [GaussianDistribution]
 
         call_signature = [EqualityNode, Type{Val{3}}, Any, Message{MvGaussianDistribution{2}}, Message{MvDeltaDistribution{Float64, 2}}, Void]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature, EqualityNode()) --> [MvDeltaDistribution{Float64, 2}]
+        @fact ForneyLab.collectAllOutboundTypes(sumProduct!, call_signature, EqualityNode()) --> [MvDeltaDistribution{Float64, 2}]
 
         call_signature = [AdditionNode, Type{Val{2}}, Any, Message{MvGaussianDistribution{2}}, Void, Message{MvGaussianDistribution{2}}]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature, AdditionNode()) --> [MvGaussianDistribution{2}]
+        @fact ForneyLab.collectAllOutboundTypes(sumProduct!, call_signature, AdditionNode()) --> [MvGaussianDistribution{2}]
 
         call_signature = [AdditionNode, Type{Val{2}}, Any, Message{MvDeltaDistribution{Float64, 2}}, Void, Message{MvDeltaDistribution{Float64, 2}}]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!], call_signature, AdditionNode()) --> [MvDeltaDistribution{Float64, 2}]
+        @fact ForneyLab.collectAllOutboundTypes(sumProduct!, call_signature, AdditionNode()) --> [MvDeltaDistribution{Float64, 2}]
 
         call_signature = [GaussianNode{Val{:precision}}, Type{Val{2}}, Any, MvGaussianDistribution{2}, Void, MvGaussianDistribution{2}]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!, vmp!], call_signature, GaussianNode(form=:precision)) --> [WishartDistribution{2}]
+        @fact ForneyLab.collectAllOutboundTypes(vmp!, call_signature, GaussianNode(form=:precision)) --> [WishartDistribution{2}]
 
         call_signature = [GaussianNode{Val{:precision}}, Type{Val{3}}, Any, NormalGammaDistribution, NormalGammaDistribution, Void]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!, vmp!], call_signature, GaussianNode(form=:precision)) --> [GaussianDistribution]
+        @fact ForneyLab.collectAllOutboundTypes(vmp!, call_signature, GaussianNode(form=:precision)) --> [GaussianDistribution]
 
         call_signature = [GaussianNode{Val{:precision}}, Type{Val{1}}, Any, Void, Message{GammaDistribution}, GaussianDistribution]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!, vmp!], call_signature, GaussianNode(form=:precision)) --> [StudentsTDistribution]
+        @fact ForneyLab.collectAllOutboundTypes(vmp!, call_signature, GaussianNode(form=:precision)) --> [StudentsTDistribution]
 
         call_signature = [SigmoidNode, Type{Val{1}}, Any, Message{GaussianDistribution}, Message{DeltaDistribution{Bool}}]
-        @fact ForneyLab.collectAllOutboundTypes([sumProduct!, ep!], call_signature, SigmoidNode()) --> [GaussianDistribution]
+        @fact ForneyLab.collectAllOutboundTypes(ep!, call_signature, SigmoidNode()) --> [GaussianDistribution]
     end
 
     FactorGraph()
@@ -83,7 +83,7 @@ facts("Shared preparation methods for inference algorithms") do
     context("inferOutboundType!() should infer the correct outbound type for a terminal node") do
         entry = ScheduleEntry(TerminalNode(GaussianDistribution()), 1, sumProduct!)
         entry.inbound_types = [Void]
-        ForneyLab.inferOutboundType!(entry, [sumProduct!])
+        ForneyLab.inferOutboundType!(entry)
         @fact entry.intermediate_outbound_type --> GaussianDistribution
         @fact entry.outbound_type --> GaussianDistribution
     end
@@ -92,7 +92,7 @@ facts("Shared preparation methods for inference algorithms") do
         entry = ScheduleEntry(TerminalNode(GaussianDistribution()), 1, sumProduct!)
         entry.inbound_types = [Void]
         entry.post_processing = sample
-        ForneyLab.inferOutboundType!(entry, [sumProduct!])
+        ForneyLab.inferOutboundType!(entry)
         @fact entry.intermediate_outbound_type --> GaussianDistribution
         @fact entry.outbound_type --> DeltaDistribution{Float64}
     end
@@ -100,7 +100,7 @@ facts("Shared preparation methods for inference algorithms") do
     context("inferOutboundType!() should infer the correct outbound type for a node") do
         entry = ScheduleEntry(AdditionNode(), 3, sumProduct!)
         entry.inbound_types = [Message{GaussianDistribution}, Message{GaussianDistribution}, Void]
-        ForneyLab.inferOutboundType!(entry, [sumProduct!])
+        ForneyLab.inferOutboundType!(entry)
         @fact entry.intermediate_outbound_type --> GaussianDistribution
         @fact entry.outbound_type --> GaussianDistribution
     end
@@ -108,7 +108,7 @@ facts("Shared preparation methods for inference algorithms") do
     context("inferOutboundType!() should infer the correct outbound type for a Gaussian node with vmp") do
         entry = ScheduleEntry(GaussianNode(form=:precision), 2, vmp!)
         entry.inbound_types = [GaussianDistribution, Void, GaussianDistribution]
-        ForneyLab.inferOutboundType!(entry, [sumProduct!, vmp!])
+        ForneyLab.inferOutboundType!(entry)
         @fact entry.intermediate_outbound_type --> GammaDistribution
         @fact entry.outbound_type --> GammaDistribution
     end

@@ -22,6 +22,7 @@ function ExpectationPropagation(
             n_iterations::Int64 = 100,
             callback::Function = ( () -> false ),
             post_processing_functions = Dict{Interface, Function}())
+
     # Build an EP message passing algorithm for the specified sites.
     # sites is a list of (interface, recognition_distribution) tuples,
     # where recognition_distribution <: ProbabilityDistribution.
@@ -102,7 +103,7 @@ function inferDistributionTypes!(algo::ExpectationPropagation, recognition_distr
 
     for entry in algo.schedule
         collectInboundTypes!(entry, schedule_entries, recognition_distributions, algo) # Fill entry.inbound_types
-        inferOutboundType!(entry, [sumProduct!, ep!]) # Infer the outbound message type, fill entry.outbound_type
+        inferOutboundType!(entry) # Infer the outbound message type, fill entry.outbound_type
 
         outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
         schedule_entries[outbound_interface] = entry # Add entry to lookup table
