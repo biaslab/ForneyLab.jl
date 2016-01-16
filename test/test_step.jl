@@ -3,6 +3,19 @@
 #####################
 
 facts("Read/write buffer integration tests") do
+    context("ensureValue!() should ensure TerminalNode has a value") do
+        # Used for readbuffer attachment
+        FactorGraph()
+        node = TerminalNode()
+
+        @fact ForneyLab.ensureValue!(node, Float64) --> DeltaDistribution()
+        @fact ForneyLab.ensureValue!(node, BernoulliDistribution) --> BernoulliDistribution()
+        @fact ForneyLab.ensureValue!(node, DeltaDistribution{Float64}) --> DeltaDistribution()
+        @fact ForneyLab.ensureValue!(node, Bool) --> DeltaDistribution(false)
+        @fact ForneyLab.ensureValue!(node, GaussianDistribution) --> vague(GaussianDistribution)
+        @fact ForneyLab.ensureValue!(node, MvDeltaDistribution{Float64, 3}) --> MvDeltaDistribution([0.0, 0.0, 0.0])
+    end
+
     # attachReadBuffer
     context("attachReadBuffer should register a read buffer for a TerminalNode") do
         g = initializeBufferGraph()

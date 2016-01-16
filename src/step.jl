@@ -11,8 +11,27 @@ export  attachReadBuffer,
 import Base.run
 import Base.step
 
+function ensureValue!(node::TerminalNode, value_type::Type)
+    # Ensure that node contains a value of type value_type
+    if !isdefined(node, :value) || (typeof(node.value) != value_type)
+        if (value_type <: DeltaDistribution{Float64}) || (value_type <: Float64)
+            node.value = DeltaDistribution()
+        elseif (value_type <: DeltaDistribution{Bool}) || (value_type <: Bool)
+            node.value = DeltaDistribution(false)
+        elseif (value_type <: MvDeltaDistribution) || (value_type <: Vector{Float64})
+            dims = value_type.parameters[end]
+            node.value = MvDeltaDistribution(zeros(dims))
+        else
+            node.value = vague(value_type)
+        end
+    end
+
+    return node.value
+end
+
 function attachReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=currentGraph())
     hasNode(graph, node) || error("The specified node is not part of the current or specified graph")
+    ensureValue!(node, typeof(buffer[1])) # Ensures that a value of correct type is set for message type inference
     graph.read_buffers[node] = buffer
 end
 
@@ -26,6 +45,7 @@ function attachReadBuffer{T<:Node}(nodes::Vector{T}, buffer::Vector, graph::Fact
     for k in 1:n_nodes
         hasNode(graph, nodes[k]) || error("One of the specified nodes is not part of the current or specified graph")
         (typeof(nodes[k]) <: TerminalNode) || error("$(nodes[k]) is not a TerminalNode")
+        ensureValue!(nodes[k], typeof(buffmat[k,1])) # Ensures that a value of correct type is set for message type inference
         graph.read_buffers[nodes[k]] = vec(buffmat[k,:])
     end
 
