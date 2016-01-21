@@ -41,7 +41,7 @@ isDeterministic(::ExponentialNode) = true
 
 
 ############################################
-# Standard update functions
+# Gaussian update functions
 ############################################
 
 function sumProduct!(   node::ExponentialNode,
@@ -50,7 +50,8 @@ function sumProduct!(   node::ExponentialNode,
                         msg_in::Message{GaussianDistribution},
                         msg_out::Any)
 
-    isProper(msg_in.payload) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # isProper(msg_in.payload) || error("Improper input distributions are not supported")
     ensureParameters!(msg_in.payload, (:m, :V))
 
     outbound_dist.m = msg_in.payload.m
@@ -65,7 +66,8 @@ function sumProduct!(   node::ExponentialNode,
                         msg_in::Any,
                         msg_out::Message{LogNormalDistribution})
 
-    isProper(msg_out.payload) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # isProper(msg_out.payload) || error("Improper input distributions are not supported")
 
     outbound_dist.m = msg_out.payload.m
     outbound_dist.V = msg_out.payload.s
@@ -95,6 +97,69 @@ function sumProduct!(   node::ExponentialNode,
                         outbound_dist::DeltaDistribution{Float64},
                         msg_in::Any,
                         msg_out::Message{DeltaDistribution{Float64}})
+
+    outbound_dist.m = log(msg_out.payload.m)
+    return outbound_dist
+end
+
+
+############################################
+# MvGaussian update functions
+############################################
+
+function sumProduct!{dims<:Int64}(  node::ExponentialNode,
+                                    outbound_interface_index::Type{Val{2}},
+                                    outbound_dist::MvLogNormalDistribution{dims},
+                                    msg_in::Message{MvGaussianDsitribution{dims}},
+                                    msg_out::Any)
+
+    # TODO: unrepress
+    # isProper(msg_in.payload) || error("Improper input distributions are not supported")
+    ensureParameters!(msg_in.payload, (:m, :V))
+
+    outbound_dist.m = deepcopy(msg_in.payload.m)
+    outbound_dist.S = deepcopy(msg_in.payload.V)
+
+    return outbound_dist
+end
+
+function sumProduct!{dims<:Int64}(  node::ExponentialNode,
+                                    outbound_interface_index::Type{Val{1}},
+                                    outbound_dist::MvGaussianDistribution{dims},
+                                    msg_in::Any,
+                                    msg_out::Message{MvLogNormalDistribution{dims}})
+
+    # TODO: unrepress
+    # isProper(msg_out.payload) || error("Improper input distributions are not supported")
+
+    outbound_dist.m = deepcopy(msg_out.payload.m)
+    outbound_dist.V = deepcopy(msg_out.payload.S)
+    outbound_dist.W = NaN
+    outbound_dist.xi = NaN
+
+    return outbound_dist
+end
+
+
+############################################
+# MvDeltaDistribution update functions
+############################################
+
+function sumProduct!{T<:MvDeltaDistribution{Float64}}(  node::ExponentialNode,
+                                                        outbound_interface_index::Type{Val{2}},
+                                                        outbound_dist::T,
+                                                        msg_in::Message{T},
+                                                        msg_out::Any)
+
+    outbound_dist.m = exp(msg_in.payload.m)
+    return outbound_dist
+end
+
+function sumProduct!{T<:MvDeltaDistribution{Float64}}(  node::ExponentialNode,
+                                                        outbound_interface_index::Type{Val{1}},
+                                                        outbound_dist::T,
+                                                        msg_in::Any,
+                                                        msg_out::Message{T})
 
     outbound_dist.m = log(msg_out.payload.m)
     return outbound_dist

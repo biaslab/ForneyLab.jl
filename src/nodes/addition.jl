@@ -53,9 +53,10 @@ function sumProduct!(   node::AdditionNode,
                         msg_out::Any)
 
     # Check convergence of calculation rule in case of improper inputs
-    if ensureParameters!(msg_in1.payload, (:m, :W)).W + ensureParameters!(msg_in2.payload, (:m, :W)).W <= 0
-        error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s)")
-    end
+    # TODO: unrepress
+    # if ensureParameters!(msg_in1.payload, (:m, :W)).W + ensureParameters!(msg_in2.payload, (:m, :W)).W <= -tiny
+    #     error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s); in1: $(msg_in1.payload), in2: $(msg_in2.payload)")
+    # end
     dist_in1 = ensureParameters!(msg_in1.payload, (:m, :V))
     dist_in2 = ensureParameters!(msg_in2.payload, (:m, :V))
     outbound_dist.m = dist_in1.m + dist_in2.m
@@ -90,9 +91,10 @@ end
 
 function backwardAdditionRule!(dist_result::GaussianDistribution, dist_in::GaussianDistribution, dist_out::GaussianDistribution)
     # Check convergence of calculation rule in case of improper inputs
-    if ensureParameters!(dist_out, (:m, :W)).W + ensureParameters!(dist_in, (:m, :W)).W <= 0
-        error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s)")
-    end
+    # TODO: unrepress
+    # if ensureParameters!(dist_out, (:m, :W)).W + ensureParameters!(dist_in, (:m, :W)).W <= -tiny
+    #     error("sumProduct! for AdditionNode is not well-defined for the provided improper Gaussian input(s); out: $(dist_out), in: $(dist_in)")
+    # end
     ensureParameters!(dist_out, (:m, :V))
     ensureParameters!(dist_in, (:m, :V))
     dist_result.m = dist_out.m - dist_in.m
@@ -265,7 +267,8 @@ end
 
 function backwardAdditionRule!(dist_result::MvGaussianDistribution, dist_in::MvGaussianDistribution, dist_out::MvGaussianDistribution)
     # Calculations for a gaussian message type; Korl (2005), table 4.1
-    (isProper(dist_in) && isProper(dist_out)) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # (isProper(dist_in) && isProper(dist_out)) || error("Improper input distributions are not supported")
 
     if isValid(dist_in.m) && isValid(dist_in.V) && isValid(dist_out.m) && isValid(dist_out.V)
         dist_result.m = backwardAdditionMRule(dist_in.m, dist_out.m)

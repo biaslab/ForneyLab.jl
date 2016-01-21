@@ -193,7 +193,8 @@ function sumProduct!{T<:MvGaussianDistribution}(node::GainNode,
                                                 msg_in::Any,
                                                 msg_out::Message{T})
 
-    isProper(msg_out.payload) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # isProper(msg_out.payload) || error("Improper input distributions are not supported")
     return gainBackwardRule!(outbound_dist, msg_out.payload, node.gain, isdefined(node, :gain_inv) ? node.gain_inv : nothing)
 end
 
@@ -203,7 +204,8 @@ function sumProduct!{T<:MvGaussianDistribution}(node::GainNode,
                                                 msg_in::Message{T},
                                                 msg_out::Any)
 
-    isProper(msg_in.payload) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # isProper(msg_in.payload) || error("Improper input distributions are not supported")
     return gainForwardRule!(outbound_dist, msg_in.payload, node.gain, isdefined(node, :gain_inv) ? node.gain_inv : nothing)
 end
 
@@ -214,7 +216,8 @@ function sumProduct!{T<:MvGaussianDistribution}(node::GainNode,
                                                 msg_out::Message{T},
                                                 msg_gain::Message{DeltaDistribution{Matrix{Float64}}})
 
-    isProper(msg_out.payload) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # isProper(msg_out.payload) || error("Improper input distributions are not supported")
     return gainBackwardRule!(outbound_dist, msg_out.payload, msg_gain.payload.m)
 end
 
@@ -225,7 +228,8 @@ function sumProduct!{T<:MvGaussianDistribution}(node::GainNode,
                                                 msg_out::Any,
                                                 msg_gain::Message{DeltaDistribution{Matrix{Float64}}})
 
-    isProper(msg_in.payload) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # isProper(msg_in.payload) || error("Improper input distributions are not supported")
     return gainForwardRule!(outbound_dist, msg_in.payload, msg_gain.payload.m)
 end
 

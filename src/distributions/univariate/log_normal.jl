@@ -5,7 +5,8 @@
 #   Encodes a log-normal PDF.
 #   Pamameters: scalars m (location) and s=σ^2 (σ scale).
 ############################################
-export LogNormalDistribution, approximateWithGamma, approximateWithLogNormal
+
+export LogNormalDistribution
 
 type LogNormalDistribution <: UnivariateProbabilityDistribution
     m::Float64 # location

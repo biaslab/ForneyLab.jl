@@ -366,7 +366,8 @@ function vmp!(  node::GaussianNode{Val{:moment}},
     #        |Q~N
     #        v
 
-    (isProper(marg_variance) && isProper(marg_out)) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # (isProper(marg_variance) && isProper(marg_out)) || error("Improper input distributions are not supported")
     ensureParameters!(marg_out, (:m,))
 
     outbound_dist.m = marg_out.m
@@ -390,7 +391,8 @@ function vmp!(  node::GaussianNode{Val{:precision}},
     #    Q~N |
     #        v
 
-    (isProper(marg_prec) && isProper(marg_y)) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # (isProper(marg_prec) && isProper(marg_y)) || error("Improper input distributions are not supported")
     ensureParameters!(marg_y, (:m,))
 
     outbound_dist.m = marg_y.m
@@ -575,7 +577,8 @@ function vmp!(  node::GaussianNode{Val{:precision}},
     #      N | |
     #        v v
 
-    (isProper(marg_mean) && isProper(marg_prec)) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # (isProper(marg_mean) && isProper(marg_prec)) || error("Improper input distributions are not supported")
     ensureParameters!(marg_mean, (:m,))
 
     outbound_dist.m = marg_mean.m
@@ -643,28 +646,30 @@ end
 # Naive variational update functions with fixed interfaces
 ##########################################################
 
-function vmp!(  node::GaussianNode{Val{:moment}},
-                outbound_interface_index::Type{Val{1}},
-                outbound_dist::GaussianDistribution,
-                marg_mean::Any,
-                marg_out::GaussianDistribution)
+# TODO: fix, same calling signature as function below
+#
+# function vmp!(  node::GaussianNode{Val{:moment}},
+#                 outbound_interface_index::Type{Val{1}},
+#                 outbound_dist::GaussianDistribution,
+#                 marg_mean::Any,
+#                 marg_out::GaussianDistribution)
 
-    # Fixed variance
-    #
-    #   <--     Q~N
-    #  ---->[N]---->
-    #    N
+#     # Fixed variance
+#     #
+#     #   <--     Q~N
+#     #  ---->[N]---->
+#     #    N
 
-    isProper(marg_out) || error("Improper input distributions are not supported")
-    ensureParameters!(marg_out, (:m,))
+#     isProper(marg_out) || error("Improper input distributions are not supported")
+#     ensureParameters!(marg_out, (:m,))
 
-    outbound_dist.m = marg_out.m
-    outbound_dist.V = node.V[1,1]
-    outbound_dist.xi = NaN
-    outbound_dist.W = NaN
+#     outbound_dist.m = marg_out.m
+#     outbound_dist.V = node.V[1,1]
+#     outbound_dist.xi = NaN
+#     outbound_dist.W = NaN
 
-    return outbound_dist
-end
+#     return outbound_dist
+# end
 
 function vmp!(  node::GaussianNode{Val{:moment}},
                 outbound_interface_index::Type{Val{1}},
@@ -678,7 +683,8 @@ function vmp!(  node::GaussianNode{Val{:moment}},
     #  ---->[N]---->
     #  <--
 
-    isProper(marg_out) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # isProper(marg_out) || error("Improper input distributions are not supported")
     ensureParameters!(marg_out, (:m, :V))
 
     outbound_dist.a = -0.5
@@ -699,7 +705,8 @@ function vmp!(  node::GaussianNode{Val{:precision}},
     #  ---->[N]---->
     #  <--
 
-    isProper(marg_out) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # isProper(marg_out) || error("Improper input distributions are not supported")
     ensureParameters!(marg_out, (:m, :V))
 
     outbound_dist.a = 1.5
@@ -742,7 +749,8 @@ function vmp!(  node::GaussianNode{Val{:moment}},
     #  ---->[N]---->
     #            N
     
-    isProper(marg_mean) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # isProper(marg_mean) || error("Improper input distributions are not supported")
     ensureParameters!(marg_mean, (:m,))
 
     outbound_dist.m = marg_mean.m
@@ -765,7 +773,8 @@ function vmp!(  node::GaussianNode{Val{:moment}},
     #  ---->[N]---->
     #            -->
 
-    isProper(marg_var) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # isProper(marg_var) || error("Improper input distributions are not supported")
 
     outbound_dist.m = node.m[1]
     outbound_dist.V = marg_var.b/(marg_var.a - 1.0)
@@ -787,7 +796,8 @@ function vmp!(  node::GaussianNode{Val{:precision}},
     #  ---->[N]---->
     #            -->
 
-    isProper(marg_prec) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # isProper(marg_prec) || error("Improper input distributions are not supported")
 
     outbound_dist.m = node.m[1]
     outbound_dist.V = NaN
@@ -839,7 +849,8 @@ function vmp!(  node::GaussianNode{Val{:precision}},
     #        | Q~N
     #        v
 
-    (isProper(msg_prec.payload) && isProper(marg_out)) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # (isProper(msg_prec.payload) && isProper(marg_out)) || error("Improper input distributions are not supported")
     ensureParameters!(marg_out, (:m, :W))
 
     outbound_dist.m = marg_out.m
@@ -863,7 +874,8 @@ function vmp!(  node::GaussianNode{Val{:precision}},
     #        | Q~N
     #        v
 
-    (isProper(msg_mean.payload) && isProper(marg_out)) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # (isProper(msg_mean.payload) && isProper(marg_out)) || error("Improper input distributions are not supported")
     ensureParameters!(marg_out, (:m, :W))
     ensureParameters!(msg_mean.payload, (:m,))
 
@@ -887,7 +899,8 @@ function vmp!(  node::GaussianNode{Val{:precision}},
     #      | | N
     #      v v
 
-    isProper(marg) || error("Improper input distributions are not supported")
+    # TODO: unrepress
+    # isProper(marg) || error("Improper input distributions are not supported")
 
     outbound_dist.m = marg.m
     outbound_dist.W = marg.a / marg.b

@@ -112,7 +112,7 @@ function Base.mean(dist::MvGaussianDistribution)
     end
 end
 
-Base.mean(::Type{MvDeltaDistribution{Float64}}, d::MvGaussianDistribution) = MvDeltaDistribution(mean(d)) # Definition for post-processing
+Base.mean{dims}(::Type{MvDeltaDistribution{Float64, dims}}, d::MvGaussianDistribution{dims}) = MvDeltaDistribution(mean(d)) # Definition for post-processing
 
 function Base.cov(dist::MvGaussianDistribution)
     if isProper(dist)
