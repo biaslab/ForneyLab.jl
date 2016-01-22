@@ -110,7 +110,7 @@ end
 function sumProduct!{dims<:Int64}(  node::ExponentialNode,
                                     outbound_interface_index::Type{Val{2}},
                                     outbound_dist::MvLogNormalDistribution{dims},
-                                    msg_in::Message{MvGaussianDsitribution{dims}},
+                                    msg_in::Message{MvGaussianDistribution{dims}},
                                     msg_out::Any)
 
     # TODO: unrepress

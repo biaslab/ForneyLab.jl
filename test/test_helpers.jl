@@ -95,4 +95,8 @@ facts("Helper function unit tests") do
         @fact format(NormalGammaDistribution()) --> "Ng(m=0.00, β=1.00, a=1.00, b=1.00)"
     end
 
+    context("expand() should expand a dictionary indexed by arrays into separate entries") do
+        d = Dict([1 2; 3 4] => 'a', [5 6] => 'b', [7] => 'c', 8 => 'd')
+        @fact ForneyLab.expand(d) --> Dict(1 => 'a', 2 => 'a', 3 => 'a', 4 => 'a', 5 => 'b', 6 => 'b', 7 => 'c', 8 => 'd')
+    end
 end

@@ -14,7 +14,7 @@ facts("ForneyLab.generateVariationalBayesSchedule() tests") do
         y_subgraph = f.edge_to_subgraph[edge(:q_y1)]
         m_gam_subgraph = f.edge_to_subgraph[edge(:q_m1)]
         @fact y_subgraph.internal_schedule --> [ForneyLab.ScheduleEntry(edge(:q_y1).head, sumProduct!), ForneyLab.ScheduleEntry(edge(:q_y1).tail, vmp!)] # Include outgoing interface
-        @fact m_gam_subgraph.internal_schedule --> ForneyLab.convert(Schedule, [n(:m0).i[:out], n(:mN).i[:out], edge(:q_m1).tail, n(:gam0).i[:out], n(:gamN).i[:out], ForneyLab.e(:q_gam1).tail]) # Exclude outgoing interfaces
+        @fact m_gam_subgraph.internal_schedule --> ForneyLab.convert(Schedule, [n(:m0).i[:out], n(:mN).i[:out], edge(:q_m1).tail, n(:gam0).i[:out], n(:gamN).i[:out], eg(:q_gam1).tail]) # Exclude outgoing interfaces
     end
     context("Should generate an internal and external schedule when called on a subgraph") do
         initializeFactoringGraphWithoutLoop()

@@ -4,16 +4,20 @@ facts("Call step() for VMP algorithm") do
     GaussianNode(form=:precision,id=:g_node)
     TerminalNode(id=:t_out)
     TerminalNode(GaussianDistribution(), id=:t_mean)
-    TerminalNode(GammaDistribution(), id=:t_var)
-    Edge(n(:g_node).i[:out], n(:t_out), GaussianDistribution)
-    Edge(n(:t_mean), n(:g_node).i[:mean], GaussianDistribution)
-    Edge(n(:t_var), n(:g_node).i[:precision], GammaDistribution)
+    TerminalNode(GammaDistribution(), id=:t_prec)
+    Edge(n(:g_node).i[:out], n(:t_out), id=:y)
+    Edge(n(:t_mean), n(:g_node).i[:mean], id=:m)
+    Edge(n(:t_prec), n(:g_node).i[:precision], id=:gam)
 
     attachReadBuffer(n(:t_out), data)
     mean_out = attachWriteBuffer(n(:g_node).i[:mean].edge)
     prec_out = attachWriteBuffer(n(:g_node).i[:precision].edge)
 
-    algo = VariationalBayes(n_iterations=10)
+    algo = VariationalBayes(Dict(
+        eg(:y) => GaussianDistribution,
+        eg(:m) => GaussianDistribution,
+        eg(:gam) => GammaDistribution),
+        n_iterations=10)
     prepare!(algo)
     step(algo)
 
@@ -43,7 +47,11 @@ facts("Naive vmp implementation integration tests") do
         gam_buffer = attachWriteBuffer(n(:gam_eq*n_sections).i[2])
 
         # Apply mean field factorization
-        algo = VariationalBayes(n_iterations=50)
+        algo = VariationalBayes(Dict(
+            eg(:q_y*(1:n_sections)) => GaussianDistribution,
+            eg(:q_m*(1:n_sections)) => GaussianDistribution,
+            eg(:q_gam*(1:n_sections)) => GammaDistribution),
+            n_iterations=50)
 
         # Perform vmp updates
         run(algo)
@@ -72,7 +80,11 @@ facts("Naive vmp implementation integration tests") do
         gam_buffer = attachWriteBuffer(n(:gam_eq*n_sections).i[2])
 
         # Apply mean field factorization
-        algo = VariationalBayes(n_iterations=50)
+        algo = VariationalBayes(Dict(
+            eg(:q_y*(1:n_sections)) => MvGaussianDistribution{2},
+            eg(:q_m*(1:n_sections)) => MvGaussianDistribution{2},
+            eg(:q_gam*(1:n_sections)) => WishartDistribution{2}),
+            n_iterations=50)
 
         # Perform vmp updates
         run(algo)
@@ -103,7 +115,11 @@ facts("Naive vmp implementation integration tests") do
         gam_buffer = attachWriteBuffer(n(:gam_eq1).i[2])
 
         # Apply mean field factorization
-        algo = VariationalBayes(n_iterations=50)
+        algo = VariationalBayes(Dict(
+            eg(:q_y1) => GaussianDistribution,
+            eg(:q_m1) => GaussianDistribution,
+            eg(:q_gam1) => GammaDistribution),
+            n_iterations=50)
 
         # Perform vmp updates
         run(algo)
@@ -134,7 +150,10 @@ facts("Structured vmp implementation integration tests") do
         gam_buffer = attachWriteBuffer(n(:gam_eq1).i[2])
 
         # Structured factorization
-        algo = VariationalBayes(Set{Edge}([ForneyLab.e(:q_y1)]), n_iterations=10)
+        algo = VariationalBayes(Dict(
+            [eg(:q_m1), eg(:q_gam1)] => NormalGammaDistribution,
+            eg(:q_y1) => GaussianDistribution),
+            n_iterations=10)
 
         run(algo)
 

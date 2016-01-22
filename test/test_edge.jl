@@ -66,7 +66,13 @@ facts("Edge integration tests") do
         FactorGraph()
         edge1 = Edge(TerminalNode().i[:out], TerminalNode().i[:out])
         edge2 = Edge(TerminalNode().i[:out], TerminalNode().i[:out])
+        edge3 = Edge(TerminalNode().i[:out], TerminalNode().i[:out])
+        edge4 = Edge(TerminalNode().i[:out], TerminalNode().i[:out])
+
         @fact (edge1 < edge2) --> true
+        @fact ([edge1, edge3] < [edge2, edge4]) --> true
+        @fact (edge1 < [edge2, edge4]) --> true
+        @fact ([edge1, edge3] < edge2) --> true
     end
 
     context("Edges have ids") do

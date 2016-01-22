@@ -15,37 +15,28 @@ end
 
 show(io::IO, f::QFactorization) = println(io, "QFactorization with $(length(f.factors)) factors")
 
-function initializeVagueQDistributions(f::QFactorization) # Initialize
+function initializeVagueQDistributions(f::QFactorization, recognition_distribution_types::Dict)
     # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
 
     q_distributions = Dict{Tuple{Node, Subgraph}, QDistribution}()
 
     for subgraph in f.factors
-        length(subgraph.external_schedule) > 0 || warn("External schedule for subgraph $(subgraph) undefined. Run generateSchedule(...) to generate internal and external schedules.")
+        (length(subgraph.external_schedule) > 0) || warn("External schedule for subgraph $(subgraph) undefined. Run generateSchedule(...) to generate internal and external schedules.")
         for node in subgraph.external_schedule
-            internal_interfaces = Array(Interface, 0)
+            # Collect all internal edges connected to node that belong to subgraph
+            internal_edges = Edge[]
             for interface in node.interfaces
-                if f.edge_to_subgraph[interface.edge] == subgraph
-                    push!(internal_interfaces, interface)
+                if f.edge_to_subgraph[interface.edge] == subgraph # Edge is internal?
+                    push!(internal_edges, interface.edge)
                 end
             end
-            # From the distribution types of the marginals on the internal edges we can deduce the unknown marginal types
-            if length(internal_interfaces) == 1
-                # Univariate
-                if internal_interfaces[1].edge.distribution_type != Any
-                    marginal_type = internal_interfaces[1].edge.distribution_type
-                else
-                    error("Unspecified distribution type on edge:\n$(internal_interfaces[1].edge)")
-                end
-            elseif length(internal_interfaces) == 0
-                error("The list of internal edges at node $(node) is empty, check your graph definition.")
-            else
-                # Multivariate
-                internal_edges_distribution_types = [interface.edge.distribution_type for interface in internal_interfaces]
-                marginal_type = getMarginalType(internal_edges_distribution_types...)
-            end
+
+            expanded_recognition_distribution_types = expand(recognition_distribution_types)
+            # Look up the recignition distribution type for each cluster
+            recognition_type = expanded_recognition_distribution_types[internal_edges[1]]
+
             # Build q_distributions dictionary
-            q_distributions[(node, subgraph)] = QDistribution(vague(marginal_type), intersect(edges(node), subgraph.internal_edges))
+            q_distributions[(node, subgraph)] = QDistribution(vague(recognition_type), intersect(edges(node), subgraph.internal_edges))
         end
     end
 
@@ -118,24 +109,35 @@ function factorize!(edge_set::Set{Edge}, f::QFactorization=QFactorization())
     end
     return f
 end
-factorize!(internal_edge::Edge, f::QFactorization=QFactorization()) = factorize!(Set{Edge}([internal_edge]), f)
-factorize!(internal_edges::Vector{Edge}, f::QFactorization=QFactorization()) = factorize!(Set{Edge}(internal_edges), f)
+factorize!(f::QFactorization, internal_edge::Edge) = factorize!(Set{Edge}([internal_edge]), f)
+factorize!(f::QFactorization, internal_edges::Vector{Edge}) = factorize!(Set{Edge}(internal_edges), f)
 
-function factorize(graph::FactorGraph=currentGraph())
-    # Generates a mean field factorization based on graph
+function factorize(recognition_distribution_types::Dict, graph=currentGraph())
+    # Encodes factorization of the recognition distribution
 
-    f = QFactorization(graph) # Starting point
+    # Single edge example; assigns a Gaussian recognition distribution to edge
+    # e1 => GaussianDistribution
 
-    edges_to_factor = sort!([e for e in f.factors[1].internal_edges]) # Cast to array and sort
-    while !isempty(edges_to_factor) # As long as there are edges to factor
-        factorize!(edges_to_factor[end], f)
+    # Column vector of edges example; assigns a Gaussian recognition distribution to each row
+    # [e1; e2; e3] => GaussianDistribution
 
-        # Remove all edges in edge_cluster from edges_to_factor, they have just been added to the same factor
-        for e in f.factors[end].internal_edges
-            splice!(edges_to_factor, findfirst(edges_to_factor, e))
+    # Matrix of edges example; assign a MvGaussian distribution to each row
+    # [e1 e2 e3; <- cluster
+    #  e4 e5 e6;             => MvGaussianDistribution{3}
+    #  e7 e8 e9]
+
+    factorization = QFactorization(graph)
+    for key in sort(collect(keys(recognition_distribution_types))) # Iterate over recogition distribution types in a deterministic order
+        if typeof(key) <: Edge # Only one edge specified
+            factorize!(factorization, key)
+        else
+            for row in size(key, 1) # Each row in key encodes edges that belong to the same cluster
+                factorize!(factorization, vec(key[row, :]))
+            end
         end
     end
-    return f
+
+    return factorization
 end
 
 function extend(edge_set::Set{Edge})
