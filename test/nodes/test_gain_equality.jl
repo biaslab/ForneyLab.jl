@@ -15,7 +15,7 @@ facts("GainEqualityNode unit tests") do
         @fact typeof(n(:node).A) --> Array{Float64, 2}
     end
 
-    context("GainEqualityNode provide sumProduct! for GaussianDistribution (m, V)") do
+    context("GainEqualityNode provide sumProductRule! for GaussianDistribution (m, V)") do
         # Forward message
         A = [2.0].'
         validateOutboundMessage(GainEqualityNode(A),
@@ -33,7 +33,7 @@ facts("GainEqualityNode unit tests") do
                                 GaussianDistribution(V=0.2, m=0.6))
     end
 
-    context("GainEqualityNode provide sumProduct! for MvGaussianDistribution with (xi,W) parametrization") do
+    context("GainEqualityNode provide sumProductRule! for MvGaussianDistribution with (xi,W) parametrization") do
         # Forward message
         A = 2.0*eye(2)
         validateOutboundMessage(GainEqualityNode(A),
@@ -51,7 +51,7 @@ facts("GainEqualityNode unit tests") do
                                 MvGaussianDistribution(W=[5.0 2.5; 2.5 5.0], xi=[3.0, 6.0]))
     end
 
-    context("GainEqualityNode provide sumProduct! for MvGaussianDistribution with (m,W) parametrization") do
+    context("GainEqualityNode provide sumProductRule! for MvGaussianDistribution with (m,W) parametrization") do
         # Forward message
         A = 2.0*eye(2)
         validateOutboundMessage(GainEqualityNode(A),
@@ -69,7 +69,7 @@ facts("GainEqualityNode unit tests") do
                                 MvGaussianDistribution(W=[5.0 2.5; 2.5 5.0], m=[0.6, 1.2]))
     end
 
-    context("GainEqualityNode provide sumProduct! for MvGaussianDistribution with (m,V) parametrization") do
+    context("GainEqualityNode provide sumProductRule! for MvGaussianDistribution with (m,V) parametrization") do
         # Forward message
         A = 2.0*eye(2)
         validateOutboundMessage(GainEqualityNode(A),
@@ -87,7 +87,7 @@ facts("GainEqualityNode unit tests") do
                                 MvGaussianDistribution(V=[0.2 0.1; 0.1 0.2], m=[0.6, 1.2]))
     end
 
-    # context("GainEqualityNode should provide sumProduct! for non-square A") do
+    # context("GainEqualityNode should provide sumProductRule! for non-square A") do
     #     # Forward message
     #     A = [1.0 0.5; -0.5 2.0; 0.5 1.0]
     #     validateOutboundMessage(GainEqualityNode(A),

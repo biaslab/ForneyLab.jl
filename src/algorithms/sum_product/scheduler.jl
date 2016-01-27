@@ -1,7 +1,7 @@
 function generateSumProductSchedule(outbound_interface::Interface; args...)
     # Generate a sum-product Schedule that can be executed to calculate the outbound message on outbound_interface.
 
-    return convert(Schedule, generateScheduleByDFS!(outbound_interface; args...), sumProduct!)
+    return convert(Schedule, generateScheduleByDFS!(outbound_interface; args...), sumProductRule!)
 end
 
 function generateSumProductSchedule(partial_schedule::Schedule; args...)
@@ -15,10 +15,10 @@ function generateSumProductSchedule(partial_schedule::Schedule; args...)
         interface_list = generateScheduleByDFS!(outbound_interface, interface_list; args...)
     end
 
-    return convert(Schedule, interface_list, sumProduct!)
+    return convert(Schedule, interface_list, sumProductRule!)
 end
 
-generateSumProductSchedule(partial_list::Array{Interface, 1}; args...) = generateSumProductSchedule(convert(Schedule, partial_list, sumProduct!); args...)
+generateSumProductSchedule(partial_list::Array{Interface, 1}; args...) = generateSumProductSchedule(convert(Schedule, partial_list, sumProductRule!); args...)
 
 function generateSumProductSchedule(graph::FactorGraph=currentGraph(); args...)
     # Build a sumproduct schedule to calculate all messages towards wraps and writebuffers

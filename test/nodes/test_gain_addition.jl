@@ -119,7 +119,7 @@ facts("GainAdditionNode unit tests") do
                                 MvGaussianDistribution(m=[0.5, 1.0], V=[13.5 12.0; 12.0 13.5]))
     end
 
-    # context("GainAdditionNode should provide sumProduct! for non-square A") do
+    # context("GainAdditionNode should provide sumProductRule! for non-square A") do
     #     # Forward message
     #     A = [2.0 3.0; 3.0 2.0; 1.0 2.0]
     #     validateOutboundMessage(GainAdditionNode(A),

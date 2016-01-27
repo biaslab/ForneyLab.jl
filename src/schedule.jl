@@ -3,7 +3,7 @@ export ScheduleEntry, Schedule, setPostProcessing!
 type ScheduleEntry
     node::Node
     outbound_interface_id::Int64
-    rule::Function  # Refers to the general message calculation rule; for example sumProduct! or vmp!.
+    rule::Function  # Refers to the general message calculation rule; for example sumProductRule! or variationalRule!.
     inbound_types::Vector{DataType}
     intermediate_outbound_type::DataType # Outbound type after update rule
     outbound_type::DataType # Outbound type after (optional) post-processing
@@ -40,7 +40,7 @@ typealias Schedule Array{ScheduleEntry, 1}
 Base.deepcopy(src::Schedule) = ScheduleEntry[copy(entry) for entry in src]
 
 # Convert interfaces to schedule
-function convert(::Type{ScheduleEntry}, interface::Interface, rule::Function = sumProduct!)
+function convert(::Type{ScheduleEntry}, interface::Interface, rule::Function = sumProductRule!)
     node = interface.node
     interface_id = findfirst(node.interfaces, interface)
     return ScheduleEntry(node, interface_id, rule)

@@ -62,10 +62,10 @@ function ExpectationPropagation(
         total_schedule = total_schedule[length(sitelist):end] # Strip other sitelist prepend
     end
 
-    schedule = convert(Schedule, total_schedule, sumProduct!)
+    schedule = convert(Schedule, total_schedule, sumProductRule!)
     for entry in schedule
         if entry.node.interfaces[entry.outbound_interface_id] in sitelist
-            entry.rule = ep!
+            entry.rule = expectationRule!
         end
     end
     setPostProcessing!(schedule, post_processing_functions)
@@ -121,8 +121,8 @@ function collectInboundTypes!(  entry::ScheduleEntry,
     entry.inbound_types = []
 
     for (id, interface) in enumerate(entry.node.interfaces)
-        if (id == entry.outbound_interface_id) && (entry.rule == sumProduct!)
-            # Incoming msg on outbound interface is always Void for sumProduct! rule
+        if (id == entry.outbound_interface_id) && (entry.rule == sumProductRule!)
+            # Incoming msg on outbound interface is always Void for sumProductRule! rule
             push!(entry.inbound_types, Void)
         elseif haskey(recognition_distributions, interface.partner)
             # Incoming msg from a site, so the type is given by the recognition distribution
@@ -148,8 +148,8 @@ function prepare!(algo::ExpectationPropagation)
     return algo
 end
 
-function compile!(entry::ScheduleEntry, ::Type{Val{symbol(ep!)}}, ::InferenceAlgorithm)
-    # Generate entry.execute for schedule entry with ep! calculation rule
+function compile!(entry::ScheduleEntry, ::Type{Val{symbol(expectationRule!)}}, ::InferenceAlgorithm)
+    # Generate entry.execute for schedule entry with expectationRule! calculation rule
 
     inbound_messages = [interface.partner.message for interface in entry.node.interfaces]
 

@@ -44,7 +44,7 @@ isDeterministic(::ExponentialNode) = true
 # Standard update functions
 ############################################
 
-function sumProduct!(   node::ExponentialNode,
+function sumProductRule!(   node::ExponentialNode,
                         outbound_interface_index::Type{Val{2}},
                         outbound_dist::LogNormalDistribution,
                         msg_in::Message{GaussianDistribution},
@@ -59,7 +59,7 @@ function sumProduct!(   node::ExponentialNode,
     return outbound_dist
 end
 
-function sumProduct!(   node::ExponentialNode,
+function sumProductRule!(   node::ExponentialNode,
                         outbound_interface_index::Type{Val{1}},
                         outbound_dist::GaussianDistribution,
                         msg_in::Any,
@@ -80,7 +80,7 @@ end
 # DeltaDistribution update functions
 ############################################
 
-function sumProduct!(   node::ExponentialNode,
+function sumProductRule!(   node::ExponentialNode,
                         outbound_interface_index::Type{Val{2}},
                         outbound_dist::DeltaDistribution{Float64},
                         msg_in::Message{DeltaDistribution{Float64}},
@@ -90,7 +90,7 @@ function sumProduct!(   node::ExponentialNode,
     return outbound_dist
 end
 
-function sumProduct!(   node::ExponentialNode,
+function sumProductRule!(   node::ExponentialNode,
                         outbound_interface_index::Type{Val{1}},
                         outbound_dist::DeltaDistribution{Float64},
                         msg_in::Any,

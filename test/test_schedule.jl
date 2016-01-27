@@ -3,8 +3,8 @@ facts("Schedule and ScheduleEntry tests") do
         FactorGraph()
 
         # ScheduleEntry
-        entry1 = ScheduleEntry(MockNode(id=:mock1), 1, sumProduct!)
-        entry2 = ScheduleEntry(MockNode(id=:mock2), 1, sumProduct!)
+        entry1 = ScheduleEntry(MockNode(id=:mock1), 1, sumProductRule!)
+        entry2 = ScheduleEntry(MockNode(id=:mock2), 1, sumProductRule!)
         @fact is(entry1.node.interfaces[entry1.outbound_interface_id], n(:mock1).i[:out]) --> true
         @fact_throws deepcopy(entry1)
 
@@ -31,7 +31,7 @@ facts("Schedule and ScheduleEntry tests") do
     context("A compiled scheduleEntry can be executed") do
         node = TerminalNode(GaussianDistribution(m=2.0, V=4.0))
         node.i[:out].message = Message(GaussianDistribution()) # Preset message
-        entry = ScheduleEntry(node, 1, sumProduct!)
+        entry = ScheduleEntry(node, 1, sumProductRule!)
         ForneyLab.buildExecute!(entry, Any[nothing])
         outbound_dist = entry.execute()
         @fact is(node.i[:out].message.payload, outbound_dist) --> true
@@ -39,7 +39,7 @@ facts("Schedule and ScheduleEntry tests") do
 
         node = AdditionNode()
         node.i[:out].message = Message(GaussianDistribution()) # Preset message
-        entry = ScheduleEntry(node, 3, sumProduct!)
+        entry = ScheduleEntry(node, 3, sumProductRule!)
         ForneyLab.buildExecute!(entry, Any[Message(GaussianDistribution(m=1.0, V=1.0)), Message(GaussianDistribution(m=1.0, V=1.0)), nothing])
         outbound_dist = entry.execute()
         @fact is(node.i[:out].message.payload, outbound_dist) --> true
@@ -47,7 +47,7 @@ facts("Schedule and ScheduleEntry tests") do
 
         node = GaussianNode(form=:precision)
         node.i[:out].message = Message(GaussianDistribution()) # Preset message
-        entry = ScheduleEntry(node, 3, vmp!)
+        entry = ScheduleEntry(node, 3, variationalRule!)
         ForneyLab.buildExecute!(entry, Any[GaussianDistribution(m=1.0, V=1.0), GammaDistribution(a=2.0, b=4.0), nothing])
         outbound_dist = entry.execute()
         @fact is(node.i[:out].message.payload, outbound_dist) --> true
@@ -57,7 +57,7 @@ facts("Schedule and ScheduleEntry tests") do
     context("A compiled scheduleEntry with post-processing can be executed") do
         node = TerminalNode(GammaDistribution(a=2.0, b=4.0))
         node.i[:out].message = Message(DeltaDistribution()) # Preset message
-        entry = ScheduleEntry(node, 1, sumProduct!)
+        entry = ScheduleEntry(node, 1, sumProductRule!)
         entry.post_processing = mean
         entry.intermediate_outbound_type = GammaDistribution
         entry.outbound_type = DeltaDistribution{Float64}
@@ -68,7 +68,7 @@ facts("Schedule and ScheduleEntry tests") do
 
         node = AdditionNode()
         node.i[:out].message = Message(DeltaDistribution()) # Preset message
-        entry = ScheduleEntry(node, 3, sumProduct!)
+        entry = ScheduleEntry(node, 3, sumProductRule!)
         entry.post_processing = mean
         entry.intermediate_outbound_type = GaussianDistribution
         entry.outbound_type = DeltaDistribution{Float64}
@@ -79,7 +79,7 @@ facts("Schedule and ScheduleEntry tests") do
 
         node = GaussianNode(form=:precision)
         node.i[:out].message = Message(DeltaDistribution()) # Preset message
-        entry = ScheduleEntry(node, 3, vmp!)
+        entry = ScheduleEntry(node, 3, variationalRule!)
         entry.post_processing = mean
         entry.intermediate_outbound_type = GaussianDistribution
         entry.outbound_type = DeltaDistribution{Float64}

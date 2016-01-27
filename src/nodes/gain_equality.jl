@@ -54,7 +54,7 @@ isDeterministic(::GainEqualityNode) = true
 # GaussianDistribution methods
 ############################################
 
-function sumProduct!(   node::GainEqualityNode,
+function sumProductRule!(   node::GainEqualityNode,
                         outbound_interface_index::Type{Val{3}},
                         outbound_dist::GaussianDistribution,
                         msg_in1::Message{GaussianDistribution},
@@ -74,7 +74,7 @@ function sumProduct!(   node::GainEqualityNode,
     return outbound_dist
 end
 
-function sumProduct!(   node::GainEqualityNode,
+function sumProductRule!(   node::GainEqualityNode,
                         outbound_interface_index::Type{Val{2}},
                         outbound_dist::GaussianDistribution,
                         msg_in1::Message{GaussianDistribution},
@@ -85,7 +85,7 @@ function sumProduct!(   node::GainEqualityNode,
     return gainEqualityBackwardRule!(outbound_dist, msg_in1.payload, msg_out.payload, node.A)
 end
 
-function sumProduct!(node::GainEqualityNode,
+function sumProductRule!(node::GainEqualityNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
                             msg_in1::Void,
@@ -116,7 +116,7 @@ end
 # MvGaussianDistribution methods
 ############################################
 
-function sumProduct!{T<:MvGaussianDistribution}(node::GainEqualityNode,
+function sumProductRule!{T<:MvGaussianDistribution}(node::GainEqualityNode,
                                                 outbound_interface_index::Type{Val{3}},
                                                 outbound_dist::T,
                                                 msg_in1::Message{T},
@@ -129,7 +129,7 @@ function sumProduct!{T<:MvGaussianDistribution}(node::GainEqualityNode,
     return gainForwardRule!(outbound_dist, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
 end
 
-function sumProduct!{T<:MvGaussianDistribution}(node::GainEqualityNode,
+function sumProductRule!{T<:MvGaussianDistribution}(node::GainEqualityNode,
                                                 outbound_interface_index::Type{Val{2}},
                                                 outbound_dist::T,
                                                 msg_in1::Message{T},
@@ -140,7 +140,7 @@ function sumProduct!{T<:MvGaussianDistribution}(node::GainEqualityNode,
     return gainEqualityBackwardRule!(outbound_dist, msg_in1.payload, msg_out.payload, node.A)
 end
 
-function sumProduct!{T<:MvGaussianDistribution}(node::GainEqualityNode,
+function sumProductRule!{T<:MvGaussianDistribution}(node::GainEqualityNode,
                                                 outbound_interface_index::Type{Val{1}},
                                                 outbound_dist::T,
                                                 msg_in1::Void,

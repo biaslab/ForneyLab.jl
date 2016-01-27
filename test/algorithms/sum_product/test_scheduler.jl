@@ -2,7 +2,7 @@ facts("Schedule related tests") do
     context("ForneyLab.convert(Schedule, ...)") do
         FactorGraph()
         GaussianNode(id=:node)
-        @fact ForneyLab.convert(Schedule, [n(:node).i[:out], n(:node).i[:mean]]) --> [ScheduleEntry(n(:node).i[:out], sumProduct!), ScheduleEntry(n(:node).i[:mean], sumProduct!)]
+        @fact ForneyLab.convert(Schedule, [n(:node).i[:out], n(:node).i[:mean]]) --> [ScheduleEntry(n(:node).i[:out], sumProductRule!), ScheduleEntry(n(:node).i[:mean], sumProductRule!)]
     end
 end
 
