@@ -67,7 +67,7 @@ function show(io::IO, edge::Edge)
     end
 end
 
-function show(io::IO, edges::Union{Array{Edge}, Set{Edge}})
+function show(io::IO, edges::Union{Vector{Edge}, Set{Edge}})
     println(io, "Edges:")
     for edge in edges
         show(io, edge)
