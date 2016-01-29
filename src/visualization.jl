@@ -5,10 +5,12 @@ export draw, drawPdf
 # draw methods
 ####################################################
 
-function graphviz(dot_graph::AbstractString; external_viewer::Bool=false)
+function graphviz(dot_graph::AbstractString; external_viewer::Symbol=:None)
     # Show a DOT graph
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    if external_viewer
+    if external_viewer == :iTerm
+        viewDotIniTerm(dot_graph)
+    elseif external_viewer == :Default
         viewDotExternal(dot_graph)
     else
         try
@@ -21,7 +23,7 @@ function graphviz(dot_graph::AbstractString; external_viewer::Bool=false)
     end
 end
 
-draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph), edges(factor_graph), wraps=wraps(factor_graph); args...))
+draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph), edges(factor_graph), wraps=wraps(factor_graph)); args...)
 draw(; args...) = draw(currentGraph(); args...)
 draw(composite_node::CompositeNode; args...) = draw(composite_node.internal_graph; args...)
 
@@ -142,6 +144,15 @@ function dot2svg(dot_graph::AbstractString)
     return readall(stdout)
 end
 
+function dot2png(dot_graph::AbstractString)
+    # Generate PNG image from DOT graph
+    validateGraphVizInstalled()
+    stdout, stdin, proc = readandwrite(`dot -Tpng`)
+    write(stdin, dot_graph)
+    close(stdin)
+    return readall(stdout)
+end
+
 function validateGraphVizInstalled()
     # Check if GraphViz is installed
     try
@@ -151,7 +162,7 @@ function validateGraphVizInstalled()
     end
 end
 
-viewDotExternal(dot_graph::AbstractString) = (@windows? viewDotExternalImage(dot_graph::AbstractString) : viewDotExternalInteractive(dot_graph::AbstractString))
+viewDotExternal(dot_graph::AbstractString) = (@unix? viewDotExternalInteractive(dot_graph::AbstractString) : viewDotExternalImage(dot_graph::AbstractString))
 
 function viewDotExternalInteractive(dot_graph::AbstractString)
     # View a DOT graph in interactive viewer
@@ -169,4 +180,12 @@ function viewDotExternalImage(dot_graph::AbstractString)
         write(f, svg)
     end
     viewFile(filename)
+end
+
+# Based on imgcat script provided by iTerm developers (working in iTerm v.2.9.x)
+function viewDotIniTerm(dot_graph::AbstractString)
+    png = dot2png(dot_graph)
+    base64png = base64encode(png)
+    sequence = ("$(Char(0x1b))]1337;File=size=$(length(png));inline=1:$base64png\a\n")
+    print(sequence)
 end
