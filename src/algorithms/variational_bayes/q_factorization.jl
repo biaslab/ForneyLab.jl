@@ -131,7 +131,7 @@ function factorize(recognition_distribution_types::Dict, graph=currentGraph())
         if typeof(key) <: Edge # Only one edge specified
             factorize!(factorization, key)
         else
-            for row in size(key, 1) # Each row in key encodes edges that belong to the same cluster
+            for row in 1:size(key, 1) # Each row in key encodes edges that belong to the same cluster
                 factorize!(factorization, vec(key[row, :]))
             end
         end

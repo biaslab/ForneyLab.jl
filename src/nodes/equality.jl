@@ -165,8 +165,7 @@ sumProduct!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound
 function equalityRule!(dist_result::BernoulliDistribution, dist_1::BernoulliDistribution, dist_2::BernoulliDistribution)
     # The result of the Bernoulli equality rule applied to dist_1 and dist_2 is written to dist_result
     norm = dist_1.p * dist_2.p + (1 - dist_1.p) * (1 - dist_2.p)
-    # TODO: unrepress
-    # (norm > 0) || error("equalityRule! for BernoulliDistribution is not wel l-defined (invalid normalization constant)")
+    (norm > 0) || error("equalityRule! for BernoulliDistribution is not wel l-defined (invalid normalization constant)")
     dist_result.p = (dist_1.p * dist_2.p) / norm
     return dist_result
 end

@@ -162,9 +162,9 @@ function initializeFactoringGraphWithoutLoop()
     TerminalNode(id=:t2)
     TerminalNode(id=:t3)
     Edge(n(:t1).i[:out], n(:a1).i[:in])
-    Edge(n(:a1).i[:out], n(:g1).i[:mean])
-    Edge(n(:t2).i[:out], n(:g1).i[:variance], InverseGammaDistribution)
-    Edge(n(:g1).i[:out], n(:t3).i[:out])
+    Edge(n(:a1).i[:out], n(:g1).i[:mean], id=:q_mean)
+    Edge(n(:t2).i[:out], n(:g1).i[:variance], id=:q_var)
+    Edge(n(:g1).i[:out], n(:t3).i[:out], id=:q_out)
 
     return g
 end

@@ -80,7 +80,7 @@ facts("Edge integration tests") do
         TerminalNode(id=:a)
         TerminalNode(id=:b)
         my_edge = Edge(n(:a), n(:b), id=:my_edge)
-        @fact ForneyLab.e(:my_edge) --> my_edge
+        @fact eg(:my_edge) --> my_edge
 
         TerminalNode(id=:c)
         TerminalNode(id=:d)
@@ -90,7 +90,7 @@ facts("Edge integration tests") do
         TerminalNode(id=:e)
         TerminalNode(id=:f)
         my_edge3 = Edge(n(:e), n(:f), id=:my_edge*3)
-        @fact ForneyLab.e(:my_edge*3) --> my_edge3
+        @fact eg(:my_edge*3) --> my_edge3
     end
 
     context("Edges can be sorted") do
@@ -110,7 +110,7 @@ facts("Edge integration tests") do
         g = initializePairOfMockNodes()
         edge = Edge(n(:node1).i[:out], n(:node2).i[:out])
         attachWriteBuffer(n(:node1).i[:out])
-        attachWriteBuffer(ForneyLab.e(:node1_node2))
+        attachWriteBuffer(eg(:node1_node2))
 
         delete!(g, edge)
         @fact length(g.edges) --> 0

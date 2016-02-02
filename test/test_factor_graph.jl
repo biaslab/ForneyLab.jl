@@ -53,7 +53,6 @@ facts("Functions for collecting nodes and edges") do
     end
 
     context("edge(id::Symbol) should return edge with matching id") do
-        @fact is(ForneyLab.e, edge) --> true
         graph_1 = FactorGraph()
         graph_2 = FactorGraph()
         my_edge = Edge(MockNode().i[:out], MockNode().i[:out])
@@ -67,7 +66,6 @@ facts("Functions for collecting nodes and edges") do
     end
 
     context("node(id::Symbol) should return node with matching id") do
-        @fact is(n, node) --> true
         graph_1 = FactorGraph()
         graph_2 = FactorGraph()
         mocknode = MockNode(id=:my_mocknode)

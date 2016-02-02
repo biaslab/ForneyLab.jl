@@ -151,7 +151,7 @@ facts("Structured vmp implementation integration tests") do
 
         # Structured factorization
         algo = VariationalBayes(Dict(
-            [eg(:q_m1), eg(:q_gam1)] => NormalGammaDistribution,
+            [eg(:q_m1), eg(:q_gam1)].' => NormalGammaDistribution,
             eg(:q_y1) => GaussianDistribution),
             n_iterations=10)
 

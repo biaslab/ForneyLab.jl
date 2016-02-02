@@ -74,7 +74,7 @@ facts("Connections between nodes integration tests") do
 
     context("delete! should remove a node and coupled read and write buffers") do
         g = initializeChainOfNodes()
-        buff_e = attachWriteBuffer(ForneyLab.e(:node1_node2))
+        buff_e = attachWriteBuffer(eg(:node1_node2))
         buff_i = attachWriteBuffer(n(:node2).i[:out])
         rd_buff = attachReadBuffer(n(:node1), zeros(3))
 

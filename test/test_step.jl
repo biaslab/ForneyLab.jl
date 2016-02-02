@@ -53,16 +53,16 @@ facts("Read/write buffer integration tests") do
     context("attachWriteBuffer should register a write buffer for an Edge (marginal)") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        attachWriteBuffer(ForneyLab.e(:e), write_buffer)
-        @fact g.write_buffers[ForneyLab.e(:e)] --> write_buffer
+        attachWriteBuffer(eg(:e), write_buffer)
+        @fact g.write_buffers[eg(:e)] --> write_buffer
     end
 
     # detachWriteBuffer
     context("detachWriteBuffer should deregister a write buffer on an edge") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        attachWriteBuffer(ForneyLab.e(:e), write_buffer)
-        detachWriteBuffer(ForneyLab.e(:e))
+        attachWriteBuffer(eg(:e), write_buffer)
+        detachWriteBuffer(eg(:e))
         @fact length(g.write_buffers) --> 0
     end
     context("detachWriteBuffer should deregister a write buffer on an interface") do
@@ -76,7 +76,7 @@ facts("Read/write buffer integration tests") do
     context("detachBuffers should deregister all read/write buffers") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        attachWriteBuffer(ForneyLab.e(:e), write_buffer)
+        attachWriteBuffer(eg(:e), write_buffer)
         detachBuffers(g)
         @fact length(g.read_buffers) --> 0
         @fact length(g.write_buffers) --> 0

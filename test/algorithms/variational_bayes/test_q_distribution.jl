@@ -3,7 +3,12 @@
 facts("Calculations for q distributions") do
     context("Q distribution calculation for naively factorized GaussianNode") do
         initializeGaussianNode()
-        algo = VariationalBayes()
+
+        algo = VariationalBayes(Dict(
+            eg(:edge1) => GaussianDistribution,
+            eg(:edge2) => GammaDistribution,
+            eg(:edge3) => GaussianDistribution))
+        
         prepare!(algo)
         f = algo.factorization
         qs = algo.q_distributions
@@ -22,7 +27,11 @@ facts("Calculations for q distributions") do
 
     context("Q distribution calculation for the structurally factorized GaussianNode") do
         initializeGaussianNode()
-        algo = VariationalBayes(Set{Edge}(Edge[ForneyLab.e(:edge3)]))
+
+        algo = VariationalBayes(Dict(
+            eg(:edge*(1:2)).' => NormalGammaDistribution,
+            eg(:edge3) => GaussianDistribution))
+        
         prepare!(algo)
         f = algo.factorization
         qs = algo.q_distributions
