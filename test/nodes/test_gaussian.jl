@@ -62,13 +62,13 @@ facts("GaussianNode unit tests") do
                                     ForneyLab.vmp!)
         end
 
-        context("GaussianNode with fixed variance should propagate a backward message to the variance") do
-            validateOutboundMessage(GaussianNode(V=2.0),
-                                    1,
-                                    [nothing, GaussianDistribution(m=3.0, V=1.0)],
-                                    GaussianDistribution(m=3.0, V=2.0),
-                                    ForneyLab.vmp!)
-        end
+        # context("GaussianNode with fixed variance should propagate a backward message to the variance") do
+        #     validateOutboundMessage(GaussianNode(V=2.0),
+        #                             1,
+        #                             [nothing, GaussianDistribution(m=3.0, V=1.0)],
+        #                             GaussianDistribution(m=3.0, V=2.0),
+        #                             ForneyLab.vmp!)
+        # end
     end
 
     context("Point estimates of y and m, so no approximation is required.") do

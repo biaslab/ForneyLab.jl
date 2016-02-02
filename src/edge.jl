@@ -86,5 +86,8 @@ function ensureMarginal!{T<:ProbabilityDistribution}(edge::Edge, distribution_ty
     return edge.marginal
 end
 
-# Compare edges by alphabetically comparing the handles in the order (head, tail)
+# Compare edges by alphabetically comparing the ids in the order (head, tail)
 Base.isless(e1::Edge, e2::Edge) = isless("$(e1.id)", "$(e2.id)")
+Base.isless(e_arr1::Array{Edge}, e_arr2::Array{Edge}) = isless("$(e_arr1[1,1].id)", "$(e_arr2[1,1].id)")
+Base.isless(e1::Edge, e_arr2::Array{Edge}) = isless("$(e1.id)", "$(e_arr2[1,1].id)")
+Base.isless(e_arr1::Array{Edge}, e2::Edge) = isless("$(e_arr1[1,1].id)", "$(e2.id)")

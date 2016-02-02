@@ -107,11 +107,11 @@ end
 # MvGaussian update functions
 ############################################
 
-function sumProduct!{dims<:Int64}(  node::ExponentialNode,
-                                    outbound_interface_index::Type{Val{2}},
-                                    outbound_dist::MvLogNormalDistribution{dims},
-                                    msg_in::Message{MvGaussianDsitribution{dims}},
-                                    msg_out::Any)
+function sumProduct!{dims}( node::ExponentialNode,
+                            outbound_interface_index::Type{Val{2}},
+                            outbound_dist::MvLogNormalDistribution{dims},
+                            msg_in::Message{MvGaussianDistribution{dims}},
+                            msg_out::Any)
 
     # TODO: unrepress
     # isProper(msg_in.payload) || error("Improper input distributions are not supported")
@@ -123,19 +123,19 @@ function sumProduct!{dims<:Int64}(  node::ExponentialNode,
     return outbound_dist
 end
 
-function sumProduct!{dims<:Int64}(  node::ExponentialNode,
-                                    outbound_interface_index::Type{Val{1}},
-                                    outbound_dist::MvGaussianDistribution{dims},
-                                    msg_in::Any,
-                                    msg_out::Message{MvLogNormalDistribution{dims}})
+function sumProduct!{dims}( node::ExponentialNode,
+                            outbound_interface_index::Type{Val{1}},
+                            outbound_dist::MvGaussianDistribution{dims},
+                            msg_in::Any,
+                            msg_out::Message{MvLogNormalDistribution{dims}})
 
     # TODO: unrepress
     # isProper(msg_out.payload) || error("Improper input distributions are not supported")
 
     outbound_dist.m = deepcopy(msg_out.payload.m)
     outbound_dist.V = deepcopy(msg_out.payload.S)
-    outbound_dist.W = NaN
-    outbound_dist.xi = NaN
+    invalidate!(outbound_dist.W)
+    invalidate!(outbound_dist.xi)
 
     return outbound_dist
 end

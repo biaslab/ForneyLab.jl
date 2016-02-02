@@ -20,7 +20,9 @@ type MvLogNormalDistribution{dims} <: MultivariateProbabilityDistribution
     end
 end
 
-MvLogNormalDistribution(; m=[0.0], S=[1.0]) = MvLogNormalDistribution(m, S)
+MvLogNormalDistribution(; m=[0.0], S=reshape([1.0], 1, 1)) = MvLogNormalDistribution{length(m)}(m, S)
+
+MvLogNormalDistribution() = MvLogNormalDistribution(m=[0.0], S=reshape([1.0], 1, 1))
 
 function vague!{dims}(dist::MvLogNormalDistribution{dims})
     dist.m = zeros(dims)
@@ -28,7 +30,7 @@ function vague!{dims}(dist::MvLogNormalDistribution{dims})
     return dist
 end
 
-vague{dims}(::Type{MvLogNormalDistribution{dims}}) = MvLogNormalDistribution(m=zeros(dims), V=huge*eye(dims))
+vague{dims}(::Type{MvLogNormalDistribution{dims}}) = MvLogNormalDistribution(m=zeros(dims), S=huge*eye(dims))
 
 isProper(dist::MvLogNormalDistribution) = isRoundedPosDef(dist.S) # TODO: verify
 
@@ -59,7 +61,7 @@ end
 
 Base.var(dist::MvLogNormalDistribution) = exp(2.0*dist.m + diag(dist.S)).*(exp(diag(dist.S)) - 1.0)
 
-format(dist::MvLogNormalDistribution) = "logN(μ=$(format(dist.m)), Σ=$(format(dist.s)))"
+format(dist::MvLogNormalDistribution) = "logN(μ=$(format(dist.m)), Σ=$(format(dist.S)))"
 
 show(io::IO, dist::MvLogNormalDistribution) = println(io, format(dist))
 

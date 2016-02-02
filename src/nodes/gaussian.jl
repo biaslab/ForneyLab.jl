@@ -646,7 +646,7 @@ end
 # Naive variational update functions with fixed interfaces
 ##########################################################
 
-# TODO: fix, same calling signature as function below
+# TODO: fix, same calling signature for preparation as function below
 #
 # function vmp!(  node::GaussianNode{Val{:moment}},
 #                 outbound_interface_index::Type{Val{1}},
