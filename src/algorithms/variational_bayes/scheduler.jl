@@ -3,7 +3,7 @@
 # There are no call signatures for message passing to specific interfaces or edges (as with sum product);
 # when required, these should be set through write buffers or wraps.
 
-function generateVariationalBayesSchedule!(f::QFactorization, graph::FactorGraph=currentGraph())
+function generateVariationalBayesSchedule!(f::RecognitionFactorization, graph::FactorGraph=currentGraph())
     # Generate and store an internal and external schedule for each subgraph in the factorization
     for sg in f.factors
         generateVariationalBayesSchedule!(sg, graph)

@@ -2,7 +2,7 @@
 # Integration tests
 #####################
 
-facts("QFactorization integration tests") do
+facts("RecognitionFactorization integration tests") do
     context("extend() should extend a set of edges to envelope deterministic nodes") do
         initializeFactoringGraph()
         cluster = ForneyLab.extend(Set{Edge}([n(:g1).i[:out].edge, n(:g1).i[:mean].edge]))
@@ -73,7 +73,7 @@ facts("QFactorization integration tests") do
     end
 end
 
-facts("initializeVagueQDistributions() should set vague marginals at the appropriate places") do
+facts("initializeVagueRecognitionDistributions() should set vague marginals at the appropriate places") do
     data = [1.0, 1.0, 1.0]
 
     # MF case
@@ -88,7 +88,7 @@ facts("initializeVagueQDistributions() should set vague marginals at the appropr
     f = ForneyLab.factorize(recognition_distribution_types)
 
     ForneyLab.generateVariationalBayesSchedule!(f) # Generate and store internal and external schedules on factorization subgraphs
-    qs = ForneyLab.initializeVagueQDistributions(f, recognition_distribution_types) # Initialize vague q distributions
+    qs = ForneyLab.initializeVagueRecognitionDistributions(f, recognition_distribution_types) # Initialize vague q distributions
 
     m_subgraph = f.edge_to_subgraph[n(:g1).i[:mean].edge]
     gam_subgraph = f.edge_to_subgraph[n(:g1).i[:precision].edge]
@@ -119,7 +119,7 @@ facts("initializeVagueQDistributions() should set vague marginals at the appropr
     f = ForneyLab.factorize(recognition_distribution_types)
 
     ForneyLab.generateVariationalBayesSchedule!(f) # Generate and store internal and external schedules on factorization subgraphs
-    qs = ForneyLab.initializeVagueQDistributions(f, recognition_distribution_types)
+    qs = ForneyLab.initializeVagueRecognitionDistributions(f, recognition_distribution_types)
 
     m_gam_subgraph = f.edge_to_subgraph[n(:g1).i[:mean].edge]
     y1_subgraph = f.edge_to_subgraph[n(:g1).i[:out].edge]
@@ -129,7 +129,7 @@ facts("initializeVagueQDistributions() should set vague marginals at the appropr
     @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(GaussianDistribution)
 end
 
-facts("resetQDistributions!() should reset already present q distributions to vague") do
+facts("resetRecognitionDistributions!() should reset already present q distributions to vague") do
     data = [1.0]
 
     # MF case
@@ -142,7 +142,7 @@ facts("resetQDistributions!() should reset already present q distributions to va
                 eg(:q_y1) => GaussianDistribution))
 
     f = algo.factorization
-    qs = algo.q_distributions
+    qs = algo.recognition_distributions
 
     m_subgraph = f.edge_to_subgraph[n(:g1).i[:mean].edge]
     gam_subgraph = f.edge_to_subgraph[n(:g1).i[:precision].edge]
@@ -161,7 +161,7 @@ facts("resetQDistributions!() should reset already present q distributions to va
     @fact qs[(n(:g1), gam_subgraph)].distribution == vague(GammaDistribution) --> false
     @fact qs[(n(:g1), y1_subgraph)].distribution == vague(GaussianDistribution) --> false
 
-    ForneyLab.resetQDistributions!(qs)
+    ForneyLab.resetRecognitionDistributions!(qs)
 
     # Distributions after resetting should be vague again
     @fact qs[(n(:g1), m_subgraph)].distribution --> vague(GaussianDistribution)

@@ -1,8 +1,8 @@
-type QFactorization
+type RecognitionFactorization
     factors::Array{Subgraph, 1}
     edge_to_subgraph::Dict{Edge, Subgraph}
 end
-function QFactorization(graph::FactorGraph=currentGraph())
+function RecognitionFactorization(graph::FactorGraph=currentGraph())
     # Create an initial subgraph that envelopes the entire graph
     internal_edges = edges(graph)
     sg = Subgraph(internal_edges, Interface[], Node[]) # Build a subgraph that contains all edges in the graph
@@ -10,15 +10,15 @@ function QFactorization(graph::FactorGraph=currentGraph())
     for edge in internal_edges # Map all edges to the just created subgraph
         merge!(edge_to_subgraph, Dict{Edge, Subgraph}(edge => sg))
     end
-    return QFactorization([sg], edge_to_subgraph) # Build the new factorization
+    return RecognitionFactorization([sg], edge_to_subgraph) # Build the new factorization
 end
 
-show(io::IO, f::QFactorization) = println(io, "QFactorization with $(length(f.factors)) factors")
+show(io::IO, f::RecognitionFactorization) = println(io, "RecognitionFactorization with $(length(f.factors)) factors")
 
-function initializeVagueQDistributions(f::QFactorization, recognition_distribution_types::Dict)
+function initializeVagueRecognitionDistributions(f::RecognitionFactorization, recognition_distribution_types::Dict)
     # Sets the vague (almost uninformative) marginals in the graph's approximate marginal dictionary at the appropriate places
 
-    q_distributions = Dict{Tuple{Node, Subgraph}, QDistribution}()
+    recognition_distributions = Dict{Tuple{Node, Subgraph}, RecognitionDistribution}()
 
     for subgraph in f.factors
         (length(subgraph.external_schedule) > 0) || warn("External schedule for subgraph $(subgraph) undefined. Run generateSchedule(...) to generate internal and external schedules.")
@@ -35,32 +35,32 @@ function initializeVagueQDistributions(f::QFactorization, recognition_distributi
             # Look up the recignition distribution type for each cluster
             recognition_type = expanded_recognition_distribution_types[internal_edges[1]]
 
-            # Build q_distributions dictionary
-            q_distributions[(node, subgraph)] = QDistribution(vague(recognition_type), intersect(edges(node), subgraph.internal_edges))
+            # Build recognition_distributions dictionary
+            recognition_distributions[(node, subgraph)] = RecognitionDistribution(vague(recognition_type), intersect(edges(node), subgraph.internal_edges))
         end
     end
 
-    return q_distributions
+    return recognition_distributions
 end
 
-function resetQDistributions!(q_distributions::Dict{Tuple{Node,Subgraph},QDistribution}) # Reset
-    # Before starting a new iteration, the q-distributions should be reset to vague
-    for q_distribution in values(q_distributions)
-        vague!(q_distribution.distribution)
+function resetRecognitionDistributions!(recognition_distributions::Dict{Tuple{Node,Subgraph},RecognitionDistribution}) # Reset
+    # Before starting a new iteration, the recognition distributions should be reset to vague
+    for recognition_distribution in values(recognition_distributions)
+        vague!(recognition_distribution.distribution)
     end
-    return q_distributions
+    return recognition_distributions
 end
 
-function calculateQDistribution!(q_distributions::Dict{Tuple{Node, Subgraph}, QDistribution}, node::Node, subgraph::Subgraph, factorization::QFactorization)
+function calculateRecognitionDistribution!(recognition_distributions::Dict{Tuple{Node, Subgraph}, RecognitionDistribution}, node::Node, subgraph::Subgraph, factorization::RecognitionFactorization)
     # Calculate the approximate marginal for node from the perspective of subgraph,
-    # and store the result in the scheme.q_distributions dictionary.
+    # and store the result in the scheme.recognition_distributions dictionary.
 
-    q_distribution = q_distributions[(node, subgraph)]
-    if length(q_distribution.edges) == 1
+    recognition_distribution = recognition_distributions[(node, subgraph)]
+    if length(recognition_distribution.edges) == 1
         # Update for univariate q
         # When there is only one internal edge, the approximate marginal calculation reduces to the naive marginal update
-        internal_edge = first(q_distribution.edges) # Extract element
-        return calculateQDistribution!(q_distribution, internal_edge.tail.message.payload, internal_edge.head.message.payload)
+        internal_edge = first(recognition_distribution.edges) # Extract element
+        return calculateRecognitionDistribution!(recognition_distribution, internal_edge.tail.message.payload, internal_edge.head.message.payload)
     end
 
     # Update for multivariate q
@@ -70,15 +70,15 @@ function calculateQDistribution!(q_distributions::Dict{Tuple{Node, Subgraph}, QD
         if neighbouring_subgraph == subgraph # edge is internal
             push!(required_inputs, interface.partner.message)
         else # edge is external
-            haskey(q_distributions, (node, neighbouring_subgraph)) || error("A required q-distribution for $(node.id) is not present. Please preset (vague) q-distributions.")
-            push!(required_inputs, q_distributions[(node, neighbouring_subgraph)].distribution)
+            haskey(recognition_distributions, (node, neighbouring_subgraph)) || error("A required recognition distribution for $(node.id) is not present. Please preset (vague) recognition distributions.")
+            push!(required_inputs, recognition_distributions[(node, neighbouring_subgraph)].distribution)
         end
     end
-    return calculateQDistribution!(q_distribution, node, required_inputs...)
+    return calculateRecognitionDistribution!(recognition_distribution, node, required_inputs...)
 end
 
-function factorize!(edge_set::Set{Edge}, f::QFactorization=QFactorization())
-    # Returns a factorization object that specifies a new q factorization with edge_set as internal edges
+function factorize!(edge_set::Set{Edge}, f::RecognitionFactorization=RecognitionFactorization())
+    # Returns a factorization object that specifies a new recognition factorization with edge_set as internal edges
 
     # The set of internal edges needs to be extended to envelope deterministic nodes
     internal_edges = extend(edge_set)
@@ -109,8 +109,8 @@ function factorize!(edge_set::Set{Edge}, f::QFactorization=QFactorization())
     end
     return f
 end
-factorize!(f::QFactorization, internal_edge::Edge) = factorize!(Set{Edge}([internal_edge]), f)
-factorize!(f::QFactorization, internal_edges::Vector{Edge}) = factorize!(Set{Edge}(internal_edges), f)
+factorize!(f::RecognitionFactorization, internal_edge::Edge) = factorize!(Set{Edge}([internal_edge]), f)
+factorize!(f::RecognitionFactorization, internal_edges::Vector{Edge}) = factorize!(Set{Edge}(internal_edges), f)
 
 function factorize(recognition_distribution_types::Dict, graph=currentGraph())
     # Encodes factorization of the recognition distribution
@@ -126,7 +126,7 @@ function factorize(recognition_distribution_types::Dict, graph=currentGraph())
     #  e4 e5 e6;             => MvGaussianDistribution{3}
     #  e7 e8 e9]
 
-    factorization = QFactorization(graph)
+    factorization = RecognitionFactorization(graph)
     for key in sort(collect(keys(recognition_distribution_types))) # Iterate over recogition distribution types in a deterministic order
         if typeof(key) <: Edge # Only one edge specified
             factorize!(factorization, key)

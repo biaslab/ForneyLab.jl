@@ -140,7 +140,7 @@ Variational message passing
 
 The variational message passing (VMP) submodule implements VMP as described by Dauwels in his 2007 paper "On variational message passing on factor graphs". The module is capable of conducting both mean field and structured VMP and implements several algorithm specific constructors, an auto scheduler and several helper types required for execution.
 
-The q-factorization is stored under the ``:factorization`` key of the ``algorithm.fields`` dictionary and references the different subgraphs. The actual q-distributions are stored under the ``:q_distributions`` key and the number of iterations under ``:n_iterations``.
+The q-factorization is stored under the ``:factorization`` key of the ``algorithm.fields`` dictionary and references the different subgraphs. The actual q-distributions are stored under the ``:recognition_distributions`` key and the number of iterations under ``:n_iterations``.
 
 Algorithm constructors
 ----------------------
@@ -175,20 +175,20 @@ VMP specific types
             external_schedule::Array{Node, 1} # Schedule for marginal updates
         end
 
-.. type:: QFactorization
+.. type:: RecognitionFactorization
 
-    The ``QFactorization`` type stores the variational factorization of the graph. The ``edge_to_subgraph`` attribute contains a dictionary for fast subgraph lookup::
+    The ``RecognitionFactorization`` type stores the variational factorization of the graph. The ``edge_to_subgraph`` attribute contains a dictionary for fast subgraph lookup::
 
-        type QFactorization
+        type RecognitionFactorization
             factors::Array{Subgraph, 1}
             edge_to_subgraph::Dict{Edge, Subgraph}
         end
 
-.. type:: QDistribution
+.. type:: RecognitionDistribution
 
-    The ``QDistribution`` type stores local q-distributions that are the approximate marginals on the external edges. The ``edges`` attribute defined the set of edges on which ``distribution`` is defined::
+    The ``RecognitionDistribution`` type stores local q-distributions that are the approximate marginals on the external edges. The ``edges`` attribute defined the set of edges on which ``distribution`` is defined::
 
-        type QDistribution
+        type RecognitionDistribution
             distribution::ProbabilityDistribution
             edges::Set{Edge} # Edges on which the distribution is defined
         end

@@ -1,10 +1,10 @@
-type QDistribution
+type RecognitionDistribution
     distribution::ProbabilityDistribution
     edges::Set{Edge} # Edges on which the distribution is defined
 end
 
-function show(io::IO, f::QDistribution)
-    println(io, "QDistribution: $(f.distribution)")
+function show(io::IO, f::RecognitionDistribution)
+    println(io, "RecognitionDistribution: $(f.distribution)")
     println(io, "Defined on edges:")
     for e in f.edges
         println(" $(e)")
@@ -16,7 +16,7 @@ end
 # GammaDistribution
 ############################################
 
-function calculateQDistribution!(marg::QDistribution, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
+function calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::GammaDistribution, backward_dist::GammaDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
@@ -25,7 +25,7 @@ end
 # InverseGammaDistribution
 ############################################
 
-function calculateQDistribution!(marg::QDistribution, forward_dist::InverseGammaDistribution, backward_dist::InverseGammaDistribution)
+function calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::InverseGammaDistribution, backward_dist::InverseGammaDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
@@ -34,7 +34,7 @@ end
 # BetaDistribution
 ############################################
 
-function calculateQDistribution!(marg::QDistribution, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
+function calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::BetaDistribution, backward_dist::BetaDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
@@ -43,7 +43,7 @@ end
 # GaussianDistribution
 ############################################
 
-function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
+function calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::GaussianDistribution, backward_dist::GaussianDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
@@ -52,7 +52,7 @@ end
 # MvGaussianDistribution
 ############################################
 
-function calculateQDistribution!(marg::QDistribution, forward_dist::MvGaussianDistribution, backward_dist::MvGaussianDistribution)
+function calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::MvGaussianDistribution, backward_dist::MvGaussianDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
@@ -61,7 +61,7 @@ end
 # WishartDistribution
 ############################################
 
-function calculateQDistribution!(marg::QDistribution, forward_dist::WishartDistribution, backward_dist::WishartDistribution)
+function calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::WishartDistribution, backward_dist::WishartDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
 
@@ -70,39 +70,39 @@ end
 # Gaussian-students t combination
 ############################################
 
-function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
+function calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::GaussianDistribution, backward_dist::StudentsTDistribution)
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
-calculateQDistribution!(marg::QDistribution, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
+calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::StudentsTDistribution, backward_dist::GaussianDistribution) = calculateRecognitionDistribution!(marg, backward_dist, forward_dist)
 
 
 ############################################
 # Gaussian-delta combination
 ############################################
 
-function calculateQDistribution!(marg::QDistribution, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution{Float64})
+function calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::GaussianDistribution, backward_dist::DeltaDistribution{Float64})
     # Calculation for univariate approximate marginal
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
-calculateQDistribution!(marg::QDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::GaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
+calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::DeltaDistribution{Float64}, backward_dist::GaussianDistribution) = calculateRecognitionDistribution!(marg, backward_dist, forward_dist)
 
 
 ############################################
 # MvGaussian-MvDelta combination
 ############################################
 
-function calculateQDistribution!(marg::QDistribution, forward_dist::MvGaussianDistribution, backward_dist::MvDeltaDistribution{Float64})
+function calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::MvGaussianDistribution, backward_dist::MvDeltaDistribution{Float64})
     # Calculation for univariate approximate marginal
     return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
 end
-calculateQDistribution!(marg::QDistribution, forward_dist::MvDeltaDistribution{Float64}, backward_dist::MvGaussianDistribution) = calculateQDistribution!(marg, backward_dist, forward_dist)
+calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::MvDeltaDistribution{Float64}, backward_dist::MvGaussianDistribution) = calculateRecognitionDistribution!(marg, backward_dist, forward_dist)
 
 
 ############################
 # Joint marginals
 ############################
 
-function calculateQDistribution!(q_dist::QDistribution,
+function calculateRecognitionDistribution!(q_dist::RecognitionDistribution,
                                  node::GaussianNode,
                                  gaus_msg::Message{GaussianDistribution},
                                  gam_msg::Message{GammaDistribution},

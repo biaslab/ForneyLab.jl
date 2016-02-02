@@ -2,15 +2,15 @@ import Base.show
 export VariationalBayes
 
 include("subgraph.jl")
-include("q_distribution.jl")
-include("q_factorization.jl")
+include("recognition_distribution.jl")
+include("recognition_factorization.jl")
 include("scheduler.jl")
 include("message_passing.jl")
 
 type VariationalBayes <: InferenceAlgorithm
     execute::Function
-    factorization::QFactorization
-    q_distributions::Dict{Tuple{Node,Subgraph},QDistribution}
+    factorization::RecognitionFactorization
+    recognition_distributions::Dict{Tuple{Node,Subgraph},RecognitionDistribution}
     n_iterations::Int64
 end
 
@@ -33,20 +33,20 @@ function VariationalBayes(  recognition_distribution_types::Dict,
 
     factorization = factorize(recognition_distribution_types, graph)
     generateVariationalBayesSchedule!(factorization, graph) # Generate and store internal and external schedules on factorization subgraphs
-    q_distributions = initializeVagueQDistributions(factorization, recognition_distribution_types) # Initialize vague q distributions
+    recognition_distributions = initializeVagueRecognitionDistributions(factorization, recognition_distribution_types) # Initialize vague recognition distributions
 
     for factor in factorization.factors
         setPostProcessing!(factor.internal_schedule, post_processing_functions)
     end
 
     function exec(algorithm)
-        resetQDistributions!(algorithm.q_distributions) # Reset q distributions before next step
+        resetRecognitionDistributions!(algorithm.recognition_distributions) # Reset recognition distributions before next step
         for iteration = 1:algorithm.n_iterations
-            execute(algorithm.factorization, algorithm.q_distributions) # For all subgraphs, execute internal and external schedules
+            execute(algorithm.factorization, algorithm.recognition_distributions) # For all subgraphs, execute internal and external schedules
         end
     end
 
-    algo = VariationalBayes(exec, factorization, q_distributions, n_iterations)
+    algo = VariationalBayes(exec, factorization, recognition_distributions, n_iterations)
     inferDistributionTypes!(algo)
 
     return algo
@@ -93,7 +93,7 @@ function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Inter
             # A subgraph border is crossed, require marginal
             # The factor is the set of internal edges that are in the same subgraph
             sg = algo.factorization.edge_to_subgraph[interface.edge]
-            push!(entry.inbound_types, typeof(algo.q_distributions[(entry.node, sg)].distribution))
+            push!(entry.inbound_types, typeof(algo.recognition_distributions[(entry.node, sg)].distribution))
         end
     end
 
@@ -131,7 +131,7 @@ function compile!(entry::ScheduleEntry, ::Type{Val{symbol(vmp!)}}, algo::Variati
         if id == entry.outbound_interface_id
             # Require marginal because it is available (not used for vmp update)
             sg = algo.factorization.edge_to_subgraph[interface.edge]
-            push!(inbound_rule_arguments, algo.q_distributions[(node, sg)].distribution)
+            push!(inbound_rule_arguments, algo.recognition_distributions[(node, sg)].distribution)
         elseif is(algo.factorization.edge_to_subgraph[interface.edge], algo.factorization.edge_to_subgraph[outbound_interface.edge])
             # Both edges in same subgraph, require message
             push!(inbound_rule_arguments, interface.partner.message)
@@ -139,7 +139,7 @@ function compile!(entry::ScheduleEntry, ::Type{Val{symbol(vmp!)}}, algo::Variati
             # A subgraph border is crossed, require marginal
             # The factor is the set of internal edges that are in the same subgraph
             sg = algo.factorization.edge_to_subgraph[interface.edge]
-            push!(inbound_rule_arguments, algo.q_distributions[(node, sg)].distribution)
+            push!(inbound_rule_arguments, algo.recognition_distributions[(node, sg)].distribution)
         end
     end
 
