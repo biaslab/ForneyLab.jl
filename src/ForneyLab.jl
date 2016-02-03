@@ -5,7 +5,7 @@ using YAML
 using LaTeXStrings
 
 export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution
-export sumProduct!, ep!, vmp!
+export sumProductRule!, expectationRule!, variationalRule!
 export vague, self, ==, isProper, sample, dimensions
 export setVerbosity
 export prepare!

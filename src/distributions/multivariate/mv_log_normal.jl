@@ -32,7 +32,7 @@ end
 
 vague{dims}(::Type{MvLogNormalDistribution{dims}}) = MvLogNormalDistribution(m=zeros(dims), S=huge*eye(dims))
 
-isProper(dist::MvLogNormalDistribution) = isRoundedPosDef(dist.S) # TODO: verify
+isProper(dist::MvLogNormalDistribution) = isRoundedPosDef(dist.S)
 
 function Base.mean(dist::MvLogNormalDistribution)
     if isProper(dist)

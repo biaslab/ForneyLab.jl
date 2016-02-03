@@ -67,7 +67,7 @@ function inferDistributionTypes!(algo::VariationalBayes)
 
         for entry in schedule
             collectInboundTypes!(entry, schedule_entries, algo) # VariationalBayes algorithm specific collection of inbound types
-            inferOutboundType!(entry) # The VariationalBayes algorithm allows access to sumProduct! and vmp! update rules
+            inferOutboundType!(entry) # The VariationalBayes algorithm allows access to sumProductRule! and variationalRule! update rules
 
             outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
             schedule_entries[outbound_interface] = entry # Assign schedule entry to lookup dictionary
@@ -116,7 +116,7 @@ function prepare!(algo::VariationalBayes)
     return algo
 end
 
-function compile!(entry::ScheduleEntry, ::Type{Val{symbol(vmp!)}}, algo::VariationalBayes)
+function compile!(entry::ScheduleEntry, ::Type{Val{symbol(variationalRule!)}}, algo::VariationalBayes)
     # Generate entry.execute for schedule entry with vmp update rule
 
     # Collect references to all required inbound messages for executing message computation rule

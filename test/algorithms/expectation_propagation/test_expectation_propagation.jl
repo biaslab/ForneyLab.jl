@@ -72,9 +72,9 @@ facts("ExpectationPropagation algorithm integration tests") do
         @fact typeof(ep_algo.schedule) --> Schedule
         for entry in ep_algo.schedule
             if entry.node.interfaces[entry.outbound_interface_id] in sitelist
-                @fact is(entry.rule, ep!) --> true
+                @fact is(entry.rule, expectationRule!) --> true
             else
-                @fact is(entry.rule, sumProduct!) --> true
+                @fact is(entry.rule, sumProductRule!) --> true
             end
         end
     end
@@ -88,7 +88,7 @@ facts("ExpectationPropagation algorithm integration tests") do
     context("Inference results") do
         @fact length(X_marg) --> 5
         predictive = BernoulliDistribution()
-        sumProduct!(n(:sig1), Val{2}, predictive, n(:equ1).interfaces[2].message, nothing)
+        sumProductRule!(n(:sig1), Val{2}, predictive, n(:equ1).interfaces[2].message, nothing)
         @fact predictive.p --> roughly(mean([sample.m for sample in samples]), atol=0.1)
     end
 end

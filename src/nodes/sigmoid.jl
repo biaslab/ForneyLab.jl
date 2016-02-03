@@ -58,11 +58,11 @@ end
 # Forward messages
 ####################
 
-function sumProduct!{T<:Real}(  node::SigmoidNode,
-                                outbound_interface_id::Type{Val{2}},
-                                outbound_dist::BernoulliDistribution,
-                                msg_real::Message{DeltaDistribution{T}},
-                                msg_bin::Any)
+function sumProductRule!{T<:Real}(  node::SigmoidNode,
+                                    outbound_interface_id::Type{Val{2}},
+                                    outbound_dist::BernoulliDistribution,
+                                    msg_real::Message{DeltaDistribution{T}},
+                                    msg_bin::Any)
 
     # Generate Bernoulli message from incoming Delta message.
     dist_real = msg_real.payload
@@ -76,11 +76,11 @@ function sumProduct!{T<:Real}(  node::SigmoidNode,
     return outbound_dist
 end
 
-function sumProduct!(   node::SigmoidNode,
-                        outbound_interface_id::Type{Val{2}},
-                        outbound_dist::BernoulliDistribution,
-                        msg_real::Message{GaussianDistribution},
-                        msg_bin::Any)
+function sumProductRule!(   node::SigmoidNode,
+                            outbound_interface_id::Type{Val{2}},
+                            outbound_dist::BernoulliDistribution,
+                            msg_real::Message{GaussianDistribution},
+                            msg_bin::Any)
 
     # Generate Bernoulli message from incoming Gaussian message.
     dist_real = ensureParameters!(msg_real.payload, (:m, :V))
@@ -99,21 +99,21 @@ end
 # Backward messages (expectation propagation)
 ############################################################
 
-function ep!{T<:Bool}(  node::SigmoidNode,
-                        outbound_interface_id::Type{Val{1}},
-                        outbound_dist::GaussianDistribution,
-                        msg_cavity::Message{GaussianDistribution},
-                        msg_bin::Message{DeltaDistribution{T}})
+function expectationRule!{T<:Bool}( node::SigmoidNode,
+                                    outbound_interface_id::Type{Val{1}},
+                                    outbound_dist::GaussianDistribution,
+                                    msg_cavity::Message{GaussianDistribution},
+                                    msg_bin::Message{DeltaDistribution{T}})
 
     # Convert incoming DeltaDistribution to BernoulliDistribution
-    return ep!(node, Val{1}, outbound_dist, msg_cavity, Message(BernoulliDistribution(msg_bin.payload.m)))
+    return expectationRule!(node, Val{1}, outbound_dist, msg_cavity, Message(BernoulliDistribution(msg_bin.payload.m)))
 end
 
-function ep!(   node::SigmoidNode,
-                outbound_interface_id::Type{Val{1}},
-                outbound_dist::GaussianDistribution,
-                msg_cavity::Message{GaussianDistribution},
-                msg_bin::Message{BernoulliDistribution})
+function expectationRule!(  node::SigmoidNode,
+                            outbound_interface_id::Type{Val{1}},
+                            outbound_dist::GaussianDistribution,
+                            msg_cavity::Message{GaussianDistribution},
+                            msg_bin::Message{BernoulliDistribution})
 
     # Calculate approximate (Gaussian) message towards i[:real]
     # The approximate message is an 'expectation' under the context (cavity distribution) encoded by incoming message msg_cavity.
@@ -127,8 +127,8 @@ function ep!(   node::SigmoidNode,
     #  - This calculation results in an implicit cycle in the factor graph since the outbound message depends on the inbound message (cavity dist.).
     #  - The outbound message is not guaranteed to be proper iff 0 < msg_bin.payload.p < 1: variance/precision parameters might be negative.
     (node.sigmoid_func == :normal_cdf) || error("Unsupported sigmoid function")
-    isProper(msg_bin.payload) || error("ep!: Incoming Bernoulli distribution should be proper")
-    isProper(msg_cavity.payload) || error("ep!: Cavity distribution is improper")
+    isProper(msg_bin.payload) || error("expectationRule!: Incoming Bernoulli distribution should be proper")
+    isProper(msg_cavity.payload) || error("expectationRule!: Cavity distribution is improper")
 
     # Shordhand notations
     p = msg_bin.payload.p

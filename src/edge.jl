@@ -67,6 +67,13 @@ function show(io::IO, edge::Edge)
     end
 end
 
+function show(io::IO, edges::Union{Vector{Edge}, Set{Edge}})
+    println(io, "Edges:")
+    for edge in edges
+        show(io, edge)
+    end
+end
+
 setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
 setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, message)
 forwardMessage(edge::Edge) = edge.tail.message

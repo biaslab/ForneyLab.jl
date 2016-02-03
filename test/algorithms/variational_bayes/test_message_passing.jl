@@ -35,7 +35,6 @@ end
 facts("Naive vmp implementation integration tests") do
     context("Gaussian node mean precision batch estimation") do
         # Integration test for the vmp implementation by trying to estimate the mean and precision of a Gaussian
-        # and comparing the outcome against the outcome of the Infer.NET framework
 
         # Initialize chain
         # Fixed observations drawn from N(5.0, 2.0)
@@ -56,7 +55,6 @@ facts("Naive vmp implementation integration tests") do
         # Perform vmp updates
         run(algo)
 
-        # Check the results against the outcome of similar Infer.NET script
         m_out = m_buffer[end]
         gam_out = gam_buffer[end]
 
@@ -92,7 +90,6 @@ facts("Naive vmp implementation integration tests") do
         m_out = m_buffer[end]
         gam_out = gam_buffer[end]
 
-        # TODO: obtain proper reference values
         @fact round(mean(m_out), 5) --> [4.38083, 2.02401]
         @fact round(cov(m_out), 5) --> [0.15241 -0.03349; -0.03349 0.08052]
         @fact round(mean(gam_out), 5)  --> [1.03159 0.42907; 0.42907 1.95259]
@@ -101,7 +98,6 @@ facts("Naive vmp implementation integration tests") do
 
     context("Gaussian node mean precision online estimation") do
         # Integration test for the vmp implementation by trying to estimate the mean and precision of a Gaussian
-        # and comparing the outcome against the outcome of the Infer.NET framework
 
         # Initialize chain
         # Fixed observations drawn from N(5.0, 2.0)
@@ -124,11 +120,10 @@ facts("Naive vmp implementation integration tests") do
         # Perform vmp updates
         run(algo)
 
-        # Check the results against the outcome of Infer.NET
         m_out = m_buffer[end]
         gam_out = gam_buffer[end]
         @fact round(mean(m_out)[1], 3) --> 4.941
-        @fact round(var(m_out)[1, 1], 3) --> 0.000 # Infer.net works with uniform gamma priors and initialization, which makes the variance collapse, (Jeffrey's prior solves this)
+        @fact round(var(m_out)[1, 1], 3) --> 0.000
         @fact round(gam_out.a, 3) --> 6.000
         @fact round(1/gam_out.b, 4) --> 0.1628 # Scale
     end
@@ -160,7 +155,6 @@ facts("Structured vmp implementation integration tests") do
         m_out = m_buffer[end]
         gam_out = gam_buffer[end]
         # Reference values from first run
-        # TODO: obtain proper reference values
         @fact round(mean(m_out)[1], 3) --> 4.521
         @fact round(var(m_out)[1, 1], 3) --> 0.873 # Uniform gamma priors make the variance collapse
         @fact round(gam_out.a, 3) --> 6.000

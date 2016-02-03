@@ -10,7 +10,6 @@ parameters(type_var::TypeVar) = type_var.ub.parameters
 
 function parameters(data_type::DataType)
     # Extract parameters of type ForneyLab.Message{T<:ForneyLab.MvGaussianDistribution{dims}}
-    # TODO: find more specific calling signature
     if data_type <: Message
         return data_type.parameters[1].ub.parameters
     else
@@ -158,7 +157,7 @@ function buildExecute!(entry::ScheduleEntry, inbound_arguments::Vector)
         # Then we repopulate the fields of the original distribution with the fields of the duplicate.
         # This approach ensures that the distribution pointers remain valid.
 
-        outbound_dist = entry.intermediate_outbound_type() # Create a dummy distribution for sumProduct! to fill (is accessed from the entry.execute closure)
+        outbound_dist = entry.intermediate_outbound_type() # Create a dummy distribution for sumProductRule! to fill (is accessed from the entry.execute closure)
 
         entry.execute = ( () -> ( # Anonymous function for message passing and post-processing
             intermediate_outbound_distribution = entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments...); # In-place operation on previously created dummy distribution

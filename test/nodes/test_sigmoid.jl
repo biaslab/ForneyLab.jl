@@ -11,7 +11,7 @@ facts("SigmoidNode unit tests") do
         @fact sig_node.i[:bin] --> sig_node.interfaces[2]
     end
 
-    context("sumProduct! rules") do
+    context("sumProductRule! rules") do
         # Forward message, DeltaDistribution on i[:real]
         validateOutboundMessage(SigmoidNode(),
                                 2,
@@ -28,7 +28,7 @@ facts("SigmoidNode unit tests") do
                                 BernoulliDistribution(ForneyLab.Φ(1/sqrt(1+0.5))))
     end
 
-    context("ep! rules: delta input") do
+    context("expectationRule! rules: delta input") do
         FactorGraph()
         sig_node = SigmoidNode(id=:sigmoid)
         cavity = GaussianDistribution(m=0.0, V=1.0)
@@ -37,20 +37,20 @@ facts("SigmoidNode unit tests") do
 
         # Backward message, DeltaDistribution on i[:bin]
         n(:t_bin).value = DeltaDistribution(true)
-        dist_out = ForneyLab.ep!(sig_node, Val{1}, GaussianDistribution(), Message(n(:t_real).value), Message(n(:t_bin).value))
+        dist_out = ForneyLab.expectationRule!(sig_node, Val{1}, GaussianDistribution(), Message(n(:t_real).value), Message(n(:t_bin).value))
         ensureParameters!(dist_out, (:m, :V))
         @fact dist_out.m --> roughly(1.7724, atol=1e-4)
         @fact dist_out.V --> roughly(2.1415, atol=1e-4)
 
         n(:t_bin).value = DeltaDistribution(false)
-        dist_out = ForneyLab.ep!(sig_node, Val{1}, GaussianDistribution(), Message(n(:t_real).value), Message(n(:t_bin).value))
+        dist_out = ForneyLab.expectationRule!(sig_node, Val{1}, GaussianDistribution(), Message(n(:t_real).value), Message(n(:t_bin).value))
         ensureParameters!(dist_out, (:m, :V))
         @fact dist_out.m --> roughly(-1.7724, atol=1e-4)
         @fact dist_out.V --> roughly(2.1415, atol=1e-4)
         ensureParameters!(sig_node.i[:real].edge.marginal, (:m, :V))
     end
 
-    context("ep! rules: Bernoulli input") do
+    context("expectationRule! rules: Bernoulli input") do
         # Backward message, BernoulliDistribution on i[:bin]
         # Uninformative data should result in marginal (almost) equal to cavity distribution and vague backward message
         FactorGraph()
@@ -60,7 +60,7 @@ facts("SigmoidNode unit tests") do
         Edge(sig_node.i[:bin], TerminalNode(BernoulliDistribution(), id=:t_bin))
 
         n(:t_bin).value = BernoulliDistribution(0.5) # uninformative data
-        dist_out = ForneyLab.ep!(sig_node, Val{1}, GaussianDistribution(), Message(n(:t_real).value), Message(n(:t_bin).value))
+        dist_out = ForneyLab.expectationRule!(sig_node, Val{1}, GaussianDistribution(), Message(n(:t_real).value), Message(n(:t_bin).value))
         ensureParameters!(dist_out, (:m, :V))
         ensureParameters!(sig_node.i[:real].edge.marginal, (:m, :V))
         @fact dist_out.m --> roughly(0.0, atol=1e-4)
@@ -71,7 +71,7 @@ facts("SigmoidNode unit tests") do
 
         # Backward message, BernoulliDistribution on i[:bin]
         n(:t_bin).value = BernoulliDistribution(0.2) # softbit
-        dist_out = ForneyLab.ep!(sig_node, Val{1}, GaussianDistribution(), Message(n(:t_real).value), Message(n(:t_bin).value))
+        dist_out = ForneyLab.expectationRule!(sig_node, Val{1}, GaussianDistribution(), Message(n(:t_real).value), Message(n(:t_bin).value))
         ensureParameters!(dist_out, (:m, :V))
         ensureParameters!(sig_node.i[:real].edge.marginal, (:m, :V))
         @fact dist_out.m --> roughly(-2.9540, atol=1e-4)

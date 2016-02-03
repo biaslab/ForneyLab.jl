@@ -2,7 +2,7 @@
 # Unit tests
 #####################
 
-# TODO: non-square A and verify results agains formulas
+# TODO: non-square A
 
 facts("GainAdditionNode unit tests") do
     context("GainAdditionNode() should initialize a GainAdditionNode with 3 interfaces") do
@@ -14,8 +14,6 @@ facts("GainAdditionNode unit tests") do
         @fact n(:node).i[:out] --> n(:node).interfaces[3]
         @fact typeof(n(:node).A) --> Array{Float64, 2}
     end
-
-    # TODO: double check outcomes
 
     context("GainAdditionNode should be able to pass GaussianDistributions") do
         # Forward message
@@ -119,7 +117,7 @@ facts("GainAdditionNode unit tests") do
                                 MvGaussianDistribution(m=[0.5, 1.0], V=[13.5 12.0; 12.0 13.5]))
     end
 
-    # context("GainAdditionNode should provide sumProduct! for non-square A") do
+    # context("GainAdditionNode should provide sumProductRule! for non-square A") do
     #     # Forward message
     #     A = [2.0 3.0; 3.0 2.0; 1.0 2.0]
     #     validateOutboundMessage(GainAdditionNode(A),

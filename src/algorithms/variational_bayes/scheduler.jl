@@ -17,7 +17,7 @@ function generateVariationalBayesSchedule!(sg::Subgraph, graph::FactorGraph=curr
     external_schedule = nodesConnectedToExternalEdges(sg) # All nodes that are connected to at least one external edge
     interface_list_for_univariate = Array(Interface, 0) # This array holds the interfaces required to calculate univariate marginals (Dauwels, 2007)
     internal_interface_list = Array(Interface, 0) # This array will hold the sumproduct schedule for internal message passing
-    external_nodes_interfaces = Array(Interface, 0) # This array will hold the interfaces that need to be calculated with a vmp! update
+    external_nodes_interfaces = Array(Interface, 0) # This array will hold the interfaces that need to be calculated with a variationalRule! update
     sg.internal_schedule = Array(ScheduleEntry, 0)
     # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present
     for g_node in external_schedule # Internal schedule depends on nodes connected to external edges
@@ -72,11 +72,11 @@ function generateVariationalBayesSchedule!(sg::Subgraph, graph::FactorGraph=curr
     end
 
     # Convert the interface list to a schedule. The schedule for univariate comes after the internal schedule, because it can depend on inbound messages calculated earlier
-    schedule = convert(Schedule, unique([internal_interface_list; interface_list_for_univariate; interface_list_for_wraps; interface_list_for_write_buffers]), sumProduct!)
+    schedule = convert(Schedule, unique([internal_interface_list; interface_list_for_univariate; interface_list_for_wraps; interface_list_for_write_buffers]), sumProductRule!)
     # Convert to a vmp update when a schedule entry interface belongs to an external node
     for entry in schedule
         if entry.node.interfaces[entry.outbound_interface_id] in external_nodes_interfaces
-            entry.rule = vmp!
+            entry.rule = variationalRule!
         end
     end
 

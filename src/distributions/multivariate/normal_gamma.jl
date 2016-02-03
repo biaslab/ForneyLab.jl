@@ -17,16 +17,16 @@ end
 
 NormalGammaDistribution(; m=0.0, beta=1.0, a=1.0, b=1.0) = NormalGammaDistribution(m, beta, a, b)
 
-# TODO: verify
+# TODO: reference
 function vague!(dist::NormalGammaDistribution)
     dist.m = 0.0
     dist.beta = 1.0
-    dist.a = 1.0-tiny
+    dist.a = tiny
     dist.b = tiny
     return dist
 end
 
-vague(::Type{NormalGammaDistribution}) = NormalGammaDistribution(m=0.0, beta=1.0, a=1.0-tiny, b=tiny)
+vague(::Type{NormalGammaDistribution}) = NormalGammaDistribution(m=0.0, beta=1.0, a=tiny, b=tiny)
 
 isProper(dist::NormalGammaDistribution) = ((dist.beta >= tiny) && (dist.a >= tiny)  && (dist.b >= tiny))
 
