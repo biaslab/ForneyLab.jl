@@ -66,7 +66,13 @@ facts("Edge integration tests") do
         FactorGraph()
         edge1 = Edge(TerminalNode().i[:out], TerminalNode().i[:out])
         edge2 = Edge(TerminalNode().i[:out], TerminalNode().i[:out])
+        edge3 = Edge(TerminalNode().i[:out], TerminalNode().i[:out])
+        edge4 = Edge(TerminalNode().i[:out], TerminalNode().i[:out])
+
         @fact (edge1 < edge2) --> true
+        @fact ([edge1, edge3] < [edge2, edge4]) --> true
+        @fact (edge1 < [edge2, edge4]) --> true
+        @fact ([edge1, edge3] < edge2) --> true
     end
 
     context("Edges have ids") do
@@ -74,7 +80,7 @@ facts("Edge integration tests") do
         TerminalNode(id=:a)
         TerminalNode(id=:b)
         my_edge = Edge(n(:a), n(:b), id=:my_edge)
-        @fact ForneyLab.e(:my_edge) --> my_edge
+        @fact eg(:my_edge) --> my_edge
 
         TerminalNode(id=:c)
         TerminalNode(id=:d)
@@ -84,7 +90,7 @@ facts("Edge integration tests") do
         TerminalNode(id=:e)
         TerminalNode(id=:f)
         my_edge3 = Edge(n(:e), n(:f), id=:my_edge*3)
-        @fact ForneyLab.e(:my_edge*3) --> my_edge3
+        @fact eg(:my_edge*3) --> my_edge3
     end
 
     context("Edges can be sorted") do
@@ -104,7 +110,7 @@ facts("Edge integration tests") do
         g = initializePairOfMockNodes()
         edge = Edge(n(:node1).i[:out], n(:node2).i[:out])
         attachWriteBuffer(n(:node1).i[:out])
-        attachWriteBuffer(ForneyLab.e(:node1_node2))
+        attachWriteBuffer(eg(:node1_node2))
 
         delete!(g, edge)
         @fact length(g.edges) --> 0
@@ -117,7 +123,9 @@ facts("Edge integration tests") do
 
     context("forwardMessage(), forwardMessage(), ensureMarginal!()") do
         FactorGraph()
-        test_edge = Edge(MockNode(Message(GaussianDistribution())).i[:out], MockNode(Message(GaussianDistribution(m=3.0, V=2.0))).i[:out])
+        test_edge = Edge(MockNode().i[:out], MockNode().i[:out])
+        test_edge.head.message = Message(GaussianDistribution(m=3.0, V=2.0))
+        test_edge.tail.message = Message(GaussianDistribution())
         @fact forwardMessage(test_edge) --> Message(GaussianDistribution())
         @fact backwardMessage(test_edge) --> Message(GaussianDistribution(m=3.0, V=2.0))
         test_edge.marginal = GaussianDistribution(m=3.0, V=2.0)

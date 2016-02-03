@@ -29,6 +29,8 @@ function Base.mean(dist::StudentsTDistribution)
     end
 end
 
+Base.mean(::Type{DeltaDistribution{Float64}}, d::StudentsTDistribution) = DeltaDistribution(mean(d)) # Definition for post-processing
+
 function Base.var(dist::StudentsTDistribution)
     if isProper(dist) && dist.nu > 2
         return dist.nu / ((dist.nu - 2) * dist.lambda)
@@ -52,4 +54,9 @@ end
 # see also (Fonseca, 2008; Objective Bayesian analysis for the Student-t regression model)
 # and (Lange, 1989; Robust statistical modeling using the t distribution).
 # The value for nu = 4 is taken from the latter reference as a value that has worked well in practice.
-vague(::Type{StudentsTDistribution}) = StudentsTDistribution(m=0.0, lambda=tiny, nu=4.0)
+function vague!(dist::StudentsTDistribution)
+    dist.m = 0.0
+    dist.lambda = tiny
+    dist.nu = 4.0
+    return dist
+end

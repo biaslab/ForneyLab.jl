@@ -9,9 +9,9 @@ type Interface
     node::Node
     edge::Union{AbstractEdge, Void}
     partner::Union{Interface, Void}
-    message::AbstractMessage
+    message::Union{Message, Void}
 end
-Interface(node::Node) = Interface(node, nothing, nothing, EmptyMessage())
+Interface(node::Node) = Interface(node, nothing, nothing, nothing)
 
 function show(io::IO, interface::Interface)
     iface_handle = handle(interface)
@@ -25,7 +25,7 @@ function setMessage!(interface::Interface, message::Message)
     interface.message = deepcopy(message)
 end
 
-clearMessage!(interface::Interface) = (interface.message = EmptyMessage())
+clearMessage!(interface::Interface) = (interface.message = nothing)
 
 function handle(interface::Interface)
     # Return named interface handle
@@ -42,11 +42,14 @@ end
 
 function ensureMessage!{T<:ProbabilityDistribution}(interface::Interface, payload_type::Type{T})
     # Ensure that interface carries a Message{payload_type}, used for in place updates
-    if typeof(interface.message) == EmptyMessage || typeof(interface.message.payload) != payload_type
-        if payload_type <: DeltaDistribution
+    if interface.message == nothing || typeof(interface.message.payload) != payload_type
+        if payload_type <: DeltaDistribution{Float64}
             interface.message = Message(DeltaDistribution())
+        elseif payload_type <: DeltaDistribution{Bool}
+            interface.message = Message(DeltaDistribution(false))
         elseif payload_type <: MvDeltaDistribution
-            interface.message = Message(MvDeltaDistribution())
+            dims = payload_type.parameters[end]
+            interface.message = Message(MvDeltaDistribution(zeros(dims)))
         else
             interface.message = Message(vague(payload_type))
         end

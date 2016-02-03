@@ -11,12 +11,31 @@ export  attachReadBuffer,
 import Base.run
 import Base.step
 
+function ensureValue!(node::TerminalNode, value_type::Type)
+    # Ensure that node contains a value of type value_type
+    if !isdefined(node, :value) || (typeof(node.value) != value_type)
+        if (value_type <: DeltaDistribution{Float64}) || (value_type <: Float64)
+            node.value = DeltaDistribution()
+        elseif (value_type <: DeltaDistribution{Bool}) || (value_type <: Bool)
+            node.value = DeltaDistribution(false)
+        elseif (value_type <: MvDeltaDistribution) || (value_type <: Vector{Float64})
+            dims = value_type.parameters[end]
+            node.value = MvDeltaDistribution(zeros(dims))
+        else
+            node.value = vague(value_type)
+        end
+    end
+
+    return node.value
+end
+
 function attachReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=currentGraph())
     hasNode(graph, node) || error("The specified node is not part of the current or specified graph")
+    ensureValue!(node, typeof(buffer[1])) # Ensures that a value of correct type is set for message type inference
     graph.read_buffers[node] = buffer
 end
 
-function attachReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, graph::FactorGraph=currentGraph())
+function attachReadBuffer{T<:Node}(nodes::Vector{T}, buffer::Vector, graph::FactorGraph=currentGraph())
     # Mini-batch assignment for read buffers.
     # buffer is divided over nodes equally.
     n_nodes = length(nodes)
@@ -25,6 +44,8 @@ function attachReadBuffer(nodes::Vector{TerminalNode}, buffer::Vector, graph::Fa
     buffmat = reshape(buffer, n_nodes, n_samples_per_node) # samples for one node are present in the rows of buffmat
     for k in 1:n_nodes
         hasNode(graph, nodes[k]) || error("One of the specified nodes is not part of the current or specified graph")
+        (typeof(nodes[k]) <: TerminalNode) || error("$(nodes[k]) is not a TerminalNode")
+        ensureValue!(nodes[k], typeof(buffmat[k,1])) # Ensures that a value of correct type is set for message type inference
         graph.read_buffers[nodes[k]] = vec(buffmat[k,:])
     end
 
@@ -43,12 +64,6 @@ function attachWriteBuffer(interface::Interface, buffer::Vector=Array(Probabilit
     hasNode(graph, interface.node) || error("The specified interface is not part of the current or specified graph")
     graph.write_buffers[interface] = buffer # Write buffer for message
 end
-
-# function attachWriteBuffer(interfaces::Vector{Interface}, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
-#     # Mini-batch assignment for write buffers.
-#     # After each step the batch results are appended to the buffer
-
-# end
 
 function detachWriteBuffer(interface::Interface, graph::FactorGraph=currentGraph())
     hasNode(graph, interface.node) || error("The specified interface is not part of the current or specified graph")
@@ -122,6 +137,7 @@ end
 function run(algorithm::InferenceAlgorithm)
     # Call step(algorithm) repeatedly until at least one read buffer is exhausted
     prepare!(algorithm)
+    
     if length(currentGraph().read_buffers) > 0
         while !any(isempty, values(currentGraph().read_buffers))
             step(algorithm)

@@ -14,7 +14,11 @@ end
 
 InverseGammaDistribution(; a=3.0, b=2.0) = InverseGammaDistribution(a, b)
 
-vague(::Type{InverseGammaDistribution}) = InverseGammaDistribution(a=tiny, b=tiny) # Jeffrey's prior
+function vague!(dist::InverseGammaDistribution)
+    dist.a = tiny
+    dist.b = tiny
+    return dist
+end
 
 isProper(dist::InverseGammaDistribution) = (dist.a >= tiny && dist.b >= tiny)
 
@@ -25,6 +29,8 @@ function Base.mean(dist::InverseGammaDistribution)
         return NaN
     end
 end
+
+Base.mean(::Type{DeltaDistribution{Float64}}, d::InverseGammaDistribution) = DeltaDistribution(mean(d)) # Definition for post-processing
 
 function Base.var(dist::InverseGammaDistribution)
     if isProper(dist) && dist.a > 2.0

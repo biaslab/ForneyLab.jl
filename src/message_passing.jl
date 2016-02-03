@@ -11,27 +11,25 @@ function execute(schedule_entry::ScheduleEntry)
     outbound_interface = schedule_entry.node.interfaces[schedule_entry.outbound_interface_id]
 
     # Evaluate message calculation rule
-    (rule, outbound_message) = schedule_entry.execute()
-
-    # Post processing?
-    if isdefined(schedule_entry, :post_processing)
-        post_processed_output = schedule_entry.post_processing(outbound_message.payload)
-        if (typeof(post_processed_output) <: ProbabilityDistribution) == false
-            # Wrap the output in a DeltaDistribution before packing it in a Message
-            post_processed_output = DeltaDistribution(post_processed_output)
-        end
-        outbound_message = outbound_interface.message = Message(post_processed_output)
-    end
+    isdefined(schedule_entry, :execute) || error("Execute function not defined for schedule entry; perhaps the schedule is not prepared?")
+    outbound_dist = schedule_entry.execute() # Note: this is an in-place operation, including optional post-processing
 
     # Print output for debugging
-    if verbose && rule != :empty
-        interface_handle = (handle(outbound_interface)!="") ? "$(handle(outbound_interface))" : "$(outbound_interface_index)"
-        postproc = (isdefined(schedule_entry, :post_processing)) ? string(schedule_entry.post_processing) : ""
-        rule_field = "$(rule) $(postproc)"
-        println("$(node.id) [$(interface_handle)], $(rule_field): $(format(outbound_message.payload))")
+    if verbose
+        node = schedule_entry.node
+        interface = node.interfaces[schedule_entry.outbound_interface_id]
+        interface_handle = (handle(interface)!="") ? "($(handle(interface)))" : ""
+        println(replace("$(schedule_entry.rule) on $(typeof(node)) $(interface.node.id) interface $(schedule_entry.outbound_interface_id) $(interface_handle)", "ForneyLab.", ""))
+        if isdefined(schedule_entry, :inbound_types) && isdefined(schedule_entry, :outbound_type)
+            println(replace("$(schedule_entry.inbound_types) -> Message{$(schedule_entry.intermediate_outbound_type)}", "ForneyLab.", ""))
+        end
+        if isdefined(schedule_entry, :post_processing)
+            println(replace("Post processing: $(schedule_entry.post_processing)", "ForneyLab.", ""))
+        end
+        println("Result: $(outbound_dist)")
     end
 
-    return outbound_message
+    return outbound_dist
 end
 
 # Execute schedules
@@ -41,15 +39,20 @@ function execute(schedule::Schedule)
 
     # Print table header for execution log
     if verbose
-        println("\n\nExecution log (node [interface], rule: result)")
+        println("\n\nExecution log")
         println("--------------------------------------------")
     end
 
-    for schedule_entry in schedule
-        execute(schedule_entry)
+    for i=1:length(schedule)
+        if verbose
+            println("$(i).")
+        end
+        execute(schedule[i])
     end
+
     # Return the last message in the schedule
-    return schedule[end].interface.message
+    entry = schedule[end] 
+    return entry.node.interfaces[entry.outbound_interface_id].message
 end
 
 function clearMessages!(node::Node)

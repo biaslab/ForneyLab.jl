@@ -47,7 +47,13 @@ end
 
 GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
 
-vague(::Type{GaussianDistribution}) = GaussianDistribution(m=0.0, V=huge)
+function vague!(dist::GaussianDistribution)
+    dist.m = 0.0
+    dist.V = huge
+    dist.W = NaN
+    dist.xi = NaN
+    return dist
+end
 
 function format(dist::GaussianDistribution)
     if !isnan(dist.m) && !isnan(dist.V)
@@ -67,6 +73,8 @@ show(io::IO, dist::GaussianDistribution) = println(io, format(dist))
 
 Base.mean(dist::GaussianDistribution) = isProper(dist) ? ensureParameter!(dist, Val{:m}).m : NaN
 
+Base.mean(::Type{DeltaDistribution{Float64}}, d::GaussianDistribution) = DeltaDistribution(mean(d)) # Definition for post-processing
+
 Base.var(dist::GaussianDistribution) = isProper(dist) ? ensureParameter!(dist, Val{:V}).V : NaN
 
 function isProper(dist::GaussianDistribution)
@@ -83,6 +91,8 @@ function sample(dist::GaussianDistribution)
     ensureParameters!(dist, (:m, :V))
     return sqrt(dist.V)*randn() + dist.m
 end
+
+sample(::Type{DeltaDistribution{Float64}}, d::GaussianDistribution) = DeltaDistribution(sample(d)) # Definition for post-processing
 
 # Methods to check and convert different parametrizations
 function isWellDefined(dist::GaussianDistribution)
@@ -183,6 +193,8 @@ end
 
 # Converts from DeltaDistribution -> GaussianDistribution
 # NOTE: this introduces a small error because the variance is set >0
+convert(::Type{GaussianDistribution}, flt::Float64) = GaussianDistribution(m=flt, V=tiny)
+
 convert(::Type{GaussianDistribution}, delta::DeltaDistribution{Float64}) = GaussianDistribution(m=delta.m, V=tiny)
 
 convert(::Type{Message{GaussianDistribution}}, msg::Message{DeltaDistribution{Float64}}) = Message(GaussianDistribution(m=msg.payload.m, V=tiny))

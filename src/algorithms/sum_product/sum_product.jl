@@ -1,16 +1,30 @@
+import Base.show
 export SumProduct
 
 include("scheduler.jl")
 
-type SumProduct <: InferenceAlgorithm
+abstract AbstractSumProduct <: InferenceAlgorithm
+
+type SumProduct <: AbstractSumProduct
     execute::Function
     schedule::Schedule
 end
 
-function SumProduct(graph::FactorGraph=currentGraph())
+function show(algo::SumProduct)
+    println("SumProduct inference algorithm")
+    println("    message passing schedule length: $(length(algo.schedule))")
+    println("Use show(algo.schedule) to view the message passing schedule.")
+end
+
+############################################
+# SumProduct algorithm constructors
+############################################
+
+function SumProduct(graph::FactorGraph=currentGraph(); post_processing_functions=Dict{Interface, Function}())
     # Generates a SumProduct algorithm that propagates messages to all wraps and write buffers.
     # Only works in acyclic graphs.
     schedule = generateSumProductSchedule(graph)
+    setPostProcessing!(schedule, post_processing_functions)
     exec(algorithm) = execute(algorithm.schedule)
 
     algo = SumProduct(exec, schedule)
@@ -19,10 +33,11 @@ function SumProduct(graph::FactorGraph=currentGraph())
     return algo
 end
 
-function SumProduct(outbound_interface::Interface)
+function SumProduct(outbound_interface::Interface; post_processing_functions=Dict{Interface, Function}())
     # Generates a SumProduct algorithm to calculate the outbound message on outbound_interface.
     # Only works in acyclic graphs.
     schedule = generateSumProductSchedule(outbound_interface)
+    setPostProcessing!(schedule, post_processing_functions)
     exec(algorithm) = execute(algorithm.schedule)
 
     algo = SumProduct(exec, schedule)
@@ -31,10 +46,11 @@ function SumProduct(outbound_interface::Interface)
     return algo
 end
 
-function SumProduct(partial_list::Vector{Interface})
+function SumProduct(partial_list::Vector{Interface}; post_processing_functions=Dict{Interface, Function}())
     # Generates a SumProduct algorithm that at least propagates to all interfaces in the argument vector.
     # Only works in acyclic graphs.
     schedule = generateSumProductSchedule(partial_list)
+    setPostProcessing!(schedule, post_processing_functions)
     exec(algorithm) = execute(algorithm.schedule)
 
     algo = SumProduct(exec, schedule)
@@ -43,10 +59,11 @@ function SumProduct(partial_list::Vector{Interface})
     return algo
 end
 
-function SumProduct(edge::Edge)
+function SumProduct(edge::Edge; post_processing_functions=Dict{Interface, Function}())
     # Generates a SumProduct algorithm to calculate the marginal on edge
     # Only works in acyclic graphs.
     schedule = generateSumProductSchedule([edge.head, edge.tail])
+    setPostProcessing!(schedule, post_processing_functions)
     function exec(algorithm)
         execute(algorithm.schedule)
         calculateMarginal!(edge)
@@ -58,48 +75,40 @@ function SumProduct(edge::Edge)
     return algo
 end
 
-function inferDistributionTypes!(algo::SumProduct)
+
+############################################
+# Type inference and preparation
+############################################
+
+function inferDistributionTypes!(algo::AbstractSumProduct)
     # Infer the payload types for all messages in algo.schedule
     # Fill schedule_entry.inbound_types and schedule_entry.outbound_type
     schedule_entries = Dict{Interface, ScheduleEntry}()
 
     for entry in algo.schedule
-        # Generate array of inbound types
+        collectInboundTypes!(entry, schedule_entries, algo) # SumProduct specific collection of inbound types
+        inferOutboundType!(entry) # For the SumProduct algorithm, the only allowed update rule is the sumProductRule! rule
+
         outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
-        inbound_types = []
-        for i=1:length(entry.node.interfaces)
-            if i == entry.outbound_interface_id
-                push!(inbound_types, Void)
-            else
-                interface = entry.node.interfaces[i]
-                push!(inbound_types, Message{schedule_entries[interface.partner].outbound_type})
-            end
-        end
-
-        # Find all compatible calculation rules
-        available_rules = methods(sumProduct!, [typeof(entry.node); Type{Val{entry.outbound_interface_id}}; inbound_types; Any])
-        outbound_types = [rule.sig.types[end] for rule in available_rules]
-
-        # The oubound outbound_types should contain just one element (there should be just one available)
-        if length(outbound_types) == 0
-            error("No calculation rule available for inbound types $(inbound_types).\n$(entry)")
-        elseif length(outbound_types) > 1
-            error("Multiple outbound type possibilities ($(outbound_types)) for inbound types $(inbound_types).\n$(entry)")
-        elseif outbound_types[1] == Any
-            # The computation rule produces Any, which indicates that the node is parametrized by its outbound type (e.g. a TerminalNode)
-            (typeof(entry.node).parameters[1] <: ProbabilityDistribution) || error("$(typeof(entry.node)) $(entry.node.id) must be parametrized by a ProbabilityDistribution")
-            entry.outbound_type = typeof(entry.node).parameters[1]
-        elseif outbound_types[1] <: ProbabilityDistribution
-            entry.outbound_type = outbound_types[1]
-        else
-            error("Unknown output of message calculation rule: $(outbound_types[1])\n$(entry)")
-        end
-
-        entry.inbound_types = inbound_types # Save inbound types on schedule entry
         schedule_entries[outbound_interface] = entry # Assign schedule entry to lookup dictionary
     end
 
     return algo
+end
+
+function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Interface, ScheduleEntry}, ::SumProduct)
+    # Infers inbound types for node relative to the outbound interface
+    entry.inbound_types = []
+
+    for (id, interface) in enumerate(entry.node.interfaces)
+        if id == entry.outbound_interface_id
+            push!(entry.inbound_types, Void)
+        else
+            push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
+        end
+    end
+
+    return entry
 end
 
 function prepare!(algo::SumProduct)
@@ -108,35 +117,24 @@ function prepare!(algo::SumProduct)
         ensureMessage!(entry.node.interfaces[entry.outbound_interface_id], entry.outbound_type)
     end
 
-    # Compile the schedule (define schedule_entry.execute)
-    compile!(algo.schedule)
+    # Compile the schedule (define entry.execute)
+    compile!(algo.schedule, algo)
 
     return algo
 end
 
-function compile!(schedule_entry::ScheduleEntry, ::Type{Val{symbol("ForneyLab.sumProduct!")}}, ::InferenceAlgorithm)
-    # Generate schedule_entry.execute for SumProduct algorithm
+function compile!(entry::ScheduleEntry, ::Type{Val{symbol(sumProductRule!)}}, ::InferenceAlgorithm)
+    # Generate entry.execute for schedule entry with sumProductRule! update rule
 
-    # Collect references to all required inbound messages for executing message computation rule
-    node = schedule_entry.node
-    outbound_interface_id = schedule_entry.outbound_interface_id
-
-    rule_arguments = []
-    # Add inbound messages to rule_arguments
-    for j = 1:length(node.interfaces)
-        interface = node.interfaces[j]
-        if j == outbound_interface_id
-            # Inbound on outbound_interface is irrelevant
-            push!(rule_arguments, nothing)
+    inbound_rule_arguments = []
+    # Add inbound messages to inbound_rule_arguments
+    for (id, interface) in enumerate(entry.node.interfaces)
+        if id == entry.outbound_interface_id
+            push!(inbound_rule_arguments, nothing)
         else
-            push!(rule_arguments, interface.partner.message)
+            push!(inbound_rule_arguments, interface.partner.message)
         end
     end
-    # Add outbound distribution to rule_arguments
-    push!(rule_arguments, interface.message.payload)
 
-    # Assign the "compiled" computation rule as an anomynous function to schedule entry.execute
-    schedule_entry.execute = ( () -> sumProduct!(node, Val{outbound_interface_id}, rule_arguments...) )
-
-    return schedule_entry
+    return buildExecute!(entry, inbound_rule_arguments)
 end

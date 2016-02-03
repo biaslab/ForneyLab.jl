@@ -14,11 +14,17 @@ end
 
 GammaDistribution(; a=1.0, b=1.0) = GammaDistribution(a, b)
 
-vague(::Type{GammaDistribution}) = GammaDistribution(a=tiny, b=tiny) # Scale invariant (Jeffrey's) prior
+function vague!(dist::GammaDistribution)
+    dist.a = tiny
+    dist.b = tiny
+    return dist
+end
 
 isProper(dist::GammaDistribution) = (dist.a >= tiny && dist.b >= tiny)
 
 Base.mean(dist::GammaDistribution) = isProper(dist) ? dist.a/dist.b : NaN
+
+Base.mean(::Type{DeltaDistribution{Float64}}, d::GammaDistribution) = DeltaDistribution(mean(d)) # Definition for post-processing
 
 Base.var(dist::GammaDistribution) = isProper(dist) ? dist.a / (dist.b^2) : NaN
 

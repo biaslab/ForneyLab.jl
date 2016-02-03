@@ -12,15 +12,22 @@ type BernoulliDistribution <: UnivariateProbabilityDistribution
 end
 BernoulliDistribution() = BernoulliDistribution(0.5)
 
-vague(::Type{BernoulliDistribution}) = BernoulliDistribution(0.5)
+function vague!(dist::BernoulliDistribution)
+    dist.p = 0.5
+    return dist
+end
 
 isProper(dist::BernoulliDistribution) = (0 <= dist.p <= 1)
 
 Base.mean(dist::BernoulliDistribution) = dist.p
 
+Base.mean(::Type{DeltaDistribution{Float64}}, d::BernoulliDistribution) = DeltaDistribution(mean(d)) # Definition for post-processing
+
 Base.var(dist::BernoulliDistribution) = dist.p*(1-dist.p)
 
 sample(dist::BernoulliDistribution) = (rand() < dist.p)
+
+sample(::Type{DeltaDistribution{Bool}}, d::BernoulliDistribution) = DeltaDistribution(sample(d)) # Definition for post-processing
 
 format(dist::BernoulliDistribution) = "Bernoulli(p=$(format(dist.p)))"
 

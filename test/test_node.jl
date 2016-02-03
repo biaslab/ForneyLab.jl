@@ -6,10 +6,10 @@ facts("General node properties unit tests") do
     FactorGraph()
     c = 0
     for node_type in subtypes(Node)
-        if node_type!=CompositeNode && node_type!=MockNode
+        if node_type!=MockNode
             context("$(node_type) properties should include interfaces and id") do
                 test_node = node_type()
-                @fact typeof(test_node) --> node_type
+                @fact typeof(test_node) <: node_type --> true
                 @fact typeof(test_node.interfaces) --> Array{Interface, 1} # Check for interface array
                 @fact length(test_node.interfaces) >= 1 --> true # Check length of interface array
                 @fact typeof(test_node.id) --> Symbol
@@ -28,10 +28,6 @@ facts("General node properties unit tests") do
                     # Check if the node interfaces couple back to the same node
                     @fact my_node.interfaces[interface_index].node --> my_node
                 end
-            end
-
-            context("$(node_type) should have at least 1 sumProduct!() method") do
-                @fact contains(string(methods(ForneyLab.sumProduct!)), string("::", node_type)) --> true
             end
 
             context("$(node_type) constructor should add node to the current graph") do
@@ -78,7 +74,7 @@ facts("Connections between nodes integration tests") do
 
     context("delete! should remove a node and coupled read and write buffers") do
         g = initializeChainOfNodes()
-        buff_e = attachWriteBuffer(ForneyLab.e(:node1_node2))
+        buff_e = attachWriteBuffer(eg(:node1_node2))
         buff_i = attachWriteBuffer(n(:node2).i[:out])
         rd_buff = attachReadBuffer(n(:node1), zeros(3))
 

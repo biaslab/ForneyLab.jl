@@ -11,7 +11,7 @@ export  currentGraph,
         node,
         edge,
         n,
-        e
+        eg
 
 abstract AbstractWrap
 
@@ -83,16 +83,22 @@ function nodes(edges::Set{Edge})
     return connected_nodes
 end
 
-edges(graph::FactorGraph = currentGraph()) = Set{Edge}(values(graph.edges))
+edges(graph::FactorGraph=currentGraph()) = Set{Edge}(values(graph.edges))
 edges(node::Node) = Set{Edge}([intf.edge for intf in node.interfaces])
 edges(nodeset::Set{Node}) = union(map(edges, nodeset)...)
 
 # Search edge and node by id
-node(id::Symbol, graph::FactorGraph = currentGraph()) = graph.nodes[id]
-n = node
+node(id::Symbol, graph::FactorGraph=currentGraph()) = graph.nodes[id]
+nodes(ids::Vector{Symbol}, graph::FactorGraph=currentGraph()) = Node[node(id, graph) for id in ids]
+# Shorthands
+n(id::Symbol, graph::FactorGraph=currentGraph()) = node(id, graph)
+n(ids::Vector{Symbol}, graph::FactorGraph=currentGraph()) = nodes(ids, graph)
 
 edge(id::Symbol, graph::FactorGraph = currentGraph()) = graph.edges[id]
-e = edge
+edges(ids::Vector{Symbol}, graph::FactorGraph=currentGraph()) = Edge[edge(id, graph) for id in ids]
+# Shorthands
+eg(id::Symbol, graph::FactorGraph = currentGraph()) = edge(id, graph)
+eg(ids::Vector{Symbol}, graph::FactorGraph=currentGraph()) = edges(ids, graph)
 
 # Add/remove graph elements
 function addNode!(graph::FactorGraph, nd::Node)

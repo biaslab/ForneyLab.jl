@@ -50,14 +50,9 @@ facts("Functions for collecting nodes and edges") do
         # FactorGraph test
         initializeLoopyGraph()
         @fact nodes(currentGraph()) --> Set{Node}([n(:driver), n(:inhibitor), n(:noise), n(:add)])
-
-        # Composite node test
-        c_node = CompositeNode(currentGraph())
-        @fact nodes(c_node) --> Set{Node}([n(:driver, c_node.internal_graph), n(:inhibitor, c_node.internal_graph), n(:noise, c_node.internal_graph), n(:add, c_node.internal_graph)]) # nodes() should return internal nodes of a CompositeNode
     end
 
     context("edge(id::Symbol) should return edge with matching id") do
-        @fact is(ForneyLab.e, edge) --> true
         graph_1 = FactorGraph()
         graph_2 = FactorGraph()
         my_edge = Edge(MockNode().i[:out], MockNode().i[:out])
@@ -71,7 +66,6 @@ facts("Functions for collecting nodes and edges") do
     end
 
     context("node(id::Symbol) should return node with matching id") do
-        @fact is(n, node) --> true
         graph_1 = FactorGraph()
         graph_2 = FactorGraph()
         mocknode = MockNode(id=:my_mocknode)

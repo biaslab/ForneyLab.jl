@@ -3,6 +3,19 @@
 #####################
 
 facts("Read/write buffer integration tests") do
+    context("ensureValue!() should ensure TerminalNode has a value") do
+        # Used for readbuffer attachment
+        FactorGraph()
+        node = TerminalNode()
+
+        @fact ForneyLab.ensureValue!(node, Float64) --> DeltaDistribution()
+        @fact ForneyLab.ensureValue!(node, BernoulliDistribution) --> BernoulliDistribution()
+        @fact ForneyLab.ensureValue!(node, DeltaDistribution{Float64}) --> DeltaDistribution()
+        @fact ForneyLab.ensureValue!(node, Bool) --> DeltaDistribution(false)
+        @fact ForneyLab.ensureValue!(node, GaussianDistribution) --> vague(GaussianDistribution)
+        @fact ForneyLab.ensureValue!(node, MvDeltaDistribution{Float64, 3}) --> MvDeltaDistribution([0.0, 0.0, 0.0])
+    end
+
     # attachReadBuffer
     context("attachReadBuffer should register a read buffer for a TerminalNode") do
         g = initializeBufferGraph()
@@ -40,16 +53,16 @@ facts("Read/write buffer integration tests") do
     context("attachWriteBuffer should register a write buffer for an Edge (marginal)") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        attachWriteBuffer(ForneyLab.e(:e), write_buffer)
-        @fact g.write_buffers[ForneyLab.e(:e)] --> write_buffer
+        attachWriteBuffer(eg(:e), write_buffer)
+        @fact g.write_buffers[eg(:e)] --> write_buffer
     end
 
     # detachWriteBuffer
     context("detachWriteBuffer should deregister a write buffer on an edge") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        attachWriteBuffer(ForneyLab.e(:e), write_buffer)
-        detachWriteBuffer(ForneyLab.e(:e))
+        attachWriteBuffer(eg(:e), write_buffer)
+        detachWriteBuffer(eg(:e))
         @fact length(g.write_buffers) --> 0
     end
     context("detachWriteBuffer should deregister a write buffer on an interface") do
@@ -63,7 +76,7 @@ facts("Read/write buffer integration tests") do
     context("detachBuffers should deregister all read/write buffers") do
         g = initializeBufferGraph()
         write_buffer = Array(Any, 0)
-        attachWriteBuffer(ForneyLab.e(:e), write_buffer)
+        attachWriteBuffer(eg(:e), write_buffer)
         detachBuffers(g)
         @fact length(g.read_buffers) --> 0
         @fact length(g.write_buffers) --> 0
@@ -76,8 +89,8 @@ facts("step integration tests") do
         g = FactorGraph()
         TerminalNode(DeltaDistribution(0.0), id=:in)
         AdditionNode(id=:add)
-        TerminalNode(id=:delta)
-        TerminalNode(id=:out)
+        TerminalNode(DeltaDistribution(), id=:delta)
+        TerminalNode(DeltaDistribution(), id=:out)
         Edge(n(:in), n(:add).i[:in1])
         Edge(n(:delta), n(:add).i[:in2])
         Edge(n(:add).i[:out], n(:out))
@@ -86,6 +99,7 @@ facts("step integration tests") do
         attachReadBuffer(n(:delta), deltas)
         results = attachWriteBuffer(n(:add).i[:out])
         algo = SumProduct(g) # The timewraps and buffers tell the autoscheduler what should be computed
+        prepare!(algo)
         while !isempty(deltas)
             step(algo)
         end
@@ -99,8 +113,8 @@ facts("run() integration tests") do
         g = FactorGraph()
         TerminalNode(DeltaDistribution(0.0), id=:in)
         AdditionNode(id=:add)
-        TerminalNode(id=:delta)
-        TerminalNode(id=:out)
+        TerminalNode(DeltaDistribution(), id=:delta)
+        TerminalNode(DeltaDistribution(), id=:out)
         Edge(n(:in), n(:add).i[:in1])
         Edge(n(:delta), n(:add).i[:in2])
         Edge(n(:add).i[:out], n(:out))
@@ -108,8 +122,7 @@ facts("run() integration tests") do
         deltas = [DeltaDistribution(n) for n in collect(1.:10.)]
         attachReadBuffer(n(:delta), deltas)
         results = attachWriteBuffer(n(:add).i[:out])
-        schedule = ForneyLab.generateSumProductSchedule(n(:add).i[:out])
-        algo = SumProduct((algorithm) -> execute(algorithm.schedule), schedule)
+        algo = SumProduct()
         run(algo)
         @fact results --> [DeltaDistribution(r) for r in cumsum(collect(1.:10.))]
     end
