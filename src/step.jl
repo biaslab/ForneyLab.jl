@@ -134,16 +134,19 @@ function step(algorithm::InferenceAlgorithm)
     return result
 end
 
-function run(algorithm::InferenceAlgorithm)
-    # Call step(algorithm) repeatedly until at least one read buffer is exhausted
+function run(algorithm::InferenceAlgorithm; n_steps::Int64=0)
+    # Call step(algorithm) repeatedly
     prepare!(algorithm)
     
-    if length(currentGraph().read_buffers) > 0
+    if n_steps > 0 # When a valid number of steps is specified, execute the algorithm n_steps times
+        for i = 1:n_steps
+            step(algorithm)
+        end
+    elseif length(currentGraph().read_buffers) > 0 # If no valid n_steps is specified, run until at least one of the read buffers is exhausted
         while !any(isempty, values(currentGraph().read_buffers))
             step(algorithm)
         end
-    else
-        # No read buffers, just call step once
+    else # No read buffers or valid n_steps, just call step once
         step(algorithm)
     end
 end
