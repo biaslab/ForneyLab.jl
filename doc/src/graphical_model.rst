@@ -5,7 +5,7 @@
 .. seealso::
     **Demo:** `Basics <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/01_basics.ipynb>`_
 
-Building the graphical model amounts to adding nodes and edges to a :class:`FactorGraph`. This chapter introduces the main types and functions that are involved in setting up the graphical model. For some examples, have a look at the following demos: ``random_walk``, ``simple_kalman``.
+Building the graphical model amounts to adding nodes and edges to a :class:`FactorGraph`. This chapter introduces the main types and functions that are involved in setting up the graphical model.
 
 The ``FactorGraph`` type
 ========================
@@ -15,8 +15,8 @@ The ``FactorGraph`` type
     A directed graph consisting of factor nodes and edges::
 
         type FactorGraph
-            n::Dict{Symbol, Node} # Nodes
-            e::Dict{Symbol, Edge} # Edges
+            nodes::Dict{Symbol, Node} # Nodes
+            edges::Dict{Symbol, Edge} # Edges
             # and some internal stuff for attaching buffers etc...
         end
 
@@ -47,7 +47,7 @@ The ``id`` field holds a unique id, which can be passed to the constructor as a 
 The calling signature of a node constructor depends on the specific type of the node, e.g.::
 
     AdditionNode(id=:my_adder)  # Node func.: out = in1 + in2
-    GainNode(3.0, id=:times_3) # Node func.: out = 3.0 * in1
+    GainNode(gain=3.0, id=:times_3) # Node func.: out = 3.0 * in1
 
 A ``Node`` constructor always adds the constructed node to the current graph. To delete a ``Node`` from a :class:`FactorGraph`, use ``delete!(graph::FactorGraph, node::Node)``. Nodes in the current graph can be accessed through the function ``node(id::Symbol)`` (which is aliased by the function ``n(id::Symbol)``), e.g.::
 
@@ -77,7 +77,7 @@ The ``Edge`` type
 
         Edge(n(:node1).i[:out], n(:node2).i[:in], GammaDistribution, id=:my_edge)
 
-    If the distribution type is omitted, a :class:`GaussianDistribution` is assumed. For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface, e.g.,
+    If the distribution type is omitted, a :class:`GaussianDistribution` is assumed. For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface, e.g.,::
 
         Edge(TerminalNode(), EqualityNode())
 
@@ -94,10 +94,10 @@ Strictly speaking, a factor graph edge does not need to be directed. However, in
 
 ForneyLab does not allow half-edges: every :class:`Edge` should be connected to two nodes at all times. Open ended edges should be terminated by a :class:`TerminalNode`.
 
-Edges in the current graph can be accessed through the function ``edge(id::Symbol)`` (which is aliased by the function ``e(id::Symbol)``), e.g.::
+Edges in the current graph can be accessed through the function ``edge(id::Symbol)`` (which is aliased by the function ``eg(id::Symbol)``), e.g.::
 
     edge(:my_edge)
-    e(:my_edge)
+    eg(:my_edge)
 
 
 Example
@@ -185,7 +185,7 @@ Interfacing to and from the graph
 =================================
 
 .. seealso::
-    **Demo:** `Simple Kalman filter <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/04_simple_kalman.ipynb>`_
+    **Demo:** `Kalman filter <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/04_simple_kalman.ipynb>`_
 
 To link a :class:`FactorGraph` to the outside world, so-called buffers can be used. A buffer can be used to insert data into the graph ('read buffer') or to extract data from the graph ('write buffer'). Some helper functions are available to work with these buffers.
 
@@ -209,7 +209,7 @@ Read buffers hold input data that is read into the graph from the outside world.
 Output from the graph
 ---------------------
 
-Write buffers allow message payloads and edge marginals to be extracted from the :class:`FactorGraph`. A write buffer is an ``Array{ProbabilityDistribution,1}``, and can be attached to either an :class:`Interface` or an :class:`Edge`. Every call to :func:`step()` will result in exactly one element (message payload or marginal) being pushed onto every write buffer. The following functions are available:
+Write buffers allow message payloads and edge marginals to be extracted from the :class:`FactorGraph`. A write buffer is a ``Vector{ProbabilityDistribution}``, and can be attached to either an :class:`Interface` or an :class:`Edge`. Every call to :func:`step()` will result in exactly one element (message payload or marginal) being pushed onto every write buffer. The following functions are available:
 
 .. function:: attachWriteBuffer(interface::Interface)
 
