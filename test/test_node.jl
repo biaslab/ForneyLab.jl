@@ -71,24 +71,6 @@ facts("Connections between nodes integration tests") do
         edge = Edge(n(:node2).interfaces[1], n(:node1).interfaces[1]) # Edge from node 2 to node 1
         testInterfaceConnections(n(:node1), n(:node2))
     end
-
-    context("delete! should remove a node and coupled read and write buffers") do
-        g = initializeChainOfNodes()
-        buff_e = attachWriteBuffer(eg(:node1_node2))
-        buff_i = attachWriteBuffer(n(:node2).i[:out])
-        rd_buff = attachReadBuffer(n(:node1), zeros(3))
-
-        delete!(g, n(:node2))
-        @fact haskey(g.nodes, :node2) --> false
-        @fact haskey(g.edges, :node1_node2) --> false
-        @fact haskey(g.edges, :node2_node3) --> false
-        @fact length(g.write_buffers) --> 0
-
-        @fact length(g.read_buffers) --> 1
-        delete!(g, n(:node1))
-        @fact haskey(g.nodes, :node1) --> false
-        @fact length(g.read_buffers) --> 0
-    end
 end
 
 facts("copy(::Node)") do

@@ -122,7 +122,7 @@ function step(algorithm::InferenceAlgorithm)
         if typeof(component) == Interface
             push!(write_buffer, deepcopy(component.message.payload))
         elseif typeof(component) == Edge
-            push!(write_buffer, calculateMarginal(component))
+            push!(write_buffer, calculateMarginal!(component))
         end
     end
 

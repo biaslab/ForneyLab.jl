@@ -49,7 +49,7 @@ The calling signature of a node constructor depends on the specific type of the 
     AdditionNode(id=:my_adder)  # Node func.: out = in1 + in2
     GainNode(gain=3.0, id=:times_3) # Node func.: out = 3.0 * in1
 
-A ``Node`` constructor always adds the constructed node to the current graph. To delete a ``Node`` from a :class:`FactorGraph`, use ``delete!(graph::FactorGraph, node::Node)``. Nodes in the current graph can be accessed through the function ``node(id::Symbol)`` (which is aliased by the function ``n(id::Symbol)``), e.g.::
+A ``Node`` constructor always adds the constructed node to the current graph. Nodes in the current graph can be accessed through the function ``node(id::Symbol)`` (which is aliased by the function ``n(id::Symbol)``), e.g.::
 
     node(:my_adder)
     n(:my_adder)
@@ -68,27 +68,21 @@ The ``Edge`` type
             tail::Interface
             head::Interface
             marginal::Union(ProbabilityDistribution, Void)
-            distribution_type::DataType
         end
 
-    An edge represents a variable, so the ``marginal`` field may contain the marginal :class:`ProbabilityDistribution` over that variable. The ``distribution_type`` field indicates the allowed distribution type of the variable.
+    An edge represents a variable, so the ``marginal`` field may contain the marginal :class:`ProbabilityDistribution` over that variable.
 
-    In general, an ``Edge`` is constructed by passing the tail and head interfaces as well as the distribution type::
+    In general, an ``Edge`` is constructed by passing the tail and head interfaces::
 
-        Edge(n(:node1).i[:out], n(:node2).i[:in], GammaDistribution, id=:my_edge)
+        Edge(n(:node1).i[:out], n(:node2).i[:in], id=:my_edge)
 
-    If the distribution type is omitted, a :class:`GaussianDistribution` is assumed. For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface, e.g.,::
+    For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface, e.g.,::
 
         Edge(TerminalNode(), EqualityNode())
 
     In such cases the constructor will automatically pick the first free interface of the node.
 
-    The ``Edge`` constructor will add the edge to the current graph (the head and tail nodes should already belong to that graph). To delete an ``Edge`` from a :class:`FactorGraph`, use ``delete!(graph::FactorGraph, edge::Edge)``:
-
-    .. function:: delete!(graph::FactorGraph, edge::Edge)
-
-        Delete the specified ``Edge`` from ``graph``.
-
+    The ``Edge`` constructor will add the edge to the current graph (the head and tail nodes should already belong to that graph).
 
 Strictly speaking, a factor graph edge does not need to be directed. However, in ForneyLab all edges are directed to have a consistent meaning for terms like "forward message", "backward messages", and "forward pass". Apart from that, the edge direction has no functional consequences.
 
@@ -128,6 +122,7 @@ ForneyLab does not allow 'half-edges' that are connected to just one node. Inste
     Edge(n(:adder_1).i[:out], n(:adder_2).i[:in1])
     Edge(n(:t_c2), n(:adder_2).i[:in2])
     Edge(n(:adder_2).i[:out], n(:t_x3))
+
 
 Chaining factor graph sections
 ==============================
@@ -175,10 +170,6 @@ In practical situations it is common for a factor graph to be a concatination of
     .. function:: wraps(node::TerminalNode, graph::FactorGraph=currentGraph())
 
         Returns a set of all ``Wrap`` instances in which ``node`` is involved. Note that a node can be the source in multiple wraps, but it can be a sink at most once.
-
-    .. function:: delete!(graph::FactorGraph, wrap::Wrap)
-
-        Delete the specified ``Wrap`` from ``graph``.
 
 
 Interfacing to and from the graph

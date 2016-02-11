@@ -234,8 +234,3 @@ An :class:`Edge` represents a variable in the probabilistic model. The ``edge.ma
 .. function:: calculateMarginal!(edge)
 
     Identical to ``calculateMarginal(edge)``, but the calculated marginal is also written to ``edge.marginal``.
-
-
-.. function:: getMarginalType(distributions...)
-
-    Returns the type of the marginal distribution given the types of its factors (i.e. carried by forward/backward messages).

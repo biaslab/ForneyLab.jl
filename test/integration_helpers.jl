@@ -138,7 +138,7 @@ function initializeFactoringGraph()
     GaussianNode(id=:g2, V=0.1)
     Edge(n(:t1).i[:out], n(:a1).i[:in])
     Edge(n(:a1).i[:out], n(:g1).i[:mean])
-    Edge(n(:t2).i[:out], n(:g1).i[:variance], InverseGammaDistribution)
+    Edge(n(:t2).i[:out], n(:g1).i[:variance])
     Edge(n(:g1).i[:out], n(:add1).i[:in1])
     Edge(n(:add1).i[:out], n(:g2).i[:mean])
     Edge(n(:g2).i[:out], n(:add1).i[:in2])
@@ -221,9 +221,9 @@ function initializeGaussianNode(; y::ProbabilityDistribution=GaussianDistributio
 
     g = FactorGraph()
     GaussianNode(form=:precision, id=:node)
-    Edge(TerminalNode(GaussianDistribution()).i[:out], n(:node).i[:mean], GaussianDistribution, id=:edge1)
-    Edge(TerminalNode(GammaDistribution()).i[:out], n(:node).i[:precision], GammaDistribution, id=:edge2)
-    Edge(n(:node).i[:out], TerminalNode(y).i[:out], GaussianDistribution, id=:edge3)
+    Edge(TerminalNode(GaussianDistribution()).i[:out], n(:node).i[:mean], id=:edge1)
+    Edge(TerminalNode(GammaDistribution()).i[:out], n(:node).i[:precision], id=:edge2)
+    Edge(n(:node).i[:out], TerminalNode(y).i[:out], id=:edge3)
 
     return g
 end

@@ -25,12 +25,6 @@ facts("Edge integration tests") do
         @fact_throws Edge(node1.i[:out], node2.i[:out])
     end
 
-    context("Edge constructor should write the distribution type") do
-        initializePairOfMockNodes()
-        edge = Edge(n(:node1).i[:out], n(:node2).i[:out], GaussianDistribution)
-        @fact edge.distribution_type --> GaussianDistribution
-    end
-
     context("It is not possible to add an Edge to a locked FactorGraph or to deepcopy an Edge") do
         initializePairOfMockNodes()
         currentGraph().locked = true
@@ -104,21 +98,6 @@ facts("Edge integration tests") do
         edge_cd = Edge(node_c.i[:out], node_d.i[:out])
         sorted = sort!([edge_bc, edge_ab, edge_cd])
         @fact sorted --> [edge_ab, edge_bc, edge_cd]
-    end
-
-    context("delete! should remove an edge and coupled write buffers") do
-        g = initializePairOfMockNodes()
-        edge = Edge(n(:node1).i[:out], n(:node2).i[:out])
-        attachWriteBuffer(n(:node1).i[:out])
-        attachWriteBuffer(eg(:node1_node2))
-
-        delete!(g, edge)
-        @fact length(g.edges) --> 0
-        @fact n(:node1).i[:out].edge --> nothing
-        @fact n(:node2).i[:out].edge --> nothing
-        @fact n(:node1).i[:out].partner --> nothing
-        @fact n(:node2).i[:out].partner --> nothing
-        @fact length(g.write_buffers) --> 0
     end
 
     context("forwardMessage(), forwardMessage(), ensureMarginal!()") do

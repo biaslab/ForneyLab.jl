@@ -41,13 +41,13 @@ facts("ExpectationPropagation algorithm integration tests") do
         equ = EqualityNode(id=symbol("equ$(section)"))
         sig = SigmoidNode(id=symbol("sig$(section)"))
         y = TerminalNode(samples[section], id=symbol("t_Y$(section)"))
-        Edge(prev_section_connector, equ.interfaces[1], GaussianDistribution)
-        Edge(equ.interfaces[2], sig.i[:real], GaussianDistribution, id=symbol("X$(section)"))
-        Edge(sig.i[:bin], y, BernoulliDistribution)
+        Edge(prev_section_connector, equ.interfaces[1])
+        Edge(equ.interfaces[2], sig.i[:real], id=symbol("X$(section)"))
+        Edge(sig.i[:bin], y)
         prev_section_connector = equ.interfaces[3]
         push!(sites, (sig.i[:real], GaussianDistribution))
     end
-    Edge(prev_section_connector, TerminalNode(vague(GaussianDistribution), id=:t_X_term), GaussianDistribution, id=:X_marg) # Terminate equality chain
+    Edge(prev_section_connector, TerminalNode(vague(GaussianDistribution), id=:t_X_term), id=:X_marg) # Terminate equality chain
 
     # ForneyLab.draw(g)
 

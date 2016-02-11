@@ -1,4 +1,4 @@
-export calculateMarginal, calculateMarginal!, getMarginalType
+export calculateMarginal, calculateMarginal!
 
 # Functions for calculating marginals on nodes and edges.
 
@@ -307,11 +307,3 @@ function calculateMarginal!(edge::Edge, forward_dist::MvDeltaDistribution{Float6
 end
 
 calculateMarginal!(edge::Edge, forward_dist::WishartDistribution, backward_dist::MvDeltaDistribution{Float64}) = calculateMarginal!(edge, backward_dist, forward_dist)
-
-
-########################################
-# Lookup table for joint marginals
-########################################
-
-getMarginalType(::Type{GaussianDistribution},   ::Type{GammaDistribution})      = NormalGammaDistribution
-getMarginalType(::Type{GammaDistribution},      ::Type{GaussianDistribution})   = NormalGammaDistribution
