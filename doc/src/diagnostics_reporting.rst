@@ -15,9 +15,9 @@ Inspect objects
 Draw graphs and subgraphs
 -------------------------
 
-The ``draw(object)`` function visualizes the argument object. Messages that are present at the moment of rendering are denoted with filled black circles. Setting the optional keyword argument ``external_viewer=true`` will render the drawing in an external viewer. The related function ``drawPdf(object, filename)`` is similar to ``draw`` but writes the visualization to a pdf file.
+The ``draw(object)`` function visualizes the argument object. Messages that are present at the moment of rendering are denoted with filled black circles. Setting the optional keyword argument ``external_viewer`` to one of the possible values (``:Default``, ``:iTerm``) will render the drawing in an external viewer of your choice. The related function ``drawPdf(object, filename)`` is similar to ``draw`` but writes the visualization to a pdf file.
 
-If you want to use graph visualizations, the GraphViz package needs to be installed. 
+If you want to use graph visualizations, the GraphViz package needs to be installed.
 
 .. function:: draw(::FactorGraph)
 
