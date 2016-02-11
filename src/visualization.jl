@@ -162,7 +162,7 @@ function validateGraphVizInstalled()
     end
 end
 
-viewDotExternal(dot_graph::AbstractString) = (@unix? viewDotExternalInteractive(dot_graph::AbstractString) : viewDotExternalImage(dot_graph::AbstractString))
+viewDotExternal(dot_graph::AbstractString) = (@linux? viewDotExternalInteractive(dot_graph::AbstractString) : viewDotExternalImage(dot_graph::AbstractString))
 
 function viewDotExternalInteractive(dot_graph::AbstractString)
     # View a DOT graph in interactive viewer
