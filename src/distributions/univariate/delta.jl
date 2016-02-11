@@ -1,16 +1,15 @@
-############################################
-# DeltaDistribution
-############################################
-# Description:
-#   Encodes a delta probability distribution.
-#   p(x) = 1 if x==m
-#        = 0 otherwise
-#   Can be used to carry samples/observations.
-#   Example: DeltaDistribution(3.0)
-############################################
-
 export DeltaDistribution
 
+"""
+Description:
+    Encodes a delta probability distribution.
+    p(x) = 1 if x==m
+         = 0 otherwise
+    Can be used to carry samples/observations.
+
+Example:
+    DeltaDistribution(3.0)
+"""
 type DeltaDistribution{T} <: UnivariateProbabilityDistribution
     m::T
 end

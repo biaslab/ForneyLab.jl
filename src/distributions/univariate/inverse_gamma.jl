@@ -1,12 +1,11 @@
-############################################
-# InverseGammaDistribution
-############################################
-# Description:
-#   Encodes an inverse gamma PDF.
-#   Pamameters: scalars a (shape) and b (scale).
-############################################
 export InverseGammaDistribution
 
+"""
+Description:
+
+    Encodes an inverse gamma PDF.
+    Pamameters: scalars a (shape) and b (scale).
+"""
 type InverseGammaDistribution <: UnivariateProbabilityDistribution
     a::Float64 # shape
     b::Float64 # scale

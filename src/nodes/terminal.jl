@@ -1,24 +1,23 @@
-############################################
-# TerminalNode
-############################################
-# Description:
-#   Sends out a predefined message.
-#
-#       out
-#   [T]----->
-#
-#   out = T.value
-#
-# Interfaces:
-#   1 i[:out]
-#
-# Construction:
-#   TerminalNode(GaussianDistribution(), id=:my_node)
-#
-############################################
-
 export TerminalNode, PriorNode
 
+"""
+Description:
+
+    Sends out a predefined message.
+
+        out
+    [T]----->
+
+    out = T.value
+
+Interfaces:
+    
+    1 i[:out]
+
+Construction:
+    
+    TerminalNode(GaussianDistribution(), id=:my_node)
+"""
 type TerminalNode <: Node
     id::Symbol
     value::ProbabilityDistribution

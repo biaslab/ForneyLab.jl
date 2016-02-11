@@ -1,30 +1,28 @@
-############################################
-# GainEqualityNode
-############################################
-# Description:
-#   Gain-equality node: A⁻¹*out = in1 = in2
-#   Combines the node functions of the GainNode
-#   and the EqualityNode for computational efficiency.
-#
-#        _________
-#    in1 |       | in2
-#   -----|->[=]<-|-----
-#        |   |   |
-#        |   v   |
-#        |  [A]  |
-#        |___|___|
-#            | out
-#            v
-#
-#   f(in1,in2,out) = δ(A*in1 - out)⋅δ(A*in2 - out)
-#
-# Construction:
-#   GainEqualityNode([1.0], id=:my_node)
-#
-############################################
-
 export GainEqualityNode
 
+"""
+Description:
+
+    Gain-equality node: A⁻¹*out = in1 = in2
+    Combines the node functions of the GainNode
+    and the EqualityNode for computational efficiency.
+
+         _________
+     in1 |       | in2
+    -----|->[=]<-|-----
+         |   |   |
+         |   v   |
+         |  [A]  |
+         |___|___|
+             | out
+             v
+
+    f(in1,in2,out) = δ(A*in1 - out)⋅δ(A*in2 - out)
+
+Construction:
+
+    GainEqualityNode([1.0], id=:my_node)
+"""
 type GainEqualityNode <: Node
     A::Array{Float64}
     id::Symbol

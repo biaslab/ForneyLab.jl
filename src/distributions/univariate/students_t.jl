@@ -1,12 +1,11 @@
-############################################
-# StudentsTDistribution
-############################################
-# Description:
-#   Encodes a student's t-distribution.
-#   Pamameters: m (mean), lambda (inverse scale), nu (degrees of freedom)
-############################################
 export StudentsTDistribution
 
+"""
+Description:
+    
+    Encodes a student's t-distribution.
+    Pamameters: m (mean), lambda (inverse scale), nu (degrees of freedom)
+"""
 type StudentsTDistribution <: UnivariateProbabilityDistribution
     m::Float64      # mean
     lambda::Float64 # inverse scale

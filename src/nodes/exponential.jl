@@ -1,25 +1,24 @@
-############################################
-# ExponentialNode
-############################################
-# Description:
-#   Maps a Gaussian to a log-normal distribution.
-#   Derivations can be found in the derivations document.
-#
-#    in         out
-#   ----->[exp]----->
-#
-#   f(in,out) = δ(out - exp(in))
-#
-# Interfaces:
-#   1 i[:in], 2 i[:out]
-#
-# Construction:
-#   ExponentialNode(id=:my_node)
-#
-############################################
-
 export ExponentialNode
 
+"""
+Description:
+
+    Maps a Gaussian to a log-normal distribution.
+    Derivations can be found in the derivations document.
+
+    in         out
+    ----->[exp]----->
+
+    f(in,out) = δ(out - exp(in))
+
+Interfaces:
+
+    1 i[:in], 2 i[:out]
+
+Construction:
+    
+    ExponentialNode(id=:my_node)
+"""
 type ExponentialNode <: Node
     id::Symbol
     interfaces::Array{Interface,1}

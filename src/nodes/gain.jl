@@ -1,31 +1,28 @@
-############################################
-# GainNode
-############################################
-# Description:
-#   Multiplication:
-#         out = gain * in
-#
-#         gain
-#          |
-#     in   V   out
-#   ----->[A]----->
-#
-#
-#
-#     f(in,out,gain) =  δ(out - gain*in), where gain is either provided upon construction of the node and is a fixed value or is supplied via gain interface.
-#
-# Interfaces:
-#   1 i[:in], 2 i[:out], 3 i[:gain] (optional)
-#
-# Construction:
-#    GainNode(gain=[1.0], id=:my_node)
-#     or
-#    GainNode(id=:my_node)
-#
-############################################
-
 export GainNode
 
+"""
+Description:
+
+    Multiplication:
+        out = gain * in
+
+        gain
+         |
+    in   V   out
+    ----->[A]----->
+
+    f(in,out,gain) =  δ(out - gain*in), where gain is either provided upon construction of the node and is a fixed value or is supplied via gain interface.
+
+Interfaces:
+
+    1 i[:in], 2 i[:out], 3 i[:gain] (optional)
+
+Construction:
+
+    GainNode(gain=[1.0], id=:my_node)
+    or
+    GainNode(id=:my_node)
+"""
 type GainNode <: Node
     id::Symbol
     interfaces::Array{Interface,1}

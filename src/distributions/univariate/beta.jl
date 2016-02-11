@@ -1,12 +1,11 @@
-############################################
-# BetaDistribution
-############################################
-# Description:
-#   Encodes a beta PDF.
-#   Pamameters: a and b.
-############################################
 export BetaDistribution
 
+"""
+Description:
+
+    Encodes a beta PDF.
+    Pamameters: a and b.
+"""
 type BetaDistribution <: UnivariateProbabilityDistribution
     a::Float64 # shape
     b::Float64 # rate

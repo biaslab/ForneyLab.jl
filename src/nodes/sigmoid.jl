@@ -1,24 +1,3 @@
-############################################
-# SigmoidNode
-############################################
-# Description:
-#   Links a continuous, real-valued variable (X) to a binary (boolean) one (Y).
-#
-#     X       Y
-#   -----[σ]-----
-#
-#   f(X,Y) = σ(X⋅Y)
-#
-# Interfaces:
-#   1 i[:real], 2 i[:bin]
-#
-# Construction:
-#   SigmoidNode(:normal_cdf, name="my_node")
-#   The optional first argument specifies the sigmoid function.
-#   Currently the only option is :normal_cdf.
-#
-############################################
-
 export SigmoidNode
 
 
@@ -34,6 +13,26 @@ export SigmoidNode
 # SigmoidNode
 ####################
 
+"""
+Description:
+
+    Links a continuous, real-valued variable (X) to a binary (boolean) one (Y).
+
+    X       Y
+    -----[σ]-----
+
+    f(X,Y) = σ(X⋅Y)
+
+Interfaces:
+
+    1 i[:real], 2 i[:bin]
+
+Construction:
+
+    SigmoidNode(:normal_cdf, name="my_node")
+    The optional first argument specifies the sigmoid function.
+    Currently the only option is :normal_cdf.
+"""
 type SigmoidNode <: Node
     sigmoid_func::Symbol
     id::Symbol

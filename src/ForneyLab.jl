@@ -107,4 +107,6 @@ include("algorithms/preparation.jl")
 
 vague{T<:UnivariateProbabilityDistribution}(dist_type::Type{T}) = vague!(T())
 
+include("docstrings.jl")
+
 end # module ForneyLab

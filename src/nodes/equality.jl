@@ -1,26 +1,25 @@
-############################################
-# EqualityNode
-############################################
-# Description:
-#   Equality constraint on 3 variables: i[1] = i[2] = i[3]
-#
-#          i[2]
-#          |
-#    i[1]  |  i[3]
-#   ------[=]-----
-#
-#   f(i1,i2,i3) = δ(i1-i3)⋅δ(i2-i3)
-#
-# Interfaces:
-#   1 i[1], 2 i[2], 3 i[3]
-#
-# Construction:
-#   EqualityNode(id=:my_node)
-#
-############################################
-
 export EqualityNode
 
+"""
+Description:
+
+    Equality constraint on 3 variables: i[1] = i[2] = i[3]
+
+         i[2]
+         |
+    i[1]  |  i[3]
+    ------[=]-----
+
+    f(i1,i2,i3) = δ(i1-i3)⋅δ(i2-i3)
+
+Interfaces:
+
+    1. i[1], 2. i[2], 3. i[3]
+
+Construction:
+
+    EqualityNode(id=:my_node)
+"""
 type EqualityNode <: Node
     id::Symbol
     interfaces::Array{Interface,1}

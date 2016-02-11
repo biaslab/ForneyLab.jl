@@ -1,23 +1,22 @@
-############################################
-# GaussianDistribution
-############################################
-# Description:
-#   Encodes a univariate Gaussian distribution.
-#   Define (mean (m) or weighted mean (xi))
-#   and (variance (V) or precision (W)).
-#   These result in the same distribution:
-#    dist = GaussianDistribution(m=1.0, V=2.0)
-#    dist = GaussianDistribution(m=1.0, W=0.5)
-#    dist = GaussianDistribution(xi=0.5, W=0.5)
-#    dist = GaussianDistribution(xi=0.5, V=2.0)
-############################################
-
 export
     GaussianDistribution,
     ensureParameters!,
     isWellDefined,
     isConsistent
 
+"""
+Description:
+
+    Encodes a univariate Gaussian distribution.
+    Define (mean (m) or weighted mean (xi))
+    and (variance (V) or precision (W)).
+    These result in the same distribution:
+
+    dist = GaussianDistribution(m=1.0, V=2.0)
+    dist = GaussianDistribution(m=1.0, W=0.5)
+    dist = GaussianDistribution(xi=0.5, W=0.5)
+    dist = GaussianDistribution(xi=0.5, V=2.0)
+"""
 type GaussianDistribution <: UnivariateProbabilityDistribution
     m::Float64   # Mean
     V::Float64   # Variance

@@ -65,6 +65,19 @@ function format(d::Matrix{Float64})
     s *= "]"
 end
 
+function format(v::Vector{Any})
+    str = ""
+    for (i, entry) in enumerate(v)
+        name = replace("$(entry)", "ForneyLab.", "")
+        if i < length(v)
+            str *= "$(name), "
+        else
+            str *= "$(name)"
+        end
+    end
+    return str
+end
+
 # isApproxEqual: check approximate equality
 isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < tiny
 

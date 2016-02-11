@@ -1,26 +1,25 @@
-############################################
-# AdditionNode
-############################################
-# Description:
-#   Addition: out = in1 + in2
-#
-#          in2
-#          |
-#    in1   v  out
-#   ----->[+]----->
-#
-#   f(in1,in2,out) = δ(out - in1 - in2)
-#
-# Interfaces:
-#   1 i[:in1], 2 i[:in2], 3 i[:out]
-#
-# Construction:
-#   AdditionNode(id=:my_node)
-#
-############################################
-
 export AdditionNode
 
+"""
+Description:
+
+    out = in1 + in2
+
+           in2
+           |
+     in1   v  out
+    ----->[+]----->
+
+    f(in1,in2,out) = δ(out - in1 - in2)
+
+Interfaces:
+
+    1 i[:in1], 2 i[:in2], 3 i[:out]
+
+Construction:
+
+    AdditionNode(id=:my_node)
+"""
 type AdditionNode <: Node
     id::Symbol
     interfaces::Array{Interface,1}

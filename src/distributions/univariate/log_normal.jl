@@ -1,13 +1,11 @@
-############################################
-# LogNormalDistribution
-############################################
-# Description:
-#   Encodes a log-normal PDF.
-#   Pamameters: scalars m (location) and s=σ^2 (σ scale).
-############################################
-
 export LogNormalDistribution
 
+"""
+Description:
+    
+    Encodes a log-normal PDF.
+    Pamameters: scalars m (location) and s=σ^2 (σ scale).
+"""
 type LogNormalDistribution <: UnivariateProbabilityDistribution
     m::Float64 # location
     s::Float64 # squared scale (s=σ^2)

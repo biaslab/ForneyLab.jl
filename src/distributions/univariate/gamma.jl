@@ -1,12 +1,11 @@
-############################################
-# GammaDistribution
-############################################
-# Description:
-#   Encodes a gamma PDF.
-#   Pamameters: scalars a (shape) and b (rate).
-############################################
 export GammaDistribution
 
+"""
+Description:
+
+    Encodes a gamma PDF.
+    Pamameters: scalars a (shape) and b (rate).
+"""
 type GammaDistribution <: UnivariateProbabilityDistribution
     a::Float64 # shape
     b::Float64 # rate

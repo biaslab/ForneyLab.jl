@@ -1,38 +1,37 @@
-############################################
-# GaussianNode
-############################################
-# Description:
-#   Node converting an input mean and precision/(log)variance
-#   to a univariate Gaussian distribution.
-#
-#   The GaussianNode has three different roles for its second interface,
-#   namely variance, precision and log-variance. This is determined by the form argument,
-#   either :moment, :precision or :log_variance.
-#
-#   Also the GaussianNode accepts a fixed mean and/or variance. In this case
-#   the fixed interface(s) are not constructed and the interface indices shift
-#   a position.
-#
-#           mean
-#            |
-#            v  out
-#     ----->[N]----->
-#    variance/
-#    precision/
-#    log-variance
-#
-# Interfaces:
-#   1. i[:mean]
-#   2. i[:variance] / i[:precision] / i[:log_variance]
-#   3. i[:out]
-#
-# Construction:
-#   GaussianNode(form=:moment, id=:my_node, m=optional, V=optional)
-#
-############################################
-
 export GaussianNode
 
+"""
+Description:
+
+    Node converting an input mean and precision/(log)variance
+    to a univariate Gaussian distribution.
+
+    The GaussianNode has three different roles for its second interface,
+    namely variance, precision and log-variance. This is determined by the form argument,
+    either :moment, :precision or :log_variance.
+
+    Also the GaussianNode accepts a fixed mean and/or variance. In this case
+    the fixed interface(s) are not constructed and the interface indices shift
+    a position.
+
+          mean
+           |
+           v  out
+    ----->[N]----->
+    variance/
+    precision/
+    log-variance
+
+Interfaces:
+
+    1. i[:mean]
+    2. i[:variance] / i[:precision] / i[:log_variance]
+    3. i[:out]
+
+Construction:
+
+    GaussianNode(form=:moment, id=:my_node, m=optional, V=optional)
+"""
 type GaussianNode{node_form} <: Node
     id::Symbol
     interfaces::Array{Interface,1}
