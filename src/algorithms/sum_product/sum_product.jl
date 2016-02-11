@@ -1,87 +1,137 @@
-module SumProduct
+import Base.show
+export SumProduct
 
-using ..ForneyLab
+include("scheduler.jl")
 
-include("generate_schedule.jl")
+abstract AbstractSumProduct <: InferenceAlgorithm
 
-
-#--------------------------------
-# Algorithm specific constructors
-#--------------------------------
-
-function Algorithm(graph::FactorGraph=currentGraph())
-    # Generates a sumproduct algorithm
-    # Uses autoscheduler and only works in acyclic graphs
-    schedule = SumProduct.generateSchedule(graph)
-
-    # Construct the execute function and its arguments
-    exec(fields) = execute(fields[:schedule])
-    return ForneyLab.Algorithm(exec, Dict{Any,Any}(:schedule => schedule))
+type SumProduct <: AbstractSumProduct
+    execute::Function
+    schedule::Schedule
 end
 
-function Algorithm(outbound_interface::Interface)
-    # Generates a sumproduct algorithm to calculate the outbound message on outbound_interface
-    # Uses autoscheduler and only works in acyclic graphs
-    schedule = SumProduct.generateSchedule(outbound_interface)
-
-    # Construct the execute function and its arguments
-    exec(fields) = execute(fields[:schedule])
-    return ForneyLab.Algorithm(exec, Dict{Any,Any}(:schedule => schedule))
-end
-
-function Algorithm(partial_list::Vector{Interface})
-    # Generates a sumproduct algorithm that at least propagates to all interfaces in the argument vector.
-    # Uses autoscheduler and only works in acyclic graphs
-    schedule = SumProduct.generateSchedule(partial_list)
-
-    # Construct the execute function and its arguments
-    exec(fields) = execute(fields[:schedule])
-    return ForneyLab.Algorithm(exec, Dict{Any,Any}(:schedule => schedule))
-end
-
-function Algorithm(edge::Edge)
-    # Generates a sumproduct algorithm to calculate the marginal on edge
-    # Uses autoscheduler and only works in acyclic graphs
-    schedule = SumProduct.generateSchedule([edge.head, edge.tail])
-
-    # Construct the execute function and its arguments
-    function exec(fields)
-        execute(fields[:schedule])
-        calculateMarginal!(fields[:edge])
-    end
-    return ForneyLab.Algorithm(exec, Dict{Any,Any}(:schedule => schedule, :edge => edge))
+function show(algo::SumProduct)
+    println("SumProduct inference algorithm")
+    println("    message passing schedule length: $(length(algo.schedule))")
+    println("Use show(algo.schedule) to view the message passing schedule.")
 end
 
 
-#---------------------------------------------------
-# Construct algorithm specific update-call signature
-#---------------------------------------------------
+############################################
+# SumProduct algorithm constructors
+############################################
 
-function collectInbounds(outbound_interface::Interface)
-    # Sum-product specific method to collect all required inbound messages in an array.
-    # This array is used to call the node update function (sumProduct!).
-    # outbound_interface: the interface on which the outbound message will be updated.
-    # If include_inbound_on_outbound_interface is true, the inbound message on the outbound interface will also be required and included in the array.
-    # Returns: (outbound interface id, array of inbound messages).
+"Generates a SumProduct algorithm that propagates messages to all wraps and write buffers."
+function SumProduct(graph::FactorGraph=currentGraph(); post_processing_functions=Dict{Interface, Function}())
+    schedule = generateSumProductSchedule(graph)
+    setPostProcessing!(schedule, post_processing_functions)
+    exec(algorithm) = execute(algorithm.schedule)
 
-    outbound_interface_index = 0
-    inbounds = Array(Any, 0)
-    for j = 1:length(outbound_interface.node.interfaces)
-        interface = outbound_interface.node.interfaces[j]
-        if is(interface, outbound_interface)
-            outbound_interface_index = j
-            push!(inbounds, nothing)
-            continue
-        end
+    algo = SumProduct(exec, schedule)
+    inferDistributionTypes!(algo)
 
-        try
-            push!(inbounds, interface.partner.message)
-        catch
-            error("Cannot collect inbound message on $(interface). Make sure there is an inbound message present at this interface.")
-        end
+    return algo
+end
+
+"Generates a SumProduct algorithm to calculate the outbound message on outbound_interface."
+function SumProduct(outbound_interface::Interface; post_processing_functions=Dict{Interface, Function}())
+    schedule = generateSumProductSchedule(outbound_interface)
+    setPostProcessing!(schedule, post_processing_functions)
+    exec(algorithm) = execute(algorithm.schedule)
+
+    algo = SumProduct(exec, schedule)
+    inferDistributionTypes!(algo)
+
+    return algo
+end
+
+"Generates a SumProduct algorithm that at least propagates to all interfaces in partial_list."
+function SumProduct(partial_list::Vector{Interface}; post_processing_functions=Dict{Interface, Function}())
+    schedule = generateSumProductSchedule(partial_list)
+    setPostProcessing!(schedule, post_processing_functions)
+    exec(algorithm) = execute(algorithm.schedule)
+
+    algo = SumProduct(exec, schedule)
+    inferDistributionTypes!(algo)
+
+    return algo
+end
+
+"Generates a SumProduct algorithm to calculate the marginal on edge"
+function SumProduct(edge::Edge; post_processing_functions=Dict{Interface, Function}())
+    schedule = generateSumProductSchedule([edge.head, edge.tail])
+    setPostProcessing!(schedule, post_processing_functions)
+    function exec(algorithm)
+        execute(algorithm.schedule)
+        calculateMarginal!(edge)
     end
 
-    return (outbound_interface_index, inbounds)
+    algo = SumProduct(exec, schedule)
+    inferDistributionTypes!(algo)
+
+    return algo
 end
 
-end # module
+
+############################################
+# Type inference and preparation
+############################################
+
+function inferDistributionTypes!(algo::AbstractSumProduct)
+    # Infer the payload types for all messages in algo.schedule
+    # Fill schedule_entry.inbound_types and schedule_entry.outbound_type
+    schedule_entries = Dict{Interface, ScheduleEntry}()
+
+    for entry in algo.schedule
+        collectInboundTypes!(entry, schedule_entries, algo) # SumProduct specific collection of inbound types
+        inferOutboundType!(entry) # For the SumProduct algorithm, the only allowed update rule is the sumProductRule! rule
+
+        outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
+        schedule_entries[outbound_interface] = entry # Assign schedule entry to lookup dictionary
+    end
+
+    return algo
+end
+
+function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Interface, ScheduleEntry}, ::SumProduct)
+    # Infers inbound types for node relative to the outbound interface
+    entry.inbound_types = []
+
+    for (id, interface) in enumerate(entry.node.interfaces)
+        if id == entry.outbound_interface_id
+            push!(entry.inbound_types, Void)
+        else
+            push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
+        end
+    end
+
+    return entry
+end
+
+function prepare!(algo::SumProduct)
+    # Populate the graph with vague messages of the correct types
+    for entry in algo.schedule
+        ensureMessage!(entry.node.interfaces[entry.outbound_interface_id], entry.outbound_type)
+    end
+
+    # Compile the schedule (define entry.execute)
+    compile!(algo.schedule, algo)
+
+    return algo
+end
+
+function compile!(entry::ScheduleEntry, ::Type{Val{symbol(sumProductRule!)}}, ::InferenceAlgorithm)
+    # Generate entry.execute for schedule entry with sumProductRule! update rule
+
+    inbound_rule_arguments = []
+    # Add inbound messages to inbound_rule_arguments
+    for (id, interface) in enumerate(entry.node.interfaces)
+        if id == entry.outbound_interface_id
+            push!(inbound_rule_arguments, nothing)
+        else
+            push!(inbound_rule_arguments, interface.partner.message)
+        end
+    end
+
+    return buildExecute!(entry, inbound_rule_arguments)
+end

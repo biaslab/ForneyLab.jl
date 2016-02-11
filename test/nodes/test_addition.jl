@@ -12,7 +12,7 @@ facts("AdditionNode unit tests") do
         @fact n(:node).i[:out] --> n(:node).interfaces[3]
     end
 
-    context("AdditionNode should provide sumProduct! for DeltaDistribution{Float64}") do
+    context("AdditionNode should provide sumProductRule! for DeltaDistribution{Float64}") do
         # Forward message
         validateOutboundMessage(AdditionNode(),
                                 3,
@@ -29,7 +29,7 @@ facts("AdditionNode unit tests") do
                                 DeltaDistribution(1.0))
     end
 
-    context("AdditionNode should provide sumProduct! for MvDeltaDistribution{Float64}") do
+    context("AdditionNode should provide sumProductRule! for MvDeltaDistribution{Float64}") do
         # Forward message
         validateOutboundMessage(AdditionNode(),
                                 3,
@@ -48,7 +48,7 @@ facts("AdditionNode unit tests") do
 
     # Tests on Gaussian messages use the update rules from Korl (2005),
     # "A Factor Graph Approach to Signal Modelling, System Identification and Filtering.", Table 4.1.
-    context("AdditionNode should provide sumProduct! for GaussianDistribution") do
+    context("AdditionNode should provide sumProductRule! for GaussianDistribution") do
         context("GaussianDistribution with (m,V) parametrization") do
             # Forward message
             validateOutboundMessage(AdditionNode(),
@@ -132,12 +132,12 @@ facts("AdditionNode unit tests") do
                                     [Message(GaussianDistribution(m=1.0, V=-2.0)), nothing, Message(GaussianDistribution(m=3.0, V=1.0))],
                                     GaussianDistribution(m=2.0, V=-1.0))
             addition_node = AdditionNode()
-            @fact_throws sumProduct!(addition_node, 3, [Message(GaussianDistribution(m=1.0, V=-1.0)), Message(GaussianDistribution(m=2.0, V=-2.0)), nothing])
-            @fact_throws sumProduct!(addition_node, 1, [nothing, Message(GaussianDistribution(m=1.0, V=-1.0)), Message(GaussianDistribution(m=2.0, V=-2.0))])
+            @fact_throws sumProductRule!(addition_node, 3, [Message(GaussianDistribution(m=1.0, V=-1.0)), Message(GaussianDistribution(m=2.0, V=-2.0)), nothing])
+            @fact_throws sumProductRule!(addition_node, 1, [nothing, Message(GaussianDistribution(m=1.0, V=-1.0)), Message(GaussianDistribution(m=2.0, V=-2.0))])
         end
     end
 
-    context("AdditionNode should provide sumProduct! for combinations of GaussianDistribution and DeltaDistribution") do
+    context("AdditionNode should provide sumProductRule! for combinations of GaussianDistribution and DeltaDistribution") do
         # Forward message
         validateOutboundMessage(AdditionNode(),
                                 3,
@@ -167,7 +167,7 @@ facts("AdditionNode unit tests") do
                                 GaussianDistribution(m=2.0, V=0.5+tiny))
     end
 
-    context("AdditionNode should provide sumProduct! for MvGaussianDistribution") do
+    context("AdditionNode should provide sumProductRule! for MvGaussianDistribution") do
         context("MvGaussianDistribution with (m,V) parametrization") do
             mean = collect(1.0:3.0)
             variance = reshape([4.0, 3.0, 2.0,

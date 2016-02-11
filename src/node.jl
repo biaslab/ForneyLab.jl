@@ -38,3 +38,11 @@ function Base.copy(src::Node; id::Symbol = generateNodeId(typeof(src)))
 
     return dup
 end
+
+function show(io::IO, nodes::Union{Vector{Node},Set{Node}})
+     # Show node array (possibly an external schedule)
+    println(io, "Nodes:")
+    for node in nodes
+        show(io, node)
+    end
+end

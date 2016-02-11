@@ -22,10 +22,17 @@ function invalidate!(v::Array{Float64})
     return v
 end
 
- # Symbol concatenation
+# Symbol concatenation
 *(sym::Symbol, num::Number) = symbol(string(sym, num))
 *(num::Number, sym::Symbol) = symbol(string(num, sym))
 *(sym1::Symbol, sym2::Symbol) = symbol(string(sym1, sym2))
+
+*(sym::Symbol, rng::Range) = Symbol[sym*k for k in rng]
+*(rng::Range, sym::Symbol) = Symbol[k*sym for k in rng]
+*{T<:Number}(sym::Symbol, vec::Vector{T}) = Symbol[sym*k for k in vec]
+*{T<:Number}(vec::Vector{T}, sym::Symbol) = Symbol[k*sym for k in vec]
+*(sym1::Symbol, sym2::Vector{Symbol}) = Symbol[sym1*s2 for s2 in sym2]
+*(sym1::Vector{Symbol}, sym2::Symbol) = Symbol[s1*sym2 for s1 in sym1]
 
 function format(d::Bool)
     string(d)
@@ -88,6 +95,24 @@ immutable HTMLString
 end
 import Base.writemime
 writemime(io::IO, ::MIME"text/html", y::HTMLString) = print(io, y.s)
+
+function expand(d::Dict)
+    # Loop over keys in d and when the key is an Array,
+    # expand the entries of the array into separate dictionary entries.
+
+    d_expanded = Dict()
+    for (key, val) in d
+        if typeof(key) <: Array
+            for i = 1:length(key)
+                d_expanded[key[i]] = val
+            end
+        else
+            d_expanded[key] = val
+        end
+    end
+
+    return d_expanded 
+end
 
 function rules(node_type::Union{DataType, Void}=nothing; format=:table)
     # Prints a table or list of node update rules

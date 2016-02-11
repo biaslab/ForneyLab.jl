@@ -21,29 +21,15 @@ If you want to use graph visualizations, the GraphViz package needs to be instal
 
 .. function:: draw(::FactorGraph)
 
-	Visualizes the argument graph. A dotted green edge indicates a ``wrap``.
+    Visualizes the argument graph. A dotted green edge indicates a ``wrap``.
 
 .. function:: draw(::Subgraph)
 
-	This method is only relevant when working with variational message passing and visualizes a subgraph. A dashed red edge indicates an external edge from the perspective of the argument subgraph.
-
-.. function:: draw(::CompositeNode)
-
-	Draws the internal graph of a composite node.
+    This method is only relevant when working with variational message passing and visualizes a subgraph. A dashed red edge indicates an external edge from the perspective of the argument subgraph.
 
 .. function:: draw(::Set{Node})
 
-	Visualizes a set of nodes and all edges inbetween.
-
-
-Display implemented update rules
---------------------------------
-
-The function ``rules`` is used to inspect the message computation rules that are implemented in ForneyLab.
-
-.. function:: rules(::Node)
-
-	Tabulates all message update rules for an argument node, together with references. Pass the optional keyword argument ``format=:list`` to show the actual update functions.
+    Visualizes a set of nodes and all edges inbetween.
 
 
 Verify algorithm execution
@@ -53,4 +39,4 @@ Sometimes you want an overview of all the computation rules that were executed. 
 
 .. function:: setVerbosity(::Bool)
 
-	Enable/disable the verbose mode.
+    Enable/disable the verbose mode.

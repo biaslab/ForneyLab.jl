@@ -24,14 +24,15 @@ Base.deepcopy(::Interface) = error("deepcopy(::Interface) is not possible. An In
 function setMessage!(interface::Interface, message::Message)
     interface.message = deepcopy(message)
 end
-clearMessage!(interface::Interface) = (interface.message=nothing)
-message(interface::Interface) = interface.message
+
+clearMessage!(interface::Interface) = (interface.message = nothing)
+
 function handle(interface::Interface)
-    # Return interface handle
+    # Return named interface handle
     if isdefined(interface.node, :i)
         for h in keys(interface.node.i)
             if (typeof(h)==Symbol || typeof(h)==Int) && is(interface.node.i[h], interface)
-                return h
+                return string(h)
             end
         end
     end
@@ -42,10 +43,13 @@ end
 function ensureMessage!{T<:ProbabilityDistribution}(interface::Interface, payload_type::Type{T})
     # Ensure that interface carries a Message{payload_type}, used for in place updates
     if interface.message == nothing || typeof(interface.message.payload) != payload_type
-        if payload_type <: DeltaDistribution
+        if payload_type <: DeltaDistribution{Float64}
             interface.message = Message(DeltaDistribution())
+        elseif payload_type <: DeltaDistribution{Bool}
+            interface.message = Message(DeltaDistribution(false))
         elseif payload_type <: MvDeltaDistribution
-            interface.message = Message(MvDeltaDistribution())
+            dims = payload_type.parameters[end]
+            interface.message = Message(MvDeltaDistribution(zeros(dims)))
         else
             interface.message = Message(vague(payload_type))
         end

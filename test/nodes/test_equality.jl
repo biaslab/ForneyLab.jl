@@ -14,7 +14,7 @@ facts("EqualityNode unit tests") do
         @fact_throws ForneyLab.firstFreeInterface(n(:node))
     end
 
-    context("EqualityNode should provide sumProduct! for arbitrary message types") do
+    context("EqualityNode should provide sumProductRule! for arbitrary message types") do
         # Equality constraint node should work for arbitraty messages, although not really useful.
         # Outbound message is equal to the inbound messages if not all inbound messages are equal.
         # Otherwise, the outbound message is Message(DeltaDistribution(0.0))
@@ -31,7 +31,7 @@ facts("EqualityNode unit tests") do
                                 DeltaDistribution(0.0))
     end
 
-    context("EqualityNode should provide sumProduct! for GaussianDistribution") do
+    context("EqualityNode should provide sumProductRule! for GaussianDistribution") do
         context("Proper input distributions") do
             inbound_dist = GaussianDistribution(xi=0.6, W=0.2)
             validateOutboundMessage(EqualityNode(),
@@ -48,10 +48,10 @@ facts("EqualityNode unit tests") do
         end
     end
 
-    context("EqualityNode should provide sumProduct! for MvGaussianDistribution") do
+    context("EqualityNode should provide sumProductRule! for MvGaussianDistribution") do
         # The following tests on the update rules correspond to node 1 from Table 4.1 in:
         # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
-        # In the tests, we use the exact rules from Korl. The actual implementation of sumProduct!() will calculate
+        # In the tests, we use the exact rules from Korl. The actual implementation of sumProductRule!() will calculate
         # the (xi,W) parametrizations of the inbound messages, such that only the W and xi update rules are used in practice.
         context("MvGaussianDistribution with (m,V) parametrization") do
             mean = collect(1.0:3.0)
@@ -103,28 +103,28 @@ facts("EqualityNode unit tests") do
         end
     end
 
-    context("EqualityNode should provide sumProduct! for GammaDistribution") do
+    context("EqualityNode should provide sumProductRule! for GammaDistribution") do
         validateOutboundMessage(EqualityNode(),
                                 3,
                                 [Message(GammaDistribution()), Message(GammaDistribution()), nothing],
                                 GammaDistribution(a=1.0, b=2.0))
     end
 
-    context("EqualityNode should provide sumProduct! for InverseGammaDistribution") do
+    context("EqualityNode should provide sumProductRule! for InverseGammaDistribution") do
         validateOutboundMessage(EqualityNode(),
                                 3,
                                 [Message(InverseGammaDistribution()), Message(InverseGammaDistribution()), nothing],
                                 InverseGammaDistribution(a=7.0, b=4.0))
     end
 
-    context("EqualityNode should provide sumProduct! for BetaDistribution") do
+    context("EqualityNode should provide sumProductRule! for BetaDistribution") do
         validateOutboundMessage(EqualityNode(),
                                 3,
                                 [Message(BetaDistribution(a=1.0, b=2.0)), Message(BetaDistribution(a=3.0, b=4.0)), nothing],
                                 BetaDistribution(a=3.0, b=5.0))
     end
 
-    context("EqualityNode should provide sumProduct! for BernoulliDistribution") do
+    context("EqualityNode should provide sumProductRule! for BernoulliDistribution") do
         validateOutboundMessage(EqualityNode(),
                                 3,
                                 [Message(BernoulliDistribution(0.2)), Message(BernoulliDistribution(0.4)), nothing],
@@ -139,7 +139,7 @@ facts("EqualityNode unit tests") do
                                 BernoulliDistribution(1/7))
     end
 
-    context("EqualityNode should provide sumProduct! for combination of student's t and Gaussian distribution") do
+    context("EqualityNode should provide sumProductRule! for combination of student's t and Gaussian distribution") do
         validateOutboundMessage(EqualityNode(),
                                 3,
                                 [Message(StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0)), Message(GaussianDistribution(m=0.0, V=1.0)), nothing],
@@ -154,7 +154,7 @@ facts("EqualityNode unit tests") do
                                 GaussianDistribution(m=0.5, W=2.0))
     end
 
-    context("EqualityNode should provide sumProduct! for combination of DeltaDistribution and a GaussianDistribution") do
+    context("EqualityNode should provide sumProductRule! for combination of DeltaDistribution and a GaussianDistribution") do
         # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(),
                                 3,
@@ -170,7 +170,39 @@ facts("EqualityNode unit tests") do
                                 DeltaDistribution(5.0))
     end
 
-    context("EqualityNode should provide sumProduct! for combination of DeltaDistribution and a GammaDistribution") do
+    context("EqualityNode should provide sumProductRule! for combination of MvDeltaDistribution and a MvGaussianDistribution") do
+        # Just test the original and a permutation of the arguments
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(MvDeltaDistribution([4.0, 5.0])), Message(MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.5; 0.5 1.0])), nothing],
+                                MvDeltaDistribution([4.0, 5.0]))
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.5; 0.5 1.0])), Message(MvDeltaDistribution([4.0, 5.0])), nothing],
+                                MvDeltaDistribution([4.0, 5.0]))
+        validateOutboundMessage(EqualityNode(),
+                                2,
+                                [Message(MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.5; 0.5 1.0])), nothing, Message(MvDeltaDistribution([4.0, 5.0]))],
+                                MvDeltaDistribution([4.0, 5.0]))
+    end
+
+    context("EqualityNode should provide sumProductRule! for combination of MvDeltaDistribution and a WishartDistribution") do
+        # Just test the original and a permutation of the arguments
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(MvDeltaDistribution([4.0, 5.0])), Message(WishartDistribution(V=[1.0 0.5; 0.5 1.0], nu=2.0)), nothing],
+                                MvDeltaDistribution([4.0, 5.0]))
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(WishartDistribution(V=[1.0 0.5; 0.5 1.0], nu=2.0)), Message(MvDeltaDistribution([4.0, 5.0])), nothing],
+                                MvDeltaDistribution([4.0, 5.0]))
+        validateOutboundMessage(EqualityNode(),
+                                2,
+                                [Message(WishartDistribution(V=[1.0 0.5; 0.5 1.0], nu=2.0)), nothing, Message(MvDeltaDistribution([4.0, 5.0]))],
+                                MvDeltaDistribution([4.0, 5.0]))
+    end
+
+    context("EqualityNode should provide sumProductRule! for combination of DeltaDistribution and a GammaDistribution") do
         # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(),
                                 3,
@@ -186,7 +218,7 @@ facts("EqualityNode unit tests") do
                                 DeltaDistribution(5.0))
     end
 
-    context("EqualityNode should provide sumProduct! for combination of DeltaDistribution and a LogNormalDistribution") do
+    context("EqualityNode should provide sumProductRule! for combination of DeltaDistribution and a LogNormalDistribution") do
         # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(),
                                 3,

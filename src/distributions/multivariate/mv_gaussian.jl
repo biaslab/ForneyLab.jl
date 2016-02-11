@@ -5,6 +5,7 @@
 #   Encodes a multivariate Gaussian distribution.
 #   Define (mean (m) or weighted mean (xi))
 #   and (covariance (V) or precision (W)).
+#
 #   Example:
 #       MvGaussianDistribution(m=[1.0,3.0], V=[2.0, 0.0; 0.0, 2.0])
 ############################################
@@ -15,7 +16,7 @@ export
     isWellDefined,
     isConsistent
 
-type MvGaussianDistribution <: MultivariateProbabilityDistribution
+type MvGaussianDistribution{dims} <: MultivariateProbabilityDistribution
     m::Vector{Float64}   # Mean vector
     V::Matrix{Float64}   # Covariance matrix
     W::Matrix{Float64}   # Weight matrix
@@ -35,7 +36,7 @@ type MvGaussianDistribution <: MultivariateProbabilityDistribution
             all(abs(diag(W)) .> realmin(Float64)) || error("Cannot create MvGaussianDistribution, diagonal of precision matrix W should be non-zero.")
         end
 
-        self = new(m, V, W, xi)
+        self = new{length(m)}(m, V, W, xi)
         isWellDefined(self) || error("Cannot create MvGaussianDistribution, distribution is underdetermined.")
 
         return self
@@ -43,9 +44,9 @@ type MvGaussianDistribution <: MultivariateProbabilityDistribution
 end
 
 function MvGaussianDistribution(; m::Vector{Float64}=[NaN],
-                                V::Matrix{Float64}=reshape([NaN], 1, 1),
-                                W::Matrix{Float64}=reshape([NaN], 1, 1),
-                                xi::Vector{Float64}=[NaN])
+                                  V::Matrix{Float64}=reshape([NaN], 1, 1),
+                                  W::Matrix{Float64}=reshape([NaN], 1, 1),
+                                  xi::Vector{Float64}=[NaN])
     # Ensure _m and _xi have the same size
     _m = copy(m)
     _xi = copy(xi)
@@ -72,12 +73,20 @@ function MvGaussianDistribution(; m::Vector{Float64}=[NaN],
         end
     end
 
-    return MvGaussianDistribution(_m, _V, _W, _xi)
+    return MvGaussianDistribution{length(_m)}(_m, _V, _W, _xi)
 end
 
 MvGaussianDistribution() = MvGaussianDistribution(m=zeros(1), V=ones(1,1))
 
-vague(::Type{MvGaussianDistribution}; dim=1) = MvGaussianDistribution(m=zeros(dim), V=huge*eye(dim))
+function vague!{dims}(dist::MvGaussianDistribution{dims})
+    dist.m = zeros(dims)
+    dist.V = huge*eye(dims)
+    invalidate!(dist.W)
+    invalidate!(dist.xi)
+    return dist
+end
+
+vague{dims}(::Type{MvGaussianDistribution{dims}}) = MvGaussianDistribution(m=zeros(dims), V=huge*eye(dims))
 
 function format(dist::MvGaussianDistribution)
     if isValid(dist.m) && isValid(dist.V)
@@ -102,6 +111,8 @@ function Base.mean(dist::MvGaussianDistribution)
         return fill!(similar(dist.m), NaN)
     end
 end
+
+Base.mean{dims}(::Type{MvDeltaDistribution{Float64, dims}}, d::MvGaussianDistribution{dims}) = MvDeltaDistribution(mean(d)) # Definition for post-processing
 
 function Base.cov(dist::MvGaussianDistribution)
     if isProper(dist)
@@ -135,6 +146,8 @@ function sample(dist::MvGaussianDistribution)
     ensureParameters!(dist, (:m, :V))
     return (dist.V^0.5)*randn(length(dist.m)) + dist.m
 end
+
+sample(::Type{MvDeltaDistribution{Float64}}, d::MvGaussianDistribution) = MvDeltaDistribution(sample(d)) # Definition for post-processing
 
 # Methods to check and convert different parametrizations
 function isWellDefined(dist::MvGaussianDistribution)
@@ -236,27 +249,27 @@ function ==(x::MvGaussianDistribution, y::MvGaussianDistribution)
     end
     # Check m or xi
     if isValid(x.m) && isValid(y.m)
-        (length(x.m)==length(x.m)) || return false
+        (length(x.m)==length(y.m)) || return false
         isApproxEqual(x.m,y.m) || return false
     elseif isValid(x.xi) && isValid(y.xi)
-        (length(x.xi)==length(x.xi)) || return false
+        (length(x.xi)==length(y.xi)) || return false
         isApproxEqual(x.xi,y.xi) || return false
     else
         ensureParameter!(x, Val{:m}); ensureParameter!(y, Val{:m});
-        (length(x.m)==length(x.m)) || return false
+        (length(x.m)==length(y.m)) || return false
         isApproxEqual(x.m,y.m) || return false
     end
 
     # Check V or W
     if isValid(x.V) && isValid(y.V)
-        (length(x.V)==length(x.V)) || return false
+        (length(x.V)==length(y.V)) || return false
         isApproxEqual(x.V,y.V) || return false
     elseif isValid(x.W) && isValid(y.W)
-        (length(x.W)==length(x.W)) || return false
+        (length(x.W)==length(y.W)) || return false
         isApproxEqual(x.W,y.W) || return false
     else
         ensureParameter!(x, Val{:V}); ensureParameter!(y, Val{:V});
-        (length(x.V)==length(x.V)) || return false
+        (length(x.V)==length(y.V)) || return false
         isApproxEqual(x.V,y.V) || return false
     end
 
@@ -266,13 +279,12 @@ end
 # Convert DeltaDistribution -> MvGaussianDistribution
 # NOTE: this introduces a small error because the variance is set >0
 convert(::Type{MvGaussianDistribution}, delta::MvDeltaDistribution{Float64}) = MvGaussianDistribution(m=delta.m, V=tiny*eye(length(delta.m)))
-convert(::Type{Message{MvGaussianDistribution}}, msg::Message{MvDeltaDistribution{Float64}}) = Message(MvGaussianDistribution(m=msg.payload.m, V=tiny*eye(length(msg.payload.m))))
+convert{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(::Type{Message{TG}}, msg::Message{TD}) = Message(MvGaussianDistribution(m=msg.payload.m, V=tiny*eye(length(msg.payload.m))))
 
 # Convert GaussianDistribution -> MvGaussianDistribution
 convert(::Type{MvGaussianDistribution}, d::GaussianDistribution) = MvGaussianDistribution(m=[d.m], V=d.V*eye(1), W=d.W*eye(1), xi=[d.xi])
 
 # Convert MvGaussianDistribution -> GaussianDistribution
-function convert(::Type{GaussianDistribution}, d::MvGaussianDistribution)
-    (length(d.m) ==1) || error("Can only convert MvGaussianDistribution to GaussianDistribution if it has dimensionality 1")
+function convert(::Type{GaussianDistribution}, d::MvGaussianDistribution{1})
     GaussianDistribution(m=d.m[1], V=d.V[1,1], W=d.W[1,1], xi=d.xi[1])
 end

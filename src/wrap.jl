@@ -1,4 +1,4 @@
-export Wrap, wrap, wraps
+export Wrap, wrap, wraps, hasWrap
 
 # Wrap type and functions
 type Wrap <: AbstractWrap
@@ -36,11 +36,3 @@ function wraps(nd::TerminalNode, g::FactorGraph=current_graph)
 end
 
 hasWrap(graph::FactorGraph, wr::Wrap) = (haskey(graph.wraps, wr.id) && is(graph.wraps[wr.id], wr))
-
-function Base.delete!(graph::FactorGraph, wr::Wrap)
-    hasWrap(graph, wr) || error("Graph does not contain wrap")
-    !graph.locked || error("Cannot delete node from locked graph")
-
-    delete!(graph.wraps, wr.id)
-    return graph
-end

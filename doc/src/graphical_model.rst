@@ -5,7 +5,7 @@
 .. seealso::
     **Demo:** `Basics <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/01_basics.ipynb>`_
 
-Building the graphical model amounts to adding nodes and edges to a :class:`FactorGraph`. This chapter introduces the main types and functions that are involved in setting up the graphical model. For some examples, have a look at the following demos: ``random_walk``, ``simple_kalman``.
+Building the graphical model amounts to adding nodes and edges to a :class:`FactorGraph`. This chapter introduces the main types and functions that are involved in setting up the graphical model.
 
 The ``FactorGraph`` type
 ========================
@@ -15,8 +15,8 @@ The ``FactorGraph`` type
     A directed graph consisting of factor nodes and edges::
 
         type FactorGraph
-            n::Dict{Symbol, Node} # Nodes
-            e::Dict{Symbol, Edge} # Edges
+            nodes::Dict{Symbol, Node} # Nodes
+            edges::Dict{Symbol, Edge} # Edges
             # and some internal stuff for attaching buffers etc...
         end
 
@@ -47,9 +47,9 @@ The ``id`` field holds a unique id, which can be passed to the constructor as a 
 The calling signature of a node constructor depends on the specific type of the node, e.g.::
 
     AdditionNode(id=:my_adder)  # Node func.: out = in1 + in2
-    GainNode(3.0, id=:times_3) # Node func.: out = 3.0 * in1
+    GainNode(gain=3.0, id=:times_3) # Node func.: out = 3.0 * in1
 
-A ``Node`` constructor always adds the constructed node to the current graph. To delete a ``Node`` from a :class:`FactorGraph`, use ``delete!(graph::FactorGraph, node::Node)``. Nodes in the current graph can be accessed through the function ``node(id::Symbol)`` (which is aliased by the function ``n(id::Symbol)``), e.g.::
+A ``Node`` constructor always adds the constructed node to the current graph. Nodes in the current graph can be accessed through the function ``node(id::Symbol)`` (which is aliased by the function ``n(id::Symbol)``), e.g.::
 
     node(:my_adder)
     n(:my_adder)
@@ -68,36 +68,30 @@ The ``Edge`` type
             tail::Interface
             head::Interface
             marginal::Union(ProbabilityDistribution, Void)
-            distribution_type::DataType
         end
 
-    An edge represents a variable, so the ``marginal`` field may contain the marginal :class:`ProbabilityDistribution` over that variable. The ``distribution_type`` field indicates the allowed distribution type of the variable.
+    An edge represents a variable, so the ``marginal`` field may contain the marginal :class:`ProbabilityDistribution` over that variable.
 
-    In general, an ``Edge`` is constructed by passing the tail and head interfaces as well as the distribution type::
+    In general, an ``Edge`` is constructed by passing the tail and head interfaces::
 
-        Edge(n(:node1).i[:out], n(:node2).i[:in], GammaDistribution, id=:my_edge)
+        Edge(n(:node1).i[:out], n(:node2).i[:in], id=:my_edge)
 
-    If the distribution type is omitted, a :class:`GaussianDistribution` is assumed. For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface, e.g.,
+    For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface, e.g.,::
 
         Edge(TerminalNode(), EqualityNode())
 
     In such cases the constructor will automatically pick the first free interface of the node.
 
-    The ``Edge`` constructor will add the edge to the current graph (the head and tail nodes should already belong to that graph). To delete an ``Edge`` from a :class:`FactorGraph`, use ``delete!(graph::FactorGraph, edge::Edge)``:
-
-    .. function:: delete!(graph::FactorGraph, edge::Edge)
-
-        Delete the specified ``Edge`` from ``graph``.
-
+    The ``Edge`` constructor will add the edge to the current graph (the head and tail nodes should already belong to that graph).
 
 Strictly speaking, a factor graph edge does not need to be directed. However, in ForneyLab all edges are directed to have a consistent meaning for terms like "forward message", "backward messages", and "forward pass". Apart from that, the edge direction has no functional consequences.
 
 ForneyLab does not allow half-edges: every :class:`Edge` should be connected to two nodes at all times. Open ended edges should be terminated by a :class:`TerminalNode`.
 
-Edges in the current graph can be accessed through the function ``edge(id::Symbol)`` (which is aliased by the function ``e(id::Symbol)``), e.g.::
+Edges in the current graph can be accessed through the function ``edge(id::Symbol)`` (which is aliased by the function ``eg(id::Symbol)``), e.g.::
 
     edge(:my_edge)
-    e(:my_edge)
+    eg(:my_edge)
 
 
 Example
@@ -128,6 +122,7 @@ ForneyLab does not allow 'half-edges' that are connected to just one node. Inste
     Edge(n(:adder_1).i[:out], n(:adder_2).i[:in1])
     Edge(n(:t_c2), n(:adder_2).i[:in2])
     Edge(n(:adder_2).i[:out], n(:t_x3))
+
 
 Chaining factor graph sections
 ==============================
@@ -176,16 +171,12 @@ In practical situations it is common for a factor graph to be a concatination of
 
         Returns a set of all ``Wrap`` instances in which ``node`` is involved. Note that a node can be the source in multiple wraps, but it can be a sink at most once.
 
-    .. function:: delete!(graph::FactorGraph, wrap::Wrap)
-
-        Delete the specified ``Wrap`` from ``graph``.
-
 
 Interfacing to and from the graph
 =================================
 
 .. seealso::
-    **Demo:** `Simple Kalman filter <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/04_simple_kalman.ipynb>`_
+    **Demo:** `Kalman filter <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/04_simple_kalman.ipynb>`_
 
 To link a :class:`FactorGraph` to the outside world, so-called buffers can be used. A buffer can be used to insert data into the graph ('read buffer') or to extract data from the graph ('write buffer'). Some helper functions are available to work with these buffers.
 
@@ -209,7 +200,7 @@ Read buffers hold input data that is read into the graph from the outside world.
 Output from the graph
 ---------------------
 
-Write buffers allow message payloads and edge marginals to be extracted from the :class:`FactorGraph`. A write buffer is an ``Array{ProbabilityDistribution,1}``, and can be attached to either an :class:`Interface` or an :class:`Edge`. Every call to :func:`step()` will result in exactly one element (message payload or marginal) being pushed onto every write buffer. The following functions are available:
+Write buffers allow message payloads and edge marginals to be extracted from the :class:`FactorGraph`. A write buffer is a ``Vector{ProbabilityDistribution}``, and can be attached to either an :class:`Interface` or an :class:`Edge`. Every call to :func:`step()` will result in exactly one element (message payload or marginal) being pushed onto every write buffer. The following functions are available:
 
 .. function:: attachWriteBuffer(interface::Interface)
 

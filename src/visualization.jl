@@ -25,7 +25,7 @@ end
 
 draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph), edges(factor_graph), wraps=wraps(factor_graph)); args...)
 draw(; args...) = draw(currentGraph(); args...)
-draw(composite_node::CompositeNode; args...) = draw(composite_node.internal_graph; args...)
+# draw(composite_node::CompositeNode; args...) = draw(composite_node.internal_graph; args...)
 
 draw(nodes::Set{Node}; args...) = graphviz(genDot(nodes, edges(nodes)); args...)
 draw(nodes::Vector{Node}; args...) = draw(Set(nodes); args...)
@@ -44,7 +44,7 @@ end
 
 drawPdf(factor_graph::FactorGraph, filename::AbstractString) = dot2pdf(genDot(nodes(factor_graph), edges(factor_graph)), filename)
 drawPdf(filename::AbstractString) = drawPdf(currentGraph(), filename)
-drawPdf(composite_node::CompositeNode, filename::AbstractString) = drawPdf(composite_node.internal_graph, filename)
+# drawPdf(composite_node::CompositeNode, filename::AbstractString) = drawPdf(composite_node.internal_graph, filename)
 
 drawPdf(nodes::Set{Node}, filename::AbstractString) = dot2pdf(genDot(nodes, edges(nodes)), filename)
 drawPdf(nodes::Vector{Node}, filename::AbstractString) = drawPdf(Set(nodes), filename)
@@ -58,8 +58,19 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
     # Return a string representing the graph in DOT format
     # External edges are edges of which only the head or tail is in the nodes set
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)
-    node_type_symbols = Dict{DataType, AbstractString}(AdditionNode => "+",
-                            EqualityNode => "=")
+    node_type_symbols = Dict{DataType, AbstractString}(
+                            AdditionNode => "+",
+                            EqualityNode => "=",
+                            GaussianNode{Val{:precision}} => "N{:precision}",
+                            GaussianNode{Val{:moment}} => "N{:moment}",
+                            GaussianNode{Val{:log_variance}} => "N{:log_variance}",
+                            ExponentialNode => "exp",
+                            GainNode => "GainNode",
+                            GainAdditionNode => "GainAdditionNode",
+                            GainEqualityNode => "GainEqualityNode",
+                            SigmoidNode => "\u03C3"
+                        )
+
     dot = "digraph G{splines=true;sep=\"+25,25\";overlap=scalexy;nodesep=1.6;compound=true;\n"
     dot *= "\tnode [shape=box, width=1.0, height=1.0, fontsize=9];\n"
     dot *= "\tedge [fontsize=8, arrowhead=onormal];\n"
@@ -119,10 +130,11 @@ function edgeDot(edge::Edge; is_external_edge=false)
     if is_external_edge
         dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", style=\"dashed\" color=\"red\"]\n"
     else
-        label =  string("FW: ", (edge.tail.message!=nothing) ? "&#9679; $(typeof(edge.tail.message.payload))" : "&#9675;", "\n")
-        label *= string("BW: ", (edge.head.message!=nothing) ? "&#9679; $(typeof(edge.head.message.payload))" : "&#9675;", "\n")
-        label *= "Distribution: $(edge.distribution_type)"
-        dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", label=\"$(label)\" color=\"black\"]\n"
+        label = ""
+        label *= (typeof(edge.tail.message) <: Message) ? "FW: $(edge.tail.message.payload)" : ""
+        label *= (typeof(edge.head.message) <: Message) ? "BW: $(edge.head.message.payload)" : ""
+        label *= (typeof(edge.marginal) <: ProbabilityDistribution) ? "Marginal: $(edge.marginal)" : ""
+        dot *= "[taillabel=\"$(tail_label)\", headlabel=\"$(head_label)\", label=\"$(label)\" color=\"black\"]"
     end
 end
 

@@ -11,7 +11,7 @@ export  currentGraph,
         node,
         edge,
         n,
-        e
+        eg
 
 abstract AbstractWrap
 
@@ -64,7 +64,7 @@ function generateNodeId(t::DataType)
     current_graph = currentGraph()
     haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
     count = current_graph.counters[t]
-    str = replace(lowercase(split(string(t),'.')[end]), "node", "")
+    str = replace(lowercase(split(string(t.name),'.')[end]), "node", "")
     return symbol("$(str)$(count)")
 end
 
@@ -83,16 +83,22 @@ function nodes(edges::Set{Edge})
     return connected_nodes
 end
 
-edges(graph::FactorGraph = currentGraph()) = Set{Edge}(values(graph.edges))
+edges(graph::FactorGraph=currentGraph()) = Set{Edge}(values(graph.edges))
 edges(node::Node) = Set{Edge}([intf.edge for intf in node.interfaces])
 edges(nodeset::Set{Node}) = union(map(edges, nodeset)...)
 
 # Search edge and node by id
-node(id::Symbol, graph::FactorGraph = currentGraph()) = graph.nodes[id]
-n = node
+node(id::Symbol, graph::FactorGraph=currentGraph()) = graph.nodes[id]
+nodes(ids::Vector{Symbol}, graph::FactorGraph=currentGraph()) = Node[node(id, graph) for id in ids]
+# Shorthands
+n(id::Symbol, graph::FactorGraph=currentGraph()) = node(id, graph)
+n(ids::Vector{Symbol}, graph::FactorGraph=currentGraph()) = nodes(ids, graph)
 
 edge(id::Symbol, graph::FactorGraph = currentGraph()) = graph.edges[id]
-e = edge
+edges(ids::Vector{Symbol}, graph::FactorGraph=currentGraph()) = Edge[edge(id, graph) for id in ids]
+# Shorthands
+eg(id::Symbol, graph::FactorGraph = currentGraph()) = edge(id, graph)
+eg(ids::Vector{Symbol}, graph::FactorGraph=currentGraph()) = edges(ids, graph)
 
 # Add/remove graph elements
 function addNode!(graph::FactorGraph, nd::Node)
@@ -103,55 +109,6 @@ function addNode!(graph::FactorGraph, nd::Node)
 
     return graph
 end
-
-function Base.delete!(graph::FactorGraph, nd::Node)
-    hasNode(graph, nd) || error("Graph does not contain node")
-    !graph.locked || error("Cannot delete node from locked graph")
-
-    # Delete wraps
-    if typeof(nd) == TerminalNode
-        for wr in wraps(nd)
-            delete!(graph, wr)
-        end
-    end
-
-    # Detach read buffers from node
-    if haskey(graph.read_buffers, nd)
-        detachReadBuffer(nd, graph)
-    end
-
-    for iface in nd.interfaces
-        # Detach and write buffers from edges/interfaces and delete edges
-        if iface.edge != nothing
-            delete!(graph, iface.edge)
-        end
-    end
-
-    # Delete node
-    delete!(graph.nodes, nd.id)
-
-    return graph
-end
-
-function Base.delete!(graph::FactorGraph, eg::Edge)
-    hasEdge(graph, eg) || error("Graph does not contain edge")
-    !graph.locked || error("Cannot delete node from locked graph")
-
-    # Decouple buffers
-    haskey(graph.write_buffers, eg) && detachWriteBuffer(eg, graph)
-    haskey(graph.write_buffers, eg.head) && detachWriteBuffer(eg.head, graph)
-    haskey(graph.write_buffers, eg.tail) && detachWriteBuffer(eg.tail, graph)
-
-    # Decouple edge and interfaces
-    delete!(graph.edges, eg.id)
-    eg.head.partner = nothing
-    eg.tail.partner = nothing
-    eg.head.edge = nothing
-    eg.tail.edge = nothing
-
-    return graph
-end
-
 
 # Check existance of graph elements
 hasNode(graph::FactorGraph, nd::Node) = (haskey(graph.nodes, nd.id) && is(graph.nodes[nd.id], nd))

@@ -8,42 +8,28 @@ function execute(schedule_entry::ScheduleEntry)
     # Calculate the outbound message based on the inbound messages and the message calculation rule.
     # The resulting message is stored in the specified interface and is returned.
 
-    outbound_interface = schedule_entry.interface
-    # Preprocessing: collect all inbound messages and build the inbound_array
-    node = outbound_interface.node
-
-    if schedule_entry.message_calculation_rule == sumProduct!
-        (outbound_interface_index, inbounds) = SumProduct.collectInbounds(outbound_interface)
-    elseif schedule_entry.message_calculation_rule == ep!
-        (outbound_interface_index, inbounds) = ExpectationPropagation.collectInbounds(outbound_interface)
-    elseif schedule_entry.message_calculation_rule == vmp!
-        (outbound_interface_index, inbounds) = VMP.collectInbounds(outbound_interface)
-    else
-        error("Unknown message calculation rule: $(schedule_entry.message_calculation_rule)")
-    end
+    outbound_interface = schedule_entry.node.interfaces[schedule_entry.outbound_interface_id]
 
     # Evaluate message calculation rule
-    (rule, outbound_message) = schedule_entry.message_calculation_rule(node, outbound_interface_index, inbounds...)
-
-    # Post processing?
-    if isdefined(schedule_entry, :post_processing)
-        post_processed_output = schedule_entry.post_processing(outbound_message.payload)
-        if (typeof(post_processed_output) <: ProbabilityDistribution) == false
-            # Wrap the output in a DeltaDistribution before packing it in a Message
-            post_processed_output = DeltaDistribution(post_processed_output)
-        end
-        outbound_message = node.interfaces[outbound_interface_index].message = Message(post_processed_output)
-    end
+    isdefined(schedule_entry, :execute) || error("Execute function not defined for schedule entry; perhaps the schedule is not prepared?")
+    outbound_dist = schedule_entry.execute() # Note: this is an in-place operation, including optional post-processing
 
     # Print output for debugging
-    if verbose && rule != :empty
-        interface_handle = (handle(outbound_interface)!="") ? "$(handle(outbound_interface))" : "$(outbound_interface_index)"
-        postproc = (isdefined(schedule_entry, :post_processing)) ? string(schedule_entry.post_processing) : ""
-        rule_field = "$(rule) $(postproc)"
-        println("$(node.id) [$(interface_handle)], $(rule_field): $(format(outbound_message.payload))")
+    if verbose
+        node = schedule_entry.node
+        interface = node.interfaces[schedule_entry.outbound_interface_id]
+        interface_handle = (handle(interface)!="") ? "($(handle(interface)))" : ""
+        println(replace("$(schedule_entry.rule) on $(typeof(node)) $(interface.node.id) interface $(schedule_entry.outbound_interface_id) $(interface_handle)", "ForneyLab.", ""))
+        if isdefined(schedule_entry, :inbound_types) && isdefined(schedule_entry, :outbound_type)
+            println(replace("$(schedule_entry.inbound_types) -> Message{$(schedule_entry.intermediate_outbound_type)}", "ForneyLab.", ""))
+        end
+        if isdefined(schedule_entry, :post_processing)
+            println(replace("Post processing: $(schedule_entry.post_processing)", "ForneyLab.", ""))
+        end
+        println("Result: $(outbound_dist)")
     end
 
-    return outbound_message
+    return outbound_dist
 end
 
 # Execute schedules
@@ -53,26 +39,31 @@ function execute(schedule::Schedule)
 
     # Print table header for execution log
     if verbose
-        println("\n\nExecution log (node [interface], rule: result)")
+        println("\n\nExecution log")
         println("--------------------------------------------")
     end
 
-    for schedule_entry in schedule
-        execute(schedule_entry)
+    for i=1:length(schedule)
+        if verbose
+            println("$(i).")
+        end
+        execute(schedule[i])
     end
+
     # Return the last message in the schedule
-    return schedule[end].interface.message
+    entry = schedule[end] 
+    return entry.node.interfaces[entry.outbound_interface_id].message
 end
 
 function clearMessages!(node::Node)
     # Clear all outbound messages on the interfaces of node
     for interface in node.interfaces
-        interface.message = nothing
+        clearMessage!(interface)
     end
 end
 
 function clearMessages!(edge::Edge)
     # Clear all messages on an edge.
-    edge.head.message = nothing
-    edge.tail.message = nothing
+    clearMessage!(edge.head.message)
+    clearMessage!(edge.tail.message)
 end

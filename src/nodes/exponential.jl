@@ -41,42 +41,35 @@ isDeterministic(::ExponentialNode) = true
 
 
 ############################################
-# Standard update functions
+# Gaussian update functions
 ############################################
 
-# Forward message
-function sumProduct!(   node::ExponentialNode,
-                        outbound_interface_index::Int,
-                        msg_in::Message{GaussianDistribution},
-                        msg_out::Void)
+function sumProductRule!(   node::ExponentialNode,
+                            outbound_interface_index::Type{Val{2}},
+                            outbound_dist::LogNormalDistribution,
+                            msg_in::Message{GaussianDistribution},
+                            msg_out::Any)
 
-    isProper(msg_in.payload) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.i[:out], LogNormalDistribution).payload
     ensureParameters!(msg_in.payload, (:m, :V))
 
-    dist_out.m = msg_in.payload.m
-    dist_out.s = msg_in.payload.V
+    outbound_dist.m = msg_in.payload.m
+    outbound_dist.s = msg_in.payload.V
 
-    return (:exponential_forward_gaussian,
-            node.interfaces[outbound_interface_index].message)
+    return outbound_dist
 end
 
-# Backward message
-function sumProduct!(   node::ExponentialNode,
-                        outbound_interface_index::Int,
-                        msg_in::Void,
-                        msg_out::Message{LogNormalDistribution})
+function sumProductRule!(   node::ExponentialNode,
+                            outbound_interface_index::Type{Val{1}},
+                            outbound_dist::GaussianDistribution,
+                            msg_in::Any,
+                            msg_out::Message{LogNormalDistribution})
 
-    isProper(msg_out.payload) || error("Improper input distributions are not supported")
-    dist_out = ensureMessage!(node.i[:in], GaussianDistribution).payload
+    outbound_dist.m = msg_out.payload.m
+    outbound_dist.V = msg_out.payload.s
+    outbound_dist.W = NaN
+    outbound_dist.xi = NaN
 
-    dist_out.m = msg_out.payload.m
-    dist_out.V = msg_out.payload.s
-    dist_out.W = NaN
-    dist_out.xi = NaN
-
-    return (:exponential_backward_gaussian,
-            node.interfaces[outbound_interface_index].message)
+    return outbound_dist
 end
 
 
@@ -84,28 +77,80 @@ end
 # DeltaDistribution update functions
 ############################################
 
-# Forward message
-function sumProduct!(   node::ExponentialNode,
-                        outbound_interface_index::Int,
-                        msg_in::Message{DeltaDistribution{Float64}},
-                        msg_out::Void)
-    dist_out = ensureMessage!(node.i[:out], DeltaDistribution{Float64}).payload
+function sumProductRule!(   node::ExponentialNode,
+                            outbound_interface_index::Type{Val{2}},
+                            outbound_dist::DeltaDistribution{Float64},
+                            msg_in::Message{DeltaDistribution{Float64}},
+                            msg_out::Any)
 
-    dist_out.m = exp(msg_in.payload.m)
-
-    return (:exponential_forward_delta,
-            node.interfaces[outbound_interface_index].message)
+    outbound_dist.m = exp(msg_in.payload.m)
+    return outbound_dist
 end
 
-# Backward message
-function sumProduct!(   node::ExponentialNode,
-                        outbound_interface_index::Int,
-                        msg_in::Void,
-                        msg_out::Message{DeltaDistribution{Float64}})
-    dist_out = ensureMessage!(node.i[:in], DeltaDistribution{Float64}).payload
+function sumProductRule!(   node::ExponentialNode,
+                            outbound_interface_index::Type{Val{1}},
+                            outbound_dist::DeltaDistribution{Float64},
+                            msg_in::Any,
+                            msg_out::Message{DeltaDistribution{Float64}})
 
-    dist_out.m = log(msg_out.payload.m)
+    outbound_dist.m = log(msg_out.payload.m)
+    return outbound_dist
+end
 
-    return (:exponential_backward_delta,
-            node.interfaces[outbound_interface_index].message)
+
+############################################
+# MvGaussian update functions
+############################################
+
+function sumProductRule!{dims}( node::ExponentialNode,
+                                outbound_interface_index::Type{Val{2}},
+                                outbound_dist::MvLogNormalDistribution{dims},
+                                msg_in::Message{MvGaussianDistribution{dims}},
+                                msg_out::Any)
+
+    ensureParameters!(msg_in.payload, (:m, :V))
+
+    outbound_dist.m = deepcopy(msg_in.payload.m)
+    outbound_dist.S = deepcopy(msg_in.payload.V)
+
+    return outbound_dist
+end
+
+function sumProductRule!{dims}( node::ExponentialNode,
+                                outbound_interface_index::Type{Val{1}},
+                                outbound_dist::MvGaussianDistribution{dims},
+                                msg_in::Any,
+                                msg_out::Message{MvLogNormalDistribution{dims}})
+
+    outbound_dist.m = deepcopy(msg_out.payload.m)
+    outbound_dist.V = deepcopy(msg_out.payload.S)
+    invalidate!(outbound_dist.W)
+    invalidate!(outbound_dist.xi)
+
+    return outbound_dist
+end
+
+
+############################################
+# MvDeltaDistribution update functions
+############################################
+
+function sumProductRule!{T<:MvDeltaDistribution{Float64}}(  node::ExponentialNode,
+                                                            outbound_interface_index::Type{Val{2}},
+                                                            outbound_dist::T,
+                                                            msg_in::Message{T},
+                                                            msg_out::Any)
+
+    outbound_dist.m = exp(msg_in.payload.m)
+    return outbound_dist
+end
+
+function sumProductRule!{T<:MvDeltaDistribution{Float64}}(  node::ExponentialNode,
+                                                            outbound_interface_index::Type{Val{1}},
+                                                            outbound_dist::T,
+                                                            msg_in::Any,
+                                                            msg_out::Message{T})
+
+    outbound_dist.m = log(msg_out.payload.m)
+    return outbound_dist
 end

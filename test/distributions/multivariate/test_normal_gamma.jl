@@ -15,7 +15,7 @@ facts("NormalGammaDistribution unit tests") do
         dist = vague(NormalGammaDistribution)
         @fact dist.m --> 0.0
         @fact dist.beta --> 1.0
-        @fact dist.a --> 1.0-tiny
+        @fact dist.a --> tiny
         @fact dist.b --> tiny
     end
 end

@@ -16,7 +16,7 @@ The name of a subtype of ``ProbabilityDistribution`` should end in "Distribution
 
 .. function:: vague(distribution_type)
 
-    Creates a vague 'non-informative' ``ProbabilityDistribution`` of type ``distribution_type``. For the :class:`GaussianDistribution` this means for example a distribution with maximum variance::
+    Creates a vague 'almost non-informative' ``ProbabilityDistribution`` of type ``distribution_type``. For the :class:`GaussianDistribution` this means for example a distribution with maximum variance::
 
         non_informative_gaussian = vague(GaussianDistribution) # identical to GaussianDistribution(m=0.0, V=huge)
 
@@ -48,8 +48,14 @@ Built-in distributions
 Univariate distributions
 ------------------------
 
-Built-in continuous univariate distributions: :class:`BetaDistribution`, :class:`DeltaDistribution`, :class:`GammaDistribution`, :class:`GaussianDistribution`, :class:`InverseGammaDistribution`, :class:`StudentsTDistribution`.
-Discrete univariate distributions: :class:`BernoulliDistribution`.
+Built-in univariate distributions: :class:`BernoulliDistribution`, :class:`BetaDistribution`, :class:`DeltaDistribution`, :class:`GammaDistribution`, :class:`GaussianDistribution`, :class:`InverseGammaDistribution`, :class:`LogNormalDistribution`, :class:`StudentsTDistribution`.
+
+
+.. type:: BernoulliDistribution
+
+    :description:   Bernoulli distribution over X ∈ {false,true} (``Pr{X=true} = p``)
+    :parameters:    ``p`` (real scalar, 0 ≤ p ≤ 1)
+    :construction:  ``BernoulliDistribution(p)``
 
 
 .. type:: BetaDistribution
@@ -75,11 +81,13 @@ Discrete univariate distributions: :class:`BernoulliDistribution`.
     :construction:  ``GammaDistribution(a=1.0, b=1.0)``
     :reference:     Bishop, 2006; Pattern recognition and machine learning; appendix B
 
+
 .. type:: LogNormalDistribution
 
     :description:   Log-normal distribution (univariate)
     :parameters:    ``m`` ("location", real scalar), ``s > 0`` ("squared scale" (s = σ²), real scalar)
     :construction:  ``LogNormalDistribution(m=0.0, s=1.0)``
+
 
 .. type:: GaussianDistribution
 
@@ -131,19 +139,14 @@ Discrete univariate distributions: :class:`BernoulliDistribution`.
     :reference:     Bishop, 2006; Pattern recognition and machine learning; appendix B
 
 
-.. type:: BernoulliDistribution
-
-    :description:   Bernoulli distribution over X ∈ {false,true} (``Pr{X=true} = p``)
-    :parameters:    ``p`` (real scalar, 0 ≤ p ≤ 1)
-    :construction:  ``BernoulliDistribution(p)``
-
-
 Multivariate distributions
 --------------------------
 
-Built-in multivariate distributions: :class:`MvDeltaDistribution`, :class:`MvGaussianDistribution`, :class:`MvNormalGammaDistribution`.
+Multivariate distribution types are parameterized on their dimension, e.g. the type `MvGaussianDistribution{d}` encodes a d-dimensional Gaussian distribution.
 
-.. type:: MvDeltaDistribution
+Built-in multivariate distributions: :class:`MvDeltaDistribution{d}`, :class:`MvGaussianDistribution{d}`, :class:`MvLogNormalDistribution{d}`, :class:`NormalGammaDistribution`, :class:`WishartDistribution{d}`.
+
+.. type:: MvDeltaDistribution{d}
 
     :description:   Multivariate Kronecker delta (``pdf(x) = δ(x-m)``)
     :parameters:    ``m`` (``Vector{Any}``)
@@ -152,7 +155,7 @@ Built-in multivariate distributions: :class:`MvDeltaDistribution`, :class:`MvGau
     Same as :class:`DeltaDistribution`, just for the multivariate case.
 
 
-.. type:: MvGaussianDistribution
+.. type:: MvGaussianDistribution{d}
 
     :description:   Gaussian distribution (multivariate)
     :parameters:    ``m`` ("mean", real vector), ``V`` ("variance", real matrix), ``W`` ("precision", real matrix), ``xi`` ("weighted mean", real vector)
@@ -179,13 +182,27 @@ Built-in multivariate distributions: :class:`MvDeltaDistribution`, :class:`MvGau
     The parameters of ``MvGaussianDistribution`` that are *not* used or that are not valid should be invalidated using :func:`invalidate!()`. Validity of a parameter can be checked using :func:`isValid()`.
 
 
-.. type:: MvNormalGammaDistribution
+.. type:: MvLogNormalDistribution{d}
+
+    :description:   Log-normal distribution (multivariate)
+    :parameters:    ``m`` (location vector), ``S`` (scale matrix)
+    :construction:  ``MvLogNormalDistribution(m=zeros(3), S=eye(3))``
+
+
+.. type:: NormalGammaDistribution
 
     :description:   Normal-gamma distribution (bivariate)
     :parameters:    ``m`` ("location", real scalar), ``beta > 0`` ("precision", real scalar), ``a`` ("shape", real scalar), ``b`` ("rate", real scalar)
     :construction:  ``MvNormalGammaDistribution(m=0.0, beta=1.0, a=1.0, b=1.0)``
     :reference:     Bishop, 2006; Pattern recognition and machine learning; appendix B
 
+
+.. type:: WishartDistribution{d}
+
+    :description:   Wishart distribution
+    :parameters:    ``V`` (scale matrix), ``nu`` (degrees of freedom)
+    :construction:  ``WishartDistribution(V=eye(3), nu=1.0)``
+    :reference:     Bishop, 2006; Pattern recognition and machine learning; appendix B
 
 
 Messages
@@ -208,17 +225,12 @@ Marginals
 .. seealso::
     **Demo:** `Marginals <https://github.com/spsbrats/ForneyLab.jl/blob/master/demo/02_marginals.ipynb>`_
 
-Since an :class:`Edge` represents a variable in the probabilistic model, the ``edge.marginal`` field holds the marginal distribution of the corresponding variable. There are some helper functions available to work with marginals.
+An :class:`Edge` represents a variable in the probabilistic model. The ``edge.marginal`` field holds the marginal distribution of the corresponding variable. There are some helper functions available to work with marginals.
 
 .. function:: calculateMarginal(edge)
 
-    If the forward and backward messages on ``edge`` are calculated according to the sum-product rule, the marginal distribution of the variable represented by ``edge`` can be calculated from these messages. ``calculateMarginal(edge)`` calculates and returns the marginal distribution from the forward and backward messages.
+    calculates and returns the marginal distribution from the forward and backward messages present on ``edge``.
 
 .. function:: calculateMarginal!(edge)
 
     Identical to ``calculateMarginal(edge)``, but the calculated marginal is also written to ``edge.marginal``.
-
-
-.. function:: getMarginalType(distributions...)
-
-    Returns the type of the marginal distribution given the types of its factors (i.e. carried by forward/backward messages).

@@ -5,14 +5,10 @@ using YAML
 using LaTeXStrings
 
 export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution
-export sumProduct!, ep!, vmp!
-export vague, self, ==, isProper, sample
+export sumProductRule!, expectationRule!, variationalRule!
+export vague, self, ==, isProper, sample, dimensions
 export setVerbosity
-
-# Export algorithm modules
-export SumProduct
-export VMP
-export ExpectationPropagation
+export prepare!
 
 # Verbosity
 verbose = false
@@ -37,6 +33,18 @@ include("node.jl")
 # Message type
 include("message.jl")
 
+# Extract dimensionality from message or distribution (note exception for normal-gamma in normal_gamma.jl)
+dimensions{T<:MultivariateProbabilityDistribution}(message::Message{T}) = typeof(message.payload).parameters[end]
+dimensions(distribution::MultivariateProbabilityDistribution) = typeof(distribution).parameters[end]
+dimensions{T<:MultivariateProbabilityDistribution}(message_type::Type{Message{T}}) = message_type.parameters[1].parameters[end]
+dimensions{T<:MultivariateProbabilityDistribution}(distribution_type::Type{T}) = distribution_type.parameters[end]
+
+dimensions{T<:UnivariateProbabilityDistribution}(message::Message{T}) = 1
+dimensions(distribution::UnivariateProbabilityDistribution) = 1
+dimensions{T<:UnivariateProbabilityDistribution}(message_type::Type{Message{T}}) = 1
+dimensions{T<:UnivariateProbabilityDistribution}(distribution_type::Type{T}) = 1
+
+
 # Univariate distributions
 include("distributions/univariate/delta.jl")
 include("distributions/univariate/bernoulli.jl")
@@ -51,6 +59,8 @@ include("distributions/univariate/log_normal.jl")
 include("distributions/multivariate/mv_delta.jl")
 include("distributions/multivariate/mv_gaussian.jl")
 include("distributions/multivariate/normal_gamma.jl")
+include("distributions/multivariate/wishart.jl")
+include("distributions/multivariate/mv_log_normal.jl")
 
 # Basic ForneyLab building blocks and methods
 include("interface.jl")
@@ -71,7 +81,7 @@ include("nodes/sigmoid.jl")
 # Graph, wraps and algorithm
 include("factor_graph.jl")
 include("wrap.jl")
-include("algorithm.jl")
+include("inference_algorithm.jl")
 
 # Composite nodes
 include("nodes/composite.jl")
@@ -86,17 +96,15 @@ include("step.jl")
 # Utils
 include("visualization.jl")
 
-# Algorithms
+# InferenceAlgorithms
 include("algorithms/sum_product/sum_product.jl")
-include("algorithms/vmp/vmp.jl")
+include("algorithms/loopy_sum_product/loopy_sum_product.jl")
+include("algorithms/variational_bayes/variational_bayes.jl")
 include("algorithms/expectation_propagation/expectation_propagation.jl")
 
-# Functions for message post-processing
-vague(dist::ProbabilityDistribution) = vague(typeof(dist))
+# Shared preparation methods for inference algorithms
+include("algorithms/preparation.jl")
 
-function __init__()
-    # Module-global variable to keep track of currently active Algorithm
-    global current_algorithm = nothing
-end
+vague{T<:UnivariateProbabilityDistribution}(dist_type::Type{T}) = vague!(T())
 
 end # module ForneyLab

@@ -13,83 +13,82 @@ facts("ExpectationPropagation algorithm integration tests") do
     # The goal is to infer X from the Y observations.
 
     ###############
-    # Build graph
-    ###############
-
-    const NUM_SECTIONS = 50
-    g = FactorGraph()
-    X_prior = TerminalNode(GaussianDistribution(m=0.0, V=20.0), id=:t_X_prior)
-    prev_section_connector = X_prior.i[:out]
-    sites = Vector{Interface}()
-    for section = 1:NUM_SECTIONS
-        equ = EqualityNode(id=symbol("equ$(section)"))
-        sig = SigmoidNode(id=symbol("sig$(section)"))
-        y = TerminalNode(DeltaDistribution(false), id=symbol("t_Y$(section)"))
-        Edge(prev_section_connector, equ.interfaces[1], GaussianDistribution)
-        Edge(equ.interfaces[2], sig.i[:real], GaussianDistribution, id=symbol("X$(section)"))
-        Edge(sig.i[:bin], y, BernoulliDistribution)
-        prev_section_connector = equ.interfaces[3]
-        push!(sites, sig.i[:real])
-    end
-    Edge(prev_section_connector, TerminalNode(vague(GaussianDistribution), id=:t_X_term), GaussianDistribution, id=:X_marg) # Terminate equality chain
-
-    # ForneyLab.draw(g)
-
-    ###############
     # Generate data
     ###############
 
-    generating_distribution = GaussianDistribution(m=-0.5, V=0.1)
-    edge(:X1).tail.message = Message(generating_distribution)
-    run(SumProduct.Algorithm(n(:sig1).i[:bin]))
-    bin_dist = n(:sig1).i[:bin].message.payload
-    samples = Vector{Float64}()
-    for section = 1:NUM_SECTIONS
-        s = sample(bin_dist)
-        push!(samples, float(s))
-        n(symbol("t_Y$(section)")).value = DeltaDistribution(s)
-    end
-    clearMessages!(g)
+    const NUM_SECTIONS = 50
+    g_gen = FactorGraph()
+    X = TerminalNode(GaussianDistribution(m=-0.5, V=0.1), id=:t_X)
+    sig = SigmoidNode(id=:sig)
+    Y = TerminalNode(DeltaDistribution(false), id=:t_Y)
+    Edge(X, sig.i[:real])
+    Edge(sig.i[:bin], Y)
+    generating_distributions = [GaussianDistribution(m=-0.5, V=0.1) for i = 1:NUM_SECTIONS]
+    attachReadBuffer(X, generating_distributions)
+    samples = attachWriteBuffer(Y.i[:out].partner)
+    algo = SumProduct(post_processing_functions=Dict(sig.i[:bin] => sample))
+    run(algo)
 
+    ###############
+    # Build graph
+    ###############
+
+    g = FactorGraph()
+    X_prior = TerminalNode(GaussianDistribution(m=0.0, V=20.0), id=:t_X_prior)
+    prev_section_connector = X_prior.i[:out]
+    sites = Vector{Tuple{Interface, DataType}}()
+    for section = 1:NUM_SECTIONS
+        equ = EqualityNode(id=symbol("equ$(section)"))
+        sig = SigmoidNode(id=symbol("sig$(section)"))
+        y = TerminalNode(samples[section], id=symbol("t_Y$(section)"))
+        Edge(prev_section_connector, equ.interfaces[1])
+        Edge(equ.interfaces[2], sig.i[:real], id=symbol("X$(section)"))
+        Edge(sig.i[:bin], y)
+        prev_section_connector = equ.interfaces[3]
+        push!(sites, (sig.i[:real], GaussianDistribution))
+    end
+    Edge(prev_section_connector, TerminalNode(vague(GaussianDistribution), id=:t_X_term), id=:X_marg) # Terminate equality chain
+
+    # ForneyLab.draw(g)
 
     ###############
     # EP algorithm
     ###############
     #setVerbosity(true)
 
-    # Define callback function to collect the posterior dist. of X after each iteration
+    # Define callback function to collect the posterior dist. of X after each iteration for later reference
     X_marg = Vector{GaussianDistribution}()
     function log_results()
-        run(SumProduct.Algorithm(edge(:X_marg).tail))
-        push!(X_marg, deepcopy(ensureParameters!(edge(:X_marg).tail.message.payload, (:m, :V))))
+        push!(X_marg, deepcopy(ensureParameters!(edge(:X1).marginal, (:m, :V))))
         return (length(X_marg) >= 5) # terminate the EP algorithm after 5 iterations
     end
 
-    ep_algo = ExpectationPropagation.Algorithm(sites, num_iterations=10, callback=log_results)
+    ep_algo = ExpectationPropagation(sites, n_iterations=10, callback=log_results)
 
-    context("Algorithm construction") do
-        @fact ep_algo.fields[:num_iterations] --> 10
-        @fact is(ep_algo.fields[:callback], log_results) --> true
-        @fact typeof(ep_algo.fields[:schedule]) --> Schedule
-        for schedule_entry in ep_algo.fields[:schedule]
-            if schedule_entry.interface in sites
-                @fact is(schedule_entry.message_calculation_rule, ForneyLab.ep!) --> true
+    sitelist = [site for (site, distribution) in sites]
+    context("ExpectationPropagation construction") do
+        @fact ep_algo.n_iterations --> 10
+        @fact is(ep_algo.callback, log_results) --> true
+        @fact typeof(ep_algo.schedule) --> Schedule
+        for entry in ep_algo.schedule
+            if entry.node.interfaces[entry.outbound_interface_id] in sitelist
+                @fact is(entry.rule, expectationRule!) --> true
             else
-                @fact is(schedule_entry.message_calculation_rule, ForneyLab.sumProduct!) --> true
+                @fact is(entry.rule, sumProductRule!) --> true
             end
         end
     end
 
-    #show(ep_algo.fields[:schedule])
     run(ep_algo)
 
     ###############
     # Compare sample mean with predictive mean after inference
     ###############
+
     context("Inference results") do
         @fact length(X_marg) --> 5
-        run(SumProduct.Algorithm(n(:sig1).i[:bin]))
-        predictive = n(:sig1).i[:bin].message.payload
-        @fact predictive.p --> roughly(mean(samples), atol=0.1)
+        predictive = BernoulliDistribution()
+        sumProductRule!(n(:sig1), Val{2}, predictive, n(:equ1).interfaces[2].message, nothing)
+        @fact predictive.p --> roughly(mean([sample.m for sample in samples]), atol=0.1)
     end
 end

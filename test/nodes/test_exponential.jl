@@ -11,7 +11,7 @@ facts("ExponentialNode unit tests") do
         @fact n(:node).i[:out] --> n(:node).interfaces[2]
     end
 
-    context("ExponentialNode should pass messages") do
+    context("ExponentialNode should pass Gaussian messages") do
         # Forward message
         validateOutboundMessage(ExponentialNode(),
                                 2,
@@ -35,5 +35,31 @@ facts("ExponentialNode unit tests") do
                                 1,
                                 [nothing, Message(DeltaDistribution(2.0))],
                                 DeltaDistribution(log(2.0)))
+    end
+
+    context("ExponentialNode should pass multivariate Gaussian messages") do
+        # Forward message
+        validateOutboundMessage(ExponentialNode(),
+                                2,
+                                [Message(MvGaussianDistribution(m=[1.0, 2.0], V=3.0*eye(2))), nothing],
+                                MvLogNormalDistribution(m=[1.0, 2.0], S=3.0*eye(2)))
+        # Backward message
+        validateOutboundMessage(ExponentialNode(),
+                                1,
+                                [nothing, Message(MvLogNormalDistribution(m=[1.0, 2.0], S=3.0*eye(2)))],
+                                MvGaussianDistribution(m=[1.0, 2.0], V=3.0*eye(2)))
+    end
+
+    context("ExponentialNode should pass multivariate delta messages") do
+        # Forward message
+        validateOutboundMessage(ExponentialNode(),
+                                2,
+                                [Message(MvDeltaDistribution([1.0, 2.0])), nothing],
+                                MvDeltaDistribution(exp([1.0, 2.0])))
+        # Backward message
+        validateOutboundMessage(ExponentialNode(),
+                                1,
+                                [nothing, Message(MvDeltaDistribution([1.0, 2.0]))],
+                                MvDeltaDistribution(log([1.0, 2.0])))
     end
 end
