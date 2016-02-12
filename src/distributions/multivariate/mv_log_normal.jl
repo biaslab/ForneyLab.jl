@@ -6,6 +6,14 @@ Description:
     Encodes a multivariate log-normal PDF.
     Pamameters: vector m (location) and matrix S (scale).
 
+Parameters:
+
+    m (location vector), S (scale matrix)
+
+Construction:
+
+    MvLogNormalDistribution(m=zeros(3), S=eye(3))
+
 Reference:
     
     Lognormal distributions: theory and aplications; Crow, 1988

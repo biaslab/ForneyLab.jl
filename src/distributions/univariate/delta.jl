@@ -2,12 +2,20 @@ export DeltaDistribution
 
 """
 Description:
-    Encodes a delta probability distribution.
-    p(x) = 1 if x==m
-         = 0 otherwise
-    Can be used to carry samples/observations.
+
+    Encodes a delta probability distribution. The DeltaDistribution is used to fix variables to a value, for example to capture observed data.
+    p(x) = δ(x-m)
+
+Parameters:
+
+	m (Any)
+
+Construction:
+
+	DeltaDistribution(m)
 
 Example:
+
     DeltaDistribution(3.0)
 """
 type DeltaDistribution{T} <: UnivariateProbabilityDistribution

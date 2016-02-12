@@ -49,6 +49,12 @@ isDeterministic(::TerminalNode) = false # Edge case for deterministicness
 # Implement firstFreeInterface since EqualityNode is symmetrical in its interfaces
 firstFreeInterface(node::TerminalNode) = (node.interfaces[1].partner==nothing) ? node.interfaces[1] : error("No free interface on $(typeof(node)) $(node.id)")
 
+"""
+TerminalNode
+
+    [T]--->
+        -->
+"""
 function sumProductRule!(   node::TerminalNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::Any,

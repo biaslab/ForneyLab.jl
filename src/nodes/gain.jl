@@ -63,6 +63,15 @@ isDeterministic(::GainNode) = true
 # GaussianDistribution methods
 ############################################
 
+"""
+GainNode:
+
+      N        N
+    --->[gain]--->
+    <--
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::GainNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
@@ -79,6 +88,15 @@ function sumProductRule!(   node::GainNode,
     return outbound_dist
 end
 
+"""
+GainNode:
+
+      N        N
+    --->[gain]--->
+               -->
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::GainNode,
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GaussianDistribution,
@@ -95,6 +113,16 @@ function sumProductRule!(   node::GainNode,
     return outbound_dist
 end
 
+"""
+GainNode:
+
+          | δ
+      N   v    N
+    --->[gain]--->
+               -->
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::GainNode,
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GaussianDistribution,
@@ -113,6 +141,16 @@ function sumProductRule!(   node::GainNode,
     return outbound_dist
 end
 
+"""
+GainNode:
+
+          | δ
+      N   v    N
+    --->[gain]--->
+    <--
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::GainNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
@@ -136,6 +174,13 @@ end
 # DeltaDistribution methods
 ############################################
 
+"""
+GainNode:
+
+      δ        δ
+    --->[gain]--->
+    <--
+"""
 function sumProductRule!(   node::GainNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::DeltaDistribution{Float64},
@@ -146,6 +191,14 @@ function sumProductRule!(   node::GainNode,
     return outbound_dist
 end
 
+"""
+GainNode:
+
+          | δ
+      δ   v    δ
+    --->[gain]--->
+    <--
+"""
 function sumProductRule!(   node::GainNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::DeltaDistribution{Float64},
@@ -157,7 +210,13 @@ function sumProductRule!(   node::GainNode,
     return outbound_dist
 end
 
-# Forward DeltaDistribution to OUT
+"""
+GainNode:
+
+      δ        δ
+    --->[gain]--->
+               -->
+"""
 function sumProductRule!(   node::GainNode,
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::DeltaDistribution{Float64},
@@ -168,6 +227,14 @@ function sumProductRule!(   node::GainNode,
     return outbound_dist
 end
 
+"""
+GainNode:
+
+          | δ
+      δ   v    δ
+    --->[gain]--->
+               -->
+"""
 function sumProductRule!(   node::GainNode,
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::DeltaDistribution{Float64},

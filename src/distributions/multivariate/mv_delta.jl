@@ -3,12 +3,14 @@ export MvDeltaDistribution
 """
 Description:
 
-    Encodes a multivariate delta distribution.
-    p(x) = 1 if x==m
-         = 0 otherwise
-    Can be used to carry samples/observations.
+    Encodes a multivariate delta distribution. Can be used to carry samples/observations.
+    p(x) = δ(x-m)
 
-Example:
+Parameters:
+
+	m (location) (Any vector)
+    
+Construction:
     
     MvDeltaDistribution([1.0, 3.0])
 """

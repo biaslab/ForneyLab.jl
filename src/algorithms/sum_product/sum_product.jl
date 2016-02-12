@@ -5,6 +5,16 @@ include("scheduler.jl")
 
 abstract AbstractSumProduct <: InferenceAlgorithm
 
+"""
+Sum-product message passing algorithm.
+
+Usage:
+
+    SumProduct(graph::Graph; post_processing_functions)
+    SumProduct(outbound_interface::Interface; post_processing_functions)
+    SumProduct(partial_list::Vector{Interface}; post_processing_functions)
+    SumProduct(edge::Edge; post_processing_functions)
+"""
 type SumProduct <: AbstractSumProduct
     execute::Function
     schedule::Schedule
@@ -21,7 +31,6 @@ end
 # SumProduct algorithm constructors
 ############################################
 
-"Generates a SumProduct algorithm that propagates messages to all wraps and write buffers."
 function SumProduct(graph::FactorGraph=currentGraph(); post_processing_functions=Dict{Interface, Function}())
     schedule = generateSumProductSchedule(graph)
     setPostProcessing!(schedule, post_processing_functions)
@@ -33,7 +42,6 @@ function SumProduct(graph::FactorGraph=currentGraph(); post_processing_functions
     return algo
 end
 
-"Generates a SumProduct algorithm to calculate the outbound message on outbound_interface."
 function SumProduct(outbound_interface::Interface; post_processing_functions=Dict{Interface, Function}())
     schedule = generateSumProductSchedule(outbound_interface)
     setPostProcessing!(schedule, post_processing_functions)
@@ -45,7 +53,6 @@ function SumProduct(outbound_interface::Interface; post_processing_functions=Dic
     return algo
 end
 
-"Generates a SumProduct algorithm that at least propagates to all interfaces in partial_list."
 function SumProduct(partial_list::Vector{Interface}; post_processing_functions=Dict{Interface, Function}())
     schedule = generateSumProductSchedule(partial_list)
     setPostProcessing!(schedule, post_processing_functions)
@@ -57,7 +64,6 @@ function SumProduct(partial_list::Vector{Interface}; post_processing_functions=D
     return algo
 end
 
-"Generates a SumProduct algorithm to calculate the marginal on edge"
 function SumProduct(edge::Edge; post_processing_functions=Dict{Interface, Function}())
     schedule = generateSumProductSchedule([edge.head, edge.tail])
     setPostProcessing!(schedule, post_processing_functions)

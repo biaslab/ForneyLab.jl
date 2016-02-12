@@ -4,7 +4,18 @@ export GammaDistribution
 Description:
 
     Encodes a gamma PDF.
-    Pamameters: scalars a (shape) and b (rate).
+
+Pamameters:
+
+	Real scalars scalars a > 0 (shape) and b > 0 (rate).
+
+Construction:
+
+	GammaDistribution(a=1.0, b=1.0)
+
+Reference:
+
+	Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
 type GammaDistribution <: UnivariateProbabilityDistribution
     a::Float64 # shape

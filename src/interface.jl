@@ -1,11 +1,12 @@
 export Interface
 export clearMessage!, setMessage!, message, handle
 
+"""
+An Interface belongs to a node and is used to send/receive messages.
+An Interface can be seen as a half-edge; it has exactly one partner interface, with wich it forms an edge.
+A message from node a to node b is stored at the Interface of node a that connects to an Interface of node b.
+"""
 type Interface
-    # An Interface belongs to a node and is used to send/receive messages.
-    # An Interface has exactly one partner interface, with wich it forms an edge.
-    # An Interface can be seen as a half-edge, that connects to a partner Interface to form a complete edge.
-    # A message from node a to node b is stored at the Interface of node a that connects to an Interface of node b.
     node::Node
     edge::Union{AbstractEdge, Void}
     partner::Union{Interface, Void}

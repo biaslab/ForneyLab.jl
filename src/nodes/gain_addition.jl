@@ -56,6 +56,20 @@ isDeterministic(::GainAdditionNode) = true
 # GaussianDistribution methods
 ############################################
 
+"""
+GainAdditionNode:
+
+            | N
+        ____|____
+        |   v   |
+        |  [A]  |
+        |   |   |
+      N |   v   | N
+    ----|->[+]--|--->
+        |_______| -->
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::GainAdditionNode,
                             outbound_interface_index::Type{Val{3}},
                             outbound_dist::GaussianDistribution,
@@ -74,6 +88,20 @@ function sumProductRule!(   node::GainAdditionNode,
     return outbound_dist
 end
 
+"""
+GainAdditionNode:
+
+            | N
+        ____|____
+        |   v   |
+        |  [A]  |
+        |   |   |
+      N |   v   | N
+    ----|->[+]--|--->
+    <-- |_______|
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::GainAdditionNode,
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GaussianDistribution,
@@ -92,6 +120,20 @@ function sumProductRule!(   node::GainAdditionNode,
     return outbound_dist
 end
 
+"""
+GainAdditionNode:
+
+          ^ | N
+        __|_|____
+        |   v   |
+        |  [A]  |
+        |   |   |
+      N |   v   | N
+    ----|->[+]--|--->
+        |_______|
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::GainAdditionNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,

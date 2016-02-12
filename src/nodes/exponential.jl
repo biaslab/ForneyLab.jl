@@ -43,6 +43,13 @@ isDeterministic(::ExponentialNode) = true
 # Gaussian update functions
 ############################################
 
+"""
+ExponentialNode:
+
+     N       logN
+    --->[exp]--->
+              -->
+"""
 function sumProductRule!(   node::ExponentialNode,
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::LogNormalDistribution,
@@ -57,6 +64,13 @@ function sumProductRule!(   node::ExponentialNode,
     return outbound_dist
 end
 
+"""
+ExponentialNode:
+
+     N       logN
+    --->[exp]--->
+    <--
+"""
 function sumProductRule!(   node::ExponentialNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
@@ -76,6 +90,13 @@ end
 # DeltaDistribution update functions
 ############################################
 
+"""
+ExponentialNode:
+
+     δ        δ
+    --->[exp]--->
+              -->
+"""
 function sumProductRule!(   node::ExponentialNode,
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::DeltaDistribution{Float64},
@@ -86,6 +107,13 @@ function sumProductRule!(   node::ExponentialNode,
     return outbound_dist
 end
 
+"""
+ExponentialNode:
+
+     δ        δ
+    --->[exp]--->
+    <--
+"""
 function sumProductRule!(   node::ExponentialNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::DeltaDistribution{Float64},

@@ -5,18 +5,21 @@ export
 """
 Description:
 
-    Encodes a Wishart distribution over precision
-    matrix W(W | V, nu).
+    Encodes a Wishart distribution over precision matrix W(W | V, nu).
     (Bishop, 2007; 'Pattern recognition and machine learning').
    
-Define:
+Parameters:
 
     Scale matrix V (p x p positive definite)), and
     degrees of freedom nu > p - 1.
    
-Example:
+Construction:
 
-    WishartDistribution(V = 1.0, V=[2.0, 0.0; 0.0, 2.0])
+    WishartDistribution(V=eye(3), nu=3.0)
+
+Reference:
+
+    Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
 type WishartDistribution{dims} <: MultivariateProbabilityDistribution
     V::Matrix{Float64}  # Scale matrix

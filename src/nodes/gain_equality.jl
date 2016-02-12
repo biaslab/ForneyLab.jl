@@ -52,6 +52,21 @@ isDeterministic(::GainEqualityNode) = true
 # GaussianDistribution methods
 ############################################
 
+"""
+GainEqualityNode:
+
+        _________
+      N |       | N
+    ----|->[=]<-|----
+        |   |   |
+        |   v   |
+        |  [A]  |
+        |___|___|
+          | | N
+          v v
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::GainEqualityNode,
                             outbound_interface_index::Type{Val{3}},
                             outbound_dist::GaussianDistribution,
@@ -71,6 +86,21 @@ function sumProductRule!(   node::GainEqualityNode,
     return outbound_dist
 end
 
+"""
+GainEqualityNode:
+
+        _________
+      N |       | N
+    ----|->[=]<-|----
+        |   |   | -->
+        |   v   |
+        |  [A]  |
+        |___|___|
+            | N
+            v
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::GainEqualityNode,
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GaussianDistribution,
@@ -81,6 +111,21 @@ function sumProductRule!(   node::GainEqualityNode,
     return gainEqualityBackwardRule!(outbound_dist, msg_in1.payload, msg_out.payload, node.A)
 end
 
+"""
+GainEqualityNode:
+
+        _________
+      N |       | N
+    ----|->[=]<-|----
+    <-- |   |   |
+        |   v   |
+        |  [A]  |
+        |___|___|
+            | N
+            v
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::GainEqualityNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,

@@ -57,13 +57,19 @@ end
 # Forward messages
 ####################
 
+"""
+SigmoidNode:
+
+      δ    Bern
+    --->[σ]--->
+            -->
+"""
 function sumProductRule!{T<:Real}(  node::SigmoidNode,
                                     outbound_interface_id::Type{Val{2}},
                                     outbound_dist::BernoulliDistribution,
                                     msg_real::Message{DeltaDistribution{T}},
                                     msg_bin::Any)
-
-    # Generate Bernoulli message from incoming Delta message.
+    
     dist_real = msg_real.payload
 
     if node.sigmoid_func == :normal_cdf
@@ -75,6 +81,13 @@ function sumProductRule!{T<:Real}(  node::SigmoidNode,
     return outbound_dist
 end
 
+"""
+SigmoidNode:
+
+      N    Bern
+    --->[σ]--->
+            -->
+"""
 function sumProductRule!(   node::SigmoidNode,
                             outbound_interface_id::Type{Val{2}},
                             outbound_dist::BernoulliDistribution,
@@ -98,6 +111,13 @@ end
 # Backward messages (expectation propagation)
 ############################################################
 
+"""
+SigmoidNode:
+
+      N     δ
+    --->[σ]--->
+    <--
+"""
 function expectationRule!{T<:Bool}( node::SigmoidNode,
                                     outbound_interface_id::Type{Val{1}},
                                     outbound_dist::GaussianDistribution,
@@ -108,6 +128,13 @@ function expectationRule!{T<:Bool}( node::SigmoidNode,
     return expectationRule!(node, Val{1}, outbound_dist, msg_cavity, Message(BernoulliDistribution(msg_bin.payload.m)))
 end
 
+"""
+SigmoidNode:
+
+      N    Bern
+    --->[σ]--->
+    <--
+"""
 function expectationRule!(  node::SigmoidNode,
                             outbound_interface_id::Type{Val{1}},
                             outbound_dist::GaussianDistribution,

@@ -12,15 +12,19 @@ export calculateMarginal, calculateMarginal!
 # Edge marginal calculations
 ############################
 
+"""
+Calculates the marginal without writing back to the edge
+"""
 function calculateMarginal(edge::Edge)
-    # Calculates the marginal without writing back to the edge
     @assert(edge.tail.message != nothing, "Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a forward message.")
     @assert(edge.head.message != nothing, "Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a backward message.")
     return calculateMarginal(edge.tail.message.payload, edge.head.message.payload)
 end
 
+"""
+Calculates and writes the marginal on edge
+"""
 function calculateMarginal!(edge::Edge)
-    # Calculates and writes the marginal on edge
     @assert(edge.tail.message != nothing, "Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a forward message.")
     @assert(edge.head.message != nothing, "Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a backward message.")
     calculateMarginal!(edge, edge.tail.message.payload, edge.head.message.payload)

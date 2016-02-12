@@ -35,6 +35,9 @@ function Base.copy(src::ScheduleEntry)
     return duplicate
 end
 
+"""
+Defines a sequence of Message calculations
+"""
 typealias Schedule Array{ScheduleEntry, 1}
 
 Base.deepcopy(src::Schedule) = ScheduleEntry[copy(entry) for entry in src]

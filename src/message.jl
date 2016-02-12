@@ -2,8 +2,10 @@ export AbstractMessage, Message
 
 import Base.isempty
 
+"""
+A Message sits on an interface and has a payload, which must be a ProbabilityDistribution.
+"""
 type Message{T<:ProbabilityDistribution}
-    # Message has a payload, which must be a ProbabilityDistribution.
     payload::T
 end
 
