@@ -56,13 +56,13 @@ facts("Shared preparation methods for inference algorithms") do
         call_signature = [AdditionNode, Type{Val{2}}, Any, Message{MvDeltaDistribution{Float64, 2}}, Void, Message{MvDeltaDistribution{Float64, 2}}]
         @fact ForneyLab.collectAllOutboundTypes(sumProductRule!, call_signature, AdditionNode()) --> [MvDeltaDistribution{Float64, 2}]
 
-        call_signature = [GaussianNode{Val{:precision}}, Type{Val{2}}, Any, MvGaussianDistribution{2}, Void, MvGaussianDistribution{2}]
+        call_signature = [GaussianNode{Val{:mean}, Val{:precision}}, Type{Val{2}}, Any, MvGaussianDistribution{2}, Void, MvGaussianDistribution{2}]
         @fact ForneyLab.collectAllOutboundTypes(variationalRule!, call_signature, GaussianNode(form=:precision)) --> [WishartDistribution{2}]
 
-        call_signature = [GaussianNode{Val{:precision}}, Type{Val{3}}, Any, NormalGammaDistribution, NormalGammaDistribution, Void]
+        call_signature = [GaussianNode{Val{:mean}, Val{:precision}}, Type{Val{3}}, Any, NormalGammaDistribution, NormalGammaDistribution, Void]
         @fact ForneyLab.collectAllOutboundTypes(variationalRule!, call_signature, GaussianNode(form=:precision)) --> [GaussianDistribution]
 
-        call_signature = [GaussianNode{Val{:precision}}, Type{Val{1}}, Any, Void, Message{GammaDistribution}, GaussianDistribution]
+        call_signature = [GaussianNode{Val{:mean}, Val{:precision}}, Type{Val{1}}, Any, Void, Message{GammaDistribution}, GaussianDistribution]
         @fact ForneyLab.collectAllOutboundTypes(variationalRule!, call_signature, GaussianNode(form=:precision)) --> [StudentsTDistribution]
 
         call_signature = [SigmoidNode, Type{Val{1}}, Any, Message{GaussianDistribution}, Message{DeltaDistribution{Bool}}]
