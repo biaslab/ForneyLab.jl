@@ -30,7 +30,7 @@
 #       - uncertainty_type ∈ {:fixed_variance, :variance, :precision, :log_variance}
 #
 # Construction:
-#   GaussianNode(form=:mean_variance, id=:my_node, m=optional_fixed_value, V=optional_fixed_value)
+#   GaussianNode(form=:variance, id=:my_node, m=optional_fixed_value, V=optional_fixed_value)
 #
 ############################################
 
