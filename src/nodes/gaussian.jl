@@ -362,6 +362,25 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
     return outbound_dist
 end
 
+function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
+                            outbound_interface_index::Type{Val{2}},
+                            outbound_dist::GaussianDistribution,
+                            msg_mean::Message{GaussianDistribution},
+                            msg_out::Any)
+
+    # Fixed variance, variable mean
+    #
+    #         N      N
+    #  mean ---->[N]----> out
+    #                -->
+    ensureParameters!(msg_mean.payload, (:m,:V))
+    outbound_dist.m = msg_mean.payload.m
+    outbound_dist.xi = NaN
+    outbound_dist.V = msg_mean.payload.V + node.V[1,1]
+    outbound_dist.W = NaN
+
+    return outbound_dist
+end
 
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                             outbound_interface_index::Type{Val{1}},
@@ -379,6 +398,106 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
     outbound_dist.xi = NaN
     outbound_dist.V = node.V[1,1]
     outbound_dist.W = NaN
+
+    return outbound_dist
+end
+
+function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
+                            outbound_interface_index::Type{Val{1}},
+                            outbound_dist::GaussianDistribution,
+                            msg_mean::Any,
+                            msg_out::Message{GaussianDistribution})
+
+    # Fixed variance, variable mean
+    #
+    #        N        N
+    #  mean ---->[N]----> out
+    #        <--
+    ensureParameters!(msg_out.payload, (:m,:V))
+    outbound_dist.m = msg_out.payload.m
+    outbound_dist.xi = NaN
+    outbound_dist.V = msg_out.payload.V + node.V[1,1]
+    outbound_dist.W = NaN
+
+    return outbound_dist
+end
+
+function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_variance}},
+                                outbound_interface_index::Type{Val{2}},
+                                outbound_dist::MvGaussianDistribution{dims},
+                                msg_mean::Message{MvDeltaDistribution{Float64,dims}},
+                                msg_out::Any)
+
+    # Fixed variance, variable mean
+    #
+    #        Dlt      N
+    #  mean ---->[N]----> out
+    #                -->
+
+    outbound_dist.m[:] = msg_mean.payload.m
+    outbound_dist.V[:] = node.V
+    invalidate!(outbound_dist.xi)
+    invalidate!(outbound_dist.W)
+
+    return outbound_dist
+end
+
+function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_variance}},
+                                outbound_interface_index::Type{Val{2}},
+                                outbound_dist::MvGaussianDistribution{dims},
+                                msg_mean::Message{MvGaussianDistribution{dims}},
+                                msg_out::Any)
+
+    # Fixed variance, variable mean
+    #
+    #        N        N
+    #  mean ---->[N]----> out
+    #                -->
+    ensureParameters!(msg_mean.payload, (:m,:V))
+    outbound_dist.m[:] = msg_mean.payload.m
+    outbound_dist.V[:] = msg_mean.payload.V + node.V
+    invalidate!(outbound_dist.xi)
+    invalidate!(outbound_dist.W)
+
+    return outbound_dist
+end
+
+function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_variance}},
+                                outbound_interface_index::Type{Val{1}},
+                                outbound_dist::MvGaussianDistribution{dims},
+                                msg_mean::Any,
+                                msg_out::Message{MvDeltaDistribution{Float64,dims}})
+
+    # Fixed variance, variable mean
+    #
+    #        N       Dlt
+    #  mean ---->[N]----> out
+    #        <--
+
+    outbound_dist.m[:] = msg_out.payload.m
+    outbound_dist.V[:] = node.V
+    invalidate!(outbound_dist.xi)
+    invalidate!(outbound_dist.W)
+
+    return outbound_dist
+end
+
+function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_variance}},
+                                outbound_interface_index::Type{Val{1}},
+                                outbound_dist::MvGaussianDistribution{dims},
+                                msg_mean::Any,
+                                msg_out::Message{MvGaussianDistribution{dims}})
+
+    # Fixed variance, variable mean
+    #
+    #        N        N
+    #  mean ---->[N]----> out
+    #        <--
+    ensureParameters!(msg_out.payload, (:m,:V))
+    outbound_dist.m[:] = msg_out.payload.m
+    outbound_dist.V[:] = msg_out.payload.V + node.V
+    invalidate!(outbound_dist.xi)
+    invalidate!(outbound_dist.W)
 
     return outbound_dist
 end
