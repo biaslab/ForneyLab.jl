@@ -1,5 +1,6 @@
 export Node
 
+# Documentation in docstrings.jl
 abstract Node
 
 Base.deepcopy(::Node) = error("deepcopy(::Node) is not supported. You should use copy(src::Node, id=:new_id) to create an independent copy with no edges attached.")

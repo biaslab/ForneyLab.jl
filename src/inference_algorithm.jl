@@ -1,10 +1,7 @@
-export InferenceAlgorithm, GenericAlgorithm
+export InferenceAlgorithm
 
+# Documentation in docstrings.jl
 abstract InferenceAlgorithm
-
-type GenericAlgorithm <: InferenceAlgorithm
-    execute::Function
-end
 
 Base.deepcopy(::InferenceAlgorithm) = error("deepcopy(::InferenceAlgorithm) is not possible. You should construct a new InferenceAlgorithm.")
 

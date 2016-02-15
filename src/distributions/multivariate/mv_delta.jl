@@ -1,16 +1,19 @@
-############################################
-# MvDeltaDistribution
-############################################
-# Description:
-#   Encodes a multivariate delta distribution.
-#   p(x) = 1 if x==m
-#        = 0 otherwise
-#   Can be used to carry samples/observations.
-#   Example: MvDeltaDistribution([1.0, 3.0])
-############################################
-
 export MvDeltaDistribution
 
+"""
+Description:
+
+    Encodes a multivariate delta distribution. Can be used to carry samples/observations.
+    p(x) = δ(x-m)
+
+Parameters:
+
+    m (location) (Any vector)
+    
+Construction:
+    
+    MvDeltaDistribution([1.0, 3.0])
+"""
 type MvDeltaDistribution{T, dims} <: MultivariateProbabilityDistribution
     m::Vector{T}
 end

@@ -1,26 +1,25 @@
-############################################
-# AdditionNode
-############################################
-# Description:
-#   Addition: out = in1 + in2
-#
-#          in2
-#          |
-#    in1   v  out
-#   ----->[+]----->
-#
-#   f(in1,in2,out) = δ(out - in1 - in2)
-#
-# Interfaces:
-#   1 i[:in1], 2 i[:in2], 3 i[:out]
-#
-# Construction:
-#   AdditionNode(id=:my_node)
-#
-############################################
-
 export AdditionNode
 
+"""
+Description:
+
+    out = in1 + in2
+
+           in2
+           |
+     in1   v  out
+    ----->[+]----->
+
+    f(in1,in2,out) = δ(out - in1 - in2)
+
+Interfaces:
+
+    1 i[:in1], 2 i[:in2], 3 i[:out]
+
+Construction:
+
+    AdditionNode(id=:my_node)
+"""
 type AdditionNode <: Node
     id::Symbol
     interfaces::Array{Interface,1}
@@ -45,6 +44,16 @@ isDeterministic(::AdditionNode) = true
 # GaussianDistribution methods
 ############################################
 
+"""
+AdditionNode:
+
+     x~N   y~N 
+    --->[+]<---
+         | | z~N  
+         v v    
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::AdditionNode,
                             outbound_interface_index::Type{Val{3}},
                             outbound_dist::GaussianDistribution,
@@ -62,6 +71,16 @@ function sumProductRule!(   node::AdditionNode,
     return outbound_dist
 end
 
+"""
+AdditionNode:
+
+     x~N   y~N 
+    --->[+]<---
+         |  -->   
+     z~N v    
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::AdditionNode,
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GaussianDistribution,
@@ -73,6 +92,16 @@ function sumProductRule!(   node::AdditionNode,
     return outbound_dist
 end
 
+"""
+AdditionNode:
+
+     x~N   y~N 
+    --->[+]<---
+    <--  |   
+         v z~N    
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 4.1
+"""
 function sumProductRule!(   node::AdditionNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
@@ -100,6 +129,14 @@ end
 # DeltaDistribution methods
 #############################################
 
+"""
+AdditionNode:
+
+     x~δ   y~δ 
+    --->[+]<---
+         | |  
+     z~δ v v
+"""
 function sumProductRule!(node::AdditionNode,
                          outbound_interface_index::Type{Val{3}},
                          outbound_dist::DeltaDistribution{Float64},
@@ -111,6 +148,14 @@ function sumProductRule!(node::AdditionNode,
     return outbound_dist
 end
 
+"""
+AdditionNode:
+
+     x~δ   y~δ 
+    --->[+]<---
+         |  --> 
+     z~δ v   
+"""
 function sumProductRule!(node::AdditionNode,
                          outbound_interface_index::Type{Val{2}},
                          outbound_dist::DeltaDistribution{Float64},
@@ -122,6 +167,14 @@ function sumProductRule!(node::AdditionNode,
     return outbound_dist
 end
 
+"""
+AdditionNode:
+
+     x~δ   y~δ 
+    --->[+]<---
+    <--  |  
+         v z~δ   
+"""
 function sumProductRule!(node::AdditionNode,
                          outbound_interface_index::Type{Val{1}},
                          outbound_dist::DeltaDistribution{Float64},

@@ -1,21 +1,27 @@
-############################################
-# MvGaussianDistribution
-############################################
-# Description:
-#   Encodes a multivariate Gaussian distribution.
-#   Define (mean (m) or weighted mean (xi))
-#   and (covariance (V) or precision (W)).
-#
-#   Example:
-#       MvGaussianDistribution(m=[1.0,3.0], V=[2.0, 0.0; 0.0, 2.0])
-############################################
-
 export
     MvGaussianDistribution,
     ensureParameters!,
     isWellDefined,
     isConsistent
 
+"""
+Description:
+
+    Encodes a multivariate Gaussian distribution.
+
+Parameters:
+
+    m (“mean”, real vector), V (“variance”, real matrix),
+    W (“precision”, real matrix), xi (“weighted mean”, real vector)
+
+Construction:
+
+    MvGaussianDistribution(m=[1.0,3.0], V=[2.0, 0.0; 0.0, 2.0])
+
+Reference:
+
+    Bishop, 2006; Pattern recognition and machine learning; appendix B
+"""
 type MvGaussianDistribution{dims} <: MultivariateProbabilityDistribution
     m::Vector{Float64}   # Mean vector
     V::Matrix{Float64}   # Covariance matrix

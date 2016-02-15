@@ -1,12 +1,22 @@
-############################################
-# BetaDistribution
-############################################
-# Description:
-#   Encodes a beta PDF.
-#   Pamameters: a and b.
-############################################
 export BetaDistribution
 
+"""
+Description:
+
+    Encodes a beta PDF.
+
+Pamameters:
+
+    Real scalars a > 0 (shape) and b > 0 (rate).
+
+Construction:
+
+    BetaDistribution(a=1.0, b=1.0)
+
+Reference:
+
+    Bishop, 2006; Pattern recognition and machine learning; appendix B
+"""
 type BetaDistribution <: UnivariateProbabilityDistribution
     a::Float64 # shape
     b::Float64 # rate

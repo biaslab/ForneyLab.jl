@@ -1,24 +1,23 @@
-############################################
-# TerminalNode
-############################################
-# Description:
-#   Sends out a predefined message.
-#
-#       out
-#   [T]----->
-#
-#   out = T.value
-#
-# Interfaces:
-#   1 i[:out]
-#
-# Construction:
-#   TerminalNode(GaussianDistribution(), id=:my_node)
-#
-############################################
-
 export TerminalNode, PriorNode
 
+"""
+Description:
+
+    Sends out a predefined message.
+
+        out
+    [T]----->
+
+    out = T.value
+
+Interfaces:
+    
+    1 i[:out]
+
+Construction:
+    
+    TerminalNode(GaussianDistribution(), id=:my_node)
+"""
 type TerminalNode <: Node
     id::Symbol
     value::ProbabilityDistribution
@@ -50,6 +49,12 @@ isDeterministic(::TerminalNode) = false # Edge case for deterministicness
 # Implement firstFreeInterface since EqualityNode is symmetrical in its interfaces
 firstFreeInterface(node::TerminalNode) = (node.interfaces[1].partner==nothing) ? node.interfaces[1] : error("No free interface on $(typeof(node)) $(node.id)")
 
+"""
+TerminalNode
+
+    [T]--->
+        -->
+"""
 function sumProductRule!(   node::TerminalNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::Any,

@@ -1,11 +1,12 @@
 export Edge
 export setForwardMessage!, setBackwardMessage!, forwardMessage, backwardMessage, ensureMarginal!
 
+"""
+An Edge joins two interfaces and has a direction (from tail to head).
+Forward messages flow in the direction of the Edge (tail to head).
+An Edge can contain a marginal, which is the product of the forward and backward message.
+"""
 type Edge <: AbstractEdge
-    # An Edge joins two interfaces and has a direction (from tail to head).
-    # Forward messages flow in the direction of the Edge (tail to head).
-    # An Edge can contain a marginal, which is the product of the forward and backward message.
-
     id::Symbol
     tail::Interface
     head::Interface

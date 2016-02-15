@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny, rules, format, isValid, invalidate!, *
+export isApproxEqual, huge, tiny, format, isValid, invalidate!, *
 
 import Base.*, Base.==
 # ensureMatrix: ensure that the input is a 2D array or nothing
@@ -65,6 +65,19 @@ function format(d::Matrix{Float64})
     s *= "]"
 end
 
+function format(v::Vector{Any})
+    str = ""
+    for (i, entry) in enumerate(v)
+        name = replace("$(entry)", "ForneyLab.", "")
+        if i < length(v)
+            str *= "`$(name)`, "
+        else
+            str *= "and `$(name)`."
+        end
+    end
+    return str
+end
+
 # isApproxEqual: check approximate equality
 isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < tiny
 
@@ -111,45 +124,5 @@ function expand(d::Dict)
         end
     end
 
-    return d_expanded 
-end
-
-function rules(node_type::Union{DataType, Void}=nothing; format=:table)
-    # Prints a table or list of node update rules
-    rule_dict = YAML.load_file("$(Pkg.dir("ForneyLab"))/src/update_equations.yaml")
-    all_rules = rule_dict["rules"]
-
-    # Select node specific rules
-    if node_type != nothing
-        rule_list = Dict()
-        for (id, rule) in all_rules
-            if rule["node"] == "$(node_type)"
-                merge!(rule_list, Dict{Any,Any}(id=>rule)) # Grow the list of rules
-            end
-        end
-    else
-        rule_list = all_rules
-    end
-
-    node="node"; reference="reference"; formula="formula"; diagram="diagram"
-    # Write rule list to output
-    if format==:table
-        println("Message calculation rules (node id (reference))")
-        println("-----------------------------------------------")
-        for (id, rule) in rule_list
-            println("$(rule[node]) $(id) ($(rule[reference]))")
-        end
-        println("\nUse rules(NodeType) to view all rules of a specific node type; use rules(..., format=:list) to view the formulas in latex output.")
-    elseif format==:list
-        display(HTMLString("<p><b>Parameterizations</b><br>Student's-t distribution: St(m,W,ν)<br>Delta Distribution: δ(m)<br>Gaussian distribution (mean, variance): N(m,V), N(m,W⁻¹) for multivariate, or N(m,λ⁻¹) for univariate<br>Gamma distribution (shape, rate): Gam(a,b)<br>Inverse gamma distribution (shape, scale): Ig(a,b)<br>Beta distribution: Bet(a,b)<br>Normal-gamma distribution: Ng(m,β,a,b)</p>"))
-        display(HTMLString("<p>Parameters in the equations are denoted by the parameter character (see above list for distribution parametrizations) and a subcript with the variable it applies to.</p>"))
-        for (id, rule) in rule_list
-            display(HTMLString("<b>$(id)</b>; $(rule[reference]):"))
-            display(HTMLString("<font face=\"monospace\">$(rule[diagram])</font>"))
-            display(LaTeXString(rule[formula]))
-            display(HTMLString("<br>"))
-        end
-    else
-        error("Unknown format $(format), use :table or :list instead")
-    end
+    return d_expanded
 end

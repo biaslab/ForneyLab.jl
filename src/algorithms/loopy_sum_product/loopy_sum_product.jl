@@ -1,6 +1,14 @@
 import Base.show
 export LoopySumProduct
 
+"""
+Loopy sum-product message passing algorithm.
+
+Usage:
+
+    LoopySumProduct(graph::Graph; post_processing_functions, breaker_messages, n_iterations)
+    LoopySumProduct(outbound_interface::Interface; post_processing_functions, breaker_messages, n_iterations)
+"""
 type LoopySumProduct <: AbstractSumProduct
     execute::Function
     schedule::Schedule

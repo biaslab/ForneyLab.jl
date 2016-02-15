@@ -1,26 +1,25 @@
-############################################
-# EqualityNode
-############################################
-# Description:
-#   Equality constraint on 3 variables: i[1] = i[2] = i[3]
-#
-#          i[2]
-#          |
-#    i[1]  |  i[3]
-#   ------[=]-----
-#
-#   f(i1,i2,i3) = δ(i1-i3)⋅δ(i2-i3)
-#
-# Interfaces:
-#   1 i[1], 2 i[2], 3 i[3]
-#
-# Construction:
-#   EqualityNode(id=:my_node)
-#
-############################################
-
 export EqualityNode
 
+"""
+Description:
+
+    Equality constraint on 3 variables: i[1] = i[2] = i[3]
+
+         i[2]
+         |
+    i[1]  |  i[3]
+    ------[=]-----
+
+    f(i1,i2,i3) = δ(i1-i3)⋅δ(i2-i3)
+
+Interfaces:
+
+    1. i[1], 2. i[2], 3. i[3]
+
+Construction:
+
+    EqualityNode(id=:my_node)
+"""
 type EqualityNode <: Node
     id::Symbol
     interfaces::Array{Interface,1}
@@ -56,6 +55,14 @@ end
 # GaussianDistribution methods
 ############################################
 
+"""
+EqualityNode:
+
+      N     N 
+    --->[=]<---
+         | | 
+       N v v
+"""
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GaussianDistribution, msg_1::Any, msg_2::Message{GaussianDistribution}, msg_3::Message{GaussianDistribution}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::GaussianDistribution, msg_1::Message{GaussianDistribution}, msg_2::Any, msg_3::Message{GaussianDistribution}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::GaussianDistribution, msg_1::Message{GaussianDistribution}, msg_2::Message{GaussianDistribution}, msg_3::Any) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
@@ -79,6 +86,14 @@ end
 # DeltaDistribution methods
 ############################################
 
+"""
+EqualityNode:
+
+      δ     δ 
+    --->[=]<---
+         | | 
+       δ v v
+"""
 sumProductRule!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::DeltaDistribution{T}, msg_1::Any, msg_2::Message{DeltaDistribution{T}}, msg_3::Message{DeltaDistribution{T}}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
 sumProductRule!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::DeltaDistribution{T}, msg_1::Message{DeltaDistribution{T}}, msg_2::Any, msg_3::Message{DeltaDistribution{T}}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
 sumProductRule!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::DeltaDistribution{T}, msg_1::Message{DeltaDistribution{T}}, msg_2::Message{DeltaDistribution{T}}, msg_3::Any) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
@@ -101,17 +116,24 @@ end
 # InverseGammaDistribution methods
 ############################################
 
+"""
+EqualityNode:
+
+     Ig     Ig 
+    --->[=]<---
+         | | 
+      Ig v v
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 5.2
+"""
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::InverseGammaDistribution, msg_1::Any, msg_2::Message{InverseGammaDistribution}, msg_3::Message{InverseGammaDistribution}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::InverseGammaDistribution, msg_1::Message{InverseGammaDistribution}, msg_2::Any, msg_3::Message{InverseGammaDistribution}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::InverseGammaDistribution, msg_1::Message{InverseGammaDistribution}, msg_2::Message{InverseGammaDistribution}, msg_3::Any) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
 
 function equalityRule!(dist_result::InverseGammaDistribution, dist_1::InverseGammaDistribution, dist_2::InverseGammaDistribution)
-    # The result of the inverse gamma equality rule applied to dist_1 and dist_2 is written to dist_result
-    # Definition from Korl table 5.2
     dist_result.a = dist_1.a+dist_2.a+1.0
     dist_result.b = dist_1.b+dist_2.b
-    # TODO: unrepress
-    # isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
+
     return dist_result
 end
 
@@ -120,17 +142,22 @@ end
 # GammaDistribution methods
 ############################################
 
+"""
+EqualityNode:
+
+    Gam     Gam 
+    --->[=]<---
+         | | 
+     Gam v v
+"""
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GammaDistribution, msg_1::Any, msg_2::Message{GammaDistribution}, msg_3::Message{GammaDistribution}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::GammaDistribution, msg_1::Message{GammaDistribution}, msg_2::Any, msg_3::Message{GammaDistribution}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::GammaDistribution, msg_1::Message{GammaDistribution}, msg_2::Message{GammaDistribution}, msg_3::Any) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
 
 function equalityRule!(dist_result::GammaDistribution, dist_1::GammaDistribution, dist_2::GammaDistribution)
-    # The result of the gamma equality rule applied to dist_1 and dist_2 is written to dist_result
-    # Derivation available in notebook
     dist_result.a = dist_1.a+dist_2.a-1.0
     dist_result.b = dist_1.b+dist_2.b
-    # TODO: unrepress
-    # isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
+
     return dist_result
 end
 
@@ -139,17 +166,22 @@ end
 # BetaDistribution methods
 ############################################
 
+"""
+EqualityNode:
+
+    Beta     Beta 
+     --->[=]<---
+          | | 
+     Beta v v
+"""
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::BetaDistribution, msg_1::Any, msg_2::Message{BetaDistribution}, msg_3::Message{BetaDistribution}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::BetaDistribution, msg_1::Message{BetaDistribution}, msg_2::Any, msg_3::Message{BetaDistribution}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::BetaDistribution, msg_1::Message{BetaDistribution}, msg_2::Message{BetaDistribution}, msg_3::Any) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
 
 function equalityRule!(dist_result::BetaDistribution, dist_1::BetaDistribution, dist_2::BetaDistribution)
-    # The result of the beta equality rule applied to dist_1 and dist_2 is written to dist_result
-    # Derivation available in notebook
     dist_result.a = dist_1.a+dist_2.a-1.0
     dist_result.b = dist_1.b+dist_2.b-1.0
-    # TODO: unrepress
-    # isProper(dist_result) || error("Output of equalityRule! ($(format(dist_result))) should be a proper distribution")
+
     return dist_result
 end
 
@@ -158,6 +190,14 @@ end
 # BernoulliDistribution methods
 ############################################
 
+"""
+EqualityNode:
+
+    Bern     Bern 
+     --->[=]<---
+          | | 
+     Bern v v
+"""
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::BernoulliDistribution, msg_1::Any, msg_2::Message{BernoulliDistribution}, msg_3::Message{BernoulliDistribution}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::BernoulliDistribution, msg_1::Message{BernoulliDistribution}, msg_2::Any, msg_3::Message{BernoulliDistribution}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::BernoulliDistribution, msg_1::Message{BernoulliDistribution}, msg_2::Message{BernoulliDistribution}, msg_3::Any) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
@@ -240,6 +280,14 @@ end
 # Gaussian-Student's t combination
 ############################################
 
+"""
+EqualityNode:
+
+      N     St 
+    --->[=]<---
+         | | 
+       N v v
+"""
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GaussianDistribution, msg_1::Any, msg_2::Message{GaussianDistribution}, msg_3::Message{StudentsTDistribution}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GaussianDistribution, msg_1::Any, msg_2::Message{StudentsTDistribution}, msg_3::Message{GaussianDistribution}) = return equalityRule!(outbound_dist, msg_3.payload, msg_2.payload)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::GaussianDistribution, msg_1::Message{GaussianDistribution}, msg_2::Any, msg_3::Message{StudentsTDistribution}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
@@ -331,6 +379,14 @@ end
 # WishartDistribution methods
 ############################################
 
+"""
+EqualityNode:
+
+      W     W 
+    --->[=]<---
+         | | 
+       W v v
+"""
 sumProductRule!{T<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::T, msg_1::Any, msg_2::Message{T}, msg_3::Message{T}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
 sumProductRule!{T<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::T, msg_1::Message{T}, msg_2::Any, msg_3::Message{T}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
 sumProductRule!{T<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::T, msg_1::Message{T}, msg_2::Message{T}, msg_3::Any) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)

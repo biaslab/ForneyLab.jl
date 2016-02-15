@@ -1,6 +1,13 @@
 import Base.show
 export ExpectationPropagation
 
+"""
+Expectation propagation algorithm.
+
+Usage:
+
+    ExpectationPropagation(sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback, post_processing_functions)
+"""
 type ExpectationPropagation <: InferenceAlgorithm
     execute::Function
     schedule::Schedule

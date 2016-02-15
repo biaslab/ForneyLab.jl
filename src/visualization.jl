@@ -61,9 +61,7 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
     node_type_symbols = Dict{DataType, AbstractString}(
                             AdditionNode => "+",
                             EqualityNode => "=",
-                            GaussianNode{Val{:precision}} => "N{:precision}",
-                            GaussianNode{Val{:moment}} => "N{:moment}",
-                            GaussianNode{Val{:log_variance}} => "N{:log_variance}",
+                            GaussianNode => "N",
                             ExponentialNode => "exp",
                             GainNode => "GainNode",
                             GainAdditionNode => "GainAdditionNode",

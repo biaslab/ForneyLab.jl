@@ -1,12 +1,22 @@
-############################################
-# InverseGammaDistribution
-############################################
-# Description:
-#   Encodes an inverse gamma PDF.
-#   Pamameters: scalars a (shape) and b (scale).
-############################################
 export InverseGammaDistribution
 
+"""
+Description:
+
+    Encodes an inverse gamma PDF.
+
+Pamameters:
+
+    Real scalars a > 0 (shape) and b > 0 (scale).
+
+Construction:
+
+    InverseGammaDistribution(a=1.0, b=1.0)
+
+Reference:
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; appendix A
+"""
 type InverseGammaDistribution <: UnivariateProbabilityDistribution
     a::Float64 # shape
     b::Float64 # scale

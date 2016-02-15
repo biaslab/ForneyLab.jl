@@ -1,15 +1,23 @@
-############################################
-# MvLogNormalDistribution
-############################################
-# Description:
-#   Encodes a multivariate log-normal PDF.
-#   Pamameters: vector m (location) and matrix S (scale).
-#
-#   Reference: Lognormal distributions: theory and aplications; Crow, 1988
-############################################
-
 export MvLogNormalDistribution
 
+"""
+Description:
+    
+    Encodes a multivariate log-normal PDF.
+    Pamameters: vector m (location) and matrix S (scale).
+
+Parameters:
+
+    m (location vector), S (scale matrix)
+
+Construction:
+
+    MvLogNormalDistribution(m=zeros(3), S=eye(3))
+
+Reference:
+    
+    Lognormal distributions: theory and aplications; Crow, 1988
+"""
 type MvLogNormalDistribution{dims} <: MultivariateProbabilityDistribution
     m::Vector{Float64} # Location
     S::Matrix{Float64} # Scale

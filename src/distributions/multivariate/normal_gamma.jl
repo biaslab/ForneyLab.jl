@@ -1,12 +1,22 @@
-############################################
-# NormalGammaDistribution
-############################################
-# Description:
-#   Encodes a normal-gamma distribution.
-#   Pamameters: m (location), beta (precision) scalars a (shape) and b (rate).
-############################################
 export NormalGammaDistribution
 
+"""
+Description:
+
+    Encodes a normal-gamma distribution (bivariate).
+
+Pamameters:
+
+    Real scalars m (location), beta (precision) scalars a (shape) and b (rate).
+
+Construction:
+    
+    MvNormalGammaDistribution(m=0.0, beta=1.0, a=1.0, b=1.0)
+
+Reference:
+
+    Bishop, 2006; Pattern recognition and machine learning; appendix B
+"""
 type NormalGammaDistribution <: MultivariateProbabilityDistribution
     # All univariate, so parameters are floats
     m::Float64    # location

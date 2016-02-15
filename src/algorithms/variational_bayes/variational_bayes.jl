@@ -7,6 +7,13 @@ include("recognition_factorization.jl")
 include("scheduler.jl")
 include("message_passing.jl")
 
+"""
+Variational message passing algorithm.
+
+Usage:
+
+    VariationalBayes(recognition_distribution_types::Dict, graph::Graph; n_iterations, post_processing_functions)
+"""
 type VariationalBayes <: InferenceAlgorithm
     execute::Function
     factorization::RecognitionFactorization

@@ -1,12 +1,18 @@
-################################################################
-# BernoulliDistribution
-################################################################
-# Description:
-#   Encodes a distribution over binary domain {false,true}.
-#   Pamameters: p ∈ [0,1]: Pr{X=true} = p
-################################################################
 export BernoulliDistribution
 
+"""
+Description:
+
+    Encodes a distribution over binary domain {false,true}.
+
+Pamameters:
+
+    p ∈ [0,1]: Pr{X=true} = p
+
+Construction:
+
+    BernoulliDistribution(p)
+"""
 type BernoulliDistribution <: UnivariateProbabilityDistribution
     p::Float64 # Pr{X=true}
 end

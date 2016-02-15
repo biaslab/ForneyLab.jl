@@ -1,7 +1,6 @@
 module ForneyLab
 
 using Optim
-using YAML
 using LaTeXStrings
 
 export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution
@@ -9,6 +8,7 @@ export sumProductRule!, expectationRule!, variationalRule!
 export vague, self, ==, isProper, sample, dimensions
 export setVerbosity
 export prepare!
+export rules
 
 # Verbosity
 verbose = false
@@ -23,6 +23,7 @@ import Base.show, Base.convert
 
 # High level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
+# Documentation in docstrings.jl
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
 abstract UnivariateProbabilityDistribution <: ProbabilityDistribution
 abstract MultivariateProbabilityDistribution <: ProbabilityDistribution
@@ -106,5 +107,7 @@ include("algorithms/expectation_propagation/expectation_propagation.jl")
 include("algorithms/preparation.jl")
 
 vague{T<:UnivariateProbabilityDistribution}(dist_type::Type{T}) = vague!(T())
+
+include("docstrings.jl")
 
 end # module ForneyLab

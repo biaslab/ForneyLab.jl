@@ -1,41 +1,42 @@
-############################################
-# GaussianNode
-############################################
-# Description:
-#   Gaussian factor node, can take multiple parametrization forms, specified
-#   through the form argument:
-#
-#   - form == :variance     => f(out,m,V)  = N(out|m,V)        (default)
-#   - form == :precision    => f(out,m,W)  = N(out|m,inv(W))
-#   - form == :log_variance => f(out,m,lV) = N(out|m,exp(lV))
-#
-#   Both parameters can be fixed, in which case the corresponding interface does
-#   not exist (and the ids of subsequent interfaces are lowered):
-#
-#           1. :mean
-#             |
-#             v
-#   2. ----->[N]-----> 3. :out            1. ----->[N]-----> 2. :out
-#    :variance /                            :variance /
-#    :precision /                           :precision /
-#    :log_variance                          :log_variance
-#
-#
-#   1. ----->[N]-----> 2. :out            [N]-----> 1. :out
-#    :mean
-#
-#
-#   The node is parametrized: GaussianNode{mean_type,uncertainty_type}, where
-#       - mean_type ∈ {:fixed_mean, :mean}
-#       - uncertainty_type ∈ {:fixed_variance, :variance, :precision, :log_variance}
-#
-# Construction:
-#   GaussianNode(form=:variance, id=:my_node, m=optional_fixed_value, V=optional_fixed_value)
-#
-############################################
-
 export GaussianNode
 
+"""
+Description:
+
+    Gaussian factor node.
+
+Interfaces:
+
+    The GaussianNode can take multiple parametrization forms, specified
+    through the form argument:
+
+    - form == :variance     => f(out,m,V)  = N(out|m,V)        (default)
+    - form == :precision    => f(out,m,W)  = N(out|m,inv(W))
+    - form == :log_variance => f(out,m,lV) = N(out|m,exp(lV))
+
+    Each parameter can be fixed, in which case the corresponding interface does
+    not exist (and the ids of subsequent interfaces are lowered):
+
+           1. :mean
+             |
+             v
+    2. ----->[N]-----> 3. :out            1. ----->[N]-----> 2. :out
+     :variance /                            :variance /
+     :precision /                           :precision /
+     :log_variance                          :log_variance
+
+
+    1. ----->[N]-----> 2. :out            [N]-----> 1. :out
+     :mean
+
+    The node is parametrized: GaussianNode{mean_type,uncertainty_type}, where
+       - mean_type ∈ {:fixed_mean, :mean}
+       - uncertainty_type ∈ {:fixed_variance, :variance, :precision, :log_variance}
+
+Construction:
+
+    GaussianNode(form=:variance, id=:my_node, m=optional_fixed_value, V=optional_fixed_value)
+"""
 type GaussianNode{mean_type,uncertainty_type} <: Node
     # mean_type ∈ {:fixed_mean, :mean}
     # uncertainty_type ∈ {:fixed_variance, :variance, :precision, :log_variance}
@@ -92,23 +93,25 @@ isDeterministic(::GaussianNode) = false
 
 
 ############################################
-# Sumproduct update functions
+# Sumproduct rules
 ############################################
 
+"""
+GaussianNode{:mean, :variance/:precision}:
+
+     N       δ
+    --->[N]<---
+    <--  |
+         v δ
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 5.2
+"""
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
                             msg_mean::Any,
                             msg_var_prec::Message{DeltaDistribution{Float64}},
                             msg_out::Message{DeltaDistribution{Float64}})
-
-    # Rules from Korl table 5.2
-    #
-    #   N       Dlt
-    #  ---->[N]<----
-    #  <--   |
-    #        | Dlt
-    #        v
 
     outbound_dist.m = msg_out.payload.m
     outbound_dist.xi = NaN
@@ -125,14 +128,6 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:precision}},
                             msg_var_prec::Message{DeltaDistribution{Float64}},
                             msg_out::Message{DeltaDistribution{Float64}})
 
-    # Rules from Korl table 5.2
-    #
-    #   N       Dlt
-    #  ---->[N]<----
-    #  <--   |
-    #        | Dlt
-    #        v
-
     outbound_dist.m = msg_out.payload.m
     outbound_dist.xi = NaN
     outbound_dist.V = NaN
@@ -141,20 +136,22 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :variance}:
+
+     δ       Ig
+    --->[N]<---
+         |  -->
+         v δ
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 5.2
+"""
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::InverseGammaDistribution,
                             msg_mean::Message{DeltaDistribution{Float64}},
                             msg_var::Any,
                             msg_out::Message{DeltaDistribution{Float64}})
-
-    # Rules from Korl table 5.2
-    #
-    #   Dlt      IG
-    #  ---->[N]<----
-    #        |   -->
-    #     Dlt|
-    #        v
 
     y = msg_out.payload.m
     m = msg_mean.payload.m
@@ -164,18 +161,22 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:variance}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :precision}:
+
+     δ      Gam
+    --->[N]<---
+         |  -->
+         v δ
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 5.2
+"""
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GammaDistribution,
                             msg_mean::Message{DeltaDistribution{Float64}},
                             msg_prec::Any,
                             msg_out::Message{DeltaDistribution{Float64}})
-
-    #   Dlt      Gam
-    #  ---->[N]<----
-    #        |   -->
-    #     Dlt|
-    #        v
 
     y = msg_out.payload.m
     m = msg_mean.payload.m
@@ -185,20 +186,22 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :variance/:precision}:
+
+     δ       δ
+    --->[N]<---
+         | |
+       N v v
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 5.2
+"""
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{3}},
                             outbound_dist::GaussianDistribution,
                             msg_mean::Message{DeltaDistribution{Float64}},
                             msg_var_prec::Message{DeltaDistribution{Float64}},
                             msg_out::Any)
-
-    # Rules from Korl table 5.2
-    #
-    #   Dlt     Dlt
-    #  ---->[N]<----
-    #        |
-    #      | | N
-    #      v v
 
     outbound_dist.m = msg_mean.payload.m
     outbound_dist.xi = NaN
@@ -214,14 +217,6 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:precision}},
                             msg_mean::Message{DeltaDistribution{Float64}},
                             msg_var_prec::Message{DeltaDistribution{Float64}},
                             msg_out::Any)
-
-    # Rules from Korl table 5.2
-    #
-    #   Dlt     Dlt
-    #  ---->[N]<----
-    #        |
-    #      | | N
-    #      v v
 
     outbound_dist.m = msg_mean.payload.m
     outbound_dist.xi = NaN
@@ -236,16 +231,17 @@ end
 # Sum-product rules for fixed mean
 #############################################
 
+"""
+GaussianNode{:fixed_mean, fixed_variance}:
+
+        N
+    [N]--->
+        -->
+"""
 function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:fixed_variance}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
                             msg_out::Any)
-
-    # Fixed mean and variance, effectively rendering the Gaussian node a terminal
-    #
-    #        N
-    #  [N]---->
-    #      -->
 
     outbound_dist.m = node.m[1]
     outbound_dist.V = node.V[1,1]
@@ -255,18 +251,20 @@ function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:fixed_varia
     return outbound_dist
 end
 
+"""
+GaussianNode{:fixed_mean, :variance}:
+
+     Ig     δ
+    --->[N]--->
+    <--
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 5.2
+"""
 function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:variance}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::InverseGammaDistribution,
                             msg_var::Any,
                             msg_out::Message{DeltaDistribution{Float64}})
-
-    # Rules from Korl table 5.2
-    # Fixed mean
-    #
-    #  Ig        Dlt
-    #  ---->[N]---->
-    #   <--
 
     y = msg_out.payload.m
     m = node.m[1]
@@ -276,17 +274,20 @@ function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:variance}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:fixed_mean, :precision}
+
+    Gam     δ
+    --->[N]--->
+    <--
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 5.2
+"""
 function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:precision}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GammaDistribution,
                             msg_prec::Any,
                             msg_out::Message{DeltaDistribution{Float64}})
-
-    # Fixed mean
-    #
-    #  Gam       Dlt
-    #  ---->[N]---->
-    #   <--
 
     y = msg_out.payload.m
     m = node.m[1]
@@ -296,18 +297,20 @@ function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:precision}}
     return outbound_dist
 end
 
+"""
+GaussianNode{:fixed_mean, :variance/:precision}
+
+     δ      N
+    --->[N]--->
+            -->
+
+    Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 5.2
+"""
 function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:variance}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GaussianDistribution,
                             msg_var::Message{DeltaDistribution{Float64}},
                             msg_out::Any)
-
-    # Rules from Korl table 5.2
-    # Fixed mean
-    #
-    #  Dlt        N
-    #  ---->[N]---->
-    #           -->
 
     outbound_dist.m = node.m[1]
     outbound_dist.xi = NaN
@@ -323,13 +326,6 @@ function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:precision}}
                             msg_prec::Message{DeltaDistribution{Float64}},
                             msg_out::Any)
 
-    # Rules from Korl table 5.2
-    # Fixed mean
-    #
-    #  Dlt        N
-    #  ---->[N]---->
-    #           -->
-
     outbound_dist.m = node.m[1]
     outbound_dist.xi = NaN
     outbound_dist.V = NaN
@@ -338,62 +334,24 @@ function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:precision}}
     return outbound_dist
 end
 
+
 #############################################
 # Sum-product rules for fixed variance
 #############################################
 
-function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
-                            outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            msg_mean::Message{DeltaDistribution{Float64}},
-                            msg_out::Any)
+"""
+GaussianNode{:mean, :fixed_variance}
 
-    # Fixed variance, variable mean
-    #
-    #        Dlt      N
-    #  mean ---->[N]----> out
-    #                -->
-
-    outbound_dist.m = msg_mean.payload.m
-    outbound_dist.xi = NaN
-    outbound_dist.V = node.V[1,1]
-    outbound_dist.W = NaN
-
-    return outbound_dist
-end
-
-function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
-                            outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            msg_mean::Message{GaussianDistribution},
-                            msg_out::Any)
-
-    # Fixed variance, variable mean
-    #
-    #         N      N
-    #  mean ---->[N]----> out
-    #                -->
-    ensureParameters!(msg_mean.payload, (:m,:V))
-    outbound_dist.m = msg_mean.payload.m
-    outbound_dist.xi = NaN
-    outbound_dist.V = msg_mean.payload.V + node.V[1,1]
-    outbound_dist.W = NaN
-
-    return outbound_dist
-end
-
+     N      δ
+    --->[N]--->
+    <--
+"""
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
                             msg_mean::Any,
                             msg_out::Message{DeltaDistribution{Float64}})
 
-    # Fixed variance, variable mean
-    #
-    #        N       Dlt
-    #  mean ---->[N]----> out
-    #        <--
-
     outbound_dist.m = msg_out.payload.m
     outbound_dist.xi = NaN
     outbound_dist.V = node.V[1,1]
@@ -402,21 +360,73 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
     return outbound_dist
 end
 
+function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_variance}},
+                                outbound_interface_index::Type{Val{1}},
+                                outbound_dist::MvGaussianDistribution{dims},
+                                msg_mean::Any,
+                                msg_out::Message{MvDeltaDistribution{Float64,dims}})
+
+    outbound_dist.m[:] = msg_out.payload.m
+    outbound_dist.V[:] = node.V
+    invalidate!(outbound_dist.xi)
+    invalidate!(outbound_dist.W)
+
+    return outbound_dist
+end
+
+"""
+GaussianNode{:mean, :fixed_variance}
+
+     N      N
+    --->[N]--->
+    <--
+"""
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
                             msg_mean::Any,
                             msg_out::Message{GaussianDistribution})
 
-    # Fixed variance, variable mean
-    #
-    #        N        N
-    #  mean ---->[N]----> out
-    #        <--
     ensureParameters!(msg_out.payload, (:m,:V))
     outbound_dist.m = msg_out.payload.m
     outbound_dist.xi = NaN
     outbound_dist.V = msg_out.payload.V + node.V[1,1]
+    outbound_dist.W = NaN
+
+    return outbound_dist
+end
+
+function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_variance}},
+                                outbound_interface_index::Type{Val{1}},
+                                outbound_dist::MvGaussianDistribution{dims},
+                                msg_mean::Any,
+                                msg_out::Message{MvGaussianDistribution{dims}})
+
+    ensureParameters!(msg_out.payload, (:m,:V))
+    outbound_dist.m[:] = msg_out.payload.m
+    outbound_dist.V[:] = msg_out.payload.V + node.V
+    invalidate!(outbound_dist.xi)
+    invalidate!(outbound_dist.W)
+
+    return outbound_dist
+end
+
+"""
+GaussianNode{:mean, :fixed_variance}
+
+     δ      N
+    --->[N]--->
+            -->
+"""
+function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
+                            outbound_interface_index::Type{Val{2}},
+                            outbound_dist::GaussianDistribution,
+                            msg_mean::Message{DeltaDistribution{Float64}},
+                            msg_out::Any)
+
+    outbound_dist.m = msg_mean.payload.m
+    outbound_dist.xi = NaN
+    outbound_dist.V = node.V[1,1]
     outbound_dist.W = NaN
 
     return outbound_dist
@@ -428,16 +438,32 @@ function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_varianc
                                 msg_mean::Message{MvDeltaDistribution{Float64,dims}},
                                 msg_out::Any)
 
-    # Fixed variance, variable mean
-    #
-    #        Dlt      N
-    #  mean ---->[N]----> out
-    #                -->
-
     outbound_dist.m[:] = msg_mean.payload.m
     outbound_dist.V[:] = node.V
     invalidate!(outbound_dist.xi)
     invalidate!(outbound_dist.W)
+
+    return outbound_dist
+end
+
+"""
+GaussianNode{:mean, :fixed_variance}
+
+     N      N
+    --->[N]--->
+            -->
+"""
+function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
+                            outbound_interface_index::Type{Val{2}},
+                            outbound_dist::GaussianDistribution,
+                            msg_mean::Message{GaussianDistribution},
+                            msg_out::Any)
+
+    ensureParameters!(msg_mean.payload, (:m,:V))
+    outbound_dist.m = msg_mean.payload.m
+    outbound_dist.xi = NaN
+    outbound_dist.V = msg_mean.payload.V + node.V[1,1]
+    outbound_dist.W = NaN
 
     return outbound_dist
 end
@@ -448,11 +474,6 @@ function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_varianc
                                 msg_mean::Message{MvGaussianDistribution{dims}},
                                 msg_out::Any)
 
-    # Fixed variance, variable mean
-    #
-    #        N        N
-    #  mean ---->[N]----> out
-    #                -->
     ensureParameters!(msg_mean.payload, (:m,:V))
     outbound_dist.m[:] = msg_mean.payload.m
     outbound_dist.V[:] = msg_mean.payload.V + node.V
@@ -462,64 +483,25 @@ function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_varianc
     return outbound_dist
 end
 
-function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_variance}},
-                                outbound_interface_index::Type{Val{1}},
-                                outbound_dist::MvGaussianDistribution{dims},
-                                msg_mean::Any,
-                                msg_out::Message{MvDeltaDistribution{Float64,dims}})
-
-    # Fixed variance, variable mean
-    #
-    #        N       Dlt
-    #  mean ---->[N]----> out
-    #        <--
-
-    outbound_dist.m[:] = msg_out.payload.m
-    outbound_dist.V[:] = node.V
-    invalidate!(outbound_dist.xi)
-    invalidate!(outbound_dist.W)
-
-    return outbound_dist
-end
-
-function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_variance}},
-                                outbound_interface_index::Type{Val{1}},
-                                outbound_dist::MvGaussianDistribution{dims},
-                                msg_mean::Any,
-                                msg_out::Message{MvGaussianDistribution{dims}})
-
-    # Fixed variance, variable mean
-    #
-    #        N        N
-    #  mean ---->[N]----> out
-    #        <--
-    ensureParameters!(msg_out.payload, (:m,:V))
-    outbound_dist.m[:] = msg_out.payload.m
-    outbound_dist.V[:] = msg_out.payload.V + node.V
-    invalidate!(outbound_dist.xi)
-    invalidate!(outbound_dist.W)
-
-    return outbound_dist
-end
 
 ############################################
 # Naive variational update functions
 ############################################
 
+"""
+GaussianNode{:mean, :variance}:
+
+     N     q(Ig)
+    --->[N]<---
+    <--  |  
+         v q(N)
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
                             marg_mean::Any,
                             marg_variance::InverseGammaDistribution,
                             marg_out::GaussianDistribution)
-
-    # Derivation for the update rule can be found in the derivations notebook.
-    #
-    #   <--     Q~IG
-    #  ---->[N]<----
-    #    N   |
-    #        |Q~N
-    #        v
 
     ensureParameters!(marg_out, (:m,))
 
@@ -531,18 +513,20 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :precision}:
+
+     N     q(Gam)
+    --->[N]<---
+    <--  |  
+         v q(N)
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
                             marg_mean::Any,
                             marg_prec::GammaDistribution,
                             marg_y::GaussianDistribution)
-
-    #   N       Q~Gam
-    #  ---->[N]<----
-    #   <--  |
-    #    Q~N |
-    #        v
 
     ensureParameters!(marg_y, (:m,))
 
@@ -554,18 +538,20 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :precision}:
+
+     N     q(W)
+    --->[N]<---
+    <--  |  
+         v q(N)
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::MvGaussianDistribution,
                             marg_mean::Any,
                             marg_prec::WishartDistribution,
                             marg_y::MvGaussianDistribution)
-
-    #   N       Q~W
-    #  ---->[N]<----
-    #   <--  |
-    #    Q~N |
-    #        v
 
     ensureParameters!(marg_y, (:m,:W))
     outbound_dist.m = deepcopy(marg_y.m)
@@ -576,19 +562,20 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :log_variance}:
+
+     N     q(N)
+    --->[N]<---
+    <--  |  
+         v q(N)
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:log_variance}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
                             marg_mean::Any,
                             marg_log_var::GaussianDistribution,
                             marg_y::GaussianDistribution)
-
-    #
-    #   N       Q~N (log-variance)
-    #  ---->[N]<----
-    #   <--  |
-    #    Q~N |
-    #        v
 
     ensureParameters!(marg_y, (:m,))
     ensureParameters!(marg_log_var, (:m, :V))
@@ -602,18 +589,20 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:log_variance}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :variance}:
+
+    q(N)    Ig
+    --->[N]<---
+         |  --> 
+         v q(N)
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::InverseGammaDistribution,
                             marg_mean::GaussianDistribution,
                             marg_var::Any,
                             marg_out::GaussianDistribution)
-
-    #   Q~N      IG
-    #  ---->[N]<----
-    #        |   -->
-    #    Q~N |
-    #        v
 
     ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(marg_mean, (:m, :V))
@@ -624,18 +613,20 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :precision}:
+
+    q(N)    Gam
+    --->[N]<---
+         |  --> 
+         v q(N)
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GammaDistribution,
                             marg_mean::GaussianDistribution,
                             marg_prec::Any,
                             marg_out::GaussianDistribution)
-
-    #   Q~N      Gam
-    #  ---->[N]<----
-    #        |   -->
-    #    Q~N |
-    #        v
 
     ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(marg_mean, (:m, :V))
@@ -646,18 +637,20 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :precision}:
+
+    q(N)     W
+    --->[N]<---
+         |  --> 
+         v q(N)
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::WishartDistribution,
                             marg_mean::MvGaussianDistribution,
                             marg_prec::Any,
                             marg_out::MvGaussianDistribution)
-
-    #  Q~N      W
-    # ---->[N]<----
-    #       |   -->
-    #   Q~N |
-    #       v
 
     ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(marg_mean, (:m, :V))
@@ -667,18 +660,20 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :log_variance}:
+
+    q(N)     N
+    --->[N]<---
+         |  --> 
+         v q(N)
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:log_variance}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GaussianDistribution,
                             marg_mean::GaussianDistribution,
                             marg_log_var::Any,
                             marg_out::GaussianDistribution)
-
-    #  Q~N      N (log-variance)
-    # ---->[N]<----
-    #       |   -->
-    #   Q~N |
-    #       v
 
     ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(marg_mean, (:m, :V))
@@ -691,6 +686,14 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:log_variance}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :variance}:
+
+    q(N)   q(Ig)
+    --->[N]<---
+         | | 
+       N v v
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{3}},
                             outbound_dist::GaussianDistribution,
@@ -698,13 +701,6 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
                             marg_var::InverseGammaDistribution,
                             marg_out::Any)
 
-    #   Q~N     Q~IG
-    #  ---->[N]<----
-    #        |
-    #      N | |
-    #        v v
-
-    (isProper(marg_mean) && isProper(marg_var)) || error("Improper input distributions are not supported")
     ensureParameters!(marg_mean, (:m,))
 
     outbound_dist.m = marg_mean.m
@@ -715,18 +711,20 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :precision}:
+
+    q(N)   q(Ig)
+    --->[N]<---
+         | | 
+       N v v
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{3}},
                             outbound_dist::GaussianDistribution,
                             marg_mean::GaussianDistribution,
                             marg_prec::GammaDistribution,
                             marg_out::Any)
-
-    #   Q~N     Q~Gam
-    #  ---->[N]<----
-    #        |
-    #      N | |
-    #        v v
 
     ensureParameters!(marg_mean, (:m,))
 
@@ -738,20 +736,20 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :precision}:
+
+    q(N)   q(W)
+    --->[N]<---
+         | | 
+       N v v
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{3}},
                             outbound_dist::MvGaussianDistribution,
                             marg_mean::MvGaussianDistribution,
                             marg_prec::WishartDistribution,
                             marg_out::Any)
-
-    # Derivation for the update rule can be found in the derivations notebook.
-    #
-    #   Q~N     Q~W
-    #  ---->[N]<----
-    #        |
-    #      N | |
-    #        v v
 
     ensureParameters!(marg_mean, (:m,:W))
 
@@ -763,20 +761,20 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :log_variance}:
+
+    q(N)   q(N)
+    --->[N]<---
+         | | 
+       N v v
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:log_variance}},
                             outbound_interface_index::Type{Val{3}},
                             outbound_dist::GaussianDistribution,
                             marg_mean::GaussianDistribution,
                             marg_log_var::GaussianDistribution,
                             marg_out::Any)
-
-    # Derivation for the update rule can be found in the derivations notebook.
-    #
-    #   Q~N     Q~N (log-variance)
-    #  ---->[N]<----
-    #        |
-    #      N | |
-    #        v v
 
     ensureParameters!(marg_mean, (:m,))
     ensureParameters!(marg_log_var, (:m,:V))
@@ -795,42 +793,41 @@ end
 # Naive variational update functions with fixed interfaces
 ##########################################################
 
-# TODO: fix, same calling signature for preparation as function below
-#
-# function variationalRule!(  node::GaussianNode{Val{:variance}},
-#                             outbound_interface_index::Type{Val{1}},
-#                             outbound_dist::GaussianDistribution,
-#                             marg_mean::Any,
-#                             marg_out::GaussianDistribution)
+"""
+GaussianNode{:mean, :fixed_variance}
 
-#     # Fixed variance
-#     #
-#     #   <--     Q~N
-#     #  ---->[N]---->
-#     #    N
+     N     q(N)
+    --->[N]--->
+    <--
+"""
+function variationalRule!(  node::GaussianNode{Val{:mean}, Val{:fixed_variance}},
+                            outbound_interface_index::Type{Val{1}},
+                            outbound_dist::GaussianDistribution,
+                            marg_mean::Any,
+                            marg_out::GaussianDistribution)
 
-#     isProper(marg_out) || error("Improper input distributions are not supported")
-#     ensureParameters!(marg_out, (:m,))
+    ensureParameters!(marg_out, (:m,))
 
-#     outbound_dist.m = marg_out.m
-#     outbound_dist.V = node.V[1,1]
-#     outbound_dist.xi = NaN
-#     outbound_dist.W = NaN
+    outbound_dist.m = marg_out.m
+    outbound_dist.V = node.V[1,1]
+    outbound_dist.xi = NaN
+    outbound_dist.W = NaN
 
-#     return outbound_dist
-# end
+    return outbound_dist
+end
 
+"""
+GaussianNode{:fixed_mean, :variance}
+
+     Ig    q(N)
+    --->[N]--->
+    <--
+"""
 function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:variance}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::InverseGammaDistribution,
                             marg_var::Any,
                             marg_out::GaussianDistribution)
-
-    # Fixed mean
-    #
-    #   IG      Q~N
-    #  ---->[N]---->
-    #  <--
 
     ensureParameters!(marg_out, (:m, :V))
 
@@ -840,17 +837,18 @@ function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:variance}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:fixed_mean, :precision}
+
+    Gam    q(N)
+    --->[N]--->
+    <--
+"""
 function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:precision}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GammaDistribution,
                             marg_prec::Any,
                             marg_out::GaussianDistribution)
-
-    # Fixed mean
-    #
-    #   Gam     Q~N
-    #  ---->[N]---->
-    #  <--
 
     ensureParameters!(marg_out, (:m, :V))
 
@@ -860,17 +858,18 @@ function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:precision}}
     return outbound_dist
 end
 
+"""
+GaussianNode{:fixed_mean, :log_variance}
+
+     N     q(N)
+    --->[N]--->
+    <--
+"""
 function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:log_variance}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
                             marg_log_var::Any,
                             marg_out::GaussianDistribution)
-
-    # Fixed mean
-    #
-    #    N      Q~N
-    #  ---->[N]---->
-    #  <--
 
     ensureParameters!(marg_out, (:m, :V))
 
@@ -882,17 +881,18 @@ function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:log_varianc
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :fixed_variance}
+
+    q(N)    N
+    --->[N]--->
+            -->
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GaussianDistribution,
                             marg_mean::GaussianDistribution,
                             marg_out::Any)
-
-    # Fixed variance
-    #
-    #   Q~N     -->
-    #  ---->[N]---->
-    #            N
 
     ensureParameters!(marg_mean, (:m,))
 
@@ -904,17 +904,18 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:fixed_variance}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:fixed_mean, :variance}
+
+    q(Ig)    N
+     --->[N]--->
+             -->
+"""
 function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:variance}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GaussianDistribution,
                             marg_var::InverseGammaDistribution,
                             marg_out::Any)
-
-    # Fixed mean
-    #
-    #  Q~IG      N
-    #  ---->[N]---->
-    #            -->
 
     outbound_dist.m = node.m[1]
     outbound_dist.V = marg_var.b/(marg_var.a - 1.0)
@@ -924,17 +925,18 @@ function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:variance}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:fixed_mean, :precision}
+
+    q(Gam)   N
+     --->[N]--->
+             -->
+"""
 function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:precision}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GaussianDistribution,
                             marg_prec::GammaDistribution,
                             marg_out::Any)
-
-    # Fixed mean
-    #
-    #  Q~Gam      N
-    #  ---->[N]---->
-    #            -->
 
     outbound_dist.m = node.m[1]
     outbound_dist.V = NaN
@@ -944,17 +946,18 @@ function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:precision}}
     return outbound_dist
 end
 
+"""
+GaussianNode{:fixed_mean, :log_variance}
+
+    q(N)    N
+    --->[N]--->
+            -->
+"""
 function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:log_variance}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GaussianDistribution,
                             marg_log_var::GaussianDistribution,
                             marg_out::Any)
-
-    # Forward variational update with fixed mean
-    #
-    #   Q~N     -->
-    #  ---->[N]---->
-    #            N
 
     ensureParameters!(marg_log_var, (:m,))
 
@@ -972,19 +975,21 @@ end
 # Structured variational update functions
 ############################################
 
+"""
+GaussianNode{:mean, :precision}:
+
+     St     Gam
+    --->[N]<---
+    <--  .
+         .
+         v q(N)
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::StudentsTDistribution,
                             msg_mean::Any,
                             msg_prec::Message{GammaDistribution},
                             marg_out::GaussianDistribution)
-
-    #   <--     Gam
-    #  ---->[N]<----
-    #   St   |
-    # - - - - - - - -
-    #        | Q~N
-    #        v
 
     ensureParameters!(marg_out, (:m, :W))
 
@@ -995,19 +1000,21 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, :precision}:
+
+     N      Gam
+    --->[N]<---
+         .  -->
+         .
+         v q(N)
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::GammaDistribution,
                             msg_mean::Message{GaussianDistribution},
                             msg_prec::Any,
                             marg_out::GaussianDistribution)
-
-    #    N      Gam
-    #  ---->[N]<----
-    #        |   -->
-    # - - - - - - - -
-    #        | Q~N
-    #        v
 
     ensureParameters!(marg_out, (:m, :W))
     ensureParameters!(msg_mean.payload, (:m,))
@@ -1018,19 +1025,21 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+"""
+GaussianNode{:mean, precision}:
+
+      q(NGam)
+    --->[N]<---
+         .
+       N . |
+         v v
+"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{3}},
                             outbound_dist::GaussianDistribution,
                             marg::NormalGammaDistribution,
                             ::NormalGammaDistribution, # Same distribution as marg
                             marg_out::Any)
-
-    #      Q~NGam
-    #  ---->[N]<----
-    #        |
-    # - - - - - - - -
-    #      | | N
-    #      v v
 
     outbound_dist.m = marg.m
     outbound_dist.W = marg.a / marg.b

@@ -15,6 +15,9 @@ export  currentGraph,
 
 abstract AbstractWrap
 
+"""
+A factor graph consisting of factor nodes and edges.
+"""
 type FactorGraph
     nodes::Dict{Symbol, Node} # Nodes
     edges::Dict{Symbol, Edge} # Edges
@@ -27,9 +30,11 @@ type FactorGraph
     write_buffers::Dict{Union{Edge,Interface}, Vector}
 end
 
+"""
+Return currently active FactorGraph.
+Create one if there is none.
+"""
 function currentGraph()
-    # Return currently active FactorGraph.
-    # Create one if there is none.
     try
         return current_graph
     catch
