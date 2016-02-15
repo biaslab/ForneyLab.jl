@@ -61,7 +61,6 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
     node_type_symbols = Dict{DataType, AbstractString}(
                             AdditionNode => "+",
                             EqualityNode => "=",
-                            GaussianNode => "N",
                             ExponentialNode => "exp",
                             GainNode => "GainNode",
                             GainAdditionNode => "GainAdditionNode",
@@ -75,6 +74,8 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
     for node in nodes
         if typeof(node)==TerminalNode
             dot *= "\t$(object_id(node)) [label=\"$(node.id)\", style=filled, width=0.75, height=0.75]\n"
+        elseif typeof(node) <: GaussianNode
+            dot *= "\t$(object_id(node)) [label=\"N\\n$(node.id)\"]\n"
         else
             if haskey(node_type_symbols, typeof(node))
                 dot *= "\t$(object_id(node)) [label=\"$(node_type_symbols[typeof(node)])\\n$(node.id)\"]\n"
