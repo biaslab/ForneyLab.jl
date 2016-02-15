@@ -8,11 +8,11 @@ Description:
 
 Parameters:
 
-	m (Any)
+    m (Any)
 
 Construction:
 
-	DeltaDistribution(m)
+    DeltaDistribution(m)
 
 Example:
 

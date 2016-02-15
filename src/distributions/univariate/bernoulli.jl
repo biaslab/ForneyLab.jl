@@ -7,11 +7,11 @@ Description:
 
 Pamameters:
 
-	p ∈ [0,1]: Pr{X=true} = p
+    p ∈ [0,1]: Pr{X=true} = p
 
 Construction:
 
-	BernoulliDistribution(p)
+    BernoulliDistribution(p)
 """
 type BernoulliDistribution <: UnivariateProbabilityDistribution
     p::Float64 # Pr{X=true}

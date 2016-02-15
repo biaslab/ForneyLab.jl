@@ -7,11 +7,11 @@ Description:
 
 Pamameters:
 
-	Real scalars m (location) and s=σ^2 (σ scale).
+    Real scalars m (location) and s=σ^2 (σ scale).
 
 Construction:
 
-	LogNormalDistribution(m=0.0, s=1.0)
+    LogNormalDistribution(m=0.0, s=1.0)
 """
 type LogNormalDistribution <: UnivariateProbabilityDistribution
     m::Float64 # location
