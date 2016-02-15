@@ -6,7 +6,7 @@
 The ``ProbabilityDistribution`` type
 ====================================
 
-ForneyLab comes with its own implementation of probability distributions (instead of using i.e. `Distributions.jl <https://github.com/JuliaStats/Distributions.jl>`_) for flexibility and efficiency reasons. Every probability distribution type is a subtype of either ``UnivariateProbabilityDistribution`` or ``MultivariateProbabilityDistribution``::
+ForneyLab comes with its own implementation of probability distributions (instead of using `Distributions.jl <https://github.com/JuliaStats/Distributions.jl>`_) for flexibility and efficiency reasons. Every probability distribution type is a subtype of either ``UnivariateProbabilityDistribution`` or ``MultivariateProbabilityDistribution``::
 
     abstract ProbabilityDistribution
     abstract UnivariateProbabilityDistribution <: ProbabilityDistribution

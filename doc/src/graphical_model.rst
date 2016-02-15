@@ -20,7 +20,7 @@ The ``FactorGraph`` type
             # and some internal stuff for attaching buffers etc...
         end
 
-The following functions are available to get/set the currently active ``FactorGraph``:
+Within ForneyLab, only one ``FactorGraph`` instance can be active at a time, and it is referred to as "current graph". Graph operations are always implictly applied to the current graph. The following functions are available to get/set the currently active ``FactorGraph``:
 
 .. function:: currentGraph()
 
@@ -34,7 +34,7 @@ The following functions are available to get/set the currently active ``FactorGr
 Nodes
 =====
 
-A node in a :class:`FactorGraph` is always of a subtype of ``abstract Node``. ForneyLab comes with a bunch of built-in nodes for commonly used functions, such as the :class:`AdditionNode` and the :class:`EqualityNode`. The :doc:`nodes` chapter describes these in more detail, as well as how to build custom nodes. It's important to know that a node should contain a couple of required fields::
+A node in a :class:`FactorGraph` is always of a subtype of ``abstract Node``. ForneyLab comes with a bunch of built-in nodes for commonly used functions, such as the :class:`AdditionNode` and the :class:`EqualityNode`. The :doc:`nodes` chapter describes the anatomy of nodes in more detail, as well as how to build custom nodes. The built-in nodes are located in ``src/nodes/``. A node has a couple of required fields::
 
     type MinimalNode <: Node
         id::Symbol
@@ -76,7 +76,7 @@ The ``Edge`` type
 
         Edge(n(:node1).i[:out], n(:node2).i[:in], id=:my_edge)
 
-    For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface, e.g.,::
+    For nodes that only have one interface (i.e. :class:`TerminalNode`) or that are symmetrical (i.e. :class:`EqualityNode`), it is also possible to pass the node instead of the interface::
 
         Edge(TerminalNode(), EqualityNode())
 
@@ -86,7 +86,7 @@ The ``Edge`` type
 
 Strictly speaking, a factor graph edge does not need to be directed. However, in ForneyLab all edges are directed to have a consistent meaning for terms like "forward message", "backward messages", and "forward pass". Apart from that, the edge direction has no functional consequences.
 
-ForneyLab does not allow half-edges: every :class:`Edge` should be connected to two nodes at all times. Open ended edges should be terminated by a :class:`TerminalNode`.
+ForneyLab does not allow half-edges: every :class:`Edge` should be connected to two nodes at all times. Open ended edges should be terminated by a :class:`TerminalNode`, which has just one interface.
 
 Edges in the current graph can be accessed through the function ``edge(id::Symbol)`` (which is aliased by the function ``eg(id::Symbol)``), e.g.::
 
@@ -165,11 +165,11 @@ In practical situations it is common for a factor graph to be a concatination of
 
     .. function:: wraps(graph::FactorGraph, graph::FactorGraph=currentGraph())
 
-        Returns a set of all ``Wrap`` instances present in ``graph``.
+        Returns the set of all ``Wrap`` instances present in ``graph``.
 
     .. function:: wraps(node::TerminalNode, graph::FactorGraph=currentGraph())
 
-        Returns a set of all ``Wrap`` instances in which ``node`` is involved. Note that a node can be the source in multiple wraps, but it can be a sink at most once.
+        Returns the set of all ``Wrap`` instances in which ``node`` is involved. Note that a node can take the role of source in multiple wraps, but it can be a sink at most once.
 
 
 Interfacing to and from the graph

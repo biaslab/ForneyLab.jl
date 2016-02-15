@@ -2,13 +2,13 @@
  Nodes
 **************
 
-This chapter describes the implementation of nodes in ForneyLab. For more details, have a look at the source files, such as ``src/nodes/addition.jl``.
+This chapter describes the implementation of nodes in ForneyLab. For more details on specific node types, use Julia's help functionality (``?AdditionNode``), or have a look at the source files, such as ``src/nodes/addition.jl``.
 
 
 The anatomy of nodes
 --------------------
 
-Each node type is a subtype of abstract ``Node``. A node should contain at least the fields ``name``, ``interfaces`` and ``i``. Let's look at the definition of the built-in :class:`AdditionNode`::
+Each node type is a subtype of abstract ``Node``. A node should contain at least the fields ``id``, ``interfaces`` and ``i``. Let's look at the definition of the built-in :class:`AdditionNode`::
 
     type AdditionNode <: Node
         id::Symbol
@@ -16,7 +16,7 @@ Each node type is a subtype of abstract ``Node``. A node should contain at least
         i::Dict{Symbol, Interface}
     end
 
-The field ``i`` stores 'named handles' to make accessing the interfaces convenient, for example if we want to access the out interface we type ``node.i[:out]``. The ``interfaces`` array always contains one or more :class:`Interface` instances. The calling signature of a node constructor varies, but it always includes the optional keyword argument ``id``. A ``Node`` can be copied using ``copy(src::Node; id=:new_id)``, where ``:new_id`` will become the id of the copy. The copy contains the exact internal state of the original, but has no edges connected to it.
+The field ``i`` stores 'named handles' to make accessing the interfaces convenient, for example if we want to access the output interface we can use ``node.i[:out]``. The ``interfaces`` array always contains one or more :class:`Interface` instances, and the index in this array is called the "interface id". The calling signature of a node constructor varies, but it always includes the optional keyword argument ``id``. A ``Node`` can be copied using ``copy(src::Node; id=:new_id)``, where ``:new_id`` will become the id of the copy. The copy contains the exact internal state of the original, but has no edges connected to it.
 
 .. type:: Interface
 
@@ -62,8 +62,8 @@ ForneyLab supports the following rules:
     The calling signature consists of:
 
     1. The node;
-    2. The index (index in node.interfaces) of the outbound interface as a value type;
-    3. The distribution currently present on the outbound interface;
+    2. The interface id (index in node.interfaces) of the outbound interface as a value type;
+    3. The payload of the message currently present on the outbound interface;
     4. The inbound messages on *all* interfaces of the node (ordered by interface id).
 
 .. function:: variationalRule!(node::Node, outbound_interface_index::Type{Val{i}}, outbound_dist::ProbabilityDistribution, marginals_and_messages...)
@@ -88,8 +88,8 @@ ForneyLab supports the following rules:
     The calling signature consists of:
 
     1. The node;
-    2. The index (index in node.interfaces) of the outbound interface as a value type;
-    3. The distribution currently present on the outbound interface;
+    2. The interface id (index in node.interfaces) of the outbound interface as a value type;
+    3. The payload of the message currently present on the outbound interface;
     4. The inbound messages/marginals on *all* interfaces of the node (ordered by interface id).
 
 .. function:: expectationRule!(node::Node, outbound_interface_index::Type{Val{i}}, outbound_dist::GaussianDistribution, inbound_messages...)
@@ -99,11 +99,19 @@ ForneyLab supports the following rules:
     The calling signature consists of:
 
     1. The node;
-    2. The index (index in node.interfaces) of the outbound interface as a value type;
-    3. The distribution currently present on the outbound interface;
+    2. The interface id (index in node.interfaces) of the outbound interface as a value type;
+    3. The payload of the message currently present on the outbound interface;
     4. The inbound messages on *all* interfaces of the node (ordered by interface id).
 
 Not all message calculation rules have to be implemented for every node, just the ones that will be used. Similarly, the message calculation rule does not have to be implemented for a specific outbound interface of a specific node if that outbound message never has to be calculated.
+
+To find out which message calculation rules are implemented for a specific node, use the ``rules`` function:
+
+.. function:: rules(node_type::DataType, [rule::Function; outbound::Int=0])
+
+    Print all message calculation rules implemented for ``node_type <: Node``.
+    Optionally, the list can be restricted to a specific rule, such as ``sumProductRule!`` or ``variationalRule!``.
+    If keyword argument ``outbound`` is passed, only the rules for that outbound interface id are listed.
 
 
 Composite nodes
