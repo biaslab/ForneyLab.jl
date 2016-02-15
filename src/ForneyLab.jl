@@ -1,7 +1,6 @@
 module ForneyLab
 
 using Optim
-using YAML
 using LaTeXStrings
 
 export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution
@@ -9,6 +8,7 @@ export sumProductRule!, expectationRule!, variationalRule!
 export vague, self, ==, isProper, sample, dimensions
 export setVerbosity
 export prepare!
+export rules
 
 # Verbosity
 verbose = false

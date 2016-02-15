@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny, rules, format, isValid, invalidate!, *
+export isApproxEqual, huge, tiny, format, isValid, invalidate!, *
 
 import Base.*, Base.==
 # ensureMatrix: ensure that the input is a 2D array or nothing
@@ -124,5 +124,5 @@ function expand(d::Dict)
         end
     end
 
-    return d_expanded 
+    return d_expanded
 end
