@@ -546,12 +546,12 @@ GaussianNode{:mean, :precision}:
     <--  |  
          v q(N)
 """
-function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
-                            outbound_interface_index::Type{Val{1}},
-                            outbound_dist::MvGaussianDistribution,
-                            marg_mean::Any,
-                            marg_prec::WishartDistribution,
-                            marg_y::MvGaussianDistribution)
+function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
+                                outbound_interface_index::Type{Val{1}},
+                                outbound_dist::MvGaussianDistribution{dims},
+                                marg_mean::Any,
+                                marg_prec::WishartDistribution{dims},
+                                marg_y::MvGaussianDistribution{dims})
 
     ensureParameters!(marg_y, (:m,:W))
     outbound_dist.m = deepcopy(marg_y.m)
@@ -645,12 +645,12 @@ GaussianNode{:mean, :precision}:
          |  --> 
          v q(N)
 """
-function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
-                            outbound_interface_index::Type{Val{2}},
-                            outbound_dist::WishartDistribution,
-                            marg_mean::MvGaussianDistribution,
-                            marg_prec::Any,
-                            marg_out::MvGaussianDistribution)
+function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
+                                outbound_interface_index::Type{Val{2}},
+                                outbound_dist::WishartDistribution{dims},
+                                marg_mean::MvGaussianDistribution{dims},
+                                marg_prec::Any,
+                                marg_out::MvGaussianDistribution{dims})
 
     ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(marg_mean, (:m, :V))
@@ -744,12 +744,12 @@ GaussianNode{:mean, :precision}:
          | | 
        N v v
 """
-function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
-                            outbound_interface_index::Type{Val{3}},
-                            outbound_dist::MvGaussianDistribution,
-                            marg_mean::MvGaussianDistribution,
-                            marg_prec::WishartDistribution,
-                            marg_out::Any)
+function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
+                                outbound_interface_index::Type{Val{3}},
+                                outbound_dist::MvGaussianDistribution{dims},
+                                marg_mean::MvGaussianDistribution{dims},
+                                marg_prec::WishartDistribution{dims},
+                                marg_out::Any)
 
     ensureParameters!(marg_mean, (:m,:W))
 

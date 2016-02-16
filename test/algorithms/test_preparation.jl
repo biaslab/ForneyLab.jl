@@ -30,9 +30,9 @@ facts("Shared preparation methods for inference algorithms") do
 
         call_signature_gauss = [GaussianNode, Type{Val{2}}, Any, MvGaussianDistribution{2}, Void, MvGaussianDistribution{2}]
         rule_signature_gauss = methods(variationalRule!, call_signature_gauss)[1].sig.types
-        @fact ForneyLab.parameters(rule_signature_gauss[4])[1] --> TypeVar(:dims, Union{}, Any, false)
+        @fact ForneyLab.parameters(rule_signature_gauss[4])[1] --> TypeVar(:dims, Union{}, Any, true)
         @fact ForneyLab.parameters(call_signature_gauss[4])[1] --> 2
-        @fact ForneyLab.extractParameters(rule_signature_gauss, call_signature_gauss) --> Dict(TypeVar(:dims, Union{}, Any, false) => 2)
+        @fact ForneyLab.extractParameters(rule_signature_gauss, call_signature_gauss) --> Dict(TypeVar(:dims, Union{}, Any, true) => 2)
     end
 
     context("collectAllOutboundTypes() should return outbound types of applicable update rules") do
