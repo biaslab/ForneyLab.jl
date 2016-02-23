@@ -31,7 +31,7 @@ end
 
 function attachReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=currentGraph())
     hasNode(graph, node) || error("The specified node is not part of the current or specified graph")
-    ensureValue!(node, typeof(buffer[1])) # Ensures that a value of correct type is set for message type inference
+    ensureValue!(node, typeof(node.value)) # Ensures that a value of correct type is set for message type inference
     graph.read_buffers[node] = buffer
 end
 

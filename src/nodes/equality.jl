@@ -362,15 +362,15 @@ sumProductRule!{TG<:MvGaussianDistribution, TD<:MvDeltaDistribution{Float64}}(no
 
 function equalityRule!(dist_result::MvDeltaDistribution{Float64}, ::MvGaussianDistribution, dist_delta::MvDeltaDistribution{Float64})
     dist_result.m = deepcopy(dist_delta.m)
+    return dist_result
+end
+
+function equalityRule!(dist_result::MvGaussianDistribution, ::MvGaussianDistribution, dist_delta::MvDeltaDistribution{Float64})
+    dist_result.m = deepcopy(dist_delta.m)
     dist_result.V = tiny*eye(length(dist_delta.m))
     invalidate!(dist_result.xi)
     invalidate!(dist_result.W)
 
-    return dist_result
-end
-
-function equalityRule!(dist_result::MvDeltaDistribution{Float64}, ::MvGaussianDistribution, dist_delta::MvDeltaDistribution{Float64})
-    dist_result.m = deepcopy(dist_delta.m)
     return dist_result
 end
 
@@ -449,25 +449,6 @@ sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outb
 
 function equalityRule!(dist_result::DeltaDistribution{Float64}, dist_1::InverseGammaDistribution, dist_2::DeltaDistribution{Float64})
     (dist_2.m >= 0) || error("Can not perform equality rule for inverse gamma-delta combination for negative numbers")
-    dist_result.m = dist_2.m
-    return dist_result
-end
-
-
-############################################
-# Wishart-MvDeltaDistribution combination
-############################################
-
-sumProductRule!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::TD, msg_1::Any, msg_2::Message{TW}, msg_3::Message{TD}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
-sumProductRule!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::TD, msg_1::Any, msg_2::Message{TD}, msg_3::Message{TW}) = return equalityRule!(outbound_dist, msg_3.payload, msg_2.payload)
-sumProductRule!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::TD, msg_1::Message{TW}, msg_2::Any, msg_3::Message{TD}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
-sumProductRule!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::TD, msg_1::Message{TD}, msg_2::Any, msg_3::Message{TW}) = return equalityRule!(outbound_dist, msg_3.payload, msg_1.payload)
-sumProductRule!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::TD, msg_1::Message{TW}, msg_2::Message{TD}, msg_3::Any) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
-sumProductRule!{TD<:MvDeltaDistribution{Float64}, TW<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::TD, msg_1::Message{TD}, msg_2::Message{TW}, msg_3::Any) = return equalityRule!(outbound_dist, msg_2.payload, msg_1.payload)
-
-function equalityRule!(dist_result::MvDeltaDistribution{Float64}, dist_1::WishartDistribution, dist_2::MvDeltaDistribution{Float64})
-    (sum(dist_2.m .< 0) == 0) || error("Can not perform equality rule for wishart-delta combination for negative numbers")
-    (size(dist_1.V, 1) == length(dist_2.m)) || error("Dimensions for Wishart and delta must agree")
     dist_result.m = dist_2.m
     return dist_result
 end

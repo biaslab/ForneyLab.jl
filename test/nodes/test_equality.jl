@@ -186,22 +186,6 @@ facts("EqualityNode unit tests") do
                                 MvDeltaDistribution([4.0, 5.0]))
     end
 
-    context("EqualityNode should provide sumProductRule! for combination of MvDeltaDistribution and a WishartDistribution") do
-        # Just test the original and a permutation of the arguments
-        validateOutboundMessage(EqualityNode(),
-                                3,
-                                [Message(MvDeltaDistribution([4.0, 5.0])), Message(WishartDistribution(V=[1.0 0.5; 0.5 1.0], nu=2.0)), nothing],
-                                MvDeltaDistribution([4.0, 5.0]))
-        validateOutboundMessage(EqualityNode(),
-                                3,
-                                [Message(WishartDistribution(V=[1.0 0.5; 0.5 1.0], nu=2.0)), Message(MvDeltaDistribution([4.0, 5.0])), nothing],
-                                MvDeltaDistribution([4.0, 5.0]))
-        validateOutboundMessage(EqualityNode(),
-                                2,
-                                [Message(WishartDistribution(V=[1.0 0.5; 0.5 1.0], nu=2.0)), nothing, Message(MvDeltaDistribution([4.0, 5.0]))],
-                                MvDeltaDistribution([4.0, 5.0]))
-    end
-
     context("EqualityNode should provide sumProductRule! for combination of DeltaDistribution and a GammaDistribution") do
         # Just test the original and a permutation of the arguments
         validateOutboundMessage(EqualityNode(),
