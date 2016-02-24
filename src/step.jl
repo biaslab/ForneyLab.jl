@@ -104,6 +104,14 @@ function execute(algorithm::InferenceAlgorithm)
     return algorithm.execute(algorithm)
 end
 
+function step(wrap::Wrap, direction::Type{Val{:forward}})
+    
+end
+
+function step(wrap::Wrap, direction::Type{Val{:backward}})
+
+end
+
 function step(algorithm::InferenceAlgorithm)
     # Execute algorithm for 1 timestep.
     # prepare!(algorithm) should always be called before the first call to step(algorithm)

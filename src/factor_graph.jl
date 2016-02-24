@@ -24,6 +24,8 @@ type FactorGraph
     wraps::Dict{Symbol, AbstractWrap}
     counters::Dict{DataType, Int} # Counters for automatic node id assignments
     locked::Bool
+    block_size::Int64
+    current_section::Int64
 
     # Connections to the outside world
     read_buffers::Dict{TerminalNode, Vector}
