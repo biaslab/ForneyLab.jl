@@ -17,7 +17,9 @@ type Wrap <: AbstractWrap
         !haskey(current_graph.wraps, id) || error("The wrap id $(id) already exists in the current graph. Consider specifying an explicit id.")
 
         if !isdefined(current_graph.block_size)
-            if block_size >= 1
+            if block_size >= 1 
+                # Test whether there are wraps without defined block_size
+                do_wraps_exist = isempty(wraps(current_graph)) || error("The graph contains wraps both with defined and undefined block_size")
                 current_graph.block_size = block_size
                 current_graph.current_section = 1
                 tail_buffer = Vector{ProbabilityDistribution}(block_size + 1)
@@ -32,6 +34,7 @@ type Wrap <: AbstractWrap
             else
                 tail_buffer = Vector{ProbabilityDistribution}(block_size + 1)
                 head_buffer = Vector{ProbabilityDistribution}(block_size + 1)
+                current_graph.current_section = 1
             end
         end
         

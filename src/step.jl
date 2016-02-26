@@ -105,14 +105,57 @@ function execute(algorithm::InferenceAlgorithm)
 end
 
 function step(wrap::Wrap, direction::Type{Val{:forward}})
-    
+    current_graph = currentGraph()
+    if isdefined(current_graph.block_size)
+        wrap.head.value = deepcopy(wrap.tail_buffer[current_graph.current_section])
+    else
+        wrap.head_value = deepcopy(wrap.tail.value)
+    end
 end
+
 
 function step(wrap::Wrap, direction::Type{Val{:backward}})
-
+    current_graph = currentGraph()
+    wrap.tail.value = deepcopy(wrap.head_buffer[current_graph.current_section + 1])
 end
 
-function step(algorithm::InferenceAlgorithm)
+function step(algorithm::InferenceAlgorithm, direction::Type{Val{:forward}})
+    # Execute algorithm for 1 timestep.
+    # prepare!(algorithm) should always be called before the first call to step(algorithm)
+
+    current_graph = currentGraph()
+    
+    # Read buffers
+    for (terminal_node, read_buffer) in currentGraph().read_buffers
+        !isempty(read_buffer) || error("Read buffer for node $(terminal_node) is empty")
+        terminal_node.value = shift!(read_buffer) # pick the first element off the read_buffer
+    end
+
+    # Execute schedule
+    result = execute(algorithm)
+
+    # Write buffers
+    for (component, write_buffer) in currentGraph().write_buffers
+        if typeof(component) == Interface
+            push!(write_buffer, deepcopy(component.message.payload))
+        elseif typeof(component) == Edge
+            push!(write_buffer, calculateMarginal!(component))
+        end
+    end
+
+    # Wraps
+    for wrap in wraps(current_graph)
+        step(wrap, direction)
+    end
+
+    if isdefined(current_graph.block_size)
+        current_graph.current_section += 1 
+    end
+    
+    return result
+end
+
+function step(algorithm::InferenceAlgorithm, direction::Type{Val{:backward}})
     # Execute algorithm for 1 timestep.
     # prepare!(algorithm) should always be called before the first call to step(algorithm)
 
@@ -136,11 +179,14 @@ function step(algorithm::InferenceAlgorithm)
 
     # Wraps
     for wrap in wraps(currentGraph())
-        wrap.sink.value = deepcopy(wrap.source.interfaces[1].partner.message.payload)
+        step(wrap, direction)
     end
+
+    current_graph.current_section -= 1
 
     return result
 end
+
 
 function run(algorithm::InferenceAlgorithm; n_steps::Int64=0)
     # Call step(algorithm) repeatedly
