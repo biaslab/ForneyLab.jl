@@ -7,6 +7,7 @@ type Wrap <: AbstractWrap
     sink::TerminalNode
 
     function Wrap(source::TerminalNode, sink::TerminalNode; id=symbol("$(source.id)_$(sink.id)"))
+        current_graph = currentGraph()
         hasNode(current_graph, source) || error("The source node does not belong to the current graph")
         hasNode(current_graph, sink) || error("The sink node does not belong to the current graph")
         !(sink in [wr.sink for wr in wraps(current_graph)]) || error("TerminalNode $(sink) already is a sink in another wrap")
@@ -21,11 +22,11 @@ end
 
 show(io::IO, wrap::Wrap) = println(io, "Wrap with id $(wrap.id) from source $(wrap.source) to sink $(wrap.sink).")
 
-wrap(id::Symbol, g::FactorGraph=current_graph) = g.wraps[id]
+wrap(id::Symbol, g::FactorGraph=currentGraph()) = g.wraps[id]
 
-wraps(g::FactorGraph=current_graph) = Set{Wrap}(values(g.wraps))
+wraps(g::FactorGraph=currentGraph()) = Set{Wrap}(values(g.wraps))
 
-function wraps(nd::TerminalNode, g::FactorGraph=current_graph)
+function wraps(nd::TerminalNode, g::FactorGraph=currentGraph())
     hasNode(g, nd) ||  error("The specified node does not belong to the specified or current graph")
     ws = Set{Wrap}()
     for w in values(g.wraps)
