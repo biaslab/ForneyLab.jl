@@ -393,7 +393,7 @@ sumProductRule!{T<:WishartDistribution}(node::EqualityNode, outbound_interface_i
 
 function equalityRule!(dist_result::WishartDistribution, dist_1::WishartDistribution, dist_2::WishartDistribution)
     # Derivation available in notebook
-    dist_result.V = inv(inv(dist_1.V) + inv(dist_2.V))
+    dist_result.V = dist_1.V*inv(cholfact(dist_1.V + dist_2.V))*dist_2.V
     dist_result.nu = dist_1.nu + dist_2.nu - size(dist_1.V, 1) - 1.0
 
     return dist_result

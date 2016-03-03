@@ -71,12 +71,8 @@ function GaussianNode(; id=generateNodeId(GaussianNode), form::Symbol=:variance,
     mean_type = isValid(m) ? :fixed_mean : :mean
     if form == :variance
         uncertainty_type = isValid(V) ? :fixed_variance : :variance
-    elseif form == :precision
-        uncertainty_type = :precision
-    elseif form == :log_variance
-        uncertainty_type = :log_variance
     else
-        error("Unrecognized form ($(form)). Please use :variance, :precision or :log_variance.")
+        uncertainty_type = form
     end
 
     num_interfaces = ((mean_type != :fixed_mean) ? 1 : 0) + ((uncertainty_type != :fixed_variance) ? 1 : 0) + 1
@@ -670,7 +666,7 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
     ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(marg_mean, (:m, :V))
     outbound_dist.nu = 2.0 + dimensions(marg_mean)
-    outbound_dist.V = inv( marg_out.V + marg_mean.V + (marg_out.m - marg_mean.m)*(marg_out.m - marg_mean.m)' )
+    outbound_dist.V = inv(cholfact( marg_out.V + marg_mean.V + (marg_out.m - marg_mean.m)*(marg_out.m - marg_mean.m)' ))
 
     return outbound_dist
 end

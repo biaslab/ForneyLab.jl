@@ -182,10 +182,10 @@ function isConsistent(dist::MvGaussianDistribution)
     if isValid(dist.V) && isValid(dist.W)
         V_W_consistent = false
         try
-           V_W_consistent = isApproxEqual(inv(dist.V), dist.W)
+           V_W_consistent = isApproxEqual(inv(cholfact(dist.V)), dist.W)
         catch
             try
-                V_W_consistent = isApproxEqual(inv(dist.W), dist.V)
+                V_W_consistent = isApproxEqual(inv(cholfact(dist.W)), dist.V)
             catch
                 error("Cannot check consistency of MvGaussianDistribution because both V and W are non-invertible.")
             end
@@ -234,14 +234,14 @@ end
 
 function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:W}})
     if !isValid(dist.W)
-        dist.W = inv(dist.V)
+        dist.W = inv(cholfact(dist.V))
     end
     return dist
 end
 
 function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:V}})
     if !isValid(dist.V)
-        dist.V = inv(dist.W)
+        dist.V = inv(cholfact(dist.W))
     end
     return dist
 end
