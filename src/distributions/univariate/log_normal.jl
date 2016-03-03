@@ -26,7 +26,7 @@ function vague!(dist::LogNormalDistribution)
     return dist
 end
 
-isProper(dist::LogNormalDistribution) = dist.s > tiny
+isProper(dist::LogNormalDistribution) = dist.s >= tiny
 
 Base.mean(dist::LogNormalDistribution) = isProper(dist) ? exp(dist.m + 0.5*dist.s) : NaN
 
