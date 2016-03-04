@@ -10,10 +10,10 @@ Description:
     Encodes a univariate Gaussian distribution.
     The Gaussian distribution can be parametrized in multiple ways.
     Depending on the application, a specific parametrization might be attractive from a computational point of view.
-    The following combinations are valid: (m,V), (m,W), (xi,V), (xi,W). 
+    The following combinations are valid: (m,V), (m,W), (xi,V), (xi,W).
 
 Parameters:
-    
+
     Real scalars m (mean), V (variance), W (precision), xi (weighted mean)
 
 Construction:
@@ -83,8 +83,6 @@ show(io::IO, dist::GaussianDistribution) = println(io, format(dist))
 
 Base.mean(dist::GaussianDistribution) = isProper(dist) ? ensureParameter!(dist, Val{:m}).m : NaN
 
-Base.mean(::Type{DeltaDistribution{Float64}}, d::GaussianDistribution) = DeltaDistribution(mean(d)) # Definition for post-processing
-
 Base.var(dist::GaussianDistribution) = isProper(dist) ? ensureParameter!(dist, Val{:V}).V : NaN
 
 function isProper(dist::GaussianDistribution)
@@ -101,8 +99,6 @@ function sample(dist::GaussianDistribution)
     ensureParameters!(dist, (:m, :V))
     return sqrt(dist.V)*randn() + dist.m
 end
-
-sample(::Type{DeltaDistribution{Float64}}, d::GaussianDistribution) = DeltaDistribution(sample(d)) # Definition for post-processing
 
 # Methods to check and convert different parametrizations
 function isWellDefined(dist::GaussianDistribution)

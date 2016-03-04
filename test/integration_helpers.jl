@@ -361,10 +361,7 @@ end
 function ==(x::ScheduleEntry, y::ScheduleEntry)
     if is(x, y) return true end
     ((x.outbound_interface_id == y.outbound_interface_id) && (x.node == y.node) && (x.rule == y.rule)) || (return false)
-    (isdefined(x, :post_processing) == isdefined(y, :post_processing)) || (return false)
-    if isdefined(x, :post_processing)
-        (x.post_processing == y.post_processing) || (return false)
-    end
+
     return true
 end
 

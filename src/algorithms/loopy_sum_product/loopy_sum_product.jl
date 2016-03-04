@@ -6,8 +6,8 @@ Loopy sum-product message passing algorithm.
 
 Usage:
 
-    LoopySumProduct(graph::Graph; post_processing_functions, breaker_messages, n_iterations)
-    LoopySumProduct(outbound_interface::Interface; post_processing_functions, breaker_messages, n_iterations)
+    LoopySumProduct(graph::Graph; breaker_messages, n_iterations)
+    LoopySumProduct(outbound_interface::Interface; breaker_messages, n_iterations)
 """
 type LoopySumProduct <: AbstractSumProduct
     graph::FactorGraph
@@ -28,11 +28,10 @@ end
 # LoopySumProduct algorithm constructors
 ############################################
 
-function LoopySumProduct(graph::FactorGraph=currentGraph(); post_processing_functions=Dict{Interface, Function}(), breaker_messages=Dict{Interface, Message}(), n_iterations=50)
+function LoopySumProduct(graph::FactorGraph=currentGraph(); breaker_messages=Dict{Interface, Message}(), n_iterations=50)
     # Generates a LoopySumProduct algorithm that propagates messages to all wraps and write buffers.
 
     schedule = generateSumProductSchedule(graph, breaker_sites=Set(keys(breaker_messages)))
-    setPostProcessing!(schedule, post_processing_functions)
 
     function exec(algorithm)
         resetBreakerMessages(algorithm)
@@ -47,11 +46,10 @@ function LoopySumProduct(graph::FactorGraph=currentGraph(); post_processing_func
     return algo
 end
 
-function LoopySumProduct(outbound_interface::Interface; post_processing_functions=Dict{Interface, Function}(), breaker_messages=Dict{Interface, Message}(), n_iterations=50, graph::FactorGraph=currentGraph())
+function LoopySumProduct(outbound_interface::Interface; breaker_messages=Dict{Interface, Message}(), n_iterations=50, graph::FactorGraph=currentGraph())
     # Generates a LoopySumProduct algorithm to calculate the outbound message on outbound_interface.
 
     schedule = generateSumProductSchedule(outbound_interface, breaker_sites=Set(keys(breaker_messages)))
-    setPostProcessing!(schedule, post_processing_functions)
 
     function exec(algorithm)
         resetBreakerMessages(algorithm)
@@ -115,4 +113,3 @@ function resetBreakerMessages(algo::LoopySumProduct)
 
     return algo
 end
-

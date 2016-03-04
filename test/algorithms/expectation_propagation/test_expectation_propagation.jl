@@ -25,9 +25,10 @@ facts("ExpectationPropagation algorithm integration tests") do
     Edge(sig.i[:bin], Y)
     generating_distributions = [GaussianDistribution(m=-0.5, V=0.1) for i = 1:NUM_SECTIONS]
     attachReadBuffer(X, generating_distributions)
-    samples = attachWriteBuffer(Y.i[:out].partner)
-    algo = SumProduct(post_processing_functions=Dict(sig.i[:bin] => sample))
+    y_predictions = attachWriteBuffer(Y.i[:out].partner)
+    algo = SumProduct()
     run(algo)
+    samples = map(sample, y_predictions)
 
     ###############
     # Build graph
@@ -94,6 +95,6 @@ facts("ExpectationPropagation algorithm integration tests") do
         @fact length(X_marg) --> 5
         predictive = BernoulliDistribution()
         sumProductRule!(n(:sig1), Val{2}, predictive, n(:equ1).interfaces[2].message, nothing)
-        @fact predictive.p --> roughly(mean([sample.m for sample in samples]), atol=0.1)
+        @fact predictive.p --> roughly(mean(samples), atol=0.1)
     end
 end

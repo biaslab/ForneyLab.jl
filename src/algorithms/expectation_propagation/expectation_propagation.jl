@@ -6,10 +6,10 @@ Expectation propagation algorithm.
 
 Usage:
 
-    ExpectationPropagation(sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback, post_processing_functions)
-    ExpectationPropagation(outbound_interface::Interface, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback, post_processing_functions)
-    ExpectationPropagation(outbound_interfaces::Vector{Interface}, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback, post_processing_functions)
-    ExpectationPropagation(graph::FactorGraph, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback, post_processing_functions)
+    ExpectationPropagation(sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
+    ExpectationPropagation(outbound_interface::Interface, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
+    ExpectationPropagation(outbound_interfaces::Vector{Interface}, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
+    ExpectationPropagation(graph::FactorGraph, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
 """
 type ExpectationPropagation <: InferenceAlgorithm
     graph::FactorGraph
@@ -71,9 +71,7 @@ function ExpectationPropagation(
             sites::Vector{Tuple{Interface, DataType}};
             n_iterations::Int64 = 100,
             callback::Function = ( () -> false ),
-            post_processing_functions = Dict{Interface, Function}(),
             graph::FactorGraph=currentGraph())
-
     # Build an EP message passing algorithm for the specified sites.
     # sites is a list of (interface, recognition_distribution) tuples,
     # where recognition_distribution <: ProbabilityDistribution.
@@ -121,7 +119,6 @@ function ExpectationPropagation(
             entry.rule = expectationRule!
         end
     end
-    setPostProcessing!(iterative_schedule, post_processing_functions)
 
     # Build post-convergence schedule
     for outbound_interface in outbound_interfaces

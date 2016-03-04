@@ -2,7 +2,7 @@ export StudentsTDistribution
 
 """
 Description:
-    
+
     Encodes a student's t-distribution.
 
 Pamameters:
@@ -38,8 +38,6 @@ function Base.mean(dist::StudentsTDistribution)
         return NaN
     end
 end
-
-Base.mean(::Type{DeltaDistribution{Float64}}, d::StudentsTDistribution) = DeltaDistribution(mean(d)) # Definition for post-processing
 
 function Base.var(dist::StudentsTDistribution)
     if isProper(dist) && dist.nu > 2

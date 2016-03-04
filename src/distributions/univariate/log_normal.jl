@@ -2,7 +2,7 @@ export LogNormalDistribution
 
 """
 Description:
-    
+
     Encodes a log-normal PDF.
 
 Pamameters:
@@ -29,8 +29,6 @@ end
 isProper(dist::LogNormalDistribution) = dist.s >= tiny
 
 Base.mean(dist::LogNormalDistribution) = isProper(dist) ? exp(dist.m + 0.5*dist.s) : NaN
-
-Base.mean(::Type{DeltaDistribution{Float64}}, d::LogNormalDistribution) = DeltaDistribution(mean(d)) # Definition for post-processing
 
 Base.var(dist::LogNormalDistribution) = isProper(dist) ? (exp(dist.s) - 1)*exp(2*dist.m + dist.s) : NaN
 

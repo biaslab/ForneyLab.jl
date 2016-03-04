@@ -2,7 +2,7 @@ export MvLogNormalDistribution
 
 """
 Description:
-    
+
     Encodes a multivariate log-normal PDF.
     Pamameters: vector m (location) and matrix S (scale).
 
@@ -15,7 +15,7 @@ Construction:
     MvLogNormalDistribution(m=zeros(3), S=eye(3))
 
 Reference:
-    
+
     Lognormal distributions: theory and aplications; Crow, 1988
 """
 type MvLogNormalDistribution{dims} <: MultivariateProbabilityDistribution
@@ -49,8 +49,6 @@ function Base.mean(dist::MvLogNormalDistribution)
         return fill!(similar(dist.m, NaN))
     end
 end
-
-Base.mean{dims}(::Type{MvDeltaDistribution{Float64, dims}}, d::MvLogNormalDistribution{dims}) = MvDeltaDistribution(mean(d)) # Definition for post-processing
 
 function Base.cov(dist::MvLogNormalDistribution)
     if isProper(dist)

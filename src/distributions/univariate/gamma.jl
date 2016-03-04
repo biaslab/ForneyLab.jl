@@ -34,8 +34,6 @@ isProper(dist::GammaDistribution) = (dist.a >= tiny && dist.b >= tiny)
 
 Base.mean(dist::GammaDistribution) = isProper(dist) ? dist.a/dist.b : NaN
 
-Base.mean(::Type{DeltaDistribution{Float64}}, d::GammaDistribution) = DeltaDistribution(mean(d)) # Definition for post-processing
-
 Base.var(dist::GammaDistribution) = isProper(dist) ? dist.a / (dist.b^2) : NaN
 
 format(dist::GammaDistribution) = "Gam(a=$(format(dist.a)), b=$(format(dist.b)))"

@@ -10,10 +10,10 @@ Sum-product message passing algorithm.
 
 Usage:
 
-    SumProduct(graph::Graph; post_processing_functions)
-    SumProduct(outbound_interface::Interface; post_processing_functions)
-    SumProduct(partial_list::Vector{Interface}; post_processing_functions)
-    SumProduct(edge::Edge; post_processing_functions)
+    SumProduct(graph::Graph)
+    SumProduct(outbound_interface::Interface)
+    SumProduct(partial_list::Vector{Interface})
+    SumProduct(edge::Edge)
 """
 type SumProduct <: AbstractSumProduct
     graph::FactorGraph
@@ -32,9 +32,8 @@ end
 # SumProduct algorithm constructors
 ############################################
 
-function SumProduct(graph::FactorGraph=currentGraph(); post_processing_functions=Dict{Interface, Function}())
+function SumProduct(graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule(graph)
-    setPostProcessing!(schedule, post_processing_functions)
     exec(algorithm) = execute(algorithm.schedule)
 
     algo = SumProduct(graph, exec, schedule)
@@ -43,9 +42,8 @@ function SumProduct(graph::FactorGraph=currentGraph(); post_processing_functions
     return algo
 end
 
-function SumProduct(outbound_interface::Interface; post_processing_functions=Dict{Interface, Function}(), graph::FactorGraph=currentGraph())
+function SumProduct(outbound_interface::Interface; graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule(outbound_interface)
-    setPostProcessing!(schedule, post_processing_functions)
     exec(algorithm) = execute(algorithm.schedule)
 
     algo = SumProduct(graph, exec, schedule)
@@ -54,9 +52,8 @@ function SumProduct(outbound_interface::Interface; post_processing_functions=Dic
     return algo
 end
 
-function SumProduct(partial_list::Vector{Interface}; post_processing_functions=Dict{Interface, Function}(), graph::FactorGraph=currentGraph())
+function SumProduct(partial_list::Vector{Interface}; graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule(partial_list)
-    setPostProcessing!(schedule, post_processing_functions)
     exec(algorithm) = execute(algorithm.schedule)
 
     algo = SumProduct(graph, exec, schedule)
@@ -65,9 +62,8 @@ function SumProduct(partial_list::Vector{Interface}; post_processing_functions=D
     return algo
 end
 
-function SumProduct(edge::Edge; post_processing_functions=Dict{Interface, Function}(), graph::FactorGraph=currentGraph())
+function SumProduct(edge::Edge; graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule([edge.head, edge.tail])
-    setPostProcessing!(schedule, post_processing_functions)
     function exec(algorithm)
         execute(algorithm.schedule)
         calculateMarginal!(edge)

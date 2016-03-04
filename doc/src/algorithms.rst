@@ -81,15 +81,12 @@ Algorithms executed on factor graphs are usually based on *message passing*. In 
             node::Node
             outbound_interface_id::Int64
             rule::Function  # Refers to the general message calculation rule; for example sumProductRule! or variationalRule!.
-            post_processing::Function
-            execute::Function # Compiled rule call: () -> rule(node, Val{outbound_interface_id}, rule_arguments...). Upon compilation execute() incorporates post-processing.
+            execute::Function # Compiled rule call: () -> rule(node, Val{outbound_interface_id}, rule_arguments...).
 
             # And some omitted fields
         end
 
     The ``ScheduleEntry`` is the workhorse of ForneyLab. Most importantly, the ``execute`` field holds the pre-compiled (anonymous) function for the message update. All other fields are simply there to facilitate the proper construction of ``execute``. The ``execute`` function is called upon execution of the ``ScheduleEntry``.
-
-A named argument ``post_processing_functions`` passes an interface-to-function dictionary which encodes e.g. sampling operations after the outbound message is computed. The post processing functionality will be removed in ForneyLab 0.5.
 
 
 The sum-product algorithm

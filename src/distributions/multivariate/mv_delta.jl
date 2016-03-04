@@ -9,9 +9,9 @@ Description:
 Parameters:
 
     m (location) (Any vector)
-    
+
 Construction:
-    
+
     MvDeltaDistribution([1.0, 3.0])
 """
 type MvDeltaDistribution{T, dims} <: MultivariateProbabilityDistribution
@@ -30,15 +30,11 @@ isProper(dist::MvDeltaDistribution) = true
 
 Base.mean(dist::MvDeltaDistribution) = dist.m
 
-Base.mean(::Type{MvDeltaDistribution{Float64}}, d::MvDeltaDistribution) = deepcopy(d) # Definition for post-processing
-
 Base.var(dist::MvDeltaDistribution) = zeros(length(dist.m))
 
 Base.cov(dist::MvDeltaDistribution) = zeros(length(dist.m), length(dist.m))
 
 sample(dist::MvDeltaDistribution) = dist.m
-
-sample(::Type{MvDeltaDistribution{Float64}}, d::MvDeltaDistribution) = deepcopy(d) # Definition for post-processing
 
 ==(x::MvDeltaDistribution, y::MvDeltaDistribution) = (x.m == y.m)
 

@@ -71,37 +71,17 @@ facts("Shared preparation methods for inference algorithms") do
 
     FactorGraph()
 
-    context("inferOutboundTypeAfterPostProcessing() should infer the correct outbound type after post-processing") do
-        entry = ScheduleEntry(TerminalNode(GaussianDistribution()), 1, sumProductRule!)
-        entry.intermediate_outbound_type = GaussianDistribution
-        entry.post_processing = sample
-        @fact ForneyLab.inferOutboundTypeAfterPostProcessing(entry) --> DeltaDistribution{Float64}
-        entry.post_processing = mean
-        @fact ForneyLab.inferOutboundTypeAfterPostProcessing(entry) --> DeltaDistribution{Float64}
-    end
-
     context("inferOutboundType!() should infer the correct outbound type for a terminal node") do
         entry = ScheduleEntry(TerminalNode(GaussianDistribution()), 1, sumProductRule!)
         entry.inbound_types = [Void]
         ForneyLab.inferOutboundType!(entry)
-        @fact entry.intermediate_outbound_type --> GaussianDistribution
         @fact entry.outbound_type --> GaussianDistribution
-    end
-
-    context("inferOutboundType!() should infer the correct outbound type after post_processing") do
-        entry = ScheduleEntry(TerminalNode(GaussianDistribution()), 1, sumProductRule!)
-        entry.inbound_types = [Void]
-        entry.post_processing = sample
-        ForneyLab.inferOutboundType!(entry)
-        @fact entry.intermediate_outbound_type --> GaussianDistribution
-        @fact entry.outbound_type --> DeltaDistribution{Float64}
     end
 
     context("inferOutboundType!() should infer the correct outbound type for a node") do
         entry = ScheduleEntry(AdditionNode(), 3, sumProductRule!)
         entry.inbound_types = [Message{GaussianDistribution}, Message{GaussianDistribution}, Void]
         ForneyLab.inferOutboundType!(entry)
-        @fact entry.intermediate_outbound_type --> GaussianDistribution
         @fact entry.outbound_type --> GaussianDistribution
     end
 
@@ -109,26 +89,13 @@ facts("Shared preparation methods for inference algorithms") do
         entry = ScheduleEntry(GaussianNode(form=:precision), 2, variationalRule!)
         entry.inbound_types = [GaussianDistribution, Void, GaussianDistribution]
         ForneyLab.inferOutboundType!(entry)
-        @fact entry.intermediate_outbound_type --> GammaDistribution
         @fact entry.outbound_type --> GammaDistribution
     end
 
     context("buildExecute!() should pre-compile the execute field of the schedule entry") do
-        # Without post-processing
         node = AdditionNode()
         node.i[:out].message = Message(GaussianDistribution())
         entry = ScheduleEntry(node, 3, sumProductRule!)
-        @fact isdefined(entry, :execute) --> false
-        ForneyLab.buildExecute!(entry, [Message(GaussianDistribution()), Message(GaussianDistribution()), nothing])
-        @fact typeof(entry.execute) --> Function
-
-        # With post-processing
-        node = AdditionNode()
-        node.i[:out].message = Message(GaussianDistribution())
-        entry = ScheduleEntry(node, 3, sumProductRule!)
-        entry.post_processing = mean
-        entry.intermediate_outbound_type = GaussianDistribution
-        entry.outbound_type = DeltaDistribution{Float64}
         @fact isdefined(entry, :execute) --> false
         ForneyLab.buildExecute!(entry, [Message(GaussianDistribution()), Message(GaussianDistribution()), nothing])
         @fact typeof(entry.execute) --> Function

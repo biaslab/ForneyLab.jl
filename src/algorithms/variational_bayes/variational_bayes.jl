@@ -12,7 +12,7 @@ Variational message passing algorithm.
 
 Usage:
 
-    VariationalBayes(recognition_distribution_types::Dict, graph::Graph; n_iterations, post_processing_functions)
+    VariationalBayes(recognition_distribution_types::Dict, graph::Graph; n_iterations)
 """
 type VariationalBayes <: InferenceAlgorithm
     graph::FactorGraph
@@ -34,18 +34,13 @@ end
 
 function VariationalBayes(  recognition_distribution_types::Dict,
                             graph::FactorGraph=currentGraph();
-                            n_iterations::Int64=50,
-                            post_processing_functions=Dict{Interface, Function}())
+                            n_iterations::Int64=50)
 
     # Generates a VariationalBayes algorithm that propagates messages to all write buffers and wraps.
 
     factorization = factorize(recognition_distribution_types, graph)
     generateVariationalBayesSchedule!(factorization, graph) # Generate and store internal and external schedules on factorization subgraphs
     recognition_distributions = initializeVagueRecognitionDistributions(factorization, recognition_distribution_types) # Initialize vague recognition distributions
-
-    for factor in factorization.factors
-        setPostProcessing!(factor.internal_schedule, post_processing_functions)
-    end
 
     function exec(algorithm)
         resetRecognitionDistributions!(algorithm.recognition_distributions) # Reset recognition distributions before next step
