@@ -1,9 +1,17 @@
 facts("SumProduct collect inbound type tests") do
-    context("SumProduct should collect the proper inbound types") do
-        # Standard
-        initializeAdditionNode()
-        algo = SumProduct(n(:add_node).i[:out])
-        @fact algo.schedule[3].inbound_types --> [Message{GaussianDistribution}, Message{GaussianDistribution}, Void]
+    context("SumProduct should perform message type inference") do
+        initializeAdditionNode([GaussianDistribution(), GaussianDistribution(), GaussianDistribution()])
+
+        # Forcing a message to a distribution type for which no rule is implemented should throw an error
+        message_types = Dict{Interface,DataType}(n(:add_node).i[:out] => GammaDistribution)
+        @fact_throws SumProduct(n(:add_node).i[:out], message_types=message_types)
+
+        # Forcing a message to a supported distribution type should be ok.
+        message_types = Dict{Interface,DataType}(n(:add_node).i[:out] => GaussianDistribution)
+        algo = SumProduct(n(:add_node).i[:out], message_types=message_types)
+        @fact algo.schedule[end].inbound_types --> [Message{GaussianDistribution}, Message{GaussianDistribution}, Void]
+        @fact algo.schedule[end].outbound_type --> GaussianDistribution
+        @fact isdefined(algo.schedule[end], :approximation) --> false
     end
 end
 

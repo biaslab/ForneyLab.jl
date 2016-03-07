@@ -71,7 +71,8 @@ function ExpectationPropagation(
             sites::Vector{Tuple{Interface, DataType}};
             n_iterations::Int64 = 100,
             callback::Function = ( () -> false ),
-            graph::FactorGraph=currentGraph())
+            graph::FactorGraph=currentGraph(),
+            message_types::Dict{Interface,DataType}=Dict{Interface,DataType}())
     # Build an EP message passing algorithm for the specified sites.
     # sites is a list of (interface, recognition_distribution) tuples,
     # where recognition_distribution <: ProbabilityDistribution.
@@ -150,7 +151,7 @@ function ExpectationPropagation(
     end
 
     algo = ExpectationPropagation(graph, exec, iterative_schedule, post_convergence_schedule, sitelist, n_iterations, callback)
-    inferDistributionTypes!(algo, recognition_distributions)
+    inferDistributionTypes!(algo, recognition_distributions, message_types)
 
     return algo
 end
@@ -159,16 +160,20 @@ end
 # Type inference and preparation
 ############################################
 
-function inferDistributionTypes!(algo::ExpectationPropagation, recognition_distributions::Dict{Interface,DataType})
+function inferDistributionTypes!(   algo::ExpectationPropagation,
+                                    recognition_distributions::Dict{Interface,DataType},
+                                    message_types::Dict{Interface,DataType})
     # Infer the payload types for all messages in algo.schedule
     # Fill schedule_entry.inbound_types and schedule_entry.outbound_type
     schedule_entries = Dict{Interface, ScheduleEntry}() # Lookup table from interface to schedule entry
 
     for entry in vcat(algo.iterative_schedule, algo.post_convergence_schedule)
         collectInboundTypes!(entry, schedule_entries, recognition_distributions, algo) # Fill entry.inbound_types
-        inferOutboundType!(entry) # Infer the outbound message type, fill entry.outbound_type
-
         outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
+        if outbound_interface in keys(message_types)
+            setOutboundType!(entry, message_types[outbound_interface])
+        end
+        inferOutboundType!(entry) # Infer the outbound message type, or validate that there exists a suitable rule if the outbound type is already fixed
         schedule_entries[outbound_interface] = entry # Add entry to lookup table
     end
 

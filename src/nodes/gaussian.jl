@@ -12,7 +12,6 @@ Interfaces:
 
     - form == :variance     => f(out,m,V)  = N(out|m,V)        (default)
     - form == :precision    => f(out,m,W)  = N(out|m,inv(W))
-    - form == :log_variance => f(out,m,lV) = N(out|m,exp(lV))
 
     Each parameter can be fixed, in which case the corresponding interface does
     not exist (and the ids of subsequent interfaces are lowered).
@@ -43,7 +42,7 @@ Interfaces:
 
     The type is parametrized: GaussianNode{mean_type,uncertainty_type}, where
        - mean_type ∈ {:fixed_mean, :mean}
-       - uncertainty_type ∈ {:fixed_variance, :variance, :precision, :log_variance}
+       - uncertainty_type ∈ {:fixed_variance, :variance, :precision}
 
 Construction:
 
@@ -54,7 +53,7 @@ Construction:
 """
 type GaussianNode{mean_type,uncertainty_type} <: Node
     # mean_type ∈ {:fixed_mean, :mean}
-    # uncertainty_type ∈ {:fixed_variance, :variance, :precision, :log_variance}
+    # uncertainty_type ∈ {:fixed_variance, :variance, :precision}
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
@@ -574,33 +573,6 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
 end
 
 """
-GaussianNode{:mean, :log_variance}:
-
-     N     q(N)
-    --->[N]<---
-    <--  |
-         v q(N)
-"""
-function variationalRule!(  node::GaussianNode{Val{:mean},Val{:log_variance}},
-                            outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
-                            marg_mean::Any,
-                            marg_log_var::GaussianDistribution,
-                            marg_y::GaussianDistribution)
-
-    ensureParameters!(marg_y, (:m,))
-    ensureParameters!(marg_log_var, (:m, :V))
-
-    outbound_dist.m = marg_y.m
-    V = exp(marg_log_var.m + 0.5*marg_log_var.V)
-    outbound_dist.V = (V > huge ? huge : V)
-    outbound_dist.xi = NaN
-    outbound_dist.W = NaN
-
-    return outbound_dist
-end
-
-"""
 GaussianNode{:mean, :variance}:
 
     q(N)    Ig
@@ -667,32 +639,6 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
     ensureParameters!(marg_mean, (:m, :V))
     outbound_dist.nu = 2.0 + dimensions(marg_mean)
     outbound_dist.V = inv(cholfact( marg_out.V + marg_mean.V + (marg_out.m - marg_mean.m)*(marg_out.m - marg_mean.m)' ))
-
-    return outbound_dist
-end
-
-"""
-GaussianNode{:mean, :log_variance}:
-
-    q(N)     N
-    --->[N]<---
-         |  -->
-         v q(N)
-"""
-function variationalRule!(  node::GaussianNode{Val{:mean},Val{:log_variance}},
-                            outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            marg_mean::GaussianDistribution,
-                            marg_log_var::Any,
-                            marg_out::GaussianDistribution)
-
-    ensureParameters!(marg_out, (:m, :V))
-    ensureParameters!(marg_mean, (:m, :V))
-
-    outbound_dist.m = log(marg_mean.m^2 + marg_mean.V - 2.0*marg_mean.m*marg_out.m + marg_out.m^2 + marg_out.V)
-    outbound_dist.V = 2.0
-    outbound_dist.xi = NaN
-    outbound_dist.W = NaN
 
     return outbound_dist
 end
@@ -772,33 +718,6 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
-"""
-GaussianNode{:mean, :log_variance}:
-
-    q(N)   q(N)
-    --->[N]<---
-         | |
-       N v v
-"""
-function variationalRule!(  node::GaussianNode{Val{:mean},Val{:log_variance}},
-                            outbound_interface_index::Type{Val{3}},
-                            outbound_dist::GaussianDistribution,
-                            marg_mean::GaussianDistribution,
-                            marg_log_var::GaussianDistribution,
-                            marg_out::Any)
-
-    ensureParameters!(marg_mean, (:m,))
-    ensureParameters!(marg_log_var, (:m,:V))
-
-    outbound_dist.m = marg_mean.m
-    V = exp(marg_log_var.m + 0.5*marg_log_var.V)
-    outbound_dist.V = (V > huge ? huge : V)
-    outbound_dist.xi = NaN
-    outbound_dist.W = NaN
-
-    return outbound_dist
-end
-
 
 ##########################################################
 # Naive variational update functions with fixed interfaces
@@ -870,29 +789,6 @@ function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:precision}}
 end
 
 """
-GaussianNode{:fixed_mean, :log_variance}
-
-     N     q(N)
-    --->[N]--->
-    <--
-"""
-function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:log_variance}},
-                            outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
-                            marg_log_var::Any,
-                            marg_out::GaussianDistribution)
-
-    ensureParameters!(marg_out, (:m, :V))
-
-    outbound_dist.m = log(node.m[1]^2 - 2.0*node.m[1]*marg_out.m + marg_out.m^2 + marg_out.V)
-    outbound_dist.V = 2.0
-    outbound_dist.xi = NaN
-    outbound_dist.W = NaN
-
-    return outbound_dist
-end
-
-"""
 GaussianNode{:mean, :fixed_variance}
 
     q(N)    N
@@ -953,30 +849,6 @@ function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:precision}}
     outbound_dist.V = NaN
     outbound_dist.xi = NaN
     outbound_dist.W = marg_prec.a / marg_prec.b
-
-    return outbound_dist
-end
-
-"""
-GaussianNode{:fixed_mean, :log_variance}
-
-    q(N)    N
-    --->[N]--->
-            -->
-"""
-function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:log_variance}},
-                            outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            marg_log_var::GaussianDistribution,
-                            marg_out::Any)
-
-    ensureParameters!(marg_log_var, (:m,))
-
-    outbound_dist.m = node.m[1]
-    V = exp(marg_log_var.m + 0.5*marg_log_var.V)
-    outbound_dist.V = (V > huge ? huge : V)
-    outbound_dist.xi = NaN
-    outbound_dist.W = NaN
 
     return outbound_dist
 end

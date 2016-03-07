@@ -67,6 +67,12 @@ facts("Shared preparation methods for inference algorithms") do
 
         call_signature = [SigmoidNode, Type{Val{1}}, Any, Message{GaussianDistribution}, Message{DeltaDistribution{Bool}}]
         @fact ForneyLab.collectAllOutboundTypes(expectationRule!, call_signature, SigmoidNode()) --> [GaussianDistribution]
+
+        # Tests for approximate msg computation rules
+        call_signature = [EqualityNode, Type{Val{1}}, Any, Any, Message{GaussianDistribution}, Message{StudentsTDistribution}]
+        @fact ForneyLab.collectAllOutboundTypes(sumProductRule!, call_signature, EqualityNode()) --> []
+        call_signature = [EqualityNode, Type{Val{1}}, Any, Any, Message{GaussianDistribution}, Message{StudentsTDistribution}, MomentMatching]
+        @fact ForneyLab.collectAllOutboundTypes(sumProductRule!, call_signature, EqualityNode()) --> [Approximation{GaussianDistribution,MomentMatching}]
     end
 
     FactorGraph()

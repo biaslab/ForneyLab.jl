@@ -30,11 +30,10 @@ abstract UnivariateProbabilityDistribution <: ProbabilityDistribution
 abstract MultivariateProbabilityDistribution <: ProbabilityDistribution
 abstract InferenceAlgorithm
 
-# Node
-include("node.jl")
-
-# Message type
-include("message.jl")
+# Low-level internals
+include("approximation.jl")     # Types related to approximations
+include("node.jl")              # Node type
+include("message.jl")           # Message type
 
 # Extract dimensionality from message or distribution (note exception for normal-gamma in normal_gamma.jl)
 dimensions{T<:MultivariateProbabilityDistribution}(message::Message{T}) = typeof(message.payload).parameters[end]

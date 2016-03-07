@@ -13,9 +13,9 @@ facts("Schedule and ScheduleEntry tests") do
         @fact is(entry1, entry1_copy) --> false
         @fact is(entry1.node, entry1_copy.node) --> true
         @fact is(entry1.rule, entry1_copy.rule) --> true
-        @fact isdefined(entry1_copy, :rule_is_approximate) --> isdefined(entry1, :rule_is_approximate)
-        if isdefined(entry1_copy, :rule_is_approximate)
-            @fact entry1_copy.rule_is_approximate --> entry1.rule_is_approximate
+        @fact isdefined(entry1_copy, :involves_approximation) --> isdefined(entry1, :involves_approximation)
+        if isdefined(entry1_copy, :involves_approximation)
+            @fact entry1_copy.involves_approximation --> entry1.involves_approximation
         end
 
         # Schedule

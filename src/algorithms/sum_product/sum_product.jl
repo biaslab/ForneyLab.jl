@@ -14,6 +14,12 @@ Usage:
     SumProduct(outbound_interface::Interface)
     SumProduct(partial_list::Vector{Interface})
     SumProduct(edge::Edge)
+
+Optionally, keyword argument `message_types::Dict{Interface,Any}` can used to constain messages to a specific distribution type.
+To force the use of a specific approximation method, use a tuple: `(dist_type::DataType, approximation::Symbol)`. Examples:
+
+    message_types = Dict{Interface,DataType}(my_node.i[:out] => GaussianDistribution)
+    message_types = Dict{Interface,DataType}(my_node.i[:out] => Approximation{GaussianDistribution,:laplace})
 """
 type SumProduct <: AbstractSumProduct
     graph::FactorGraph
@@ -32,37 +38,44 @@ end
 # SumProduct algorithm constructors
 ############################################
 
-function SumProduct(graph::FactorGraph=currentGraph())
+function SumProduct(graph::FactorGraph=currentGraph();
+                    message_types::Dict{Interface,DataType}=Dict{Interface,DataType}())
     schedule = generateSumProductSchedule(graph)
     exec(algorithm) = execute(algorithm.schedule)
 
     algo = SumProduct(graph, exec, schedule)
-    inferDistributionTypes!(algo)
+    inferDistributionTypes!(algo, message_types)
 
     return algo
 end
 
-function SumProduct(outbound_interface::Interface; graph::FactorGraph=currentGraph())
+function SumProduct(outbound_interface::Interface;
+                    message_types::Dict{Interface,DataType}=Dict{Interface,DataType}(),
+                    graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule(outbound_interface)
     exec(algorithm) = execute(algorithm.schedule)
 
     algo = SumProduct(graph, exec, schedule)
-    inferDistributionTypes!(algo)
+    inferDistributionTypes!(algo, message_types)
 
     return algo
 end
 
-function SumProduct(partial_list::Vector{Interface}; graph::FactorGraph=currentGraph())
+function SumProduct(partial_list::Vector{Interface};
+                    message_types::Dict{Interface,DataType}=Dict{Interface,DataType}(),
+                    graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule(partial_list)
     exec(algorithm) = execute(algorithm.schedule)
 
     algo = SumProduct(graph, exec, schedule)
-    inferDistributionTypes!(algo)
+    inferDistributionTypes!(algo, message_types)
 
     return algo
 end
 
-function SumProduct(edge::Edge; graph::FactorGraph=currentGraph())
+function SumProduct(edge::Edge;
+                    message_types::Dict{Interface,DataType}=Dict{Interface,DataType}(),
+                    graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule([edge.head, edge.tail])
     function exec(algorithm)
         execute(algorithm.schedule)
@@ -70,7 +83,7 @@ function SumProduct(edge::Edge; graph::FactorGraph=currentGraph())
     end
 
     algo = SumProduct(graph, exec, schedule)
-    inferDistributionTypes!(algo)
+    inferDistributionTypes!(algo, message_types)
 
     return algo
 end
@@ -80,16 +93,19 @@ end
 # Type inference and preparation
 ############################################
 
-function inferDistributionTypes!(algo::AbstractSumProduct)
+function inferDistributionTypes!(algo::AbstractSumProduct, message_types::Dict{Interface,DataType})
     # Infer the payload types for all messages in algo.schedule
     # Fill schedule_entry.inbound_types and schedule_entry.outbound_type
     schedule_entries = Dict{Interface, ScheduleEntry}()
 
     for entry in algo.schedule
         collectInboundTypes!(entry, schedule_entries, algo) # SumProduct specific collection of inbound types
-        inferOutboundType!(entry) # For the SumProduct algorithm, the only allowed update rule is the sumProductRule! rule
-
         outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
+        if outbound_interface in keys(message_types)
+            setOutboundType!(entry, message_types[outbound_interface])
+        end
+        inferOutboundType!(entry) # If the outbound type is fixed, this will check if there is a suitable rule available
+
         schedule_entries[outbound_interface] = entry # Assign schedule entry to lookup dictionary
     end
 

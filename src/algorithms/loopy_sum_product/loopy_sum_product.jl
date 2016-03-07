@@ -6,8 +6,8 @@ Loopy sum-product message passing algorithm.
 
 Usage:
 
-    LoopySumProduct(graph::Graph; breaker_messages, n_iterations)
-    LoopySumProduct(outbound_interface::Interface; breaker_messages, n_iterations)
+    LoopySumProduct(graph::Graph; breaker_messages, message_types, n_iterations)
+    LoopySumProduct(outbound_interface::Interface; breaker_messages, message_types, n_iterations)
 """
 type LoopySumProduct <: AbstractSumProduct
     graph::FactorGraph
@@ -28,7 +28,10 @@ end
 # LoopySumProduct algorithm constructors
 ############################################
 
-function LoopySumProduct(graph::FactorGraph=currentGraph(); breaker_messages=Dict{Interface, Message}(), n_iterations=50)
+function LoopySumProduct(   graph::FactorGraph=currentGraph();
+                            breaker_messages=Dict{Interface, Message}(),
+                            message_types::Dict{Interface,DataType}=Dict{Interface,DataType}(),
+                            n_iterations=50)
     # Generates a LoopySumProduct algorithm that propagates messages to all wraps and write buffers.
 
     schedule = generateSumProductSchedule(graph, breaker_sites=Set(keys(breaker_messages)))
@@ -41,12 +44,16 @@ function LoopySumProduct(graph::FactorGraph=currentGraph(); breaker_messages=Dic
     end
 
     algo = LoopySumProduct(graph, exec, schedule, breaker_messages, n_iterations)
-    inferDistributionTypes!(algo)
+    inferDistributionTypes!(algo, message_types)
 
     return algo
 end
 
-function LoopySumProduct(outbound_interface::Interface; breaker_messages=Dict{Interface, Message}(), n_iterations=50, graph::FactorGraph=currentGraph())
+function LoopySumProduct(   outbound_interface::Interface;
+                            breaker_messages=Dict{Interface, Message}(),
+                            message_types::Dict{Interface,DataType}=Dict{Interface,DataType}(),
+                            n_iterations=50,
+                            graph::FactorGraph=currentGraph())
     # Generates a LoopySumProduct algorithm to calculate the outbound message on outbound_interface.
 
     schedule = generateSumProductSchedule(outbound_interface, breaker_sites=Set(keys(breaker_messages)))
@@ -59,7 +66,7 @@ function LoopySumProduct(outbound_interface::Interface; breaker_messages=Dict{In
     end
 
     algo = LoopySumProduct(graph, exec, schedule, breaker_messages, n_iterations)
-    inferDistributionTypes!(algo)
+    inferDistributionTypes!(algo, message_types)
 
     return algo
 end

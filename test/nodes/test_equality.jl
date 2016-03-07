@@ -139,18 +139,18 @@ facts("EqualityNode unit tests") do
                                 BernoulliDistribution(1/7))
     end
 
-    context("EqualityNode should provide sumProductRule! for combination of student's t and Gaussian distribution") do
+    context("EqualityNode should provide approximate sumProductRule! for combination of student's t and Gaussian distribution") do
         validateOutboundMessage(EqualityNode(),
                                 3,
-                                [Message(StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0)), Message(GaussianDistribution(m=0.0, V=1.0)), nothing],
+                                [Message(StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0)), Message(GaussianDistribution(m=0.0, V=1.0)), nothing, MomentMatching],
                                 GaussianDistribution(m=0.5, W=2.0))
         validateOutboundMessage(EqualityNode(),
                                 3,
-                                [Message(GaussianDistribution(m=0.0, V=1.0)), Message(StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0)), nothing],
+                                [Message(GaussianDistribution(m=0.0, V=1.0)), Message(StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0)), nothing, MomentMatching],
                                 GaussianDistribution(m=0.5, W=2.0))
         validateOutboundMessage(EqualityNode(),
                                 2,
-                                [Message(StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0)), nothing, Message(GaussianDistribution(m=0.0, V=1.0))],
+                                [Message(StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0)), nothing, Message(GaussianDistribution(m=0.0, V=1.0)), MomentMatching],
                                 GaussianDistribution(m=0.5, W=2.0))
     end
 

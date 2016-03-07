@@ -6,7 +6,7 @@ type ScheduleEntry
     rule::Function                  # Refers to the general message calculation rule; for example sumProductRule! or variationalRule!.
     inbound_types::Vector{DataType} # Types of inbound messages/distributions.
     outbound_type::DataType         # Type of outbound distribution (the outbound distribution will be wrapped in a Message).
-    rule_is_approximate::Bool       # Indicates whether the message calculation rule involves an approximation.
+    approximation::DataType         # If the rule is an approximate one, this field specifies the type of approximation. Should be <: ApproximationType.
     execute::Function               # Compiled rule call: () -> rule(node, Val{outbound_interface_id}, rule_arguments...). Invoked by execute(::ScheduleEntry).
 
     function ScheduleEntry(node::Node, outbound_interface_id::Int64, rule::Function)
@@ -21,9 +21,22 @@ function Base.copy(src::ScheduleEntry)
 
     isdefined(src, :inbound_types) && (duplicate.inbound_types = copy(src.inbound_types))
     isdefined(src, :outbound_type) && (duplicate.outbound_type = src.outbound_type)
-    isdefined(src, :rule_is_approximate) && (duplicate.rule_is_approximate = src.rule_is_approximate)
+    isdefined(src, :approximation) && (duplicate.approximation = src.approximation)
 
     return duplicate
+end
+
+function setOutboundType!(entry::ScheduleEntry, outbound_type::DataType)
+    if outbound_type <: ProbabilityDistribution
+        entry.outbound_type = outbound_type
+    elseif outbound_type == Approximation
+        entry.outbound_type = outbound_type.parameters[1]
+        entry.approximation = outbound_type.parameters[2]
+    else
+        error("Invalid message type specification: $(outbound_type). Should be <:ProbabilityDistribution or Approximation.")
+    end
+
+    return entry
 end
 
 """
@@ -48,16 +61,16 @@ function show(io::IO, schedule_entry::ScheduleEntry)
     node = schedule_entry.node
     interface = node.interfaces[schedule_entry.outbound_interface_id]
     interface_handle = (handle(interface)!="") ? "($(handle(interface)))" : ""
-    println(io, replace("$(schedule_entry.rule) on $(typeof(node)) $(interface.node.id) interface $(schedule_entry.outbound_interface_id) $(interface_handle)", "ForneyLab.", ""))
+    approx = isdefined(schedule_entry, :approximation) ? "(Approx.: $(schedule_entry.approximation)) " : ""
+    println(io, replace("$(approx)$(schedule_entry.rule) on $(typeof(node)) $(interface.node.id) interface $(schedule_entry.outbound_interface_id) $(interface_handle)", "ForneyLab.", ""))
     if isdefined(schedule_entry, :inbound_types) && isdefined(schedule_entry, :outbound_type)
-        approx = (isdefined(schedule_entry, :rule_is_approximate) && schedule_entry.rule_is_approximate) ? " (APPROXIMATION)" : ""
-        println(io, replace("$(schedule_entry.inbound_types) -> Message{$(schedule_entry.outbound_type)}", "ForneyLab.", "") * approx)
+        println(io, replace("$(schedule_entry.inbound_types) -> Message{$(schedule_entry.outbound_type)}", "ForneyLab.", ""))
     end
 end
 
 function show(io::IO, schedule::Schedule)
     println(io, "Message passing schedule")
-    println(io, "-----------------------------------------------")
+    println(io, "------------------------\n")
     for i=1:length(schedule)
         println("$(i).")
         show(schedule[i])
