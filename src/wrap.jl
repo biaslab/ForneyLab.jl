@@ -16,7 +16,7 @@ type Wrap <: AbstractWrap
         !is(tail, head) || error("Cannot create wrap: tail and head must be different nodes")
         !haskey(current_graph.wraps, id) || error("The wrap id $(id) already exists in the current graph. Consider specifying an explicit id.")
 
-        if !isdefined(current_graph.block_size)
+        if !isdefined(current_graph, :block_size)
             if block_size >= 1 
                 # Test whether there are wraps without defined block_size
                 do_wraps_exist = isempty(wraps(current_graph)) || error("The graph contains wraps both with defined and undefined block_size")

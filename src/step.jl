@@ -106,10 +106,12 @@ end
 
 function step(wrap::Wrap, direction::Type{Val{:forward}})
     current_graph = currentGraph()
-    if isdefined(current_graph.block_size)
+    if isdefined(current_graph, :block_size)
         wrap.head.value = deepcopy(wrap.tail_buffer[current_graph.current_section])
     else
-        wrap.head_value = deepcopy(wrap.tail.value)
+        println(wrap.tail.value)
+        wrap.head.value = deepcopy(wrap.tail.interfaces[1].partner.message.payload)
+        println(wrap.head.value)
     end
 end
 
@@ -148,7 +150,7 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:forward}})
         step(wrap, direction)
     end
 
-    if isdefined(current_graph.block_size)
+    if isdefined(current_graph, :block_size)
         current_graph.current_section += 1 
     end
     

@@ -24,13 +24,37 @@ type FactorGraph
     wraps::Dict{Symbol, AbstractWrap}
     counters::Dict{DataType, Int} # Counters for automatic node id assignments
     locked::Bool
-    block_size::Int64
-    current_section::Int64
+    block_size
+    current_section
 
     # Connections to the outside world
     read_buffers::Dict{TerminalNode, Vector}
     write_buffers::Dict{Union{Edge,Interface}, Vector}
+
+    function FactorGraph(nodes::Dict{Symbol, Node},
+                         edges::Dict{Symbol, Edge},
+                         wraps::Dict{Symbol, AbstractWrap},
+                         counters::Dict{DataType, Int},
+                         locked:: Bool,
+                         read_buffers::Dict{TerminalNode, Vector},
+                         write_buffers::Dict{Union{Edge, Interface}, Vector})
+
+        self = new()
+        #println(self.block_size)
+        self.nodes = nodes
+        self.edges = edges
+        self.wraps = wraps
+        self.counters = counters
+        self.locked = locked
+        self.read_buffers = read_buffers
+        self.write_buffers = write_buffers
+        #self.block_size = -1
+        #self.current_section = -1
+        return self
+    end
+    
 end
+
 
 """
 Return currently active FactorGraph.
@@ -59,6 +83,8 @@ function show(io::IO, factor_graph::FactorGraph)
     println(io, " # nodes: $(length(nodes(factor_graph)))")
     println(io, " # edges: $(length(edges(factor_graph)))")
     println(io, " # wraps: $(length(wraps(factor_graph)))")
+    println(io, " block_size: $(factor_graph.block_size)")
+    println(io, " current_section: $(factor_graph.current_section)")
     println(io, "\nSee also:")
     println(io, " draw(::FactorGraph)")
     println(io, " show(nodes(::FactorGraph))")
