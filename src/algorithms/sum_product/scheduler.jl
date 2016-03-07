@@ -27,7 +27,7 @@ function generateSumProductSchedule(graph::FactorGraph=currentGraph(); args...)
     # Collect wrap interfaces
     for wrap in wraps(graph)
         push!(partial_list, wrap.tail.interfaces[1].partner)
-        #push!(partial_list, wrap.head.interfaces[1].partner)
+        push!(partial_list, wrap.head.interfaces[1].partner)
     end
 
     # Collect write buffer interfaces
