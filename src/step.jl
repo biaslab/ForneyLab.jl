@@ -136,7 +136,7 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:forward}})
     end
     
     # Read buffers
-    for (terminal_node, read_buffer) in currentGraph().read_buffers
+    for (terminal_node, read_buffer) in current_graph.read_buffers
         terminal_node.value = read_buffer[current_graph.current_section] # pick the proper element from the read_buffer
     end
 
@@ -144,7 +144,7 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:forward}})
     result = execute(algorithm)
 
     # Write buffers
-    for (component, write_buffer) in currentGraph().write_buffers
+    for (component, write_buffer) in current_graph.write_buffers
         if typeof(component) == Interface
             push!(write_buffer, deepcopy(component.message.payload))
         elseif typeof(component) == Edge
@@ -156,10 +156,8 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:forward}})
     for wrap in wraps(current_graph)
         step(wrap, direction)
     end
-
     
-    current_graph.current_section += 1 
-    
+    current_graph.current_section += 1
     
     return result
 end
@@ -174,7 +172,7 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:backward}})
     current_graph.current_section > 0 || error("You did too many backward passes and stepped out of the block.") 
 
     # Read buffers
-    for (terminal_node, read_buffer) in currentGraph().read_buffers
+    for (terminal_node, read_buffer) in current_graph.read_buffers
         terminal_node.value = read_buffer[current_graph.current_section] # pick the proper element from the read_buffer
     end
 
@@ -182,7 +180,7 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:backward}})
     result = execute(algorithm)
 
     # Write buffers
-    for (component, write_buffer) in currentGraph().write_buffers
+    for (component, write_buffer) in current_graph.write_buffers
         if typeof(component) == Interface
             push!(write_buffer, deepcopy(component.message.payload))
         elseif typeof(component) == Edge
@@ -191,7 +189,7 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:backward}})
     end
 
     # Wraps
-    for wrap in wraps(currentGraph())
+    for wrap in wraps(current_graph)
         step(wrap, direction)
     end
 
@@ -201,9 +199,10 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:backward}})
 end
 
 function read_buffers_contain_enough_elements()
-    if length(currentGraph().read_buffers) > 0
-        for (node, read_buffer) in currentGraph().read_buffers
-            if length(read_buffer) < currentGraph().current_section || currentGraph().current_section <= 0
+    current_graph = currentGraph()
+    if length(current_graph.read_buffers) > 0
+        for (node, read_buffer) in current_graph.read_buffers
+            if length(read_buffer) < current_graph.current_section || current_graph.current_section <= 0
                 return false
             end
         end
