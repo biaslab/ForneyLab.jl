@@ -128,13 +128,16 @@ end
 function step(algorithm::InferenceAlgorithm, direction::Type{Val{:forward}})
     # Execute algorithm for 1 timestep.
     # prepare!(algorithm) should always be called before the first call to step(algorithm)
-
+    
     current_graph = currentGraph()
+
+    if isdefined(current_graph, :block_size) && current_graph.current_section > current_graph.block_size
+        error("Further forward steps are impossible since you stepped outside of the block.")
+    end
     
     # Read buffers
     for (terminal_node, read_buffer) in currentGraph().read_buffers
-        !isempty(read_buffer) || error("Read buffer for node $(terminal_node) is empty")
-        terminal_node.value = shift!(read_buffer) # pick the first element off the read_buffer
+        terminal_node.value = read_buffer[current_graph.current_section] # pick the proper element from the read_buffer
     end
 
     # Execute schedule
@@ -154,9 +157,9 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:forward}})
         step(wrap, direction)
     end
 
-    if isdefined(current_graph, :block_size)
-        current_graph.current_section += 1 
-    end
+    
+    current_graph.current_section += 1 
+    
     
     return result
 end
@@ -165,10 +168,14 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:backward}})
     # Execute algorithm for 1 timestep.
     # prepare!(algorithm) should always be called before the first call to step(algorithm)
 
+    current_graph = currentGraph()
+    
+    isdefined(current_graph, :block_size) || error("Backward passes are not allowed if the block size is not defined.")
+    current_graph.current_section > 0 || error("You did too many backward passes and stepped out of the block.") 
+
     # Read buffers
     for (terminal_node, read_buffer) in currentGraph().read_buffers
-        !isempty(read_buffer) || error("Read buffer for node $(terminal_node) is empty")
-        terminal_node.value = shift!(read_buffer) # pick the first element off the read_buffer
+        terminal_node.value = read_buffer[current_graph.current_section] # pick the proper element from the read_buffer
     end
 
     # Execute schedule
@@ -193,20 +200,33 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:backward}})
     return result
 end
 
+function read_buffers_contain_enough_elements()
+    if length(currentGraph().read_buffers) > 0
+        for (node, read_buffer) in currentGraph().read_buffers
+            if length(read_buffer) < currentGraph().current_section || currentGraph().current_section <= 0
+                return false
+            end
+        end
+        return true
+    else
+        return false
+    end
+end
 
-function run(algorithm::InferenceAlgorithm; n_steps::Int64=0)
+
+function run(algorithm::InferenceAlgorithm; n_steps::Int64=0, direction::Symbol=:forward)
     # Call step(algorithm) repeatedly
     prepare!(algorithm)
     
-    if n_steps > 0 # When a valid number of steps is specified, execute the algorithm n_steps times
+    if n_steps > 0 # When a valid number of steps is specified, execute the algorithm n_steps times in the direction
         for i = 1:n_steps
-            step(algorithm)
+            step(algorithm, direction)
         end
     elseif length(currentGraph().read_buffers) > 0 # If no valid n_steps is specified, run until at least one of the read buffers is exhausted
-        while !any(isempty, values(currentGraph().read_buffers))
-            step(algorithm)
+        while read_buffers_contain_enough_elements()
+            step(algorithm, direction)
         end
     else # No read buffers or valid n_steps, just call step once
-        step(algorithm)
+        step(algorithm, direction)
     end
 end

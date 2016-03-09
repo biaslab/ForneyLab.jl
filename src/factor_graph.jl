@@ -25,7 +25,7 @@ type FactorGraph
     counters::Dict{DataType, Int} # Counters for automatic node id assignments
     locked::Bool
     block_size
-    current_section
+    current_section::Int64
 
     # Connections to the outside world
     read_buffers::Dict{TerminalNode, Vector}
@@ -40,7 +40,6 @@ type FactorGraph
                          write_buffers::Dict{Union{Edge, Interface}, Vector})
 
         self = new()
-        #println(self.block_size)
         self.nodes = nodes
         self.edges = edges
         self.wraps = wraps
@@ -48,8 +47,7 @@ type FactorGraph
         self.locked = locked
         self.read_buffers = read_buffers
         self.write_buffers = write_buffers
-        #self.block_size = -1
-        #self.current_section = -1
+        self.current_section = 1
         return self
     end
     
