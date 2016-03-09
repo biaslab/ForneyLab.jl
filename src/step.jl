@@ -121,6 +121,10 @@ function step(wrap::Wrap, direction::Type{Val{:backward}})
     wrap.tail.value = deepcopy(wrap.head_buffer[current_graph.current_section + 1])
 end
 
+function step(algorithm::InferenceAlgorithm, direction::Symbol)
+    step(algorithm, Val{direction})
+end
+
 function step(algorithm::InferenceAlgorithm, direction::Type{Val{:forward}})
     # Execute algorithm for 1 timestep.
     # prepare!(algorithm) should always be called before the first call to step(algorithm)
