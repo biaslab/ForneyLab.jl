@@ -41,20 +41,21 @@ The following functions are exported:
     Executes ``algorithm`` on the current graph.
 
 
-.. function:: step(algorithm)
+.. function:: step(algorithm, direction::Symbol)
 
     Buffer and wrap aware version of ``execute(algorithm)``. Performs the following:
 
     1. Read an element from all read-buffers defined in the current graph
     2. ``execute(algorithm)``
     3. Write an element to all write-buffers defined in the current graph
-    4. Apply all wraps defined in current graph
+    4. Propagate messages along all wraps defined in current graph in the corresponding direction
 
     Before calling ``step``, the algorithm must first be prepared by calling ``prepare!(algorithm)``. Preparing the algorithm ensures that initial messages are set and all update rules are pre-compiled.
+    Shorthand version of the function ``step(algorithm)`` exists and is an alias for ``step(algorithm, :forward)``
 
-.. function:: run(algorithm)
+.. function:: run(algorithm; direction::Symbol)
 
-    Prepares the algorithm and calls ``step(algorithm)`` repeatedly until one of the read-buffers is exhausted.
+    Prepares the algorithm and calls ``step(algorithm)`` repeatedly until one of the read-buffers is exhausted or until the end of the block is reached. Keyword argument ``direction`` is optional and by default takes ``:forward`` value.
 
 
 Schedules

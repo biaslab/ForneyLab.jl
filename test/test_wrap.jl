@@ -9,8 +9,8 @@ facts("Wrap integration tests") do
         @fact wrap.tail --> n(:node_t2)
         @fact wrap.head --> n(:node_t1)
         @fact g.current_section --> 1
-        @fact_throws wrap.head_buffer
-        @fact_throws wrap.tail_buffer
+        @fact length(wrap.head_buffer) --> 1
+        @fact length(wrap.tail_buffer) --> 1
     end
 
     context("Wrap() should validate and accept an id") do

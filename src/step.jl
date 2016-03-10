@@ -203,7 +203,7 @@ function read_buffers_contain_enough_elements()
     current_graph = currentGraph()
     if length(current_graph.read_buffers) > 0
         for (node, read_buffer) in current_graph.read_buffers
-            if length(read_buffer) < current_graph.current_section || current_graph.current_section <= 0
+            if length(read_buffer) < current_graph.current_section
                 return false
             end
         end
@@ -217,16 +217,23 @@ end
 function run(algorithm::InferenceAlgorithm; n_steps::Int64=0, direction::Symbol=:forward)
     # Call step(algorithm) repeatedly
     prepare!(algorithm)
-    
+
     if n_steps > 0 # When a valid number of steps is specified, execute the algorithm n_steps times in the direction
-        for i = 1:n_steps
-            step(algorithm, direction)
-        end
+            for i = 1:n_steps
+                step(algorithm, direction)
+            end 
     elseif length(currentGraph().read_buffers) > 0 # If no valid n_steps is specified, run until at least one of the read buffers is exhausted
-        while read_buffers_contain_enough_elements()
-            step(algorithm, direction)
+        if !isdefined(current_graph, :block_size)
+            while read_buffers_contain_enough_elements()
+                step(algorithm, direction)
+            end
+        else
+            bound = direction==:backward ? 1 : 0
+            while (bound < current_graph.current_section <= current_graph.block_size + bound) && read_buffers_contain_enough_elements() #run only until the end of graph
+                step(algorithm, direction)
+            end
         end
     else # No read buffers or valid n_steps, just call step once
         step(algorithm, direction)
-    end
+    end        
 end
