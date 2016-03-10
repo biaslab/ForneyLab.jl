@@ -114,16 +114,17 @@ function step(wrap::Wrap, direction::Type{Val{:forward}})
     end
 end
 
-
 function step(wrap::Wrap, direction::Type{Val{:backward}})
     current_graph = currentGraph()
-    wrap.head_buffer[current_graph.current_section+1] = deepcopy(wrap.head.interfaces[1].partner.message.payload)
-    wrap.tail.value = deepcopy(wrap.head_buffer[current_graph.current_section + 1])
+    wrap.head_buffer[current_graph.current_section] = deepcopy(wrap.head.interfaces[1].partner.message.payload)
+    wrap.tail.value = deepcopy(wrap.head_buffer[current_graph.current_section])
 end
 
 function step(algorithm::InferenceAlgorithm, direction::Symbol)
     step(algorithm, Val{direction})
 end
+
+step(algorithm::InferenceAlgorithm) = step(algorithm, :forward)
 
 function step(algorithm::InferenceAlgorithm, direction::Type{Val{:forward}})
     # Execute algorithm for 1 timestep.

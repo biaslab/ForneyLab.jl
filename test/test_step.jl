@@ -100,7 +100,7 @@ facts("step integration tests") do
         results = attachWriteBuffer(n(:add).i[:out])
         algo = SumProduct(g) # The timewraps and buffers tell the autoscheduler what should be computed
         prepare!(algo)
-        while !isempty(deltas)
+        while g.current_section <= length(deltas)
             step(algo)
         end
         @fact results --> [DeltaDistribution(r) for r in cumsum(collect(1.:10.))]

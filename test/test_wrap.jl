@@ -6,8 +6,11 @@ facts("Wrap integration tests") do
         @fact length(g.wraps) --> 1
         @fact wrap in values(g.wraps) --> true
         @fact wrap.id --> :node_t2_node_t1
-        @fact wrap.source --> n(:node_t2)
-        @fact wrap.sink --> n(:node_t1)
+        @fact wrap.tail --> n(:node_t2)
+        @fact wrap.head --> n(:node_t1)
+        @fact g.current_section --> 1
+        @fact_throws wrap.head_buffer
+        @fact_throws wrap.tail_buffer
     end
 
     context("Wrap() should validate and accept an id") do
@@ -34,4 +37,14 @@ facts("Wrap integration tests") do
         @fact wraps(n(:t1)) --> Set{Wrap}([wrap1])
         @fact wraps(n(:t2)) --> Set{Wrap}([wrap1, wrap2])
     end
+
+    context("Wrap() with specified block_size should initialize corresponding field on the graph and tail/head buffers") do
+        g = initializeWrapGraph()
+        wrap1 = Wrap(n(:t2), n(:t1), block_size=10)
+        @fact isdefined(g, :block_size) --> true
+        @fact g.block_size --> 10
+        @fact length(wrap1.head_buffer) --> g.block_size + 1
+        @fact length(wrap1.tail_buffer) --> g.block_size + 1
+    end
+    
 end
