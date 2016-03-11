@@ -108,7 +108,7 @@ function step(wrap::Wrap, direction::Type{Val{:forward}})
     current_graph = currentGraph()
     if isdefined(current_graph, :block_size)
         wrap.tail_buffer[current_graph.current_section] = deepcopy(wrap.tail.interfaces[1].partner.message.payload)
-        wrap.head.value = deepcopy(wrap.tail_buffer[current_graph.current_section])
+        wrap.head.value = wrap.tail_buffer[current_graph.current_section]
     else
         wrap.head.value = deepcopy(wrap.tail.interfaces[1].partner.message.payload)
     end
@@ -117,7 +117,7 @@ end
 function step(wrap::Wrap, direction::Type{Val{:backward}})
     current_graph = currentGraph()
     wrap.head_buffer[current_graph.current_section] = deepcopy(wrap.head.interfaces[1].partner.message.payload)
-    wrap.tail.value = deepcopy(wrap.head_buffer[current_graph.current_section])
+    wrap.tail.value = wrap.head_buffer[current_graph.current_section]
 end
 
 function step(algorithm::InferenceAlgorithm, direction::Symbol)

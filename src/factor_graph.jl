@@ -24,12 +24,13 @@ type FactorGraph
     wraps::Dict{Symbol, AbstractWrap}
     counters::Dict{DataType, Int} # Counters for automatic node id assignments
     locked::Bool
-    block_size
-    current_section::Int64
 
     # Connections to the outside world
     read_buffers::Dict{TerminalNode, Vector}
     write_buffers::Dict{Union{Edge,Interface}, Vector}
+
+    current_section::Int64
+    block_size
 
     function FactorGraph(nodes::Dict{Symbol, Node},
                          edges::Dict{Symbol, Edge},
@@ -39,16 +40,7 @@ type FactorGraph
                          read_buffers::Dict{TerminalNode, Vector},
                          write_buffers::Dict{Union{Edge, Interface}, Vector})
 
-        self = new()
-        self.nodes = nodes
-        self.edges = edges
-        self.wraps = wraps
-        self.counters = counters
-        self.locked = locked
-        self.read_buffers = read_buffers
-        self.write_buffers = write_buffers
-        self.current_section = 1
-        return self
+        return new(nodes, edges, wraps, counters, locked, read_buffers, write_buffers, 1)
     end
     
 end
