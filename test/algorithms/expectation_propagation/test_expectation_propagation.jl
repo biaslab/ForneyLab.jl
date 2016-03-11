@@ -63,19 +63,24 @@ facts("ExpectationPropagation algorithm integration tests") do
         return (length(X_marg) >= 5) # terminate the EP algorithm after 5 iterations
     end
 
-    ep_algo = ExpectationPropagation(sites, n_iterations=10, callback=log_results)
+    ep_algo = ExpectationPropagation(prev_section_connector, sites, n_iterations=10, callback=log_results)
 
     sitelist = [site for (site, distribution) in sites]
     context("ExpectationPropagation construction") do
         @fact ep_algo.n_iterations --> 10
         @fact is(ep_algo.callback, log_results) --> true
-        @fact typeof(ep_algo.schedule) --> Schedule
-        for entry in ep_algo.schedule
+        @fact typeof(ep_algo.iterative_schedule) --> Schedule
+        for entry in ep_algo.iterative_schedule
             if entry.node.interfaces[entry.outbound_interface_id] in sitelist
                 @fact is(entry.rule, expectationRule!) --> true
             else
                 @fact is(entry.rule, sumProductRule!) --> true
             end
+        end
+        @fact typeof(ep_algo.post_convergence_schedule) --> Schedule
+        @fact length(ep_algo.post_convergence_schedule) --> 1
+        for entry in ep_algo.post_convergence_schedule
+            @fact is(entry.rule, sumProductRule!) --> true
         end
     end
 
