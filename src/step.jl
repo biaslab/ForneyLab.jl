@@ -62,6 +62,9 @@ end
 
 function attachWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
     hasNode(graph, interface.node) || error("The specified interface is not part of the current or specified graph")
+    if isdefined(graph, :block_size)
+        (length(buffer) == graph.block_size) || error("The length of write buffer should be equal to the graph block size.")  
+    end
     graph.write_buffers[interface] = buffer # Write buffer for message
 end
 
@@ -75,6 +78,9 @@ end
 
 function attachWriteBuffer(edge::Edge, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
     hasEdge(graph, edge) || error("The specified edge is not part of the current or specified graph")
+    if isdefined(graph, :block_size)
+        (length(buffer) == graph.block_size) || error("The length of write buffer should be equal to the graph block size.")  
+    end
     graph.write_buffers[edge] = buffer # Write buffer for marginal
 end
 

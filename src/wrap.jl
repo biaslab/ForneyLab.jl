@@ -37,6 +37,12 @@ type Wrap <: AbstractWrap
                 current_graph.current_section = 1
             end
         end
+
+        if isdefined(current_graph, :block_size)
+            for (component, write_buffer) in current_graph.write_buffers
+                length(write_buffer) == block_size || error("Write buffer attached to $component has length $(length(write_buffer)), which is not equal to the block_size: $block_size.") 
+            end
+        end
         
         wrap = new(id, tail, head, tail_buffer, head_buffer)
         current_graph.wraps[id] = wrap
