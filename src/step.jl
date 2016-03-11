@@ -132,6 +132,24 @@ end
 
 step(algorithm::InferenceAlgorithm) = step(algorithm, :forward)
 
+function write_message_from_component_to_buffer!(component::Edge, write_buffer::Vector{ProbabilityDistribution})
+    current_graph = currentGraph()
+    if isdefined(current_graph, :block_size)
+        write_buffer[current_graph.current_section] = deepcopy(calculateMarginal!(component))
+    else
+        push!(write_buffer, deepcopy(calculateMarginal!(component)))
+    end
+end
+
+function write_message_from_component_to_buffer!(component::Interface, write_buffer::Vector{ProbabilityDistribution})
+    current_graph = currentGraph()
+    if isdefined(current_graph, :block_size)
+        write_buffer[current_graph.current_section] = deepcopy(component.message.payload)
+    else
+        push!(write_buffer, deepcopy(component.message.payload))
+    end
+end
+
 function step(algorithm::InferenceAlgorithm, direction::Type{Val{:forward}})
     # Execute algorithm for 1 timestep.
     # prepare!(algorithm) should always be called before the first call to step(algorithm)
@@ -152,11 +170,7 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:forward}})
 
     # Write buffers
     for (component, write_buffer) in current_graph.write_buffers
-        if typeof(component) == Interface
-            push!(write_buffer, deepcopy(component.message.payload))
-        elseif typeof(component) == Edge
-            push!(write_buffer, calculateMarginal!(component))
-        end
+        write_message_from_component_to_buffer!(component, write_buffer)
     end
 
     # Wraps
@@ -188,11 +202,7 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:backward}})
 
     # Write buffers
     for (component, write_buffer) in current_graph.write_buffers
-        if typeof(component) == Interface
-            push!(write_buffer, deepcopy(component.message.payload))
-        elseif typeof(component) == Edge
-            push!(write_buffer, calculateMarginal!(component))
-        end
+        write_message_from_component_to_buffer!(component, write_buffer)
     end
 
     # Wraps
