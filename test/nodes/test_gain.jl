@@ -9,7 +9,7 @@ facts("GainNode unit tests") do
         @fact length(n(:node).interfaces) --> 2
         @fact n(:node).i[:in] --> n(:node).interfaces[1]
         @fact n(:node).i[:out] --> n(:node).interfaces[2]
-        @fact typeof(n(:node).gain) <: Array --> true
+        @fact typeof(n(:node).gain) <: AbstractArray --> true
         @fact length(size(n(:node).gain)) --> 2 # A should always be a matrix
     end
 

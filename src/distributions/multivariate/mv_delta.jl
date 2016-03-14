@@ -34,7 +34,7 @@ Base.mean(::Type{MvDeltaDistribution{Float64}}, d::MvDeltaDistribution) = deepco
 
 Base.var(dist::MvDeltaDistribution) = zeros(length(dist.m))
 
-Base.cov(dist::MvDeltaDistribution) = zeros(length(dist.m), length(dist.m))
+Base.cov(dist::MvDeltaDistribution) = Diagonal(zeros(length(dist.m)))
 
 sample(dist::MvDeltaDistribution) = dist.m
 

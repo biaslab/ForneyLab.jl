@@ -28,13 +28,13 @@ Construction:
     GainAdditionNode([1.0], id=:my_node)
 """
 type GainAdditionNode <: Node
-    A::Array{Float64}
+    A::AbstractArray{Float64}
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
-    A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
+    A_inv::AbstractMatrix{Float64} # holds pre-computed inv(A) if possible
 
-    function GainAdditionNode(A::Union{Array{Float64},Float64}=1.0; id=generateNodeId(GainAdditionNode))
+    function GainAdditionNode(A::Union{AbstractArray{Float64}, Float64}=1.0; id=generateNodeId(GainAdditionNode))
         self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
 
@@ -293,14 +293,14 @@ end
 
 # Rule set for forward propagation ({in1,in2}-->out)
 # From: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-forwardGainAdditionMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, m_y::Array{T, 1}) = m_x + A*m_y
-forwardGainAdditionVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x + A*V_y*A'
-forwardGainAdditionWRule{T<:Number}(A::Array{T, 2}, W_x::Array{T, 2}, W_y::Array{T, 2}) = W_x - W_x * A * inv(W_y+A'*W_x*A) * A' * W_x
-forwardGainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}, W_x::Array{T, 2}, W_y::Array{T, 2}) = xi_x + W_x*A*inv(W_y+A'*W_x*A)*(xi_y-A'*xi_x)
+forwardGainAdditionMRule{T<:Number}(A::AbstractMatrix{T}, m_x::Vector{T}, m_y::Vector{T}) = m_x + A*m_y
+forwardGainAdditionVRule{T<:Number}(A::AbstractMatrix{T}, V_x::AbstractMatrix{T}, V_y::AbstractMatrix{T}) = V_x + A*V_y*A'
+forwardGainAdditionWRule{T<:Number}(A::AbstractMatrix{T}, W_x::AbstractMatrix{T}, W_y::AbstractMatrix{T}) = W_x - W_x * A * cholinv(W_y+A'*W_x*A) * A' * W_x
+forwardGainAdditionXiRule{T<:Number}(A::AbstractMatrix{T}, xi_x::Vector{T}, xi_y::Vector{T}, W_x::AbstractMatrix{T}, W_y::AbstractMatrix{T}) = xi_x + W_x*A*cholinv(W_y+A'*W_x*A)*(xi_y-A'*xi_x)
 
 # Rule set for backward propagation ({in1,out}-->in2)
 # From: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-backwardIn2GainAdditionMRule{T<:Number}(A::Array{T, 2}, m_y::Array{T, 1}, m_z::Array{T, 1}) = m_z - A*m_y
-backwardIn2GainAdditionVRule{T<:Number}(A::Array{T, 2}, V_y::Array{T, 2}, V_z::Array{T, 2}) = V_z + A*V_y*A'
-backwardIn2GainAdditionWRule{T<:Number}(A::Array{T, 2}, W_y::Array{T, 2}, W_z::Array{T, 2}) = W_z - W_z * A * inv(W_y+A'*W_z*A) * A' * W_z
-backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z::Array{T, 1}, W_y::Array{T, 2}, W_z::Array{T, 2}) = xi_z - W_z*A*inv(W_y+A'*W_z*A)*(xi_y+A'*xi_z)
+backwardIn2GainAdditionMRule{T<:Number}(A::AbstractMatrix{T}, m_y::Vector{T}, m_z::Vector{T}) = m_z - A*m_y
+backwardIn2GainAdditionVRule{T<:Number}(A::AbstractMatrix{T}, V_y::AbstractMatrix{T}, V_z::AbstractMatrix{T}) = V_z + A*V_y*A'
+backwardIn2GainAdditionWRule{T<:Number}(A::AbstractMatrix{T}, W_y::AbstractMatrix{T}, W_z::AbstractMatrix{T}) = W_z - W_z * A * cholinv(W_y+A'*W_z*A) * A' * W_z
+backwardIn2GainAdditionXiRule{T<:Number}(A::AbstractMatrix{T}, xi_y::Vector{T}, xi_z::Vector{T}, W_y::AbstractMatrix{T}, W_z::AbstractMatrix{T}) = xi_z - W_z*A*cholinv(W_y+A'*W_z*A)*(xi_y+A'*xi_z)

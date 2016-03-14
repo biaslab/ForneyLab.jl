@@ -62,6 +62,7 @@ include("distributions/multivariate/mv_gaussian.jl")
 include("distributions/multivariate/normal_gamma.jl")
 include("distributions/multivariate/wishart.jl")
 include("distributions/multivariate/mv_log_normal.jl")
+include("distributions/multivariate/matrix_delta.jl")
 
 # Basic ForneyLab building blocks and methods
 include("interface.jl")

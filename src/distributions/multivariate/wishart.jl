@@ -16,17 +16,18 @@ Parameters:
 Construction:
 
     WishartDistribution(V=eye(3), nu=3.0)
+    WishartDistribution(V=Diagonal(ones(3)), nu=3.0)
 
 Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
 type WishartDistribution{dims} <: MultivariateProbabilityDistribution
-    V::Matrix{Float64}  # Scale matrix
+    V::AbstractMatrix{Float64}  # Scale matrix
     nu::Float64         # Degrees of freedom
 end
 
-WishartDistribution(; V::Matrix{Float64} = [1.0].', nu::Float64 = 1.0) = WishartDistribution{size(V, 1)}(deepcopy(V), nu)
+WishartDistribution(; V::AbstractMatrix{Float64} = [1.0].', nu::Float64 = 1.0) = WishartDistribution{size(V, 1)}(deepcopy(V), nu)
 
 WishartDistribution() = WishartDistribution(V = [1.0].', nu = 1.0)
 
@@ -36,7 +37,7 @@ function vague!{dims}(dist::WishartDistribution{dims})
     return dist
 end
 
-vague{dims}(::Type{WishartDistribution{dims}}) = WishartDistribution(V=huge*eye(dims), nu=tiny)
+vague{dims}(::Type{WishartDistribution{dims}}) = WishartDistribution(V=huge*Diagonal(ones(dims)), nu=tiny)
 
 format(dist::WishartDistribution) = "W(V=$(format(dist.V)), ν=$(format(dist.nu)))"
 

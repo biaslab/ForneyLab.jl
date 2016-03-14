@@ -60,14 +60,14 @@ type GaussianNode{mean_type,uncertainty_type} <: Node
     i::Dict{Symbol,Interface}
     # Fixed parameters
     m::Vector{Float64}
-    V::Matrix{Float64}
+    V::AbstractMatrix{Float64}
 
     function GaussianNode(id::Symbol, interfaces::Array{Interface,1}, i::Dict{Symbol,Interface})
         new(id, interfaces, i)
     end
 end
 
-function GaussianNode(; id=generateNodeId(GaussianNode), form::Symbol=:variance, m::Union{Float64,Vector{Float64}}=[NaN], V::Union{Float64,Matrix{Float64}}=reshape([NaN],1,1))
+function GaussianNode(; id=generateNodeId(GaussianNode), form::Symbol=:variance, m::Union{Float64,Vector{Float64}}=[NaN], V::Union{Float64, AbstractMatrix{Float64}}=reshape([NaN],1,1))
     mean_type = isValid(m) ? :fixed_mean : :mean
     if form == :variance
         uncertainty_type = isValid(V) ? :fixed_variance : :variance
@@ -666,7 +666,7 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
     ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(marg_mean, (:m, :V))
     outbound_dist.nu = 2.0 + dimensions(marg_mean)
-    outbound_dist.V = inv(cholfact( marg_out.V + marg_mean.V + (marg_out.m - marg_mean.m)*(marg_out.m - marg_mean.m)' ))
+    outbound_dist.V = cholinv( marg_out.V + marg_mean.V + (marg_out.m - marg_mean.m)*(marg_out.m - marg_mean.m)' )
 
     return outbound_dist
 end

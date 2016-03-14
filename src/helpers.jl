@@ -1,9 +1,10 @@
-export isApproxEqual, huge, tiny, format, isValid, invalidate!, *
+export isApproxEqual, huge, tiny, format, isValid, invalidate!, cholinv, *, .*, ^
 
-import Base.*, Base.==
+import Base.*, Base.(.*), Base.^, Base.==, Base.sqrt
+
 # ensureMatrix: ensure that the input is a 2D array or nothing
-ensureMatrix{T<:Number}(arr::Array{T, 2}) = arr
-ensureMatrix{T<:Number}(arr::Array{T, 1}) = reshape(arr, 1, 1)
+ensureMatrix{T<:Number}(arr::AbstractMatrix{T}) = arr
+ensureMatrix{T<:Number}(arr::Vector{T}) = Diagonal(arr)
 ensureMatrix(n::Number) = fill!(Array(typeof(n),1,1), n)
 ensureMatrix(n::Void) = nothing
 
@@ -14,13 +15,24 @@ const tiny = 1e-12
 
 # Functions for checking validity and invalidating arrays of floats
 # An array is invalid if and only if its first entry is NaN
-isValid(v::Array{Float64}) = !isnan(v[1])
+isValid(v::AbstractArray{Float64}) = !isnan(v[1])
 isValid(v::Float64) = !isnan(v)
 
-function invalidate!(v::Array{Float64})
+function invalidate!(v::AbstractArray{Float64})
     v[1] = NaN
     return v
 end
+
+# Operations related to diagonal matrices
+cholinv(M::Matrix) = inv(cholfact(M))
+cholinv(D::Diagonal) = Diagonal(1./D.diag)
+
+.*(D1::Diagonal, D2::Diagonal) = Diagonal(D1.diag.*D2.diag)
+.*(D1::Matrix, D2::Diagonal) = Diagonal(diag(D1).*D2.diag)
+.*(D1::Diagonal, D2::Matrix) = D2.*D1
+
+^(D::Diagonal, p::Float64) = Diagonal(D.diag.^p)
+sqrt(D::Diagonal) = Diagonal(sqrt(D.diag))
 
 # Symbol concatenation
 *(sym::Symbol, num::Number) = symbol(string(sym, num))
@@ -59,11 +71,14 @@ end
 
 function format(d::Matrix{Float64})
     s = "["
-    for r in 1:size(d)[1]
+    for r in 1:size(d, 1)
         s *= format(vec(d[r,:]))
     end
     s *= "]"
+    return s
 end
+
+format(d::Diagonal{Float64}) = "diag$(format(d.diag))"
 
 function format(v::Vector{Any})
     str = ""
@@ -82,7 +97,7 @@ end
 isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < tiny
 
 # isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from.
-isRoundedPosDef{T<:AbstractFloat}(arr::Array{T, 2}) = ishermitian(round(arr, round(Int, log(10, huge)))) && isposdef(arr, :L)
+isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round(Matrix(arr), round(Int, log(10, huge)))) && isposdef(Matrix(arr), :L)
 
 function viewFile(filename::AbstractString)
     # Open a file with the application associated with the file type

@@ -27,10 +27,10 @@ type GainNode <: Node
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
-    gain::Matrix{Float64}
-    gain_inv::Matrix{Float64} # holds pre-computed inv(gain) if possible
+    gain::AbstractMatrix{Float64}
+    gain_inv::AbstractMatrix{Float64} # holds pre-computed inv(gain) if possible
 
-    function GainNode(;gain::Union{Array{Float64},Float64, Void}=nothing, id=generateNodeId(GainNode))
+    function GainNode(;gain::Union{AbstractArray{Float64}, Float64, Void}=nothing, id=generateNodeId(GainNode))
         if gain != nothing
             # Fixed gain; no gain interface.
             # Deepcopy gain to avoid an unexpected change of the input argument gain. Ensure that gain is a matrix.
@@ -362,18 +362,18 @@ function gainForwardRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussia
 end
 
 # Rule set for backward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-backwardGainMRule{T<:Number}(A_inv::Array{T, 2}, m::Array{T, 1}) = A_inv * m
-backwardGainMRule{T<:Number}(A::Array{T, 2}, m::Array{T, 1}, W::Array{T, 2}) = pinv(A' * W * A) * A' * W * m
-backwardGainVRule{T<:Number}(A_inv::Array{T, 2}, V::Array{T, 2}) = A_inv * V * A_inv'
-backwardGainWRule{T<:Number}(A::Array{T, 2}, W::Array{T, 2}) = A' * W * A
-backwardGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}) = A' * xi
+backwardGainMRule{T<:Number}(A_inv::AbstractMatrix{T}, m::Vector{T}) = A_inv * m
+backwardGainMRule{T<:Number}(A::AbstractMatrix{T}, m::Vector{T}, W::AbstractMatrix{T}) = pinv(A' * W * A) * A' * W * m
+backwardGainVRule{T<:Number}(A_inv::AbstractMatrix{T}, V::AbstractMatrix{T}) = A_inv * V * A_inv'
+backwardGainWRule{T<:Number}(A::AbstractMatrix{T}, W::AbstractMatrix{T}) = A' * W * A
+backwardGainXiRule{T<:Number}(A::AbstractMatrix{T}, xi::Vector{T}) = A' * xi
 
 # Rule set for forward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-forwardGainMRule{T<:Number}(A::Array{T, 2}, m::Array{T, 1}) = A * m
-forwardGainVRule{T<:Number}(A::Array{T, 2}, V::Array{T, 2}) = A * V * A'
-forwardGainWRule{T<:Number}(A_inv::Array{T, 2}, W::Array{T, 2}) = A_inv' * W * A_inv
-forwardGainXiRule{T<:Number}(A_inv::Array{T, 2}, xi::Array{T, 1}) = A_inv' * xi
-forwardGainXiRule{T<:Number}(A::Array{T, 2}, xi::Array{T, 1}, V::Array{T, 2}) = pinv(A * V * A') * A * V * xi # Combination of xi and V
+forwardGainMRule{T<:Number}(A::AbstractMatrix{T}, m::Vector{T}) = A * m
+forwardGainVRule{T<:Number}(A::AbstractMatrix{T}, V::AbstractMatrix{T}) = A * V * A'
+forwardGainWRule{T<:Number}(A_inv::AbstractMatrix{T}, W::AbstractMatrix{T}) = A_inv' * W * A_inv
+forwardGainXiRule{T<:Number}(A_inv::AbstractMatrix{T}, xi::Vector{T}) = A_inv' * xi
+forwardGainXiRule{T<:Number}(A::AbstractMatrix{T}, xi::Vector{T}, V::AbstractMatrix{T}) = pinv(A * V * A') * A * V * xi # Combination of xi and V
 
 
 ############################################

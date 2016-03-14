@@ -13,6 +13,7 @@ Parameters:
 Construction:
 
     MvLogNormalDistribution(m=zeros(3), S=eye(3))
+    MvLogNormalDistribution(m=zeros(3), S=Diagonal(ones(3)))
 
 Reference:
     
@@ -20,7 +21,7 @@ Reference:
 """
 type MvLogNormalDistribution{dims} <: MultivariateProbabilityDistribution
     m::Vector{Float64} # Location
-    S::Matrix{Float64} # Scale
+    S::AbstractMatrix{Float64} # Scale
 
     function MvLogNormalDistribution(m, S)
         (length(m) == size(S,1) == size(S,2)) || error("Dimensions of m and S must agree")
@@ -28,17 +29,15 @@ type MvLogNormalDistribution{dims} <: MultivariateProbabilityDistribution
     end
 end
 
-MvLogNormalDistribution(; m=[0.0], S=reshape([1.0], 1, 1)) = MvLogNormalDistribution{length(m)}(m, S)
-
-MvLogNormalDistribution() = MvLogNormalDistribution(m=[0.0], S=reshape([1.0], 1, 1))
+MvLogNormalDistribution(; m=[0.0], S=reshape([1.0],1,1)) = MvLogNormalDistribution{length(m)}(m, S)
 
 function vague!{dims}(dist::MvLogNormalDistribution{dims})
     dist.m = zeros(dims)
-    dist.S = huge*eye(dims)
+    dist.S = huge*Diagonal(ones(dims))
     return dist
 end
 
-vague{dims}(::Type{MvLogNormalDistribution{dims}}) = MvLogNormalDistribution(m=zeros(dims), S=huge*eye(dims))
+vague{dims}(::Type{MvLogNormalDistribution{dims}}) = MvLogNormalDistribution(m=zeros(dims), S=huge*Diagonal(ones(dims)))
 
 isProper(dist::MvLogNormalDistribution) = isRoundedPosDef(dist.S)
 
@@ -46,7 +45,7 @@ function Base.mean(dist::MvLogNormalDistribution)
     if isProper(dist)
         return exp(dist.m + 0.5*diag(dist.S))
     else
-        return fill!(similar(dist.m, NaN))
+        return fill!(similar(dist.m), NaN)
     end
 end
 

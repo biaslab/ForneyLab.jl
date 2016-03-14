@@ -24,13 +24,13 @@ Construction:
     GainEqualityNode([1.0], id=:my_node)
 """
 type GainEqualityNode <: Node
-    A::Array{Float64}
+    A::AbstractArray{Float64}
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
-    A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
+    A_inv::AbstractMatrix{Float64} # holds pre-computed inv(A) if possible
 
-    function GainEqualityNode(A::Union{Array{Float64},Float64}=1.0; id=generateNodeId(GainEqualityNode))
+    function GainEqualityNode(A::Union{AbstractArray{Float64}, Float64}=1.0; id=generateNodeId(GainEqualityNode))
         self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
 
@@ -206,7 +206,7 @@ function gainEqualityBackwardRule!( dist_result::MvGaussianDistribution,
         invalidate!(dist_result.W)
         invalidate!(dist_result.xi)
     elseif isValid(dist_out.m) && isValid(dist_out.W) && isValid(dist_in.m) && isValid(dist_in.W)
-        dist_result.m = backwardGainEqualityMRule(A, dist_in.m, inv(dist_in.W), dist_out.m, inv(dist_out.W))
+        dist_result.m = backwardGainEqualityMRule(A, dist_in.m, cholinv(dist_in.W), dist_out.m, cholinv(dist_out.W))
         invalidate!(dist_result.V)
         dist_result.W = backwardGainEqualityWRule(A, dist_in.W, dist_out.W)
         invalidate!(dist_result.xi)
@@ -225,7 +225,7 @@ end
 
 # Rule set for backward propagation ({in2,out}-->in1 or {in1,out}-->in2)
 # From: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-backwardGainEqualityWRule{T<:Number}(A::Array{T, 2}, W_x::Array{T, 2}, W_y::Array{T, 2}) = W_x + A' * W_y * A
-backwardGainEqualityXiRule{T<:Number}(A::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x + A' * xi_y
-backwardGainEqualityVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x - V_x * A' * inv(V_y + A * V_x * A') * A * V_x
-backwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, V_x::Array{T, 2}, m_y::Array{T, 1}, V_y::Array{T, 2}) = m_x + V_x * A' * inv(V_y + A * V_x * A') * (m_y - A * m_x)
+backwardGainEqualityWRule{T<:Number}(A::AbstractMatrix{T}, W_x::AbstractMatrix{T}, W_y::AbstractMatrix{T}) = W_x + A' * W_y * A
+backwardGainEqualityXiRule{T<:Number}(A::AbstractMatrix{T}, xi_x::Vector{T}, xi_y::Vector{T}) = xi_x + A' * xi_y
+backwardGainEqualityVRule{T<:Number}(A::AbstractMatrix{T}, V_x::AbstractMatrix{T}, V_y::AbstractMatrix{T}) = V_x - V_x * A' * cholinv(V_y + A * V_x * A') * A * V_x
+backwardGainEqualityMRule{T<:Number}(A::AbstractMatrix{T}, m_x::Vector{T}, V_x::AbstractMatrix{T}, m_y::Vector{T}, V_y::AbstractMatrix{T}) = m_x + V_x * A' * cholinv(V_y + A * V_x * A') * (m_y - A * m_x)

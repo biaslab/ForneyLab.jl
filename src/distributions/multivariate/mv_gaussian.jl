@@ -17,6 +17,7 @@ Parameters:
 Construction:
 
     MvGaussianDistribution(m=[1.0,3.0], V=[2.0, 0.0; 0.0, 2.0])
+    MvGaussianDistribution(m=[1.0,3.0], V=Diagonal([2.0, 2.0]))
 
 Reference:
 
@@ -24,8 +25,8 @@ Reference:
 """
 type MvGaussianDistribution{dims} <: MultivariateProbabilityDistribution
     m::Vector{Float64}   # Mean vector
-    V::Matrix{Float64}   # Covariance matrix
-    W::Matrix{Float64}   # Weight matrix
+    V::AbstractMatrix{Float64}   # Covariance matrix
+    W::AbstractMatrix{Float64}   # Weight matrix
     xi::Vector{Float64}  # Weighted mean vector: xi=W*m
 
     function MvGaussianDistribution(m, V, W, xi)
@@ -50,8 +51,8 @@ type MvGaussianDistribution{dims} <: MultivariateProbabilityDistribution
 end
 
 function MvGaussianDistribution(; m::Vector{Float64}=[NaN],
-                                  V::Matrix{Float64}=reshape([NaN], 1, 1),
-                                  W::Matrix{Float64}=reshape([NaN], 1, 1),
+                                  V::AbstractMatrix{Float64}=Diagonal([NaN]),
+                                  W::AbstractMatrix{Float64}=Diagonal([NaN]),
                                   xi::Vector{Float64}=[NaN])
     # Ensure _m and _xi have the same size
     _m = copy(m)
@@ -82,17 +83,17 @@ function MvGaussianDistribution(; m::Vector{Float64}=[NaN],
     return MvGaussianDistribution{length(_m)}(_m, _V, _W, _xi)
 end
 
-MvGaussianDistribution() = MvGaussianDistribution(m=zeros(1), V=ones(1,1))
+MvGaussianDistribution() = MvGaussianDistribution(m=[0.0], V=reshape([1.0],1,1))
 
 function vague!{dims}(dist::MvGaussianDistribution{dims})
     dist.m = zeros(dims)
-    dist.V = huge*eye(dims)
+    dist.V = huge*Diagonal(ones(dims))
     invalidate!(dist.W)
     invalidate!(dist.xi)
     return dist
 end
 
-vague{dims}(::Type{MvGaussianDistribution{dims}}) = MvGaussianDistribution(m=zeros(dims), V=huge*eye(dims))
+vague{dims}(::Type{MvGaussianDistribution{dims}}) = MvGaussianDistribution(m=zeros(dims), V=huge*Diagonal(ones(dims)))
 
 function format(dist::MvGaussianDistribution)
     if isValid(dist.m) && isValid(dist.V)
@@ -182,10 +183,10 @@ function isConsistent(dist::MvGaussianDistribution)
     if isValid(dist.V) && isValid(dist.W)
         V_W_consistent = false
         try
-           V_W_consistent = isApproxEqual(inv(cholfact(dist.V)), dist.W)
+           V_W_consistent = isApproxEqual(cholinv(dist.V), dist.W)
         catch
             try
-                V_W_consistent = isApproxEqual(inv(cholfact(dist.W)), dist.V)
+                V_W_consistent = isApproxEqual(cholinv(dist.W), dist.V)
             catch
                 error("Cannot check consistency of MvGaussianDistribution because both V and W are non-invertible.")
             end
@@ -234,14 +235,14 @@ end
 
 function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:W}})
     if !isValid(dist.W)
-        dist.W = inv(cholfact(dist.V))
+        dist.W = cholinv(dist.V)
     end
     return dist
 end
 
 function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:V}})
     if !isValid(dist.V)
-        dist.V = inv(cholfact(dist.W))
+        dist.V = cholinv(dist.W)
     end
     return dist
 end
@@ -284,8 +285,8 @@ end
 
 # Convert DeltaDistribution -> MvGaussianDistribution
 # NOTE: this introduces a small error because the variance is set >0
-convert(::Type{MvGaussianDistribution}, delta::MvDeltaDistribution{Float64}) = MvGaussianDistribution(m=delta.m, V=tiny*eye(length(delta.m)))
-convert{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(::Type{Message{TG}}, msg::Message{TD}) = Message(MvGaussianDistribution(m=msg.payload.m, V=tiny*eye(length(msg.payload.m))))
+convert(::Type{MvGaussianDistribution}, delta::MvDeltaDistribution{Float64}) = MvGaussianDistribution(m=delta.m, V=tiny*Diagonal(ones(length(delta.m))))
+convert{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(::Type{Message{TG}}, msg::Message{TD}) = Message(MvGaussianDistribution(m=msg.payload.m, V=tiny*Diagonal(ones(length(msg.payload.m)))))
 
 # Convert GaussianDistribution -> MvGaussianDistribution
 convert(::Type{MvGaussianDistribution}, d::GaussianDistribution) = MvGaussianDistribution(m=[d.m], V=d.V*eye(1), W=d.W*eye(1), xi=[d.xi])

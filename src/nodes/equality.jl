@@ -248,10 +248,10 @@ function equalityRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDi
 end
 
 # From: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-equalityMRule{T<:Number}(m_x::Array{T, 1}, m_y::Array{T, 1}, W_x::Array{T, 2}, W_y::Array{T, 2}) = pinv(W_x+W_y)*(W_x*m_x+W_y*m_y)
-equalityVRule{T<:Number}(V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x*pinv(V_x+V_y)*V_y
-equalityWRule{T<:Number}(W_x::Array{T, 2}, W_y::Array{T, 2}) = W_x+W_y
-equalityXiRule{T<:Number}(xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x+xi_y
+equalityMRule{T<:Number}(m_x::Vector{T}, m_y::Vector{T}, W_x::AbstractMatrix{T}, W_y::AbstractMatrix{T}) = cholinv(W_x+W_y)*(W_x*m_x+W_y*m_y)
+equalityVRule{T<:Number}(V_x::AbstractMatrix{T}, V_y::AbstractMatrix{T}) = V_x*cholinv(V_x+V_y)*V_y
+equalityWRule{T<:Number}(W_x::AbstractMatrix{T}, W_y::AbstractMatrix{T}) = W_x+W_y
+equalityXiRule{T<:Number}(xi_x::Vector{T}, xi_y::Vector{T}) = xi_x+xi_y
 
 
 ############################################
@@ -393,7 +393,7 @@ sumProductRule!{T<:WishartDistribution}(node::EqualityNode, outbound_interface_i
 
 function equalityRule!(dist_result::WishartDistribution, dist_1::WishartDistribution, dist_2::WishartDistribution)
     # Derivation available in notebook
-    dist_result.V = dist_1.V*inv(cholfact(dist_1.V + dist_2.V))*dist_2.V
+    dist_result.V = dist_1.V*cholinv(dist_1.V + dist_2.V)*dist_2.V
     dist_result.nu = dist_1.nu + dist_2.nu - size(dist_1.V, 1) - 1.0
 
     return dist_result
