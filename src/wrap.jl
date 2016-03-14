@@ -22,8 +22,8 @@ type Wrap <: AbstractWrap
                 do_wraps_exist = isempty(wraps(current_graph)) || error("The graph contains wraps both with defined and undefined block_size")
                 current_graph.block_size = block_size
                 current_graph.current_section = 1
-                tail_buffer = Vector{ProbabilityDistribution}(block_size + 1)
-                head_buffer = Vector{ProbabilityDistribution}(block_size + 1)
+                tail_buffer = Vector{ProbabilityDistribution}(block_size)
+                head_buffer = Vector{ProbabilityDistribution}(block_size)
             else
                 tail_buffer = Vector{ProbabilityDistribution}(1)
                 head_buffer = Vector{ProbabilityDistribution}(1)
@@ -32,8 +32,8 @@ type Wrap <: AbstractWrap
             if current_graph.block_size != block_size
                 error("The graph contains two wraps with different block sizes.")
             else
-                tail_buffer = Vector{ProbabilityDistribution}(block_size + 1)
-                head_buffer = Vector{ProbabilityDistribution}(block_size + 1)
+                tail_buffer = Vector{ProbabilityDistribution}(block_size)
+                head_buffer = Vector{ProbabilityDistribution}(block_size)
                 current_graph.current_section = 1
             end
         end

@@ -115,6 +115,9 @@ function step(wrap::Wrap, direction::Type{Val{:forward}})
     if isdefined(current_graph, :block_size)
         wrap.tail_buffer[current_graph.current_section] = deepcopy(wrap.tail.interfaces[1].partner.message.payload)
         wrap.head.value = wrap.tail_buffer[current_graph.current_section]
+        if isdefined(wrap.head_buffer, current_graph.current_section) 
+            wrap.tail.value = wrap.head_buffer[current_graph.current_section]
+        end
     else
         wrap.head.value = deepcopy(wrap.tail.interfaces[1].partner.message.payload)
     end
@@ -124,6 +127,9 @@ function step(wrap::Wrap, direction::Type{Val{:backward}})
     current_graph = currentGraph()
     wrap.head_buffer[current_graph.current_section] = deepcopy(wrap.head.interfaces[1].partner.message.payload)
     wrap.tail.value = wrap.head_buffer[current_graph.current_section]
+    if isdefined(wrap.tail_buffer, current_graph.current_section)
+        wrap.head.value = wrap.tail_buffer[current_graph.current_section]
+    end
 end
 
 function step(algorithm::InferenceAlgorithm, direction::Symbol)
@@ -192,6 +198,8 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:backward}})
     isdefined(current_graph, :block_size) || error("Backward passes are not allowed if the block size is not defined.")
     current_graph.current_section > 0 || error("You did too many backward passes and stepped out of the block.") 
 
+    current_graph.current_section -= 1
+    
     # Read buffers
     for (terminal_node, read_buffer) in current_graph.read_buffers
         terminal_node.value = read_buffer[current_graph.current_section] # pick the proper element from the read_buffer
@@ -209,8 +217,6 @@ function step(algorithm::InferenceAlgorithm, direction::Type{Val{:backward}})
     for wrap in wraps(current_graph)
         step(wrap, direction)
     end
-
-    current_graph.current_section -= 1
 
     return result
 end
@@ -240,13 +246,17 @@ function run(algorithm::InferenceAlgorithm; n_steps::Int64=0, direction::Symbol=
             end 
     elseif length(currentGraph().read_buffers) > 0 # If no valid n_steps is specified, run until at least one of the read buffers is exhausted
         if !isdefined(current_graph, :block_size)
+            direction == :forward || error("Backward passes are not allowed if the block size is not defined.")
             while read_buffers_contain_enough_elements()
                 step(algorithm, direction)
             end
         else
             bound = direction==:backward ? 1 : 0
-            while (bound < current_graph.current_section <= current_graph.block_size + bound) && read_buffers_contain_enough_elements() #run only until the end of graph
+            while (bound < current_graph.current_section <= current_graph.block_size + bound)  #run only until the end of graph
                 step(algorithm, direction)
+                if !read_buffers_contain_enough_elements()
+                    break
+                end
             end
         end
     else # No read buffers or valid n_steps, just call step once
