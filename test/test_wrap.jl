@@ -43,8 +43,8 @@ facts("Wrap integration tests") do
         wrap1 = Wrap(n(:t2), n(:t1), block_size=10)
         @fact isdefined(g, :block_size) --> true
         @fact g.block_size --> 10
-        @fact length(wrap1.head_buffer) --> g.block_size + 1
-        @fact length(wrap1.tail_buffer) --> g.block_size + 1
+        @fact length(wrap1.head_buffer) --> g.block_size
+        @fact length(wrap1.tail_buffer) --> g.block_size
     end
     
 end

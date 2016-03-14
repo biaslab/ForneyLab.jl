@@ -32,7 +32,7 @@ function initializeVagueRecognitionDistributions(f::RecognitionFactorization, re
             end
 
             expanded_recognition_distribution_types = expand(recognition_distribution_types)
-            # Look up the recignition distribution type for each cluster
+            # Look up the recognition distribution type for each cluster
             recognition_type = expanded_recognition_distribution_types[internal_edges[1]]
 
             # Build recognition_distributions dictionary

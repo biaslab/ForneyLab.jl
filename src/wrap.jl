@@ -52,11 +52,11 @@ end
 
 show(io::IO, wrap::Wrap) = println(io, "Wrap with id $(wrap.id) from tail $(wrap.tail) to head $(wrap.head).")
 
-wrap(id::Symbol, g::FactorGraph=current_graph) = g.wraps[id]
+wrap(id::Symbol, g::FactorGraph=currentGraph()) = g.wraps[id]
 
-wraps(g::FactorGraph=current_graph) = Set{Wrap}(values(g.wraps))
+wraps(g::FactorGraph=currentGraph()) = Set{Wrap}(values(g.wraps))
 
-function wraps(nd::TerminalNode, g::FactorGraph=current_graph)
+function wraps(nd::TerminalNode, g::FactorGraph=currentGraph())
     hasNode(g, nd) ||  error("The specified node does not belong to the specified or current graph")
     ws = Set{Wrap}()
     for w in values(g.wraps)

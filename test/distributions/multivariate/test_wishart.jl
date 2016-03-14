@@ -34,7 +34,7 @@ facts("Marginal calculations for the Wishart") do
         marginal_dist = calculateMarginal(
                                 WishartDistribution(V = [1.0].', nu=2.0),
                                 WishartDistribution(V = [1.0].', nu=2.0))
-        @fact marginal_dist.V --> [0.5].'
+        @fact marginal_dist.V --> roughly([0.5].')
         @fact marginal_dist.nu --> 2.0
     end
 end

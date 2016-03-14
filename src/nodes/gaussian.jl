@@ -15,27 +15,42 @@ Interfaces:
     - form == :log_variance => f(out,m,lV) = N(out|m,exp(lV))
 
     Each parameter can be fixed, in which case the corresponding interface does
-    not exist (and the ids of subsequent interfaces are lowered):
+    not exist (and the ids of subsequent interfaces are lowered).
+    Examples:
 
-           1. :mean
-             |
-             v
-    2. ----->[N]-----> 3. :out            1. ----->[N]-----> 2. :out
-     :variance /                            :variance /
-     :precision /                           :precision /
-     :log_variance                          :log_variance
+    No fixed parameters:            |     Fixed mean:
+    --------------------            |     -----------
+                                    |
+           1. :mean                 |
+             |                      |
+             v                      |
+    2. ----->[N]-----> 3. :out      |     1. ----->[N]-----> 2. :out
+     :variance                      |       :precision
+                                    |
+    GaussianNode(form=:variance)    |     GaussianNode(m=0.0, form=:precision)
+                                    |
+    ________________________________|______________________________________________________
+                                    |
+    Fixed variance:                 |     Fixed mean and variance (constant distribution):
+    ---------------                 |     ------------------------------------------------
+                                    |
+                                    |
+    1. ----->[N]-----> 2. :out      |     [N]-----> 1. :out
+     :mean                          |
+                                    |
+    GaussianNode(V=1.0)             |     GaussianNode(m=0.0, V=1.0)
+                                    |
 
-
-    1. ----->[N]-----> 2. :out            [N]-----> 1. :out
-     :mean
-
-    The node is parametrized: GaussianNode{mean_type,uncertainty_type}, where
+    The type is parametrized: GaussianNode{mean_type,uncertainty_type}, where
        - mean_type ∈ {:fixed_mean, :mean}
        - uncertainty_type ∈ {:fixed_variance, :variance, :precision, :log_variance}
 
 Construction:
 
-    GaussianNode(form=:variance, id=:my_node, m=optional_fixed_value, V=optional_fixed_value)
+    GaussianNode(form=:variance, id=:my_node)           # N(out|m,V)        (default)
+    GaussianNode(form=:precision, m=0.0, id=:my_node)   # N(out|0.0,inv(W)) (fixed mean)
+    GaussianNode(V=1.0, id=:my_node)                    # N(out|m,1.0)      (fixed variance)
+    GaussianNode(m=0.0, V=1.0, id=:my_node)             # N(out|0.0,1.0)    (fixed distribution)
 """
 type GaussianNode{mean_type,uncertainty_type} <: Node
     # mean_type ∈ {:fixed_mean, :mean}
@@ -56,12 +71,8 @@ function GaussianNode(; id=generateNodeId(GaussianNode), form::Symbol=:variance,
     mean_type = isValid(m) ? :fixed_mean : :mean
     if form == :variance
         uncertainty_type = isValid(V) ? :fixed_variance : :variance
-    elseif form == :precision
-        uncertainty_type = :precision
-    elseif form == :log_variance
-        uncertainty_type = :log_variance
     else
-        error("Unrecognized form ($(form)). Please use :variance, :precision or :log_variance.")
+        uncertainty_type = form
     end
 
     num_interfaces = ((mean_type != :fixed_mean) ? 1 : 0) + ((uncertainty_type != :fixed_variance) ? 1 : 0) + 1
@@ -493,7 +504,7 @@ GaussianNode{:mean, :variance}:
 
      N     q(Ig)
     --->[N]<---
-    <--  |  
+    <--  |
          v q(N)
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
@@ -518,7 +529,7 @@ GaussianNode{:mean, :precision}:
 
      N     q(Gam)
     --->[N]<---
-    <--  |  
+    <--  |
          v q(N)
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
@@ -543,7 +554,7 @@ GaussianNode{:mean, :precision}:
 
      N     q(W)
     --->[N]<---
-    <--  |  
+    <--  |
          v q(N)
 """
 function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
@@ -567,7 +578,7 @@ GaussianNode{:mean, :log_variance}:
 
      N     q(N)
     --->[N]<---
-    <--  |  
+    <--  |
          v q(N)
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:log_variance}},
@@ -594,7 +605,7 @@ GaussianNode{:mean, :variance}:
 
     q(N)    Ig
     --->[N]<---
-         |  --> 
+         |  -->
          v q(N)
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
@@ -618,7 +629,7 @@ GaussianNode{:mean, :precision}:
 
     q(N)    Gam
     --->[N]<---
-         |  --> 
+         |  -->
          v q(N)
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
@@ -642,7 +653,7 @@ GaussianNode{:mean, :precision}:
 
     q(N)     W
     --->[N]<---
-         |  --> 
+         |  -->
          v q(N)
 """
 function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
@@ -655,7 +666,7 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
     ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(marg_mean, (:m, :V))
     outbound_dist.nu = 2.0 + dimensions(marg_mean)
-    outbound_dist.V = inv( marg_out.V + marg_mean.V + (marg_out.m - marg_mean.m)*(marg_out.m - marg_mean.m)' )
+    outbound_dist.V = inv(cholfact( marg_out.V + marg_mean.V + (marg_out.m - marg_mean.m)*(marg_out.m - marg_mean.m)' ))
 
     return outbound_dist
 end
@@ -665,7 +676,7 @@ GaussianNode{:mean, :log_variance}:
 
     q(N)     N
     --->[N]<---
-         |  --> 
+         |  -->
          v q(N)
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:log_variance}},
@@ -691,7 +702,7 @@ GaussianNode{:mean, :variance}:
 
     q(N)   q(Ig)
     --->[N]<---
-         | | 
+         | |
        N v v
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
@@ -714,9 +725,9 @@ end
 """
 GaussianNode{:mean, :precision}:
 
-    q(N)   q(Ig)
+    q(N)   q(G)
     --->[N]<---
-         | | 
+         | |
        N v v
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
@@ -741,7 +752,7 @@ GaussianNode{:mean, :precision}:
 
     q(N)   q(W)
     --->[N]<---
-         | | 
+         | |
        N v v
 """
 function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
@@ -766,7 +777,7 @@ GaussianNode{:mean, :log_variance}:
 
     q(N)   q(N)
     --->[N]<---
-         | | 
+         | |
        N v v
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:log_variance}},

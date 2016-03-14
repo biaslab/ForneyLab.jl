@@ -96,10 +96,10 @@ facts("MvGaussianDistribution unit tests") do
         @fact mean(MvGaussianDistribution(xi=[1.0, 2.0], V=2.0*eye(2))) --> [2.0, 4.0]
         @fact isValid(mean(MvGaussianDistribution(xi=[1.0, 2.0], V=-2.0*eye(2)))) --> false
         @fact var(MvGaussianDistribution(m=[1.0, 2.0], V=diagm([2.0, 4.0]))) --> [2.0, 4.0]
-        @fact var(MvGaussianDistribution(m=[1.0, 2.0], W=diagm([2.0, 4.0]))) --> [0.5, 0.25]
+        @fact var(MvGaussianDistribution(m=[1.0, 2.0], W=diagm([2.0, 4.0]))) --> roughly([0.5, 0.25])
         @fact isValid(var(MvGaussianDistribution(m=[1.0, 2.0], W=diagm([-2.0, 4.0])))) --> false
         @fact cov(MvGaussianDistribution(m=[1.0, 2.0], V=[2.0 1.0;1.0 2.0])) --> [2.0 1.0;1.0 2.0]
-        @fact cov(MvGaussianDistribution(m=[1.0, 2.0], W=[2.0 1.0;1.0 2.0])) --> inv([2.0 1.0;1.0 2.0])
+        @fact cov(MvGaussianDistribution(m=[1.0, 2.0], W=[2.0 1.0;1.0 2.0])) --> roughly(inv([2.0 1.0;1.0 2.0]))
         @fact isValid(cov(MvGaussianDistribution(m=[1.0, 2.0], W=diagm([-2.0, 4.0])))) --> false
     end
     context("Inconsistent overdetermined MvGaussianDistribution should be detected by isConsistent()") do
