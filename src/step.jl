@@ -122,7 +122,7 @@ function step(algorithm::InferenceAlgorithm, graph::FactorGraph=currentGraph())
         if typeof(component) == Interface
             push!(write_buffer, deepcopy(component.message.payload))
         elseif typeof(component) == Edge
-            push!(write_buffer, calculateMarginal!(component))
+            push!(write_buffer, deepcopy(component.marginal))
         end
     end
 
@@ -137,7 +137,7 @@ end
 function run(algorithm::InferenceAlgorithm, graph::FactorGraph=currentGraph(); n_steps::Int64=0)
     # Call step(algorithm) repeatedly
     prepare!(algorithm)
-    
+
     if n_steps > 0 # When a valid number of steps is specified, execute the algorithm n_steps times
         for i = 1:n_steps
             step(algorithm, graph)
