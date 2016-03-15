@@ -34,7 +34,7 @@ include("node.jl")
 # Message type
 include("message.jl")
 
-# Extract dimensionality from message or distribution (note exception for normal-gamma in normal_gamma.jl)
+# Extract dimensionality from message or distribution (exceptions for normal-gamma and matrix-delta in distribution files)
 dimensions{T<:MultivariateProbabilityDistribution}(message::Message{T}) = typeof(message.payload).parameters[end]
 dimensions(distribution::MultivariateProbabilityDistribution) = typeof(distribution).parameters[end]
 dimensions{T<:MultivariateProbabilityDistribution}(message_type::Type{Message{T}}) = message_type.parameters[1].parameters[end]

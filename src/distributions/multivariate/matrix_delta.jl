@@ -42,3 +42,8 @@ sample(::Type{MatrixDeltaDistribution{Float64}}, d::MatrixDeltaDistribution) = d
 convert{T<:Number}(::Type{ProbabilityDistribution}, obj::AbstractMatrix{T}) = MatrixDeltaDistribution(obj)
 
 convert{T<:Number}(::Type{MatrixDeltaDistribution}, obj::AbstractMatrix{T}) = MatrixDeltaDistribution(obj)
+
+dimensions{T<:MatrixDeltaDistribution}(message::Message{T}) = (typeof(message.payload).parameters[end-1], typeof(message.payload).parameters[end])
+dimensions(distribution::MatrixDeltaDistribution) = (typeof(distribution).parameters[end-1], typeof(distribution).parameters[end])
+dimensions{T<:MatrixDeltaDistribution}(message_type::Type{Message{T}}) = (message_type.parameters[1].parameters[end-1], message_type.parameters[1].parameters[end])
+dimensions{T<:MatrixDeltaDistribution}(distribution_type::Type{T}) = (distribution_type.parameters[end-1], distribution_type.parameters[end])
