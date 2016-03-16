@@ -30,7 +30,22 @@ type FactorGraph
 
     # Reference to the algorithm that has been prepared on this graph
     prepared_algorithm::Union{InferenceAlgorithm,Void}
+
+    # Book keeping for graphs with wraps
+    current_section::Int64
+    block_size
+
+    function FactorGraph(nodes::Dict{Symbol, Node},
+                         edges::Dict{Symbol, Edge},
+                         wraps::Dict{Symbol, AbstractWrap},
+                         counters::Dict{DataType, Int},
+                         read_buffers::Dict{TerminalNode, Vector},
+                         write_buffers::Dict{Union{Edge, Interface}, Vector})
+
+        return new(nodes, edges, wraps, counters, read_buffers, write_buffers, nothing, 1)
+    end
 end
+
 
 """
 Return currently active FactorGraph.
@@ -52,14 +67,17 @@ FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
                                             Dict{Symbol, AbstractWrap}(),
                                             Dict{DataType, Int}(),
                                             Dict{TerminalNode, Vector}(),
-                                            Dict{Union{Edge,Interface}, Vector}(),
-                                            nothing))
+                                            Dict{Union{Edge,Interface}, Vector}()))
 
 function show(io::IO, factor_graph::FactorGraph)
     println(io, "FactorGraph")
     println(io, " # nodes: $(length(nodes(factor_graph)))")
     println(io, " # edges: $(length(edges(factor_graph)))")
     println(io, " # wraps: $(length(wraps(factor_graph)))")
+    if isdefined(factor_graph, :block_size)
+        println(io, " #block_size: $(factor_graph.block_size)")
+    end
+    println(io, "# current_section: $(factor_graph.current_section)")
     println(io, "\nSee also:")
     println(io, " draw(::FactorGraph)")
     println(io, " show(nodes(::FactorGraph))")
