@@ -25,11 +25,8 @@ facts("Edge integration tests") do
         @fact_throws Edge(node1.i[:out], node2.i[:out])
     end
 
-    context("It is not possible to add an Edge to a locked FactorGraph or to deepcopy an Edge") do
+    context("It is not possible to deepcopy an Edge") do
         initializePairOfMockNodes()
-        currentGraph().locked = true
-        @fact_throws Edge(n(:node1).i[:out], n(:node2).i[:out])
-        currentGraph().locked = false
         testedge = Edge(n(:node1).i[:out], n(:node2).i[:out])
         @fact_throws deepcopy(testedge)
     end

@@ -23,11 +23,13 @@ type FactorGraph
     edges::Dict{Symbol, Edge} # Edges
     wraps::Dict{Symbol, AbstractWrap}
     counters::Dict{DataType, Int} # Counters for automatic node id assignments
-    locked::Bool
 
     # Connections to the outside world
     read_buffers::Dict{TerminalNode, Vector}
     write_buffers::Dict{Union{Edge,Interface}, Vector}
+
+    # Reference to the algorithm that has been prepared on this graph
+    prepared_algorithm::Union{InferenceAlgorithm,Void}
 end
 
 """
@@ -44,13 +46,14 @@ end
 
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph
 
+# Initialize a new factor graph; automatically sets current_graph
 FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
                                             Dict{Symbol, Edge}(),
                                             Dict{Symbol, AbstractWrap}(),
                                             Dict{DataType, Int}(),
-                                            false,
                                             Dict{TerminalNode, Vector}(),
-                                            Dict{Union{Edge,Interface}, Vector}())) # Initialize a new factor graph; automatically sets current_graph
+                                            Dict{Union{Edge,Interface}, Vector}(),
+                                            nothing))
 
 function show(io::IO, factor_graph::FactorGraph)
     println(io, "FactorGraph")
@@ -108,9 +111,9 @@ eg(ids::Vector{Symbol}, graph::FactorGraph=currentGraph()) = edges(ids, graph)
 # Add/remove graph elements
 function addNode!(graph::FactorGraph, nd::Node)
     # Add a Node to a FactorGraph
-    !graph.locked || error("Cannot add a Node to a locked graph")
     !haskey(graph.nodes, nd.id) || error("Graph already contains a Node with id $(nd.id)")
     graph.nodes[nd.id] = nd
+    graph.prepared_algorithm = nothing # Modifying the graph 'unprepares' any InferenceAlgorithm
 
     return graph
 end

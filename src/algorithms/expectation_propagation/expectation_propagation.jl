@@ -12,6 +12,7 @@ Usage:
     ExpectationPropagation(graph::FactorGraph, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback, post_processing_functions)
 """
 type ExpectationPropagation <: InferenceAlgorithm
+    graph::FactorGraph
     execute::Function
     iterative_schedule::Schedule
     post_convergence_schedule::Schedule
@@ -70,7 +71,8 @@ function ExpectationPropagation(
             sites::Vector{Tuple{Interface, DataType}};
             n_iterations::Int64 = 100,
             callback::Function = ( () -> false ),
-            post_processing_functions = Dict{Interface, Function}())
+            post_processing_functions = Dict{Interface, Function}(),
+            graph::FactorGraph=currentGraph())
 
     # Build an EP message passing algorithm for the specified sites.
     # sites is a list of (interface, recognition_distribution) tuples,
@@ -150,7 +152,7 @@ function ExpectationPropagation(
         isempty(algorithm.post_convergence_schedule) || execute(algorithm.post_convergence_schedule)
     end
 
-    algo = ExpectationPropagation(exec, iterative_schedule, post_convergence_schedule, sitelist, n_iterations, callback)
+    algo = ExpectationPropagation(graph, exec, iterative_schedule, post_convergence_schedule, sitelist, n_iterations, callback)
     inferDistributionTypes!(algo, recognition_distributions)
 
     return algo
@@ -210,7 +212,7 @@ function prepare!(algo::ExpectationPropagation)
     compile!(algo.iterative_schedule, algo)
     compile!(algo.post_convergence_schedule, algo)
 
-    return algo
+    return algo.graph.prepared_algorithm = algo
 end
 
 function compile!(entry::ScheduleEntry, ::Type{Val{symbol(expectationRule!)}}, ::InferenceAlgorithm)

@@ -10,6 +10,7 @@ Usage:
     LoopySumProduct(outbound_interface::Interface; post_processing_functions, breaker_messages, n_iterations)
 """
 type LoopySumProduct <: AbstractSumProduct
+    graph::FactorGraph
     execute::Function
     schedule::Schedule
     breaker_messages::Dict{Interface, Message} # Sites for breaker message initializations
@@ -40,13 +41,13 @@ function LoopySumProduct(graph::FactorGraph=currentGraph(); post_processing_func
         end
     end
 
-    algo = LoopySumProduct(exec, schedule, breaker_messages, n_iterations)
+    algo = LoopySumProduct(graph, exec, schedule, breaker_messages, n_iterations)
     inferDistributionTypes!(algo)
 
     return algo
 end
 
-function LoopySumProduct(outbound_interface::Interface; post_processing_functions=Dict{Interface, Function}(), breaker_messages=Dict{Interface, Message}(), n_iterations=50)
+function LoopySumProduct(outbound_interface::Interface; post_processing_functions=Dict{Interface, Function}(), breaker_messages=Dict{Interface, Message}(), n_iterations=50, graph::FactorGraph=currentGraph())
     # Generates a LoopySumProduct algorithm to calculate the outbound message on outbound_interface.
 
     schedule = generateSumProductSchedule(outbound_interface, breaker_sites=Set(keys(breaker_messages)))
@@ -59,7 +60,7 @@ function LoopySumProduct(outbound_interface::Interface; post_processing_function
         end
     end
 
-    algo = LoopySumProduct(exec, schedule, breaker_messages, n_iterations)
+    algo = LoopySumProduct(graph, exec, schedule, breaker_messages, n_iterations)
     inferDistributionTypes!(algo)
 
     return algo
@@ -102,7 +103,7 @@ function prepare!(algo::LoopySumProduct)
     # Compile the schedule (define entry.execute)
     compile!(algo.schedule, algo)
 
-    return algo
+    return algo.graph.prepared_algorithm = algo
 end
 
 function resetBreakerMessages(algo::LoopySumProduct)

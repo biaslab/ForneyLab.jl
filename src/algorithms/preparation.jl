@@ -81,7 +81,7 @@ function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::N
             end
 
             substituted_outbound_type = eval(parse("$(outbound_type.name){$(paramify(param_values))}")) # Construct the type definition of the substituted outbund type
-            push!(outbound_types, substituted_outbound_type) 
+            push!(outbound_types, substituted_outbound_type)
         end
     end
 
@@ -109,7 +109,7 @@ function inferOutboundType!(entry::ScheduleEntry)
         error("Unknown output of message calculation rule: $(outbound_types[1]) for node $(node)")
     end
 
-    
+
     if isdefined(entry, :post_processing)
         entry.outbound_type = inferOutboundTypeAfterPostProcessing(entry) # If post-processing is defined, entry.outbound_type might differ from entry.intermediate_outbound_type
     else
@@ -163,10 +163,10 @@ function buildExecute!(entry::ScheduleEntry, inbound_arguments::Vector)
             intermediate_outbound_distribution = entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments...); # In-place operation on previously created dummy distribution
             new_outbound_distribution = entry.post_processing(entry.outbound_type, intermediate_outbound_distribution); # Not an in-place operation
             original_outbound_distribution = entry.node.interfaces[entry.outbound_interface_id].message.payload; # Get original pointer to outbound distribution on interface
-            
+
             # Duplicate parameters of new into original
             injectParameters!(original_outbound_distribution, new_outbound_distribution);
-            
+
             return original_outbound_distribution
         ))
     end

@@ -5,6 +5,7 @@ using LaTeXStrings
 
 export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution
 export sumProductRule!, expectationRule!, variationalRule!
+export InferenceAlgorithm
 export vague, self, ==, isProper, sample, dimensions
 export setVerbosity
 export prepare!
@@ -27,6 +28,7 @@ abstract AbstractEdge # An Interface belongs to an Edge, but Interface is define
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
 abstract UnivariateProbabilityDistribution <: ProbabilityDistribution
 abstract MultivariateProbabilityDistribution <: ProbabilityDistribution
+abstract InferenceAlgorithm
 
 # Node
 include("node.jl")

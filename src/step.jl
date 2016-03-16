@@ -98,18 +98,19 @@ function emptyWriteBuffers(graph::FactorGraph=currentGraph())
 end
 
 function execute(algorithm::InferenceAlgorithm)
-    # Call algorithm's execute function with itself as argument
-    # prepare!(algorithm) should always be called before the first call to execute(algorithm)
+    # Make sure algorithm is prepared
+    graph = algorithm.graph
+    (graph.prepared_algorithm == algorithm) || prepare!(algorithm)
 
+    # Call algorithm's execute function with itself as argument
     return algorithm.execute(algorithm)
 end
 
-function step(algorithm::InferenceAlgorithm, graph::FactorGraph=currentGraph())
+function step(algorithm::InferenceAlgorithm)
     # Execute algorithm for 1 timestep.
-    # prepare!(algorithm) should always be called before the first call to step(algorithm)
 
     # Read buffers
-    for (terminal_node, read_buffer) in graph.read_buffers
+    for (terminal_node, read_buffer) in algorithm.graph.read_buffers
         !isempty(read_buffer) || error("Read buffer for node $(terminal_node) is empty")
         terminal_node.value = shift!(read_buffer) # pick the first element off the read_buffer
     end
@@ -118,35 +119,34 @@ function step(algorithm::InferenceAlgorithm, graph::FactorGraph=currentGraph())
     result = execute(algorithm)
 
     # Write buffers
-    for (component, write_buffer) in graph.write_buffers
+    for (component, write_buffer) in algorithm.graph.write_buffers
         if typeof(component) == Interface
             push!(write_buffer, deepcopy(component.message.payload))
         elseif typeof(component) == Edge
-            push!(write_buffer, deepcopy(component.marginal))
+            push!(write_buffer, deepcopy(calculateMarginal!(component)))
         end
     end
 
     # Wraps
-    for wrap in wraps(graph)
+    for wrap in wraps(algorithm.graph)
         wrap.sink.value = deepcopy(wrap.source.interfaces[1].partner.message.payload)
     end
 
     return result
 end
 
-function run(algorithm::InferenceAlgorithm, graph::FactorGraph=currentGraph(); n_steps::Int64=0)
+function run(algorithm::InferenceAlgorithm; n_steps::Int64=0)
     # Call step(algorithm) repeatedly
-    prepare!(algorithm)
 
     if n_steps > 0 # When a valid number of steps is specified, execute the algorithm n_steps times
         for i = 1:n_steps
-            step(algorithm, graph)
+            step(algorithm)
         end
-    elseif length(graph.read_buffers) > 0 # If no valid n_steps is specified, run until at least one of the read buffers is exhausted
-        while !any(isempty, values(graph.read_buffers))
-            step(algorithm, graph)
+    elseif length(algorithm.graph.read_buffers) > 0 # If no valid n_steps is specified, run until at least one of the read buffers is exhausted
+        while !any(isempty, values(algorithm.graph.read_buffers))
+            step(algorithm)
         end
     else # No read buffers or valid n_steps, just call step once
-        step(algorithm, graph)
+        step(algorithm)
     end
 end

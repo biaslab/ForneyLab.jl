@@ -15,6 +15,7 @@ Usage:
     VariationalBayes(recognition_distribution_types::Dict, graph::Graph; n_iterations, post_processing_functions)
 """
 type VariationalBayes <: InferenceAlgorithm
+    graph::FactorGraph
     execute::Function
     factorization::RecognitionFactorization
     recognition_distributions::Dict{Tuple{Node,Subgraph},RecognitionDistribution}
@@ -53,7 +54,7 @@ function VariationalBayes(  recognition_distribution_types::Dict,
         end
     end
 
-    algo = VariationalBayes(exec, factorization, recognition_distributions, n_iterations)
+    algo = VariationalBayes(graph, exec, factorization, recognition_distributions, n_iterations)
     inferDistributionTypes!(algo)
 
     return algo
@@ -120,7 +121,7 @@ function prepare!(algo::VariationalBayes)
         compile!(schedule, algo)
     end
 
-    return algo
+    return algo.graph.prepared_algorithm = algo
 end
 
 function compile!(entry::ScheduleEntry, ::Type{Val{symbol(variationalRule!)}}, algo::VariationalBayes)

@@ -17,7 +17,6 @@ type Edge <: AbstractEdge
         current_graph = currentGraph()
         !is(head.node, tail.node) || error("Cannot connect two interfaces of the same node: $(typeof(head.node)) $(head.node.id)")
         (head.partner == nothing && tail.partner == nothing) || error("Previously defined edges cannot be repositioned.")
-        !current_graph.locked || error("Cannot extend a locked FactorGraph.")
         hasNode(current_graph, head.node) || error("Head node does not belong to the current graph.")
         hasNode(current_graph, tail.node) || error("Tail node does not belong to the current graph.")
         !haskey(current_graph.edges, id) || error("The edge id $(id) already exists in the current graph. Consider specifying an explicit id.")
@@ -33,6 +32,7 @@ type Edge <: AbstractEdge
 
         # Add edge to current_graph
         current_graph.edges[self.id] = self
+        current_graph.prepared_algorithm = nothing # Modifying the graph 'unprepares' any InferenceAlgorithm
 
         return self
     end

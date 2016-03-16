@@ -16,6 +16,7 @@ Usage:
     SumProduct(edge::Edge; post_processing_functions)
 """
 type SumProduct <: AbstractSumProduct
+    graph::FactorGraph
     execute::Function
     schedule::Schedule
 end
@@ -36,35 +37,35 @@ function SumProduct(graph::FactorGraph=currentGraph(); post_processing_functions
     setPostProcessing!(schedule, post_processing_functions)
     exec(algorithm) = execute(algorithm.schedule)
 
-    algo = SumProduct(exec, schedule)
+    algo = SumProduct(graph, exec, schedule)
     inferDistributionTypes!(algo)
 
     return algo
 end
 
-function SumProduct(outbound_interface::Interface; post_processing_functions=Dict{Interface, Function}())
+function SumProduct(outbound_interface::Interface; post_processing_functions=Dict{Interface, Function}(), graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule(outbound_interface)
     setPostProcessing!(schedule, post_processing_functions)
     exec(algorithm) = execute(algorithm.schedule)
 
-    algo = SumProduct(exec, schedule)
+    algo = SumProduct(graph, exec, schedule)
     inferDistributionTypes!(algo)
 
     return algo
 end
 
-function SumProduct(partial_list::Vector{Interface}; post_processing_functions=Dict{Interface, Function}())
+function SumProduct(partial_list::Vector{Interface}; post_processing_functions=Dict{Interface, Function}(), graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule(partial_list)
     setPostProcessing!(schedule, post_processing_functions)
     exec(algorithm) = execute(algorithm.schedule)
 
-    algo = SumProduct(exec, schedule)
+    algo = SumProduct(graph, exec, schedule)
     inferDistributionTypes!(algo)
 
     return algo
 end
 
-function SumProduct(edge::Edge; post_processing_functions=Dict{Interface, Function}())
+function SumProduct(edge::Edge; post_processing_functions=Dict{Interface, Function}(), graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule([edge.head, edge.tail])
     setPostProcessing!(schedule, post_processing_functions)
     function exec(algorithm)
@@ -72,7 +73,7 @@ function SumProduct(edge::Edge; post_processing_functions=Dict{Interface, Functi
         calculateMarginal!(edge)
     end
 
-    algo = SumProduct(exec, schedule)
+    algo = SumProduct(graph, exec, schedule)
     inferDistributionTypes!(algo)
 
     return algo
@@ -123,7 +124,7 @@ function prepare!(algo::SumProduct)
     # Compile the schedule (define entry.execute)
     compile!(algo.schedule, algo)
 
-    return algo
+    return algo.graph.prepared_algorithm = algo
 end
 
 function compile!(entry::ScheduleEntry, ::Type{Val{symbol(sumProductRule!)}}, ::InferenceAlgorithm)
