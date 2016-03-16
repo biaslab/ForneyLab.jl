@@ -71,7 +71,7 @@ facts("Shared preparation methods for inference algorithms") do
         # Tests for approximate msg computation rules
         call_signature = [EqualityNode, Type{Val{1}}, Any, Any, Message{GaussianDistribution}, Message{StudentsTDistribution}]
         @fact ForneyLab.collectAllOutboundTypes(sumProductRule!, call_signature, EqualityNode()) --> []
-        call_signature = [EqualityNode, Type{Val{1}}, Any, Any, Message{GaussianDistribution}, Message{StudentsTDistribution}, MomentMatching]
+        call_signature = [EqualityNode, Type{Val{1}}, Any, Any, Message{GaussianDistribution}, Message{StudentsTDistribution}, Type{MomentMatching}]
         @fact ForneyLab.collectAllOutboundTypes(sumProductRule!, call_signature, EqualityNode()) --> [Approximation{GaussianDistribution,MomentMatching}]
     end
 
