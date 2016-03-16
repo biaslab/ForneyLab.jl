@@ -46,9 +46,9 @@ sqrt(D::Diagonal) = Diagonal(sqrt(D.diag))
 *(sym1::Symbol, sym2::Vector{Symbol}) = Symbol[sym1*s2 for s2 in sym2]
 *(sym1::Vector{Symbol}, sym2::Symbol) = Symbol[s1*sym2 for s1 in sym1]
 
-function format(d::Bool)
-    string(d)
-end
+format(d::Bool) = string(d)
+
+format(d::Symbol) = string(d)
 
 function format(d::Float64)
     if 0.01 < d < 100.0 || -100 < d < -0.01 || d==0.0

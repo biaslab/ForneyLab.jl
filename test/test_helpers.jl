@@ -105,6 +105,8 @@ facts("Helper function unit tests") do
     context("format() should format distributions") do
         @fact format(0.0000001) --> "1.00e-07"
         @fact format(0.0) --> "0.00"
+        @fact format(true) --> "true"
+        @fact format(:a) --> "a"
         @fact format([7.345345456456456464564645645645, 0.00005345, -0.000145, -108.0]) --> "[7.35, 5.34e-05, -1.45e-04, -1.08e+02]"
         @fact format([7.345345456456456464564645645645 0.00005345; -0.000145 -108.0]) --> "[[7.35, 5.34e-05][-1.45e-04, -1.08e+02]]"
         @fact format(DeltaDistribution()) --> "δ(m=1.00)"

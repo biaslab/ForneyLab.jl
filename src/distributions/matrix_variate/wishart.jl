@@ -22,9 +22,9 @@ Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type WishartDistribution{dims} <: MultivariateProbabilityDistribution
+type WishartDistribution{dims} <: MatrixVariateProbabilityDistribution
     V::AbstractMatrix{Float64}  # Scale matrix
-    nu::Float64         # Degrees of freedom
+    nu::Float64                 # Degrees of freedom
 end
 
 WishartDistribution(; V::AbstractMatrix{Float64} = [1.0].', nu::Float64 = 1.0) = WishartDistribution{size(V, 1)}(deepcopy(V), nu)

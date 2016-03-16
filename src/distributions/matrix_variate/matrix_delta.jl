@@ -15,7 +15,7 @@ Construction:
     MatrixDeltaDistribution(eye(3))
     MatrixDeltaDistribution(Diagonal(ones(3)))
 """
-type MatrixDeltaDistribution{T, dims_n, dims_m} <: ForneyLab.MultivariateProbabilityDistribution
+type MatrixDeltaDistribution{T, dims_n, dims_m} <: ForneyLab.MatrixVariateProbabilityDistribution
     M::AbstractMatrix{T}
 end
 

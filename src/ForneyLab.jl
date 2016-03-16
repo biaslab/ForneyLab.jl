@@ -3,7 +3,7 @@ module ForneyLab
 using Optim
 using LaTeXStrings
 
-export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution
+export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution, MatrixVariateProbabilityDistribution
 export sumProductRule!, expectationRule!, variationalRule!
 export vague, self, ==, isProper, sample, dimensions
 export setVerbosity
@@ -27,6 +27,7 @@ abstract AbstractEdge # An Interface belongs to an Edge, but Interface is define
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
 abstract UnivariateProbabilityDistribution <: ProbabilityDistribution
 abstract MultivariateProbabilityDistribution <: ProbabilityDistribution
+abstract MatrixVariateProbabilityDistribution <: ProbabilityDistribution
 
 # Node
 include("node.jl")
@@ -60,9 +61,11 @@ include("distributions/univariate/log_normal.jl")
 include("distributions/multivariate/mv_delta.jl")
 include("distributions/multivariate/mv_gaussian.jl")
 include("distributions/multivariate/normal_gamma.jl")
-include("distributions/multivariate/wishart.jl")
 include("distributions/multivariate/mv_log_normal.jl")
-include("distributions/multivariate/matrix_delta.jl")
+
+# Matrix variate distributions
+include("distributions/matrix_variate/wishart.jl")
+include("distributions/matrix_variate/matrix_delta.jl")
 
 # Basic ForneyLab building blocks and methods
 include("interface.jl")
