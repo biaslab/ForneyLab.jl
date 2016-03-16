@@ -49,11 +49,11 @@ facts("GainNode unit tests") do
         validateOutboundMessage(GainNode(gain=A),
                                 1,
                                 [nothing, Message(MvDeltaDistribution([30.0, 10.0]))],
-                                MvDeltaDistribution(inv(A)*[30.0, 10.0]))
+                                MvDeltaDistribution(pinv(A)*[30.0, 10.0]))
         validateOutboundMessage(GainNode(),
                                 1,
                                 [nothing, Message(MvDeltaDistribution([30.0, 10.0])), Message(MatrixDeltaDistribution(A))],
-                                MvDeltaDistribution(inv(A)*[30.0, 10.0]))
+                                MvDeltaDistribution(pinv(A)*[30.0, 10.0]))
         # Forward message
         validateOutboundMessage(GainNode(gain=A),
                                 2,

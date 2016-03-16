@@ -12,7 +12,7 @@ facts("GainEqualityNode unit tests") do
         @fact n(:node).i[:in1] --> n(:node).interfaces[1]
         @fact n(:node).i[:in2] --> n(:node).interfaces[2]
         @fact n(:node).i[:out] --> n(:node).interfaces[3]
-        @fact typeof(n(:node).A) --> Array{Float64, 2}
+        @fact typeof(n(:node).gain) --> Array{Float64, 2}
     end
 
     context("GainEqualityNode provide sumProductRule! for GaussianDistribution (m, V)") do

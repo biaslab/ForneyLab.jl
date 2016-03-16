@@ -69,6 +69,22 @@ facts("Shared preparation methods for inference algorithms") do
         @fact ForneyLab.collectAllOutboundTypes(expectationRule!, call_signature, SigmoidNode()) --> [GaussianDistribution]
     end
 
+    context("collectAllOutboundTypes() should return outbound types for nodes with a fixed gain under inputs of different dimensions") do
+        FactorGraph()
+
+        call_signature = [GainNode, Type{Val{1}}, Any, Void, Message{MvGaussianDistribution{3}}]
+        @fact ForneyLab.collectAllOutboundTypes(sumProductRule!, call_signature, GainNode(gain=rand(3,2))) --> [MvGaussianDistribution{2}]
+
+        call_signature = [GainNode, Type{Val{2}}, Any, Message{MvGaussianDistribution{2}}, Void]
+        @fact ForneyLab.collectAllOutboundTypes(sumProductRule!, call_signature, GainNode(gain=rand(3,2))) --> [MvGaussianDistribution{3}]
+
+        call_signature = [GainAdditionNode, Type{Val{1}}, Any, Void, Message{MvGaussianDistribution{3}}, Message{MvGaussianDistribution{3}}]
+        @fact ForneyLab.collectAllOutboundTypes(sumProductRule!, call_signature, GainAdditionNode(rand(3,2))) --> [MvGaussianDistribution{2}]
+
+        call_signature = [GainEqualityNode, Type{Val{3}}, Any, Message{MvGaussianDistribution{2}}, Message{MvGaussianDistribution{2}}, Void]
+        @fact ForneyLab.collectAllOutboundTypes(sumProductRule!, call_signature, GainEqualityNode(rand(3,2))) --> [MvGaussianDistribution{3}]
+    end
+
     FactorGraph()
 
     context("inferOutboundTypeAfterPostProcessing() should infer the correct outbound type after post-processing") do

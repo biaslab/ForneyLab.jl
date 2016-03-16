@@ -80,7 +80,48 @@ function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::N
                 push!(param_values, params_dict[param])
             end
 
-            substituted_outbound_type = eval(parse("$(outbound_type.name){$(paramify(param_values))}")) # Construct the type definition of the substituted outbund type
+            substituted_outbound_type = eval(parse("$(outbound_type.name){$(paramify(param_values))}")) # Construct the type definition of the substituted outbound type
+            push!(outbound_types, substituted_outbound_type) 
+        end
+    end
+
+    return outbound_types
+end
+
+function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::Union{GainNode, GainAdditionNode, GainEqualityNode})
+    # Outbound type collection overloading for nodes with an (optional) fixed gain
+
+    outbound_types = DataType[]
+
+    available_methods = methods(rule, call_signature)
+    for method in available_methods
+
+        method_signature = method.sig.types
+        outbound_type = extractOutboundType(method_signature[3]) # Third entry is always the outbound distribution
+
+        if isempty(parameters(outbound_type)) # Are there no type variables defined for the outbound type?
+            push!(outbound_types, outbound_type) # Simply push the found outbound type on the stack
+        else  # Outbound type has parameters that need to be inferred
+            params_dict = extractParameters(method_signature, call_signature) # Extract parameters and values of inbound types
+            outbound_params = parameters(outbound_type) # Extract parameters of outbound type
+
+            # Construct new outbound type definition with substituted values
+            param_values = Any[]
+            for param in outbound_params
+                if haskey(params_dict, param)
+                    push!(param_values, params_dict[param])
+                else # The outbound param is not available in the inbound parameter dictionary; we need to infer it from the fixed gain matrix
+                    if param.name == :dims_n
+                        push!(param_values, size(node.gain, 1))
+                    elseif param.name == :dims_m
+                        push!(param_values, size(node.gain, 2))
+                    else
+                        error("For the gain node with fixed gain, the dimensionalities in the calling signature need to be encoded as {dims_n, dims_m}")
+                    end
+                end
+            end
+
+            substituted_outbound_type = eval(parse("$(outbound_type.name){$(paramify(param_values))}")) # Construct the type definition of the substituted outbound type
             push!(outbound_types, substituted_outbound_type) 
         end
     end
