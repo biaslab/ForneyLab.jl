@@ -52,7 +52,7 @@ function ExpectationPropagation(
     # Build outbound_interfaces based on write buffers and wraps
     outbound_interfaces = Interface[]
     for wrap in wraps(graph)
-        push!(outbound_interfaces, wrap.source.interfaces[1].partner)
+        push!(outbound_interfaces, wrap.tail.interfaces[1].partner)
     end
     for entry in keys(graph.write_buffers)
         if typeof(entry) == Interface
