@@ -61,6 +61,12 @@ facts("Helper function unit tests") do
         @fact cholinv(A) --> inv(A)
     end
 
+    context("diageye() should return a diagonal eye matrix") do
+        M = diageye(3)
+        @fact typeof(M) --> Diagonal{Float64}
+        @fact M --> Diagonal(ones(3))
+    end
+
     context("The following arithmetic operations on diagonal matrix should yield diagonal matrices") do
         D = Diagonal([1.0, 2.0])
         M = [2.0 1.0; 1.0 2.0]
@@ -118,7 +124,7 @@ facts("Helper function unit tests") do
 
         @fact format(MvDeltaDistribution()) --> "δ(m=[1.00])"
         @fact format(MvGaussianDistribution()) --> "N(m=[0.00], V=[[1.00]])"
-        @fact format(MvGaussianDistribution(m=zeros(2), V=Diagonal(ones(2)))) --> "N(m=[0.00, 0.00], V=diag[1.00, 1.00])"
+        @fact format(MvGaussianDistribution(m=zeros(2), V=diageye(2))) --> "N(m=[0.00, 0.00], V=diag[1.00, 1.00])"
         @fact format(NormalGammaDistribution()) --> "Ng(m=0.00, β=1.00, a=1.00, b=1.00)"
     end
 

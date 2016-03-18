@@ -1,4 +1,4 @@
-export isApproxEqual, huge, tiny, format, isValid, invalidate!, cholinv, *, .*, ^
+export isApproxEqual, huge, tiny, format, isValid, invalidate!, cholinv, diageye, *, .*, ^
 
 import Base.*, Base.(.*), Base.^, Base.==, Base.sqrt
 
@@ -26,6 +26,7 @@ end
 # Operations related to diagonal matrices
 cholinv(M::Matrix) = inv(cholfact(M))
 cholinv(D::Diagonal) = Diagonal(1./D.diag)
+diageye(dims::Int64) = Diagonal(ones(dims))
 
 .*(D1::Diagonal, D2::Diagonal) = Diagonal(D1.diag.*D2.diag)
 .*(D1::Matrix, D2::Diagonal) = Diagonal(diag(D1).*D2.diag)

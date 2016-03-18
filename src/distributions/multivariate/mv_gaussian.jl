@@ -87,13 +87,13 @@ MvGaussianDistribution() = MvGaussianDistribution(m=[0.0], V=reshape([1.0],1,1))
 
 function vague!{dims}(dist::MvGaussianDistribution{dims})
     dist.m = zeros(dims)
-    dist.V = huge*Diagonal(ones(dims))
+    dist.V = huge*diageye(dims)
     invalidate!(dist.W)
     invalidate!(dist.xi)
     return dist
 end
 
-vague{dims}(::Type{MvGaussianDistribution{dims}}) = MvGaussianDistribution(m=zeros(dims), V=huge*Diagonal(ones(dims)))
+vague{dims}(::Type{MvGaussianDistribution{dims}}) = MvGaussianDistribution(m=zeros(dims), V=huge*diageye(dims))
 
 function format(dist::MvGaussianDistribution)
     if isValid(dist.m) && isValid(dist.V)
@@ -285,8 +285,8 @@ end
 
 # Convert DeltaDistribution -> MvGaussianDistribution
 # NOTE: this introduces a small error because the variance is set >0
-convert(::Type{MvGaussianDistribution}, delta::MvDeltaDistribution{Float64}) = MvGaussianDistribution(m=delta.m, V=tiny*Diagonal(ones(length(delta.m))))
-convert{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(::Type{Message{TG}}, msg::Message{TD}) = Message(MvGaussianDistribution(m=msg.payload.m, V=tiny*Diagonal(ones(length(msg.payload.m)))))
+convert(::Type{MvGaussianDistribution}, delta::MvDeltaDistribution{Float64}) = MvGaussianDistribution(m=delta.m, V=tiny*diageye(length(delta.m)))
+convert{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(::Type{Message{TG}}, msg::Message{TD}) = Message(MvGaussianDistribution(m=msg.payload.m, V=tiny*diageye(length(msg.payload.m))))
 
 # Convert GaussianDistribution -> MvGaussianDistribution
 convert(::Type{MvGaussianDistribution}, d::GaussianDistribution) = MvGaussianDistribution(m=[d.m], V=d.V*eye(1), W=d.W*eye(1), xi=[d.xi])

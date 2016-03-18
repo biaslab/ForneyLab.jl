@@ -22,7 +22,7 @@ Interfaces:
 Construction:
 
     GainNode(gain=[1.0], id=:my_node)
-    GainNode(gain=Diagonal(ones(2)), id=:my_node)
+    GainNode(gain=diageye(2), id=:my_node)
     GainNode(id=:my_node)
 """
 type GainNode <: Node

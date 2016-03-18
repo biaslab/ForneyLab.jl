@@ -13,7 +13,7 @@ Parameters:
 Construction:
 
     MvLogNormalDistribution(m=zeros(3), S=eye(3))
-    MvLogNormalDistribution(m=zeros(3), S=Diagonal(ones(3)))
+    MvLogNormalDistribution(m=zeros(3), S=diageye(3))
 
 Reference:
     
@@ -33,11 +33,11 @@ MvLogNormalDistribution(; m=[0.0], S=reshape([1.0],1,1)) = MvLogNormalDistributi
 
 function vague!{dims}(dist::MvLogNormalDistribution{dims})
     dist.m = zeros(dims)
-    dist.S = huge*Diagonal(ones(dims))
+    dist.S = huge*diageye(dims)
     return dist
 end
 
-vague{dims}(::Type{MvLogNormalDistribution{dims}}) = MvLogNormalDistribution(m=zeros(dims), S=huge*Diagonal(ones(dims)))
+vague{dims}(::Type{MvLogNormalDistribution{dims}}) = MvLogNormalDistribution(m=zeros(dims), S=huge*diageye(dims))
 
 isProper(dist::MvLogNormalDistribution) = isRoundedPosDef(dist.S)
 

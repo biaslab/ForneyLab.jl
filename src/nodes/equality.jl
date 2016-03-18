@@ -367,7 +367,7 @@ end
 
 function equalityRule!(dist_result::MvGaussianDistribution, ::MvGaussianDistribution, dist_delta::MvDeltaDistribution{Float64})
     dist_result.m = deepcopy(dist_delta.m)
-    dist_result.V = tiny*Diagonal(ones(length(dist_delta.m)))
+    dist_result.V = tiny*diageye(length(dist_delta.m))
     invalidate!(dist_result.xi)
     invalidate!(dist_result.W)
 

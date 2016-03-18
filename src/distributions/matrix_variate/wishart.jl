@@ -16,7 +16,7 @@ Parameters:
 Construction:
 
     WishartDistribution(V=eye(3), nu=3.0)
-    WishartDistribution(V=Diagonal(ones(3)), nu=3.0)
+    WishartDistribution(V=diageye(3), nu=3.0)
 
 Reference:
 
@@ -37,7 +37,7 @@ function vague!{dims}(dist::WishartDistribution{dims})
     return dist
 end
 
-vague{dims}(::Type{WishartDistribution{dims}}) = WishartDistribution(V=huge*Diagonal(ones(dims)), nu=tiny)
+vague{dims}(::Type{WishartDistribution{dims}}) = WishartDistribution(V=huge*diageye(dims), nu=tiny)
 
 format(dist::WishartDistribution) = "W(V=$(format(dist.V)), ν=$(format(dist.nu)))"
 

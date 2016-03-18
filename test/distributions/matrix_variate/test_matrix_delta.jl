@@ -9,7 +9,7 @@ facts("MatrixDeltaDistribution unit tests") do
         @fact MatrixDeltaDistribution([2.0].').M --> [2.0].'
         @fact typeof(MatrixDeltaDistribution(eye(2))) --> MatrixDeltaDistribution{Float64, 2, 2}
         @fact MatrixDeltaDistribution(eye(2)).M --> eye(2)
-        @fact MatrixDeltaDistribution(Diagonal(ones(2))).M --> Diagonal(ones(2))
+        @fact MatrixDeltaDistribution(diageye(2)).M --> diageye(2)
         @fact typeof(MatrixDeltaDistribution()) --> MatrixDeltaDistribution{Float64, 1, 1}
     end
 
