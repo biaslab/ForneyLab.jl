@@ -97,4 +97,52 @@ facts("ExpectationPropagation algorithm integration tests") do
         sumProductRule!(n(:sig1), Val{2}, predictive, n(:equ1).interfaces[2].message, nothing)
         @fact predictive.p --> roughly(mean(samples), atol=0.1)
     end
+
+
+    ###############
+    # EP in a graph with wraps
+    ###############
+    FactorGraph()
+    EqualityNode(id=:eq)
+    SigmoidNode(id=:sig)
+    TerminalNode(DeltaDistribution(false), id=:Y)
+    PriorNode(GaussianDistribution(m=-0.5, V=0.1), id=:X0)
+    TerminalNode(vague(GaussianDistribution), id=:XN)
+    Y_dists = ProbabilityDistribution[samples[section] for section in 1:NUM_SECTIONS]
+    Y_buffer = attachReadBuffer(n(:Y), deepcopy(Y_dists))
+    # Connect
+    Edge(n(:X0),n(:eq).i[1])
+    Edge(n(:eq).i[2], n(:sig).i[:real], id=:X)
+    Edge(n(:eq).i[3], n(:XN))
+    Edge(n(:sig).i[:bin], n(:Y))
+    Wrap(n(:XN),n(:X0), block_size=NUM_SECTIONS)
+
+    sites = Vector{Tuple{Interface, DataType}}()
+    push!(sites, (n(:sig).i[:real], GaussianDistribution))
+
+    context("Throws an error when the wrap is not implemented correct") do
+            algo = ExpectationPropagation(currentGraph(), sites; n_iterations=1)
+    end
+
+    sitelist = [site for (site, distribution) in sites]
+    context("ExpectationPropagation construction with wraps") do
+        @fact algo.n_iterations --> 1
+        @fact typeof(algo.iterative_schedule) --> Schedule
+        @fact length(algo.iterative_schedule) --> 5
+        for entry in algo.iterative_schedule
+            if entry.node.interfaces[entry.outbound_interface_id] in sitelist
+                @fact is(entry.rule, expectationRule!) --> true
+            else
+                @fact is(entry.rule, sumProductRule!) --> true
+            end
+        end
+        @fact typeof(algo.post_convergence_schedule) --> Schedule
+        @fact length(algo.post_convergence_schedule) --> 2
+        for entry in algo.post_convergence_schedule
+            @fact is(entry.rule, sumProductRule!) --> true
+        end
+    end
+
+
+
 end

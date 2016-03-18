@@ -135,6 +135,36 @@ function inferOutboundType!(entry::ScheduleEntry)
     end
 end
 
+function interfacesFacingWrapsOrBuffers(graph::FactorGraph=currentGraph();
+                                        include_wraps=true,
+                                        include_buffers=true)
+    # Return a list of interfaces in graph that face a wrap or writebuffer.
+    interfaces = Interface[]
+
+    # Collect wrap facing interfaces
+    if include_wraps
+        for wrap in wraps(graph)
+            push!(interfaces, wrap.tail.interfaces[1].partner)
+            if isdefined(graph, :block_size)
+                push!(interfaces, wrap.head.interfaces[1].partner)
+            end
+        end
+    end
+
+    # Collect write buffer facing interfaces
+    if include_buffers
+        for entry in keys(graph.write_buffers)
+            if typeof(entry) == Interface
+                push!(interfaces, entry)
+            elseif typeof(entry) == Edge
+                push!(interfaces, entry.head)
+                push!(interfaces, entry.tail)
+            end
+        end
+    end
+
+    return interfaces
+end
 
 #######################################################
 # Shared methods for algorithm preparation/compilation

@@ -49,21 +49,7 @@ function ExpectationPropagation(
             sites::Vector{Tuple{Interface, DataType}};
             kwargs...)
 
-    # Build outbound_interfaces based on write buffers and wraps
-    outbound_interfaces = Interface[]
-    for wrap in wraps(graph)
-        push!(outbound_interfaces, wrap.tail.interfaces[1].partner)
-    end
-    for entry in keys(graph.write_buffers)
-        if typeof(entry) == Interface
-            push!(outbound_interfaces, entry)
-        elseif typeof(entry) == Edge
-            push!(outbound_interfaces, entry.head)
-            push!(outbound_interfaces, entry.tail)
-        end
-    end
-
-    ExpectationPropagation(outbound_interfaces, sites; kwargs...)
+    ExpectationPropagation(interfacesFacingWrapsOrBuffers(graph), sites; kwargs...)
 end
 
 function ExpectationPropagation(
