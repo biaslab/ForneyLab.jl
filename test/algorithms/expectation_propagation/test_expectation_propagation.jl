@@ -100,7 +100,7 @@ facts("ExpectationPropagation algorithm integration tests") do
 
 
     ###############
-    # Test for the EP algorithm using wraps
+    # EP in a graph with wraps
     ###############
     FactorGraph()
     EqualityNode(id=:eq)
@@ -115,7 +115,7 @@ facts("ExpectationPropagation algorithm integration tests") do
     Edge(n(:eq).i[2], n(:sig).i[:real], id=:X)
     Edge(n(:eq).i[3], n(:XN))
     Edge(n(:sig).i[:bin], n(:Y))
-    Wrap(n(:XN),n(:X0))
+    Wrap(n(:XN),n(:X0), block_size=NUM_SECTIONS)
 
     sites = Vector{Tuple{Interface, DataType}}()
     push!(sites, (n(:sig).i[:real], GaussianDistribution))
@@ -128,6 +128,7 @@ facts("ExpectationPropagation algorithm integration tests") do
     context("ExpectationPropagation construction with wraps") do
         @fact algo.n_iterations --> 1
         @fact typeof(algo.iterative_schedule) --> Schedule
+        @fact length(algo.iterative_schedule) --> 5
         for entry in algo.iterative_schedule
             if entry.node.interfaces[entry.outbound_interface_id] in sitelist
                 @fact is(entry.rule, expectationRule!) --> true
@@ -136,12 +137,12 @@ facts("ExpectationPropagation algorithm integration tests") do
             end
         end
         @fact typeof(algo.post_convergence_schedule) --> Schedule
-        @fact length(algo.post_convergence_schedule) --> 1
+        @fact length(algo.post_convergence_schedule) --> 2
         for entry in algo.post_convergence_schedule
             @fact is(entry.rule, sumProductRule!) --> true
         end
     end
-    
+
 
 
 end

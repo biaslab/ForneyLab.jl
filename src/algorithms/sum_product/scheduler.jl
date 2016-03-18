@@ -20,27 +20,4 @@ end
 
 generateSumProductSchedule(partial_list::Array{Interface, 1}; args...) = generateSumProductSchedule(convert(Schedule, partial_list, sumProductRule!); args...)
 
-function generateSumProductSchedule(graph::FactorGraph=currentGraph(); args...)
-    # Build a sumproduct schedule to calculate all messages towards wraps and writebuffers
-    partial_list = Interface[]
-
-    # Collect wrap interfaces
-    for wrap in wraps(graph)
-        push!(partial_list, wrap.tail.interfaces[1].partner)
-        if isdefined(graph, :block_size)
-            push!(partial_list, wrap.head.interfaces[1].partner)
-        end
-    end
-
-    # Collect write buffer interfaces
-    for entry in keys(graph.write_buffers)
-        if typeof(entry) == Interface
-            push!(partial_list, entry)
-        elseif typeof(entry) == Edge
-            push!(partial_list, entry.head)
-            push!(partial_list, entry.tail)
-        end
-    end
-
-    return generateSumProductSchedule(partial_list; args...)
-end
+generateSumProductSchedule(graph::FactorGraph=currentGraph(); args...) = generateSumProductSchedule(interfacesFacingWrapsOrBuffers(graph); args...)
