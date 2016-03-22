@@ -53,7 +53,7 @@ end
 
 function Base.var(dist::WishartDistribution)
     d = size(dist.V, 1)
-    M = fill!(similar(dist.V), NaN)
+    M = fill!(similar(Matrix(dist.V)), NaN)
     if isProper(dist)
         for i = 1:d
             for j = 1:d

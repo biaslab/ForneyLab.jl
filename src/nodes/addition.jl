@@ -339,16 +339,16 @@ end
 # Rule set for forward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
 forwardAdditionMRule{T<:Number}(m_x::Vector{T}, m_y::Vector{T}) = m_x + m_y
 forwardAdditionVRule{T<:Number}(V_x::AbstractMatrix{T}, V_y::AbstractMatrix{T}) = V_x + V_y
-forwardAdditionWRule{T<:Number}(W_x::AbstractMatrix{T}, W_y::AbstractMatrix{T}) = W_x * pinv(W_x + W_y) * W_y
-forwardAdditionXiRule{T<:Number}(V_x::AbstractMatrix{T}, xi_x::Vector{T}, V_y::AbstractMatrix{T}, xi_y::Vector{T}) = pinv(V_x + V_y) * (V_x*xi_x + V_y*xi_y)
+forwardAdditionWRule{T<:Number}(W_x::AbstractMatrix{T}, W_y::AbstractMatrix{T}) = W_x * cholinv(W_x + W_y) * W_y
+forwardAdditionXiRule{T<:Number}(V_x::AbstractMatrix{T}, xi_x::Vector{T}, V_y::AbstractMatrix{T}, xi_y::Vector{T}) = cholinv(V_x + V_y) * (V_x*xi_x + V_y*xi_y)
 
 # Rule set for backward propagation, from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
 # The backward propagation merely negates the mean of the present input message (edge X) and uses the same rules to determine the missing input (edge Y)
 # For the sake of clarity there is some redundancy between forward and backward rules.
 backwardAdditionMRule{T<:Number}(m_x::Vector{T}, m_z::Vector{T}) = m_z - m_x
 backwardAdditionVRule{T<:Number}(V_x::AbstractMatrix{T}, V_z::AbstractMatrix{T}) = V_x + V_z
-backwardAdditionWRule{T<:Number}(W_x::AbstractMatrix{T}, W_z::AbstractMatrix{T}) = W_x * pinv(W_x + W_z) * W_z
-backwardAdditionXiRule{T<:Number}(V_x::AbstractMatrix{T}, xi_x::Vector{T}, V_z::AbstractMatrix{T}, xi_z::Vector{T}) = pinv(V_x + V_z) * (V_z*xi_z - V_x*xi_x)
+backwardAdditionWRule{T<:Number}(W_x::AbstractMatrix{T}, W_z::AbstractMatrix{T}) = W_x * cholinv(W_x + W_z) * W_z
+backwardAdditionXiRule{T<:Number}(V_x::AbstractMatrix{T}, xi_x::Vector{T}, V_z::AbstractMatrix{T}, xi_z::Vector{T}) = cholinv(V_x + V_z) * (V_z*xi_z - V_x*xi_x)
 
 
 #############################################
