@@ -82,6 +82,52 @@ function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::N
     return outbound_types
 end
 
+function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::Union{GainNode, GainAdditionNode, GainEqualityNode})
+    # Outbound type collection overloading for nodes with an (optional) fixed gain
+
+    outbound_types = DataType[]
+
+    for method in methods(rule, call_signature)
+
+        ob_type = extractOutboundType(method.sig.types[3]) # Third entry is always the outbound distribution
+
+        if !isempty(parameters(ob_type)) # Outbound type has parameters that need to be inferred
+            params_dict = extractParameters(method.sig.types, call_signature) # Extract parameters and values of inbound types
+            outbound_params = parameters(ob_type) # Extract parameters of outbound type
+
+            # Construct new outbound type definition with substituted values
+            param_values = Any[]
+            for param in outbound_params
+                if haskey(params_dict, param)
+                    push!(param_values, params_dict[param])
+                else # The outbound param is not available in the inbound parameter dictionary; we need to infer it from the fixed gain matrix
+                    if param.name == :dims_n
+                        push!(param_values, size(node.gain, 1))
+                    elseif param.name == :dims_m
+                        push!(param_values, size(node.gain, 2))
+                    else
+                        error("For the gain node with fixed gain, the dimensionalities in the calling signature need to be encoded as {dims_n, dims_m}")
+                    end
+                end
+            end
+
+            ob_type = eval(parse("$(ob_type.name){" * join(param_values, ", ") * "}")) # Construct the type definition of the substituted outbound type
+        end
+
+        # Is the method an approximate msg calculation rule?
+        if (typeof(method.sig.types[end])==DataType
+            && length(method.sig.types[end].parameters)==1
+            && method.sig.types[end].parameters[1]<:ApproximationType)
+
+            ob_type = Approximation{ob_type,method.sig.types[end].parameters[1]}
+        end
+
+        push!(outbound_types, ob_type)
+    end
+
+    return outbound_types
+end
+
 function inferOutboundType!(entry::ScheduleEntry)
     # Infer the outbound type from the node type and the types of the inbounds
 

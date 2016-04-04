@@ -59,14 +59,14 @@ type GaussianNode{mean_type,uncertainty_type} <: Node
     i::Dict{Symbol,Interface}
     # Fixed parameters
     m::Vector{Float64}
-    V::Matrix{Float64}
+    V::AbstractMatrix{Float64}
 
     function GaussianNode(id::Symbol, interfaces::Array{Interface,1}, i::Dict{Symbol,Interface})
         new(id, interfaces, i)
     end
 end
 
-function GaussianNode(; id=generateNodeId(GaussianNode), form::Symbol=:variance, m::Union{Float64,Vector{Float64}}=[NaN], V::Union{Float64,Matrix{Float64}}=reshape([NaN],1,1))
+function GaussianNode(; id=generateNodeId(GaussianNode), form::Symbol=:variance, m::Union{Float64,Vector{Float64}}=[NaN], V::Union{Float64, AbstractMatrix{Float64}}=reshape([NaN],1,1))
     mean_type = isValid(m) ? :fixed_mean : :mean
     if form == :variance
         uncertainty_type = isValid(V) ? :fixed_variance : :variance
@@ -120,12 +120,12 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
                             msg_mean::Any,
-                            msg_var_prec::Message{DeltaDistribution{Float64}},
+                            msg_var::Message{DeltaDistribution{Float64}},
                             msg_out::Message{DeltaDistribution{Float64}})
 
     outbound_dist.m = msg_out.payload.m
     outbound_dist.xi = NaN
-    outbound_dist.V = msg_var_prec.payload.m
+    outbound_dist.V = msg_var.payload.m
     outbound_dist.W = NaN
 
     return outbound_dist
@@ -135,13 +135,13 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::GaussianDistribution,
                             msg_mean::Any,
-                            msg_var_prec::Message{DeltaDistribution{Float64}},
+                            msg_prec::Message{DeltaDistribution{Float64}},
                             msg_out::Message{DeltaDistribution{Float64}})
 
     outbound_dist.m = msg_out.payload.m
     outbound_dist.xi = NaN
     outbound_dist.V = NaN
-    outbound_dist.W = msg_var_prec.payload.m
+    outbound_dist.W = msg_prec.payload.m
 
     return outbound_dist
 end
@@ -210,12 +210,12 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{3}},
                             outbound_dist::GaussianDistribution,
                             msg_mean::Message{DeltaDistribution{Float64}},
-                            msg_var_prec::Message{DeltaDistribution{Float64}},
+                            msg_var::Message{DeltaDistribution{Float64}},
                             msg_out::Any)
 
     outbound_dist.m = msg_mean.payload.m
     outbound_dist.xi = NaN
-    outbound_dist.V = msg_var_prec.payload.m
+    outbound_dist.V = msg_var.payload.m
     outbound_dist.W = NaN
 
     return outbound_dist
@@ -225,13 +225,43 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{3}},
                             outbound_dist::GaussianDistribution,
                             msg_mean::Message{DeltaDistribution{Float64}},
-                            msg_var_prec::Message{DeltaDistribution{Float64}},
+                            msg_prec::Message{DeltaDistribution{Float64}},
                             msg_out::Any)
 
     outbound_dist.m = msg_mean.payload.m
     outbound_dist.xi = NaN
     outbound_dist.V = NaN
-    outbound_dist.W = msg_var_prec.payload.m
+    outbound_dist.W = msg_prec.payload.m
+
+    return outbound_dist
+end
+
+function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:variance}},
+                                outbound_interface_index::Type{Val{3}},
+                                outbound_dist::MvGaussianDistribution{dims},
+                                msg_mean::Message{MvDeltaDistribution{Float64, dims}},
+                                msg_var::Message{MatrixDeltaDistribution{Float64, dims, dims}},
+                                msg_out::Any)
+
+    outbound_dist.m = deepcopy(msg_mean.payload.m)
+    invalidate!(outbound_dist.xi)
+    outbound_dist.V = deepcopy(msg_var.payload.M)
+    invalidate!(outbound_dist.W)
+
+    return outbound_dist
+end
+
+function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:precision}},
+                                outbound_interface_index::Type{Val{3}},
+                                outbound_dist::MvGaussianDistribution{dims},
+                                msg_mean::Message{MvDeltaDistribution{Float64, dims}},
+                                msg_prec::Message{MatrixDeltaDistribution{Float64, dims, dims}},
+                                msg_out::Any)
+
+    outbound_dist.m = deepcopy(msg_mean.payload.m)
+    invalidate!(outbound_dist.xi)
+    invalidate!(outbound_dist.V)
+    outbound_dist.W = deepcopy(msg_prec.payload.M)
 
     return outbound_dist
 end
@@ -376,8 +406,8 @@ function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_varianc
                                 msg_mean::Any,
                                 msg_out::Message{MvDeltaDistribution{Float64,dims}})
 
-    outbound_dist.m[:] = msg_out.payload.m
-    outbound_dist.V[:] = node.V
+    outbound_dist.m = deepcopy(msg_out.payload.m)
+    outbound_dist.V = deepcopy(node.V)
     invalidate!(outbound_dist.xi)
     invalidate!(outbound_dist.W)
 
@@ -413,8 +443,8 @@ function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_varianc
                                 msg_out::Message{MvGaussianDistribution{dims}})
 
     ensureParameters!(msg_out.payload, (:m,:V))
-    outbound_dist.m[:] = msg_out.payload.m
-    outbound_dist.V[:] = msg_out.payload.V + node.V
+    outbound_dist.m = deepcopy(msg_out.payload.m)
+    outbound_dist.V = msg_out.payload.V + node.V
     invalidate!(outbound_dist.xi)
     invalidate!(outbound_dist.W)
 
@@ -448,8 +478,8 @@ function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_varianc
                                 msg_mean::Message{MvDeltaDistribution{Float64,dims}},
                                 msg_out::Any)
 
-    outbound_dist.m[:] = msg_mean.payload.m
-    outbound_dist.V[:] = node.V
+    outbound_dist.m = deepcopy(msg_mean.payload.m)
+    outbound_dist.V = deepcopy(node.V)
     invalidate!(outbound_dist.xi)
     invalidate!(outbound_dist.W)
 
@@ -485,8 +515,8 @@ function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_varianc
                                 msg_out::Any)
 
     ensureParameters!(msg_mean.payload, (:m,:V))
-    outbound_dist.m[:] = msg_mean.payload.m
-    outbound_dist.V[:] = msg_mean.payload.V + node.V
+    outbound_dist.m = deepcopy(msg_mean.payload.m)
+    outbound_dist.V = msg_mean.payload.V + node.V
     invalidate!(outbound_dist.xi)
     invalidate!(outbound_dist.W)
 
@@ -638,7 +668,7 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
     ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(marg_mean, (:m, :V))
     outbound_dist.nu = 2.0 + dimensions(marg_mean)
-    outbound_dist.V = inv(cholfact( marg_out.V + marg_mean.V + (marg_out.m - marg_mean.m)*(marg_out.m - marg_mean.m)' ))
+    outbound_dist.V = cholinv( marg_out.V + marg_mean.V + (marg_out.m - marg_mean.m)*(marg_out.m - marg_mean.m)' )
 
     return outbound_dist
 end

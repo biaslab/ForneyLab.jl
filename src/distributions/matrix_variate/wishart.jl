@@ -16,17 +16,18 @@ Parameters:
 Construction:
 
     WishartDistribution(V=eye(3), nu=3.0)
+    WishartDistribution(V=diageye(3), nu=3.0)
 
 Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type WishartDistribution{dims} <: MultivariateProbabilityDistribution
-    V::Matrix{Float64}  # Scale matrix
-    nu::Float64         # Degrees of freedom
+type WishartDistribution{dims} <: MatrixVariateProbabilityDistribution
+    V::AbstractMatrix{Float64}  # Scale matrix
+    nu::Float64                 # Degrees of freedom
 end
 
-WishartDistribution(; V::Matrix{Float64} = [1.0].', nu::Float64 = 1.0) = WishartDistribution{size(V, 1)}(deepcopy(V), nu)
+WishartDistribution(; V::AbstractMatrix{Float64} = [1.0].', nu::Float64 = 1.0) = WishartDistribution{size(V, 1)}(deepcopy(V), nu)
 
 WishartDistribution() = WishartDistribution(V = [1.0].', nu = 1.0)
 
@@ -36,7 +37,7 @@ function vague!{dims}(dist::WishartDistribution{dims})
     return dist
 end
 
-vague{dims}(::Type{WishartDistribution{dims}}) = WishartDistribution(V=huge*eye(dims), nu=tiny)
+vague{dims}(::Type{WishartDistribution{dims}}) = WishartDistribution(V=huge*diageye(dims), nu=tiny)
 
 format(dist::WishartDistribution) = "W(V=$(format(dist.V)), ν=$(format(dist.nu)))"
 
@@ -52,7 +53,7 @@ end
 
 function Base.var(dist::WishartDistribution)
     d = size(dist.V, 1)
-    M = fill!(similar(dist.V), NaN)
+    M = fill!(similar(Matrix(dist.V)), NaN)
     if isProper(dist)
         for i = 1:d
             for j = 1:d

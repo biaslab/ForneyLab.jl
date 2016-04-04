@@ -28,22 +28,22 @@ Construction:
     GainAdditionNode([1.0], id=:my_node)
 """
 type GainAdditionNode <: Node
-    A::Array{Float64}
+    gain::AbstractMatrix{Float64}
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
-    A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
+    gain_inv::AbstractMatrix{Float64} # holds pre-computed inv(gain) if possible
 
-    function GainAdditionNode(A::Union{Array{Float64},Float64}=1.0; id=generateNodeId(GainAdditionNode))
-        self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
+    function GainAdditionNode(gain::Union{AbstractArray{Float64}, Float64}=1.0; id=generateNodeId(GainAdditionNode))
+        self = new(ensureMatrix(deepcopy(gain)), id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
 
         for (iface_index, iface_handle) in enumerate([:in1, :in2, :out])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
-        # Precompute inverse of A
-        try self.A_inv = inv(self.A) end
+        # Precompute inverse of gain
+        self.gain_inv = pinv(self.gain)
 
         return self
     end
@@ -80,8 +80,8 @@ function sumProductRule!(   node::GainAdditionNode,
     dist_1 = ensureParameters!(msg_in1.payload, (:m, :V))
     dist_2 = ensureParameters!(msg_in2.payload, (:m, :V))
 
-    outbound_dist.m = dist_2.m + node.A[1,1]*dist_1.m
-    outbound_dist.V = dist_2.V + node.A[1,1]^2 * dist_1.V
+    outbound_dist.m = dist_2.m + node.gain[1,1]*dist_1.m
+    outbound_dist.V = dist_2.V + node.gain[1,1]^2 * dist_1.V
     outbound_dist.xi = NaN
     outbound_dist.W = NaN
 
@@ -112,8 +112,8 @@ function sumProductRule!(   node::GainAdditionNode,
     dist_1 = ensureParameters!(msg_in1.payload, (:m, :V))
     dist_3 = ensureParameters!(msg_out.payload, (:m, :V))
 
-    outbound_dist.m  = dist_3.m - node.A[1,1]*dist_1.m
-    outbound_dist.V  = dist_3.V + node.A[1,1]^2 * dist_1.V
+    outbound_dist.m  = dist_3.m - node.gain[1,1]*dist_1.m
+    outbound_dist.V  = dist_3.V + node.gain[1,1]^2 * dist_1.V
     outbound_dist.xi = NaN
     outbound_dist.W = NaN
 
@@ -150,8 +150,8 @@ function sumProductRule!(   node::GainAdditionNode,
 
     outbound_dist.m = NaN
     outbound_dist.V = NaN
-    outbound_dist.xi = node.A[1,1] * dist_temp.xi
-    outbound_dist.W = (node.A[1,1])^2 * dist_temp.W
+    outbound_dist.xi = node.gain[1,1] * dist_temp.xi
+    outbound_dist.W = (node.gain[1,1])^2 * dist_temp.W
 
     return outbound_dist
 end
@@ -161,36 +161,36 @@ end
 # MvGaussianDistribution methods
 ############################################
 
-function sumProductRule!{T<:MvGaussianDistribution}(node::GainAdditionNode,
-                                                    outbound_interface_index::Type{Val{3}},
-                                                    outbound_dist::T,
-                                                    msg_in1::Message{T},
-                                                    msg_in2::Message{T},
-                                                    msg_out::Any)
+function sumProductRule!{dims_n, dims_m}(   node::GainAdditionNode,
+                                            outbound_interface_index::Type{Val{3}},
+                                            outbound_dist::MvGaussianDistribution{dims_n},
+                                            msg_in1::Message{MvGaussianDistribution{dims_m}},
+                                            msg_in2::Message{MvGaussianDistribution{dims_n}},
+                                            msg_out::Any)
 
-    return gainAdditionForwardRule!(outbound_dist, msg_in1.payload, msg_in2.payload, node.A)
+    return gainAdditionForwardRule!(outbound_dist, msg_in1.payload, msg_in2.payload, node.gain)
 end
 
-function sumProductRule!{T<:MvGaussianDistribution}(node::GainAdditionNode,
-                                                    outbound_interface_index::Type{Val{2}},
-                                                    outbound_dist::T,
-                                                    msg_in1::Message{T},
-                                                    msg_in2::Any,
-                                                    msg_out::Message{T})
+function sumProductRule!{dims_n, dims_m}(   node::GainAdditionNode,
+                                            outbound_interface_index::Type{Val{2}},
+                                            outbound_dist::MvGaussianDistribution{dims_n},
+                                            msg_in1::Message{MvGaussianDistribution{dims_m}},
+                                            msg_in2::Any,
+                                            msg_out::Message{MvGaussianDistribution{dims_n}})
 
-    return gainAdditionBackwardIn2Rule!(outbound_dist, msg_in1.payload, msg_out.payload, node.A)
+    return gainAdditionBackwardIn2Rule!(outbound_dist, msg_in1.payload, msg_out.payload, node.gain)
 end
 
-function sumProductRule!{T<:MvGaussianDistribution}(node::GainAdditionNode,
-                                                    outbound_interface_index::Type{Val{1}},
-                                                    outbound_dist::T,
-                                                    msg_in1::Any,
-                                                    msg_in2::Message{T},
-                                                    msg_out::Message{T})
+function sumProductRule!{dims_n, dims_m}(   node::GainAdditionNode,
+                                            outbound_interface_index::Type{Val{1}},
+                                            outbound_dist::MvGaussianDistribution{dims_m},
+                                            msg_in1::Any,
+                                            msg_in2::Message{MvGaussianDistribution{dims_n}},
+                                            msg_out::Message{MvGaussianDistribution{dims_n}})
 
-    dist_temp = vague(MvGaussianDistribution{size(node.A, 1)})
+    dist_temp = vague(MvGaussianDistribution{size(node.gain, 1)})
     backwardAdditionRule!(dist_temp, msg_in2.payload, msg_out.payload)
-    return gainBackwardRule!(outbound_dist, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
+    return gainBackwardRule!(outbound_dist, dist_temp, node.gain, (isdefined(node, :gain_inv)) ? node.gain_inv : nothing)
 end
 
 function gainAdditionForwardRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDistribution, dist_2::MvGaussianDistribution, A::Any)
@@ -293,14 +293,14 @@ end
 
 # Rule set for forward propagation ({in1,in2}-->out)
 # From: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-forwardGainAdditionMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, m_y::Array{T, 1}) = m_x + A*m_y
-forwardGainAdditionVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x + A*V_y*A'
-forwardGainAdditionWRule{T<:Number}(A::Array{T, 2}, W_x::Array{T, 2}, W_y::Array{T, 2}) = W_x - W_x * A * inv(W_y+A'*W_x*A) * A' * W_x
-forwardGainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}, W_x::Array{T, 2}, W_y::Array{T, 2}) = xi_x + W_x*A*inv(W_y+A'*W_x*A)*(xi_y-A'*xi_x)
+forwardGainAdditionMRule{T<:Number}(A::AbstractMatrix{T}, m_x::Vector{T}, m_y::Vector{T}) = m_x + A*m_y
+forwardGainAdditionVRule{T<:Number}(A::AbstractMatrix{T}, V_x::AbstractMatrix{T}, V_y::AbstractMatrix{T}) = V_x + A*V_y*A'
+forwardGainAdditionWRule{T<:Number}(A::AbstractMatrix{T}, W_x::AbstractMatrix{T}, W_y::AbstractMatrix{T}) = W_x - W_x * A * cholinv(W_y+A'*W_x*A) * A' * W_x
+forwardGainAdditionXiRule{T<:Number}(A::AbstractMatrix{T}, xi_x::Vector{T}, xi_y::Vector{T}, W_x::AbstractMatrix{T}, W_y::AbstractMatrix{T}) = xi_x + W_x*A*cholinv(W_y+A'*W_x*A)*(xi_y-A'*xi_x)
 
 # Rule set for backward propagation ({in1,out}-->in2)
 # From: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-backwardIn2GainAdditionMRule{T<:Number}(A::Array{T, 2}, m_y::Array{T, 1}, m_z::Array{T, 1}) = m_z - A*m_y
-backwardIn2GainAdditionVRule{T<:Number}(A::Array{T, 2}, V_y::Array{T, 2}, V_z::Array{T, 2}) = V_z + A*V_y*A'
-backwardIn2GainAdditionWRule{T<:Number}(A::Array{T, 2}, W_y::Array{T, 2}, W_z::Array{T, 2}) = W_z - W_z * A * inv(W_y+A'*W_z*A) * A' * W_z
-backwardIn2GainAdditionXiRule{T<:Number}(A::Array{T, 2}, xi_y::Array{T, 1}, xi_z::Array{T, 1}, W_y::Array{T, 2}, W_z::Array{T, 2}) = xi_z - W_z*A*inv(W_y+A'*W_z*A)*(xi_y+A'*xi_z)
+backwardIn2GainAdditionMRule{T<:Number}(A::AbstractMatrix{T}, m_y::Vector{T}, m_z::Vector{T}) = m_z - A*m_y
+backwardIn2GainAdditionVRule{T<:Number}(A::AbstractMatrix{T}, V_y::AbstractMatrix{T}, V_z::AbstractMatrix{T}) = V_z + A*V_y*A'
+backwardIn2GainAdditionWRule{T<:Number}(A::AbstractMatrix{T}, W_y::AbstractMatrix{T}, W_z::AbstractMatrix{T}) = W_z - W_z * A * cholinv(W_y+A'*W_z*A) * A' * W_z
+backwardIn2GainAdditionXiRule{T<:Number}(A::AbstractMatrix{T}, xi_y::Vector{T}, xi_z::Vector{T}, W_y::AbstractMatrix{T}, W_z::AbstractMatrix{T}) = xi_z - W_z*A*cholinv(W_y+A'*W_z*A)*(xi_y+A'*xi_z)

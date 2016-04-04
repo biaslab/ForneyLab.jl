@@ -4,6 +4,7 @@
 
 facts("Interface unit tests") do
     # Test setMessage!, clearMessage!, message, ensureMessage!, handle
+    FactorGraph()
     n = MockNode()
     @fact_throws deepcopy(n.i[:out])
     @fact setMessage!(n.i[:out], Message(GaussianDistribution(m=3.0, V=2.0))) --> Message(GaussianDistribution(m=3.0, V=2.0))
