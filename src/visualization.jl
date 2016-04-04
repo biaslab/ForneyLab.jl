@@ -1,5 +1,5 @@
 # Functions for visualizing graphs
-export draw, drawPdf
+export draw, drawPdf, drawPng
 
 ####################################################
 # draw methods
@@ -26,6 +26,14 @@ end
 draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph), edges(factor_graph), wraps=wraps(factor_graph)); args...)
 draw(; args...) = draw(currentGraph(); args...)
 # draw(composite_node::CompositeNode; args...) = draw(composite_node.internal_graph; args...)
+
+function drawPng(factor_graph::FactorGraph, filename::AbstractString)
+    dot_graph = genDot(nodes(factor_graph), edges(factor_graph), wraps=wraps(factor_graph))
+    png_graph = dot2png(dot_graph)
+    png_file = open(filename, "w")
+    write(png_file, png_graph)
+end
+drawPng(filename::AbstractString) = drawPng(currentGraph(), filename)
 
 draw(nodes::Set{Node}; args...) = graphviz(genDot(nodes, edges(nodes)); args...)
 draw(nodes::Vector{Node}; args...) = draw(Set(nodes); args...)
@@ -110,7 +118,7 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
     if !isempty(wraps)
         # Add edges to visualize time wraps
         for wrap in wraps
-            dot *= "\t$(object_id(wrap.source)) -> $(object_id(wrap.sink)) [style=\"dotted\" color=\"green\"]\n"
+            dot *= "\t$(object_id(wrap.tail)) -> $(object_id(wrap.head)) [style=\"dotted\" color=\"green\"]\n"
         end
     end
 

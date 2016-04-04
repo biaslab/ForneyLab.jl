@@ -34,15 +34,6 @@ function extractParameters(method_signature::SimpleVector, call_signature::Vecto
     return params_dict
 end
 
-function paramify(arr::Vector{Any})
-    # Converts arr to a nice string for parameterized type construction
-    str = ""
-    for param in arr
-        str *= "$(param), "
-    end
-    return str[1:end-2] # Chop off last comma
-end
-
 function extractOutboundType(outbound_arg)
     # Acceps the update rule argument of the outbound and returns a DataType with the parameterized outbound distribution type
     if typeof(outbound_arg) == TypeVar
@@ -54,35 +45,38 @@ function extractOutboundType(outbound_arg)
     end
 end
 
+
 function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::Node)
-    # Find the available methods for the update function 'rule' that satisfy 'call_signature' and push the result to 'outbound_types'
-    # Note the node::Node argument, so for specific node types this function may be overloaded
+    # Collect all outbound distribution types that can be generated with the specified rule and calling_signature combination
+    # Note the node argument: this function can be overloaded for specific nodes
+    # Returns: outbound_types::Vector{DataType}
+    # The entries of outbound_types can be <: ProbabilityDistribution or Approximation
 
     outbound_types = DataType[]
 
-    available_methods = methods(rule, call_signature)
-    for method in available_methods
-
-        method_signature = method.sig.types
-        outbound_type = extractOutboundType(method_signature[3]) # Third entry is always the outbound distribution
+    for method in methods(rule, call_signature)
+        ob_type = extractOutboundType(method.sig.types[3]) # Third entry is always the outbound distribution
 
         if typeof(node) <: TerminalNode
-            push!(outbound_types, typeof(node.value))
-        elseif isempty(parameters(outbound_type)) # Are there no type variables defined for the outbound type?
-            push!(outbound_types, outbound_type) # Simply push the found outbound type on the stack
-        else  # Outbound type has parameters that need to be inferred
-            params_dict = extractParameters(method_signature, call_signature) # Extract parameters and values of inbound types
-            outbound_params = parameters(outbound_type) # Extract parameters of outbound type
+            ob_type = typeof(node.value)
+        elseif !isempty(parameters(ob_type)) # ob_type has parameters that need to be inferred
+            params_dict = extractParameters(method.sig.types, call_signature) # Extract parameters and values of inbound types
+            outbound_params = parameters(ob_type) # Extract parameters of outbound type
 
-            # Construct new outbound type definition with substituted values
-            param_values = Any[]
-            for param in outbound_params
-                push!(param_values, params_dict[param])
-            end
-
-            substituted_outbound_type = eval(parse("$(outbound_type.name){$(paramify(param_values))}")) # Construct the type definition of the substituted outbound type
-            push!(outbound_types, substituted_outbound_type) 
+            # Construct parametrized outbound type with substituted values
+            param_values = [params_dict[param] for param in outbound_params]
+            ob_type = eval(parse("$(ob_type.name){" * join(param_values,", ") * "}")) # Construct the parametrized outbound type
         end
+
+        # Is the method an approximate msg calculation rule?
+        if (typeof(method.sig.types[end])==DataType
+            && length(method.sig.types[end].parameters)==1
+            && method.sig.types[end].parameters[1]<:ApproximationType)
+
+            ob_type = Approximation{ob_type,method.sig.types[end].parameters[1]}
+        end
+
+        push!(outbound_types, ob_type)
     end
 
     return outbound_types
@@ -93,17 +87,13 @@ function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::U
 
     outbound_types = DataType[]
 
-    available_methods = methods(rule, call_signature)
-    for method in available_methods
+    for method in methods(rule, call_signature)
 
-        method_signature = method.sig.types
-        outbound_type = extractOutboundType(method_signature[3]) # Third entry is always the outbound distribution
+        ob_type = extractOutboundType(method.sig.types[3]) # Third entry is always the outbound distribution
 
-        if isempty(parameters(outbound_type)) # Are there no type variables defined for the outbound type?
-            push!(outbound_types, outbound_type) # Simply push the found outbound type on the stack
-        else  # Outbound type has parameters that need to be inferred
-            params_dict = extractParameters(method_signature, call_signature) # Extract parameters and values of inbound types
-            outbound_params = parameters(outbound_type) # Extract parameters of outbound type
+        if !isempty(parameters(ob_type)) # Outbound type has parameters that need to be inferred
+            params_dict = extractParameters(method.sig.types, call_signature) # Extract parameters and values of inbound types
+            outbound_params = parameters(ob_type) # Extract parameters of outbound type
 
             # Construct new outbound type definition with substituted values
             param_values = Any[]
@@ -121,95 +111,123 @@ function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::U
                 end
             end
 
-            substituted_outbound_type = eval(parse("$(outbound_type.name){$(paramify(param_values))}")) # Construct the type definition of the substituted outbound type
-            push!(outbound_types, substituted_outbound_type) 
+            ob_type = eval(parse("$(ob_type.name){" * join(param_values, ", ") * "}")) # Construct the type definition of the substituted outbound type
         end
+
+        # Is the method an approximate msg calculation rule?
+        if (typeof(method.sig.types[end])==DataType
+            && length(method.sig.types[end].parameters)==1
+            && method.sig.types[end].parameters[1]<:ApproximationType)
+
+            ob_type = Approximation{ob_type,method.sig.types[end].parameters[1]}
+        end
+
+        push!(outbound_types, ob_type)
     end
 
     return outbound_types
 end
 
 function inferOutboundType!(entry::ScheduleEntry)
-    # Infers the outbound type from node and all available information on inbounds and post-processing
+    # Infer the outbound type from the node type and the types of the inbounds
+
     inbound_types = entry.inbound_types
-    outbound_interface_id = entry.outbound_interface_id
     node = entry.node
+    exact_call_signature = [typeof(node); Type{Val{entry.outbound_interface_id}}; Any; inbound_types] # Call signature for exact message computation rules
 
-    # Find all outbound types compatible with entry.rule
-    outbound_types = collectAllOutboundTypes(entry.rule, [typeof(node); Type{Val{outbound_interface_id}}; Any; inbound_types], node)
+    if isdefined(entry, :outbound_type)
+        # The outbound type is already fixed, so we just need to validate that there exists a suitable computation rule
 
-    # The outbound outbound_types should contain just one element (there should be just one available update rule)
-    if length(outbound_types) == 0
-        error("No calculation rule available for inbound types $(inbound_types) on node $(node)")
-    elseif length(outbound_types) > 1
-        error("Multiple outbound type possibilities ($(outbound_types)) for inbound types $(inbound_types) on node $(node)")
-    elseif outbound_types[1] <: ProbabilityDistribution
-        # There is only one possible outbound type and it is a probability distribution
-        entry.intermediate_outbound_type = outbound_types[1]
+        # Try to find a matching exact rule
+        outbound_types = collectAllOutboundTypes(entry.rule, exact_call_signature, node)
+        if entry.outbound_type in outbound_types
+            return entry
+        end
+
+        # Try to find a matching approximate rule
+        call_signature = vcat(exact_call_signature, isdefined(entry, :approximation) ? Type{entry.approximation} : Any)
+        outbound_types = collectAllOutboundTypes(entry.rule, call_signature, node)
+        for outbound_type in outbound_types
+            if entry.outbound_type == outbound_type.parameters[1]
+                return entry
+            end
+        end
+
+        error("No suitable calculation rule available for schedule entry:\n$(entry)Inbound types: $(inbound_types)")
     else
-        error("Unknown output of message calculation rule: $(outbound_types[1]) for node $(node)")
-    end
+        # Infer the outbound type
 
-    
-    if isdefined(entry, :post_processing)
-        entry.outbound_type = inferOutboundTypeAfterPostProcessing(entry) # If post-processing is defined, entry.outbound_type might differ from entry.intermediate_outbound_type
-    else
-        entry.outbound_type = entry.intermediate_outbound_type # No post-processing, outbound type remains unaltered
-    end
+        # Try to apply an exact rule
+        outbound_types = collectAllOutboundTypes(entry.rule, exact_call_signature, node)
+        if length(outbound_types) == 1
+            entry.outbound_type = outbound_types[1]
+            return entry
+        elseif length(outbound_types) > 1
+            error("There are multiple outbound type possibilities for schedule entry:\n$(entry)Inbound types: $(inbound_types)\nPlease specify a message type.")
+        end
 
-    return entry
+        # Try to apply an approximate rule
+        call_signature = vcat(exact_call_signature, isdefined(entry, :approximation) ? Type{entry.approximation} : Any)
+        outbound_types = collectAllOutboundTypes(entry.rule, call_signature, node)
+        if length(outbound_types) == 1
+            entry.outbound_type = outbound_types[1].parameters[1]
+            entry.approximation = outbound_types[1].parameters[2]
+            return entry
+        elseif length(outbound_types) > 1
+            error("There are multiple outbound type possibilities for schedule entry:\n$(entry)Inbound types: $(inbound_types)\nPlease specify a message type and if required also an approximation method.")
+        else
+            error("No calculation rule available for schedule entry:\n$(entry)")
+        end
+    end
 end
 
-function inferOutboundTypeAfterPostProcessing(entry::ScheduleEntry)
-    outbound_types = []
-    available_post_processing_rules = methods(entry.post_processing, [Any, entry.intermediate_outbound_type])
+function interfacesFacingWrapsOrBuffers(graph::FactorGraph=currentGraph();
+                                        include_wraps=true,
+                                        include_buffers=true)
+    # Return a list of interfaces in graph that face a wrap or writebuffer.
+    interfaces = Interface[]
 
-    length(available_post_processing_rules) > 0 || error("No post processing available as $(entry.post_processing) on $(entry.intermediate_outbound_type). Please make sure all post-processing functions fit the signature: function{T}(::Type{T<:ProbabilityDistribution}, d::ProbabilityDistribution)")
-
-    for post_processing_rule in available_post_processing_rules
-        outbound_type = post_processing_rule.sig.types[1].parameters[1]
-        (outbound_type <: ProbabilityDistribution) || continue # Skip when result is not a distribution
-        push!(outbound_types, outbound_type) # Push the found outbound type (first entry) on the stack
+    # Collect wrap facing interfaces
+    if include_wraps
+        for wrap in wraps(graph)
+            push!(interfaces, wrap.tail.interfaces[1].partner)
+            if isdefined(graph, :block_size)
+                push!(interfaces, wrap.head.interfaces[1].partner)
+            end
+        end
     end
 
-    length(outbound_types) <= 1 || error("Multiple post processing possibilities for $(entry.post_processing): ($(outbound_types)).")
+    # Collect write buffer facing interfaces
+    if include_buffers
+        for entry in keys(graph.write_buffers)
+            if typeof(entry) == Interface
+                push!(interfaces, entry)
+            elseif typeof(entry) == Edge
+                push!(interfaces, entry.head)
+                push!(interfaces, entry.tail)
+            end
+        end
+    end
 
-    return outbound_types[1]
+    return interfaces
 end
-
 
 #######################################################
 # Shared methods for algorithm preparation/compilation
 #######################################################
 
 function buildExecute!(entry::ScheduleEntry, inbound_arguments::Vector)
-    # Constructs the execute function with optional post processing folded in
-    # Additionally, this function completes the rule arguments for the update function call with the pointer to the outbound distribution
+    # Construct the entry.execute function.
+    # This function is called by the prepare methods of inference algorithms.
 
-    if !isdefined(entry, :post_processing)
-        # Create pointer to outbound distribution
-        outbound_dist = entry.node.interfaces[entry.outbound_interface_id].message.payload
-        # No post-processing; assign the "compiled" computation rule as an anomynous function to entry.execute
-        entry.execute = ( () -> entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments...) )
+    # Get pointer to the outbound distribution
+    outbound_dist = entry.node.interfaces[entry.outbound_interface_id].message.payload
+
+    # Save the "compiled" message computation rule as an anomynous function in entry.execute
+    if isdefined(entry, :approximation)
+        entry.execute = ( () -> entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments..., entry.approximation) )
     else
-        # Fold the post-processing operation into entry.execute()
-        # Note that the distribution type after execute() in general does not correspond with the distribution type after post_processing().
-        # Therefore, we need to copy the original disribution and perform the execute() and post_processing() operations on the duplicate.
-        # Then we repopulate the fields of the original distribution with the fields of the duplicate.
-        # This approach ensures that the distribution pointers remain valid.
-
-        outbound_dist = entry.intermediate_outbound_type() # Create a dummy distribution for sumProductRule! to fill (is accessed from the entry.execute closure)
-
-        entry.execute = ( () -> ( # Anonymous function for message passing and post-processing
-            intermediate_outbound_distribution = entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments...); # In-place operation on previously created dummy distribution
-            new_outbound_distribution = entry.post_processing(entry.outbound_type, intermediate_outbound_distribution); # Not an in-place operation
-            original_outbound_distribution = entry.node.interfaces[entry.outbound_interface_id].message.payload; # Get original pointer to outbound distribution on interface
-            
-            # Duplicate parameters of new into original
-            injectParameters!(original_outbound_distribution, new_outbound_distribution);
-            
-            return original_outbound_distribution
-        ))
+        entry.execute = ( () -> entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments...) )
     end
 
     return entry

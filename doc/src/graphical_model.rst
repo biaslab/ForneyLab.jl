@@ -153,11 +153,11 @@ In practical situations it is common for a factor graph to be a concatination of
 
 .. type:: Wrap
 
-    A ``Wrap`` is a special kind of :class:`Edge` that connects to :class:`TerminalNode` instances such that the involved :class:`FactorGraph` is 'folded'. Inbound messages towards the *source* terminal of a ``Wrap`` will be tranferred to the *sink* of that ``Wrap`` by the :func:`step` function.
+    A ``Wrap`` is a special kind of :class:`Edge` that connects to :class:`TerminalNode` instances such that the involved :class:`FactorGraph` is 'folded'. One :class: `TerminalNode` is considered to be the tail of the wrap, while the other one is considered to be the head of it. Message transfer from *tail* to *head* and vice versa is handled by the :func:`step` function.
 
-    .. function:: Wrap(source::TerminalNode, sink::TerminalNode; id::Symbol)
+    .. function:: Wrap(tail::TerminalNode, head::TerminalNode; id::Symbol, block_size::Int64)
 
-        Constructs a wrap from ``source`` to ``sink`` in the currently active graph. The keyword argument ``id`` is optional.
+        Constructs a wrap from ``tail`` to ``head`` in the currently active graph. The keyword arguments ``id`` and ``block_size`` are optional. If ``block_size`` argument is not specified, the constructed wrap supports only forward message passing. To support backward message passing through wrap, ``block_size`` should be provided to the constructor. It is prohibited to construct wraps with different block sizes.
 
     .. function:: wrap(id::Symbol, graph::FactorGraph=currentGraph())
 

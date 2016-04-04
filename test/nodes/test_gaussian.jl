@@ -29,10 +29,6 @@ facts("GaussianNode unit tests") do
         @fact typeof(testnode) --> GaussianNode{Val{:mean},Val{:fixed_variance}}
         @fact testnode.i[:mean] --> testnode.interfaces[1]
         @fact testnode.i[:out] --> testnode.interfaces[2]
-
-        testnode = GaussianNode(form=:log_variance)
-        @fact typeof(testnode) --> GaussianNode{Val{:mean},Val{:log_variance}}
-        @fact testnode.i[:log_variance] --> testnode.interfaces[2]
     end
 
     FactorGraph()
@@ -162,13 +158,7 @@ facts("GaussianNode unit tests") do
                                         [nothing, WishartDistribution(V=[1.0 0.0; 0.0 2.0], nu=2.0), MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.0; 0.0 2.0])],
                                         MvGaussianDistribution(m=[1.0, 2.0], W=[2.0 0.0; 0.0 4.0]),
                                         ForneyLab.variationalRule!)
-                # Log-Variance
-                validateOutboundMessage(GaussianNode(form=:log_variance),
-                                        1,
-                                        [nothing, GaussianDistribution(m=3.0, V=2.0), GaussianDistribution(m=2.0, V=0.1)],
-                                        GaussianDistribution(m=2.0, V=exp(4.0)),
-                                        ForneyLab.variationalRule!)
-                # Moment
+                # Variance
                 validateOutboundMessage(GaussianNode(),
                                         1,
                                         [nothing, InverseGammaDistribution(a=3.0, b=1.0), GaussianDistribution(m=2.0, V=0.1)],
@@ -189,13 +179,7 @@ facts("GaussianNode unit tests") do
                                         [MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.0; 0.0 2.0]), nothing, MvGaussianDistribution(m=[3.0, 4.0], V=[1.0 0.0; 0.0 2.0])],
                                         WishartDistribution(V=[0.25 -0.125; -0.125 0.1875], nu=4.0),
                                         ForneyLab.variationalRule!)
-                # Log-Variance
-                validateOutboundMessage(GaussianNode(form=:log_variance),
-                                        2,
-                                        [GaussianDistribution(m=3.0, V=2.0), nothing, GaussianDistribution(m=2.0, V=1.0)],
-                                        GaussianDistribution(m=log(4.0), V=2.0),
-                                        ForneyLab.variationalRule!)
-                # Moment
+                # Variance
                 validateOutboundMessage(GaussianNode(form=:variance),
                                         2,
                                         [GaussianDistribution(m=4.0, V=1.0), nothing, GaussianDistribution(m=2.0, V=0.1)],
@@ -206,11 +190,6 @@ facts("GaussianNode unit tests") do
                                         1,
                                         [nothing, GaussianDistribution(m=2.0, V=0.5)],
                                         GammaDistribution(a=1.5, b=0.75),
-                                        ForneyLab.variationalRule!)
-                validateOutboundMessage(GaussianNode(m=1.0; form=:log_variance),
-                                        1,
-                                        [nothing, GaussianDistribution(m=3.0, V=2.0)],
-                                        GaussianDistribution(m=log(6.0), V=2.0),
                                         ForneyLab.variationalRule!)
                 validateOutboundMessage(GaussianNode(m=4.0; form=:variance),
                                         1,
@@ -231,12 +210,6 @@ facts("GaussianNode unit tests") do
                                         [MvGaussianDistribution(m=[1.0, 2.0], V=[1.0 0.0; 0.0 2.0]), WishartDistribution(V=[1.0 0.0; 0.0 2.0], nu=2.0), nothing],
                                         MvGaussianDistribution(m=[1.0, 2.0], W=[2.0 0.0; 0.0 4.0]),
                                         ForneyLab.variationalRule!)
-                # Log variance
-                validateOutboundMessage(GaussianNode(form=:log_variance),
-                                        3,
-                                        [GaussianDistribution(m=2.0, V=0.1), GaussianDistribution(m=3.0, V=2.0), nothing],
-                                        GaussianDistribution(m=2.0, V=exp(4.0)),
-                                        ForneyLab.variationalRule!)
                 # Variance
                 validateOutboundMessage(GaussianNode(form=:variance),
                                         3,
@@ -248,11 +221,6 @@ facts("GaussianNode unit tests") do
                                         2,
                                         [GammaDistribution(a=1.5, b=0.5), nothing],
                                         GaussianDistribution(m=1.0, W=3.0),
-                                        ForneyLab.variationalRule!)
-                validateOutboundMessage(GaussianNode(m=1.0; form=:log_variance),
-                                        2,
-                                        [GaussianDistribution(m=3.0, V=2.0), nothing],
-                                        GaussianDistribution(m=1.0, V=exp(4.0)),
                                         ForneyLab.variationalRule!)
                 validateOutboundMessage(GaussianNode(m=1.0; form=:variance),
                                         2,

@@ -5,6 +5,7 @@ using LaTeXStrings
 
 export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution, MatrixVariateProbabilityDistribution
 export sumProductRule!, expectationRule!, variationalRule!
+export InferenceAlgorithm
 export vague, self, ==, isProper, sample, dimensions
 export setVerbosity
 export prepare!
@@ -29,11 +30,12 @@ abstract UnivariateProbabilityDistribution <: ProbabilityDistribution
 abstract MultivariateProbabilityDistribution <: ProbabilityDistribution
 abstract MatrixVariateProbabilityDistribution <: ProbabilityDistribution
 
-# Node
-include("node.jl")
+abstract InferenceAlgorithm
 
-# Message type
-include("message.jl")
+# Low-level internals
+include("approximation.jl")     # Types related to approximations
+include("node.jl")              # Node type
+include("message.jl")           # Message type
 
 # Extract dimensionality from message or distribution (exceptions for normal-gamma and matrix-delta in distribution files)
 dimensions{T<:MultivariateProbabilityDistribution}(message::Message{T}) = typeof(message.payload).parameters[end]

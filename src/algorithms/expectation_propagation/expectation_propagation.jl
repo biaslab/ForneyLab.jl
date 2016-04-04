@@ -6,11 +6,16 @@ Expectation propagation algorithm.
 
 Usage:
 
-    ExpectationPropagation(sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback, post_processing_functions)
+    ExpectationPropagation(sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
+    ExpectationPropagation(outbound_interface::Interface, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
+    ExpectationPropagation(outbound_interfaces::Vector{Interface}, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
+    ExpectationPropagation(graph::FactorGraph, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
 """
 type ExpectationPropagation <: InferenceAlgorithm
+    graph::FactorGraph
     execute::Function
-    schedule::Schedule
+    iterative_schedule::Schedule
+    post_convergence_schedule::Schedule
     sites::Vector{Interface}
     n_iterations::Int64
     callback::Function
@@ -21,15 +26,39 @@ function show(algo::ExpectationPropagation)
     println("    # sites: $(length(algo.sites))")
     println("    max. number of iterations: $(algo.n_iterations)")
     println("    callback function: $(algo.callback)")
-    println("Use show(algo.schedule) to view the message passing schedule.")
+    println("Use show(algo.iterative_schedule) and show(algo.post_convergence_schedule) to view the message passing schedules.")
 end
 
 function ExpectationPropagation(
             sites::Vector{Tuple{Interface, DataType}};
+            kwargs...)
+
+    ExpectationPropagation(Interface[], sites; kwargs...)
+end
+
+function ExpectationPropagation(
+            outbound_interface::Interface,
+            sites::Vector{Tuple{Interface, DataType}};
+            kwargs...)
+
+    ExpectationPropagation([outbound_interface], sites; kwargs...)
+end
+
+function ExpectationPropagation(
+            graph::FactorGraph,
+            sites::Vector{Tuple{Interface, DataType}};
+            kwargs...)
+
+    ExpectationPropagation(interfacesFacingWrapsOrBuffers(graph), sites; kwargs...)
+end
+
+function ExpectationPropagation(
+            outbound_interfaces::Vector{Interface},
+            sites::Vector{Tuple{Interface, DataType}};
             n_iterations::Int64 = 100,
             callback::Function = ( () -> false ),
-            post_processing_functions = Dict{Interface, Function}())
-
+            graph::FactorGraph=currentGraph(),
+            message_types::Dict{Interface,DataType}=Dict{Interface,DataType}())
     # Build an EP message passing algorithm for the specified sites.
     # sites is a list of (interface, recognition_distribution) tuples,
     # where recognition_distribution <: ProbabilityDistribution.
@@ -39,17 +68,19 @@ function ExpectationPropagation(
 
     # InferenceAlgorithm overview:
     # 1. Init all sites with vague messages
-    # 2. For all sites i=1:N
-    #   2a. Calculate cavity distribution i
-    #   2b. Calculate site distribution i
+    # 2. (iterative schedule)
+    #   For all sites i=1:N
+    #       2a. Calculate cavity distribution i
+    #       2b. Calculate site distribution i
     # 3. Check stopping criteria, goto 2
+    # 4. (post convergence schedule) to calculate the final messages after convergence
 
     (length(sites) > 0) || error("Specify at least one site")
 
     sitelist = Interface[site[1] for site in sites]
     recognition_distributions = Dict{Interface,DataType}([interface => distribution_type for (interface, distribution_type) in sites])
 
-    # Build schedule
+    # Build iterative schedule
     total_schedule = Vector{Interface}()
     for i = 1:length(sitelist)
         site = sitelist[i]
@@ -69,13 +100,23 @@ function ExpectationPropagation(
         total_schedule = total_schedule[length(sitelist):end] # Strip other sitelist prepend
     end
 
-    schedule = convert(Schedule, total_schedule, sumProductRule!)
-    for entry in schedule
+    iterative_schedule = convert(Schedule, total_schedule, sumProductRule!)
+    for entry in iterative_schedule
         if entry.node.interfaces[entry.outbound_interface_id] in sitelist
             entry.rule = expectationRule!
         end
     end
-    setPostProcessing!(schedule, post_processing_functions)
+
+    # Build post-convergence schedule
+    for outbound_interface in outbound_interfaces
+        total_schedule = generateScheduleByDFS!(outbound_interface, total_schedule)
+    end
+
+    if length(total_schedule) > length(iterative_schedule)
+        post_convergence_schedule = convert(Schedule, total_schedule[length(iterative_schedule)+1:end], sumProductRule!)
+    else
+        post_convergence_schedule = convert(Schedule, Interface[], sumProductRule!)
+    end
 
     # Build execute function
     function exec(algorithm)
@@ -83,18 +124,20 @@ function ExpectationPropagation(
         for site in algorithm.sites
             vague!(site.message.payload)
         end
-        # Execute schedule until stopping criterium is met
+        # Execute iterative schedule until stopping criterium is met
         for iteration_count = 1:algorithm.n_iterations
-            execute(algorithm.schedule)
+            execute(algorithm.iterative_schedule)
             # Check stopping criteria
             if algorithm.callback()
                 break
             end
         end
+        # Execute post convergence schedule once
+        isempty(algorithm.post_convergence_schedule) || execute(algorithm.post_convergence_schedule)
     end
 
-    algo = ExpectationPropagation(exec, schedule, sitelist, n_iterations, callback)
-    inferDistributionTypes!(algo, recognition_distributions)
+    algo = ExpectationPropagation(graph, exec, iterative_schedule, post_convergence_schedule, sitelist, n_iterations, callback)
+    inferDistributionTypes!(algo, recognition_distributions, message_types)
 
     return algo
 end
@@ -103,16 +146,20 @@ end
 # Type inference and preparation
 ############################################
 
-function inferDistributionTypes!(algo::ExpectationPropagation, recognition_distributions::Dict{Interface,DataType})
+function inferDistributionTypes!(   algo::ExpectationPropagation,
+                                    recognition_distributions::Dict{Interface,DataType},
+                                    message_types::Dict{Interface,DataType})
     # Infer the payload types for all messages in algo.schedule
     # Fill schedule_entry.inbound_types and schedule_entry.outbound_type
     schedule_entries = Dict{Interface, ScheduleEntry}() # Lookup table from interface to schedule entry
 
-    for entry in algo.schedule
+    for entry in vcat(algo.iterative_schedule, algo.post_convergence_schedule)
         collectInboundTypes!(entry, schedule_entries, recognition_distributions, algo) # Fill entry.inbound_types
-        inferOutboundType!(entry) # Infer the outbound message type, fill entry.outbound_type
-
         outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
+        if outbound_interface in keys(message_types)
+            setOutboundType!(entry, message_types[outbound_interface])
+        end
+        inferOutboundType!(entry) # Infer the outbound message type, or validate that there exists a suitable rule if the outbound type is already fixed
         schedule_entries[outbound_interface] = entry # Add entry to lookup table
     end
 
@@ -145,14 +192,15 @@ end
 
 function prepare!(algo::ExpectationPropagation)
     # Populate the graph with vague messages of the correct types
-    for entry in algo.schedule
+    for entry in vcat(algo.iterative_schedule, algo.post_convergence_schedule)
         ensureMessage!(entry.node.interfaces[entry.outbound_interface_id], entry.outbound_type)
     end
 
-    # Compile the schedule
-    compile!(algo.schedule, algo)
+    # Compile the schedules
+    compile!(algo.iterative_schedule, algo)
+    compile!(algo.post_convergence_schedule, algo)
 
-    return algo
+    return algo.graph.prepared_algorithm = algo
 end
 
 function compile!(entry::ScheduleEntry, ::Type{Val{symbol(expectationRule!)}}, ::InferenceAlgorithm)

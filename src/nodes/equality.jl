@@ -58,9 +58,9 @@ end
 """
 EqualityNode:
 
-      N     N 
+      N     N
     --->[=]<---
-         | | 
+         | |
        N v v
 """
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GaussianDistribution, msg_1::Any, msg_2::Message{GaussianDistribution}, msg_3::Message{GaussianDistribution}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
@@ -89,9 +89,9 @@ end
 """
 EqualityNode:
 
-      δ     δ 
+      δ     δ
     --->[=]<---
-         | | 
+         | |
        δ v v
 """
 sumProductRule!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::DeltaDistribution{T}, msg_1::Any, msg_2::Message{DeltaDistribution{T}}, msg_3::Message{DeltaDistribution{T}}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
@@ -119,9 +119,9 @@ end
 """
 EqualityNode:
 
-     Ig     Ig 
+     Ig     Ig
     --->[=]<---
-         | | 
+         | |
       Ig v v
 
     Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 5.2
@@ -145,9 +145,9 @@ end
 """
 EqualityNode:
 
-    Gam     Gam 
+    Gam     Gam
     --->[=]<---
-         | | 
+         | |
      Gam v v
 """
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GammaDistribution, msg_1::Any, msg_2::Message{GammaDistribution}, msg_3::Message{GammaDistribution}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
@@ -169,9 +169,9 @@ end
 """
 EqualityNode:
 
-    Beta     Beta 
+    Beta     Beta
      --->[=]<---
-          | | 
+          | |
      Beta v v
 """
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::BetaDistribution, msg_1::Any, msg_2::Message{BetaDistribution}, msg_3::Message{BetaDistribution}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
@@ -193,9 +193,9 @@ end
 """
 EqualityNode:
 
-    Bern     Bern 
+    Bern     Bern
      --->[=]<---
-          | | 
+          | |
      Bern v v
 """
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::BernoulliDistribution, msg_1::Any, msg_2::Message{BernoulliDistribution}, msg_3::Message{BernoulliDistribution}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
@@ -283,21 +283,21 @@ end
 """
 EqualityNode:
 
-      N     St 
+      N     St
     --->[=]<---
-         | | 
+         | |
        N v v
 """
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GaussianDistribution, msg_1::Any, msg_2::Message{GaussianDistribution}, msg_3::Message{StudentsTDistribution}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GaussianDistribution, msg_1::Any, msg_2::Message{StudentsTDistribution}, msg_3::Message{GaussianDistribution}) = return equalityRule!(outbound_dist, msg_3.payload, msg_2.payload)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::GaussianDistribution, msg_1::Message{GaussianDistribution}, msg_2::Any, msg_3::Message{StudentsTDistribution}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::GaussianDistribution, msg_1::Message{StudentsTDistribution}, msg_2::Any, msg_3::Message{GaussianDistribution}) = return equalityRule!(outbound_dist, msg_3.payload, msg_1.payload)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::GaussianDistribution, msg_1::Message{GaussianDistribution}, msg_2::Message{StudentsTDistribution}, msg_3::Any) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::GaussianDistribution, msg_1::Message{StudentsTDistribution}, msg_2::Message{GaussianDistribution}, msg_3::Any) = return equalityRule!(outbound_dist, msg_2.payload, msg_1.payload)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GaussianDistribution, msg_1::Any, msg_2::Message{GaussianDistribution}, msg_3::Message{StudentsTDistribution}, approx::Type{MomentMatching}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GaussianDistribution, msg_1::Any, msg_2::Message{StudentsTDistribution}, msg_3::Message{GaussianDistribution}, approx::Type{MomentMatching}) = return equalityRule!(outbound_dist, msg_3.payload, msg_2.payload)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::GaussianDistribution, msg_1::Message{GaussianDistribution}, msg_2::Any, msg_3::Message{StudentsTDistribution}, approx::Type{MomentMatching}) = return equalityRule!(outbound_dist, msg_1.payload, msg_3.payload)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::GaussianDistribution, msg_1::Message{StudentsTDistribution}, msg_2::Any, msg_3::Message{GaussianDistribution}, approx::Type{MomentMatching}) = return equalityRule!(outbound_dist, msg_3.payload, msg_1.payload)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::GaussianDistribution, msg_1::Message{GaussianDistribution}, msg_2::Message{StudentsTDistribution}, msg_3::Any, approx::Type{MomentMatching}) = return equalityRule!(outbound_dist, msg_1.payload, msg_2.payload)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::GaussianDistribution, msg_1::Message{StudentsTDistribution}, msg_2::Message{GaussianDistribution}, msg_3::Any, approx::Type{MomentMatching}) = return equalityRule!(outbound_dist, msg_2.payload, msg_1.payload)
 
 function equalityRule!(dist_result::GaussianDistribution, dist_gauss_in::GaussianDistribution, dist_stud_in::StudentsTDistribution)
     # The result of the Gaussian-Student's t equality rule applied to dist_gauss_in and dist_stud_in is written to dist_result
-    # The student's t distribution is approximated by a Gaussian by moment matching.
+    # The student's t distribution is approximated with a Gaussian by moment matching.
     # The result is a Gaussian approximation to the exact result.
 
     ensureParameters!(dist_gauss_in, (:xi, :W))
@@ -382,9 +382,9 @@ end
 """
 EqualityNode:
 
-      W     W 
+      W     W
     --->[=]<---
-         | | 
+         | |
        W v v
 """
 sumProductRule!{T<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::T, msg_1::Any, msg_2::Message{T}, msg_3::Message{T}) = return equalityRule!(outbound_dist, msg_2.payload, msg_3.payload)

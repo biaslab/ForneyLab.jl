@@ -23,12 +23,29 @@ type FactorGraph
     edges::Dict{Symbol, Edge} # Edges
     wraps::Dict{Symbol, AbstractWrap}
     counters::Dict{DataType, Int} # Counters for automatic node id assignments
-    locked::Bool
 
     # Connections to the outside world
     read_buffers::Dict{TerminalNode, Vector}
     write_buffers::Dict{Union{Edge,Interface}, Vector}
+
+    # Reference to the algorithm that has been prepared on this graph
+    prepared_algorithm::Union{InferenceAlgorithm,Void}
+
+    # Book keeping for graphs with wraps
+    current_section::Int64
+    block_size
+
+    function FactorGraph(nodes::Dict{Symbol, Node},
+                         edges::Dict{Symbol, Edge},
+                         wraps::Dict{Symbol, AbstractWrap},
+                         counters::Dict{DataType, Int},
+                         read_buffers::Dict{TerminalNode, Vector},
+                         write_buffers::Dict{Union{Edge, Interface}, Vector})
+
+        return new(nodes, edges, wraps, counters, read_buffers, write_buffers, nothing, 1)
+    end
 end
+
 
 """
 Return currently active FactorGraph.
@@ -44,19 +61,23 @@ end
 
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph
 
+# Initialize a new factor graph; automatically sets current_graph
 FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, Node}(),
                                             Dict{Symbol, Edge}(),
                                             Dict{Symbol, AbstractWrap}(),
                                             Dict{DataType, Int}(),
-                                            false,
                                             Dict{TerminalNode, Vector}(),
-                                            Dict{Union{Edge,Interface}, Vector}())) # Initialize a new factor graph; automatically sets current_graph
+                                            Dict{Union{Edge,Interface}, Vector}()))
 
 function show(io::IO, factor_graph::FactorGraph)
     println(io, "FactorGraph")
     println(io, " # nodes: $(length(nodes(factor_graph)))")
     println(io, " # edges: $(length(edges(factor_graph)))")
     println(io, " # wraps: $(length(wraps(factor_graph)))")
+    if isdefined(factor_graph, :block_size)
+        println(io, " #block_size: $(factor_graph.block_size)")
+    end
+    println(io, "# current_section: $(factor_graph.current_section)")
     println(io, "\nSee also:")
     println(io, " draw(::FactorGraph)")
     println(io, " show(nodes(::FactorGraph))")
@@ -108,9 +129,9 @@ eg(ids::Vector{Symbol}, graph::FactorGraph=currentGraph()) = edges(ids, graph)
 # Add/remove graph elements
 function addNode!(graph::FactorGraph, nd::Node)
     # Add a Node to a FactorGraph
-    !graph.locked || error("Cannot add a Node to a locked graph")
     !haskey(graph.nodes, nd.id) || error("Graph already contains a Node with id $(nd.id)")
     graph.nodes[nd.id] = nd
+    graph.prepared_algorithm = nothing # Modifying the graph 'unprepares' any InferenceAlgorithm
 
     return graph
 end

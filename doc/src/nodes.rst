@@ -38,7 +38,7 @@ Message calculation rules
 
 A factor node captures a specific *node function*, which involves the variables that are represented by the connected edges. The :class:`AdditionNode` for example captures the addition function: ``f(in1,in2,out) = δ(in1+in2-out)``. When running a message passing algorithm on a :class:`FactorGraph`, the node function specifies how the outbound messages are calculated from the inbound messages. An outbound message is calculated according to a message calculation rule, also simply called *rule*. Rules are implemented for specific nodes and message types, making heavy use of Julia's multiple dispatch system.
 
-ForneyLab supports the following rules:
+ForneyLab comes with the following built-in rules:
 
 .. function:: sumProductRule!(node::Node, outbound_interface_index::Type{Val{i}}, outbound_dist::ProbabilityDistribution, inbound_messages...)
 
@@ -112,6 +112,33 @@ To find out which message calculation rules are implemented for a specific node,
     Print all message calculation rules implemented for ``node_type <: Node``.
     Optionally, the list can be restricted to a specific rule, such as ``sumProductRule!`` or ``variationalRule!``.
     If keyword argument ``outbound`` is passed, only the rules for that outbound interface id are listed.
+
+
+Approximate rules
+-----------------
+
+A rule might not result in a convenient or tractable exact outbound message. In such cases, one might want to implement an *approximate rule*. For example, a difficult, non-Gaussian, outbound message might be approximated by a Gaussian outbound message using Laplace's method or by moment matching. An approximate rule should have an extra argument to specify the type of approximation. For example::
+
+    function sumProductRule!(node::GaussianNode{:mean}{:precision},
+                             outbound_interface_index::Type{Val{3}},
+                             outbound_dist::GaussianDistribution,
+                             msg_mean::Message{GaussianDistribution},
+                             msg_prec::Message{GammaDistribution},
+                             msg_out::Any,
+                             approx::Type{MomentMatching})
+        # Approximate exact student's t message by a Gaussian through moment matching
+        ...
+
+        return outbound_dist
+    end
+
+The extra argument should be a subtype of ``ApproximationType``. Built-in approximation types are ``Laplace`` and ``MomentMatching``. By default, ForneyLab will only resort to an approximate rule if there is no exact rule that can handle the incoming messages. However, a the user can force a message to have a specific distribution type by passing the ``message_types`` keyword argument to the algorithm constructor. If there are multiple approximation types for the same approximating distribution type, the user can even specify the desired approximation::
+
+    # Force the use of the Laplace approximation on my_interface
+    msg_types = Dict{Interface,DataType}(
+                    my_interface => Approximation{GaussianDistribution, Laplace}
+                )
+    algo = SumProduct(message_types=msg_types)
 
 
 Composite nodes

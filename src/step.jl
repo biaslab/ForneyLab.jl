@@ -62,6 +62,9 @@ end
 
 function attachWriteBuffer(interface::Interface, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
     hasNode(graph, interface.node) || error("The specified interface is not part of the current or specified graph")
+    if isdefined(graph, :block_size)
+        (length(buffer) == graph.block_size) || error("The length of write buffer should be equal to the graph block size.")
+    end
     graph.write_buffers[interface] = buffer # Write buffer for message
 end
 
@@ -75,6 +78,9 @@ end
 
 function attachWriteBuffer(edge::Edge, buffer::Vector=Array(ProbabilityDistribution,0), graph::FactorGraph=currentGraph())
     hasEdge(graph, edge) || error("The specified edge is not part of the current or specified graph")
+    if isdefined(graph, :block_size)
+        (length(buffer) == graph.block_size) || error("The length of write buffer should be equal to the graph block size.")
+    end
     graph.write_buffers[edge] = buffer # Write buffer for marginal
 end
 
@@ -98,55 +104,150 @@ function emptyWriteBuffers(graph::FactorGraph=currentGraph())
 end
 
 function execute(algorithm::InferenceAlgorithm)
-    # Call algorithm's execute function with itself as argument
-    # prepare!(algorithm) should always be called before the first call to execute(algorithm)
+    # Make sure algorithm is prepared
+    (algorithm.graph.prepared_algorithm == algorithm) || prepare!(algorithm)
 
+    # Call algorithm's execute function with itself as argument
     return algorithm.execute(algorithm)
 end
 
-function step(algorithm::InferenceAlgorithm, graph::FactorGraph=currentGraph())
+function step(wrap::Wrap, direction::Type{Val{:forward}}, graph::FactorGraph)
+    # Forward propagate messages through wraps
+    if isdefined(graph, :block_size)
+        wrap.tail_buffer[graph.current_section] = deepcopy(wrap.tail.interfaces[1].partner.message.payload)
+        wrap.head.value = wrap.tail_buffer[graph.current_section]
+        if isdefined(wrap.head_buffer, graph.current_section)
+            wrap.tail.value = wrap.head_buffer[graph.current_section]
+        end
+    else
+        wrap.head.value = deepcopy(wrap.tail.interfaces[1].partner.message.payload)
+    end
+end
+
+function step(wrap::Wrap, direction::Type{Val{:backward}}, graph::FactorGraph)
+    # Forward propagate messages through wraps
+    wrap.head_buffer[graph.current_section] = deepcopy(wrap.head.interfaces[1].partner.message.payload)
+    wrap.tail.value = wrap.head_buffer[graph.current_section]
+    if isdefined(wrap.tail_buffer, graph.current_section)
+        wrap.head.value = wrap.tail_buffer[graph.current_section]
+    end
+end
+
+step(algorithm::InferenceAlgorithm, direction::Symbol) = step(algorithm, Val{direction})
+step(algorithm::InferenceAlgorithm) = step(algorithm, :forward)
+
+function copyFromComponentToBuffer!(component::Edge, write_buffer::Vector{ProbabilityDistribution}, graph::FactorGraph)
+    if isdefined(graph, :block_size)
+        write_buffer[graph.current_section] = deepcopy(calculateMarginal!(component))
+    else
+        push!(write_buffer, deepcopy(calculateMarginal!(component)))
+    end
+end
+
+function copyFromComponentToBuffer!(component::Interface, write_buffer::Vector{ProbabilityDistribution}, graph::FactorGraph)
+    if isdefined(graph, :block_size)
+        write_buffer[graph.current_section] = deepcopy(component.message.payload)
+    else
+        push!(write_buffer, deepcopy(component.message.payload))
+    end
+end
+
+function step(algorithm::InferenceAlgorithm, direction::Type{Val{:forward}})
     # Execute algorithm for 1 timestep.
-    # prepare!(algorithm) should always be called before the first call to step(algorithm)
+
+    if isdefined(algorithm.graph, :block_size) && algorithm.graph.current_section > algorithm.graph.block_size
+        error("Further forward steps are impossible since you stepped outside of the block.")
+    end
 
     # Read buffers
-    for (terminal_node, read_buffer) in graph.read_buffers
-        !isempty(read_buffer) || error("Read buffer for node $(terminal_node) is empty")
-        terminal_node.value = shift!(read_buffer) # pick the first element off the read_buffer
+    for (terminal_node, read_buffer) in algorithm.graph.read_buffers
+        terminal_node.value = read_buffer[algorithm.graph.current_section] # pick the proper element from the read_buffer
     end
 
     # Execute schedule
     result = execute(algorithm)
 
     # Write buffers
-    for (component, write_buffer) in graph.write_buffers
-        if typeof(component) == Interface
-            push!(write_buffer, deepcopy(component.message.payload))
-        elseif typeof(component) == Edge
-            push!(write_buffer, calculateMarginal!(component))
-        end
+    for (component, write_buffer) in algorithm.graph.write_buffers
+        copyFromComponentToBuffer!(component, write_buffer, algorithm.graph)
     end
 
     # Wraps
-    for wrap in wraps(graph)
-        wrap.sink.value = deepcopy(wrap.source.interfaces[1].partner.message.payload)
+    for wrap in wraps(algorithm.graph)
+        step(wrap, direction, algorithm.graph)
+    end
+
+    algorithm.graph.current_section += 1
+
+    return result
+end
+
+function step(algorithm::InferenceAlgorithm, direction::Type{Val{:backward}})
+    # Execute algorithm for 1 timestep.
+
+    isdefined(algorithm.graph, :block_size) || error("Backward passes are not allowed if the block size is not defined.")
+    algorithm.graph.current_section > 0 || error("You performed too many backward steps and stepped out of the block.")
+
+    algorithm.graph.current_section -= 1
+
+    # Read buffers
+    for (terminal_node, read_buffer) in algorithm.graph.read_buffers
+        terminal_node.value = read_buffer[algorithm.graph.current_section] # pick the proper element from the read_buffer
+    end
+
+    # Execute schedule
+    result = execute(algorithm)
+
+    # Write buffers
+    for (component, write_buffer) in algorithm.graph.write_buffers
+        copyFromComponentToBuffer!(component, write_buffer, algorithm.graph)
+    end
+
+    # Wraps
+    for wrap in wraps(algorithm.graph)
+        step(wrap, direction, algorithm.graph)
     end
 
     return result
 end
 
-function run(algorithm::InferenceAlgorithm, graph::FactorGraph=currentGraph(); n_steps::Int64=0)
-    # Call step(algorithm) repeatedly
-    prepare!(algorithm)
-    
-    if n_steps > 0 # When a valid number of steps is specified, execute the algorithm n_steps times
-        for i = 1:n_steps
-            step(algorithm, graph)
+function readBuffersContainEnoughElements(graph::FactorGraph=currentGraph())
+    if length(graph.read_buffers) > 0
+        for (node, read_buffer) in graph.read_buffers
+            if length(read_buffer) < graph.current_section
+                return false
+            end
         end
-    elseif length(graph.read_buffers) > 0 # If no valid n_steps is specified, run until at least one of the read buffers is exhausted
-        while !any(isempty, values(graph.read_buffers))
-            step(algorithm, graph)
+        return true
+    else
+        return false
+    end
+end
+
+
+function run(algorithm::InferenceAlgorithm; n_steps::Int64=0, direction::Symbol=:forward)
+    # Call step(algorithm) repeatedly
+
+    if n_steps > 0 # When a valid number of steps is specified, execute the algorithm n_steps times in the direction
+            for i = 1:n_steps
+                step(algorithm, direction)
+            end
+    elseif length(algorithm.graph.read_buffers) > 0 # If no valid n_steps is specified, run until at least one of the read buffers is exhausted
+        if !isdefined(algorithm.graph, :block_size)
+            direction == :forward || error("Backward passes are not allowed if the block size is not defined.")
+            while readBuffersContainEnoughElements()
+                step(algorithm, direction)
+            end
+        else
+            bound = direction==:backward ? 1 : 0
+            while (bound < algorithm.graph.current_section <= algorithm.graph.block_size + bound)  #run only until the end of algorithm.graph
+                step(algorithm, direction)
+                if !readBuffersContainEnoughElements(algorithm.graph)
+                    break
+                end
+            end
         end
     else # No read buffers or valid n_steps, just call step once
-        step(algorithm, graph)
+        step(algorithm, direction)
     end
 end

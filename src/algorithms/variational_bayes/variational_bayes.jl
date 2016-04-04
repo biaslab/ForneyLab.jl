@@ -12,9 +12,10 @@ Variational message passing algorithm.
 
 Usage:
 
-    VariationalBayes(recognition_distribution_types::Dict, graph::Graph; n_iterations, post_processing_functions)
+    VariationalBayes(recognition_distribution_types::Dict, graph::Graph; n_iterations, message_types)
 """
 type VariationalBayes <: InferenceAlgorithm
+    graph::FactorGraph
     execute::Function
     factorization::RecognitionFactorization
     recognition_distributions::Dict{Tuple{Node,Subgraph},RecognitionDistribution}
@@ -34,17 +35,13 @@ end
 function VariationalBayes(  recognition_distribution_types::Dict,
                             graph::FactorGraph=currentGraph();
                             n_iterations::Int64=50,
-                            post_processing_functions=Dict{Interface, Function}())
+                            message_types::Dict{Interface,DataType}=Dict{Interface,DataType}())
 
     # Generates a VariationalBayes algorithm that propagates messages to all write buffers and wraps.
 
     factorization = factorize(recognition_distribution_types, graph)
     generateVariationalBayesSchedule!(factorization, graph) # Generate and store internal and external schedules on factorization subgraphs
     recognition_distributions = initializeVagueRecognitionDistributions(factorization, recognition_distribution_types) # Initialize vague recognition distributions
-
-    for factor in factorization.factors
-        setPostProcessing!(factor.internal_schedule, post_processing_functions)
-    end
 
     function exec(algorithm)
         resetRecognitionDistributions!(algorithm.recognition_distributions) # Reset recognition distributions before next step
@@ -53,8 +50,8 @@ function VariationalBayes(  recognition_distribution_types::Dict,
         end
     end
 
-    algo = VariationalBayes(exec, factorization, recognition_distributions, n_iterations)
-    inferDistributionTypes!(algo)
+    algo = VariationalBayes(graph, exec, factorization, recognition_distributions, n_iterations)
+    inferDistributionTypes!(algo, message_types)
 
     return algo
 end
@@ -64,7 +61,7 @@ end
 # Type inference and preparation
 ############################################
 
-function inferDistributionTypes!(algo::VariationalBayes)
+function inferDistributionTypes!(algo::VariationalBayes, message_types::Dict{Interface,DataType})
     # Infer the payload types for all messages in the internal schedules
 
     for factor in algo.factorization.factors
@@ -74,9 +71,11 @@ function inferDistributionTypes!(algo::VariationalBayes)
 
         for entry in schedule
             collectInboundTypes!(entry, schedule_entries, algo) # VariationalBayes algorithm specific collection of inbound types
-            inferOutboundType!(entry) # The VariationalBayes algorithm allows access to sumProductRule! and variationalRule! update rules
-
             outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
+            if outbound_interface in keys(message_types)
+                setOutboundType!(entry, message_types[outbound_interface])
+            end
+            inferOutboundType!(entry) # If the outbound type is fixed, this will check if there is a suitable rule available
             schedule_entries[outbound_interface] = entry # Assign schedule entry to lookup dictionary
         end
     end
@@ -120,7 +119,7 @@ function prepare!(algo::VariationalBayes)
         compile!(schedule, algo)
     end
 
-    return algo
+    return algo.graph.prepared_algorithm = algo
 end
 
 function compile!(entry::ScheduleEntry, ::Type{Val{symbol(variationalRule!)}}, algo::VariationalBayes)

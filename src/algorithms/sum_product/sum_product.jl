@@ -10,12 +10,19 @@ Sum-product message passing algorithm.
 
 Usage:
 
-    SumProduct(graph::Graph; post_processing_functions)
-    SumProduct(outbound_interface::Interface; post_processing_functions)
-    SumProduct(partial_list::Vector{Interface}; post_processing_functions)
-    SumProduct(edge::Edge; post_processing_functions)
+    SumProduct(graph::Graph)
+    SumProduct(outbound_interface::Interface)
+    SumProduct(partial_list::Vector{Interface})
+    SumProduct(edge::Edge)
+
+Optionally, keyword argument `message_types::Dict{Interface,Any}` can used to constain messages to a specific distribution type.
+To force the use of a specific approximation method, use a tuple: `(dist_type::DataType, approximation::Symbol)`. Examples:
+
+    message_types = Dict{Interface,DataType}(my_node.i[:out] => GaussianDistribution)
+    message_types = Dict{Interface,DataType}(my_node.i[:out] => Approximation{GaussianDistribution,:laplace})
 """
 type SumProduct <: AbstractSumProduct
+    graph::FactorGraph
     execute::Function
     schedule::Schedule
 end
@@ -31,49 +38,52 @@ end
 # SumProduct algorithm constructors
 ############################################
 
-function SumProduct(graph::FactorGraph=currentGraph(); post_processing_functions=Dict{Interface, Function}())
+function SumProduct(graph::FactorGraph=currentGraph();
+                    message_types::Dict{Interface,DataType}=Dict{Interface,DataType}())
     schedule = generateSumProductSchedule(graph)
-    setPostProcessing!(schedule, post_processing_functions)
     exec(algorithm) = execute(algorithm.schedule)
 
-    algo = SumProduct(exec, schedule)
-    inferDistributionTypes!(algo)
+    algo = SumProduct(graph, exec, schedule)
+    inferDistributionTypes!(algo, message_types)
 
     return algo
 end
 
-function SumProduct(outbound_interface::Interface; post_processing_functions=Dict{Interface, Function}())
+function SumProduct(outbound_interface::Interface;
+                    message_types::Dict{Interface,DataType}=Dict{Interface,DataType}(),
+                    graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule(outbound_interface)
-    setPostProcessing!(schedule, post_processing_functions)
     exec(algorithm) = execute(algorithm.schedule)
 
-    algo = SumProduct(exec, schedule)
-    inferDistributionTypes!(algo)
+    algo = SumProduct(graph, exec, schedule)
+    inferDistributionTypes!(algo, message_types)
 
     return algo
 end
 
-function SumProduct(partial_list::Vector{Interface}; post_processing_functions=Dict{Interface, Function}())
+function SumProduct(partial_list::Vector{Interface};
+                    message_types::Dict{Interface,DataType}=Dict{Interface,DataType}(),
+                    graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule(partial_list)
-    setPostProcessing!(schedule, post_processing_functions)
     exec(algorithm) = execute(algorithm.schedule)
 
-    algo = SumProduct(exec, schedule)
-    inferDistributionTypes!(algo)
+    algo = SumProduct(graph, exec, schedule)
+    inferDistributionTypes!(algo, message_types)
 
     return algo
 end
 
-function SumProduct(edge::Edge; post_processing_functions=Dict{Interface, Function}())
+function SumProduct(edge::Edge;
+                    message_types::Dict{Interface,DataType}=Dict{Interface,DataType}(),
+                    graph::FactorGraph=currentGraph())
     schedule = generateSumProductSchedule([edge.head, edge.tail])
-    setPostProcessing!(schedule, post_processing_functions)
     function exec(algorithm)
         execute(algorithm.schedule)
         calculateMarginal!(edge)
     end
 
-    algo = SumProduct(exec, schedule)
-    inferDistributionTypes!(algo)
+    algo = SumProduct(graph, exec, schedule)
+    inferDistributionTypes!(algo, message_types)
 
     return algo
 end
@@ -83,16 +93,19 @@ end
 # Type inference and preparation
 ############################################
 
-function inferDistributionTypes!(algo::AbstractSumProduct)
+function inferDistributionTypes!(algo::AbstractSumProduct, message_types::Dict{Interface,DataType})
     # Infer the payload types for all messages in algo.schedule
     # Fill schedule_entry.inbound_types and schedule_entry.outbound_type
     schedule_entries = Dict{Interface, ScheduleEntry}()
 
     for entry in algo.schedule
         collectInboundTypes!(entry, schedule_entries, algo) # SumProduct specific collection of inbound types
-        inferOutboundType!(entry) # For the SumProduct algorithm, the only allowed update rule is the sumProductRule! rule
-
         outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
+        if outbound_interface in keys(message_types)
+            setOutboundType!(entry, message_types[outbound_interface])
+        end
+        inferOutboundType!(entry) # If the outbound type is fixed, this will check if there is a suitable rule available
+
         schedule_entries[outbound_interface] = entry # Assign schedule entry to lookup dictionary
     end
 
@@ -123,7 +136,7 @@ function prepare!(algo::SumProduct)
     # Compile the schedule (define entry.execute)
     compile!(algo.schedule, algo)
 
-    return algo
+    return algo.graph.prepared_algorithm = algo
 end
 
 function compile!(entry::ScheduleEntry, ::Type{Val{symbol(sumProductRule!)}}, ::InferenceAlgorithm)
