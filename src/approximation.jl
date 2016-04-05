@@ -1,4 +1,4 @@
-export ApproximationType, Laplace, MomentMatching
+export ApproximationType, Laplace, MomentMatching, ExponentMomentMatching, LogMomentMatching
 export Approximation
 
 """
@@ -15,6 +15,16 @@ abstract Laplace <: ApproximationType
 `MomentMatching <: ApproximationType` represents the moment matching approximation.
 """
 abstract MomentMatching <: ApproximationType
+
+"""
+`ExpMomentMatching <: ApproximationType` represents the approximation that matches the moments of `exp(X)`, where X is the random variable.
+"""
+abstract ExponentMomentMatching <: ApproximationType
+
+"""
+`LogMomentMatching <: ApproximationType` represents the approximation that matches the moments of `ln(X)`, where X is the random variable.
+"""
+abstract LogMomentMatching <: ApproximationType
 
 """
     Approximation{dist<:ProbabilityDistribution, approx_type<:ApproximationType}

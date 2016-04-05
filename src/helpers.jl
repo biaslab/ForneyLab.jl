@@ -126,3 +126,25 @@ function expand(d::Dict)
 
     return d_expanded
 end
+
+"""
+trigammaInverse(x): solve `trigamma(y) = x` for `y`.
+
+Uses Newton's method on the convex function 1/trigramma(y).
+Iterations converge monotonically.
+Based on trigammaInverse implementation in R package "limma" by Gordon Smyth:
+https://github.com/Bioconductor-mirror/limma/blob/master/R/fitFDist.R
+"""
+function trigammaInverse(x::Float64)
+    y = 0.5 + 1/x
+    iter = 0
+    while iter < 20
+        iter += 1
+        tri = trigamma(y)
+        dif = tri*(1-tri/x) / polygamma(2, y)
+        y += dif
+        ((-dif/y) > 1e-8) || break
+    end
+
+    return y
+end

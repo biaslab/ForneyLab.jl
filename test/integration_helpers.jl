@@ -382,7 +382,12 @@ function testInterfaceConnections(node1::GainNode, node2::TerminalNode)
     @fact mean(node2.i[:out].partner.message.payload) --> 2.0
 end
 
-function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbound_messages::Array, correct_outbound_dist::ProbabilityDistribution, update_function::Function=ForneyLab.sumProductRule!)
+function validateOutboundMessage(   node::Node,
+                                    outbound_interface_index::Int,
+                                    inbound_messages::Array,
+                                    correct_outbound_dist::ProbabilityDistribution,
+                                    update_function::Function = ForneyLab.sumProductRule!,
+                                    approx::DataType = Void)
     # Preset an outbound distribution on which the update may operate
     if typeof(correct_outbound_dist) <: DeltaDistribution
         outbound_dist = DeltaDistribution()
@@ -393,7 +398,11 @@ function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbo
     end
 
     # Perform the update and verify the result
-    dist = update_function(node, Val{outbound_interface_index}, outbound_dist, inbound_messages...)
+    if approx <: ApproximationType
+        dist = update_function(node, Val{outbound_interface_index}, outbound_dist, inbound_messages..., approx)
+    else
+        dist = update_function(node, Val{outbound_interface_index}, outbound_dist, inbound_messages...)
+    end
     @fact dist --> correct_outbound_dist
 
     if dist != correct_outbound_dist

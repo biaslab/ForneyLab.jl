@@ -16,7 +16,7 @@ Interfaces:
     1 i[:in], 2 i[:out]
 
 Construction:
-    
+
     ExponentialNode(id=:my_node)
 """
 type ExponentialNode <: Node
@@ -40,7 +40,7 @@ isDeterministic(::ExponentialNode) = true
 
 
 ############################################
-# Gaussian update functions
+# Exact Gaussian update functions
 ############################################
 
 """
@@ -85,6 +85,81 @@ function sumProductRule!(   node::ExponentialNode,
     return outbound_dist
 end
 
+############################################
+# Approximate Gaussian update functions
+############################################
+
+"""
+ExponentialNode:
+
+     N       Gam (MomentMatching)
+    --->[exp]--->
+              -->
+
+    The gamma msg is the moment-matching approx. to the exact log-normal message.
+    The approximation is easily obtained by substituting the expressions for the mean and variance.
+"""
+function sumProductRule!(   node::ExponentialNode,
+                            outbound_interface_index::Type{Val{2}},
+                            outbound_dist::GammaDistribution,
+                            msg_in::Message{GaussianDistribution},
+                            msg_out::Any,
+                            approx::Type{MomentMatching})
+
+    ensureParameters!(msg_in.payload, (:m, :V))
+    outbound_dist.b = msg_in.payload.m / msg_in.payload.V
+    outbound_dist.a = msg_in.payload.m * outbound_dist.b
+
+    return outbound_dist
+end
+
+"""
+ExponentialNode:
+
+     N       Gam (LogMomentMatching)
+    --->[exp]--->
+              -->
+
+    The approximate gamma msg matches the moments of ln(X).
+    (The incoming Gaussian is approximated by p(ln X), where X is gamma distributed.)
+"""
+function sumProductRule!(   node::ExponentialNode,
+                            outbound_interface_index::Type{Val{2}},
+                            outbound_dist::GammaDistribution,
+                            msg_in::Message{GaussianDistribution},
+                            msg_out::Any,
+                            approx::Type{LogMomentMatching})
+
+    ensureParameters!(msg_in.payload, (:m, :V))
+    outbound_dist.a = trigammaInverse(msg_in.payload.V)
+    outbound_dist.b = 1 / exp(msg_in.payload.m - digamma(outbound_dist.a))
+
+    return outbound_dist
+end
+
+"""
+ExponentialNode:
+
+     N       Gam
+    --->[exp]--->
+    <--
+
+    The Gaussian msg is the moment-matching approximation to the exact outbound message.
+"""
+function sumProductRule!(   node::ExponentialNode,
+                            outbound_interface_index::Type{Val{1}},
+                            outbound_dist::GaussianDistribution,
+                            msg_in::Any,
+                            msg_out::Message{GammaDistribution},
+                            approx::Type{MomentMatching})
+
+    outbound_dist.m = digamma(msg_out.payload.a) - log(msg_out.payload.b)
+    outbound_dist.V = trigamma(msg_out.payload.a)
+    outbound_dist.W = NaN
+    outbound_dist.xi = NaN
+
+    return outbound_dist
+end
 
 ############################################
 # DeltaDistribution update functions

@@ -24,6 +24,30 @@ facts("ExponentialNode unit tests") do
                                 GaussianDistribution(m=2.0, V=3.0))
     end
 
+    context("ExponentialNode should provide approximate rules for Gaussian messages") do
+        # Forward message
+        validateOutboundMessage(ExponentialNode(),
+                                2,
+                                [Message(GaussianDistribution(m=2.0, V=3.0)), nothing],
+                                GammaDistribution(a=4.0/3.0, b=2.0/3.0),
+                                sumProductRule!,
+                                MomentMatching)
+        a = ForneyLab.trigammaInverse(3.0)
+        validateOutboundMessage(ExponentialNode(),
+                                2,
+                                [Message(GaussianDistribution(m=2.0, V=3.0)), nothing],
+                                GammaDistribution(a=a, b=1/exp(2.0-digamma(a))),
+                                sumProductRule!,
+                                LogMomentMatching)
+        # Backward message
+        validateOutboundMessage(ExponentialNode(),
+                                1,
+                                [nothing, Message(GammaDistribution(a=2.0, b=3.0))],
+                                GaussianDistribution(m=digamma(2.0)-log(3.0), V=trigamma(2.0)),
+                                sumProductRule!,
+                                MomentMatching)
+    end
+
     context("ExponentialNode should pass delta messages") do
         # Forward message
         validateOutboundMessage(ExponentialNode(),
