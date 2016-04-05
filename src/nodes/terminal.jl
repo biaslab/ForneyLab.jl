@@ -40,6 +40,8 @@ TerminalNode(bool::Bool; id=generateNodeId(TerminalNode)) = TerminalNode(convert
 
 TerminalNode{T<:Number}(vect::Vector{T}; id=generateNodeId(TerminalNode)) = TerminalNode(convert(MvDeltaDistribution, vect), id=id)
 
+TerminalNode{T<:Number}(mat::AbstractMatrix{T}; id=generateNodeId(TerminalNode)) = TerminalNode(convert(MatrixDeltaDistribution, mat), id=id)
+
 TerminalNode(; id=generateNodeId(TerminalNode)) = TerminalNode(vague(GaussianDistribution), id=id)
 
 typealias PriorNode TerminalNode # For more overview during graph construction

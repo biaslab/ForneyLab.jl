@@ -24,22 +24,22 @@ Construction:
     GainEqualityNode([1.0], id=:my_node)
 """
 type GainEqualityNode <: Node
-    A::Array{Float64}
+    gain::AbstractMatrix{Float64}
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol,Interface}
-    A_inv::Array{Float64, 2} # holds pre-computed inv(A) if possible
+    gain_inv::AbstractMatrix{Float64} # holds pre-computed inv(gain) if possible
 
-    function GainEqualityNode(A::Union{Array{Float64},Float64}=1.0; id=generateNodeId(GainEqualityNode))
-        self = new(ensureMatrix(deepcopy(A)), id, Array(Interface, 3), Dict{Symbol,Interface}())
+    function GainEqualityNode(gain::Union{AbstractArray{Float64}, Float64}=1.0; id=generateNodeId(GainEqualityNode))
+        self = new(ensureMatrix(deepcopy(gain)), id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
 
         for (iface_index, iface_handle) in enumerate([:in1, :in2, :out])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
-        # Precompute inverse of A
-        try self.A_inv = inv(self.A) end
+        # Precompute inverse of gain
+        self.gain_inv = pinv(self.gain)
 
         return self
     end
@@ -78,8 +78,8 @@ function sumProductRule!(   node::GainEqualityNode,
     equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
     dist_temp = ensureParameters!(dist_temp, (:m, :V))
 
-    outbound_dist.m = node.A[1,1] * dist_temp.m
-    outbound_dist.V = (node.A[1,1])^2 * dist_temp.V
+    outbound_dist.m = node.gain[1,1] * dist_temp.m
+    outbound_dist.V = (node.gain[1,1])^2 * dist_temp.V
     outbound_dist.xi = NaN
     outbound_dist.W = NaN
 
@@ -108,7 +108,7 @@ function sumProductRule!(   node::GainEqualityNode,
                             msg_in2::Any,
                             msg_out::Message{GaussianDistribution})
 
-    return gainEqualityBackwardRule!(outbound_dist, msg_in1.payload, msg_out.payload, node.A)
+    return gainEqualityBackwardRule!(outbound_dist, msg_in1.payload, msg_out.payload, node.gain)
 end
 
 """
@@ -133,7 +133,7 @@ function sumProductRule!(   node::GainEqualityNode,
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Message{GaussianDistribution})
     # Backward message (towards in1)
-    return gainEqualityBackwardRule!(outbound_dist, msg_in2.payload, msg_out.payload, node.A)
+    return gainEqualityBackwardRule!(outbound_dist, msg_in2.payload, msg_out.payload, node.gain)
 end
 
 function gainEqualityBackwardRule!(dist_result::GaussianDistribution, dist_in::GaussianDistribution, dist_out::GaussianDistribution, A::Any)
@@ -156,36 +156,36 @@ end
 # MvGaussianDistribution methods
 ############################################
 
-function sumProductRule!{T<:MvGaussianDistribution}(node::GainEqualityNode,
-                                                    outbound_interface_index::Type{Val{3}},
-                                                    outbound_dist::T,
-                                                    msg_in1::Message{T},
-                                                    msg_in2::Message{T},
-                                                    msg_out::Any)
+function sumProductRule!{dims_n, dims_m}(   node::GainEqualityNode,
+                                            outbound_interface_index::Type{Val{3}},
+                                            outbound_dist::MvGaussianDistribution{dims_n},
+                                            msg_in1::Message{MvGaussianDistribution{dims_m}},
+                                            msg_in2::Message{MvGaussianDistribution{dims_m}},
+                                            msg_out::Any)
 
-    dist_temp = vague(MvGaussianDistribution{size(node.A, 2)})
+    dist_temp = vague(MvGaussianDistribution{size(node.gain, 2)})
     equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
-    return gainForwardRule!(outbound_dist, dist_temp, node.A, (isdefined(node, :A_inv)) ? node.A_inv : nothing)
+    return gainForwardRule!(outbound_dist, dist_temp, node.gain, (isdefined(node, :A_inv)) ? node.gain_inv : nothing)
 end
 
-function sumProductRule!{T<:MvGaussianDistribution}(node::GainEqualityNode,
-                                                    outbound_interface_index::Type{Val{2}},
-                                                    outbound_dist::T,
-                                                    msg_in1::Message{T},
-                                                    msg_in2::Any,
-                                                    msg_out::Message{T})
+function sumProductRule!{dims_n, dims_m}(   node::GainEqualityNode,
+                                            outbound_interface_index::Type{Val{2}},
+                                            outbound_dist::MvGaussianDistribution{dims_m},
+                                            msg_in1::Message{MvGaussianDistribution{dims_m}},
+                                            msg_in2::Any,
+                                            msg_out::Message{MvGaussianDistribution{dims_n}})
 
-    return gainEqualityBackwardRule!(outbound_dist, msg_in1.payload, msg_out.payload, node.A)
+    return gainEqualityBackwardRule!(outbound_dist, msg_in1.payload, msg_out.payload, node.gain)
 end
 
-function sumProductRule!{T<:MvGaussianDistribution}(node::GainEqualityNode,
-                                                    outbound_interface_index::Type{Val{1}},
-                                                    outbound_dist::T,
-                                                    msg_in1::Void,
-                                                    msg_in2::Message{T},
-                                                    msg_out::Message{T})
+function sumProductRule!{dims_n, dims_m}(   node::GainEqualityNode,
+                                            outbound_interface_index::Type{Val{1}},
+                                            outbound_dist::MvGaussianDistribution{dims_m},
+                                            msg_in1::Any,
+                                            msg_in2::Message{MvGaussianDistribution{dims_m}},
+                                            msg_out::Message{MvGaussianDistribution{dims_n}})
 
-    return gainEqualityBackwardRule!(outbound_dist, msg_in2.payload, msg_out.payload, node.A)
+    return gainEqualityBackwardRule!(outbound_dist, msg_in2.payload, msg_out.payload, node.gain)
 end
 
 function gainEqualityBackwardRule!( dist_result::MvGaussianDistribution,
@@ -206,7 +206,7 @@ function gainEqualityBackwardRule!( dist_result::MvGaussianDistribution,
         invalidate!(dist_result.W)
         invalidate!(dist_result.xi)
     elseif isValid(dist_out.m) && isValid(dist_out.W) && isValid(dist_in.m) && isValid(dist_in.W)
-        dist_result.m = backwardGainEqualityMRule(A, dist_in.m, inv(dist_in.W), dist_out.m, inv(dist_out.W))
+        dist_result.m = backwardGainEqualityMRule(A, dist_in.m, cholinv(dist_in.W), dist_out.m, cholinv(dist_out.W))
         invalidate!(dist_result.V)
         dist_result.W = backwardGainEqualityWRule(A, dist_in.W, dist_out.W)
         invalidate!(dist_result.xi)
@@ -225,7 +225,7 @@ end
 
 # Rule set for backward propagation ({in2,out}-->in1 or {in1,out}-->in2)
 # From: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
-backwardGainEqualityWRule{T<:Number}(A::Array{T, 2}, W_x::Array{T, 2}, W_y::Array{T, 2}) = W_x + A' * W_y * A
-backwardGainEqualityXiRule{T<:Number}(A::Array{T, 2}, xi_x::Array{T, 1}, xi_y::Array{T, 1}) = xi_x + A' * xi_y
-backwardGainEqualityVRule{T<:Number}(A::Array{T, 2}, V_x::Array{T, 2}, V_y::Array{T, 2}) = V_x - V_x * A' * inv(V_y + A * V_x * A') * A * V_x
-backwardGainEqualityMRule{T<:Number}(A::Array{T, 2}, m_x::Array{T, 1}, V_x::Array{T, 2}, m_y::Array{T, 1}, V_y::Array{T, 2}) = m_x + V_x * A' * inv(V_y + A * V_x * A') * (m_y - A * m_x)
+backwardGainEqualityWRule{T<:Number}(A::AbstractMatrix{T}, W_x::AbstractMatrix{T}, W_y::AbstractMatrix{T}) = W_x + A' * W_y * A
+backwardGainEqualityXiRule{T<:Number}(A::AbstractMatrix{T}, xi_x::Vector{T}, xi_y::Vector{T}) = xi_x + A' * xi_y
+backwardGainEqualityVRule{T<:Number}(A::AbstractMatrix{T}, V_x::AbstractMatrix{T}, V_y::AbstractMatrix{T}) = V_x - V_x * A' * cholinv(V_y + A * V_x * A') * A * V_x
+backwardGainEqualityMRule{T<:Number}(A::AbstractMatrix{T}, m_x::Vector{T}, V_x::AbstractMatrix{T}, m_y::Vector{T}, V_y::AbstractMatrix{T}) = m_x + V_x * A' * cholinv(V_y + A * V_x * A') * (m_y - A * m_x)

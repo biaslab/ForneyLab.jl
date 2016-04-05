@@ -32,7 +32,7 @@ Base.mean(dist::MvDeltaDistribution) = dist.m
 
 Base.var(dist::MvDeltaDistribution) = zeros(length(dist.m))
 
-Base.cov(dist::MvDeltaDistribution) = zeros(length(dist.m), length(dist.m))
+Base.cov(dist::MvDeltaDistribution) = Diagonal(zeros(length(dist.m)))
 
 sample(dist::MvDeltaDistribution) = dist.m
 

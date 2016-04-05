@@ -9,7 +9,7 @@ facts("GainNode unit tests") do
         @fact length(n(:node).interfaces) --> 2
         @fact n(:node).i[:in] --> n(:node).interfaces[1]
         @fact n(:node).i[:out] --> n(:node).interfaces[2]
-        @fact typeof(n(:node).gain) <: Array --> true
+        @fact typeof(n(:node).gain) <: AbstractArray --> true
         @fact length(size(n(:node).gain)) --> 2 # A should always be a matrix
     end
 
@@ -49,11 +49,11 @@ facts("GainNode unit tests") do
         validateOutboundMessage(GainNode(gain=A),
                                 1,
                                 [nothing, Message(MvDeltaDistribution([30.0, 10.0]))],
-                                MvDeltaDistribution(inv(A)*[30.0, 10.0]))
+                                MvDeltaDistribution(pinv(A)*[30.0, 10.0]))
         validateOutboundMessage(GainNode(),
                                 1,
-                                [nothing, Message(MvDeltaDistribution([30.0, 10.0])), Message(DeltaDistribution(A))],
-                                MvDeltaDistribution(inv(A)*[30.0, 10.0]))
+                                [nothing, Message(MvDeltaDistribution([30.0, 10.0])), Message(MatrixDeltaDistribution(A))],
+                                MvDeltaDistribution(pinv(A)*[30.0, 10.0]))
         # Forward message
         validateOutboundMessage(GainNode(gain=A),
                                 2,
@@ -61,7 +61,7 @@ facts("GainNode unit tests") do
                                 MvDeltaDistribution(A*[30.0, 10.0]))
         validateOutboundMessage(GainNode(),
                                 2,
-                                [Message(MvDeltaDistribution([30.0, 10.0])), nothing, Message(DeltaDistribution(A))],
+                                [Message(MvDeltaDistribution([30.0, 10.0])), nothing, Message(MatrixDeltaDistribution(A))],
                                 MvDeltaDistribution(A*[30.0, 10.0]))
     end
 
@@ -166,7 +166,7 @@ facts("GainNode unit tests") do
                                     MvGaussianDistribution(m=inv(A) * mean, V=inv(A) * variance * inv(A)'))
             validateOutboundMessage(GainNode(),
                                     1,
-                                    [nothing, Message(MvGaussianDistribution(m=mean, V=variance)), Message(DeltaDistribution(A))],
+                                    [nothing, Message(MvGaussianDistribution(m=mean, V=variance)), Message(MatrixDeltaDistribution(A))],
                                     MvGaussianDistribution(m=inv(A) * mean, V=inv(A) * variance * inv(A)'))
             # Forward message
             validateOutboundMessage(GainNode(gain=A),
@@ -175,7 +175,7 @@ facts("GainNode unit tests") do
                                     MvGaussianDistribution(m=A * mean, V=A * variance * A'))
             validateOutboundMessage(GainNode(),
                                     2,
-                                    [Message(MvGaussianDistribution(m=mean, V=variance)), nothing, Message(DeltaDistribution(A))],
+                                    [Message(MvGaussianDistribution(m=mean, V=variance)), nothing, Message(MatrixDeltaDistribution(A))],
                                     MvGaussianDistribution(m=A * mean, V=A * variance * A'))
         end
 
@@ -198,7 +198,7 @@ facts("GainNode unit tests") do
                                         GainNode(),
                                         Val{1},
                                         MvGaussianDistribution(m=zeros(3), V=eye(3)),
-                                        nothing, Message(MvGaussianDistribution(m=mean, W=precision)), Message(DeltaDistribution(A)))
+                                        nothing, Message(MvGaussianDistribution(m=mean, W=precision)), Message(MatrixDeltaDistribution(A)))
             ensureParameters!(dist, (:m, :W))
             @fact dist.m --> roughly(inv(A) * mean)
             @fact dist.W --> roughly(A' * precision * A)
@@ -217,7 +217,7 @@ facts("GainNode unit tests") do
                                         GainNode(),
                                         Val{2},
                                         MvGaussianDistribution(m=zeros(3), V=eye(3)),
-                                        Message(MvGaussianDistribution(m=mean, W=precision)), nothing, Message(DeltaDistribution(A)))
+                                        Message(MvGaussianDistribution(m=mean, W=precision)), nothing, Message(MatrixDeltaDistribution(A)))
             ensureParameters!(dist, (:m, :W))
             @fact dist.m --> roughly(A * mean)
             @fact dist.W --> roughly(inv(A)' * precision * inv(A))

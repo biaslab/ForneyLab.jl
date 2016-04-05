@@ -35,6 +35,7 @@ facts("GaussianNode unit tests") do
 
     context("Sum-product: no fixed parameters") do
         context("Sum-product message towards out") do
+            # Univariate
             validateOutboundMessage(GaussianNode(),
                                     3,
                                     [Message(DeltaDistribution(2.0)), Message(DeltaDistribution(0.5)), nothing],
@@ -43,6 +44,25 @@ facts("GaussianNode unit tests") do
                                     3,
                                     [Message(DeltaDistribution(2.0)), Message(DeltaDistribution(0.5)), nothing],
                                     GaussianDistribution(m=2.0, W=0.5))
+
+            # Multivariate
+            validateOutboundMessage(GaussianNode(),
+                                    3,
+                                    [Message(MvDeltaDistribution(2.0*ones(2))), Message(MatrixDeltaDistribution(0.5*eye(2))), nothing],
+                                    MvGaussianDistribution(m=2.0*ones(2), V=0.5*eye(2)))
+            validateOutboundMessage(GaussianNode(form=:precision),
+                                    3,
+                                    [Message(MvDeltaDistribution(2.0*ones(2))), Message(MatrixDeltaDistribution(0.5*eye(2))), nothing],
+                                    MvGaussianDistribution(m=2.0*ones(2), W=0.5*eye(2)))
+
+            validateOutboundMessage(GaussianNode(),
+                                    3,
+                                    [Message(MvDeltaDistribution(2.0*ones(2))), Message(MatrixDeltaDistribution(0.5*diageye(2))), nothing],
+                                    MvGaussianDistribution(m=2.0*ones(2), V=0.5*diageye(2)))
+            validateOutboundMessage(GaussianNode(form=:precision),
+                                    3,
+                                    [Message(MvDeltaDistribution(2.0*ones(2))), Message(MatrixDeltaDistribution(0.5*diageye(2))), nothing],
+                                    MvGaussianDistribution(m=2.0*ones(2), W=0.5*diageye(2)))
         end
 
         context("Sum-product message towards mean") do

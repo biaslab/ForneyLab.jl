@@ -3,7 +3,7 @@ module ForneyLab
 using Optim
 using LaTeXStrings
 
-export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution
+export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution, MatrixVariateProbabilityDistribution
 export sumProductRule!, expectationRule!, variationalRule!
 export InferenceAlgorithm
 export vague, self, ==, isProper, sample, dimensions
@@ -28,6 +28,8 @@ abstract AbstractEdge # An Interface belongs to an Edge, but Interface is define
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
 abstract UnivariateProbabilityDistribution <: ProbabilityDistribution
 abstract MultivariateProbabilityDistribution <: ProbabilityDistribution
+abstract MatrixVariateProbabilityDistribution <: ProbabilityDistribution
+
 abstract InferenceAlgorithm
 
 # Low-level internals
@@ -35,7 +37,7 @@ include("approximation.jl")     # Types related to approximations
 include("node.jl")              # Node type
 include("message.jl")           # Message type
 
-# Extract dimensionality from message or distribution (note exception for normal-gamma in normal_gamma.jl)
+# Extract dimensionality from message or distribution (exceptions for normal-gamma and matrix-delta in distribution files)
 dimensions{T<:MultivariateProbabilityDistribution}(message::Message{T}) = typeof(message.payload).parameters[end]
 dimensions(distribution::MultivariateProbabilityDistribution) = typeof(distribution).parameters[end]
 dimensions{T<:MultivariateProbabilityDistribution}(message_type::Type{Message{T}}) = message_type.parameters[1].parameters[end]
@@ -61,8 +63,11 @@ include("distributions/univariate/log_normal.jl")
 include("distributions/multivariate/mv_delta.jl")
 include("distributions/multivariate/mv_gaussian.jl")
 include("distributions/multivariate/normal_gamma.jl")
-include("distributions/multivariate/wishart.jl")
 include("distributions/multivariate/mv_log_normal.jl")
+
+# Matrix variate distributions
+include("distributions/matrix_variate/wishart.jl")
+include("distributions/matrix_variate/matrix_delta.jl")
 
 # Basic ForneyLab building blocks and methods
 include("interface.jl")
