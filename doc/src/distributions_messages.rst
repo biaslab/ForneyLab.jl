@@ -22,7 +22,7 @@ The name of a subtype of ``ProbabilityDistribution`` should end in "Distribution
 
 .. function:: isProper(p::ProbabilityDistribution)
 
-    Returns true/false according to whether or not ``p`` is a proper probability distribution. A distribution is proper if and only if (i) the pdf/pmf is upper bounded by 1, and (ii) the integral/sum of the pdf/pmf over the entire domain equals 1.
+    Returns true/false according to whether or not ``p`` is a proper probability distribution. A distribution is proper if and only if (i) the pdf/pmf is non-negative, and (ii) the integral/sum of the pdf/pmf over the entire domain equals 1.
 
 
 Moreover, the following optional methods might be implemented:
