@@ -18,9 +18,10 @@ function ensureValue!(node::TerminalNode, value_type::Type)
             node.value = DeltaDistribution()
         elseif (value_type <: DeltaDistribution{Bool}) || (value_type <: Bool)
             node.value = DeltaDistribution(false)
-        elseif (value_type <: MvDeltaDistribution) || (value_type <: Vector{Float64})
-            dims = value_type.parameters[end]
-            node.value = MvDeltaDistribution(zeros(dims))
+        elseif value_type <: MvDeltaDistribution
+            node.value = MvDeltaDistribution(zeros(dimensions(value_type)))
+        elseif value_type <: MatrixDeltaDistribution
+            node.value = MatrixDeltaDistribution(zeros(dimensions(value_type)...))
         else
             node.value = vague(value_type)
         end

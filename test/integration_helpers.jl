@@ -391,6 +391,8 @@ function validateOutboundMessage(node::Node, outbound_interface_index::Int, inbo
         outbound_dist = DeltaDistribution()
     elseif typeof(correct_outbound_dist) <: MvDeltaDistribution
         outbound_dist = MvDeltaDistribution(zeros(dimensions(correct_outbound_dist)))
+    elseif typeof(correct_outbound_dist) <: MatrixDeltaDistribution
+        outbound_dist = MatrixDeltaDistribution(zeros(dimensions(correct_outbound_dist)))
     else
         outbound_dist = vague(typeof(correct_outbound_dist))
     end

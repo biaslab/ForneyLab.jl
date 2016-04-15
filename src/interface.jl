@@ -49,12 +49,9 @@ function ensureMessage!{T<:ProbabilityDistribution}(interface::Interface, payloa
         elseif payload_type <: DeltaDistribution{Bool}
             interface.message = Message(DeltaDistribution(false))
         elseif payload_type <: MvDeltaDistribution
-            dims = payload_type.parameters[end]
-            interface.message = Message(MvDeltaDistribution(zeros(dims)))
+            interface.message = Message(MvDeltaDistribution(zeros(dimensions(payload_type))))
         elseif payload_type <: MatrixDeltaDistribution
-            dims_n = payload_type.parameters[end-1]
-            dims_m = payload_type.parameters[end]
-            interface.message = Message(MatrixDeltaDistribution(zeros(dims_n, dims_m)))
+            interface.message = Message(MatrixDeltaDistribution(zeros(dimensions(payload_type)...)))
         else
             interface.message = Message(vague(payload_type))
         end

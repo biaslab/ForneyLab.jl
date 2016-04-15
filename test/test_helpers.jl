@@ -82,6 +82,16 @@ facts("Helper function unit tests") do
         @fact node.i[:out].message --> nothing
         @fact ForneyLab.ensureMessage!(node.i[:out], GaussianDistribution) --> Message(vague(GaussianDistribution))
         @fact node.i[:out].message --> Message(vague(GaussianDistribution))
+        @fact ForneyLab.ensureMessage!(node.i[:out], MvGaussianDistribution{2}) --> Message(vague(MvGaussianDistribution{2}))
+        @fact node.i[:out].message --> Message(vague(MvGaussianDistribution{2}))
+        @fact ForneyLab.ensureMessage!(node.i[:out], DeltaDistribution{Bool}) --> Message(DeltaDistribution(false))
+        @fact node.i[:out].message --> Message(DeltaDistribution(false))
+        @fact ForneyLab.ensureMessage!(node.i[:out], DeltaDistribution{Float64}) --> Message(DeltaDistribution())
+        @fact node.i[:out].message --> Message(DeltaDistribution())
+        @fact ForneyLab.ensureMessage!(node.i[:out], MvDeltaDistribution{Float64, 2}) --> Message(MvDeltaDistribution(zeros(2)))
+        @fact node.i[:out].message --> Message(MvDeltaDistribution(zeros(2)))
+        @fact ForneyLab.ensureMessage!(node.i[:out], MatrixDeltaDistribution{Float64, 2, 3}) --> Message(MatrixDeltaDistribution(zeros(2, 3)))
+        @fact node.i[:out].message --> Message(MatrixDeltaDistribution(zeros(2, 3)))
     end
 
     context("ensureMessage! should return the present message is there is one and the type matches") do
