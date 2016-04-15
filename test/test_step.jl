@@ -14,6 +14,7 @@ facts("Read/write buffer integration tests") do
         @fact ForneyLab.ensureValue!(node, Bool) --> DeltaDistribution(false)
         @fact ForneyLab.ensureValue!(node, GaussianDistribution) --> vague(GaussianDistribution)
         @fact ForneyLab.ensureValue!(node, MvDeltaDistribution{Float64, 3}) --> MvDeltaDistribution([0.0, 0.0, 0.0])
+        @fact ForneyLab.ensureValue!(node, MatrixDeltaDistribution{Float64, 2, 3}) --> MatrixDeltaDistribution(zeros(2, 3))
     end
 
     # attachReadBuffer
