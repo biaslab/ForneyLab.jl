@@ -153,7 +153,7 @@ function inferOutboundType!(entry::ScheduleEntry)
             end
         end
 
-        error("No suitable calculation rule available for schedule entry:\n$(entry)Inbound types: $(inbound_types)")
+        error("No suitable calculation rule available for schedule entry:\n$(entry)Inbound types: $(inbound_types).")
     else
         # Infer the outbound type
 
@@ -176,7 +176,7 @@ function inferOutboundType!(entry::ScheduleEntry)
         elseif length(outbound_types) > 1
             error("There are multiple outbound type possibilities for schedule entry:\n$(entry)Inbound types: $(inbound_types)\nPlease specify a message type and if required also an approximation method.")
         else
-            error("No calculation rule available for schedule entry:\n$(entry)")
+            error("No calculation rule available for schedule entry:\n$(entry)Inbound types: $(inbound_types).")
         end
     end
 end
