@@ -416,6 +416,13 @@ function equalityRule!{dims}(dist_result::MatrixDeltaDistribution{Float64, dims,
     return dist_result
 end
 
+function equalityRule!{dims}(dist_result::WishartDistribution{dims}, dist_1::WishartDistribution{dims}, dist_2::MatrixDeltaDistribution{Float64, dims, dims})
+    dist_result.V = tiny*dist_2.M
+    dist_result.nu = huge
+
+    return dist_result
+end
+
 
 ############################################
 # LogNormal-DeltaDistribution combination

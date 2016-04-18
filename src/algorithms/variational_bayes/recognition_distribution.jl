@@ -67,6 +67,17 @@ end
 
 
 ############################################
+# Wishart-MatrixDelta combination
+############################################
+
+function calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::WishartDistribution, backward_dist::MatrixDeltaDistribution{Float64})
+    # Calculation for univariate approximate marginal
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
+end
+calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::MatrixDeltaDistribution{Float64}, backward_dist::WishartDistribution) = calculateRecognitionDistribution!(marg, backward_dist, forward_dist)
+
+
+############################################
 # Gaussian-students t combination
 ############################################
 
