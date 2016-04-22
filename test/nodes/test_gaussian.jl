@@ -44,12 +44,12 @@ facts("GaussianNode unit tests") do
                                     3,
                                     [Message(DeltaDistribution(2.0)), Message(DeltaDistribution(0.5)), nothing],
                                     GaussianDistribution(m=2.0, W=0.5))
-
-            # Multivariate
             validateOutboundMessage(GaussianNode(),
                                     3,
-                                    [Message(MvDeltaDistribution(2.0*ones(2))), Message(MatrixDeltaDistribution(0.5*eye(2))), nothing],
-                                    MvGaussianDistribution(m=2.0*ones(2), V=0.5*eye(2)))
+                                    [Message(GaussianDistribution(m=2.0, V=1.0)), Message(DeltaDistribution(0.5)), nothing],
+                                    GaussianDistribution(m=2.0, V=1.5))
+
+            # Multivariate
             validateOutboundMessage(GaussianNode(form=:precision),
                                     3,
                                     [Message(MvDeltaDistribution(2.0*ones(2))), Message(MatrixDeltaDistribution(0.5*eye(2))), nothing],
@@ -63,6 +63,11 @@ facts("GaussianNode unit tests") do
                                     3,
                                     [Message(MvDeltaDistribution(2.0*ones(2))), Message(MatrixDeltaDistribution(0.5*diageye(2))), nothing],
                                     MvGaussianDistribution(m=2.0*ones(2), W=0.5*diageye(2)))
+
+            validateOutboundMessage(GaussianNode(form=:precision),
+                                    3,
+                                    [Message(MvGaussianDistribution(m=2.0*ones(2), V=1.0*diageye(2))), Message(MatrixDeltaDistribution(0.5*eye(2))), nothing],
+                                    MvGaussianDistribution(m=2.0*ones(2), V=3.0*eye(2)))
         end
 
         context("Sum-product message towards mean") do
@@ -74,6 +79,15 @@ facts("GaussianNode unit tests") do
                                     1,
                                     [nothing, Message(DeltaDistribution(0.5)), Message(DeltaDistribution(2.0))],
                                     GaussianDistribution(m=2.0, W=0.5))
+
+            validateOutboundMessage(GaussianNode(),
+                                    1,
+                                    [nothing, Message(DeltaDistribution(0.5)), Message(GaussianDistribution(m=2.0, V=1.0))],
+                                    GaussianDistribution(m=2.0, V=1.5))
+            validateOutboundMessage(GaussianNode(form=:precision),
+                                    1,
+                                    [nothing, Message(MatrixDeltaDistribution(0.5*diageye(2))), Message(MvGaussianDistribution(m=2.0*ones(2), V=1.0*diageye(2)))],
+                                    MvGaussianDistribution(m=2.0*ones(2), V=3.0*diageye(2)))
         end
 
         context("Sum-product message towards variance/precision") do
