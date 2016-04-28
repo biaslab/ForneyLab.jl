@@ -27,7 +27,7 @@ type SumProduct <: AbstractSumProduct
     schedule::Schedule
 end
 
-function show(algo::SumProduct)
+function show(io::IO, algo::SumProduct)
     println("SumProduct inference algorithm")
     println("    message passing schedule length: $(length(algo.schedule))")
     println("Use show(algo.schedule) to view the message passing schedule.")
