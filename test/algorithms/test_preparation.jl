@@ -69,8 +69,12 @@ facts("Shared preparation methods for inference algorithms") do
         @fact ForneyLab.collectAllOutboundTypes(expectationRule!, call_signature, SigmoidNode()) --> [GaussianDistribution]
 
         # Tests for approximate msg computation rules
+        # Fixed outbound distribution type
         call_signature = [EqualityNode, Type{Val{1}}, Any, Any, Message{GaussianDistribution}, Message{StudentsTDistribution}]
         @fact ForneyLab.collectAllOutboundTypes(sumProductRule!, call_signature, EqualityNode()) --> []
+        call_signature = [EqualityNode, Type{Val{1}}, Any, Any, Message{GaussianDistribution}, Message{StudentsTDistribution}, Any]
+        @fact ForneyLab.collectAllOutboundTypes(sumProductRule!, call_signature, EqualityNode()) --> [Approximation{GaussianDistribution,MomentMatching}]
+        # Fixed outbound distribution type and approximation type
         call_signature = [EqualityNode, Type{Val{1}}, Any, Any, Message{GaussianDistribution}, Message{StudentsTDistribution}, Type{MomentMatching}]
         @fact ForneyLab.collectAllOutboundTypes(sumProductRule!, call_signature, EqualityNode()) --> [Approximation{GaussianDistribution,MomentMatching}]
     end
@@ -112,6 +116,41 @@ facts("Shared preparation methods for inference algorithms") do
         entry.inbound_types = [GaussianDistribution, Void, GaussianDistribution]
         ForneyLab.inferOutboundType!(entry)
         @fact entry.outbound_type --> GammaDistribution
+    end
+
+    context("inferOutboundType!() should consider approximate rules") do
+        # Just one approximate rule available
+        entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
+        entry.inbound_types = [Message{GaussianDistribution}, Message{StudentsTDistribution}, Void]
+        ForneyLab.inferOutboundType!(entry)
+        @fact entry.outbound_type --> GaussianDistribution
+        @fact entry.approximation --> MomentMatching
+
+        # Just one approximate rule available, fixed outbound type
+        entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
+        entry.inbound_types = [Message{GaussianDistribution}, Message{StudentsTDistribution}, Void]
+        entry.outbound_type = GaussianDistribution
+        ForneyLab.inferOutboundType!(entry)
+        @fact entry.outbound_type --> GaussianDistribution
+        @fact entry.approximation --> MomentMatching
+
+        # Multiple approximate rules available, fixed outbound type
+        entry = ScheduleEntry(ExponentialNode(), 2, sumProductRule!)
+        entry.inbound_types = [Message{GaussianDistribution}, Void]
+        entry.outbound_type = GammaDistribution
+        ForneyLab.inferOutboundType!(entry)
+        @fact entry.outbound_type --> GammaDistribution
+        @fact isdefined(entry, :approximation) --> true # we don't care which approximation has been chosen
+
+
+        # Multiple approximate rules available, fixed outbound type and approximation type
+        entry = ScheduleEntry(ExponentialNode(), 2, sumProductRule!)
+        entry.inbound_types = [Message{GaussianDistribution}, Void]
+        entry.outbound_type = GammaDistribution
+        entry.approximation = MomentMatching
+        ForneyLab.inferOutboundType!(entry)
+        @fact entry.outbound_type --> GammaDistribution
+        @fact entry.approximation --> MomentMatching
     end
 
     context("buildExecute!() should pre-compile the execute field of the schedule entry") do

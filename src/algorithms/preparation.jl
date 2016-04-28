@@ -83,12 +83,12 @@ function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::N
 end
 
 function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::Union{GainNode, GainAdditionNode, GainEqualityNode})
-    # Outbound type collection overloading for nodes with an (optional) fixed gain
+    # Outbound type collection overloading for nodes with an (optional) fixed gain.
+    # This is necessary because the fixed gain determines the dimensionality of the outbound distribution.
 
     outbound_types = DataType[]
 
     for method in methods(rule, call_signature)
-
         ob_type = extractOutboundType(method.sig.types[3]) # Third entry is always the outbound distribution
 
         if !isempty(parameters(ob_type)) # Outbound type has parameters that need to be inferred
@@ -140,15 +140,18 @@ function inferOutboundType!(entry::ScheduleEntry)
 
         # Try to find a matching exact rule
         outbound_types = collectAllOutboundTypes(entry.rule, exact_call_signature, node)
-        if entry.outbound_type in outbound_types
-            return entry
+        for outbound_type in outbound_types
+            if entry.outbound_type <: outbound_type
+                return entry
+            end
         end
 
         # Try to find a matching approximate rule
         call_signature = vcat(exact_call_signature, isdefined(entry, :approximation) ? Type{entry.approximation} : Any)
         outbound_types = collectAllOutboundTypes(entry.rule, call_signature, node)
         for outbound_type in outbound_types
-            if entry.outbound_type == outbound_type.parameters[1]
+            if entry.outbound_type <: outbound_type.parameters[1]
+                entry.approximation = outbound_type.parameters[2]
                 return entry
             end
         end

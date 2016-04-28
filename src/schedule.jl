@@ -29,11 +29,11 @@ end
 function setOutboundType!(entry::ScheduleEntry, outbound_type::DataType)
     if outbound_type <: ProbabilityDistribution
         entry.outbound_type = outbound_type
-    elseif outbound_type == Approximation
+    elseif outbound_type <: Approximation
         entry.outbound_type = outbound_type.parameters[1]
         entry.approximation = outbound_type.parameters[2]
     else
-        error("Invalid message type specification: $(outbound_type). Should be <:ProbabilityDistribution or Approximation.")
+        error("Invalid message type specification: $(outbound_type). Should be subtype of ProbabilityDistribution or Approximation.")
     end
 
     return entry

@@ -1,4 +1,4 @@
-facts("Approximation related types") do
+facts("Approximations") do
     context("Parameters of Approximation should be subtype-constrained") do
         @fact Approximation{GaussianDistribution, Laplace} --> Approximation{GaussianDistribution, Laplace}
         @fact_throws Approximation{GaussianDistribution, Int64}
