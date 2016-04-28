@@ -48,7 +48,7 @@ function variationalRule!(  node::GaussianMixtureNode,
                             q_w1::GammaDistribution,
                             q_m2::GaussianDistribution,
                             q_w2::GammaDistribution,
-                            q_x::DeltaDistribution{Float64},
+                            q_x::GaussianDistribution,
                             q_z::BernoulliDistribution)
 
     ensureParameters!(q_m1, (:m, :V))
@@ -69,11 +69,11 @@ function variationalRule!(  node::GaussianMixtureNode,
                             q_w1::GammaDistribution,
                             q_m2::GaussianDistribution,
                             q_w2::GammaDistribution,
-                            q_x::DeltaDistribution{Float64},
+                            q_x::GaussianDistribution,
                             q_z::BernoulliDistribution)
+    ensureParameters!(q_x, (:m, :V))
 
-
-    outbound_dist.m = q_x
+    outbound_dist.m = q_x.m
     outbound_dist.V = NaN
     outbound_dist.xi  = NaN
     outbound_dist.W = q_z.p*q_w1.a/q_w1.b
@@ -90,14 +90,15 @@ function variationalRule!(  node::GaussianMixtureNode,
                             ::Any,
                             q_m2::GaussianDistribution,
                             q_w2::GammaDistribution,
-                            q_x::DeltaDistribution{Float64},
+                            q_x::GaussianDistribution,
                             q_z::BernoulliDistribution)
 
     ensureParameters!(q_m1, (:m, :V))
+    ensureParameters!(q_x, (:m, :V))
 
     outbound_dist.a = 1.+0.5*q_z.p
     e_m1_square = q_m1.V+q_m1.m^2
-    outbound_dist.b = 0.5*q_z.p*(q_x^2-2.*q_x*q_m1.m+e_m1_square)
+    outbound_dist.b = 0.5*q_z.p*(q_x.m^2-2.*q_x.m*q_m1.m+e_m1_square)
 
     return outbound_dist
 end
@@ -111,11 +112,11 @@ function variationalRule!(  node::GaussianMixtureNode,
                             q_w1::GammaDistribution,
                             ::Any,
                             q_w2::GammaDistribution,
-                            q_x::DeltaDistribution{Float64},
+                            q_x::GaussianDistribution,
                             q_z::BernoulliDistribution)
+    ensureParameters!(q_x, (:m, :V))
 
-
-    outbound_dist.m = q_x
+    outbound_dist.m = q_x.m
     outbound_dist.V = NaN
     outbound_dist.xi  = NaN
     outbound_dist.W = (1.-q_z.p)*q_w2.a/q_w2.b
@@ -132,14 +133,15 @@ function variationalRule!(  node::GaussianMixtureNode,
                             q_w1::GammaDistribution,
                             q_m2::GaussianDistribution,
                             ::Any,
-                            q_x::DeltaDistribution{Float64},
+                            q_x::GaussianDistribution,
                             q_z::BernoulliDistribution)
 
     ensureParameters!(q_m2, (:m, :V))
+    ensureParameters!(q_x, (:m, :V))
 
     outbound_dist.a = 1.+0.5*(1.-q_z.p)
     e_m2_square = q_m2.V+q_m2.m^2
-    outbound_dist.b = 0.5*(1.-q_z.p)*(q_x^2-2.*q_x*q_m2.m+e_m2_square)
+    outbound_dist.b = 0.5*(1.-q_z.p)*(q_x.m^2-2.*q_x.m*q_m2.m+e_m2_square)
 
     return outbound_dist
 end
@@ -153,16 +155,37 @@ function variationalRule!(  node::GaussianMixtureNode,
                             q_w1::GammaDistribution,
                             q_m2::GaussianDistribution,
                             q_w2::GammaDistribution,
-                            q_x::DeltaDistribution{Float64},
-                            ::Any
+                            q_x::GaussianDistribution,
+                            ::Any)
 
     ensureParameters!(q_m1, (:m, :V))
+    ensureParameters!(q_x, (:m, :V))
 
     e_ln_pi1 = digamma(q_pi.a)-digamma(q_pi.a+q_pi.b)
-    e_ln_w1 = digamma(q_w1.a)-ln(q_w1.b)
+    e_ln_w1 = digamma(q_w1.a)-log(q_w1.b)
     e_m1_square = q_m1.V+q_m1.m^2
-    ln_ro1 = e_ln_pi+0.5*e_ln_w1-0.5*ln(2pi)-0.5*q_w1.a/q_w1.b*e_m1_square
+    ln_ro1 = e_ln_pi1+0.5*e_ln_w1-0.5*log(2pi)-0.5*q_w1.a/q_w1.b*e_m1_square
     outbound_dist.p = exp(ln_ro1)
+
+    return outbound_dist
+end
+
+# VMP message towards i[:z]
+function variationalRule!(  node::GaussianMixtureNode,
+                            ::Type{Val{6}},
+                            outbound_dist::GaussianDistribution,
+                            q_pi::BetaDistribution,
+                            q_m1::GaussianDistribution,
+                            q_w1::GammaDistribution,
+                            q_m2::GaussianDistribution,
+                            q_w2::GammaDistribution,
+                            q_x::Any,
+                            q_z::BernoulliDistribution)
+
+    outbound_dist.m=0.0
+    outbound_dist.V=100
+    outbound_dist.xi=NaN
+    outbound_dist.W=NaN
 
     return outbound_dist
 end
