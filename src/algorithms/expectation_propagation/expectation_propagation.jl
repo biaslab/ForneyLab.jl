@@ -21,7 +21,7 @@ type ExpectationPropagation <: InferenceAlgorithm
     callback::Function
 end
 
-function show(algo::ExpectationPropagation)
+function show(io::IO, algo::ExpectationPropagation)
     println("ExpectationPropagation inference algorithm")
     println("    # sites: $(length(algo.sites))")
     println("    max. number of iterations: $(algo.n_iterations)")

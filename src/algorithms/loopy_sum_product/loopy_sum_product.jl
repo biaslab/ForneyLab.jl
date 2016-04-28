@@ -17,7 +17,7 @@ type LoopySumProduct <: AbstractSumProduct
     n_iterations::Int64
 end
 
-function show(algo::LoopySumProduct)
+function show(io::IO, algo::LoopySumProduct)
     println("LoopySumProduct inference algorithm")
     println("    message passing schedule length: $(length(algo.schedule))")
     println("    number of iterations: $(algo.n_iterations)")
