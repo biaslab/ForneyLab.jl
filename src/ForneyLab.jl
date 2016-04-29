@@ -60,6 +60,7 @@ include("distributions/univariate/beta.jl")
 include("distributions/univariate/log_normal.jl")
 
 # Multivariate distributions
+include("distributions/multivariate/factorized.jl")
 include("distributions/multivariate/mv_delta.jl")
 include("distributions/multivariate/mv_gaussian.jl")
 include("distributions/multivariate/normal_gamma.jl")
