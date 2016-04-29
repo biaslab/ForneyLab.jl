@@ -16,6 +16,14 @@ function calculateRecognitionDistribution!(recog::RecognitionDistribution, forwa
     return prod!(forward_dist, backward_dist, recog.distribution)
 end
 
+############################################
+# Bernoulli-Bernoulli combination
+############################################
+
+function calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::BernoulliDistribution, backward_dist::BernoulliDistribution)
+    # Calculation for univariate approximate marginal
+    return ForneyLab.equalityRule!(marg.distribution, forward_dist, backward_dist)
+end
 
 ############################
 # Joint marginals
