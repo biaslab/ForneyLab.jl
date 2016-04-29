@@ -3,7 +3,23 @@ export GaussianMixtureNode
 """
 Description:
 
+    Univariate gaussian mixture model with
     f(m1,m2,w1,w2,pi,x,z) = N(x|m1,1/w1)^z[1] * N(x|m2,1/w2)^z[2] * pi[1]^z[1] * pi[2]^z[2]
+
+
+                  | pi
+                  |
+          ________|________
+      m1  |               |  x
+     -----|               |----
+      w1  |               |  z
+     -----|       GM      |----
+      m2  |               |
+     -----|               |
+      w2  |               |
+     -----|               |
+          |_______________|
+
 
 Interfaces:
 
