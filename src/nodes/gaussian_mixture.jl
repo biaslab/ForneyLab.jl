@@ -54,8 +54,8 @@ function variationalRule!(  node::GaussianMixtureNode,
     ensureParameters!(q_m1, (:m, :V))
 
 
-    outbound_dist.a = q_z.p+1
-    outbound_dist.b = 2-q_z.p
+    outbound_dist.a = q_z.p+1.
+    outbound_dist.b = 2.-q_z.p
 
     return outbound_dist
 end
@@ -165,14 +165,14 @@ function variationalRule!(  node::GaussianMixtureNode,
     #calculating ln(ro1)
     e_ln_pi1 = digamma(q_pi.a)-digamma(q_pi.a+q_pi.b)
     e_ln_w1 = digamma(q_w1.a)-log(q_w1.b)
-    e_m1_square = q_m1.V+q_m1.m^2
+    e_m1_square = q_x.m^2-2*q_x.m*q_m1.m+q_m1.V+q_m1.m^2
     ln_ro1 = e_ln_pi1+0.5*e_ln_w1-0.5*log(2pi)-0.5*q_w1.a/q_w1.b*e_m1_square
 
-    #calculating ln(ro2)
+    #calculating ln(ro2) for normalization
 
     e_ln_pi2=digamma(q_pi.b)-digamma(q_pi.b+q_pi.a)
     e_ln_w2=digamma(q_w2.a)-log(q_w2.b)
-    e_m2_square=q_m2.V+q_m2.m^2
+    e_m2_square=q_x.m^2-2*q_x.m*q_m2.m+q_m2.V+q_m2.m^2
     ln_ro2 = e_ln_pi2+0.5*e_ln_w2-0.5*log(2pi)-0.5*q_w2.a/q_w2.b*e_m2_square
 
     outbound_dist.p = exp(ln_ro1)/(exp(ln_ro1)+exp(ln_ro2))
