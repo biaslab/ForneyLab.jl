@@ -128,18 +128,47 @@ function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::U
     return outbound_types
 end
 
+function buildRuleSignature(rule::Function, node::Node, outbound_interface_id::Int64, inbound_types::Vector{DataType}, approx=false)
+    if approx == false
+        return vcat([typeof(node); Type{Val{outbound_interface_id}}; Any], inbound_types)
+    else
+        return vcat([typeof(node); Type{Val{outbound_interface_id}}; Any], inbound_types, approx)
+    end
+end
+
+function collectOutboundTypes(rule::Function, node::Node, outbound_interface_id::Int64, inbound_types::Vector{DataType}, approx=false; one_is_enough::Bool=false)
+    sig = buildRuleSignature(rule, node, outbound_interface_id, inbound_types, approx)
+    outbound_types = collectAllOutboundTypes(rule, sig, node)
+
+    if (length(outbound_types) > 0) && one_is_enough
+        return outbound_types
+    else
+        num_factors = partitionedInboundTypesSize(inbound_types)
+        if num_factors > 0
+            # Try to find extra outbound types by splitting partitioned inbounds
+            modified_inbound_types = stripPartitionedInboundTypes(inbound_types)
+            sig = buildRuleSignature(rule, node, outbound_interface_id, modified_inbound_types, approx)
+            extra_outbound_types = collectAllOutboundTypes(rule, sig, node)
+            for ob_type in extra_outbound_types
+                push!(outbound_types, Message{PartitionedDistribution{ob_type, num_factors}})
+            end
+        else
+            return outbound_types
+        end
+    end
+
+    return outbound_types
+end
+
 function inferOutboundType!(entry::ScheduleEntry)
     # Infer the outbound type from the node type and the types of the inbounds
 
     inbound_types = entry.inbound_types
-    node = entry.node
-    exact_call_signature = [typeof(node); Type{Val{entry.outbound_interface_id}}; Any; inbound_types] # Call signature for exact message computation rules
-
     if isdefined(entry, :outbound_type)
         # The outbound type is already fixed, so we just need to validate that there exists a suitable computation rule
 
         # Try to find a matching exact rule
-        outbound_types = collectAllOutboundTypes(entry.rule, exact_call_signature, node)
+        outbound_types = collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types)
         for outbound_type in outbound_types
             if entry.outbound_type <: outbound_type
                 return entry
@@ -147,8 +176,8 @@ function inferOutboundType!(entry::ScheduleEntry)
         end
 
         # Try to find a matching approximate rule
-        call_signature = vcat(exact_call_signature, isdefined(entry, :approximation) ? Type{entry.approximation} : Any)
-        outbound_types = collectAllOutboundTypes(entry.rule, call_signature, node)
+        approx = isdefined(entry, :approximation) ? Type{entry.approximation} : Any
+        outbound_types = collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, approx)
         for outbound_type in outbound_types
             if entry.outbound_type <: outbound_type.parameters[1]
                 entry.approximation = outbound_type.parameters[2]
@@ -161,7 +190,7 @@ function inferOutboundType!(entry::ScheduleEntry)
         # Infer the outbound type
 
         # Try to apply an exact rule
-        outbound_types = collectAllOutboundTypes(entry.rule, exact_call_signature, node)
+        outbound_types = collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, one_is_enough=true)
         if length(outbound_types) == 1
             entry.outbound_type = outbound_types[1]
             return entry
@@ -170,8 +199,8 @@ function inferOutboundType!(entry::ScheduleEntry)
         end
 
         # Try to apply an approximate rule
-        call_signature = vcat(exact_call_signature, isdefined(entry, :approximation) ? Type{entry.approximation} : Any)
-        outbound_types = collectAllOutboundTypes(entry.rule, call_signature, node)
+        approx = isdefined(entry, :approximation) ? Type{entry.approximation} : Any
+        outbound_types = collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, approx, one_is_enough=true)
         if length(outbound_types) == 1
             entry.outbound_type = outbound_types[1].parameters[1]
             entry.approximation = outbound_types[1].parameters[2]
@@ -182,6 +211,51 @@ function inferOutboundType!(entry::ScheduleEntry)
             error("No calculation rule available for schedule entry:\n$(entry)Inbound types: $(inbound_types).")
         end
     end
+end
+
+function partitionedInboundTypesSize(inbound_types::Vector{DataType})
+    # Return 0 if inbound_types contains no partitioned inbounds.
+    # If a partitioned inbound is detected, return the number of factors.
+
+    for ib_type in inbound_types
+        if ib_type <: PartitionedDistribution
+            return ib_type.parameters[2]
+        elseif ((ib_type <: Message) && (ib_type.parameters[1] <: PartitionedDistribution))
+            return ib_type.parameters[1].parameters[2]
+        end
+    end
+
+    return 0
+end
+
+function stripPartitionedInboundTypes(inbound_types::Vector{DataType})
+    # Simplify a list of inbound types that contains PartitionedDistribution or Message{PartitionedDistribution} entries.
+    # Replace every partitioned inbound type by the type of the factors.
+    # Check if all partitioned inbounds contain the same number of factors. If not, throw an error.
+    stripped_inbound_types = Vector{DataType}()
+    num_factors = 0
+    for ib_type in inbound_types
+        if ib_type <: PartitionedDistribution
+            part_type = ib_type
+        elseif ((ib_type <: Message) && (ib_type.parameters[1] <: PartitionedDistribution))
+            part_type = ib_type.parameters[1]
+        else
+            # Regular inbound type
+            push!(stripped_inbound_types, ib_type)
+            continue
+        end
+
+        if num_factors == 0
+            num_factors = part_type.parameters[2]
+        elseif num_factors != part_type.parameters[2]
+            error("PartitionedDistribution inbounds for a message computation rule should have the same number of factors.")
+        end
+
+        factor_type = part_type.parameters[1]
+        push!(stripped_inbound_types, (ib_type <: Message) ? Message{factor_type} : factor_type)
+    end
+
+    return stripped_inbound_types
 end
 
 function interfacesFacingWrapsOrBuffers(graph::FactorGraph=currentGraph();

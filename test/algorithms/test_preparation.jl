@@ -153,6 +153,25 @@ facts("Shared preparation methods for inference algorithms") do
         @fact entry.approximation --> MomentMatching
     end
 
+    context("inferOutboundType!() should consider one-by-one processing of PartitionedDistribution factors") do
+        # Only PartitionedDistribution inbounds
+        entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
+        entry.inbound_types = [Message{PartitionedDistribution{GaussianDistribution,3}}, Message{PartitionedDistribution{GaussianDistribution,3}}, Void]
+        ForneyLab.inferOutboundType!(entry)
+        @fact entry.outbound_type --> Message{PartitionedDistribution{GaussianDistribution,3}}
+
+        # Mismatch in number of factors
+        entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
+        entry.inbound_types = [Message{PartitionedDistribution{GaussianDistribution,2}}, Message{PartitionedDistribution{GaussianDistribution,3}}, Void]
+        @fact_throws ForneyLab.inferOutboundType!(entry)
+
+        # PartitionedDistribution inbound mixed with regular inbound
+        entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
+        entry.inbound_types = [Message{GaussianDistribution}, Message{PartitionedDistribution{GaussianDistribution,3}}, Void]
+        ForneyLab.inferOutboundType!(entry)
+        @fact entry.outbound_type --> Message{PartitionedDistribution{GaussianDistribution,3}}
+    end
+
     context("buildExecute!() should pre-compile the execute field of the schedule entry") do
         node = AdditionNode()
         node.i[:out].message = Message(GaussianDistribution())

@@ -43,4 +43,20 @@ facts("PartitionedDistribution unit tests") do
         @fact d1 --> d2
         @fact (d1==d3) --> false
     end
+
+    context("partitionedInboundTypesSize") do
+        testfunc = ForneyLab.partitionedInboundTypesSize
+        @fact testfunc([GaussianDistribution; Message{GammaDistribution}]) --> 0
+        @fact testfunc([PartitionedDistribution{GaussianDistribution,3}; Message{GammaDistribution}]) --> 3
+        @fact testfunc([GaussianDistribution; Message{PartitionedDistribution{GammaDistribution,2}}]) --> 2
+    end
+
+    context("stripPartitionedInboundTypes") do
+        testfunc = ForneyLab.stripPartitionedInboundTypes
+        @fact testfunc([GaussianDistribution; Message{GammaDistribution}]) --> [GaussianDistribution; Message{GammaDistribution}]
+        @fact testfunc([PartitionedDistribution{GaussianDistribution,3}; Message{GammaDistribution}]) --> [GaussianDistribution; Message{GammaDistribution}]
+        @fact testfunc([GaussianDistribution; Message{PartitionedDistribution{GammaDistribution,2}}]) --> [GaussianDistribution; Message{GammaDistribution}]
+        @fact testfunc([PartitionedDistribution{GaussianDistribution,2}; Message{PartitionedDistribution{GammaDistribution,2}}]) --> [GaussianDistribution; Message{GammaDistribution}]
+        @fact_throws testfunc([PartitionedDistribution{GaussianDistribution,2}; Message{PartitionedDistribution{GammaDistribution,3}}])
+    end
 end
