@@ -4,6 +4,7 @@ export  attachReadBuffer,
         detachWriteBuffer,
         detachBuffers,
         emptyWriteBuffers,
+        emptyReadBuffers,
         execute,
         step,
         run
@@ -102,6 +103,13 @@ function emptyWriteBuffers(graph::FactorGraph=currentGraph())
     for (k, v) in graph.write_buffers
         empty!(v) # Clear the vector but keep the pointer
     end
+end
+
+function emptyReadBuffers(graph::FactorGraph=currentGraph())
+    for (k, v) in graph.read_buffers
+        empty!(v) # Clear the vector but keep the pointer
+    end
+    graph.current_section = 1
 end
 
 function execute(algorithm::InferenceAlgorithm)

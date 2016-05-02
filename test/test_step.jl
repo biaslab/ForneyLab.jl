@@ -44,6 +44,16 @@ facts("Read/write buffer integration tests") do
         @fact length(g.read_buffers) --> 0
     end
 
+    context("emptyReadBuffers should empty read buffers while retaining pointers") do
+        g = initializeBufferGraph()
+        read_buffer = zeros(10)
+        attachReadBuffer(n(:node_t1), read_buffer)
+        emptyReadBuffers(g)
+        @fact g.read_buffers[n(:node_t1)] --> read_buffer
+        @fact length(g.read_buffers[n(:node_t1)]) --> 0
+        @fact g.current_section --> 1
+    end
+
     # attachWriteBuffer
     context("attachWriteBuffer should register a write buffer for an Interface") do
         g = initializeBufferGraph()
@@ -81,6 +91,15 @@ facts("Read/write buffer integration tests") do
         detachBuffers(g)
         @fact length(g.read_buffers) --> 0
         @fact length(g.write_buffers) --> 0
+    end
+
+    context("emptyWriteBuffers should empty write buffers while retaining pointers") do
+        g = initializeBufferGraph()
+        write_buffer = Array(Any, 0)
+        attachWriteBuffer(n(:node_t1).i[:out], write_buffer)
+        emptyWriteBuffers(g)
+        @fact g.write_buffers[n(:node_t1).i[:out]] --> write_buffer
+        @fact length(g.write_buffers[n(:node_t1).i[:out]]) --> 0
     end
 end
 
