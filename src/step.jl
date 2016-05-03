@@ -145,7 +145,7 @@ end
 step(algorithm::InferenceAlgorithm, direction::Symbol) = step(algorithm, Val{direction})
 step(algorithm::InferenceAlgorithm) = step(algorithm, :forward)
 
-function copyFromComponentToBuffer!(component::Edge, write_buffer::Vector{ProbabilityDistribution}, graph::FactorGraph)
+function copyFromComponentToBuffer!{T<:ProbabilityDistribution}(component::Edge, write_buffer::Vector{T}, graph::FactorGraph)
     if isdefined(graph, :block_size)
         write_buffer[graph.current_section] = deepcopy(calculateMarginal!(component))
     else
@@ -153,7 +153,7 @@ function copyFromComponentToBuffer!(component::Edge, write_buffer::Vector{Probab
     end
 end
 
-function copyFromComponentToBuffer!(component::Interface, write_buffer::Vector{ProbabilityDistribution}, graph::FactorGraph)
+function copyFromComponentToBuffer!{T<:ProbabilityDistribution}(component::Interface, write_buffer::Vector{T}, graph::FactorGraph)
     if isdefined(graph, :block_size)
         write_buffer[graph.current_section] = deepcopy(component.message.payload)
     else
