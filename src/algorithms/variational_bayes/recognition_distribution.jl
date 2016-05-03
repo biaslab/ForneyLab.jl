@@ -108,6 +108,14 @@ function calculateRecognitionDistribution!(marg::RecognitionDistribution, forwar
 end
 calculateRecognitionDistribution!(marg::RecognitionDistribution, forward_dist::MvDeltaDistribution{Float64}, backward_dist::MvGaussianDistribution) = calculateRecognitionDistribution!(marg, backward_dist, forward_dist)
 
+############################################
+# PartitionedDistribution
+############################################
+
+function calculateRecognitionDistribution!{dtype1,dtype2,n_factors}(marg::RecognitionDistribution, forward_dist::PartitionedDistribution{dtype1,n_factors}, backward_dist::PartitionedDistribution{dtype2,n_factors})
+    return marg.distribution = calculateMarginal(forward_dist, backward_dist)
+end
+
 
 ############################
 # Joint marginals

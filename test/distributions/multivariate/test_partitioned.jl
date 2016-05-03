@@ -59,6 +59,15 @@ facts("PartitionedDistribution unit tests") do
         @fact testfunc([PartitionedDistribution{GaussianDistribution,2}; Message{PartitionedDistribution{GammaDistribution,2}}]) --> [GaussianDistribution; Message{GammaDistribution}]
         @fact_throws testfunc([PartitionedDistribution{GaussianDistribution,2}; Message{PartitionedDistribution{GammaDistribution,3}}])
     end
+
+    context("calculateMarginal") do
+        d1 = PartitionedDistribution([GaussianDistribution(m=1.0,V=1.0); GaussianDistribution(m=2.0,V=3.0)])
+        d2 = PartitionedDistribution([GaussianDistribution(m=5.0,V=5.0); GaussianDistribution(m=2.0,V=4.0)])
+        marg = calculateMarginal(d1, d2)
+        @fact typeof(marg) --> PartitionedDistribution{GaussianDistribution, 2}
+        @fact marg.factors[1] --> calculateMarginal(d1.factors[1], d2.factors[1])
+        @fact marg.factors[2] --> calculateMarginal(d1.factors[2], d2.factors[2])
+    end
 end
 
 facts("PartitionedDistribution integration tests") do

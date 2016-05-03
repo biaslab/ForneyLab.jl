@@ -279,6 +279,17 @@ function calculateMarginal!(edge::Edge, forward_dist::WishartDistribution, backw
     return equalityRule!(marg, forward_dist, backward_dist)
 end
 
+############################################
+# PartitionedDistribution
+############################################
+
+function calculateMarginal{dtype1,dtype2,n_factors}(forward_dist::PartitionedDistribution{dtype1,n_factors}, backward_dist::PartitionedDistribution{dtype2,n_factors})
+    return PartitionedDistribution([calculateMarginal(forward_dist.factors[i], backward_dist.factors[i]) for i=1:n_factors])
+end
+function calculateMarginal!{dtype1,dtype2,n_factors}(edge::Edge, forward_dist::PartitionedDistribution{dtype1,n_factors}, backward_dist::PartitionedDistribution{dtype2,n_factors})
+    return edge.marginal = calculateMarginal(forward_dist, backward_dist)
+end
+
 
 ############################################
 # MvGaussian-MvDelta combination
