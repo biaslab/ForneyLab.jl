@@ -158,7 +158,7 @@ facts("Shared preparation methods for inference algorithms") do
         entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
         entry.inbound_types = [Message{PartitionedDistribution{GaussianDistribution,3}}, Message{PartitionedDistribution{GaussianDistribution,3}}, Void]
         ForneyLab.inferOutboundType!(entry)
-        @fact entry.outbound_type --> Message{PartitionedDistribution{GaussianDistribution,3}}
+        @fact entry.outbound_type --> PartitionedDistribution{GaussianDistribution,3}
 
         # Mismatch in number of factors
         entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
@@ -169,7 +169,7 @@ facts("Shared preparation methods for inference algorithms") do
         entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
         entry.inbound_types = [Message{GaussianDistribution}, Message{PartitionedDistribution{GaussianDistribution,3}}, Void]
         ForneyLab.inferOutboundType!(entry)
-        @fact entry.outbound_type --> Message{PartitionedDistribution{GaussianDistribution,3}}
+        @fact entry.outbound_type --> PartitionedDistribution{GaussianDistribution,3}
     end
 
     context("buildExecute!() should pre-compile the execute field of the schedule entry") do

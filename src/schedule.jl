@@ -7,10 +7,13 @@ type ScheduleEntry
     inbound_types::Vector{DataType} # Types of inbound messages/distributions.
     outbound_type::DataType         # Type of outbound distribution (the outbound distribution will be wrapped in a Message).
     approximation::DataType         # If the rule is an approximate one, this field specifies the type of approximation. Should be <: ApproximationType.
+    unrolling_factor::Int64         # The number of factors that are unrolled.
     execute::Function               # Compiled rule call: () -> rule(node, Val{outbound_interface_id}, rule_arguments...). Invoked by execute(::ScheduleEntry).
 
     function ScheduleEntry(node::Node, outbound_interface_id::Int64, rule::Function)
-        return self = new(node, outbound_interface_id, rule)
+        self = new(node, outbound_interface_id, rule)
+        self.unrolling_factor = 0 # can't leave this field undefined since its not a reference
+        return self
     end
 end
 
@@ -19,6 +22,7 @@ Base.deepcopy(::ScheduleEntry) = error("deepcopy(::ScheduleEntry) is not possibl
 function Base.copy(src::ScheduleEntry)
     duplicate = ScheduleEntry(src.node, src.outbound_interface_id, src.rule)
 
+    duplicate.unrolling_factor = src.unrolling_factor
     isdefined(src, :inbound_types) && (duplicate.inbound_types = copy(src.inbound_types))
     isdefined(src, :outbound_type) && (duplicate.outbound_type = src.outbound_type)
     isdefined(src, :approximation) && (duplicate.approximation = src.approximation)
@@ -65,6 +69,9 @@ function show(io::IO, schedule_entry::ScheduleEntry)
     println(io, replace("$(approx)$(schedule_entry.rule) on $(typeof(node)) $(interface.node.id) interface $(schedule_entry.outbound_interface_id) $(interface_handle)", "ForneyLab.", ""))
     if isdefined(schedule_entry, :inbound_types) && isdefined(schedule_entry, :outbound_type)
         println(io, replace("$(schedule_entry.inbound_types) -> Message{$(schedule_entry.outbound_type)}", "ForneyLab.", ""))
+    end
+    if schedule_entry.unrolling_factor > 0
+        println(io, "The partitioned distributions are unrolled and the rule is applied to each of the $(schedule_entry.unrolling_factor) factors.")
     end
 end
 
