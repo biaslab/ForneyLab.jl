@@ -238,13 +238,13 @@ function run(algorithm::InferenceAlgorithm; n_steps::Int64=0, direction::Symbol=
     # Call step(algorithm) repeatedly
 
     if n_steps > 0 # When a valid number of steps is specified, execute the algorithm n_steps times in the direction
-            for i = 1:n_steps
-                step(algorithm, direction)
-            end
+        for i = 1:n_steps
+            step(algorithm, direction)
+        end
     elseif length(algorithm.graph.read_buffers) > 0 # If no valid n_steps is specified, run until at least one of the read buffers is exhausted
         if !isdefined(algorithm.graph, :block_size)
             direction == :forward || error("Backward passes are not allowed if the block size is not defined.")
-            while readBuffersContainEnoughElements()
+            while readBuffersContainEnoughElements(algorithm.graph)
                 step(algorithm, direction)
             end
         else
