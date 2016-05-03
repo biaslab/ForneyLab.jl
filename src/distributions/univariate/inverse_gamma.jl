@@ -52,4 +52,29 @@ format(dist::InverseGammaDistribution) = "Ig(a=$(format(dist.a)), b=$(format(dis
 
 show(io::IO, dist::InverseGammaDistribution) = println(io, format(dist))
 
+function prod!(x::InverseGammaDistribution, y::InverseGammaDistribution, z::InverseGammaDistribution=InverseGammaDistribution())
+    # Multiplication of 2 inverse gamma PDFs: p(z) = p(x) * p(y)
+    z.a = x.a + y.a + 1.0
+    z.b = x.b + y.b
+
+    return z
+end
+
+@symmetrical function prod!(x::InverseGammaDistribution, y::DeltaDistribution{Float64}, z::DeltaDistribution{Float64}=DeltaDistribution(1.0))
+    # Multiplication of inverse gamma PDF with a Delta
+    (y.m >= 0.0) || throw(DomainError())
+    z.m = y.m
+
+    return z
+end
+
+@symmetrical function prod!(x::InverseGammaDistribution, y::DeltaDistribution{Float64}, z::InverseGammaDistribution)
+    # Multiplication of inverse gamma PDF with a Delta, force result to be inverse gamma
+    (y.m >= 0.0) || throw(DomainError())
+    z.a = clamp(1e8*y.m, tiny, huge)
+    z.b = clamp(y.m*(z.a-1), tiny, huge)
+
+    return z
+end
+
 ==(x::InverseGammaDistribution, y::InverseGammaDistribution) = (x.a==y.a && x.b==y.b)

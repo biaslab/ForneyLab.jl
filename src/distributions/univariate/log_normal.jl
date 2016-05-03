@@ -37,3 +37,20 @@ format(dist::LogNormalDistribution) = "logN(μ=$(format(dist.m)), σ²=$(format(
 show(io::IO, dist::LogNormalDistribution) = println(io, format(dist))
 
 ==(x::LogNormalDistribution, y::LogNormalDistribution) = (x.m==y.m && x.s==y.s)
+
+@symmetrical function prod!(x::LogNormalDistribution, y::DeltaDistribution{Float64}, z::DeltaDistribution{Float64}=DeltaDistribution(y.m))
+    # Product of log-normal PDF and Delta
+    (y.m >= 0.) || throw(DomainError())
+    (z.m == y.m) || (z.m = y.m)
+
+    return z
+end
+
+@symmetrical function prod!(x::LogNormalDistribution, y::DeltaDistribution{Float64}, z::LogNormalDistribution)
+    # Product of multivariate log-normal PDF and MvDelta, force result to be mv log-normal
+    (y.m >= 0.) || throw(DomainError())
+    z.m = log(y.m)
+    z.s = tiny
+
+    return z
+end

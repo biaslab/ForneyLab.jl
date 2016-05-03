@@ -28,15 +28,11 @@ facts("WishartDistribution unit tests") do
         @fact isProper(WishartDistribution(V = [-1.0].', nu = 2.0)) --> false
         @fact isProper(WishartDistribution(V = [1.0].', nu = 0.0)) --> false
     end
-end
 
-facts("Marginal calculations for the Wishart") do
-    context("calculateMarginal(forward_msg, backward_msg) should give correct result") do
-        marginal_dist = calculateMarginal(
-                                WishartDistribution(V = [1.0].', nu=2.0),
-                                WishartDistribution(V = [1.0].', nu=2.0))
-        @fact marginal_dist.V --> roughly([0.5].')
-        @fact marginal_dist.nu --> 2.0
+    context("prod!() should yield correct result") do
+        marg = WishartDistribution(V = [1.0].', nu=2.0) * WishartDistribution(V = [1.0].', nu=2.0)
+        @fact marg.V --> roughly([0.5].')
+        @fact marg.nu --> 2.0
     end
 end
 

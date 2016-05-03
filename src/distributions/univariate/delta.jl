@@ -28,6 +28,14 @@ format(dist::DeltaDistribution) = "δ(m=$(format(dist.m)))"
 
 show(io::IO, dist::DeltaDistribution) = println(io, format(dist))
 
+function prod!{T}(x::DeltaDistribution{T}, y::DeltaDistribution{T}, z::DeltaDistribution{T}=deepcopy(y))
+    # Product of two deltas: only valid if the deltas are equal
+    (x.m == y.m) || error("The product of two deltas at different positions does not yield a probability distribution")
+    (z.m == y.m) || (z.m = deepcopy(y.m))
+
+    return z
+end
+
 isProper(dist::DeltaDistribution) = true
 
 Base.mean(dist::DeltaDistribution) = dist.m

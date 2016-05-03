@@ -9,13 +9,13 @@ Description:
 Parameters:
 
     M (location) (Number matrix)
-    
+
 Construction:
-    
+
     MatrixDeltaDistribution(eye(3))
     MatrixDeltaDistribution(diageye(3))
 """
-type MatrixDeltaDistribution{T, dims_n, dims_m} <: ForneyLab.MatrixVariateProbabilityDistribution
+type MatrixDeltaDistribution{T, dims_n, dims_m} <: MatrixvariateProbabilityDistribution
     M::AbstractMatrix{T}
 end
 
@@ -26,6 +26,13 @@ MatrixDeltaDistribution() = MatrixDeltaDistribution{Float64, 1, 1}(eye(1))
 format(dist::MatrixDeltaDistribution) = "δ(M=$(format(dist.M)))"
 
 show(io::IO, dist::MatrixDeltaDistribution) = println(io, format(dist))
+
+function prod!{T,dims_n,dims_m}(x::MatrixDeltaDistribution{T,dims_n,dims_m}, y::MatrixDeltaDistribution{T,dims_n,dims_m}, z::MatrixDeltaDistribution{T,dims_n,dims_m}=deepcopy(y))
+    (x.M == y.M) || throw(DomainError())
+    (z.M == y.M) || (z.M = deepcopy(y.M))
+
+    return z
+end
 
 isProper(dist::MatrixDeltaDistribution) = true
 

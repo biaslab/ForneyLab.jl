@@ -22,9 +22,10 @@ facts("MvDeltaDistribution unit tests") do
         @fact_throws vague(MvDeltaDistribution{Float64, 2})
     end
 
-    context("Marginal calculation for two MvDeltaDistributions") do
-        @fact calculateMarginal(MvDeltaDistribution([2.0]), MvDeltaDistribution([2.0])) --> MvDeltaDistribution([2.0])
-        @fact calculateMarginal(MvDeltaDistribution([1.0]), MvDeltaDistribution([2.0])) --> MvDeltaDistribution([0.0])
+    context("Product of two MvDeltaDistributions") do
+        @fact MvDeltaDistribution([2.0]) * MvDeltaDistribution([2.0]) --> MvDeltaDistribution([2.0])
+        @fact_throws MvDeltaDistribution([1.0]) * MvDeltaDistribution([2.0])
+        @fact_throws MethodError MvDeltaDistribution([1.0]) * MvDeltaDistribution([1.0; 1.0])
     end
 
     context("Numbers and vectors should convert to MvDeltaDistribution") do

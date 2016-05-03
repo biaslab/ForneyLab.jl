@@ -18,9 +18,7 @@ facts("GammaDistribution unit tests") do
         @fact dist.a --> tiny
         @fact dist.b --> tiny
     end
-end
 
-facts("Marginal calculations for the gamma") do
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
         initializePairOfTerminalNodes(GammaDistribution(a=1.0, b=2.0), GammaDistribution(a=3.0, b=4.0))
         edge = n(:t1).i[:out].edge
@@ -39,11 +37,12 @@ facts("Marginal calculations for the gamma") do
         @fact edge.marginal --> DeltaDistribution(3.0)
     end
 
-    context("calculateMarginal(forward_msg, backward_msg) should give correct result") do
-        marginal_dist = calculateMarginal(
-                                GammaDistribution(a=1.0, b=2.0),
-                                GammaDistribution(a=3.0, b=4.0))
-        @fact marginal_dist.a --> 3.0
-        @fact marginal_dist.b --> 6.0
+    context("prod! for GammaDistribution") do
+        @fact GammaDistribution(a=1.0, b=2.0) * GammaDistribution(a=3.0, b=4.0) --> GammaDistribution(a=3.0, b=6.0)
+        @fact DeltaDistribution(0.5) * GammaDistribution(a=3.0, b=4.0) --> DeltaDistribution(0.5)
+        @fact_throws DomainError GammaDistribution(a=3.0, b=4.0) * DeltaDistribution(-1.1)
+        @fact typeof(ForneyLab.prod!(DeltaDistribution(0.5), GammaDistribution(a=3.0, b=4.0), GammaDistribution())) --> GammaDistribution
+        @fact mean(ForneyLab.prod!(GammaDistribution(a=3.0, b=4.0), DeltaDistribution(0.5), GammaDistribution())) --> roughly(0.5)
+        @fact var(ForneyLab.prod!(GammaDistribution(a=3.0, b=4.0), DeltaDistribution(0.5), GammaDistribution())) --> less_than(1e-6)
     end
 end

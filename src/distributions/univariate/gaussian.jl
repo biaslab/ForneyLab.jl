@@ -85,6 +85,34 @@ Base.mean(dist::GaussianDistribution) = isProper(dist) ? ensureParameter!(dist, 
 
 Base.var(dist::GaussianDistribution) = isProper(dist) ? ensureParameter!(dist, Val{:V}).V : NaN
 
+function prod!(x::GaussianDistribution, y::GaussianDistribution, z::GaussianDistribution=GaussianDistribution())
+    # Multiplication of 2 Gaussian PDFs: p(z) = p(x) * p(y)
+    ensureParameters!(x, (:xi, :W))
+    ensureParameters!(y, (:xi, :W))
+    z.m = NaN
+    z.V = NaN
+    z.W  = x.W + y.W
+    z.xi = x.xi + y.xi
+
+    return z
+end
+
+@symmetrical function prod!(x::GaussianDistribution, y::DeltaDistribution{Float64}, z::DeltaDistribution{Float64}=DeltaDistribution())
+    # Multiplication of Gaussian PDF with a Delta
+    z.m = y.m
+
+    return z
+end
+
+@symmetrical function prod!(x::GaussianDistribution, y::DeltaDistribution{Float64}, z::GaussianDistribution)
+    # Multiplication of Gaussian PDF with Delta, force result to be Gaussian
+    z.m = y.m
+    z.V = tiny
+    z.xi = z.W = NaN
+
+    return z
+end
+
 function isProper(dist::GaussianDistribution)
     if isWellDefined(dist)
         param = isnan(dist.W) ? dist.V : dist.W

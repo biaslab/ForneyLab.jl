@@ -1,5 +1,5 @@
 export Edge
-export setForwardMessage!, setBackwardMessage!, forwardMessage, backwardMessage, ensureMarginal!
+export setForwardMessage!, setBackwardMessage!, forwardMessage, backwardMessage, ensureMarginal!, calculateMarginal, calculateMarginal!
 
 """
 An Edge joins two interfaces and has a direction (from tail to head).
@@ -92,3 +92,25 @@ Base.isless(e1::Edge, e2::Edge) = isless("$(e1.id)", "$(e2.id)")
 Base.isless(e_arr1::Array{Edge}, e_arr2::Array{Edge}) = isless("$(e_arr1[1,1].id)", "$(e_arr2[1,1].id)")
 Base.isless(e1::Edge, e_arr2::Array{Edge}) = isless("$(e1.id)", "$(e_arr2[1,1].id)")
 Base.isless(e_arr1::Array{Edge}, e2::Edge) = isless("$(e_arr1[1,1].id)", "$(e2.id)")
+
+"""
+Calculates the marginal without writing back to the edge
+"""
+function calculateMarginal(edge::Edge)
+    @assert(edge.tail.message != nothing, "Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a forward message.")
+    @assert(edge.head.message != nothing, "Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a backward message.")
+    return edge.tail.message.payload * edge.head.message.payload
+end
+
+"""
+Calculates and writes the marginal on edge
+"""
+function calculateMarginal!(edge::Edge)
+    @assert(edge.tail.message != nothing, "Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a forward message.")
+    @assert(edge.head.message != nothing, "Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a backward message.")
+    if edge.marginal != nothing
+        return prod!(edge.tail.message.payload, edge.head.message.payload, edge.marginal)
+    else
+        return edge.marginal = edge.tail.message.payload * edge.head.message.payload
+    end
+end

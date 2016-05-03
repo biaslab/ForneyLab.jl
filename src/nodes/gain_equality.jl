@@ -74,9 +74,7 @@ function sumProductRule!(   node::GainEqualityNode,
                             msg_in2::Message{GaussianDistribution},
                             msg_out::Any)
 
-    dist_temp = GaussianDistribution()
-    equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
-    dist_temp = ensureParameters!(dist_temp, (:m, :V))
+    dist_temp = ensureParameters!(msg_in1.payload * msg_in2.payload, (:m, :V))
 
     outbound_dist.m = node.gain[1,1] * dist_temp.m
     outbound_dist.V = (node.gain[1,1])^2 * dist_temp.V
@@ -163,8 +161,7 @@ function sumProductRule!{dims_n, dims_m}(   node::GainEqualityNode,
                                             msg_in2::Message{MvGaussianDistribution{dims_m}},
                                             msg_out::Any)
 
-    dist_temp = vague(MvGaussianDistribution{size(node.gain, 2)})
-    equalityRule!(dist_temp, msg_in1.payload, msg_in2.payload)
+    dist_temp = msg_in1.payload * msg_in2.payload
     return gainForwardRule!(outbound_dist, dist_temp, node.gain, (isdefined(node, :A_inv)) ? node.gain_inv : nothing)
 end
 

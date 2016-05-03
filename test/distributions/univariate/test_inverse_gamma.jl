@@ -22,9 +22,7 @@ facts("InverseGammaDistribution unit tests") do
     context("Vague inverse gamma distributions should be equal") do
         @fact vague(InverseGammaDistribution) --> vague(InverseGammaDistribution)
     end
-end
 
-facts("Marginal calculations for the inverse gamma") do
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
         initializePairOfTerminalNodes(InverseGammaDistribution(a=1.0, b=2.0), InverseGammaDistribution(a=3.0, b=4.0))
         edge = n(:t1).i[:out].edge
@@ -43,11 +41,12 @@ facts("Marginal calculations for the inverse gamma") do
         @fact edge.marginal --> DeltaDistribution(3.0)
     end
 
-    context("calculateMarginal(forward_msg, backward_msg) should give correct result") do
-        marginal_dist = calculateMarginal(
-                                InverseGammaDistribution(a=1.0, b=2.0),
-                                InverseGammaDistribution(a=3.0, b=4.0))
-        @fact marginal_dist.a --> 5.0
-        @fact marginal_dist.b --> 6.0
+    context("prod!() should yield correct result") do
+        @fact InverseGammaDistribution(a=1.0, b=2.0) * InverseGammaDistribution(a=3.0, b=4.0) --> InverseGammaDistribution(a=5.0, b=6.0)
+        @fact DeltaDistribution(0.5) * InverseGammaDistribution(a=3.0, b=4.0) --> DeltaDistribution(0.5)
+        @fact_throws DomainError InverseGammaDistribution(a=3.0, b=4.0) * DeltaDistribution(-1.1)
+        @fact typeof(ForneyLab.prod!(DeltaDistribution(0.5), InverseGammaDistribution(a=3.0, b=4.0), InverseGammaDistribution())) --> InverseGammaDistribution
+        @fact mean(ForneyLab.prod!(InverseGammaDistribution(a=3.0, b=4.0), DeltaDistribution(0.5), InverseGammaDistribution())) --> roughly(0.5)
+        @fact var(ForneyLab.prod!(InverseGammaDistribution(a=3.0, b=4.0), DeltaDistribution(0.5), InverseGammaDistribution())) --> less_than(1e-6)
     end
 end

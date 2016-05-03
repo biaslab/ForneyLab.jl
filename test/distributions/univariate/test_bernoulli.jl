@@ -19,9 +19,16 @@ facts("BernoulliDistribution unit tests") do
         @fact (BernoulliDistribution(0.3) == BernoulliDistribution(0.7)) --> false
     end
 
-    context("marginal calculation") do
-        @fact calculateMarginal(BernoulliDistribution(0.2), BernoulliDistribution(0.4)).p --> roughly(1/7)
-        @fact_throws calculateMarginal(BernoulliDistribution(0.0), BernoulliDistribution(1.0))
+    context("prod!") do
+        @fact (BernoulliDistribution(0.2) * BernoulliDistribution(0.4)).p --> roughly(1/7)
+        @fact_throws BernoulliDistribution(0.0) * BernoulliDistribution(1.0)
+        @fact BernoulliDistribution(0.2) * DeltaDistribution(true) --> DeltaDistribution(true)
+        @fact DeltaDistribution(false) * BernoulliDistribution(0.2) --> DeltaDistribution(false)
+        @fact_throws BernoulliDistribution(0.0) * DeltaDistribution(true)
+        @fact_throws BernoulliDistribution(0.2) * DeltaDistribution(3.0)
+        @fact ForneyLab.prod!(BernoulliDistribution(0.2), DeltaDistribution(true), BernoulliDistribution()) --> BernoulliDistribution(1.0)
+        @fact ForneyLab.prod!(DeltaDistribution(true), BernoulliDistribution(0.2), BernoulliDistribution()) --> BernoulliDistribution(1.0)
+        @fact_throws ForneyLab.prod!(DeltaDistribution(false), BernoulliDistribution(1.0), BernoulliDistribution())
     end
 end
 
