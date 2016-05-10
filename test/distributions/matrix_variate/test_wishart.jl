@@ -11,6 +11,8 @@ facts("WishartDistribution unit tests") do
         @fact mean(dist) --> 3.0*[2.0 1.0; 1.0 2.0]
         @fact var(dist) --> [24.0 15.0; 15.0 24.0]
         @fact var(WishartDistribution(V=diageye(3), nu=3.0)) --> [6.0 3.0 3.0; 3.0 6.0 3.0; 3.0 3.0 6.0]
+        @fact dimensions(WishartDistribution{2}) --> (2, 2)
+        @fact dimensions(WishartDistribution(V=[2.0 1.0; 1.0 2.0], nu=3.0)) --> (2, 2)
     end
 
     context("vague() should initialize a vague (almost uninformative) Wishart distribution") do

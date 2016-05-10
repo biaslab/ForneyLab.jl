@@ -113,3 +113,7 @@ convert(::Type{WishartDistribution}, d::GammaDistribution) = WishartDistribution
 function convert(::Type{GammaDistribution}, d::WishartDistribution{1})
     GammaDistribution(a = d.nu/2.0, b = 1.0/(2.0*d.V[1, 1]))
 end
+
+dimensions{dims}(distribution::WishartDistribution{dims}) = (dims, dims)
+
+dimensions{T<:WishartDistribution}(distribution_type::Type{T}) = (distribution_type.parameters[end], distribution_type.parameters[end])
