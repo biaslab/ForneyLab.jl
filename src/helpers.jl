@@ -164,3 +164,31 @@ function trigammaInverse(x::Float64)
 
     return y
 end
+
+
+"""
+Duplicate a method definition with the order of the first two arguments swapped.
+This macro is used to duplicate methods that are symmetrical in their first two input arguments,
+but require explicit definitions for the different argument orders.
+Example:
+
+    @symmetrical function prod!(x::GaussianDistribution, y::DeltaDistribution{Float64}, z::DeltaDistribution)
+        z.m = y.m
+        return z
+    end
+"""
+macro symmetrical(orig::Expr)
+    (orig.args[1].head == :call) || error("Invalid use of @symmetrical")
+    eval(orig)
+    swap_arg_indexes = Int64[]
+    for i=1:length(orig.args[1].args)
+        (typeof(orig.args[1].args[i]) == Expr) || continue
+        (orig.args[1].args[i].head == :(::)) || continue
+        push!(swap_arg_indexes, i)
+        (length(swap_arg_indexes) < 2) || break
+    end
+
+    mirrored = deepcopy(orig)
+    mirrored.args[1].args[swap_arg_indexes] = orig.args[1].args[reverse(swap_arg_indexes)]
+    eval(mirrored)
+end

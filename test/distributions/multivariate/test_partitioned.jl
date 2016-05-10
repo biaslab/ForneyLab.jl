@@ -60,13 +60,23 @@ facts("PartitionedDistribution unit tests") do
         @fact_throws testfunc([PartitionedDistribution{GaussianDistribution,2}; Message{PartitionedDistribution{GammaDistribution,3}}])
     end
 
-    context("calculateMarginal") do
+    context("dimensions(::PartitionedDistribution)") do
+        @fact dimensions(PartitionedDistribution([GaussianDistribution(m=1.0,V=1.0); GaussianDistribution(m=2.0,V=3.0)])) --> 2
+        @fact dimensions(PartitionedDistribution([MvGaussianDistribution(m=zeros(2),V=eye(2)); MvGaussianDistribution(m=zeros(2),V=eye(2))])) --> 4
+    end
+
+    context("prod() should yield correct result") do
         d1 = PartitionedDistribution([GaussianDistribution(m=1.0,V=1.0); GaussianDistribution(m=2.0,V=3.0)])
         d2 = PartitionedDistribution([GaussianDistribution(m=5.0,V=5.0); GaussianDistribution(m=2.0,V=4.0)])
-        marg = calculateMarginal(d1, d2)
+        marg = d1 * d2
         @fact typeof(marg) --> PartitionedDistribution{GaussianDistribution, 2}
-        @fact marg.factors[1] --> calculateMarginal(d1.factors[1], d2.factors[1])
-        @fact marg.factors[2] --> calculateMarginal(d1.factors[2], d2.factors[2])
+        @fact marg.factors[1] --> d1.factors[1] * d2.factors[1]
+        @fact marg.factors[2] --> d1.factors[2] * d2.factors[2]
+        @fact d1 * MvDeltaDistribution(ones(2)) --> MvDeltaDistribution(ones(2))
+        d3 = PartitionedDistribution([MvGaussianDistribution(m=zeros(2),V=eye(2)); MvGaussianDistribution(m=zeros(2),V=eye(2))])
+        @fact d3 * MvDeltaDistribution(ones(4)) --> MvDeltaDistribution(ones(4))
+        @fact_throws DimensionMismatch d3 * MvDeltaDistribution(ones(3))
+        @fact_throws DomainError PartitionedDistribution([GammaDistribution(); GammaDistribution()]) * MvDeltaDistribution(-1.*ones(2))
     end
 end
 
@@ -86,7 +96,7 @@ facts("PartitionedDistribution integration tests") do
         out = eq.interfaces[3].message.payload
 
         @fact typeof(out) --> PartitionedDistribution{GaussianDistribution, 2}
-        @fact out.factors[1] --> calculateMarginal(d1.factors[1], d2.factors[1])
-        @fact out.factors[2] --> calculateMarginal(d1.factors[2], d2.factors[2])
+        @fact out.factors[1] --> d1.factors[1] * d2.factors[1]
+        @fact out.factors[2] --> d1.factors[2] * d2.factors[2]
     end
 end

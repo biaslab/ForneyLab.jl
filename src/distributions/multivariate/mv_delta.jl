@@ -26,6 +26,13 @@ format(dist::MvDeltaDistribution) = "δ(m=$(format(dist.m)))"
 
 show(io::IO, dist::MvDeltaDistribution) = println(io, format(dist))
 
+function prod!{T,dims}(x::MvDeltaDistribution{T,dims}, y::MvDeltaDistribution{T,dims}, z::MvDeltaDistribution{T,dims}=deepcopy(y))
+    # Sifting property: multiplying a prob. dist. with a delta yields the delta
+    (x.m == y.m) || error("The product of two deltas at different positions does not yield a probability distribution")
+    (z.m == y.m) || (z.m = deepcopy(y.m))
+    return z
+end
+
 isProper(dist::MvDeltaDistribution) = true
 
 Base.mean(dist::MvDeltaDistribution) = dist.m

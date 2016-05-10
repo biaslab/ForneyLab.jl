@@ -18,4 +18,14 @@ facts("MvLogNormalDistribution unit tests") do
         @fact dist.m --> [0.0, 0.0]
         @fact dist.S --> Diagonal([huge, huge])
     end
+
+    context("prod!() should calculate product with a MvDeltaDistribution") do
+        @fact MvLogNormalDistribution(m=[2.0], S=0.5*eye(1)) * MvDeltaDistribution(ones(1)) --> MvDeltaDistribution(ones(1))
+        @fact MvDeltaDistribution(ones(1)) * MvLogNormalDistribution(m=[2.0], S=0.5*eye(1)) --> MvDeltaDistribution(ones(1))
+        @fact_throws MethodError MvDeltaDistribution(ones(2)) * MvLogNormalDistribution(m=[2.0], S=0.5*eye(1))
+        @fact_throws DomainError MvDeltaDistribution(-1.*ones(1)) * MvLogNormalDistribution(m=[2.0], S=0.5*eye(1))
+        @fact ForneyLab.prod!(MvLogNormalDistribution(m=[2.0], S=0.5*eye(1)), MvDeltaDistribution(ones(1)), MvLogNormalDistribution(m=[2.0], S=0.5*eye(1))) --> MvLogNormalDistribution(m=[0.0], S=tiny*eye(1))
+        @fact_throws MethodError ForneyLab.prod!(MvLogNormalDistribution(m=[2.0], S=0.5*eye(1)), MvDeltaDistribution(ones(2)), MvLogNormalDistribution(m=[2.0], S=0.5*eye(1)))
+        @fact_throws DomainError ForneyLab.prod!(MvLogNormalDistribution(m=[2.0], S=0.5*eye(1)), MvDeltaDistribution(-1.*ones(1)), MvLogNormalDistribution(m=[2.0], S=0.5*eye(1)))
+    end
 end

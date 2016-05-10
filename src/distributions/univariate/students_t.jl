@@ -68,3 +68,19 @@ function vague!(dist::StudentsTDistribution)
     dist.nu = 4.0
     return dist
 end
+
+@symmetrical function prod!(x::StudentsTDistribution, y::DeltaDistribution{Float64}, z::DeltaDistribution{Float64}=DeltaDistribution(y.m))
+    # Product of log-normal PDF and Delta
+    z.m = y.m
+
+    return z
+end
+
+@symmetrical function prod!(x::StudentsTDistribution, y::DeltaDistribution{Float64}, z::StudentsTDistribution)
+    # Product of multivariate log-normal PDF and MvDelta, force result to be mv log-normal
+    z.m = y.m
+    z.lambda = huge
+    z.nu = huge
+
+    return z
+end

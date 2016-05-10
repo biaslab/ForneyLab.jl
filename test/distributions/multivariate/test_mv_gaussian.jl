@@ -127,13 +127,15 @@ facts("Marginal calculations for the MvGaussian") do
         @fact isApproxEqual(edge.marginal.V, reshape([0.5], 1, 1)) --> true
     end
 
-    context("calculateMarginal(forward_msg, backward_msg) should give correct result") do
-        marginal_dist = calculateMarginal(
-                                MvGaussianDistribution(m=[0.0], V=eye(1)),
-                                MvGaussianDistribution(m=[0.0], V=eye(1)))
-        ensureParameters!(marginal_dist, (:m, :V))
-        @fact marginal_dist.m --> [0.0]
-        @fact isApproxEqual(marginal_dist.V, reshape([0.5], 1, 1)) --> true
+    context("prod! for MvGaussianDistribution") do
+        marg = ensureParameters!(MvGaussianDistribution(m=[0.0], V=eye(1)) * MvGaussianDistribution(m=[0.0], V=eye(1)), (:m, :V))
+        @fact marg.m --> [0.0]
+        @fact isApproxEqual(marg.V, reshape([0.5], 1, 1)) --> true
+        @fact MvGaussianDistribution(m=zeros(2), V=eye(2)) * MvDeltaDistribution(ones(2)) --> MvDeltaDistribution(ones(2))
+        @fact MvDeltaDistribution(ones(2)) * MvGaussianDistribution(m=zeros(2), V=eye(2)) --> MvDeltaDistribution(ones(2))
+        @fact_throws MethodError MvDeltaDistribution(ones(3)) * MvGaussianDistribution(m=zeros(2), V=eye(2))
+        @fact ForneyLab.prod!(MvGaussianDistribution(m=zeros(2), V=eye(2)), MvDeltaDistribution(ones(2)), MvGaussianDistribution(m=zeros(2), V=eye(2))) --> MvGaussianDistribution(m=ones(2), V=tiny*eye(2))
+        @fact ForneyLab.prod!(MvDeltaDistribution(ones(2)), MvGaussianDistribution(m=zeros(2), V=eye(2)), MvGaussianDistribution(m=zeros(2), V=eye(2))) --> MvGaussianDistribution(m=ones(2), V=tiny*eye(2))
     end
 end
 

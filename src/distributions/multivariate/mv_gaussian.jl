@@ -111,6 +111,57 @@ end
 
 show(io::IO, dist::MvGaussianDistribution) = println(io, format(dist))
 
+function prod!{dims}(x::MvGaussianDistribution{dims}, y::MvGaussianDistribution{dims}, z::MvGaussianDistribution{dims}=MvGaussianDistribution(m=zeros(dims), V=eye(dims)))
+    # Multiplication of 2 multivariate Gaussian PDFs: p(z) = p(x) * p(y)
+    # Equations from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
+    if isValid(x.xi) && isValid(x.W) && isValid(y.xi) && isValid(y.W)
+        # Use (xi,W)x(xi,W) parametrization
+        invalidate!(z.m)
+        invalidate!(z.V)
+        z.W  = x.W + y.W
+        z.xi = x.xi + y.xi
+    elseif isValid(x.m) && isValid(x.W) && isValid(y.m) && isValid(y.W)
+        # Use (m,W)x(m,W) parametrization
+        z.m  = cholinv(x.W+y.W) * (x.W*x.m + y.W*y.m)
+        invalidate!(z.V)
+        z.W  = x.W + y.W
+        invalidate!(z.xi)
+    elseif isValid(x.xi) && isValid(x.V) && isValid(y.xi) && isValid(y.V)
+        # Use (xi,V)x(xi,V) parametrization
+        invalidate!(z.m)
+        z.V  = x.V * cholinv(x.V+y.V) * y.V
+        invalidate!(z.W)
+        z.xi = x.xi + y.xi
+    else
+        # Convert to (xi,W)x(xi,W) parametrization
+        ensureParameters!(x, (:xi, :W))
+        ensureParameters!(y, (:xi, :W))
+        invalidate!(z.m)
+        invalidate!(z.V)
+        z.W  = x.W + y.W
+        z.xi = x.xi + y.xi
+    end
+
+    return z
+end
+
+@symmetrical function prod!{dims}(x::MvGaussianDistribution{dims}, y::MvDeltaDistribution{Float64,dims}, z::MvDeltaDistribution{Float64,dims}=MvDeltaDistribution(y.m))
+    # Product of multivariate Gaussian PDF and MvDelta
+    (z.m == y.m) || (z.m[:] = y.m)
+
+    return z
+end
+
+@symmetrical function prod!{dims}(x::MvGaussianDistribution{dims}, y::MvDeltaDistribution{Float64,dims}, z::MvGaussianDistribution{dims})
+    # Product of multivariate Gaussian PDF and MvDelta, force result to be MvGaussian
+    z.m[:] = y.m
+    z.V = tiny.*eye(dims)
+    invalidate!(z.xi)
+    invalidate!(z.W)
+
+    return z
+end
+
 function Base.mean(dist::MvGaussianDistribution)
     if isProper(dist)
         return ensureParameter!(dist, Val{:m}).m

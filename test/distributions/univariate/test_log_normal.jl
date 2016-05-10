@@ -17,4 +17,12 @@ facts("LogNormalDistribution unit tests") do
         @fact dist.m --> 0.0
         @fact dist.s --> huge
     end
+
+    context("prod!() should yield correct result") do
+        @fact DeltaDistribution(0.5) * LogNormalDistribution(m=2.0, s=0.5) --> DeltaDistribution(0.5)
+        @fact_throws DomainError LogNormalDistribution(m=2.0, s=0.5) * DeltaDistribution(-1.1)
+        @fact typeof(ForneyLab.prod!(DeltaDistribution(0.5), LogNormalDistribution(m=2.0, s=0.5), LogNormalDistribution())) --> LogNormalDistribution
+        @fact mean(ForneyLab.prod!(LogNormalDistribution(m=2.0, s=0.5), DeltaDistribution(0.5), LogNormalDistribution())) --> roughly(0.5)
+        @fact var(ForneyLab.prod!(LogNormalDistribution(m=2.0, s=0.5), DeltaDistribution(0.5), LogNormalDistribution())) --> less_than(1e-6)
+    end
 end

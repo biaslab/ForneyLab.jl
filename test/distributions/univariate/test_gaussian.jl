@@ -33,6 +33,21 @@ facts("GaussianDistribution unit tests") do
         @fact typeof(sample(GaussianDistribution(m=1.0, V=2.0))) --> Float64
     end
 
+    context("prod!() should produce correct output") do
+        p = GaussianDistribution(m=0.0, V=1.0) * GaussianDistribution(m=0.0, V=1.0)
+        ensureParameters!(p, (:m, :V))
+        @fact p.m --> roughly(0.0)
+        @fact p.V --> roughly(0.5)
+        p = GaussianDistribution(xi=0.0, W=1.0) * GaussianDistribution(xi=0.0, W=1.0)
+        ensureParameters!(p, (:m, :V))
+        @fact p.m --> roughly(0.0)
+        @fact p.V --> roughly(0.5)
+        @fact GaussianDistribution() * DeltaDistribution(2.0) --> DeltaDistribution(2.0)
+        @fact DeltaDistribution(2.0) *  GaussianDistribution() --> DeltaDistribution(2.0)
+        @fact ForneyLab.prod!(GaussianDistribution(), DeltaDistribution(2.0), GaussianDistribution()) --> GaussianDistribution(m=2.0, V=tiny)
+        @fact ForneyLab.prod!(DeltaDistribution(2.0), GaussianDistribution(), GaussianDistribution()) --> GaussianDistribution(m=2.0, V=tiny)
+    end
+
     context("Underdetermined GaussianDistribution should be detected by isWellDefined()") do
         @fact isWellDefined(GaussianDistribution()) --> true
         @fact isWellDefined(GaussianDistribution(m=0.0, V=1.0)) --> true
@@ -95,43 +110,6 @@ facts("GaussianDistribution unit tests") do
         @fact isConsistent(GaussianDistribution(m=0.0, xi=1.0, W=1.0)) --> false
         @fact isConsistent(GaussianDistribution(m=0.0, V=1.0, W=2.0)) --> false
         @fact isConsistent(GaussianDistribution(m=0.0, xi=1.0, V=1.0, W=2.0)) --> false
-    end
-end
-
-facts("Marginal calculations for the Gaussian") do
-    context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
-        initializePairOfTerminalNodes(GaussianDistribution(m=0.0, V=1.0), GaussianDistribution(m=0.0, V=1.0))
-        edge = n(:t1).i[:out].edge
-        n(:t1).i[:out].message = Message(GaussianDistribution(m=0.0, V=1.0))
-        n(:t2).i[:out].message = Message(GaussianDistribution(m=0.0, V=1.0))
-        marginal_dist = calculateMarginal!(edge)
-        @fact edge.marginal --> marginal_dist
-        ensureParameters!(marginal_dist, (:m, :V))
-        @fact edge.marginal.m --> 0.0
-        @fact isApproxEqual(edge.marginal.V, 0.5) --> true
-    end
-
-    context("calculateMarginal(forward_msg, backward_msg) should give correct result") do
-        marginal_dist = calculateMarginal(
-                                GaussianDistribution(m=0.0, V=1.0),
-                                GaussianDistribution(m=0.0, V=1.0))
-        ensureParameters!(marginal_dist, (:m, :V))
-        @fact marginal_dist.m --> 0.0
-        @fact isApproxEqual(marginal_dist.V, 0.5) --> true
-    end
-
-    context("Marginal calculation for the combination of a Gaussian and student's t-distribution") do
-        initializePairOfTerminalNodes(GaussianDistribution(), StudentsTDistribution(m=1.0, lambda=2.0, nu=4.0))
-        edge = n(:t1).i[:out].edge
-        calculateMarginal!(edge)
-        @fact edge.marginal --> GaussianDistribution(m=0.5, W=2.0)
-    end
-
-    context("Marginal calculation for the combination of a Gaussian and DeltaDistribution") do
-        initializePairOfTerminalNodes(GaussianDistribution(), DeltaDistribution(3.0))
-        edge = n(:t1).i[:out].edge
-        calculateMarginal!(edge)
-        @fact edge.marginal --> DeltaDistribution(3.0)
     end
 end
 

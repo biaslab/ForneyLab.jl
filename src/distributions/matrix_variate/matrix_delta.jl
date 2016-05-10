@@ -9,13 +9,13 @@ Description:
 Parameters:
 
     M (location) (Number matrix)
-    
+
 Construction:
-    
+
     MatrixDeltaDistribution(eye(3))
     MatrixDeltaDistribution(diageye(3))
 """
-type MatrixDeltaDistribution{T, dims_n, dims_m} <: ForneyLab.MatrixVariateProbabilityDistribution
+type MatrixDeltaDistribution{T, dims_n, dims_m} <: MatrixVariateProbabilityDistribution
     M::AbstractMatrix{T}
 end
 
@@ -26,6 +26,13 @@ MatrixDeltaDistribution() = MatrixDeltaDistribution{Float64, 1, 1}(eye(1))
 format(dist::MatrixDeltaDistribution) = "δ(M=$(format(dist.M)))"
 
 show(io::IO, dist::MatrixDeltaDistribution) = println(io, format(dist))
+
+function prod!{T,dims_n,dims_m}(x::MatrixDeltaDistribution{T,dims_n,dims_m}, y::MatrixDeltaDistribution{T,dims_n,dims_m}, z::MatrixDeltaDistribution{T,dims_n,dims_m}=deepcopy(y))
+    (x.M == y.M) || throw(DomainError())
+    (z.M == y.M) || (z.M = deepcopy(y.M))
+
+    return z
+end
 
 isProper(dist::MatrixDeltaDistribution) = true
 
@@ -43,7 +50,6 @@ convert{T<:Number}(::Type{ProbabilityDistribution}, obj::AbstractMatrix{T}) = Ma
 
 convert{T<:Number}(::Type{MatrixDeltaDistribution}, obj::AbstractMatrix{T}) = MatrixDeltaDistribution(obj)
 
-dimensions{T<:MatrixDeltaDistribution}(message::Message{T}) = (typeof(message.payload).parameters[end-1], typeof(message.payload).parameters[end])
-dimensions(distribution::MatrixDeltaDistribution) = (typeof(distribution).parameters[end-1], typeof(distribution).parameters[end])
-dimensions{T<:MatrixDeltaDistribution}(message_type::Type{Message{T}}) = (message_type.parameters[1].parameters[end-1], message_type.parameters[1].parameters[end])
+dimensions{T, dims_n, dims_m}(distribution::MatrixDeltaDistribution{T,dims_n,dims_m}) = (dims_n, dims_m)
+
 dimensions{T<:MatrixDeltaDistribution}(distribution_type::Type{T}) = (distribution_type.parameters[end-1], distribution_type.parameters[end])

@@ -14,7 +14,7 @@ facts("EqualityNode unit tests") do
         @fact_throws ForneyLab.firstFreeInterface(n(:node))
     end
 
-    context("EqualityNode should provide sumProductRule! for arbitrary message types") do
+    context("EqualityNode should provide sumProductRule! for DeltaDistribution") do
         # Equality constraint node should work for arbitraty messages, although not really useful.
         # Outbound message is equal to the inbound messages if not all inbound messages are equal.
         # Otherwise, the outbound message is Message(DeltaDistribution(0.0))
@@ -24,11 +24,6 @@ facts("EqualityNode unit tests") do
                                 3,
                                 [Message(DeltaDistribution(1.0)), Message(DeltaDistribution(1.0)), nothing],
                                 DeltaDistribution(1.0))
-        # Unequal scalars
-        validateOutboundMessage(EqualityNode(),
-                                3,
-                                [Message(DeltaDistribution(1.0)), Message(DeltaDistribution(1.1)), nothing],
-                                DeltaDistribution(0.0))
     end
 
     context("EqualityNode should provide sumProductRule! for GaussianDistribution") do

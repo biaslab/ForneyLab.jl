@@ -71,3 +71,20 @@ format(dist::MvLogNormalDistribution) = "logN(μ=$(format(dist.m)), Σ=$(format(
 show(io::IO, dist::MvLogNormalDistribution) = println(io, format(dist))
 
 ==(x::MvLogNormalDistribution, y::MvLogNormalDistribution) = (x.m==y.m && x.S==y.S)
+
+@symmetrical function prod!{dims}(x::MvLogNormalDistribution{dims}, y::MvDeltaDistribution{Float64,dims}, z::MvDeltaDistribution{Float64,dims}=MvDeltaDistribution(y.m))
+    # Product of multivariate log-normal PDF and MvDelta
+    all(y.m .>= 0.) || throw(DomainError())
+    (z.m == y.m) || (z.m[:] = y.m)
+
+    return z
+end
+
+@symmetrical function prod!{dims}(x::MvLogNormalDistribution{dims}, y::MvDeltaDistribution{Float64,dims}, z::MvLogNormalDistribution{dims})
+    # Product of multivariate log-normal PDF and MvDelta, force result to be mv log-normal
+    all(y.m .>= 0.) || throw(DomainError())
+    z.m[:] = log(y.m)
+    z.S = tiny.*eye(dims)
+
+    return z
+end

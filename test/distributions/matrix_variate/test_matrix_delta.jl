@@ -11,6 +11,8 @@ facts("MatrixDeltaDistribution unit tests") do
         @fact MatrixDeltaDistribution(eye(2)).M --> eye(2)
         @fact MatrixDeltaDistribution(diageye(2)).M --> diageye(2)
         @fact typeof(MatrixDeltaDistribution()) --> MatrixDeltaDistribution{Float64, 1, 1}
+        @fact dimensions(MatrixDeltaDistribution{Float64,2,2}) --> (2, 2)
+        @fact dimensions(MatrixDeltaDistribution(eye(2))) --> (2, 2)
     end
 
     context("MatrixDeltaDistribution can be sampled") do

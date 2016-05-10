@@ -40,4 +40,29 @@ format(dist::GammaDistribution) = "Gam(a=$(format(dist.a)), b=$(format(dist.b)))
 
 show(io::IO, dist::GammaDistribution) = println(io, format(dist))
 
+function prod!(x::GammaDistribution, y::GammaDistribution, z::GammaDistribution=GammaDistribution())
+    # Multiplication of 2 gamma PDFs: p(z) = p(x) * p(y)
+    z.a = x.a + y.a - 1.0
+    z.b = x.b + y.b
+
+    return z
+end
+
+@symmetrical function prod!(x::GammaDistribution, y::DeltaDistribution{Float64}, z::DeltaDistribution{Float64}=DeltaDistribution(1.0))
+    # Multiplication of Gamma PDF with a Delta
+    (y.m >= 0.0) || throw(DomainError())
+    z.m = y.m
+
+    return z
+end
+
+@symmetrical function prod!(x::GammaDistribution, y::DeltaDistribution{Float64}, z::GammaDistribution)
+    # Multiplication of Gamma PDF with a Delta, force result to be Gamma
+    (y.m >= 0.0) || throw(DomainError())
+    z.b = clamp(y.m / 1e-10, tiny, huge)
+    z.a = clamp(y.m * z.b, tiny, huge)
+
+    return z
+end
+
 ==(x::GammaDistribution, y::GammaDistribution) = (x.a==y.a && x.b==y.b)

@@ -28,11 +28,11 @@ facts("Marginal calculations for the beta") do
         @fact edge.marginal.b --> 5.0
     end
 
-    context("calculateMarginal(forward_msg, backward_msg) should give correct result") do
-        marginal_dist = calculateMarginal(
-                                BetaDistribution(a=1.0, b=2.0),
-                                BetaDistribution(a=3.0, b=4.0))
-        @fact marginal_dist.a --> 3.0
-        @fact marginal_dist.b --> 5.0
+    context("prod!() should yield correct result") do
+        @fact BetaDistribution(a=1.0, b=2.0) * BetaDistribution(a=3.0, b=4.0) --> BetaDistribution(a=3.0, b=5.0)
+        @fact DeltaDistribution(0.5) * BetaDistribution(a=3.0, b=4.0) --> DeltaDistribution(0.5)
+        @fact_throws DomainError BetaDistribution(a=3.0, b=4.0) * DeltaDistribution(1.1)
+        @fact typeof(ForneyLab.prod!(DeltaDistribution(0.5), BetaDistribution(a=3.0, b=4.0), BetaDistribution())) --> BetaDistribution
+        @fact mean(ForneyLab.prod!(BetaDistribution(a=3.0, b=4.0), DeltaDistribution(0.5), BetaDistribution())) --> roughly(0.5)
     end
 end
