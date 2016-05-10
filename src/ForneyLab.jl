@@ -62,8 +62,9 @@ include("distributions/univariate/log_normal.jl")
 # Multivariate distributions
 include("distributions/multivariate/mv_delta.jl")
 include("distributions/multivariate/mv_gaussian.jl")
-include("distributions/multivariate/normal_gamma.jl")
 include("distributions/multivariate/mv_log_normal.jl")
+include("distributions/multivariate/normal_gamma.jl")
+include("distributions/multivariate/partitioned.jl")
 
 # Matrix variate distributions
 include("distributions/matrix_variate/wishart.jl")
