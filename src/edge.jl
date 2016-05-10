@@ -97,8 +97,8 @@ Base.isless(e_arr1::Array{Edge}, e2::Edge) = isless("$(e_arr1[1,1].id)", "$(e2.i
 Calculates the marginal without writing back to the edge
 """
 function calculateMarginal(edge::Edge)
-    @assert(edge.tail.message != nothing, "Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a forward message.")
-    @assert(edge.head.message != nothing, "Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a backward message.")
+    (edge.tail.message != nothing) || error("Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a forward message.")
+    (edge.head.message != nothing) || error("Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a backward message.")
     return edge.tail.message.payload * edge.head.message.payload
 end
 
@@ -106,8 +106,8 @@ end
 Calculates and writes the marginal on edge
 """
 function calculateMarginal!(edge::Edge)
-    @assert(edge.tail.message != nothing, "Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a forward message.")
-    @assert(edge.head.message != nothing, "Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a backward message.")
+    (edge.tail.message != nothing) || error("Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a forward message.")
+    (edge.head.message != nothing) || error("Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a backward message.")
     if edge.marginal != nothing
         return prod!(edge.tail.message.payload, edge.head.message.payload, edge.marginal)
     else
