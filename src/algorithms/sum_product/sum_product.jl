@@ -18,8 +18,8 @@ Usage:
 Optionally, keyword argument `message_types::Dict{Interface,Any}` can used to constain messages to a specific distribution type.
 To force the use of a specific approximation method, use a tuple: `(dist_type::DataType, approximation::Symbol)`. Examples:
 
-    message_types = Dict{Interface,DataType}(my_node.i[:out] => GaussianDistribution)
-    message_types = Dict{Interface,DataType}(my_node.i[:out] => Approximation{GaussianDistribution,:laplace})
+    message_types = Dict{Interface,DataType}(my_node.i[:out] => Gaussian)
+    message_types = Dict{Interface,DataType}(my_node.i[:out] => Approximation{Gaussian,:laplace})
 """
 type SumProduct <: AbstractSumProduct
     graph::FactorGraph

@@ -2,27 +2,27 @@
 # Unit tests
 #####################
 
-facts("LogNormalDistribution unit tests") do
-    context("LogNormalDistribution() should initiatize a log-normal distribution") do
-        dist = LogNormalDistribution(m=2.0, s=0.5)
+facts("LogNormal unit tests") do
+    context("LogNormal() should initiatize a log-normal distribution") do
+        dist = LogNormal(m=2.0, s=0.5)
         @fact dist.m --> 2.0
         @fact dist.s --> 0.5
         @fact mean(dist) --> exp(dist.m + 0.5*dist.s)
         @fact var(dist) --> (exp(dist.s) - 1)*exp(2*dist.m + dist.s)
-        @fact isnan(mean(LogNormalDistribution(m=0.0, s=-1.0))) --> true
+        @fact isnan(mean(LogNormal(m=0.0, s=-1.0))) --> true
     end
 
     context("vague() should initialize a vague (almost uninformative) log-normal distribution") do
-        dist = vague(LogNormalDistribution)
+        dist = vague(LogNormal)
         @fact dist.m --> 0.0
         @fact dist.s --> huge
     end
 
     context("prod!() should yield correct result") do
-        @fact DeltaDistribution(0.5) * LogNormalDistribution(m=2.0, s=0.5) --> DeltaDistribution(0.5)
-        @fact_throws DomainError LogNormalDistribution(m=2.0, s=0.5) * DeltaDistribution(-1.1)
-        @fact typeof(ForneyLab.prod!(DeltaDistribution(0.5), LogNormalDistribution(m=2.0, s=0.5), LogNormalDistribution())) --> LogNormalDistribution
-        @fact mean(ForneyLab.prod!(LogNormalDistribution(m=2.0, s=0.5), DeltaDistribution(0.5), LogNormalDistribution())) --> roughly(0.5)
-        @fact var(ForneyLab.prod!(LogNormalDistribution(m=2.0, s=0.5), DeltaDistribution(0.5), LogNormalDistribution())) --> less_than(1e-6)
+        @fact Delta(0.5) * LogNormal(m=2.0, s=0.5) --> Delta(0.5)
+        @fact_throws DomainError LogNormal(m=2.0, s=0.5) * Delta(-1.1)
+        @fact typeof(ForneyLab.prod!(Delta(0.5), LogNormal(m=2.0, s=0.5), LogNormal())) --> LogNormal
+        @fact mean(ForneyLab.prod!(LogNormal(m=2.0, s=0.5), Delta(0.5), LogNormal())) --> roughly(0.5)
+        @fact var(ForneyLab.prod!(LogNormal(m=2.0, s=0.5), Delta(0.5), LogNormal())) --> less_than(1e-6)
     end
 end

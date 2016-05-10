@@ -1,5 +1,5 @@
 export
-    MvGaussianDistribution,
+    MvGaussian,
     ensureParameters!,
     isWellDefined,
     isConsistent
@@ -16,41 +16,41 @@ Parameters:
 
 Construction:
 
-    MvGaussianDistribution(m=[1.0,3.0], V=[2.0, 0.0; 0.0, 2.0])
-    MvGaussianDistribution(m=[1.0,3.0], V=Diagonal([2.0, 2.0]))
+    MvGaussian(m=[1.0,3.0], V=[2.0, 0.0; 0.0, 2.0])
+    MvGaussian(m=[1.0,3.0], V=Diagonal([2.0, 2.0]))
 
 Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type MvGaussianDistribution{dims} <: MultivariateProbabilityDistribution
+type MvGaussian{dims} <: Multivariate
     m::Vector{Float64}   # Mean vector
     V::AbstractMatrix{Float64}   # Covariance matrix
     W::AbstractMatrix{Float64}   # Weight matrix
     xi::Vector{Float64}  # Weighted mean vector: xi=W*m
 
-    function MvGaussianDistribution(m, V, W, xi)
-        (size(m) == size(xi)) || error("Cannot create MvGaussianDistribution: m and xi should have the same size")
-        (size(V) == size(W)) || error("Cannot create MvGaussianDistribution: V and W should have the same size")
-        (length(m) == size(V,1) == size(V,2)) || error("Cannot create MvGaussianDistribution: inconsistent parameter dimensions")
+    function MvGaussian(m, V, W, xi)
+        (size(m) == size(xi)) || error("Cannot create MvGaussian: m and xi should have the same size")
+        (size(V) == size(W)) || error("Cannot create MvGaussian: V and W should have the same size")
+        (length(m) == size(V,1) == size(V,2)) || error("Cannot create MvGaussian: inconsistent parameter dimensions")
 
         if isValid(V)
-            (maximum(abs(V)) < realmax(Float64)) || error("Cannot create MvGaussianDistribution, covariance matrix V cannot contain Inf.")
-            all(abs(diag(V)) .> realmin(Float64)) || error("Cannot create MvGaussianDistribution, diagonal of covariance matrix V should be non-zero.")
+            (maximum(abs(V)) < realmax(Float64)) || error("Cannot create MvGaussian, covariance matrix V cannot contain Inf.")
+            all(abs(diag(V)) .> realmin(Float64)) || error("Cannot create MvGaussian, diagonal of covariance matrix V should be non-zero.")
         end
         if isValid(W)
-            (maximum(abs(W)) < realmax(Float64)) || error("Cannot create MvGaussianDistribution, precision matrix W cannot contain Inf.")
-            all(abs(diag(W)) .> realmin(Float64)) || error("Cannot create MvGaussianDistribution, diagonal of precision matrix W should be non-zero.")
+            (maximum(abs(W)) < realmax(Float64)) || error("Cannot create MvGaussian, precision matrix W cannot contain Inf.")
+            all(abs(diag(W)) .> realmin(Float64)) || error("Cannot create MvGaussian, diagonal of precision matrix W should be non-zero.")
         end
 
         self = new{length(m)}(m, V, W, xi)
-        isWellDefined(self) || error("Cannot create MvGaussianDistribution, distribution is underdetermined.")
+        isWellDefined(self) || error("Cannot create MvGaussian, distribution is underdetermined.")
 
         return self
     end
 end
 
-function MvGaussianDistribution(; m::Vector{Float64}=[NaN],
+function MvGaussian(; m::Vector{Float64}=[NaN],
                                   V::AbstractMatrix{Float64}=Diagonal([NaN]),
                                   W::AbstractMatrix{Float64}=Diagonal([NaN]),
                                   xi::Vector{Float64}=[NaN])
@@ -80,12 +80,12 @@ function MvGaussianDistribution(; m::Vector{Float64}=[NaN],
         end
     end
 
-    return MvGaussianDistribution{length(_m)}(_m, _V, _W, _xi)
+    return MvGaussian{length(_m)}(_m, _V, _W, _xi)
 end
 
-MvGaussianDistribution() = MvGaussianDistribution(m=[0.0], V=reshape([1.0],1,1))
+MvGaussian() = MvGaussian(m=[0.0], V=reshape([1.0],1,1))
 
-function vague!{dims}(dist::MvGaussianDistribution{dims})
+function vague!{dims}(dist::MvGaussian{dims})
     dist.m = zeros(dims)
     dist.V = huge*diageye(dims)
     invalidate!(dist.W)
@@ -93,9 +93,9 @@ function vague!{dims}(dist::MvGaussianDistribution{dims})
     return dist
 end
 
-vague{dims}(::Type{MvGaussianDistribution{dims}}) = MvGaussianDistribution(m=zeros(dims), V=huge*diageye(dims))
+vague{dims}(::Type{MvGaussian{dims}}) = MvGaussian(m=zeros(dims), V=huge*diageye(dims))
 
-function format(dist::MvGaussianDistribution)
+function format(dist::MvGaussian)
     if isValid(dist.m) && isValid(dist.V)
         return "N(m=$(format(dist.m)), V=$(format(dist.V)))"
     elseif isValid(dist.m) && isValid(dist.W)
@@ -109,9 +109,9 @@ function format(dist::MvGaussianDistribution)
     end
 end
 
-show(io::IO, dist::MvGaussianDistribution) = println(io, format(dist))
+show(io::IO, dist::MvGaussian) = println(io, format(dist))
 
-function prod!{dims}(x::MvGaussianDistribution{dims}, y::MvGaussianDistribution{dims}, z::MvGaussianDistribution{dims}=MvGaussianDistribution(m=zeros(dims), V=eye(dims)))
+function prod!{dims}(x::MvGaussian{dims}, y::MvGaussian{dims}, z::MvGaussian{dims}=MvGaussian(m=zeros(dims), V=eye(dims)))
     # Multiplication of 2 multivariate Gaussian PDFs: p(z) = p(x) * p(y)
     # Equations from: Korl (2005), "A Factor graph approach to signal modelling, system identification and filtering", Table 4.1
     if isValid(x.xi) && isValid(x.W) && isValid(y.xi) && isValid(y.W)
@@ -145,14 +145,14 @@ function prod!{dims}(x::MvGaussianDistribution{dims}, y::MvGaussianDistribution{
     return z
 end
 
-@symmetrical function prod!{dims}(x::MvGaussianDistribution{dims}, y::MvDeltaDistribution{Float64,dims}, z::MvDeltaDistribution{Float64,dims}=MvDeltaDistribution(y.m))
+@symmetrical function prod!{dims}(x::MvGaussian{dims}, y::MvDelta{Float64,dims}, z::MvDelta{Float64,dims}=MvDelta(y.m))
     # Product of multivariate Gaussian PDF and MvDelta
     (z.m == y.m) || (z.m[:] = y.m)
 
     return z
 end
 
-@symmetrical function prod!{dims}(x::MvGaussianDistribution{dims}, y::MvDeltaDistribution{Float64,dims}, z::MvGaussianDistribution{dims})
+@symmetrical function prod!{dims}(x::MvGaussian{dims}, y::MvDelta{Float64,dims}, z::MvGaussian{dims})
     # Product of multivariate Gaussian PDF and MvDelta, force result to be MvGaussian
     z.m[:] = y.m
     z.V = tiny.*eye(dims)
@@ -162,7 +162,7 @@ end
     return z
 end
 
-function Base.mean(dist::MvGaussianDistribution)
+function Base.mean(dist::MvGaussian)
     if isProper(dist)
         return ensureParameter!(dist, Val{:m}).m
     else
@@ -170,7 +170,7 @@ function Base.mean(dist::MvGaussianDistribution)
     end
 end
 
-function Base.cov(dist::MvGaussianDistribution)
+function Base.cov(dist::MvGaussian)
     if isProper(dist)
         return ensureParameter!(dist, Val{:V}).V
     else
@@ -178,7 +178,7 @@ function Base.cov(dist::MvGaussianDistribution)
     end
 end
 
-function Base.var(dist::MvGaussianDistribution)
+function Base.var(dist::MvGaussian)
     if isProper(dist)
         return diag(ensureParameter!(dist, Val{:V}).V)
     else
@@ -186,7 +186,7 @@ function Base.var(dist::MvGaussianDistribution)
     end
 end
 
-function isProper(dist::MvGaussianDistribution)
+function isProper(dist::MvGaussian)
     if isWellDefined(dist)
         param = isValid(dist.V) ? dist.V : dist.W
         if isRoundedPosDef(param)
@@ -197,14 +197,14 @@ function isProper(dist::MvGaussianDistribution)
     return false
 end
 
-function sample(dist::MvGaussianDistribution)
+function sample(dist::MvGaussian)
     isProper(dist) || error("Cannot sample from improper distribution")
     ensureParameters!(dist, (:m, :V))
     return (dist.V^0.5)*randn(length(dist.m)) + dist.m
 end
 
 # Methods to check and convert different parametrizations
-function isWellDefined(dist::MvGaussianDistribution)
+function isWellDefined(dist::MvGaussian)
     # Check if dist is not underdetermined
     if !((isValid(dist.m) || isValid(dist.xi)) &&
          (isValid(dist.V) || isValid(dist.W)))
@@ -225,7 +225,7 @@ function isWellDefined(dist::MvGaussianDistribution)
     return true
 end
 
-function isConsistent(dist::MvGaussianDistribution)
+function isConsistent(dist::MvGaussian)
     # Check if dist is consistent in case it is overdetermined
     if isValid(dist.V) && isValid(dist.W)
         V_W_consistent = false
@@ -235,7 +235,7 @@ function isConsistent(dist::MvGaussianDistribution)
             try
                 V_W_consistent = isApproxEqual(cholinv(dist.W), dist.V)
             catch
-                error("Cannot check consistency of MvGaussianDistribution because both V and W are non-invertible.")
+                error("Cannot check consistency of MvGaussian because both V and W are non-invertible.")
             end
         end
         if !V_W_consistent
@@ -259,42 +259,42 @@ end
 # In all ensureParameter! methods we check if the required parameter defined and, if not, calculate it.
 # We assume that the distribution is well-defined, otherwise we would've gotten the message upon creating.
 
-function ensureParameters!(dist::MvGaussianDistribution, params::Tuple{Symbol, Vararg{Symbol}})
+function ensureParameters!(dist::MvGaussian, params::Tuple{Symbol, Vararg{Symbol}})
     for param in params
         ensureParameter!(dist, Val{param})
     end
     return dist
 end
 
-function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:m}})
+function ensureParameter!(dist::MvGaussian, param::Type{Val{:m}})
     if !isValid(dist.m)
         dist.m = ensureParameter!(dist, Val{:V}).V * dist.xi
     end
     return dist
 end
 
-function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:xi}})
+function ensureParameter!(dist::MvGaussian, param::Type{Val{:xi}})
     if !isValid(dist.xi)
         dist.xi = ensureParameter!(dist, Val{:W}).W * dist.m
     end
     return dist
 end
 
-function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:W}})
+function ensureParameter!(dist::MvGaussian, param::Type{Val{:W}})
     if !isValid(dist.W)
         dist.W = cholinv(dist.V)
     end
     return dist
 end
 
-function ensureParameter!(dist::MvGaussianDistribution, param::Type{Val{:V}})
+function ensureParameter!(dist::MvGaussian, param::Type{Val{:V}})
     if !isValid(dist.V)
         dist.V = cholinv(dist.W)
     end
     return dist
 end
 
-function ==(x::MvGaussianDistribution, y::MvGaussianDistribution)
+function ==(x::MvGaussian, y::MvGaussian)
     if is(x, y)
         return true
     end
@@ -330,15 +330,15 @@ function ==(x::MvGaussianDistribution, y::MvGaussianDistribution)
     return true
 end
 
-# Convert DeltaDistribution -> MvGaussianDistribution
+# Convert Delta -> MvGaussian
 # NOTE: this introduces a small error because the variance is set >0
-convert(::Type{MvGaussianDistribution}, delta::MvDeltaDistribution{Float64}) = MvGaussianDistribution(m=delta.m, V=tiny*diageye(length(delta.m)))
-convert{TD<:MvDeltaDistribution{Float64}, TG<:MvGaussianDistribution}(::Type{Message{TG}}, msg::Message{TD}) = Message(MvGaussianDistribution(m=msg.payload.m, V=tiny*diageye(length(msg.payload.m))))
+convert(::Type{MvGaussian}, delta::MvDelta{Float64}) = MvGaussian(m=delta.m, V=tiny*diageye(length(delta.m)))
+convert{TD<:MvDelta{Float64}, TG<:MvGaussian}(::Type{Message{TG}}, msg::Message{TD}) = Message(MvGaussian(m=msg.payload.m, V=tiny*diageye(length(msg.payload.m))))
 
-# Convert GaussianDistribution -> MvGaussianDistribution
-convert(::Type{MvGaussianDistribution}, d::GaussianDistribution) = MvGaussianDistribution(m=[d.m], V=d.V*eye(1), W=d.W*eye(1), xi=[d.xi])
+# Convert Gaussian -> MvGaussian
+convert(::Type{MvGaussian}, d::Gaussian) = MvGaussian(m=[d.m], V=d.V*eye(1), W=d.W*eye(1), xi=[d.xi])
 
-# Convert MvGaussianDistribution -> GaussianDistribution
-function convert(::Type{GaussianDistribution}, d::MvGaussianDistribution{1})
-    GaussianDistribution(m=d.m[1], V=d.V[1,1], W=d.W[1,1], xi=d.xi[1])
+# Convert MvGaussian -> Gaussian
+function convert(::Type{Gaussian}, d::MvGaussian{1})
+    Gaussian(m=d.m[1], V=d.V[1,1], W=d.W[1,1], xi=d.xi[1])
 end

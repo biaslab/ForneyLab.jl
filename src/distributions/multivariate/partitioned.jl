@@ -17,9 +17,9 @@ Fields:
 
 Construction:
 
-    PartitionedDistribution([GaussianDistribution(), GaussianDistribution()])
+    PartitionedDistribution([Gaussian(), Gaussian()])
 """
-type PartitionedDistribution{dtype<:ProbabilityDistribution,n_factors} <: MultivariateProbabilityDistribution
+type PartitionedDistribution{dtype<:ProbabilityDistribution,n_factors} <: Multivariate
     factors::Vector{dtype}
 
     function PartitionedDistribution(factors::Vector{dtype})
@@ -32,7 +32,7 @@ type PartitionedDistribution{dtype<:ProbabilityDistribution,n_factors} <: Multiv
     end
 end
 PartitionedDistribution{T<:ProbabilityDistribution}(factors::Vector{T}) = PartitionedDistribution{typeof(factors[1]), length(factors)}(factors)
-PartitionedDistribution() = PartitionedDistribution([GaussianDistribution(), GaussianDistribution()])
+PartitionedDistribution() = PartitionedDistribution([Gaussian(), Gaussian()])
 
 function show(io::IO, dist::PartitionedDistribution)
     println(io, typeof(dist))
@@ -66,20 +66,20 @@ function prod!{Tx,Ty,Tz,n_factors}(x::PartitionedDistribution{Tx,n_factors}, y::
     return z
 end
 
-@symmetrical function prod!{dtype,n_factors}(x::PartitionedDistribution{dtype,n_factors}, y::MvDeltaDistribution, z::MvDeltaDistribution=MvDeltaDistribution(zeros(2)))
+@symmetrical function prod!{dtype,n_factors}(x::PartitionedDistribution{dtype,n_factors}, y::MvDelta, z::MvDelta=MvDelta(zeros(2)))
     # Multiplication of a partitioned PDF with a delta
     dims = dimensions(x)
     factor_dims = dimensions(x.factors[1])
     (dims == dimensions(y)) || throw(DimensionMismatch())
     (length(z.m) == dims) || (z.m = zeros(dims))
     for i=1:n_factors
-        if dtype <: MultivariateProbabilityDistribution
+        if dtype <: Multivariate
             idx = 1 + (i-1)*factor_dims
             factor_range = idx:idx+factor_dims-1
-            y_factor = MvDeltaDistribution(y.m[factor_range])
+            y_factor = MvDelta(y.m[factor_range])
             z.m[factor_range] = (x.factors[i] * y_factor).m
         else
-            y_factor = DeltaDistribution(y.m[i])
+            y_factor = Delta(y.m[i])
             z.m[i] = (x.factors[i] * y_factor).m
         end
     end

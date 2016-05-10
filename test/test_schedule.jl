@@ -29,28 +29,28 @@ facts("Schedule and ScheduleEntry tests") do
     end
 
     context("A compiled scheduleEntry can be executed") do
-        node = TerminalNode(GaussianDistribution(m=2.0, V=4.0))
-        node.i[:out].message = Message(GaussianDistribution()) # Preset message
+        node = TerminalNode(Gaussian(m=2.0, V=4.0))
+        node.i[:out].message = Message(Gaussian()) # Preset message
         entry = ScheduleEntry(node, 1, sumProductRule!)
         ForneyLab.buildExecute!(entry, Any[nothing])
         outbound_dist = entry.execute()
         @fact is(node.i[:out].message.payload, outbound_dist) --> true
-        @fact node.i[:out].message --> Message(GaussianDistribution(m=2.0, V=4.0))
+        @fact node.i[:out].message --> Message(Gaussian(m=2.0, V=4.0))
 
         node = AdditionNode()
-        node.i[:out].message = Message(GaussianDistribution()) # Preset message
+        node.i[:out].message = Message(Gaussian()) # Preset message
         entry = ScheduleEntry(node, 3, sumProductRule!)
-        ForneyLab.buildExecute!(entry, Any[Message(GaussianDistribution(m=1.0, V=1.0)), Message(GaussianDistribution(m=1.0, V=1.0)), nothing])
+        ForneyLab.buildExecute!(entry, Any[Message(Gaussian(m=1.0, V=1.0)), Message(Gaussian(m=1.0, V=1.0)), nothing])
         outbound_dist = entry.execute()
         @fact is(node.i[:out].message.payload, outbound_dist) --> true
-        @fact node.i[:out].message --> Message(GaussianDistribution(m=2.0, V=2.0))
+        @fact node.i[:out].message --> Message(Gaussian(m=2.0, V=2.0))
 
         node = GaussianNode(form=:precision)
-        node.i[:out].message = Message(GaussianDistribution()) # Preset message
+        node.i[:out].message = Message(Gaussian()) # Preset message
         entry = ScheduleEntry(node, 3, variationalRule!)
-        ForneyLab.buildExecute!(entry, Any[GaussianDistribution(m=1.0, V=1.0), GammaDistribution(a=2.0, b=4.0), nothing])
+        ForneyLab.buildExecute!(entry, Any[Gaussian(m=1.0, V=1.0), Gamma(a=2.0, b=4.0), nothing])
         outbound_dist = entry.execute()
         @fact is(node.i[:out].message.payload, outbound_dist) --> true
-        @fact node.i[:out].message --> Message(GaussianDistribution(m=1.0, W=0.5))
+        @fact node.i[:out].message --> Message(Gaussian(m=1.0, W=0.5))
     end
 end

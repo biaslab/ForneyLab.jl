@@ -48,7 +48,7 @@ function initializePairOfMockNodes()
     return g
 end
 
-function initializePairOfTerminalNodes(d1::ProbabilityDistribution=GaussianDistribution(), d2::ProbabilityDistribution=GaussianDistribution())
+function initializePairOfTerminalNodes(d1::ProbabilityDistribution=Gaussian(), d2::ProbabilityDistribution=Gaussian())
     # Two connected TerminalNodes
     #
     # [T]-->[T]
@@ -63,7 +63,7 @@ function initializePairOfTerminalNodes(d1::ProbabilityDistribution=GaussianDistr
     return g
 end
 
-function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(DeltaDistribution(2.0)), msg_gain_2=Message(DeltaDistribution(3.0)), msg_terminal=Message(DeltaDistribution(1.0)))
+function initializePairOfNodes(; A=[1.0], msg_gain_1=Message(Delta(2.0)), msg_gain_2=Message(Delta(3.0)), msg_terminal=Message(Delta(1.0)))
     # Helper function for initializing an unconnected pair of nodes
     #
     # |--[A]--|
@@ -87,7 +87,7 @@ function initializeChainOfNodes()
     # [T]-->[A]-->[B]-->[M]
 
     g = FactorGraph()
-    TerminalNode(DeltaDistribution(3.0), id=:node1)
+    TerminalNode(Delta(3.0), id=:node1)
     GainNode(gain=[2.0], id=:node2)
     GainNode(gain=[2.0], id=:node3)
     Edge(n(:node1).i[:out], n(:node2).i[:in])
@@ -110,7 +110,7 @@ function initializeLoopyGraph(; A=[2.0], B=[0.5], noise_m=1.0, noise_V=0.1)
     g = FactorGraph()
     GainNode(gain=A, id=:driver)
     GainNode(gain=B, id=:inhibitor)
-    TerminalNode(GaussianDistribution(m=noise_m, V=noise_V), id=:noise)
+    TerminalNode(Gaussian(m=noise_m, V=noise_V), id=:noise)
     AdditionNode(id=:add)
     Edge(n(:add).i[:out], n(:inhibitor).i[:in])
     Edge(n(:inhibitor).i[:out], n(:driver).i[:in])
@@ -195,7 +195,7 @@ function initializeSimpleFactoringGraph()
     return g
 end
 
-function initializeAdditionNode(values=[GaussianDistribution(), GaussianDistribution(), GaussianDistribution()])
+function initializeAdditionNode(values=[Gaussian(), Gaussian(), Gaussian()])
     # Set up an addition node    #
     # [T]-->[+]<--[T]
     #        |
@@ -210,7 +210,7 @@ function initializeAdditionNode(values=[GaussianDistribution(), GaussianDistribu
     return g
 end
 
-function initializeGaussianNode(; y::ProbabilityDistribution=GaussianDistribution())
+function initializeGaussianNode(; y::ProbabilityDistribution=Gaussian())
     # Initialize a Gaussian node
     #
     #    mean   precision
@@ -221,8 +221,8 @@ function initializeGaussianNode(; y::ProbabilityDistribution=GaussianDistributio
 
     g = FactorGraph()
     GaussianNode(form=:precision, id=:node)
-    Edge(TerminalNode(GaussianDistribution()).i[:out], n(:node).i[:mean], id=:edge1)
-    Edge(TerminalNode(GammaDistribution()).i[:out], n(:node).i[:precision], id=:edge2)
+    Edge(TerminalNode(Gaussian()).i[:out], n(:node).i[:mean], id=:edge1)
+    Edge(TerminalNode(Gamma()).i[:out], n(:node).i[:precision], id=:edge2)
     Edge(n(:node).i[:out], TerminalNode(y).i[:out], id=:edge3)
 
     return g
@@ -257,9 +257,9 @@ end
 function initializeCompositeGraph()
     # Build the internal graph
     g = FactorGraph()
-    t_constant = TerminalNode(DeltaDistribution(3.0))
-    t_in = TerminalNode(DeltaDistribution(), id=:in)
-    t_out = TerminalNode(DeltaDistribution(), id=:out)
+    t_constant = TerminalNode(Delta(3.0))
+    t_in = TerminalNode(Delta(), id=:in)
+    t_out = TerminalNode(Delta(), id=:out)
     a = AdditionNode(id=:adder)
     Edge(t_in, a.i[:in1])
     Edge(t_constant, a.i[:in2])
@@ -299,10 +299,10 @@ function initializeGaussianNodeChain(y::Array{Float64, 1})
         end
     end
     # Attach beginning and end nodes
-    TerminalNode(vague(GaussianDistribution), id=:m0) # Prior
-    TerminalNode(GammaDistribution(a=1.0-tiny, b=tiny), id=:gam0) # Unifirm prior
-    TerminalNode(vague(GaussianDistribution), id=:mN)
-    TerminalNode(GammaDistribution(a=1.0-tiny, b=tiny), id=:gamN) # Uniform
+    TerminalNode(vague(Gaussian), id=:m0) # Prior
+    TerminalNode(Gamma(a=1.0-tiny, b=tiny), id=:gam0) # Unifirm prior
+    TerminalNode(vague(Gaussian), id=:mN)
+    TerminalNode(Gamma(a=1.0-tiny, b=tiny), id=:gamN) # Uniform
     Edge(n(:m0).i[:out], n(:m_eq1).i[1])
     Edge(n(:gam0).i[:out], n(:gam_eq1).i[1])
     Edge(n(:m_eq*n_samples).i[2], n(:mN).i[:out])
@@ -332,7 +332,7 @@ function initializeMvGaussianNodeChain(y::Array{Float64, 2})
         GaussianNode(form=:precision, id=:g*sec)
         EqualityNode(id=:m_eq*sec) # Equality node chain for mean
         EqualityNode(id=:gam_eq*sec) # Equality node chain for precision
-        TerminalNode(MvGaussianDistribution(m=vec(y[sec, :]), V=tiny*eye(2)), id=:y*sec) # Observed y values are stored in terminal node
+        TerminalNode(MvGaussian(m=vec(y[sec, :]), V=tiny*eye(2)), id=:y*sec) # Observed y values are stored in terminal node
         Edge(n(:g*sec).i[:out], n(:y*sec).i[:out], id=:q_y*sec)
         Edge(n(:m_eq*sec).i[3], n(:g*sec).i[:mean], id=:q_m*sec)
         Edge(n(:gam_eq*sec).i[3], n(:g*sec).i[:precision], id=:q_gam*sec)
@@ -342,10 +342,10 @@ function initializeMvGaussianNodeChain(y::Array{Float64, 2})
         end
     end
     # Attach beginning and end nodes
-    TerminalNode(vague(MvGaussianDistribution{2}), id=:m0) # Prior
-    TerminalNode(vague(WishartDistribution{2}), id=:gam0) # Unifirm prior
-    TerminalNode(vague(MvGaussianDistribution{2}), id=:mN)
-    TerminalNode(vague(WishartDistribution{2}), id=:gamN) # Uniform
+    TerminalNode(vague(MvGaussian{2}), id=:m0) # Prior
+    TerminalNode(vague(Wishart{2}), id=:gam0) # Unifirm prior
+    TerminalNode(vague(MvGaussian{2}), id=:mN)
+    TerminalNode(vague(Wishart{2}), id=:gamN) # Uniform
     Edge(n(:m0).i[:out], n(:m_eq1).i[1])
     Edge(n(:gam0).i[:out], n(:gam_eq1).i[1])
     Edge(n(:m_eq*n_samples).i[2], n(:mN).i[:out])
@@ -369,8 +369,8 @@ function testInterfaceConnections(node1::GainNode, node2::TerminalNode)
     # Helper function for node comparison
 
     # Check that nodes are properly connected
-    @fact typeof(node1.interfaces[1].message.payload) <: DeltaDistribution --> true
-    @fact typeof(node2.interfaces[1].message.payload) <: DeltaDistribution --> true
+    @fact typeof(node1.interfaces[1].message.payload) <: Delta --> true
+    @fact typeof(node2.interfaces[1].message.payload) <: Delta --> true
     @fact mean(node1.interfaces[1].message.payload) --> 2.0
     @fact mean(node2.interfaces[1].message.payload) --> 1.0
     @fact mean(node1.interfaces[1].partner.message.payload) --> 1.0
@@ -389,12 +389,12 @@ function validateOutboundMessage(   node::Node,
                                     update_function::Function = ForneyLab.sumProductRule!,
                                     approx::DataType = Void)
     # Preset an outbound distribution on which the update may operate
-    if typeof(correct_outbound_dist) <: DeltaDistribution
-        outbound_dist = DeltaDistribution()
-    elseif typeof(correct_outbound_dist) <: MvDeltaDistribution
-        outbound_dist = MvDeltaDistribution(zeros(dimensions(correct_outbound_dist)))
-    elseif typeof(correct_outbound_dist) <: MatrixDeltaDistribution
-        outbound_dist = MatrixDeltaDistribution(zeros(dimensions(correct_outbound_dist)))
+    if typeof(correct_outbound_dist) <: Delta
+        outbound_dist = Delta()
+    elseif typeof(correct_outbound_dist) <: MvDelta
+        outbound_dist = MvDelta(zeros(dimensions(correct_outbound_dist)))
+    elseif typeof(correct_outbound_dist) <: MatrixDelta
+        outbound_dist = MatrixDelta(zeros(dimensions(correct_outbound_dist)))
     else
         outbound_dist = vague(typeof(correct_outbound_dist))
     end

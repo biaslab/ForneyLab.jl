@@ -33,6 +33,6 @@ Used to specify an approximation of a probability distribution.
 `dist` is the type of the approximating distribution.
 `approx_type` is the approximation type. Example:
 
-    Approximation{GaussianDistribution, MomentMatching}
+    Approximation{Gaussian, MomentMatching}
 """
 abstract Approximation{dist<:ProbabilityDistribution, approx_type<:ApproximationType}

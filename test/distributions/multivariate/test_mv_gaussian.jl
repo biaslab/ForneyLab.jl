@@ -2,124 +2,124 @@
 # Unit tests
 #####################
 
-facts("MvGaussianDistribution unit tests") do
-    context("MvGaussianDistribution() should initialize a Gaussian distribution") do
-        @fact MvGaussianDistribution().V --> reshape([1.0],1,1)
-        @fact MvGaussianDistribution().m --> [0.0]
-        @fact typeof(MvGaussianDistribution(m=[0.0], W=eye(1))) --> MvGaussianDistribution{1}
-        @fact MvGaussianDistribution(m=[0.0], W=eye(1)).W --> eye(1)
-        @fact MvGaussianDistribution(m=[0.0], W=Diagonal([1.0])).W --> Diagonal([1.0])
-        @fact MvGaussianDistribution(xi=[0.0], W=eye(1)).W --> eye(1)
-        @fact typeof(MvGaussianDistribution(m=[1.0], V=eye(1)).V) --> Array{Float64, 2} # cast single value to matrix
-        @fact typeof(MvGaussianDistribution(m=[0.0, 0.0], V=eye(2))) --> MvGaussianDistribution{2} # multivariate
-        @fact MvGaussianDistribution(m=[0.0, 0.0], V=eye(2)).V --> eye(2) # multivariate
-        @fact MvGaussianDistribution(m=[0.0, 0.0], V=diageye(2)).V --> diageye(2) # multivariate
-        @fact_throws MvGaussianDistribution(V=eye(1), W=eye(1))
-        @fact_throws MvGaussianDistribution(m=[0.0], xi=[0.0])
-        @fact_throws MvGaussianDistribution(xi=[0.0])
-        @fact_throws MvGaussianDistribution(m=[0.0, 0.0], V=[0. 0.;0. 0.])  # V should be positive definite
-        @fact_throws MvGaussianDistribution(m=[0.0, 0.0], V=[Inf 0.;0. 1.]) # V should be bounded
-        @fact_throws MvGaussianDistribution(m=[0.0, 0.0], W=[0. 0.;0. 0.])  # W should be positive definite
-        @fact_throws MvGaussianDistribution(m=[0.0, 0.0], W=[Inf 0.;0. 1.]) # W should be bounded
+facts("MvGaussian unit tests") do
+    context("MvGaussian() should initialize a Gaussian distribution") do
+        @fact MvGaussian().V --> reshape([1.0],1,1)
+        @fact MvGaussian().m --> [0.0]
+        @fact typeof(MvGaussian(m=[0.0], W=eye(1))) --> MvGaussian{1}
+        @fact MvGaussian(m=[0.0], W=eye(1)).W --> eye(1)
+        @fact MvGaussian(m=[0.0], W=Diagonal([1.0])).W --> Diagonal([1.0])
+        @fact MvGaussian(xi=[0.0], W=eye(1)).W --> eye(1)
+        @fact typeof(MvGaussian(m=[1.0], V=eye(1)).V) --> Array{Float64, 2} # cast single value to matrix
+        @fact typeof(MvGaussian(m=[0.0, 0.0], V=eye(2))) --> MvGaussian{2} # multivariate
+        @fact MvGaussian(m=[0.0, 0.0], V=eye(2)).V --> eye(2) # multivariate
+        @fact MvGaussian(m=[0.0, 0.0], V=diageye(2)).V --> diageye(2) # multivariate
+        @fact_throws MvGaussian(V=eye(1), W=eye(1))
+        @fact_throws MvGaussian(m=[0.0], xi=[0.0])
+        @fact_throws MvGaussian(xi=[0.0])
+        @fact_throws MvGaussian(m=[0.0, 0.0], V=[0. 0.;0. 0.])  # V should be positive definite
+        @fact_throws MvGaussian(m=[0.0, 0.0], V=[Inf 0.;0. 1.]) # V should be bounded
+        @fact_throws MvGaussian(m=[0.0, 0.0], W=[0. 0.;0. 0.])  # W should be positive definite
+        @fact_throws MvGaussian(m=[0.0, 0.0], W=[Inf 0.;0. 1.]) # W should be bounded
     end
 
     context("vague() should initialize a vague (almost uninformative) Gaussian distribution") do
-        dist = vague(MvGaussianDistribution{1})
+        dist = vague(MvGaussian{1})
         @fact dist.m --> [0.0]
         @fact dist.V --> Diagonal([huge])
 
-        dist = vague(MvGaussianDistribution{2})
+        dist = vague(MvGaussian{2})
         @fact dist.m --> zeros(2)
         @fact dist.V --> Diagonal([huge, huge])
     end
 
     context("isProper() should indicate whether a Gaussian distribution is proper") do
-        @fact isProper(MvGaussianDistribution()) --> true
-        @fact isProper(MvGaussianDistribution(m=[0.0, 0.0], V=diageye(2))) --> true
-        @fact isProper(MvGaussianDistribution(m=[0.0], V= -1*eye(1))) --> false
-        @fact isProper(MvGaussianDistribution(m=[0.0], W= -1*eye(1))) --> false
+        @fact isProper(MvGaussian()) --> true
+        @fact isProper(MvGaussian(m=[0.0, 0.0], V=diageye(2))) --> true
+        @fact isProper(MvGaussian(m=[0.0], V= -1*eye(1))) --> false
+        @fact isProper(MvGaussian(m=[0.0], W= -1*eye(1))) --> false
     end
 
-    context("MvGaussianDistribution can be sampled") do
-        @fact typeof(sample(MvGaussianDistribution(m=[1.2, 2.7], V=[2.0 -0.5; -0.5 1.5]))) --> Array{Float64, 1}
-        @fact typeof(sample(MvGaussianDistribution(m=[1.2, 2.7], V=Diagonal([2.0, 1.5])))) --> Array{Float64, 1}
+    context("MvGaussian can be sampled") do
+        @fact typeof(sample(MvGaussian(m=[1.2, 2.7], V=[2.0 -0.5; -0.5 1.5]))) --> Array{Float64, 1}
+        @fact typeof(sample(MvGaussian(m=[1.2, 2.7], V=Diagonal([2.0, 1.5])))) --> Array{Float64, 1}
     end
 
-    context("Underdetermined MvGaussianDistribution should be detected by isWellDefined()") do
-        @fact isWellDefined(MvGaussianDistribution()) --> true
-        @fact isWellDefined(MvGaussianDistribution(m=[0.0], V=eye(1))) --> true
-        @fact isWellDefined(MvGaussianDistribution(m=[0.0], W=eye(1))) --> true
-        @fact isWellDefined(MvGaussianDistribution(m=[0.0, 0.0], W=diageye(2))) --> true
-        @fact isWellDefined(MvGaussianDistribution(xi=[0.0], V=eye(1))) --> true
-        @fact isWellDefined(MvGaussianDistribution(xi=[0.0], W=eye(1))) --> true
-        @fact isWellDefined(MvGaussianDistribution(m=[0.0], xi=[0.0], W=eye(1), V=eye(1))) --> true
+    context("Underdetermined MvGaussian should be detected by isWellDefined()") do
+        @fact isWellDefined(MvGaussian()) --> true
+        @fact isWellDefined(MvGaussian(m=[0.0], V=eye(1))) --> true
+        @fact isWellDefined(MvGaussian(m=[0.0], W=eye(1))) --> true
+        @fact isWellDefined(MvGaussian(m=[0.0, 0.0], W=diageye(2))) --> true
+        @fact isWellDefined(MvGaussian(xi=[0.0], V=eye(1))) --> true
+        @fact isWellDefined(MvGaussian(xi=[0.0], W=eye(1))) --> true
+        @fact isWellDefined(MvGaussian(m=[0.0], xi=[0.0], W=eye(1), V=eye(1))) --> true
 
-        dist = MvGaussianDistribution(m=[0.0], V=eye(1))
+        dist = MvGaussian(m=[0.0], V=eye(1))
         invalidate!(dist.m)
         @fact isWellDefined(dist) --> false
 
-        dist = MvGaussianDistribution(m=[0.0], V=eye(1))
+        dist = MvGaussian(m=[0.0], V=eye(1))
         invalidate!(dist.V)
         @fact isWellDefined(dist) --> false
 
-        dist = MvGaussianDistribution(xi=[0.0], W=eye(1))
+        dist = MvGaussian(xi=[0.0], W=eye(1))
         invalidate!(dist.xi)
         @fact isWellDefined(dist) --> false
 
-        dist = MvGaussianDistribution(xi=[0.0], W=eye(1))
+        dist = MvGaussian(xi=[0.0], W=eye(1))
         invalidate!(dist.W)
         @fact isWellDefined(dist) --> false
 
-        dist = MvGaussianDistribution(m=[0.0], V=eye(1), W=eye(1))
+        dist = MvGaussian(m=[0.0], V=eye(1), W=eye(1))
         invalidate!(dist.m)
         @fact isWellDefined(dist) --> false
 
-        dist = MvGaussianDistribution(m=[0.0], xi=[0.0], V=eye(1))
+        dist = MvGaussian(m=[0.0], xi=[0.0], V=eye(1))
         invalidate!(dist.V)
         @fact isWellDefined(dist) --> false
     end
-    context("Conversions between valid parametrizations of a MvGaussianDistribution should be consistent") do
+    context("Conversions between valid parametrizations of a MvGaussian should be consistent") do
         # Defined as (m,V)
-        @fact isConsistent(ensureParameters!(MvGaussianDistribution(m=[0.0], V=eye(1)), (:m, :W))) --> true
-        @fact isConsistent(ensureParameters!(MvGaussianDistribution(m=[0.0], V=eye(1)), (:xi, :V))) --> true
-        @fact isConsistent(ensureParameters!(MvGaussianDistribution(m=[0.0], V=eye(1)), (:xi, :W))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussian(m=[0.0], V=eye(1)), (:m, :W))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussian(m=[0.0], V=eye(1)), (:xi, :V))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussian(m=[0.0], V=eye(1)), (:xi, :W))) --> true
         # Defined as (m,W)
-        @fact isConsistent(ensureParameters!(MvGaussianDistribution(m=[0.0], W=eye(1)), (:m, :V))) --> true
-        @fact isConsistent(ensureParameters!(MvGaussianDistribution(m=[0.0], W=eye(1)), (:xi, :V))) --> true
-        @fact isConsistent(ensureParameters!(MvGaussianDistribution(m=[0.0], W=eye(1)), (:xi, :W))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussian(m=[0.0], W=eye(1)), (:m, :V))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussian(m=[0.0], W=eye(1)), (:xi, :V))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussian(m=[0.0], W=eye(1)), (:xi, :W))) --> true
         # Defined as (xi,V)
-        @fact isConsistent(ensureParameters!(MvGaussianDistribution(xi=[2.0], V=eye(1)), (:m, :V))) --> true
-        @fact isConsistent(ensureParameters!(MvGaussianDistribution(xi=[2.0], V=eye(1)), (:m, :W))) --> true
-        @fact isConsistent(ensureParameters!(MvGaussianDistribution(xi=[2.0], V=eye(1)), (:xi, :W))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussian(xi=[2.0], V=eye(1)), (:m, :V))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussian(xi=[2.0], V=eye(1)), (:m, :W))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussian(xi=[2.0], V=eye(1)), (:xi, :W))) --> true
         # Defined as (xi,W)
-        @fact isConsistent(ensureParameters!(MvGaussianDistribution(xi=[2.0], W=eye(1)), (:m, :V))) --> true
-        @fact isConsistent(ensureParameters!(MvGaussianDistribution(xi=[2.0], W=eye(1)), (:m, :W))) --> true
-        @fact isConsistent(ensureParameters!(MvGaussianDistribution(xi=[2.0], W=eye(1)), (:xi, :V))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussian(xi=[2.0], W=eye(1)), (:m, :V))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussian(xi=[2.0], W=eye(1)), (:m, :W))) --> true
+        @fact isConsistent(ensureParameters!(MvGaussian(xi=[2.0], W=eye(1)), (:xi, :V))) --> true
     end
     context("mean(d), var(d), cov(d) should return correct results") do
-        @fact mean(MvGaussianDistribution(m=[1.0, 2.0], V=eye(2))) --> [1.0, 2.0]
-        @fact mean(MvGaussianDistribution(xi=[1.0, 2.0], V=2.0*eye(2))) --> [2.0, 4.0]
-        @fact isValid(mean(MvGaussianDistribution(xi=[1.0, 2.0], V=-2.0*eye(2)))) --> false
-        @fact var(MvGaussianDistribution(m=[1.0, 2.0], V=diagm([2.0, 4.0]))) --> [2.0, 4.0]
-        @fact var(MvGaussianDistribution(m=[1.0, 2.0], W=diagm([2.0, 4.0]))) --> roughly([0.5, 0.25])
-        @fact isValid(var(MvGaussianDistribution(m=[1.0, 2.0], W=diagm([-2.0, 4.0])))) --> false
-        @fact cov(MvGaussianDistribution(m=[1.0, 2.0], V=[2.0 1.0;1.0 2.0])) --> [2.0 1.0;1.0 2.0]
-        @fact cov(MvGaussianDistribution(m=[1.0, 2.0], W=[2.0 1.0;1.0 2.0])) --> roughly(inv([2.0 1.0;1.0 2.0]))
-        @fact isValid(cov(MvGaussianDistribution(m=[1.0, 2.0], W=diagm([-2.0, 4.0])))) --> false
+        @fact mean(MvGaussian(m=[1.0, 2.0], V=eye(2))) --> [1.0, 2.0]
+        @fact mean(MvGaussian(xi=[1.0, 2.0], V=2.0*eye(2))) --> [2.0, 4.0]
+        @fact isValid(mean(MvGaussian(xi=[1.0, 2.0], V=-2.0*eye(2)))) --> false
+        @fact var(MvGaussian(m=[1.0, 2.0], V=diagm([2.0, 4.0]))) --> [2.0, 4.0]
+        @fact var(MvGaussian(m=[1.0, 2.0], W=diagm([2.0, 4.0]))) --> roughly([0.5, 0.25])
+        @fact isValid(var(MvGaussian(m=[1.0, 2.0], W=diagm([-2.0, 4.0])))) --> false
+        @fact cov(MvGaussian(m=[1.0, 2.0], V=[2.0 1.0;1.0 2.0])) --> [2.0 1.0;1.0 2.0]
+        @fact cov(MvGaussian(m=[1.0, 2.0], W=[2.0 1.0;1.0 2.0])) --> roughly(inv([2.0 1.0;1.0 2.0]))
+        @fact isValid(cov(MvGaussian(m=[1.0, 2.0], W=diagm([-2.0, 4.0])))) --> false
     end
-    context("Inconsistent overdetermined MvGaussianDistribution should be detected by isConsistent()") do
-        @fact isConsistent(MvGaussianDistribution(m=[0.0], xi=[1.0], W=eye(1))) --> false
-        @fact isConsistent(MvGaussianDistribution(m=[0.0], V=eye(1), W=2*eye(1))) --> false
-        @fact isConsistent(MvGaussianDistribution(m=[0.0], xi=[1.0], V=eye(1), W=2*eye(1))) --> false
+    context("Inconsistent overdetermined MvGaussian should be detected by isConsistent()") do
+        @fact isConsistent(MvGaussian(m=[0.0], xi=[1.0], W=eye(1))) --> false
+        @fact isConsistent(MvGaussian(m=[0.0], V=eye(1), W=2*eye(1))) --> false
+        @fact isConsistent(MvGaussian(m=[0.0], xi=[1.0], V=eye(1), W=2*eye(1))) --> false
     end
 end
 
 facts("Marginal calculations for the MvGaussian") do
     context("calculateMarginal!(edge) should give correct result and save the marginal to the edge") do
-        initializePairOfTerminalNodes(MvGaussianDistribution(m=[0.0], V=eye(1)), MvGaussianDistribution(m=[0.0], V=eye(1)))
+        initializePairOfTerminalNodes(MvGaussian(m=[0.0], V=eye(1)), MvGaussian(m=[0.0], V=eye(1)))
         edge = n(:t1).i[:out].edge
-        n(:t1).i[:out].message = Message(MvGaussianDistribution(m=[0.0], V=eye(1)))
-        n(:t2).i[:out].message = Message(MvGaussianDistribution(m=[0.0], V=eye(1)))
+        n(:t1).i[:out].message = Message(MvGaussian(m=[0.0], V=eye(1)))
+        n(:t2).i[:out].message = Message(MvGaussian(m=[0.0], V=eye(1)))
         marginal_dist = calculateMarginal!(edge)
         @fact edge.marginal --> marginal_dist
         ensureParameters!(marginal_dist, (:m, :V))
@@ -127,33 +127,33 @@ facts("Marginal calculations for the MvGaussian") do
         @fact isApproxEqual(edge.marginal.V, reshape([0.5], 1, 1)) --> true
     end
 
-    context("prod! for MvGaussianDistribution") do
-        marg = ensureParameters!(MvGaussianDistribution(m=[0.0], V=eye(1)) * MvGaussianDistribution(m=[0.0], V=eye(1)), (:m, :V))
+    context("prod! for MvGaussian") do
+        marg = ensureParameters!(MvGaussian(m=[0.0], V=eye(1)) * MvGaussian(m=[0.0], V=eye(1)), (:m, :V))
         @fact marg.m --> [0.0]
         @fact isApproxEqual(marg.V, reshape([0.5], 1, 1)) --> true
-        @fact MvGaussianDistribution(m=zeros(2), V=eye(2)) * MvDeltaDistribution(ones(2)) --> MvDeltaDistribution(ones(2))
-        @fact MvDeltaDistribution(ones(2)) * MvGaussianDistribution(m=zeros(2), V=eye(2)) --> MvDeltaDistribution(ones(2))
-        @fact_throws MethodError MvDeltaDistribution(ones(3)) * MvGaussianDistribution(m=zeros(2), V=eye(2))
-        @fact ForneyLab.prod!(MvGaussianDistribution(m=zeros(2), V=eye(2)), MvDeltaDistribution(ones(2)), MvGaussianDistribution(m=zeros(2), V=eye(2))) --> MvGaussianDistribution(m=ones(2), V=tiny*eye(2))
-        @fact ForneyLab.prod!(MvDeltaDistribution(ones(2)), MvGaussianDistribution(m=zeros(2), V=eye(2)), MvGaussianDistribution(m=zeros(2), V=eye(2))) --> MvGaussianDistribution(m=ones(2), V=tiny*eye(2))
+        @fact MvGaussian(m=zeros(2), V=eye(2)) * MvDelta(ones(2)) --> MvDelta(ones(2))
+        @fact MvDelta(ones(2)) * MvGaussian(m=zeros(2), V=eye(2)) --> MvDelta(ones(2))
+        @fact_throws MethodError MvDelta(ones(3)) * MvGaussian(m=zeros(2), V=eye(2))
+        @fact ForneyLab.prod!(MvGaussian(m=zeros(2), V=eye(2)), MvDelta(ones(2)), MvGaussian(m=zeros(2), V=eye(2))) --> MvGaussian(m=ones(2), V=tiny*eye(2))
+        @fact ForneyLab.prod!(MvDelta(ones(2)), MvGaussian(m=zeros(2), V=eye(2)), MvGaussian(m=zeros(2), V=eye(2))) --> MvGaussian(m=ones(2), V=tiny*eye(2))
     end
 end
 
-facts("MvGaussianDistribution converts") do
-    context("MvDeltaDistribution should be convertible to MvGaussianDistribution with tiny variance") do
-        @fact convert(MvGaussianDistribution, MvDeltaDistribution([1.0, 2.0])) --> MvGaussianDistribution(m=[1.0, 2.0], V=tiny*diageye(2)) # Vector
+facts("MvGaussian converts") do
+    context("MvDelta should be convertible to MvGaussian with tiny variance") do
+        @fact convert(MvGaussian, MvDelta([1.0, 2.0])) --> MvGaussian(m=[1.0, 2.0], V=tiny*diageye(2)) # Vector
     end
 
-    context("Message{MvDeltaDistribution} should be convertible to Message{MvGaussianDistribution} with tiny variance") do
-        @fact convert(Message{MvGaussianDistribution}, Message(MvDeltaDistribution([1.0, 2.0]))) --> Message(MvGaussianDistribution(m=[1.0, 2.0], V=tiny*diageye(2))) # Vector
+    context("Message{MvDelta} should be convertible to Message{MvGaussian} with tiny variance") do
+        @fact convert(Message{MvGaussian}, Message(MvDelta([1.0, 2.0]))) --> Message(MvGaussian(m=[1.0, 2.0], V=tiny*diageye(2))) # Vector
     end
 
-    context("GaussianDistribution should be convertible to MvGaussianDistribution") do
-        @fact convert(MvGaussianDistribution, GaussianDistribution(m=1.0, V=2.0)) --> MvGaussianDistribution(m=[1.0], V=2.0*eye(1))
+    context("Gaussian should be convertible to MvGaussian") do
+        @fact convert(MvGaussian, Gaussian(m=1.0, V=2.0)) --> MvGaussian(m=[1.0], V=2.0*eye(1))
     end
 
-    context("MvGaussianDistribution should be convertible to GaussianDistribution") do
-        @fact convert(GaussianDistribution, MvGaussianDistribution(m=[1.0], V=2.0*eye(1))) --> GaussianDistribution(m=1.0, V=2.0)
-        @fact_throws convert(GaussianDistribution, MvGaussianDistribution(m=ones(2), V=eye(2)))
+    context("MvGaussian should be convertible to Gaussian") do
+        @fact convert(Gaussian, MvGaussian(m=[1.0], V=2.0*eye(1))) --> Gaussian(m=1.0, V=2.0)
+        @fact_throws convert(Gaussian, MvGaussian(m=ones(2), V=eye(2)))
     end
 end

@@ -49,7 +49,7 @@ isDeterministic(::GainEqualityNode) = true
 
 
 ############################################
-# GaussianDistribution methods
+# Gaussian methods
 ############################################
 
 """
@@ -69,9 +69,9 @@ GainEqualityNode:
 """
 function sumProductRule!(   node::GainEqualityNode,
                             outbound_interface_index::Type{Val{3}},
-                            outbound_dist::GaussianDistribution,
-                            msg_in1::Message{GaussianDistribution},
-                            msg_in2::Message{GaussianDistribution},
+                            outbound_dist::Gaussian,
+                            msg_in1::Message{Gaussian},
+                            msg_in2::Message{Gaussian},
                             msg_out::Any)
 
     dist_temp = ensureParameters!(msg_in1.payload * msg_in2.payload, (:m, :V))
@@ -101,10 +101,10 @@ GainEqualityNode:
 """
 function sumProductRule!(   node::GainEqualityNode,
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            msg_in1::Message{GaussianDistribution},
+                            outbound_dist::Gaussian,
+                            msg_in1::Message{Gaussian},
                             msg_in2::Any,
-                            msg_out::Message{GaussianDistribution})
+                            msg_out::Message{Gaussian})
 
     return gainEqualityBackwardRule!(outbound_dist, msg_in1.payload, msg_out.payload, node.gain)
 end
@@ -126,15 +126,15 @@ GainEqualityNode:
 """
 function sumProductRule!(   node::GainEqualityNode,
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             msg_in1::Void,
-                            msg_in2::Message{GaussianDistribution},
-                            msg_out::Message{GaussianDistribution})
+                            msg_in2::Message{Gaussian},
+                            msg_out::Message{Gaussian})
     # Backward message (towards in1)
     return gainEqualityBackwardRule!(outbound_dist, msg_in2.payload, msg_out.payload, node.gain)
 end
 
-function gainEqualityBackwardRule!(dist_result::GaussianDistribution, dist_in::GaussianDistribution, dist_out::GaussianDistribution, A::Any)
+function gainEqualityBackwardRule!(dist_result::Gaussian, dist_in::Gaussian, dist_out::Gaussian, A::Any)
     # Calculate an outbound message based on the inbound messages and the node function.
     # This function is not exported, and is only meant for internal use.
     # Backward message (towards in1 or in2)
@@ -151,14 +151,14 @@ end
 
 
 ############################################
-# MvGaussianDistribution methods
+# MvGaussian methods
 ############################################
 
 function sumProductRule!{dims_n, dims_m}(   node::GainEqualityNode,
                                             outbound_interface_index::Type{Val{3}},
-                                            outbound_dist::MvGaussianDistribution{dims_n},
-                                            msg_in1::Message{MvGaussianDistribution{dims_m}},
-                                            msg_in2::Message{MvGaussianDistribution{dims_m}},
+                                            outbound_dist::MvGaussian{dims_n},
+                                            msg_in1::Message{MvGaussian{dims_m}},
+                                            msg_in2::Message{MvGaussian{dims_m}},
                                             msg_out::Any)
 
     dist_temp = msg_in1.payload * msg_in2.payload
@@ -167,27 +167,27 @@ end
 
 function sumProductRule!{dims_n, dims_m}(   node::GainEqualityNode,
                                             outbound_interface_index::Type{Val{2}},
-                                            outbound_dist::MvGaussianDistribution{dims_m},
-                                            msg_in1::Message{MvGaussianDistribution{dims_m}},
+                                            outbound_dist::MvGaussian{dims_m},
+                                            msg_in1::Message{MvGaussian{dims_m}},
                                             msg_in2::Any,
-                                            msg_out::Message{MvGaussianDistribution{dims_n}})
+                                            msg_out::Message{MvGaussian{dims_n}})
 
     return gainEqualityBackwardRule!(outbound_dist, msg_in1.payload, msg_out.payload, node.gain)
 end
 
 function sumProductRule!{dims_n, dims_m}(   node::GainEqualityNode,
                                             outbound_interface_index::Type{Val{1}},
-                                            outbound_dist::MvGaussianDistribution{dims_m},
+                                            outbound_dist::MvGaussian{dims_m},
                                             msg_in1::Any,
-                                            msg_in2::Message{MvGaussianDistribution{dims_m}},
-                                            msg_out::Message{MvGaussianDistribution{dims_n}})
+                                            msg_in2::Message{MvGaussian{dims_m}},
+                                            msg_out::Message{MvGaussian{dims_n}})
 
     return gainEqualityBackwardRule!(outbound_dist, msg_in2.payload, msg_out.payload, node.gain)
 end
 
-function gainEqualityBackwardRule!( dist_result::MvGaussianDistribution,
-                                    dist_in::MvGaussianDistribution,
-                                    dist_out::MvGaussianDistribution,
+function gainEqualityBackwardRule!( dist_result::MvGaussian,
+                                    dist_in::MvGaussian,
+                                    dist_out::MvGaussian,
                                     A::Any)
 
     # Select parameterization

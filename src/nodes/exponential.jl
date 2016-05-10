@@ -52,8 +52,8 @@ ExponentialNode:
 """
 function sumProductRule!(   node::ExponentialNode,
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::LogNormalDistribution,
-                            msg_in::Message{GaussianDistribution},
+                            outbound_dist::LogNormal,
+                            msg_in::Message{Gaussian},
                             msg_out::Any)
 
     ensureParameters!(msg_in.payload, (:m, :V))
@@ -73,9 +73,9 @@ ExponentialNode:
 """
 function sumProductRule!(   node::ExponentialNode,
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             msg_in::Any,
-                            msg_out::Message{LogNormalDistribution})
+                            msg_out::Message{LogNormal})
 
     outbound_dist.m = msg_out.payload.m
     outbound_dist.V = msg_out.payload.s
@@ -101,8 +101,8 @@ ExponentialNode:
 """
 function sumProductRule!(   node::ExponentialNode,
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GammaDistribution,
-                            msg_in::Message{GaussianDistribution},
+                            outbound_dist::Gamma,
+                            msg_in::Message{Gaussian},
                             msg_out::Any,
                             approx::Type{MomentMatching})
 
@@ -125,8 +125,8 @@ ExponentialNode:
 """
 function sumProductRule!(   node::ExponentialNode,
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GammaDistribution,
-                            msg_in::Message{GaussianDistribution},
+                            outbound_dist::Gamma,
+                            msg_in::Message{Gaussian},
                             msg_out::Any,
                             approx::Type{LogMomentMatching})
 
@@ -148,9 +148,9 @@ ExponentialNode:
 """
 function sumProductRule!(   node::ExponentialNode,
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             msg_in::Any,
-                            msg_out::Message{GammaDistribution},
+                            msg_out::Message{Gamma},
                             approx::Type{MomentMatching})
 
     outbound_dist.m = digamma(msg_out.payload.a) - log(msg_out.payload.b)
@@ -162,7 +162,7 @@ function sumProductRule!(   node::ExponentialNode,
 end
 
 ############################################
-# DeltaDistribution update functions
+# Delta update functions
 ############################################
 
 """
@@ -174,8 +174,8 @@ ExponentialNode:
 """
 function sumProductRule!(   node::ExponentialNode,
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::DeltaDistribution{Float64},
-                            msg_in::Message{DeltaDistribution{Float64}},
+                            outbound_dist::Delta{Float64},
+                            msg_in::Message{Delta{Float64}},
                             msg_out::Any)
 
     outbound_dist.m = exp(msg_in.payload.m)
@@ -191,9 +191,9 @@ ExponentialNode:
 """
 function sumProductRule!(   node::ExponentialNode,
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::DeltaDistribution{Float64},
+                            outbound_dist::Delta{Float64},
                             msg_in::Any,
-                            msg_out::Message{DeltaDistribution{Float64}})
+                            msg_out::Message{Delta{Float64}})
 
     outbound_dist.m = log(msg_out.payload.m)
     return outbound_dist
@@ -206,8 +206,8 @@ end
 
 function sumProductRule!{dims}( node::ExponentialNode,
                                 outbound_interface_index::Type{Val{2}},
-                                outbound_dist::MvLogNormalDistribution{dims},
-                                msg_in::Message{MvGaussianDistribution{dims}},
+                                outbound_dist::MvLogNormal{dims},
+                                msg_in::Message{MvGaussian{dims}},
                                 msg_out::Any)
 
     ensureParameters!(msg_in.payload, (:m, :V))
@@ -220,9 +220,9 @@ end
 
 function sumProductRule!{dims}( node::ExponentialNode,
                                 outbound_interface_index::Type{Val{1}},
-                                outbound_dist::MvGaussianDistribution{dims},
+                                outbound_dist::MvGaussian{dims},
                                 msg_in::Any,
-                                msg_out::Message{MvLogNormalDistribution{dims}})
+                                msg_out::Message{MvLogNormal{dims}})
 
     outbound_dist.m = deepcopy(msg_out.payload.m)
     outbound_dist.V = deepcopy(msg_out.payload.S)
@@ -234,10 +234,10 @@ end
 
 
 ############################################
-# MvDeltaDistribution update functions
+# MvDelta update functions
 ############################################
 
-function sumProductRule!{T<:MvDeltaDistribution{Float64}}(  node::ExponentialNode,
+function sumProductRule!{T<:MvDelta{Float64}}(  node::ExponentialNode,
                                                             outbound_interface_index::Type{Val{2}},
                                                             outbound_dist::T,
                                                             msg_in::Message{T},
@@ -247,7 +247,7 @@ function sumProductRule!{T<:MvDeltaDistribution{Float64}}(  node::ExponentialNod
     return outbound_dist
 end
 
-function sumProductRule!{T<:MvDeltaDistribution{Float64}}(  node::ExponentialNode,
+function sumProductRule!{T<:MvDelta{Float64}}(  node::ExponentialNode,
                                                             outbound_interface_index::Type{Val{1}},
                                                             outbound_dist::T,
                                                             msg_in::Any,

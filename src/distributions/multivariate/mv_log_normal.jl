@@ -1,4 +1,4 @@
-export MvLogNormalDistribution
+export MvLogNormal
 
 """
 Description:
@@ -12,36 +12,36 @@ Parameters:
 
 Construction:
 
-    MvLogNormalDistribution(m=zeros(3), S=eye(3))
-    MvLogNormalDistribution(m=zeros(3), S=diageye(3))
+    MvLogNormal(m=zeros(3), S=eye(3))
+    MvLogNormal(m=zeros(3), S=diageye(3))
 
 Reference:
 
     Lognormal distributions: theory and aplications; Crow, 1988
 """
-type MvLogNormalDistribution{dims} <: MultivariateProbabilityDistribution
+type MvLogNormal{dims} <: Multivariate
     m::Vector{Float64} # Location
     S::AbstractMatrix{Float64} # Scale
 
-    function MvLogNormalDistribution(m, S)
+    function MvLogNormal(m, S)
         (length(m) == size(S,1) == size(S,2)) || error("Dimensions of m and S must agree")
         return new{length(m)}(m, S)
     end
 end
 
-MvLogNormalDistribution(; m=[0.0], S=reshape([1.0],1,1)) = MvLogNormalDistribution{length(m)}(m, S)
+MvLogNormal(; m=[0.0], S=reshape([1.0],1,1)) = MvLogNormal{length(m)}(m, S)
 
-function vague!{dims}(dist::MvLogNormalDistribution{dims})
+function vague!{dims}(dist::MvLogNormal{dims})
     dist.m = zeros(dims)
     dist.S = huge*diageye(dims)
     return dist
 end
 
-vague{dims}(::Type{MvLogNormalDistribution{dims}}) = MvLogNormalDistribution(m=zeros(dims), S=huge*diageye(dims))
+vague{dims}(::Type{MvLogNormal{dims}}) = MvLogNormal(m=zeros(dims), S=huge*diageye(dims))
 
-isProper(dist::MvLogNormalDistribution) = isRoundedPosDef(dist.S)
+isProper(dist::MvLogNormal) = isRoundedPosDef(dist.S)
 
-function Base.mean(dist::MvLogNormalDistribution)
+function Base.mean(dist::MvLogNormal)
     if isProper(dist)
         return exp(dist.m + 0.5*diag(dist.S))
     else
@@ -49,7 +49,7 @@ function Base.mean(dist::MvLogNormalDistribution)
     end
 end
 
-function Base.cov(dist::MvLogNormalDistribution)
+function Base.cov(dist::MvLogNormal)
     if isProper(dist)
         dims = size(dist, 1)
         C = zeros(dims, dims)
@@ -64,15 +64,15 @@ function Base.cov(dist::MvLogNormalDistribution)
     end
 end
 
-Base.var(dist::MvLogNormalDistribution) = exp(2.0*dist.m + diag(dist.S)).*(exp(diag(dist.S)) - 1.0)
+Base.var(dist::MvLogNormal) = exp(2.0*dist.m + diag(dist.S)).*(exp(diag(dist.S)) - 1.0)
 
-format(dist::MvLogNormalDistribution) = "logN(μ=$(format(dist.m)), Σ=$(format(dist.S)))"
+format(dist::MvLogNormal) = "logN(μ=$(format(dist.m)), Σ=$(format(dist.S)))"
 
-show(io::IO, dist::MvLogNormalDistribution) = println(io, format(dist))
+show(io::IO, dist::MvLogNormal) = println(io, format(dist))
 
-==(x::MvLogNormalDistribution, y::MvLogNormalDistribution) = (x.m==y.m && x.S==y.S)
+==(x::MvLogNormal, y::MvLogNormal) = (x.m==y.m && x.S==y.S)
 
-@symmetrical function prod!{dims}(x::MvLogNormalDistribution{dims}, y::MvDeltaDistribution{Float64,dims}, z::MvDeltaDistribution{Float64,dims}=MvDeltaDistribution(y.m))
+@symmetrical function prod!{dims}(x::MvLogNormal{dims}, y::MvDelta{Float64,dims}, z::MvDelta{Float64,dims}=MvDelta(y.m))
     # Product of multivariate log-normal PDF and MvDelta
     all(y.m .>= 0.) || throw(DomainError())
     (z.m == y.m) || (z.m[:] = y.m)
@@ -80,7 +80,7 @@ show(io::IO, dist::MvLogNormalDistribution) = println(io, format(dist))
     return z
 end
 
-@symmetrical function prod!{dims}(x::MvLogNormalDistribution{dims}, y::MvDeltaDistribution{Float64,dims}, z::MvLogNormalDistribution{dims})
+@symmetrical function prod!{dims}(x::MvLogNormal{dims}, y::MvDelta{Float64,dims}, z::MvLogNormal{dims})
     # Product of multivariate log-normal PDF and MvDelta, force result to be mv log-normal
     all(y.m .>= 0.) || throw(DomainError())
     z.m[:] = log(y.m)

@@ -22,133 +22,133 @@ facts("GainNode unit tests") do
         @fact n(:node).i[:gain] --> n(:node).interfaces[3]
     end
 
-    context("GainNode should provide sumProductRule! for DeltaDistribution{Float64}") do
+    context("GainNode should provide sumProductRule! for Delta{Float64}") do
         # Backward message
         validateOutboundMessage(GainNode(gain=2.0),
                                 1,
-                                [nothing, Message(DeltaDistribution(3.0))],
-                                DeltaDistribution(1.5))
+                                [nothing, Message(Delta(3.0))],
+                                Delta(1.5))
         validateOutboundMessage(GainNode(),
                                 1,
-                                [nothing, Message(DeltaDistribution(3.0)), Message(DeltaDistribution(2.0))],
-                                DeltaDistribution(1.5))
+                                [nothing, Message(Delta(3.0)), Message(Delta(2.0))],
+                                Delta(1.5))
         # Forward message
         validateOutboundMessage(GainNode(gain=2.0),
                                 2,
-                                [Message(DeltaDistribution(3.0)), nothing],
-                                DeltaDistribution(6.0))
+                                [Message(Delta(3.0)), nothing],
+                                Delta(6.0))
         validateOutboundMessage(GainNode(),
                                 2,
-                                [Message(DeltaDistribution(3.0)), nothing, Message(DeltaDistribution(2.0))],
-                                DeltaDistribution(6.0))
+                                [Message(Delta(3.0)), nothing, Message(Delta(2.0))],
+                                Delta(6.0))
     end
 
-    context("GainNode should provide sumProductRule! for MvDeltaDistribution{Float64}") do
+    context("GainNode should provide sumProductRule! for MvDelta{Float64}") do
         # Backward message
         A = [1.0 0.5; -0.5 2.0]
         validateOutboundMessage(GainNode(gain=A),
                                 1,
-                                [nothing, Message(MvDeltaDistribution([30.0, 10.0]))],
-                                MvDeltaDistribution(pinv(A)*[30.0, 10.0]))
+                                [nothing, Message(MvDelta([30.0, 10.0]))],
+                                MvDelta(pinv(A)*[30.0, 10.0]))
         validateOutboundMessage(GainNode(),
                                 1,
-                                [nothing, Message(MvDeltaDistribution([30.0, 10.0])), Message(MatrixDeltaDistribution(A))],
-                                MvDeltaDistribution(pinv(A)*[30.0, 10.0]))
+                                [nothing, Message(MvDelta([30.0, 10.0])), Message(MatrixDelta(A))],
+                                MvDelta(pinv(A)*[30.0, 10.0]))
         # Forward message
         validateOutboundMessage(GainNode(gain=A),
                                 2,
-                                [Message(MvDeltaDistribution([30.0, 10.0])), nothing],
-                                MvDeltaDistribution(A*[30.0, 10.0]))
+                                [Message(MvDelta([30.0, 10.0])), nothing],
+                                MvDelta(A*[30.0, 10.0]))
         validateOutboundMessage(GainNode(),
                                 2,
-                                [Message(MvDeltaDistribution([30.0, 10.0])), nothing, Message(MatrixDeltaDistribution(A))],
-                                MvDeltaDistribution(A*[30.0, 10.0]))
+                                [Message(MvDelta([30.0, 10.0])), nothing, Message(MatrixDelta(A))],
+                                MvDelta(A*[30.0, 10.0]))
     end
 
-    context("GainNode should provide sumProductRule! for GaussianDistribution") do
+    context("GainNode should provide sumProductRule! for Gaussian") do
         context("(m,V) parametrization") do
             # Backward message
             validateOutboundMessage(GainNode(gain=2.0),
                                     1,
-                                    [nothing, Message(GaussianDistribution(m=3.0, V=5.0))],
-                                    GaussianDistribution(m=1.5, V=1.25))
+                                    [nothing, Message(Gaussian(m=3.0, V=5.0))],
+                                    Gaussian(m=1.5, V=1.25))
             validateOutboundMessage(GainNode(),
                                     1,
-                                    [nothing, Message(GaussianDistribution(m=3.0, V=5.0)), Message(DeltaDistribution(2.0))],
-                                    GaussianDistribution(m=1.5, V=1.25))
+                                    [nothing, Message(Gaussian(m=3.0, V=5.0)), Message(Delta(2.0))],
+                                    Gaussian(m=1.5, V=1.25))
             # Forward message
             validateOutboundMessage(GainNode(gain=2.0),
                                     2,
-                                    [Message(GaussianDistribution(m=3.0, V=5.0)), nothing],
-                                    GaussianDistribution(m=6.0, V=20.0))
+                                    [Message(Gaussian(m=3.0, V=5.0)), nothing],
+                                    Gaussian(m=6.0, V=20.0))
             validateOutboundMessage(GainNode(),
                                     2,
-                                    [Message(GaussianDistribution(m=3.0, V=5.0)), nothing, Message(DeltaDistribution(2.0))],
-                                    GaussianDistribution(m=6.0, V=20.0))
+                                    [Message(Gaussian(m=3.0, V=5.0)), nothing, Message(Delta(2.0))],
+                                    Gaussian(m=6.0, V=20.0))
         end
         context("(m,W) parametrization") do
             # Backward message
             validateOutboundMessage(GainNode(gain=2.0),
                                     1,
-                                    [nothing, Message(GaussianDistribution(m=3.0, W=2.0))],
-                                    GaussianDistribution(m=1.5, W=8.0))
+                                    [nothing, Message(Gaussian(m=3.0, W=2.0))],
+                                    Gaussian(m=1.5, W=8.0))
             validateOutboundMessage(GainNode(),
                                     1,
-                                    [nothing, Message(GaussianDistribution(m=3.0, W=2.0)), Message(DeltaDistribution(2.0))],
-                                    GaussianDistribution(m=1.5, W=8.0))
+                                    [nothing, Message(Gaussian(m=3.0, W=2.0)), Message(Delta(2.0))],
+                                    Gaussian(m=1.5, W=8.0))
             # Forward message
             validateOutboundMessage(GainNode(gain=2.0),
                                     2,
-                                    [Message(GaussianDistribution(m=3.0, W=2.0)), nothing],
-                                    GaussianDistribution(m=6.0, W=0.5))
+                                    [Message(Gaussian(m=3.0, W=2.0)), nothing],
+                                    Gaussian(m=6.0, W=0.5))
             validateOutboundMessage(GainNode(),
                                     2,
-                                    [Message(GaussianDistribution(m=3.0, W=2.0)), nothing, Message(DeltaDistribution(2.0))],
-                                    GaussianDistribution(m=6.0, W=0.5))
+                                    [Message(Gaussian(m=3.0, W=2.0)), nothing, Message(Delta(2.0))],
+                                    Gaussian(m=6.0, W=0.5))
         end
         context("(xi,W) parametrization") do
             # Backward message
             validateOutboundMessage(GainNode(gain=2.0),
                                     1,
-                                    [nothing, Message(GaussianDistribution(xi=6.0, W=2.0))],
-                                    GaussianDistribution(xi=12.0, W=8.0))
+                                    [nothing, Message(Gaussian(xi=6.0, W=2.0))],
+                                    Gaussian(xi=12.0, W=8.0))
             validateOutboundMessage(GainNode(),
                                     1,
-                                    [nothing, Message(GaussianDistribution(xi=6.0, W=2.0)), Message(DeltaDistribution(2.0))],
-                                    GaussianDistribution(xi=12.0, W=8.0))
+                                    [nothing, Message(Gaussian(xi=6.0, W=2.0)), Message(Delta(2.0))],
+                                    Gaussian(xi=12.0, W=8.0))
             # Forward message
             validateOutboundMessage(GainNode(gain=2.0),
                                     2,
-                                    [Message(GaussianDistribution(xi=6.0, W=2.0)), nothing],
-                                    GaussianDistribution(xi=3.0, W=0.5))
+                                    [Message(Gaussian(xi=6.0, W=2.0)), nothing],
+                                    Gaussian(xi=3.0, W=0.5))
             validateOutboundMessage(GainNode(),
                                     2,
-                                    [Message(GaussianDistribution(xi=6.0, W=2.0)), nothing, Message(DeltaDistribution(2.0))],
-                                    GaussianDistribution(xi=3.0, W=0.5))
+                                    [Message(Gaussian(xi=6.0, W=2.0)), nothing, Message(Delta(2.0))],
+                                    Gaussian(xi=3.0, W=0.5))
         end
         context("Improper distributions") do
             # Backward message
             validateOutboundMessage(GainNode(gain=2.0),
                                     1,
-                                    [nothing, Message(GaussianDistribution(m=3.0, V=-5.0))],
-                                    GaussianDistribution(m=1.5, V=-1.25))
+                                    [nothing, Message(Gaussian(m=3.0, V=-5.0))],
+                                    Gaussian(m=1.5, V=-1.25))
             validateOutboundMessage(GainNode(),
                                     1,
-                                    [nothing, Message(GaussianDistribution(m=3.0, V=-5.0)), Message(DeltaDistribution(2.0))],
-                                    GaussianDistribution(m=1.5, V=-1.25))
+                                    [nothing, Message(Gaussian(m=3.0, V=-5.0)), Message(Delta(2.0))],
+                                    Gaussian(m=1.5, V=-1.25))
             # Forward message
             validateOutboundMessage(GainNode(gain=2.0),
                                     2,
-                                    [Message(GaussianDistribution(m=3.0, V=-5.0)), nothing],
-                                    GaussianDistribution(m=6.0, V=-20.0))
+                                    [Message(Gaussian(m=3.0, V=-5.0)), nothing],
+                                    Gaussian(m=6.0, V=-20.0))
             validateOutboundMessage(GainNode(),
                                     2,
-                                    [Message(GaussianDistribution(m=3.0, V=-5.0)), nothing, Message(DeltaDistribution(2.0))],
-                                    GaussianDistribution(m=6.0, V=-20.0))
+                                    [Message(Gaussian(m=3.0, V=-5.0)), nothing, Message(Delta(2.0))],
+                                    Gaussian(m=6.0, V=-20.0))
         end
     end
 
-    context("GainNode should provide sumProductRule! for MvGaussianDistribution") do
+    context("GainNode should provide sumProductRule! for MvGaussian") do
         # The following tests on the update rules correspond to nodes 3 and 4 from Table 4.1 in:
         # Korl, Sascha. “A Factor Graph Approach to Signal Modelling, System Identification and Filtering.” Hartung-Gorre, 2005.
         A = [   3.0 2.0 1.0;
@@ -162,21 +162,21 @@ facts("GainNode unit tests") do
             # Backward message
             validateOutboundMessage(GainNode(gain=A),
                                     1,
-                                    [nothing, Message(MvGaussianDistribution(m=mean, V=variance))],
-                                    MvGaussianDistribution(m=inv(A) * mean, V=inv(A) * variance * inv(A)'))
+                                    [nothing, Message(MvGaussian(m=mean, V=variance))],
+                                    MvGaussian(m=inv(A) * mean, V=inv(A) * variance * inv(A)'))
             validateOutboundMessage(GainNode(),
                                     1,
-                                    [nothing, Message(MvGaussianDistribution(m=mean, V=variance)), Message(MatrixDeltaDistribution(A))],
-                                    MvGaussianDistribution(m=inv(A) * mean, V=inv(A) * variance * inv(A)'))
+                                    [nothing, Message(MvGaussian(m=mean, V=variance)), Message(MatrixDelta(A))],
+                                    MvGaussian(m=inv(A) * mean, V=inv(A) * variance * inv(A)'))
             # Forward message
             validateOutboundMessage(GainNode(gain=A),
                                     2,
-                                    [Message(MvGaussianDistribution(m=mean, V=variance)), nothing],
-                                    MvGaussianDistribution(m=A * mean, V=A * variance * A'))
+                                    [Message(MvGaussian(m=mean, V=variance)), nothing],
+                                    MvGaussian(m=A * mean, V=A * variance * A'))
             validateOutboundMessage(GainNode(),
                                     2,
-                                    [Message(MvGaussianDistribution(m=mean, V=variance)), nothing, Message(MatrixDeltaDistribution(A))],
-                                    MvGaussianDistribution(m=A * mean, V=A * variance * A'))
+                                    [Message(MvGaussian(m=mean, V=variance)), nothing, Message(MatrixDelta(A))],
+                                    MvGaussian(m=A * mean, V=A * variance * A'))
         end
 
         context("(m,W) parametrization") do
@@ -188,8 +188,8 @@ facts("GainNode unit tests") do
             dist = ForneyLab.sumProductRule!(
                                         GainNode(gain=A),
                                         Val{1},
-                                        MvGaussianDistribution(m=zeros(3), V=eye(3)),
-                                        nothing, Message(MvGaussianDistribution(m=mean, W=precision)))
+                                        MvGaussian(m=zeros(3), V=eye(3)),
+                                        nothing, Message(MvGaussian(m=mean, W=precision)))
             ensureParameters!(dist, (:m, :W))
             @fact dist.m --> roughly(inv(A) * mean)
             @fact dist.W --> roughly(A' * precision * A)
@@ -197,8 +197,8 @@ facts("GainNode unit tests") do
             dist = ForneyLab.sumProductRule!(
                                         GainNode(),
                                         Val{1},
-                                        MvGaussianDistribution(m=zeros(3), V=eye(3)),
-                                        nothing, Message(MvGaussianDistribution(m=mean, W=precision)), Message(MatrixDeltaDistribution(A)))
+                                        MvGaussian(m=zeros(3), V=eye(3)),
+                                        nothing, Message(MvGaussian(m=mean, W=precision)), Message(MatrixDelta(A)))
             ensureParameters!(dist, (:m, :W))
             @fact dist.m --> roughly(inv(A) * mean)
             @fact dist.W --> roughly(A' * precision * A)
@@ -207,8 +207,8 @@ facts("GainNode unit tests") do
             dist = ForneyLab.sumProductRule!(
                                         GainNode(gain=A),
                                         Val{2},
-                                        MvGaussianDistribution(m=zeros(3), V=eye(3)),
-                                        Message(MvGaussianDistribution(m=mean, W=precision)), nothing)
+                                        MvGaussian(m=zeros(3), V=eye(3)),
+                                        Message(MvGaussian(m=mean, W=precision)), nothing)
             ensureParameters!(dist, (:m, :W))
             @fact dist.m --> roughly(A * mean)
             @fact dist.W --> roughly(inv(A)' * precision * inv(A))
@@ -216,8 +216,8 @@ facts("GainNode unit tests") do
             dist = ForneyLab.sumProductRule!(
                                         GainNode(),
                                         Val{2},
-                                        MvGaussianDistribution(m=zeros(3), V=eye(3)),
-                                        Message(MvGaussianDistribution(m=mean, W=precision)), nothing, Message(MatrixDeltaDistribution(A)))
+                                        MvGaussian(m=zeros(3), V=eye(3)),
+                                        Message(MvGaussian(m=mean, W=precision)), nothing, Message(MatrixDelta(A)))
             ensureParameters!(dist, (:m, :W))
             @fact dist.m --> roughly(A * mean)
             @fact dist.W --> roughly(inv(A)' * precision * inv(A))

@@ -47,9 +47,9 @@ ForneyLab comes with the following built-in rules:
 
         function sumProductRule!(node::AdditionNode,
                                  outbound_interface_index::Type{Val{3}},
-                                 outbound_dist::GaussianDistribution,
-                                 msg_in1::Message{GaussianDistribution},
-                                 msg_in2::Message{GaussianDistribution},
+                                 outbound_dist::Gaussian,
+                                 msg_in1::Message{Gaussian},
+                                 msg_in2::Message{Gaussian},
                                  msg_out::Any)
             # Calculate outbound message on interface 3 (:out)
             # according to the sum-product rule
@@ -73,10 +73,10 @@ ForneyLab comes with the following built-in rules:
 
         function variationalRule!(node::GaussianNode,
                                   outbound_interface_index::Type{Val{1}},
-                                  outbound_dist::GaussianDistribution,
+                                  outbound_dist::Gaussian,
                                   marg_mean::Any,
-                                  marg_prec::GammaDistribution,
-                                  marg_y::GaussianDistribution)
+                                  marg_prec::Gamma,
+                                  marg_y::Gaussian)
             # Calculate outbound message on interface 1 (:mean)
             # according to the variational rule
 
@@ -92,7 +92,7 @@ ForneyLab comes with the following built-in rules:
     3. The payload of the message currently present on the outbound interface;
     4. The inbound messages/marginals on *all* interfaces of the node (ordered by interface id).
 
-.. function:: expectationRule!(node::Node, outbound_interface_index::Type{Val{i}}, outbound_dist::GaussianDistribution, inbound_messages...)
+.. function:: expectationRule!(node::Node, outbound_interface_index::Type{Val{i}}, outbound_dist::Gaussian, inbound_messages...)
 
     Similar to :func:`sumProductRule!`, but also the inbound message on the outbound interface is consumed (this messages carries the cavity distrubution). This calculation rule is used in the expectation propagation algorithm.
 
@@ -121,9 +121,9 @@ A rule might not result in a convenient or tractable exact outbound message. In 
 
     function sumProductRule!(node::GaussianNode{:mean}{:precision},
                              outbound_interface_index::Type{Val{3}},
-                             outbound_dist::GaussianDistribution,
-                             msg_mean::Message{GaussianDistribution},
-                             msg_prec::Message{GammaDistribution},
+                             outbound_dist::Gaussian,
+                             msg_mean::Message{Gaussian},
+                             msg_prec::Message{Gamma},
                              msg_out::Any,
                              approx::Type{MomentMatching})
         # Approximate exact student's t message by a Gaussian through moment matching
@@ -136,7 +136,7 @@ The extra argument should be a subtype of ``ApproximationType``. Built-in approx
 
     # Force the use of the Laplace approximation on my_interface
     msg_types = Dict{Interface,DataType}(
-                    my_interface => Approximation{GaussianDistribution, Laplace}
+                    my_interface => Approximation{Gaussian, Laplace}
                 )
     algo = SumProduct(message_types=msg_types)
 

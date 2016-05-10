@@ -4,21 +4,21 @@ facts("VariationalBayes collect inbound type tests") do
         initializeGaussianNode()
 
         algo = VariationalBayes(Dict(
-            eg(:edge1) => GaussianDistribution,
-            eg(:edge2) => GammaDistribution,
-            eg(:edge3) => GaussianDistribution))
+            eg(:edge1) => Gaussian,
+            eg(:edge2) => Gamma,
+            eg(:edge3) => Gaussian))
 
-        @fact algo.factorization.factors[3].internal_schedule[2].inbound_types --> [GaussianDistribution, GammaDistribution, Void]
-        @fact algo.factorization.factors[2].internal_schedule[2].inbound_types --> [GaussianDistribution, Void, GaussianDistribution]
-        @fact algo.factorization.factors[1].internal_schedule[2].inbound_types --> [Void, GammaDistribution, GaussianDistribution]
+        @fact algo.factorization.factors[3].internal_schedule[2].inbound_types --> [Gaussian, Gamma, Void]
+        @fact algo.factorization.factors[2].internal_schedule[2].inbound_types --> [Gaussian, Void, Gaussian]
+        @fact algo.factorization.factors[1].internal_schedule[2].inbound_types --> [Void, Gamma, Gaussian]
 
         # Structurally factorized
         initializeGaussianNode()
         
         algo = VariationalBayes(Dict(
-            eg(:edge*(1:2)).' => NormalGammaDistribution,
-            eg(:edge3) => GaussianDistribution))
+            eg(:edge*(1:2)).' => NormalGamma,
+            eg(:edge3) => Gaussian))
         
-        @fact algo.factorization.factors[2].internal_schedule[2].inbound_types --> [NormalGammaDistribution, NormalGammaDistribution, Void]
+        @fact algo.factorization.factors[2].internal_schedule[2].inbound_types --> [NormalGamma, NormalGamma, Void]
     end
 end

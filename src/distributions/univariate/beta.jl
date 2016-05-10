@@ -1,4 +1,4 @@
-export BetaDistribution
+export Beta
 
 """
 Description:
@@ -11,36 +11,36 @@ Pamameters:
 
 Construction:
 
-    BetaDistribution(a=1.0, b=1.0)
+    Beta(a=1.0, b=1.0)
 
 Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type BetaDistribution <: UnivariateProbabilityDistribution
+type Beta <: Univariate
     a::Float64 # shape
     b::Float64 # rate
 end
 
-BetaDistribution(; a=1.0, b=1.0) = BetaDistribution(a, b)
+Beta(; a=1.0, b=1.0) = Beta(a, b)
 
-function vague!(dist::BetaDistribution)
+function vague!(dist::Beta)
     dist.a = tiny
     dist.b = tiny
     return dist
 end
 
-isProper(dist::BetaDistribution) = (dist.a >= tiny && dist.b >= tiny)
+isProper(dist::Beta) = (dist.a >= tiny && dist.b >= tiny)
 
-Base.mean(dist::BetaDistribution) = isProper(dist) ? dist.a/(dist.a+dist.b) : NaN
+Base.mean(dist::Beta) = isProper(dist) ? dist.a/(dist.a+dist.b) : NaN
 
-Base.var(dist::BetaDistribution) = isProper(dist) ? dist.a*dist.b/((dist.a+dist.b)^2*(dist.a+dist.b+1)) : NaN
+Base.var(dist::Beta) = isProper(dist) ? dist.a*dist.b/((dist.a+dist.b)^2*(dist.a+dist.b+1)) : NaN
 
-format(dist::BetaDistribution) = "Bet(a=$(format(dist.a)), b=$(format(dist.b)))"
+format(dist::Beta) = "Bet(a=$(format(dist.a)), b=$(format(dist.b)))"
 
-show(io::IO, dist::BetaDistribution) = println(io, format(dist))
+show(io::IO, dist::Beta) = println(io, format(dist))
 
-function prod!(x::BetaDistribution, y::BetaDistribution, z::BetaDistribution=BetaDistribution())
+function prod!(x::Beta, y::Beta, z::Beta=Beta())
     # Multiplication of 2 beta PDFs: p(z) = p(x) * p(y)
     z.a = x.a + y.a - 1.0
     z.b = x.b + y.b - 1.0
@@ -48,7 +48,7 @@ function prod!(x::BetaDistribution, y::BetaDistribution, z::BetaDistribution=Bet
     return z
 end
 
-@symmetrical function prod!(x::BetaDistribution, y::DeltaDistribution{Float64}, z::DeltaDistribution{Float64}=DeltaDistribution(1.0))
+@symmetrical function prod!(x::Beta, y::Delta{Float64}, z::Delta{Float64}=Delta(1.0))
     # Multiplication of beta PDF with Delta
     (0.0 <= y.m <= 1.0) || throw(DomainError())
     z.m = y.m
@@ -56,7 +56,7 @@ end
     return z
 end
 
-@symmetrical function prod!(x::BetaDistribution, y::DeltaDistribution{Float64}, z::BetaDistribution)
+@symmetrical function prod!(x::Beta, y::Delta{Float64}, z::Beta)
     # Multiplication of beta PDF with Delta, force result to be beta
     (0.0 <= y.m <= 1.0) || throw(DomainError())
     z.a = (1.0 - y.m) * huge
@@ -65,4 +65,4 @@ end
     return z
 end
 
-==(x::BetaDistribution, y::BetaDistribution) = (x.a==y.a && x.b==y.b)
+==(x::Beta, y::Beta) = (x.a==y.a && x.b==y.b)

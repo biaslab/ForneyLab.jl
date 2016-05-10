@@ -2,28 +2,28 @@
 # Unit tests
 #####################
 
-facts("DeltaDistribution unit tests") do
-    context("DeltaDistribution() should initialize a delta distribution") do
-        @fact DeltaDistribution().m --> 1.0
-        @fact DeltaDistribution(2.0).m --> 2.0
-        @fact typeof(DeltaDistribution()) --> DeltaDistribution{Float64}
+facts("Delta unit tests") do
+    context("Delta() should initialize a delta distribution") do
+        @fact Delta().m --> 1.0
+        @fact Delta(2.0).m --> 2.0
+        @fact typeof(Delta()) --> Delta{Float64}
     end
 
-    context("DeltaDistribution can be sampled") do
-        @fact sample(DeltaDistribution(2.0)) --> 2.0
+    context("Delta can be sampled") do
+        @fact sample(Delta(2.0)) --> 2.0
     end
 
-    context("There should be no such thing as vague(DeltaDistribution)") do
-        @fact_throws vague(DeltaDistribution)
-        @fact_throws vague(DeltaDistribution{Float64})
+    context("There should be no such thing as vague(Delta)") do
+        @fact_throws vague(Delta)
+        @fact_throws vague(Delta{Float64})
     end
 
-    context("prod! involving DeltaDistributions") do
-        @fact DeltaDistribution(2.0) * DeltaDistribution(2.0) --> DeltaDistribution(2.0)
-        @fact_throws DeltaDistribution(1.0) * DeltaDistribution(2.0)
+    context("prod! involving Deltas") do
+        @fact Delta(2.0) * Delta(2.0) --> Delta(2.0)
+        @fact_throws Delta(1.0) * Delta(2.0)
     end
 
-    context("Numbers should convert to DeltaDistribution") do
-        @fact convert(ProbabilityDistribution, 3.0) --> DeltaDistribution(3.0)
+    context("Numbers should convert to Delta") do
+        @fact convert(ProbabilityDistribution, 3.0) --> Delta(3.0)
     end
 end

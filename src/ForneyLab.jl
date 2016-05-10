@@ -3,7 +3,7 @@ module ForneyLab
 using Optim
 using LaTeXStrings
 
-export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution, MatrixVariateProbabilityDistribution
+export ProbabilityDistribution, Univariate, Multivariate, MatrixVariate
 export sumProductRule!, expectationRule!, variationalRule!
 export InferenceAlgorithm
 export vague, self, ==, isProper, sample, dimensions, prod!
@@ -26,9 +26,9 @@ import Base.show, Base.convert
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
 # Documentation in docstrings.jl
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
-abstract UnivariateProbabilityDistribution <: ProbabilityDistribution
-abstract MultivariateProbabilityDistribution <: ProbabilityDistribution
-abstract MatrixVariateProbabilityDistribution <: ProbabilityDistribution
+abstract Univariate <: ProbabilityDistribution
+abstract Multivariate <: ProbabilityDistribution
+abstract MatrixVariate <: ProbabilityDistribution
 
 abstract InferenceAlgorithm
 
@@ -38,12 +38,12 @@ include("node.jl")              # Node type
 include("message.jl")           # Message type
 
 # Dimensionality of distributions
-dimensions(::UnivariateProbabilityDistribution) = 1
-dimensions(distribution::MultivariateProbabilityDistribution) = typeof(distribution).parameters[end]
+dimensions(::Univariate) = 1
+dimensions(distribution::Multivariate) = typeof(distribution).parameters[end]
 
 # Dimensionality of distribution types
-dimensions{T<:UnivariateProbabilityDistribution}(::Type{T}) = 1
-dimensions{T<:MultivariateProbabilityDistribution}(distribution_type::Type{T}) = distribution_type.parameters[end]
+dimensions{T<:Univariate}(::Type{T}) = 1
+dimensions{T<:Multivariate}(distribution_type::Type{T}) = distribution_type.parameters[end]
 
 # Dimensionality of messages and message types
 dimensions(message::Message) = dimensions(message.payload)
@@ -111,7 +111,7 @@ include("algorithms/expectation_propagation/expectation_propagation.jl")
 # Shared preparation methods for inference algorithms
 include("algorithms/preparation.jl")
 
-vague{T<:UnivariateProbabilityDistribution}(dist_type::Type{T}) = vague!(T())
+vague{T<:Univariate}(dist_type::Type{T}) = vague!(T())
 *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
 *(x::Message, y::Message) = prod!(x.payload, y.payload) # * operator for messages
 

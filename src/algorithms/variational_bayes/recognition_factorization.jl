@@ -116,14 +116,14 @@ function factorize(recognition_distribution_types::Dict, graph=currentGraph())
     # Encodes factorization of the recognition distribution
 
     # Single edge example; assigns a Gaussian recognition distribution to edge
-    # e1 => GaussianDistribution
+    # e1 => Gaussian
 
     # Column vector of edges example; assigns a Gaussian recognition distribution to each row
-    # [e1; e2; e3] => GaussianDistribution
+    # [e1; e2; e3] => Gaussian
 
     # Matrix of edges example; assign a MvGaussian distribution to each row
     # [e1 e2 e3; <- cluster
-    #  e4 e5 e6;             => MvGaussianDistribution{3}
+    #  e4 e5 e6;             => MvGaussian{3}
     #  e7 e8 e9]
 
     factorization = RecognitionFactorization(graph)

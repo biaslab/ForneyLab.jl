@@ -1,4 +1,4 @@
-export LogNormalDistribution
+export LogNormal
 
 """
 Description:
@@ -11,34 +11,34 @@ Pamameters:
 
 Construction:
 
-    LogNormalDistribution(m=0.0, s=1.0)
+    LogNormal(m=0.0, s=1.0)
 """
-type LogNormalDistribution <: UnivariateProbabilityDistribution
+type LogNormal <: Univariate
     m::Float64 # location
     s::Float64 # squared scale (s=σ^2)
 end
 
-LogNormalDistribution(; m=0.0, s=1.0) = LogNormalDistribution(m, s)
+LogNormal(; m=0.0, s=1.0) = LogNormal(m, s)
 
-function vague!(dist::LogNormalDistribution)
+function vague!(dist::LogNormal)
     dist.m = 0.0
     dist.s = huge
     return dist
 end
 
-isProper(dist::LogNormalDistribution) = dist.s >= tiny
+isProper(dist::LogNormal) = dist.s >= tiny
 
-Base.mean(dist::LogNormalDistribution) = isProper(dist) ? exp(dist.m + 0.5*dist.s) : NaN
+Base.mean(dist::LogNormal) = isProper(dist) ? exp(dist.m + 0.5*dist.s) : NaN
 
-Base.var(dist::LogNormalDistribution) = isProper(dist) ? (exp(dist.s) - 1)*exp(2*dist.m + dist.s) : NaN
+Base.var(dist::LogNormal) = isProper(dist) ? (exp(dist.s) - 1)*exp(2*dist.m + dist.s) : NaN
 
-format(dist::LogNormalDistribution) = "logN(μ=$(format(dist.m)), σ²=$(format(dist.s)))"
+format(dist::LogNormal) = "logN(μ=$(format(dist.m)), σ²=$(format(dist.s)))"
 
-show(io::IO, dist::LogNormalDistribution) = println(io, format(dist))
+show(io::IO, dist::LogNormal) = println(io, format(dist))
 
-==(x::LogNormalDistribution, y::LogNormalDistribution) = (x.m==y.m && x.s==y.s)
+==(x::LogNormal, y::LogNormal) = (x.m==y.m && x.s==y.s)
 
-@symmetrical function prod!(x::LogNormalDistribution, y::DeltaDistribution{Float64}, z::DeltaDistribution{Float64}=DeltaDistribution(y.m))
+@symmetrical function prod!(x::LogNormal, y::Delta{Float64}, z::Delta{Float64}=Delta(y.m))
     # Product of log-normal PDF and Delta
     (y.m >= 0.) || throw(DomainError())
     (z.m == y.m) || (z.m = y.m)
@@ -46,7 +46,7 @@ show(io::IO, dist::LogNormalDistribution) = println(io, format(dist))
     return z
 end
 
-@symmetrical function prod!(x::LogNormalDistribution, y::DeltaDistribution{Float64}, z::LogNormalDistribution)
+@symmetrical function prod!(x::LogNormal, y::Delta{Float64}, z::LogNormal)
     # Product of multivariate log-normal PDF and MvDelta, force result to be mv log-normal
     (y.m >= 0.) || throw(DomainError())
     z.m = log(y.m)

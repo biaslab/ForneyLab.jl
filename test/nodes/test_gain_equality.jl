@@ -15,76 +15,76 @@ facts("GainEqualityNode unit tests") do
         @fact typeof(n(:node).gain) --> Array{Float64, 2}
     end
 
-    context("GainEqualityNode provide sumProductRule! for GaussianDistribution (m, V)") do
+    context("GainEqualityNode provide sumProductRule! for Gaussian (m, V)") do
         # Forward message
         A = [2.0].'
         validateOutboundMessage(GainEqualityNode(A),
                                 3,
-                                [Message(GaussianDistribution(V=1.0, m=1.0)), Message(GaussianDistribution(V=1.0, m=1.0)), nothing],
-                                GaussianDistribution(V=2.0, m=2.0))
+                                [Message(Gaussian(V=1.0, m=1.0)), Message(Gaussian(V=1.0, m=1.0)), nothing],
+                                Gaussian(V=2.0, m=2.0))
         # Backward messages
         validateOutboundMessage(GainEqualityNode(A),
                                 2,
-                                [Message(GaussianDistribution(V=1.0, m=1.0)), nothing, Message(GaussianDistribution(V=1.0, m=1.0))],
-                                GaussianDistribution(V=0.2, m=0.6))
+                                [Message(Gaussian(V=1.0, m=1.0)), nothing, Message(Gaussian(V=1.0, m=1.0))],
+                                Gaussian(V=0.2, m=0.6))
         validateOutboundMessage(GainEqualityNode(A),
                                 1,
-                                [nothing, Message(GaussianDistribution(V=1.0, m=1.0)), Message(GaussianDistribution(V=1.0, m=1.0))],
-                                GaussianDistribution(V=0.2, m=0.6))
+                                [nothing, Message(Gaussian(V=1.0, m=1.0)), Message(Gaussian(V=1.0, m=1.0))],
+                                Gaussian(V=0.2, m=0.6))
     end
 
-    context("GainEqualityNode provide sumProductRule! for MvGaussianDistribution with (xi,W) parametrization") do
+    context("GainEqualityNode provide sumProductRule! for MvGaussian with (xi,W) parametrization") do
         # Forward message
         A = 2.0*eye(2)
         validateOutboundMessage(GainEqualityNode(A),
                                 3,
-                                [Message(MvGaussianDistribution(W=[1.0 0.5; 0.5 1.0], xi=[1.0, 2.0])), Message(MvGaussianDistribution(W=[1.0 0.5; 0.5 1.0], xi=[1.0, 2.0])), nothing],
-                                MvGaussianDistribution(W=[0.5 0.25; 0.25 0.5], xi=[1.0, 2.0]))
+                                [Message(MvGaussian(W=[1.0 0.5; 0.5 1.0], xi=[1.0, 2.0])), Message(MvGaussian(W=[1.0 0.5; 0.5 1.0], xi=[1.0, 2.0])), nothing],
+                                MvGaussian(W=[0.5 0.25; 0.25 0.5], xi=[1.0, 2.0]))
         # Backward messages
         validateOutboundMessage(GainEqualityNode(A),
                                 2,
-                                [Message(MvGaussianDistribution(W=[1.0 0.5; 0.5 1.0], xi=[1.0, 2.0])), nothing, Message(MvGaussianDistribution(W=[1.0 0.5; 0.5 1.0], xi=[1.0, 2.0]))],
-                                MvGaussianDistribution(W=[5.0 2.5; 2.5 5.0], xi=[3.0, 6.0]))
+                                [Message(MvGaussian(W=[1.0 0.5; 0.5 1.0], xi=[1.0, 2.0])), nothing, Message(MvGaussian(W=[1.0 0.5; 0.5 1.0], xi=[1.0, 2.0]))],
+                                MvGaussian(W=[5.0 2.5; 2.5 5.0], xi=[3.0, 6.0]))
         validateOutboundMessage(GainEqualityNode(A),
                                 1,
-                                [nothing, Message(MvGaussianDistribution(W=[1.0 0.5; 0.5 1.0], xi=[1.0, 2.0])), Message(MvGaussianDistribution(W=[1.0 0.5; 0.5 1.0], xi=[1.0, 2.0]))],
-                                MvGaussianDistribution(W=[5.0 2.5; 2.5 5.0], xi=[3.0, 6.0]))
+                                [nothing, Message(MvGaussian(W=[1.0 0.5; 0.5 1.0], xi=[1.0, 2.0])), Message(MvGaussian(W=[1.0 0.5; 0.5 1.0], xi=[1.0, 2.0]))],
+                                MvGaussian(W=[5.0 2.5; 2.5 5.0], xi=[3.0, 6.0]))
     end
 
-    context("GainEqualityNode provide sumProductRule! for MvGaussianDistribution with (m,W) parametrization") do
+    context("GainEqualityNode provide sumProductRule! for MvGaussian with (m,W) parametrization") do
         # Forward message
         A = 2.0*eye(2)
         validateOutboundMessage(GainEqualityNode(A),
                                 3,
-                                [Message(MvGaussianDistribution(W=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), Message(MvGaussianDistribution(W=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), nothing],
-                                MvGaussianDistribution(W=[0.5 0.25; 0.25 0.5], m=[2.0, 4.0]))
+                                [Message(MvGaussian(W=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), Message(MvGaussian(W=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), nothing],
+                                MvGaussian(W=[0.5 0.25; 0.25 0.5], m=[2.0, 4.0]))
         # Backward messages
         validateOutboundMessage(GainEqualityNode(A),
                                 2,
-                                [Message(MvGaussianDistribution(W=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), nothing, Message(MvGaussianDistribution(W=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0]))],
-                                MvGaussianDistribution(W=[5.0 2.5; 2.5 5.0], m=[0.6, 1.2]))
+                                [Message(MvGaussian(W=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), nothing, Message(MvGaussian(W=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0]))],
+                                MvGaussian(W=[5.0 2.5; 2.5 5.0], m=[0.6, 1.2]))
         validateOutboundMessage(GainEqualityNode(A),
                                 1,
-                                [nothing, Message(MvGaussianDistribution(W=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), Message(MvGaussianDistribution(W=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0]))],
-                                MvGaussianDistribution(W=[5.0 2.5; 2.5 5.0], m=[0.6, 1.2]))
+                                [nothing, Message(MvGaussian(W=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), Message(MvGaussian(W=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0]))],
+                                MvGaussian(W=[5.0 2.5; 2.5 5.0], m=[0.6, 1.2]))
     end
 
-    context("GainEqualityNode provide sumProductRule! for MvGaussianDistribution with (m,V) parametrization") do
+    context("GainEqualityNode provide sumProductRule! for MvGaussian with (m,V) parametrization") do
         # Forward message
         A = 2.0*eye(2)
         validateOutboundMessage(GainEqualityNode(A),
                                 3,
-                                [Message(MvGaussianDistribution(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), Message(MvGaussianDistribution(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), nothing],
-                                MvGaussianDistribution(V=[2.0 1.0; 1.0 2.0], m=[2.0, 4.0]))
+                                [Message(MvGaussian(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), Message(MvGaussian(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), nothing],
+                                MvGaussian(V=[2.0 1.0; 1.0 2.0], m=[2.0, 4.0]))
         # Backward messages
         validateOutboundMessage(GainEqualityNode(A),
                                 2,
-                                [Message(MvGaussianDistribution(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), nothing, Message(MvGaussianDistribution(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0]))],
-                                MvGaussianDistribution(V=[0.2 0.1; 0.1 0.2], m=[0.6, 1.2]))
+                                [Message(MvGaussian(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), nothing, Message(MvGaussian(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0]))],
+                                MvGaussian(V=[0.2 0.1; 0.1 0.2], m=[0.6, 1.2]))
         validateOutboundMessage(GainEqualityNode(A),
                                 1,
-                                [nothing, Message(MvGaussianDistribution(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), Message(MvGaussianDistribution(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0]))],
-                                MvGaussianDistribution(V=[0.2 0.1; 0.1 0.2], m=[0.6, 1.2]))
+                                [nothing, Message(MvGaussian(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), Message(MvGaussian(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0]))],
+                                MvGaussian(V=[0.2 0.1; 0.1 0.2], m=[0.6, 1.2]))
     end
 
     # context("GainEqualityNode should provide sumProductRule! for non-square A") do
@@ -92,16 +92,16 @@ facts("GainEqualityNode unit tests") do
     #     A = [1.0 0.5; -0.5 2.0; 0.5 1.0]
     #     validateOutboundMessage(GainEqualityNode(A),
     #                             3,
-    #                             [Message(MvGaussianDistribution(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), Message(MvGaussianDistribution(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), nothing],
-    #                             MvGaussianDistribution(...)) # 3D
+    #                             [Message(MvGaussian(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), Message(MvGaussian(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), nothing],
+    #                             MvGaussian(...)) # 3D
     #     # Backward messages
     #     validateOutboundMessage(GainEqualityNode(A),
     #                             2,
-    #                             [Message(MvGaussianDistribution(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), nothing, Message(MvGaussianDistribution(V=[1.0 0.5; 0.5 1.0; 2.0 3.0], m=[1.0, 2.0, 3.0]))],
-    #                             MvGaussianDistribution(...)) # 2D
+    #                             [Message(MvGaussian(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), nothing, Message(MvGaussian(V=[1.0 0.5; 0.5 1.0; 2.0 3.0], m=[1.0, 2.0, 3.0]))],
+    #                             MvGaussian(...)) # 2D
     #     validateOutboundMessage(GainEqualityNode(A),
     #                             1,
-    #                             [nothing, Message(MvGaussianDistribution(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), Message(MvGaussianDistribution(V=[1.0 0.5; 0.5 1.0; 2.0 3.0], m=[1.0, 2.0, 3.0]))],
-    #                             MvGaussianDistribution(...) # 2D
+    #                             [nothing, Message(MvGaussian(V=[1.0 0.5; 0.5 1.0], m=[1.0, 2.0])), Message(MvGaussian(V=[1.0 0.5; 0.5 1.0; 2.0 3.0], m=[1.0, 2.0, 3.0]))],
+    #                             MvGaussian(...) # 2D
     # end
 end

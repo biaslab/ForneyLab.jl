@@ -16,7 +16,7 @@ Interfaces:
 
 Construction:
     
-    TerminalNode(GaussianDistribution(), id=:my_node)
+    TerminalNode(Gaussian(), id=:my_node)
 """
 type TerminalNode <: Node
     id::Symbol
@@ -34,15 +34,15 @@ type TerminalNode <: Node
     end
 end
 
-TerminalNode(num::Number; id=generateNodeId(TerminalNode)) = TerminalNode(convert(DeltaDistribution, num), id=id)
+TerminalNode(num::Number; id=generateNodeId(TerminalNode)) = TerminalNode(convert(Delta, num), id=id)
 
-TerminalNode(bool::Bool; id=generateNodeId(TerminalNode)) = TerminalNode(convert(DeltaDistribution, bool), id=id)
+TerminalNode(bool::Bool; id=generateNodeId(TerminalNode)) = TerminalNode(convert(Delta, bool), id=id)
 
-TerminalNode{T<:Number}(vect::Vector{T}; id=generateNodeId(TerminalNode)) = TerminalNode(convert(MvDeltaDistribution, vect), id=id)
+TerminalNode{T<:Number}(vect::Vector{T}; id=generateNodeId(TerminalNode)) = TerminalNode(convert(MvDelta, vect), id=id)
 
-TerminalNode{T<:Number}(mat::AbstractMatrix{T}; id=generateNodeId(TerminalNode)) = TerminalNode(convert(MatrixDeltaDistribution, mat), id=id)
+TerminalNode{T<:Number}(mat::AbstractMatrix{T}; id=generateNodeId(TerminalNode)) = TerminalNode(convert(MatrixDelta, mat), id=id)
 
-TerminalNode(; id=generateNodeId(TerminalNode)) = TerminalNode(vague(GaussianDistribution), id=id)
+TerminalNode(; id=generateNodeId(TerminalNode)) = TerminalNode(vague(Gaussian), id=id)
 
 typealias PriorNode TerminalNode # For more overview during graph construction
 

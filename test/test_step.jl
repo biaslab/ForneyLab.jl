@@ -8,13 +8,13 @@ facts("Read/write buffer integration tests") do
         FactorGraph()
         node = TerminalNode()
 
-        @fact ForneyLab.ensureValue!(node, Float64) --> DeltaDistribution()
-        @fact ForneyLab.ensureValue!(node, BernoulliDistribution) --> BernoulliDistribution()
-        @fact ForneyLab.ensureValue!(node, DeltaDistribution{Float64}) --> DeltaDistribution()
-        @fact ForneyLab.ensureValue!(node, Bool) --> DeltaDistribution(false)
-        @fact ForneyLab.ensureValue!(node, GaussianDistribution) --> vague(GaussianDistribution)
-        @fact ForneyLab.ensureValue!(node, MvDeltaDistribution{Float64, 3}) --> MvDeltaDistribution([0.0, 0.0, 0.0])
-        @fact ForneyLab.ensureValue!(node, MatrixDeltaDistribution{Float64, 2, 3}) --> MatrixDeltaDistribution(zeros(2, 3))
+        @fact ForneyLab.ensureValue!(node, Float64) --> Delta()
+        @fact ForneyLab.ensureValue!(node, Bernoulli) --> Bernoulli()
+        @fact ForneyLab.ensureValue!(node, Delta{Float64}) --> Delta()
+        @fact ForneyLab.ensureValue!(node, Bool) --> Delta(false)
+        @fact ForneyLab.ensureValue!(node, Gaussian) --> vague(Gaussian)
+        @fact ForneyLab.ensureValue!(node, MvDelta{Float64, 3}) --> MvDelta([0.0, 0.0, 0.0])
+        @fact ForneyLab.ensureValue!(node, MatrixDelta{Float64, 2, 3}) --> MatrixDelta(zeros(2, 3))
     end
 
     # attachReadBuffer
@@ -107,15 +107,15 @@ facts("step integration tests") do
     context("step should perform a time step and handle read/write buffers") do
         # out = in + delta
         g = FactorGraph()
-        TerminalNode(DeltaDistribution(0.0), id=:in)
+        TerminalNode(Delta(0.0), id=:in)
         AdditionNode(id=:add)
-        TerminalNode(DeltaDistribution(), id=:delta)
-        TerminalNode(DeltaDistribution(), id=:out)
+        TerminalNode(Delta(), id=:delta)
+        TerminalNode(Delta(), id=:out)
         Edge(n(:in), n(:add).i[:in1])
         Edge(n(:delta), n(:add).i[:in2])
         Edge(n(:add).i[:out], n(:out))
         Wrap(n(:out), n(:in))
-        deltas = [DeltaDistribution(n) for n in collect(1.:10.)]
+        deltas = [Delta(n) for n in collect(1.:10.)]
         attachReadBuffer(n(:delta), deltas)
         results = attachWriteBuffer(n(:add).i[:out])
         algo = SumProduct(g) # The timewraps and buffers tell the autoscheduler what should be computed
@@ -123,7 +123,7 @@ facts("step integration tests") do
         while g.current_section <= length(deltas)
             step(algo)
         end
-        @fact results --> [DeltaDistribution(r) for r in cumsum(collect(1.:10.))]
+        @fact results --> [Delta(r) for r in cumsum(collect(1.:10.))]
     end
 end
 
@@ -131,19 +131,19 @@ facts("run() integration tests") do
     context("run() should step() until a read buffer is exhausted") do
         # out = in + delta
         g = FactorGraph()
-        TerminalNode(DeltaDistribution(0.0), id=:in)
+        TerminalNode(Delta(0.0), id=:in)
         AdditionNode(id=:add)
-        TerminalNode(DeltaDistribution(), id=:delta)
-        TerminalNode(DeltaDistribution(), id=:out)
+        TerminalNode(Delta(), id=:delta)
+        TerminalNode(Delta(), id=:out)
         Edge(n(:in), n(:add).i[:in1])
         Edge(n(:delta), n(:add).i[:in2])
         Edge(n(:add).i[:out], n(:out))
         Wrap(n(:out), n(:in))
-        deltas = [DeltaDistribution(n) for n in collect(1.:10.)]
+        deltas = [Delta(n) for n in collect(1.:10.)]
         attachReadBuffer(n(:delta), deltas)
         results = attachWriteBuffer(n(:add).i[:out])
         algo = SumProduct()
         run(algo)
-        @fact results --> [DeltaDistribution(r) for r in cumsum(collect(1.:10.))]
+        @fact results --> [Delta(r) for r in cumsum(collect(1.:10.))]
     end
 end

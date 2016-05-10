@@ -19,19 +19,19 @@ facts("TerminalNode unit tests") do
 
     context("TerminalNode should throw an error when its value is set to a message") do
         FactorGraph()
-        @fact TerminalNode(DeltaDistribution(1.0)).value --> DeltaDistribution(1.0)
-        @fact_throws TerminalNode(Message(DeltaDistribution(1.0)))
+        @fact TerminalNode(Delta(1.0)).value --> Delta(1.0)
+        @fact_throws TerminalNode(Message(Delta(1.0)))
     end
 
     context("TerminalNode should propagate distributions") do
-        validateOutboundMessage(TerminalNode(GaussianDistribution(m=4.0, V=5.0)),
+        validateOutboundMessage(TerminalNode(Gaussian(m=4.0, V=5.0)),
                                 1,
                                 [nothing],
-                                GaussianDistribution(m=4.0, V=5.0))
+                                Gaussian(m=4.0, V=5.0))
 
-        validateOutboundMessage(TerminalNode(DeltaDistribution(4.0)),
+        validateOutboundMessage(TerminalNode(Delta(4.0)),
                                 1,
                                 [nothing],
-                                DeltaDistribution(4.0))
+                                Delta(4.0))
     end
 end

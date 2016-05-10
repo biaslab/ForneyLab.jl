@@ -1,4 +1,4 @@
-export GammaDistribution
+export Gamma
 
 """
 Description:
@@ -11,36 +11,36 @@ Pamameters:
 
 Construction:
 
-    GammaDistribution(a=1.0, b=1.0)
+    Gamma(a=1.0, b=1.0)
 
 Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type GammaDistribution <: UnivariateProbabilityDistribution
+type Gamma <: Univariate
     a::Float64 # shape
     b::Float64 # rate
 end
 
-GammaDistribution(; a=1.0, b=1.0) = GammaDistribution(a, b)
+Gamma(; a=1.0, b=1.0) = Gamma(a, b)
 
-function vague!(dist::GammaDistribution)
+function vague!(dist::Gamma)
     dist.a = tiny
     dist.b = tiny
     return dist
 end
 
-isProper(dist::GammaDistribution) = (dist.a >= tiny && dist.b >= tiny)
+isProper(dist::Gamma) = (dist.a >= tiny && dist.b >= tiny)
 
-Base.mean(dist::GammaDistribution) = isProper(dist) ? dist.a/dist.b : NaN
+Base.mean(dist::Gamma) = isProper(dist) ? dist.a/dist.b : NaN
 
-Base.var(dist::GammaDistribution) = isProper(dist) ? dist.a / (dist.b^2) : NaN
+Base.var(dist::Gamma) = isProper(dist) ? dist.a / (dist.b^2) : NaN
 
-format(dist::GammaDistribution) = "Gam(a=$(format(dist.a)), b=$(format(dist.b)))"
+format(dist::Gamma) = "Gam(a=$(format(dist.a)), b=$(format(dist.b)))"
 
-show(io::IO, dist::GammaDistribution) = println(io, format(dist))
+show(io::IO, dist::Gamma) = println(io, format(dist))
 
-function prod!(x::GammaDistribution, y::GammaDistribution, z::GammaDistribution=GammaDistribution())
+function prod!(x::Gamma, y::Gamma, z::Gamma=Gamma())
     # Multiplication of 2 gamma PDFs: p(z) = p(x) * p(y)
     z.a = x.a + y.a - 1.0
     z.b = x.b + y.b
@@ -48,7 +48,7 @@ function prod!(x::GammaDistribution, y::GammaDistribution, z::GammaDistribution=
     return z
 end
 
-@symmetrical function prod!(x::GammaDistribution, y::DeltaDistribution{Float64}, z::DeltaDistribution{Float64}=DeltaDistribution(1.0))
+@symmetrical function prod!(x::Gamma, y::Delta{Float64}, z::Delta{Float64}=Delta(1.0))
     # Multiplication of Gamma PDF with a Delta
     (y.m >= 0.0) || throw(DomainError())
     z.m = y.m
@@ -56,7 +56,7 @@ end
     return z
 end
 
-@symmetrical function prod!(x::GammaDistribution, y::DeltaDistribution{Float64}, z::GammaDistribution)
+@symmetrical function prod!(x::Gamma, y::Delta{Float64}, z::Gamma)
     # Multiplication of Gamma PDF with a Delta, force result to be Gamma
     (y.m >= 0.0) || throw(DomainError())
     z.b = clamp(y.m / 1e-10, tiny, huge)
@@ -65,4 +65,4 @@ end
     return z
 end
 
-==(x::GammaDistribution, y::GammaDistribution) = (x.a==y.a && x.b==y.b)
+==(x::Gamma, y::Gamma) = (x.a==y.a && x.b==y.b)

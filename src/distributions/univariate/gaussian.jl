@@ -1,5 +1,5 @@
 export
-    GaussianDistribution,
+    Gaussian,
     ensureParameters!,
     isWellDefined,
     isConsistent
@@ -19,45 +19,45 @@ Parameters:
 Construction:
 
     These result in the same distribution:
-    GaussianDistribution(m=1.0, V=2.0)
-    GaussianDistribution(m=1.0, W=0.5)
-    GaussianDistribution(xi=0.5, W=0.5)
-    GaussianDistribution(xi=0.5, V=2.0)
+    Gaussian(m=1.0, V=2.0)
+    Gaussian(m=1.0, W=0.5)
+    Gaussian(xi=0.5, W=0.5)
+    Gaussian(xi=0.5, V=2.0)
 
 Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type GaussianDistribution <: UnivariateProbabilityDistribution
+type Gaussian <: Univariate
     m::Float64   # Mean
     V::Float64   # Variance
     W::Float64   # Precision / weight
     xi::Float64  # Weighted mean: xi=W*m
 
-    function GaussianDistribution(m, V, W, xi)
+    function Gaussian(m, V, W, xi)
         self = new(m, V, W, xi)
-        isWellDefined(self) || error("Cannot create GaussianDistribution: distribution is underdetermined.")
+        isWellDefined(self) || error("Cannot create Gaussian: distribution is underdetermined.")
         if !isnan(V)
-            (realmin(Float64) < abs(V) < realmax(Float64)) || error("Cannot create GaussianDistribution: V cannot be 0 or Inf.")
+            (realmin(Float64) < abs(V) < realmax(Float64)) || error("Cannot create Gaussian: V cannot be 0 or Inf.")
         end
         if !isnan(W)
-            (realmin(Float64) < abs(W) < realmax(Float64)) || error("Cannot create GaussianDistribution: W cannot be 0 or Inf.")
+            (realmin(Float64) < abs(W) < realmax(Float64)) || error("Cannot create Gaussian: W cannot be 0 or Inf.")
         end
 
         return self
     end
 end
 
-function GaussianDistribution(; m::Float64=NaN,
+function Gaussian(; m::Float64=NaN,
                                 V::Float64=NaN,
                                 W::Float64=NaN,
                                 xi::Float64=NaN)
-    return GaussianDistribution(m, V, W, xi)
+    return Gaussian(m, V, W, xi)
 end
 
-GaussianDistribution() = GaussianDistribution(m=0.0, V=1.0)
+Gaussian() = Gaussian(m=0.0, V=1.0)
 
-function vague!(dist::GaussianDistribution)
+function vague!(dist::Gaussian)
     dist.m = 0.0
     dist.V = huge
     dist.W = NaN
@@ -65,7 +65,7 @@ function vague!(dist::GaussianDistribution)
     return dist
 end
 
-function format(dist::GaussianDistribution)
+function format(dist::Gaussian)
     if !isnan(dist.m) && !isnan(dist.V)
         return "N(m=$(format(dist.m)), V=$(format(dist.V)))"
     elseif !isnan(dist.m) && !isnan(dist.W)
@@ -79,13 +79,13 @@ function format(dist::GaussianDistribution)
     end
 end
 
-show(io::IO, dist::GaussianDistribution) = println(io, format(dist))
+show(io::IO, dist::Gaussian) = println(io, format(dist))
 
-Base.mean(dist::GaussianDistribution) = isProper(dist) ? ensureParameter!(dist, Val{:m}).m : NaN
+Base.mean(dist::Gaussian) = isProper(dist) ? ensureParameter!(dist, Val{:m}).m : NaN
 
-Base.var(dist::GaussianDistribution) = isProper(dist) ? ensureParameter!(dist, Val{:V}).V : NaN
+Base.var(dist::Gaussian) = isProper(dist) ? ensureParameter!(dist, Val{:V}).V : NaN
 
-function prod!(x::GaussianDistribution, y::GaussianDistribution, z::GaussianDistribution=GaussianDistribution())
+function prod!(x::Gaussian, y::Gaussian, z::Gaussian=Gaussian())
     # Multiplication of 2 Gaussian PDFs: p(z) = p(x) * p(y)
     ensureParameters!(x, (:xi, :W))
     ensureParameters!(y, (:xi, :W))
@@ -97,14 +97,14 @@ function prod!(x::GaussianDistribution, y::GaussianDistribution, z::GaussianDist
     return z
 end
 
-@symmetrical function prod!(x::GaussianDistribution, y::DeltaDistribution{Float64}, z::DeltaDistribution{Float64}=DeltaDistribution())
+@symmetrical function prod!(x::Gaussian, y::Delta{Float64}, z::Delta{Float64}=Delta())
     # Multiplication of Gaussian PDF with a Delta
     z.m = y.m
 
     return z
 end
 
-@symmetrical function prod!(x::GaussianDistribution, y::DeltaDistribution{Float64}, z::GaussianDistribution)
+@symmetrical function prod!(x::Gaussian, y::Delta{Float64}, z::Gaussian)
     # Multiplication of Gaussian PDF with Delta, force result to be Gaussian
     z.m = y.m
     z.V = tiny
@@ -113,7 +113,7 @@ end
     return z
 end
 
-function isProper(dist::GaussianDistribution)
+function isProper(dist::Gaussian)
     if isWellDefined(dist)
         param = isnan(dist.W) ? dist.V : dist.W
         return (realmin(Float64) < param < realmax(Float64))
@@ -122,20 +122,20 @@ function isProper(dist::GaussianDistribution)
     end
 end
 
-function sample(dist::GaussianDistribution)
+function sample(dist::Gaussian)
     isProper(dist) || error("Cannot sample from improper distribution")
     ensureParameters!(dist, (:m, :V))
     return sqrt(dist.V)*randn() + dist.m
 end
 
 # Methods to check and convert different parametrizations
-function isWellDefined(dist::GaussianDistribution)
+function isWellDefined(dist::Gaussian)
     # Check if dist is not underdetermined
     return ((!isnan(dist.m) || !isnan(dist.xi)) &&
             (!isnan(dist.V) || !isnan(dist.W)))
 end
 
-function isConsistent(dist::GaussianDistribution)
+function isConsistent(dist::Gaussian)
     # Check if dist is consistent in case it is overdetermined
     if !isnan(dist.V) && !isnan(dist.W)
         V_W_consistent = false
@@ -157,7 +157,7 @@ function isConsistent(dist::GaussianDistribution)
     return true # all validations passed
 end
 
-function ensureParameters!(dist::GaussianDistribution, params::Tuple{Symbol, Vararg{Symbol}})
+function ensureParameters!(dist::Gaussian, params::Tuple{Symbol, Vararg{Symbol}})
     for param in params
         ensureParameter!(dist, Val{param})
     end
@@ -167,35 +167,35 @@ end
 # In all ensureParameter! methods we check if the required parameter defined and, if not, calculate it.
 # We assume that the distribution is well-defined, otherwise we would've gotten the message upon creating.
 
-function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:m}})
+function ensureParameter!(dist::Gaussian, param::Type{Val{:m}})
     if isnan(dist.m)
         dist.m = ensureParameter!(dist, Val{:V}).V * dist.xi
     end
     return dist
 end
 
-function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:V}})
+function ensureParameter!(dist::Gaussian, param::Type{Val{:V}})
     if isnan(dist.V)
         dist.V = 1/dist.W
     end
     return dist
 end
 
-function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:xi}})
+function ensureParameter!(dist::Gaussian, param::Type{Val{:xi}})
     if isnan(dist.xi)
         dist.xi = ensureParameter!(dist, Val{:W}).W * dist.m
     end
     return dist
 end
 
-function ensureParameter!(dist::GaussianDistribution, param::Type{Val{:W}})
+function ensureParameter!(dist::Gaussian, param::Type{Val{:W}})
     if isnan(dist.W)
         dist.W = 1/dist.V
     end
     return dist
 end
 
-function ==(x::GaussianDistribution, y::GaussianDistribution)
+function ==(x::Gaussian, y::Gaussian)
     if is(x, y)
         return true
     end
@@ -225,10 +225,10 @@ function ==(x::GaussianDistribution, y::GaussianDistribution)
     return true
 end
 
-# Converts from DeltaDistribution -> GaussianDistribution
+# Converts from Delta -> Gaussian
 # NOTE: this introduces a small error because the variance is set >0
-convert(::Type{GaussianDistribution}, flt::Float64) = GaussianDistribution(m=flt, V=tiny)
+convert(::Type{Gaussian}, flt::Float64) = Gaussian(m=flt, V=tiny)
 
-convert(::Type{GaussianDistribution}, delta::DeltaDistribution{Float64}) = GaussianDistribution(m=delta.m, V=tiny)
+convert(::Type{Gaussian}, delta::Delta{Float64}) = Gaussian(m=delta.m, V=tiny)
 
-convert(::Type{Message{GaussianDistribution}}, msg::Message{DeltaDistribution{Float64}}) = Message(GaussianDistribution(m=msg.payload.m, V=tiny))
+convert(::Type{Message{Gaussian}}, msg::Message{Delta{Float64}}) = Message(Gaussian(m=msg.payload.m, V=tiny))

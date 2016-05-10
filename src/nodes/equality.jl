@@ -52,7 +52,7 @@ end
 
 
 ############################################
-# GaussianDistribution methods
+# Gaussian methods
 ############################################
 
 """
@@ -63,13 +63,13 @@ EqualityNode:
          | |
        N v v
 """
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GaussianDistribution, msg_1::Any, msg_2::Message{GaussianDistribution}, msg_3::Message{GaussianDistribution}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::GaussianDistribution, msg_1::Message{GaussianDistribution}, msg_2::Any, msg_3::Message{GaussianDistribution}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::GaussianDistribution, msg_1::Message{GaussianDistribution}, msg_2::Message{GaussianDistribution}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Gaussian, msg_1::Any, msg_2::Message{Gaussian}, msg_3::Message{Gaussian}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Gaussian, msg_1::Message{Gaussian}, msg_2::Any, msg_3::Message{Gaussian}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Gaussian, msg_1::Message{Gaussian}, msg_2::Message{Gaussian}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
 
 
 ############################################
-# DeltaDistribution methods
+# Delta methods
 ############################################
 
 """
@@ -80,13 +80,13 @@ EqualityNode:
          | |
        δ v v
 """
-sumProductRule!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::DeltaDistribution{T}, msg_1::Any, msg_2::Message{DeltaDistribution{T}}, msg_3::Message{DeltaDistribution{T}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::DeltaDistribution{T}, msg_1::Message{DeltaDistribution{T}}, msg_2::Any, msg_3::Message{DeltaDistribution{T}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::DeltaDistribution{T}, msg_1::Message{DeltaDistribution{T}}, msg_2::Message{DeltaDistribution{T}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Delta{T}, msg_1::Any, msg_2::Message{Delta{T}}, msg_3::Message{Delta{T}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Delta{T}, msg_1::Message{Delta{T}}, msg_2::Any, msg_3::Message{Delta{T}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!{T<:Float64}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Delta{T}, msg_1::Message{Delta{T}}, msg_2::Message{Delta{T}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
 
 
 ############################################
-# InverseGammaDistribution methods
+# InverseGamma methods
 ############################################
 
 """
@@ -99,13 +99,13 @@ EqualityNode:
 
     Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; table 5.2
 """
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::InverseGammaDistribution, msg_1::Any, msg_2::Message{InverseGammaDistribution}, msg_3::Message{InverseGammaDistribution}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::InverseGammaDistribution, msg_1::Message{InverseGammaDistribution}, msg_2::Any, msg_3::Message{InverseGammaDistribution}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::InverseGammaDistribution, msg_1::Message{InverseGammaDistribution}, msg_2::Message{InverseGammaDistribution}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::InverseGamma, msg_1::Any, msg_2::Message{InverseGamma}, msg_3::Message{InverseGamma}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::InverseGamma, msg_1::Message{InverseGamma}, msg_2::Any, msg_3::Message{InverseGamma}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::InverseGamma, msg_1::Message{InverseGamma}, msg_2::Message{InverseGamma}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
 
 
 ############################################
-# GammaDistribution methods
+# Gamma methods
 ############################################
 
 """
@@ -116,13 +116,13 @@ EqualityNode:
          | |
      Gam v v
 """
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GammaDistribution, msg_1::Any, msg_2::Message{GammaDistribution}, msg_3::Message{GammaDistribution}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::GammaDistribution, msg_1::Message{GammaDistribution}, msg_2::Any, msg_3::Message{GammaDistribution}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::GammaDistribution, msg_1::Message{GammaDistribution}, msg_2::Message{GammaDistribution}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Gamma, msg_1::Any, msg_2::Message{Gamma}, msg_3::Message{Gamma}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Gamma, msg_1::Message{Gamma}, msg_2::Any, msg_3::Message{Gamma}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Gamma, msg_1::Message{Gamma}, msg_2::Message{Gamma}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
 
 
 ############################################
-# BetaDistribution methods
+# Beta methods
 ############################################
 
 """
@@ -133,13 +133,13 @@ EqualityNode:
           | |
      Beta v v
 """
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::BetaDistribution, msg_1::Any, msg_2::Message{BetaDistribution}, msg_3::Message{BetaDistribution}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::BetaDistribution, msg_1::Message{BetaDistribution}, msg_2::Any, msg_3::Message{BetaDistribution}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::BetaDistribution, msg_1::Message{BetaDistribution}, msg_2::Message{BetaDistribution}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Beta, msg_1::Any, msg_2::Message{Beta}, msg_3::Message{Beta}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Beta, msg_1::Message{Beta}, msg_2::Any, msg_3::Message{Beta}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Beta, msg_1::Message{Beta}, msg_2::Message{Beta}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
 
 
 ############################################
-# BernoulliDistribution methods
+# Bernoulli methods
 ############################################
 
 """
@@ -150,27 +150,27 @@ EqualityNode:
           | |
      Bern v v
 """
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::BernoulliDistribution, msg_1::Any, msg_2::Message{BernoulliDistribution}, msg_3::Message{BernoulliDistribution}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::BernoulliDistribution, msg_1::Message{BernoulliDistribution}, msg_2::Any, msg_3::Message{BernoulliDistribution}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::BernoulliDistribution, msg_1::Message{BernoulliDistribution}, msg_2::Message{BernoulliDistribution}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Bernoulli, msg_1::Any, msg_2::Message{Bernoulli}, msg_3::Message{Bernoulli}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Bernoulli, msg_1::Message{Bernoulli}, msg_2::Any, msg_3::Message{Bernoulli}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Bernoulli, msg_1::Message{Bernoulli}, msg_2::Message{Bernoulli}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
 
 
 ############################################
-# MvGaussianDistribution methods
+# MvGaussian methods
 ############################################
 
-sumProductRule!{T<:MvGaussianDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::T, msg_1::Any, msg_2::Message{T}, msg_3::Message{T}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!{T<:MvGaussianDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::T, msg_1::Message{T}, msg_2::Any, msg_3::Message{T}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!{T<:MvGaussianDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::T, msg_1::Message{T}, msg_2::Message{T}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!{T<:MvGaussian}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::T, msg_1::Any, msg_2::Message{T}, msg_3::Message{T}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!{T<:MvGaussian}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::T, msg_1::Message{T}, msg_2::Any, msg_3::Message{T}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!{T<:MvGaussian}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::T, msg_1::Message{T}, msg_2::Message{T}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
 
 
 ############################################
-# MvDeltaDistribution methods
+# MvDelta methods
 ############################################
 
-sumProductRule!{T<:MvDeltaDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::T, msg_1::Any, msg_2::Message{T}, msg_3::Message{T}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!{T<:MvDeltaDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::T, msg_1::Message{T}, msg_2::Any, msg_3::Message{T}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!{T<:MvDeltaDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::T, msg_1::Message{T}, msg_2::Message{T}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!{T<:MvDelta}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::T, msg_1::Any, msg_2::Message{T}, msg_3::Message{T}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!{T<:MvDelta}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::T, msg_1::Message{T}, msg_2::Any, msg_3::Message{T}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!{T<:MvDelta}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::T, msg_1::Message{T}, msg_2::Message{T}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
 
 ############################################
 # Gaussian-Student's t combination
@@ -184,14 +184,14 @@ EqualityNode:
          | |
        N v v
 """
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GaussianDistribution, msg_1::Any, msg_2::Message{GaussianDistribution}, msg_3::Message{StudentsTDistribution}, approx::Type{MomentMatching}) = studentsGaussianProd!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::GaussianDistribution, msg_1::Any, msg_2::Message{StudentsTDistribution}, msg_3::Message{GaussianDistribution}, approx::Type{MomentMatching}) = studentsGaussianProd!(msg_3.payload, msg_2.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::GaussianDistribution, msg_1::Message{GaussianDistribution}, msg_2::Any, msg_3::Message{StudentsTDistribution}, approx::Type{MomentMatching}) = studentsGaussianProd!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::GaussianDistribution, msg_1::Message{StudentsTDistribution}, msg_2::Any, msg_3::Message{GaussianDistribution}, approx::Type{MomentMatching}) = studentsGaussianProd!(msg_3.payload, msg_1.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::GaussianDistribution, msg_1::Message{GaussianDistribution}, msg_2::Message{StudentsTDistribution}, msg_3::Any, approx::Type{MomentMatching}) = studentsGaussianProd!(msg_1.payload, msg_2.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::GaussianDistribution, msg_1::Message{StudentsTDistribution}, msg_2::Message{GaussianDistribution}, msg_3::Any, approx::Type{MomentMatching}) = studentsGaussianProd!(msg_2.payload, msg_1.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Gaussian, msg_1::Any, msg_2::Message{Gaussian}, msg_3::Message{StudentsT}, approx::Type{MomentMatching}) = studentsGaussianProd!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Gaussian, msg_1::Any, msg_2::Message{StudentsT}, msg_3::Message{Gaussian}, approx::Type{MomentMatching}) = studentsGaussianProd!(msg_3.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Gaussian, msg_1::Message{Gaussian}, msg_2::Any, msg_3::Message{StudentsT}, approx::Type{MomentMatching}) = studentsGaussianProd!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Gaussian, msg_1::Message{StudentsT}, msg_2::Any, msg_3::Message{Gaussian}, approx::Type{MomentMatching}) = studentsGaussianProd!(msg_3.payload, msg_1.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Gaussian, msg_1::Message{Gaussian}, msg_2::Message{StudentsT}, msg_3::Any, approx::Type{MomentMatching}) = studentsGaussianProd!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Gaussian, msg_1::Message{StudentsT}, msg_2::Message{Gaussian}, msg_3::Any, approx::Type{MomentMatching}) = studentsGaussianProd!(msg_2.payload, msg_1.payload, outbound_dist)
 
-function studentsGaussianProd!(dist_gauss_in::GaussianDistribution, dist_stud_in::StudentsTDistribution, dist_result::GaussianDistribution)
+function studentsGaussianProd!(dist_gauss_in::Gaussian, dist_stud_in::StudentsT, dist_result::Gaussian)
     # The student's t distribution is approximated with a Gaussian by moment matching.
     # The result is a Gaussian approximation to the exact result.
 
@@ -219,31 +219,31 @@ end
 
 
 ############################################
-# Gaussian-DeltaDistribution combination
+# Gaussian-Delta combination
 ############################################
 
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Any, msg_2::Message{GaussianDistribution}, msg_3::Message{DeltaDistribution{Float64}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Any, msg_2::Message{DeltaDistribution{Float64}}, msg_3::Message{GaussianDistribution}) = prod!(msg_3.payload, msg_2.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{GaussianDistribution}, msg_2::Any, msg_3::Message{DeltaDistribution{Float64}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{DeltaDistribution{Float64}}, msg_2::Any, msg_3::Message{GaussianDistribution}) = prod!(msg_3.payload, msg_1.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{GaussianDistribution}, msg_2::Message{DeltaDistribution{Float64}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{DeltaDistribution{Float64}}, msg_2::Message{GaussianDistribution}, msg_3::Any) = prod!(msg_2.payload, msg_1.payload, outbound_dist)
-
-
-############################################
-# MvGaussian-MvDeltaDistribution combination
-############################################
-
-sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::MvDeltaDistribution{Float64, dims}, msg_1::Any, msg_2::Message{MvGaussianDistribution{dims}}, msg_3::Message{MvDeltaDistribution{Float64, dims}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::MvDeltaDistribution{Float64, dims}, msg_1::Any, msg_2::Message{MvDeltaDistribution{Float64, dims}}, msg_3::Message{MvGaussianDistribution{dims}}) = prod!(msg_3.payload, msg_2.payload, outbound_dist)
-sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::MvDeltaDistribution{Float64, dims}, msg_1::Message{MvGaussianDistribution{dims}}, msg_2::Any, msg_3::Message{MvDeltaDistribution{Float64, dims}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::MvDeltaDistribution{Float64, dims}, msg_1::Message{MvDeltaDistribution{Float64, dims}}, msg_2::Any, msg_3::Message{MvGaussianDistribution{dims}}) = prod!(msg_3.payload, msg_1.payload, outbound_dist)
-sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::MvDeltaDistribution{Float64, dims}, msg_1::Message{MvGaussianDistribution{dims}}, msg_2::Message{MvDeltaDistribution{Float64, dims}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
-sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::MvDeltaDistribution{Float64, dims}, msg_1::Message{MvDeltaDistribution{Float64, dims}}, msg_2::Message{MvGaussianDistribution{dims}}, msg_3::Any) = prod!(msg_2.payload, msg_1.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Delta{Float64}, msg_1::Any, msg_2::Message{Gaussian}, msg_3::Message{Delta{Float64}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Delta{Float64}, msg_1::Any, msg_2::Message{Delta{Float64}}, msg_3::Message{Gaussian}) = prod!(msg_3.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Delta{Float64}, msg_1::Message{Gaussian}, msg_2::Any, msg_3::Message{Delta{Float64}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Delta{Float64}, msg_1::Message{Delta{Float64}}, msg_2::Any, msg_3::Message{Gaussian}) = prod!(msg_3.payload, msg_1.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Delta{Float64}, msg_1::Message{Gaussian}, msg_2::Message{Delta{Float64}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Delta{Float64}, msg_1::Message{Delta{Float64}}, msg_2::Message{Gaussian}, msg_3::Any) = prod!(msg_2.payload, msg_1.payload, outbound_dist)
 
 
 ############################################
-# WishartDistribution methods
+# MvGaussian-MvDelta combination
+############################################
+
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::MvDelta{Float64, dims}, msg_1::Any, msg_2::Message{MvGaussian{dims}}, msg_3::Message{MvDelta{Float64, dims}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::MvDelta{Float64, dims}, msg_1::Any, msg_2::Message{MvDelta{Float64, dims}}, msg_3::Message{MvGaussian{dims}}) = prod!(msg_3.payload, msg_2.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::MvDelta{Float64, dims}, msg_1::Message{MvGaussian{dims}}, msg_2::Any, msg_3::Message{MvDelta{Float64, dims}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::MvDelta{Float64, dims}, msg_1::Message{MvDelta{Float64, dims}}, msg_2::Any, msg_3::Message{MvGaussian{dims}}) = prod!(msg_3.payload, msg_1.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::MvDelta{Float64, dims}, msg_1::Message{MvGaussian{dims}}, msg_2::Message{MvDelta{Float64, dims}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::MvDelta{Float64, dims}, msg_1::Message{MvDelta{Float64, dims}}, msg_2::Message{MvGaussian{dims}}, msg_3::Any) = prod!(msg_2.payload, msg_1.payload, outbound_dist)
+
+
+############################################
+# Wishart methods
 ############################################
 
 """
@@ -254,54 +254,54 @@ EqualityNode:
          | |
        W v v
 """
-sumProductRule!{T<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::T, msg_1::Any, msg_2::Message{T}, msg_3::Message{T}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!{T<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::T, msg_1::Message{T}, msg_2::Any, msg_3::Message{T}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!{T<:WishartDistribution}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::T, msg_1::Message{T}, msg_2::Message{T}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!{T<:Wishart}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::T, msg_1::Any, msg_2::Message{T}, msg_3::Message{T}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!{T<:Wishart}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::T, msg_1::Message{T}, msg_2::Any, msg_3::Message{T}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!{T<:Wishart}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::T, msg_1::Message{T}, msg_2::Message{T}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
 
 
 #############################################
-# Wishart-MatrixDeltaDistribution combination
+# Wishart-MatrixDelta combination
 #############################################
 
-sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::MatrixDeltaDistribution{Float64, dims, dims}, msg_1::Any, msg_2::Message{WishartDistribution{dims}}, msg_3::Message{MatrixDeltaDistribution{Float64, dims, dims}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::MatrixDeltaDistribution{Float64, dims, dims}, msg_1::Any, msg_2::Message{MatrixDeltaDistribution{Float64, dims, dims}}, msg_3::Message{WishartDistribution{dims}}) = prod!(msg_3.payload, msg_2.payload, outbound_dist)
-sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::MatrixDeltaDistribution{Float64, dims, dims}, msg_1::Message{WishartDistribution{dims}}, msg_2::Any, msg_3::Message{MatrixDeltaDistribution{Float64, dims, dims}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::MatrixDeltaDistribution{Float64, dims, dims}, msg_1::Message{MatrixDeltaDistribution{Float64, dims, dims}}, msg_2::Any, msg_3::Message{WishartDistribution{dims}}) = prod!(msg_3.payload, msg_1.payload, outbound_dist)
-sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::MatrixDeltaDistribution{Float64, dims, dims}, msg_1::Message{WishartDistribution{dims}}, msg_2::Message{MatrixDeltaDistribution{Float64, dims, dims}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
-sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::MatrixDeltaDistribution{Float64, dims, dims}, msg_1::Message{MatrixDeltaDistribution{Float64, dims, dims}}, msg_2::Message{WishartDistribution{dims}}, msg_3::Any) = prod!(msg_2.payload, msg_1.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::MatrixDelta{Float64, dims, dims}, msg_1::Any, msg_2::Message{Wishart{dims}}, msg_3::Message{MatrixDelta{Float64, dims, dims}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::MatrixDelta{Float64, dims, dims}, msg_1::Any, msg_2::Message{MatrixDelta{Float64, dims, dims}}, msg_3::Message{Wishart{dims}}) = prod!(msg_3.payload, msg_2.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::MatrixDelta{Float64, dims, dims}, msg_1::Message{Wishart{dims}}, msg_2::Any, msg_3::Message{MatrixDelta{Float64, dims, dims}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::MatrixDelta{Float64, dims, dims}, msg_1::Message{MatrixDelta{Float64, dims, dims}}, msg_2::Any, msg_3::Message{Wishart{dims}}) = prod!(msg_3.payload, msg_1.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::MatrixDelta{Float64, dims, dims}, msg_1::Message{Wishart{dims}}, msg_2::Message{MatrixDelta{Float64, dims, dims}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::MatrixDelta{Float64, dims, dims}, msg_1::Message{MatrixDelta{Float64, dims, dims}}, msg_2::Message{Wishart{dims}}, msg_3::Any) = prod!(msg_2.payload, msg_1.payload, outbound_dist)
 
 
 ############################################
-# LogNormal-DeltaDistribution combination
+# LogNormal-Delta combination
 ############################################
 
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Any, msg_2::Message{LogNormalDistribution}, msg_3::Message{DeltaDistribution{Float64}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Any, msg_2::Message{DeltaDistribution{Float64}}, msg_3::Message{LogNormalDistribution}) = prod!(msg_3.payload, msg_2.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{LogNormalDistribution}, msg_2::Any, msg_3::Message{DeltaDistribution{Float64}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{DeltaDistribution{Float64}}, msg_2::Any, msg_3::Message{LogNormalDistribution}) = prod!(msg_3.payload, msg_1.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{LogNormalDistribution}, msg_2::Message{DeltaDistribution{Float64}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{DeltaDistribution{Float64}}, msg_2::Message{LogNormalDistribution}, msg_3::Any) = prod!(msg_2.payload, msg_1.payload, outbound_dist)
-
-
-############################################
-# Gamma-DeltaDistribution combination
-############################################
-
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Any, msg_2::Message{GammaDistribution}, msg_3::Message{DeltaDistribution{Float64}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Any, msg_2::Message{DeltaDistribution{Float64}}, msg_3::Message{GammaDistribution}) = prod!(msg_3.payload, msg_2.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{GammaDistribution}, msg_2::Any, msg_3::Message{DeltaDistribution{Float64}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{DeltaDistribution{Float64}}, msg_2::Any, msg_3::Message{GammaDistribution}) = prod!(msg_3.payload, msg_1.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{GammaDistribution}, msg_2::Message{DeltaDistribution{Float64}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{DeltaDistribution{Float64}}, msg_2::Message{GammaDistribution}, msg_3::Any) = prod!(msg_2.payload, msg_1.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Delta{Float64}, msg_1::Any, msg_2::Message{LogNormal}, msg_3::Message{Delta{Float64}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Delta{Float64}, msg_1::Any, msg_2::Message{Delta{Float64}}, msg_3::Message{LogNormal}) = prod!(msg_3.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Delta{Float64}, msg_1::Message{LogNormal}, msg_2::Any, msg_3::Message{Delta{Float64}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Delta{Float64}, msg_1::Message{Delta{Float64}}, msg_2::Any, msg_3::Message{LogNormal}) = prod!(msg_3.payload, msg_1.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Delta{Float64}, msg_1::Message{LogNormal}, msg_2::Message{Delta{Float64}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Delta{Float64}, msg_1::Message{Delta{Float64}}, msg_2::Message{LogNormal}, msg_3::Any) = prod!(msg_2.payload, msg_1.payload, outbound_dist)
 
 
 ############################################
-# InverseGamma-DeltaDistribution combination
+# Gamma-Delta combination
 ############################################
 
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Any, msg_2::Message{InverseGammaDistribution}, msg_3::Message{DeltaDistribution{Float64}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Any, msg_2::Message{DeltaDistribution{Float64}}, msg_3::Message{InverseGammaDistribution}) = prod!(msg_3.payload, msg_2.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{InverseGammaDistribution}, msg_2::Any, msg_3::Message{DeltaDistribution{Float64}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{DeltaDistribution{Float64}}, msg_2::Any, msg_3::Message{InverseGammaDistribution}) = prod!(msg_3.payload, msg_1.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{InverseGammaDistribution}, msg_2::Message{DeltaDistribution{Float64}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
-sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::DeltaDistribution{Float64}, msg_1::Message{DeltaDistribution{Float64}}, msg_2::Message{InverseGammaDistribution}, msg_3::Any) = prod!(msg_2.payload, msg_1.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Delta{Float64}, msg_1::Any, msg_2::Message{Gamma}, msg_3::Message{Delta{Float64}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Delta{Float64}, msg_1::Any, msg_2::Message{Delta{Float64}}, msg_3::Message{Gamma}) = prod!(msg_3.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Delta{Float64}, msg_1::Message{Gamma}, msg_2::Any, msg_3::Message{Delta{Float64}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Delta{Float64}, msg_1::Message{Delta{Float64}}, msg_2::Any, msg_3::Message{Gamma}) = prod!(msg_3.payload, msg_1.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Delta{Float64}, msg_1::Message{Gamma}, msg_2::Message{Delta{Float64}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Delta{Float64}, msg_1::Message{Delta{Float64}}, msg_2::Message{Gamma}, msg_3::Any) = prod!(msg_2.payload, msg_1.payload, outbound_dist)
+
+
+############################################
+# InverseGamma-Delta combination
+############################################
+
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Delta{Float64}, msg_1::Any, msg_2::Message{InverseGamma}, msg_3::Message{Delta{Float64}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Delta{Float64}, msg_1::Any, msg_2::Message{Delta{Float64}}, msg_3::Message{InverseGamma}) = prod!(msg_3.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Delta{Float64}, msg_1::Message{InverseGamma}, msg_2::Any, msg_3::Message{Delta{Float64}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Delta{Float64}, msg_1::Message{Delta{Float64}}, msg_2::Any, msg_3::Message{InverseGamma}) = prod!(msg_3.payload, msg_1.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Delta{Float64}, msg_1::Message{InverseGamma}, msg_2::Message{Delta{Float64}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Delta{Float64}, msg_1::Message{Delta{Float64}}, msg_2::Message{InverseGamma}, msg_3::Any) = prod!(msg_2.payload, msg_1.payload, outbound_dist)

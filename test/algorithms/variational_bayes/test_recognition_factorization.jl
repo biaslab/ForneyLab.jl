@@ -47,9 +47,9 @@ facts("RecognitionFactorization integration tests") do
         data = Float64[1.0, 1.0, 1.0]
         initializeGaussianNodeChain(data)
         f = ForneyLab.factorize(Dict(
-                eg(:q_m*(1:3)) => GaussianDistribution,
-                eg(:q_gam*(1:3)) => GammaDistribution,
-                eg(:q_y*(1:3)) => GaussianDistribution))
+                eg(:q_m*(1:3)) => Gaussian,
+                eg(:q_gam*(1:3)) => Gamma,
+                eg(:q_y*(1:3)) => Gaussian))
 
         gam_set = Set{Edge}()
         for gam_eq_node in n(:gam_eq*(1:3))
@@ -81,9 +81,9 @@ facts("initializeVagueRecognitionDistributions() should set vague marginals at t
     n_sections = length(data)
 
     recognition_distribution_types = Dict(
-        eg(:q_m*(1:3)) => GaussianDistribution,
-        eg(:q_gam*(1:3)) => GammaDistribution,
-        eg(:q_y*(1:3)) => GaussianDistribution)
+        eg(:q_m*(1:3)) => Gaussian,
+        eg(:q_gam*(1:3)) => Gamma,
+        eg(:q_y*(1:3)) => Gaussian)
 
     f = ForneyLab.factorize(recognition_distribution_types)
 
@@ -97,15 +97,15 @@ facts("initializeVagueRecognitionDistributions() should set vague marginals at t
     y3_subgraph = f.edge_to_subgraph[n(:g3).i[:out].edge]
 
     @fact length(qs) --> 9
-    @fact qs[(n(:g1), m_subgraph)].distribution --> vague(GaussianDistribution)
-    @fact qs[(n(:g2), m_subgraph)].distribution --> vague(GaussianDistribution)
-    @fact qs[(n(:g3), m_subgraph)].distribution --> vague(GaussianDistribution)
-    @fact qs[(n(:g1), gam_subgraph)].distribution --> vague(GammaDistribution)
-    @fact qs[(n(:g2), gam_subgraph)].distribution --> vague(GammaDistribution)
-    @fact qs[(n(:g3), gam_subgraph)].distribution --> vague(GammaDistribution)
-    @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(GaussianDistribution)
-    @fact qs[(n(:g2), y2_subgraph)].distribution --> vague(GaussianDistribution)
-    @fact qs[(n(:g3), y3_subgraph)].distribution --> vague(GaussianDistribution)
+    @fact qs[(n(:g1), m_subgraph)].distribution --> vague(Gaussian)
+    @fact qs[(n(:g2), m_subgraph)].distribution --> vague(Gaussian)
+    @fact qs[(n(:g3), m_subgraph)].distribution --> vague(Gaussian)
+    @fact qs[(n(:g1), gam_subgraph)].distribution --> vague(Gamma)
+    @fact qs[(n(:g2), gam_subgraph)].distribution --> vague(Gamma)
+    @fact qs[(n(:g3), gam_subgraph)].distribution --> vague(Gamma)
+    @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(Gaussian)
+    @fact qs[(n(:g2), y2_subgraph)].distribution --> vague(Gaussian)
+    @fact qs[(n(:g3), y3_subgraph)].distribution --> vague(Gaussian)
 
     # Structured case
     data = [1.0]
@@ -113,8 +113,8 @@ facts("initializeVagueRecognitionDistributions() should set vague marginals at t
     n_sections = length(data)
 
     recognition_distribution_types = Dict(
-        [eg(:q_m1), eg(:q_gam1)].' => NormalGammaDistribution,
-        eg(:q_y1) => GaussianDistribution)
+        [eg(:q_m1), eg(:q_gam1)].' => NormalGamma,
+        eg(:q_y1) => Gaussian)
 
     f = ForneyLab.factorize(recognition_distribution_types)
 
@@ -125,8 +125,8 @@ facts("initializeVagueRecognitionDistributions() should set vague marginals at t
     y1_subgraph = f.edge_to_subgraph[n(:g1).i[:out].edge]
 
     @fact length(qs) --> 2
-    @fact qs[(n(:g1), m_gam_subgraph)].distribution --> vague(NormalGammaDistribution)
-    @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(GaussianDistribution)
+    @fact qs[(n(:g1), m_gam_subgraph)].distribution --> vague(NormalGamma)
+    @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(Gaussian)
 end
 
 facts("resetRecognitionDistributions!() should reset already present q distributions to vague") do
@@ -137,9 +137,9 @@ facts("resetRecognitionDistributions!() should reset already present q distribut
     n_sections = length(data)
 
     algo = VariationalBayes(Dict(
-                eg(:q_m1) => GaussianDistribution,
-                eg(:q_gam1) => GammaDistribution,
-                eg(:q_y1) => GaussianDistribution))
+                eg(:q_m1) => Gaussian,
+                eg(:q_gam1) => Gamma,
+                eg(:q_y1) => Gaussian))
 
     f = algo.factorization
     qs = algo.recognition_distributions
@@ -149,22 +149,22 @@ facts("resetRecognitionDistributions!() should reset already present q distribut
     y1_subgraph = f.edge_to_subgraph[n(:g1).i[:out].edge]
 
     # Distributions before step() should be vague
-    @fact qs[(n(:g1), m_subgraph)].distribution --> vague(GaussianDistribution)
-    @fact qs[(n(:g1), gam_subgraph)].distribution --> vague(GammaDistribution)
-    @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(GaussianDistribution)
+    @fact qs[(n(:g1), m_subgraph)].distribution --> vague(Gaussian)
+    @fact qs[(n(:g1), gam_subgraph)].distribution --> vague(Gamma)
+    @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(Gaussian)
 
     prepare!(algo)
     step(algo)
 
     # Distributions after step() should not be vague
-    @fact qs[(n(:g1), m_subgraph)].distribution == vague(GaussianDistribution) --> false
-    @fact qs[(n(:g1), gam_subgraph)].distribution == vague(GammaDistribution) --> false
-    @fact qs[(n(:g1), y1_subgraph)].distribution == vague(GaussianDistribution) --> false
+    @fact qs[(n(:g1), m_subgraph)].distribution == vague(Gaussian) --> false
+    @fact qs[(n(:g1), gam_subgraph)].distribution == vague(Gamma) --> false
+    @fact qs[(n(:g1), y1_subgraph)].distribution == vague(Gaussian) --> false
 
     ForneyLab.resetRecognitionDistributions!(qs)
 
     # Distributions after resetting should be vague again
-    @fact qs[(n(:g1), m_subgraph)].distribution --> vague(GaussianDistribution)
-    @fact qs[(n(:g1), gam_subgraph)].distribution --> vague(GammaDistribution)
-    @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(GaussianDistribution)
+    @fact qs[(n(:g1), m_subgraph)].distribution --> vague(Gaussian)
+    @fact qs[(n(:g1), gam_subgraph)].distribution --> vague(Gamma)
+    @fact qs[(n(:g1), y1_subgraph)].distribution --> vague(Gaussian)
 end

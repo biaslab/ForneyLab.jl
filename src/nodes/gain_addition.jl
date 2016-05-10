@@ -53,7 +53,7 @@ isDeterministic(::GainAdditionNode) = true
 
 
 ############################################
-# GaussianDistribution methods
+# Gaussian methods
 ############################################
 
 """
@@ -72,9 +72,9 @@ GainAdditionNode:
 """
 function sumProductRule!(   node::GainAdditionNode,
                             outbound_interface_index::Type{Val{3}},
-                            outbound_dist::GaussianDistribution,
-                            msg_in1::Message{GaussianDistribution},
-                            msg_in2::Message{GaussianDistribution},
+                            outbound_dist::Gaussian,
+                            msg_in1::Message{Gaussian},
+                            msg_in2::Message{Gaussian},
                             msg_out::Any)
 
     dist_1 = ensureParameters!(msg_in1.payload, (:m, :V))
@@ -104,10 +104,10 @@ GainAdditionNode:
 """
 function sumProductRule!(   node::GainAdditionNode,
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            msg_in1::Message{GaussianDistribution},
+                            outbound_dist::Gaussian,
+                            msg_in1::Message{Gaussian},
                             msg_in2::Any,
-                            msg_out::Message{GaussianDistribution})
+                            msg_out::Message{Gaussian})
 
     dist_1 = ensureParameters!(msg_in1.payload, (:m, :V))
     dist_3 = ensureParameters!(msg_out.payload, (:m, :V))
@@ -136,15 +136,15 @@ GainAdditionNode:
 """
 function sumProductRule!(   node::GainAdditionNode,
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             msg_in1::Void,
-                            msg_in2::Message{GaussianDistribution},
-                            msg_out::Message{GaussianDistribution})
+                            msg_in2::Message{Gaussian},
+                            msg_out::Message{Gaussian})
 
     dist_out = ensureParameters!(msg_out.payload, (:m, :V))
     dist_in2 = ensureParameters!(msg_in2.payload, (:m, :V))
 
-    dist_temp = GaussianDistribution(   m = dist_out.m - dist_in2.m,
+    dist_temp = Gaussian(   m = dist_out.m - dist_in2.m,
                                         V = msg_in2.payload.V + msg_out.payload.V)
     ensureParameters!(dist_temp, (:xi, :W))
 
@@ -158,14 +158,14 @@ end
 
 
 ############################################
-# MvGaussianDistribution methods
+# MvGaussian methods
 ############################################
 
 function sumProductRule!{dims_n, dims_m}(   node::GainAdditionNode,
                                             outbound_interface_index::Type{Val{3}},
-                                            outbound_dist::MvGaussianDistribution{dims_n},
-                                            msg_in1::Message{MvGaussianDistribution{dims_m}},
-                                            msg_in2::Message{MvGaussianDistribution{dims_n}},
+                                            outbound_dist::MvGaussian{dims_n},
+                                            msg_in1::Message{MvGaussian{dims_m}},
+                                            msg_in2::Message{MvGaussian{dims_n}},
                                             msg_out::Any)
 
     return gainAdditionForwardRule!(outbound_dist, msg_in1.payload, msg_in2.payload, node.gain)
@@ -173,27 +173,27 @@ end
 
 function sumProductRule!{dims_n, dims_m}(   node::GainAdditionNode,
                                             outbound_interface_index::Type{Val{2}},
-                                            outbound_dist::MvGaussianDistribution{dims_n},
-                                            msg_in1::Message{MvGaussianDistribution{dims_m}},
+                                            outbound_dist::MvGaussian{dims_n},
+                                            msg_in1::Message{MvGaussian{dims_m}},
                                             msg_in2::Any,
-                                            msg_out::Message{MvGaussianDistribution{dims_n}})
+                                            msg_out::Message{MvGaussian{dims_n}})
 
     return gainAdditionBackwardIn2Rule!(outbound_dist, msg_in1.payload, msg_out.payload, node.gain)
 end
 
 function sumProductRule!{dims_n, dims_m}(   node::GainAdditionNode,
                                             outbound_interface_index::Type{Val{1}},
-                                            outbound_dist::MvGaussianDistribution{dims_m},
+                                            outbound_dist::MvGaussian{dims_m},
                                             msg_in1::Any,
-                                            msg_in2::Message{MvGaussianDistribution{dims_n}},
-                                            msg_out::Message{MvGaussianDistribution{dims_n}})
+                                            msg_in2::Message{MvGaussian{dims_n}},
+                                            msg_out::Message{MvGaussian{dims_n}})
 
-    dist_temp = vague(MvGaussianDistribution{size(node.gain, 1)})
+    dist_temp = vague(MvGaussian{size(node.gain, 1)})
     backwardAdditionRule!(dist_temp, msg_in2.payload, msg_out.payload)
     return gainBackwardRule!(outbound_dist, dist_temp, node.gain, (isdefined(node, :gain_inv)) ? node.gain_inv : nothing)
 end
 
-function gainAdditionForwardRule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDistribution, dist_2::MvGaussianDistribution, A::Any)
+function gainAdditionForwardRule!(dist_result::MvGaussian, dist_1::MvGaussian, dist_2::MvGaussian, A::Any)
     # Select parameterization
     # Order is from least to most computationally intensive
     if isValid(dist_1.m) && isValid(dist_1.V) && isValid(dist_2.m) && isValid(dist_2.V)
@@ -242,7 +242,7 @@ function gainAdditionForwardRule!(dist_result::MvGaussianDistribution, dist_1::M
     return dist_result
 end
 
-function gainAdditionBackwardIn2Rule!(dist_result::MvGaussianDistribution, dist_1::MvGaussianDistribution, dist_3::MvGaussianDistribution, A::Any)
+function gainAdditionBackwardIn2Rule!(dist_result::MvGaussian, dist_1::MvGaussian, dist_3::MvGaussian, A::Any)
     # Select parameterization
     # Order is from least to most computationally intensive
     if isValid(dist_1.m) && isValid(dist_1.V) && isValid(dist_3.m) && isValid(dist_3.V)

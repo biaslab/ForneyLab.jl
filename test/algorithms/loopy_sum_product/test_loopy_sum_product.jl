@@ -7,7 +7,7 @@ facts("LoopySumProduct message passing tests") do
             prepare!(algo)
             execute(algo)
 
-            @fact n(:add_node).i[:out].message.payload --> GaussianDistribution(m=0.0, V=2.0)
+            @fact n(:add_node).i[:out].message.payload --> Gaussian(m=0.0, V=2.0)
         end
 
         context("Should correctly execute a schedule and return the result of the last step with preset messages") do
@@ -18,11 +18,11 @@ facts("LoopySumProduct message passing tests") do
             Edge(n(:g2).i[:out], n(:g1).i[:in])
 
             algo = LoopySumProduct( n(:g2).i[:out],
-                                    breaker_messages=Dict(n(:g2).i[:out] => Message(GaussianDistribution(m=1.0, V=1.0))),
+                                    breaker_messages=Dict(n(:g2).i[:out] => Message(Gaussian(m=1.0, V=1.0))),
                                     n_iterations=5)
             prepare!(algo)
             execute(algo)
-            @fact n(:g2).i[:out].message.payload --> GaussianDistribution(m=32.0, V=1024.0)
+            @fact n(:g2).i[:out].message.payload --> Gaussian(m=32.0, V=1024.0)
         end
 
     end

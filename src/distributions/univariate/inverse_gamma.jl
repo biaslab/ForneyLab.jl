@@ -1,4 +1,4 @@
-export InverseGammaDistribution
+export InverseGamma
 
 """
 Description:
@@ -11,28 +11,28 @@ Pamameters:
 
 Construction:
 
-    InverseGammaDistribution(a=1.0, b=1.0)
+    InverseGamma(a=1.0, b=1.0)
 
 Reference:
 
     Korl, 2005; A factor graph approach to signal modelling, system identification and filtering; appendix A
 """
-type InverseGammaDistribution <: UnivariateProbabilityDistribution
+type InverseGamma <: Univariate
     a::Float64 # shape
     b::Float64 # scale
 end
 
-InverseGammaDistribution(; a=3.0, b=2.0) = InverseGammaDistribution(a, b)
+InverseGamma(; a=3.0, b=2.0) = InverseGamma(a, b)
 
-function vague!(dist::InverseGammaDistribution)
+function vague!(dist::InverseGamma)
     dist.a = tiny
     dist.b = tiny
     return dist
 end
 
-isProper(dist::InverseGammaDistribution) = (dist.a >= tiny && dist.b >= tiny)
+isProper(dist::InverseGamma) = (dist.a >= tiny && dist.b >= tiny)
 
-function Base.mean(dist::InverseGammaDistribution)
+function Base.mean(dist::InverseGamma)
     if isProper(dist) && dist.a > 1.0
         return dist.b / (dist.a - 1)
     else
@@ -40,7 +40,7 @@ function Base.mean(dist::InverseGammaDistribution)
     end
 end
 
-function Base.var(dist::InverseGammaDistribution)
+function Base.var(dist::InverseGamma)
     if isProper(dist) && dist.a > 2.0
         return (dist.b^2) / ( ( (dist.a-1)^2 ) * (dist.a-2) )
     else
@@ -48,11 +48,11 @@ function Base.var(dist::InverseGammaDistribution)
     end
 end
 
-format(dist::InverseGammaDistribution) = "Ig(a=$(format(dist.a)), b=$(format(dist.b)))"
+format(dist::InverseGamma) = "Ig(a=$(format(dist.a)), b=$(format(dist.b)))"
 
-show(io::IO, dist::InverseGammaDistribution) = println(io, format(dist))
+show(io::IO, dist::InverseGamma) = println(io, format(dist))
 
-function prod!(x::InverseGammaDistribution, y::InverseGammaDistribution, z::InverseGammaDistribution=InverseGammaDistribution())
+function prod!(x::InverseGamma, y::InverseGamma, z::InverseGamma=InverseGamma())
     # Multiplication of 2 inverse gamma PDFs: p(z) = p(x) * p(y)
     z.a = x.a + y.a + 1.0
     z.b = x.b + y.b
@@ -60,7 +60,7 @@ function prod!(x::InverseGammaDistribution, y::InverseGammaDistribution, z::Inve
     return z
 end
 
-@symmetrical function prod!(x::InverseGammaDistribution, y::DeltaDistribution{Float64}, z::DeltaDistribution{Float64}=DeltaDistribution(1.0))
+@symmetrical function prod!(x::InverseGamma, y::Delta{Float64}, z::Delta{Float64}=Delta(1.0))
     # Multiplication of inverse gamma PDF with a Delta
     (y.m >= 0.0) || throw(DomainError())
     z.m = y.m
@@ -68,7 +68,7 @@ end
     return z
 end
 
-@symmetrical function prod!(x::InverseGammaDistribution, y::DeltaDistribution{Float64}, z::InverseGammaDistribution)
+@symmetrical function prod!(x::InverseGamma, y::Delta{Float64}, z::InverseGamma)
     # Multiplication of inverse gamma PDF with a Delta, force result to be inverse gamma
     (y.m >= 0.0) || throw(DomainError())
     z.a = clamp(1e8*y.m, tiny, huge)
@@ -77,4 +77,4 @@ end
     return z
 end
 
-==(x::InverseGammaDistribution, y::InverseGammaDistribution) = (x.a==y.a && x.b==y.b)
+==(x::InverseGamma, y::InverseGamma) = (x.a==y.a && x.b==y.b)

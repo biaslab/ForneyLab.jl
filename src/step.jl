@@ -15,14 +15,14 @@ import Base.step
 function ensureValue!(node::TerminalNode, value_type::Type)
     # Ensure that node contains a value of type value_type
     if !isdefined(node, :value) || (typeof(node.value) != value_type)
-        if (value_type <: DeltaDistribution{Float64}) || (value_type <: Float64)
-            node.value = DeltaDistribution()
-        elseif (value_type <: DeltaDistribution{Bool}) || (value_type <: Bool)
-            node.value = DeltaDistribution(false)
-        elseif value_type <: MvDeltaDistribution
-            node.value = MvDeltaDistribution(zeros(dimensions(value_type)))
-        elseif value_type <: MatrixDeltaDistribution
-            node.value = MatrixDeltaDistribution(zeros(dimensions(value_type)...))
+        if (value_type <: Delta{Float64}) || (value_type <: Float64)
+            node.value = Delta()
+        elseif (value_type <: Delta{Bool}) || (value_type <: Bool)
+            node.value = Delta(false)
+        elseif value_type <: MvDelta
+            node.value = MvDelta(zeros(dimensions(value_type)))
+        elseif value_type <: MatrixDelta
+            node.value = MatrixDelta(zeros(dimensions(value_type)...))
         else
             node.value = vague(value_type)
         end

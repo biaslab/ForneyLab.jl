@@ -12,163 +12,163 @@ facts("AdditionNode unit tests") do
         @fact n(:node).i[:out] --> n(:node).interfaces[3]
     end
 
-    context("AdditionNode should provide sumProductRule! for DeltaDistribution{Float64}") do
+    context("AdditionNode should provide sumProductRule! for Delta{Float64}") do
         # Forward message
         validateOutboundMessage(AdditionNode(),
                                 3,
-                                [Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0)), nothing],
-                                DeltaDistribution(5.0))
+                                [Message(Delta(2.0)), Message(Delta(3.0)), nothing],
+                                Delta(5.0))
         # Backward message
         validateOutboundMessage(AdditionNode(),
                                 1,
-                                [nothing, Message(DeltaDistribution(2.0)), Message(DeltaDistribution(3.0))],
-                                DeltaDistribution(1.0))
+                                [nothing, Message(Delta(2.0)), Message(Delta(3.0))],
+                                Delta(1.0))
         validateOutboundMessage(AdditionNode(),
                                 2,
-                                [Message(DeltaDistribution(2.0)), nothing, Message(DeltaDistribution(3.0))],
-                                DeltaDistribution(1.0))
+                                [Message(Delta(2.0)), nothing, Message(Delta(3.0))],
+                                Delta(1.0))
     end
 
-    context("AdditionNode should provide sumProductRule! for MvDeltaDistribution{Float64}") do
+    context("AdditionNode should provide sumProductRule! for MvDelta{Float64}") do
         # Forward message
         validateOutboundMessage(AdditionNode(),
                                 3,
-                                [Message(MvDeltaDistribution([1.0, 2.0])), Message(MvDeltaDistribution([3.0, 4.0])), nothing],
-                                MvDeltaDistribution([4.0, 6.0]))
+                                [Message(MvDelta([1.0, 2.0])), Message(MvDelta([3.0, 4.0])), nothing],
+                                MvDelta([4.0, 6.0]))
         # Backward message
         validateOutboundMessage(AdditionNode(),
                                 1,
-                                [nothing, Message(MvDeltaDistribution([1.0, 2.0])), Message(MvDeltaDistribution([3.0, 4.0]))],
-                                MvDeltaDistribution([2.0, 2.0]))
+                                [nothing, Message(MvDelta([1.0, 2.0])), Message(MvDelta([3.0, 4.0]))],
+                                MvDelta([2.0, 2.0]))
         validateOutboundMessage(AdditionNode(),
                                 2,
-                                [Message(MvDeltaDistribution([1.0, 2.0])), nothing, Message(MvDeltaDistribution([3.0, 4.0]))],
-                                MvDeltaDistribution([2.0, 2.0]))
+                                [Message(MvDelta([1.0, 2.0])), nothing, Message(MvDelta([3.0, 4.0]))],
+                                MvDelta([2.0, 2.0]))
     end
 
     # Tests on Gaussian messages use the update rules from Korl (2005),
     # "A Factor Graph Approach to Signal Modelling, System Identification and Filtering.", Table 4.1.
-    context("AdditionNode should provide sumProductRule! for GaussianDistribution") do
-        context("GaussianDistribution with (m,V) parametrization") do
+    context("AdditionNode should provide sumProductRule! for Gaussian") do
+        context("Gaussian with (m,V) parametrization") do
             # Forward message
             validateOutboundMessage(AdditionNode(),
                                     3,
-                                    [Message(GaussianDistribution(m=1.0, V=2.0)), Message(GaussianDistribution(m=3.0, V=4.0)), nothing],
-                                    GaussianDistribution(m=4.0, V=6.0))
+                                    [Message(Gaussian(m=1.0, V=2.0)), Message(Gaussian(m=3.0, V=4.0)), nothing],
+                                    Gaussian(m=4.0, V=6.0))
             # Backward message
             validateOutboundMessage(AdditionNode(),
                                     1,
-                                    [nothing, Message(GaussianDistribution(m=1.0, V=2.0)), Message(GaussianDistribution(m=3.0, V=4.0))],
-                                    GaussianDistribution(m=2.0, V=6.0))
+                                    [nothing, Message(Gaussian(m=1.0, V=2.0)), Message(Gaussian(m=3.0, V=4.0))],
+                                    Gaussian(m=2.0, V=6.0))
             validateOutboundMessage(AdditionNode(),
                                     2,
-                                    [Message(GaussianDistribution(m=1.0, V=2.0)), nothing, Message(GaussianDistribution(m=3.0, V=4.0))],
-                                    GaussianDistribution(m=2.0, V=6.0))
+                                    [Message(Gaussian(m=1.0, V=2.0)), nothing, Message(Gaussian(m=3.0, V=4.0))],
+                                    Gaussian(m=2.0, V=6.0))
         end
 
-        context("GaussianDistribution with (m,W) parametrization") do
+        context("Gaussian with (m,W) parametrization") do
             # Forward message
             validateOutboundMessage(AdditionNode(),
                                     3,
-                                    [Message(GaussianDistribution(m=1.0, W=2.0)), Message(GaussianDistribution(m=3.0, W=4.0)), nothing],
-                                    GaussianDistribution(m=4.0, W=4.0/3.0))
+                                    [Message(Gaussian(m=1.0, W=2.0)), Message(Gaussian(m=3.0, W=4.0)), nothing],
+                                    Gaussian(m=4.0, W=4.0/3.0))
             # Backward message
             validateOutboundMessage(AdditionNode(),
                                     1,
-                                    [nothing, Message(GaussianDistribution(m=1.0, W=2.0)), Message(GaussianDistribution(m=3.0, W=4.0))],
-                                    GaussianDistribution(m=2.0, W=4.0/3.0))
+                                    [nothing, Message(Gaussian(m=1.0, W=2.0)), Message(Gaussian(m=3.0, W=4.0))],
+                                    Gaussian(m=2.0, W=4.0/3.0))
             validateOutboundMessage(AdditionNode(),
                                     2,
-                                    [Message(GaussianDistribution(m=1.0, W=2.0)), nothing, Message(GaussianDistribution(m=3.0, W=4.0))],
-                                    GaussianDistribution(m=2.0, W=4.0/3.0))
+                                    [Message(Gaussian(m=1.0, W=2.0)), nothing, Message(Gaussian(m=3.0, W=4.0))],
+                                    Gaussian(m=2.0, W=4.0/3.0))
         end
 
-        context("GaussianDistribution with (xi,V) parametrization") do
+        context("Gaussian with (xi,V) parametrization") do
             # Forward message
             validateOutboundMessage(AdditionNode(),
                                     3,
-                                    [Message(GaussianDistribution(xi=1.0, V=2.0)), Message(GaussianDistribution(xi=3.0, V=4.0)), nothing],
-                                    GaussianDistribution(xi=14/6, V=6.0))
+                                    [Message(Gaussian(xi=1.0, V=2.0)), Message(Gaussian(xi=3.0, V=4.0)), nothing],
+                                    Gaussian(xi=14/6, V=6.0))
             # Backward message
             validateOutboundMessage(AdditionNode(),
                                     1,
-                                    [nothing, Message(GaussianDistribution(xi=1.0, V=2.0)), Message(GaussianDistribution(xi=3.0, V=4.0))],
-                                    GaussianDistribution(xi=10/6, V=6.0))
+                                    [nothing, Message(Gaussian(xi=1.0, V=2.0)), Message(Gaussian(xi=3.0, V=4.0))],
+                                    Gaussian(xi=10/6, V=6.0))
             validateOutboundMessage(AdditionNode(),
                                     2,
-                                    [Message(GaussianDistribution(xi=1.0, V=2.0)), nothing, Message(GaussianDistribution(xi=3.0, V=4.0))],
-                                    GaussianDistribution(xi=10/6, V=6.0))
+                                    [Message(Gaussian(xi=1.0, V=2.0)), nothing, Message(Gaussian(xi=3.0, V=4.0))],
+                                    Gaussian(xi=10/6, V=6.0))
         end
 
-        context("GaussianDistribution with different parametrizations") do
+        context("Gaussian with different parametrizations") do
             # Forward message
             validateOutboundMessage(AdditionNode(),
                                     3,
-                                    [Message(GaussianDistribution(m=1.0, V=0.5)), Message(GaussianDistribution(m=3.0, W=4.0)), nothing],
-                                    GaussianDistribution(m=4.0, W=4.0/3.0))
+                                    [Message(Gaussian(m=1.0, V=0.5)), Message(Gaussian(m=3.0, W=4.0)), nothing],
+                                    Gaussian(m=4.0, W=4.0/3.0))
             # Backward message
             validateOutboundMessage(AdditionNode(),
                                     1,
-                                    [nothing, Message(GaussianDistribution(m=1.0, V=0.5)), Message(GaussianDistribution(m=3.0, W=4.0))],
-                                    GaussianDistribution(m=2.0, W=4.0/3.0))
+                                    [nothing, Message(Gaussian(m=1.0, V=0.5)), Message(Gaussian(m=3.0, W=4.0))],
+                                    Gaussian(m=2.0, W=4.0/3.0))
             validateOutboundMessage(AdditionNode(),
                                     2,
-                                    [Message(GaussianDistribution(m=1.0, V=0.5)), nothing, Message(GaussianDistribution(m=3.0, W=4.0))],
-                                    GaussianDistribution(m=2.0, W=4.0/3.0))
+                                    [Message(Gaussian(m=1.0, V=0.5)), nothing, Message(Gaussian(m=3.0, W=4.0))],
+                                    Gaussian(m=2.0, W=4.0/3.0))
         end
-        context("Support for improper GaussianDistributions") do
+        context("Support for improper Gaussians") do
             # Forward message
             validateOutboundMessage(AdditionNode(),
                                     3,
-                                    [Message(GaussianDistribution(m=1.0, V=1.0)), Message(GaussianDistribution(m=2.0, V=-2.0)), nothing],
-                                    GaussianDistribution(m=3.0, V=-1.0))
+                                    [Message(Gaussian(m=1.0, V=1.0)), Message(Gaussian(m=2.0, V=-2.0)), nothing],
+                                    Gaussian(m=3.0, V=-1.0))
             # Backward message
             validateOutboundMessage(AdditionNode(),
                                     1,
-                                    [nothing, Message(GaussianDistribution(m=2.0, V=-2.0)), Message(GaussianDistribution(m=3.0, V=1.0))],
-                                    GaussianDistribution(m=1.0, V=-1.0))
+                                    [nothing, Message(Gaussian(m=2.0, V=-2.0)), Message(Gaussian(m=3.0, V=1.0))],
+                                    Gaussian(m=1.0, V=-1.0))
             validateOutboundMessage(AdditionNode(),
                                     2,
-                                    [Message(GaussianDistribution(m=1.0, V=-2.0)), nothing, Message(GaussianDistribution(m=3.0, V=1.0))],
-                                    GaussianDistribution(m=2.0, V=-1.0))
+                                    [Message(Gaussian(m=1.0, V=-2.0)), nothing, Message(Gaussian(m=3.0, V=1.0))],
+                                    Gaussian(m=2.0, V=-1.0))
             addition_node = AdditionNode()
-            @fact_throws sumProductRule!(addition_node, 3, [Message(GaussianDistribution(m=1.0, V=-1.0)), Message(GaussianDistribution(m=2.0, V=-2.0)), nothing])
-            @fact_throws sumProductRule!(addition_node, 1, [nothing, Message(GaussianDistribution(m=1.0, V=-1.0)), Message(GaussianDistribution(m=2.0, V=-2.0))])
+            @fact_throws sumProductRule!(addition_node, 3, [Message(Gaussian(m=1.0, V=-1.0)), Message(Gaussian(m=2.0, V=-2.0)), nothing])
+            @fact_throws sumProductRule!(addition_node, 1, [nothing, Message(Gaussian(m=1.0, V=-1.0)), Message(Gaussian(m=2.0, V=-2.0))])
         end
     end
 
-    context("AdditionNode should provide sumProductRule! for combinations of GaussianDistribution and DeltaDistribution") do
+    context("AdditionNode should provide sumProductRule! for combinations of Gaussian and Delta") do
         # Forward message
         validateOutboundMessage(AdditionNode(),
                                 3,
-                                [Message(GaussianDistribution(m=1.0, V=0.5)), Message(DeltaDistribution(3.0)), nothing],
-                                GaussianDistribution(m=4.0, V=0.5+tiny))
+                                [Message(Gaussian(m=1.0, V=0.5)), Message(Delta(3.0)), nothing],
+                                Gaussian(m=4.0, V=0.5+tiny))
         validateOutboundMessage(AdditionNode(),
                                 3,
-                                [Message(DeltaDistribution(3.0)), Message(GaussianDistribution(m=1.0, V=0.5)), nothing],
-                                GaussianDistribution(m=4.0, V=0.5+tiny))
+                                [Message(Delta(3.0)), Message(Gaussian(m=1.0, V=0.5)), nothing],
+                                Gaussian(m=4.0, V=0.5+tiny))
         #Backward message towards in1
         validateOutboundMessage(AdditionNode(),
                                 1,
-                                [nothing, Message(DeltaDistribution(3.0)), Message(GaussianDistribution(m=1.0, V=0.5))],
-                                GaussianDistribution(m=-2.0, V=0.5+tiny))
+                                [nothing, Message(Delta(3.0)), Message(Gaussian(m=1.0, V=0.5))],
+                                Gaussian(m=-2.0, V=0.5+tiny))
         validateOutboundMessage(AdditionNode(),
                                 1,
-                                [nothing, Message(GaussianDistribution(m=1.0, V=0.5)), Message(DeltaDistribution(3.0))],
-                                GaussianDistribution(m=2.0, V=0.5+tiny))
+                                [nothing, Message(Gaussian(m=1.0, V=0.5)), Message(Delta(3.0))],
+                                Gaussian(m=2.0, V=0.5+tiny))
         # Backward message towards in2
         validateOutboundMessage(AdditionNode(),
                                 2,
-                                [Message(DeltaDistribution(3.0)), nothing, Message(GaussianDistribution(m=1.0, V=0.5))],
-                                GaussianDistribution(m=-2.0, V=0.5+tiny))
+                                [Message(Delta(3.0)), nothing, Message(Gaussian(m=1.0, V=0.5))],
+                                Gaussian(m=-2.0, V=0.5+tiny))
         validateOutboundMessage(AdditionNode(),
                                 2,
-                                [Message(GaussianDistribution(m=1.0, V=0.5)), nothing, Message(DeltaDistribution(3.0))],
-                                GaussianDistribution(m=2.0, V=0.5+tiny))
+                                [Message(Gaussian(m=1.0, V=0.5)), nothing, Message(Delta(3.0))],
+                                Gaussian(m=2.0, V=0.5+tiny))
     end
 
-    context("AdditionNode should provide sumProductRule! for MvGaussianDistribution") do
-        context("MvGaussianDistribution with (m,V) parametrization") do
+    context("AdditionNode should provide sumProductRule! for MvGaussian") do
+        context("MvGaussian with (m,V) parametrization") do
             mean = collect(1.0:3.0)
             variance = reshape([4.0, 3.0, 2.0,
                                 3.0, 4.0, 3.0,
@@ -176,20 +176,20 @@ facts("AdditionNode unit tests") do
             # Forward message
             validateOutboundMessage(AdditionNode(),
                                     3,
-                                    [Message(MvGaussianDistribution(m=mean, V=variance)), Message(MvGaussianDistribution(m=mean, V=variance)), nothing],
-                                    MvGaussianDistribution(m=[2.0, 4.0, 6.0], V=2.0*variance))
+                                    [Message(MvGaussian(m=mean, V=variance)), Message(MvGaussian(m=mean, V=variance)), nothing],
+                                    MvGaussian(m=[2.0, 4.0, 6.0], V=2.0*variance))
             # Backward message
             validateOutboundMessage(AdditionNode(),
                                     1,
-                                    [nothing, Message(MvGaussianDistribution(m=mean, V=variance)), Message(MvGaussianDistribution(m=mean, V=variance))],
-                                    MvGaussianDistribution(m=[0.0, 0.0, 0.0], V=2.0*variance))
+                                    [nothing, Message(MvGaussian(m=mean, V=variance)), Message(MvGaussian(m=mean, V=variance))],
+                                    MvGaussian(m=[0.0, 0.0, 0.0], V=2.0*variance))
             validateOutboundMessage(AdditionNode(),
                                     2,
-                                    [Message(MvGaussianDistribution(m=mean, V=variance)), nothing, Message(MvGaussianDistribution(m=mean, V=variance))],
-                                    MvGaussianDistribution(m=[0.0, 0.0, 0.0], V=2.0*variance))
+                                    [Message(MvGaussian(m=mean, V=variance)), nothing, Message(MvGaussian(m=mean, V=variance))],
+                                    MvGaussian(m=[0.0, 0.0, 0.0], V=2.0*variance))
         end
 
-        context("MvGaussianDistribution with (m,W) parametrization") do
+        context("MvGaussian with (m,W) parametrization") do
             mean = collect(1.0:3.0)
             precision = reshape([4.0, 3.0, 2.0,
                                  3.0, 4.0, 3.0,
@@ -197,20 +197,20 @@ facts("AdditionNode unit tests") do
             # Forward message
             validateOutboundMessage(AdditionNode(),
                                     3,
-                                    [Message(MvGaussianDistribution(m=mean, W=precision)), Message(MvGaussianDistribution(m=mean, W=precision)), nothing],
-                                    MvGaussianDistribution(m=[2.0, 4.0, 6.0], W=0.5*precision))
+                                    [Message(MvGaussian(m=mean, W=precision)), Message(MvGaussian(m=mean, W=precision)), nothing],
+                                    MvGaussian(m=[2.0, 4.0, 6.0], W=0.5*precision))
             # Backward message
             validateOutboundMessage(AdditionNode(),
                                     1,
-                                    [nothing, Message(MvGaussianDistribution(m=mean, W=precision)), Message(MvGaussianDistribution(m=mean, W=precision))],
-                                    MvGaussianDistribution(m=[0.0, 0.0, 0.0], W=0.5*precision))
+                                    [nothing, Message(MvGaussian(m=mean, W=precision)), Message(MvGaussian(m=mean, W=precision))],
+                                    MvGaussian(m=[0.0, 0.0, 0.0], W=0.5*precision))
             validateOutboundMessage(AdditionNode(),
                                     2,
-                                    [Message(MvGaussianDistribution(m=mean, W=precision)), nothing, Message(MvGaussianDistribution(m=mean, W=precision))],
-                                    MvGaussianDistribution(m=[0.0, 0.0, 0.0], W=0.5*precision))
+                                    [Message(MvGaussian(m=mean, W=precision)), nothing, Message(MvGaussian(m=mean, W=precision))],
+                                    MvGaussian(m=[0.0, 0.0, 0.0], W=0.5*precision))
         end
 
-        context("MvGaussianDistribution with (xi,V) parametrization") do
+        context("MvGaussian with (xi,V) parametrization") do
             xi = collect(1.0:3.0)
             variance = reshape([4.0, 3.0, 2.0,
                                 3.0, 4.0, 3.0,
@@ -218,20 +218,20 @@ facts("AdditionNode unit tests") do
             # Forward message
             validateOutboundMessage(AdditionNode(),
                                     3,
-                                    [Message(MvGaussianDistribution(xi=xi, V=variance)), Message(MvGaussianDistribution(xi=xi, V=variance)), nothing],
-                                    MvGaussianDistribution(xi=[1.0, 2.0, 3.0], V=2.0*variance))
+                                    [Message(MvGaussian(xi=xi, V=variance)), Message(MvGaussian(xi=xi, V=variance)), nothing],
+                                    MvGaussian(xi=[1.0, 2.0, 3.0], V=2.0*variance))
             # Backward message
             validateOutboundMessage(AdditionNode(),
                                     1,
-                                    [nothing, Message(MvGaussianDistribution(xi=xi, V=variance)), Message(MvGaussianDistribution(xi=xi, V=variance))],
-                                    MvGaussianDistribution(xi=[0.0, 0.0, 0.0], V=2.0*variance))
+                                    [nothing, Message(MvGaussian(xi=xi, V=variance)), Message(MvGaussian(xi=xi, V=variance))],
+                                    MvGaussian(xi=[0.0, 0.0, 0.0], V=2.0*variance))
             validateOutboundMessage(AdditionNode(),
                                     2,
-                                    [Message(MvGaussianDistribution(xi=xi, V=variance)), nothing, Message(MvGaussianDistribution(xi=xi, V=variance))],
-                                    MvGaussianDistribution(xi=[0.0, 0.0, 0.0], V=2.0*variance))
+                                    [Message(MvGaussian(xi=xi, V=variance)), nothing, Message(MvGaussian(xi=xi, V=variance))],
+                                    MvGaussian(xi=[0.0, 0.0, 0.0], V=2.0*variance))
         end
 
-        context("MvGaussianDistribution with different parametrizations") do
+        context("MvGaussian with different parametrizations") do
             mean = collect(1.0:3.0)
             precision = reshape([4.0, 3.0, 2.0,
                                  3.0, 4.0, 3.0,
@@ -239,17 +239,17 @@ facts("AdditionNode unit tests") do
             # Forward message
             validateOutboundMessage(AdditionNode(),
                                     3,
-                                    [Message(MvGaussianDistribution(m=mean, W=precision)), Message(MvGaussianDistribution(xi=precision*mean, V=inv(precision))), nothing],
-                                    MvGaussianDistribution(m=[2.0, 4.0, 6.0], W=0.5*precision))
+                                    [Message(MvGaussian(m=mean, W=precision)), Message(MvGaussian(xi=precision*mean, V=inv(precision))), nothing],
+                                    MvGaussian(m=[2.0, 4.0, 6.0], W=0.5*precision))
             # Backward message
             validateOutboundMessage(AdditionNode(),
                                     1,
-                                    [nothing, Message(MvGaussianDistribution(m=mean, W=precision)), Message(MvGaussianDistribution(xi=precision*mean, V=inv(precision)))],
-                                    MvGaussianDistribution(m=[0.0, 0.0, 0.0], W=0.5*precision))
+                                    [nothing, Message(MvGaussian(m=mean, W=precision)), Message(MvGaussian(xi=precision*mean, V=inv(precision)))],
+                                    MvGaussian(m=[0.0, 0.0, 0.0], W=0.5*precision))
             validateOutboundMessage(AdditionNode(),
                                     2,
-                                    [Message(MvGaussianDistribution(m=mean, W=precision)), nothing, Message(MvGaussianDistribution(xi=precision*mean, V=inv(precision)))],
-                                    MvGaussianDistribution(m=[0.0, 0.0, 0.0], W=0.5*precision))
+                                    [Message(MvGaussian(m=mean, W=precision)), nothing, Message(MvGaussian(xi=precision*mean, V=inv(precision)))],
+                                    MvGaussian(m=[0.0, 0.0, 0.0], W=0.5*precision))
         end
     end
 end

@@ -118,10 +118,10 @@ GaussianNode{:mean, :variance/:precision}:
 """
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             msg_mean::Any,
-                            msg_var::Message{DeltaDistribution{Float64}},
-                            msg_out::Message{DeltaDistribution{Float64}})
+                            msg_var::Message{Delta{Float64}},
+                            msg_out::Message{Delta{Float64}})
 
     outbound_dist.m = msg_out.payload.m
     outbound_dist.xi = NaN
@@ -133,10 +133,10 @@ end
 
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             msg_mean::Any,
-                            msg_prec::Message{DeltaDistribution{Float64}},
-                            msg_out::Message{DeltaDistribution{Float64}})
+                            msg_prec::Message{Delta{Float64}},
+                            msg_out::Message{Delta{Float64}})
 
     outbound_dist.m = msg_out.payload.m
     outbound_dist.xi = NaN
@@ -156,10 +156,10 @@ GaussianNode{:mean, :variance}
 """
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             msg_mean::Any,
-                            msg_var::Message{DeltaDistribution{Float64}},
-                            msg_out::Message{GaussianDistribution})
+                            msg_var::Message{Delta{Float64}},
+                            msg_out::Message{Gaussian})
 
     ensureParameters!(msg_out.payload, (:m,:V))
     outbound_dist.m = msg_out.payload.m
@@ -180,10 +180,10 @@ GaussianNode{:mean, :precision}
 """
 function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:precision}},
                                 outbound_interface_index::Type{Val{1}},
-                                outbound_dist::MvGaussianDistribution{dims},
+                                outbound_dist::MvGaussian{dims},
                                 msg_mean::Any,
-                                msg_prec::Message{MatrixDeltaDistribution{Float64, dims, dims}},
-                                msg_out::Message{MvGaussianDistribution{dims}})
+                                msg_prec::Message{MatrixDelta{Float64, dims, dims}},
+                                msg_out::Message{MvGaussian{dims}})
 
     ensureParameters!(msg_out.payload, (:m,:V))
     outbound_dist.m = deepcopy(msg_out.payload.m)
@@ -206,10 +206,10 @@ GaussianNode{:mean, :variance}:
 """
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::InverseGammaDistribution,
-                            msg_mean::Message{DeltaDistribution{Float64}},
+                            outbound_dist::InverseGamma,
+                            msg_mean::Message{Delta{Float64}},
                             msg_var::Any,
-                            msg_out::Message{DeltaDistribution{Float64}})
+                            msg_out::Message{Delta{Float64}})
 
     y = msg_out.payload.m
     m = msg_mean.payload.m
@@ -231,10 +231,10 @@ GaussianNode{:mean, :precision}:
 """
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GammaDistribution,
-                            msg_mean::Message{DeltaDistribution{Float64}},
+                            outbound_dist::Gamma,
+                            msg_mean::Message{Delta{Float64}},
                             msg_prec::Any,
-                            msg_out::Message{DeltaDistribution{Float64}})
+                            msg_out::Message{Delta{Float64}})
 
     y = msg_out.payload.m
     m = msg_mean.payload.m
@@ -256,9 +256,9 @@ GaussianNode{:mean, :variance/:precision}:
 """
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{3}},
-                            outbound_dist::GaussianDistribution,
-                            msg_mean::Message{DeltaDistribution{Float64}},
-                            msg_var::Message{DeltaDistribution{Float64}},
+                            outbound_dist::Gaussian,
+                            msg_mean::Message{Delta{Float64}},
+                            msg_var::Message{Delta{Float64}},
                             msg_out::Any)
 
     outbound_dist.m = msg_mean.payload.m
@@ -271,9 +271,9 @@ end
 
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{3}},
-                            outbound_dist::GaussianDistribution,
-                            msg_mean::Message{DeltaDistribution{Float64}},
-                            msg_prec::Message{DeltaDistribution{Float64}},
+                            outbound_dist::Gaussian,
+                            msg_mean::Message{Delta{Float64}},
+                            msg_prec::Message{Delta{Float64}},
                             msg_out::Any)
 
     outbound_dist.m = msg_mean.payload.m
@@ -286,9 +286,9 @@ end
 
 function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:variance}},
                                 outbound_interface_index::Type{Val{3}},
-                                outbound_dist::MvGaussianDistribution{dims},
-                                msg_mean::Message{MvDeltaDistribution{Float64, dims}},
-                                msg_var::Message{MatrixDeltaDistribution{Float64, dims, dims}},
+                                outbound_dist::MvGaussian{dims},
+                                msg_mean::Message{MvDelta{Float64, dims}},
+                                msg_var::Message{MatrixDelta{Float64, dims, dims}},
                                 msg_out::Any)
 
     outbound_dist.m = deepcopy(msg_mean.payload.m)
@@ -301,9 +301,9 @@ end
 
 function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:precision}},
                                 outbound_interface_index::Type{Val{3}},
-                                outbound_dist::MvGaussianDistribution{dims},
-                                msg_mean::Message{MvDeltaDistribution{Float64, dims}},
-                                msg_prec::Message{MatrixDeltaDistribution{Float64, dims, dims}},
+                                outbound_dist::MvGaussian{dims},
+                                msg_mean::Message{MvDelta{Float64, dims}},
+                                msg_prec::Message{MatrixDelta{Float64, dims, dims}},
                                 msg_out::Any)
 
     outbound_dist.m = deepcopy(msg_mean.payload.m)
@@ -324,9 +324,9 @@ GaussianNode{:mean, :variance}
 """
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{3}},
-                            outbound_dist::GaussianDistribution,
-                            msg_mean::Message{GaussianDistribution},
-                            msg_var::Message{DeltaDistribution{Float64}},
+                            outbound_dist::Gaussian,
+                            msg_mean::Message{Gaussian},
+                            msg_var::Message{Delta{Float64}},
                             msg_out::Any)
 
     ensureParameters!(msg_mean.payload, (:m,:V))
@@ -348,9 +348,9 @@ GaussianNode{:mean, :precision}
 """
 function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:precision}},
                                 outbound_interface_index::Type{Val{3}},
-                                outbound_dist::MvGaussianDistribution{dims},
-                                msg_mean::Message{MvGaussianDistribution{dims}},
-                                msg_prec::Message{MatrixDeltaDistribution{Float64, dims, dims}},
+                                outbound_dist::MvGaussian{dims},
+                                msg_mean::Message{MvGaussian{dims}},
+                                msg_prec::Message{MatrixDelta{Float64, dims, dims}},
                                 msg_out::Any)
 
     ensureParameters!(msg_mean.payload, (:m,:V))
@@ -376,7 +376,7 @@ GaussianNode{:fixed_mean, fixed_variance}:
 """
 function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:fixed_variance}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             msg_out::Any)
 
     outbound_dist.m = node.m[1]
@@ -398,9 +398,9 @@ GaussianNode{:fixed_mean, :variance}:
 """
 function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:variance}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::InverseGammaDistribution,
+                            outbound_dist::InverseGamma,
                             msg_var::Any,
-                            msg_out::Message{DeltaDistribution{Float64}})
+                            msg_out::Message{Delta{Float64}})
 
     y = msg_out.payload.m
     m = node.m[1]
@@ -421,9 +421,9 @@ GaussianNode{:fixed_mean, :precision}
 """
 function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:precision}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GammaDistribution,
+                            outbound_dist::Gamma,
                             msg_prec::Any,
-                            msg_out::Message{DeltaDistribution{Float64}})
+                            msg_out::Message{Delta{Float64}})
 
     y = msg_out.payload.m
     m = node.m[1]
@@ -444,8 +444,8 @@ GaussianNode{:fixed_mean, :variance/:precision}
 """
 function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:variance}},
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            msg_var::Message{DeltaDistribution{Float64}},
+                            outbound_dist::Gaussian,
+                            msg_var::Message{Delta{Float64}},
                             msg_out::Any)
 
     outbound_dist.m = node.m[1]
@@ -458,8 +458,8 @@ end
 
 function sumProductRule!(   node::GaussianNode{Val{:fixed_mean},Val{:precision}},
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            msg_prec::Message{DeltaDistribution{Float64}},
+                            outbound_dist::Gaussian,
+                            msg_prec::Message{Delta{Float64}},
                             msg_out::Any)
 
     outbound_dist.m = node.m[1]
@@ -484,9 +484,9 @@ GaussianNode{:mean, :fixed_variance}
 """
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             msg_mean::Any,
-                            msg_out::Message{DeltaDistribution{Float64}})
+                            msg_out::Message{Delta{Float64}})
 
     outbound_dist.m = msg_out.payload.m
     outbound_dist.xi = NaN
@@ -498,9 +498,9 @@ end
 
 function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                                 outbound_interface_index::Type{Val{1}},
-                                outbound_dist::MvGaussianDistribution{dims},
+                                outbound_dist::MvGaussian{dims},
                                 msg_mean::Any,
-                                msg_out::Message{MvDeltaDistribution{Float64,dims}})
+                                msg_out::Message{MvDelta{Float64,dims}})
 
     outbound_dist.m = deepcopy(msg_out.payload.m)
     outbound_dist.V = deepcopy(node.V)
@@ -519,9 +519,9 @@ GaussianNode{:mean, :fixed_variance}
 """
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             msg_mean::Any,
-                            msg_out::Message{GaussianDistribution})
+                            msg_out::Message{Gaussian})
 
     ensureParameters!(msg_out.payload, (:m,:V))
     outbound_dist.m = msg_out.payload.m
@@ -534,9 +534,9 @@ end
 
 function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                                 outbound_interface_index::Type{Val{1}},
-                                outbound_dist::MvGaussianDistribution{dims},
+                                outbound_dist::MvGaussian{dims},
                                 msg_mean::Any,
-                                msg_out::Message{MvGaussianDistribution{dims}})
+                                msg_out::Message{MvGaussian{dims}})
 
     ensureParameters!(msg_out.payload, (:m,:V))
     outbound_dist.m = deepcopy(msg_out.payload.m)
@@ -556,8 +556,8 @@ GaussianNode{:mean, :fixed_variance}
 """
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            msg_mean::Message{DeltaDistribution{Float64}},
+                            outbound_dist::Gaussian,
+                            msg_mean::Message{Delta{Float64}},
                             msg_out::Any)
 
     outbound_dist.m = msg_mean.payload.m
@@ -570,8 +570,8 @@ end
 
 function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                                 outbound_interface_index::Type{Val{2}},
-                                outbound_dist::MvGaussianDistribution{dims},
-                                msg_mean::Message{MvDeltaDistribution{Float64,dims}},
+                                outbound_dist::MvGaussian{dims},
+                                msg_mean::Message{MvDelta{Float64,dims}},
                                 msg_out::Any)
 
     outbound_dist.m = deepcopy(msg_mean.payload.m)
@@ -591,8 +591,8 @@ GaussianNode{:mean, :fixed_variance}
 """
 function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            msg_mean::Message{GaussianDistribution},
+                            outbound_dist::Gaussian,
+                            msg_mean::Message{Gaussian},
                             msg_out::Any)
 
     ensureParameters!(msg_mean.payload, (:m,:V))
@@ -606,8 +606,8 @@ end
 
 function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                                 outbound_interface_index::Type{Val{2}},
-                                outbound_dist::MvGaussianDistribution{dims},
-                                msg_mean::Message{MvGaussianDistribution{dims}},
+                                outbound_dist::MvGaussian{dims},
+                                msg_mean::Message{MvGaussian{dims}},
                                 msg_out::Any)
 
     ensureParameters!(msg_mean.payload, (:m,:V))
@@ -634,10 +634,10 @@ GaussianNode{:mean, :variance}:
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             marg_mean::Any,
-                            marg_variance::InverseGammaDistribution,
-                            marg_out::GaussianDistribution)
+                            marg_variance::InverseGamma,
+                            marg_out::Gaussian)
 
     ensureParameters!(marg_out, (:m,))
 
@@ -659,10 +659,10 @@ GaussianNode{:mean, :precision}:
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             marg_mean::Any,
-                            marg_prec::GammaDistribution,
-                            marg_y::GaussianDistribution)
+                            marg_prec::Gamma,
+                            marg_y::Gaussian)
 
     ensureParameters!(marg_y, (:m,))
 
@@ -684,10 +684,10 @@ GaussianNode{:mean, :precision}:
 """
 function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
                                 outbound_interface_index::Type{Val{1}},
-                                outbound_dist::MvGaussianDistribution{dims},
+                                outbound_dist::MvGaussian{dims},
                                 marg_mean::Any,
-                                marg_prec::WishartDistribution{dims},
-                                marg_y::MvGaussianDistribution{dims})
+                                marg_prec::Wishart{dims},
+                                marg_y::MvGaussian{dims})
 
     ensureParameters!(marg_y, (:m,:W))
     outbound_dist.m = deepcopy(marg_y.m)
@@ -708,10 +708,10 @@ GaussianNode{:mean, :variance}:
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::InverseGammaDistribution,
-                            marg_mean::GaussianDistribution,
+                            outbound_dist::InverseGamma,
+                            marg_mean::Gaussian,
                             marg_var::Any,
-                            marg_out::GaussianDistribution)
+                            marg_out::Gaussian)
 
     ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(marg_mean, (:m, :V))
@@ -732,10 +732,10 @@ GaussianNode{:mean, :precision}:
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GammaDistribution,
-                            marg_mean::GaussianDistribution,
+                            outbound_dist::Gamma,
+                            marg_mean::Gaussian,
                             marg_prec::Any,
-                            marg_out::GaussianDistribution)
+                            marg_out::Gaussian)
 
     ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(marg_mean, (:m, :V))
@@ -756,10 +756,10 @@ GaussianNode{:mean, :precision}:
 """
 function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
                                 outbound_interface_index::Type{Val{2}},
-                                outbound_dist::WishartDistribution{dims},
-                                marg_mean::MvGaussianDistribution{dims},
+                                outbound_dist::Wishart{dims},
+                                marg_mean::MvGaussian{dims},
                                 marg_prec::Any,
-                                marg_out::MvGaussianDistribution{dims})
+                                marg_out::MvGaussian{dims})
 
     ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(marg_mean, (:m, :V))
@@ -779,9 +779,9 @@ GaussianNode{:mean, :variance}:
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{3}},
-                            outbound_dist::GaussianDistribution,
-                            marg_mean::GaussianDistribution,
-                            marg_var::InverseGammaDistribution,
+                            outbound_dist::Gaussian,
+                            marg_mean::Gaussian,
+                            marg_var::InverseGamma,
                             marg_out::Any)
 
     ensureParameters!(marg_mean, (:m,))
@@ -804,9 +804,9 @@ GaussianNode{:mean, :precision}:
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{3}},
-                            outbound_dist::GaussianDistribution,
-                            marg_mean::GaussianDistribution,
-                            marg_prec::GammaDistribution,
+                            outbound_dist::Gaussian,
+                            marg_mean::Gaussian,
+                            marg_prec::Gamma,
                             marg_out::Any)
 
     ensureParameters!(marg_mean, (:m,))
@@ -829,9 +829,9 @@ GaussianNode{:mean, :precision}:
 """
 function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
                                 outbound_interface_index::Type{Val{3}},
-                                outbound_dist::MvGaussianDistribution{dims},
-                                marg_mean::MvGaussianDistribution{dims},
-                                marg_prec::WishartDistribution{dims},
+                                outbound_dist::MvGaussian{dims},
+                                marg_mean::MvGaussian{dims},
+                                marg_prec::Wishart{dims},
                                 marg_out::Any)
 
     ensureParameters!(marg_mean, (:m,:W))
@@ -858,9 +858,9 @@ GaussianNode{:mean, :fixed_variance}
 """
 function variationalRule!(  node::GaussianNode{Val{:mean}, Val{:fixed_variance}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
+                            outbound_dist::Gaussian,
                             marg_mean::Any,
-                            marg_out::GaussianDistribution)
+                            marg_out::Gaussian)
 
     ensureParameters!(marg_out, (:m,))
 
@@ -881,9 +881,9 @@ GaussianNode{:fixed_mean, :variance}
 """
 function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:variance}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::InverseGammaDistribution,
+                            outbound_dist::InverseGamma,
                             marg_var::Any,
-                            marg_out::GaussianDistribution)
+                            marg_out::Gaussian)
 
     ensureParameters!(marg_out, (:m, :V))
 
@@ -902,9 +902,9 @@ GaussianNode{:fixed_mean, :precision}
 """
 function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:precision}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::GammaDistribution,
+                            outbound_dist::Gamma,
                             marg_prec::Any,
-                            marg_out::GaussianDistribution)
+                            marg_out::Gaussian)
 
     ensureParameters!(marg_out, (:m, :V))
 
@@ -923,8 +923,8 @@ GaussianNode{:mean, :fixed_variance}
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:fixed_variance}},
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            marg_mean::GaussianDistribution,
+                            outbound_dist::Gaussian,
+                            marg_mean::Gaussian,
                             marg_out::Any)
 
     ensureParameters!(marg_mean, (:m,))
@@ -946,8 +946,8 @@ GaussianNode{:fixed_mean, :variance}
 """
 function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:variance}},
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            marg_var::InverseGammaDistribution,
+                            outbound_dist::Gaussian,
+                            marg_var::InverseGamma,
                             marg_out::Any)
 
     outbound_dist.m = node.m[1]
@@ -967,8 +967,8 @@ GaussianNode{:fixed_mean, :precision}
 """
 function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:precision}},
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            marg_prec::GammaDistribution,
+                            outbound_dist::Gaussian,
+                            marg_prec::Gamma,
                             marg_out::Any)
 
     outbound_dist.m = node.m[1]
@@ -995,10 +995,10 @@ GaussianNode{:mean, :precision}:
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{1}},
-                            outbound_dist::StudentsTDistribution,
+                            outbound_dist::StudentsT,
                             msg_mean::Any,
-                            msg_prec::Message{GammaDistribution},
-                            marg_out::GaussianDistribution)
+                            msg_prec::Message{Gamma},
+                            marg_out::Gaussian)
 
     ensureParameters!(marg_out, (:m, :W))
 
@@ -1020,10 +1020,10 @@ GaussianNode{:mean, :precision}:
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{2}},
-                            outbound_dist::GammaDistribution,
-                            msg_mean::Message{GaussianDistribution},
+                            outbound_dist::Gamma,
+                            msg_mean::Message{Gaussian},
                             msg_prec::Any,
-                            marg_out::GaussianDistribution)
+                            marg_out::Gaussian)
 
     ensureParameters!(marg_out, (:m, :W))
     ensureParameters!(msg_mean.payload, (:m,))
@@ -1045,9 +1045,9 @@ GaussianNode{:mean, precision}:
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{3}},
-                            outbound_dist::GaussianDistribution,
-                            marg::NormalGammaDistribution,
-                            ::NormalGammaDistribution, # Same distribution as marg
+                            outbound_dist::Gaussian,
+                            marg::NormalGamma,
+                            ::NormalGamma, # Same distribution as marg
                             marg_out::Any)
 
     outbound_dist.m = marg.m

@@ -9,7 +9,7 @@ parameters{T<:ProbabilityDistribution}(distribution_type::Type{T}) = distributio
 parameters(type_var::TypeVar) = type_var.ub.parameters
 
 function parameters(data_type::DataType)
-    # Extract parameters of type ForneyLab.Message{T<:ForneyLab.MvGaussianDistribution{dims}}
+    # Extract parameters of type ForneyLab.Message{T<:ForneyLab.MvGaussian{dims}}
     if data_type <: Message
         return data_type.parameters[1].ub.parameters
     else

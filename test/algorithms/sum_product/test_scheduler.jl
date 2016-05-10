@@ -15,8 +15,8 @@ facts("ForneyLab.generateSumProductSchedule() integration tests") do
         end
 
         # Initial message
-        setMessage!(n(:add).i[:in1], Message(GaussianDistribution(m=2.0, V=0.5)))
-        setMessage!(n(:add).i[:out], Message(GaussianDistribution()))
+        setMessage!(n(:add).i[:in1], Message(Gaussian(m=2.0, V=0.5)))
+        setMessage!(n(:add).i[:out], Message(Gaussian()))
 
         context("Should auto-generate a feasible schedule") do
             # Generate schedule automatically

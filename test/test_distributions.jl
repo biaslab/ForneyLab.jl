@@ -1,6 +1,6 @@
 # Probability distribution test
 facts("ProbabilityDistribution unit tests") do
-    for probdist_type in [subtypes(UnivariateProbabilityDistribution); subtypes(MultivariateProbabilityDistribution); subtypes(MatrixVariateProbabilityDistribution)]
+    for probdist_type in [subtypes(Univariate); subtypes(Multivariate); subtypes(MatrixVariate)]
         context("$(probdist_type) should have a default constructor and a == operator") do
             @fact probdist_type()==probdist_type() --> true
         end
@@ -13,27 +13,27 @@ facts("ProbabilityDistribution unit tests") do
         end
     end
 
-    # Univariate PDF can be multiplied with DeltaDistribution
-    for dtype in subtypes(UnivariateProbabilityDistribution)
-        (dtype==DeltaDistribution) && continue
-        context("$(dtype) can be multiplied with a DeltaDistribution") do
-            @fact length(methods(ForneyLab.prod!, [dtype, DeltaDistribution, Any])) --> greater_than_or_equal(1)
+    # Univariate PDF can be multiplied with Delta
+    for dtype in subtypes(Univariate)
+        (dtype==Delta) && continue
+        context("$(dtype) can be multiplied with a Delta") do
+            @fact length(methods(ForneyLab.prod!, [dtype, Delta, Any])) --> greater_than_or_equal(1)
         end
     end
 
-    # Multivariate PDF can be multiplied with MvDeltaDistribution
-    for dtype in subtypes(MultivariateProbabilityDistribution)
-        (dtype==MvDeltaDistribution) && continue
-        context("$(dtype) can be multiplied with a MvDeltaDistribution") do
-            @fact length(methods(ForneyLab.prod!, [dtype, MvDeltaDistribution, Any])) --> greater_than_or_equal(1)
+    # Multivariate PDF can be multiplied with MvDelta
+    for dtype in subtypes(Multivariate)
+        (dtype==MvDelta) && continue
+        context("$(dtype) can be multiplied with a MvDelta") do
+            @fact length(methods(ForneyLab.prod!, [dtype, MvDelta, Any])) --> greater_than_or_equal(1)
         end
     end
 
-    # Matrixvariate PDF can be multiplied with MatrixDeltaDistribution
-    for dtype in subtypes(MatrixVariateProbabilityDistribution)
-        (dtype==MatrixDeltaDistribution) && continue
-        context("$(dtype) can be multiplied with a MatrixDeltaDistribution") do
-            @fact length(methods(ForneyLab.prod!, [dtype, MatrixDeltaDistribution, Any])) --> greater_than_or_equal(1)
+    # Matrixvariate PDF can be multiplied with MatrixDelta
+    for dtype in subtypes(MatrixVariate)
+        (dtype==MatrixDelta) && continue
+        context("$(dtype) can be multiplied with a MatrixDelta") do
+            @fact length(methods(ForneyLab.prod!, [dtype, MatrixDelta, Any])) --> greater_than_or_equal(1)
         end
     end
 end

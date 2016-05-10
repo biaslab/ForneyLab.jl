@@ -1,10 +1,10 @@
 facts("Call step() for VMP algorithm") do
-    data = [GaussianDistribution(m=2.0, V=tiny)]
+    data = [Gaussian(m=2.0, V=tiny)]
     g = FactorGraph()
     GaussianNode(form=:precision,id=:g_node)
     TerminalNode(id=:t_out)
-    TerminalNode(GaussianDistribution(), id=:t_mean)
-    TerminalNode(GammaDistribution(), id=:t_prec)
+    TerminalNode(Gaussian(), id=:t_mean)
+    TerminalNode(Gamma(), id=:t_prec)
     Edge(n(:g_node).i[:out], n(:t_out), id=:y)
     Edge(n(:t_mean), n(:g_node).i[:mean], id=:m)
     Edge(n(:t_prec), n(:g_node).i[:precision], id=:gam)
@@ -14,9 +14,9 @@ facts("Call step() for VMP algorithm") do
     prec_out = attachWriteBuffer(n(:g_node).i[:precision].edge)
 
     algo = VariationalBayes(Dict(
-        eg(:y) => GaussianDistribution,
-        eg(:m) => GaussianDistribution,
-        eg(:gam) => GammaDistribution),
+        eg(:y) => Gaussian,
+        eg(:m) => Gaussian,
+        eg(:gam) => Gamma),
         n_iterations=10)
     prepare!(algo)
     step(algo)
@@ -47,9 +47,9 @@ facts("Naive vmp implementation integration tests") do
 
         # Apply mean field factorization
         algo = VariationalBayes(Dict(
-            eg(:q_y*(1:n_sections)) => GaussianDistribution,
-            eg(:q_m*(1:n_sections)) => GaussianDistribution,
-            eg(:q_gam*(1:n_sections)) => GammaDistribution),
+            eg(:q_y*(1:n_sections)) => Gaussian,
+            eg(:q_m*(1:n_sections)) => Gaussian,
+            eg(:q_gam*(1:n_sections)) => Gamma),
             n_iterations=50)
 
         # Perform vmp updates
@@ -79,9 +79,9 @@ facts("Naive vmp implementation integration tests") do
 
         # Apply mean field factorization
         algo = VariationalBayes(Dict(
-            eg(:q_y*(1:n_sections)) => MvGaussianDistribution{2},
-            eg(:q_m*(1:n_sections)) => MvGaussianDistribution{2},
-            eg(:q_gam*(1:n_sections)) => WishartDistribution{2}),
+            eg(:q_y*(1:n_sections)) => MvGaussian{2},
+            eg(:q_m*(1:n_sections)) => MvGaussian{2},
+            eg(:q_gam*(1:n_sections)) => Wishart{2}),
             n_iterations=50)
 
         # Perform vmp updates
@@ -112,9 +112,9 @@ facts("Naive vmp implementation integration tests") do
 
         # Apply mean field factorization
         algo = VariationalBayes(Dict(
-            eg(:q_y1) => GaussianDistribution,
-            eg(:q_m1) => GaussianDistribution,
-            eg(:q_gam1) => GammaDistribution),
+            eg(:q_y1) => Gaussian,
+            eg(:q_m1) => Gaussian,
+            eg(:q_gam1) => Gamma),
             n_iterations=50)
 
         # Perform vmp updates
@@ -134,8 +134,8 @@ facts("Structured vmp implementation integration tests") do
         # Initialize chain
         # Samples drawn from N(mean 5.0, prec 0.5): data = randn(100)*(1/sqrt(0.5))+5.0
         data = [4.9411489951651735,4.4083330961647595,3.535639074214823,2.1690761263145855,4.740705436131505,5.407175878845115,3.6458623443189957,5.132115496214244,4.485471215629411,5.342809672818667]
-        d_data = [DeltaDistribution(d_k) for d_k in data]
-        # d_data = [GaussianDistribution(m=d_k, W=10.0) for d_k in data]
+        d_data = [Delta(d_k) for d_k in data]
+        # d_data = [Gaussian(m=d_k, W=10.0) for d_k in data]
         initializeGaussianNodeChain([0.0]) # Initialize a length 1 chain
         Wrap(n(:mN), n(:m0))
         Wrap(n(:gamN), n(:gam0))
@@ -146,8 +146,8 @@ facts("Structured vmp implementation integration tests") do
 
         # Structured factorization
         algo = VariationalBayes(Dict(
-            [eg(:q_m1), eg(:q_gam1)].' => NormalGammaDistribution,
-            eg(:q_y1) => GaussianDistribution),
+            [eg(:q_m1), eg(:q_gam1)].' => NormalGamma,
+            eg(:q_y1) => Gaussian),
             n_iterations=10)
 
         run(algo)

@@ -1,4 +1,4 @@
-export BernoulliDistribution
+export Bernoulli
 
 """
 Description:
@@ -11,33 +11,33 @@ Pamameters:
 
 Construction:
 
-    BernoulliDistribution(p)
+    Bernoulli(p)
 """
-type BernoulliDistribution <: UnivariateProbabilityDistribution
+type Bernoulli <: Univariate
     p::Float64 # Pr{X=true}
 end
-BernoulliDistribution() = BernoulliDistribution(0.5)
+Bernoulli() = Bernoulli(0.5)
 
-function vague!(dist::BernoulliDistribution)
+function vague!(dist::Bernoulli)
     dist.p = 0.5
     return dist
 end
 
-isProper(dist::BernoulliDistribution) = (0 <= dist.p <= 1)
+isProper(dist::Bernoulli) = (0 <= dist.p <= 1)
 
-Base.mean(dist::BernoulliDistribution) = dist.p
+Base.mean(dist::Bernoulli) = dist.p
 
-Base.var(dist::BernoulliDistribution) = dist.p*(1-dist.p)
+Base.var(dist::Bernoulli) = dist.p*(1-dist.p)
 
-sample(dist::BernoulliDistribution) = (rand() < dist.p)
+sample(dist::Bernoulli) = (rand() < dist.p)
 
-format(dist::BernoulliDistribution) = "Bernoulli(p=$(format(dist.p)))"
+format(dist::Bernoulli) = "Bernoulli(p=$(format(dist.p)))"
 
-show(io::IO, dist::BernoulliDistribution) = println(io, format(dist))
+show(io::IO, dist::Bernoulli) = println(io, format(dist))
 
-==(x::BernoulliDistribution, y::BernoulliDistribution) = isApproxEqual(x.p, y.p)
+==(x::Bernoulli, y::Bernoulli) = isApproxEqual(x.p, y.p)
 
-function prod!(x::BernoulliDistribution, y::BernoulliDistribution, z::BernoulliDistribution=BernoulliDistribution())
+function prod!(x::Bernoulli, y::Bernoulli, z::Bernoulli=Bernoulli())
     # Multiplication of 2 Bernoulli PDFs: p(z) = p(x) * p(y)
     norm = x.p * y.p + (1 - x.p) * (1 - y.p)
     (norm > 0) || error("Product of $(x) and $(y) cannot be normalized")
@@ -46,7 +46,7 @@ function prod!(x::BernoulliDistribution, y::BernoulliDistribution, z::BernoulliD
     return z
 end
 
-@symmetrical function prod!(x::BernoulliDistribution, y::DeltaDistribution{Bool}, z::DeltaDistribution{Bool}=DeltaDistribution(true))
+@symmetrical function prod!(x::Bernoulli, y::Delta{Bool}, z::Delta{Bool}=Delta(true))
     # Product of Bernoulli PMF and Delta
     if y.m
         (x.p > 0.) || error("Invalid product of Bernoulli and Delta")
@@ -58,7 +58,7 @@ end
     return z
 end
 
-@symmetrical function prod!(x::BernoulliDistribution, y::DeltaDistribution{Bool}, z::BernoulliDistribution)
+@symmetrical function prod!(x::Bernoulli, y::Delta{Bool}, z::Bernoulli)
     # Product of Bernoulli PMF and Delta, force result to be Bernoulli
     if y.m
         (x.p > 0.) || error("Invalid product of Bernoulli and Delta")
@@ -70,5 +70,5 @@ end
     return z
 end
 
-# Converts from DeltaDistribution{Bool} -> BernoulliDistribution
-Base.convert{T<:Bool}(::Type{BernoulliDistribution}, delta::DeltaDistribution{T}) = BernoulliDistribution(float(delta.m))
+# Converts from Delta{Bool} -> Bernoulli
+Base.convert{T<:Bool}(::Type{Bernoulli}, delta::Delta{T}) = Bernoulli(float(delta.m))

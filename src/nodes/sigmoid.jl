@@ -66,8 +66,8 @@ SigmoidNode:
 """
 function sumProductRule!{T<:Real}(  node::SigmoidNode,
                                     outbound_interface_id::Type{Val{2}},
-                                    outbound_dist::BernoulliDistribution,
-                                    msg_real::Message{DeltaDistribution{T}},
+                                    outbound_dist::Bernoulli,
+                                    msg_real::Message{Delta{T}},
                                     msg_bin::Any)
     
     dist_real = msg_real.payload
@@ -90,8 +90,8 @@ SigmoidNode:
 """
 function sumProductRule!(   node::SigmoidNode,
                             outbound_interface_id::Type{Val{2}},
-                            outbound_dist::BernoulliDistribution,
-                            msg_real::Message{GaussianDistribution},
+                            outbound_dist::Bernoulli,
+                            msg_real::Message{Gaussian},
                             msg_bin::Any)
 
     # Generate Bernoulli message from incoming Gaussian message.
@@ -120,12 +120,12 @@ SigmoidNode:
 """
 function expectationRule!{T<:Bool}( node::SigmoidNode,
                                     outbound_interface_id::Type{Val{1}},
-                                    outbound_dist::GaussianDistribution,
-                                    msg_cavity::Message{GaussianDistribution},
-                                    msg_bin::Message{DeltaDistribution{T}})
+                                    outbound_dist::Gaussian,
+                                    msg_cavity::Message{Gaussian},
+                                    msg_bin::Message{Delta{T}})
 
-    # Convert incoming DeltaDistribution to BernoulliDistribution
-    return expectationRule!(node, Val{1}, outbound_dist, msg_cavity, Message(BernoulliDistribution(msg_bin.payload.m)))
+    # Convert incoming Delta to Bernoulli
+    return expectationRule!(node, Val{1}, outbound_dist, msg_cavity, Message(Bernoulli(msg_bin.payload.m)))
 end
 
 """
@@ -137,9 +137,9 @@ SigmoidNode:
 """
 function expectationRule!(  node::SigmoidNode,
                             outbound_interface_id::Type{Val{1}},
-                            outbound_dist::GaussianDistribution,
-                            msg_cavity::Message{GaussianDistribution},
-                            msg_bin::Message{BernoulliDistribution})
+                            outbound_dist::Gaussian,
+                            msg_cavity::Message{Gaussian},
+                            msg_bin::Message{Bernoulli})
 
     # Calculate approximate (Gaussian) message towards i[:real]
     # The approximate message is an 'expectation' under the context (cavity distribution) encoded by incoming message msg_cavity.
@@ -181,7 +181,7 @@ function expectationRule!(  node::SigmoidNode,
     mp_2 = ((1-p)*(μ^2+σ2) + (2*p-1)*mg_2) / Z
 
     # Save Gaussian marginal with identical first and second moments (moment matching approximation)
-    marginal = ensureMarginal!(node.interfaces[1].edge, GaussianDistribution)
+    marginal = ensureMarginal!(node.interfaces[1].edge, Gaussian)
     marginal.m = NaN
     marginal.V = NaN
     marginal.W = clamp(1/(mp_2 - mp_1^2), tiny, huge) # This quantity is guaranteed to be positive

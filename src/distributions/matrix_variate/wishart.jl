@@ -1,5 +1,5 @@
 export
-    WishartDistribution,
+    Wishart,
     isProper
 
 """
@@ -15,35 +15,35 @@ Parameters:
 
 Construction:
 
-    WishartDistribution(V=eye(3), nu=3.0)
-    WishartDistribution(V=diageye(3), nu=3.0)
+    Wishart(V=eye(3), nu=3.0)
+    Wishart(V=diageye(3), nu=3.0)
 
 Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type WishartDistribution{dims} <: MatrixVariateProbabilityDistribution
+type Wishart{dims} <: MatrixVariate
     V::AbstractMatrix{Float64}  # Scale matrix
     nu::Float64                 # Degrees of freedom
 end
 
-WishartDistribution(; V::AbstractMatrix{Float64} = [1.0].', nu::Float64 = 1.0) = WishartDistribution{size(V, 1)}(deepcopy(V), nu)
+Wishart(; V::AbstractMatrix{Float64} = [1.0].', nu::Float64 = 1.0) = Wishart{size(V, 1)}(deepcopy(V), nu)
 
-WishartDistribution() = WishartDistribution(V = [1.0].', nu = 1.0)
+Wishart() = Wishart(V = [1.0].', nu = 1.0)
 
-function vague!{dims}(dist::WishartDistribution{dims})
+function vague!{dims}(dist::Wishart{dims})
     dist.V = huge*eye(dims)
     dist.nu = tiny
     return dist
 end
 
-vague{dims}(::Type{WishartDistribution{dims}}) = WishartDistribution(V=huge*diageye(dims), nu=tiny)
+vague{dims}(::Type{Wishart{dims}}) = Wishart(V=huge*diageye(dims), nu=tiny)
 
-format(dist::WishartDistribution) = "W(V=$(format(dist.V)), ν=$(format(dist.nu)))"
+format(dist::Wishart) = "W(V=$(format(dist.V)), ν=$(format(dist.nu)))"
 
-show(io::IO, dist::WishartDistribution) = println(io, format(dist))
+show(io::IO, dist::Wishart) = println(io, format(dist))
 
-function prod!{dims}(x::WishartDistribution{dims}, y::WishartDistribution{dims}, z::WishartDistribution{dims}=WishartDistribution(V=eye(dims), nu=1.0))
+function prod!{dims}(x::Wishart{dims}, y::Wishart{dims}, z::Wishart{dims}=Wishart(V=eye(dims), nu=1.0))
     # Multiplication of 2 Wishart PDFs: p(z) = p(x) * p(y)
     # Derivation available in notebook
     z.V = x.V * cholinv(x.V + y.V) * y.V
@@ -52,21 +52,21 @@ function prod!{dims}(x::WishartDistribution{dims}, y::WishartDistribution{dims},
     return z
 end
 
-@symmetrical function prod!{dims}(x::WishartDistribution{dims}, y::MatrixDeltaDistribution{Float64,dims,dims}, z::MatrixDeltaDistribution{Float64,dims,dims}=deepcopy(y))
+@symmetrical function prod!{dims}(x::Wishart{dims}, y::MatrixDelta{Float64,dims,dims}, z::MatrixDelta{Float64,dims,dims}=deepcopy(y))
     # Multiplication of Wishart PDF with a delta
     (z.M == y.M) || (z.M[:] = y.M)
 
     return z
 end
 
-@symmetrical function prod!{dims}(x::WishartDistribution{dims}, y::MatrixDeltaDistribution{Float64,dims,dims}, z::MatrixDeltaDistribution{Float64,dims,dims}=deepcopy(y))
+@symmetrical function prod!{dims}(x::Wishart{dims}, y::MatrixDelta{Float64,dims,dims}, z::MatrixDelta{Float64,dims,dims}=deepcopy(y))
     # Multiplication of Wishart PDF with a delta
     (z.M == y.M) || (z.M[:] = y.M)
 
     return z
 end
 
-function Base.mean(dist::WishartDistribution)
+function Base.mean(dist::Wishart)
     if isProper(dist)
         return dist.nu*dist.V
     else
@@ -74,7 +74,7 @@ function Base.mean(dist::WishartDistribution)
     end
 end
 
-function Base.var(dist::WishartDistribution)
+function Base.var(dist::Wishart)
     d = size(dist.V, 1)
     M = fill!(similar(Matrix(dist.V)), NaN)
     if isProper(dist)
@@ -89,7 +89,7 @@ function Base.var(dist::WishartDistribution)
     end
 end
 
-function isProper(dist::WishartDistribution)
+function isProper(dist::Wishart)
     (size(dist.V, 1) == size(dist.V, 2)) || return false
     (dist.nu > size(dist.V, 1) - 1) || return false
     isRoundedPosDef(dist.V) || return false
@@ -97,7 +97,7 @@ function isProper(dist::WishartDistribution)
     return true
 end
 
-function ==(x::WishartDistribution, y::WishartDistribution)
+function ==(x::Wishart, y::Wishart)
     is(x, y) && return true
     isApproxEqual(x.nu, y.nu) || return false
     (length(x.V)==length(y.V)) || return false
@@ -106,14 +106,14 @@ function ==(x::WishartDistribution, y::WishartDistribution)
     return true
 end
 
-# Convert GammaDistribution -> WishartDistribution
-convert(::Type{WishartDistribution}, d::GammaDistribution) = WishartDistribution(V = [1.0/(2.0*d.b)].', nu = 2.0*d.a)
+# Convert Gamma -> Wishart
+convert(::Type{Wishart}, d::Gamma) = Wishart(V = [1.0/(2.0*d.b)].', nu = 2.0*d.a)
 
-# Convert WishartDistribution -> GammaDistribution
-function convert(::Type{GammaDistribution}, d::WishartDistribution{1})
-    GammaDistribution(a = d.nu/2.0, b = 1.0/(2.0*d.V[1, 1]))
+# Convert Wishart -> Gamma
+function convert(::Type{Gamma}, d::Wishart{1})
+    Gamma(a = d.nu/2.0, b = 1.0/(2.0*d.V[1, 1]))
 end
 
-dimensions{dims}(distribution::WishartDistribution{dims}) = (dims, dims)
+dimensions{dims}(distribution::Wishart{dims}) = (dims, dims)
 
-dimensions{T<:WishartDistribution}(distribution_type::Type{T}) = (distribution_type.parameters[end], distribution_type.parameters[end])
+dimensions{T<:Wishart}(distribution_type::Type{T}) = (distribution_type.parameters[end], distribution_type.parameters[end])

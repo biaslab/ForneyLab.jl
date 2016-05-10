@@ -100,14 +100,14 @@ facts("Edge integration tests") do
     context("forwardMessage(), forwardMessage(), ensureMarginal!()") do
         FactorGraph()
         test_edge = Edge(MockNode().i[:out], MockNode().i[:out])
-        test_edge.head.message = Message(GaussianDistribution(m=3.0, V=2.0))
-        test_edge.tail.message = Message(GaussianDistribution())
-        @fact forwardMessage(test_edge) --> Message(GaussianDistribution())
-        @fact backwardMessage(test_edge) --> Message(GaussianDistribution(m=3.0, V=2.0))
-        test_edge.marginal = GaussianDistribution(m=3.0, V=2.0)
-        @fact ForneyLab.ensureMarginal!(test_edge, GaussianDistribution) --> GaussianDistribution(m=3.0, V=2.0)
+        test_edge.head.message = Message(Gaussian(m=3.0, V=2.0))
+        test_edge.tail.message = Message(Gaussian())
+        @fact forwardMessage(test_edge) --> Message(Gaussian())
+        @fact backwardMessage(test_edge) --> Message(Gaussian(m=3.0, V=2.0))
+        test_edge.marginal = Gaussian(m=3.0, V=2.0)
+        @fact ForneyLab.ensureMarginal!(test_edge, Gaussian) --> Gaussian(m=3.0, V=2.0)
         test_edge.marginal = nothing
-        @fact ForneyLab.ensureMarginal!(test_edge, GaussianDistribution) --> vague(GaussianDistribution)
+        @fact ForneyLab.ensureMarginal!(test_edge, Gaussian) --> vague(Gaussian)
     end
 
     context("calculateMarginal, calculateMarginal!") do
@@ -115,8 +115,8 @@ facts("Edge integration tests") do
         test_edge = Edge(MockNode().i[:out], MockNode().i[:out])
         @fact_throws calculateMarginal(test_edge)
         @fact_throws calculateMarginal!(test_edge)
-        d1 = GaussianDistribution(m=3.0, V=1.0)
-        d2 = GaussianDistribution()
+        d1 = Gaussian(m=3.0, V=1.0)
+        d2 = Gaussian()
         marg = d1 * d2
         test_edge.head.message = Message(d1)
         test_edge.tail.message = Message(d2)

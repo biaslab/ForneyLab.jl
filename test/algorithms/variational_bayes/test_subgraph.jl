@@ -17,9 +17,9 @@ facts("Nodes and edges overloadings for Subgraph") do
         initializeFactoringGraphWithoutLoop()
 
         f = ForneyLab.factorize(Dict(
-            eg(:q_mean) => GaussianDistribution,
-            eg(:q_var) => InverseGammaDistribution,
-            eg(:q_out) => GaussianDistribution))
+            eg(:q_mean) => Gaussian,
+            eg(:q_var) => InverseGamma,
+            eg(:q_out) => Gaussian))
 
         sg = f.factors[3]
         @fact nodes(sg) --> Set{Node}(Node[n(:g1), n(:t2)])
@@ -28,9 +28,9 @@ facts("Nodes and edges overloadings for Subgraph") do
     context("edges() called on a subgraph should return all internal edges (optionally external as well) of the subgraph") do
         initializeFactoringGraphWithoutLoop()
         f = ForneyLab.factorize(Dict(
-            eg(:q_mean) => GaussianDistribution,
-            eg(:q_var) => InverseGammaDistribution,
-            eg(:q_out) => GaussianDistribution))
+            eg(:q_mean) => Gaussian,
+            eg(:q_var) => InverseGamma,
+            eg(:q_out) => Gaussian))
         sg = f.factors[3]
         @fact edges(sg, include_external=false) --> Set{Edge}(Edge[n(:g1).i[:variance].edge])
         @fact edges(sg) --> Set{Edge}(Edge[n(:g1).i[:variance].edge, n(:g1).i[:out].edge, n(:g1).i[:mean].edge])
@@ -50,9 +50,9 @@ facts("Subgraph integration tests") do
         n_sections = length(data)
 
         f = ForneyLab.factorize(Dict(
-            eg(:q_m*(1:3)) => GaussianDistribution,
-            eg(:q_gam*(1:3)) => GammaDistribution,
-            eg(:q_y*(1:3)) => GaussianDistribution))
+            eg(:q_m*(1:3)) => Gaussian,
+            eg(:q_gam*(1:3)) => Gamma,
+            eg(:q_y*(1:3)) => Gaussian))
 
         m_subgraph = f.edge_to_subgraph[n(:g1).i[:mean].edge]
         @fact ForneyLab.externalEdges(m_subgraph) --> Set(Edge[n(:g1).i[:out].edge, n(:g2).i[:out].edge, n(:g3).i[:out].edge, n(:g1).i[:precision].edge, n(:g2).i[:precision].edge, n(:g3).i[:precision].edge])
@@ -64,8 +64,8 @@ facts("Subgraph integration tests") do
         f = ForneyLab.factorize(Dict(
             [eg(:q_m1) eg(:q_gam1);
              eg(:q_m2) eg(:q_gam2);
-             eg(:q_m3) eg(:q_gam3)] => NormalGammaDistribution,
-            eg(:q_y1) => GaussianDistribution))
+             eg(:q_m3) eg(:q_gam3)] => NormalGamma,
+            eg(:q_y1) => Gaussian))
 
         m_gam_subgraph = f.edge_to_subgraph[n(:g1).i[:mean].edge]
         @fact ForneyLab.externalEdges(m_gam_subgraph) --> Set(Edge[n(:g1).i[:out].edge, n(:g2).i[:out].edge, n(:g3).i[:out].edge])
@@ -78,9 +78,9 @@ facts("Subgraph integration tests") do
         initializeGaussianNodeChain(data)
         n_sections = length(data)
         f = ForneyLab.factorize(Dict(
-            eg(:q_m*(1:3)) => GaussianDistribution,
-            eg(:q_gam*(1:3)) => GammaDistribution,
-            eg(:q_y*(1:3)) => GaussianDistribution))
+            eg(:q_m*(1:3)) => Gaussian,
+            eg(:q_gam*(1:3)) => Gamma,
+            eg(:q_y*(1:3)) => Gaussian))
 
         m_subgraph = f.edge_to_subgraph[n(:g1).i[:mean].edge]
         @fact ForneyLab.nodesConnectedToExternalEdges(m_subgraph) --> Set{Node}([n(:g1), n(:g2), n(:g3)])
@@ -92,8 +92,8 @@ facts("Subgraph integration tests") do
         f = ForneyLab.factorize(Dict(
             [eg(:q_m1) eg(:q_gam1);
              eg(:q_m2) eg(:q_gam2);
-             eg(:q_m3) eg(:q_gam3)] => NormalGammaDistribution,
-            eg(:q_y1) => GaussianDistribution))
+             eg(:q_m3) eg(:q_gam3)] => NormalGamma,
+            eg(:q_y1) => Gaussian))
 
         m_gam_subgraph = f.edge_to_subgraph[n(:g1).i[:mean].edge]
         @fact ForneyLab.nodesConnectedToExternalEdges(m_gam_subgraph) --> Set{Node}([n(:g1), n(:g2), n(:g3)])

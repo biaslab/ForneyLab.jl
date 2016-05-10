@@ -77,8 +77,8 @@ backwardMessage(edge::Edge) = edge.head.message
 function ensureMarginal!{T<:ProbabilityDistribution}(edge::Edge, distribution_type::Type{T})
     # Ensure that edge carries a marginal of type distribution_type, used for in place updates
     if edge.marginal==nothing || (typeof(edge.marginal) <: distribution_type)==false
-        if distribution_type <: DeltaDistribution{Float64}
-            edge.marginal = DeltaDistribution() # vague() not implemented
+        if distribution_type <: Delta{Float64}
+            edge.marginal = Delta() # vague() not implemented
         else
             edge.marginal = vague(distribution_type)
         end

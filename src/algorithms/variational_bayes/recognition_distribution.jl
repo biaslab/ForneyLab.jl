@@ -23,9 +23,9 @@ end
 
 function calculateRecognitionDistribution!(q_dist::RecognitionDistribution,
                                  node::GaussianNode,
-                                 gaus_msg::Message{GaussianDistribution},
-                                 gam_msg::Message{GammaDistribution},
-                                 y_dist::GaussianDistribution)
+                                 gaus_msg::Message{Gaussian},
+                                 gam_msg::Message{Gamma},
+                                 y_dist::Gaussian)
     # (Joint) marginal update function used for SVMP
     # Definitions available in derivations notebook
 

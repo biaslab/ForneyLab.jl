@@ -166,22 +166,22 @@ The factorization of the recognition distribution is specified by the edge(array
 The snippet below specifies a full (mean field) factorization around a Gaussian node::
 
     algo = VariationalBayes(Dict(
-        eg(:mean) => GaussianDistribution,
-        eg(:prec) => GammaDistribution,
-        eg(:out)  => GaussianDistribution))
+        eg(:mean) => Gaussian,
+        eg(:prec) => Gamma,
+        eg(:out)  => Gaussian))
 
 For defining a full factorization over multiple graph sections, edges with similar distributions are grouped in a column vector::
 
     algo = VariationalBayes(Dict(
-        [eg(:mean1), eg(:mean2)] => GaussianDistribution,
-        [eg(:prec1), eg(:prec2)] => GammaDistribution,
-        [eg(:out1),  eg(:out2) ] => GaussianDistribution))
+        [eg(:mean1), eg(:mean2)] => Gaussian,
+        [eg(:prec1), eg(:prec2)] => Gamma,
+        [eg(:out1),  eg(:out2) ] => Gaussian))
 
 Edges belonging to the same cluster are grouped in the rows of a matrix. The following snippet specifies a joint recognition distribution over the mean and precision (note the lack of a separating comma)::
 
     algo = VariationalBayes(Dict(
-        [eg(:mean) eg(:prec)] => NormalGammaDistribution,
-         eg(:out)             => GaussianDistribution))
+        [eg(:mean) eg(:prec)] => NormalGamma,
+         eg(:out)             => Gaussian))
 
 For more examples, consult the VMP demos.
 

@@ -6,19 +6,19 @@
 The ``ProbabilityDistribution`` type
 ====================================
 
-ForneyLab comes with its own implementation of probability distributions (instead of using `Distributions.jl <https://github.com/JuliaStats/Distributions.jl>`_) for flexibility and efficiency reasons. Every probability distribution type is a subtype of either ``UnivariateProbabilityDistribution`` or ``MultivariateProbabilityDistribution``::
+ForneyLab comes with its own implementation of probability distributions (instead of using `Distributions.jl <https://github.com/JuliaStats/Distributions.jl>`_) for flexibility and efficiency reasons. Every probability distribution type is a subtype of either ``Univariate`` or ``Multivariate``::
 
     abstract ProbabilityDistribution
-    abstract UnivariateProbabilityDistribution <: ProbabilityDistribution
-    abstract MultivariateProbabilityDistribution <: ProbabilityDistribution
+    abstract Univariate <: ProbabilityDistribution
+    abstract Multivariate <: ProbabilityDistribution
 
-The name of a subtype of ``ProbabilityDistribution`` should end in "Distribution", and at least the following methods should be implemented for it: ``==``, ``show``, ``isProper``, and ``vague``. The name of a multivariate distribution type should start with "Mv", i.e. :class:`MvGaussianDistribution`.
+The name of a subtype of ``ProbabilityDistribution`` should end in "Distribution", and at least the following methods should be implemented for it: ``==``, ``show``, ``isProper``, and ``vague``. The name of a multivariate distribution type should start with "Mv", i.e. :class:`MvGaussian`.
 
 .. function:: vague(distribution_type)
 
-    Creates a vague 'almost non-informative' ``ProbabilityDistribution`` of type ``distribution_type``. For the :class:`GaussianDistribution` this means for example a distribution with maximum variance::
+    Creates a vague 'almost non-informative' ``ProbabilityDistribution`` of type ``distribution_type``. For the :class:`Gaussian` this means for example a distribution with maximum variance::
 
-        non_informative_gaussian = vague(GaussianDistribution) # identical to GaussianDistribution(m=0.0, V=huge)
+        non_informative_gaussian = vague(Gaussian) # identical to Gaussian(m=0.0, V=huge)
 
 .. function:: isProper(p::ProbabilityDistribution)
 
