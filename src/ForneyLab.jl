@@ -3,7 +3,7 @@ module ForneyLab
 using Optim
 using LaTeXStrings
 
-export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution, MatrixvariateProbabilityDistribution
+export ProbabilityDistribution, UnivariateProbabilityDistribution, MultivariateProbabilityDistribution, MatrixVariateProbabilityDistribution
 export sumProductRule!, expectationRule!, variationalRule!
 export InferenceAlgorithm
 export vague, self, ==, isProper, sample, dimensions, prod!
@@ -28,7 +28,7 @@ abstract AbstractEdge # An Interface belongs to an Edge, but Interface is define
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
 abstract UnivariateProbabilityDistribution <: ProbabilityDistribution
 abstract MultivariateProbabilityDistribution <: ProbabilityDistribution
-abstract MatrixvariateProbabilityDistribution <: ProbabilityDistribution
+abstract MatrixVariateProbabilityDistribution <: ProbabilityDistribution
 
 abstract InferenceAlgorithm
 

@@ -1,6 +1,6 @@
 # Probability distribution test
 facts("ProbabilityDistribution unit tests") do
-    for probdist_type in [subtypes(UnivariateProbabilityDistribution); subtypes(MultivariateProbabilityDistribution); subtypes(MatrixvariateProbabilityDistribution)]
+    for probdist_type in [subtypes(UnivariateProbabilityDistribution); subtypes(MultivariateProbabilityDistribution); subtypes(MatrixVariateProbabilityDistribution)]
         context("$(probdist_type) should have a default constructor and a == operator") do
             @fact probdist_type()==probdist_type() --> true
         end
@@ -30,7 +30,7 @@ facts("ProbabilityDistribution unit tests") do
     end
 
     # Matrixvariate PDF can be multiplied with MatrixDeltaDistribution
-    for dtype in subtypes(MatrixvariateProbabilityDistribution)
+    for dtype in subtypes(MatrixVariateProbabilityDistribution)
         (dtype==MatrixDeltaDistribution) && continue
         context("$(dtype) can be multiplied with a MatrixDeltaDistribution") do
             @fact length(methods(ForneyLab.prod!, [dtype, MatrixDeltaDistribution, Any])) --> greater_than_or_equal(1)

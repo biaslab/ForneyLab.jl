@@ -15,7 +15,7 @@ Construction:
     MatrixDeltaDistribution(eye(3))
     MatrixDeltaDistribution(diageye(3))
 """
-type MatrixDeltaDistribution{T, dims_n, dims_m} <: MatrixvariateProbabilityDistribution
+type MatrixDeltaDistribution{T, dims_n, dims_m} <: MatrixVariateProbabilityDistribution
     M::AbstractMatrix{T}
 end
 

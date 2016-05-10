@@ -22,7 +22,7 @@ Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type WishartDistribution{dims} <: MatrixvariateProbabilityDistribution
+type WishartDistribution{dims} <: MatrixVariateProbabilityDistribution
     V::AbstractMatrix{Float64}  # Scale matrix
     nu::Float64                 # Degrees of freedom
 end
