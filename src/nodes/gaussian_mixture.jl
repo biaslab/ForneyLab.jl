@@ -92,11 +92,10 @@ function variationalRule!{dims}(  node::GaussianMixtureNode,
 
     ensureParameters!(q_m1, (:m, :V))
 
-     print("start pi\n")
-     println(q_x.m)
+
      outbound_dist.a   =   q_z.p+1.
      outbound_dist.b   =   2.-q_z.p
-    # print("end pi\n")
+
     return outbound_dist
 end
 
@@ -135,12 +134,11 @@ function variationalRule!{dims}(  node::GaussianMixtureNode,
                             q_x::MvGaussianDistribution{dims},
                             q_z::BernoulliDistribution)
     ensureParameters!(q_x, (:m, :V))
-    println("start m1")
-    println(q_x.m)
-     outbound_dist.m   =   deepcopy(q_x.m)
+
+     outbound_dist.m    =   deepcopy(q_x.m)
      invalidate!(outbound_dist.V)
      invalidate!(outbound_dist.xi)
-     outbound_dist.W   =   q_z.p*q_w1.nu*q_w1.V
+     outbound_dist.W    =   q_z.p*q_w1.nu*q_w1.V
 
     return outbound_dist
 end
@@ -180,19 +178,20 @@ function variationalRule!{dims}(  node::GaussianMixtureNode,
                             q_w2::WishartDistribution{dims},
                             q_x::MvGaussianDistribution{dims},
                             q_z::BernoulliDistribution)
-    println("start w1")
+
     ensureParameters!(q_m1, (:m, :V))
     ensureParameters!(q_x, (:m, :V))
-    print(q_x.m)
+
     outbound_dist.nu    =   1.+q_z.p+dims
-    gausterm1     =(deepcopy(q_x.m)-q_m1.m)*transpose(deepcopy(q_x.m)-q_m1.m)+q_m1.V
+    gausterm1           =   (deepcopy(q_x.m)-q_m1.m)*transpose(deepcopy(q_x.m)-q_m1.m)+q_m1.V
+
+    #if statement to prevent multiplication with zero
     if det((q_z.p)*gausterm1)<tiny
       outbound_dist.V     =   pinv((q_z.p)*gausterm1+eye(dims)*tiny)
     else
       outbound_dist.V     =   pinv(q_z.p*gausterm1)
     end
-    println(q_z.p*gausterm1)
-    println("end w1")
+
     return outbound_dist
 end
 
@@ -232,12 +231,12 @@ function variationalRule!{dims}(  node::GaussianMixtureNode,
                             q_x::MvGaussianDistribution{dims},
                             q_z::BernoulliDistribution)
      ensureParameters!(q_x, (:m, :V))
-     println("start m2")
-     print(q_x.m)
+
      outbound_dist.m   =   deepcopy(q_x.m)
+
      invalidate!(outbound_dist.V)
      invalidate!(outbound_dist.xi)
-     outbound_dist.W   =   (1.-q_z.p)*q_w2.nu*q_w2.V
+    outbound_dist.W   =   (1.-q_z.p)*q_w2.nu*q_w2.V
 
     return outbound_dist
 end
@@ -276,17 +275,23 @@ function variationalRule!{dims}(  node::GaussianMixtureNode,
                             ::Any,
                             q_x::MvGaussianDistribution{dims},
                             q_z::BernoulliDistribution)
-    println("start w2")
+
     ensureParameters!(q_m2, (:m, :V))
     ensureParameters!(q_x, (:m, :V))
-    print(q_x.m)
+
     outbound_dist.nu    =   1.+(1.-q_z.p)+dims
-    gausterm2=(deepcopy(q_x.m)-q_m2.m)*transpose(deepcopy(q_x.m)-q_m2.m)+q_m2.V
+    gausterm2           =   (deepcopy(q_x.m)-q_m2.m)*transpose(deepcopy(q_x.m)-q_m2.m)+q_m2.V
+
+    #if statement to prevent multiplication by zero
+
     if det((1.-q_z.p)*gausterm2)<tiny
       outbound_dist.V     =   pinv((1.-q_z.p)*gausterm2+eye(dims)*tiny)
+
     else
       outbound_dist.V     =   pinv((1.-q_z.p)*gausterm2)
+
     end
+
     return outbound_dist
 end
 
@@ -341,16 +346,12 @@ function variationalRule!{dims}(node::GaussianMixtureNode,
     ensureParameters!(q_m1, (:m, :V))
     ensureParameters!(q_x, (:m, :V))
     ensureParameters!(q_m2, (:m, :V))
-    println("start z")
-    print(q_x.m)
+
     e_ln_pi1      =   digamma(q_pi.a)-digamma(q_pi.a+q_pi.b)
 
-
-    #calculating multivariate digamma function
-    multidi1      =   0.0
-    for i=1:dims
-      multidi1      =   deepcopy(multidi1)+digamma((q_w1.nu-i+1)/2)
-    end
+    #multivariate digamma
+    i = collect(1:dims)
+    multidi1=sum(digamma((q_w1.nu+1-i)/2))
 
     e_ln_w1       =   deepcopy(multidi1)+dims*log(2.0)+log(det(q_w1.V))
     e_w1          =   q_w1.nu*q_w1.V
@@ -358,32 +359,29 @@ function variationalRule!{dims}(node::GaussianMixtureNode,
 
     ln_ro1        =   e_ln_pi1+0.5*e_ln_w1-dims/2.0*log(2.0*pi)-0.5*gausterm1
 
+
     #calculating ln(ro2) for normalization
 
     e_ln_pi2      =   digamma(q_pi.b)-digamma(q_pi.b+q_pi.a)
 
     #multivariate digamma
-    multidi2      =   0.0
-    for i=1:dims
-      multidi2      =   deepcopy(multidi2)+digamma((q_w2.nu-i+1)/2)
-    end
-
+    i = collect(1:dims)
+    multidi2= sum(digamma((q_w2.nu+1-i)/2))
 
     e_ln_w2       =  multidi2+dims*log(2.0)+log(det(q_w2.V))
     e_w2          =   q_w2.nu*q_w2.V
     gausterm2     =  (transpose(q_x.m-q_m2.m)*e_w2*(q_x.m-q_m2.m))[1] + trace(q_m2.V*e_w2) # wordt te groot
-    println(trace(q_m2.V*e_w2))
-    println((transpose(q_x.m-q_m2.m)*e_w2*(q_x.m-q_m2.m))[1])
-    println(e_w2)
-    println(q_x.m-q_m2.m)
+
 
     ln_ro2        =   e_ln_pi2+0.5*e_ln_w2-dims/2.0*log(2.0*pi)-0.5*gausterm2
+
+    #Normalize message
+    #if statement to prevent division by zero
     if exp(ln_ro1)+exp(ln_ro2)>tiny
-    outbound_dist.p = exp(ln_ro1)/(exp(ln_ro1)+exp(ln_ro2))
+      outbound_dist.p = exp(ln_ro1)/(exp(ln_ro1)+exp(ln_ro2))
     else
       outbound_dist.p=0.5
     end
-    println(outbound_dist.p)
     return outbound_dist
 end
 
@@ -418,11 +416,11 @@ function variationalRule!{dims}(  node::GaussianMixtureNode,
                             q_w2::WishartDistribution{dims},
                             q_x::Any,
                             q_z::BernoulliDistribution)
-    println("start x")
-    outbound_dist.m = 10*ones(dims)
-    outbound_dist.V = 100.0*eye(dims)
+
+    outbound_dist.m   =  ones(dims)
+    outbound_dist.V   = 100.0*eye(dims)
     invalidate!(outbound_dist.xi)
     invalidate!(outbound_dist.W)
-    println(outbound_dist.m)
+
     return outbound_dist
 end
