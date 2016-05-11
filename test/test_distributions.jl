@@ -1,5 +1,8 @@
 # Probability distribution test
 facts("ProbabilityDistribution unit tests") do
+    @fact all(map(ForneyLab.isDelta, [Delta, MvDelta, MatrixDelta])) --> true
+    @fact ForneyLab.isDelta(Gaussian) --> false
+
     for probdist_type in [subtypes(Univariate); subtypes(Multivariate); subtypes(MatrixVariate)]
         context("$(probdist_type) should have a default constructor and a == operator") do
             @fact probdist_type()==probdist_type() --> true
@@ -11,6 +14,13 @@ facts("ProbabilityDistribution unit tests") do
         context("$(probdist_type) should provide a isProper method") do
             @fact isProper(probdist_type()) --> true
         end
+
+        if !ForneyLab.isDelta(probdist_type)
+            context("$(probdist_type) should provide a vague! method") do
+                @fact applicable(ForneyLab.vague!, probdist_type()) --> true
+            end
+        end
+
     end
 
     # Univariate PDF can be multiplied with Delta

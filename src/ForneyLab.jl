@@ -63,6 +63,7 @@ include("distributions/univariate/log_normal.jl")
 
 # Multivariate distributions
 include("distributions/multivariate/mv_delta.jl")
+include("distributions/multivariate/dirichlet.jl")
 include("distributions/multivariate/mv_gaussian.jl")
 include("distributions/multivariate/mv_log_normal.jl")
 include("distributions/multivariate/normal_gamma.jl")
@@ -71,6 +72,8 @@ include("distributions/multivariate/partitioned.jl")
 # Matrix variate distributions
 include("distributions/matrix_variate/matrix_delta.jl")
 include("distributions/matrix_variate/wishart.jl")
+
+isDelta{T<:ProbabilityDistribution}(dist_type::Type{T}) = (dist_type <: Union{Delta,MvDelta,MatrixDelta})
 
 # Basic ForneyLab building blocks and methods
 include("interface.jl")
