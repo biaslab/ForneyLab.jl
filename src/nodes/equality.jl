@@ -139,7 +139,7 @@ sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outb
 
 
 ############################################
-# Categorical{k} methods
+# Bernoulli methods
 ############################################
 
 """
@@ -156,7 +156,7 @@ sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outb
 
 
 ############################################
-# Categorical methods
+# Categorical{k} methods
 ############################################
 
 """
@@ -171,6 +171,21 @@ sumProductRule!{k}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, o
 sumProductRule!{k}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Categorical{k}, msg_1::Message{Categorical{k}}, msg_2::Any, msg_3::Message{Categorical{k}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
 sumProductRule!{k}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Categorical{k}, msg_1::Message{Categorical{k}}, msg_2::Message{Categorical{k}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
 
+############################################
+# Dirichlet methods
+############################################
+
+"""
+EqualityNode:
+
+    Dir       Dir
+     --->[=]<---
+          | |
+      Dir v v
+"""
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Dirichlet{dims}, msg_1::Any, msg_2::Message{Dirichlet{dims}}, msg_3::Message{Dirichlet{dims}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Dirichlet{dims}, msg_1::Message{Dirichlet{dims}}, msg_2::Any, msg_3::Message{Dirichlet{dims}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!{dims}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Dirichlet{dims}, msg_1::Message{Dirichlet{dims}}, msg_2::Message{Dirichlet{dims}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
 
 
 ############################################

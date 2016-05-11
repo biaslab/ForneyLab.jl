@@ -141,6 +141,13 @@ facts("EqualityNode unit tests") do
                                 Categorical([0.3076923076923077;0.6923076923076922]))
     end
 
+    context("EqualityNode should provide sumProductRule! for Dirichlet") do
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(Dirichlet([1.0; 1.0])), Message(Dirichlet([1.0; 1.0])), nothing],
+                                Dirichlet([1.0; 1.0]))
+    end
+
     context("EqualityNode should provide approximate sumProductRule! for combination of student's t and Gaussian distribution") do
         validateOutboundMessage(EqualityNode(),
                                 3,
