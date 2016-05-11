@@ -6,7 +6,7 @@ using LaTeXStrings
 export ProbabilityDistribution, Univariate, Multivariate, MatrixVariate
 export sumProductRule!, expectationRule!, variationalRule!
 export InferenceAlgorithm
-export vague, self, ==, isProper, sample, dimensions, prod!
+export vague, self, ==, isProper, sample, dimensions
 export setVerbosity
 export prepare!
 export rules
@@ -53,6 +53,7 @@ dimensions(message_type::Type{Message}) = dimensions(message_type.parameters[1])
 # Univariate distributions
 include("distributions/univariate/delta.jl")
 include("distributions/univariate/bernoulli.jl")
+include("distributions/univariate/categorical.jl")
 include("distributions/univariate/gaussian.jl")
 include("distributions/univariate/gamma.jl")
 include("distributions/univariate/inverse_gamma.jl")

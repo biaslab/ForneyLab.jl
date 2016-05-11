@@ -134,6 +134,13 @@ facts("EqualityNode unit tests") do
                                 Bernoulli(1/7))
     end
 
+    context("EqualityNode should provide sumProductRule! for Categorical") do
+        validateOutboundMessage(EqualityNode(),
+                                3,
+                                [Message(Categorical([0.4;0.6])), Message(Categorical([0.4;0.6])), nothing],
+                                Categorical([0.3076923076923077;0.6923076923076922]))
+    end
+
     context("EqualityNode should provide approximate sumProductRule! for combination of student's t and Gaussian distribution") do
         validateOutboundMessage(EqualityNode(),
                                 3,

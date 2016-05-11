@@ -139,7 +139,7 @@ sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outb
 
 
 ############################################
-# Bernoulli methods
+# Categorical{k} methods
 ############################################
 
 """
@@ -153,6 +153,24 @@ EqualityNode:
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Bernoulli, msg_1::Any, msg_2::Message{Bernoulli}, msg_3::Message{Bernoulli}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Bernoulli, msg_1::Message{Bernoulli}, msg_2::Any, msg_3::Message{Bernoulli}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
 sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Bernoulli, msg_1::Message{Bernoulli}, msg_2::Message{Bernoulli}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+
+
+############################################
+# Categorical methods
+############################################
+
+"""
+EqualityNode:
+
+    Cat       Cat
+     --->[=]<---
+          | |
+      Cat v v
+"""
+sumProductRule!{k}(node::EqualityNode, outbound_interface_index::Type{Val{1}}, outbound_dist::Categorical{k}, msg_1::Any, msg_2::Message{Categorical{k}}, msg_3::Message{Categorical{k}}) = prod!(msg_2.payload, msg_3.payload, outbound_dist)
+sumProductRule!{k}(node::EqualityNode, outbound_interface_index::Type{Val{2}}, outbound_dist::Categorical{k}, msg_1::Message{Categorical{k}}, msg_2::Any, msg_3::Message{Categorical{k}}) = prod!(msg_1.payload, msg_3.payload, outbound_dist)
+sumProductRule!{k}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outbound_dist::Categorical{k}, msg_1::Message{Categorical{k}}, msg_2::Message{Categorical{k}}, msg_3::Any) = prod!(msg_1.payload, msg_2.payload, outbound_dist)
+
 
 
 ############################################
