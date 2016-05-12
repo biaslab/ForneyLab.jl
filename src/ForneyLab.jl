@@ -73,6 +73,9 @@ include("distributions/multivariate/partitioned.jl")
 include("distributions/matrix_variate/matrix_delta.jl")
 include("distributions/matrix_variate/wishart.jl")
 
+# Special distributions
+include("distributions/mixture.jl")
+
 isDelta{T<:ProbabilityDistribution}(dist_type::Type{T}) = (dist_type <: Union{Delta,MvDelta,MatrixDelta})
 
 # Basic ForneyLab building blocks and methods
