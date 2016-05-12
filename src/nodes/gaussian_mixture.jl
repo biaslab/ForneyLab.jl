@@ -41,9 +41,11 @@ type GaussianMixtureNode <: Node
     i::Dict{Symbol,Interface}
 
     function GaussianMixtureNode(; id=generateNodeId(GaussianMixtureNode))
+        #self = new(id, Array(Interface, 5), Dict{Symbol,Interface}())
         self = new(id, Array(Interface, 7), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
 
+        #for (iface_index, iface_handle) in enumerate([:pi, :m, :w, :x, :z])
         for (iface_index, iface_handle) in enumerate([:pi, :m1, :w1, :m2, :w2, :x, :z])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
@@ -55,18 +57,19 @@ end
 isDeterministic(::GaussianMixtureNode) = false
 
 
+
 # VMP message towards i[:pi]
 # Univariate gaussian with two clusters
 function variationalRule!(  node::GaussianMixtureNode,
                             ::Type{Val{1}},
-                            outbound_dist::BetaDistribution,
+                            outbound_dist::Beta,
                             ::Any,
-                            q_m1::GaussianDistribution,
-                            q_w1::GammaDistribution,
-                            q_m2::GaussianDistribution,
-                            q_w2::GammaDistribution,
-                            q_x::GaussianDistribution,
-                            q_z::BernoulliDistribution)
+                            q_m1::Gaussian,
+                            q_w1::Gamma,
+                            q_m2::Gaussian,
+                            q_w2::Gamma,
+                            q_x::Gaussian,
+                            q_z::Bernoulli)
 
     ensureParameters!(q_m1, (:m, :V))
 
@@ -81,14 +84,14 @@ end
 # Multivariate gaussian with two clusters
 function variationalRule!{dims}(  node::GaussianMixtureNode,
                             ::Type{Val{1}},
-                            outbound_dist::BetaDistribution,
+                            outbound_dist::Beta,
                             ::Any,
-                            q_m1::MvGaussianDistribution{dims},
-                            q_w1::WishartDistribution{dims},
-                            q_m2::MvGaussianDistribution{dims},
-                            q_w2::WishartDistribution{dims},
-                            q_x::MvGaussianDistribution{dims},
-                            q_z::BernoulliDistribution)
+                            q_m1::MvGaussian{dims},
+                            q_w1::Wishart{dims},
+                            q_m2::MvGaussian{dims},
+                            q_w2::Wishart{dims},
+                            q_x::MvGaussian{dims},
+                            q_z::Bernoulli)
 
     ensureParameters!(q_m1, (:m, :V))
 
@@ -99,18 +102,19 @@ function variationalRule!{dims}(  node::GaussianMixtureNode,
     return outbound_dist
 end
 
+
 # VMP message towards i[:m1]
 # Univariate Gaussian with two clusters
 function variationalRule!(  node::GaussianMixtureNode,
                             ::Type{Val{2}},
-                            outbound_dist::GaussianDistribution,
-                            q_pi::BetaDistribution,
+                            outbound_dist::Gaussian,
+                            q_pi::Beta,
                             ::Any,
-                            q_w1::GammaDistribution,
-                            q_m2::GaussianDistribution,
-                            q_w2::GammaDistribution,
-                            q_x::GaussianDistribution,
-                            q_z::BernoulliDistribution)
+                            q_w1::Gamma,
+                            q_m2::Gaussian,
+                            q_w2::Gamma,
+                            q_x::Gaussian,
+                            q_z::Bernoulli)
     ensureParameters!(q_x, (:m, :V))
 
     outbound_dist.m   =   q_x.m
@@ -125,14 +129,14 @@ end
 # Multivariate Gaussian with two clusters
 function variationalRule!{dims}(  node::GaussianMixtureNode,
                             ::Type{Val{2}},
-                            outbound_dist::MvGaussianDistribution{dims},
-                            q_pi::BetaDistribution,
+                            outbound_dist::MvGaussian{dims},
+                            q_pi::Beta,
                             ::Any,
-                            q_w1::WishartDistribution{dims},
-                            q_m2::MvGaussianDistribution{dims},
-                            q_w2::WishartDistribution{dims},
-                            q_x::MvGaussianDistribution{dims},
-                            q_z::BernoulliDistribution)
+                            q_w1::Wishart{dims},
+                            q_m2::MvGaussian{dims},
+                            q_w2::Wishart{dims},
+                            q_x::MvGaussian{dims},
+                            q_z::Bernoulli)
     ensureParameters!(q_x, (:m, :V))
 
      outbound_dist.m    =   deepcopy(q_x.m)
@@ -143,18 +147,19 @@ function variationalRule!{dims}(  node::GaussianMixtureNode,
     return outbound_dist
 end
 
+
 # VMP message towards i[:w1]
 # Univariate Gaussian with two clusters
 function variationalRule!(  node::GaussianMixtureNode,
                             ::Type{Val{3}},
-                            outbound_dist::GammaDistribution,
-                            q_pi::BetaDistribution,
-                            q_m1::GaussianDistribution,
+                            outbound_dist::Gamma,
+                            q_pi::Beta,
+                            q_m1::Gaussian,
                             ::Any,
-                            q_m2::GaussianDistribution,
-                            q_w2::GammaDistribution,
-                            q_x::GaussianDistribution,
-                            q_z::BernoulliDistribution)
+                            q_m2::Gaussian,
+                            q_w2::Gamma,
+                            q_x::Gaussian,
+                            q_z::Bernoulli)
 
     ensureParameters!(q_m1, (:m, :V))
     ensureParameters!(q_x, (:m, :V))
@@ -170,14 +175,14 @@ end
 # Multivariate Gaussian with two clusters
 function variationalRule!{dims}(  node::GaussianMixtureNode,
                             ::Type{Val{3}},
-                            outbound_dist::WishartDistribution{dims},
-                            q_pi::BetaDistribution,
-                            q_m1::MvGaussianDistribution{dims},
+                            outbound_dist::Wishart{dims},
+                            q_pi::Beta,
+                            q_m1::MvGaussian{dims},
                             ::Any,
-                            q_m2::MvGaussianDistribution{dims},
-                            q_w2::WishartDistribution{dims},
-                            q_x::MvGaussianDistribution{dims},
-                            q_z::BernoulliDistribution)
+                            q_m2::MvGaussian{dims},
+                            q_w2::Wishart{dims},
+                            q_x::MvGaussian{dims},
+                            q_z::Bernoulli)
 
     ensureParameters!(q_m1, (:m, :V))
     ensureParameters!(q_x, (:m, :V))
@@ -200,14 +205,14 @@ end
 # Univariate Gaussian with two clusters
 function variationalRule!(  node::GaussianMixtureNode,
                             ::Type{Val{4}},
-                            outbound_dist::GaussianDistribution,
-                            q_pi::BetaDistribution,
-                            q_m1::GaussianDistribution,
-                            q_w1::GammaDistribution,
+                            outbound_dist::Gaussian,
+                            q_pi::Beta,
+                            q_m1::Gaussian,
+                            q_w1::Gamma,
                             ::Any,
-                            q_w2::GammaDistribution,
-                            q_x::GaussianDistribution,
-                            q_z::BernoulliDistribution)
+                            q_w2::Gamma,
+                            q_x::Gaussian,
+                            q_z::Bernoulli)
     ensureParameters!(q_x, (:m, :V))
 
     outbound_dist.m   =   q_x.m
@@ -222,14 +227,14 @@ end
 # Multivariate Gaussian with two clusters
 function variationalRule!{dims}(  node::GaussianMixtureNode,
                             ::Type{Val{4}},
-                            outbound_dist::MvGaussianDistribution{dims},
-                            q_pi::BetaDistribution,
-                            q_m1::MvGaussianDistribution{dims},
-                            q_w1::WishartDistribution{dims},
+                            outbound_dist::MvGaussian{dims},
+                            q_pi::Beta,
+                            q_m1::MvGaussian{dims},
+                            q_w1::Wishart{dims},
                             ::Any,
-                            q_w2::WishartDistribution{dims},
-                            q_x::MvGaussianDistribution{dims},
-                            q_z::BernoulliDistribution)
+                            q_w2::Wishart{dims},
+                            q_x::MvGaussian{dims},
+                            q_z::Bernoulli)
      ensureParameters!(q_x, (:m, :V))
 
      outbound_dist.m   =   deepcopy(q_x.m)
@@ -245,14 +250,14 @@ end
 # Univariate Gaussian with two clusters
 function variationalRule!(  node::GaussianMixtureNode,
                             ::Type{Val{5}},
-                            outbound_dist::GammaDistribution,
-                            q_pi::BetaDistribution,
-                            q_m1::GaussianDistribution,
-                            q_w1::GammaDistribution,
-                            q_m2::GaussianDistribution,
+                            outbound_dist::Gamma,
+                            q_pi::Beta,
+                            q_m1::Gaussian,
+                            q_w1::Gamma,
+                            q_m2::Gaussian,
                             ::Any,
-                            q_x::GaussianDistribution,
-                            q_z::BernoulliDistribution)
+                            q_x::Gaussian,
+                            q_z::Bernoulli)
 
     ensureParameters!(q_m2, (:m, :V))
     ensureParameters!(q_x, (:m, :V))
@@ -262,19 +267,19 @@ function variationalRule!(  node::GaussianMixtureNode,
     outbound_dist.b   =   0.5*(1.-q_z.p)*(q_x.m^2-2.*q_x.m*q_m2.m+e_m2_square)
     return outbound_dist
 end
-
+#
 # VMP message towards i[:w2]
 # Multivariate Gaussian with two clusters
 function variationalRule!{dims}(  node::GaussianMixtureNode,
                             ::Type{Val{5}},
-                            outbound_dist::WishartDistribution{dims},
-                            q_pi::BetaDistribution,
-                            q_m1::MvGaussianDistribution{dims},
-                            q_w1::WishartDistribution{dims},
-                            q_m2::MvGaussianDistribution{dims},
+                            outbound_dist::Wishart{dims},
+                            q_pi::Beta,
+                            q_m1::MvGaussian{dims},
+                            q_w1::Wishart{dims},
+                            q_m2::MvGaussian{dims},
                             ::Any,
-                            q_x::MvGaussianDistribution{dims},
-                            q_z::BernoulliDistribution)
+                            q_x::MvGaussian{dims},
+                            q_z::Bernoulli)
 
     ensureParameters!(q_m2, (:m, :V))
     ensureParameters!(q_x, (:m, :V))
@@ -295,17 +300,18 @@ function variationalRule!{dims}(  node::GaussianMixtureNode,
     return outbound_dist
 end
 
+
 # VMP message towards i[:z]
 # Univariate Gaussian with two clusters
 function variationalRule!(  node::GaussianMixtureNode,
                             ::Type{Val{7}},
-                            outbound_dist::BernoulliDistribution,
-                            q_pi::BetaDistribution,
-                            q_m1::GaussianDistribution,
-                            q_w1::GammaDistribution,
-                            q_m2::GaussianDistribution,
-                            q_w2::GammaDistribution,
-                            q_x::GaussianDistribution,
+                            outbound_dist::Bernoulli,
+                            q_pi::Beta,
+                            q_m1::Gaussian,
+                            q_w1::Gamma,
+                            q_m2::Gaussian,
+                            q_w2::Gamma,
+                            q_x::Gaussian,
                             ::Any)
 
     ensureParameters!(q_m1, (:m, :V))
@@ -334,13 +340,13 @@ end
 # Multivariate Gaussian with two clusters
 function variationalRule!{dims}(node::GaussianMixtureNode,
                             ::Type{Val{7}},
-                            outbound_dist::BernoulliDistribution,
-                            q_pi::BetaDistribution,
-                            q_m1::MvGaussianDistribution{dims},
-                            q_w1::WishartDistribution{dims},
-                            q_m2::MvGaussianDistribution{dims},
-                            q_w2::WishartDistribution{dims},
-                            q_x::MvGaussianDistribution{dims},
+                            outbound_dist::Bernoulli,
+                            q_pi::Beta,
+                            q_m1::MvGaussian{dims},
+                            q_w1::Wishart{dims},
+                            q_m2::MvGaussian{dims},
+                            q_w2::Wishart{dims},
+                            q_x::MvGaussian{dims},
                             ::Any)
 
     ensureParameters!(q_m1, (:m, :V))
@@ -385,17 +391,20 @@ function variationalRule!{dims}(node::GaussianMixtureNode,
     return outbound_dist
 end
 
+
+
+
 # VMP message towards i[:x]
 function variationalRule!(  node::GaussianMixtureNode,s
                             ::Type{Val{6}},
-                            outbound_dist::GaussianDistribution,
-                            q_pi::BetaDistribution,
-                            q_m1::GaussianDistribution,
-                            q_w1::GammaDistribution,
-                            q_m2::GaussianDistribution,
-                            q_w2::GammaDistribution,
+                            outbound_dist::Gaussian,
+                            q_pi::Beta,
+                            q_m1::Gaussian,
+                            q_w1::Gamma,
+                            q_m2::Gaussian,
+                            q_w2::Gamma,
                             q_x::Any,
-                            q_z::BernoulliDistribution)
+                            q_z::Bernoulli)
 
     outbound_dist.m=0.0
     outbound_dist.V=100
@@ -408,14 +417,14 @@ end
 # VMP message towards i[:x]
 function variationalRule!{dims}(  node::GaussianMixtureNode,
                             ::Type{Val{6}},
-                            outbound_dist::MvGaussianDistribution{dims},
-                            q_pi::BetaDistribution,
-                            q_m1::MvGaussianDistribution{dims},
-                            q_w1::WishartDistribution{dims},
-                            q_m2::MvGaussianDistribution{dims},
-                            q_w2::WishartDistribution{dims},
+                            outbound_dist::MvGaussian{dims},
+                            q_pi::Beta,
+                            q_m1::MvGaussian{dims},
+                            q_w1::Wishart{dims},
+                            q_m2::MvGaussian{dims},
+                            q_w2::Wishart{dims},
                             q_x::Any,
-                            q_z::BernoulliDistribution)
+                            q_z::Bernoulli)
 
     outbound_dist.m   =  ones(dims)
     outbound_dist.V   = 100.0*eye(dims)
