@@ -25,9 +25,46 @@ dimensions{dtype}(dist::Mixture{dtype}) = dimensions(dtype)
 
 dimensions{dtype}(dist_type::Type{Mixture{dtype}}) = dimensions(dtype)
 
+function vague!(dist::Mixture)
+    for component in dist.components
+        vague!(component)
+    end
+    fill!(dist.weights, 1./length(dist.components))
+
+    return dist
+end
+
+function format(dist::Mixture)
+    str = "$(typeof(dist))\n"
+    str *= "  weights: $(format(dist.weights))\n"
+    str *= "  components: $(format(dist.components))"
+
+    return str
+end
+
+show(io::IO, dist::Mixture) = println(io, format(dist))
+
 function isProper(dist::Mixture)
     isApproxEqual(sum(dist.weights), 1.0) || return false
     return all(map(isProper, dist.components))
+end
+
+"""
+Change the number of components in a Mixture
+"""
+function Base.resize!{dtype}(dist::Mixture{dtype}, num_components::Int64)
+    current_length = length(dist.components)
+    if num_components < current_length
+        # Delete components
+        return deleteat!(dist, num_components:current_length)
+    elseif num_components > current_length
+        # Add components
+        dist.weights = [dist.weights; zeros(num_components-current_length)]
+        dist.components = [dist.components; [vague(dtype) for i=1:num_components-current_length]]
+        return dist
+    else
+        return dist # nothing to do
+    end
 end
 
 """
