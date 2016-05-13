@@ -2,49 +2,74 @@
 # Shared methods for algorithm construction
 ###########################################
 
-parameters{T<:ProbabilityDistribution}(message_type::Type{Message{T}}) = message_type.parameters[1].parameters
+function collectTypeVarValues(method::Method, argument_types::Vector{DataType}, results::Dict{Symbol,Any}=Dict{Symbol,Any}())
+    # Resolve all the values of TypeVar objects in method.sig.types, based on the types of the actual arguments (argument_types)
+    # The results are collected in a Dict, indexed by the names of the TypeVars.
+    # Example: if method.sig.types[2] = Message{MvGaussian{dims}}
+    #           and argument_types[2] = Message{MvGaussian{3}}
+    #          {:dims => 3} is added to the results Dict.
 
-parameters{T<:ProbabilityDistribution}(distribution_type::Type{T}) = distribution_type.parameters
+    for a=1:length(method.sig.types)
+        _collectTypeVarValues!(method.sig.types[a], argument_types[a], results)
+    end
 
-parameters(type_var::TypeVar) = type_var.ub.parameters
+    return results
+end
 
-function parameters(data_type::DataType)
-    # Extract parameters of type ForneyLab.Message{T<:ForneyLab.MvGaussian{dims}}
-    if data_type <: Message
-        return data_type.parameters[1].ub.parameters
-    else
-        error("parameters function not valid for $(data_type)")
+function _collectTypeVarValues!(method_sig_type::TypeVar, param_value, results::Dict{Symbol,Any})
+    # Internal function called by collectTypeVarValues
+    results[method_sig_type.name] = param_value
+end
+
+function _collectTypeVarValues!(method_sig_type::DataType, arg_type::DataType, results::Dict{Symbol,Any})
+    # Internal function called by collectTypeVarValues
+    # The recursion performs a depth-first search through the (hierarchical) parameters of the argument type
+    if length(method_sig_type.parameters) > 0
+        for p = 1:length(method_sig_type.parameters)
+            _collectTypeVarValues!(method_sig_type.parameters[p], arg_type.parameters[p], results)
+        end
     end
 end
 
-function extractParameters(method_signature::SimpleVector, call_signature::Vector{DataType})
-    # Constructs a dictionary of parameter variables in method_signature mapped to values in call_signature
-
-    params_dict = Dict()
-    for p in 4:length(method_signature) # Loop of indices of inbound types
-        if call_signature[p] != Void # Skip irrelevant inbounds
-            method_params = parameters(method_signature[p])
-            call_params = parameters(call_signature[p])
-            for r in 1:length(method_params) # Iterate over all found parameters for that specific inbound and the pairs to the dictionary
-                push!(params_dict, method_params[r] => call_params[r])
-            end
+function containsTypeVars(dtype::DataType)
+    # Check if dtype contains TypeVar parameters
+    for param in dtype.parameters
+        if isa(param, TypeVar)
+            return true
+        elseif isa(param, DataType)
+            containsTypeVars(param) && return true
         end
     end
 
-    return params_dict
+    return false
 end
 
-function extractOutboundType(outbound_arg)
-    # Acceps the update rule argument of the outbound and returns a DataType with the parameterized outbound distribution type
-    if typeof(outbound_arg) == TypeVar
-        return outbound_arg.ub
-    elseif typeof(outbound_arg) == DataType
-        return outbound_arg
-    else
-        error("outbound_arg of unrecognized type: $(typeof(outbound_arg))")
+function resolveTypeVars(dtype::TypeVar, method::Method, argument_types::Vector{DataType})
+    # Find the value of dtype based on the method and its instantiation argument types
+    # Return: (resolved_dtype, completely_resolved)
+    typevar_values = collectTypeVarValues(method, argument_types)
+    try
+        return (typevar_values[dtype.name], true)
+    catch
+        (dtype, false)
     end
 end
 
+function resolveTypeVars(dtype::DataType, method::Method, argument_types::Vector{DataType})
+    # Build a DataType based on dtype, but with all TypeVar parameters replaced by their corresponding values.
+    # The values are determined from the method specification and the calling signature of the method.
+    # Return: (resolved_dtype, completely_resolved)
+
+    containsTypeVars(dtype) || return (dtype, true) # Nothing to resolve
+    typevar_values = collectTypeVarValues(method, argument_types) # Collect all TypeVar values in a Dict indexed by the TypeVar name
+
+    return resolveTypeVars(dtype, typevar_values) # TODO: implement this method to actually replace TypeVars with their corresponding values
+end
+
+function resolveTypeVars!(dtype::DataType, lookup_table::Dict{Symbol,Any})
+    completely_resolved = true
+    error("TODO")
+end
 
 function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::Node)
     # Collect all outbound distribution types that can be generated with the specified rule and calling_signature combination
@@ -55,17 +80,12 @@ function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::N
     outbound_types = DataType[]
 
     for method in methods(rule, call_signature)
-        ob_type = extractOutboundType(method.sig.types[3]) # Third entry is always the outbound distribution
+        ob_type = method.sig.types[3] # Third entry is always the outbound distribution
 
         if typeof(node) <: TerminalNode
             ob_type = typeof(node.value)
-        elseif !isempty(parameters(ob_type)) # ob_type has parameters that need to be inferred
-            params_dict = extractParameters(method.sig.types, call_signature) # Extract parameters and values of inbound types
-            outbound_params = parameters(ob_type) # Extract parameters of outbound type
-
-            # Construct parametrized outbound type with substituted values
-            param_values = [params_dict[param] for param in outbound_params]
-            ob_type = eval(parse("$(ob_type.name){" * join(param_values,", ") * "}")) # Construct the parametrized outbound type
+        else
+            substituteParameterValues(ob_type, method, call_signature)
         end
 
         # Is the method an approximate msg calculation rule?
@@ -89,10 +109,10 @@ function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::U
     outbound_types = DataType[]
 
     for method in methods(rule, call_signature)
-        ob_type = extractOutboundType(method.sig.types[3]) # Third entry is always the outbound distribution
+        ob_type = method.sig.types[3] # Third entry is always the outbound distribution
 
         if !isempty(parameters(ob_type)) # Outbound type has parameters that need to be inferred
-            params_dict = extractParameters(method.sig.types, call_signature) # Extract parameters and values of inbound types
+            params_dict = extractParameterValues(method, call_signature) # Extract parameters and values of inbound types
             outbound_params = parameters(ob_type) # Extract parameters of outbound type
 
             # Construct new outbound type definition with substituted values
