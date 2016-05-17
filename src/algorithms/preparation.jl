@@ -3,14 +3,14 @@
 ###########################################
 
 function collectTypeVarValues(method::Method, argument_types::Vector{DataType}, results::Dict{Symbol,Any}=Dict{Symbol,Any}())
-    # Resolve all the values of TypeVar objects in method.sig.types, based on the types of the actual arguments (argument_types)
+    # Collect the values of TypeVar objects in method.sig.types, based on the types of the actual arguments (argument_types)
     # The results are collected in a Dict, indexed by the names of the TypeVars.
     # Example: if method.sig.types[2] = Message{MvGaussian{dims}}
     #           and argument_types[2] = Message{MvGaussian{3}}
     #          {:dims => 3} is added to the results Dict.
 
     for a=4:length(method.sig.types) # skip the first 3 arguments since they do not contain inbounds
-        _collectTypeVarValues!(method.sig.types[a], argument_types[a], results)
+        _collectTypeVarValues!(method.sig.types[a], argument_types[a], results) # Use internal function for recursive implementation
     end
 
     return results
@@ -32,12 +32,12 @@ function _collectTypeVarValues!(method_sig_type::DataType, arg_type::DataType, r
 end
 
 function collectTypeVarNames(dtype::DataType, results=Set{Symbol}())
-    # Recursively collect all the names of TypeVar parameters in dtype
+    # Collect all names of TypeVar parameters in dtype
     for param in dtype.parameters
         if isa(param, TypeVar)
             push!(results, param.name)
         elseif isa(param, DataType)
-            collectTypeVarNames(param, results)
+            collectTypeVarNames(param, results) # recurse into the parameters of this parameter
         end
     end
 
@@ -45,22 +45,20 @@ function collectTypeVarNames(dtype::DataType, results=Set{Symbol}())
 end
 
 function resolveTypeVars(dtype::TypeVar, method::Method, argument_types::Vector{DataType}, node::Node)
-    # Find the value of dtype based on the method and its instantiation argument types
-    # Return: resolved_dtype
-
+    # Return the value of dtype.
+    # The value is determined from the method specification and the types of the actual arguments.
     typevar_values = collectTypeVarValues(method, argument_types)
     try
         return typevar_values[dtype.name]
     catch
+        # Resort to node-specific fallback lookup.
         return outboundParameterValue(node, Val{typevar}, method, argument_types)
     end
 end
 
 function resolveTypeVars(dtype::DataType, method::Method, argument_types::Vector{DataType}, node::Node)
     # Build a DataType based on dtype, but with all TypeVar parameters replaced by their corresponding values.
-    # The values are determined from the method specification and the calling signature of the method.
-    # Return: resolved_dtype
-
+    # The values are determined from the method specification and the types of the actual arguments.
     typevars = collectTypeVarNames(dtype)
     (length(typevars) > 0) || return dtype # Nothing to resolve
     typevar_values = collectTypeVarValues(method, argument_types) # Collect all TypeVar values in a Dict indexed by the TypeVar name
@@ -76,6 +74,9 @@ function resolveTypeVars(dtype::DataType, method::Method, argument_types::Vector
 end
 
 function _resolveTypeVars(dtype::DataType, lookup_table::Dict{Symbol,Any})
+    # Internal function called by resolveTypeVars.
+    # Returns dtype with all TypeVar parameters replaced by the values defined in lookup_table.
+
     if length(dtype.parameters) == 0
         return dtype
     else
@@ -87,10 +88,10 @@ end
 _resolveTypeVars(dtype::TypeVar, lookup_table::Dict{Symbol,Any}) = lookup_table[dtype.name]
 
 function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::Node)
-    # Collect all outbound distribution types that can be generated with the specified rule and calling_signature combination
-    # Note the node argument: this function can be overloaded for specific nodes
-    # Returns: outbound_types::Vector{DataType}
-    # The entries of outbound_types can be <: ProbabilityDistribution or Approximation
+    # Collect all outbound distribution types that can be generated with the specified rule and calling_signature combination.
+    # The node argument is only meant for overloading purposes (see TerminalNode for example).
+    # Returns: Vector{DataType} containing the possible outbound types.
+    # The entries of the returned vector can be <: ProbabilityDistribution or Approximation
 
     outbound_types = DataType[]
 

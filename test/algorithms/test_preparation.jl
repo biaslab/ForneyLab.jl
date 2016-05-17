@@ -13,6 +13,30 @@ facts("Shared preparation methods for inference algorithms") do
         @fact_throws ForneyLab.injectParameters!(destination, Delta(4.0))
     end
 
+    context("collectTypeVarNames and resolveTypeVars") do
+        # Specify dummy function for tests
+        function dummyRule{dims,n_factors}( node::MockNode,
+                                    outbound_iface_id,
+                                    outbound::PartitionedDistribution{MvGaussian{dims},n_factors},
+                                    inbound1::Message{MvGaussian{dims}},
+                                    inbound2::Message{PartitionedDistribution{Gaussian,n_factors}})
+            return true
+        end
+
+        method = start(methods(dummyRule))
+
+        # collectTypeVarNames should return the names of TypeVar parameters as a Set
+        @fact ForneyLab.collectTypeVarNames(method.sig.types[1]) --> Set()
+        @fact ForneyLab.collectTypeVarNames(method.sig.types[3]) --> Set([:dims; :n_factors])
+        @fact ForneyLab.collectTypeVarNames(method.sig.types[5]) --> Set([:n_factors])
+
+        # resolveTypeVars should resolve the values of TypeVars
+        # Build calling signature (vector of argument types) for dummyRule
+        # The combination of method and argtypes fully specifies the values of the dims and n_factors parameters of the outbound argument
+        argtypes = [Node; Int64; Any; Message{MvGaussian{5}}; Message{PartitionedDistribution{Gaussian,3}}]
+        @fact ForneyLab.resolveTypeVars(method.sig.types[3], method, argtypes, MockNode()) --> PartitionedDistribution{MvGaussian{5},3}
+    end
+
     context("collectAllOutboundTypes() should return outbound types of applicable update rules") do
         FactorGraph()
 
