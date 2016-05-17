@@ -9,7 +9,7 @@ function collectTypeVarValues(method::Method, argument_types::Vector{DataType}, 
     #           and argument_types[2] = Message{MvGaussian{3}}
     #          {:dims => 3} is added to the results Dict.
 
-    for a=1:length(method.sig.types)
+    for a=4:length(method.sig.types) # skip the first 3 arguments since they do not contain inbounds
         _collectTypeVarValues!(method.sig.types[a], argument_types[a], results)
     end
 
@@ -31,45 +31,60 @@ function _collectTypeVarValues!(method_sig_type::DataType, arg_type::DataType, r
     end
 end
 
-function containsTypeVars(dtype::DataType)
-    # Check if dtype contains TypeVar parameters
+function collectTypeVarNames(dtype::DataType, results=Set{Symbol}())
+    # Recursively collect all the names of TypeVar parameters in dtype
     for param in dtype.parameters
         if isa(param, TypeVar)
-            return true
+            push!(results, param.name)
         elseif isa(param, DataType)
-            containsTypeVars(param) && return true
+            collectTypeVarNames(param, results)
         end
     end
 
-    return false
+    return results
 end
 
-function resolveTypeVars(dtype::TypeVar, method::Method, argument_types::Vector{DataType})
+function resolveTypeVars(dtype::TypeVar, method::Method, argument_types::Vector{DataType}, node::Node)
     # Find the value of dtype based on the method and its instantiation argument types
-    # Return: (resolved_dtype, completely_resolved)
+    # Return: resolved_dtype
+
     typevar_values = collectTypeVarValues(method, argument_types)
     try
-        return (typevar_values[dtype.name], true)
+        return typevar_values[dtype.name]
     catch
-        (dtype, false)
+        return outboundParameterValue(node, Val{typevar}, method, argument_types)
     end
 end
 
-function resolveTypeVars(dtype::DataType, method::Method, argument_types::Vector{DataType})
+function resolveTypeVars(dtype::DataType, method::Method, argument_types::Vector{DataType}, node::Node)
     # Build a DataType based on dtype, but with all TypeVar parameters replaced by their corresponding values.
     # The values are determined from the method specification and the calling signature of the method.
-    # Return: (resolved_dtype, completely_resolved)
+    # Return: resolved_dtype
 
-    containsTypeVars(dtype) || return (dtype, true) # Nothing to resolve
+    typevars = collectTypeVarNames(dtype)
+    (length(typevars) > 0) || return dtype # Nothing to resolve
     typevar_values = collectTypeVarValues(method, argument_types) # Collect all TypeVar values in a Dict indexed by the TypeVar name
 
-    return resolveTypeVars(dtype, typevar_values) # TODO: implement this method to actually replace TypeVars with their corresponding values
+    for typevar in typevars
+        if !haskey(typevar_values, typevar)
+            # Call node-specific function to resolve typevar
+            typevar_values[typevar] = outboundParameterValue(node, Val{typevar}, method, argument_types)
+        end
+    end
+
+    return _resolveTypeVars(dtype, typevar_values) # Build the resolved DataType
 end
 
-function resolveTypeVars!(dtype::DataType, lookup_table::Dict{Symbol,Any})
-    completely_resolved = true
-    error("TODO")
+function _resolveTypeVars(dtype::DataType, lookup_table::Dict{Symbol,Any})
+    if length(dtype.parameters) == 0
+        return dtype
+    else
+        param_values = map(dt -> _resolveTypeVars(dt, lookup_table), dtype.parameters)
+        return eval(parse("$(dtype.name){" * join(param_values,",") * "}"))
+    end
 end
+
+_resolveTypeVars(dtype::TypeVar, lookup_table::Dict{Symbol,Any}) = lookup_table[dtype.name]
 
 function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::Node)
     # Collect all outbound distribution types that can be generated with the specified rule and calling_signature combination
@@ -80,59 +95,7 @@ function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::N
     outbound_types = DataType[]
 
     for method in methods(rule, call_signature)
-        ob_type = method.sig.types[3] # Third entry is always the outbound distribution
-
-        if typeof(node) <: TerminalNode
-            ob_type = typeof(node.value)
-        else
-            substituteParameterValues(ob_type, method, call_signature)
-        end
-
-        # Is the method an approximate msg calculation rule?
-        if (typeof(method.sig.types[end])==DataType
-            && length(method.sig.types[end].parameters)==1
-            && method.sig.types[end].parameters[1]<:ApproximationType)
-
-            ob_type = Approximation{ob_type,method.sig.types[end].parameters[1]}
-        end
-
-        push!(outbound_types, ob_type)
-    end
-
-    return outbound_types
-end
-
-function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::Union{GainNode, GainAdditionNode, GainEqualityNode})
-    # Outbound type collection overloading for nodes with an (optional) fixed gain.
-    # This is necessary because the fixed gain determines the dimensionality of the outbound distribution.
-
-    outbound_types = DataType[]
-
-    for method in methods(rule, call_signature)
-        ob_type = method.sig.types[3] # Third entry is always the outbound distribution
-
-        if !isempty(parameters(ob_type)) # Outbound type has parameters that need to be inferred
-            params_dict = extractParameterValues(method, call_signature) # Extract parameters and values of inbound types
-            outbound_params = parameters(ob_type) # Extract parameters of outbound type
-
-            # Construct new outbound type definition with substituted values
-            param_values = Any[]
-            for param in outbound_params
-                if haskey(params_dict, param)
-                    push!(param_values, params_dict[param])
-                else # The outbound param is not available in the inbound parameter dictionary; we need to infer it from the fixed gain matrix
-                    if param.name == :dims_n
-                        push!(param_values, size(node.gain, 1))
-                    elseif param.name == :dims_m
-                        push!(param_values, size(node.gain, 2))
-                    else
-                        error("For the gain node with fixed gain, the dimensionalities in the calling signature need to be encoded as {dims_n, dims_m}")
-                    end
-                end
-            end
-
-            ob_type = eval(parse("$(ob_type.name){" * join(param_values, ", ") * "}")) # Construct the type definition of the substituted outbound type
-        end
+        ob_type = resolveTypeVars(method.sig.types[3], method, call_signature, node)
 
         # Is the method an approximate msg calculation rule?
         if (typeof(method.sig.types[end])==DataType

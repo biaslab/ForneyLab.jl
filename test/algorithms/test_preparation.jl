@@ -13,28 +13,6 @@ facts("Shared preparation methods for inference algorithms") do
         @fact_throws ForneyLab.injectParameters!(destination, Delta(4.0))
     end
 
-    context("extractParameterValues() should return a Dict containing the parameter values of a method") do
-        call_signature_add = [AdditionNode, Type{Val{2}}, Any, Message{MvGaussian{2}}, Void, Message{MvGaussian{2}}]
-        rule_method = methods(sumProductRule!, call_signature_add)[1]
-        @fact ForneyLab.parameters(rule_method.sig.types[4])[1] --> TypeVar(:dims, Union{}, Any, false)
-        @fact ForneyLab.parameters(call_signature_add[4])[1] --> 2
-        @fact ForneyLab.extractParameterValues(rule_method, call_signature_add) --> Dict(TypeVar(:dims, Union{}, Any, false) => 2)
-
-        call_signature_add_delta = [AdditionNode, Type{Val{2}}, Any, Message{MvDelta{Float64, 2}}, Void, Message{MvDelta{Float64, 2}}]
-        rule_method = methods(sumProductRule!, call_signature_add_delta)[1]
-        @fact ForneyLab.parameters(rule_method.sig.types[4])[1] --> Float64
-        @fact ForneyLab.parameters(call_signature_add_delta[4])[1] --> Float64
-        @fact ForneyLab.parameters(rule_method.sig.types[4])[2] --> TypeVar(:dims, Union{}, Any, false)
-        @fact ForneyLab.parameters(call_signature_add_delta[4])[2] --> 2
-        @fact ForneyLab.extractParameterValues(rule_method, call_signature_add_delta) --> Dict(Float64 => Float64, TypeVar(:dims, Union{}, Any, false) => 2)
-
-        call_signature_gauss = [GaussianNode, Type{Val{2}}, Any, MvGaussian{2}, Void, MvGaussian{2}]
-        rule_method = methods(variationalRule!, call_signature_gauss)[1]
-        @fact ForneyLab.parameters(rule_method.sig.types[4])[1] --> TypeVar(:dims, Union{}, Any, true)
-        @fact ForneyLab.parameters(call_signature_gauss[4])[1] --> 2
-        @fact ForneyLab.extractParameterValues(rule_method, call_signature_gauss) --> Dict(TypeVar(:dims, Union{}, Any, true) => 2)
-    end
-
     context("collectAllOutboundTypes() should return outbound types of applicable update rules") do
         FactorGraph()
 
