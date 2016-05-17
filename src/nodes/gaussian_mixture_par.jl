@@ -93,24 +93,47 @@ function variationalRule!{dims,n_factors}(  node::GaussianMixtureNodePar,
 
     return outbound_dist
 end
+
 # VMP message towards i[:pi]
 # Multivariate gaussian with multiple clusters
 function variationalRule!{dims,n_factors}(  node::GaussianMixtureNodePar,
                             ::Type{Val{1}},
-                            outbound_dist::Dirichlet,
+                            outbound_dist::Dirichlet{n_factors},
                             ::Any,
                             q_m::PartitionedDistribution{MvGaussian{dims},n_factors},
                             q_w::PartitionedDistribution{Wishart{dims},n_factors},
                             q_x::MvGaussian{dims},
-                            q_z::Categorical)
+                            q_z::Categorical{n_factors})
 
      a=zeros[k]
 
      for k=1:n_factors
-       a[k]=q_z.p[k]+1)
+       a[k]=q_z.p[k]+1
      end
 
-     outbound_dist.a   =   a
+     outbound_dist.alpha   =   a
+
+    return outbound_dist
+end
+
+# VMP message towards i[:pi]
+# Univariate gaussian with multiple clusters
+function variationalRule!{n_factors}(  node::GaussianMixtureNodePar,
+                            ::Type{Val{1}},
+                            outbound_dist::Dirichlet{n_factors},
+                            ::Any,
+                            q_m::PartitionedDistribution{Gaussian,n_factors},
+                            q_w::PartitionedDistribution{Gamma,n_factors},
+                            q_x::Gaussian,
+                            q_z::Categorical{n_factors})
+
+     a=zeros[k]
+
+     for k=1:n_factors
+       a[k]=q_z.p[k]+1
+     end
+
+     outbound_dist.alpha   =   a
 
     return outbound_dist
 end
@@ -168,11 +191,11 @@ end
 function variationalRule!{dims,n_factors}(  node::GaussianMixtureNodePar,
                             ::Type{Val{2}},
                             outbound_dist::PartitionedDistribution{MvGaussian{dims},n_factors},
-                            q_pi::Dirichlet,
+                            q_pi::Dirichlet{n_factors},
                             ::Any,
                             q_w::PartitionedDistribution{Wishart{dims},n_factors},
                             q_x::MvGaussian{dims},
-                            q_z::Categorical)
+                            q_z::Categorical{n_factors})
     ensureParameters!(q_x, (:m, :V))
 
 
@@ -181,6 +204,29 @@ function variationalRule!{dims,n_factors}(  node::GaussianMixtureNodePar,
        invalidate!(outbound_dist.factors[k].V)
        invalidate!(outbound_dist.factors[k].xi)
       outbound_dist.factors[k].W  = q_z.p[k]*q_w.factors[k].nu*q_w.factors[k].V
+    end
+
+    return outbound_dist
+end
+
+# VMP message towards i[:m]
+# Univariate Gaussian with multiple clusters
+function variationalRule!{n_factors}(  node::GaussianMixtureNodePar,
+                            ::Type{Val{2}},
+                            outbound_dist::PartitionedDistribution{Gaussian,n_factors},
+                            q_pi::Dirichlet{n_factors},
+                            ::Any,
+                            q_w::PartitionedDistribution{Gamma,n_factors},
+                            q_x::Gaussian,
+                            q_z::Categorical{n_factors})
+    ensureParameters!(q_x, (:m, :V))
+
+
+    for k=1:n_factors
+      outbound_dist.factors[k].m  = deepcopy(q_x.m)
+       invalidate!(outbound_dist.factors[k].V)
+       invalidate!(outbound_dist.factors[k].xi)
+      outbound_dist.factors[k].W  = q_z.p[k]*q_w.factors[k].a/q_w.factors[k].b
     end
 
     return outbound_dist
@@ -262,11 +308,11 @@ end
 function variationalRule!{dims,n_factors}(  node::GaussianMixtureNodePar,
                             ::Type{Val{3}},
                             outbound_dist::PartitionedDistribution{Wishart{dims},n_factors},
-                            q_pi::Dirichlet,
+                            q_pi::Dirichlet{n_factors},
                             q_m::PartitionedDistribution{MvGaussian{dims},n_factors},
                             ::Any,
                             q_x::MvGaussian{dims},
-                            q_z::Categorical)
+                            q_z::Categorical{n_factors})
 
     ensureParameters!(q_x,(:m,:V))
 
@@ -284,6 +330,31 @@ function variationalRule!{dims,n_factors}(  node::GaussianMixtureNodePar,
       end
 
     end
+
+    return outbound_dist
+end
+
+# VMP message towards i[:w]
+# Univariate Gaussian with multiple clusters
+function variationalRule!{n_factors}(  node::GaussianMixtureNodePar,
+                            ::Type{Val{3}},
+                            outbound_dist::PartitionedDistribution{Gamma,n_factors},
+                            q_pi::Dirichlet{n_factors},
+                            q_m::PartitionedDistribution{Gaussian,n_factors},
+                            ::Any,
+                            q_x::Gaussian,
+                            q_z::Categorical{n_factors})
+
+    ensureParameters!(q_x, (:m, :V))
+
+    for k=1:n_factors
+      ensureParameters!(q_m.factors[k], (:m, :V))
+
+      outbound_dist.factors[k].a  = 1.+0.5*q_z.p[k]
+      e_m1_square                 = q_m.factors[k].V+q_m.factors[k].m^2
+      outbound_dist.factors[k].b  = 0.5*q_z.p[k]*(q_x.m^2-2.*q_x.m*q_m.factors[k].m+e_m1_square)
+    end
+
 
     return outbound_dist
 end
@@ -378,11 +449,11 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
 end
 
 # VMP message towards i[:z]
-# Multivariate Gaussian with two clusters
+# Multivariate Gaussian with multiple clusters
 function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
                             ::Type{Val{5}},
-                            outbound_dist::Categorical,
-                            q_pi::Dirichlet,
+                            outbound_dist::Categorical{n_factors},
+                            q_pi::Dirichlet{n_factors},
                             q_m::PartitionedDistribution{MvGaussian{dims},n_factors},
                             q_w::PartitionedDistribution{Wishart{dims}},
                             q_x::MvGaussian{dims},
@@ -393,17 +464,15 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
     a=zeros(n_factors)
     ln_ro=zeros(n_factors)
 
-    for k=1:n_factors
-      a[k]=q_pi.factors[k].a
-    end
+    k=collect(1:n_factors)
+    sum_a=sum(q_pi.alpha[k])
 
-    sum_a=sum(a)
     i=collect(1:dims)
 
     for k=1:n_factors
       ensureParameters!(q_m.factors[k], (:m, :V))
 
-      e_ln_pi=digamma(q_pi.factors[k].a)-digamma(sum_a)
+      e_ln_pi=digamma(q_pi.alpha[k])-digamma(sum_a)
 
       multidi=sum(digamma((q_w.factors[k].nu+1-i)/2))
 
@@ -425,6 +494,54 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
           outbound_dist.p[k]=1/n_factors
         end
     end
+
+    return outbound_dist
+end
+
+# VMP message towards i[:z]
+# Univariate gaussian with multiple clusters
+function variationalRule!{n_factors}(  node::GaussianMixtureNodePar,
+                            ::Type{Val{5}},
+                            outbound_dist::Categorical{n_factors},
+                            q_pi::Dirichlet{n_factors},
+                            q_m::PartitionedDistribution{Gaussian,n_factors},
+                            q_w::PartitionedDistribution{Gamma,n_factors},
+                            q_x::Gaussian,
+                            ::Any)
+
+
+      ensureParameters!(q_x, (:m, :V))
+
+      a=zeros(n_factors)
+      ln_ro=zeros(n_factors)
+
+      k=collect(1:n_factors)
+      sum_a=sum(q_pi.alpha[k])
+
+
+
+      for k=1:n_factors
+        ensureParameters!(q_m.factors[k], (:m, :V))
+
+        #calculating ln(ro1)
+        e_ln_pi    =   digamma(q_pi.a[k])-digamma(sum_a)
+        e_ln_w     =   digamma(q_w.factors[k].a)-log(q_w.factors[k].b)
+        e_m_square =   q_x.m^2-2.0*q_x.m*q_m.factors[k].m+q_m.factors[k].V+q_m.factors[k].m^2
+        ln_ro[k]      =   e_ln_pi+0.5*e_ln_w-0.5*log(2pi)-0.5*q_w.factors[k].a/q_w.factors[k].b*e_m_square
+
+      end
+
+      sum_ro=sum(ln_ro)
+
+      for k=1:n_factors
+          if sum_ro> tiny
+            outbound_dist.p[k]=ln_ro[k]/sum_ro
+          else
+            outbound_dist.p[k]=1/n_factors
+          end
+      end
+
+
 
     return outbound_dist
 end
@@ -473,16 +590,34 @@ end
 function variationalRule!{dims,n_factors}(  node::GaussianMixtureNodePar,
                             ::Type{Val{4}},
                             outbound_dist::MvGaussian{dims},
-                            q_pi::Dirichlet,
+                            q_pi::Dirichlet{n_factors},
                             q_m::PartitionedDistribution{MvGaussian{dims}, n_factors},
                             q_w::PartitionedDistribution{Wishart{dims},n_factors},
                             q_x::Any,
-                            q_z::Categorical)
+                            q_z::Categorical{n_factors})
 
     outbound_dist.m   =  ones(dims)
     outbound_dist.V   = 100.0*eye(dims)
     invalidate!(outbound_dist.xi)
     invalidate!(outbound_dist.W)
+
+    return outbound_dist
+end
+
+# VMP message towards i[:x]
+function variationalRule!{n_factors}(  node::GaussianMixtureNodePar,
+                            ::Type{Val{4}},
+                            outbound_dist::Gaussian,
+                            q_pi::Dirichlet{n_factors},
+                            q_m::PartitionedDistribution{Gaussian,n_factors},
+                            q_w::PartitionedDistribution{Gamma,n_factors},
+                            ::Any,
+                            q_z::Categorical{n_factors})
+
+    outbound_dist.m=0.0
+    outbound_dist.V=100
+    outbound_dist.xi=NaN
+    outbound_dist.W=NaN
 
     return outbound_dist
 end
