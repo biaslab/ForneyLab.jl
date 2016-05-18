@@ -47,6 +47,9 @@ end
 
 isDeterministic(::GainEqualityNode) = true
 
+outboundParameterValue(node::GainEqualityNode, ::Type{Val{:dims_n}}, args...) = size(node.gain, 1)
+
+outboundParameterValue(node::GainEqualityNode, ::Type{Val{:dims_m}}, args...) = size(node.gain, 2)
 
 ############################################
 # Gaussian methods

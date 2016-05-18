@@ -11,11 +11,11 @@ Description:
     out = T.value
 
 Interfaces:
-    
+
     1 i[:out]
 
 Construction:
-    
+
     TerminalNode(Gaussian(), id=:my_node)
 """
 type TerminalNode <: Node
@@ -50,6 +50,9 @@ isDeterministic(::TerminalNode) = false # Edge case for deterministicness
 
 # Implement firstFreeInterface since EqualityNode is symmetrical in its interfaces
 firstFreeInterface(node::TerminalNode) = (node.interfaces[1].partner==nothing) ? node.interfaces[1] : error("No free interface on $(typeof(node)) $(node.id)")
+
+collectAllOutboundTypes(rule::Function, call_signature::Vector, node::TerminalNode) = DataType[typeof(node.value)]
+
 
 """
 TerminalNode

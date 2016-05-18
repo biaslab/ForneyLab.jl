@@ -13,26 +13,28 @@ facts("Shared preparation methods for inference algorithms") do
         @fact_throws ForneyLab.injectParameters!(destination, Delta(4.0))
     end
 
-    context("extractParameters() should return a dictionary of relevant type parameters") do
-        call_signature_add = [AdditionNode, Type{Val{2}}, Any, Message{MvGaussian{2}}, Void, Message{MvGaussian{2}}]
-        rule_signature_add = methods(sumProductRule!, call_signature_add)[1].sig.types
-        @fact ForneyLab.parameters(rule_signature_add[4])[1] --> TypeVar(:dims, Union{}, Any, false)
-        @fact ForneyLab.parameters(call_signature_add[4])[1] --> 2
-        @fact ForneyLab.extractParameters(rule_signature_add, call_signature_add) --> Dict(TypeVar(:dims, Union{}, Any, false) => 2)
+    context("collectTypeVarNames and resolveTypeVars") do
+        # Specify dummy function for tests
+        function dummyRule{dims,n_factors}( node::MockNode,
+                                    outbound_iface_id,
+                                    outbound::PartitionedDistribution{MvGaussian{dims},n_factors},
+                                    inbound1::Message{MvGaussian{dims}},
+                                    inbound2::Message{PartitionedDistribution{Gaussian,n_factors}})
+            return true
+        end
 
-        call_signature_add_delta = [AdditionNode, Type{Val{2}}, Any, Message{MvDelta{Float64, 2}}, Void, Message{MvDelta{Float64, 2}}]
-        rule_signature_add_delta = methods(sumProductRule!, call_signature_add_delta)[1].sig.types
-        @fact ForneyLab.parameters(rule_signature_add_delta[4])[1] --> Float64
-        @fact ForneyLab.parameters(call_signature_add_delta[4])[1] --> Float64
-        @fact ForneyLab.parameters(rule_signature_add_delta[4])[2] --> TypeVar(:dims, Union{}, Any, false)
-        @fact ForneyLab.parameters(call_signature_add_delta[4])[2] --> 2
-        @fact ForneyLab.extractParameters(rule_signature_add_delta, call_signature_add_delta) --> Dict(Float64 => Float64, TypeVar(:dims, Union{}, Any, false) => 2)
+        method = start(methods(dummyRule))
 
-        call_signature_gauss = [GaussianNode, Type{Val{2}}, Any, MvGaussian{2}, Void, MvGaussian{2}]
-        rule_signature_gauss = methods(variationalRule!, call_signature_gauss)[1].sig.types
-        @fact ForneyLab.parameters(rule_signature_gauss[4])[1] --> TypeVar(:dims, Union{}, Any, true)
-        @fact ForneyLab.parameters(call_signature_gauss[4])[1] --> 2
-        @fact ForneyLab.extractParameters(rule_signature_gauss, call_signature_gauss) --> Dict(TypeVar(:dims, Union{}, Any, true) => 2)
+        # collectTypeVarNames should return the names of TypeVar parameters as a Set
+        @fact ForneyLab.collectTypeVarNames(method.sig.types[1]) --> Set()
+        @fact ForneyLab.collectTypeVarNames(method.sig.types[3]) --> Set([:dims; :n_factors])
+        @fact ForneyLab.collectTypeVarNames(method.sig.types[5]) --> Set([:n_factors])
+
+        # resolveTypeVars should resolve the values of TypeVars
+        # Build calling signature (vector of argument types) for dummyRule
+        # The combination of method and argtypes fully specifies the values of the dims and n_factors parameters of the outbound argument
+        argtypes = [Node; Int64; Any; Message{MvGaussian{5}}; Message{PartitionedDistribution{Gaussian,3}}]
+        @fact ForneyLab.resolveTypeVars(method.sig.types[3], method, argtypes, MockNode()) --> PartitionedDistribution{MvGaussian{5},3}
     end
 
     context("collectAllOutboundTypes() should return outbound types of applicable update rules") do
