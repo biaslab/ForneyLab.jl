@@ -105,7 +105,7 @@ function variationalRule!{dims,n_factors}(  node::GaussianMixtureNodePar,
                             q_x::MvGaussian{dims},
                             q_z::Categorical{n_factors})
 
-     a=zeros[k]
+     a=zeros(n_factors)
 
      for k=1:n_factors
        a[k]=q_z.p[k]+1
@@ -178,8 +178,10 @@ function variationalRule!{dims,n_factors}(  node::GaussianMixtureNodePar,
 
      outbound_dist.factors[1].m    =   deepcopy(q_x.m)
      outbound_dist.factors[2].m    =   deepcopy(q_x.m)
-     invalidate!(outbound_dist.V)
-     invalidate!(outbound_dist.xi)
+     invalidate!(outbound_dist.factors[1].V)
+     invalidate!(outbound_dist.factors[2].V)
+     invalidate!(outbound_dist.factors[1].xi)
+     invalidate!(outbound_dist.factors[2].xi)
      outbound_dist.factors[1].W    =   q_z.p*q_w.factors[1].nu*q_w.factors[1].V
      outbound_dist.factors[2].W    =   (1.-q_z.p)*q_w.factors[2].nu*q_w.factors[2].V
 
@@ -287,7 +289,7 @@ function variationalRule!{dims,n_factors}(  node::GaussianMixtureNodePar,
 
 
 
-    outbound_dist.factor[2].nu    =   1.+(1.-q_z.p)+dims
+    outbound_dist.factors[2].nu    =   1.+(1.-q_z.p)+dims
     gausterm2           =   (deepcopy(q_x.m)-q_m.factors[2].m)*transpose(deepcopy(q_x.m)-q_m.factors[2].m)+q_m.factors[2].V
 
     #if statement to prevent multiplication by zero
@@ -402,13 +404,13 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
                             outbound_dist::Bernoulli,
                             q_pi::Beta,
                             q_m::PartitionedDistribution{MvGaussian{dims},n_factors},
-                            q_w::PartitionedDistribution{Wishart{dims}},
+                            q_w::PartitionedDistribution{Wishart{dims}, n_factors},
                             q_x::MvGaussian{dims},
                             ::Any)
 
     ensureParameters!(q_m.factors[1], (:m, :V))
     ensureParameters!(q_x, (:m, :V))
-    ensureParameters!(q_m2.factors[2], (:m, :V))
+    ensureParameters!(q_m.factors[2], (:m, :V))
 
     e_ln_pi1      =   digamma(q_pi.a)-digamma(q_pi.a+q_pi.b)
 
@@ -433,11 +435,22 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
 
     e_ln_w2       =  multidi2+dims*log(2.0)+log(det(q_w.factors[2].V))
     e_w2          =   q_w.factors[2].nu*q_w.factors[2].V
-    gausterm2     =  (transpose(q_x.m-q_m.factors[2].m)*e_w2*(q_x.m-q_m.factors[2].m))[1] + trace(q_m.factors[2].V*e_w2) # wordt te groot
+    gausterm2     =  (transpose(q_x.m-q_m.factors[2].m)*e_w2*(q_x.m-q_m.factors[2].m))[1] + trace(q_m.factors[2].V*e_w2)
 
 
     ln_ro2        =   e_ln_pi2+0.5*e_ln_w2-dims/2.0*log(2.0*pi)-0.5*gausterm2
 
+    println("q_w.V",q_w.factors[2].V)
+    println("q_x.m", q_x.m)
+    println("diff",q_x.m-q_m.factors[2].m )
+    println("e_w",e_w2)
+    println("q_w.nu", q_w.factors[2].nu)
+    #println("a", q_pi.b)
+    #println("sum_a",sum_a)
+    println("multidi",multidi2)
+    println("gausterm",gausterm2)
+    println("e_ln_w",e_ln_w2)
+    println("e_ln_pi", e_ln_pi2)
     #Normalize message
     #if statement to prevent division by zero
     if exp(ln_ro1)+exp(ln_ro2)>tiny
@@ -455,7 +468,7 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
                             outbound_dist::Categorical{n_factors},
                             q_pi::Dirichlet{n_factors},
                             q_m::PartitionedDistribution{MvGaussian{dims},n_factors},
-                            q_w::PartitionedDistribution{Wishart{dims}},
+                            q_w::PartitionedDistribution{Wishart{dims}, n_factors},
                             q_x::MvGaussian{dims},
                             ::Any)
 
@@ -481,20 +494,37 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
       e_w = q_w.factors[k].nu*q_w.factors[k].V
 
       gausterm = (transpose(q_x.m-q_m.factors[k].m)*e_w*(q_x.m-q_m.factors[k].m))[1] + trace(q_m.factors[k].V*e_w)
-
+      # println("q_w.V",q_w.factors[k].V)
+      # println("q_x.m", q_x.m)
+      # println("diff",q_x.m-q_m.factors[k].m )
+      # println("e_w",e_w)
+      # println("q_w.nu", q_w.factors[k].nu)
+      # println("a", q_pi.alpha[k])
+      # println("sum_a",sum_a)
+      # println("multidi",multidi)
+      # println("gausterm",gausterm)
+      # println("e_ln_w",e_ln_w)
+      # println("e_ln_pi", e_ln_pi)
       ln_ro[k]        =   e_ln_pi+0.5*e_ln_w-dims/2.0*log(2.0*pi)-0.5*gausterm
+      # println(ln_ro[k])
     end
 
-    sum_ro=sum(ln_ro)
+    sum_ro=sum(exp(ln_ro))
 
-    for k=1:n_factors
-        if sum_ro> tiny
-          outbound_dist.p[k]=ln_ro[k]/sum_ro
-        else
-          outbound_dist.p[k]=1/n_factors
-        end
+    if sum_ro>tiny
+      for k=1:n_factors
+        outbound_dist.p[k]=exp(ln_ro[k])/sum_ro
+      end
+    # elseif sum_ro<0
+    #   for k=1:n_factors
+    #     outbound_dist.p[k]=(ln_ro[k]+abs(sum_ro))/(2*abs(sum_ro))
+    #   end
+    else
+      for k=1:n_factors
+        outbound_dist.p[k]=1/n_factors
+      end
     end
-
+    # println(outbound_dist)
     return outbound_dist
 end
 
@@ -531,11 +561,11 @@ function variationalRule!{n_factors}(  node::GaussianMixtureNodePar,
 
       end
 
-      sum_ro=sum(ln_ro)
+      sum_ro=sum(exp(ln_ro))
 
       for k=1:n_factors
           if sum_ro> tiny
-            outbound_dist.p[k]=ln_ro[k]/sum_ro
+            outbound_dist.p[k]=exp(ln_ro[k])/sum_ro
           else
             outbound_dist.p[k]=1/n_factors
           end
