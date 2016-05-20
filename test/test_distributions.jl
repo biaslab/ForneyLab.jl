@@ -3,7 +3,9 @@ facts("ProbabilityDistribution unit tests") do
     @fact all(map(ForneyLab.isDelta, [Delta, MvDelta, MatrixDelta])) --> true
     @fact ForneyLab.isDelta(Gaussian) --> false
 
-    for probdist_type in [subtypes(Univariate); subtypes(Multivariate); subtypes(MatrixVariate)]
+    for probdist_type in subtypes(ProbabilityDistribution)
+        probdist_type.abstract && continue # Skip abstract types
+
         context("$(probdist_type) should have a default constructor and a == operator") do
             @fact probdist_type()==probdist_type() --> true
         end

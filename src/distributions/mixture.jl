@@ -17,13 +17,22 @@ Construction:
 type Mixture{dtype<:ProbabilityDistribution} <: ProbabilityDistribution
     components::Vector{dtype}
     weights::Vector{Float64}
+
+    function Mixture(components::Vector{dtype}, weights::Vector{Float64})
+        (length(components) > 0) || error("Mixture should contain at least one component")
+        (all(map(typeof, components) .== typeof(components[1]))) || error("All mixture components should have the same type")
+
+        return new{dtype}(components, weights)
+    end
 end
+
+Mixture{dtype<:ProbabilityDistribution}(components::Vector{dtype}, weights::Vector{Float64}) = Mixture{typeof(components[1])}(components, weights)
 
 Mixture() = Mixture([Gaussian()], [1.0])
 
 dimensions{dtype}(dist::Mixture{dtype}) = dimensions(dtype)
 
-dimensions{dtype}(dist_type::Type{Mixture{dtype}}) = dimensions(dtype)
+dimensions{T<:Mixture}(dist_type::Type{T}) = dimensions(dist_type.parameters[1])
 
 function vague!(dist::Mixture)
     for component in dist.components
@@ -33,6 +42,8 @@ function vague!(dist::Mixture)
 
     return dist
 end
+
+vague{T<:Mixture}(dist_type::Type{T}) = Mixture([vague(T.parameters[1])], [1.0])
 
 function format(dist::Mixture)
     str = "$(typeof(dist))\n"
@@ -48,6 +59,36 @@ function isProper(dist::Mixture)
     isApproxEqual(sum(dist.weights), 1.0) || return false
     return all(map(isProper, dist.components))
 end
+
+function ==(x::Mixture, y::Mixture)
+    is(x,y) && return true # same object
+    (typeof(x) == typeof(y)) || return false # different component types
+    (length(x.components)==length(y.components)) || return false
+    if (x.weights==y.weights) && (x.components==y.components)
+        return true
+    end
+
+    # Check if x and y are identical except for the ordering of the components
+    n = length(x.components)
+    permutation_candidates = collect(1:n)
+    for i=1:n
+        # Find component in y that matches x.components[i]
+        matched = false
+        for p=1:length(permutation_candidates)
+            j = permutation_candidates[p]
+            if (x.weights[i]==y.weights[j]) && (x.components[i]==y.components[j])
+                matched = true
+                deleteat!(permutation_candidates, p)
+                break
+            end
+        end
+        matched || return false # x.components[i] could not be matched to a component of y
+    end
+
+    return true
+end
+
+Base.mean(dist::Mixture) = sum(map(mean, dist.components) .* dist.weights)
 
 """
 Change the number of components in a Mixture
