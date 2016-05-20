@@ -393,8 +393,11 @@ function variationalRule!{n_factors}(  node::GaussianMixtureNodePar,
       e_m2_square =   q_x.m^2-2.0*q_x.m*q_m.factors[2].m+q_m.factors[2].V+q_m.factors[2].m^2
       ln_ro2      =   e_ln_pi2+0.5*e_ln_w2-0.5*log(2pi)-0.5*q_w.factors[2].a/q_w.factors[2].b*e_m2_square
 
-      outbound_dist.p = exp(ln_ro1)/(exp(ln_ro1)+exp(ln_ro2))
-
+      if (exp(ln_ro1)+exp(ln_ro2))>tiny
+          outbound_dist.p = exp(ln_ro1)/(exp(ln_ro1)+exp(ln_ro2))
+      else
+          outbound_dist.p=1/2
+      end
 
 
     return outbound_dist
