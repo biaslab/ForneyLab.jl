@@ -11,11 +11,11 @@ true_mean2        = [3.0,10.0, 20.0]                          # Mean of the seco
 true_variance2    = [1.0 0.0 0.0; 0.0 4.0 0.0; 0.0 0.0 1.0]   # Variance of the second cluster
 d1                = MvNormal(true_mean1, true_variance1)      # Construct the distribution of first cluster
 d2                = MvNormal(true_mean2, true_variance2)      # Construct distribution of the second cluster
-y_observations1   = rand(d1,N1)'                              # Take samples from the first cluster
-y_observations2   = rand(d2,N2)'                              # Take samples from the second cluster
+y_observations1   = rand(d1,N1)'                                # Take samples from the first cluster
+y_observations2   = rand(d2,N2)'                                # Take samples from the second cluster                            # Take samples from the second cluster
 
 permutations      = shuffle(collect(1:N1+N2))
-y                 = [y_observations1; y_observations2][permutations,:]        # Mix the samples from the clusters
+y                 = [y_observations1; y_observations2][permutations,:]         # Mix the samples from the clusters
 
 #Overwrite the Wishart prior with variables that are equal or bigger than 1
 function ForneyLab.vague!{dims}(dist::ForneyLab.Wishart{dims})
@@ -25,6 +25,7 @@ function ForneyLab.vague!{dims}(dist::ForneyLab.Wishart{dims})
 end
 
 ForneyLab.vague{dims}(::Type{ForneyLab.Wishart{dims}}) = ForneyLab.Wishart(V=diageye(dims), nu=1.)
+
 
 # Build graph
 for k=1:(N1+N2)
@@ -71,11 +72,11 @@ w1_est = attachWriteBuffer(n(:w1_end).i[:out].partner)
 pi_est = attachWriteBuffer(n(:pi_end).i[:out].partner)
 
 # Specify the variational algorithm for n_its vmp iterations
-algo = VariationalBayes(Dict(   eg(:m1_e*(1:N1+N2)) => PartitionedDistribution{MvGaussian{length(true_mean1)},2},
-                                eg(:w1_e*(1:N1+N2)) => PartitionedDistribution{ForneyLab.Wishart{length(true_mean1)},2},
-                                eg(:z_e*(1:N1+N2))  => ForneyLab.Bernoulli,
-                                eg(:pi_e*(1:N1+N2)) => ForneyLab.Beta,
-                                eg(:y_e*(1:N1+N2))  => MvGaussian{length(true_mean1)}),
+algo = VariationalBayes(Dict(   eg(:m1_e*(1:(N1+N2))) => PartitionedDistribution{MvGaussian{length(true_mean1)},2},
+                                eg(:w1_e*(1:(N1+N2))) => PartitionedDistribution{ForneyLab.Wishart{length(true_mean1)},2},
+                                eg(:z_e*(1:(N1+N2)))  => ForneyLab.Bernoulli,
+                                eg(:pi_e*(1:(N1+N2))) => ForneyLab.Beta,
+                                eg(:y_e*(1:(N1+N2)))  => MvGaussian{length(true_mean1)}),
                         n_iterations=n_its)
 
 show(algo)
@@ -83,11 +84,11 @@ show(algo)
 run(algo);
 
 #print the true parameters
-println("True mean: $(true_mean1)")
-println("True precision: $(inv(true_variance1))")
-println("True mean: $(true_mean2)")
-println("True precision: $(inv(true_variance2))")
-println("Number of samples: $(N1+N2)")
+# println("True mean: $(true_mean1)")
+# println("True precision: $(inv(true_variance1))")
+# println("True mean: $(true_mean2)")
+# println("True precision: $(inv(true_variance2))")
+# println("Number of samples: $(N1+N2)")
 
 #print the estimated parameters
 ensureParameters!(m1_est[end].factors[1], (:m, :V))

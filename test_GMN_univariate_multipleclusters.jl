@@ -1,8 +1,8 @@
 using ForneyLab
 
 # Initial settings
-N               = [200; 200; 200]                               # Number of observed samples first cluster
-n_its           = 200                                     # Number of vmp iterations
+N               = [100; 100; 100]                               # Number of observed samples first cluster
+n_its           = 50                                         # Number of vmp iterations
 true_mean1      = 30.0                                          # Mean first cluster
 true_variance1  = 0.1                                           # Variance first cluster
 true_mean2      = 1.0                                           # Mean second cluster
@@ -24,54 +24,56 @@ function ForneyLab.vague!(dist::ForneyLab.Gamma)
 end
 
 ForneyLab.vague(::Type{ForneyLab.Gamma}) = ForneyLab.Gamma(a=1., b=1.)
+
 # Build graph
+for k=1:(sum(N))
+    GaussianMixtureNodePar(id=:gm*k) # s() for symbol concatenation
+    EqualityNode(id=:m1_eq*k)
+    EqualityNode(id=:w1_eq*k)
+    EqualityNode(id=:pi_eq*k)
+    TerminalNode(Delta(y[k]), id=:y*k) # Observed y values are stored in terminal node values
+    PriorNode(Categorical{length(N)}(1/length(N)*ones(length(N))),id=:z*k)
+    Edge(n(:pi_eq*k).i[1],n(:gm*k).i[:pi],id=:pi_e*k)
+    Edge(n(:m1_eq*k).i[1],n(:gm*k).i[:m],id=:m1_e*k)
+    Edge(n(:w1_eq*k).i[1],n(:gm*k).i[:w],id=:w1_e*k)
+    Edge(n(:z*k).i[:out],n(:gm*k).i[:z],id=:z_e*k)
+    Edge(n(:y*k).i[:out],n(:gm*k).i[:x],id=:y_e*k)
 
-#Nodes
-GaussianMixtureNodePar(id=:gm)
-EqualityNode(id=:m1_eq)
-EqualityNode(id=:w1_eq)
-EqualityNode(id=:pi_eq)
-TerminalNode(Delta(),id=:y)
-PriorNode(Categorical{length(N)}(1/length(N)*ones(length(N))),id=:z)
-PriorNode(PartitionedDistribution([Gaussian(m=25.0,V=12.0),Gaussian(m=10.0,V=12.0),Gaussian(m=125.,V=12.)]),id=:m1_min_1)
-PriorNode(PartitionedDistribution([Gamma(a=1,b=1.),Gamma(a=1, b=1.), Gamma(a=1,b=1.)]),id=:w1_min_1)
-PriorNode(Dirichlet(20.*ones(length(N))),id=:pi_min_1)
-TerminalNode(vague(PartitionedDistribution{Gaussian, length(N)}),id=:m1_n)
-TerminalNode(vague(PartitionedDistribution{Gamma,length(N)}),id=:w1_n)
-TerminalNode(vague(Dirichlet{length(N)}),id=:pi_n)
+    if k > 1 # Connect sections
+        Edge(n(:m1_eq*(k-1)).i[2], n(:m1_eq*k).i[3])
+        Edge(n(:pi_eq*(k-1)).i[2], n(:pi_eq*k).i[3])
+        Edge(n(:w1_eq*(k-1)).i[2], n(:w1_eq*k).i[3])
+    end
+end
 
-#Edges
-Edge(n(:pi_eq).i[1],n(:gm).i[:pi],id=:pi)
-Edge(n(:m1_eq).i[1],n(:gm).i[:m],id=:m1)
-Edge(n(:w1_eq).i[1],n(:gm).i[:w],id=:w1)
-Edge(n(:z).i[:out],n(:gm).i[:z],id=:z)
-Edge(n(:y).i[:out],n(:gm).i[:x],id=:y)
-Edge(n(:m1_min_1).i[:out], n(:m1_eq).i[:2])
-Edge(n(:w1_min_1).i[:out], n(:w1_eq).i[:2])
-Edge(n(:pi_min_1).i[:out], n(:pi_eq).i[:2])
-Edge(n(:m1_n).i[:out], n(:m1_eq).i[:3])
-Edge(n(:w1_n).i[:out], n(:w1_eq).i[:3])
-Edge(n(:pi_n).i[:out], n(:pi_eq).i[:3])
 
-Wrap(n(:pi_n),n(:pi_min_1))
-Wrap(n(:m1_n),n(:m1_min_1))
-Wrap(n(:w1_n),n(:w1_min_1))
+PriorNode(PartitionedDistribution([Gaussian(m=25.0,V=12.0),Gaussian(m=10.0,V=12.0),Gaussian(m=150.,V=12.)]),id=:m1_start)
+PriorNode(PartitionedDistribution([Gamma(a=1,b=1.),Gamma(a=1, b=1.), Gamma(a=1,b=1.)]),id=:w1_start)
+PriorNode(Dirichlet(2.*ones(length(N))),id=:pi_start)
 
-#attach the observed data
-attachReadBuffer(n(:y), deepcopy(y));
+Edge(n(:m1_eq*1).i[3],n(:m1_start).i[:out])
+Edge(n(:w1_eq*1).i[3],n(:w1_start).i[:out])
+Edge(n(:pi_eq*1).i[3],n(:pi_start).i[:out])
+
+TerminalNode(vague(PartitionedDistribution{Gaussian, length(N)}),id=:m1_end)
+TerminalNode(vague(PartitionedDistribution{Gamma,length(N)}),id=:w1_end)
+TerminalNode(vague(Dirichlet{length(N)}),id=:pi_end)
+
+Edge(n(:m1_eq*(sum(N))).i[2], n(:m1_end))
+Edge(n(:w1_eq*(sum(N))).i[2], n(:w1_end))
+Edge(n(:pi_eq*(sum(N))).i[2], n(:pi_end))
 
 # attach write buffers to the wanted variables
-m1_est = attachWriteBuffer(n(:m1_eq).i[3])
-w1_est = attachWriteBuffer(n(:w1_eq).i[3])
-pi_est = attachWriteBuffer(n(:pi_eq).i[3])
-z_est  = attachWriteBuffer(n(:gm).i[:z])
+m1_est = attachWriteBuffer(n(:m1_end).i[:out].partner)
+w1_est = attachWriteBuffer(n(:w1_end).i[:out].partner)
+pi_est = attachWriteBuffer(n(:pi_end).i[:out].partner);
 
 # Specify the variational algorithm for n_its vmp iterations
-algo = VariationalBayes(Dict(   eg(:m1) => PartitionedDistribution{Gaussian,length(N)},
-                                eg(:w1) => PartitionedDistribution{Gamma,length(N)},
-                                eg(:z)  => Categorical{length(N)},
-                                eg(:pi) => Dirichlet{length(N)},
-                                eg(:y)  => Gaussian),
+algo = VariationalBayes(Dict(   eg(:m1_e*(1:(sum(N)))) => PartitionedDistribution{Gaussian,length(N)},
+                                eg(:w1_e*(1:(sum(N)))) => PartitionedDistribution{Gamma,length(N)},
+                                eg(:z_e*(1:(sum(N))))  => Categorical{length(N)},
+                                eg(:pi_e*(1:(sum(N)))) => Dirichlet{length(N)},
+                                eg(:y_e*(1:(sum(N))))  => Gaussian),
                         n_iterations=n_its)
 
 show(algo)
