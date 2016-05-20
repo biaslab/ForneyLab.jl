@@ -2,32 +2,32 @@ using ForneyLab
 using Distributions
 
 # Initial settings
-N                 = [20;20;20]                                # Number of observed samples first clusters
-n_its             = 50                                        # Number of vmp iterations
-true_mean1        = [10.0,3.0,1.0]                            # Mean of the first cluster
-true_variance1    = [3.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]   # Variance of the first cluster
-true_mean2        = [4.0,10.0, 2.0]                          # Mean of the second cluster
-true_variance2    = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]   # Variance of the second cluster
-true_mean3        = [1.0,3.0, 10.0]                          # Mean of the second cluster
-true_variance3    = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]   # Variance of the second cluster
-d1                = MvNormal(true_mean1, true_variance1)      # Construct the distribution of first cluster
-d2                = MvNormal(true_mean2, true_variance2)      # Construct distribution of the second cluster
-d3                = MvNormal(true_mean3, true_variance3)      # Construct distribution of the second cluster
-y_observations1   = rand(d1,N[1])'                              # Take samples from the first cluster
-y_observations2   = rand(d2,N[2])'                              # Take samples from the second cluster
-y_observations3   = rand(d3,N[3])'                              # Take samples from the second cluster
+N                 = [100;100;100]                                    # Number of observed samples first clusters
+n_its             = 100                                            # Number of vmp iterations
+true_mean1        = [10.0,3.0,1.0]                                # Mean of the first cluster
+true_variance1    = [3.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]       # Variance of the first cluster
+true_mean2        = [4.0,10.0, 2.0]                               # Mean of the second cluster
+true_variance2    = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]       # Variance of the second cluster
+true_mean3        = [1.0,3.0, 10.0]                               # Mean of the second cluster
+true_variance3    = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]       # Variance of the second cluster
+d1                = MvNormal(true_mean1, true_variance1)          # Construct the distribution of first cluster
+d2                = MvNormal(true_mean2, true_variance2)          # Construct distribution of the second cluster
+d3                = MvNormal(true_mean3, true_variance3)          # Construct distribution of the second cluster
+y_observations1   = rand(d1,N[1])'                                # Take samples from the first cluster
+y_observations2   = rand(d2,N[2])'                                # Take samples from the second cluster
+y_observations3   = rand(d3,N[3])'                                # Take samples from the second cluster
 
 permutations      = shuffle(collect(1:sum(N)))
 y                 = [y_observations1; y_observations2; y_observations3][permutations,:]        # Mix the samples from the clusters
 
 #Overwrite the Wishart prior with variables that are equal or bigger than 1
 function ForneyLab.vague!{dims}(dist::ForneyLab.Wishart{dims})
-    dist.V = eye(dims)*4.
-    dist.nu = 4.
+    dist.V = eye(dims)
+    dist.nu = 1.
    return dist
 end
 
-ForneyLab.vague{dims}(::Type{ForneyLab.Wishart{dims}}) = ForneyLab.Wishart(V=diageye(dims)*4., nu=4.)
+ForneyLab.vague{dims}(::Type{ForneyLab.Wishart{dims}}) = ForneyLab.Wishart(V=diageye(dims), nu=1.)
 
 # Build graph
 for k=1:(sum(N))
@@ -52,7 +52,7 @@ end
 
 PriorNode(PartitionedDistribution([MvGaussian(m=[5.,1.0, 1.0],V=[10. 0.0 0.0;0.0 10. 0.0; 0.0 0.0 10.0]),MvGaussian(m=[1.0, 5.0, 1.0],V=[10. 0.0 0.0; 0.0 10. 0.0; 0.0 0.0 10.0]), MvGaussian(m=[1.0, 1.0, 5.0],V=[10. 0.0 0.0; 0.0 10. 0.0; 0.0 0.0 10.0])]),id=:m1_start)
 PriorNode(PartitionedDistribution([ForneyLab.Wishart(nu=3., V=eye(3)*3.),ForneyLab.Wishart(nu=3., V=eye(3)*3.), ForneyLab.Wishart(nu=3., V=eye(3)*3.)]),id=:w1_start)
-PriorNode(ForneyLab.Dirichlet([200.0;200.0;200.0]),id=:pi_start)
+PriorNode(ForneyLab.Dirichlet([1.0;1.0;1.0]),id=:pi_start)
 
 Edge(n(:m1_eq*1).i[3],n(:m1_start).i[:out])
 Edge(n(:w1_eq*1).i[3],n(:w1_start).i[:out])
@@ -70,10 +70,6 @@ Edge(n(:pi_eq*(sum(N))).i[2], n(:pi_end))
 m1_est = attachWriteBuffer(n(:m1_end).i[:out].partner)
 w1_est = attachWriteBuffer(n(:w1_end).i[:out].partner)
 pi_est = attachWriteBuffer(n(:pi_end).i[:out].partner)
-z_est1=attachWriteBuffer(n(:z*1).i[:out].partner)
-z_est2=attachWriteBuffer(n(:z*2).i[:out].partner)
-z_est3=attachWriteBuffer(n(:z*3).i[:out].partner)
-z_est4=attachWriteBuffer(n(:z*4).i[:out].partner)
 
 # Specify the variational algorithm for n_its vmp iterations
 algo = VariationalBayes(Dict(   eg(:m1_e*(1:sum(N))) => PartitionedDistribution{MvGaussian{length(true_mean1)},length(N)},
@@ -88,13 +84,13 @@ show(algo)
 run(algo)
 
 #print the true parameters
-println("True mean 1: $(true_mean1)")
-println("True precision 1: $(inv(true_variance1))")
-println("True mean 2: $(true_mean2)")
-println("True precision 2: $(inv(true_variance2))")
-println("True mean 3: $(true_mean3)")
-println("True precision 3: $(inv(true_variance3))")
-println("Number of samples: $(sum(N))")
+# println("True mean 1: $(true_mean1)")
+# println("True precision 1: $(inv(true_variance1))")
+# println("True mean 2: $(true_mean2)")
+# println("True precision 2: $(inv(true_variance2))")
+# println("True mean 3: $(true_mean3)")
+# println("True precision 3: $(inv(true_variance3))")
+# println("Number of samples: $(sum(N))")
 
 #print the estimated parameters
 ensureParameters!(m1_est[end].factors[1], (:m, :V))
@@ -107,9 +103,3 @@ println("Mean estimate2: $(round(m1_est[end].factors[2].m,2)), with variance $(r
 println("Precision estimate2: $(round(w1_est[end].factors[2].nu*w1_est[end].factors[2].V,2))")
 println("Mean estimate3: $(round(m1_est[end].factors[3].m,2)), with variance $(round(m1_est[end].factors[3].V,2))")
 println("Precision estimate3: $(round(w1_est[end].factors[3].nu*w1_est[end].factors[3].V,2))")
-println("$(z_est1[end])")
-println("$(z_est2[end])")
-println("$(z_est3[end])")
-println("$(z_est4[end])")
-
-#println("ratio of pi $(pi_est[end].a/(pi_est[end].a+pi_est[end].b))")

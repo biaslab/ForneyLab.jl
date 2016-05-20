@@ -127,7 +127,7 @@ function variationalRule!{n_factors}(  node::GaussianMixtureNodePar,
                             q_x::Gaussian,
                             q_z::Categorical{n_factors})
 
-     a=zeros[k]
+     a=zeros(n_factors)
 
      for k=1:n_factors
        a[k]=q_z.p[k]+1
@@ -226,8 +226,8 @@ function variationalRule!{n_factors}(  node::GaussianMixtureNodePar,
 
     for k=1:n_factors
       outbound_dist.factors[k].m  = deepcopy(q_x.m)
-       invalidate!(outbound_dist.factors[k].V)
-       invalidate!(outbound_dist.factors[k].xi)
+       outbound_dist.factors[k].V = NaN
+       outbound_dist.factors[k].xi= NaN
       outbound_dist.factors[k].W  = q_z.p[k]*q_w.factors[k].a/q_w.factors[k].b
     end
 
@@ -355,6 +355,10 @@ function variationalRule!{n_factors}(  node::GaussianMixtureNodePar,
       outbound_dist.factors[k].a  = 1.+0.5*q_z.p[k]
       e_m1_square                 = q_m.factors[k].V+q_m.factors[k].m^2
       outbound_dist.factors[k].b  = 0.5*q_z.p[k]*(q_x.m^2-2.*q_x.m*q_m.factors[k].m+e_m1_square)
+      if outbound_dist.factors[k].b<tiny
+        outbound_dist.factors[k].b =100*tiny+0.5*q_z.p[k]*(q_x.m^2-2.*q_x.m*q_m.factors[k].m+e_m1_square)
+      end
+
     end
 
 
@@ -440,17 +444,6 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
 
     ln_ro2        =   e_ln_pi2+0.5*e_ln_w2-dims/2.0*log(2.0*pi)-0.5*gausterm2
 
-    println("q_w.V",q_w.factors[2].V)
-    println("q_x.m", q_x.m)
-    println("diff",q_x.m-q_m.factors[2].m )
-    println("e_w",e_w2)
-    println("q_w.nu", q_w.factors[2].nu)
-    #println("a", q_pi.b)
-    #println("sum_a",sum_a)
-    println("multidi",multidi2)
-    println("gausterm",gausterm2)
-    println("e_ln_w",e_ln_w2)
-    println("e_ln_pi", e_ln_pi2)
     #Normalize message
     #if statement to prevent division by zero
     if exp(ln_ro1)+exp(ln_ro2)>tiny
@@ -494,19 +487,7 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
       e_w = q_w.factors[k].nu*q_w.factors[k].V
 
       gausterm = (transpose(q_x.m-q_m.factors[k].m)*e_w*(q_x.m-q_m.factors[k].m))[1] + trace(q_m.factors[k].V*e_w)
-      # println("q_w.V",q_w.factors[k].V)
-      # println("q_x.m", q_x.m)
-      # println("diff",q_x.m-q_m.factors[k].m )
-      # println("e_w",e_w)
-      # println("q_w.nu", q_w.factors[k].nu)
-      # println("a", q_pi.alpha[k])
-      # println("sum_a",sum_a)
-      # println("multidi",multidi)
-      # println("gausterm",gausterm)
-      # println("e_ln_w",e_ln_w)
-      # println("e_ln_pi", e_ln_pi)
       ln_ro[k]        =   e_ln_pi+0.5*e_ln_w-dims/2.0*log(2.0*pi)-0.5*gausterm
-      # println(ln_ro[k])
     end
 
     sum_ro=sum(exp(ln_ro))
@@ -515,16 +496,11 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
       for k=1:n_factors
         outbound_dist.p[k]=exp(ln_ro[k])/sum_ro
       end
-    # elseif sum_ro<0
-    #   for k=1:n_factors
-    #     outbound_dist.p[k]=(ln_ro[k]+abs(sum_ro))/(2*abs(sum_ro))
-    #   end
     else
       for k=1:n_factors
         outbound_dist.p[k]=1/n_factors
       end
     end
-    # println(outbound_dist)
     return outbound_dist
 end
 
@@ -554,7 +530,7 @@ function variationalRule!{n_factors}(  node::GaussianMixtureNodePar,
         ensureParameters!(q_m.factors[k], (:m, :V))
 
         #calculating ln(ro1)
-        e_ln_pi    =   digamma(q_pi.a[k])-digamma(sum_a)
+        e_ln_pi    =   digamma(q_pi.alpha[k])-digamma(sum_a)
         e_ln_w     =   digamma(q_w.factors[k].a)-log(q_w.factors[k].b)
         e_m_square =   q_x.m^2-2.0*q_x.m*q_m.factors[k].m+q_m.factors[k].V+q_m.factors[k].m^2
         ln_ro[k]      =   e_ln_pi+0.5*e_ln_w-0.5*log(2pi)-0.5*q_w.factors[k].a/q_w.factors[k].b*e_m_square
