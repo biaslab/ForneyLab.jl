@@ -12,6 +12,8 @@ facts("Bernoulli unit tests") do
         @fact vague(Bernoulli) --> Bernoulli(0.5)
         @fact mean(Bernoulli(0.7)) --> 0.7
         @fact var(Bernoulli(0.7)) --> roughly(0.7*0.3)
+        @fact pdf(Bernoulli(0.6), true) --> 0.6
+        @fact pdf(Bernoulli(0.6), false) --> 0.4
         @fact typeof(sample(Bernoulli())) --> Bool
         @fact sample(Bernoulli(0.0)) --> false
         @fact sample(Bernoulli(1.0)) --> true

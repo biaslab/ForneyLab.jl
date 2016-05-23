@@ -7,6 +7,8 @@ facts("Categorical unit tests") do
         @fact Categorical().p --> [0.5; 0.5]
         @fact Categorical([0.1; 0.9]).p --> [0.1; 0.9]
         @fact typeof(Categorical([0.1; 0.8; 0.1])) --> Categorical{3}
+        @fact pdf(Categorical([0.1; 0.8; 0.1]), 2) --> 0.8
+        @fact pdf(Categorical([0.1; 0.8; 0.1]), 4) --> 0.0
     end
 
     context("required methods") do

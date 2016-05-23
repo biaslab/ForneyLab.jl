@@ -1,11 +1,17 @@
 # Probability distribution test
 facts("ProbabilityDistribution unit tests") do
-    for probdist_type in subtypes(ProbabilityDistribution)
-        probdist_type.abstract && continue # Skip abstract types
+    probdist_types = vcat(subtypes(ProbabilityDistribution), subtypes(Univariate), subtypes(Multivariate), subtypes(MatrixVariate))
+    for probdist_type in probdist_types
+        probdist_type.abstract && continue # skip abstract types
 
         context("$(probdist_type) should have a default constructor and a == operator") do
             @fact probdist_type()==probdist_type() --> true
         end
+
+        context("pdf(::$(probdist_type), x) should be implemented") do
+            @fact length(methods(pdf, [probdist_type, Any])) --> greater_than_or_equal(1)
+        end
+
         context("dimensions() should be implemented for $(probdist_type)") do
             @fact applicable(dimensions, probdist_type) --> true
             @fact applicable(dimensions, probdist_type()) --> true

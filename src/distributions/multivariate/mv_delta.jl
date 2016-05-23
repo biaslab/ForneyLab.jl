@@ -22,6 +22,8 @@ MvDelta{T<:Any}(m::Vector{T}) = MvDelta{T, length(m)}(deepcopy(m))
 
 MvDelta() = MvDelta{Float64, 1}(ones(1))
 
+pdf(dist::MvDelta, x::Vector) = ((dist.m==x) ? 1.0 : 0.0)
+
 format(dist::MvDelta) = "δ(m=$(format(dist.m)))"
 
 show(io::IO, dist::MvDelta) = println(io, format(dist))

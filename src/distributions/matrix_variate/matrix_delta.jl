@@ -23,6 +23,8 @@ MatrixDelta{T<:Number}(M::AbstractMatrix{T}) = MatrixDelta{T, size(M, 1), size(M
 
 MatrixDelta() = MatrixDelta{Float64, 1, 1}(eye(1))
 
+pdf(dist::MatrixDelta, x::AbstractMatrix) = ((dist.M==x) ? 1.0 : 0.0)
+
 format(dist::MatrixDelta) = "δ(M=$(format(dist.M)))"
 
 show(io::IO, dist::MatrixDelta) = println(io, format(dist))

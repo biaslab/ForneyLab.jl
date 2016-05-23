@@ -27,6 +27,16 @@ end
 
 NormalGamma(; m=0.0, beta=1.0, a=1.0, b=1.0) = NormalGamma(m, beta, a, b)
 
+function pdf(dist::NormalGamma, _x::Vector{Float64})
+    (length(_x) == 2) || return 0.0
+    x = _x[1]; τ = _x[2]
+    (τ >= 0) || return 0.0
+    m = dist.m; λ = dist.beta; a = dist.a; b = dist.b
+    C = b^a * sqrt(λ) / (gamma(a)*sqrt(2.0*pi))
+
+    return (C * τ^(a-0.5) * exp(-b*τ) * exp(-0.5*λ*τ*(x-m)^2))[1]
+end
+
 # TODO: reference
 function vague!(dist::NormalGamma)
     dist.m = 0.0

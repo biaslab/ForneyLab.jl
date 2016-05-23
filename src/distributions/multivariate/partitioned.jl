@@ -31,8 +31,29 @@ type PartitionedDistribution{dtype<:ProbabilityDistribution,n_factors} <: Multiv
         return new{dtype,length(factors)}(factors)
     end
 end
+
 PartitionedDistribution{T<:ProbabilityDistribution}(factors::Vector{T}) = PartitionedDistribution{typeof(factors[1]), length(factors)}(factors)
+
 PartitionedDistribution() = PartitionedDistribution([Gaussian(), Gaussian()])
+
+function pdf(dist::PartitionedDistribution, x::Vector)
+    (length(x) == dimensions(dist)) || throw(DimensionMismatch())
+    d = dimensions(dist.factors[1])
+    p = 1.0
+    factor_idx = 1
+    factor_dim = 1
+    for i=1:length(x)
+        p *= pdf(dist.factors[factor_idx], x[i])
+        if factor_dim == d
+            factor_dim = 1
+            factor_idx += 1
+        else
+            factor_dim += 1
+        end
+    end
+
+    return p
+end
 
 function show(io::IO, dist::PartitionedDistribution)
     println(io, typeof(dist))

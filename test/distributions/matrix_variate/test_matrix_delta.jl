@@ -13,6 +13,9 @@ facts("MatrixDelta unit tests") do
         @fact typeof(MatrixDelta()) --> MatrixDelta{Float64, 1, 1}
         @fact dimensions(MatrixDelta{Float64,2,2}) --> (2, 2)
         @fact dimensions(MatrixDelta(eye(2))) --> (2, 2)
+        @fact pdf(MatrixDelta(eye(3)), eye(3)) --> 1.0
+        @fact pdf(MatrixDelta(eye(3)), eye(4)) --> 0.0
+        @fact pdf(MatrixDelta(eye(3)), 2.0*eye(3)) --> 0.0
     end
 
     context("MatrixDelta can be sampled") do

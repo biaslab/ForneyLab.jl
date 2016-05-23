@@ -57,6 +57,19 @@ end
 
 Gaussian() = Gaussian(m=0.0, V=1.0)
 
+function pdf(dist::Gaussian, x::Float64)
+    ensureParameter!(dist, Val{:m})
+    if !isnan(dist.W)
+        C = sqrt(dist.W) / sqrt(2.0*pi)
+        return C * exp(-0.5 * (x-dist.m)^2 * dist.W)
+    elseif !isnan(dist.V)
+        C = 1.0 / sqrt(2.0*pi*dist.V)
+        return C * exp(-0.5 * (x-dist.m)^2 / dist.V)
+    else
+        error("Cannot evaluate pdf for underdetermined Gaussian")
+    end
+end
+
 function vague!(dist::Gaussian)
     dist.m = 0.0
     dist.V = huge

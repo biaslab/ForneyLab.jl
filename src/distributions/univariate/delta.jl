@@ -24,6 +24,8 @@ end
 
 Delta() = Delta{Float64}(1.0)
 
+pdf(dist::Delta, x) = ((dist.m==x) ? 1.0 :0.0)
+
 format(dist::Delta) = "δ(m=$(format(dist.m)))"
 
 show(io::IO, dist::Delta) = println(io, format(dist))

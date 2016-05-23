@@ -21,6 +21,16 @@ Dirichlet(alpha::Vector{Float64}) = Dirichlet{length(alpha)}(alpha)
 
 Dirichlet() = Dirichlet{2}(ones(2))
 
+function pdf(dist::Dirichlet, x::Vector{Float64})
+    (length(x) == length(dist.alpha)) || return 0.0
+    all(0.0 .<= x .<= 1.0) || return 0.0
+    isApproxEqual(sum(x), 1.0) || return 0.0
+    α = dist.alpha
+    B_inv = gamma(sum(α)) / prod(gamma(α))
+
+    return B_inv * prod(x.^(α-1.0))
+end
+
 format(dist::Dirichlet) = "Dir(α=$(format(dist.alpha)))"
 
 show(io::IO, dist::Dirichlet) = println(io, format(dist))
@@ -52,7 +62,7 @@ function prod!{dims}(x::Dirichlet{dims}, y::Dirichlet{dims}, z::Dirichlet{dims}=
 end
 
 @symmetrical function prod!{dims}(x::Dirichlet{dims}, y::MvDelta{Float64,dims}, z::MvDelta{Float64,dims}=deepcopy(y))
-    # Multiplication of 2 Dirichlet PDF with a MvDelta
+    # Multiplication of a Dirichlet PDF with a MvDelta
     all(0.0 .<= y.m .<= 1.0) || throw(DomainError())
     isApproxEqual(sum(y.m), 1.0) || throw(DomainError())
     z.m[:] = y.m
@@ -61,6 +71,6 @@ end
 end
 
 @symmetrical function prod!{dims}(x::Dirichlet{dims}, y::MvDelta{Float64,dims}, z::Dirichlet{dims})
-    # Multiplication of 2 Dirichlet PDF with a MvDelta, force result to be Dirichlet
+    # Multiplication of a Dirichlet PDF with a MvDelta, force result to be Dirichlet
     error("TODO")
 end

@@ -7,6 +7,7 @@ facts("Beta unit tests") do
         dist = Beta(a=2.0, b=0.5)
         @fact dist.a --> 2.0
         @fact dist.b --> 0.5
+        @fact pdf(Beta(a=2.0, b=0.5), 0.8) --> roughly(1.3416407864998738, atol=1e-8)
     end
 
     context("vague() should initialize a vague (almost uninformative) beta distribution") do

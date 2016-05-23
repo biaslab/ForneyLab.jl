@@ -7,6 +7,8 @@ facts("Mixture unit tests") do
         @fact_throws Mixture([Gaussian(), Gaussian()])
         @fact_throws Mixture([Gaussian(), Gamma()], [0.4; 0.6])
         @fact_throws Mixture([MvGaussian(m=zeros(2),V=eye(2)), MvGaussian(m=zeros(3),V=eye(3))], [0.4; 0.6])
+        dd = Mixture([Gaussian(m=1.0, V=2.0); Gaussian(m=2.0, V=3.0)], [0.4; 0.6])
+        @fact pdf(dd, 1.5) --> roughly(0.4*pdf(Gaussian(m=1.0, V=2.0), 1.5) + 0.6*pdf(Gaussian(m=2.0, V=3.0), 1.5), atol=1e-6)
     end
 
     context("vague! and vague should be implemented") do

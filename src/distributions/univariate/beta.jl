@@ -24,6 +24,13 @@ end
 
 Beta(; a=1.0, b=1.0) = Beta(a, b)
 
+function pdf(dist::Beta, x::Float64)
+    (0.0 <= x <= 1.0) || return 0.0
+    B = gamma(dist.a)*gamma(dist.b) / gamma(dist.a+dist.b)
+    return (x^(dist.a-1)*(1-x)^(dist.b-1)) / B
+end
+
+
 function vague!(dist::Beta)
     dist.a = tiny
     dist.b = tiny

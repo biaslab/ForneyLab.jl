@@ -31,6 +31,12 @@ end
 
 MvLogNormal(; m=[0.0], S=reshape([1.0],1,1)) = MvLogNormal{length(m)}(m, S)
 
+function pdf{dims}(dist::MvLogNormal{dims}, x::Vector{Float64})
+    (length(x) == dims) || return 0.0
+    all(x .>= 0.0) || return 0.0
+    error("TODO: pdf(::MvLogNormal, x) is not yet implemented")
+end
+
 function vague!{dims}(dist::MvLogNormal{dims})
     dist.m = zeros(dims)
     dist.S = huge*diageye(dims)

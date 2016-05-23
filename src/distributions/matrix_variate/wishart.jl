@@ -31,6 +31,10 @@ Wishart(; V::AbstractMatrix{Float64} = [1.0].', nu::Float64 = 1.0) = Wishart{siz
 
 Wishart() = Wishart(V = [1.0].', nu = 1.0)
 
+function pdf(dist::Wishart, x::AbstractMatrix{Float64})
+    error("TODO: pdf(::Wishart, x) is not yet implemented")
+end
+
 function vague!{dims}(dist::Wishart{dims})
     dist.V = huge*eye(dims)
     dist.nu = tiny

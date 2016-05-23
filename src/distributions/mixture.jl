@@ -30,6 +30,8 @@ Mixture{dtype<:ProbabilityDistribution}(components::Vector{dtype}, weights::Vect
 
 Mixture() = Mixture([Gaussian()], [1.0])
 
+pdf(dist::Mixture, x) = sum([dist.weights[c]*pdf(dist.components[c], x) for c=1:length(dist.components)])
+
 dimensions{dtype}(dist::Mixture{dtype}) = dimensions(dtype)
 
 dimensions{T<:Mixture}(dist_type::Type{T}) = dimensions(dist_type.parameters[1])

@@ -27,6 +27,10 @@ end
 
 Categorical() = Categorical([0.5; 0.5])
 
+function pdf(dist::Categorical, x::Int64)
+    return (1 <= x <= length(dist.p)) ? dist.p[x] : 0.0
+end
+
 function vague!{k}(dist::Categorical{k})
     fill!(dist.p, 1./k)
     return dist

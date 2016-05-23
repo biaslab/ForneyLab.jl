@@ -6,7 +6,7 @@ using LaTeXStrings
 export ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, AbstractDelta
 export sumProductRule!, expectationRule!, variationalRule!
 export InferenceAlgorithm
-export vague, self, ==, isProper, sample, dimensions
+export vague, self, ==, isProper, sample, dimensions, pdf
 export setVerbosity
 export prepare!
 export rules

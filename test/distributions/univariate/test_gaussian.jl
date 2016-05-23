@@ -15,6 +15,7 @@ facts("Gaussian unit tests") do
         @fact_throws Gaussian(m=0.0, V=Inf) # V should be bounded
         @fact_throws Gaussian(m=0.0, W=0.0)  # W should be positive definite
         @fact_throws Gaussian(m=0.0, W=Inf) # W should be bounded
+        @fact pdf(Gaussian(m=1.0, V=4.0), 1.5) --> roughly(0.19333405840142462, atol=1e-8)
     end
 
     context("vague() should initialize a vague (almost uninformative) Gaussian distribution") do

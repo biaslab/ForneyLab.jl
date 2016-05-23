@@ -24,6 +24,12 @@ end
 
 InverseGamma(; a=3.0, b=2.0) = InverseGamma(a, b)
 
+function pdf(dist::InverseGamma, x::Float64)
+    (0.0 <= x) || return 0.0
+    C = (dist.b^dist.a) / gamma(dist.a)
+    return C * x^(-dist.a-1) * exp(-dist.b/x)
+end
+
 function vague!(dist::InverseGamma)
     dist.a = tiny
     dist.b = tiny
