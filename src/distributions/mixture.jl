@@ -90,6 +90,41 @@ end
 
 Base.mean(dist::Mixture) = sum(map(mean, dist.components) .* dist.weights)
 
+function prod!(x::Mixture, y::Mixture, z::Mixture=vague(typeof(x)))
+    # Multiplication of 2 mixtures
+    n_x = length(x.components)
+    n_y = length(y.components)
+    n = n_x * n_y
+    p1 =  x.components[1] * y.components[1]
+    if typeof(z).parameters[1] != typeof(p1)
+        z = vague(Mixture{typeof(p1)})
+    end
+    (length(z.components) == n) || resize!(z, n)
+
+    for i=1:n_x
+        for j=1:n_y
+            prod!(x.components[i], y.components[j], z.components[(i-1)*n_x+j])
+            z.weights[(i-1)*n_x+j] = x.weights[i] * y.weights[j]
+            # TODO: incorporate normalizing constant for every component in weights vector
+        end
+    end
+
+    return normalize!(z)
+end
+
+@symmetrical function prod!{dtype}(x::Mixture{dtype}, y::dtype, z::Mixture{dtype}=vague(typeof(x)))
+    # Multiplication of a mixture with a single component
+
+    # TODO
+
+    return normalize!(z)
+end
+
+@symmetrical function prod!(x::Mixture, y::AbstractDelta, z::AbstractDelta=deepcopy(y))
+    # Multiplication of a mixture with a delta
+    return prod!(x.components[1], y, z)
+end
+
 """
 Change the number of components in a Mixture
 """
@@ -109,16 +144,24 @@ function Base.resize!{dtype}(dist::Mixture{dtype}, num_components::Int64)
 end
 
 """
+Normalize the weights vector of a Mixture
+"""
+function normalize!(dist::Mixture)
+    norm = sum(dist.weights)
+    (norm > 0.) || error("Cannot normalize Mixture weights")
+    dist.weights /= norm
+
+    return dist
+end
+
+"""
 Delete one or more components from a Mixture
 """
 function Base.deleteat!(dist::Mixture, args...)
     deleteat!(dist.components, args...)
     deleteat!(dist.weights, args...)
-    norm = sum(dist.weights)
-    (norm > 0.) || error("Cannot normalize Mixture weights after deleting components")
-    dist.weights /= norm
 
-    return dist
+    return normalize!(dist)
 end
 
 

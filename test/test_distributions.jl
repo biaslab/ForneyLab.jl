@@ -1,8 +1,5 @@
 # Probability distribution test
 facts("ProbabilityDistribution unit tests") do
-    @fact all(map(ForneyLab.isDelta, [Delta, MvDelta, MatrixDelta])) --> true
-    @fact ForneyLab.isDelta(Gaussian) --> false
-
     for probdist_type in subtypes(ProbabilityDistribution)
         probdist_type.abstract && continue # Skip abstract types
 
@@ -17,7 +14,7 @@ facts("ProbabilityDistribution unit tests") do
             @fact isProper(probdist_type()) --> true
         end
 
-        if !ForneyLab.isDelta(probdist_type)
+        if !(probdist_type <: AbstractDelta)
             context("$(probdist_type) should provide a vague! method") do
                 @fact applicable(ForneyLab.vague!, probdist_type()) --> true
             end
