@@ -50,7 +50,7 @@ vague{T<:Mixture}(dist_type::Type{T}) = Mixture([vague(T.parameters[1])], [1.0])
 function format(dist::Mixture)
     str = "$(typeof(dist))\n"
     str *= "  weights: $(format(dist.weights))\n"
-    str *= "  components: $(format(dist.components))"
+    str *= "  components:\n$(dist.components)"
 
     return str
 end
@@ -105,19 +105,36 @@ function prod!(x::Mixture, y::Mixture, z::Mixture=vague(typeof(x)))
 
     for i=1:n_x
         for j=1:n_y
-            prod!(x.components[i], y.components[j], z.components[(i-1)*n_x+j])
-            z.weights[(i-1)*n_x+j] = x.weights[i] * y.weights[j]
-            # TODO: incorporate normalizing constant for every component in weights vector
+            idx = (i-1)*n_x+j
+            prod!(x.components[i], y.components[j], z.components[idx])
+            # Evaluate pdf of product and the two factors to determine scaling factor.
+            # This is quite expensive due to the calls to pdf() and the division, so we could replace this with an analytical expression in the future.
+            x_test = mean(z.components[idx])
+            norm_const = (pdf(x.components[i], x_test) * pdf(y.components[j], x_test)) / pdf(z.components[idx], x_test)
+            z.weights[idx] = x.weights[i] * y.weights[j] * norm_const
         end
     end
 
     return normalize!(z)
 end
 
-@symmetrical function prod!{dtype}(x::Mixture{dtype}, y::dtype, z::Mixture{dtype}=vague(typeof(x)))
+@symmetrical function prod!{dtype}(x::Mixture{dtype}, y::dtype, z::Mixture=vague(typeof(x)))
     # Multiplication of a mixture with a single component
+    n_x = length(x.components)
+    c1 =  x.components[1] * y
+    if typeof(c1) != dtype
+        z = vague(Mixture{typeof(c1)})
+    end
+    (length(z.components) == n_x) || resize!(z, n_x)
 
-    # TODO
+    for i=1:n_x
+        prod!(x.components[i], y, z.components[i])
+        # Evaluate pdf of product and the two factors to determine scaling factor.
+        # This is quite expensive due to the calls to pdf() and the division, so we could replace this with an analytical expression in the future.
+        x_test = mean(z.components[i])
+        norm_const = (pdf(x.components[i], x_test) * pdf(y, x_test)) / pdf(z.components[i], x_test)
+        z.weights[i] = x.weights[i] * norm_const
+    end
 
     return normalize!(z)
 end
