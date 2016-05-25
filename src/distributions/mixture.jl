@@ -151,7 +151,7 @@ function Base.resize!{dtype}(dist::Mixture{dtype}, num_components::Int64)
     current_length = length(dist.components)
     if num_components < current_length
         # Delete components
-        return deleteat!(dist, num_components:current_length)
+        return deleteat!(dist, num_components+1:current_length)
     elseif num_components > current_length
         # Add components
         dist.weights = [dist.weights; zeros(num_components-current_length)]

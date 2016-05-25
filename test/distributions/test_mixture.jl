@@ -41,6 +41,36 @@ facts("Mixture unit tests") do
         @fact dimensions(Mixture{MvGaussian{4}}) --> 4
     end
 
+    context("normalize!") do
+        d = Mixture([Gaussian(m=1.0,V=2.0); Gaussian(m=3.0,V=2.0)], [0.3;0.9])
+        @fact d.weights --> [0.3;0.9]
+        ForneyLab.normalize!(d)
+        @fact d.weights --> [0.3;0.9] ./ sum([0.3;0.9])
+    end
+
+    context("deleteat!") do
+        d = Mixture([Gaussian(m=1.0,V=2.0); Gaussian(m=3.0,V=2.0)], [0.3;0.7])
+        @fact deleteat!(d, 2) --> Mixture([Gaussian(m=1.0,V=2.0)], [1.0])
+        d = Mixture([Gaussian(m=1.0,V=2.0); Gaussian(m=3.0,V=2.0); Gaussian()], [0.3;0.6;0.1])
+        @fact deleteat!(d, 2:3) --> Mixture([Gaussian(m=1.0,V=2.0)], [1.0])
+    end
+
+    context("resize!") do
+        d = Mixture([Gaussian(m=1.0,V=2.0); Gaussian(m=3.0,V=2.0)], [0.3;0.7])
+        resize!(d, 3)
+        @fact length(d.components) --> 3
+        @fact length(d.weights) --> 3
+        @fact sum(d.weights) --> roughly(1.0, atol=1e-6)
+        @fact resize!(d, 1) --> Mixture([Gaussian(m=1.0,V=2.0)], [1.0])
+    end
+
+    context("prune!") do
+        d = Mixture([Gaussian(m=1.0,V=2.0); Gaussian(m=3.0,V=2.0)], [0.3;0.7])
+        @fact prune!(d, min_weight=0.4) --> Mixture([Gaussian(m=3.0,V=2.0)], [1.0])
+        d = Mixture([Gaussian(m=1.0,V=2.0); Gaussian(m=3.0,V=2.0)], [0.3;0.7])
+        @fact prune!(d, max_num_components=1) --> Mixture([Gaussian(m=3.0,V=2.0)], [1.0])
+    end
+
     context("prod() should yield correct result") do
         # Test product of mixture and single component
         d = Gaussian(m=0.0, V=1.0)
