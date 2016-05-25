@@ -29,6 +29,12 @@ function StudentsT(; m::Float64 = 0.0,
     return StudentsT(m, lambda, nu)
 end
 
+function pdf(dist::StudentsT, x::Float64)
+    ν = dist.nu; λ = dist.lambda; m = dist.m
+    C = gamma((ν+1)/2.) / (gamma(ν/2.) * (λ/(pi*ν))^2)
+    return C * (1. + λ*(x-m)^2 / ν)^(-(ν+1.)/2.)
+end
+
 isProper(dist::StudentsT) = (realmin(Float64) < abs(dist.lambda) < realmax(Float64)) && (dist.nu > realmin(Float64))
 
 function Base.mean(dist::StudentsT)

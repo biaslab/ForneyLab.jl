@@ -6,6 +6,7 @@ facts("Dirichlet unit tests") do
     context("construction") do
         @fact Dirichlet([2.0; 1.0]).alpha --> [2.0; 1.0]
         @fact typeof(Dirichlet([0.1; 0.8; 0.1])) --> Dirichlet{3}
+        @fact pdf(Dirichlet([0.1; 0.8; 0.1]), [0.25;0.25;0.5]) --> roughly(0.0813716194533408, atol=1e-8)
     end
 
     context("required methods") do

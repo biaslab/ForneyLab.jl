@@ -10,6 +10,7 @@ facts("LogNormal unit tests") do
         @fact mean(dist) --> exp(dist.m + 0.5*dist.s)
         @fact var(dist) --> (exp(dist.s) - 1)*exp(2*dist.m + dist.s)
         @fact isnan(mean(LogNormal(m=0.0, s=-1.0))) --> true
+        @fact pdf(LogNormal(m=2.0, s=0.5^2), 1.0) --> roughly(0.00026766045152977074, atol=1e-8)
     end
 
     context("vague() should initialize a vague (almost uninformative) log-normal distribution") do

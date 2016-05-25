@@ -20,6 +20,12 @@ end
 
 LogNormal(; m=0.0, s=1.0) = LogNormal(m, s)
 
+function pdf(dist::LogNormal, x::Float64)
+    (0.0 <= x) || return 0.0
+    C = 1.0 / (x*sqrt(2*pi*dist.s))
+    return C * exp((log(x)-dist.m)^2 / (-2.0*dist.s))
+end
+
 function vague!(dist::LogNormal)
     dist.m = 0.0
     dist.s = huge

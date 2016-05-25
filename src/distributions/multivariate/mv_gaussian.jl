@@ -85,6 +85,30 @@ end
 
 MvGaussian() = MvGaussian(m=[0.0], V=reshape([1.0],1,1))
 
+function pdf(dist::MvGaussian, x::Vector{Float64})
+    k = size(dist.V, 1)
+    if isValid(dist.W)
+        if isValid(dist.m)
+            C = (2.0*pi)^(-k/2.0) * det(dist.W)^(0.5)
+            d = x - dist.m
+            return (C * exp(-0.5 * d' * dist.W * d))[1]
+        elseif isValid(dist.xi)
+            W = dist.W; ξ = dist.xi
+            C = (2.0*pi)^(-k/2.0) * det(W)^(0.5)
+            return (C * exp(-0.5*ξ'*pinv(W)*ξ) * exp(-0.5*x'*W*x + x'*ξ))[1]
+        else
+            error("Cannot evaluate pdf for underdetermined MvGaussian")
+        end
+    elseif isValid(dist.V)
+        ensureParameter!(dist, Val{:m})
+        C = (2.0*pi)^(-k/2.0) * det(dist.V)^(-0.5)
+        d = x - dist.m
+        return (C * exp(-0.5 * d' * pinv(dist.V) * d))[1]
+    else
+        error("Cannot evaluate pdf for underdetermined MvGaussian")
+    end
+end
+
 function vague!{dims}(dist::MvGaussian{dims})
     dist.m = zeros(dims)
     dist.V = huge*diageye(dims)

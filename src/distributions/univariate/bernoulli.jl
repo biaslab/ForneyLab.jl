@@ -16,7 +16,10 @@ Construction:
 type Bernoulli <: Univariate
     p::Float64 # Pr{X=true}
 end
+
 Bernoulli() = Bernoulli(0.5)
+
+pdf(dist::Bernoulli, x::Bool) = (x ? dist.p : (1.0-dist.p))
 
 function vague!(dist::Bernoulli)
     dist.p = 0.5

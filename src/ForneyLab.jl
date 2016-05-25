@@ -3,10 +3,10 @@ module ForneyLab
 using Optim
 using LaTeXStrings
 
-export ProbabilityDistribution, Univariate, Multivariate, MatrixVariate
+export ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, AbstractDelta
 export sumProductRule!, expectationRule!, variationalRule!
 export InferenceAlgorithm
-export vague, self, ==, isProper, sample, dimensions
+export vague, self, ==, isProper, sample, dimensions, pdf
 export setVerbosity
 export prepare!
 export rules
@@ -49,9 +49,13 @@ dimensions{T<:Multivariate}(distribution_type::Type{T}) = distribution_type.para
 dimensions(message::Message) = dimensions(message.payload)
 dimensions(message_type::Type{Message}) = dimensions(message_type.parameters[1])
 
+# Delta distributions
+include("distributions/univariate/delta.jl")
+include("distributions/multivariate/mv_delta.jl")
+include("distributions/matrix_variate/matrix_delta.jl")
+typealias AbstractDelta Union{Delta,MvDelta,MatrixDelta}
 
 # Univariate distributions
-include("distributions/univariate/delta.jl")
 include("distributions/univariate/bernoulli.jl")
 include("distributions/univariate/categorical.jl")
 include("distributions/univariate/gaussian.jl")
@@ -62,7 +66,6 @@ include("distributions/univariate/beta.jl")
 include("distributions/univariate/log_normal.jl")
 
 # Multivariate distributions
-include("distributions/multivariate/mv_delta.jl")
 include("distributions/multivariate/dirichlet.jl")
 include("distributions/multivariate/mv_gaussian.jl")
 include("distributions/multivariate/mv_log_normal.jl")
@@ -70,10 +73,10 @@ include("distributions/multivariate/normal_gamma.jl")
 include("distributions/multivariate/partitioned.jl")
 
 # Matrix variate distributions
-include("distributions/matrix_variate/matrix_delta.jl")
 include("distributions/matrix_variate/wishart.jl")
 
-isDelta{T<:ProbabilityDistribution}(dist_type::Type{T}) = (dist_type <: Union{Delta,MvDelta,MatrixDelta})
+# Special distributions
+include("distributions/mixture.jl")
 
 # Basic ForneyLab building blocks and methods
 include("interface.jl")

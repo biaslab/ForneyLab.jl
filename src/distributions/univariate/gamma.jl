@@ -24,6 +24,12 @@ end
 
 Gamma(; a=1.0, b=1.0) = Gamma(a, b)
 
+function pdf(dist::Gamma, x::Float64)
+    (0.0 <= x) || return 0.0
+    C = (dist.b^dist.a) / gamma(dist.a)
+    return C * x^(dist.a-1) * exp(-dist.b*x)
+end
+
 function vague!(dist::Gamma)
     dist.a = tiny
     dist.b = tiny

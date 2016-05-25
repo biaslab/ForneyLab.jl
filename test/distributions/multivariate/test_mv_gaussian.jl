@@ -21,6 +21,8 @@ facts("MvGaussian unit tests") do
         @fact_throws MvGaussian(m=[0.0, 0.0], V=[Inf 0.;0. 1.]) # V should be bounded
         @fact_throws MvGaussian(m=[0.0, 0.0], W=[0. 0.;0. 0.])  # W should be positive definite
         @fact_throws MvGaussian(m=[0.0, 0.0], W=[Inf 0.;0. 1.]) # W should be bounded
+        @fact pdf(MvGaussian(m=ones(2), W=eye(2)), [0.0;0.0]) --> roughly(0.05854983152431917, atol=1e-8)
+        @fact pdf(MvGaussian(xi=ones(2), V=eye(2)), [0.0;0.0]) --> roughly(0.05854983152431917, atol=1e-8)
     end
 
     context("vague() should initialize a vague (almost uninformative) Gaussian distribution") do

@@ -11,6 +11,7 @@ facts("InverseGamma unit tests") do
         @fact isnan(var(dist)) --> true
         @fact isnan(mean(InverseGamma(a=1.0, b=0.5))) --> true
         @fact var(InverseGamma(a=3.0, b=0.5)) --> 1./16
+        @fact pdf(InverseGamma(a=2.0, b=0.5), 1.5) --> roughly(0.05307639337583624, atol=1e-8)
     end
 
     context("vague() should initialize a vague (almost uninformative) inverse gamma distribution") do

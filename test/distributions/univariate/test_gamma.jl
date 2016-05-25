@@ -11,6 +11,7 @@ facts("Gamma unit tests") do
         @fact var(dist) --> 8.0
         @fact isnan(mean(Gamma(a=0.0, b=0.5))) --> true
         @fact isnan(mean(Gamma(a=1.0, b=0.0))) --> true
+        @fact pdf(Gamma(a=2.0, b=2.0), 1.5) --> roughly(0.2987224102071837, atol=1e-8)
     end
 
     context("vague() should initialize a vague (almost uninformative) gamma distribution") do

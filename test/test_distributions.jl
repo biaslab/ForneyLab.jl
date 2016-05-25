@@ -1,12 +1,17 @@
 # Probability distribution test
 facts("ProbabilityDistribution unit tests") do
-    @fact all(map(ForneyLab.isDelta, [Delta, MvDelta, MatrixDelta])) --> true
-    @fact ForneyLab.isDelta(Gaussian) --> false
+    probdist_types = vcat(subtypes(ProbabilityDistribution), subtypes(Univariate), subtypes(Multivariate), subtypes(MatrixVariate))
+    for probdist_type in probdist_types
+        probdist_type.abstract && continue # skip abstract types
 
-    for probdist_type in [subtypes(Univariate); subtypes(Multivariate); subtypes(MatrixVariate)]
         context("$(probdist_type) should have a default constructor and a == operator") do
             @fact probdist_type()==probdist_type() --> true
         end
+
+        context("pdf(::$(probdist_type), x) should be implemented") do
+            @fact length(methods(pdf, [probdist_type, Any])) --> greater_than_or_equal(1)
+        end
+
         context("dimensions() should be implemented for $(probdist_type)") do
             @fact applicable(dimensions, probdist_type) --> true
             @fact applicable(dimensions, probdist_type()) --> true
@@ -15,7 +20,7 @@ facts("ProbabilityDistribution unit tests") do
             @fact isProper(probdist_type()) --> true
         end
 
-        if !ForneyLab.isDelta(probdist_type)
+        if !(probdist_type <: AbstractDelta)
             context("$(probdist_type) should provide a vague! method") do
                 @fact applicable(ForneyLab.vague!, probdist_type()) --> true
             end

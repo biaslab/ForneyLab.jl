@@ -7,6 +7,8 @@ facts("Delta unit tests") do
         @fact Delta().m --> 1.0
         @fact Delta(2.0).m --> 2.0
         @fact typeof(Delta()) --> Delta{Float64}
+        @fact pdf(Delta(2.0), 2.0) --> 1.0
+        @fact pdf(Delta(2.0), 2.1) --> 0.0
     end
 
     context("Delta can be sampled") do

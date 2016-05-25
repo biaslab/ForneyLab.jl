@@ -9,6 +9,8 @@ facts("PartitionedDistribution unit tests") do
         @fact_throws PartitionedDistribution([Gaussian()])
         @fact_throws PartitionedDistribution([Gaussian(), Gamma()])
         @fact_throws PartitionedDistribution([vague(MvGaussian{2}), vague(MvGaussian{3})])
+        dd = PartitionedDistribution([Gaussian(m=1.0, V=1.0), Gaussian()])
+        @fact pdf(dd, [1.5;1.5]) --> roughly(pdf(Gaussian(m=1.0, V=1.0), 1.5) * pdf(Gaussian(), 1.5), atol=1e-6)
     end
 
     context("vague! and vague should be implemented") do
