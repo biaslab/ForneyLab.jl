@@ -1,5 +1,3 @@
-using PyPlot
-
 facts("Mixture unit tests") do
     context("Construction") do
         dd = Mixture([Gaussian(); Gaussian()], [0.4; 0.6])
@@ -53,17 +51,6 @@ facts("Mixture unit tests") do
         @fact scaling_factors[2] --> roughly(scaling_factors[1], atol=1e-6)
         @fact scaling_factors[3] --> roughly(scaling_factors[1], atol=1e-6)
 
-
-        # x = collect(-1:0.1:6)
-        # pm = [pdf(dm, xi) for xi in x]
-        # pp = [pdf(dp, xi) for xi in x]
-
-
-        # ion()
-        # plot(x, pm, "b")
-        # plot(x, pp, "r")
-        # readline()
-
         # Test product of two mixtures
         d1 = Mixture([Gaussian(m=1.0, V=0.1); Gaussian(m=2.0, V=1.0)], [0.4; 0.6])
         d2 = Mixture([Gaussian(m=3.0, V=0.2); Gaussian(m=-4.0, V=3.0)], [0.1; 0.9])
@@ -73,13 +60,5 @@ facts("Mixture unit tests") do
         scaling_factors = [pdf(d3,x) / (pdf(d1, x) * pdf(d2, x)) for x in x_test]
         @fact scaling_factors[2] --> roughly(scaling_factors[1], atol=1e-6)
         @fact scaling_factors[3] --> roughly(scaling_factors[1], atol=1e-6)
-
-
-        # x = collect(-1:0.1:6)
-        # p = [pdf(d3, xi) for xi in x]
-
-        # ion()
-        # plot(x, p)
-        # readline()
     end
 end
