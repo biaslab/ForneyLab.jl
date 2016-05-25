@@ -3,7 +3,7 @@ using Distributions
 
 # Initial settings
 N                 = [100;100;100]                                    # Number of observed samples first clusters
-n_its             = 100                                            # Number of vmp iterations
+n_its             = 10                                            # Number of vmp iterations
 true_mean1        = [10.0,3.0,1.0]                                # Mean of the first cluster
 true_variance1    = [3.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]       # Variance of the first cluster
 true_mean2        = [4.0,10.0, 2.0]                               # Mean of the second cluster

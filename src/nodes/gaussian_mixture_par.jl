@@ -491,6 +491,7 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
 
       gausterm = (transpose(q_x.m-q_m.factors[k].m)*e_w*(q_x.m-q_m.factors[k].m))[1] + trace(q_m.factors[k].V*e_w)
       ln_ro[k]        =   e_ln_pi+0.5*e_ln_w-dims/2.0*log(2.0*pi)-0.5*gausterm
+
     end
 
     sum_ro=sum(exp(ln_ro))
@@ -504,6 +505,7 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNodePar,
         outbound_dist.p[k]=1/n_factors
       end
     end
+
     return outbound_dist
 end
 
