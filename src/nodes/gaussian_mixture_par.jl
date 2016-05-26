@@ -55,6 +55,115 @@ end
 
 isDeterministic(::GaussianMixtureNodePar) = false
 
+#Sum product rule
+#Predictive distribution towards x
+
+#Univariate case with 2 clusters
+function sumProductRule!(   node::GaussianMixtureNodePar,
+                            outbound_interface_index::Type{Val{4}},
+                            outbound_dist::Mixture{Gaussian},
+                            msg_pi::Message{Beta},
+                            msg_m::Message{PartitionedDistribution{Gaussian,2}},
+                            msg_w::Message{PartitionedDistribution{Gamma,2}},
+                            msg_x::Any,
+                            msg_z::Message{Bernoulli})
+
+          ensureParameters!(msg_m.payload.factors[1], (:m, :V))
+          ensureParameters!(msg_m.payload.factors[2], (:m, :V))
+          resize!(outbound_dist, 2)
+
+          #for the first component
+          outbound_dist.components[1].m = msg_m.payload.factors[1].m
+          outbound_dist.components[1].V = (inv(msg_w.payload.factors[1].b)/(msg_w.payload.factors[1].a-1)+msg_m.payload.factors[1].V)
+          outbound_dist.components[1].xi=NaN
+          outbound_dist.components[1].W=NaN
+
+          w1     = msg_z.payload.p*msg_pi.payload.a/(msg_pi.payload.a+msg_pi.payload.b)
+
+          #for the second component
+          outbound_dist.components[2].m = msg_m.payload.factors[2].m
+          outbound_dist.components[2].V = (inv(msg_w.payload.factors[2].b)/(msg_w.payload.factors[2].a-1)+msg_m.payload.factors[2].V)
+          outbound_dist.components[2].xi=NaN
+          outbound_dist.components[2].W=NaN
+
+          w2      = (1-msg_z.payload.p)*msg_pi.payload.b/(msg_pi.payload.a+msg_pi.payload.b)
+
+          outbound_dist.weights[1]=w1/(w1+w2)
+          outbound_dist.weights[2]=w2/(w1+w2)
+
+    return outbound_dist
+end
+
+#Univariate case with k clusters
+function sumProductRule!{n_factors}(   node::GaussianMixtureNodePar,
+                            outbound_interface_index::Type{Val{4}},
+                            outbound_dist::Mixture{Gaussian},
+                            msg_pi::Message{Dirichlet{n_factors}},
+                            msg_m::Message{PartitionedDistribution{Gaussian,n_factors}},
+                            msg_w::Message{PartitionedDistribution{Gamma,n_factors}},
+                            msg_x::Any,
+                            msg_z::Message{Categorical{n_factors}})
+
+          resize!(outbound_dist, n_factors)
+          w=ones(n_factors)
+
+          k=collect(1:n_factors)
+          sum_a=sum(msg_pi.payload.alpha[k])
+
+          for k=1:n_factors
+            ensureParameters!(msg_m.payload.factors[k], (:m, :V))
+            outbound_dist.components[k].m = msg_m.payload.factors[k].m
+            outbound_dist.components[k].V = (inv(msg_w.payload.factors[k].b)/(msg_w.payload.factors[k].a-1)+msg_m.payload.factors[k].V)
+            outbound_dist.components[k].xi=NaN
+            outbound_dist.components[k].W=NaN
+
+            w[k]     = msg_z.payload.p[k]*msg_pi.payload.alpha[k]/(sum_a)
+          end
+
+          sum_w=sum(w)
+          for k=1:n_factors
+            outbound_dist.weights[k]=w[k]/(sum_w)
+          end
+
+
+    return outbound_dist
+end
+
+#Multivariate case with k clusters
+function sumProductRule!{n_factors,dims}(   node::GaussianMixtureNodePar,
+                            outbound_interface_index::Type{Val{4}},
+                            outbound_dist::Mixture{MvGaussian{dims}},
+                            msg_pi::Message{Dirichlet{n_factors}},
+                            msg_m::Message{PartitionedDistribution{MvGaussian{dims},n_factors}},
+                            msg_w::Message{PartitionedDistribution{Wishart{dims},n_factors}},
+                            msg_x::Any,
+                            msg_z::Message{Categorical{n_factors}})
+
+          resize!(outbound_dist, n_factors)
+          w=ones(n_factors)
+
+          k=collect(1:n_factors)
+          sum_a=sum(msg_pi.payload.alpha[k])
+
+          for k=1:n_factors
+            ensureParameters!(msg_m.payload.factors[k], (:m, :V))
+            outbound_dist.components[k].m = msg_m.payload.factors[k].m
+            outbound_dist.components[k].V = inv(msg_w.payload.factors[k].V)/(msg_w.payload.factors[k].nu-dims-1.)+msg_m.payload.factors[k].V
+            invalidate!(outbound_dist.components[k].xi)
+            invalidate!(outbound_dist.components[k].W)
+
+            w[k]     = msg_z.payload.p[k]*msg_pi.payload.alpha[k]/(sum_a)
+          end
+
+          sum_w=sum(w)
+          for k=1:n_factors
+            outbound_dist.weights[k]=w[k]/(sum_w)
+          end
+
+
+    return outbound_dist
+end
+
 # VMP message towards i[:pi]
 # Univariate gaussian with two clusters
 function variationalRule!{n_factors}(  node::GaussianMixtureNodePar,
