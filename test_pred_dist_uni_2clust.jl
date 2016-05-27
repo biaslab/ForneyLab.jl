@@ -4,7 +4,7 @@ GaussianMixtureNodePar(id=:gm)
 PriorNode(Bernoulli(0.3),id=:z)
 PriorNode(Beta(10.,20.),id=:pi)
 PriorNode(PartitionedDistribution([Gaussian(m=5., V=50.),Gaussian(m=10., V=50.)]),id=:m)
-PriorNode(PartitionedDistribution([Gamma(10.,10.),Gamma(2.,2.)]),id=:w)
+PriorNode(PartitionedDistribution([Gamma(10.,10.),Gamma(2.,5.)]),id=:w)
 TerminalNode(Mixture([Gaussian(m=0.0, V=huge), Gaussian(m=0.0, V=huge)],[0.5,0.5]),id=:x)
 
 Edge(n(:z).i[:out],n(:gm).i[:z],id=:e_z)

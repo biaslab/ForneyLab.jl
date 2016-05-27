@@ -74,7 +74,7 @@ function sumProductRule!(   node::GaussianMixtureNodePar,
 
           #for the first component
           outbound_dist.components[1].m = msg_m.payload.factors[1].m
-          outbound_dist.components[1].V = (inv(msg_w.payload.factors[1].b)/(msg_w.payload.factors[1].a-1)+msg_m.payload.factors[1].V)
+          outbound_dist.components[1].V = (msg_w.payload.factors[1].b/(msg_w.payload.factors[1].a-1)+msg_m.payload.factors[1].V)
           outbound_dist.components[1].xi=NaN
           outbound_dist.components[1].W=NaN
 
@@ -82,7 +82,7 @@ function sumProductRule!(   node::GaussianMixtureNodePar,
 
           #for the second component
           outbound_dist.components[2].m = msg_m.payload.factors[2].m
-          outbound_dist.components[2].V = (inv(msg_w.payload.factors[2].b)/(msg_w.payload.factors[2].a-1)+msg_m.payload.factors[2].V)
+          outbound_dist.components[2].V = (msg_w.payload.factors[2].b/(msg_w.payload.factors[2].a-1)+msg_m.payload.factors[2].V)
           outbound_dist.components[2].xi=NaN
           outbound_dist.components[2].W=NaN
 
@@ -114,7 +114,7 @@ function sumProductRule!{n_factors}(   node::GaussianMixtureNodePar,
           for k=1:n_factors
             ensureParameters!(msg_m.payload.factors[k], (:m, :V))
             outbound_dist.components[k].m = msg_m.payload.factors[k].m
-            outbound_dist.components[k].V = (inv(msg_w.payload.factors[k].b)/(msg_w.payload.factors[k].a-1)+msg_m.payload.factors[k].V)
+            outbound_dist.components[k].V = (msg_w.payload.factors[k].b/(msg_w.payload.factors[k].a-1)+msg_m.payload.factors[k].V)
             outbound_dist.components[k].xi=NaN
             outbound_dist.components[k].W=NaN
 
@@ -150,7 +150,7 @@ function sumProductRule!{n_factors,dims}(   node::GaussianMixtureNodePar,
       outbound_dist.components[1].V = inv(msg_w.payload.factors[1].V)/(msg_w.payload.factors[1].nu-dims-1.)+msg_m.payload.factors[1].V
       invalidate!(outbound_dist.components[1].xi)
       invalidate!(outbound_dist.components[1].W)
-    
+
       outbound_dist.components[2].m = msg_m.payload.factors[2].m
       outbound_dist.components[2].V = inv(msg_w.payload.factors[2].V)/(msg_w.payload.factors[2].nu-dims-1.)+msg_m.payload.factors[2].V
       invalidate!(outbound_dist.components[2].xi)
