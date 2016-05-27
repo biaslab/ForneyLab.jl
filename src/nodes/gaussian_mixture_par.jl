@@ -94,6 +94,7 @@ function sumProductRule!(   node::GaussianMixtureNodePar,
     return outbound_dist
 end
 
+#Sum product predictive distribution
 #Univariate case with k clusters
 function sumProductRule!{n_factors}(   node::GaussianMixtureNodePar,
                             outbound_interface_index::Type{Val{4}},
@@ -129,6 +130,45 @@ function sumProductRule!{n_factors}(   node::GaussianMixtureNodePar,
     return outbound_dist
 end
 
+#Sum product predictive distribution
+#Multivariate case with 2 clusters
+function sumProductRule!{n_factors,dims}(   node::GaussianMixtureNodePar,
+                            outbound_interface_index::Type{Val{4}},
+                            outbound_dist::Mixture{MvGaussian{dims}},
+                            msg_pi::Message{Beta},
+                            msg_m::Message{PartitionedDistribution{MvGaussian{dims},n_factors}},
+                            msg_w::Message{PartitionedDistribution{Wishart{dims},n_factors}},
+                            msg_x::Any,
+                            msg_z::Message{Bernoulli})
+
+      resize!(outbound_dist, 2)
+      ensureParameters!(msg_m.payload.factors[1], (:m, :V))
+      ensureParameters!(msg_m.payload.factors[2], (:m, :V))
+      w=ones(2)
+
+      outbound_dist.components[1].m = msg_m.payload.factors[1].m
+      outbound_dist.components[1].V = inv(msg_w.payload.factors[1].V)/(msg_w.payload.factors[1].nu-dims-1.)+msg_m.payload.factors[1].V
+      invalidate!(outbound_dist.components[1].xi)
+      invalidate!(outbound_dist.components[1].W)
+    
+      outbound_dist.components[2].m = msg_m.payload.factors[2].m
+      outbound_dist.components[2].V = inv(msg_w.payload.factors[2].V)/(msg_w.payload.factors[2].nu-dims-1.)+msg_m.payload.factors[2].V
+      invalidate!(outbound_dist.components[2].xi)
+      invalidate!(outbound_dist.components[2].W)
+
+      w[1]     = msg_z.payload.p*msg_pi.payload.a/(msg_pi.payload.a+msg_pi.payload.b)
+      w[2]     = (1-msg_z.payload.p)*msg_pi.payload.b/(msg_pi.payload.a+msg_pi.payload.b)
+
+
+      #Normalize weight
+      outbound_dist.weights[1]=w[1]/(w[1]+w[2])
+      outbound_dist.weights[2]=w[2]/(w[1]+w[2])
+
+
+    return outbound_dist
+end
+
+#Sum product predictive distribution
 #Multivariate case with k clusters
 function sumProductRule!{n_factors,dims}(   node::GaussianMixtureNodePar,
                             outbound_interface_index::Type{Val{4}},
