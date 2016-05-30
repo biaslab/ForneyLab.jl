@@ -1,8 +1,8 @@
 using ForneyLab
 
 # Initial settings
-N1              = 200                                           # Number of observed samples first cluster
-N2              = 200                                           # Number of observed samples second cluster
+N1              = 50                                           # Number of observed samples first cluster
+N2              = 50                                           # Number of observed samples second cluster
 n_its           = 50                                           # Number of vmp iterations
 true_mean1      = 30.0                                          # Mean first cluster
 true_variance1  = 0.1                                           # Variance first cluster
@@ -20,7 +20,7 @@ for k=1:(N1+N2)
     EqualityNode(id=:m1_eq*k)
     EqualityNode(id=:w1_eq*k)
     EqualityNode(id=:pi_eq*k)
-    TerminalNode(Delta(y[k]), id=:y*k) # Observed y values are stored in terminal node values
+    TerminalNode(Gaussian(m=y[k],V=4.0), id=:y*k) # Observed y values are stored in terminal node values
     PriorNode(ForneyLab.Bernoulli(0.5),id=:z*k)
     Edge(n(:pi_eq*k).i[1],n(:gm*k).i[:pi],id=:pi_e*k)
     Edge(n(:m1_eq*k).i[1],n(:gm*k).i[:m],id=:m1_e*k)
@@ -36,7 +36,7 @@ for k=1:(N1+N2)
 end
 
 
-PriorNode(PartitionedDistribution([Gaussian(m=50.0,V=12.0),Gaussian(m=6.0,V=5.0)]),id=:m1_start)
+PriorNode(PartitionedDistribution([Gaussian(m=50.0,V=12.0),Gaussian(m=6.0,V=2.0)]),id=:m1_start)
 PriorNode(PartitionedDistribution([Gamma(a=1,b=0.01),Gamma(a=1, b=0.01)]),id=:w1_start)
 PriorNode(ForneyLab.Beta(a=2.,b=2.),id=:pi_start)
 
@@ -58,12 +58,12 @@ w1_est = attachWriteBuffer(n(:w1_end).i[:out].partner)
 pi_est = attachWriteBuffer(n(:pi_end).i[:out].partner);
 
 # Specify the variational algorithm for n_its vmp iterations
-msg_types = Dict{Interface,DataType}([n(:gm*i).i[:x] => Gaussian for i=1:(N1+N2)])
+msg_types = Dict{Interface,DataType}([n(:gm*i).i[:x] => Mixture{Gaussian} for i=1:(N1+N2)])
 algo = VariationalBayes(Dict(   eg(:m1_e*(1:(N1+N2))) => PartitionedDistribution{Gaussian,2},
                                 eg(:w1_e*(1:(N1+N2))) => PartitionedDistribution{Gamma,2},
                                 eg(:z_e*(1:(N1+N2)))  => Bernoulli,
                                 eg(:pi_e*(1:(N1+N2))) => Beta,
-                                eg(:y_e*(1:(N1+N2)))  => Gaussian),
+                                eg(:y_e*(1:(N1+N2)))  => Mixture{Gaussian}),
                         n_iterations=n_its,
                         message_types=msg_types)
 
