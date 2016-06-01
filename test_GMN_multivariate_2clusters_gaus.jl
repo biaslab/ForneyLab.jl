@@ -29,7 +29,7 @@ ForneyLab.vague{dims}(::Type{ForneyLab.Wishart{dims}}) = ForneyLab.Wishart(V=dia
 
 # Build graph
 for k=1:(N1+N2)
-    GaussianMixtureNodePar(id=:gm*k) # s() for symbol concatenation
+    GaussianMixtureNode(id=:gm*k) # s() for symbol concatenation
     EqualityNode(id=:m1_eq*k)
     EqualityNode(id=:w1_eq*k)
     EqualityNode(id=:pi_eq*k)

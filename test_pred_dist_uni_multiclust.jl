@@ -1,6 +1,6 @@
 using ForneyLab
 
-GaussianMixtureNodePar(id=:gm)
+GaussianMixtureNode(id=:gm)
 PriorNode(Categorical([0.25,0.25,0.5]),id=:z)
 PriorNode(Dirichlet([10.,10.,20.]),id=:pi)
 PriorNode(PartitionedDistribution([Gaussian(m=5., V=50.),Gaussian(m=10., V=50.),Gaussian(m=20., V=100.)]),id=:m)

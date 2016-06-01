@@ -27,7 +27,7 @@ ForneyLab.vague(::Type{ForneyLab.Gamma}) = ForneyLab.Gamma(a=1., b=1.)
 
 # Build graph
 for k=1:(sum(N))
-    GaussianMixtureNodePar(id=:gm*k) # s() for symbol concatenation
+    GaussianMixtureNode(id=:gm*k) # s() for symbol concatenation
     EqualityNode(id=:m1_eq*k)
     EqualityNode(id=:w1_eq*k)
     EqualityNode(id=:pi_eq*k)
