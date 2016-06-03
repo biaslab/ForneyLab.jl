@@ -152,12 +152,16 @@ function inferDistributionTypes!(   algo::ExpectationPropagation,
     # Infer the payload types for all messages in algo.schedule
     # Fill schedule_entry.inbound_types and schedule_entry.outbound_type
     schedule_entries = Dict{Interface, ScheduleEntry}() # Lookup table from interface to schedule entry
+    message_types_interfaces = keys(message_types)
+    recognition_distributions_interfaces = keys(recognition_distributions)
 
     for entry in vcat(algo.iterative_schedule, algo.post_convergence_schedule)
         collectInboundTypes!(entry, schedule_entries, recognition_distributions, algo) # Fill entry.inbound_types
         outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
-        if outbound_interface in keys(message_types)
+        if outbound_interface in message_types_interfaces
             setOutboundType!(entry, message_types[outbound_interface])
+        elseif outbound_interface in recognition_distributions_interfaces
+            setOutboundType!(entry, recognition_distributions[outbound_interface])
         end
         inferOutboundType!(entry) # Infer the outbound message type, or validate that there exists a suitable rule if the outbound type is already fixed
         schedule_entries[outbound_interface] = entry # Add entry to lookup table
