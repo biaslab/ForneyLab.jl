@@ -1,7 +1,6 @@
 module ForneyLab
 
-using Optim
-using LaTeXStrings
+using Optim, LaTeXStrings, Graphs
 
 export ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, AbstractDelta
 export sumProductRule!, expectationRule!, variationalRule!
@@ -103,6 +102,7 @@ include("inference_algorithm.jl")
 include("nodes/composite.jl")
 
 # Generic methods
+include("graph_algorithms.jl")
 include("message_passing.jl")
 include("step.jl")
 

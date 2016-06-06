@@ -85,6 +85,7 @@ function show(io::IO, schedule::Schedule)
     end
 end
 
+
 function generateScheduleByDFS!(outbound_interface::Interface,
                                 backtrace::Vector{Interface} = Interface[],
                                 call_list::Vector{Interface} = Interface[];
