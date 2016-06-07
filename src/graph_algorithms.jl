@@ -5,14 +5,12 @@ export children
 
 type ChildrenVisitor{V} <: AbstractGraphVisitor
     vertices::Vector{V}
-    breakers::Set{V}
-    restrict_to::Set{V}
     allow_cycles::Bool
 
-    function ChildrenVisitor(n::Int; allow_cycles::Bool=false, breakers::Set{V}=Set{V}(), restrict_to::Set{V}=Set{V}())
+    function ChildrenVisitor(n::Int, allow_cycles::Bool)
         vs = Array(Int, 0)
         sizehint!(vs, n)
-        new(vs, breakers, restrict_to, allow_cycles)
+        new(vs, allow_cycles)
     end
 end
 
@@ -20,15 +18,6 @@ function Graphs.examine_neighbor!{V}(visitor::ChildrenVisitor{V}, u::V, v::V, vc
     if visitor.allow_cycles == false && vcolor == 1 && ecolor == 0
         throw(ArgumentError("The input graph contains a loop around $(v)."))
     end
-end
-
-function Graphs.discover_vertex!{V}(visitor::ChildrenVisitor{V}, v::V)
-    (v in visitor.breakers) && return false # stop at breakers
-    if length(visitor.restrict_to) > 0
-        (v in visitor.restrict_to) || return false
-    end
-
-    return true
 end
 
 Graphs.close_vertex!{V}(visitor::ChildrenVisitor{V}, v::V) = push!(visitor.vertices, v)
@@ -53,11 +42,24 @@ if `graph` is a dependency graph.
 """
 function children{V}(   vertices::Vector{V},
                         graph::AbstractGraph{V};
-                        kwargs...)
+                        allow_cycles::Bool=false,
+                        breakers::Set{V}=Set{V}(),
+                        restrict_to::Set{V}=Set{V}())
     @graph_requires graph vertex_list incidence_list vertex_map
 
+    # Init graph colormap
     cmap = zeros(Int, num_vertices(graph))
-    visitor = ChildrenVisitor{V}(num_vertices(graph); kwargs...)
+    if length(restrict_to) > 0
+        fill!(cmap, 2)
+        for allowed_vertex in restrict_to
+            cmap[vertex_index(allowed_vertex, graph)] = 0
+        end
+    end
+    for breaker in breakers
+        cmap[vertex_index(breaker, graph)] = 2
+    end
+
+    visitor = ChildrenVisitor{V}(num_vertices(graph), allow_cycles)
 
     for s in vertices
         if cmap[vertex_index(s, graph)] == 0
@@ -67,3 +69,5 @@ function children{V}(   vertices::Vector{V},
 
     visitor.vertices
 end
+
+children{V}(vertex::V, graph::AbstractGraph{V}; kwargs...) = children(V[vertex], graph; kwargs...)
