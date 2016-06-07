@@ -1,22 +1,43 @@
 import Base.show
 export ExpectationPropagation
 
+type EPSite
+    interface::Interface
+    expectation_type::DataType
+    expectation_entry::ScheduleEntry
+    prior_schedule::Schedule
+    prior::ProbabilityDistribution # payload of the incoming message, interface.partner.message always holds the cavity distribution
+
+    function EPSite{T<:ProbabilityDistribution}(interface::Interface, expectation_type::Type{T})
+        expectation_entry = convert(ScheduleEntry, interface, expectationRule!)
+        expectation_entry.outbound_type = expectation_type
+        new(interface, expectation_type, expectation_entry)
+    end
+end
+
 """
 Expectation propagation algorithm.
 
 Usage:
 
     ExpectationPropagation(sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
-    ExpectationPropagation(outbound_interface::Interface, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
-    ExpectationPropagation(outbound_interfaces::Vector{Interface}, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
+    ExpectationPropagation(target::Interface, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
+    ExpectationPropagation(targets::Vector{Interface}, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
     ExpectationPropagation(graph::FactorGraph, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
+
+Builds an expectation propagation message passing algorithm for the specified sites. Arguments:
+
+    - `sites`: a list of `(interface, expectation_type)` tuples, where `interface` specifies where the expectation message
+      is calculated, and `expectation_type <: ProbabilityDistribution` specifies the type of the expectation message.
+    - `n_iterations`: the maximum number of iterations.
+    - `callback`: a function that gets called after every iteration. If it returns true, the algorithm is terminated.
 """
 type ExpectationPropagation <: InferenceAlgorithm
     graph::FactorGraph
     execute::Function
-    iterative_schedule::Schedule
-    post_convergence_schedule::Schedule
-    sites::Vector{Interface}
+    sites::Vector{EPSite}
+    pre_schedule::Schedule
+    post_schedule::Schedule
     n_iterations::Int64
     callback::Function
 end
@@ -26,7 +47,6 @@ function show(io::IO, algo::ExpectationPropagation)
     println("    # sites: $(length(algo.sites))")
     println("    max. number of iterations: $(algo.n_iterations)")
     println("    callback function: $(algo.callback)")
-    println("Use show(algo.iterative_schedule) and show(algo.post_convergence_schedule) to view the message passing schedules.")
 end
 
 function ExpectationPropagation(
@@ -37,11 +57,11 @@ function ExpectationPropagation(
 end
 
 function ExpectationPropagation(
-            outbound_interface::Interface,
+            target::Interface,
             sites::Vector{Tuple{Interface, DataType}};
             kwargs...)
 
-    ExpectationPropagation([outbound_interface], sites; kwargs...)
+    ExpectationPropagation([target], sites; kwargs...)
 end
 
 function ExpectationPropagation(
@@ -53,91 +73,91 @@ function ExpectationPropagation(
 end
 
 function ExpectationPropagation(
-            outbound_interfaces::Vector{Interface},
+            targets::Vector{Interface},
             sites::Vector{Tuple{Interface, DataType}};
             n_iterations::Int64 = 100,
             callback::Function = ( () -> false ),
             graph::FactorGraph=currentGraph(),
             message_types::Dict{Interface,DataType}=Dict{Interface,DataType}())
-    # Build an EP message passing algorithm for the specified sites.
-    # sites is a list of (interface, recognition_distribution) tuples,
-    # where recognition_distribution <: ProbabilityDistribution.
-    # n_iterations specifies the maximum number of iterations.
-    # After each iteration, callback is called to allow for convergence checks.
-    # If the callback returns true, the algorithm is terminated.
 
-    # InferenceAlgorithm overview:
-    # 1. Init all sites with vague messages
-    # 2. (iterative schedule)
-    #   For all sites i=1:N
-    #       2a. Calculate cavity distribution i
-    #       2b. Calculate site distribution i
-    # 3. Check stopping criteria, goto 2
-    # 4. (post convergence schedule) to calculate the final messages after convergence
+    # Algorithm pseudo code:
+    #
+    # init all sites with vague expectation messages.
+    # execute algo.pre_schedule
+    # while (algo.callback()!=true && algo.n_iterations not exceeded):
+    #     for every site in algo.sites:
+    #         execute site.prior_schedule
+    #         expectation_dist = site.interface.message.payload
+    #         if expectation_dist <: PartitionedDistribution:
+    #             for every factor in expectation_dist:
+    #                 calculate cavity distribution from prior + other factors
+    #                 invoke expectationRule! on factor
+    #         else:
+    #             invoke expectationRule! (cavity distribution is equal to the result of algo.prior_schedule)
+    # execute algo.post_convergence_schedule
 
-    (length(sites) > 0) || error("Specify at least one site")
+    (length(sites) > 0) || throw(ArgumentError("Specify at least one site"))
 
-    sitelist = Interface[site[1] for site in sites]
-    recognition_distributions = Dict{Interface,DataType}([interface => distribution_type for (interface, distribution_type) in sites])
-
-    # Build iterative schedule
-    total_schedule = Vector{Interface}()
-    for i = 1:length(sitelist)
-        site = sitelist[i]
-        # Prepend sitelist b/c of vague initialization
-        total_schedule = vcat(sitelist, total_schedule)
-        # Add schedule for cavity distribution to total_schedule
-        total_schedule = generateScheduleByDFS!(site.partner, total_schedule)
-        total_schedule = total_schedule[length(sitelist)+1:end] # Strip sitelist prepend
-        # Build list of other sites, prepend to total schedule
-        if i < length(sitelist)
-            other_sites = vcat(sitelist[1:i-1], sitelist[i+1:end])
-        else
-            other_sites = sitelist[1:i-1]
-        end
-        total_schedule = vcat(other_sites, total_schedule)
-        total_schedule = generateScheduleByDFS!(site, total_schedule)
-        total_schedule = total_schedule[length(sitelist):end] # Strip other sitelist prepend
+    # unzip sites
+    interface_to_site = Dict{Interface, EPSite}()
+    ep_sites = EPSite[]
+    for (interface, expectation_type) in sites
+        push!(ep_sites, EPSite(interface, expectation_type))
+        interface_to_site[interface] = ep_sites[end]
     end
 
-    iterative_schedule = convert(Schedule, total_schedule, sumProductRule!)
-    for entry in iterative_schedule
-        if entry.node.interfaces[entry.outbound_interface_id] in sitelist
-            entry.rule = expectationRule!
-        end
+    # build schedules
+    site_interfaces = Set(keys(interface_to_site))
+    dg = summaryDependencyGraph(graph)
+    rdg = summaryDependencyGraph(graph, reverse_edges=true)
+    influenced_by_site = [Set(children(site_interface, rdg)) for site_interface in site_interfaces]
+
+    # Build prior schedules for all sites.
+    # Dependencies that are independent of the sites end up in the pre-schedule,
+    # which is only executed once at the start of the algorithm.
+    pre_schedule = children(Interface[site_interface.partner for site_interface in site_interfaces], dg, breakers=site_interfaces)
+    for i = 1:length(ep_sites)
+        site = ep_sites[i]
+        prev_site_idx = (i==1) ? length(ep_sites) : i-1
+        message_types[site.interface] = site.expectation_type # Add sites to the fixed msg type dictionary
+        # The prior schedule should include all messages that influence the prior on site i, and that are influenced by the previous site
+        prior_schedule = children(site.interface.partner, dg, breakers=site_interfaces, restrict_to=influenced_by_site[prev_site_idx])
+        ep_sites[i].prior_schedule = convert(Schedule, prior_schedule, sumProductRule!)
     end
 
-    # Build post-convergence schedule
-    for outbound_interface in outbound_interfaces
-        total_schedule = generateScheduleByDFS!(outbound_interface, total_schedule)
-    end
+    # build post-schedule
+    post_schedule = children(targets, dg, breakers=union(site_interfaces, Set(pre_schedule)))
 
-    if length(total_schedule) > length(iterative_schedule)
-        post_convergence_schedule = convert(Schedule, total_schedule[length(iterative_schedule)+1:end], sumProductRule!)
-    else
-        post_convergence_schedule = convert(Schedule, Interface[], sumProductRule!)
-    end
+    # type inference
+    pre_schedule = convert(Schedule, pre_schedule, sumProductRule!)
+    post_schedule = convert(Schedule, post_schedule, sumProductRule!)
+    inferMessageTypes!(pre_schedule, ep_sites, post_schedule, message_types)
 
-    # Build execute function
-    function exec(algorithm)
-        # Init all sites with vague messages
-        for site in algorithm.sites
-            vague!(site.message.payload)
-        end
-        # Execute iterative schedule until stopping criterium is met
-        for iteration_count = 1:algorithm.n_iterations
-            execute(algorithm.iterative_schedule)
-            # Check stopping criteria
-            if algorithm.callback()
-                break
-            end
-        end
-        # Execute post convergence schedule once
-        isempty(algorithm.post_convergence_schedule) || execute(algorithm.post_convergence_schedule)
-    end
+    # # Build execute function
+    # function exec(algorithm)
+    #     # Init all sites with vague messages
+    #     for site in algorithm.sites
+    #         vague!(site.message.payload)
+    #     end
+    #     # Execute iterative schedule until stopping criterium is met
+    #     for iteration_count = 1:algorithm.n_iterations
+    #         execute(algorithm.iterative_schedule)
+    #         # Check stopping criteria
+    #         if algorithm.callback()
+    #             break
+    #         end
+    #     end
+    #     # Execute post convergence schedule once
+    #     isempty(algorithm.post_convergence_schedule) || execute(algorithm.post_convergence_schedule)
+    # end
 
-    algo = ExpectationPropagation(graph, exec, iterative_schedule, post_convergence_schedule, sitelist, n_iterations, callback)
-    inferDistributionTypes!(algo, recognition_distributions, message_types)
+    algo = ExpectationPropagation(graph,
+                                  () -> true,
+                                  ep_sites,
+                                  pre_schedule,
+                                  convert(Schedule, Interface[], sumProductRule!), # TODO: post-schedule
+                                  n_iterations,
+                                  callback)
 
     return algo
 end
@@ -145,6 +165,21 @@ end
 ############################################
 # Type inference and preparation
 ############################################
+
+function inferMessageTypes!(pre_schedule::Schedule,
+                            ep_sites::Vector{EPSite},
+                            post_schedule::Schedule,
+                            fixed_types::Dict{Interface,DataType})
+    # Message type inference for all schedule entries in:
+    #   - pre_schedule
+    #   - site.prior_schedule for site in ep_sites
+    #   - post_schedule
+    # This fills the inbound_types and outbound_type fields of every ScheduleEntry
+
+    schedule_entries = Dict{Interface, ScheduleEntry}() # lookup table
+    fixed_type_interfaces = keys(fixed_types)
+    #schedule_entries = vcat(pre_schedule, [site.prior_schedule for site in ep_sites]..., post_schedule)
+end
 
 function inferDistributionTypes!(   algo::ExpectationPropagation,
                                     recognition_distributions::Dict{Interface,DataType},
