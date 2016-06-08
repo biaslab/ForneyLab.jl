@@ -360,7 +360,7 @@ end
 
 function ==(x::ScheduleEntry, y::ScheduleEntry)
     if is(x, y) return true end
-    ((x.outbound_interface_id == y.outbound_interface_id) && (x.node == y.node) && (x.rule == y.rule)) || (return false)
+    ((x.outbound_interface_id == y.outbound_interface_id) && (x.node == y.node) && (typeof(x) == typeof(y))) || (return false)
 
     return true
 end

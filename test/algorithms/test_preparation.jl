@@ -100,21 +100,21 @@ facts("Shared preparation methods for inference algorithms") do
     FactorGraph()
 
     context("inferOutboundType!() should infer the correct outbound type for a terminal node") do
-        entry = ScheduleEntry(TerminalNode(Gaussian()), 1, sumProductRule!)
+        entry = ScheduleEntry{SumProductRule}(TerminalNode(Gaussian()), 1)
         entry.inbound_types = [Void]
         ForneyLab.inferOutboundType!(entry)
         @fact entry.outbound_type --> Gaussian
     end
 
     context("inferOutboundType!() should infer the correct outbound type for a node") do
-        entry = ScheduleEntry(AdditionNode(), 3, sumProductRule!)
+        entry = ScheduleEntry{SumProductRule}(AdditionNode(), 3)
         entry.inbound_types = [Message{Gaussian}, Message{Gaussian}, Void]
         ForneyLab.inferOutboundType!(entry)
         @fact entry.outbound_type --> Gaussian
     end
 
     context("inferOutboundType!() should infer the correct outbound type for a Gaussian node with vmp") do
-        entry = ScheduleEntry(GaussianNode(form=:precision), 2, variationalRule!)
+        entry = ScheduleEntry{VariationalRule}(GaussianNode(form=:precision), 2)
         entry.inbound_types = [Gaussian, Void, Gaussian]
         ForneyLab.inferOutboundType!(entry)
         @fact entry.outbound_type --> Gamma
@@ -122,14 +122,14 @@ facts("Shared preparation methods for inference algorithms") do
 
     context("inferOutboundType!() should consider approximate rules") do
         # Just one approximate rule available
-        entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
+        entry = ScheduleEntry{SumProductRule}(EqualityNode(), 3)
         entry.inbound_types = [Message{Gaussian}, Message{StudentsT}, Void]
         ForneyLab.inferOutboundType!(entry)
         @fact entry.outbound_type --> Gaussian
         @fact entry.approximation --> MomentMatching
 
         # Just one approximate rule available, fixed outbound type
-        entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
+        entry = ScheduleEntry{SumProductRule}(EqualityNode(), 3)
         entry.inbound_types = [Message{Gaussian}, Message{StudentsT}, Void]
         entry.outbound_type = Gaussian
         ForneyLab.inferOutboundType!(entry)
@@ -137,7 +137,7 @@ facts("Shared preparation methods for inference algorithms") do
         @fact entry.approximation --> MomentMatching
 
         # Multiple approximate rules available, fixed outbound type
-        entry = ScheduleEntry(ExponentialNode(), 2, sumProductRule!)
+        entry = ScheduleEntry{SumProductRule}(ExponentialNode(), 2)
         entry.inbound_types = [Message{Gaussian}, Void]
         entry.outbound_type = Gamma
         ForneyLab.inferOutboundType!(entry)
@@ -146,7 +146,7 @@ facts("Shared preparation methods for inference algorithms") do
 
 
         # Multiple approximate rules available, fixed outbound type and approximation type
-        entry = ScheduleEntry(ExponentialNode(), 2, sumProductRule!)
+        entry = ScheduleEntry{SumProductRule}(ExponentialNode(), 2)
         entry.inbound_types = [Message{Gaussian}, Void]
         entry.outbound_type = Gamma
         entry.approximation = MomentMatching
@@ -157,18 +157,18 @@ facts("Shared preparation methods for inference algorithms") do
 
     context("inferOutboundType!() should consider one-by-one processing of PartitionedDistribution factors") do
         # Only PartitionedDistribution inbounds
-        entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
+        entry = ScheduleEntry{SumProductRule}(EqualityNode(), 3)
         entry.inbound_types = [Message{PartitionedDistribution{Gaussian,3}}, Message{PartitionedDistribution{Gaussian,3}}, Void]
         ForneyLab.inferOutboundType!(entry)
         @fact entry.outbound_type --> PartitionedDistribution{Gaussian,3}
 
         # Mismatch in number of factors
-        entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
+        entry = ScheduleEntry{SumProductRule}(EqualityNode(), 3)
         entry.inbound_types = [Message{PartitionedDistribution{Gaussian,2}}, Message{PartitionedDistribution{Gaussian,3}}, Void]
         @fact_throws ForneyLab.inferOutboundType!(entry)
 
         # PartitionedDistribution inbound mixed with regular inbound
-        entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
+        entry = ScheduleEntry{SumProductRule}(EqualityNode(), 3)
         entry.inbound_types = [Message{Gaussian}, Message{PartitionedDistribution{Gaussian,3}}, Void]
         ForneyLab.inferOutboundType!(entry)
         @fact entry.outbound_type --> PartitionedDistribution{Gaussian,3}
@@ -177,7 +177,7 @@ facts("Shared preparation methods for inference algorithms") do
     context("buildExecute!() should pre-compile the execute field of the schedule entry") do
         node = AdditionNode()
         node.i[:out].message = Message(Gaussian())
-        entry = ScheduleEntry(node, 3, sumProductRule!)
+        entry = ScheduleEntry{SumProductRule}(node, 3)
         @fact isdefined(entry, :execute) --> false
         ForneyLab.buildExecute!(entry, [Message(Gaussian()), Message(Gaussian()), nothing])
         @fact typeof(entry.execute) --> Function

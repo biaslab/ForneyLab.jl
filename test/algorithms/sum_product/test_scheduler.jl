@@ -2,7 +2,7 @@ facts("Schedule related tests") do
     context("ForneyLab.convert(Schedule, ...)") do
         FactorGraph()
         GaussianNode(id=:node)
-        @fact ForneyLab.convert(Schedule, [n(:node).i[:out], n(:node).i[:mean]]) --> [ScheduleEntry(n(:node).i[:out], sumProductRule!), ScheduleEntry(n(:node).i[:mean], sumProductRule!)]
+        @fact ForneyLab.convert(Schedule, [n(:node).i[:out], n(:node).i[:mean]], SumProductRule) --> [ScheduleEntry{SumProductRule}(n(:node).i[:out]), ScheduleEntry{SumProductRule}(n(:node).i[:mean])]
     end
 end
 
@@ -22,7 +22,7 @@ facts("ForneyLab.generateSumProductSchedule() integration tests") do
             # Generate schedule automatically
             # Message towards noise factor
             schedule = ForneyLab.generateSumProductSchedule(n(:add).i[:in2], breaker_sites = Set([n(:add).i[:in1], n(:add).i[:out]]))
-            
+
             intf_list = [schedule_entry.node.interfaces[schedule_entry.outbound_interface_id] for schedule_entry in schedule]
             # All (but just) required calculations should be in the schedule
             @fact n(:inhibitor).i[:out] in intf_list --> true
@@ -42,10 +42,10 @@ facts("ForneyLab.generateSumProductSchedule() integration tests") do
 
         context("Should correctly complete a partial schedule") do
             # Generate a schedule that first passes clockwise through the cycle and then counterclockwise
-            partial = ForneyLab.convert(Schedule, [n(:driver).i[:out], n(:add).i[:in2]])
+            partial = ForneyLab.convert(Schedule, [n(:driver).i[:out], n(:add).i[:in2]], SumProductRule)
             schedule = ForneyLab.generateSumProductSchedule(partial, breaker_sites = Set([n(:add).i[:in1], n(:add).i[:out]])) # Message towards noise factor
             # All (but just) required calculations should be in the schedule
-            @fact schedule --> ForneyLab.convert(Schedule, [n(:inhibitor).i[:out], n(:driver).i[:out], n(:driver).i[:in], n(:inhibitor).i[:in], n(:add).i[:in2]])
+            @fact schedule --> ForneyLab.convert(Schedule, [n(:inhibitor).i[:out], n(:driver).i[:out], n(:driver).i[:in], n(:inhibitor).i[:in], n(:add).i[:in2]], SumProductRule)
         end
 
         context("Should generate a schedule that propagates messages to timewraps") do
@@ -57,7 +57,7 @@ facts("ForneyLab.generateSumProductSchedule() integration tests") do
             @fact s1 --> Array(ScheduleEntry, 0)
             Wrap(n(:t1), n(:t2))
             s2 = ForneyLab.generateSumProductSchedule(g)
-            @fact s2 --> ForneyLab.convert(Schedule, [n(:t1).i[:out].partner])
+            @fact s2 --> ForneyLab.convert(Schedule, [n(:t1).i[:out].partner], SumProductRule)
         end
 
         context("Should generate a schedule that propagates messages to write buffers defined on interfaces") do
@@ -69,7 +69,7 @@ facts("ForneyLab.generateSumProductSchedule() integration tests") do
             @fact s1 --> Array(ScheduleEntry, 0)
             attachWriteBuffer(n(:t1).i[:out])
             s2 = ForneyLab.generateSumProductSchedule(g)
-            @fact s2 --> ForneyLab.convert(Schedule, [n(:t1).i[:out]])
+            @fact s2 --> ForneyLab.convert(Schedule, [n(:t1).i[:out]], SumProductRule)
         end
 
         context("Should generate a schedule that propagates messages to write buffers defined on edges") do
@@ -81,7 +81,7 @@ facts("ForneyLab.generateSumProductSchedule() integration tests") do
             @fact s1 --> Array(ScheduleEntry, 0)
             attachWriteBuffer(n(:t1).i[:out].edge)
             s2 = ForneyLab.generateSumProductSchedule(g)
-            @fact s2 --> ForneyLab.convert(Schedule, [n(:t1).i[:out].partner, n(:t1).i[:out]])
+            @fact s2 --> ForneyLab.convert(Schedule, [n(:t1).i[:out].partner, n(:t1).i[:out]], SumProductRule)
         end
     end
 end

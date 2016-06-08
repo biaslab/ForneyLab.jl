@@ -20,7 +20,7 @@ printVerbose(msg) = if verbose println(msg) end
 include("helpers.jl")
 
 # Other includes
-import Base.show, Base.convert
+import Base.show, Base.convert, Base.==
 
 # High level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
@@ -35,7 +35,7 @@ abstract InferenceAlgorithm
 # Low-level internals
 include("approximation.jl")     # Types related to approximations
 include("node.jl")              # Node type
-include("message.jl")           # Message type
+include("message.jl")           # Message type and message calculation rules
 
 # Dimensionality of distributions
 dimensions(::Univariate) = 1

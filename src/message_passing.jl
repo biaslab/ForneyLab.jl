@@ -21,7 +21,7 @@ function execute(schedule_entry::ScheduleEntry)
 end
 
 # Execute schedules
-function execute(schedule::Schedule)
+function execute{T<:ScheduleEntry}(schedule::Vector{T})
     # Execute a message passing schedule
     !isempty(schedule) || error("Cannot execute an empty schedule")
 

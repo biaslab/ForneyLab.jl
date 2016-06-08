@@ -100,11 +100,9 @@ function ExpectationPropagation(
         total_schedule = total_schedule[length(sitelist):end] # Strip other sitelist prepend
     end
 
-    iterative_schedule = convert(Schedule, total_schedule, sumProductRule!)
-    for entry in iterative_schedule
-        if entry.node.interfaces[entry.outbound_interface_id] in sitelist
-            entry.rule = expectationRule!
-        end
+    iterative_schedule = Schedule()
+    for interface in total_schedule
+        push!(iterative_schedule, ScheduleEntry{(interface in sitelist) ? ExpectationRule : SumProductRule}(interface))
     end
 
     # Build post-convergence schedule
@@ -113,9 +111,9 @@ function ExpectationPropagation(
     end
 
     if length(total_schedule) > length(iterative_schedule)
-        post_convergence_schedule = convert(Schedule, total_schedule[length(iterative_schedule)+1:end], sumProductRule!)
+        post_convergence_schedule = convert(Schedule, total_schedule[length(iterative_schedule)+1:end], SumProductRule)
     else
-        post_convergence_schedule = convert(Schedule, Interface[], sumProductRule!)
+        post_convergence_schedule = convert(Schedule, Interface[], SumProductRule)
     end
 
     # Build execute function
@@ -166,17 +164,17 @@ function inferDistributionTypes!(   algo::ExpectationPropagation,
     return algo
 end
 
-function collectInboundTypes!(  entry::ScheduleEntry,
-                                schedule_entries::Dict{Interface, ScheduleEntry},
-                                recognition_distributions::Dict{Interface,DataType},
-                                algo::ExpectationPropagation)
+function collectInboundTypes!{rule}(entry::ScheduleEntry{rule},
+                                    schedule_entries::Dict{Interface, ScheduleEntry},
+                                    recognition_distributions::Dict{Interface,DataType},
+                                    algo::ExpectationPropagation)
     # Look up the types of the inbound messages for entry.
     # Fill entry.inbound_types
     entry.inbound_types = []
 
     for (id, interface) in enumerate(entry.node.interfaces)
-        if (id == entry.outbound_interface_id) && (entry.rule == sumProductRule!)
-            # Incoming msg on outbound interface is always Void for sumProductRule! rule
+        if (id == entry.outbound_interface_id) && (rule == SumProductRule)
+            # Incoming msg on outbound interface is always Void for SumProductRule
             push!(entry.inbound_types, Void)
         elseif haskey(recognition_distributions, interface.partner)
             # Incoming msg from a site, so the type is given by the recognition distribution
@@ -203,9 +201,8 @@ function prepare!(algo::ExpectationPropagation)
     return algo.graph.prepared_algorithm = algo
 end
 
-function compile!(entry::ScheduleEntry, ::Type{Val{symbol(expectationRule!)}}, ::InferenceAlgorithm)
-    # Generate entry.execute for schedule entry with expectationRule! calculation rule
-
+function compile!(entry::ScheduleEntry{ExpectationRule}, ::InferenceAlgorithm)
+    # Generate entry.execute
     inbound_messages = [interface.partner.message for interface in entry.node.interfaces]
 
     return buildExecute!(entry, inbound_messages)

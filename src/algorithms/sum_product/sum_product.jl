@@ -139,8 +139,8 @@ function prepare!(algo::SumProduct)
     return algo.graph.prepared_algorithm = algo
 end
 
-function compile!(entry::ScheduleEntry, ::Type{Val{symbol(sumProductRule!)}}, ::InferenceAlgorithm)
-    # Generate entry.execute for schedule entry with sumProductRule! update rule
+function compile!(entry::ScheduleEntry{SumProductRule}, ::InferenceAlgorithm)
+    # Generate entry.execute
 
     inbound_rule_arguments = []
     # Add inbound messages to inbound_rule_arguments
