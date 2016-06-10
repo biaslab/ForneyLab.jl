@@ -40,7 +40,9 @@ end
 # Integration tests
 #####################
 
-facts("Functions for collecting nodes and edges") do
+import Graphs.num_vertices, Graphs.vertices, Graphs.out_neighbors
+
+facts("FactorGraph related functions") do
     context("edges() should get all edges connected to the node set") do
         initializeLoopyGraph()
         @fact edges(Set{Node}(Node[n(:driver), n(:inhibitor)])) --> Set{Edge}(Edge[n(:driver).i[:in].edge, n(:add).i[:in1].edge, n(:add).i[:out].edge])
@@ -85,5 +87,21 @@ facts("Functions for collecting nodes and edges") do
         g = FactorGraph()
         ForneyLab.addNode!(g, nd)
         @fact g.nodes[:tnode] --> nd
+    end
+
+    context("summaryDependencyGraph(fg) should build correct dependency graph") do
+        initializeLoopyGraph()
+        fg = currentGraph()
+        dg = summaryDependencyGraph(fg)
+        @fact num_vertices(dg) --> 8
+        for nd in nodes(fg)
+            for iface in nd.interfaces
+                @fact iface in vertices(dg) --> true
+            end
+        end
+        @fact length(out_neighbors(n(:noise).i[:out], dg)) --> 0
+        @fact length(out_neighbors(n(:add).i[:in1], dg)) --> 2
+        @fact n(:noise).i[:out] in out_neighbors(n(:add).i[:in1], dg) --> true
+        @fact n(:inhibitor).i[:in] in out_neighbors(n(:add).i[:in1], dg) --> true
     end
 end

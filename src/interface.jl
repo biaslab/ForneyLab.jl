@@ -20,6 +20,8 @@ function show(io::IO, interface::Interface)
     println(io, "Interface $(findfirst(interface.node.interfaces, interface)) $(iface_handle) of $(typeof(interface.node)) $(interface.node.id)")
 end
 
+==(interface1::Interface, interface2::Interface) = is(interface1, interface2)
+
 Base.deepcopy(::Interface) = error("deepcopy(::Interface) is not possible. An Interface should only be created by a Node constructor.")
 
 function setMessage!(interface::Interface, message::Message)
