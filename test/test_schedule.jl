@@ -29,6 +29,12 @@ facts("Schedule and ScheduleEntry tests") do
         end
     end
 
+    context("ForneyLab.convert(Schedule, ...)") do
+        FactorGraph()
+        GaussianNode(id=:node)
+        @fact ForneyLab.convert(Schedule, [n(:node).i[:out], n(:node).i[:mean]], SumProductRule) --> [ScheduleEntry{SumProductRule}(n(:node).i[:out]), ScheduleEntry{SumProductRule}(n(:node).i[:mean])]
+    end
+
     context("A compiled scheduleEntry can be executed") do
         node = TerminalNode(Gaussian(m=2.0, V=4.0))
         node.i[:out].message = Message(Gaussian()) # Preset message
