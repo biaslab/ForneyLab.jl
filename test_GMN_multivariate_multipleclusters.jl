@@ -2,23 +2,25 @@ using ForneyLab
 using Distributions
 
 # Initial settings
-N                 = [100;100;100]                                    # Number of observed samples first clusters
-n_its             = 10                                            # Number of vmp iterations
-true_mean1        = [10.0,3.0,1.0]                                # Mean of the first cluster
-true_variance1    = [3.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]       # Variance of the first cluster
-true_mean2        = [4.0,10.0, 2.0]                               # Mean of the second cluster
-true_variance2    = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]       # Variance of the second cluster
-true_mean3        = [1.0,3.0, 10.0]                               # Mean of the second cluster
-true_variance3    = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]       # Variance of the second cluster
-d1                = MvNormal(true_mean1, true_variance1)          # Construct the distribution of first cluster
-d2                = MvNormal(true_mean2, true_variance2)          # Construct distribution of the second cluster
-d3                = MvNormal(true_mean3, true_variance3)          # Construct distribution of the second cluster
-y_observations1   = rand(d1,N[1])'                                # Take samples from the first cluster
-y_observations2   = rand(d2,N[2])'                                # Take samples from the second cluster
-y_observations3   = rand(d3,N[3])'                                # Take samples from the second cluster
+N                 = [50;50;50]                           # Number of observed samples first clusters
+n_its             = 25                                      # Number of VMP iterations
+true_mean1        = [10.0,3.0]                              # Mean of the first cluster
+true_variance1    = [10.0 0.0; 0.0 5.0 ]                    # Variance of the first cluster
+true_mean2        = [4.0,10.0]                              # Mean of the second cluster
+true_variance2    = [5.0 0.0; 0.0 5.0]                      # Variance of the second cluster
+true_mean3        = [12.0,15.0]                             # Mean of the third cluster
+true_variance3    = [5.0 0.0;  0.0 5.0]                     # Variance of the third cluster
+d1                = MvNormal(true_mean1, true_variance1)    # Construct the distribution of first cluster
+d2                = MvNormal(true_mean2, true_variance2)    # Construct distribution of the second cluster
+d3                = MvNormal(true_mean3, true_variance3)    # Construct the third distribution
+y_observations1   = rand(d1,N[1])'                          # Take samples from the first cluster
+y_observations2   = rand(d2,N[2])'                          # Take samples from the second cluster
+y_observations3   = rand(d3,N[3])'                          # Take samples from the second cluster
 
-permutations      = shuffle(collect(1:sum(N)))
-y                 = [y_observations1; y_observations2; y_observations3][permutations,:]        # Mix the samples from the clusters
+
+#Construct the complete dataset
+permutations      = shuffle(collect(1:sum(N)));
+y                 = [y_observations1; y_observations2; y_observations3][permutations,:];
 
 #Overwrite the Wishart prior with variables that are equal or bigger than 1
 function ForneyLab.vague!{dims}(dist::ForneyLab.Wishart{dims})
@@ -27,7 +29,7 @@ function ForneyLab.vague!{dims}(dist::ForneyLab.Wishart{dims})
    return dist
 end
 
-ForneyLab.vague{dims}(::Type{ForneyLab.Wishart{dims}}) = ForneyLab.Wishart(V=diageye(dims), nu=1.)
+ForneyLab.vague{dims}(::Type{ForneyLab.Wishart{dims}}) = ForneyLab.Wishart(V=diageye(dims), nu=1.);
 
 # Build graph
 for k=1:(sum(N))
@@ -49,9 +51,8 @@ for k=1:(sum(N))
         Edge(n(:w1_eq*(k-1)).i[2], n(:w1_eq*k).i[3])
     end
 end
-
-PriorNode(PartitionedDistribution([MvGaussian(m=[5.,1.0, 1.0],V=[10. 0.0 0.0;0.0 10. 0.0; 0.0 0.0 10.0]),MvGaussian(m=[1.0, 5.0, 1.0],V=[10. 0.0 0.0; 0.0 10. 0.0; 0.0 0.0 10.0]), MvGaussian(m=[1.0, 1.0, 5.0],V=[10. 0.0 0.0; 0.0 10. 0.0; 0.0 0.0 10.0])]),id=:m1_start)
-PriorNode(PartitionedDistribution([ForneyLab.Wishart(nu=3., V=eye(3)*3.),ForneyLab.Wishart(nu=3., V=eye(3)*3.), ForneyLab.Wishart(nu=3., V=eye(3)*3.)]),id=:w1_start)
+PriorNode(PartitionedDistribution([MvGaussian(m=[25.,5.0],V=[10. 0.0;0.0 10.]),MvGaussian(m=[0.0, 15.0],V=[10. 0.0; 0.0 10.]), MvGaussian(m=[18.0, 18.0],V=[10. 0.0; 0.0 10.])]),id=:m1_start)
+PriorNode(PartitionedDistribution([ForneyLab.Wishart(nu=2., V=eye(2)*2.),ForneyLab.Wishart(nu=2., V=eye(2)*2.), ForneyLab.Wishart(nu=2., V=eye(2)*2.)]),id=:w1_start)
 PriorNode(ForneyLab.Dirichlet([1.0;1.0;1.0]),id=:pi_start)
 
 Edge(n(:m1_eq*1).i[3],n(:m1_start).i[:out])
@@ -64,12 +65,17 @@ TerminalNode(vague(ForneyLab.Dirichlet{length(N)}),id=:pi_end)
 
 Edge(n(:m1_eq*(sum(N))).i[2], n(:m1_end))
 Edge(n(:w1_eq*(sum(N))).i[2], n(:w1_end))
-Edge(n(:pi_eq*(sum(N))).i[2], n(:pi_end))
+Edge(n(:pi_eq*(sum(N))).i[2], n(:pi_end));
 
 #Attach write buffers
 m1_est = attachWriteBuffer(n(:m1_end).i[:out].partner)
 w1_est = attachWriteBuffer(n(:w1_end).i[:out].partner)
-pi_est = attachWriteBuffer(n(:pi_end).i[:out].partner)
+pi_est = attachWriteBuffer(n(:pi_end).i[:out].partner);
+z_est=Array{Array{ForneyLab.ProbabilityDistribution,1},1}(sum(N))
+
+for k=1:(sum(N))
+    z_est[k]=attachWriteBuffer(n(:z*k).i[:out].partner)
+end
 
 # Specify the variational algorithm for n_its vmp iterations
 algo = VariationalBayes(Dict(   eg(:m1_e*(1:sum(N))) => PartitionedDistribution{MvGaussian{length(true_mean1)},length(N)},
@@ -84,13 +90,13 @@ show(algo)
 run(algo)
 
 #print the true parameters
-# println("True mean 1: $(true_mean1)")
-# println("True precision 1: $(inv(true_variance1))")
-# println("True mean 2: $(true_mean2)")
-# println("True precision 2: $(inv(true_variance2))")
-# println("True mean 3: $(true_mean3)")
-# println("True precision 3: $(inv(true_variance3))")
-# println("Number of samples: $(sum(N))")
+println("True mean 1: $(true_mean1)")
+println("True precision 1: $(inv(true_variance1))")
+println("True mean 2: $(true_mean2)")
+println("True precision 2: $(inv(true_variance2))")
+println("True mean 3: $(true_mean3)")
+println("True precision 3: $(inv(true_variance3))")
+println("Number of samples: $(sum(N))")
 
 #print the estimated parameters
 ensureParameters!(m1_est[end].factors[1], (:m, :V))
@@ -103,3 +109,31 @@ println("Mean estimate2: $(round(m1_est[end].factors[2].m,2)), with variance $(r
 println("Precision estimate2: $(round(w1_est[end].factors[2].nu*w1_est[end].factors[2].V,2))")
 println("Mean estimate3: $(round(m1_est[end].factors[3].m,2)), with variance $(round(m1_est[end].factors[3].V,2))")
 println("Precision estimate3: $(round(w1_est[end].factors[3].nu*w1_est[end].factors[3].V,2))")
+
+# #Ensure that the parameters are available
+# ensureParameters!(m1_est[end].factors[1], (:m, :V))
+# ensureParameters!(m1_est[end].factors[2], (:m, :V))
+# ensureParameters!(m1_est[end].factors[3], (:m, :V))
+#
+# include("gmm_plot.jl");
+#
+# #Plot the values of the priors
+# γ = fill!(Matrix{Float64}(2,sum(N)), NaN)
+# prior1=MvNormal([25.,5.0],[10. 0.0;0.0 10.])
+# prior2=MvNormal([0.0, 15.0],[10. 0.0; 0.0 10.])
+# prior3=MvNormal([18.0, 18.0],[10. 0.0; 0.0 10.])
+#
+# figure(); plotGMM(y',[prior1,prior2,prior3],γ,3);
+# #title("Initial situation")
+#
+# #Plot the final values
+# γ=Matrix{Float64}(length(N),sum(N))
+# for k=1:sum(N)
+#     γ[:,k]=z_est[k][1].p
+# end
+# post1=MvNormal(m1_est[end].factors[1].m,pinv(w1_est[end].factors[1].nu*w1_est[end].factors[1].V))
+# post2=MvNormal(m1_est[end].factors[2].m,pinv(w1_est[end].factors[2].nu*w1_est[end].factors[2].V))
+# post3=MvNormal(m1_est[end].factors[3].m,pinv(w1_est[end].factors[3].nu*w1_est[end].factors[3].V))
+#
+# figure();plotGMM(y',[post1,post2,post3],γ,3);
+# #title("Final values");

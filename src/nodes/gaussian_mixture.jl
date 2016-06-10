@@ -3,8 +3,10 @@ export GaussianMixtureNode
 """
 Description:
 
-    Univariate and multivariate gaussian mixture model for data with two clusters:
-    f(m1,m2,w1,w2,pi,x,z) = N(x|m1,1/w1)^z[1] * N(x|m2,1/w2)^z[2] * pi[1]^z[1] * pi[2]^z[2]
+    Gaussian mixture model
+
+    Node function for two clusters:
+    f(m,w,pi,x,z) = N(x|m1,1/w1)^z[1] * N(x|m2,1/w2)^z[2] * pi[1]^z[1] * pi[2]^z[2]
 
 
                   | pi
@@ -41,11 +43,9 @@ type GaussianMixtureNode <: Node
 
     function GaussianMixtureNode(; id=generateNodeId(GaussianMixtureNode))
         self = new(id, Array(Interface, 5), Dict{Symbol,Interface}())
-        #self = new(id, Array(Interface, 7), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
 
         for (iface_index, iface_handle) in enumerate([:pi, :m, :w, :x, :z])
-        #for (iface_index, iface_handle) in enumerate([:pi, :m1, :w1, :m2, :w2, :x, :z])
             self.i[iface_handle] = self.interfaces[iface_index] = Interface(self)
         end
 
@@ -814,7 +814,7 @@ function variationalRule!{dims,n_factors}(  node::GaussianMixtureNode,
 
     lambda = 0.0
     xi = 0.0
-    
+
     for k = 1:n_factors
         lambda = lambda + q_z.p[k]*q_w.factors[k].nu*q_w.factors[k].V
         xi = xi + q_z.p[k]*q_w.factors[k].nu*q_w.factors[k].V*q_m.factors[k].m
