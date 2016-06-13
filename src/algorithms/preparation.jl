@@ -306,12 +306,13 @@ end
 # Shared methods for algorithm preparation/compilation
 #######################################################
 
-function buildExecute!{rule}(entry::ScheduleEntry{rule}, inbound_arguments::Vector)
+function buildExecute!{rule}(   entry::ScheduleEntry{rule},
+                                inbound_arguments::Vector;
+                                outbound_dist::ProbabilityDistribution=entry.node.interfaces[entry.outbound_interface_id].message.payload)
     # Construct the entry.execute function.
     # This function is called by the prepare methods of inference algorithms.
 
     # Get pointer to the outbound distribution
-    outbound_dist = entry.node.interfaces[entry.outbound_interface_id].message.payload
     rule_implementation = implementation(rule)
 
     # Save the "compiled" message computation rule as an anomynous function in entry.execute

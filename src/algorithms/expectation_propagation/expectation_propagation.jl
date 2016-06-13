@@ -1,17 +1,16 @@
 import Base.show
 export ExpectationPropagation
 
+abstract CollapsedExpectationRule <: MessageCalculationRule
+implementation(::Type{CollapsedExpectationRule}) = expectationRule!
+
 type EPSite
     interface::Interface
     expectation_type::DataType
-    expectation_entry::ScheduleEntry
-    prior_schedule::Schedule
-    prior::ProbabilityDistribution # payload of the incoming message, interface.partner.message always holds the cavity distribution
+    schedule::Schedule # last entry applies the ExpectationRule
 
     function EPSite{T<:ProbabilityDistribution}(interface::Interface, expectation_type::Type{T})
-        expectation_entry = convert(ScheduleEntry, interface, expectationRule!)
-        expectation_entry.outbound_type = expectation_type
-        new(interface, expectation_type, expectation_entry)
+        new(interface, expectation_type)
     end
 end
 
@@ -34,10 +33,10 @@ Builds an expectation propagation message passing algorithm for the specified si
 """
 type ExpectationPropagation <: InferenceAlgorithm
     graph::FactorGraph
-    execute::Function
     sites::Vector{EPSite}
-    pre_schedule::Schedule
-    post_schedule::Schedule
+    pre_schedule::Schedule                          # executed once before iterating of the sites
+    post_schedule::Schedule                         # executed once after convergence
+    collapsed_site_priors::Dict{Interface,Message}  # holds prior messages for collapsed sites (the interfaces themselves hold the cavity distributions)
     n_iterations::Int64
     callback::Function
 end
@@ -85,14 +84,7 @@ function ExpectationPropagation(
     # execute algo.pre_schedule
     # while (algo.callback()!=true && algo.n_iterations not exceeded):
     #     for every site in algo.sites:
-    #         execute site.prior_schedule
-    #         expectation_dist = site.interface.message.payload
-    #         if expectation_dist <: PartitionedDistribution:
-    #             for every factor in expectation_dist:
-    #                 calculate cavity distribution from prior + other factors
-    #                 invoke expectationRule! on factor
-    #         else:
-    #             invoke expectationRule! (cavity distribution is equal to the result of algo.prior_schedule)
+    #         execute site.schedule
     # execute algo.post_convergence_schedule
 
     (length(sites) > 0) || throw(ArgumentError("Specify at least one site"))
@@ -106,55 +98,69 @@ function ExpectationPropagation(
     end
 
     # build schedules
-    site_interfaces = Set(keys(interface_to_site))
+    site_interfaces_set = Set(keys(interface_to_site))
     dg = summaryDependencyGraph(graph)
     rdg = summaryDependencyGraph(graph, reverse_edges=true)
-    influenced_by_site = [Set(children(site_interface, rdg)) for site_interface in site_interfaces]
+    influenced_by_site = [Set(children(site_interface, rdg)) for site_interface in site_interfaces_set]
 
-    # Build prior schedules for all sites.
-    # Dependencies that are independent of the sites end up in the pre-schedule,
-    # which is only executed once at the start of the algorithm.
-    pre_schedule = children(Interface[site_interface.partner for site_interface in site_interfaces], dg, breakers=site_interfaces)
+    # build pre-schedule
+    site_dependencies = Interface[]
+    for site in ep_sites
+        push!(site_dependencies, site.interface.partner) # prior/cavity distribution
+        for interface in Graphs.out_neighbors(site.interface, dg)
+            push!(site_dependencies, interface) # direct dependency of site
+        end
+    end
+    pre_schedule = children(site_dependencies, dg, breakers=site_interfaces_set)
+
+    # build site schedules
+    # the last entry of site.schedule produces the expectation message
     for i = 1:length(ep_sites)
         site = ep_sites[i]
         prev_site_idx = (i==1) ? length(ep_sites) : i-1
         message_types[site.interface] = site.expectation_type # Add sites to the fixed msg type dictionary
-        # The prior schedule should include all messages that influence the prior on site i, and that are influenced by the previous site
-        prior_schedule = children(site.interface.partner, dg, breakers=site_interfaces, restrict_to=influenced_by_site[prev_site_idx])
-        ep_sites[i].prior_schedule = convert(Schedule, prior_schedule, sumProductRule!)
+        schedule = children([site.interface.partner; site.interface],
+                            dg,
+                            breakers = setdiff(site_interfaces_set, Set([site.interface])),
+                            restrict_to = union(influenced_by_site[prev_site_idx], Set([site.interface])))
+        site.schedule = ScheduleEntry[ScheduleEntry{SumProductRule}(interface) for interface in schedule[1:end-1]]
+        if site.expectation_type <: PartitionedDistribution
+            (site.expectation_type.parameters[1]==Gaussian) || error("Collapsed sites are only supported for Gaussian expectations")
+            expectation_entry = ScheduleEntry{CollapsedExpectationRule}(site.interface)
+        else
+            expectation_entry = ScheduleEntry{ExpectationRule}(site.interface)
+        end
+        expectation_entry.outbound_type = site.expectation_type
+        push!(site.schedule, expectation_entry)
     end
 
     # build post-schedule
-    post_schedule = children(targets, dg, breakers=union(site_interfaces, Set(pre_schedule)))
+    post_schedule = children(targets, dg, breakers=union(site_interfaces_set, Set(pre_schedule)))
 
     # type inference
-    pre_schedule = convert(Schedule, pre_schedule, sumProductRule!)
-    post_schedule = convert(Schedule, post_schedule, sumProductRule!)
-    inferMessageTypes!(pre_schedule, ep_sites, post_schedule, message_types)
-
-    # # Build execute function
-    # function exec(algorithm)
-    #     # Init all sites with vague messages
-    #     for site in algorithm.sites
-    #         vague!(site.message.payload)
-    #     end
-    #     # Execute iterative schedule until stopping criterium is met
-    #     for iteration_count = 1:algorithm.n_iterations
-    #         execute(algorithm.iterative_schedule)
-    #         # Check stopping criteria
-    #         if algorithm.callback()
-    #             break
-    #         end
-    #     end
-    #     # Execute post convergence schedule once
-    #     isempty(algorithm.post_convergence_schedule) || execute(algorithm.post_convergence_schedule)
-    # end
+    pre_schedule = convert(Schedule, pre_schedule, SumProductRule)
+    post_schedule = convert(Schedule, post_schedule, SumProductRule)
+    collapsed_site_priors = Dict{Interface,Message}()
+    for entry in pre_schedule
+        inferTypes!(entry, message_types)
+    end
+    for site in ep_sites
+        for entry in site.schedule
+            inferTypes!(entry, message_types)
+        end
+        if site.expectation_type <: PartitionedDistribution
+            collapsed_site_priors[site.interface.partner] = Message(vague(message_types[site.interface.partner]))
+        end
+    end
+    for entry in post_schedule
+        inferTypes!(entry, message_types)
+    end
 
     algo = ExpectationPropagation(graph,
-                                  () -> true,
                                   ep_sites,
                                   pre_schedule,
-                                  convert(Schedule, Interface[], sumProductRule!), # TODO: post-schedule
+                                  post_schedule,
+                                  collapsed_site_priors,
                                   n_iterations,
                                   callback)
 
@@ -165,80 +171,80 @@ end
 # Type inference and preparation
 ############################################
 
-function inferMessageTypes!(pre_schedule::Schedule,
-                            ep_sites::Vector{EPSite},
-                            post_schedule::Schedule,
-                            fixed_types::Dict{Interface,DataType})
-    # Message type inference for all schedule entries in:
-    #   - pre_schedule
-    #   - site.prior_schedule for site in ep_sites
-    #   - post_schedule
-    # This fills the inbound_types and outbound_type fields of every ScheduleEntry
-
-    schedule_entries = Dict{Interface, ScheduleEntry}() # lookup table
-    fixed_type_interfaces = keys(fixed_types)
-    #schedule_entries = vcat(pre_schedule, [site.prior_schedule for site in ep_sites]..., post_schedule)
-end
-
-function inferDistributionTypes!(   algo::ExpectationPropagation,
-                                    recognition_distributions::Dict{Interface,DataType},
-                                    message_types::Dict{Interface,DataType})
-    # Infer the payload types for all messages in algo.schedule
-    # Fill schedule_entry.inbound_types and schedule_entry.outbound_type
-    schedule_entries = Dict{Interface, ScheduleEntry}() # Lookup table from interface to schedule entry
-    message_types_interfaces = keys(message_types)
-    recognition_distributions_interfaces = keys(recognition_distributions)
-
-    for entry in vcat(algo.iterative_schedule, algo.post_convergence_schedule)
-        collectInboundTypes!(entry, schedule_entries, recognition_distributions, algo) # Fill entry.inbound_types
-        outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
-        if outbound_interface in message_types_interfaces
-            setOutboundType!(entry, message_types[outbound_interface])
-        elseif outbound_interface in recognition_distributions_interfaces
-            setOutboundType!(entry, recognition_distributions[outbound_interface])
-        end
-        inferOutboundType!(entry) # Infer the outbound message type, or validate that there exists a suitable rule if the outbound type is already fixed
-        schedule_entries[outbound_interface] = entry # Add entry to lookup table
-    end
-
-    return algo
-end
-
-function collectInboundTypes!{rule}(entry::ScheduleEntry{rule},
-                                    schedule_entries::Dict{Interface, ScheduleEntry},
-                                    recognition_distributions::Dict{Interface,DataType},
-                                    algo::ExpectationPropagation)
-    # Look up the types of the inbound messages for entry.
-    # Fill entry.inbound_types
-    entry.inbound_types = []
-
+function inferTypes!(   entry::ScheduleEntry{ExpectationRule},
+                        inferred_outbound_types::Dict{Interface, DataType})
+    # Collect inbound types
+    entry.inbound_types = DataType[]
     for (id, interface) in enumerate(entry.node.interfaces)
-        if (id == entry.outbound_interface_id) && (rule == SumProductRule)
-            # Incoming msg on outbound interface is always Void for SumProductRule
-            push!(entry.inbound_types, Void)
-        elseif haskey(recognition_distributions, interface.partner)
-            # Incoming msg from a site, so the type is given by the recognition distribution
-            push!(entry.inbound_types, Message{recognition_distributions[interface.partner]})
+        push!(entry.inbound_types, Message{inferred_outbound_types[interface.partner]})
+    end
+
+    # Infer outbound type
+    outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
+    if outbound_interface in keys(inferred_outbound_types)
+        setOutboundType!(entry, inferred_outbound_types[outbound_interface])
+    end
+    inferOutboundType!(entry) # If entry.outbound_type is already set, this will validate that there is a suitable rule available
+    inferred_outbound_types[outbound_interface] = entry.outbound_type
+
+    return entry
+end
+
+function inferTypes!(   entry::ScheduleEntry{CollapsedExpectationRule},
+                        inferred_outbound_types::Dict{Interface, DataType})
+    # Collect inbound types
+    entry.inbound_types = DataType[]
+    for (id, interface) in enumerate(entry.node.interfaces)
+        if id == entry.outbound_interface_id
+            # The incoming message should not be the multivariate prior message
+            # but a Message{PartitionedDistribution} that holds the cavity distributions.
+            # The type of the cavity distribution is identical to the type of the expectation message.
+            push!(entry.inbound_types, Message{entry.outbound_type})
         else
-            # Incoming msg from earlier schedule entry
-            push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
+            push!(entry.inbound_types, Message{inferred_outbound_types[interface.partner]})
         end
     end
+
+    # Verify that there exists a suitable ExpectationRule method.
+    inferOutboundType!(entry)
 
     return entry
 end
 
 function prepare!(algo::ExpectationPropagation)
-    # Populate the graph with vague messages of the correct types
-    for entry in vcat(algo.iterative_schedule, algo.post_convergence_schedule)
-        ensureMessage!(entry.node.interfaces[entry.outbound_interface_id], entry.outbound_type)
+    # Populate the graph with messages of the correct types and compile the schedules
+    for entry in vcat(algo.pre_schedule, algo.post_schedule)
+        iterface = entry.node.interfaces[entry.outbound_interface_id]
+        # Prior messages for collapsed sites are not written to the interface, but are saved in algo.collapsed_site_priors
+        haskey(algo.collapsed_site_priors, interface) || ensureMessage!(interface, entry.outbound_type)
+    end
+    for site in algo.sites
+        for entry in site.schedule
+            iterface = entry.node.interfaces[entry.outbound_interface_id]
+            haskey(algo.collapsed_site_priors, interface) || ensureMessage!(interface, entry.outbound_type)
+        end
+        compile!(site.schedule, algo)
     end
 
     # Compile the schedules
-    compile!(algo.iterative_schedule, algo)
-    compile!(algo.post_convergence_schedule, algo)
+    compile!(algo.pre_schedule, algo)
+    compile!(algo.post_schedule, algo)
 
     return algo.graph.prepared_algorithm = algo
+end
+
+function compile!(entry::ScheduleEntry{SumProductRule}, algo::ExpectationPropagation)
+    # Generate entry.execute
+    inbound_messages = [interface.partner.message for interface in entry.node.interfaces]
+    outbound_iterface = entry.node.interfaces[entry.outbound_interface_id]
+
+    if haskey(algo.collapsed_site_priors, outbound_iterface)
+        # Write outbound message to algo.collapsed_site_priors
+        return buildExecute!(entry, inbound_messages, outbound_dist=algo.collapsed_site_priors[outbound_iterface])
+    else
+        # Write outbound message to the corresponding interface
+        return buildExecute!(entry, inbound_messages)
+    end
 end
 
 function compile!(entry::ScheduleEntry{ExpectationRule}, ::InferenceAlgorithm)
@@ -246,4 +252,78 @@ function compile!(entry::ScheduleEntry{ExpectationRule}, ::InferenceAlgorithm)
     inbound_messages = [interface.partner.message for interface in entry.node.interfaces]
 
     return buildExecute!(entry, inbound_messages)
+end
+
+function compile!(entry::ScheduleEntry{CollapsedExpectationRule}, algo::ExpectationPropagation)
+    # Generate entry.execute
+
+    # Init cavity distributions
+    cavity_distributions = vague(entry.outbound_type) # cavity distributions have the same type as the expectation distributions
+
+    # TODO: finish this
+
+    # inbound_arguments = [interface.partner.message for interface in entry.node.interfaces]
+
+    # # Unroll partitioned inbounds and call implementation(ExpectationRule) for each factor
+    # factor_inbounds = copy(inbound_arguments) # inbounds for a single factor
+    # inbounds_to_unroll = Int64[]
+    # for i=1:length(inbound_arguments)
+    #     if typeof(inbound_arguments[i]) <: PartitionedDistribution
+    #         factor_inbounds[i] = inbound_arguments[i].factors[1]
+    #         push!(inbounds_to_unroll, i)
+    #     elseif ((typeof(inbound_arguments[i]) <: Message) && (typeof(inbound_arguments[i].payload) <: PartitionedDistribution))
+    #         factor_inbounds[i] = Message(inbound_arguments[i].payload.factors[1])
+    #         push!(inbounds_to_unroll, i)
+    #     end
+    # end
+
+    # entry.execute = () -> begin
+    #     for factor_idx=1:entry.unrolling_factor
+    #         for i in inbounds_to_unroll
+    #             if typeof(factor_inbounds[i]) <: Message
+    #                 factor_inbounds[i].payload = inbound_arguments[i].payload.factors[factor_idx]
+    #             else
+    #                 factor_inbounds[i] = inbound_arguments[i].factors[factor_idx]
+    #             end
+    #         end
+
+    #         if isdefined(entry, :approximation)
+    #             rule_implementation(entry.node, Val{entry.outbound_interface_id}, outbound_dist.factors[factor_idx], factor_inbounds..., entry.approximation)
+    #         else
+    #             rule_implementation(entry.node, Val{entry.outbound_interface_id}, outbound_dist.factors[factor_idx], factor_inbounds...)
+    #         end
+    #     end
+
+    #     return outbound_dist
+    # end
+
+    # return buildExecute!(entry, inbound_messages)
+end
+
+function execute(algo::ExpectationPropagation)
+    # Make sure algo is prepared
+    (algo.graph.prepared_algorithm == algo) || prepare!(algo)
+
+    # Init all sites with vague messages
+    for site in algo.sites
+        vague!(site.interface.message.payload)
+    end
+
+    # Execute pre schedule once
+    isempty(algo.pre_schedule) || execute(algo.pre_schedule)
+
+    # Loop over sites until stopping criterium is met
+    for iteration_count = 1:algo.n_iterations
+        for site in algo.sites
+            execute(site.schedule)
+        end
+
+        # Check stopping criteria
+        if algo.callback()
+            break
+        end
+    end
+
+    # Execute post convergence schedule once
+    isempty(algo.post_schedule) || execute(algo.post_schedule)
 end
