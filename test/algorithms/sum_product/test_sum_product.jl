@@ -1,4 +1,4 @@
-facts("SumProduct collect inbound type tests") do
+facts("SumProduct") do
     context("SumProduct should perform message type inference") do
         initializeAdditionNode([Gaussian(), Gaussian(), Gaussian()])
 
@@ -13,7 +13,44 @@ facts("SumProduct collect inbound type tests") do
         @fact algo.schedule[end].outbound_type --> Gaussian
         @fact isdefined(algo.schedule[end], :approximation) --> false
     end
+
+    context("Should generate a schedule that propagates messages to wraps") do
+        g = FactorGraph()
+        TerminalNode(id=:t1)
+        TerminalNode(id=:t2)
+        e = Edge(n(:t1), n(:t2))
+        algo = SumProduct(g)
+        @fact length(algo.schedule) --> 0
+        Wrap(n(:t1), n(:t2))
+        algo2 = SumProduct(g)
+        @fact algo2.schedule --> ForneyLab.convert(Schedule, [n(:t1).i[:out].partner], SumProductRule)
+    end
+
+    context("Should generate a schedule that propagates messages to write buffers defined on interfaces") do
+        g = FactorGraph()
+        TerminalNode(id=:t1)
+        TerminalNode(id=:t2)
+        e = Edge(n(:t1), n(:t2))
+        algo = SumProduct(g)
+        @fact length(algo.schedule) --> 0
+        attachWriteBuffer(n(:t1).i[:out])
+        algo = SumProduct(g)
+        @fact algo.schedule --> ForneyLab.convert(Schedule, [n(:t1).i[:out]], SumProductRule)
+    end
+
+    context("Should generate a schedule that propagates messages to write buffers defined on edges") do
+        g = FactorGraph()
+        TerminalNode(id=:t1)
+        TerminalNode(id=:t2)
+        e = Edge(n(:t1), n(:t2))
+        algo = SumProduct(g)
+        @fact length(algo.schedule) --> 0
+        attachWriteBuffer(n(:t1).i[:out].edge)
+        algo = SumProduct(g)
+        @fact algo.schedule --> ForneyLab.convert(Schedule, [n(:t1).i[:out].partner, n(:t1).i[:out]], SumProductRule)
+    end
 end
+
 
 facts("SumProduct message passing tests") do
     context("SumProduct execute()") do

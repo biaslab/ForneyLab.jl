@@ -79,7 +79,6 @@ function ExpectationPropagation(
             callback::Function = ( () -> false ),
             graph::FactorGraph=currentGraph(),
             message_types::Dict{Interface,DataType}=Dict{Interface,DataType}())
-
     # Algorithm pseudo code:
     #
     # init all sites with vague expectation messages.
@@ -205,17 +204,17 @@ function inferDistributionTypes!(   algo::ExpectationPropagation,
     return algo
 end
 
-function collectInboundTypes!(  entry::ScheduleEntry,
-                                schedule_entries::Dict{Interface, ScheduleEntry},
-                                recognition_distributions::Dict{Interface,DataType},
-                                algo::ExpectationPropagation)
+function collectInboundTypes!{rule}(entry::ScheduleEntry{rule},
+                                    schedule_entries::Dict{Interface, ScheduleEntry},
+                                    recognition_distributions::Dict{Interface,DataType},
+                                    algo::ExpectationPropagation)
     # Look up the types of the inbound messages for entry.
     # Fill entry.inbound_types
     entry.inbound_types = []
 
     for (id, interface) in enumerate(entry.node.interfaces)
-        if (id == entry.outbound_interface_id) && (entry.rule == sumProductRule!)
-            # Incoming msg on outbound interface is always Void for sumProductRule! rule
+        if (id == entry.outbound_interface_id) && (rule == SumProductRule)
+            # Incoming msg on outbound interface is always Void for SumProductRule
             push!(entry.inbound_types, Void)
         elseif haskey(recognition_distributions, interface.partner)
             # Incoming msg from a site, so the type is given by the recognition distribution
@@ -242,9 +241,8 @@ function prepare!(algo::ExpectationPropagation)
     return algo.graph.prepared_algorithm = algo
 end
 
-function compile!(entry::ScheduleEntry, ::Type{Val{symbol(expectationRule!)}}, ::InferenceAlgorithm)
-    # Generate entry.execute for schedule entry with expectationRule! calculation rule
-
+function compile!(entry::ScheduleEntry{ExpectationRule}, ::InferenceAlgorithm)
+    # Generate entry.execute
     inbound_messages = [interface.partner.message for interface in entry.node.interfaces]
 
     return buildExecute!(entry, inbound_messages)

@@ -70,18 +70,17 @@ facts("ExpectationPropagation algorithm integration tests") do
     context("ExpectationPropagation construction") do
         @fact ep_algo.n_iterations --> 10
         @fact is(ep_algo.callback, log_results) --> true
-        @fact typeof(ep_algo.iterative_schedule) --> Schedule
         for entry in ep_algo.iterative_schedule
             if entry.node.interfaces[entry.outbound_interface_id] in sitelist
-                @fact is(entry.rule, expectationRule!) --> true
+                @fact calculationRule(entry) --> ExpectationRule
             else
-                @fact is(entry.rule, sumProductRule!) --> true
+                @fact calculationRule(entry) --> SumProductRule
             end
         end
         @fact typeof(ep_algo.post_convergence_schedule) --> Schedule
         @fact length(ep_algo.post_convergence_schedule) --> 1
         for entry in ep_algo.post_convergence_schedule
-            @fact is(entry.rule, sumProductRule!) --> true
+            @fact calculationRule(entry) --> SumProductRule
         end
     end
 
@@ -131,15 +130,15 @@ facts("ExpectationPropagation algorithm integration tests") do
         @fact length(algo.iterative_schedule) --> 5
         for entry in algo.iterative_schedule
             if entry.node.interfaces[entry.outbound_interface_id] in sitelist
-                @fact is(entry.rule, expectationRule!) --> true
+                @fact calculationRule(entry) --> ExpectationRule
             else
-                @fact is(entry.rule, sumProductRule!) --> true
+                @fact calculationRule(entry) --> SumProductRule
             end
         end
         @fact typeof(algo.post_convergence_schedule) --> Schedule
         @fact length(algo.post_convergence_schedule) --> 2
         for entry in algo.post_convergence_schedule
-            @fact is(entry.rule, sumProductRule!) --> true
+            @fact calculationRule(entry) --> SumProductRule
         end
     end
 
