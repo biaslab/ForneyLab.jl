@@ -128,7 +128,7 @@ function collectOutboundTypes(rule::Function, node::Node, outbound_interface_id:
             # Try to find extra outbound types by splitting partitioned inbounds
             modified_inbound_types = stripPartitionedInboundTypes(inbound_types)
             sig = buildRuleSignature(rule, node, outbound_interface_id, modified_inbound_types, approx)
-            return DataType[PartitionedDistribution{ob_type, num_factors} for ob_type in collectAllOutboundTypes(rule, sig, node)]
+            return DataType[Partitioned{ob_type, num_factors} for ob_type in collectAllOutboundTypes(rule, sig, node)]
         else
             return DataType[]
         end
@@ -230,9 +230,9 @@ function partitionedInboundTypesSize(inbound_types::Vector{DataType})
     # If a partitioned inbound is detected, return the number of factors.
 
     for ib_type in inbound_types
-        if ib_type <: PartitionedDistribution
+        if ib_type <: Partitioned
             return ib_type.parameters[2]
-        elseif ((ib_type <: Message) && (ib_type.parameters[1] <: PartitionedDistribution))
+        elseif ((ib_type <: Message) && (ib_type.parameters[1] <: Partitioned))
             return ib_type.parameters[1].parameters[2]
         end
     end
@@ -241,15 +241,15 @@ function partitionedInboundTypesSize(inbound_types::Vector{DataType})
 end
 
 function stripPartitionedInboundTypes(inbound_types::Vector{DataType})
-    # Simplify a list of inbound types that contains PartitionedDistribution or Message{PartitionedDistribution} entries.
+    # Simplify a list of inbound types that contains Partitioned or Message{Partitioned} entries.
     # Replace every partitioned inbound type by the type of the factors.
     # Check if all partitioned inbounds contain the same number of factors. If not, throw an error.
     stripped_inbound_types = Vector{DataType}()
     num_factors = 0
     for ib_type in inbound_types
-        if ib_type <: PartitionedDistribution
+        if ib_type <: Partitioned
             part_type = ib_type
-        elseif ((ib_type <: Message) && (ib_type.parameters[1] <: PartitionedDistribution))
+        elseif ((ib_type <: Message) && (ib_type.parameters[1] <: Partitioned))
             part_type = ib_type.parameters[1]
         else
             # Regular inbound type
@@ -260,7 +260,7 @@ function stripPartitionedInboundTypes(inbound_types::Vector{DataType})
         if num_factors == 0
             num_factors = part_type.parameters[2]
         elseif num_factors != part_type.parameters[2]
-            error("PartitionedDistribution inbounds for a message computation rule should have the same number of factors.")
+            error("Partitioned inbounds for a message computation rule should have the same number of factors.")
         end
 
         factor_type = part_type.parameters[1]
@@ -318,10 +318,10 @@ function buildExecute!(entry::ScheduleEntry, inbound_arguments::Vector)
         factor_inbounds = copy(inbound_arguments) # inbounds for a single factor
         inbounds_to_unroll = Int64[]
         for i=1:length(inbound_arguments)
-            if typeof(inbound_arguments[i]) <: PartitionedDistribution
+            if typeof(inbound_arguments[i]) <: Partitioned
                 factor_inbounds[i] = inbound_arguments[i].factors[1]
                 push!(inbounds_to_unroll, i)
-            elseif ((typeof(inbound_arguments[i]) <: Message) && (typeof(inbound_arguments[i].payload) <: PartitionedDistribution))
+            elseif ((typeof(inbound_arguments[i]) <: Message) && (typeof(inbound_arguments[i].payload) <: Partitioned))
                 factor_inbounds[i] = Message(inbound_arguments[i].payload.factors[1])
                 push!(inbounds_to_unroll, i)
             end

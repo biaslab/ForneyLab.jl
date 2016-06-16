@@ -17,9 +17,9 @@ facts("Shared preparation methods for inference algorithms") do
         # Specify dummy function for tests
         function dummyRule{dims,n_factors}( node::MockNode,
                                     outbound_iface_id,
-                                    outbound::PartitionedDistribution{MvGaussian{dims},n_factors},
+                                    outbound::Partitioned{MvGaussian{dims},n_factors},
                                     inbound1::Message{MvGaussian{dims}},
-                                    inbound2::Message{PartitionedDistribution{Gaussian,n_factors}})
+                                    inbound2::Message{Partitioned{Gaussian,n_factors}})
             return true
         end
 
@@ -33,8 +33,8 @@ facts("Shared preparation methods for inference algorithms") do
         # resolveTypeVars should resolve the values of TypeVars
         # Build calling signature (vector of argument types) for dummyRule
         # The combination of method and argtypes fully specifies the values of the dims and n_factors parameters of the outbound argument
-        argtypes = [Node; Int64; Any; Message{MvGaussian{5}}; Message{PartitionedDistribution{Gaussian,3}}]
-        @fact ForneyLab.resolveTypeVars(method.sig.types[3], method, argtypes, MockNode()) --> PartitionedDistribution{MvGaussian{5},3}
+        argtypes = [Node; Int64; Any; Message{MvGaussian{5}}; Message{Partitioned{Gaussian,3}}]
+        @fact ForneyLab.resolveTypeVars(method.sig.types[3], method, argtypes, MockNode()) --> Partitioned{MvGaussian{5},3}
     end
 
     context("collectAllOutboundTypes() should return outbound types of applicable update rules") do
@@ -155,23 +155,23 @@ facts("Shared preparation methods for inference algorithms") do
         @fact entry.approximation --> MomentMatching
     end
 
-    context("inferOutboundType!() should consider one-by-one processing of PartitionedDistribution factors") do
-        # Only PartitionedDistribution inbounds
+    context("inferOutboundType!() should consider one-by-one processing of Partitioned factors") do
+        # Only Partitioned inbounds
         entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
-        entry.inbound_types = [Message{PartitionedDistribution{Gaussian,3}}, Message{PartitionedDistribution{Gaussian,3}}, Void]
+        entry.inbound_types = [Message{Partitioned{Gaussian,3}}, Message{Partitioned{Gaussian,3}}, Void]
         ForneyLab.inferOutboundType!(entry)
-        @fact entry.outbound_type --> PartitionedDistribution{Gaussian,3}
+        @fact entry.outbound_type --> Partitioned{Gaussian,3}
 
         # Mismatch in number of factors
         entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
-        entry.inbound_types = [Message{PartitionedDistribution{Gaussian,2}}, Message{PartitionedDistribution{Gaussian,3}}, Void]
+        entry.inbound_types = [Message{Partitioned{Gaussian,2}}, Message{Partitioned{Gaussian,3}}, Void]
         @fact_throws ForneyLab.inferOutboundType!(entry)
 
-        # PartitionedDistribution inbound mixed with regular inbound
+        # Partitioned inbound mixed with regular inbound
         entry = ScheduleEntry(EqualityNode(), 3, sumProductRule!)
-        entry.inbound_types = [Message{Gaussian}, Message{PartitionedDistribution{Gaussian,3}}, Void]
+        entry.inbound_types = [Message{Gaussian}, Message{Partitioned{Gaussian,3}}, Void]
         ForneyLab.inferOutboundType!(entry)
-        @fact entry.outbound_type --> PartitionedDistribution{Gaussian,3}
+        @fact entry.outbound_type --> Partitioned{Gaussian,3}
     end
 
     context("buildExecute!() should pre-compile the execute field of the schedule entry") do
