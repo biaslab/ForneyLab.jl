@@ -1,24 +1,29 @@
-facts("VariationalBayes collect inbound type tests") do
-    context("VariationalBayes should collect the proper inbound types as dependent on the factorization") do
-        # Mean field factorized Gaussian node
-        initializeGaussianNode()
+facts("VariationalBayes should collect the proper inbound types as dependent on the recognition factorization") do
+    # Mean field factorized Gaussian node
+    initializeGaussianNode()
 
-        algo = VariationalBayes(Dict(
-            eg(:edge1) => Gaussian,
-            eg(:edge2) => Gamma,
-            eg(:edge3) => Gaussian))
+    rf = RecognitionFactorization()
+    factorizeMeanField()
+    setRecognitionDistribution(eg(:edge1), Gaussian)
+    setRecognitionDistribution(eg(:edge2), Gamma)
+    setRecognitionDistribution(eg(:edge3), Gaussian)
 
-        @fact algo.factorization.factors[3].internal_schedule[2].inbound_types --> [Gaussian, Gamma, Void]
-        @fact algo.factorization.factors[2].internal_schedule[2].inbound_types --> [Gaussian, Void, Gaussian]
-        @fact algo.factorization.factors[1].internal_schedule[2].inbound_types --> [Void, Gamma, Gaussian]
+    algo = VariationalBayes()
 
-        # Structurally factorized
-        initializeGaussianNode()
-        
-        algo = VariationalBayes(Dict(
-            eg(:edge*(1:2)).' => NormalGamma,
-            eg(:edge3) => Gaussian))
-        
-        @fact algo.factorization.factors[2].internal_schedule[2].inbound_types --> [NormalGamma, NormalGamma, Void]
-    end
+    @fact algo.recognition_factorization.subgraphs[3].internal_schedule[2].inbound_types --> [Gaussian, Gamma, Void]
+    @fact algo.recognition_factorization.subgraphs[2].internal_schedule[2].inbound_types --> [Gaussian, Void, Gaussian]
+    @fact algo.recognition_factorization.subgraphs[1].internal_schedule[2].inbound_types --> [Void, Gamma, Gaussian]
+
+    # Structurally factorized
+    initializeGaussianNode()
+
+    rf = RecognitionFactorization()
+    addFactor([eg(:edge1), eg(:edge2)])
+    addFactor(eg(:edge3))
+    setRecognitionDistribution([eg(:edge1), eg(:edge2)], NormalGamma)
+    setRecognitionDistribution(eg(:edge3), Gaussian)
+
+    algo = VariationalBayes()
+    
+    @fact algo.recognition_factorization.subgraphs[2].internal_schedule[2].inbound_types --> [NormalGamma, NormalGamma, Void]
 end

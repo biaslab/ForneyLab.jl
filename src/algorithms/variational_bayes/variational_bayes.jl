@@ -18,7 +18,7 @@ type VariationalBayes <: InferenceAlgorithm
     execute::Function
     n_iterations::Int64
 
-    factorization::RecognitionFactorization
+    recognition_factorization::RecognitionFactorization
 end
 
 function show(io::IO, algo::VariationalBayes)
@@ -31,25 +31,25 @@ end
 # VariationalBayes algorithm constructors
 ############################################
 
-function VariationalBayes(  recognition_distribution_types::Dict,
-                            graph::FactorGraph=currentGraph();
+"""
+Generate a VariationalBayes algorithm that propagates messages to all write buffers and wraps.
+"""
+function VariationalBayes(  graph::FactorGraph=currentGraph(),
+                            recognition_factorization::RecognitionFactorization=currentRecognitionFactorization();
                             n_iterations::Int64=50,
                             message_types::Dict{Interface,DataType}=Dict{Interface,DataType}())
 
-    # Generates a VariationalBayes algorithm that propagates messages to all write buffers and wraps.
-
-    factorization = factorize(recognition_distribution_types, graph)
-    generateVariationalBayesSchedule!(factorization, graph) # Generate and store internal and external schedules on factorization subgraphs
-    recognition_distributions = initializeVagueRecognitionDistributions(factorization, recognition_distribution_types) # Initialize vague recognition distributions
+    verifyProper(recognition_factorization)
+    generateVariationalBayesSchedule!(recognition_factorization, graph) # Generate and store internal schedules on subgraphs of recognition factorization
 
     function exec(algorithm)
-        resetRecognitionDistributions!(algorithm.recognition_distributions) # Reset recognition distributions before next step
+        resetRecognitionDistributions!(algorithm.recognition_factorization) # Reset recognition distributions to vague before next step
         for iteration = 1:algorithm.n_iterations
-            execute(algorithm.factorization, algorithm.recognition_distributions) # For all subgraphs, execute internal and external schedules
+            execute(algorithm.recognition_factorization)
         end
     end
 
-    algo = VariationalBayes(graph, exec, factorization, recognition_distributions, n_iterations)
+    algo = VariationalBayes(graph, exec, n_iterations, recognition_factorization)
     inferDistributionTypes!(algo, message_types)
 
     return algo
@@ -63,7 +63,7 @@ end
 function inferDistributionTypes!(algo::VariationalBayes, message_types::Dict{Interface,DataType})
     # Infer the payload types for all messages in the internal schedules
 
-    for sg in algo.factorization.subgraphs
+    for sg in algo.recognition_factorization.subgraphs
         # Fill schedule_entry.inbound_types and schedule_entry.outbound_type
         schedule = sg.internal_schedule
         schedule_entries = Dict{Interface, ScheduleEntry}()
@@ -91,14 +91,14 @@ function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Inter
         # Should we require the inbound message or marginal?
         if id == entry.outbound_interface_id
             push!(entry.inbound_types, Void)
-        elseif is(algo.factorization.edge_to_subgraph[interface.edge], algo.factorization.edge_to_subgraph[outbound_interface.edge]) && !is(interface, outbound_interface)
+        elseif is(algo.recognition_factorization.edge_to_subgraph[interface.edge], algo.recognition_factorization.edge_to_subgraph[outbound_interface.edge]) && !is(interface, outbound_interface)
             # Both edges in same subgraph, require message
             push!(entry.inbound_types, Message{schedule_entries[interface.partner].outbound_type})
         else
             # A subgraph border is crossed, require marginal
             # The factor is the set of internal edges that are in the same subgraph
-            sg = algo.factorization.edge_to_subgraph[interface.edge]
-            push!(entry.inbound_types, typeof(algo.recognition_distributions[(entry.node, sg)].distribution))
+            sg = algo.recognition_factorization.edge_to_subgraph[interface.edge]
+            push!(entry.inbound_types, typeof(algo.recognition_factorization.node_subgraph_to_recognition_distribution[(entry.node, sg)]))
         end
     end
 
@@ -106,7 +106,7 @@ function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Inter
 end
 
 function prepare!(algo::VariationalBayes)
-    for factor in algo.factorization.subgraphs
+    for factor in algo.recognition_factorization.subgraphs
         schedule = factor.internal_schedule
 
         # Populate the subgraph with vague messages of the correct types
@@ -135,16 +135,16 @@ function compile!(entry::ScheduleEntry, ::Type{Val{symbol(variationalRule!)}}, a
         # Should we require the inbound message or marginal?
         if id == entry.outbound_interface_id
             # Require marginal because it is available (not used for vmp update)
-            sg = algo.factorization.edge_to_subgraph[interface.edge]
-            push!(inbound_rule_arguments, algo.recognition_distributions[(node, sg)].distribution)
-        elseif is(algo.factorization.edge_to_subgraph[interface.edge], algo.factorization.edge_to_subgraph[outbound_interface.edge])
+            sg = algo.recognition_factorization.edge_to_subgraph[interface.edge]
+            push!(inbound_rule_arguments, algo.recognition_factorization.node_subgraph_to_recognition_distribution[(node, sg)])
+        elseif is(algo.recognition_factorization.edge_to_subgraph[interface.edge], algo.recognition_factorization.edge_to_subgraph[outbound_interface.edge])
             # Both edges in same subgraph, require message
             push!(inbound_rule_arguments, interface.partner.message)
         else
             # A subgraph border is crossed, require marginal
             # The factor is the set of internal edges that are in the same subgraph
-            sg = algo.factorization.edge_to_subgraph[interface.edge]
-            push!(inbound_rule_arguments, algo.recognition_distributions[(node, sg)].distribution)
+            sg = algo.recognition_factorization.edge_to_subgraph[interface.edge]
+            push!(inbound_rule_arguments, algo.recognition_factorization.node_subgraph_to_recognition_distribution[(node, sg)])
         end
     end
 

@@ -14,13 +14,12 @@ end
 function generateVariationalBayesSchedule!(sg::Subgraph, graph::FactorGraph=currentGraph())
     # Generate and store an internal and external schedule for the subgraph
 
-    external_schedule = nodesConnectedToExternalEdges(sg) # All nodes that are connected to at least one external edge
     interface_list_for_univariate = Array(Interface, 0) # This array holds the interfaces required to calculate univariate marginals (Dauwels, 2007)
     internal_interface_list = Array(Interface, 0) # This array will hold the sumproduct schedule for internal message passing
     external_nodes_interfaces = Array(Interface, 0) # This array will hold the interfaces that need to be calculated with a variationalRule! update
     sg.internal_schedule = Array(ScheduleEntry, 0)
     # The internal schedule makes sure that incoming internal messages over internal edges connected to nodes (g) are present
-    for g_node in external_schedule # Internal schedule depends on nodes connected to external edges
+    for g_node in sg.nodes_connected_to_external_edges # Internal schedule depends on nodes connected to external edges
         outbound_interfaces = Array(Interface, 0) # Array that holds required outbound for the case of one internal edge connected to g_node
         for interface in g_node.interfaces
             if interface.edge in sg.internal_edges # edge carries incoming internal message
@@ -82,7 +81,6 @@ function generateVariationalBayesSchedule!(sg::Subgraph, graph::FactorGraph=curr
 
     # Store schedules
     sg.internal_schedule = schedule
-    sg.external_schedule = collect(external_schedule) # Convert set to array
 
     return sg
 end

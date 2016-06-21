@@ -13,11 +13,13 @@ facts("Call step() for VMP algorithm") do
     mean_out = attachWriteBuffer(n(:g_node).i[:mean].edge)
     prec_out = attachWriteBuffer(n(:g_node).i[:precision].edge)
 
-    algo = VariationalBayes(Dict(
-        eg(:y) => Gaussian,
-        eg(:m) => Gaussian,
-        eg(:gam) => Gamma),
-        n_iterations=10)
+    rf = RecognitionFactorization()
+    factorizeMeanField()
+    setRecognitionDistribution(eg(:y), Gaussian)
+    setRecognitionDistribution(eg(:m), Gaussian)
+    setRecognitionDistribution(eg(:gam), Gamma)
+
+    algo = VariationalBayes(n_iterations=10)
     prepare!(algo)
     step(algo)
 
@@ -46,11 +48,16 @@ facts("Naive vmp implementation integration tests") do
         gam_buffer = attachWriteBuffer(n(:gam_eq*n_sections).i[2])
 
         # Apply mean field factorization
-        algo = VariationalBayes(Dict(
-            eg(:q_y*(1:n_sections)) => Gaussian,
-            eg(:q_m*(1:n_sections)) => Gaussian,
-            eg(:q_gam*(1:n_sections)) => Gamma),
-            n_iterations=50)
+        rf = RecognitionFactorization()
+        factorizeMeanField()
+        for sec in 1:n_sections
+            setRecognitionDistribution(eg(:q_y*sec), Gaussian)
+            setRecognitionDistribution(eg(:q_m*sec), Gaussian)
+            setRecognitionDistribution(eg(:q_gam*sec), Gamma)
+        end
+
+        # Construct algorithm
+        algo = VariationalBayes(n_iterations=50)
 
         # Perform vmp updates
         run(algo)
@@ -78,11 +85,16 @@ facts("Naive vmp implementation integration tests") do
         gam_buffer = attachWriteBuffer(n(:gam_eq*n_sections).i[2])
 
         # Apply mean field factorization
-        algo = VariationalBayes(Dict(
-            eg(:q_y*(1:n_sections)) => MvGaussian{2},
-            eg(:q_m*(1:n_sections)) => MvGaussian{2},
-            eg(:q_gam*(1:n_sections)) => Wishart{2}),
-            n_iterations=50)
+        rf = RecognitionFactorization()
+        factorizeMeanField()
+        for sec in 1:n_sections
+            setRecognitionDistribution(eg(:q_y*sec), MvGaussian{2})
+            setRecognitionDistribution(eg(:q_m*sec), MvGaussian{2})
+            setRecognitionDistribution(eg(:q_gam*sec), Wishart{2})
+        end
+
+        # Construct algorithm
+        algo = VariationalBayes(n_iterations=50)
 
         # Perform vmp updates
         run(algo)
@@ -111,11 +123,14 @@ facts("Naive vmp implementation integration tests") do
         gam_buffer = attachWriteBuffer(n(:gam_eq1).i[2])
 
         # Apply mean field factorization
-        algo = VariationalBayes(Dict(
-            eg(:q_y1) => Gaussian,
-            eg(:q_m1) => Gaussian,
-            eg(:q_gam1) => Gamma),
-            n_iterations=50)
+        rf = RecognitionFactorization()
+        factorizeMeanField()
+        setRecognitionDistribution(eg(:q_y1), Gaussian)
+        setRecognitionDistribution(eg(:q_m1), Gaussian)
+        setRecognitionDistribution(eg(:q_gam1), Gamma)
+
+        # Construct algorithm
+        algo = VariationalBayes(n_iterations=50)
 
         # Perform vmp updates
         run(algo)
@@ -145,10 +160,14 @@ facts("Structured vmp implementation integration tests") do
         gam_buffer = attachWriteBuffer(n(:gam_eq1).i[2])
 
         # Structured factorization
-        algo = VariationalBayes(Dict(
-            [eg(:q_m1), eg(:q_gam1)].' => NormalGamma,
-            eg(:q_y1) => Gaussian),
-            n_iterations=10)
+        rf = RecognitionFactorization()
+        addFactor([eg(:q_m1), eg(:q_gam1)])
+        addFactor(eg(:q_y1))
+        setRecognitionDistribution([eg(:q_m1), eg(:q_gam1)], NormalGamma)
+        setRecognitionDistribution(eg(:q_y1), Gaussian)
+
+        # Construct algorithm
+        algo = VariationalBayes(n_iterations=10)
 
         run(algo)
 
