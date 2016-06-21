@@ -48,6 +48,8 @@ sample(dist::Delta) = dist.m
 
 ==(x::Delta, y::Delta) = (x.m == y.m)
 
+vague{T}(::Type{Delta{T}}) = Delta(rand(T))
+
 # We can convert a lot of object types into a Delta with that object as position of the delta.
 # This is useful so we can write i.e. TerminalNode(3.0) instead of TerminalNode(Delta(3.0)).
 convert(::Type{ProbabilityDistribution}, obj::Number) = Delta(obj)

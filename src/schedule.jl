@@ -22,7 +22,7 @@ type ScheduleEntry{rule<:MessageCalculationRule}
     end
 end
 
-function show{rule}(io::IO, entry::ScheduleEntry{rule})
+function Base.show{rule}(io::IO, entry::ScheduleEntry{rule})
     node = entry.node
     interface = node.interfaces[entry.outbound_interface_id]
     interface_handle = (handle(interface)!="") ? "($(handle(interface)))" : ""
@@ -81,7 +81,7 @@ function convert{rule<:MessageCalculationRule}(::Type{Schedule}, interfaces::Vec
     return ScheduleEntry[convert(ScheduleEntry{rule}, interface) for interface in interfaces]
 end
 
-function show{T<:ScheduleEntry}(io::IO, schedule::Vector{T})
+function Base.show(io::IO, schedule::Vector{ScheduleEntry})
     println(io, "Message passing schedule")
     println(io, "------------------------\n")
     for i=1:length(schedule)

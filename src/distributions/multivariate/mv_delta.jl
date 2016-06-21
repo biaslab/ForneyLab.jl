@@ -37,6 +37,8 @@ end
 
 isProper(dist::MvDelta) = true
 
+vague{T,dims}(::Type{MvDelta{T,dims}}) = MvDelta(rand(T, dims))
+
 Base.mean(dist::MvDelta) = dist.m
 
 Base.var(dist::MvDelta) = zeros(length(dist.m))
