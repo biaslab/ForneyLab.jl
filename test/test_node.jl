@@ -73,6 +73,17 @@ facts("Connections between nodes integration tests") do
     end
 end
 
+facts("Nodes can be sorted") do
+    FactorGraph()
+    node_a = TerminalNode(id=:a)
+    node_b = GainNode(id=:b)
+    node_c = GainNode(id=:c)
+    node_d = TerminalNode(id=:d)
+    sorted = sort!([node_d, node_b, node_a, node_c])
+    @fact sorted --> [node_a, node_b, node_c, node_d]
+end
+
+
 facts("copy(::Node)") do
     g1 = initializePairOfNodes()
     test_edge = Edge(n(:node2).interfaces[1], n(:node1).interfaces[1])

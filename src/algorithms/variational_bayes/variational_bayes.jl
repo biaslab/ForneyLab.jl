@@ -2,7 +2,6 @@ import Base.show
 export VariationalBayes
 
 include("subgraph.jl")
-include("recognition_distribution.jl")
 include("recognition_factorization.jl")
 include("scheduler.jl")
 include("message_passing.jl")
@@ -17,14 +16,14 @@ Usage:
 type VariationalBayes <: InferenceAlgorithm
     graph::FactorGraph
     execute::Function
-    factorization::RecognitionFactorization
-    recognition_distributions::Dict{Tuple{Node,Subgraph},RecognitionDistribution}
     n_iterations::Int64
+
+    factorization::RecognitionFactorization
 end
 
 function show(io::IO, algo::VariationalBayes)
     println("VariationalBayes inference algorithm")
-    println("    number of factors: $(length(algo.factorization.factors))")
+    println("    number of subgraphs: $(length(algo.subgraphs))")
     println("    number of iterations: $(algo.n_iterations)")
 end
 
@@ -64,9 +63,9 @@ end
 function inferDistributionTypes!(algo::VariationalBayes, message_types::Dict{Interface,DataType})
     # Infer the payload types for all messages in the internal schedules
 
-    for factor in algo.factorization.factors
+    for sg in algo.factorization.subgraphs
         # Fill schedule_entry.inbound_types and schedule_entry.outbound_type
-        schedule = factor.internal_schedule
+        schedule = sg.internal_schedule
         schedule_entries = Dict{Interface, ScheduleEntry}()
 
         for entry in schedule
@@ -107,7 +106,7 @@ function collectInboundTypes!(entry::ScheduleEntry, schedule_entries::Dict{Inter
 end
 
 function prepare!(algo::VariationalBayes)
-    for factor in algo.factorization.factors
+    for factor in algo.factorization.subgraphs
         schedule = factor.internal_schedule
 
         # Populate the subgraph with vague messages of the correct types

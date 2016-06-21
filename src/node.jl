@@ -5,6 +5,8 @@ abstract Node
 
 Base.deepcopy(::Node) = error("deepcopy(::Node) is not supported. You should use copy(src::Node, id=:new_id) to create an independent copy with no edges attached.")
 
+Base.isless(n1::Node, n2::Node) = isless("$(n1.id)", "$(n2.id)")
+
 show(io::IO, node::Node) = println(io, "$(typeof(node)) with id $(node.id)")
 
 function Base.copy(src::Node; id::Symbol = generateNodeId(typeof(src)))

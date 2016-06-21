@@ -55,6 +55,7 @@ function currentGraph()
     try
         return current_graph
     catch
+        println("NEW GRAPH")
         return FactorGraph()
     end
 end

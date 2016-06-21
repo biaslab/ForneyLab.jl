@@ -5,7 +5,7 @@
 
 function generateVariationalBayesSchedule!(f::RecognitionFactorization, graph::FactorGraph=currentGraph())
     # Generate and store an internal and external schedule for each subgraph in the factorization
-    for sg in f.factors
+    for sg in f.subgraphs
         generateVariationalBayesSchedule!(sg, graph)
     end
     return f
