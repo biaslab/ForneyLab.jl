@@ -15,9 +15,9 @@ facts("Call step() for VMP algorithm") do
 
     rf = RecognitionFactorization()
     factorizeMeanField()
-    setRecognitionDistribution(eg(:y), Gaussian)
-    setRecognitionDistribution(eg(:m), Gaussian)
-    setRecognitionDistribution(eg(:gam), Gamma)
+    initialize(eg(:y), vague(Gaussian))
+    initialize(eg(:m), vague(Gaussian))
+    initialize(eg(:gam), vague(Gamma))
 
     algo = VariationalBayes(n_iterations=10)
     prepare!(algo)
@@ -51,9 +51,9 @@ facts("Naive vmp implementation integration tests") do
         rf = RecognitionFactorization()
         factorizeMeanField()
         for sec in 1:n_sections
-            setRecognitionDistribution(eg(:q_y*sec), Gaussian)
-            setRecognitionDistribution(eg(:q_m*sec), Gaussian)
-            setRecognitionDistribution(eg(:q_gam*sec), Gamma)
+            initialize(eg(:q_y*sec), vague(Gaussian))
+            initialize(eg(:q_m*sec), vague(Gaussian))
+            initialize(eg(:q_gam*sec), vague(Gamma))
         end
 
         # Construct algorithm
@@ -88,9 +88,9 @@ facts("Naive vmp implementation integration tests") do
         rf = RecognitionFactorization()
         factorizeMeanField()
         for sec in 1:n_sections
-            setRecognitionDistribution(eg(:q_y*sec), MvGaussian{2})
-            setRecognitionDistribution(eg(:q_m*sec), MvGaussian{2})
-            setRecognitionDistribution(eg(:q_gam*sec), Wishart{2})
+            initialize(eg(:q_y*sec), vague(MvGaussian{2}))
+            initialize(eg(:q_m*sec), vague(MvGaussian{2}))
+            initialize(eg(:q_gam*sec), vague(Wishart{2}))
         end
 
         # Construct algorithm
@@ -125,9 +125,9 @@ facts("Naive vmp implementation integration tests") do
         # Apply mean field factorization
         rf = RecognitionFactorization()
         factorizeMeanField()
-        setRecognitionDistribution(eg(:q_y1), Gaussian)
-        setRecognitionDistribution(eg(:q_m1), Gaussian)
-        setRecognitionDistribution(eg(:q_gam1), Gamma)
+        initialize(eg(:q_y1), vague(Gaussian))
+        initialize(eg(:q_m1), vague(Gaussian))
+        initialize(eg(:q_gam1), vague(Gamma))
 
         # Construct algorithm
         algo = VariationalBayes(n_iterations=50)
@@ -161,10 +161,10 @@ facts("Structured vmp implementation integration tests") do
 
         # Structured factorization
         rf = RecognitionFactorization()
-        addFactor([eg(:q_m1), eg(:q_gam1)])
-        addFactor(eg(:q_y1))
-        setRecognitionDistribution([eg(:q_m1), eg(:q_gam1)], NormalGamma)
-        setRecognitionDistribution(eg(:q_y1), Gaussian)
+        factor([eg(:q_m1), eg(:q_gam1)])
+        factor(eg(:q_y1))
+        initialize([eg(:q_m1), eg(:q_gam1)], vague(NormalGamma))
+        initialize(eg(:q_y1), vague(Gaussian))
 
         # Construct algorithm
         algo = VariationalBayes(n_iterations=10)

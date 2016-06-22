@@ -4,9 +4,9 @@ facts("VariationalBayes should collect the proper inbound types as dependent on 
 
     rf = RecognitionFactorization()
     factorizeMeanField()
-    setRecognitionDistribution(eg(:edge1), Gaussian)
-    setRecognitionDistribution(eg(:edge2), Gamma)
-    setRecognitionDistribution(eg(:edge3), Gaussian)
+    initialize(eg(:edge1), vague(Gaussian))
+    initialize(eg(:edge2), vague(Gamma))
+    initialize(eg(:edge3), vague(Gaussian))
 
     algo = VariationalBayes()
 
@@ -18,10 +18,10 @@ facts("VariationalBayes should collect the proper inbound types as dependent on 
     initializeGaussianNode()
 
     rf = RecognitionFactorization()
-    addFactor([eg(:edge1), eg(:edge2)])
-    addFactor(eg(:edge3))
-    setRecognitionDistribution([eg(:edge1), eg(:edge2)], NormalGamma)
-    setRecognitionDistribution(eg(:edge3), Gaussian)
+    factor([eg(:edge1), eg(:edge2)])
+    factor(eg(:edge3))
+    initialize([eg(:edge1), eg(:edge2)], vague(NormalGamma))
+    initialize(eg(:edge3), vague(Gaussian))
 
     algo = VariationalBayes()
     

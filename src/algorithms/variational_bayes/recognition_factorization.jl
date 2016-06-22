@@ -1,5 +1,6 @@
+import Base.factor
 export RecognitionFactorization, currentRecognitionFactorization
-export show, addFactor, factorizeMeanField, setRecognitionDistribution, setDefaultRecognitionDistributions
+export show, factor, factorizeMeanField, initialize
 
 type RecognitionFactorization
     graph::FactorGraph
@@ -10,6 +11,7 @@ type RecognitionFactorization
     node_subgraph_to_internal_edges::Dict{Tuple{Node, Subgraph}, Set{Edge}}
 
     # Recognition distributions
+    initial_recognition_distributions::Partitioned
     recognition_distributions::Partitioned
     node_subgraph_to_recognition_distribution::Dict{Tuple{Node, Subgraph}, ProbabilityDistribution}
 
@@ -17,6 +19,7 @@ type RecognitionFactorization
                                             Subgraph[],
                                             Dict{Edge, Subgraph}(),
                                             Dict{Tuple{Node, Subgraph}, Set{Edge}}(),
+                                            Partitioned{ProbabilityDistribution,0}(ProbabilityDistribution[]),
                                             Partitioned{ProbabilityDistribution,0}(ProbabilityDistribution[]),
                                             Dict{Tuple{Node, Subgraph}, ProbabilityDistribution}())
 end
@@ -42,7 +45,7 @@ show(io::IO, rf::RecognitionFactorization) = println(io, "RecognitionFactorizati
 """
 Add a subgraph to the recognition factorization
 """
-function addFactor(edge_set::Set{Edge}, rf::RecognitionFactorization=currentRecognitionFactorization())
+function factor(edge_set::Set{Edge}, rf::RecognitionFactorization=currentRecognitionFactorization())
     # Construct a new Subgraph
     internal_edges = extend(edge_set)
     external_edges = setdiff(edges(nodes(internal_edges)), internal_edges) # external_edges are the difference between all edges connected to nodes, and the internal edges
@@ -62,8 +65,8 @@ function addFactor(edge_set::Set{Edge}, rf::RecognitionFactorization=currentReco
     return rf
 end
 
-addFactor(edge::Edge, rf::RecognitionFactorization=currentRecognitionFactorization()) = addFactor(Set([edge]), rf)
-addFactor(edges::Vector{Edge}, rf::RecognitionFactorization=currentRecognitionFactorization()) = addFactor(Set(edges), rf)
+factor(edge::Edge, rf::RecognitionFactorization=currentRecognitionFactorization()) = factor(Set([edge]), rf)
+factor(edges::Vector{Edge}, rf::RecognitionFactorization=currentRecognitionFactorization()) = factor(Set(edges), rf)
 
 """
 Find the smallest legal subgraph (connected through deterministic nodes) that includes the argument edges
@@ -97,7 +100,7 @@ function factorizeMeanField(rf::RecognitionFactorization=currentRecognitionFacto
     unfactored_edges = copy(edges(rf.graph)) # Iterate through ordered vector of edges
     while length(unfactored_edges) > 0
         current_edge = sort(collect(unfactored_edges))[1] # Pick the next edge from an ordered set of edges; this ensures that the factorization is deterministic
-        addFactor(current_edge, rf)
+        factor(current_edge, rf)
         cluster = rf.subgraphs[end].internal_edges # Get edges that were just added to factor
         setdiff!(unfactored_edges, cluster) # Remove factored edges
     end
@@ -106,20 +109,24 @@ function factorizeMeanField(rf::RecognitionFactorization=currentRecognitionFacto
 end
 
 """
-Define the recognition distribution type for an Edge, Set{Edge} or Node-Subgraph combination
+Define the initial recognition distribution for an Edge, Set{Edge} or Node-Subgraph combination
 """
-function setRecognitionDistribution{T<:ProbabilityDistribution}(node::Node, sg::Subgraph, dist_type::Type{T}, rf::RecognitionFactorization=currentRecognitionFactorization())
-    rd = vague(dist_type)
-    rf.recognition_distributions = Partitioned(push!(rf.recognition_distributions.factors, rd)) # Adds a partition
+function initialize(node::Node, sg::Subgraph, initial_rd::ProbabilityDistribution, rf::RecognitionFactorization=currentRecognitionFactorization())
+    # Set initial distribution
+    rf.initial_recognition_distributions = Partitioned(push!(rf.initial_recognition_distributions.factors, initial_rd))
+    
+    # Set iteration distribution
+    rd = deepcopy(initial_rd)
+    rf.recognition_distributions = Partitioned(push!(rf.recognition_distributions.factors, rd))
     rf.node_subgraph_to_recognition_distribution[(node, sg)] = rd
 
     return rf
 end
 
-function setRecognitionDistribution{T<:ProbabilityDistribution}(edges::Set{Edge}, dist_type::Type{T}, rf::RecognitionFactorization=currentRecognitionFactorization())
+function initialize(edges::Set{Edge}, initial_rd::ProbabilityDistribution, rf::RecognitionFactorization=currentRecognitionFactorization())
     # Find the subgraph that the edge set belongs to
     subgraphs = unique([rf.edge_to_subgraph[edge] for edge in edges])
-    (length(subgraphs) == 0) && error("Cannot specify recognition distribution over unfactorized edge(s). Use addFactor to specify a recognition factorization.")
+    (length(subgraphs) == 0) && error("Cannot specify recognition distribution over unfactorized edge(s). Use factor to specify a recognition factorization.")
     (length(subgraphs) == 1) || error("Cannot specify recognition distribution when edges are distributed over multiple subgraphs")
     subgraph = subgraphs[1]
 
@@ -128,17 +135,17 @@ function setRecognitionDistribution{T<:ProbabilityDistribution}(edges::Set{Edge}
     (length(node_set) == 0) && error("Cannot specify recognition distribution over specified edge(s)")
     (length(node_set) > 2) && error("Cannot specify recognition distribution over specified edge(s)")
     for node in node_set # Note: an edge could be connected to two external nodes, hence the loop 
-        setRecognitionDistribution(node, subgraph, dist_type, rf)
+        initialize(node, subgraph, initial_rd, rf)
     end
 
     return rf
 end
 
-setRecognitionDistribution{T<:ProbabilityDistribution}(edge::Edge, dist_type::Type{T}, rf::RecognitionFactorization=currentRecognitionFactorization()) = setRecognitionDistribution(Set([edge]), dist_type, rf)
-setRecognitionDistribution{T<:ProbabilityDistribution}(edges::Vector{Edge}, dist_type::Type{T}, rf::RecognitionFactorization=currentRecognitionFactorization()) = setRecognitionDistribution(Set(edges), dist_type, rf)
+initialize(edge::Edge, initial_rd::ProbabilityDistribution, rf::RecognitionFactorization=currentRecognitionFactorization()) = initialize(Set([edge]), initial_rd, rf)
+initialize(edges::Vector{Edge}, initial_rd::ProbabilityDistribution, rf::RecognitionFactorization=currentRecognitionFactorization()) = initialize(Set(edges), initial_rd, rf)
 
 """
-Verify whether the recognition factorization proper and all distributions are set.
+Verify whether the recognition factorization is proper and all distributions are set.
 Throw an error if the factorization is improper.
 """
 function verifyProper(rf::RecognitionFactorization)
@@ -164,11 +171,14 @@ function verifyProper(rf::RecognitionFactorization)
 end
 
 """
-Reset the recognition distributions to vague
+Reset the recognition distributions to the initial distributions
 """
 function resetRecognitionDistributions!(rf::RecognitionFactorization)
-    for rd in rf.recognition_distributions.factors
-        vague!(rd)
+    n_factors = length(rf.recognition_distributions.factors)
+    for factor_ind in 1:n_factors
+        initial_rd = rf.initial_recognition_distributions.factors[factor_ind]
+        rd = rf.recognition_distributions.factors[factor_ind]
+        injectParameters!(rd, initial_rd) # Inject parametesr of initial distribution into recognition distribution
     end
 
     return rf

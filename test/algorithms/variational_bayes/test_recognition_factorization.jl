@@ -9,6 +9,7 @@ facts("RecognitionFactorization(::FactorGraph) should initialize a new recogniti
     @fact rf.subgraphs --> Subgraph[]
     @fact rf.edge_to_subgraph --> Dict{Edge, Subgraph}()
     @fact rf.node_subgraph_to_internal_edges --> Dict{Tuple{Node, Subgraph}, Set{Edge}}()
+    @fact rf.initial_recognition_distributions --> Partitioned{ProbabilityDistribution,0}(ProbabilityDistribution[])
     @fact rf.recognition_distributions --> Partitioned{ProbabilityDistribution,0}(ProbabilityDistribution[])
     @fact rf.node_subgraph_to_recognition_distribution --> Dict{Tuple{Node, Subgraph}, ProbabilityDistribution}()
 end
@@ -36,7 +37,7 @@ facts("extend() should extend a set of edges to envelope deterministic nodes") d
     @fact ForneyLab.extend(eg(:g1_g2)) --> Set([eg(:g1_g2)])
 end
 
-facts("addFactor() should specify a new custom subgraph for the recognition factorization and initialize lookup tables") do
+facts("factor() should specify a new custom subgraph for the recognition factorization and initialize lookup tables") do
     context("Mean field case") do
         #               [T2]   [T3]
         #     here       |      |
@@ -45,7 +46,7 @@ facts("addFactor() should specify a new custom subgraph for the recognition fact
 
         g = initializeFactoringGraph()
         rf = RecognitionFactorization()
-        addFactor(eg(:t1_a1)) # Should automatically bind to current graph and create a RecognitionFactorization instance
+        factor(eg(:t1_a1)) # Should automatically bind to current graph and create a RecognitionFactorization instance
 
         # Verify factorization properties
         @fact typeof(rf) --> RecognitionFactorization
@@ -72,7 +73,7 @@ facts("addFactor() should specify a new custom subgraph for the recognition fact
         #                    ^
         #                   here
 
-        addFactor(eg(:g1_g2))
+        factor(eg(:g1_g2))
 
         # Verify factorization properties
         @fact length(rf.subgraphs) --> 2 # A subgraph should be added
@@ -100,7 +101,7 @@ facts("addFactor() should specify a new custom subgraph for the recognition fact
 
         g = initializeFactoringGraph()
         rf = RecognitionFactorization()
-        addFactor(Set([eg(:t3_g2), eg(:g2_t4)])) # Should automatically bind to current graph and create a RecognitionFactorization instance
+        factor(Set([eg(:t3_g2), eg(:g2_t4)])) # Should automatically bind to current graph and create a RecognitionFactorization instance
 
         # Verify factorization properties
         @fact length(rf.subgraphs) --> 1
@@ -158,7 +159,7 @@ facts("factorizeMeanField() should specify a mean-field factorization") do
     @fact rf.node_subgraph_to_internal_edges[(n(:g2), sg_g2_t4)] --> Set([eg(:g2_t4)])
 end
 
-facts("setRecognitionDistribution() should specify a recognition distribution for a node-subgraph combination") do
+facts("initialize() should specify a recognition distribution for a node-subgraph combination") do
     context("Mean field case") do
         #               [T2]   [T3]
         #     here       |      |
@@ -168,10 +169,12 @@ facts("setRecognitionDistribution() should specify a recognition distribution fo
         g = initializeFactoringGraph()
         rf = RecognitionFactorization()
 
-        addFactor(eg(:t1_a1)) # Should automatically bind to current graph and create a RecognitionFactorization instance
-        setRecognitionDistribution(eg(:a1_g1), Gaussian)
+        factor(eg(:t1_a1)) # Should automatically bind to current graph and create a RecognitionFactorization instance
+        initialize(eg(:a1_g1), vague(Gaussian))
 
+        @fact rf.initial_recognition_distributions --> Partitioned([vague(Gaussian)])
         @fact rf.recognition_distributions --> Partitioned([vague(Gaussian)])
+        @fact is(rf.initial_recognition_distributions, rf.recognition_distributions) --> false
         
         sg = rf.subgraphs[1]
         @fact is(rf.node_subgraph_to_recognition_distribution[(n(:g1), sg)], rf.recognition_distributions.factors[1]) --> true
@@ -186,13 +189,16 @@ facts("setRecognitionDistribution() should specify a recognition distribution fo
         g = initializeFactoringGraph()
         rf = RecognitionFactorization()
 
-        addFactor(Set([eg(:t3_g2), eg(:g2_t4)])) # Should automatically bind to current graph and create a RecognitionFactorization instance
-        setRecognitionDistribution(Set([eg(:t3_g2), eg(:g2_t4)]), MvGaussian{2})
+        factor(Set([eg(:t3_g2), eg(:g2_t4)])) # Should automatically bind to current graph and create a RecognitionFactorization instance
+        initialize(Set([eg(:t3_g2), eg(:g2_t4)]), vague(MvGaussian{2}))
 
+        @fact rf.initial_recognition_distributions --> Partitioned([vague(MvGaussian{2})])
         @fact rf.recognition_distributions --> Partitioned([vague(MvGaussian{2})])
+        @fact is(rf.initial_recognition_distributions, rf.recognition_distributions) --> false
         
         sg = rf.subgraphs[1]
         @fact is(rf.node_subgraph_to_recognition_distribution[(n(:g2), sg)], rf.recognition_distributions.factors[1]) --> true
+        @fact is(rf.node_subgraph_to_recognition_distribution[(n(:g2), sg)], rf.initial_recognition_distributions.factors[1]) --> false
     end
 
     context("Invalid cases") do
@@ -205,12 +211,12 @@ facts("setRecognitionDistribution() should specify a recognition distribution fo
         rf = RecognitionFactorization()
 
         # Try to set distribution before partitioning
-        @fact_throws setRecognitionDistribution(eg(:a1_g1), Gaussian)
+        @fact_throws initialize(eg(:a1_g1), vague(Gaussian))
 
         # Try to set distribution over edges on separate subgraphs 
-        addFactor(eg(:a1_g1))
-        addFactor(eg(:t2_g1))
-        @fact_throws setRecognitionDistribution(Set([eg(:a1_g1), eg(:t2_g1)]), MvGaussian{2})
+        factor(eg(:a1_g1))
+        factor(eg(:t2_g1))
+        @fact_throws initialize(Set([eg(:a1_g1), eg(:t2_g1)]), vague(MvGaussian{2}))
     end
 end
 
@@ -223,21 +229,21 @@ facts("verifyProperFactorization should return an error if a factorization is im
     g = initializeFactoringGraph()
     rf = RecognitionFactorization()
 
-    addFactor(Set([eg(:a1_g1), eg(:t2_g1)]))
+    factor(Set([eg(:a1_g1), eg(:t2_g1)]))
 
     # Partial factorization
     @fact_throws ForneyLab.verifyProper(rf)
 
-    addFactor(Set([eg(:t3_g2), eg(:g2_t4)]))
-    addFactor(eg(:g1_g2))
+    factor(Set([eg(:t3_g2), eg(:g2_t4)]))
+    factor(eg(:g1_g2))
 
-    setRecognitionDistribution(Set([eg(:a1_g1), eg(:t2_g1)]), MvGaussian{2})
+    initialize(Set([eg(:a1_g1), eg(:t2_g1)]), vague(MvGaussian{2}))
 
     # Partially set recognition distributions
     @fact_throws ForneyLab.verifyProper(rf)
 
-    setRecognitionDistribution(Set([eg(:t3_g2), eg(:g2_t4)]), MvGaussian{2})
-    setRecognitionDistribution(eg(:g1_g2), Gaussian)
+    initialize(Set([eg(:t3_g2), eg(:g2_t4)]), vague(MvGaussian{2}))
+    initialize(eg(:g1_g2), vague(Gaussian))
 
     # Finished recognition factorization specification
     @fact ForneyLab.verifyProper(rf) --> true
@@ -254,11 +260,12 @@ facts("resetRecognitionDistributions!() should reset recognition distributions t
     rf = RecognitionFactorization()
 
     factorizeMeanField()
-    setRecognitionDistribution(eg(:a1_g1), Gaussian)
-    setRecognitionDistribution(eg(:t2_g1), Gaussian)
-    setRecognitionDistribution(eg(:g1_g2), Gaussian)
-    setRecognitionDistribution(eg(:t3_g2), Gaussian)
-    setRecognitionDistribution(eg(:g2_t4), Gaussian)
+    initialize(eg(:a1_g1), vague(Gaussian))
+    initialize(eg(:t2_g1), vague(Gaussian))
+    initialize(eg(:g1_g2), vague(Gaussian))
+    initialize(eg(:t3_g2), vague(Gaussian))
+    initialize(eg(:g2_t4), vague(Gaussian))
+    @fact rf.initial_recognition_distributions --> Partitioned([vague(Gaussian), vague(Gaussian), vague(Gaussian), vague(Gaussian), vague(Gaussian)])
 
     # Change something so reset will have an effect
     rf.recognition_distributions.factors[1].V = 1.0
