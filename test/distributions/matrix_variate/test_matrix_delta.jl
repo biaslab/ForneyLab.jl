@@ -22,10 +22,6 @@ facts("MatrixDelta unit tests") do
         @fact sample(MatrixDelta([2.0].')) --> [2.0].'
     end
 
-    context("There should be no such thing as vague(MatrixDelta)") do
-        @fact_throws vague(MatrixDelta{Float64, 2, 2})
-    end
-
     context("Matrices should convert to MatrixDelta") do
         @fact convert(ProbabilityDistribution, eye(2)) --> MatrixDelta(eye(2))
     end

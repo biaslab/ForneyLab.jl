@@ -138,20 +138,21 @@ function collectOutboundTypes(rule::Function, node::Node, outbound_interface_id:
     end
 end
 
-function inferOutboundType!(entry::ScheduleEntry)
+function inferOutboundType!{rule}(entry::ScheduleEntry{rule})
     # Infer the outbound type from the node type and the types of the inbounds
 
     inbound_types = entry.inbound_types
+    rule_implementation = implementation(rule)
     if isdefined(entry, :outbound_type)
         # The outbound type is already fixed, so we just need to validate that there exists a suitable computation rule
 
         # Try to find a matching exact rule
-        for outbound_type in collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types)
+        for outbound_type in collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types)
             (entry.outbound_type <: outbound_type) && return(entry)
         end
 
         # Try to find a matching exact rule by unrolling partitioned inbounds
-        for outbound_type in collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, unroll_partitioned_inbounds=true)
+        for outbound_type in collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types, unroll_partitioned_inbounds=true)
             if entry.outbound_type <: outbound_type
                 entry.unrolling_factor = outbound_type.parameters[2]
                 return(entry)
@@ -160,7 +161,7 @@ function inferOutboundType!(entry::ScheduleEntry)
 
         # Try to find a matching approximate rule
         approx = isdefined(entry, :approximation) ? Type{entry.approximation} : Any
-        for outbound_type in collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, approx)
+        for outbound_type in collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types, approx)
             if entry.outbound_type <: outbound_type.parameters[1]
                 entry.approximation = outbound_type.parameters[2]
                 return entry
@@ -168,7 +169,7 @@ function inferOutboundType!(entry::ScheduleEntry)
         end
 
         # Try to find a matching approximate rule by unrolling partitioned inbounds
-        for outbound_type in collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, approx, unroll_partitioned_inbounds=true)
+        for outbound_type in collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types, approx, unroll_partitioned_inbounds=true)
             if entry.outbound_type <: outbound_type.parameters[1]
                 entry.approximation = outbound_type.parameters[2]
                 entry.unrolling_factor = outbound_type.parameters[1].parameters[2]
@@ -181,7 +182,7 @@ function inferOutboundType!(entry::ScheduleEntry)
         # Infer the outbound type
 
         # Try to apply an exact rule
-        outbound_types = collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types)
+        outbound_types = collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types)
         if length(outbound_types) == 1
             entry.outbound_type = outbound_types[1]
             return entry
@@ -190,7 +191,7 @@ function inferOutboundType!(entry::ScheduleEntry)
         end
 
         # Try to apply an exact rule by unrolling partitioned inbounds
-        outbound_types = collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, unroll_partitioned_inbounds=true)
+        outbound_types = collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types, unroll_partitioned_inbounds=true)
         if length(outbound_types) == 1
             entry.outbound_type = outbound_types[1]
             entry.unrolling_factor = outbound_types[1].parameters[2]
@@ -201,7 +202,7 @@ function inferOutboundType!(entry::ScheduleEntry)
 
         # Try to apply an approximate rule
         approx = isdefined(entry, :approximation) ? Type{entry.approximation} : Any
-        outbound_types = collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, approx)
+        outbound_types = collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types, approx)
         if length(outbound_types) == 1
             entry.outbound_type = outbound_types[1].parameters[1]
             entry.approximation = outbound_types[1].parameters[2]
@@ -211,7 +212,7 @@ function inferOutboundType!(entry::ScheduleEntry)
         end
 
         # Try to apply an approximate rule by unrolling partitioned inbounds
-        outbound_types = collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, approx, unroll_partitioned_inbounds=true)
+        outbound_types = collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types, approx, unroll_partitioned_inbounds=true)
         if length(outbound_types) == 1
             entry.outbound_type = outbound_types[1].parameters[1]
             entry.approximation = outbound_types[1].parameters[2]
@@ -305,12 +306,14 @@ end
 # Shared methods for algorithm preparation/compilation
 #######################################################
 
-function buildExecute!(entry::ScheduleEntry, inbound_arguments::Vector)
+function buildExecute!{rule}(   entry::ScheduleEntry{rule},
+                                inbound_arguments::Vector;
+                                outbound_dist::ProbabilityDistribution=entry.node.interfaces[entry.outbound_interface_id].message.payload)
     # Construct the entry.execute function.
     # This function is called by the prepare methods of inference algorithms.
 
     # Get pointer to the outbound distribution
-    outbound_dist = entry.node.interfaces[entry.outbound_interface_id].message.payload
+    rule_implementation = implementation(rule)
 
     # Save the "compiled" message computation rule as an anomynous function in entry.execute
     if entry.unrolling_factor > 0
@@ -338,9 +341,9 @@ function buildExecute!(entry::ScheduleEntry, inbound_arguments::Vector)
                 end
 
                 if isdefined(entry, :approximation)
-                    entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist.factors[factor_idx], factor_inbounds..., entry.approximation)
+                    rule_implementation(entry.node, Val{entry.outbound_interface_id}, outbound_dist.factors[factor_idx], factor_inbounds..., entry.approximation)
                 else
-                    entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist.factors[factor_idx], factor_inbounds...)
+                    rule_implementation(entry.node, Val{entry.outbound_interface_id}, outbound_dist.factors[factor_idx], factor_inbounds...)
                 end
             end
 
@@ -348,9 +351,9 @@ function buildExecute!(entry::ScheduleEntry, inbound_arguments::Vector)
         end
     else
         if isdefined(entry, :approximation)
-            entry.execute = ( () -> entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments..., entry.approximation) )
+            entry.execute = ( () -> rule_implementation(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments..., entry.approximation) )
         else
-            entry.execute = ( () -> entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments...) )
+            entry.execute = ( () -> rule_implementation(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments...) )
         end
     end
 

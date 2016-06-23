@@ -20,6 +20,8 @@ function show(io::IO, interface::Interface)
     println(io, "Interface $(findfirst(interface.node.interfaces, interface)) $(iface_handle) of $(typeof(interface.node)) $(interface.node.id)")
 end
 
+==(interface1::Interface, interface2::Interface) = is(interface1, interface2)
+
 Base.deepcopy(::Interface) = error("deepcopy(::Interface) is not possible. An Interface should only be created by a Node constructor.")
 
 function setMessage!(interface::Interface, message::Message)
@@ -44,17 +46,7 @@ end
 function ensureMessage!{T<:ProbabilityDistribution}(interface::Interface, payload_type::Type{T})
     # Ensure that interface carries a Message{payload_type}, used for in place updates
     if interface.message == nothing || typeof(interface.message.payload) != payload_type
-        if payload_type <: Delta{Float64}
-            interface.message = Message(Delta())
-        elseif payload_type <: Delta{Bool}
-            interface.message = Message(Delta(false))
-        elseif payload_type <: MvDelta
-            interface.message = Message(MvDelta(zeros(dimensions(payload_type))))
-        elseif payload_type <: MatrixDelta
-            interface.message = Message(MatrixDelta(zeros(dimensions(payload_type)...)))
-        else
-            interface.message = Message(vague(payload_type))
-        end
+        interface.message = Message(vague(payload_type))
     end
 
     return interface.message
