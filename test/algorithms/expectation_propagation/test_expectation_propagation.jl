@@ -70,18 +70,17 @@ facts("ExpectationPropagation algorithm integration tests") do
     context("ExpectationPropagation construction") do
         @fact ep_algo.n_iterations --> 10
         @fact is(ep_algo.callback, log_results) --> true
-        @fact typeof(ep_algo.iterative_schedule) --> Schedule
-        for entry in ep_algo.iterative_schedule
-            if entry.node.interfaces[entry.outbound_interface_id] in sitelist
-                @fact is(entry.rule, expectationRule!) --> true
-            else
-                @fact is(entry.rule, sumProductRule!) --> true
-            end
+        for entry in vcat(ep_algo.pre_schedule, ep_algo.post_schedule)
+            @fact calculationRule(entry) --> SumProductRule
         end
-        @fact typeof(ep_algo.post_convergence_schedule) --> Schedule
-        @fact length(ep_algo.post_convergence_schedule) --> 1
-        for entry in ep_algo.post_convergence_schedule
-            @fact is(entry.rule, sumProductRule!) --> true
+        for site in ep_algo.sites
+            for entry in site.schedule
+                if entry.node.interfaces[entry.outbound_interface_id] in sitelist
+                    @fact calculationRule(entry) --> ExpectationRule
+                else
+                    @fact calculationRule(entry) --> SumProductRule
+                end
+            end
         end
     end
 
@@ -120,29 +119,27 @@ facts("ExpectationPropagation algorithm integration tests") do
     sites = Vector{Tuple{Interface, DataType}}()
     push!(sites, (n(:sig).i[:real], Gaussian))
 
-    context("Throws an error when the wrap is not implemented correct") do
-            algo = ExpectationPropagation(currentGraph(), sites; n_iterations=1)
+    context("ExpectationPropagation constructor should handle wraps gracefully") do
+        algo = ExpectationPropagation(currentGraph(), sites; n_iterations=1)
     end
 
     sitelist = [site for (site, distribution) in sites]
     context("ExpectationPropagation construction with wraps") do
         @fact algo.n_iterations --> 1
-        @fact typeof(algo.iterative_schedule) --> Schedule
-        @fact length(algo.iterative_schedule) --> 5
-        for entry in algo.iterative_schedule
-            if entry.node.interfaces[entry.outbound_interface_id] in sitelist
-                @fact is(entry.rule, expectationRule!) --> true
-            else
-                @fact is(entry.rule, sumProductRule!) --> true
+        @fact typeof(algo.pre_schedule) --> Schedule
+        @fact typeof(algo.post_schedule) --> Schedule
+
+        for entry in vcat(algo.pre_schedule, algo.post_schedule)
+            @fact calculationRule(entry) --> SumProductRule
+        end
+        for site in algo.sites
+            for entry in site.schedule
+                if entry.node.interfaces[entry.outbound_interface_id] in sitelist
+                    @fact calculationRule(entry) --> ExpectationRule
+                else
+                    @fact calculationRule(entry) --> SumProductRule
+                end
             end
         end
-        @fact typeof(algo.post_convergence_schedule) --> Schedule
-        @fact length(algo.post_convergence_schedule) --> 2
-        for entry in algo.post_convergence_schedule
-            @fact is(entry.rule, sumProductRule!) --> true
-        end
     end
-
-
-
 end

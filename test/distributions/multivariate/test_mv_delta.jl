@@ -19,11 +19,6 @@ facts("MvDelta unit tests") do
         @fact sample(MvDelta([2.0])) --> [2.0]
     end
 
-    context("There should be no such thing as vague(MvDelta)") do
-        @fact_throws vague(MvDelta{2})
-        @fact_throws vague(MvDelta{Float64, 2})
-    end
-
     context("Product of two MvDeltas") do
         @fact MvDelta([2.0]) * MvDelta([2.0]) --> MvDelta([2.0])
         @fact_throws MvDelta([1.0]) * MvDelta([2.0])

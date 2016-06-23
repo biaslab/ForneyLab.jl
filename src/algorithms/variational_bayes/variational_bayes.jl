@@ -121,7 +121,7 @@ function prepare!(algo::VariationalBayes)
     return algo.graph.prepared_algorithm = algo
 end
 
-function compile!(entry::ScheduleEntry, ::Type{Val{symbol(variationalRule!)}}, algo::VariationalBayes)
+function compile!(entry::ScheduleEntry{VariationalRule}, algo::VariationalBayes)
     # Generate entry.execute for schedule entry with vmp update rule
 
     # Collect references to all required inbound messages for executing message computation rule

@@ -84,14 +84,10 @@ facts("Helper function unit tests") do
         @fact node.i[:out].message --> Message(vague(Gaussian))
         @fact ForneyLab.ensureMessage!(node.i[:out], MvGaussian{2}) --> Message(vague(MvGaussian{2}))
         @fact node.i[:out].message --> Message(vague(MvGaussian{2}))
-        @fact ForneyLab.ensureMessage!(node.i[:out], Delta{Bool}) --> Message(Delta(false))
-        @fact node.i[:out].message --> Message(Delta(false))
-        @fact ForneyLab.ensureMessage!(node.i[:out], Delta{Float64}) --> Message(Delta())
-        @fact node.i[:out].message --> Message(Delta())
-        @fact ForneyLab.ensureMessage!(node.i[:out], MvDelta{Float64, 2}) --> Message(MvDelta(zeros(2)))
-        @fact node.i[:out].message --> Message(MvDelta(zeros(2)))
-        @fact ForneyLab.ensureMessage!(node.i[:out], MatrixDelta{Float64, 2, 3}) --> Message(MatrixDelta(zeros(2, 3)))
-        @fact node.i[:out].message --> Message(MatrixDelta(zeros(2, 3)))
+        @fact typeof(ForneyLab.ensureMessage!(node.i[:out], Delta{Bool}).payload) --> Delta{Bool}
+        @fact typeof(ForneyLab.ensureMessage!(node.i[:out], Delta{Float64}).payload) --> Delta{Float64}
+        @fact typeof(ForneyLab.ensureMessage!(node.i[:out], MvDelta{Float64, 2}).payload) --> MvDelta{Float64, 2}
+        @fact typeof(ForneyLab.ensureMessage!(node.i[:out], MatrixDelta{Float64, 2, 3}).payload) --> MatrixDelta{Float64, 2, 3}
     end
 
     context("ensureMessage! should return the present message is there is one and the type matches") do
@@ -104,8 +100,7 @@ facts("Helper function unit tests") do
     context("ensureMessage! should assign a message to an interface if the type does not match") do
         node = TerminalNode(Gaussian(m=5.0, V=1.0))
         node.i[:out].message = Message(Gaussian(m=5.0, V=1.0))
-        @fact ForneyLab.ensureMessage!(node.i[:out], Delta{Float64}) --> Message(Delta())
-        @fact node.i[:out].message --> Message(Delta())
+        @fact typeof(ForneyLab.ensureMessage!(node.i[:out], Delta{Float64})) --> Message{Delta{Float64}}
     end
 
     context("truncate() should truncate a string to a specified length") do

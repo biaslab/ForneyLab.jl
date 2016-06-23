@@ -11,7 +11,8 @@ export  currentGraph,
         node,
         edge,
         n,
-        eg
+        eg,
+        summaryDependencyGraph
 
 abstract AbstractWrap
 
@@ -140,3 +141,41 @@ end
 # Check existance of graph elements
 hasNode(graph::FactorGraph, nd::Node) = (haskey(graph.nodes, nd.id) && is(graph.nodes[nd.id], nd))
 hasEdge(graph::FactorGraph, eg::Edge) = (haskey(graph.edges, eg.id) && is(graph.edges[eg.id], eg))
+
+
+"""
+summaryDependencyGraph(fg)
+
+Returns a directed graph that encodes the dependencies among
+summary messages (such as sum-product messages) in FactorGraph `fg`.
+All Interfaces in `fg` are vertices in the dependency graph.
+An edge `V1 --> V2` represents the dependency of summary `V1` on `V2`.
+The dependency graph can be used for loop detection, scheduling, etc.
+"""
+function summaryDependencyGraph(fg::FactorGraph; reverse_edges=false)
+    # Create dependency graph object
+    dg = graph(Interface[], Graphs.Edge[], is_directed=true)
+
+    # Add all Interfaces in fg as vertices in dg
+    for node in nodes(fg)
+        for interface in node.interfaces
+            add_vertex!(dg, interface)
+        end
+    end
+
+    # Add all summary dependencies
+    for interface in vertices(dg)
+        if isa(interface.partner, Interface) # interface is connected to an Edge
+            for node_interface in interface.partner.node.interfaces
+                is(node_interface, interface.partner) && continue
+                if reverse_edges
+                    add_edge!(dg, interface, node_interface)
+                else
+                    add_edge!(dg, node_interface, interface)
+                end
+            end
+        end
+    end
+
+    return dg
+end
