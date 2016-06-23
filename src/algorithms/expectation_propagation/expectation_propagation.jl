@@ -1,9 +1,6 @@
 import Base.show
 export ExpectationPropagation
 
-abstract CollapsedExpectationRule <: MessageCalculationRule
-implementation(::Type{CollapsedExpectationRule}) = expectationRule!
-
 type EPSite
     interface::Interface
     expectation_type::DataType
@@ -36,7 +33,6 @@ type ExpectationPropagation <: InferenceAlgorithm
     sites::Vector{EPSite}
     pre_schedule::Schedule                          # executed once before iterating of the sites
     post_schedule::Schedule                         # executed once after convergence
-    collapsed_site_priors::Dict{Interface,ProbabilityDistribution}  # holds priors for collapsed sites (the interfaces themselves hold the cavity distributions)
     n_iterations::Int64
     callback::Function
 end
@@ -124,11 +120,7 @@ function ExpectationPropagation(
                             breakers = setdiff(site_interfaces_set, Set([site.interface])),
                             restrict_to = union(influenced_by_site[prev_site_idx], Set([site.interface])))
         site.schedule = ScheduleEntry[ScheduleEntry{SumProductRule}(interface) for interface in schedule[1:end-1]]
-        if site.expectation_type <: PartitionedDistribution
-            expectation_entry = ScheduleEntry{CollapsedExpectationRule}(site.interface)
-        else
-            expectation_entry = ScheduleEntry{ExpectationRule}(site.interface)
-        end
+        expectation_entry = ScheduleEntry{ExpectationRule}(site.interface)
         expectation_entry.outbound_type = site.expectation_type
         push!(site.schedule, expectation_entry)
     end
@@ -139,16 +131,12 @@ function ExpectationPropagation(
     # type inference
     pre_schedule = convert(Schedule, pre_schedule, SumProductRule)
     post_schedule = convert(Schedule, post_schedule, SumProductRule)
-    collapsed_site_priors = Dict{Interface,ProbabilityDistribution}()
     for entry in pre_schedule
         inferTypes!(entry, message_types)
     end
     for site in ep_sites
         for entry in site.schedule
             inferTypes!(entry, message_types)
-        end
-        if site.expectation_type <: PartitionedDistribution
-            collapsed_site_priors[site.interface.partner] = vague(message_types[site.interface.partner])
         end
     end
     for entry in post_schedule
@@ -159,7 +147,6 @@ function ExpectationPropagation(
                                   ep_sites,
                                   pre_schedule,
                                   post_schedule,
-                                  collapsed_site_priors,
                                   n_iterations,
                                   callback)
 
@@ -189,66 +176,30 @@ function inferTypes!(   entry::ScheduleEntry{ExpectationRule},
     return entry
 end
 
-function inferTypes!(   entry::ScheduleEntry{CollapsedExpectationRule},
-                        inferred_outbound_types::Dict{Interface, DataType})
-    # Collect inbound types
-    entry.inbound_types = DataType[]
-    for (id, interface) in enumerate(entry.node.interfaces)
-        if id == entry.outbound_interface_id
-            # The incoming message should not be the multivariate prior message
-            # but a Message{PartitionedDistribution} that holds the cavity distributions.
-            # The type of the cavity distribution is identical to the type of the expectation message.
-            push!(entry.inbound_types, Message{entry.outbound_type})
-        else
-            push!(entry.inbound_types, Message{inferred_outbound_types[interface.partner]})
-        end
-    end
-
-    # Verify that there exists a suitable ExpectationRule method.
-    inferOutboundType!(entry)
-
-    return entry
-end
 
 function prepare!(algo::ExpectationPropagation)
     # Populate the graph with messages of the correct types and compile the schedules
     for entry in vcat(algo.pre_schedule, algo.post_schedule)
         interface = entry.node.interfaces[entry.outbound_interface_id]
-        # Prior messages for collapsed sites are not written to the interface, but are saved in algo.collapsed_site_priors
-        haskey(algo.collapsed_site_priors, interface) || ensureMessage!(interface, entry.outbound_type)
+        ensureMessage!(interface, entry.outbound_type)
     end
     for site in algo.sites
         for entry in site.schedule
             interface = entry.node.interfaces[entry.outbound_interface_id]
-            haskey(algo.collapsed_site_priors, interface) || ensureMessage!(interface, entry.outbound_type)
+            ensureMessage!(interface, entry.outbound_type)
         end
-        # init cavity distribution?
-        if haskey(algo.collapsed_site_priors, site.interface.partner)
-            ensureMessage!(site.interface.partner, site.expectation_type)
-        end
-        compile!(site.schedule, algo)
     end
 
     # Compile the schedules
     compile!(algo.pre_schedule, algo)
+    for site in algo.sites
+        compile!(site.schedule, algo)
+    end
     compile!(algo.post_schedule, algo)
 
     return algo.graph.prepared_algorithm = algo
 end
 
-function compile!(entry::ScheduleEntry{SumProductRule}, algo::ExpectationPropagation)
-    # Generate entry.execute
-    inbound_messages = [interface.partner.message for interface in entry.node.interfaces]
-    outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
-
-    if haskey(algo.collapsed_site_priors, outbound_interface)
-        # Write outbound distribution to algo.collapsed_site_priors
-        return buildExecute!(entry, inbound_messages, outbound_dist=algo.collapsed_site_priors[outbound_interface])
-    else
-        # Write outbound distribution to the message on the corresponding interface
-        return buildExecute!(entry, inbound_messages)
-    end
-end
 
 function compile!(entry::ScheduleEntry{ExpectationRule}, ::InferenceAlgorithm)
     # Generate entry.execute
@@ -257,20 +208,6 @@ function compile!(entry::ScheduleEntry{ExpectationRule}, ::InferenceAlgorithm)
     return buildExecute!(entry, inbound_messages)
 end
 
-function compile!(entry::ScheduleEntry{CollapsedExpectationRule}, algo::ExpectationPropagation)
-    # Generate entry.execute
-
-    # Find the site that corresponds to this entry
-    interface = entry.node.interfaces[entry.outbound_interface_id]
-    for site in algo.sites
-        if site.interface == interface
-            entry.execute = () -> collapsedEP(site, site.expectation_type, algo)
-            return entry
-        end
-    end
-
-    error("Could not link $(entry) to a site in the ExpectationPropagation algorithm")
-end
 
 function execute(algo::ExpectationPropagation)
     # Make sure algo is prepared
@@ -299,5 +236,3 @@ function execute(algo::ExpectationPropagation)
     # Execute post convergence schedule once
     isempty(algo.post_schedule) || execute(algo.post_schedule)
 end
-
-include("collapsed_ep.jl")
