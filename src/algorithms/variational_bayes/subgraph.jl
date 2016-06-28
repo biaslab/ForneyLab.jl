@@ -31,3 +31,34 @@ function edges(sg::Subgraph; include_external=true) # Return edges connected to 
         return copy(sg.internal_edges)
     end
 end
+
+"""
+summaryDependencyGraph(sg)
+
+Returns a directed graph that encodes the dependencies between internal edges of the subgraph `sg`.
+"""
+function summaryDependencyGraph(sg::Subgraph)
+    # Create dependency graph object
+    dg = graph(Interface[], Graphs.Edge[], is_directed=true)
+
+    # Add all interfaces of internal edges as vertices in dg
+    for node in nodes(sg)
+        for interface in node.interfaces
+            (interface.edge in sg.internal_edges) || continue # interface must be of an internal edge
+            add_vertex!(dg, interface)
+        end
+    end
+
+    # Add all summary dependencies
+    for interface in vertices(dg)
+        if isa(interface.partner, Interface) # interface is connected to an Edge
+            for node_interface in interface.partner.node.interfaces
+                (node_interface in vertices(dg)) || continue # dependent interface must be in the dependency graph
+                is(node_interface, interface.partner) && continue # do not add self
+                add_edge!(dg, node_interface, interface) # node_interface is dependent on interface
+            end
+        end
+    end
+
+    return dg
+end

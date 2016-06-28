@@ -91,7 +91,7 @@ function Base.show(io::IO, schedule::Vector{ScheduleEntry})
     end
 end
 
-
+# TODO: remove
 function generateScheduleByDFS!(outbound_interface::Interface,
                                 backtrace::Vector{Interface} = Interface[],
                                 call_list::Vector{Interface} = Interface[];
