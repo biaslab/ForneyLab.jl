@@ -21,7 +21,6 @@ To force the use of a specific approximation method, use a tuple: `(dist_type::D
 """
 type SumProduct <: AbstractSumProduct
     graph::FactorGraph
-    execute::Function
     schedule::Schedule
 end
 
@@ -57,12 +56,7 @@ function SumProduct(edge::Edge;
         inferTypes!(entry, message_types)
     end
 
-    function exec(algorithm)
-        execute(algorithm.schedule)
-        calculateMarginal!(edge)
-    end
-
-    return SumProduct(graph, exec, schedule)
+    return SumProduct(graph, schedule)
 end
 
 function SumProduct(outbound_interfaces::Vector{Interface};
@@ -77,9 +71,7 @@ function SumProduct(outbound_interfaces::Vector{Interface};
         inferTypes!(entry, message_types)
     end
 
-    exec(algorithm) = execute(algorithm.schedule)
-
-    return SumProduct(graph, exec, schedule)
+    return SumProduct(graph, schedule)
 end
 
 ############################################
@@ -135,4 +127,10 @@ function compile!(entry::ScheduleEntry{SumProductRule}, ::InferenceAlgorithm)
     end
 
     return buildExecute!(entry, inbound_rule_arguments)
+end
+
+function execute(algo::SumProduct)
+    (algo.graph.prepared_algorithm == algo) || prepare!(algo)
+
+    execute(algo.schedule)
 end

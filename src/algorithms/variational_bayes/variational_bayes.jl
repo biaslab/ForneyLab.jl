@@ -49,6 +49,10 @@ function VariationalBayes(  targets::Vector{Interface},
     for sg in recognition_factorization.subgraphs
         dg = summaryDependencyGraph(sg) # Dependency graph of subgraph internal edges
         
+        # TODO: this scheduler requires messages for the structured factorization that are not always required;
+        # e.g. backward messages over the mean and precision edges present in a joint factorization when there
+        # are no target dependencies.
+
         # Update the messages along the internal edges of sg
         variational_interfaces = Interface[]
         internal_interface_list = Interface[]
@@ -61,7 +65,7 @@ function VariationalBayes(  targets::Vector{Interface},
             end
         end
         
-        # Propagate messages towards wraps
+        # Propagate messages towards targets (such as wraps and write buffers)
         target_interface_list = Interface[]
         for interface in targets
             if interface.edge in sg.internal_edges # target is the responsibility of the subgraph sg
