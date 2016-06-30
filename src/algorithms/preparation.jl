@@ -81,7 +81,7 @@ function _resolveTypeVars(dtype::DataType, lookup_table::Dict{Symbol,Any})
         return dtype
     else
         param_values = map(dt -> _resolveTypeVars(dt, lookup_table), dtype.parameters)
-        return eval(parse("$(dtype.name){" * join(param_values,",") * "}"))
+        return Main.eval(parse("$(dtype.name){" * join(param_values,",") * "}"))
     end
 end
 
@@ -364,7 +364,9 @@ function injectParameters!{T<:ProbabilityDistribution}(destination::T, source::T
     # Fill the parameters of a destination distribution with the copied parameters of the source
 
     for field in fieldnames(source)
-        setfield!(destination, field, deepcopy(getfield(source, field)))
+        if isdefined(source, field)
+            setfield!(destination, field, deepcopy(getfield(source, field)))
+        end
     end
 
     return destination
