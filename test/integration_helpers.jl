@@ -122,75 +122,27 @@ end
 
 function initializeFactoringGraph()
     # Set up a graph to test factorize function
-    #             [T]
-    #              |     -----
-    #              v     v   |
-    # [T]-->[A]-->[N]-->[+] [N]
-    #                    |   ^
-    #                    -----
-
+    #               [T2]   [T3]
+    #                |      |
+    #                v      v
+    # [T1]-->[A1]-->[N1]-->[N2]-->[T4]
+    
     g = FactorGraph()
+
     TerminalNode(id=:t1)
     GainNode(gain=[1.0], id=:a1)
     GaussianNode(form=:variance, id=:g1)
     TerminalNode(id=:t2)
-    AdditionNode(id=:add1)
-    GaussianNode(id=:g2, V=0.1)
+    GaussianNode(form=:variance, id=:g2)
+    TerminalNode(id=:t3)
+    TerminalNode(id=:t4)
+    
     Edge(n(:t1).i[:out], n(:a1).i[:in])
     Edge(n(:a1).i[:out], n(:g1).i[:mean])
     Edge(n(:t2).i[:out], n(:g1).i[:variance])
-    Edge(n(:g1).i[:out], n(:add1).i[:in1])
-    Edge(n(:add1).i[:out], n(:g2).i[:mean])
-    Edge(n(:g2).i[:out], n(:add1).i[:in2])
-
-    return g
-end
-
-function initializeFactoringGraphWithoutLoop()
-    # Set up a graph to test factorize function
-    #             [T]
-    #              |
-    #              v
-    # [T]-->[A]-->[N]-->[T]
-    #
-    #
-
-    g = FactorGraph()
-    TerminalNode(id=:t1)
-    GainNode(gain=[1.0], id=:a1)
-    GaussianNode(form=:variance, id=:g1)
-    TerminalNode(id=:t2)
-    TerminalNode(id=:t3)
-    Edge(n(:t1).i[:out], n(:a1).i[:in])
-    Edge(n(:a1).i[:out], n(:g1).i[:mean], id=:q_mean)
-    Edge(n(:t2).i[:out], n(:g1).i[:variance], id=:q_var)
-    Edge(n(:g1).i[:out], n(:t3).i[:out], id=:q_out)
-
-    return g
-end
-
-function initializeGaussianFactoringGraph()
-    # [T]<--[A]<--[N]
-
-    g = FactorGraph()
-    TerminalNode(id=:t)
-    GainNode(gain=[1.0], id=:gain)
-    GaussianNode(m=1.0, V=0.5, id=:gauss)
-    Edge(n(:gauss).i[:out], n(:gain).i[:in])
-    Edge(n(:gain).i[:out], n(:t).i[:out])
-
-    return g
-end
-
-function initializeSimpleFactoringGraph()
-    # [T]<--[A]<--[T]
-
-    g = FactorGraph()
-    TerminalNode(id=:t1)
-    GainNode(gain=[1.0], id=:gain)
-    TerminalNode(id=:t2)
-    Edge(n(:t2).i[:out], n(:gain).i[:in])
-    Edge(n(:gain).i[:out], n(:t1).i[:out])
+    Edge(n(:g1).i[:out], n(:g2).i[:mean])
+    Edge(n(:t3).i[:out], n(:g2).i[:variance])
+    Edge(n(:g2).i[:out], n(:t4).i[:out])
 
     return g
 end

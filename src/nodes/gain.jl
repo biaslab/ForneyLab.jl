@@ -1,5 +1,3 @@
-# TODO: non-square matrices for gain?
-
 export GainNode
 
 """

@@ -15,7 +15,6 @@ Usage:
 """
 type LoopySumProduct <: AbstractSumProduct
     graph::FactorGraph
-    execute::Function
     pre_schedule::Schedule
     iterative_schedule::Schedule
     post_schedule::Schedule
@@ -104,17 +103,7 @@ function LoopySumProduct(   outbound_interfaces::Vector{Interface};
         inferTypes!(entry, message_types)
     end
 
-    function exec(algo)
-        resetBreakerMessages(algo)
-        isempty(algo.pre_schedule) || execute(algo.pre_schedule)
-        for iteration = 1:algo.n_iterations
-            execute(algo.iterative_schedule)
-        end
-        isempty(algo.post_schedule) || execute(algo.post_schedule)
-    end
-
     return LoopySumProduct( graph,
-                            exec,
                             pre_schedule,
                             iterative_schedule,
                             post_schedule,
@@ -151,4 +140,16 @@ function resetBreakerMessages(algo::LoopySumProduct)
     end
 
     return algo
+end
+
+function execute(algo::LoopySumProduct)
+    (algo.graph.prepared_algorithm == algo) || prepare!(algo)
+
+    resetBreakerMessages(algo)
+
+    isempty(algo.pre_schedule) || execute(algo.pre_schedule)
+    for iteration = 1:algo.n_iterations
+        execute(algo.iterative_schedule)
+    end
+    isempty(algo.post_schedule) || execute(algo.post_schedule)
 end
