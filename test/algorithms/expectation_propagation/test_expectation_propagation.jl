@@ -17,6 +17,7 @@ facts("ExpectationPropagation algorithm integration tests") do
     ###############
 
     const NUM_SECTIONS = 50
+    srand(1234) # make tests deterministic
     g_gen = FactorGraph()
     X = TerminalNode(Gaussian(m=-0.5, V=0.1), id=:t_X)
     sig = SigmoidNode(id=:sig)
