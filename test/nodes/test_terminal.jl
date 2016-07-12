@@ -15,6 +15,8 @@ facts("TerminalNode unit tests") do
         @fact ForneyLab.firstFreeInterface(n(:node)) --> n(:node).i[:out]
         Edge(n(:node), TerminalNode())
         @fact_throws ForneyLab.firstFreeInterface(n(:node))
+        @fact ForneyLab.isDeterministic(TerminalNode(Delta())) --> true
+        @fact ForneyLab.isDeterministic(TerminalNode(Gaussian())) --> false
     end
 
     context("TerminalNode should throw an error when its value is set to a message") do

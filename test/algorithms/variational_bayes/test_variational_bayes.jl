@@ -14,12 +14,16 @@ facts("VariationalBayes should collect the proper inbound types as dependent on 
 
     algo = VariationalBayes()
 
-    @fact algo.recognition_factorization.subgraphs[3].internal_schedule[1].inbound_types --> [Gaussian, Gamma, Void]
-    @fact algo.recognition_factorization.subgraphs[3].internal_schedule[1].outbound_type --> Gaussian
-    @fact algo.recognition_factorization.subgraphs[2].internal_schedule[1].inbound_types --> [Gaussian, Void, Gaussian]
-    @fact algo.recognition_factorization.subgraphs[2].internal_schedule[1].outbound_type --> Gamma
-    @fact algo.recognition_factorization.subgraphs[1].internal_schedule[1].inbound_types --> [Void, Gamma, Gaussian]
-    @fact algo.recognition_factorization.subgraphs[1].internal_schedule[1].outbound_type --> Gaussian
+    @fact algo.recognition_factorization.subgraphs[3].internal_pre_schedule[1].outbound_type --> Gaussian
+    @fact algo.recognition_factorization.subgraphs[2].internal_pre_schedule[1].outbound_type --> Gamma
+    @fact algo.recognition_factorization.subgraphs[1].internal_pre_schedule[1].outbound_type --> Gaussian
+
+    @fact algo.recognition_factorization.subgraphs[3].internal_iterative_schedule[1].inbound_types --> [Gaussian, Gamma, Void]
+    @fact algo.recognition_factorization.subgraphs[3].internal_iterative_schedule[1].outbound_type --> Gaussian
+    @fact algo.recognition_factorization.subgraphs[2].internal_iterative_schedule[1].inbound_types --> [Gaussian, Void, Gaussian]
+    @fact algo.recognition_factorization.subgraphs[2].internal_iterative_schedule[1].outbound_type --> Gamma
+    @fact algo.recognition_factorization.subgraphs[1].internal_iterative_schedule[1].inbound_types --> [Void, Gamma, Gaussian]
+    @fact algo.recognition_factorization.subgraphs[1].internal_iterative_schedule[1].outbound_type --> Gaussian
 
     # Structurally factorized
     initializeGaussianNode()
@@ -32,12 +36,16 @@ facts("VariationalBayes should collect the proper inbound types as dependent on 
 
     algo = VariationalBayes()
     
-    @fact algo.recognition_factorization.subgraphs[2].internal_schedule[1].inbound_types --> [NormalGamma, NormalGamma, Void]
-    @fact algo.recognition_factorization.subgraphs[2].internal_schedule[1].outbound_type --> Gaussian
-    @fact algo.recognition_factorization.subgraphs[1].internal_schedule[2].inbound_types --> [Void,Message{Gamma},Gaussian]
-    @fact algo.recognition_factorization.subgraphs[1].internal_schedule[2].outbound_type --> StudentsT
-    @fact algo.recognition_factorization.subgraphs[1].internal_schedule[4].inbound_types --> [Message{Gaussian},Void,Gaussian]
-    @fact algo.recognition_factorization.subgraphs[1].internal_schedule[4].outbound_type --> Gamma
+    @fact algo.recognition_factorization.subgraphs[2].internal_pre_schedule[1].outbound_type --> Gaussian
+    @fact algo.recognition_factorization.subgraphs[1].internal_pre_schedule[1].outbound_type --> Gaussian
+    @fact algo.recognition_factorization.subgraphs[1].internal_pre_schedule[2].outbound_type --> Gamma
+
+    @fact algo.recognition_factorization.subgraphs[2].internal_iterative_schedule[1].inbound_types --> [NormalGamma, NormalGamma, Void]
+    @fact algo.recognition_factorization.subgraphs[2].internal_iterative_schedule[1].outbound_type --> Gaussian
+    @fact algo.recognition_factorization.subgraphs[1].internal_iterative_schedule[1].inbound_types --> [Void,Message{Gamma},Gaussian]
+    @fact algo.recognition_factorization.subgraphs[1].internal_iterative_schedule[1].outbound_type --> StudentsT
+    @fact algo.recognition_factorization.subgraphs[1].internal_iterative_schedule[2].inbound_types --> [Message{Gaussian},Void,Gaussian]
+    @fact algo.recognition_factorization.subgraphs[1].internal_iterative_schedule[2].outbound_type --> Gamma
 end
 
 facts("Naive vmp implementation integration tests") do

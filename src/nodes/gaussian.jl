@@ -146,6 +146,21 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:precision}},
+                                outbound_interface_index::Type{Val{1}},
+                                outbound_dist::MvGaussian{dims},
+                                msg_mean::Any,
+                                msg_prec::Message{MatrixDelta{Float64,dims,dims}},
+                                msg_out::Message{MvDelta{Float64,dims}})
+
+    outbound_dist.m = deepcopy(msg_out.payload.m)
+    invalidate!(outbound_dist.xi)
+    invalidate!(outbound_dist.V)
+    outbound_dist.W = deepcopy(msg_prec.payload.M)
+
+    return outbound_dist
+end
+
 """
 GaussianNode{:mean, :variance}
 

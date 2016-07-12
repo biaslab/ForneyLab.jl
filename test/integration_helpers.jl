@@ -28,7 +28,7 @@ type MockNode <: Node
     end
 end
 
-ForneyLab.isDeterministic(::MockNode) = false # Edge case, same as terminal node
+ForneyLab.isDeterministic(::MockNode) = false
 
 #############
 # Backgrounds
