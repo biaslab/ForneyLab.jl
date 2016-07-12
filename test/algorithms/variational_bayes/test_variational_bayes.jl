@@ -2,6 +2,42 @@
 # Integration tests
 #####################
 
+facts("VariationalBayes should initialize a pre, iterative and post schedule") do
+    # Initialize chain
+    data = [0.0, 0.0]
+    initializeGaussianNodeChain(data)
+    n_sections = length(data)
+
+    m_buffer = attachWriteBuffer(n(:m_eq*n_sections).i[2]) # Propagate to the end
+    gam_buffer = attachWriteBuffer(n(:gam_eq*n_sections).i[2])
+
+    # Apply mean field factorization
+    rf = RecognitionFactorization()
+    factorizeMeanField()
+    for sec in 1:n_sections
+        initialize(eg(:q_y*sec), vague(Gaussian))
+        initialize(eg(:q_m*sec), vague(Gaussian))
+        initialize(eg(:q_gam*sec), vague(Gamma))
+    end
+
+    # Construct algorithm
+    algo = VariationalBayes(n_iterations=50)
+
+    # Verify correct schedule lengths
+    @fact length(algo.recognition_factorization.subgraphs[1].internal_pre_schedule) --> 2
+    @fact length(algo.recognition_factorization.subgraphs[1].internal_iterative_schedule) --> 6
+    @fact length(algo.recognition_factorization.subgraphs[1].internal_post_schedule) --> 1
+    @fact length(algo.recognition_factorization.subgraphs[2].internal_pre_schedule) --> 2
+    @fact length(algo.recognition_factorization.subgraphs[2].internal_iterative_schedule) --> 6
+    @fact length(algo.recognition_factorization.subgraphs[2].internal_post_schedule) --> 1
+    @fact length(algo.recognition_factorization.subgraphs[3].internal_pre_schedule) --> 1
+    @fact length(algo.recognition_factorization.subgraphs[3].internal_iterative_schedule) --> 1
+    @fact length(algo.recognition_factorization.subgraphs[3].internal_post_schedule) --> 0
+    @fact length(algo.recognition_factorization.subgraphs[4].internal_pre_schedule) --> 1
+    @fact length(algo.recognition_factorization.subgraphs[4].internal_iterative_schedule) --> 1
+    @fact length(algo.recognition_factorization.subgraphs[4].internal_post_schedule) --> 0
+end
+
 facts("VariationalBayes should collect the proper inbound types as dependent on the recognition factorization") do
     # Mean field factorized Gaussian node
     initializeGaussianNode()

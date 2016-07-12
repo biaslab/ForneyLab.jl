@@ -76,19 +76,15 @@ function VariationalBayes(  targets::Vector{Interface},
 
         # Based on the variationally dependent messages, distinguish between the pre and iterative schedule
         pre_interface_list = Interface[]
-        iterative_interface_list = variational_interfaces # Outbound variational messages from nodes connected to external edges
-        for partner_interface in partner_variational_interfaces
-            if partner_interface in influenced_by_variational_update # Partner interface is influenced by a variational update, add to iterative schedule
-                # Note: the internal schedule (towards the node) is computed before the variational updates,
-                # since a variational message for a structured factorization depends on the internally incoming message
-                # (in addition to the external recognition distribution).
-                iterative_interface_list = [children(partner_interface, dg); iterative_interface_list]
-            else # Partner interface is not influenced by a variational update, only compute once in pre schedule
-                pre_interface_list = [pre_interface_list; children(partner_interface, dg)]
+        iterative_interface_list = Interface[]
+        for interface in children(partner_variational_interfaces, dg)
+            if interface in influenced_by_variational_update # Interface is influenced by a variational update, add to iterative schedule
+                push!(iterative_interface_list, interface)
+            else # Interface is not influenced by a variational update, only compute once in pre schedule
+                push!(pre_interface_list, interface)
             end
         end
-        pre_interface_list = unique(pre_interface_list) # Remove potential duplicate entries
-        iterative_interface_list = unique(iterative_interface_list)
+        iterative_interface_list = unique([iterative_interface_list; variational_interfaces]) # Add variational interfaces at the end because these may depend in internal messages in the case of a structured factorization.
 
         # Propagate messages towards targets (such as wraps and write buffers)
         post_interface_list = Interface[]
@@ -97,14 +93,8 @@ function VariationalBayes(  targets::Vector{Interface},
                 post_interface_list = [post_interface_list; children(interface, dg, breakers=union(Set(pre_interface_list), Set(iterative_interface_list)))]
             end
         end
-        post_interface_list = unique(post_interface_list) # Remove potential duplicate entries
         
-        # Sanity check, schedules should not intersect
-        isempty(intersect(Set(pre_interface_list), Set(iterative_interface_list))) || error("Pre and iterative schedules share interfaces")
-        isempty(intersect(Set(pre_interface_list), Set(post_interface_list))) || error("Pre and post schedules share interfaces")
-        isempty(intersect(Set(iterative_interface_list), Set(post_interface_list))) || error("Post and iterative schedules share interfaces")
-
-        # Covert interface lists to schedule, assign variational update rules to variational interfaces
+        # Covert interface lists to schedule; assign variational update rules to variational interfaces
         sg.internal_pre_schedule = convertToVariationalSchedule(pre_interface_list, variational_interfaces)
         sg.internal_iterative_schedule = convertToVariationalSchedule(iterative_interface_list, variational_interfaces)
         sg.internal_post_schedule = convertToVariationalSchedule(post_interface_list, variational_interfaces)

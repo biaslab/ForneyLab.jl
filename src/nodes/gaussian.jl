@@ -790,7 +790,7 @@ GaussianNode{:mean, :variance}:
     q(N)   q(Ig)
     --->[N]<---
          | |
-       N v v
+     N/δ v v
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{3}},
@@ -809,13 +809,16 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
     return outbound_dist
 end
 
+# For a delta recognition distribution, the variational update is irrelevant
+variationalRule!(node::GaussianNode{Val{:mean},Val{:variance}}, outbound_interface_index::Type{Val{3}}, outbound_dist::Gaussian, marg_mean::Gaussian, marg_var::InverseGamma, marg_out::Delta) = outbound_dist
+
 """
 GaussianNode{:mean, :precision}:
 
     q(N)   q(G)
     --->[N]<---
          | |
-       N v v
+     N/δ v v
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{3}},
@@ -834,13 +837,16 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+# For a delta recognition distribution, the variational update is irrelevant
+variationalRule!(node::GaussianNode{Val{:mean},Val{:precision}}, outbound_interface_index::Type{Val{3}}, outbound_dist::Gaussian, marg_mean::Gaussian, marg_prec::Gamma, marg_out::Delta) = outbound_dist
+
 """
 GaussianNode{:mean, :precision}:
 
     q(N)   q(W)
     --->[N]<---
          | |
-       N v v
+     N/δ v v
 """
 function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
                                 outbound_interface_index::Type{Val{3}},
@@ -858,6 +864,9 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
 
     return outbound_dist
 end
+
+# For a delta recognition distribution, the variational update is irrelevant
+variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}}, outbound_interface_index::Type{Val{3}}, outbound_dist::MvGaussian{dims}, marg_mean::MvGaussian{dims}, marg_prec::Wishart{dims}, marg_out::MvDelta{dims}) = outbound_dist
 
 
 ##########################################################
