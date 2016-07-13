@@ -294,39 +294,6 @@ function calculateRecognitionDistribution!(rf::RecognitionFactorization, node::N
     end
 end
 
-@symmetrical function prod!(::Void, y::Delta{Float64}, z::Delta{Float64}=Delta())
-    # Multiplication of an unknown with a Delta
-    z.m = y.m
-
-    return z
-end
-
-@symmetrical function prod!(::Void, y::Delta{Float64}, z::Gaussian)
-    # Multiplication of an unknown with Delta, force result to be Gaussian
-    z.m = y.m
-    z.V = tiny
-    z.xi = z.W = NaN
-
-    return z
-end
-
-@symmetrical function prod!{dims}(::Void, y::MvDelta{Float64,dims}, z::MvDelta{Float64,dims}=MvDelta(y.m))
-    # Product of an unknown PDF and MvDelta
-    (z.m == y.m) || (z.m[:] = y.m)
-
-    return z
-end
-
-@symmetrical function prod!{dims}(::Void, y::MvDelta{Float64,dims}, z::MvGaussian{dims})
-    # Product of an unknown with MvDelta, force result to be MvGaussian
-    z.m[:] = y.m
-    z.V = tiny.*eye(dims)
-    invalidate!(z.xi)
-    invalidate!(z.W)
-
-    return z
-end
-
 
 ############################
 # Update rules for multivariate recognition distributions

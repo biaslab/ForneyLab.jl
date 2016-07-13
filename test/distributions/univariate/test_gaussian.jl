@@ -113,6 +113,10 @@ facts("Gaussian unit tests") do
         @fact isConsistent(Gaussian(m=0.0, V=1.0, W=2.0)) --> false
         @fact isConsistent(Gaussian(m=0.0, xi=1.0, V=1.0, W=2.0)) --> false
     end
+
+    context("H() should evaluate the entropy") do
+        @fact ForneyLab.H(Gaussian()) --> roughly(1.4189385332046727)
+    end
 end
 
 facts("Gaussian converts") do

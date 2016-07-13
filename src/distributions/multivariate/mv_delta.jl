@@ -35,6 +35,13 @@ function prod!{T,dims}(x::MvDelta{T,dims}, y::MvDelta{T,dims}, z::MvDelta{T,dims
     return z
 end
 
+@symmetrical function prod!{dims}(::Void, y::MvDelta{Float64,dims}, z::MvDelta{Float64,dims}=MvDelta(y.m))
+    # Product of an unknown PDF and MvDelta
+    (z.m == y.m) || (z.m[:] = y.m)
+
+    return z
+end
+
 isProper(dist::MvDelta) = true
 
 vague{T,dims}(::Type{MvDelta{T,dims}}) = MvDelta(rand(T, dims))

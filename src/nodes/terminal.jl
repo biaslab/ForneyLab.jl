@@ -54,6 +54,10 @@ firstFreeInterface(node::TerminalNode) = (node.interfaces[1].partner==nothing) ?
 collectAllOutboundTypes(rule::Function, call_signature::Vector, node::TerminalNode) = DataType[typeof(node.value)]
 
 
+############################################
+# Sumproduct rules
+############################################
+
 """
 TerminalNode
 
@@ -67,4 +71,40 @@ function sumProductRule!(   node::TerminalNode,
 
     # Fill the fields of outbound_dist with node.value
     return injectParameters!(outbound_dist, node.value)
+end
+
+
+############################
+# Average energy functionals
+############################
+
+"""
+Compute average energy as U[q] = -E_q[log f(x)]
+"""
+function U(node::TerminalNode, dist_y::Gaussian)
+    (typeof(node.value) <: Gaussian) || error("Average energy for TerminalNode only defined for Gaussian value")
+
+    ensureParameters!(node.value, (:m, :W))
+    ensureParameters!(dist_y, (:m, :V))
+
+    mean = node.value.m
+    prec = node.value.W
+
+    return  (1/2)*log(2*pi) -
+            0.5*log(prec) +
+            0.5*(prec)*( dist_y.V + (dist_y.m - mean)^2)
+end
+
+function U{dims}(node::TerminalNode, dist_y::MvGaussian{dims})
+    (typeof(node.value) <: MvGaussian) || error("Average energy for TerminalNode only defined for Gaussian value")
+
+    ensureParameters!(node.value, (:m, :W))
+    ensureParameters!(dist_y, (:m, :V))
+
+    mean = node.value.m
+    prec = node.value.W
+
+    return  (dims/2)*log(2*pi) -
+            0.5*log(det(prec)) +
+            0.5*trace( prec*( dist_y.V + (dist_y.m - mean)*(dist_y.m - mean)' ) )
 end

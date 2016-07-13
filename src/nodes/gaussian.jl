@@ -1072,3 +1072,29 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
 
     return outbound_dist
 end
+
+
+############################
+# Average energy functionals
+############################
+
+function U(::GaussianNode{Val{:mean},Val{:precision}}, dist_mean::Gaussian, dist_prec::Gamma, dist_y::Gaussian)
+    ensureParameters!(dist_mean, (:m, :V))
+    ensureParameters!(dist_y, (:m, :V))
+
+    return  (1/2)*log(2*pi) -
+            0.5*digamma(dist_prec.a) +
+            0.5*log(dist_prec.b) +
+            0.5*(dist_prec.a/dist_prec.b)*( dist_y.V + dist_mean.V + (dist_y.m - dist_mean.m)^2)
+end
+
+function U{dims}(::GaussianNode{Val{:mean},Val{:precision}}, dist_mean::MvGaussian{dims}, dist_prec::Wishart{dims}, dist_y::MvGaussian{dims})
+    ensureParameters!(dist_mean, (:m, :V))
+    ensureParameters!(dist_y, (:m, :V))
+
+    return  (dims/2)*log(2*pi) -
+            0.5*sum([digamma(0.5*(dist_prec.nu + 1 - i)) for i = 1:dims]) -
+            (dims/2)*log(2) -
+            0.5*log(det(dist_prec.V)) +
+            0.5*trace( dist_prec.nu*dist_prec.V*( dist_y.V + dist_mean.V + (dist_y.m - dist_mean.m)*(dist_y.m - dist_mean.m)' ) )
+end

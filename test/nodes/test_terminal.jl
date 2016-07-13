@@ -36,4 +36,9 @@ facts("TerminalNode unit tests") do
                                 [nothing],
                                 Delta(4.0))
     end
+
+    context("U() should evaluate the average energy") do
+        @fact ForneyLab.U(TerminalNode(Gaussian()), Gaussian()) --> roughly(1.4189385332046727)
+        @fact ForneyLab.U(TerminalNode(MvGaussian()), MvGaussian()) --> roughly(1.4189385332046727)
+    end
 end

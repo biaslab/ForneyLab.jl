@@ -72,3 +72,11 @@ end
 end
 
 ==(x::Gamma, y::Gamma) = (x.a==y.a && x.b==y.b)
+
+# Entropy functional
+function H(dist::Gamma)
+    return  log(gamma(dist.a)) -
+            (dist.a - 1.0)*digamma(dist.a) -
+            log(dist.b) +
+            dist.a
+end

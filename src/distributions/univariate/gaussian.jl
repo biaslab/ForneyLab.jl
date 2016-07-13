@@ -126,6 +126,15 @@ end
     return z
 end
 
+@symmetrical function prod!(::Void, y::Delta{Float64}, z::Gaussian)
+    # Multiplication of an unknown with Delta, force result to be Gaussian
+    z.m = y.m
+    z.V = tiny
+    z.xi = z.W = NaN
+
+    return z
+end
+
 function isProper(dist::Gaussian)
     if isWellDefined(dist)
         param = isnan(dist.W) ? dist.V : dist.W
@@ -245,3 +254,12 @@ convert(::Type{Gaussian}, flt::Float64) = Gaussian(m=flt, V=tiny)
 convert(::Type{Gaussian}, delta::Delta{Float64}) = Gaussian(m=delta.m, V=tiny)
 
 convert(::Type{Message{Gaussian}}, msg::Message{Delta{Float64}}) = Message(Gaussian(m=msg.payload.m, V=tiny))
+
+# Entropy functional
+function H(dist::Gaussian)
+    ensureParameters!(dist, (:m, :V))
+
+    return  0.5*log(dist.V) +
+            0.5*log(2*pi) +
+            0.5
+end

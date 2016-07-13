@@ -46,4 +46,8 @@ facts("Gamma unit tests") do
         @fact mean(ForneyLab.prod!(Gamma(a=3.0, b=4.0), Delta(0.5), Gamma())) --> roughly(0.5)
         @fact var(ForneyLab.prod!(Gamma(a=3.0, b=4.0), Delta(0.5), Gamma())) --> less_than(1e-6)
     end
+
+    context("H() should evaluate the entropy") do
+        @fact ForneyLab.H(Gamma(a=0.5, b=0.5)) --> roughly(0.7837571104739337)
+    end
 end

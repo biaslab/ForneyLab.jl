@@ -31,6 +31,11 @@ facts("GaussianNode unit tests") do
         @fact testnode.i[:out] --> testnode.interfaces[2]
     end
 
+    context("U() should evaluate the average energy") do
+        @fact ForneyLab.U(GaussianNode(form=:precision), Gaussian(), Gamma(a=0.5, b=0.5), Gaussian()) --> roughly(2.5541199559354117)
+        @fact ForneyLab.U(GaussianNode(form=:precision), MvGaussian(), Wishart(), MvGaussian()) --> roughly(2.5541199559354117)
+    end    
+
     FactorGraph()
 
     context("Sum-product: no fixed parameters") do

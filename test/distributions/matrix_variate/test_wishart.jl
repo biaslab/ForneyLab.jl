@@ -36,6 +36,10 @@ facts("Wishart unit tests") do
         @fact marg.V --> roughly([0.5].')
         @fact marg.nu --> 2.0
     end
+
+    context("H() should evaluate the entropy") do
+        @fact ForneyLab.H(Wishart()) --> roughly(0.7837571104739337)
+    end
 end
 
 facts("Wishart converts") do

@@ -38,6 +38,13 @@ function prod!{T}(x::Delta{T}, y::Delta{T}, z::Delta{T}=deepcopy(y))
     return z
 end
 
+@symmetrical function prod!(::Void, y::Delta{Float64}, z::Delta{Float64}=Delta())
+    # Multiplication of an unknown with a Delta
+    z.m = y.m
+
+    return z
+end
+
 isProper(dist::Delta) = true
 
 Base.mean(dist::Delta) = dist.m
