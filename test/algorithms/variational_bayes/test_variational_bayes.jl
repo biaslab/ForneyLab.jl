@@ -31,10 +31,10 @@ facts("VariationalBayes should initialize a pre, iterative and post schedule") d
     @fact length(algo.recognition_factorization.subgraphs[2].internal_iterative_schedule) --> 6
     @fact length(algo.recognition_factorization.subgraphs[2].internal_post_schedule) --> 1
     @fact length(algo.recognition_factorization.subgraphs[3].internal_pre_schedule) --> 1
-    @fact length(algo.recognition_factorization.subgraphs[3].internal_iterative_schedule) --> 1
+    @fact length(algo.recognition_factorization.subgraphs[3].internal_iterative_schedule) --> 0 # Message is skipped
     @fact length(algo.recognition_factorization.subgraphs[3].internal_post_schedule) --> 0
     @fact length(algo.recognition_factorization.subgraphs[4].internal_pre_schedule) --> 1
-    @fact length(algo.recognition_factorization.subgraphs[4].internal_iterative_schedule) --> 1
+    @fact length(algo.recognition_factorization.subgraphs[4].internal_iterative_schedule) --> 0 # Message is skipped
     @fact length(algo.recognition_factorization.subgraphs[4].internal_post_schedule) --> 0
 end
 

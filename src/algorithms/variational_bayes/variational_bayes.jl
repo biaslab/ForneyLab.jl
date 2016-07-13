@@ -99,13 +99,34 @@ function VariationalBayes(  targets::Vector{Interface},
         sg.internal_iterative_schedule = convertToVariationalSchedule(iterative_interface_list, variational_interfaces)
         sg.internal_post_schedule = convertToVariationalSchedule(post_interface_list, variational_interfaces)
 
-        # Execute type inference
+        # Infer types on pre schedule
+        skip_update_interfaces = Interface[] # Interfaces for which the variational update need not be computed
         for entry in sg.internal_pre_schedule
             inferTypes!(entry, message_types, recognition_factorization)
+
+            # Find interfaces of superfluous variational updates
+            outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
+            if (outbound_interface in partner_variational_interfaces) && (entry.outbound_type <: AbstractDelta)
+                # The variational message will be combined with a delta message to yield the recognition distribution.
+                # In this case the recognition distribution will become equal to the delta message,
+                # so it is superfluous to compute the variational message.
+                push!(skip_update_interfaces, outbound_interface.partner)
+            end
         end
+
+        # Infer types on iterative schedule
         for entry in sg.internal_iterative_schedule
-            inferTypes!(entry, message_types, recognition_factorization)
+            # Find schedule entries of superfluous variational updates
+            outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
+            # TODO: optionally turn skipping off
+            if outbound_interface in skip_update_interfaces
+                deleteat!(sg.internal_iterative_schedule, findfirst(sg.internal_iterative_schedule, entry)) # Remove entry from schedule
+            else
+                inferTypes!(entry, message_types, recognition_factorization)
+            end
         end
+
+        # Infer types on post schedule
         for entry in sg.internal_post_schedule
             inferTypes!(entry, message_types, recognition_factorization)
         end
@@ -222,7 +243,7 @@ function execute(algo::VariationalBayes)
     for iteration = 1:algo.n_iterations
         for subgraph in rf.subgraphs
             # Execute internal schedule
-            execute(subgraph.internal_iterative_schedule)
+            isempty(subgraph.internal_iterative_schedule) || execute(subgraph.internal_iterative_schedule)
 
             # Update recognition distributions at external edges
             if ForneyLab.verbose
@@ -255,7 +276,9 @@ function calculateRecognitionDistribution!(rf::RecognitionFactorization, node::N
     if length(internal_edges) == 1
         # Update for univariate recognition distribution
         internal_edge = first(internal_edges)
-        return prod!(internal_edge.tail.message.payload, internal_edge.head.message.payload, recognition_distribution)
+        (internal_edge.tail.message == nothing) ? tail_dist = nothing : tail_dist = internal_edge.tail.message.payload
+        (internal_edge.head.message == nothing) ? head_dist = nothing : head_dist = internal_edge.head.message.payload
+        return prod!(tail_dist, head_dist, recognition_distribution)
     else
         # Update for multivariate recognition distribution
         required_inputs = Array(Any, 0)
@@ -269,6 +292,39 @@ function calculateRecognitionDistribution!(rf::RecognitionFactorization, node::N
         end
         return recognitionRule!(node, recognition_distribution, required_inputs...)
     end
+end
+
+@symmetrical function prod!(::Void, y::Delta{Float64}, z::Delta{Float64}=Delta())
+    # Multiplication of an unknown with a Delta
+    z.m = y.m
+
+    return z
+end
+
+@symmetrical function prod!(::Void, y::Delta{Float64}, z::Gaussian)
+    # Multiplication of an unknown with Delta, force result to be Gaussian
+    z.m = y.m
+    z.V = tiny
+    z.xi = z.W = NaN
+
+    return z
+end
+
+@symmetrical function prod!{dims}(::Void, y::MvDelta{Float64,dims}, z::MvDelta{Float64,dims}=MvDelta(y.m))
+    # Product of an unknown PDF and MvDelta
+    (z.m == y.m) || (z.m[:] = y.m)
+
+    return z
+end
+
+@symmetrical function prod!{dims}(::Void, y::MvDelta{Float64,dims}, z::MvGaussian{dims})
+    # Product of an unknown with MvDelta, force result to be MvGaussian
+    z.m[:] = y.m
+    z.V = tiny.*eye(dims)
+    invalidate!(z.xi)
+    invalidate!(z.W)
+
+    return z
 end
 
 
