@@ -71,6 +71,15 @@ end
     return z
 end
 
+@symmetrical function prod!(::Void, y::Delta{Float64}, z::Gamma)
+    # Multiplication of an unknown with Delta, force result to be Gamma
+    (y.m >= 0.0) || throw(DomainError())
+    z.b = clamp(y.m / 1e-10, tiny, huge)
+    z.a = clamp(y.m * z.b, tiny, huge)
+
+    return z
+end
+
 ==(x::Gamma, y::Gamma) = (x.a==y.a && x.b==y.b)
 
 # Entropy functional
