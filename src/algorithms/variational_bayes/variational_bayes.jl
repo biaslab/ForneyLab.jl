@@ -1,5 +1,5 @@
 import Base.show
-export VariationalBayes, F
+export VariationalBayes
 
 include("subgraph.jl")
 include("recognition_factorization.jl")
@@ -15,7 +15,6 @@ type VariationalBayes <: InferenceAlgorithm
     graph::FactorGraph
     n_iterations::Int64
     recognition_factorization::RecognitionFactorization
-    callback::Function
 end
 
 function show(io::IO, algo::VariationalBayes)
@@ -43,7 +42,6 @@ function VariationalBayes(  targets::Vector{Interface},
                             graph::FactorGraph=currentGraph(),
                             recognition_factorization::RecognitionFactorization=currentRecognitionFactorization();
                             n_iterations::Int64=50,
-                            callback::Function = ( () -> false ),
                             message_types::Dict{Interface,DataType}=Dict{Interface,DataType}())
     
     verifyProper(recognition_factorization)
@@ -135,7 +133,7 @@ function VariationalBayes(  targets::Vector{Interface},
         end
     end
 
-    algo = VariationalBayes(graph, n_iterations, recognition_factorization, callback)
+    algo = VariationalBayes(graph, n_iterations, recognition_factorization)
 
     return algo
 end
@@ -261,8 +259,6 @@ function execute(algo::VariationalBayes)
                 end
             end
         end
-
-        algo.callback()
     end
 
     # Execute internal post schedules
@@ -297,46 +293,6 @@ function calculateRecognitionDistribution!(rf::RecognitionFactorization, node::N
         end
         return recognitionRule!(node, recognition_distribution, required_inputs...)
     end
-end
-
-"""
-Evaluate the variational free energy
-"""
-function F(rf::RecognitionFactorization=currentRecognitionFactorization())
-    # Find non-deterministic nodes at which to evaluate the partial free energies
-    # TODO: nodes_connected_to_external_edges should include prior nodes
-    f_nodes = Node[]
-    for sg in rf.subgraphs
-        f_nodes = [f_nodes; sg.nodes_connected_to_external_edges]
-    end
-    f_nodes = unique(f_nodes)
-
-    # Evaluate partial free energies at each non-deterministic node
-    F = 0.0
-    for node in f_nodes
-        # Extract the local q's
-        local_qs = ProbabilityDistribution[]
-        for interface in node.interfaces
-            sg = rf.edge_to_subgraph[interface.edge]
-            q = rf.node_subgraph_to_recognition_distribution[(node, sg)]
-            push!(local_qs, q)
-        end
-
-        # Compute average energy
-        U_local = U(node, local_qs...)
-
-        # Compute entropy in generative direction
-        # TODO: here it is assumed that the last interface is always the generative direction
-        # TODO: this will add -12 for Gaussian approximated q's (on the likelihoods)
-        H_local = H(local_qs[end])
-
-        # Update F
-        F = F + U_local - H_local
-    end
-
-    println(F)
-
-    return F
 end
 
 
