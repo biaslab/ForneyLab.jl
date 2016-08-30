@@ -35,25 +35,11 @@ function pdf(dist::StudentsT, x::Float64)
     return C * (1. + λ*(x-m)^2 / ν)^(-(ν+1.)/2.)
 end
 
-isProper(dist::StudentsT) = (realmin(Float64) < abs(dist.lambda) < realmax(Float64)) && (dist.nu > realmin(Float64))
+isProper(dist::StudentsT) = (realmin(Float64) < abs(dist.lambda) < realmax(Float64)) && (dist.nu > 1)
 
-function Base.mean(dist::StudentsT)
-    if isProper(dist) && dist.nu > 1
-        return dist.m
-    else
-        return NaN
-    end
-end
+unsafeMean(dist::StudentsT) = dist.m
 
-function Base.var(dist::StudentsT)
-    if isProper(dist) && dist.nu > 2
-        return dist.nu / ((dist.nu - 2) * dist.lambda)
-    elseif isProper(dist) && dist.nu > 1 # 1 < ν ≤ 2
-        return huge
-    else
-        return NaN
-    end
-end
+unsafeVar(dist::StudentsT) = (dist.nu > 2) ? dist.nu / ((dist.nu - 2) * dist.lambda) : huge
 
 format(dist::StudentsT) = "St(μ=$(format(dist.m)), λ=$(format(dist.lambda)), ν=$(format(dist.nu)))"
 

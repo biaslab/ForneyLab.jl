@@ -47,9 +47,9 @@ end
 
 isProper(dist::Delta) = true
 
-Base.mean(dist::Delta) = dist.m
+unsafeMean(dist::Delta) = dist.m
 
-Base.var(dist::Delta) = 0.0
+unsafeVar(dist::Delta) = 0.0
 
 sample(dist::Delta) = dist.m
 

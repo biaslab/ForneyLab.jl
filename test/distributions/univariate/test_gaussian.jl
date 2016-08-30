@@ -103,10 +103,10 @@ facts("Gaussian unit tests") do
     context("mean(Gaussian) and var(Gaussian) should return correct result") do
         @fact mean(Gaussian(m=1.0, V=1.0)) --> 1.0
         @fact mean(Gaussian(xi=1.0, V=2.0)) --> 2.0
-        @fact isnan(mean(Gaussian(xi=1.0, V=-2.0))) --> true
+        @fact isProper(Gaussian(xi=1.0, V=-2.0)) --> false
         @fact var(Gaussian(m=1.0, V=2.0)) --> 2.0
         @fact var(Gaussian(m=1.0, W=2.0)) --> 0.5
-        @fact isnan(var(Gaussian(m=1.0, W=-2.0))) --> true
+        @fact isProper(Gaussian(m=1.0, W=-2.0)) --> false
     end
     context("Inconsistent overdetermined Gaussian should be detected by isConsistent()") do
         @fact isConsistent(Gaussian(m=0.0, xi=1.0, W=1.0)) --> false

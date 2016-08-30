@@ -46,11 +46,11 @@ isProper(dist::MvDelta) = true
 
 vague{T,dims}(::Type{MvDelta{T,dims}}) = MvDelta(rand(T, dims))
 
-Base.mean(dist::MvDelta) = dist.m
+unsafeMean(dist::MvDelta) = dist.m
 
-Base.var(dist::MvDelta) = zeros(length(dist.m))
+unsafeVar(dist::MvDelta) = zeros(dist.m)
 
-Base.cov(dist::MvDelta) = Diagonal(zeros(length(dist.m)))
+unsafeCov(dist::MvDelta) = Diagonal(zeros(dist.m))
 
 sample(dist::MvDelta) = dist.m
 

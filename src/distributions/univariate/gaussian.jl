@@ -94,9 +94,9 @@ end
 
 show(io::IO, dist::Gaussian) = println(io, format(dist))
 
-Base.mean(dist::Gaussian) = isProper(dist) ? ensureParameter!(dist, Val{:m}).m : NaN
+unsafeMean(dist::Gaussian) = ensureParameter!(dist, Val{:m}).m
 
-Base.var(dist::Gaussian) = isProper(dist) ? ensureParameter!(dist, Val{:V}).V : NaN
+unsafeVar(dist::Gaussian) = ensureParameter!(dist, Val{:V}).V
 
 function prod!(x::Gaussian, y::Gaussian, z::Gaussian=Gaussian())
     # Multiplication of 2 Gaussian PDFs: p(z) = p(x) * p(y)

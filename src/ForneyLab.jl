@@ -5,7 +5,7 @@ using Optim, LaTeXStrings, Graphs
 export ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, AbstractDelta
 export sumProductRule!, expectationRule!, variationalRule!
 export InferenceAlgorithm
-export vague, self, ==, isProper, sample, dimensions, pdf
+export vague, self, ==, isProper, sample, dimensions, pdf, mean, var, cov
 export setVerbosity
 export prepare!
 export rules
@@ -19,7 +19,7 @@ printVerbose(msg) = if verbose println(msg) end
 include("helpers.jl")
 
 # Other includes
-import Base.show, Base.convert, Base.==
+import Base.show, Base.convert, Base.==, Base.mean, Base.var, Base.cov
 
 # High level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
@@ -47,6 +47,11 @@ dimensions{T<:Multivariate}(distribution_type::Type{T}) = distribution_type.para
 # Dimensionality of messages and message types
 dimensions(message::Message) = dimensions(message.payload)
 dimensions(message_type::Type{Message}) = dimensions(message_type.parameters[1])
+
+# Mean and variance of distributions
+mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error("mean($(dist)) is undefined because the distribution is improper.")
+var(dist::ProbabilityDistribution) = isProper(dist) ? unsafeVar(dist) : error("var($(dist)) is undefined because the distribution is improper.")
+cov(dist::ProbabilityDistribution) = isProper(dist) ? unsafeCov(dist) : error("cov($(dist)) is undefined because the distribution is improper.")
 
 # Delta distributions
 include("distributions/univariate/delta.jl")

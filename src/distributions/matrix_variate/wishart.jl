@@ -70,27 +70,17 @@ end
     return z
 end
 
-function Base.mean(dist::Wishart)
-    if isProper(dist)
-        return dist.nu*dist.V
-    else
-        return fill!(similar(dist.V), NaN)
-    end
-end
+unsafeMean(dist::Wishart) = dist.nu*dist.V
 
-function Base.var(dist::Wishart)
+function unsafeVar(dist::Wishart)
     d = size(dist.V, 1)
     M = fill!(similar(Matrix(dist.V)), NaN)
-    if isProper(dist)
-        for i = 1:d
-            for j = 1:d
-                M[i, j] = dist.nu*(dist.V[i, j]^2 + dist.V[i, i]*dist.V[j, j])
-            end
+    for i = 1:d
+        for j = 1:d
+            M[i, j] = dist.nu*(dist.V[i, j]^2 + dist.V[i, i]*dist.V[j, j])
         end
-        return M
-    else
-        return M
     end
+    return M
 end
 
 function isProper(dist::Wishart)

@@ -196,29 +196,11 @@ end
     return z
 end
 
-function Base.mean(dist::MvGaussian)
-    if isProper(dist)
-        return ensureParameter!(dist, Val{:m}).m
-    else
-        return fill!(similar(dist.m), NaN)
-    end
-end
+unsafeMean(dist::MvGaussian) = ensureParameter!(dist, Val{:m}).m
 
-function Base.cov(dist::MvGaussian)
-    if isProper(dist)
-        return ensureParameter!(dist, Val{:V}).V
-    else
-        return fill!(similar(dist.V), NaN)
-    end
-end
+unsafeCov(dist::MvGaussian) = ensureParameter!(dist, Val{:V}).V
 
-function Base.var(dist::MvGaussian)
-    if isProper(dist)
-        return diag(ensureParameter!(dist, Val{:V}).V)
-    else
-        return fill!(similar(dist.m), NaN)
-    end
-end
+unsafeVar(dist::MvGaussian) = diag(ensureParameter!(dist, Val{:V}).V)
 
 function isProper(dist::MvGaussian)
     if isWellDefined(dist)

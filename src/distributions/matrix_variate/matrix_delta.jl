@@ -40,13 +40,9 @@ isProper(dist::MatrixDelta) = true
 
 vague{T,dims_n, dims_m}(::Type{MatrixDelta{T,dims_n,dims_m}}) = MatrixDelta(rand(T, dims_n, dims_m))
 
-Base.mean(dist::MatrixDelta) = dist.M
-
-Base.mean(::Type{MatrixDelta{Float64}}, d::MatrixDelta) = deepcopy(d) # Definition for post-processing
+unsafeMean(dist::MatrixDelta) = dist.M
 
 sample(dist::MatrixDelta) = dist.M
-
-sample(::Type{MatrixDelta{Float64}}, d::MatrixDelta) = deepcopy(d) # Definition for post-processing
 
 ==(x::MatrixDelta, y::MatrixDelta) = (x.M == y.M)
 
