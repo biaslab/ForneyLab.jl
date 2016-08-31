@@ -39,7 +39,7 @@ isProper(dist::StudentsT) = (realmin(Float64) < abs(dist.lambda) < realmax(Float
 
 m(dist::StudentsT) = dist.m
 
-V(dist::StudentsT) = (dist.nu > 2) ? dist.nu / ((dist.nu - 2) * dist.lambda) : huge
+v(dist::StudentsT) = (dist.nu > 2) ? dist.nu / ((dist.nu - 2) * dist.lambda) : huge
 
 format(dist::StudentsT) = "St(μ=$(format(dist.m)), λ=$(format(dist.lambda)), ν=$(format(dist.nu)))"
 

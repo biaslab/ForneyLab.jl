@@ -48,7 +48,7 @@ vague{T,dims}(::Type{MvDelta{T,dims}}) = MvDelta(rand(T, dims))
 
 m(dist::MvDelta) = dist.m
 
-V(dist::MvDelta) = zeros(dist.m)
+v(dist::MvDelta) = zeros(dist.m)
 
 S(dist::MvDelta) = Diagonal(zeros(dist.m))
 

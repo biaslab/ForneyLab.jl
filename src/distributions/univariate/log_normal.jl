@@ -36,7 +36,7 @@ isProper(dist::LogNormal) = dist.s >= tiny
 
 m(dist::LogNormal) = exp(dist.m + 0.5*dist.s)
 
-V(dist::LogNormal) = (exp(dist.s) - 1)*exp(2*dist.m + dist.s)
+v(dist::LogNormal) = (exp(dist.s) - 1)*exp(2*dist.m + dist.s)
 
 format(dist::LogNormal) = "logN(μ=$(format(dist.m)), σ²=$(format(dist.s)))"
 

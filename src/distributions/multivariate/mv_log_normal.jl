@@ -60,7 +60,7 @@ function S(dist::MvLogNormal)
     return C
 end
 
-V(dist::MvLogNormal) = exp(2.0*dist.m + diag(dist.S)).*(exp(diag(dist.S)) - 1.0)
+v(dist::MvLogNormal) = exp(2.0*dist.m + diag(dist.S)).*(exp(diag(dist.S)) - 1.0)
 
 format(dist::MvLogNormal) = "logN(μ=$(format(dist.m)), Σ=$(format(dist.S)))"
 

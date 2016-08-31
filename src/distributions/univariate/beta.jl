@@ -41,7 +41,7 @@ isProper(dist::Beta) = (dist.a >= tiny && dist.b >= tiny)
 
 m(dist::Beta) = dist.a/(dist.a+dist.b)
 
-V(dist::Beta) = dist.a*dist.b/((dist.a+dist.b)^2*(dist.a+dist.b+1))
+v(dist::Beta) = dist.a*dist.b/((dist.a+dist.b)^2*(dist.a+dist.b+1))
 
 format(dist::Beta) = "Bet(a=$(format(dist.a)), b=$(format(dist.b)))"
 

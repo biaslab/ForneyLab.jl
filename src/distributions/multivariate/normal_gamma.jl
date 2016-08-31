@@ -58,7 +58,7 @@ show(io::IO, dist::NormalGamma) = println(io, format(dist))
 
 m(dist::NormalGamma) = [dist.m; dist.a/dist.b]
 
-V(dist::NormalGamma) = [dist.b/(dist.beta*(dist.a-1)); dist.a/(dist.b^2)]
+v(dist::NormalGamma) = [dist.b/(dist.beta*(dist.a-1)); dist.a/(dist.b^2)]
 
 dimensions(distribution::NormalGamma) = 2
 

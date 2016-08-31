@@ -72,7 +72,7 @@ end
 
 m(dist::Wishart) = dist.nu*dist.V
 
-function V(dist::Wishart)
+function v(dist::Wishart)
     d = size(dist.V, 1)
     M = fill!(similar(Matrix(dist.V)), NaN)
     for i = 1:d

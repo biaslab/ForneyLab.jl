@@ -24,6 +24,6 @@ facts("LogNormal unit tests") do
         @fact_throws DomainError LogNormal(m=2.0, s=0.5) * Delta(-1.1)
         @fact typeof(ForneyLab.prod!(Delta(0.5), LogNormal(m=2.0, s=0.5), LogNormal())) --> LogNormal
         @fact ForneyLab.m(ForneyLab.prod!(LogNormal(m=2.0, s=0.5), Delta(0.5), LogNormal())) --> roughly(0.5)
-        @fact ForneyLab.V(ForneyLab.prod!(LogNormal(m=2.0, s=0.5), Delta(0.5), LogNormal())) --> less_than(1e-6)
+        @fact ForneyLab.v(ForneyLab.prod!(LogNormal(m=2.0, s=0.5), Delta(0.5), LogNormal())) --> less_than(1e-6)
     end
 end
