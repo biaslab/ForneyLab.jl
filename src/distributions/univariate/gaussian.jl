@@ -98,6 +98,8 @@ unsafeMean(dist::Gaussian) = ensureParameter!(dist, Val{:m}).m
 
 unsafeVar(dist::Gaussian) = ensureParameter!(dist, Val{:V}).V
 
+unsafeCov(dist::Gaussian) = ensureParameter!(dist, Val{:V}).V
+
 function prod!(x::Gaussian, y::Gaussian, z::Gaussian=Gaussian())
     # Multiplication of 2 Gaussian PDFs: p(z) = p(x) * p(y)
     ensureParameters!(x, (:xi, :W))

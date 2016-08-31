@@ -22,7 +22,7 @@ Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type Wishart{dims} <: MatrixVariate
+type Wishart{dims} <: MatrixVariate{dims, dims}
     V::AbstractMatrix{Float64}  # Scale matrix
     nu::Float64                 # Degrees of freedom
 end

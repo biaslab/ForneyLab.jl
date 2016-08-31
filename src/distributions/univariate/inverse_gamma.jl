@@ -19,7 +19,7 @@ Reference:
 """
 type InverseGamma <: Univariate
     a::Float64 # shape
-    b::Float64 # scale
+    b::Float64 # rate
 end
 
 InverseGamma(; a=3.0, b=2.0) = InverseGamma(a, b)

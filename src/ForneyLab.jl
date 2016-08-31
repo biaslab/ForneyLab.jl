@@ -26,8 +26,8 @@ abstract AbstractEdge # An Interface belongs to an Edge, but Interface is define
 # Documentation in docstrings.jl
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
 abstract Univariate <: ProbabilityDistribution
-abstract Multivariate <: ProbabilityDistribution
-abstract MatrixVariate <: ProbabilityDistribution
+abstract Multivariate{dims} <: ProbabilityDistribution
+abstract MatrixVariate{dims_n, dims_m} <: ProbabilityDistribution
 
 abstract InferenceAlgorithm
 

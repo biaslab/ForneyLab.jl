@@ -24,8 +24,8 @@ end
 function _collectTypeVarValues!(method_sig_type::DataType, arg_type::DataType, results::Dict{Symbol,Any})
     # Internal function called by collectTypeVarValues
     # The recursion performs a depth-first search through the (hierarchical) parameters of the argument type
-    if length(method_sig_type.parameters) > 0
-        for p = 1:length(method_sig_type.parameters)
+    if length(arg_type.parameters) > 0
+        for p = 1:length(arg_type.parameters)
             _collectTypeVarValues!(method_sig_type.parameters[p], arg_type.parameters[p], results)
         end
     end

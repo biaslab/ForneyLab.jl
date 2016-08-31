@@ -51,6 +51,8 @@ unsafeMean(dist::Delta) = dist.m
 
 unsafeVar(dist::Delta) = 0.0
 
+unsafeCov(dist::Delta) = 0.0
+
 sample(dist::Delta) = dist.m
 
 ==(x::Delta, y::Delta) = (x.m == y.m)

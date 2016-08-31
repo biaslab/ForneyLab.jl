@@ -17,7 +17,7 @@ Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type NormalGamma <: Multivariate
+type NormalGamma <: Multivariate{2}
     # All univariate, so parameters are floats
     m::Float64    # location
     beta::Float64 # precision

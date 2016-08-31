@@ -14,7 +14,7 @@ Construction:
 
     MvDelta([1.0, 3.0])
 """
-type MvDelta{T, dims} <: Multivariate
+type MvDelta{T, dims} <: Multivariate{dims}
     m::Vector{T}
 end
 

@@ -19,7 +19,7 @@ Reference:
 
     Lognormal distributions: theory and aplications; Crow, 1988
 """
-type MvLogNormal{dims} <: Multivariate
+type MvLogNormal{dims} <: Multivariate{dims}
     m::Vector{Float64} # Location
     S::AbstractMatrix{Float64} # Scale
 

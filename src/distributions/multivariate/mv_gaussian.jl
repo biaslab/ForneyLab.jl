@@ -23,7 +23,7 @@ Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type MvGaussian{dims} <: Multivariate
+type MvGaussian{dims} <: Multivariate{dims}
     m::Vector{Float64}   # Mean vector
     V::AbstractMatrix{Float64}   # Covariance matrix
     W::AbstractMatrix{Float64}   # Weight matrix
@@ -198,9 +198,9 @@ end
 
 unsafeMean(dist::MvGaussian) = ensureParameter!(dist, Val{:m}).m
 
-unsafeCov(dist::MvGaussian) = ensureParameter!(dist, Val{:V}).V
-
 unsafeVar(dist::MvGaussian) = diag(ensureParameter!(dist, Val{:V}).V)
+
+unsafeCov(dist::MvGaussian) = ensureParameter!(dist, Val{:V}).V
 
 function isProper(dist::MvGaussian)
     if isWellDefined(dist)

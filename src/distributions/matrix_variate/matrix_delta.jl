@@ -15,7 +15,7 @@ Construction:
     MatrixDelta(eye(3))
     MatrixDelta(diageye(3))
 """
-type MatrixDelta{T, dims_n, dims_m} <: MatrixVariate
+type MatrixDelta{T, dims_n, dims_m} <: MatrixVariate{dims_n, dims_m}
     M::AbstractMatrix{T}
 end
 
