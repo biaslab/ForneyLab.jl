@@ -38,9 +38,9 @@ end
 
 isProper(dist::InverseGamma) = (dist.a >= tiny && dist.b >= tiny)
 
-unsafeMean(dist::InverseGamma) = dist.b / (dist.a - 1)
+m(dist::InverseGamma) = dist.b / (dist.a - 1)
 
-unsafeVar(dist::InverseGamma) = (dist.b^2) / ( ( (dist.a-1)^2 ) * (dist.a-2) )
+V(dist::InverseGamma) = (dist.b^2) / ( ( (dist.a-1)^2 ) * (dist.a-2) )
 
 format(dist::InverseGamma) = "Ig(a=$(format(dist.a)), b=$(format(dist.b)))"
 

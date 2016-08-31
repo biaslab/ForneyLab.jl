@@ -38,9 +38,9 @@ end
 
 isProper(dist::Gamma) = (dist.a >= tiny && dist.b >= tiny)
 
-unsafeMean(dist::Gamma) = dist.a/dist.b
+m(dist::Gamma) = dist.a/dist.b
 
-unsafeVar(dist::Gamma) = dist.a/(dist.b^2)
+V(dist::Gamma) = dist.a/(dist.b^2)
 
 format(dist::Gamma) = "Gam(a=$(format(dist.a)), b=$(format(dist.b)))"
 

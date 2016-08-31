@@ -196,11 +196,11 @@ end
     return z
 end
 
-unsafeMean(dist::MvGaussian) = ensureParameter!(dist, Val{:m}).m
+m(dist::MvGaussian) = deepcopy(ensureParameter!(dist, Val{:m}).m)
 
-unsafeVar(dist::MvGaussian) = diag(ensureParameter!(dist, Val{:V}).V)
+V(dist::MvGaussian) = diag(ensureParameter!(dist, Val{:V}).V)
 
-unsafeCov(dist::MvGaussian) = ensureParameter!(dist, Val{:V}).V
+S(dist::MvGaussian) = deepcopy(ensureParameter!(dist, Val{:V}).V)
 
 function isProper(dist::MvGaussian)
     if isWellDefined(dist)

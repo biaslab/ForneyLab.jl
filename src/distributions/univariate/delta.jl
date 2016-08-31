@@ -47,11 +47,11 @@ end
 
 isProper(dist::Delta) = true
 
-unsafeMean(dist::Delta) = dist.m
+m(dist::Delta) = dist.m
 
-unsafeVar(dist::Delta) = 0.0
+V(dist::Delta) = 0.0
 
-unsafeCov(dist::Delta) = 0.0
+S(dist::Delta) = 0.0
 
 sample(dist::Delta) = dist.m
 

@@ -56,9 +56,9 @@ show(io::IO, dist::NormalGamma) = println(io, format(dist))
 
 ==(x::NormalGamma, y::NormalGamma) = (x.m==y.m && x.beta==y.beta && x.a==y.a && x.b==y.b)
 
-unsafeMean(dist::NormalGamma) = [dist.m; dist.a/dist.b]
+m(dist::NormalGamma) = [dist.m; dist.a/dist.b]
 
-unsafeVar(dist::NormalGamma) = [dist.b/(dist.beta*(dist.a-1)); dist.a/(dist.b^2)]
+V(dist::NormalGamma) = [dist.b/(dist.beta*(dist.a-1)); dist.a/(dist.b^2)]
 
 dimensions(distribution::NormalGamma) = 2
 

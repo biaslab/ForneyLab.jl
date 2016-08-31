@@ -74,7 +74,7 @@ end
 
 vague{dtype<:ProbabilityDistribution,n_factors}(::Type{Partitioned{dtype,n_factors}}) = Partitioned(dtype[vague(dtype) for i=1:n_factors]) # Note: this function is only implemented for a uniform partition
 
-unsafeMean(dist::Partitioned) = vcat(map(unsafeMean, dist.factors)...)
+m(dist::Partitioned) = vcat(map(m, dist.factors)...)
 
 sample(dist::Partitioned) = vcat(map(sample, dist.factors)...)
 

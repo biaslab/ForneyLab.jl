@@ -28,9 +28,9 @@ end
 
 isProper(dist::Bernoulli) = (0 <= dist.p <= 1)
 
-unsafeMean(dist::Bernoulli) = dist.p
+m(dist::Bernoulli) = dist.p
 
-unsafeVar(dist::Bernoulli) = dist.p*(1-dist.p)
+V(dist::Bernoulli) = dist.p*(1-dist.p)
 
 sample(dist::Bernoulli) = (rand() < dist.p)
 

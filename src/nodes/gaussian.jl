@@ -654,10 +654,10 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             marg_prec::Univariate,
                             marg_out::Univariate)
 
-    outbound_dist.m = unsafeMean(marg_out)
+    outbound_dist.m = m(marg_out)
     outbound_dist.xi = NaN
     outbound_dist.V = NaN
-    outbound_dist.W = unsafeMean(marg_prec)
+    outbound_dist.W = m(marg_prec)
 
     return outbound_dist
 end
@@ -670,7 +670,7 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             marg_out::Univariate)
 
     outbound_dist.a = 1.5
-    outbound_dist.b = 0.5*( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))^2 )
+    outbound_dist.b = 0.5*( S(marg_out) + S(marg_mean) + (m(marg_out) - m(marg_mean))^2 )
 
     return outbound_dist
 end
@@ -682,10 +682,10 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             marg_prec::Univariate,
                             marg_out::Any)
 
-    outbound_dist.m = unsafeMean(marg_mean)
+    outbound_dist.m = m(marg_mean)
     outbound_dist.xi = NaN
     outbound_dist.V = NaN
-    outbound_dist.W = unsafeMean(marg_prec)
+    outbound_dist.W = m(marg_prec)
 
     return outbound_dist
 end
@@ -705,9 +705,9 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
                             marg_var::Univariate,
                             marg_out::Univariate)
 
-    outbound_dist.m = unsafeMean(marg_out)
+    outbound_dist.m = m(marg_out)
     outbound_dist.xi = NaN
-    outbound_dist.V = unsafeMean(marg_var)
+    outbound_dist.V = m(marg_var)
     outbound_dist.W = NaN
 
     return outbound_dist
@@ -721,7 +721,7 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
                             marg_out::Univariate)
 
     outbound_dist.a = -0.5
-    outbound_dist.b = 0.5*(unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))^2)
+    outbound_dist.b = 0.5*(S(marg_out) + S(marg_mean) + (m(marg_out) - m(marg_mean))^2)
 
     return outbound_dist
 end
@@ -733,9 +733,9 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
                             marg_var::Univariate,
                             marg_out::Any)
 
-    outbound_dist.m = unsafeMean(marg_mean)
+    outbound_dist.m = m(marg_mean)
     outbound_dist.xi = NaN
-    outbound_dist.V = unsafeMean(marg_var)
+    outbound_dist.V = m(marg_var)
     outbound_dist.W = NaN
 
     return outbound_dist
@@ -756,10 +756,10 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
                                 marg_prec::MatrixVariate{dims, dims},
                                 marg_out::Multivariate{dims})
 
-    outbound_dist.m = deepcopy(unsafeMean(marg_out))
+    outbound_dist.m = m(marg_out)
     invalidate!(outbound_dist.xi)
     invalidate!(outbound_dist.V)
-    outbound_dist.W = unsafeMean(marg_prec)
+    outbound_dist.W = m(marg_prec)
 
     return outbound_dist
 end
@@ -772,7 +772,7 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
                                 marg_out::Multivariate{dims})
 
     outbound_dist.nu = dims + 2.0
-    outbound_dist.V = cholinv( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))*(unsafeMean(marg_out) - unsafeMean(marg_mean))' )
+    outbound_dist.V = cholinv( S(marg_out) + S(marg_mean) + (m(marg_out) - m(marg_mean))*(m(marg_out) - m(marg_mean))' )
 
     return outbound_dist
 end
@@ -784,10 +784,10 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
                                 marg_prec::MatrixVariate{dims, dims},
                                 marg_out::Any)
 
-    outbound_dist.m = deepcopy(unsafeMean(marg_mean))
+    outbound_dist.m = m(marg_mean)
     invalidate!(outbound_dist.xi)
     invalidate!(outbound_dist.V)
-    outbound_dist.W = unsafeMean(marg_prec)
+    outbound_dist.W = m(marg_prec)
 
     return outbound_dist
 end

@@ -39,9 +39,9 @@ end
 
 isProper(dist::Beta) = (dist.a >= tiny && dist.b >= tiny)
 
-unsafeMean(dist::Beta) = dist.a/(dist.a+dist.b)
+m(dist::Beta) = dist.a/(dist.a+dist.b)
 
-unsafeVar(dist::Beta) = dist.a*dist.b/((dist.a+dist.b)^2*(dist.a+dist.b+1))
+V(dist::Beta) = dist.a*dist.b/((dist.a+dist.b)^2*(dist.a+dist.b+1))
 
 format(dist::Beta) = "Bet(a=$(format(dist.a)), b=$(format(dist.b)))"
 
