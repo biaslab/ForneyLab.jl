@@ -49,9 +49,9 @@ dimensions(message::Message) = dimensions(message.payload)
 dimensions(message_type::Type{Message}) = dimensions(message_type.parameters[1])
 
 # Mean and variance of distributions, m, v, and S (that are not exported) are the unsafe mean, variance and covariance respectively
-mean(dist::ProbabilityDistribution) = isProper(dist) ? m(dist) : error("mean($(dist)) is undefined because the distribution is improper.")
-var(dist::ProbabilityDistribution) = isProper(dist) ? v(dist) : error("var($(dist)) is undefined because the distribution is improper.")
-cov(dist::ProbabilityDistribution) = isProper(dist) ? S(dist) : error("cov($(dist)) is undefined because the distribution is improper.")
+mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error("mean($(dist)) is undefined because the distribution is improper.")
+var(dist::ProbabilityDistribution) = isProper(dist) ? unsafeVar(dist) : error("var($(dist)) is undefined because the distribution is improper.")
+cov(dist::ProbabilityDistribution) = isProper(dist) ? unsafeCov(dist) : error("cov($(dist)) is undefined because the distribution is improper.")
 
 # Delta distributions
 include("distributions/univariate/delta.jl")

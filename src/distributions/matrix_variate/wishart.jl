@@ -70,9 +70,9 @@ end
     return z
 end
 
-m(dist::Wishart) = dist.nu*dist.V
+unsafeMean(dist::Wishart) = dist.nu*dist.V
 
-function v(dist::Wishart)
+function unsafeVar(dist::Wishart)
     d = size(dist.V, 1)
     M = fill!(similar(Matrix(dist.V)), NaN)
     for i = 1:d

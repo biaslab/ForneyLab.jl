@@ -47,9 +47,9 @@ vague{dims}(::Type{MvLogNormal{dims}}) = MvLogNormal(m=zeros(dims), S=huge*diage
 
 isProper(dist::MvLogNormal) = isRoundedPosDef(dist.S)
 
-m(dist::MvLogNormal) = exp(dist.m + 0.5*diag(dist.S))
+unsafeMean(dist::MvLogNormal) = exp(dist.m + 0.5*diag(dist.S))
 
-function S(dist::MvLogNormal)
+function unsafeCov(dist::MvLogNormal)
     dims = dimensions(dist)
     C = zeros(dims, dims)
     for i = 1:dims
@@ -60,7 +60,7 @@ function S(dist::MvLogNormal)
     return C
 end
 
-v(dist::MvLogNormal) = exp(2.0*dist.m + diag(dist.S)).*(exp(diag(dist.S)) - 1.0)
+unsafeVar(dist::MvLogNormal) = exp(2.0*dist.m + diag(dist.S)).*(exp(diag(dist.S)) - 1.0)
 
 format(dist::MvLogNormal) = "logN(μ=$(format(dist.m)), Σ=$(format(dist.S)))"
 

@@ -40,7 +40,7 @@ isProper(dist::MatrixDelta) = true
 
 vague{T,dims_n, dims_m}(::Type{MatrixDelta{T,dims_n,dims_m}}) = MatrixDelta(rand(T, dims_n, dims_m))
 
-m(dist::MatrixDelta) = dist.M
+unsafeMean(dist::MatrixDelta) = dist.M
 
 sample(dist::MatrixDelta) = dist.M
 

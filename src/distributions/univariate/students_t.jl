@@ -37,9 +37,9 @@ end
 
 isProper(dist::StudentsT) = (realmin(Float64) < abs(dist.lambda) < realmax(Float64)) && (dist.nu > 1)
 
-m(dist::StudentsT) = dist.m
+unsafeMean(dist::StudentsT) = dist.m
 
-v(dist::StudentsT) = (dist.nu > 2) ? dist.nu / ((dist.nu - 2) * dist.lambda) : huge
+unsafeVar(dist::StudentsT) = (dist.nu > 2) ? dist.nu / ((dist.nu - 2) * dist.lambda) : huge
 
 format(dist::StudentsT) = "St(μ=$(format(dist.m)), λ=$(format(dist.lambda)), ν=$(format(dist.nu)))"
 
