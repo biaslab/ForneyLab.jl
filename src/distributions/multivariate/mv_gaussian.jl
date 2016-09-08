@@ -146,10 +146,10 @@ function prod!{dims}(x::MvGaussian{dims}, y::MvGaussian{dims}, z::MvGaussian{dim
         z.xi = x.xi + y.xi
     elseif isValid(x.m) && isValid(x.W) && isValid(y.m) && isValid(y.W)
         # Use (m,W)x(m,W) parametrization
-        z.m  = cholinv(x.W+y.W) * (x.W*x.m + y.W*y.m)
-        invalidate!(z.V)
         z.W  = x.W + y.W
-        invalidate!(z.xi)
+        z.xi = x.W*x.m + y.W*y.m
+        invalidate!(z.V)
+        invalidate!(z.m)
     elseif isValid(x.xi) && isValid(x.V) && isValid(y.xi) && isValid(y.V)
         # Use (xi,V)x(xi,V) parametrization
         invalidate!(z.m)
