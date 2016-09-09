@@ -170,9 +170,7 @@ facts("Naive vmp implementation integration tests") do
         rf = RecognitionFactorization()
         factorizeMeanField()
         for sec in 1:n_sections
-            # TODO: Fix this
-            # initialize(eg(:q_y*sec), MvDelta(zeros(2)))
-            initialize(eg(:q_y*sec), vague(MvGaussian{2}))
+            initialize(eg(:q_y*sec), MvDelta(zeros(2)))
             initialize(eg(:q_m*sec), vague(MvGaussian{2}))
             initialize(eg(:q_gam*sec), vague(Wishart{2}))
         end
