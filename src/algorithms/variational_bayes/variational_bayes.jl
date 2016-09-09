@@ -115,16 +115,18 @@ function VariationalBayes(  targets::Vector{Interface},
             end
         end
 
-        # Infer types on iterative schedule
-        for entry in sg.internal_iterative_schedule
-            # Find schedule entries of superfluous variational updates
+        # Delete schedule entries of superfluous variational updates
+        # TODO: optionally turn skipping off
+        for entry in copy(sg.internal_iterative_schedule)
             outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
-            # TODO: optionally turn skipping off
             if outbound_interface in skip_update_interfaces
                 deleteat!(sg.internal_iterative_schedule, findfirst(sg.internal_iterative_schedule, entry)) # Remove entry from schedule
-            else
-                inferTypes!(entry, message_types, recognition_factorization)
-            end
+            end            
+        end
+
+        # Infer types on iterative schedule
+        for entry in sg.internal_iterative_schedule
+            inferTypes!(entry, message_types, recognition_factorization)
         end
 
         # Infer types on post schedule

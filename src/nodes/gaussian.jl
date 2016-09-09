@@ -836,13 +836,13 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_dist::Gamma,
                             msg_mean::Message{Gaussian},
                             msg_prec::Any,
-                            marg_out::Gaussian)
+                            marg_out::Univariate)
 
-    ensureParameters!(marg_out, (:m, :W))
+    ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(msg_mean.payload, (:m,))
 
     outbound_dist.a = 1.5
-    outbound_dist.b = 0.5*((1.0/marg_out.W) + (msg_mean.payload.m - marg_out.m)^2)
+    outbound_dist.b = 0.5*(marg_out.V + (msg_mean.payload.m - marg_out.m)^2)
 
     return outbound_dist
 end

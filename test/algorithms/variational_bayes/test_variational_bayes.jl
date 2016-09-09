@@ -15,7 +15,7 @@ facts("VariationalBayes should initialize a pre, iterative and post schedule") d
     rf = RecognitionFactorization()
     factorizeMeanField()
     for sec in 1:n_sections
-        initialize(eg(:q_y*sec), vague(Gaussian))
+        initialize(eg(:q_y*sec), Delta())
         initialize(eg(:q_m*sec), vague(Gaussian))
         initialize(eg(:q_gam*sec), vague(Gamma))
     end
@@ -133,7 +133,7 @@ facts("Naive vmp implementation integration tests") do
         rf = RecognitionFactorization()
         factorizeMeanField()
         for sec in 1:n_sections
-            initialize(eg(:q_y*sec), vague(Gaussian))
+            initialize(eg(:q_y*sec), Delta())
             initialize(eg(:q_m*sec), vague(Gaussian))
             initialize(eg(:q_gam*sec), vague(Gamma))
         end
@@ -170,6 +170,8 @@ facts("Naive vmp implementation integration tests") do
         rf = RecognitionFactorization()
         factorizeMeanField()
         for sec in 1:n_sections
+            # TODO: Fix this
+            # initialize(eg(:q_y*sec), MvDelta(zeros(2)))
             initialize(eg(:q_y*sec), vague(MvGaussian{2}))
             initialize(eg(:q_m*sec), vague(MvGaussian{2}))
             initialize(eg(:q_gam*sec), vague(Wishart{2}))
@@ -207,7 +209,7 @@ facts("Naive vmp implementation integration tests") do
         # Apply mean field factorization
         rf = RecognitionFactorization()
         factorizeMeanField()
-        initialize(eg(:q_y1), vague(Gaussian))
+        initialize(eg(:q_y1), Delta())
         initialize(eg(:q_m1), vague(Gaussian))
         initialize(eg(:q_gam1), vague(Gamma))
 
@@ -231,13 +233,12 @@ facts("Structured vmp implementation integration tests") do
         # Initialize chain
         # Samples drawn from N(mean 5.0, prec 0.5): data = randn(100)*(1/sqrt(0.5))+5.0
         data = [4.9411489951651735,4.4083330961647595,3.535639074214823,2.1690761263145855,4.740705436131505,5.407175878845115,3.6458623443189957,5.132115496214244,4.485471215629411,5.342809672818667]
-        d_data = [Delta(d_k) for d_k in data]
         # d_data = [Gaussian(m=d_k, W=10.0) for d_k in data]
         initializeGaussianNodeChain([0.0]) # Initialize a length 1 chain
         Wrap(n(:mN), n(:m0))
         Wrap(n(:gamN), n(:gam0))
 
-        attachReadBuffer(n(:y1), d_data)
+        attachReadBuffer(n(:y1), data)
         m_buffer = attachWriteBuffer(n(:m_eq1).i[2])
         gam_buffer = attachWriteBuffer(n(:gam_eq1).i[2])
 
