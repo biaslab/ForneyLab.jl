@@ -47,6 +47,10 @@ facts("Gamma unit tests") do
         @fact var(ForneyLab.prod!(Gamma(a=3.0, b=4.0), Delta(0.5), Gamma())) --> less_than(1e-6)
     end
 
+    context("unsafeLogMean() should return correct result") do
+        @fact ForneyLab.unsafeLogMean(Gamma(a=1.0, b=2.0)) --> digamma(1) - log(2)
+    end
+
     context("H() should evaluate the entropy") do
         @fact ForneyLab.H(Gamma(a=0.5, b=0.5)) --> roughly(0.7837571104739337)
     end

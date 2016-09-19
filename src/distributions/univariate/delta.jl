@@ -49,6 +49,8 @@ isProper(dist::Delta) = true
 
 unsafeMean(dist::Delta) = dist.m # unsafe mean
 
+unsafeLogMean(dist::Delta) = log(dist.m)
+
 unsafeCov(dist::Delta) = 0.0 # unsafe covariance
 
 unsafeVar(dist::Delta) = unsafeCov(dist) # unsafe variance

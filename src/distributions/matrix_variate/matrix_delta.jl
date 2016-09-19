@@ -42,6 +42,8 @@ vague{T,dims_n, dims_m}(::Type{MatrixDelta{T,dims_n,dims_m}}) = MatrixDelta(rand
 
 unsafeMean(dist::MatrixDelta) = dist.M
 
+unsafeDetLogMean(dist::MatrixDelta) = log(det(dist.M))
+
 sample(dist::MatrixDelta) = dist.M
 
 ==(x::MatrixDelta, y::MatrixDelta) = (x.M == y.M)

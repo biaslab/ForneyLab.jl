@@ -81,30 +81,5 @@ end
 """
 Compute average energy as U[q] = -E_q[log f(x)]
 """
-function U(node::TerminalNode, dist_y::Gaussian)
-    (typeof(node.value) <: Gaussian) || error("Average energy for TerminalNode only defined for Gaussian value")
-
-    ensureParameters!(node.value, (:m, :W))
-    ensureParameters!(dist_y, (:m, :V))
-
-    mean = node.value.m
-    prec = node.value.W
-
-    return  (1/2)*log(2*pi) -
-            0.5*log(prec) +
-            0.5*(prec)*( dist_y.V + (dist_y.m - mean)^2)
-end
-
-function U{dims}(node::TerminalNode, dist_y::MvGaussian{dims})
-    (typeof(node.value) <: MvGaussian) || error("Average energy for TerminalNode only defined for Gaussian value")
-
-    ensureParameters!(node.value, (:m, :W))
-    ensureParameters!(dist_y, (:m, :V))
-
-    mean = node.value.m
-    prec = node.value.W
-
-    return  (dims/2)*log(2*pi) -
-            0.5*log(det(prec)) +
-            0.5*trace( prec*( dist_y.V + (dist_y.m - mean)*(dist_y.m - mean)' ) )
-end
+U(::Type{TerminalNode}, marg_mean::Delta, marg_prec::Delta, marg_out::Univariate) = U(GaussianNode, marg_mean, marg_prec, marg_out)
+U(::Type{TerminalNode}, marg_mean::MvDelta, marg_prec::MatrixDelta, marg_out::Multivariate) = U(GaussianNode, marg_mean, marg_prec, marg_out)

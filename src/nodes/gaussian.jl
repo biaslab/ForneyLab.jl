@@ -875,24 +875,14 @@ end
 ############################
 # Average energy functionals
 ############################
-
-function U(::GaussianNode{Val{:mean},Val{:precision}}, dist_mean::Gaussian, dist_prec::Gamma, dist_y::Gaussian)
-    ensureParameters!(dist_mean, (:m, :V))
-    ensureParameters!(dist_y, (:m, :V))
-
-    return  (1/2)*log(2*pi) -
-            0.5*digamma(dist_prec.a) +
-            0.5*log(dist_prec.b) +
-            0.5*(dist_prec.a/dist_prec.b)*( dist_y.V + dist_mean.V + (dist_y.m - dist_mean.m)^2)
+function U(::Type{GaussianNode}, marg_mean::Univariate, marg_prec::Univariate, marg_out::Univariate)
+    0.5*log(2*pi) -
+    0.5*unsafeLogMean(marg_prec) +
+    0.5*unsafeMean(marg_prec)*( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))^2 )
 end
 
-function U{dims}(::GaussianNode{Val{:mean},Val{:precision}}, dist_mean::MvGaussian{dims}, dist_prec::Wishart{dims}, dist_y::MvGaussian{dims})
-    ensureParameters!(dist_mean, (:m, :V))
-    ensureParameters!(dist_y, (:m, :V))
-
-    return  (dims/2)*log(2*pi) -
-            0.5*sum([digamma(0.5*(dist_prec.nu + 1 - i)) for i = 1:dims]) -
-            (dims/2)*log(2) -
-            0.5*log(det(dist_prec.V)) +
-            0.5*trace( dist_prec.nu*dist_prec.V*( dist_y.V + dist_mean.V + (dist_y.m - dist_mean.m)*(dist_y.m - dist_mean.m)' ) )
+function U{dims}(::Type{GaussianNode}, marg_mean::Multivariate{dims}, marg_prec::MatrixVariate{dims, dims}, marg_out::Multivariate{dims})
+    0.5*dims*log(2*pi) -
+    0.5*unsafeDetLogMean(marg_prec) +
+    0.5*trace( unsafeMean(marg_prec)*(unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))*(unsafeMean(marg_out) - unsafeMean(marg_mean))' ))
 end

@@ -83,6 +83,12 @@ function unsafeVar(dist::Wishart)
     return M
 end
 
+function unsafeDetLogMean{dims}(dist::Wishart{dims})
+    sum([digamma(0.5*(dist.nu + 1 - i)) for i = 1:dims]) +
+    dims*log(2) +
+    log(det(dist.V))
+end
+
 function isProper(dist::Wishart)
     (size(dist.V, 1) == size(dist.V, 2)) || return false
     (dist.nu > size(dist.V, 1) - 1) || return false

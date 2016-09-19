@@ -22,6 +22,11 @@ facts("MatrixDelta unit tests") do
         @fact sample(MatrixDelta([2.0].')) --> [2.0].'
     end
 
+    context("unsafeDetLogMean() should return correct result") do
+        @fact ForneyLab.unsafeDetLogMean(MatrixDelta(eye(2))) --> 0.0
+        @fact ForneyLab.unsafeDetLogMean(MatrixDelta([1.0 0.0;0.0 2.0])) --> log(2)
+    end
+
     context("Matrices should convert to MatrixDelta") do
         @fact convert(ProbabilityDistribution, eye(2)) --> MatrixDelta(eye(2))
     end

@@ -20,6 +20,10 @@ facts("Delta unit tests") do
         @fact_throws Delta(1.0) * Delta(2.0)
     end
 
+    context("unsafeLogMean() should return correct result") do
+        @fact ForneyLab.unsafeLogMean(Delta(2.0)) --> log(2)
+    end
+
     context("Numbers should convert to Delta") do
         @fact convert(ProbabilityDistribution, 3.0) --> Delta(3.0)
     end
