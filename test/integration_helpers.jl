@@ -28,7 +28,7 @@ type MockNode <: Node
     end
 end
 
-ForneyLab.isDeterministic(::MockNode) = false # Edge case, same as terminal node
+ForneyLab.isDeterministic(::MockNode) = false
 
 #############
 # Backgrounds
@@ -284,7 +284,7 @@ function initializeMvGaussianNodeChain(y::Array{Float64, 2})
         GaussianNode(form=:precision, id=:g*sec)
         EqualityNode(id=:m_eq*sec) # Equality node chain for mean
         EqualityNode(id=:gam_eq*sec) # Equality node chain for precision
-        TerminalNode(MvGaussian(m=vec(y[sec, :]), V=tiny*eye(2)), id=:y*sec) # Observed y values are stored in terminal node
+        TerminalNode(vec(y[sec, :]), id=:y*sec) # Observed y values are stored in terminal node
         Edge(n(:g*sec).i[:out], n(:y*sec).i[:out], id=:q_y*sec)
         Edge(n(:m_eq*sec).i[3], n(:g*sec).i[:mean], id=:q_m*sec)
         Edge(n(:gam_eq*sec).i[3], n(:g*sec).i[:precision], id=:q_gam*sec)

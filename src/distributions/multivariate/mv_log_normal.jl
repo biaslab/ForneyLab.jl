@@ -19,7 +19,7 @@ Reference:
 
     Lognormal distributions: theory and aplications; Crow, 1988
 """
-type MvLogNormal{dims} <: Multivariate
+type MvLogNormal{dims} <: Multivariate{dims}
     m::Vector{Float64} # Location
     S::AbstractMatrix{Float64} # Scale
 
@@ -47,30 +47,20 @@ vague{dims}(::Type{MvLogNormal{dims}}) = MvLogNormal(m=zeros(dims), S=huge*diage
 
 isProper(dist::MvLogNormal) = isRoundedPosDef(dist.S)
 
-function Base.mean(dist::MvLogNormal)
-    if isProper(dist)
-        return exp(dist.m + 0.5*diag(dist.S))
-    else
-        return fill!(similar(dist.m), NaN)
-    end
-end
+unsafeMean(dist::MvLogNormal) = exp(dist.m + 0.5*diag(dist.S))
 
-function Base.cov(dist::MvLogNormal)
-    if isProper(dist)
-        dims = size(dist, 1)
-        C = zeros(dims, dims)
-        for i = 1:dims
-            for j = 1:dims
-                C[i,j] = exp(dist.m[i] + dist.m[j] + 0.5*(S[i,i] + S[j,j]))*(exp(S[i,j]) - 1.0)
-            end
+function unsafeCov(dist::MvLogNormal)
+    dims = dimensions(dist)
+    C = zeros(dims, dims)
+    for i = 1:dims
+        for j = 1:dims
+            C[i,j] = exp(dist.m[i] + dist.m[j] + 0.5*(S[i,i] + S[j,j]))*(exp(S[i,j]) - 1.0)
         end
-        return C
-    else
-        return fill!(similar(dist.S, NaN))
     end
+    return C
 end
 
-Base.var(dist::MvLogNormal) = exp(2.0*dist.m + diag(dist.S)).*(exp(diag(dist.S)) - 1.0)
+unsafeVar(dist::MvLogNormal) = exp(2.0*dist.m + diag(dist.S)).*(exp(diag(dist.S)) - 1.0)
 
 format(dist::MvLogNormal) = "logN(μ=$(format(dist.m)), Σ=$(format(dist.S)))"
 

@@ -46,13 +46,17 @@ TerminalNode(; id=generateNodeId(TerminalNode)) = TerminalNode(vague(Gaussian), 
 
 typealias PriorNode TerminalNode # For more overview during graph construction
 
-isDeterministic(::TerminalNode) = false # Edge case for deterministicness
+isDeterministic(node::TerminalNode) = (typeof(node.value) <: AbstractDelta) ? true : false # Edge case for deterministicness
 
 # Implement firstFreeInterface since EqualityNode is symmetrical in its interfaces
 firstFreeInterface(node::TerminalNode) = (node.interfaces[1].partner==nothing) ? node.interfaces[1] : error("No free interface on $(typeof(node)) $(node.id)")
 
 collectAllOutboundTypes(rule::Function, call_signature::Vector, node::TerminalNode) = DataType[typeof(node.value)]
 
+
+############################################
+# Sumproduct rules
+############################################
 
 """
 TerminalNode
@@ -68,3 +72,14 @@ function sumProductRule!(   node::TerminalNode,
     # Fill the fields of outbound_dist with node.value
     return injectParameters!(outbound_dist, node.value)
 end
+
+
+############################
+# Average energy functionals
+############################
+
+"""
+Compute average energy as U[q] = -E_q[log f(x)]
+"""
+U(::Type{TerminalNode}, marg_mean::Delta, marg_prec::Delta, marg_out::Univariate) = U(GaussianNode, marg_mean, marg_prec, marg_out)
+U(::Type{TerminalNode}, marg_mean::MvDelta, marg_prec::MatrixDelta, marg_out::Multivariate) = U(GaussianNode, marg_mean, marg_prec, marg_out)

@@ -8,7 +8,6 @@ function collectTypeVarValues(method::Method, argument_types::Vector{DataType}, 
     # Example: if method.sig.types[2] = Message{MvGaussian{dims}}
     #           and argument_types[2] = Message{MvGaussian{3}}
     #          {:dims => 3} is added to the results Dict.
-
     for a=4:length(method.sig.types) # skip the first 3 arguments since they do not contain inbounds
         _collectTypeVarValues!(method.sig.types[a], argument_types[a], results) # Use internal function for recursive implementation
     end
@@ -24,11 +23,33 @@ end
 function _collectTypeVarValues!(method_sig_type::DataType, arg_type::DataType, results::Dict{Symbol,Any})
     # Internal function called by collectTypeVarValues
     # The recursion performs a depth-first search through the (hierarchical) parameters of the argument type
-    if length(method_sig_type.parameters) > 0
-        for p = 1:length(method_sig_type.parameters)
+    if length(method_sig_type.parameters) != length(arg_type.parameters)
+        error("Mismatch in parameter vector length between method: $(method_sig_type), and argument: $(arg_type). Consider implementing a custom _collectTypeVarValues! method")
+    end
+
+    if length(arg_type.parameters) > 0
+        for p = 1:length(arg_type.parameters)
             _collectTypeVarValues!(method_sig_type.parameters[p], arg_type.parameters[p], results)
         end
     end
+end
+
+# Custom methods for matching distribution type parameters
+function _collectTypeVarValues!(method_sig_type::Type{Univariate}, arg_type::Type{MvDelta{Float64}}, results::Dict{Symbol,Any})
+    # Do nothing
+end
+
+function _collectTypeVarValues!{dims}(method_sig_type::Type{Multivariate{dims}}, arg_type::Type{MvDelta{Float64, dims}}, results::Dict{Symbol,Any})
+    _collectTypeVarValues!(method_sig_type.parameters[1], arg_type.parameters[2], results)
+end
+
+function _collectTypeVarValues!{dims_n, dims_m}(method_sig_type::Type{MatrixVariate{dims_n, dims_m}}, arg_type::Type{MatrixDelta{Float64, dims_n, dims_m}}, results::Dict{Symbol,Any})
+    _collectTypeVarValues!(method_sig_type.parameters[1], arg_type.parameters[2], results)
+    _collectTypeVarValues!(method_sig_type.parameters[2], arg_type.parameters[3], results)
+end
+
+function _collectTypeVarValues!{dims}(method_sig_type::Type{MatrixVariate{dims, dims}}, arg_type::Type{Wishart{dims}}, results::Dict{Symbol,Any})
+    _collectTypeVarValues!(method_sig_type.parameters[1], arg_type.parameters[1], results)
 end
 
 function collectTypeVarNames(dtype::DataType, results=Set{Symbol}())
@@ -62,7 +83,6 @@ function resolveTypeVars(dtype::DataType, method::Method, argument_types::Vector
     typevars = collectTypeVarNames(dtype)
     (length(typevars) > 0) || return dtype # Nothing to resolve
     typevar_values = collectTypeVarValues(method, argument_types) # Collect all TypeVar values in a Dict indexed by the TypeVar name
-
     for typevar in typevars
         if !haskey(typevar_values, typevar)
             # Call node-specific function to resolve typevar

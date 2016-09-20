@@ -19,7 +19,7 @@ Reference:
 """
 type InverseGamma <: Univariate
     a::Float64 # shape
-    b::Float64 # scale
+    b::Float64 # rate
 end
 
 InverseGamma(; a=3.0, b=2.0) = InverseGamma(a, b)
@@ -38,21 +38,9 @@ end
 
 isProper(dist::InverseGamma) = (dist.a >= tiny && dist.b >= tiny)
 
-function Base.mean(dist::InverseGamma)
-    if isProper(dist) && dist.a > 1.0
-        return dist.b / (dist.a - 1)
-    else
-        return NaN
-    end
-end
+unsafeMean(dist::InverseGamma) = dist.b / (dist.a - 1)
 
-function Base.var(dist::InverseGamma)
-    if isProper(dist) && dist.a > 2.0
-        return (dist.b^2) / ( ( (dist.a-1)^2 ) * (dist.a-2) )
-    else
-        return NaN
-    end
-end
+unsafeVar(dist::InverseGamma) = (dist.b^2) / ( ( (dist.a-1)^2 ) * (dist.a-2) )
 
 format(dist::InverseGamma) = "Ig(a=$(format(dist.a)), b=$(format(dist.b)))"
 

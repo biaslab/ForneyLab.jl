@@ -23,7 +23,7 @@ Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type MvGaussian{dims} <: Multivariate
+type MvGaussian{dims} <: Multivariate{dims}
     m::Vector{Float64}   # Mean vector
     V::AbstractMatrix{Float64}   # Covariance matrix
     W::AbstractMatrix{Float64}   # Weight matrix
@@ -186,29 +186,21 @@ end
     return z
 end
 
-function Base.mean(dist::MvGaussian)
-    if isProper(dist)
-        return ensureParameter!(dist, Val{:m}).m
-    else
-        return fill!(similar(dist.m), NaN)
-    end
+@symmetrical function prod!{dims}(::Void, y::MvDelta{Float64,dims}, z::MvGaussian{dims})
+    # Product of an unknown with MvDelta, force result to be MvGaussian
+    z.m[:] = y.m
+    z.V = tiny.*eye(dims)
+    invalidate!(z.xi)
+    invalidate!(z.W)
+
+    return z
 end
 
-function Base.cov(dist::MvGaussian)
-    if isProper(dist)
-        return ensureParameter!(dist, Val{:V}).V
-    else
-        return fill!(similar(dist.V), NaN)
-    end
-end
+unsafeMean(dist::MvGaussian) = deepcopy(ensureParameter!(dist, Val{:m}).m) # unsafe mean
 
-function Base.var(dist::MvGaussian)
-    if isProper(dist)
-        return diag(ensureParameter!(dist, Val{:V}).V)
-    else
-        return fill!(similar(dist.m), NaN)
-    end
-end
+unsafeVar(dist::MvGaussian) = diag(ensureParameter!(dist, Val{:V}).V) # unsafe variance
+
+unsafeCov(dist::MvGaussian) = deepcopy(ensureParameter!(dist, Val{:V}).V) # unsafe covariance
 
 function isProper(dist::MvGaussian)
     if isWellDefined(dist)
@@ -365,4 +357,13 @@ convert(::Type{MvGaussian}, d::Gaussian) = MvGaussian(m=[d.m], V=d.V*eye(1), W=d
 # Convert MvGaussian -> Gaussian
 function convert(::Type{Gaussian}, d::MvGaussian{1})
     Gaussian(m=d.m[1], V=d.V[1,1], W=d.W[1,1], xi=d.xi[1])
+end
+
+# Entropy functional
+function H{dims}(dist::MvGaussian{dims})
+    ensureParameters!(dist, (:m, :V))
+
+    return  0.5*log(det(dist.V)) +
+            (dims/2)*log(2*pi) +
+            (dims/2)    
 end

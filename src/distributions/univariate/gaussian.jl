@@ -94,9 +94,11 @@ end
 
 show(io::IO, dist::Gaussian) = println(io, format(dist))
 
-Base.mean(dist::Gaussian) = isProper(dist) ? ensureParameter!(dist, Val{:m}).m : NaN
+unsafeMean(dist::Gaussian) = ensureParameter!(dist, Val{:m}).m # unsafe mean
 
-Base.var(dist::Gaussian) = isProper(dist) ? ensureParameter!(dist, Val{:V}).V : NaN
+unsafeCov(dist::Gaussian) = ensureParameter!(dist, Val{:V}).V # unsafe covariance
+
+unsafeVar(dist::Gaussian) = unsafeCov(dist) # unsafe variance
 
 function prod!(x::Gaussian, y::Gaussian, z::Gaussian=Gaussian())
     # Multiplication of 2 Gaussian PDFs: p(z) = p(x) * p(y)
@@ -119,6 +121,15 @@ end
 
 @symmetrical function prod!(x::Gaussian, y::Delta{Float64}, z::Gaussian)
     # Multiplication of Gaussian PDF with Delta, force result to be Gaussian
+    z.m = y.m
+    z.V = tiny
+    z.xi = z.W = NaN
+
+    return z
+end
+
+@symmetrical function prod!(::Void, y::Delta{Float64}, z::Gaussian)
+    # Multiplication of an unknown with Delta, force result to be Gaussian
     z.m = y.m
     z.V = tiny
     z.xi = z.W = NaN
@@ -245,3 +256,12 @@ convert(::Type{Gaussian}, flt::Float64) = Gaussian(m=flt, V=tiny)
 convert(::Type{Gaussian}, delta::Delta{Float64}) = Gaussian(m=delta.m, V=tiny)
 
 convert(::Type{Message{Gaussian}}, msg::Message{Delta{Float64}}) = Message(Gaussian(m=msg.payload.m, V=tiny))
+
+# Entropy functional
+function H(dist::Gaussian)
+    ensureParameters!(dist, (:m, :V))
+
+    return  0.5*log(dist.V) +
+            0.5*log(2*pi) +
+            0.5
+end

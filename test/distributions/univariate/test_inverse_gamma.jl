@@ -8,8 +8,8 @@ facts("InverseGamma unit tests") do
         @fact dist.a --> 2.0
         @fact dist.b --> 0.5
         @fact mean(dist) --> 0.5
-        @fact isnan(var(dist)) --> true
-        @fact isnan(mean(InverseGamma(a=1.0, b=0.5))) --> true
+        @fact ForneyLab.isProper(dist) --> true
+        @fact ForneyLab.isProper(InverseGamma(a=0.0, b=0.5)) --> false
         @fact var(InverseGamma(a=3.0, b=0.5)) --> 1./16
         @fact pdf(InverseGamma(a=2.0, b=0.5), 1.5) --> roughly(0.05307639337583624, atol=1e-8)
     end

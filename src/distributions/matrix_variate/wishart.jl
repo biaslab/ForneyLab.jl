@@ -22,7 +22,7 @@ Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type Wishart{dims} <: MatrixVariate
+type Wishart{dims} <: MatrixVariate{dims, dims}
     V::AbstractMatrix{Float64}  # Scale matrix
     nu::Float64                 # Degrees of freedom
 end
@@ -70,27 +70,23 @@ end
     return z
 end
 
-function Base.mean(dist::Wishart)
-    if isProper(dist)
-        return dist.nu*dist.V
-    else
-        return fill!(similar(dist.V), NaN)
-    end
-end
+unsafeMean(dist::Wishart) = dist.nu*dist.V
 
-function Base.var(dist::Wishart)
+function unsafeVar(dist::Wishart)
     d = size(dist.V, 1)
     M = fill!(similar(Matrix(dist.V)), NaN)
-    if isProper(dist)
-        for i = 1:d
-            for j = 1:d
-                M[i, j] = dist.nu*(dist.V[i, j]^2 + dist.V[i, i]*dist.V[j, j])
-            end
+    for i = 1:d
+        for j = 1:d
+            M[i, j] = dist.nu*(dist.V[i, j]^2 + dist.V[i, i]*dist.V[j, j])
         end
-        return M
-    else
-        return M
     end
+    return M
+end
+
+function unsafeDetLogMean{dims}(dist::Wishart{dims})
+    sum([digamma(0.5*(dist.nu + 1 - i)) for i = 1:dims]) +
+    dims*log(2) +
+    log(det(dist.V))
 end
 
 function isProper(dist::Wishart)
@@ -121,3 +117,13 @@ end
 dimensions{dims}(distribution::Wishart{dims}) = (dims, dims)
 
 dimensions{T<:Wishart}(distribution_type::Type{T}) = (distribution_type.parameters[end], distribution_type.parameters[end])
+
+# Entropy functional
+function H{dims}(dist::Wishart{dims})
+    return  0.5*(dims + 1.0)*log(det(dist.V)) +
+            0.5*dims*(dims + 1.0)*log(2) +
+            0.25*dims*(dims - 1.0)*log(pi) +
+            sum([log(gamma(0.5*(dist.nu + 1.0 - i))) for i=1:dims]) -
+            0.5*(dist.nu - dims - 1.0) * sum([digamma(0.5*(dist.nu + 1.0 - i)) for i=1:dims]) +
+            0.5*dist.nu*dims
+end

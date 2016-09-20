@@ -6,7 +6,11 @@ type Subgraph
     internal_edges::Set{Edge}
     external_edges::Set{Edge}
     nodes_connected_to_external_edges::Vector{Node} # This is a vector instead of a set, so marginal updates have a fixed order
-    internal_schedule::Schedule # Schedule for internal message passing
+
+    # Schedules for internal message passing
+    internal_pre_schedule::Schedule
+    internal_iterative_schedule::Schedule
+    internal_post_schedule::Schedule
 
     Subgraph(internal_edges, external_edges, nodes_connected_to_external_edges) = new(internal_edges, external_edges, nodes_connected_to_external_edges)
 end
@@ -37,7 +41,7 @@ summaryDependencyGraph(sg)
 
 Returns a directed graph that encodes the dependencies between internal edges of the subgraph `sg`.
 """
-function summaryDependencyGraph(sg::Subgraph)
+function summaryDependencyGraph(sg::Subgraph; reverse_edges=false)
     # Create dependency graph object
     dg = graph(Interface[], Graphs.Edge[], is_directed=true)
 
@@ -55,7 +59,11 @@ function summaryDependencyGraph(sg::Subgraph)
             for node_interface in interface.partner.node.interfaces
                 (node_interface in vertices(dg)) || continue # dependent interface must be in the dependency graph
                 is(node_interface, interface.partner) && continue # do not add self
-                add_edge!(dg, node_interface, interface) # node_interface is dependent on interface
+                if reverse_edges
+                    add_edge!(dg, interface, node_interface) # "Influenced by" relation
+                else
+                    add_edge!(dg, node_interface, interface) # "Depends on" relation
+                end
             end
         end
     end

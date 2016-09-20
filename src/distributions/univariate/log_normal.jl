@@ -34,9 +34,9 @@ end
 
 isProper(dist::LogNormal) = dist.s >= tiny
 
-Base.mean(dist::LogNormal) = isProper(dist) ? exp(dist.m + 0.5*dist.s) : NaN
+unsafeMean(dist::LogNormal) = exp(dist.m + 0.5*dist.s)
 
-Base.var(dist::LogNormal) = isProper(dist) ? (exp(dist.s) - 1)*exp(2*dist.m + dist.s) : NaN
+unsafeVar(dist::LogNormal) = (exp(dist.s) - 1)*exp(2*dist.m + dist.s)
 
 format(dist::LogNormal) = "logN(μ=$(format(dist.m)), σ²=$(format(dist.s)))"
 

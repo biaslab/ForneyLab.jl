@@ -61,6 +61,15 @@ facts("Shared preparation methods for inference algorithms") do
         call_signature = [GaussianNode{Val{:mean}, Val{:precision}}, Type{Val{2}}, Any, MvGaussian{2}, Void, MvGaussian{2}]
         @fact ForneyLab.collectAllOutboundTypes(variationalRule!, call_signature, GaussianNode(form=:precision)) --> [Wishart{2}]
 
+        call_signature = [GaussianNode{Val{:mean}, Val{:precision}}, Type{Val{2}}, Any, Gaussian, Void, Delta{Float64}]
+        @fact ForneyLab.collectAllOutboundTypes(variationalRule!, call_signature, GaussianNode(form=:precision)) --> [Gamma]
+
+        call_signature = [GaussianNode{Val{:mean}, Val{:precision}}, Type{Val{2}}, Any, MvGaussian{2}, Void, MvDelta{Float64, 2}]
+        @fact ForneyLab.collectAllOutboundTypes(variationalRule!, call_signature, GaussianNode(form=:precision)) --> [Wishart{2}]
+
+        call_signature = [GaussianNode{Val{:mean}, Val{:precision}}, Type{Val{3}}, Any, MvGaussian{2}, MatrixDelta{Float64, 2, 2}, Void]
+        @fact ForneyLab.collectAllOutboundTypes(variationalRule!, call_signature, GaussianNode(form=:precision)) --> [MvGaussian{2}]
+
         call_signature = [GaussianNode{Val{:mean}, Val{:precision}}, Type{Val{3}}, Any, NormalGamma, NormalGamma, Void]
         @fact ForneyLab.collectAllOutboundTypes(variationalRule!, call_signature, GaussianNode(form=:precision)) --> [Gaussian]
 

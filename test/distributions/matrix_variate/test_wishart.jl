@@ -36,6 +36,15 @@ facts("Wishart unit tests") do
         @fact marg.V --> roughly([0.5].')
         @fact marg.nu --> 2.0
     end
+
+    context("unsafeDetLogMean() should return correct result") do
+        @fact ForneyLab.unsafeDetLogMean(Wishart(V=[1.0].', nu=1.0)) --> digamma(0.5) + log(2)
+        @fact ForneyLab.unsafeDetLogMean(Wishart(V=eye(2), nu=2.0)) --> digamma(0.5) + digamma(1) + 2*log(2)
+    end
+
+    context("H() should evaluate the entropy") do
+        @fact ForneyLab.H(Wishart()) --> roughly(0.7837571104739337)
+    end
 end
 
 facts("Wishart converts") do
