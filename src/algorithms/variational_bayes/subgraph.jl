@@ -43,26 +43,26 @@ Returns a directed graph that encodes the dependencies between internal edges of
 """
 function summaryDependencyGraph(sg::Subgraph; reverse_edges=false)
     # Create dependency graph object
-    dg = graph(Interface[], Graphs.Edge[], is_directed=true)
+    dg = DependencyGraph{Interface}()
 
     # Add all interfaces of internal edges as vertices in dg
     for node in nodes(sg)
         for interface in node.interfaces
             (interface.edge in sg.internal_edges) || continue # interface must be of an internal edge
-            add_vertex!(dg, interface)
+            addVertex!(dg, interface)
         end
     end
 
     # Add all summary dependencies
-    for interface in vertices(dg)
+    for interface in dg.vertices
         if isa(interface.partner, Interface) # interface is connected to an Edge
             for node_interface in interface.partner.node.interfaces
-                (node_interface in vertices(dg)) || continue # dependent interface must be in the dependency graph
+                (node_interface in dg.vertices) || continue # dependent interface must be in the dependency graph
                 is(node_interface, interface.partner) && continue # do not add self
                 if reverse_edges
-                    add_edge!(dg, interface, node_interface) # "Influenced by" relation
+                    addEdge!(dg, interface, node_interface) # "Influenced by" relation
                 else
-                    add_edge!(dg, node_interface, interface) # "Depends on" relation
+                    addEdge!(dg, node_interface, interface) # "Depends on" relation
                 end
             end
         end

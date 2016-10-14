@@ -103,7 +103,7 @@ function ExpectationPropagation(
     site_dependencies = Interface[]
     for site in ep_sites
         push!(site_dependencies, site.interface.partner) # prior/cavity distribution
-        for interface in Graphs.out_neighbors(site.interface, dg)
+        for interface in neighbors(site.interface, dg)
             push!(site_dependencies, interface) # direct dependency of site
         end
     end
