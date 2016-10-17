@@ -24,7 +24,7 @@ function invalidate!(v::AbstractArray{Float64})
 end
 
 # Operations related to diagonal matrices
-cholinv(M::Matrix) = inv(cholfact(M))
+cholinv(M::Matrix) = inv(cholfact(Hermitian(M)))
 cholinv(D::Diagonal) = Diagonal(1./D.diag)
 diageye(dims::Int64) = Diagonal(ones(dims))
 
@@ -36,9 +36,9 @@ diageye(dims::Int64) = Diagonal(ones(dims))
 sqrt(D::Diagonal) = Diagonal(sqrt(D.diag))
 
 # Symbol concatenation
-*(sym::Symbol, num::Number) = symbol(string(sym, num))
-*(num::Number, sym::Symbol) = symbol(string(num, sym))
-*(sym1::Symbol, sym2::Symbol) = symbol(string(sym1, sym2))
+*(sym::Symbol, num::Number) = Symbol(string(sym, num))
+*(num::Number, sym::Symbol) = Symbol(string(num, sym))
+*(sym1::Symbol, sym2::Symbol) = Symbol(string(sym1, sym2))
 
 *(sym::Symbol, rng::Range) = Symbol[sym*k for k in rng]
 *(rng::Range, sym::Symbol) = Symbol[k*sym for k in rng]

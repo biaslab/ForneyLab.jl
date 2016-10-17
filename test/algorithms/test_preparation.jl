@@ -23,18 +23,18 @@ facts("Shared preparation methods for inference algorithms") do
             return true
         end
 
-        method = start(methods(dummyRule))
+        method = first(methods(dummyRule))
 
         # collectTypeVarNames should return the names of TypeVar parameters as a Set
-        @fact ForneyLab.collectTypeVarNames(method.sig.types[1]) --> Set()
-        @fact ForneyLab.collectTypeVarNames(method.sig.types[3]) --> Set([:dims; :n_factors])
-        @fact ForneyLab.collectTypeVarNames(method.sig.types[5]) --> Set([:n_factors])
+        @fact ForneyLab.collectTypeVarNames(method.sig.types[2]) --> Set()
+        @fact ForneyLab.collectTypeVarNames(method.sig.types[4]) --> Set([:dims; :n_factors])
+        @fact ForneyLab.collectTypeVarNames(method.sig.types[6]) --> Set([:n_factors])
 
         # resolveTypeVars should resolve the values of TypeVars
         # Build calling signature (vector of argument types) for dummyRule
         # The combination of method and argtypes fully specifies the values of the dims and n_factors parameters of the outbound argument
         argtypes = [Node; Int64; Any; Message{MvGaussian{5}}; Message{Partitioned{Gaussian,3}}]
-        @fact ForneyLab.resolveTypeVars(method.sig.types[3], method, argtypes, MockNode()) --> Partitioned{MvGaussian{5},3}
+        @fact ForneyLab.resolveTypeVars(method.sig.types[4], method, argtypes, MockNode()) --> Partitioned{MvGaussian{5},3}
     end
 
     context("collectAllOutboundTypes() should return outbound types of applicable update rules") do
@@ -189,6 +189,6 @@ facts("Shared preparation methods for inference algorithms") do
         entry = ScheduleEntry{SumProductRule}(node, 3)
         @fact isdefined(entry, :execute) --> false
         ForneyLab.buildExecute!(entry, [Message(Gaussian()), Message(Gaussian()), nothing])
-        @fact typeof(entry.execute) --> Function
+        @fact typeof(entry.execute) <: Function --> true
     end
 end
