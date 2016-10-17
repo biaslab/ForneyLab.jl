@@ -12,7 +12,7 @@ type Edge <: AbstractEdge
     head::Interface
     marginal::Union{ProbabilityDistribution, Void}
 
-    function Edge(tail::Interface, head::Interface; id=symbol("$(tail.node.id)_$(head.node.id)"))
+    function Edge(tail::Interface, head::Interface; id=Symbol("$(tail.node.id)_$(head.node.id)"))
         # add_to_graph is false for edges that are internal in a composite node
         current_graph = currentGraph()
         !is(head.node, tail.node) || error("Cannot connect two interfaces of the same node: $(typeof(head.node)) $(head.node.id)")

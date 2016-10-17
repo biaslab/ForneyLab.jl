@@ -102,10 +102,10 @@ isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round(Matrix(arr), r
 
 function viewFile(filename::AbstractString)
     # Open a file with the application associated with the file type
-    @windows? run(`cmd /c start $filename`) : (@osx? run(`open $filename`) : (@linux? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
+    is_windows() ? run(`cmd /c start $filename`) : (is_osx() ? run(`open $filename`) : (is_linux() ? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
 end
 
-function truncate(str::ASCIIString, max::Integer)
+function truncate(str::String, max::Integer)
     # Truncate srt to max positions
     if length(str)>max
         return "$(str[1:max-3])..."
@@ -113,17 +113,11 @@ function truncate(str::ASCIIString, max::Integer)
     return str
 end
 
-function pad(str::ASCIIString, size::Integer)
+function pad(str::String, size::Integer)
     # Pads str with spaces until its length reaches size
     str_trunc = truncate(str, size)
     return "$(str_trunc)$(repeat(" ",size-length(str_trunc)))"
 end
-
-immutable HTMLString
-    s::ByteString
-end
-import Base.writemime
-writemime(io::IO, ::MIME"text/html", y::HTMLString) = print(io, y.s)
 
 function expand(d::Dict)
     # Loop over keys in d and when the key is an Array,

@@ -151,7 +151,7 @@ function dot2gif(dot_graph::AbstractString)
     stdout, stdin, proc = readandwrite(`dot -Tgif`)
     write(stdin, dot_graph)
     close(stdin)
-    return readall(stdout)
+    return readstring(stdout)
 end
 
 function dot2svg(dot_graph::AbstractString)
@@ -160,7 +160,7 @@ function dot2svg(dot_graph::AbstractString)
     stdout, stdin, proc = readandwrite(`dot -Tsvg`)
     write(stdin, dot_graph)
     close(stdin)
-    return readall(stdout)
+    return readstring(stdout)
 end
 
 function dot2png(dot_graph::AbstractString)
@@ -169,19 +169,19 @@ function dot2png(dot_graph::AbstractString)
     stdout, stdin, proc = readandwrite(`dot -Tpng`)
     write(stdin, dot_graph)
     close(stdin)
-    return readall(stdout)
+    return readstring(stdout)
 end
 
 function validateGraphVizInstalled()
     # Check if GraphViz is installed
     try
-        (readall(`dot -?`)[1:10] == "Usage: dot") || error()
+        (readstring(`dot -?`)[1:10] == "Usage: dot") || error()
     catch
         error("GraphViz is not installed correctly. Make sure GraphViz is installed. If you are on Windows, manually add the path to GraphViz to your path variable. You should be able to run 'dot' from the command line.")
     end
 end
 
-viewDotExternal(dot_graph::AbstractString) = (@linux? viewDotExternalInteractive(dot_graph::AbstractString) : viewDotExternalImage(dot_graph::AbstractString))
+viewDotExternal(dot_graph::AbstractString) = (is_linux() ? viewDotExternalInteractive(dot_graph::AbstractString) : viewDotExternalImage(dot_graph::AbstractString))
 
 function viewDotExternalInteractive(dot_graph::AbstractString)
     # View a DOT graph in interactive viewer

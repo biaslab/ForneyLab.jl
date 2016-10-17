@@ -92,7 +92,7 @@ function generateNodeId(t::DataType)
     haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
     count = current_graph.counters[t]
     str = replace(lowercase(split(string(t.name),'.')[end]), "node", "")
-    return symbol("$(str)$(count)")
+    return Symbol("$(str)$(count)")
 end
 
 clearMessages!(graph::FactorGraph = currentGraph()) = map(clearMessages!, nodes(graph))

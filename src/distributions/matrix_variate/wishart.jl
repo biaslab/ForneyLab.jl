@@ -29,8 +29,6 @@ end
 
 Wishart(; V::AbstractMatrix{Float64} = [1.0].', nu::Float64 = 1.0) = Wishart{size(V, 1)}(deepcopy(V), nu)
 
-Wishart() = Wishart(V = [1.0].', nu = 1.0)
-
 function pdf(dist::Wishart, x::AbstractMatrix{Float64})
     error("TODO: pdf(::Wishart, x) is not yet implemented")
 end
@@ -52,13 +50,6 @@ function prod!{dims}(x::Wishart{dims}, y::Wishart{dims}, z::Wishart{dims}=Wishar
     # Derivation available in notebook
     z.V = x.V * cholinv(x.V + y.V) * y.V
     z.nu = x.nu + y.nu - dims - 1.0
-
-    return z
-end
-
-@symmetrical function prod!{dims}(x::Wishart{dims}, y::MatrixDelta{Float64,dims,dims}, z::MatrixDelta{Float64,dims,dims}=deepcopy(y))
-    # Multiplication of Wishart PDF with a delta
-    (z.M == y.M) || (z.M[:] = y.M)
 
     return z
 end
