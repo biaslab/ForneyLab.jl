@@ -49,14 +49,11 @@ function Base.collect{T}(list::LinkedList{T})
     items = T[]
     if isdefined(list, :first)
         entry = list.first
-        while true
+        while isdefined(entry, :next)
             push!(items, entry.payload)
-            if isdefined(entry, :next)
-                entry = entry.next
-            else
-                break
-            end
+            entry = entry.next
         end
+        push!(items, entry.payload) # last entry
     end
 
     return items
