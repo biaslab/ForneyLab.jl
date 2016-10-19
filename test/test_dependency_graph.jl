@@ -1,4 +1,14 @@
-facts("Graph algorithms") do
+facts("LinkedList unit tests") do
+    ll = ForneyLab.LinkedList{typeof("test")}()
+    @fact isempty(ll) --> true
+    @fact_throws push!(ll, 3) # Incorrect element type
+    push!(ll, "test1")
+    push!(ll, "test2")
+    @fact isempty(ll) --> false
+    @fact collect(ll) --> ["test1"; "test2"]
+end
+
+facts("DependencyGraph tests") do
     context("children(...) should find all children of a vertex and return a topologically sorted array.") do
         fg = FactorGraph()
         Edge(MockNode(1; id=:n1).interfaces[1], MockNode(2; id=:n2).interfaces[1])

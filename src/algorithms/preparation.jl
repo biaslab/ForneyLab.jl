@@ -6,10 +6,10 @@ function collectTypeVarValues(method::Method, argument_types::Vector{DataType}, 
     # Collect the values of TypeVar objects in method.sig.types, based on the types of the actual arguments (argument_types)
     # The results are collected in a Dict, indexed by the names of the TypeVars.
     # Example: if method.sig.types[2] = Message{MvGaussian{dims}}
-    #           and argument_types[2] = Message{MvGaussian{3}}
+    #           and argument_types[1] = Message{MvGaussian{3}}
     #          {:dims => 3} is added to the results Dict.
-    for a=4:length(method.sig.types) # skip the first 3 arguments since they do not contain inbounds
-        _collectTypeVarValues!(method.sig.types[a], argument_types[a], results) # Use internal function for recursive implementation
+    for a=5:length(method.sig.types) # skip the first 4 arguments since they do not contain inbounds (function, node, outbound_id, outbound_type)
+        _collectTypeVarValues!(method.sig.types[a], argument_types[a-1], results) # Use internal function for recursive implementation
     end
 
     return results
@@ -116,7 +116,7 @@ function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::N
     outbound_types = DataType[]
 
     for method in methods(rule, call_signature)
-        ob_type = resolveTypeVars(method.sig.types[3], method, call_signature, node)
+        ob_type = resolveTypeVars(method.sig.types[4], method, call_signature, node)
 
         # Is the method an approximate msg calculation rule?
         if (typeof(method.sig.types[end])==DataType

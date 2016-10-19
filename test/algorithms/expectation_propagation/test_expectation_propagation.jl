@@ -40,11 +40,11 @@ facts("ExpectationPropagation algorithm integration tests") do
     prev_section_connector = X_prior.i[:out]
     sites = Vector{Tuple{Interface, DataType}}()
     for section = 1:NUM_SECTIONS
-        equ = EqualityNode(id=symbol("equ$(section)"))
-        sig = SigmoidNode(id=symbol("sig$(section)"))
-        y = TerminalNode(samples[section], id=symbol("t_Y$(section)"))
+        equ = EqualityNode(id=Symbol("equ$(section)"))
+        sig = SigmoidNode(id=Symbol("sig$(section)"))
+        y = TerminalNode(samples[section], id=Symbol("t_Y$(section)"))
         Edge(prev_section_connector, equ.interfaces[1])
-        Edge(equ.interfaces[2], sig.i[:real], id=symbol("X$(section)"))
+        Edge(equ.interfaces[2], sig.i[:real], id=Symbol("X$(section)"))
         Edge(sig.i[:bin], y)
         prev_section_connector = equ.interfaces[3]
         push!(sites, (sig.i[:real], Gaussian))

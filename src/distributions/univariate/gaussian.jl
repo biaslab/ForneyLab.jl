@@ -49,13 +49,16 @@ type Gaussian <: Univariate
 end
 
 function Gaussian(; m::Float64=NaN,
-                                V::Float64=NaN,
-                                W::Float64=NaN,
-                                xi::Float64=NaN)
+                    V::Float64=NaN,
+                    W::Float64=NaN,
+                    xi::Float64=NaN)
+    if isnan(m) && isnan(V) && isnan(W) && isnan(xi)
+        m = 0.0
+        V = 1.0
+    end
+
     return Gaussian(m, V, W, xi)
 end
-
-Gaussian() = Gaussian(m=0.0, V=1.0)
 
 function pdf(dist::Gaussian, x::Float64)
     ensureParameter!(dist, Val{:m})

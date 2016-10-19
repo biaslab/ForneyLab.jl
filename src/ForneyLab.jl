@@ -1,6 +1,6 @@
 module ForneyLab
 
-using Optim, LaTeXStrings, Graphs
+using Optim, LaTeXStrings
 
 export ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, AbstractDelta
 export sumProductRule!, expectationRule!, variationalRule!
@@ -17,6 +17,7 @@ printVerbose(msg) = if verbose println(msg) end
 
 # ForneyLab helpers
 include("helpers.jl")
+include("dependency_graph.jl")
 
 # Other includes
 import Base.show, Base.convert, Base.==, Base.mean, Base.var, Base.cov
@@ -107,7 +108,6 @@ include("inference_algorithm.jl")
 include("nodes/composite.jl")
 
 # Generic methods
-include("graph_algorithms.jl")
 include("message_passing.jl")
 include("step.jl")
 

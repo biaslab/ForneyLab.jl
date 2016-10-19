@@ -51,9 +51,15 @@ type MvGaussian{dims} <: Multivariate{dims}
 end
 
 function MvGaussian(; m::Vector{Float64}=[NaN],
-                                  V::AbstractMatrix{Float64}=Diagonal([NaN]),
-                                  W::AbstractMatrix{Float64}=Diagonal([NaN]),
-                                  xi::Vector{Float64}=[NaN])
+                      V::AbstractMatrix{Float64}=Diagonal([NaN]),
+                      W::AbstractMatrix{Float64}=Diagonal([NaN]),
+                      xi::Vector{Float64}=[NaN])
+    # Default constructor
+    if !any(map(isValid, [m,V,W,xi]))
+        m = [0.0]
+        V = eye(1)
+    end
+
     # Ensure _m and _xi have the same size
     _m = copy(m)
     _xi = copy(xi)
@@ -82,8 +88,6 @@ function MvGaussian(; m::Vector{Float64}=[NaN],
 
     return MvGaussian{length(_m)}(_m, _V, _W, _xi)
 end
-
-MvGaussian() = MvGaussian(m=[0.0], V=reshape([1.0],1,1))
 
 function pdf(dist::MvGaussian, x::Vector{Float64})
     k = size(dist.V, 1)
@@ -365,5 +369,5 @@ function H{dims}(dist::MvGaussian{dims})
 
     return  0.5*log(det(dist.V)) +
             (dims/2)*log(2*pi) +
-            (dims/2)    
+            (dims/2)
 end

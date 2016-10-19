@@ -18,8 +18,8 @@ facts("General node properties unit tests") do
             end
 
             context("$(node_type) constructor should assign an id") do
-                my_node = node_type(;id=symbol("my_id_$(c)"))
-                @fact my_node.id --> symbol("my_id_$(c)")
+                my_node = node_type(;id=Symbol("my_id_$(c)"))
+                @fact my_node.id --> Symbol("my_id_$(c)")
             end
 
             context("$(node_type) constructor should assign interfaces to itself") do
@@ -36,8 +36,8 @@ facts("General node properties unit tests") do
             end
 
             facts("$(node_type) constructor should check for unique id") do
-                MockNode(id=symbol("mock_$(c)"))
-                @fact_throws MockNode(id=symbol("mock_$(c)"))
+                MockNode(id=Symbol("mock_$(c)"))
+                @fact_throws MockNode(id=Symbol("mock_$(c)"))
             end
         end
         c += 1

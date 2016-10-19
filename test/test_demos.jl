@@ -26,7 +26,7 @@ try
         println("\n>> Checking demo: $(basename(demo_file)[1:end-3])\n")
         try
             # Run the demo
-            readall(`julia $(demo_file)`)
+            readstring(`julia $(demo_file)`)
             # Delete julia script if the demo was executed successfully
             rm(demo_file)
         catch exception
