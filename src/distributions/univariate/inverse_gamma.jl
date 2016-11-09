@@ -7,7 +7,7 @@ Description:
 
 Pamameters:
 
-    Real scalars a > 0 (shape) and b > 0 (scale).
+    Real scalars a > 0 (shape) and b > 0 (rate).
 
 Construction:
 
@@ -39,6 +39,8 @@ end
 isProper(dist::InverseGamma) = (dist.a >= tiny && dist.b >= tiny)
 
 unsafeMean(dist::InverseGamma) = dist.b / (dist.a - 1)
+
+unsafeLogMean(dist::InverseGamma) = log(dist.b) - digamma(dist.a) 
 
 unsafeVar(dist::InverseGamma) = (dist.b^2) / ( ( (dist.a-1)^2 ) * (dist.a-2) )
 
@@ -72,3 +74,10 @@ end
 end
 
 ==(x::InverseGamma, y::InverseGamma) = (x.a==y.a && x.b==y.b)
+
+# Entropy functional
+function H(dist::InverseGamma)
+    return  dist.a +
+            log(dist.b*gamma(dist.a)) -
+            (1 + dist.a)*digamma(dist.a)
+end
