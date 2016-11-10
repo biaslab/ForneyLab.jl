@@ -73,7 +73,8 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
                             GainNode => "GainNode",
                             GainAdditionNode => "GainAdditionNode",
                             GainEqualityNode => "GainEqualityNode",
-                            SigmoidNode => "\u03C3"
+                            SigmoidNode => "\u03C3",
+                            BernoulliNode => "Bern"
                         )
 
     dot = "digraph G{splines=true;sep=\"+25,25\";overlap=scalexy;nodesep=1.6;compound=true;\n"
