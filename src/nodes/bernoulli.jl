@@ -3,7 +3,7 @@ export BernoulliNode
 """
 Description:
 
-    Maps a Beta to a Bernoulli distribution.
+    Bernoulli factor node: Bern(x|c)
     Derivations can be found in the derivations document.
 
     in, x       out, c
@@ -118,7 +118,7 @@ BernoulliNode:
 
     Beta      Bern
     --->[Bern]--->
-    <--          
+    <--
 """
 function variationalRule!(  node::BernoulliNode,
                             outbound_interface_index::Type{Val{1}},
