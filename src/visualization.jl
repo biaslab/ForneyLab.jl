@@ -8,9 +8,9 @@ export draw, drawPdf, drawPng
 function graphviz(dot_graph::AbstractString; external_viewer::Symbol=:None)
     # Show a DOT graph
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    if external_viewer == :iTerm
+    if external_viewer == :iterm
         viewDotIniTerm(dot_graph)
-    elseif external_viewer == :Default
+    elseif external_viewer == :default
         viewDotExternal(dot_graph)
     else
         try

@@ -67,7 +67,25 @@ end
 """
 BernoulliNode:
 
-    Beta      Bern
+      δ       Bern
+    --->[Bern]--->
+              -->
+"""
+function sumProductRule!(   node::BernoulliNode,
+                            outbound_interface_index::Type{Val{2}},
+                            outbound_dist::Bernoulli,
+                            msg_in::Message{Delta{Float64}},
+                            msg_out::Any)
+
+    outbound_dist.p = msg_in.payload.m
+
+    return outbound_dist
+end
+
+"""
+BernoulliNode:
+
+    Beta       δ
     --->[Bern]--->
     <--
 """

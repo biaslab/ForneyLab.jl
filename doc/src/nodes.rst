@@ -144,4 +144,4 @@ The extra argument should be a subtype of ``ApproximationType``. Built-in approx
 Composite nodes
 ---------------
 
-A node in which multiple node functions are combined into one node function is called a ``CompositeNode`` In ForneyLab 0.4 the composite node functionality is removed. It will be reintroduced in ForneyLab 0.5.
+A node in which multiple node functions are combined into one node function is called a ``CompositeNode`` In ForneyLab 0.4 the composite node functionality is removed.

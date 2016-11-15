@@ -21,6 +21,10 @@ facts("BernoulliNode unit tests") do
                                 2,
                                 [Message(Beta(a=1.0, b=2.0)), nothing],
                                 Bernoulli(1/3))
+        validateOutboundMessage(BernoulliNode(),
+                                2,
+                                [Message(Delta(0.2)), nothing],
+                                Bernoulli(0.2))
         # Backward message
         validateOutboundMessage(BernoulliNode(),
                                 1,

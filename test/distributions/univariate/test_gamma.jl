@@ -42,9 +42,6 @@ facts("Gamma unit tests") do
         @fact Gamma(a=1.0, b=2.0) * Gamma(a=3.0, b=4.0) --> Gamma(a=3.0, b=6.0)
         @fact Delta(0.5) * Gamma(a=3.0, b=4.0) --> Delta(0.5)
         @fact_throws DomainError Gamma(a=3.0, b=4.0) * Delta(-1.1)
-        @fact typeof(ForneyLab.prod!(Delta(0.5), Gamma(a=3.0, b=4.0), Gamma())) --> Gamma
-        @fact mean(ForneyLab.prod!(Gamma(a=3.0, b=4.0), Delta(0.5), Gamma())) --> roughly(0.5)
-        @fact var(ForneyLab.prod!(Gamma(a=3.0, b=4.0), Delta(0.5), Gamma())) --> less_than(1e-6)
     end
 
     context("unsafeLogMean() should return correct result") do
