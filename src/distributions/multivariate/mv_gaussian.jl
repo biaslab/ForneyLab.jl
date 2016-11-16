@@ -366,7 +366,7 @@ function convert(::Type{Gaussian}, d::MvGaussian{1})
 end
 
 # Entropy functional
-function H{dims}(dist::MvGaussian{dims})
+function differentialEntropy{dims}(dist::MvGaussian{dims})
     ensureParameters!(dist, (:m, :V))
 
     return  0.5*log(det(dist.V)) +

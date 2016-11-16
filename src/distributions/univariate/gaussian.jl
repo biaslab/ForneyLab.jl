@@ -263,7 +263,7 @@ convert(::Type{Gaussian}, delta::Delta{Float64}) = Gaussian(m=delta.m, V=tiny)
 convert(::Type{Message{Gaussian}}, msg::Message{Delta{Float64}}) = Message(Gaussian(m=msg.payload.m, V=tiny))
 
 # Entropy functional
-function H(dist::Gaussian)
+function differentialEntropy(dist::Gaussian)
     ensureParameters!(dist, (:m, :V))
 
     return  0.5*log(dist.V) +

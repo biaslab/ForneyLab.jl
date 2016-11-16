@@ -155,7 +155,7 @@ end
 # Average energy functional
 ############################
 
-function U(::Type{BernoulliNode}, marg_in::Beta, marg_out::Bernoulli)
+function averageEnergy(::Type{BernoulliNode}, marg_in::Beta, marg_out::Bernoulli)
     digamma(marg_in.a + marg_in.b) -
     (1 - marg_out.p)*digamma(marg_in.b) -
     marg_out.p*digamma(marg_in.a)

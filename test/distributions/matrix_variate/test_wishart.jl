@@ -42,8 +42,8 @@ facts("Wishart unit tests") do
         @fact ForneyLab.unsafeDetLogMean(Wishart(V=eye(2), nu=2.0)) --> digamma(0.5) + digamma(1) + 2*log(2)
     end
 
-    context("H() should evaluate the entropy") do
-        @fact ForneyLab.H(Wishart()) --> roughly(0.7837571104739337)
+    context("differentialEntropy() should evaluate the differential entropy") do
+        @fact ForneyLab.differentialEntropy(Wishart()) --> roughly(0.7837571104739337)
     end
 end
 

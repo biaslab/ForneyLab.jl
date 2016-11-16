@@ -11,8 +11,8 @@ facts("BernoulliNode unit tests") do
         @fact n(:node).i[:out] --> n(:node).interfaces[2]
     end
 
-    context("U() should evaluate the average energy") do
-        @fact ForneyLab.U(BernoulliNode, Beta(a=1.0, b=2.0), Bernoulli(0.2)) --> roughly(0.7)
+    context("averageEnergy() should evaluate the average energy") do
+        @fact ForneyLab.averageEnergy(BernoulliNode, Beta(a=1.0, b=2.0), Bernoulli(0.2)) --> roughly(0.7)
     end    
 
     context("BernoulliNode should pass sum-product messages") do
