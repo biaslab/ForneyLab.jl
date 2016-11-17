@@ -12,8 +12,10 @@ export  attachReadBuffer,
 import Base.run
 import Base.step
 
-function ensureValue!(node::TerminalNode, value_type::Type)
-    # Ensure that node contains a value of type value_type
+"""
+Ensure that node contains a value of type value_type
+"""
+function ensureValue!(node::DataNode, value_type::Type)
     if !isdefined(node, :value) || (typeof(node.value) != value_type)
         if (value_type <: Delta{Float64}) || (value_type <: Float64)
             node.value = Delta()
@@ -31,7 +33,7 @@ function ensureValue!(node::TerminalNode, value_type::Type)
     return node.value
 end
 
-function attachReadBuffer(node::TerminalNode, buffer::Vector, graph::FactorGraph=currentGraph())
+function attachReadBuffer(node::DataNode, buffer::Vector, graph::FactorGraph=currentGraph())
     hasNode(graph, node) || error("The specified node is not part of the current or specified graph")
     ensureValue!(node, typeof(node.value)) # Ensures that a value of correct type is set for message type inference
     graph.read_buffers[node] = buffer
@@ -46,7 +48,7 @@ function attachReadBuffer{T<:Node}(nodes::Vector{T}, buffer::Vector, graph::Fact
     buffmat = reshape(buffer, n_nodes, n_samples_per_node) # samples for one node are present in the rows of buffmat
     for k in 1:n_nodes
         hasNode(graph, nodes[k]) || error("One of the specified nodes is not part of the current or specified graph")
-        (typeof(nodes[k]) <: TerminalNode) || error("$(nodes[k]) is not a TerminalNode")
+        (typeof(nodes[k]) <: DataNode) || error("$(nodes[k]) is not a DataNode")
         ensureValue!(nodes[k], typeof(buffmat[k,1])) # Ensures that a value of correct type is set for message type inference
         graph.read_buffers[nodes[k]] = vec(buffmat[k,:])
     end
@@ -54,7 +56,7 @@ function attachReadBuffer{T<:Node}(nodes::Vector{T}, buffer::Vector, graph::Fact
     return graph.read_buffers[nodes[end]] # Return last node's buffer
 end
 
-function detachReadBuffer(nd::TerminalNode, graph::FactorGraph=currentGraph())
+function detachReadBuffer(nd::DataNode, graph::FactorGraph=currentGraph())
     hasNode(graph, nd) || error("The specified node is not part of the current or specified graph")
     haskey(graph.read_buffers, nd) || error("There is no read buffer attached to the specified node")
 
@@ -95,7 +97,7 @@ function detachWriteBuffer(edge::Edge, graph::FactorGraph=currentGraph())
 end
 
 function detachBuffers(graph::FactorGraph=currentGraph())
-    graph.read_buffers = Dict{TerminalNode, Vector}()
+    graph.read_buffers = Dict{DataNode, Vector}()
     graph.write_buffers = Dict{Union{Edge,Interface}, Vector}()
 end
 

@@ -3,16 +3,16 @@ export Wrap, wrap, wraps, hasWrap
 # Wrap type and functions
 type Wrap <: AbstractWrap
     id::Symbol
-    tail::TerminalNode
-    head::TerminalNode
+    tail::WrapableNode
+    head::WrapableNode
     tail_buffer::Vector{ProbabilityDistribution}
     head_buffer::Vector{ProbabilityDistribution}
 
-    function Wrap(tail::TerminalNode, head::TerminalNode; id=Symbol("$(tail.id)_$(head.id)"), block_size::Int64=0)
+    function Wrap(tail::WrapableNode, head::WrapableNode; id=Symbol("$(tail.id)_$(head.id)"), block_size::Int64=0)
         current_graph = currentGraph()
         hasNode(current_graph, tail) || error("The tail node does not belong to the current graph")
         hasNode(current_graph, head) || error("The head node does not belong to the current graph")
-        !(head in [wr.head for wr in wraps(current_graph)]) || error("TerminalNode $(head) already is a head in another wrap")
+        !(head in [wr.head for wr in wraps(current_graph)]) || error("Node $(head) already is a head in another wrap")
         !is(tail, head) || error("Cannot create wrap: tail and head must be different nodes")
         !haskey(current_graph.wraps, id) || error("The wrap id $(id) already exists in the current graph. Consider specifying an explicit id.")
 
@@ -56,7 +56,7 @@ wrap(id::Symbol, g::FactorGraph=currentGraph()) = g.wraps[id]
 
 wraps(g::FactorGraph=currentGraph()) = Set{Wrap}(values(g.wraps))
 
-function wraps(nd::TerminalNode, g::FactorGraph=currentGraph())
+function wraps(nd::WrapableNode, g::FactorGraph=currentGraph())
     hasNode(g, nd) ||  error("The specified node does not belong to the specified or current graph")
     ws = Set{Wrap}()
     for w in values(g.wraps)

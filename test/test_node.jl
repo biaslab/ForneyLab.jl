@@ -5,8 +5,8 @@
 facts("General node properties unit tests") do
     FactorGraph()
     c = 0
-    for node_type in subtypes(Node)
-        if node_type!=MockNode
+    for node_type in [subtypes(Node); subtypes(ForneyLab.WrapableNode)]
+        if (node_type != MockNode) && (node_type != ForneyLab.WrapableNode)
             context("$(node_type) properties should include interfaces and id") do
                 test_node = node_type()
                 @fact typeof(test_node) <: node_type --> true
@@ -35,14 +35,23 @@ facts("General node properties unit tests") do
                 @fact currentGraph().nodes[my_node.id] --> my_node
             end
 
-            facts("$(node_type) constructor should check for unique id") do
+            context("$(node_type) constructor should check for unique id") do
                 MockNode(id=Symbol("mock_$(c)"))
                 @fact_throws MockNode(id=Symbol("mock_$(c)"))
             end
+
+            if (node_type <: ForneyLab.WrapableNode)
+                context("$(node_type) should have a value field") do
+                    my_node = node_type()
+                    @fact (:value in fieldnames(my_node)) --> true
+                end
+            end
         end
+
         c += 1
     end
 end
+
 
 #####################
 # Integration tests

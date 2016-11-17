@@ -1,4 +1,4 @@
-export TerminalNode, PriorNode
+export TerminalNode, PriorNode, DataNode
 
 """
 Description:
@@ -18,7 +18,7 @@ Construction:
 
     TerminalNode(Gaussian(), id=:my_node)
 """
-type TerminalNode <: Node
+type TerminalNode <: WrapableNode
     id::Symbol
     value::ProbabilityDistribution
     interfaces::Vector{Interface}
@@ -44,14 +44,16 @@ TerminalNode{T<:Number}(mat::AbstractMatrix{T}; id=generateNodeId(TerminalNode))
 
 TerminalNode(; id=generateNodeId(TerminalNode)) = TerminalNode(vague(Gaussian), id=id)
 
-typealias PriorNode TerminalNode # For more overview during graph construction
+# Aliases for more overview during graph construction
+typealias PriorNode TerminalNode
+typealias DataNode TerminalNode
 
 isDeterministic(node::TerminalNode) = (typeof(node.value) <: AbstractDelta) ? true : false # Edge case for deterministicness
 
 # Implement firstFreeInterface since EqualityNode is symmetrical in its interfaces
 firstFreeInterface(node::TerminalNode) = (node.interfaces[1].partner==nothing) ? node.interfaces[1] : error("No free interface on $(typeof(node)) $(node.id)")
 
-collectAllOutboundTypes(rule::Function, call_signature::Vector, node::TerminalNode) = DataType[typeof(node.value)]
+collectAllOutboundTypes(rule::Function, call_signature::Vector, node::ForneyLab.WrapableNode) = DataType[typeof(node.value)]
 
 
 ############################################
@@ -81,5 +83,5 @@ end
 """
 Compute average energy
 """
-averageEnergy(::Type{TerminalNode}, marg_mean::Delta, marg_prec::Delta, marg_out::Univariate) = averageEnergy(GaussianNode, marg_mean, marg_prec, marg_out)
-averageEnergy(::Type{TerminalNode}, marg_mean::MvDelta, marg_prec::MatrixDelta, marg_out::Multivariate) = averageEnergy(GaussianNode, marg_mean, marg_prec, marg_out)
+averageEnergy(::Type{TerminalNode}, value::Gaussian, marg_out::Univariate) = averageEnergy(GaussianNode, Delta(unsafeMean(value)), Delta(1.0/unsafeCov(value)), marg_out)
+averageEnergy(::Type{TerminalNode}, value::MvGaussian, marg_out::Multivariate) = averageEnergy(GaussianNode, MvDelta(unsafeMean(value)), MatrixDelta(cholinv(unsafeCov(value))), marg_out)
