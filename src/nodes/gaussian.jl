@@ -875,13 +875,14 @@ end
 ############################
 # Average energy functionals
 ############################
-function U(::Type{GaussianNode}, marg_mean::Univariate, marg_prec::Univariate, marg_out::Univariate)
+
+function averageEnergy(::Type{GaussianNode}, marg_mean::Univariate, marg_prec::Univariate, marg_out::Univariate)
     0.5*log(2*pi) -
     0.5*unsafeLogMean(marg_prec) +
     0.5*unsafeMean(marg_prec)*( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))^2 )
 end
 
-function U{dims}(::Type{GaussianNode}, marg_mean::Multivariate{dims}, marg_prec::MatrixVariate{dims, dims}, marg_out::Multivariate{dims})
+function averageEnergy{dims}(::Type{GaussianNode}, marg_mean::Multivariate{dims}, marg_prec::MatrixVariate{dims, dims}, marg_out::Multivariate{dims})
     0.5*dims*log(2*pi) -
     0.5*unsafeDetLogMean(marg_prec) +
     0.5*trace( unsafeMean(marg_prec)*(unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))*(unsafeMean(marg_out) - unsafeMean(marg_mean))' ))

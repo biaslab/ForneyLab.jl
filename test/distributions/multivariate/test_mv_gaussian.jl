@@ -114,8 +114,8 @@ facts("MvGaussian unit tests") do
         @fact isConsistent(MvGaussian(m=[0.0], xi=[1.0], V=eye(1), W=2*eye(1))) --> false
     end
 
-    context("H() should evaluate the entropy") do
-        @fact ForneyLab.H(MvGaussian()) --> roughly(1.4189385332046727)
+    context("differentialEntropy() should evaluate the differential entropy") do
+        @fact ForneyLab.differentialEntropy(MvGaussian()) --> roughly(1.4189385332046727)
     end
 end
 

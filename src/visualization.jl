@@ -8,9 +8,9 @@ export draw, drawPdf, drawPng
 function graphviz(dot_graph::AbstractString; external_viewer::Symbol=:None)
     # Show a DOT graph
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    if external_viewer == :iTerm
+    if external_viewer == :iterm
         viewDotIniTerm(dot_graph)
-    elseif external_viewer == :Default
+    elseif external_viewer == :default
         viewDotExternal(dot_graph)
     else
         try
@@ -73,7 +73,8 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
                             GainNode => "GainNode",
                             GainAdditionNode => "GainAdditionNode",
                             GainEqualityNode => "GainEqualityNode",
-                            SigmoidNode => "\u03C3"
+                            SigmoidNode => "\u03C3",
+                            BernoulliNode => "Bern"
                         )
 
     dot = "digraph G{splines=true;sep=\"+25,25\";overlap=scalexy;nodesep=1.6;compound=true;\n"

@@ -37,8 +37,8 @@ facts("TerminalNode unit tests") do
                                 Delta(4.0))
     end
 
-    context("U() should evaluate the average energy") do
-        @fact ForneyLab.U(TerminalNode, Delta(0.0), Delta(1.0), Gaussian()) --> roughly(1.4189385332046727)
-        @fact ForneyLab.U(TerminalNode, MvDelta([0.0]), MatrixDelta([1.0].'), MvGaussian()) --> roughly(1.4189385332046727)
+    context("averageEnergy() should evaluate the average energy") do
+        @fact ForneyLab.averageEnergy(TerminalNode, Delta(0.0), Delta(1.0), Gaussian()) --> roughly(1.4189385332046727)
+        @fact ForneyLab.averageEnergy(TerminalNode, MvDelta([0.0]), MatrixDelta([1.0].'), MvGaussian()) --> roughly(1.4189385332046727)
     end
 end

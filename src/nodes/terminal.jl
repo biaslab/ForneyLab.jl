@@ -79,7 +79,7 @@ end
 ############################
 
 """
-Compute average energy as U[q] = -E_q[log f(x)]
+Compute average energy
 """
-U(::Type{TerminalNode}, marg_mean::Delta, marg_prec::Delta, marg_out::Univariate) = U(GaussianNode, marg_mean, marg_prec, marg_out)
-U(::Type{TerminalNode}, marg_mean::MvDelta, marg_prec::MatrixDelta, marg_out::Multivariate) = U(GaussianNode, marg_mean, marg_prec, marg_out)
+averageEnergy(::Type{TerminalNode}, marg_mean::Delta, marg_prec::Delta, marg_out::Univariate) = averageEnergy(GaussianNode, marg_mean, marg_prec, marg_out)
+averageEnergy(::Type{TerminalNode}, marg_mean::MvDelta, marg_prec::MatrixDelta, marg_out::Multivariate) = averageEnergy(GaussianNode, marg_mean, marg_prec, marg_out)

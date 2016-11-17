@@ -129,9 +129,11 @@ function format(dist::MvGaussian)
     elseif isValid(dist.m) && isValid(dist.W)
         return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
     elseif isValid(dist.xi) && isValid(dist.W)
-        return "N(ξ=$(format(dist.xi)), W=$(format(dist.W)))"
+        ensureParameters!(dist, (:m,))
+        return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
     elseif isValid(dist.xi) && isValid(dist.V)
-        return "N(ξ=$(format(dist.xi)), V=$(format(dist.V)))"
+        ensureParameters!(dist, (:m,))
+        return "N(m=$(format(dist.m)), V=$(format(dist.V)))"
     else
         return "N(underdetermined)"
     end
@@ -364,7 +366,7 @@ function convert(::Type{Gaussian}, d::MvGaussian{1})
 end
 
 # Entropy functional
-function H{dims}(dist::MvGaussian{dims})
+function differentialEntropy{dims}(dist::MvGaussian{dims})
     ensureParameters!(dist, (:m, :V))
 
     return  0.5*log(det(dist.V)) +
