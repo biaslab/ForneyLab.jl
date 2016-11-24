@@ -15,6 +15,10 @@ facts("Beta unit tests") do
         @fact dist.a --> tiny
         @fact dist.b --> tiny
     end
+
+    context("differentialEntropy() should evaluate the differential entropy") do
+        @fact ForneyLab.differentialEntropy(Beta(a=1.0, b=2.0)) --> roughly(-0.1931471805599455)
+    end
 end
 
 facts("Marginal calculations for the beta") do

@@ -75,3 +75,8 @@ end
 
 # Converts from Delta{Bool} -> Bernoulli
 Base.convert{T<:Bool}(::Type{Bernoulli}, delta::Delta{T}) = Bernoulli(float(delta.m))
+
+function differentialEntropy(dist::Bernoulli)
+    -(1.0 - dist.p)*log(1.0 - dist.p) -
+    dist.p*log(dist.p)
+end

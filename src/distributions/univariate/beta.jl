@@ -77,3 +77,10 @@ end
 end
 
 ==(x::Beta, y::Beta) = (x.a==y.a && x.b==y.b)
+
+function differentialEntropy(dist::Beta)
+    lbeta(dist.a, dist.b) -
+    (dist.a - 1.0)*digamma(dist.a) -
+    (dist.b - 1.0)*digamma(dist.b) +
+    (dist.a + dist.b - 2.0)*digamma(dist.a + dist.b)
+end

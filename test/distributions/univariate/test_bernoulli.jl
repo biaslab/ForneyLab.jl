@@ -32,6 +32,10 @@ facts("Bernoulli unit tests") do
         @fact ForneyLab.prod!(Delta(true), Bernoulli(0.2), Bernoulli()) --> Bernoulli(1.0)
         @fact_throws ForneyLab.prod!(Delta(false), Bernoulli(1.0), Bernoulli())
     end
+
+    context("differentialEntropy() should evaluate the differential entropy") do
+        @fact ForneyLab.differentialEntropy(Bernoulli(0.2)) --> roughly(0.5004024235381879)
+    end
 end
 
 #####################
