@@ -85,3 +85,9 @@ Compute average energy
 """
 averageEnergy(::Type{TerminalNode}, value::Gaussian, marg_out::Univariate) = averageEnergy(GaussianNode, Delta(unsafeMean(value)), Delta(1.0/unsafeCov(value)), marg_out)
 averageEnergy(::Type{TerminalNode}, value::MvGaussian, marg_out::Multivariate) = averageEnergy(GaussianNode, MvDelta(unsafeMean(value)), MatrixDelta(cholinv(unsafeCov(value))), marg_out)
+
+function averageEnergy(::Type{TerminalNode}, value::Beta, marg_out::Univariate)
+    lbeta(value.a, value.b) -
+    (value.a - 1)*unsafeLogMean(marg_out) -
+    (value.b - 1)*unsafeMirroredLogMean(marg_out)
+end
