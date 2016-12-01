@@ -1,16 +1,6 @@
 facts("LoopySumProduct message passing tests") do
     context("LoopySumProduct execute()") do
         context("Should correctly execute a schedule and return the result of the last step") do
-            initializeAdditionNode()
-
-            algo = LoopySumProduct(n(:add_node).i[:out])
-            prepare!(algo)
-            execute(algo)
-
-            @fact n(:add_node).i[:out].message.payload --> Gaussian(m=0.0, V=2.0)
-        end
-
-        context("Should correctly execute a schedule and return the result of the last step with preset messages") do
             FactorGraph()
             GainNode(gain=1.0, id=:g1)
             GainNode(gain=2.0, id=:g2)

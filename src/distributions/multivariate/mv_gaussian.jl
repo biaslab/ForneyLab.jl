@@ -23,7 +23,7 @@ Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type MvGaussian{dims} <: Multivariate
+type MvGaussian{dims} <: Multivariate{dims}
     m::Vector{Float64}   # Mean vector
     V::AbstractMatrix{Float64}   # Covariance matrix
     W::AbstractMatrix{Float64}   # Weight matrix
@@ -51,9 +51,15 @@ type MvGaussian{dims} <: Multivariate
 end
 
 function MvGaussian(; m::Vector{Float64}=[NaN],
-                                  V::AbstractMatrix{Float64}=Diagonal([NaN]),
-                                  W::AbstractMatrix{Float64}=Diagonal([NaN]),
-                                  xi::Vector{Float64}=[NaN])
+                      V::AbstractMatrix{Float64}=Diagonal([NaN]),
+                      W::AbstractMatrix{Float64}=Diagonal([NaN]),
+                      xi::Vector{Float64}=[NaN])
+    # Default constructor
+    if !any(map(isValid, [m,V,W,xi]))
+        m = [0.0]
+        V = eye(1)
+    end
+
     # Ensure _m and _xi have the same size
     _m = copy(m)
     _xi = copy(xi)
@@ -82,8 +88,6 @@ function MvGaussian(; m::Vector{Float64}=[NaN],
 
     return MvGaussian{length(_m)}(_m, _V, _W, _xi)
 end
-
-MvGaussian() = MvGaussian(m=[0.0], V=reshape([1.0],1,1))
 
 function pdf(dist::MvGaussian, x::Vector{Float64})
     k = size(dist.V, 1)
@@ -125,9 +129,11 @@ function format(dist::MvGaussian)
     elseif isValid(dist.m) && isValid(dist.W)
         return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
     elseif isValid(dist.xi) && isValid(dist.W)
-        return "N(ξ=$(format(dist.xi)), W=$(format(dist.W)))"
+        ensureParameters!(dist, (:m,))
+        return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
     elseif isValid(dist.xi) && isValid(dist.V)
-        return "N(ξ=$(format(dist.xi)), V=$(format(dist.V)))"
+        ensureParameters!(dist, (:m,))
+        return "N(m=$(format(dist.m)), V=$(format(dist.V)))"
     else
         return "N(underdetermined)"
     end
@@ -146,10 +152,10 @@ function prod!{dims}(x::MvGaussian{dims}, y::MvGaussian{dims}, z::MvGaussian{dim
         z.xi = x.xi + y.xi
     elseif isValid(x.m) && isValid(x.W) && isValid(y.m) && isValid(y.W)
         # Use (m,W)x(m,W) parametrization
-        z.m  = cholinv(x.W+y.W) * (x.W*x.m + y.W*y.m)
-        invalidate!(z.V)
         z.W  = x.W + y.W
-        invalidate!(z.xi)
+        z.xi = x.W*x.m + y.W*y.m
+        invalidate!(z.V)
+        invalidate!(z.m)
     elseif isValid(x.xi) && isValid(x.V) && isValid(y.xi) && isValid(y.V)
         # Use (xi,V)x(xi,V) parametrization
         invalidate!(z.m)
@@ -186,29 +192,21 @@ end
     return z
 end
 
-function Base.mean(dist::MvGaussian)
-    if isProper(dist)
-        return ensureParameter!(dist, Val{:m}).m
-    else
-        return fill!(similar(dist.m), NaN)
-    end
+@symmetrical function prod!{dims}(::Void, y::MvDelta{Float64,dims}, z::MvGaussian{dims})
+    # Product of an unknown with MvDelta, force result to be MvGaussian
+    z.m[:] = y.m
+    z.V = tiny.*eye(dims)
+    invalidate!(z.xi)
+    invalidate!(z.W)
+
+    return z
 end
 
-function Base.cov(dist::MvGaussian)
-    if isProper(dist)
-        return ensureParameter!(dist, Val{:V}).V
-    else
-        return fill!(similar(dist.V), NaN)
-    end
-end
+unsafeMean(dist::MvGaussian) = deepcopy(ensureParameter!(dist, Val{:m}).m) # unsafe mean
 
-function Base.var(dist::MvGaussian)
-    if isProper(dist)
-        return diag(ensureParameter!(dist, Val{:V}).V)
-    else
-        return fill!(similar(dist.m), NaN)
-    end
-end
+unsafeVar(dist::MvGaussian) = diag(ensureParameter!(dist, Val{:V}).V) # unsafe variance
+
+unsafeCov(dist::MvGaussian) = deepcopy(ensureParameter!(dist, Val{:V}).V) # unsafe covariance
 
 function isProper(dist::MvGaussian)
     if isWellDefined(dist)
@@ -224,7 +222,7 @@ end
 function sample(dist::MvGaussian)
     isProper(dist) || error("Cannot sample from improper distribution")
     ensureParameters!(dist, (:m, :V))
-    return (dist.V^0.5)*randn(length(dist.m)) + dist.m
+    return chol(dist.V)' *randn(length(dist.m)) + dist.m
 end
 
 # Methods to check and convert different parametrizations
@@ -365,4 +363,13 @@ convert(::Type{MvGaussian}, d::Gaussian) = MvGaussian(m=[d.m], V=d.V*eye(1), W=d
 # Convert MvGaussian -> Gaussian
 function convert(::Type{Gaussian}, d::MvGaussian{1})
     Gaussian(m=d.m[1], V=d.V[1,1], W=d.W[1,1], xi=d.xi[1])
+end
+
+# Entropy functional
+function differentialEntropy{dims}(dist::MvGaussian{dims})
+    ensureParameters!(dist, (:m, :V))
+
+    return  0.5*log(det(dist.V)) +
+            (dims/2)*log(2*pi) +
+            (dims/2)
 end

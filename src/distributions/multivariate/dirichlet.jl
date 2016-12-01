@@ -13,7 +13,7 @@ Construction:
 
     Dirichlet([1.0; 3.0; 2.0])
 """
-type Dirichlet{dims} <: Multivariate
+type Dirichlet{dims} <: Multivariate{dims}
     alpha::Vector{Float64}
 end
 

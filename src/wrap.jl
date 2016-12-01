@@ -7,8 +7,8 @@ type Wrap <: AbstractWrap
     head::TerminalNode
     tail_buffer::Vector{ProbabilityDistribution}
     head_buffer::Vector{ProbabilityDistribution}
-    
-    function Wrap(tail::TerminalNode, head::TerminalNode; id=symbol("$(tail.id)_$(head.id)"), block_size::Int64=0)
+
+    function Wrap(tail::TerminalNode, head::TerminalNode; id=Symbol("$(tail.id)_$(head.id)"), block_size::Int64=0)
         current_graph = currentGraph()
         hasNode(current_graph, tail) || error("The tail node does not belong to the current graph")
         hasNode(current_graph, head) || error("The head node does not belong to the current graph")
@@ -17,7 +17,7 @@ type Wrap <: AbstractWrap
         !haskey(current_graph.wraps, id) || error("The wrap id $(id) already exists in the current graph. Consider specifying an explicit id.")
 
         if !isdefined(current_graph, :block_size)
-            if block_size >= 1 
+            if block_size >= 1
                 # Test whether there are wraps without defined block_size
                 do_wraps_exist = isempty(wraps(current_graph)) || error("The graph contains wraps both with defined and undefined block_size")
                 current_graph.block_size = block_size
@@ -40,10 +40,10 @@ type Wrap <: AbstractWrap
 
         if isdefined(current_graph, :block_size)
             for (component, write_buffer) in current_graph.write_buffers
-                length(write_buffer) == block_size || error("Write buffer attached to $component has length $(length(write_buffer)), which is not equal to the block_size: $block_size.") 
+                length(write_buffer) == block_size || error("Write buffer attached to $component has length $(length(write_buffer)), which is not equal to the block_size: $block_size.")
             end
         end
-        
+
         wrap = new(id, tail, head, tail_buffer, head_buffer)
         current_graph.wraps[id] = wrap
         return wrap

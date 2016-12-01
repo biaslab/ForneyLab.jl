@@ -38,15 +38,28 @@ function prod!{T}(x::Delta{T}, y::Delta{T}, z::Delta{T}=deepcopy(y))
     return z
 end
 
+@symmetrical function prod!(::Void, y::Delta{Float64}, z::Delta{Float64}=Delta())
+    # Multiplication of an unknown with a Delta
+    z.m = y.m
+
+    return z
+end
+
 isProper(dist::Delta) = true
 
-Base.mean(dist::Delta) = dist.m
+unsafeMean(dist::Delta) = dist.m # unsafe mean
 
-Base.var(dist::Delta) = 0.0
+unsafeLogMean(dist::Delta) = log(dist.m)
+
+unsafeCov(dist::Delta) = 0.0 # unsafe covariance
+
+unsafeVar(dist::Delta) = unsafeCov(dist) # unsafe variance
 
 sample(dist::Delta) = dist.m
 
 ==(x::Delta, y::Delta) = (x.m == y.m)
+
+vague{T}(::Type{Delta{T}}) = Delta(rand(T))
 
 # We can convert a lot of object types into a Delta with that object as position of the delta.
 # This is useful so we can write i.e. TerminalNode(3.0) instead of TerminalNode(Delta(3.0)).

@@ -31,6 +31,11 @@ facts("GaussianNode unit tests") do
         @fact testnode.i[:out] --> testnode.interfaces[2]
     end
 
+    context("averageEnergy() should evaluate the average energy") do
+        @fact ForneyLab.averageEnergy(GaussianNode, Gaussian(), Gamma(a=0.5, b=0.5), Gaussian()) --> roughly(2.5541199559354117)
+        @fact ForneyLab.averageEnergy(GaussianNode, MvGaussian(), Wishart(), MvGaussian()) --> roughly(2.5541199559354117)
+    end    
+
     FactorGraph()
 
     context("Sum-product: no fixed parameters") do
@@ -150,14 +155,6 @@ facts("GaussianNode unit tests") do
     end
 
     context("Variational estimation") do
-        context("GaussianNode with fixed variance should propagate a forward message to y") do
-            validateOutboundMessage(GaussianNode(V=2.0),
-                                    2,
-                                    [Gaussian(m=3.0, V=1.0), nothing],
-                                    Gaussian(m=3.0, V=2.0),
-                                    ForneyLab.variationalRule!)
-        end
-
         context("Naive variational implementation (mean field)") do
             context("GaussianNode should propagate a backward message to the mean") do
                 # Precision
@@ -176,7 +173,7 @@ facts("GaussianNode unit tests") do
                 validateOutboundMessage(GaussianNode(),
                                         1,
                                         [nothing, InverseGamma(a=3.0, b=1.0), Gaussian(m=2.0, V=0.1)],
-                                        Gaussian(m=2.0, V=4.0),
+                                        Gaussian(m=2.0, V=0.5),
                                         ForneyLab.variationalRule!)
             end
 
@@ -199,17 +196,6 @@ facts("GaussianNode unit tests") do
                                         [Gaussian(m=4.0, V=1.0), nothing, Gaussian(m=2.0, V=0.1)],
                                         InverseGamma(a=-0.5, b=2.55),
                                         ForneyLab.variationalRule!)
-                # With fixed mean
-                validateOutboundMessage(GaussianNode(m=1.0; form=:precision),
-                                        1,
-                                        [nothing, Gaussian(m=2.0, V=0.5)],
-                                        Gamma(a=1.5, b=0.75),
-                                        ForneyLab.variationalRule!)
-                validateOutboundMessage(GaussianNode(m=4.0; form=:variance),
-                                        1,
-                                        [nothing, Gaussian(m=2.0, V=0.1)],
-                                        InverseGamma(a=-0.5, b=2.05),
-                                        ForneyLab.variationalRule!)
             end
 
             context("GaussianNode should propagate a forward message") do
@@ -229,17 +215,6 @@ facts("GaussianNode unit tests") do
                                         3,
                                         [Gaussian(), InverseGamma(a=2.0, b=1.0), nothing],
                                         Gaussian(m=0.0, V=1.0),
-                                        ForneyLab.variationalRule!)
-                # With fixed mean
-                validateOutboundMessage(GaussianNode(m=1.0; form=:precision),
-                                        2,
-                                        [Gamma(a=1.5, b=0.5), nothing],
-                                        Gaussian(m=1.0, W=3.0),
-                                        ForneyLab.variationalRule!)
-                validateOutboundMessage(GaussianNode(m=1.0; form=:variance),
-                                        2,
-                                        [InverseGamma(a=2.0, b=1.0), nothing],
-                                        Gaussian(m=1.0, V=1.0),
                                         ForneyLab.variationalRule!)
             end
         end

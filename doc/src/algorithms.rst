@@ -9,11 +9,10 @@ Algorithms that are to be executed on a :class:`FactorGraph`, are instances of t
     A specific algorithm type for sum-product message passing::
 
         type SumProduct
-            execute::Function
             schedule::Schedule
         end
 
-    The ``SumProduct`` algorithm holds a ``schedule``, which is executed upon calling the ``execute`` function.
+    The ``SumProduct`` algorithm holds a ``schedule``, which is executed upon calling the ``execute(::SumProduct)`` function.
 
 ForneyLab implements several constructors for algorithm types. Construction of an algorithm generally consists of these steps:
 
@@ -112,18 +111,6 @@ Algorithm constructors for sum-product message passing only work for acyclic gra
 
     Generates a sum-product algorithm that at least propagates messages to all interfaces in the argument vector.
 
-.. function:: SumProduct(::Edge)
-
-    Defines a sum-product algorithm with a schedule towards the forward and backward interfaces of the argument edge and calculates the corresponding marginal.
-
-
-Automatic scheduler
--------------------
-
-.. function:: generateSumProductSchedule(::FactorGraph)
-
-    Returns a sum-product message passing schedule that passes messages towards interfaces concerning write buffers and wraps as defined by the argument graph. The scheduler works through depth first search.
-
 
 The loopy sum-product algorithm
 ===============================
@@ -154,44 +141,40 @@ The ``VariationalBayes`` algorithm implements variational message passing (VMP) 
 The factorization of the recognition distribution is stored under the ``factorization`` field of the algorithm and references the different subgraphs. The actual recognition distributions are stored under the ``recognition_distributions`` field and the number of iterations under ``:n_iterations``.
 
 
+Recognition factorization specification
+---------------------------------------
+
+The variational Bayes algorithm requires the specification of a recognition factorization and an initialization of the recognition distributions. A factorization is specified over an edge cluster. A cluster is a set of edges that are connected by deterministic nodes.
+
+.. function:: factor(::Edge)
+
+    Factorize the cluster of the argument edge.
+
+.. function:: factor(::Vector{Edge})
+
+    Factorize the cluster(s) of the argument edges. If the edges are in separate clusters, this function defines a structured factorization.
+
+.. function:: factorizeMeanField(::FactorGraph)
+
+    Define a naive (mean-field) factorization on the argument graph.
+
+.. function:: initialize(::Edge, ::ProbabilityDistribution)
+
+    Initialize the recognition distribution on the edge.
+
+.. function:: initialize(::Vector{Edge}, ::ProbabilityDistribution)
+
+    Initialize a joint recognition distribution on the edges. 
+
+
 Algorithm constructors
 ----------------------
 
-.. function:: VariationalBayes(recognition_distribution_types::Dict, ::FactorGraph; n_iterations=50)
+After specification of the recognition factorization, the variational algorithm can be constructed.
 
-    Generates a VMP algorithm to calculate the messages towards write buffers and timewraps defined on the argument graph, with a as specified by the ``recognition_distribution_types`` dictionary.
+.. function:: VariationalBayes(::FactorGraph; n_iterations=50)
 
-The factorization of the recognition distribution is specified by the edge(array)-to-distribution-type dictionary called ``recognition_distribution_types``. The conventions for passing the recognition distribution factorization are best specified by example.
-
-The snippet below specifies a full (mean field) factorization around a Gaussian node::
-
-    algo = VariationalBayes(Dict(
-        eg(:mean) => Gaussian,
-        eg(:prec) => Gamma,
-        eg(:out)  => Gaussian))
-
-For defining a full factorization over multiple graph sections, edges with similar distributions are grouped in a column vector::
-
-    algo = VariationalBayes(Dict(
-        [eg(:mean1), eg(:mean2)] => Gaussian,
-        [eg(:prec1), eg(:prec2)] => Gamma,
-        [eg(:out1),  eg(:out2) ] => Gaussian))
-
-Edges belonging to the same cluster are grouped in the rows of a matrix. The following snippet specifies a joint recognition distribution over the mean and precision (note the lack of a separating comma)::
-
-    algo = VariationalBayes(Dict(
-        [eg(:mean) eg(:prec)] => NormalGamma,
-         eg(:out)             => Gaussian))
-
-For more examples, consult the VMP demos.
-
-
-Automatic scheduler
--------------------
-
-.. function:: generateVariationalBayesSchedule!(::RecognitionFactorization, ::FactorGraph)
-
-    Generates and stores an (internal and external) schedule for VMP.
+    Generate a VMP algorithm to calculate the messages towards write buffers and timewraps defined on the argument graph.
 
 
 VMP specific types
@@ -199,31 +182,11 @@ VMP specific types
 
 .. type:: Subgraph
 
-    The internal edges of subgraphs are non-overlapping clusters, which together define the factorization of the recognition distribution. The VMP algorithm executes updates for the subgraphs (corresponding with the factors) in turn::
-
-        type Subgraph
-            internal_edges::Set{Edge}
-            internal_schedule::Schedule # Schedule for internal message passing
-            external_schedule::Array{Node, 1} # Schedule for marginal updates
-        end
+    A factorization is specified by a set of non-overlapping subgraphs. The VMP algorithm executes updates for the subgraphs in turn.
 
 .. type:: RecognitionFactorization
 
-    The ``RecognitionFactorization`` type stores the variational factorization of the graph. The ``edge_to_subgraph`` attribute contains a dictionary for fast subgraph lookup::
-
-        type RecognitionFactorization
-            factors::Array{Subgraph, 1}
-            edge_to_subgraph::Dict{Edge, Subgraph}
-        end
-
-.. type:: RecognitionDistribution
-
-    The ``RecognitionDistribution`` type stores local recognition distributions. The ``edges`` attribute defined the local set of edges on which ``distribution`` is defined::
-
-        type RecognitionDistribution
-            distribution::ProbabilityDistribution
-            edges::Set{Edge} # Edges on which the distribution is defined
-        end
+    The ``RecognitionFactorization`` type stores the variational factorization and recognition distributions, in combination with several lookup tables for algorithm execution.
 
 
 The expectation propagation algorithm

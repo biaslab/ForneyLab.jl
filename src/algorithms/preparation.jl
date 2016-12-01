@@ -6,11 +6,10 @@ function collectTypeVarValues(method::Method, argument_types::Vector{DataType}, 
     # Collect the values of TypeVar objects in method.sig.types, based on the types of the actual arguments (argument_types)
     # The results are collected in a Dict, indexed by the names of the TypeVars.
     # Example: if method.sig.types[2] = Message{MvGaussian{dims}}
-    #           and argument_types[2] = Message{MvGaussian{3}}
+    #           and argument_types[1] = Message{MvGaussian{3}}
     #          {:dims => 3} is added to the results Dict.
-
-    for a=4:length(method.sig.types) # skip the first 3 arguments since they do not contain inbounds
-        _collectTypeVarValues!(method.sig.types[a], argument_types[a], results) # Use internal function for recursive implementation
+    for a=5:length(method.sig.types) # skip the first 4 arguments since they do not contain inbounds (function, node, outbound_id, outbound_type)
+        _collectTypeVarValues!(method.sig.types[a], argument_types[a-1], results) # Use internal function for recursive implementation
     end
 
     return results
@@ -24,11 +23,33 @@ end
 function _collectTypeVarValues!(method_sig_type::DataType, arg_type::DataType, results::Dict{Symbol,Any})
     # Internal function called by collectTypeVarValues
     # The recursion performs a depth-first search through the (hierarchical) parameters of the argument type
-    if length(method_sig_type.parameters) > 0
-        for p = 1:length(method_sig_type.parameters)
+    if length(method_sig_type.parameters) != length(arg_type.parameters)
+        error("Mismatch in parameter vector length between method: $(method_sig_type), and argument: $(arg_type). Consider implementing a custom _collectTypeVarValues! method")
+    end
+
+    if length(arg_type.parameters) > 0
+        for p = 1:length(arg_type.parameters)
             _collectTypeVarValues!(method_sig_type.parameters[p], arg_type.parameters[p], results)
         end
     end
+end
+
+# Custom methods for matching distribution type parameters
+function _collectTypeVarValues!(method_sig_type::Type{Univariate}, arg_type::Type{MvDelta{Float64}}, results::Dict{Symbol,Any})
+    # Do nothing
+end
+
+function _collectTypeVarValues!{dims}(method_sig_type::Type{Multivariate{dims}}, arg_type::Type{MvDelta{Float64, dims}}, results::Dict{Symbol,Any})
+    _collectTypeVarValues!(method_sig_type.parameters[1], arg_type.parameters[2], results)
+end
+
+function _collectTypeVarValues!{dims_n, dims_m}(method_sig_type::Type{MatrixVariate{dims_n, dims_m}}, arg_type::Type{MatrixDelta{Float64, dims_n, dims_m}}, results::Dict{Symbol,Any})
+    _collectTypeVarValues!(method_sig_type.parameters[1], arg_type.parameters[2], results)
+    _collectTypeVarValues!(method_sig_type.parameters[2], arg_type.parameters[3], results)
+end
+
+function _collectTypeVarValues!{dims}(method_sig_type::Type{MatrixVariate{dims, dims}}, arg_type::Type{Wishart{dims}}, results::Dict{Symbol,Any})
+    _collectTypeVarValues!(method_sig_type.parameters[1], arg_type.parameters[1], results)
 end
 
 function collectTypeVarNames(dtype::DataType, results=Set{Symbol}())
@@ -62,7 +83,6 @@ function resolveTypeVars(dtype::DataType, method::Method, argument_types::Vector
     typevars = collectTypeVarNames(dtype)
     (length(typevars) > 0) || return dtype # Nothing to resolve
     typevar_values = collectTypeVarValues(method, argument_types) # Collect all TypeVar values in a Dict indexed by the TypeVar name
-
     for typevar in typevars
         if !haskey(typevar_values, typevar)
             # Call node-specific function to resolve typevar
@@ -81,7 +101,7 @@ function _resolveTypeVars(dtype::DataType, lookup_table::Dict{Symbol,Any})
         return dtype
     else
         param_values = map(dt -> _resolveTypeVars(dt, lookup_table), dtype.parameters)
-        return eval(parse("$(dtype.name){" * join(param_values,",") * "}"))
+        return Main.eval(parse("$(dtype.name){" * join(param_values,",") * "}"))
     end
 end
 
@@ -96,7 +116,7 @@ function collectAllOutboundTypes(rule::Function, call_signature::Vector, node::N
     outbound_types = DataType[]
 
     for method in methods(rule, call_signature)
-        ob_type = resolveTypeVars(method.sig.types[3], method, call_signature, node)
+        ob_type = resolveTypeVars(method.sig.types[4], method, call_signature, node)
 
         # Is the method an approximate msg calculation rule?
         if (typeof(method.sig.types[end])==DataType
@@ -128,7 +148,7 @@ function collectOutboundTypes(rule::Function, node::Node, outbound_interface_id:
             # Try to find extra outbound types by splitting partitioned inbounds
             modified_inbound_types = stripPartitionedInboundTypes(inbound_types)
             sig = buildRuleSignature(rule, node, outbound_interface_id, modified_inbound_types, approx)
-            return DataType[PartitionedDistribution{ob_type, num_factors} for ob_type in collectAllOutboundTypes(rule, sig, node)]
+            return DataType[Partitioned{ob_type, num_factors} for ob_type in collectAllOutboundTypes(rule, sig, node)]
         else
             return DataType[]
         end
@@ -138,20 +158,21 @@ function collectOutboundTypes(rule::Function, node::Node, outbound_interface_id:
     end
 end
 
-function inferOutboundType!(entry::ScheduleEntry)
+function inferOutboundType!{rule}(entry::ScheduleEntry{rule})
     # Infer the outbound type from the node type and the types of the inbounds
 
     inbound_types = entry.inbound_types
+    rule_implementation = implementation(rule)
     if isdefined(entry, :outbound_type)
         # The outbound type is already fixed, so we just need to validate that there exists a suitable computation rule
 
         # Try to find a matching exact rule
-        for outbound_type in collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types)
+        for outbound_type in collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types)
             (entry.outbound_type <: outbound_type) && return(entry)
         end
 
         # Try to find a matching exact rule by unrolling partitioned inbounds
-        for outbound_type in collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, unroll_partitioned_inbounds=true)
+        for outbound_type in collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types, unroll_partitioned_inbounds=true)
             if entry.outbound_type <: outbound_type
                 entry.unrolling_factor = outbound_type.parameters[2]
                 return(entry)
@@ -160,7 +181,7 @@ function inferOutboundType!(entry::ScheduleEntry)
 
         # Try to find a matching approximate rule
         approx = isdefined(entry, :approximation) ? Type{entry.approximation} : Any
-        for outbound_type in collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, approx)
+        for outbound_type in collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types, approx)
             if entry.outbound_type <: outbound_type.parameters[1]
                 entry.approximation = outbound_type.parameters[2]
                 return entry
@@ -168,7 +189,7 @@ function inferOutboundType!(entry::ScheduleEntry)
         end
 
         # Try to find a matching approximate rule by unrolling partitioned inbounds
-        for outbound_type in collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, approx, unroll_partitioned_inbounds=true)
+        for outbound_type in collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types, approx, unroll_partitioned_inbounds=true)
             if entry.outbound_type <: outbound_type.parameters[1]
                 entry.approximation = outbound_type.parameters[2]
                 entry.unrolling_factor = outbound_type.parameters[1].parameters[2]
@@ -181,7 +202,7 @@ function inferOutboundType!(entry::ScheduleEntry)
         # Infer the outbound type
 
         # Try to apply an exact rule
-        outbound_types = collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types)
+        outbound_types = collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types)
         if length(outbound_types) == 1
             entry.outbound_type = outbound_types[1]
             return entry
@@ -190,7 +211,7 @@ function inferOutboundType!(entry::ScheduleEntry)
         end
 
         # Try to apply an exact rule by unrolling partitioned inbounds
-        outbound_types = collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, unroll_partitioned_inbounds=true)
+        outbound_types = collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types, unroll_partitioned_inbounds=true)
         if length(outbound_types) == 1
             entry.outbound_type = outbound_types[1]
             entry.unrolling_factor = outbound_types[1].parameters[2]
@@ -201,7 +222,7 @@ function inferOutboundType!(entry::ScheduleEntry)
 
         # Try to apply an approximate rule
         approx = isdefined(entry, :approximation) ? Type{entry.approximation} : Any
-        outbound_types = collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, approx)
+        outbound_types = collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types, approx)
         if length(outbound_types) == 1
             entry.outbound_type = outbound_types[1].parameters[1]
             entry.approximation = outbound_types[1].parameters[2]
@@ -211,7 +232,7 @@ function inferOutboundType!(entry::ScheduleEntry)
         end
 
         # Try to apply an approximate rule by unrolling partitioned inbounds
-        outbound_types = collectOutboundTypes(entry.rule, entry.node, entry.outbound_interface_id, inbound_types, approx, unroll_partitioned_inbounds=true)
+        outbound_types = collectOutboundTypes(rule_implementation, entry.node, entry.outbound_interface_id, inbound_types, approx, unroll_partitioned_inbounds=true)
         if length(outbound_types) == 1
             entry.outbound_type = outbound_types[1].parameters[1]
             entry.approximation = outbound_types[1].parameters[2]
@@ -230,9 +251,9 @@ function partitionedInboundTypesSize(inbound_types::Vector{DataType})
     # If a partitioned inbound is detected, return the number of factors.
 
     for ib_type in inbound_types
-        if ib_type <: PartitionedDistribution
+        if ib_type <: Partitioned
             return ib_type.parameters[2]
-        elseif ((ib_type <: Message) && (ib_type.parameters[1] <: PartitionedDistribution))
+        elseif ((ib_type <: Message) && (ib_type.parameters[1] <: Partitioned))
             return ib_type.parameters[1].parameters[2]
         end
     end
@@ -241,15 +262,15 @@ function partitionedInboundTypesSize(inbound_types::Vector{DataType})
 end
 
 function stripPartitionedInboundTypes(inbound_types::Vector{DataType})
-    # Simplify a list of inbound types that contains PartitionedDistribution or Message{PartitionedDistribution} entries.
+    # Simplify a list of inbound types that contains Partitioned or Message{Partitioned} entries.
     # Replace every partitioned inbound type by the type of the factors.
     # Check if all partitioned inbounds contain the same number of factors. If not, throw an error.
     stripped_inbound_types = Vector{DataType}()
     num_factors = 0
     for ib_type in inbound_types
-        if ib_type <: PartitionedDistribution
+        if ib_type <: Partitioned
             part_type = ib_type
-        elseif ((ib_type <: Message) && (ib_type.parameters[1] <: PartitionedDistribution))
+        elseif ((ib_type <: Message) && (ib_type.parameters[1] <: Partitioned))
             part_type = ib_type.parameters[1]
         else
             # Regular inbound type
@@ -260,7 +281,7 @@ function stripPartitionedInboundTypes(inbound_types::Vector{DataType})
         if num_factors == 0
             num_factors = part_type.parameters[2]
         elseif num_factors != part_type.parameters[2]
-            error("PartitionedDistribution inbounds for a message computation rule should have the same number of factors.")
+            error("Partitioned inbounds for a message computation rule should have the same number of factors.")
         end
 
         factor_type = part_type.parameters[1]
@@ -305,12 +326,14 @@ end
 # Shared methods for algorithm preparation/compilation
 #######################################################
 
-function buildExecute!(entry::ScheduleEntry, inbound_arguments::Vector)
+function buildExecute!{rule}(   entry::ScheduleEntry{rule},
+                                inbound_arguments::Vector;
+                                outbound_dist::ProbabilityDistribution=entry.node.interfaces[entry.outbound_interface_id].message.payload)
     # Construct the entry.execute function.
     # This function is called by the prepare methods of inference algorithms.
 
     # Get pointer to the outbound distribution
-    outbound_dist = entry.node.interfaces[entry.outbound_interface_id].message.payload
+    rule_implementation = implementation(rule)
 
     # Save the "compiled" message computation rule as an anomynous function in entry.execute
     if entry.unrolling_factor > 0
@@ -318,10 +341,10 @@ function buildExecute!(entry::ScheduleEntry, inbound_arguments::Vector)
         factor_inbounds = copy(inbound_arguments) # inbounds for a single factor
         inbounds_to_unroll = Int64[]
         for i=1:length(inbound_arguments)
-            if typeof(inbound_arguments[i]) <: PartitionedDistribution
+            if typeof(inbound_arguments[i]) <: Partitioned
                 factor_inbounds[i] = inbound_arguments[i].factors[1]
                 push!(inbounds_to_unroll, i)
-            elseif ((typeof(inbound_arguments[i]) <: Message) && (typeof(inbound_arguments[i].payload) <: PartitionedDistribution))
+            elseif ((typeof(inbound_arguments[i]) <: Message) && (typeof(inbound_arguments[i].payload) <: Partitioned))
                 factor_inbounds[i] = Message(inbound_arguments[i].payload.factors[1])
                 push!(inbounds_to_unroll, i)
             end
@@ -338,9 +361,9 @@ function buildExecute!(entry::ScheduleEntry, inbound_arguments::Vector)
                 end
 
                 if isdefined(entry, :approximation)
-                    entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist.factors[factor_idx], factor_inbounds..., entry.approximation)
+                    rule_implementation(entry.node, Val{entry.outbound_interface_id}, outbound_dist.factors[factor_idx], factor_inbounds..., entry.approximation)
                 else
-                    entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist.factors[factor_idx], factor_inbounds...)
+                    rule_implementation(entry.node, Val{entry.outbound_interface_id}, outbound_dist.factors[factor_idx], factor_inbounds...)
                 end
             end
 
@@ -348,9 +371,9 @@ function buildExecute!(entry::ScheduleEntry, inbound_arguments::Vector)
         end
     else
         if isdefined(entry, :approximation)
-            entry.execute = ( () -> entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments..., entry.approximation) )
+            entry.execute = ( () -> rule_implementation(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments..., entry.approximation) )
         else
-            entry.execute = ( () -> entry.rule(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments...) )
+            entry.execute = ( () -> rule_implementation(entry.node, Val{entry.outbound_interface_id}, outbound_dist, inbound_arguments...) )
         end
     end
 
@@ -361,7 +384,9 @@ function injectParameters!{T<:ProbabilityDistribution}(destination::T, source::T
     # Fill the parameters of a destination distribution with the copied parameters of the source
 
     for field in fieldnames(source)
-        setfield!(destination, field, deepcopy(getfield(source, field)))
+        if isdefined(source, field)
+            setfield!(destination, field, deepcopy(getfield(source, field)))
+        end
     end
 
     return destination

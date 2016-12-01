@@ -12,6 +12,8 @@
 
 import sys, os, re
 
+docdir = '{0}/juliadoc/'.format(os.path.abspath('.'))
+sys.path.append(docdir)
 import juliadoc
 import sphinx_rtd_theme
 
@@ -42,7 +44,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'ForneyLab.jl'
 AUTHORS = u"Marco Cox, Thijs van de Laar, and Bert de Vries"
-copyright = u'2014-2015, '+AUTHORS
+copyright = u'2014-2016, '+AUTHORS
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

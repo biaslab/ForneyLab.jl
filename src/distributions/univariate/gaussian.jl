@@ -49,13 +49,16 @@ type Gaussian <: Univariate
 end
 
 function Gaussian(; m::Float64=NaN,
-                                V::Float64=NaN,
-                                W::Float64=NaN,
-                                xi::Float64=NaN)
+                    V::Float64=NaN,
+                    W::Float64=NaN,
+                    xi::Float64=NaN)
+    if isnan(m) && isnan(V) && isnan(W) && isnan(xi)
+        m = 0.0
+        V = 1.0
+    end
+
     return Gaussian(m, V, W, xi)
 end
-
-Gaussian() = Gaussian(m=0.0, V=1.0)
 
 function pdf(dist::Gaussian, x::Float64)
     ensureParameter!(dist, Val{:m})
@@ -84,9 +87,11 @@ function format(dist::Gaussian)
     elseif !isnan(dist.m) && !isnan(dist.W)
         return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
     elseif !isnan(dist.xi) && !isnan(dist.W)
-        return "N(ξ=$(format(dist.xi)), W=$(format(dist.W)))"
+        ensureParameters!(dist, (:m,))
+        return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
     elseif !isnan(dist.xi) && !isnan(dist.V)
-        return "N(ξ=$(format(dist.xi)), V=$(format(dist.V)))"
+        ensureParameters!(dist, (:m,))
+        return "N(m=$(format(dist.m)), V=$(format(dist.V)))"
     else
         return "N(underdetermined)"
     end
@@ -94,9 +99,11 @@ end
 
 show(io::IO, dist::Gaussian) = println(io, format(dist))
 
-Base.mean(dist::Gaussian) = isProper(dist) ? ensureParameter!(dist, Val{:m}).m : NaN
+unsafeMean(dist::Gaussian) = ensureParameter!(dist, Val{:m}).m # unsafe mean
 
-Base.var(dist::Gaussian) = isProper(dist) ? ensureParameter!(dist, Val{:V}).V : NaN
+unsafeCov(dist::Gaussian) = ensureParameter!(dist, Val{:V}).V # unsafe covariance
+
+unsafeVar(dist::Gaussian) = unsafeCov(dist) # unsafe variance
 
 function prod!(x::Gaussian, y::Gaussian, z::Gaussian=Gaussian())
     # Multiplication of 2 Gaussian PDFs: p(z) = p(x) * p(y)
@@ -119,6 +126,15 @@ end
 
 @symmetrical function prod!(x::Gaussian, y::Delta{Float64}, z::Gaussian)
     # Multiplication of Gaussian PDF with Delta, force result to be Gaussian
+    z.m = y.m
+    z.V = tiny
+    z.xi = z.W = NaN
+
+    return z
+end
+
+@symmetrical function prod!(::Void, y::Delta{Float64}, z::Gaussian)
+    # Multiplication of an unknown with Delta, force result to be Gaussian
     z.m = y.m
     z.V = tiny
     z.xi = z.W = NaN
@@ -245,3 +261,12 @@ convert(::Type{Gaussian}, flt::Float64) = Gaussian(m=flt, V=tiny)
 convert(::Type{Gaussian}, delta::Delta{Float64}) = Gaussian(m=delta.m, V=tiny)
 
 convert(::Type{Message{Gaussian}}, msg::Message{Delta{Float64}}) = Message(Gaussian(m=msg.payload.m, V=tiny))
+
+# Entropy functional
+function differentialEntropy(dist::Gaussian)
+    ensureParameters!(dist, (:m, :V))
+
+    return  0.5*log(dist.V) +
+            0.5*log(2*pi) +
+            0.5
+end

@@ -8,9 +8,9 @@ export draw, drawPdf, drawPng
 function graphviz(dot_graph::AbstractString; external_viewer::Symbol=:None)
     # Show a DOT graph
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    if external_viewer == :iTerm
+    if external_viewer == :iterm
         viewDotIniTerm(dot_graph)
-    elseif external_viewer == :Default
+    elseif external_viewer == :default
         viewDotExternal(dot_graph)
     else
         try
@@ -73,7 +73,8 @@ function genDot(nodes::Set{Node}, edges::Set{Edge}; external_edges::Set{Edge}=Se
                             GainNode => "GainNode",
                             GainAdditionNode => "GainAdditionNode",
                             GainEqualityNode => "GainEqualityNode",
-                            SigmoidNode => "\u03C3"
+                            SigmoidNode => "\u03C3",
+                            BernoulliNode => "Bern"
                         )
 
     dot = "digraph G{splines=true;sep=\"+25,25\";overlap=scalexy;nodesep=1.6;compound=true;\n"
@@ -151,7 +152,7 @@ function dot2gif(dot_graph::AbstractString)
     stdout, stdin, proc = readandwrite(`dot -Tgif`)
     write(stdin, dot_graph)
     close(stdin)
-    return readall(stdout)
+    return readstring(stdout)
 end
 
 function dot2svg(dot_graph::AbstractString)
@@ -160,7 +161,7 @@ function dot2svg(dot_graph::AbstractString)
     stdout, stdin, proc = readandwrite(`dot -Tsvg`)
     write(stdin, dot_graph)
     close(stdin)
-    return readall(stdout)
+    return readstring(stdout)
 end
 
 function dot2png(dot_graph::AbstractString)
@@ -169,19 +170,19 @@ function dot2png(dot_graph::AbstractString)
     stdout, stdin, proc = readandwrite(`dot -Tpng`)
     write(stdin, dot_graph)
     close(stdin)
-    return readall(stdout)
+    return readstring(stdout)
 end
 
 function validateGraphVizInstalled()
     # Check if GraphViz is installed
     try
-        (readall(`dot -?`)[1:10] == "Usage: dot") || error()
+        (readstring(`dot -?`)[1:10] == "Usage: dot") || error()
     catch
         error("GraphViz is not installed correctly. Make sure GraphViz is installed. If you are on Windows, manually add the path to GraphViz to your path variable. You should be able to run 'dot' from the command line.")
     end
 end
 
-viewDotExternal(dot_graph::AbstractString) = (@linux? viewDotExternalInteractive(dot_graph::AbstractString) : viewDotExternalImage(dot_graph::AbstractString))
+viewDotExternal(dot_graph::AbstractString) = (is_linux() ? viewDotExternalInteractive(dot_graph::AbstractString) : viewDotExternalImage(dot_graph::AbstractString))
 
 function viewDotExternalInteractive(dot_graph::AbstractString)
     # View a DOT graph in interactive viewer

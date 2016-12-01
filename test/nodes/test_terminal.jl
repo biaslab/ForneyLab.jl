@@ -15,6 +15,8 @@ facts("TerminalNode unit tests") do
         @fact ForneyLab.firstFreeInterface(n(:node)) --> n(:node).i[:out]
         Edge(n(:node), TerminalNode())
         @fact_throws ForneyLab.firstFreeInterface(n(:node))
+        @fact ForneyLab.isDeterministic(TerminalNode(Delta())) --> true
+        @fact ForneyLab.isDeterministic(TerminalNode(Gaussian())) --> false
     end
 
     context("TerminalNode should throw an error when its value is set to a message") do
@@ -33,5 +35,10 @@ facts("TerminalNode unit tests") do
                                 1,
                                 [nothing],
                                 Delta(4.0))
+    end
+
+    context("averageEnergy() should evaluate the average energy") do
+        @fact ForneyLab.averageEnergy(TerminalNode, Delta(0.0), Delta(1.0), Gaussian()) --> roughly(1.4189385332046727)
+        @fact ForneyLab.averageEnergy(TerminalNode, MvDelta([0.0]), MatrixDelta([1.0].'), MvGaussian()) --> roughly(1.4189385332046727)
     end
 end

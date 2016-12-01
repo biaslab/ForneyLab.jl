@@ -11,7 +11,8 @@ export  currentGraph,
         node,
         edge,
         n,
-        eg
+        eg,
+        summaryDependencyGraph
 
 abstract AbstractWrap
 
@@ -91,7 +92,7 @@ function generateNodeId(t::DataType)
     haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
     count = current_graph.counters[t]
     str = replace(lowercase(split(string(t.name),'.')[end]), "node", "")
-    return symbol("$(str)$(count)")
+    return Symbol("$(str)$(count)")
 end
 
 clearMessages!(graph::FactorGraph = currentGraph()) = map(clearMessages!, nodes(graph))
@@ -139,3 +140,42 @@ end
 # Check existance of graph elements
 hasNode(graph::FactorGraph, nd::Node) = (haskey(graph.nodes, nd.id) && is(graph.nodes[nd.id], nd))
 hasEdge(graph::FactorGraph, eg::Edge) = (haskey(graph.edges, eg.id) && is(graph.edges[eg.id], eg))
+
+
+
+"""
+summaryDependencyGraph(fg)
+
+Returns a DependencyGraph (directed graph) that encodes the dependencies among
+summary messages (such as sum-product messages) in FactorGraph `fg`.
+All Interfaces in `fg` are vertices in the dependency graph.
+An edge `V1 --> V2` represents the dependency of summary `V1` on `V2`.
+The dependency graph can be used for loop detection, scheduling, etc.
+"""
+function summaryDependencyGraph(fg::FactorGraph; reverse_edges=false)
+    # Create dependency graph object
+    dg = DependencyGraph{Interface}()
+
+    # Add all Interfaces in fg as vertices in dg
+    for node in nodes(fg)
+        for interface in node.interfaces
+            addVertex!(dg, interface)
+        end
+    end
+
+    # Add all summary dependencies
+    for interface in dg.vertices
+        if isa(interface.partner, Interface) # interface is connected to an Edge
+            for node_interface in interface.partner.node.interfaces
+                is(node_interface, interface.partner) && continue
+                if reverse_edges
+                    addEdge!(dg, interface, node_interface)
+                else
+                    addEdge!(dg, node_interface, interface)
+                end
+            end
+        end
+    end
+
+    return dg
+end

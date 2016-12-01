@@ -10,8 +10,8 @@ facts("StudentsT unit tests") do
         @fact dist.nu --> huge
         @fact mean(StudentsT(m=0.0, lambda=1.0, nu=3.0)) --> 0.0
         @fact var(StudentsT(m=0.0, lambda=1.0, nu=3.0)) --> 3.0
-        @fact isnan(mean(StudentsT(m=0.0, lambda=1.0, nu=1.0))) --> true
-        @fact isnan(var(StudentsT(m=0.0, lambda=1.0, nu=0.5))) --> true
+        @fact isProper(StudentsT(m=0.0, lambda=1.0, nu=1.0)) --> false
+        @fact isProper(StudentsT(m=0.0, lambda=1.0, nu=0.5)) --> false
         @fact vague(StudentsT) --> StudentsT(m=0.0, lambda=tiny, nu=4.0)
     end
 

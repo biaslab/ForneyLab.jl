@@ -146,6 +146,21 @@ function sumProductRule!(   node::GaussianNode{Val{:mean},Val{:precision}},
     return outbound_dist
 end
 
+function sumProductRule!{dims}( node::GaussianNode{Val{:mean},Val{:precision}},
+                                outbound_interface_index::Type{Val{1}},
+                                outbound_dist::MvGaussian{dims},
+                                msg_mean::Any,
+                                msg_prec::Message{MatrixDelta{Float64,dims,dims}},
+                                msg_out::Message{MvDelta{Float64,dims}})
+
+    outbound_dist.m = deepcopy(msg_out.payload.m)
+    invalidate!(outbound_dist.xi)
+    invalidate!(outbound_dist.V)
+    outbound_dist.W = deepcopy(msg_prec.payload.M)
+
+    return outbound_dist
+end
+
 """
 GaussianNode{:mean, :variance}
 
@@ -625,146 +640,52 @@ end
 ############################################
 
 """
-GaussianNode{:mean, :variance}:
-
-     N     q(Ig)
-    --->[N]<---
-    <--  |
-         v q(N)
-"""
-function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
-                            outbound_interface_index::Type{Val{1}},
-                            outbound_dist::Gaussian,
-                            marg_mean::Any,
-                            marg_variance::InverseGamma,
-                            marg_out::Gaussian)
-
-    ensureParameters!(marg_out, (:m,))
-
-    outbound_dist.m = marg_out.m
-    outbound_dist.V = (marg_variance.a + 1)/marg_variance.b
-    outbound_dist.xi = NaN
-    outbound_dist.W = NaN
-
-    return outbound_dist
-end
-
-"""
 GaussianNode{:mean, :precision}:
 
-     N     q(Gam)
+    q(N)   q(gam)
     --->[N]<---
-    <--  |
+         |
          v q(N)
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::Gaussian,
                             marg_mean::Any,
-                            marg_prec::Gamma,
-                            marg_y::Gaussian)
+                            marg_prec::Univariate,
+                            marg_out::Univariate)
 
-    ensureParameters!(marg_y, (:m,))
-
-    outbound_dist.m = marg_y.m
-    outbound_dist.W = marg_prec.a / marg_prec.b
+    outbound_dist.m = unsafeMean(marg_out)
     outbound_dist.xi = NaN
     outbound_dist.V = NaN
+    outbound_dist.W = unsafeMean(marg_prec)
 
     return outbound_dist
 end
 
-"""
-GaussianNode{:mean, :precision}:
-
-     N     q(W)
-    --->[N]<---
-    <--  |
-         v q(N)
-"""
-function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
-                                outbound_interface_index::Type{Val{1}},
-                                outbound_dist::MvGaussian{dims},
-                                marg_mean::Any,
-                                marg_prec::Wishart{dims},
-                                marg_y::MvGaussian{dims})
-
-    ensureParameters!(marg_y, (:m,:W))
-    outbound_dist.m = deepcopy(marg_y.m)
-    outbound_dist.W = marg_prec.nu*marg_prec.V
-    invalidate!(outbound_dist.xi)
-    invalidate!(outbound_dist.V)
-
-    return outbound_dist
-end
-
-"""
-GaussianNode{:mean, :variance}:
-
-    q(N)    Ig
-    --->[N]<---
-         |  -->
-         v q(N)
-"""
-function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
-                            outbound_interface_index::Type{Val{2}},
-                            outbound_dist::InverseGamma,
-                            marg_mean::Gaussian,
-                            marg_var::Any,
-                            marg_out::Gaussian)
-
-    ensureParameters!(marg_out, (:m, :V))
-    ensureParameters!(marg_mean, (:m, :V))
-
-    outbound_dist.a = -0.5
-    outbound_dist.b = 0.5*(marg_out.m - marg_mean.m)^2 + 0.5*(marg_mean.V + marg_out.V)
-
-    return outbound_dist
-end
-
-"""
-GaussianNode{:mean, :precision}:
-
-    q(N)    Gam
-    --->[N]<---
-         |  -->
-         v q(N)
-"""
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::Gamma,
-                            marg_mean::Gaussian,
+                            marg_mean::Univariate,
                             marg_prec::Any,
-                            marg_out::Gaussian)
-
-    ensureParameters!(marg_out, (:m, :V))
-    ensureParameters!(marg_mean, (:m, :V))
+                            marg_out::Univariate)
 
     outbound_dist.a = 1.5
-    outbound_dist.b = 0.5*(marg_out.m - marg_mean.m)^2 + 0.5*(marg_mean.V + marg_out.V)
+    outbound_dist.b = 0.5*( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))^2 )
 
     return outbound_dist
 end
 
-"""
-GaussianNode{:mean, :precision}:
+function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
+                            outbound_interface_index::Type{Val{3}},
+                            outbound_dist::Gaussian,
+                            marg_mean::Univariate,
+                            marg_prec::Univariate,
+                            marg_out::Any)
 
-    q(N)     W
-    --->[N]<---
-         |  -->
-         v q(N)
-"""
-function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
-                                outbound_interface_index::Type{Val{2}},
-                                outbound_dist::Wishart{dims},
-                                marg_mean::MvGaussian{dims},
-                                marg_prec::Any,
-                                marg_out::MvGaussian{dims})
-
-    ensureParameters!(marg_out, (:m, :V))
-    ensureParameters!(marg_mean, (:m, :V))
-    outbound_dist.nu = 2.0 + dimensions(marg_mean)
-    outbound_dist.V = cholinv( marg_out.V + marg_mean.V + (marg_out.m - marg_mean.m)*(marg_out.m - marg_mean.m)' )
+    outbound_dist.m = unsafeMean(marg_mean)
+    outbound_dist.xi = NaN
+    outbound_dist.V = NaN
+    outbound_dist.W = unsafeMean(marg_prec)
 
     return outbound_dist
 end
@@ -774,47 +695,48 @@ GaussianNode{:mean, :variance}:
 
     q(N)   q(Ig)
     --->[N]<---
-         | |
-       N v v
+         |
+         v q(N)
 """
 function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
-                            outbound_interface_index::Type{Val{3}},
+                            outbound_interface_index::Type{Val{1}},
                             outbound_dist::Gaussian,
-                            marg_mean::Gaussian,
-                            marg_var::InverseGamma,
-                            marg_out::Any)
+                            marg_mean::Any,
+                            marg_var::Univariate,
+                            marg_out::Univariate)
 
-    ensureParameters!(marg_mean, (:m,))
-
-    outbound_dist.m = marg_mean.m
-    outbound_dist.V = marg_var.b / (marg_var.a-1.0)
+    outbound_dist.m = unsafeMean(marg_out)
     outbound_dist.xi = NaN
+    outbound_dist.V = unsafeMean(marg_var)
     outbound_dist.W = NaN
 
     return outbound_dist
 end
 
-"""
-GaussianNode{:mean, :precision}:
+function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
+                            outbound_interface_index::Type{Val{2}},
+                            outbound_dist::InverseGamma,
+                            marg_mean::Univariate,
+                            marg_var::Any,
+                            marg_out::Univariate)
 
-    q(N)   q(G)
-    --->[N]<---
-         | |
-       N v v
-"""
-function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
+    outbound_dist.a = -0.5
+    outbound_dist.b = 0.5*(unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))^2)
+
+    return outbound_dist
+end
+
+function variationalRule!(  node::GaussianNode{Val{:mean},Val{:variance}},
                             outbound_interface_index::Type{Val{3}},
                             outbound_dist::Gaussian,
-                            marg_mean::Gaussian,
-                            marg_prec::Gamma,
+                            marg_mean::Univariate,
+                            marg_var::Univariate,
                             marg_out::Any)
 
-    ensureParameters!(marg_mean, (:m,))
-
-    outbound_dist.m = marg_mean.m
-    outbound_dist.W = marg_prec.a / marg_prec.b
+    outbound_dist.m = unsafeMean(marg_mean)
     outbound_dist.xi = NaN
-    outbound_dist.V = NaN
+    outbound_dist.V = unsafeMean(marg_var)
+    outbound_dist.W = NaN
 
     return outbound_dist
 end
@@ -824,157 +746,48 @@ GaussianNode{:mean, :precision}:
 
     q(N)   q(W)
     --->[N]<---
-         | |
-       N v v
+         |
+         v q(N)
 """
+function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
+                                outbound_interface_index::Type{Val{1}},
+                                outbound_dist::MvGaussian{dims},
+                                marg_mean::Any,
+                                marg_prec::MatrixVariate{dims, dims},
+                                marg_out::Multivariate{dims})
+
+    outbound_dist.m = unsafeMean(marg_out)
+    invalidate!(outbound_dist.xi)
+    invalidate!(outbound_dist.V)
+    outbound_dist.W = unsafeMean(marg_prec)
+
+    return outbound_dist
+end
+
+function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
+                                outbound_interface_index::Type{Val{2}},
+                                outbound_dist::Wishart{dims},
+                                marg_mean::Multivariate{dims},
+                                marg_prec::Any,
+                                marg_out::Multivariate{dims})
+
+    outbound_dist.nu = dims + 2.0
+    outbound_dist.V = cholinv( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))*(unsafeMean(marg_out) - unsafeMean(marg_mean))' )
+
+    return outbound_dist
+end
+
 function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
                                 outbound_interface_index::Type{Val{3}},
                                 outbound_dist::MvGaussian{dims},
-                                marg_mean::MvGaussian{dims},
-                                marg_prec::Wishart{dims},
+                                marg_mean::Multivariate{dims},
+                                marg_prec::MatrixVariate{dims, dims},
                                 marg_out::Any)
 
-    ensureParameters!(marg_mean, (:m,:W))
-
-    outbound_dist.m = deepcopy(marg_mean.m)
-    outbound_dist.W = marg_prec.nu*marg_prec.V
+    outbound_dist.m = unsafeMean(marg_mean)
     invalidate!(outbound_dist.xi)
     invalidate!(outbound_dist.V)
-
-    return outbound_dist
-end
-
-
-##########################################################
-# Naive variational update functions with fixed interfaces
-##########################################################
-
-"""
-GaussianNode{:mean, :fixed_variance}
-
-     N     q(N)
-    --->[N]--->
-    <--
-"""
-function variationalRule!(  node::GaussianNode{Val{:mean}, Val{:fixed_variance}},
-                            outbound_interface_index::Type{Val{1}},
-                            outbound_dist::Gaussian,
-                            marg_mean::Any,
-                            marg_out::Gaussian)
-
-    ensureParameters!(marg_out, (:m,))
-
-    outbound_dist.m = marg_out.m
-    outbound_dist.V = node.V[1,1]
-    outbound_dist.xi = NaN
-    outbound_dist.W = NaN
-
-    return outbound_dist
-end
-
-"""
-GaussianNode{:fixed_mean, :variance}
-
-     Ig    q(N)
-    --->[N]--->
-    <--
-"""
-function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:variance}},
-                            outbound_interface_index::Type{Val{1}},
-                            outbound_dist::InverseGamma,
-                            marg_var::Any,
-                            marg_out::Gaussian)
-
-    ensureParameters!(marg_out, (:m, :V))
-
-    outbound_dist.a = -0.5
-    outbound_dist.b = 0.5*(marg_out.m - node.m[1])^2 + 0.5*marg_out.V
-
-    return outbound_dist
-end
-
-"""
-GaussianNode{:fixed_mean, :precision}
-
-    Gam    q(N)
-    --->[N]--->
-    <--
-"""
-function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:precision}},
-                            outbound_interface_index::Type{Val{1}},
-                            outbound_dist::Gamma,
-                            marg_prec::Any,
-                            marg_out::Gaussian)
-
-    ensureParameters!(marg_out, (:m, :V))
-
-    outbound_dist.a = 1.5
-    outbound_dist.b = 0.5*(marg_out.m - node.m[1])^2 + 0.5*marg_out.V
-
-    return outbound_dist
-end
-
-"""
-GaussianNode{:mean, :fixed_variance}
-
-    q(N)    N
-    --->[N]--->
-            -->
-"""
-function variationalRule!(  node::GaussianNode{Val{:mean},Val{:fixed_variance}},
-                            outbound_interface_index::Type{Val{2}},
-                            outbound_dist::Gaussian,
-                            marg_mean::Gaussian,
-                            marg_out::Any)
-
-    ensureParameters!(marg_mean, (:m,))
-
-    outbound_dist.m = marg_mean.m
-    outbound_dist.V = node.V[1,1]
-    outbound_dist.xi = NaN
-    outbound_dist.W = NaN
-
-    return outbound_dist
-end
-
-"""
-GaussianNode{:fixed_mean, :variance}
-
-    q(Ig)    N
-     --->[N]--->
-             -->
-"""
-function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:variance}},
-                            outbound_interface_index::Type{Val{2}},
-                            outbound_dist::Gaussian,
-                            marg_var::InverseGamma,
-                            marg_out::Any)
-
-    outbound_dist.m = node.m[1]
-    outbound_dist.V = marg_var.b/(marg_var.a - 1.0)
-    outbound_dist.xi = NaN
-    outbound_dist.W = NaN
-
-    return outbound_dist
-end
-
-"""
-GaussianNode{:fixed_mean, :precision}
-
-    q(Gam)   N
-     --->[N]--->
-             -->
-"""
-function variationalRule!(  node::GaussianNode{Val{:fixed_mean},Val{:precision}},
-                            outbound_interface_index::Type{Val{2}},
-                            outbound_dist::Gaussian,
-                            marg_prec::Gamma,
-                            marg_out::Any)
-
-    outbound_dist.m = node.m[1]
-    outbound_dist.V = NaN
-    outbound_dist.xi = NaN
-    outbound_dist.W = marg_prec.a / marg_prec.b
+    outbound_dist.W = unsafeMean(marg_prec)
 
     return outbound_dist
 end
@@ -1023,13 +836,13 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
                             outbound_dist::Gamma,
                             msg_mean::Message{Gaussian},
                             msg_prec::Any,
-                            marg_out::Gaussian)
+                            marg_out::Univariate)
 
-    ensureParameters!(marg_out, (:m, :W))
+    ensureParameters!(marg_out, (:m, :V))
     ensureParameters!(msg_mean.payload, (:m,))
 
     outbound_dist.a = 1.5
-    outbound_dist.b = 0.5*((1.0/marg_out.W) + (msg_mean.payload.m - marg_out.m)^2)
+    outbound_dist.b = 0.5*(marg_out.V + (msg_mean.payload.m - marg_out.m)^2)
 
     return outbound_dist
 end
@@ -1056,4 +869,21 @@ function variationalRule!(  node::GaussianNode{Val{:mean},Val{:precision}},
     outbound_dist.V = NaN
 
     return outbound_dist
+end
+
+
+############################
+# Average energy functionals
+############################
+
+function averageEnergy(::Type{GaussianNode}, marg_mean::Univariate, marg_prec::Univariate, marg_out::Univariate)
+    0.5*log(2*pi) -
+    0.5*unsafeLogMean(marg_prec) +
+    0.5*unsafeMean(marg_prec)*( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))^2 )
+end
+
+function averageEnergy{dims}(::Type{GaussianNode}, marg_mean::Multivariate{dims}, marg_prec::MatrixVariate{dims, dims}, marg_out::Multivariate{dims})
+    0.5*dims*log(2*pi) -
+    0.5*unsafeDetLogMean(marg_prec) +
+    0.5*trace( unsafeMean(marg_prec)*(unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))*(unsafeMean(marg_out) - unsafeMean(marg_mean))' ))
 end

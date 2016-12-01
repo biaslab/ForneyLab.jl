@@ -38,9 +38,11 @@ end
 
 isProper(dist::Gamma) = (dist.a >= tiny && dist.b >= tiny)
 
-Base.mean(dist::Gamma) = isProper(dist) ? dist.a/dist.b : NaN
+unsafeMean(dist::Gamma) = dist.a/dist.b
 
-Base.var(dist::Gamma) = isProper(dist) ? dist.a / (dist.b^2) : NaN
+unsafeLogMean(dist::Gamma) = digamma(dist.a) - log(dist.b)
+
+unsafeVar(dist::Gamma) = dist.a/(dist.b^2)
 
 format(dist::Gamma) = "Gam(a=$(format(dist.a)), b=$(format(dist.b)))"
 
@@ -62,13 +64,12 @@ end
     return z
 end
 
-@symmetrical function prod!(x::Gamma, y::Delta{Float64}, z::Gamma)
-    # Multiplication of Gamma PDF with a Delta, force result to be Gamma
-    (y.m >= 0.0) || throw(DomainError())
-    z.b = clamp(y.m / 1e-10, tiny, huge)
-    z.a = clamp(y.m * z.b, tiny, huge)
-
-    return z
-end
-
 ==(x::Gamma, y::Gamma) = (x.a==y.a && x.b==y.b)
+
+# Entropy functional
+function differentialEntropy(dist::Gamma)
+    return  log(gamma(dist.a)) -
+            (dist.a - 1.0)*digamma(dist.a) -
+            log(dist.b) +
+            dist.a
+end

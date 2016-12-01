@@ -1,12 +1,11 @@
 module ForneyLab
 
-using Optim
-using LaTeXStrings
+using Optim, LaTeXStrings
 
 export ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, AbstractDelta
 export sumProductRule!, expectationRule!, variationalRule!
 export InferenceAlgorithm
-export vague, self, ==, isProper, sample, dimensions, pdf
+export vague, self, ==, isProper, sample, dimensions, pdf, mean, var, cov
 export setVerbosity
 export prepare!
 export rules
@@ -18,24 +17,25 @@ printVerbose(msg) = if verbose println(msg) end
 
 # ForneyLab helpers
 include("helpers.jl")
+include("dependency_graph.jl")
 
 # Other includes
-import Base.show, Base.convert
+import Base.show, Base.convert, Base.==, Base.mean, Base.var, Base.cov
 
 # High level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, but Interface is defined before Edge. Because you can not belong to something undefined, Edge will inherit from AbstractEdge, solving this problem.
 # Documentation in docstrings.jl
 abstract ProbabilityDistribution # ProbabilityDistribution can be carried by a Message or an Edge (as marginal)
 abstract Univariate <: ProbabilityDistribution
-abstract Multivariate <: ProbabilityDistribution
-abstract MatrixVariate <: ProbabilityDistribution
+abstract Multivariate{dims} <: ProbabilityDistribution
+abstract MatrixVariate{dims_n, dims_m} <: ProbabilityDistribution
 
 abstract InferenceAlgorithm
 
 # Low-level internals
 include("approximation.jl")     # Types related to approximations
 include("node.jl")              # Node type
-include("message.jl")           # Message type
+include("message.jl")           # Message type and message calculation rules
 
 # Dimensionality of distributions
 dimensions(::Univariate) = 1
@@ -48,6 +48,11 @@ dimensions{T<:Multivariate}(distribution_type::Type{T}) = distribution_type.para
 # Dimensionality of messages and message types
 dimensions(message::Message) = dimensions(message.payload)
 dimensions(message_type::Type{Message}) = dimensions(message_type.parameters[1])
+
+# Mean and variance of distributions, m, v, and S (that are not exported) are the unsafe mean, variance and covariance respectively
+mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error("mean($(dist)) is undefined because the distribution is improper.")
+var(dist::ProbabilityDistribution) = isProper(dist) ? unsafeVar(dist) : error("var($(dist)) is undefined because the distribution is improper.")
+cov(dist::ProbabilityDistribution) = isProper(dist) ? unsafeCov(dist) : error("cov($(dist)) is undefined because the distribution is improper.")
 
 # Delta distributions
 include("distributions/univariate/delta.jl")
@@ -94,6 +99,7 @@ include("nodes/exponential.jl")
 include("nodes/gain_addition.jl")
 include("nodes/gain_equality.jl")
 include("nodes/sigmoid.jl")
+include("nodes/bernoulli.jl")
 
 # Graph, wraps and algorithm
 include("factor_graph.jl")

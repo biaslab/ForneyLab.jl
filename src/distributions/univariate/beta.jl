@@ -1,4 +1,4 @@
-export Beta
+ export Beta
 
 """
 Description:
@@ -39,9 +39,9 @@ end
 
 isProper(dist::Beta) = (dist.a >= tiny && dist.b >= tiny)
 
-Base.mean(dist::Beta) = isProper(dist) ? dist.a/(dist.a+dist.b) : NaN
+unsafeMean(dist::Beta) = dist.a/(dist.a+dist.b)
 
-Base.var(dist::Beta) = isProper(dist) ? dist.a*dist.b/((dist.a+dist.b)^2*(dist.a+dist.b+1)) : NaN
+unsafeVar(dist::Beta) = dist.a*dist.b/((dist.a+dist.b)^2*(dist.a+dist.b+1))
 
 format(dist::Beta) = "Bet(a=$(format(dist.a)), b=$(format(dist.b)))"
 

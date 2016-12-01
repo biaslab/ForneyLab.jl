@@ -14,7 +14,7 @@ Construction:
 
     MvDelta([1.0, 3.0])
 """
-type MvDelta{T, dims} <: Multivariate
+type MvDelta{T, dims} <: Multivariate{dims}
     m::Vector{T}
 end
 
@@ -35,13 +35,22 @@ function prod!{T,dims}(x::MvDelta{T,dims}, y::MvDelta{T,dims}, z::MvDelta{T,dims
     return z
 end
 
+@symmetrical function prod!{dims}(::Void, y::MvDelta{Float64,dims}, z::MvDelta{Float64,dims}=MvDelta(y.m))
+    # Product of an unknown PDF and MvDelta
+    (z.m == y.m) || (z.m[:] = y.m)
+
+    return z
+end
+
 isProper(dist::MvDelta) = true
 
-Base.mean(dist::MvDelta) = dist.m
+vague{T,dims}(::Type{MvDelta{T,dims}}) = MvDelta(rand(T, dims))
 
-Base.var(dist::MvDelta) = zeros(length(dist.m))
+unsafeMean(dist::MvDelta) = dist.m
 
-Base.cov(dist::MvDelta) = Diagonal(zeros(length(dist.m)))
+unsafeVar(dist::MvDelta) = zeros(dist.m)
+
+unsafeCov(dist::MvDelta) = Diagonal(zeros(dist.m))
 
 sample(dist::MvDelta) = dist.m
 

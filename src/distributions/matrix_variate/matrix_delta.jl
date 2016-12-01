@@ -15,7 +15,7 @@ Construction:
     MatrixDelta(eye(3))
     MatrixDelta(diageye(3))
 """
-type MatrixDelta{T, dims_n, dims_m} <: MatrixVariate
+type MatrixDelta{T, dims_n, dims_m} <: MatrixVariate{dims_n, dims_m}
     M::AbstractMatrix{T}
 end
 
@@ -38,13 +38,13 @@ end
 
 isProper(dist::MatrixDelta) = true
 
-Base.mean(dist::MatrixDelta) = dist.M
+vague{T,dims_n, dims_m}(::Type{MatrixDelta{T,dims_n,dims_m}}) = MatrixDelta(rand(T, dims_n, dims_m))
 
-Base.mean(::Type{MatrixDelta{Float64}}, d::MatrixDelta) = deepcopy(d) # Definition for post-processing
+unsafeMean(dist::MatrixDelta) = dist.M
+
+unsafeDetLogMean(dist::MatrixDelta) = log(det(dist.M))
 
 sample(dist::MatrixDelta) = dist.M
-
-sample(::Type{MatrixDelta{Float64}}, d::MatrixDelta) = deepcopy(d) # Definition for post-processing
 
 ==(x::MatrixDelta, y::MatrixDelta) = (x.M == y.M)
 

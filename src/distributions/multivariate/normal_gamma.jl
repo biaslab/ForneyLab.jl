@@ -17,7 +17,7 @@ Reference:
 
     Bishop, 2006; Pattern recognition and machine learning; appendix B
 """
-type NormalGamma <: Multivariate
+type NormalGamma <: Multivariate{2}
     # All univariate, so parameters are floats
     m::Float64    # location
     beta::Float64 # precision
@@ -56,9 +56,9 @@ show(io::IO, dist::NormalGamma) = println(io, format(dist))
 
 ==(x::NormalGamma, y::NormalGamma) = (x.m==y.m && x.beta==y.beta && x.a==y.a && x.b==y.b)
 
-Base.mean(dist::NormalGamma) = [dist.m; dist.a/dist.b]
+unsafeMean(dist::NormalGamma) = [dist.m; dist.a/dist.b]
 
-Base.var(dist::NormalGamma) = [dist.b/(dist.beta*(dist.a-1)); dist.a/(dist.b^2)]
+unsafeVar(dist::NormalGamma) = [dist.b/(dist.beta*(dist.a-1)); dist.a/(dist.b^2)]
 
 dimensions(distribution::NormalGamma) = 2
 

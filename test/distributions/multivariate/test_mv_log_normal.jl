@@ -9,8 +9,7 @@ facts("MvLogNormal unit tests") do
         @fact dist.S --> reshape([0.5],1,1)
         @fact mean(dist) --> roughly(exp(dist.m + 0.5*diag(dist.S)))
         @fact var(dist) --> roughly(exp(2.0*dist.m + diag(dist.S)).*(exp(diag(dist.S)) - 1.0))
-        d = MvLogNormal(m=[0.0], S=-1.0*eye(1))
-        @fact isnan(mean(d)[1]) --> true
+        @fact isProper(MvLogNormal(m=[0.0], S=-1.0*eye(1))) --> false
     end
 
     context("vague() should initialize a vague (almost uninformative) log-normal distribution") do

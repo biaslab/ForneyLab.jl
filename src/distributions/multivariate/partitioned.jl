@@ -1,4 +1,4 @@
-export PartitionedDistribution
+export Partitioned
 
 """
 Description:
@@ -8,7 +8,8 @@ Description:
 
 Parameters:
 
-    dtype<:ProbabilityDistribution: type of the factors
+    dtype<:ProbabilityDistribution: uniform type of the factors
+    dtype<:Union{ProbabilityDistribution}: type for factors of distinct distributions
     n_factors: number of factors
 
 Fields:
@@ -17,68 +18,73 @@ Fields:
 
 Construction:
 
-    PartitionedDistribution([Gaussian(), Gaussian()])
+    Partitioned([Gaussian(), Gaussian()])
 """
-type PartitionedDistribution{dtype<:ProbabilityDistribution,n_factors} <: Multivariate
-    factors::Vector{dtype}
-
-    function PartitionedDistribution(factors::Vector{dtype})
-        (length(factors) > 1) || error("PartitionedDistribution should contain at least 2 factors")
-        for i=2:length(factors)
-            (typeof(factors[i]) == dtype) || error("All factors in PartitionedDistribution should have the same type")
-        end
-
-        return new{dtype,length(factors)}(factors)
-    end
+type Partitioned{dtype, n_factors} <: Multivariate
+    factors::Vector{ProbabilityDistribution}
 end
 
-PartitionedDistribution{T<:ProbabilityDistribution}(factors::Vector{T}) = PartitionedDistribution{typeof(factors[1]), length(factors)}(factors)
+function Partitioned{T<:ProbabilityDistribution}(factors::Vector{T})
+    # Construct distribution type parametrization
+    unique_partition_types = unique(map(typeof, factors))
+    if length(unique_partition_types) == 1 # factor distribution types are uniform
+        dtype = unique_partition_types[1]
+    else # factors consist of varying distribution types
+        dtype = Union{unique_partition_types...}
+    end
 
-PartitionedDistribution() = PartitionedDistribution([Gaussian(), Gaussian()])
+    return Partitioned{dtype, length(factors)}(factors)
+end
 
-function pdf(dist::PartitionedDistribution, x::Vector)
+Partitioned() = Partitioned([Gaussian()])
+
+function pdf{dtype,n_factors}(dist::Partitioned{dtype,n_factors}, x::Vector)
     (length(x) == dimensions(dist)) || throw(DimensionMismatch())
-    d = dimensions(dist.factors[1])
+
     p = 1.0
-    factor_idx = 1
-    factor_dim = 1
-    for i=1:length(x)
-        p *= pdf(dist.factors[factor_idx], x[i])
-        if factor_dim == d
-            factor_dim = 1
-            factor_idx += 1
+    x_start_idx = 1 # starting position for x
+    for factor_idx = 1 : n_factors # iterate over factors
+        factor_dist = dist.factors[factor_idx] # get the factor distribution
+        factor_dims = dimensions(factor_dist) # get the factor distribution dimensionality
+
+         # get the corresponding x indices/index
+        if factor_dims > 1
+            x_idc = x_start_idx : x_start_idx+factor_dims-1
         else
-            factor_dim += 1
+            x_idc = x_start_idx
         end
+
+        p *= pdf(factor_dist, x[x_idc]) # evaluate the factor distribution at the appropriate values obtained from x
+        x_start_idx += factor_dims
     end
 
     return p
 end
 
-function show(io::IO, dist::PartitionedDistribution)
+function show(io::IO, dist::Partitioned)
     println(io, typeof(dist))
     println(io, dist.factors)
 end
 
-function vague!{dtype,n_factors}(dist::PartitionedDistribution{dtype,n_factors})
+function vague!{dtype,n_factors}(dist::Partitioned{dtype,n_factors})
     map(vague!, dist.factors)
 
     return dist
 end
 
-vague{dtype,n_factors}(::Type{PartitionedDistribution{dtype,n_factors}}) = PartitionedDistribution(dtype[vague(dtype) for i=1:n_factors])
+vague{dtype<:ProbabilityDistribution,n_factors}(::Type{Partitioned{dtype,n_factors}}) = Partitioned(dtype[vague(dtype) for i=1:n_factors]) # Note: this function is only implemented for a uniform partition
 
-Base.mean(dist::PartitionedDistribution) = vcat(map(mean, dist.factors)...)
+unsafeMean(dist::Partitioned) = vcat(map(unsafeMean, dist.factors)...)
 
-sample(dist::PartitionedDistribution) = vcat(map(sample, dist.factors)...)
+sample(dist::Partitioned) = vcat(map(sample, dist.factors)...)
 
-isProper(dist::PartitionedDistribution) = all(map(isProper, dist.factors))
+isProper(dist::Partitioned) = all(map(isProper, dist.factors))
 
-dimensions{dtype,n_factors}(distribution::PartitionedDistribution{dtype,n_factors}) = dimensions(dtype)*n_factors
+dimensions{dtype,n_factors}(distribution::Partitioned{dtype,n_factors}) = sum(map(dimensions, distribution.factors))
 
-dimensions{dtype,n_factors}(distribution_type::Type{PartitionedDistribution{dtype,n_factors}}) = dimensions(dtype)*n_factors
+dimensions{dtype<:ProbabilityDistribution, n_factors}(distribution_type::Type{Partitioned{dtype,n_factors}}) = dimensions(dtype)*n_factors # Note: this function is only implemented for a uniform partition
 
-function prod!{Tx,Ty,Tz,n_factors}(x::PartitionedDistribution{Tx,n_factors}, y::PartitionedDistribution{Ty,n_factors}, z::PartitionedDistribution{Tz,n_factors}=vague(PartitionedDistribution{Tx,n_factors}))
+function prod!{Tx,Ty,Tz,n_factors}(x::Partitioned{Tx,n_factors}, y::Partitioned{Ty,n_factors}, z::Partitioned{Tz,n_factors}=vague(Partitioned{Tx,n_factors}))
     # Multiplication of 2 partitioned PDFs: p(z1)...p(zn) = p(x1)*p(y1)...p(xn)*p(yn)
     for f=1:n_factors
         prod!(x.factors[f], y.factors[f], z.factors[f])
@@ -87,28 +93,32 @@ function prod!{Tx,Ty,Tz,n_factors}(x::PartitionedDistribution{Tx,n_factors}, y::
     return z
 end
 
-@symmetrical function prod!{dtype,n_factors}(x::PartitionedDistribution{dtype,n_factors}, y::MvDelta, z::MvDelta=MvDelta(zeros(2)))
+@symmetrical function prod!{dtype,n_factors}(x::Partitioned{dtype,n_factors}, y::MvDelta, z::MvDelta=MvDelta(zeros(dimensions(y))))
     # Multiplication of a partitioned PDF with a delta
-    dims = dimensions(x)
-    factor_dims = dimensions(x.factors[1])
-    (dims == dimensions(y)) || throw(DimensionMismatch())
-    (length(z.m) == dims) || (z.m = zeros(dims))
-    for i=1:n_factors
-        if dtype <: Multivariate
-            idx = 1 + (i-1)*factor_dims
-            factor_range = idx:idx+factor_dims-1
-            y_factor = MvDelta(y.m[factor_range])
-            z.m[factor_range] = (x.factors[i] * y_factor).m
+    (dimensions(x) == dimensions(y) == dimensions(z)) || throw(DimensionMismatch())
+
+    y_start_idx = 1
+    for factor_idx = 1 : n_factors
+        factor_dist = x.factors[factor_idx]
+        factor_dims = dimensions(factor_dist)
+
+        # Select whether to multiply with a multi- or univariate delta
+        if factor_dims > 1
+            y_idc = y_start_idx : y_start_idx+factor_dims-1
+            y_factor_dist = MvDelta(y.m[y_idc])
         else
-            y_factor = Delta(y.m[i])
-            z.m[i] = (x.factors[i] * y_factor).m
+            y_idc = y_start_idx
+            y_factor_dist = Delta(y.m[y_idc])
         end
+
+        z.m[y_idc] = (factor_dist * y_factor_dist).m
+        y_start_idx += factor_dims
     end
 
     return z
 end
 
-function ==(x::PartitionedDistribution, y::PartitionedDistribution)
+function ==(x::Partitioned, y::Partitioned)
     (length(x.factors)==length(x.factors)) || return false
     return all(i->(x.factors[i]==y.factors[i]), collect(1:length(x.factors)))
 end

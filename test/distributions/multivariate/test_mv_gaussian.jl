@@ -101,18 +101,21 @@ facts("MvGaussian unit tests") do
     context("mean(d), var(d), cov(d) should return correct results") do
         @fact mean(MvGaussian(m=[1.0, 2.0], V=eye(2))) --> [1.0, 2.0]
         @fact mean(MvGaussian(xi=[1.0, 2.0], V=2.0*eye(2))) --> [2.0, 4.0]
-        @fact isValid(mean(MvGaussian(xi=[1.0, 2.0], V=-2.0*eye(2)))) --> false
+        @fact isProper(MvGaussian(xi=[1.0, 2.0], V=-2.0*eye(2))) --> false
         @fact var(MvGaussian(m=[1.0, 2.0], V=diagm([2.0, 4.0]))) --> [2.0, 4.0]
         @fact var(MvGaussian(m=[1.0, 2.0], W=diagm([2.0, 4.0]))) --> roughly([0.5, 0.25])
-        @fact isValid(var(MvGaussian(m=[1.0, 2.0], W=diagm([-2.0, 4.0])))) --> false
+        @fact isProper(MvGaussian(m=[1.0, 2.0], W=diagm([-2.0, 4.0]))) --> false
         @fact cov(MvGaussian(m=[1.0, 2.0], V=[2.0 1.0;1.0 2.0])) --> [2.0 1.0;1.0 2.0]
         @fact cov(MvGaussian(m=[1.0, 2.0], W=[2.0 1.0;1.0 2.0])) --> roughly(inv([2.0 1.0;1.0 2.0]))
-        @fact isValid(cov(MvGaussian(m=[1.0, 2.0], W=diagm([-2.0, 4.0])))) --> false
     end
     context("Inconsistent overdetermined MvGaussian should be detected by isConsistent()") do
         @fact isConsistent(MvGaussian(m=[0.0], xi=[1.0], W=eye(1))) --> false
         @fact isConsistent(MvGaussian(m=[0.0], V=eye(1), W=2*eye(1))) --> false
         @fact isConsistent(MvGaussian(m=[0.0], xi=[1.0], V=eye(1), W=2*eye(1))) --> false
+    end
+
+    context("differentialEntropy() should evaluate the differential entropy") do
+        @fact ForneyLab.differentialEntropy(MvGaussian()) --> roughly(1.4189385332046727)
     end
 end
 
