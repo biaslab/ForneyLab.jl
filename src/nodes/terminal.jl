@@ -18,7 +18,7 @@ Construction:
 
     TerminalNode(Gaussian(), id=:my_node)
 """
-type TerminalNode <: WrapableNode
+type TerminalNode <: Node
     id::Symbol
     value::ProbabilityDistribution
     interfaces::Vector{Interface}
@@ -53,7 +53,7 @@ isDeterministic(node::TerminalNode) = (typeof(node.value) <: AbstractDelta) ? tr
 # Implement firstFreeInterface since EqualityNode is symmetrical in its interfaces
 firstFreeInterface(node::TerminalNode) = (node.interfaces[1].partner==nothing) ? node.interfaces[1] : error("No free interface on $(typeof(node)) $(node.id)")
 
-collectAllOutboundTypes(rule::Function, call_signature::Vector, node::ForneyLab.WrapableNode) = DataType[typeof(node.value)]
+collectAllOutboundTypes(rule::Function, call_signature::Vector, node::ForneyLab.TerminalNode) = DataType[typeof(node.value)]
 
 
 ############################################

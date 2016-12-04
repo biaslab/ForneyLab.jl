@@ -3,11 +3,6 @@ export Node
 # Documentation in docstrings.jl
 abstract Node
 
-"""
-Node to which a Wrap can be attached. A node::WrapableNode requires a node.value field.
-"""
-abstract WrapableNode <: Node
-
 Base.deepcopy(::Node) = error("deepcopy(::Node) is not supported. You should use copy(src::Node, id=:new_id) to create an independent copy with no edges attached.")
 
 Base.isless(n1::Node, n2::Node) = isless("$(n1.id)", "$(n2.id)")

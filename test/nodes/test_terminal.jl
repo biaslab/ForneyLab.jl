@@ -11,10 +11,6 @@ facts("TerminalNode unit tests") do
         @fact DataNode --> TerminalNode
     end
 
-    context("TerminalNode should be wrapable") do
-        @fact (TerminalNode <: ForneyLab.WrapableNode) --> true
-    end
-
     context("TerminalNode() should initialize a TerminalNode with 1 interface") do
         FactorGraph()
         TerminalNode(id=:node)

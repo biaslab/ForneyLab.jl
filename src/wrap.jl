@@ -3,12 +3,12 @@ export Wrap, wrap, wraps, hasWrap
 # Wrap type and functions
 type Wrap <: AbstractWrap
     id::Symbol
-    tail::WrapableNode
-    head::WrapableNode
+    tail::TerminalNode
+    head::PriorNode
     tail_buffer::Vector{ProbabilityDistribution}
     head_buffer::Vector{ProbabilityDistribution}
 
-    function Wrap(tail::WrapableNode, head::WrapableNode; id=Symbol("$(tail.id)_$(head.id)"), block_size::Int64=0)
+    function Wrap(tail::TerminalNode, head::PriorNode; id=Symbol("$(tail.id)_$(head.id)"), block_size::Int64=0)
         current_graph = currentGraph()
         hasNode(current_graph, tail) || error("The tail node does not belong to the current graph")
         hasNode(current_graph, head) || error("The head node does not belong to the current graph")
@@ -56,7 +56,7 @@ wrap(id::Symbol, g::FactorGraph=currentGraph()) = g.wraps[id]
 
 wraps(g::FactorGraph=currentGraph()) = Set{Wrap}(values(g.wraps))
 
-function wraps(nd::WrapableNode, g::FactorGraph=currentGraph())
+function wraps(nd::TerminalNode, g::FactorGraph=currentGraph())
     hasNode(g, nd) ||  error("The specified node does not belong to the specified or current graph")
     ws = Set{Wrap}()
     for w in values(g.wraps)
