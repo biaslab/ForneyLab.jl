@@ -45,5 +45,7 @@ facts("TerminalNode unit tests") do
         @fact ForneyLab.averageEnergy(TerminalNode, Gaussian(m=0.0, W=1.0), Gaussian()) --> roughly(1.4189385332046727)
         @fact ForneyLab.averageEnergy(TerminalNode, MvGaussian(m=[0.0], W=reshape([1.0], 1, 1)), MvGaussian()) --> roughly(1.4189385332046727)
         @fact ForneyLab.averageEnergy(TerminalNode, Beta(a=1.0, b=2.0), Beta(a=2.0, b=1.0)) --> roughly(0.8068528194400549)
+        @fact ForneyLab.averageEnergy(TerminalNode, Gamma(a=1.0, b=2.0), Gamma(a=2.0, b=1.0)) --> roughly(3.3068528194400546)
+        @fact ForneyLab.averageEnergy(TerminalNode, Wishart(V=[0.25].', nu=2.0), Wishart(V=[0.5].', nu=4.0)) --> roughly(3.3068528194400546)
     end
 end
