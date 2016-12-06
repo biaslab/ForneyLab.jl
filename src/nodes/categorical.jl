@@ -53,7 +53,7 @@ CategoricalNode:
     --->[Cat]--->
               -->
 """
-function variationalRule!{n_factors}{n_factors}(  node::CategoricalNode,
+function variationalRule!{n_factors}(  node::CategoricalNode,
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::Categorical{n_factors},
                             pi::Dirichlet{n_factors},
@@ -89,7 +89,7 @@ CategoricalNode:
     --->[Cat]--->
     <--
 """
-function variationalRule!(  node::CategoricalNode,
+function variationalRule!{n_factors}(  node::CategoricalNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::Dirichlet{n_factors},
                             pi::Any,
