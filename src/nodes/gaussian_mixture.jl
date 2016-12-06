@@ -415,7 +415,6 @@ function variationalRule!{dims,n_factors}(  node::GaussianMixtureNode,
         outbound_dist.factors[k].V = pinv(q_z.p[k]*gausterm)
       end
     end
-
     return outbound_dist
 end
 
@@ -549,7 +548,7 @@ end
 # Multivariate Gaussian with multiple clusters
 function variationalRule!{dims,n_factors}(node::GaussianMixtureNode,
                             ::Type{Val{4}},
-                            outbound_dist::Categorical{n_factors},
+                            outbound_dist::ForneyLab.Categorical{n_factors},
                             q_m::Partitioned{MvGaussian{dims},n_factors},
                             q_w::Partitioned{Wishart{dims}, n_factors},
                             q_x::MvGaussian{dims},
@@ -559,9 +558,6 @@ function variationalRule!{dims,n_factors}(node::GaussianMixtureNode,
 
     a = zeros(n_factors)
     ln_ro = zeros(n_factors)
-
-    k = collect(1:n_factors)
-    sum_a = sum(q_pi.alpha[k])
 
     i = collect(1:dims)
 

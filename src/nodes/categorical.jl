@@ -56,8 +56,8 @@ CategoricalNode:
 function variationalRule!{n_factors}(  node::CategoricalNode,
                             outbound_interface_index::Type{Val{2}},
                             outbound_dist::Categorical{n_factors},
-                            pi::Dirichlet{n_factors},
-                            z::Any)
+                            q_pi::Dirichlet{n_factors},
+                            q_z::Any)
 
     k = collect(1:n_factors)
     sum_a = sum(q_pi.alpha[k])
@@ -92,11 +92,11 @@ CategoricalNode:
 function variationalRule!{n_factors}(  node::CategoricalNode,
                             outbound_interface_index::Type{Val{1}},
                             outbound_dist::Dirichlet{n_factors},
-                            pi::Any,
-                            z::Categorical{n_factors})
+                            q_pi::Any,
+                            q_z::Categorical{n_factors})
 
 
-    outbound_dist.alpha = z.p+1.
+    outbound_dist.alpha = q_z.p+1.
 
     return outbound_dist
 end
