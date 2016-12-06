@@ -272,9 +272,9 @@ end
 # Multivariate Gaussian with multiple clusters
 function variationalRule!{dims,n_factors}(  node::GaussianMixtureNode,
                             ::Type{Val{1}},
-                            outbound_dist::PartitionedDistribution{MvGaussian{dims},n_factors},
+                            outbound_dist::Partitioned{MvGaussian{dims},n_factors},
                             ::Any,
-                            q_w::PartitionedDistribution{Wishart{dims},n_factors},
+                            q_w::Partitioned{Wishart{dims},n_factors},
                             q_x::MvGaussian{dims},
                             q_z::Categorical{n_factors})
 
@@ -295,10 +295,10 @@ end
 # # Univariate Gaussian with multiple clusters
 # function variationalRule!{n_factors}(  node::GaussianMixtureNode,
 #                             ::Type{Val{2}},
-#                             outbound_dist::PartitionedDistribution{Gaussian,n_factors},
+#                             outbound_dist::Partitioned{Gaussian,n_factors},
 #                             q_pi::Dirichlet{n_factors},
 #                             ::Any,
-#                             q_w::PartitionedDistribution{Gamma,n_factors},
+#                             q_w::Partitioned{Gamma,n_factors},
 #                             q_x::Gaussian,
 #                             q_z::Categorical{n_factors})
 #
@@ -392,8 +392,8 @@ end
 # Multivariate Gaussian with multiple clusters
 function variationalRule!{dims,n_factors}(  node::GaussianMixtureNode,
                             ::Type{Val{2}},
-                            outbound_dist::PartitionedDistribution{Wishart{dims},n_factors},
-                            q_m::PartitionedDistribution{MvGaussian{dims},n_factors},
+                            outbound_dist::Partitioned{Wishart{dims},n_factors},
+                            q_m::Partitioned{MvGaussian{dims},n_factors},
                             ::Any,
                             q_x::MvGaussian{dims},
                             q_z::Categorical{n_factors})
@@ -423,9 +423,9 @@ end
 # # Univariate Gaussian with multiple clusters
 # function variationalRule!{n_factors}(  node::GaussianMixtureNode,
 #                             ::Type{Val{3}},
-#                             outbound_dist::PartitionedDistribution{Gamma,n_factors},
+#                             outbound_dist::Partitioned{Gamma,n_factors},
 #                             q_pi::Dirichlet{n_factors},
-#                             q_m::PartitionedDistribution{Gaussian,n_factors},
+#                             q_m::Partitioned{Gaussian,n_factors},
 #                             ::Any,
 #                             q_x::Gaussian,
 #                             q_z::Categorical{n_factors})
@@ -550,8 +550,8 @@ end
 function variationalRule!{dims,n_factors}(node::GaussianMixtureNode,
                             ::Type{Val{4}},
                             outbound_dist::Categorical{n_factors},
-                            q_m::PartitionedDistribution{MvGaussian{dims},n_factors},
-                            q_w::PartitionedDistribution{Wishart{dims}, n_factors},
+                            q_m::Partitioned{MvGaussian{dims},n_factors},
+                            q_w::Partitioned{Wishart{dims}, n_factors},
                             q_x::MvGaussian{dims},
                             ::Any)
 
@@ -600,8 +600,8 @@ end
 #                             ::Type{Val{5}},
 #                             outbound_dist::Categorical{n_factors},
 #                             q_pi::Dirichlet{n_factors},
-#                             q_m::PartitionedDistribution{Gaussian,n_factors},
-#                             q_w::PartitionedDistribution{Gamma,n_factors},
+#                             q_m::Partitioned{Gaussian,n_factors},
+#                             q_w::Partitioned{Gamma,n_factors},
 #                             q_x::Gaussian,
 #                             ::Any)
 #
@@ -691,8 +691,8 @@ end
 function variationalRule!{dims,n_factors}(  node::GaussianMixtureNode,
                             ::Type{Val{3}},
                             outbound_dist::MvGaussian{dims},
-                            q_m::PartitionedDistribution{MvGaussian{dims}, n_factors},
-                            q_w::PartitionedDistribution{Wishart{dims},n_factors},
+                            q_m::Partitioned{MvGaussian{dims}, n_factors},
+                            q_w::Partitioned{Wishart{dims},n_factors},
                             q_x::Any,
                             q_z::Categorical{n_factors})
 
