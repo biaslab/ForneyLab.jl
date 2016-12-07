@@ -59,24 +59,18 @@ function variationalRule!{n_factors}(  node::CategoricalNode,
                             q_pi::Dirichlet{n_factors},
                             q_z::Any)
 
-    k = collect(1:n_factors)
-    sum_a = sum(q_pi.alpha[k])
-    ro = zeros(n_factors)
 
-    for k = 1:n_factors
-      e_ln_pi   =   digamma(q_pi.alpha[k]) - digamma(sum_a)
-      ro[k]   =   exp(e_ln_pi)
-    end
+    ro  =   exp(digamma(q_pi.alpha))
 
-    sum_ro=sum(ro)
+    sum_ro = sum(ro)
 
     #normalize rho
-    for k = 1:n_factors
-      if sum_ro > tiny
-        outbound_dist.p[k] = ro[k]/sum_ro
-      else
-        outbound_dist.p[k] = 1/n_factors
-      end
+    if sum_ro > tiny
+      outbound_dist.p= ro/sum_ro
+    else
+        for k = 1:n_factors
+          outbound_dist.p[k] = 1/n_factors
+        end
     end
 
     return outbound_dist
@@ -99,4 +93,12 @@ function variationalRule!{n_factors}(  node::CategoricalNode,
     outbound_dist.alpha = q_z.p+1.
 
     return outbound_dist
+end
+
+############################
+# Average energy functional
+############################
+
+function averageEnergy(::Type{CategoricalNode}, q_pi::Dirichlet, q_z::Categorical)
+    digamma(sum(q_pi.alpha))-(q_z.p'*digamma(q_pi.alpha))[1]
 end
