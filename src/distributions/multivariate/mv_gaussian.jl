@@ -222,7 +222,7 @@ end
 function sample(dist::MvGaussian)
     isProper(dist) || error("Cannot sample from improper distribution")
     ensureParameters!(dist, (:m, :V))
-    return (dist.V^0.5)*randn(length(dist.m)) + dist.m
+    return chol(dist.V)' *randn(length(dist.m)) + dist.m
 end
 
 # Methods to check and convert different parametrizations

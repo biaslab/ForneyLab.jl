@@ -161,7 +161,6 @@ sumProductRule!(node::EqualityNode, outbound_interface_index::Type{Val{3}}, outb
 
 """
 EqualityNode:
-
     Cat       Cat
      --->[=]<---
           | |
@@ -177,7 +176,6 @@ sumProductRule!{k}(node::EqualityNode, outbound_interface_index::Type{Val{3}}, o
 
 """
 EqualityNode:
-
     Dir       Dir
      --->[=]<---
           | |
