@@ -255,12 +255,20 @@ function variationalRule!{dims,n_factors}(  node::GaussianMixtureNode,
 
      outbound_dist.factors[1].m    =   deepcopy(q_x.m)
      outbound_dist.factors[2].m    =   deepcopy(q_x.m)
-     invalidate!(outbound_dist.factors[1].V)
-     invalidate!(outbound_dist.factors[2].V)
+     invalidate!(outbound_dist.factors[1].W)
+     invalidate!(outbound_dist.factors[2].W)
      invalidate!(outbound_dist.factors[1].xi)
      invalidate!(outbound_dist.factors[2].xi)
-     outbound_dist.factors[1].W    =   (q_z.p*q_w.factors[1].nu*q_w.factors[1].V)
-     outbound_dist.factors[2].W    =   ((1. - q_z.p)*q_w.factors[2].nu*q_w.factors[2].V)
+     outbound_dist.factors[1].V    =   pinv(q_z.p*q_w.factors[1].nu*q_w.factors[1].V)
+     outbound_dist.factors[2].V    =   pinv((1. - q_z.p)*q_w.factors[2].nu*q_w.factors[2].V)
+
+     #V must be positive definite
+     if det(outbound_dist.factors[1].V)<tiny
+       outbound_dist.factors[1].V=outbound_dist.factors[1].V+tiny*eye(dims)
+     end
+     if det(outbound_dist.factors[2].V)<tiny
+       outbound_dist.factors[2].V=outbound_dist.factors[2].V+tiny*eye(dims)
+     end
 
     return outbound_dist
 end
@@ -283,9 +291,9 @@ function variationalRule!{dims,n_factors}(  node::GaussianMixtureNode,
 
     for k = 1:n_factors
       outbound_dist.factors[k].m  = deepcopy(q_x.m)
-      invalidate!(outbound_dist.factors[k].V)
+      outbound_dist.factors[k].V = pinv(q_z.p[k]*q_w.factors[k].nu*q_w.factors[k].V)
       invalidate!(outbound_dist.factors[k].xi)
-      outbound_dist.factors[k].W  = q_z.p[k]*q_w.factors[k].nu*q_w.factors[k].V
+      invalidate!(outbound_dist.factors[k].W)
     end
 
     return outbound_dist
@@ -468,14 +476,14 @@ function variationalRule!{n_factors}(  node::GaussianMixtureNode,
       #e_ln_pi1    =   digamma(q_pi.a) - digamma(q_pi.a + q_pi.b)
       e_ln_w1     =   digamma(q_w.factors[1].a) - log(q_w.factors[1].b)
       e_m1_square =   q_x.m^2 - 2.0*q_x.m*q_m.factors[1].m + q_m.factors[1].V + q_m.factors[1].m^2 + q_x.V
-      ln_ro1      =   0.5*e_ln_w1 - 0.5*log(2pi) - 0.5*q_w.factors[1].a/q_w.factors[1].b*e_m1_square
+      ln_ro1      =   0.5*e_ln_w1 - 0.5*q_w.factors[1].a/q_w.factors[1].b*e_m1_square
 
       #calculating ln(ro2) for normalization
 
       #e_ln_pi2    =   digamma(q_pi.b) - digamma(q_pi.b + q_pi.a)
       e_ln_w2     =   digamma(q_w.factors[2].a) - log(q_w.factors[2].b)
       e_m2_square =   q_x.m^2 - 2.0*q_x.m*q_m.factors[2].m + q_m.factors[2].V + q_m.factors[2].m^2 + q_x.V
-      ln_ro2      =   0.5*e_ln_w2 - 0.5*log(2pi) - 0.5*q_w.factors[2].a/q_w.factors[2].b*e_m2_square
+      ln_ro2      =   0.5*e_ln_w2 -0.5*q_w.factors[2].a/q_w.factors[2].b*e_m2_square
 
       if (exp(ln_ro1) + exp(ln_ro2)) > tiny
           outbound_dist.p = exp(ln_ro1)/(exp(ln_ro1) + exp(ln_ro2))
