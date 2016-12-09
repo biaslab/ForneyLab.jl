@@ -96,7 +96,7 @@ facts("GaussianMixtureNode unit tests") do
         validateOutboundMessage(GaussianMixtureNode(),
                                 4,
                                 [Partitioned([MvGaussian(m=[5.,0.],V=[3 0.0; 0.0 3.]),MvGaussian(m=[10.,1.5],V=[2. 0.0; 0.0 1.])]),Partitioned([Wishart(V=[1. 0.;0. 1.],nu=3.), Wishart(V=[2. 0.;0. 2.],nu=3.)]), MvGaussian(m=[8.5,1.],V=[0.5 0;0 0.5]), nothing],
-                                Bernoulli(9.462663664175011e-6),
+                                Bernoulli(0.0006053637068648643),
                                 ForneyLab.variationalRule!)
 
         #message to m multivariate with multiple clusters
@@ -124,7 +124,7 @@ facts("GaussianMixtureNode unit tests") do
         validateOutboundMessage(GaussianMixtureNode(),
                                 4,
                                 [Partitioned([MvGaussian(m=[5.,0.],V=[3 0.0; 0.0 3.]),MvGaussian(m=[10.,1.5],V=[2. 0.0; 0.0 1.]), MvGaussian(m=[12.,1.],V=[2. 0.0; 0.0 1.])]),Partitioned([Wishart(V=[1. 0.;0. 1.],nu=3.), Wishart(V=[2. 0.;0. 2.],nu=3.),Wishart(V=[2. 0.;0. 2.],nu=4.)]),  MvGaussian(m=[8.5,1.],V=[0.5 0;0 0.5]), nothing],
-                                Categorical([9.462663664175011e-6, 0.9999905373363358, 2.8624914934988436e-20]),
+                                Categorical([0.0006049974633578021, 0.9987900050732843, 0.0006049974633578021]),
                                 ForneyLab.variationalRule!)
 
     end

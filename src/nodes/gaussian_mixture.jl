@@ -462,130 +462,72 @@ end
 
 # VMP message towards i[:z]
 # Multivariate Gaussian with multiple clusters
-function variationalRule!{dims,n_factors}(node::GaussianMixtureNode,
-                            outbound_interface_index::Type{Val{4}},
-                            outbound_dist::ForneyLab.Categorical{n_factors},
-                            q_m::Partitioned{MvGaussian{dims},n_factors},
-                            q_w::Partitioned{Wishart{dims}, n_factors},
-                            q_x::MvGaussian{dims},
-                            q_z::Any)
-
-    ensureParameters!(q_x, (:m, :V))
-
-    a = zeros(n_factors)
-    ln_ro = zeros(n_factors)
-
-    i = collect(1:dims)
-
+# TODO: constrain to Multivariate{dims}, MatrixVariate{dims, dims}
+function variationalRule!{dims, n_factors, TN<:Multivariate, TW<:MatrixVariate}(node::GaussianMixtureNode,
+                                                                                outbound_interface_index::Type{Val{4}},
+                                                                                outbound_dist::Categorical{n_factors},
+                                                                                q_m::Partitioned{TN, n_factors},
+                                                                                q_w::Partitioned{TW, n_factors},
+                                                                                q_x::MvGaussian{dims},
+                                                                                q_z::Any)
+    rho = zeros(n_factors)
     for k = 1:n_factors
-      ensureParameters!(q_m.factors[k], (:m, :V))
-
-      multidi = sum(digamma((q_w.factors[k].nu + 1 - i)/2))
-
-      e_ln_w=  multidi + dims*log(2.0) + log(det(q_w.factors[k].V))
-
-      e_w = q_w.factors[k].nu*q_w.factors[k].V
-
-      gausterm = (transpose(q_x.m-q_m.factors[k].m)*e_w*(q_x.m - q_m.factors[k].m))[1] + trace((q_x.V + q_m.factors[k].V)*e_w)
-      ln_ro[k]        =   0.5*e_ln_w - dims/2.0*log(2.0*pi) - 0.5*gausterm
-
+        rho[k] = clamp(exp(-averageEnergy(GaussianNode, q_m.factors[k], q_w.factors[k], q_x)), tiny, huge)
     end
-
-    sum_ro=sum(exp(ln_ro))
-
-    if sum_ro > tiny
-      for k = 1:n_factors
-        outbound_dist.p[k] = exp(ln_ro[k])/sum_ro
-      end
-    else
-      for k = 1:n_factors
-        outbound_dist.p[k] = 1/n_factors
-      end
-    end
+    outbound_dist.p = rho./sum(rho)
 
     return outbound_dist
 end
 #
 # VMP message towards i[:z]
 # Univariate gaussian with multiple clusters
-function variationalRule!{n_factors}(  node::GaussianMixtureNode,
-                            outbound_interface_index::Type{Val{4}},
-                            outbound_dist::Categorical{n_factors},
-                            q_m::Partitioned{Gaussian,n_factors},
-                            q_w::Partitioned{Gamma,n_factors},
-                            q_x::Gaussian,
-                            q_z::Any)
-
-
-      ensureParameters!(q_x, (:m, :V))
-
-      a = zeros(n_factors)
-      ln_ro = zeros(n_factors)
-
-
-      #Calculate rho for each cluster
-      for k = 1:n_factors
-        ensureParameters!(q_m.factors[k], (:m, :V))
-
-        e_ln_w     =   digamma(q_w.factors[k].a) - log(q_w.factors[k].b)
-        e_m_square =   q_x.m^2 - 2.0*q_x.m*q_m.factors[k].m + q_m.factors[k].V + q_m.factors[k].m^2 + q_x.V
-        ln_ro[k]   =   0.5*e_ln_w - 0.5*log(2pi) - 0.5*q_w.factors[k].a/q_w.factors[k].b*e_m_square
-
-      end
-
-      sum_ro=sum(exp(ln_ro))
-
-      #normalize rho
-      for k = 1:n_factors
-          if sum_ro > tiny
-            outbound_dist.p[k] = exp(ln_ro[k])/sum_ro
-          else
-            outbound_dist.p[k] = 1/n_factors
-          end
-      end
-
-
+function variationalRule!{n_factors, TN<:Univariate, TG<:Univariate}(   node::GaussianMixtureNode,
+                                                                        outbound_interface_index::Type{Val{4}},
+                                                                        outbound_dist::Categorical{n_factors},
+                                                                        q_m::Partitioned{TN, n_factors},
+                                                                        q_w::Partitioned{TG, n_factors},
+                                                                        q_x::Univariate,
+                                                                        q_z::Any)
+    rho = zeros(n_factors)
+    for k = 1:n_factors
+        rho[k] = clamp(exp(-averageEnergy(GaussianNode, q_m.factors[k], q_w.factors[k], q_x)), tiny, huge)
+    end
+    outbound_dist.p = rho./sum(rho)
 
     return outbound_dist
 end
 #
 #
 # VMP message towards i[:x]
-function variationalRule!{n_factors}(  node::GaussianMixtureNode,
-                            outbound_interface_index::Type{Val{3}},
-                            outbound_dist::Gaussian,
-                            q_m::Partitioned{Gaussian,n_factors},
-                            q_w::Partitioned{Gamma,n_factors},
-                            q_x::Any,
-                            q_z::Bernoulli)
-
-
-
-    V = pinv(q_z.p*q_w.factors[1].a/q_w.factors[1].b + (1. - q_z.p)*q_w.factors[2].a/q_w.factors[2].b)
-    outbound_dist.m = (q_z.p*q_m.factors[1].m*q_w.factors[1].a/q_w.factors[1].b + (1. - q_z.p)*q_m.factors[2].m*q_w.factors[2].a/q_w.factors[2].b)*V
-    outbound_dist.V = V
-    outbound_dist.W = NaN
-    outbound_dist.xi = NaN
-
+function variationalRule!{n_factors, TN<:Univariate, TG<:Univariate}(   node::GaussianMixtureNode,
+                                                                        outbound_interface_index::Type{Val{3}},
+                                                                        outbound_dist::Gaussian,
+                                                                        q_m::Partitioned{TN, n_factors},
+                                                                        q_w::Partitioned{TG, n_factors},
+                                                                        q_x::Any,
+                                                                        q_z::Bernoulli)
+    outbound_dist.m  = NaN
+    outbound_dist.V  = NaN
+    outbound_dist.xi = unsafeMean(q_w.factors[1])*unsafeMean(q_m.factors[1])*unsafeMean(q_z) + unsafeMean(q_w.factors[2])*unsafeMean(q_m.factors[2])*(1.0 - unsafeMean(q_z))
+    outbound_dist.W  = unsafeMean(q_z)*unsafeMean(q_w.factors[1]) + (1.0 - unsafeMean(q_z))*unsafeMean(q_w.factors[2])
 
     return outbound_dist
 end
 #
 # #
 # VMP message towards i[:x]
-function variationalRule!{dims,n_factors}(  node::GaussianMixtureNode,
-                            outbound_interface_index::Type{Val{3}},
-                            outbound_dist::MvGaussian{dims},
-                            q_m::Partitioned{MvGaussian{dims}, n_factors},
-                            q_w::Partitioned{ForneyLab.Wishart{dims},n_factors},
-                            q_x::Any,
-                            q_z::ForneyLab.Bernoulli)
-
-    lambda = (q_z.p*q_w.factors[1].nu*q_w.factors[1].V + (1. - q_z.p)*q_w.factors[2].nu*q_w.factors[2].V)
-    outbound_dist.xi = (q_z.p*q_w.factors[1].nu*q_w.factors[1].V*q_m.factors[1].m + (1. - q_z.p)*q_w.factors[2].nu*q_w.factors[2].V*q_m.factors[2].m)
-    outbound_dist.W = (lambda)
+# TODO: replace MvGaussian{dims} with TN
+function variationalRule!{dims, n_factors, TW<:MatrixVariate}(  node::GaussianMixtureNode,
+                                                                outbound_interface_index::Type{Val{3}},
+                                                                outbound_dist::MvGaussian{dims},
+                                                                q_m::Partitioned{MvGaussian{dims}, n_factors},
+                                                                q_w::Partitioned{TW, n_factors},
+                                                                q_x::Any,
+                                                                q_z::Bernoulli)
     invalidate!(outbound_dist.m)
     invalidate!(outbound_dist.V)
+    outbound_dist.xi = unsafeMean(q_w.factors[1])*unsafeMean(q_m.factors[1])*unsafeMean(q_z) + unsafeMean(q_w.factors[2])*unsafeMean(q_m.factors[2])*(1.0 - unsafeMean(q_z))
+    outbound_dist.W  = unsafeMean(q_z)*unsafeMean(q_w.factors[1]) + (1.0 - unsafeMean(q_z))*unsafeMean(q_w.factors[2])
 
     return outbound_dist
 end
@@ -595,26 +537,25 @@ end
 #
 # #
 # VMP message towards i[:x]
-function variationalRule!{dims,n_factors}(  node::GaussianMixtureNode,
-                            outbound_interface_index::Type{Val{3}},
-                            outbound_dist::MvGaussian{dims},
-                            q_m::Partitioned{MvGaussian{dims}, n_factors},
-                            q_w::Partitioned{Wishart{dims},n_factors},
-                            q_x::Any,
-                            q_z::Categorical{n_factors})
-
-    lambda = 0.0
-    xi = 0.0
-
+# TODO: replace MvGaussian{dims} with TN
+function variationalRule!{dims, n_factors, TW<:MatrixVariate}(  node::GaussianMixtureNode,
+                                                                outbound_interface_index::Type{Val{3}},
+                                                                outbound_dist::MvGaussian{dims},
+                                                                q_m::Partitioned{MvGaussian{dims}, n_factors},
+                                                                q_w::Partitioned{TW, n_factors},
+                                                                q_x::Any,
+                                                                q_z::Categorical{n_factors})
+    W  = Diagonal(zeros(dims))
+    xi = zeros(dims)
     for k = 1:n_factors
-        lambda = lambda + q_z.p[k]*q_w.factors[k].nu*q_w.factors[k].V
-        xi = xi + q_z.p[k]*q_w.factors[k].nu*q_w.factors[k].V*q_m.factors[k].m
+        W  += unsafeMean(q_z)[k]*unsafeMean(q_w.factors[k])
+        xi += unsafeMean(q_w.factors[k])*unsafeMean(q_m.factors[k])*unsafeMean(q_z)[k]
     end
 
+    invalidate!(outbound_dist.m)
+    invalidate!(outbound_dist.V)
     outbound_dist.xi = xi
-    outbound_dist.W = lambda
-    invalidate!(outbound_dist.m)
-    invalidate!(outbound_dist.V)
+    outbound_dist.W  = W
 
     return outbound_dist
 end
@@ -627,20 +568,17 @@ function variationalRule!{n_factors}(  node::GaussianMixtureNode,
                             q_w::Partitioned{Gamma,n_factors},
                             q_x::Any,
                             q_z::Categorical{n_factors})
-
-    lambda = 0.0
-    m = 0.0
-
+    W  = 0.0
+    xi = 0.0
     for k = 1:n_factors
-        lambda = lambda + q_z.p[k]*q_w.factors[k].a/q_w.factors[k].b
-        m = m + q_z.p[k]*q_m.factors[k].m*q_w.factors[k].a/q_w.factors[k].b
-
+        W  += unsafeMean(q_z)[k]*unsafeMean(q_w.factors[k])
+        xi += unsafeMean(q_w.factors[k])*unsafeMean(q_m.factors[k])*unsafeMean(q_z)[k]
     end
 
-    outbound_dist.V = pinv(lambda)
-    outbound_dist.m = m*outbound_dist.V
-    outbound_dist.W = NaN
-    outbound_dist.xi = NaN
+    outbound_dist.m  = NaN
+    outbound_dist.V  = NaN
+    outbound_dist.xi = xi
+    outbound_dist.W  = W
 
     return outbound_dist
 end
