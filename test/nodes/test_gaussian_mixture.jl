@@ -92,12 +92,40 @@ facts("GaussianMixtureNode unit tests") do
                                 MvGaussian(xi=[51.0,7.2],V=[0.18518518518518517 0;0 0.18518518518518517]),
                                 ForneyLab.variationalRule!)
 
-        # #message to x multivariate with two clusters
-        # validateOutboundMessage(GaussianMixtureNode(),
-        #                         4,
-        #                         [Partitioned([MvGaussian(m=[5.,0.],V=[3 0.0; 0.0 3.]),MvGaussian(m=[10.,1.5],V=[2. 0.0; 0.0 1.])]),Partitioned([Wishart(V=[1. 0.;0. 1.],nu=3.), Wishart(V=[2. 0.;0. 2.],nu=3.)]), MvGaussian(m=[8.5,1.],V=[0.5 0;0 0.5]), nothing],
-        #                         Bernoulli(),
-        #                         ForneyLab.variationalRule!)
+        #message to z multivariate with two clusters
+        validateOutboundMessage(GaussianMixtureNode(),
+                                4,
+                                [Partitioned([MvGaussian(m=[5.,0.],V=[3 0.0; 0.0 3.]),MvGaussian(m=[10.,1.5],V=[2. 0.0; 0.0 1.])]),Partitioned([Wishart(V=[1. 0.;0. 1.],nu=3.), Wishart(V=[2. 0.;0. 2.],nu=3.)]), MvGaussian(m=[8.5,1.],V=[0.5 0;0 0.5]), nothing],
+                                Bernoulli(9.462663664175011e-6),
+                                ForneyLab.variationalRule!)
+
+        #message to m multivariate with multiple clusters
+        validateOutboundMessage(GaussianMixtureNode(),
+                                1,
+                                [nothing,Partitioned([Wishart(V=[1. 0.;0. 1.],nu=3.), Wishart(V=[2. 0.;0. 2.],nu=3.),Wishart(V=[2. 0.;0. 2.],nu=4.)]), MvGaussian(m=[8.5,1.],V=[0.5 0;0 0.5]), Categorical([0.1, 0.1, 0.8])],
+                                Partitioned([MvGaussian(m=[8.5,1.],V=[3.333333333333333 0.0; 0.0 3.333333333333333]),MvGaussian(m=[8.5,1.],V=[1.6666666666666665 0.0; 0.0 1.6666666666666665]),MvGaussian(m=[8.5,1.],V=[0.15625 0.0; 0.0 0.15625])]),
+                                ForneyLab.variationalRule!)
+
+        #message to lambda multivariate with multiple clusters
+        validateOutboundMessage(GaussianMixtureNode(),
+                                2,
+                                [Partitioned([MvGaussian(m=[5.,0.],V=[3 0.0; 0.0 3.]),MvGaussian(m=[10.,1.5],V=[2. 0.0; 0.0 1.]), MvGaussian(m=[12.,1.],V=[2. 0.0; 0.0 1.])]),nothing, MvGaussian(m=[8.5,1.],V=[0.5 0;0 0.5]), Categorical([0.1, 0.1, 0.8])],
+                                Partitioned([Wishart(V=[0.7675906183368868 -0.5970149253731344;-0.5970149253731339 2.6865671641791047],nu=3.1), Wishart(V=[2.2580645161290316 -0.967741935483871;-0.9677419354838712 6.129032258064517],nu=3.1),Wishart(V=[0.0847457627118644 0.;0. 0.8333333333333333],nu=3.8)]),
+                                ForneyLab.variationalRule!)
+
+        #message to lambda multivariate with multiple clusters
+        validateOutboundMessage(GaussianMixtureNode(),
+                                3,
+                                [Partitioned([MvGaussian(m=[5.,0.],V=[3 0.0; 0.0 3.]),MvGaussian(m=[10.,1.5],V=[2. 0.0; 0.0 1.]), MvGaussian(m=[12.,1.],V=[2. 0.0; 0.0 1.])]),Partitioned([Wishart(V=[1. 0.;0. 1.],nu=3.), Wishart(V=[2. 0.;0. 2.],nu=3.),Wishart(V=[2. 0.;0. 2.],nu=4.)]), nothing, Categorical([0.1, 0.1, 0.8])],
+                                MvGaussian(xi = [84.30000000000001,7.300000000000001],V=[0.136986301369863 0;0 0.136986301369863]),
+                                ForneyLab.variationalRule!)
+
+        #message to z multivariate with multiple clusters
+        validateOutboundMessage(GaussianMixtureNode(),
+                                4,
+                                [Partitioned([MvGaussian(m=[5.,0.],V=[3 0.0; 0.0 3.]),MvGaussian(m=[10.,1.5],V=[2. 0.0; 0.0 1.]), MvGaussian(m=[12.,1.],V=[2. 0.0; 0.0 1.])]),Partitioned([Wishart(V=[1. 0.;0. 1.],nu=3.), Wishart(V=[2. 0.;0. 2.],nu=3.),Wishart(V=[2. 0.;0. 2.],nu=4.)]),  MvGaussian(m=[8.5,1.],V=[0.5 0;0 0.5]), nothing],
+                                Categorical([9.462663664175011e-6, 0.9999905373363358, 2.8624914934988436e-20]),
+                                ForneyLab.variationalRule!)
 
     end
 end
