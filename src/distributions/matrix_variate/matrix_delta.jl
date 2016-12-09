@@ -29,6 +29,12 @@ format(dist::MatrixDelta) = "δ(M=$(format(dist.M)))"
 
 show(io::IO, dist::MatrixDelta) = println(io, format(dist))
 
+@symmetrical function prod!{dims_n,dims_m}(::Void, y::MatrixDelta{Float64,dims_n,dims_m}, z::MatrixDelta{Float64,dims_n,dims_m}=MatrixDelta(zeros(dims_n, dims_m)))
+    # Multiplication of an unknown with a Delta
+    z.M = y.M
+
+    return z
+end
 function prod!{T,dims_n,dims_m}(x::MatrixDelta{T,dims_n,dims_m}, y::MatrixDelta{T,dims_n,dims_m}, z::MatrixDelta{T,dims_n,dims_m}=deepcopy(y))
     (x.M == y.M) || throw(DomainError())
     (z.M == y.M) || (z.M = deepcopy(y.M))

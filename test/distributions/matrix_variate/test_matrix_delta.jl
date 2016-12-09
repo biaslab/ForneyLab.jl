@@ -22,6 +22,12 @@ facts("MatrixDelta unit tests") do
         @fact sample(MatrixDelta([2.0].')) --> [2.0].'
     end
 
+    context("prod! involving MatrixDeltas") do
+        @fact MatrixDelta([2.0].') * MatrixDelta([2.0].') --> MatrixDelta([2.0].')
+        @fact ForneyLab.prod!(MatrixDelta([2.0].'), nothing) --> MatrixDelta([2.0].')
+        @fact_throws MatrixDelta([1.0].') * MatrixDelta([2.0].')
+    end
+
     context("unsafeDetLogMean() should return correct result") do
         @fact ForneyLab.unsafeDetLogMean(MatrixDelta(eye(2))) --> 0.0
         @fact ForneyLab.unsafeDetLogMean(MatrixDelta([1.0 0.0;0.0 2.0])) --> log(2)
