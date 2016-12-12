@@ -13,6 +13,32 @@ facts("GaussianMixtureNode unit tests") do
         @fact n(:node).i[:z] --> n(:node).interfaces[4]
     end
 
+    context("GaussianmixtureNode should pass sum-product messages") do
+        #Message to x, two clusters univariate
+        validateOutboundMessage(GaussianMixtureNode(),
+                                3,
+                                [Message(Partitioned([Gaussian(m=1.0, V=5.0),Gaussian(m=10.0,V=6.0)])), Message(Partitioned([Gamma(a=2.0,b=1.0),Gamma(a=3.0,b=1.0)])), nothing, Message(Bernoulli(0.4))],
+                                Mixture([Gaussian(m=1.0, V=6.0), Gaussian(m=10.0, V=6.5)], [0.4,0.6]))
+
+      #Message to x, multiple clusters univariate
+      validateOutboundMessage(GaussianMixtureNode(),
+                              3,
+                              [Message(Partitioned([Gaussian(m=1.0, V=5.0),Gaussian(m=10.0,V=6.0), Gaussian(m=15.0, V=3.0)])), Message(Partitioned([Gamma(a=2.0,b=1.0),Gamma(a=3.0,b=1.0), Gamma(a=6.0, b=2.0)])), nothing, Message(Categorical([0.3,0.2,0.5]))],
+                              Mixture([Gaussian(m=1.0, V=6.0), Gaussian(m=10.0, V=6.5), Gaussian(m=15.0,V = 3.4)], [0.3,0.2, 0.5]))
+
+      #Message to x, 2 clusters multivariate
+      validateOutboundMessage(GaussianMixtureNode(),
+                              3,
+                              [Message(Partitioned([MvGaussian(m=[1.0, 0.1], V=[5.0 0.0; 0.0 2.0]),MvGaussian(m=[10.0, 11.1], V=[1.0 0.0; 0.0 6.0])])), Message(Partitioned([Wishart(nu = 4.0, V = [1.0 0.0;0.0 2.0]), Wishart(nu = 5.0, V = [2.0 0.0; 0.0 2.0])])), nothing, Message(Bernoulli(0.4))],
+                              Mixture([MvGaussian(m=[1.0, 0.1], V=[6.0 0.0; 0.0 2.5]), MvGaussian(m=[10.0, 11.1], V=[1.25 0.0; 0.0 6.25])], [0.4,0.6]))
+
+      #Message to x, multiple clusters multivariate
+      validateOutboundMessage(GaussianMixtureNode(),
+                              3,
+                              [Message(Partitioned([MvGaussian(m=[1.0, 0.1], V=[5.0 0.0; 0.0 2.0]),MvGaussian(m=[10.0, 11.1], V=[1.0 0.0; 0.0 6.0]),MvGaussian(m=[5.0, 4.0], V=[5.0 0.0; 0.0 3.0])])), Message(Partitioned([Wishart(nu = 4., V = [1.0 0.0;0.0 2.0]), Wishart(nu = 5., V = [2.0 0.0; 0.0 2.0]), Wishart(nu = 6., V = [1.0 0.0; 0.0 1.0])])), nothing, Message(Categorical([0.8,0.1,0.1]))],
+                              Mixture([MvGaussian(m=[1.0, 0.1], V=[6.0 0.0; 0.0 2.5]), MvGaussian(m=[10.0, 11.1], V=[1.25 0.0; 0.0 6.25]), MvGaussian(m=[5.0, 4.0], V=[5.333333333333333 0.0; 0.0 3.3333333333333335])], [0.8,0.1,0.1]))
+    end
+
     context("GaussianMixtureNode should pass variational messages") do
       # message to m
       validateOutboundMessage(GaussianMixtureNode(),
