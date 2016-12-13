@@ -47,6 +47,25 @@ ForneyLab.isDeterministic(::GaussianMixtureNode) = false
 ############################################
 # Sumproduct rules
 ############################################
+
+#calculate univariate sum-product
+function predxRule!(outbound_dist::Gaussian, msg_m::Univariate, msg_w::Gamma)
+    outbound_dist.m = unsafeMean(msg_m)
+    outbound_dist.V   = msg_w.b/(msg_w.a-1) + unsafeCov(msg_m)
+    outbound_dist.xi  = NaN
+    outbound_dist.W   = NaN
+    return outbound_dist
+end
+
+#calculate multivariate sum-product
+function predxRule!{dims}(outbound_dist::MvGaussian{dims}, msg_m::Multivariate{dims}, msg_w::Wishart{dims})
+    outbound_dist.m = unsafeMean(msg_m)
+    outbound_dist.V   = inv(msg_w.V)/(msg_w.nu - dims - 1.) + unsafeCov(msg_m)
+    invalidate!(outbound_dist.xi)
+    invalidate!(outbound_dist.W)
+    return outbound_dist
+end
+
 #Sum product rule
 #Predictive distribution towards x
 #Univariate case with 2 clusters
@@ -59,24 +78,12 @@ function sumProductRule!(   node::GaussianMixtureNode,
                             msg_z::Message{Bernoulli})
 
     #Ensure that the messages are the right form
-    ensureParameters!(msg_m.payload.factors[1], (:m, :V))
-    ensureParameters!(msg_m.payload.factors[2], (:m, :V))
     resize!(outbound_dist, 2)
 
-    #Calculate the mean, variance and weight for the first component
-    outbound_dist.components[1].m   = unsafeMean(msg_m.payload.factors[1])
-    outbound_dist.components[1].V   = msg_w.payload.factors[1].b/(msg_w.payload.factors[1].a-1) + unsafeCov(msg_m.payload.factors[1])
-    outbound_dist.components[1].xi  = NaN
-    outbound_dist.components[1].W   = NaN
+    predxRule!(outbound_dist.components[1], msg_m.payload.factors[1], msg_w.payload.factors[1])
+    predxRule!(outbound_dist.components[2], msg_m.payload.factors[2], msg_w.payload.factors[2])
 
     outbound_dist.weights[1]      = unsafeMean(msg_z.payload)
-
-    #Calculate the mean, variance and weight for the second component
-    outbound_dist.components[2].m   = unsafeMean(msg_m.payload.factors[2])
-    outbound_dist.components[2].V   = msg_w.payload.factors[2].b/(msg_w.payload.factors[2].a - 1) + unsafeCov(msg_m.payload.factors[2])
-    outbound_dist.components[2].xi  = NaN
-    outbound_dist.components[2].W   = NaN
-
     outbound_dist.weights[2]      = 1 - unsafeMean(msg_z.payload)
 
     return outbound_dist
@@ -94,17 +101,11 @@ function sumProductRule!{n_factors}(   node::GaussianMixtureNode,
 
     #Ensure that the outbound distribution has the correct form
     resize!(outbound_dist, n_factors)
-    w = ones(n_factors)
 
     #Calculate the mean and variance for each component
     for k = 1:n_factors
-        outbound_dist.components[k].m   = unsafeMean(msg_m.payload.factors[k])
-        outbound_dist.components[k].V   = msg_w.payload.factors[k].b/(msg_w.payload.factors[k].a - 1) + unsafeCov(msg_m.payload.factors[k])
-        outbound_dist.components[k].xi  = NaN
-        outbound_dist.components[k].W   = NaN
-
+        predxRule!(outbound_dist.components[k], msg_m.payload.factors[k], msg_w.payload.factors[k])
         outbound_dist.weights[k]        = unsafeMean(msg_z.payload)[k]
-
     end
 
     return outbound_dist
@@ -122,19 +123,9 @@ function sumProductRule!{n_factors,dims}(   node::GaussianMixtureNode,
 
     #Ensure that the parameters are in the right form
     resize!(outbound_dist, 2)
-    w  =  ones(2)
 
-    #Calculate the mean and variance for the first component
-    outbound_dist.components[1].m = unsafeMean(msg_m.payload.factors[1])
-    outbound_dist.components[1].V = inv(msg_w.payload.factors[1].V)/(msg_w.payload.factors[1].nu - dims - 1.) + unsafeCov(msg_m.payload.factors[1])
-    invalidate!(outbound_dist.components[1].xi)
-    invalidate!(outbound_dist.components[1].W)
-
-    #Calculate the mean and  variance for the second component
-    outbound_dist.components[2].m = unsafeMean(msg_m.payload.factors[2])
-    outbound_dist.components[2].V = inv(msg_w.payload.factors[2].V)/(msg_w.payload.factors[2].nu - dims - 1.) + unsafeCov(msg_m.payload.factors[2])
-    invalidate!(outbound_dist.components[2].xi)
-    invalidate!(outbound_dist.components[2].W)
+    predxRule!(outbound_dist.components[1], msg_m.payload.factors[1], msg_w.payload.factors[1])
+    predxRule!(outbound_dist.components[2], msg_m.payload.factors[2], msg_w.payload.factors[2])
 
     #Calculating the weights
     outbound_dist.weights[1]     = unsafeMean(msg_z.payload)
@@ -155,15 +146,10 @@ function sumProductRule!{n_factors,dims}(   node::GaussianMixtureNode,
 
     #Ensure outbound message has the right form
     resize!(outbound_dist, n_factors)
-    w = ones(n_factors)
 
     #Calculate the mean, variance and weights of all components
     for k = 1:n_factors
-        outbound_dist.components[k].m = unsafeMean(msg_m.payload.factors[k])
-        outbound_dist.components[k].V = inv(msg_w.payload.factors[k].V)/(msg_w.payload.factors[k].nu - dims - 1.) + unsafeCov(msg_m.payload.factors[k])
-        invalidate!(outbound_dist.components[k].xi)
-        invalidate!(outbound_dist.components[k].W)
-
+        predxRule!(outbound_dist.components[k], msg_m.payload.factors[k], msg_w.payload.factors[k])
         outbound_dist.weights[k]     = unsafeMean(msg_z.payload)[k]
     end
 
@@ -229,10 +215,10 @@ function variationalRule!{dims, n_factors, T<:MatrixVariate}(   node::GaussianMi
 
     return outbound_dist
 end
-#
-#
-#
-#
+
+
+
+
 # VMP message towards i[:m]
 # Multivariate Gaussian with multiple clusters
 # TODO: constrain to MatrixVariate{dims, dims}
@@ -303,9 +289,9 @@ function variationalRule!{n_factors, T<:Univariate}(node::GaussianMixtureNode,
 
     return outbound_dist
 end
-#
-#
-#
+
+
+
 # VMP message towards i[:w]
 # Multivariate Gaussian with two clusters
 # TODO: constrain to Multivariate{dims}
@@ -323,8 +309,8 @@ function variationalRule!{dims, n_factors, T<:Multivariate}(node::GaussianMixtur
     return outbound_dist
 end
 
-#
-#
+
+
 # VMP message towards i[:w]
 # Multivariate Gaussian with multiple clusters
 # TODO: constrain to Multivariate{dims}
@@ -489,8 +475,8 @@ function variationalRule!{n_factors, TN<:Univariate, TG<:Univariate}(   node::Ga
 
     return outbound_dist
 end
-#
-# #
+
+
 # VMP message towards i[:x]
 # TODO: replace MvGaussian{dims} with TN
 function variationalRule!{dims, n_factors, TW<:MatrixVariate}(  node::GaussianMixtureNode,
@@ -505,11 +491,11 @@ function variationalRule!{dims, n_factors, TW<:MatrixVariate}(  node::GaussianMi
 
     return outbound_dist
 end
-#
-#
-#
-#
-# #
+
+
+
+
+
 # VMP message towards i[:x]
 # TODO: replace MvGaussian{dims} with TN
 function variationalRule!{dims, n_factors, TW<:MatrixVariate}(  node::GaussianMixtureNode,
@@ -524,7 +510,7 @@ function variationalRule!{dims, n_factors, TW<:MatrixVariate}(  node::GaussianMi
 
     return outbound_dist
 end
-#
+
 # VMP message towards i[:x]
 function variationalRule!{n_factors}(  node::GaussianMixtureNode,
                             outbound_interface_index::Type{Val{3}},
