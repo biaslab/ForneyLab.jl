@@ -15,6 +15,19 @@ facts("CategoricalNode unit tests") do
         @fact ForneyLab.averageEnergy(CategoricalNode, Dirichlet([1.,2.,1.]), Categorical([0.2,0.2,0.6]))  --> roughly(1.6333333333333335)
     end
 
+    context("CategoricalNode should pass sum-product messages") do
+        # Forward message
+        validateOutboundMessage(CategoricalNode(),
+                                2,
+                                [Message(Dirichlet([5.,4.,6.])), nothing],
+                                Categorical([0.3333333333333333,0.26666666666666666,0.4]))
+        # Backward message
+        validateOutboundMessage(CategoricalNode(),
+                                1,
+                                [nothing, Message(MvDelta([true,false,false]))],
+                                Dirichlet([2.0,1.0,1.0]))
+    end
+
 
     context("CategoricalNode should pass variational messages") do
         # Forward message
