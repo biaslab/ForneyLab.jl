@@ -60,7 +60,7 @@ end
 #calculate multivariate sum-product
 function predxRule!{dims}(outbound_dist::MvGaussian{dims}, msg_m::Multivariate{dims}, msg_w::Wishart{dims})
     outbound_dist.m = unsafeMean(msg_m)
-    outbound_dist.V   = inv(msg_w.V)/(msg_w.nu - dims - 1.) + unsafeCov(msg_m)
+    outbound_dist.V   = cholinv(msg_w.V)/(msg_w.nu - dims - 1.) + unsafeCov(msg_m)
     invalidate!(outbound_dist.xi)
     invalidate!(outbound_dist.W)
     return outbound_dist

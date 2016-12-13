@@ -59,7 +59,7 @@ function format(d::Float64)
     end
 end
 
-function format(d::Vector{Float64})
+function format{T<:Union{Float64, Bool}}(d::Vector{T})
     s = "["
     for d_k in d[1:end-1]
         s*=format(d_k)

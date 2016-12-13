@@ -41,6 +41,31 @@ end
 
 isDeterministic(::CategoricalNode) = false
 
+############################################
+# Sum-product update functions
+############################################
+function sumProductRule!{n_factors}(    node::CategoricalNode,
+                                        outbound_interface_index::Type{Val{2}},
+                                        outbound_dist::Categorical{n_factors},
+                                        msg_in::Message{Dirichlet{n_factors}},
+                                        msg_out::Any)
+
+    outbound_dist.p = msg_in.payload.alpha/sum(msg_in.payload.alpha)
+
+    return outbound_dist
+end
+
+function sumProductRule!{n_factors}(    node::CategoricalNode,
+                                        outbound_interface_index::Type{Val{1}},
+                                        outbound_dist::Dirichlet{n_factors},
+                                        msg_in::Any,
+                                        msg_out::Message{MvDelta{Bool,n_factors}})
+
+    outbound_dist.alpha = msg_out.payload.m + 1.0
+
+    return outbound_dist
+end
+
 
 ############################################
 # Variational update functions
