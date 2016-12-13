@@ -13,6 +13,7 @@ facts("Categorical unit tests") do
 
     context("required methods") do
         @fact vague(Categorical{4}) --> Categorical([0.25; 0.25; 0.25; 0.25])
+        @fact mean(Categorical([0.1, 0.3, 0.6])) --> [0.1, 0.3, 0.6]
         @fact ForneyLab.vague!(Categorical([0.1; 0.9])) --> Categorical([0.5; 0.5])
         @fact Categorical() --> Categorical()
         @fact (Categorical([0.25; 0.75]) == vague(Categorical{2})) --> false

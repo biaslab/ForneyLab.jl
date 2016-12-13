@@ -94,11 +94,13 @@ include("nodes/terminal.jl")
 include("nodes/equality.jl")
 include("nodes/gain.jl")
 include("nodes/gaussian.jl")
+include("nodes/gaussian_mixture.jl")
 include("nodes/exponential.jl")
 include("nodes/gain_addition.jl")
 include("nodes/gain_equality.jl")
 include("nodes/sigmoid.jl")
 include("nodes/bernoulli.jl")
+include("nodes/categorical.jl")
 
 # Graph, wraps and algorithm
 include("factor_graph.jl")
