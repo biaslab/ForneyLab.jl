@@ -22,6 +22,13 @@ facts("MatrixDelta unit tests") do
         @fact sample(MatrixDelta([2.0].')) --> [2.0].'
     end
 
+    context("Product of two MatrixDeltas") do
+        @fact MatrixDelta([2.0 1.0;2.0 1.0]) * MatrixDelta([2.0 1.0;2.0 1.0]) --> MatrixDelta([2.0 1.0;2.0 1.0])
+        @fact_throws MatrixDelta([1.0 2.0; 1.0 2.0]) * MatrixDelta([2.0 1.0; 1.0 1.0])
+        @fact_throws MethodError MatrixDelta([2.0 5.0 6.0;2.0 4.0 1.0]) * MatrixDelta([2.0 1.0;2.0 1.0])
+        @fact ForneyLab.prod!(MatrixDelta([2.0 1.0;2.0 1.0]), nothing) --> MatrixDelta([2.0 1.0;2.0 1.0])
+    end
+
     context("unsafeDetLogMean() should return correct result") do
         @fact ForneyLab.unsafeDetLogMean(MatrixDelta(eye(2))) --> 0.0
         @fact ForneyLab.unsafeDetLogMean(MatrixDelta([1.0 0.0;0.0 2.0])) --> log(2)
