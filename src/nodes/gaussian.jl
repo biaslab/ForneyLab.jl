@@ -756,10 +756,7 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
                                 marg_prec::MatrixVariate{dims, dims},
                                 marg_out::Multivariate{dims})
 
-    outbound_dist.m = unsafeMean(marg_out)
-    invalidate!(outbound_dist.xi)
-    invalidate!(outbound_dist.V)
-    outbound_dist.W = unsafeMean(marg_prec)
+    gaussianForwardYBackwardMRule!(outbound_dist, marg_prec, marg_out)
 
     return outbound_dist
 end
@@ -770,10 +767,9 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
                                 marg_mean::Multivariate{dims},
                                 marg_prec::Any,
                                 marg_out::Multivariate{dims})
-
-    outbound_dist.nu = dims + 2.0
-    outbound_dist.V = cholinv( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))*(unsafeMean(marg_out) - unsafeMean(marg_mean))' )
-
+    
+    gaussianBackwardWRule!(outbound_dist, marg_mean, marg_out)
+    
     return outbound_dist
 end
 
@@ -784,10 +780,23 @@ function variationalRule!{dims}(node::GaussianNode{Val{:mean},Val{:precision}},
                                 marg_prec::MatrixVariate{dims, dims},
                                 marg_out::Any)
 
-    outbound_dist.m = unsafeMean(marg_mean)
+    gaussianForwardYBackwardMRule!(outbound_dist, marg_prec, marg_mean)
+
+    return outbound_dist
+end
+
+function gaussianForwardYBackwardMRule!{dims}(outbound_dist::MvGaussian{dims}, marg_prec::MatrixVariate{dims, dims}, marg_mean_out::Multivariate{dims})
+    outbound_dist.m = unsafeMean(marg_mean_out)
     invalidate!(outbound_dist.xi)
     invalidate!(outbound_dist.V)
     outbound_dist.W = unsafeMean(marg_prec)
+
+    return outbound_dist
+end
+
+function gaussianBackwardWRule!{dims}(outbound_dist::Wishart{dims}, marg_mean::Multivariate{dims}, marg_out::Multivariate{dims})
+    outbound_dist.nu = dims + 2.0
+    outbound_dist.V = cholinv( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))*(unsafeMean(marg_out) - unsafeMean(marg_mean))' )
 
     return outbound_dist
 end
