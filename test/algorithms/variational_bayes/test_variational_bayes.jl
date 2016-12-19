@@ -14,28 +14,29 @@ facts("VariationalBayes should initialize a pre, iterative and post schedule") d
     # Apply mean field factorization
     rf = RecognitionFactorization()
     factorizeMeanField()
-    for sec in 1:n_sections
-        initialize(eg(:q_y*sec), Delta())
-        initialize(eg(:q_m*sec), vague(Gaussian))
-        initialize(eg(:q_gam*sec), vague(Gamma))
-    end
+    initialize(eg(:q_y*(1:n_sections)), Delta())
+    initialize(eg(:q_m*(1:n_sections)), vague(Gaussian))
+    initialize(eg(:q_gam*(1:n_sections)), vague(Gamma))
 
     # Construct algorithm
     algo = VariationalBayes(n_iterations=50)
 
+    # Verify initialization of update order
+    @fact algo.update_order --> rf.default_update_order
+
     # Verify correct schedule lengths
-    @fact length(algo.recognition_factorization.subgraphs[1].internal_pre_schedule) --> 2
-    @fact length(algo.recognition_factorization.subgraphs[1].internal_iterative_schedule) --> 6
-    @fact length(algo.recognition_factorization.subgraphs[1].internal_post_schedule) --> 1
-    @fact length(algo.recognition_factorization.subgraphs[2].internal_pre_schedule) --> 2
-    @fact length(algo.recognition_factorization.subgraphs[2].internal_iterative_schedule) --> 6
-    @fact length(algo.recognition_factorization.subgraphs[2].internal_post_schedule) --> 1
-    @fact length(algo.recognition_factorization.subgraphs[3].internal_pre_schedule) --> 1
-    @fact length(algo.recognition_factorization.subgraphs[3].internal_iterative_schedule) --> 0 # Message is skipped
-    @fact length(algo.recognition_factorization.subgraphs[3].internal_post_schedule) --> 0
-    @fact length(algo.recognition_factorization.subgraphs[4].internal_pre_schedule) --> 1
-    @fact length(algo.recognition_factorization.subgraphs[4].internal_iterative_schedule) --> 0 # Message is skipped
-    @fact length(algo.recognition_factorization.subgraphs[4].internal_post_schedule) --> 0
+    @fact length(sg(:subgraph1).internal_pre_schedule) --> 2
+    @fact length(sg(:subgraph1).internal_iterative_schedule) --> 6
+    @fact length(sg(:subgraph1).internal_post_schedule) --> 1
+    @fact length(sg(:subgraph2).internal_pre_schedule) --> 2
+    @fact length(sg(:subgraph2).internal_iterative_schedule) --> 6
+    @fact length(sg(:subgraph2).internal_post_schedule) --> 1
+    @fact length(sg(:subgraph3).internal_pre_schedule) --> 1
+    @fact length(sg(:subgraph3).internal_iterative_schedule) --> 0 # Message is skipped
+    @fact length(sg(:subgraph3).internal_post_schedule) --> 0
+    @fact length(sg(:subgraph4).internal_pre_schedule) --> 1
+    @fact length(sg(:subgraph4).internal_iterative_schedule) --> 0 # Message is skipped
+    @fact length(sg(:subgraph4).internal_post_schedule) --> 0
 end
 
 facts("VariationalBayes should collect the proper inbound types as dependent on the recognition factorization") do
@@ -43,45 +44,49 @@ facts("VariationalBayes should collect the proper inbound types as dependent on 
     initializeGaussianNode()
 
     rf = RecognitionFactorization()
-    factorizeMeanField()
+    factor(eg(:edge1))
+    factor(eg(:edge2))
+    factor(eg(:edge3))
     initialize(eg(:edge1), vague(Gaussian))
     initialize(eg(:edge2), vague(Gamma))
     initialize(eg(:edge3), vague(Gaussian))
 
     algo = VariationalBayes()
 
-    @fact algo.recognition_factorization.subgraphs[3].internal_pre_schedule[1].outbound_type --> Gaussian
-    @fact algo.recognition_factorization.subgraphs[2].internal_pre_schedule[1].outbound_type --> Gamma
-    @fact algo.recognition_factorization.subgraphs[1].internal_pre_schedule[1].outbound_type --> Gaussian
+    @fact algo.update_order --> sg(:subgraph*(1:3))
 
-    @fact algo.recognition_factorization.subgraphs[3].internal_iterative_schedule[1].inbound_types --> [Gaussian, Gamma, Void]
-    @fact algo.recognition_factorization.subgraphs[3].internal_iterative_schedule[1].outbound_type --> Gaussian
-    @fact algo.recognition_factorization.subgraphs[2].internal_iterative_schedule[1].inbound_types --> [Gaussian, Void, Gaussian]
-    @fact algo.recognition_factorization.subgraphs[2].internal_iterative_schedule[1].outbound_type --> Gamma
-    @fact algo.recognition_factorization.subgraphs[1].internal_iterative_schedule[1].inbound_types --> [Void, Gamma, Gaussian]
-    @fact algo.recognition_factorization.subgraphs[1].internal_iterative_schedule[1].outbound_type --> Gaussian
+    @fact sg(:subgraph3).internal_pre_schedule[1].outbound_type --> Gaussian
+    @fact sg(:subgraph2).internal_pre_schedule[1].outbound_type --> Gamma
+    @fact sg(:subgraph1).internal_pre_schedule[1].outbound_type --> Gaussian
+
+    @fact sg(:subgraph3).internal_iterative_schedule[1].inbound_types --> [Gaussian, Gamma, Void]
+    @fact sg(:subgraph3).internal_iterative_schedule[1].outbound_type --> Gaussian
+    @fact sg(:subgraph2).internal_iterative_schedule[1].inbound_types --> [Gaussian, Void, Gaussian]
+    @fact sg(:subgraph2).internal_iterative_schedule[1].outbound_type --> Gamma
+    @fact sg(:subgraph1).internal_iterative_schedule[1].inbound_types --> [Void, Gamma, Gaussian]
+    @fact sg(:subgraph1).internal_iterative_schedule[1].outbound_type --> Gaussian
 
     # Structurally factorized
     initializeGaussianNode()
 
     rf = RecognitionFactorization()
-    factor([eg(:edge1), eg(:edge2)])
+    factor((eg(:edge1), eg(:edge2)))
     factor(eg(:edge3))
-    initialize([eg(:edge1), eg(:edge2)], vague(NormalGamma))
+    initialize((eg(:edge1), eg(:edge2)), vague(NormalGamma))
     initialize(eg(:edge3), vague(Gaussian))
 
     algo = VariationalBayes()
     
-    @fact algo.recognition_factorization.subgraphs[2].internal_pre_schedule[1].outbound_type --> Gaussian
-    @fact algo.recognition_factorization.subgraphs[1].internal_pre_schedule[1].outbound_type --> Gaussian
-    @fact algo.recognition_factorization.subgraphs[1].internal_pre_schedule[2].outbound_type --> Gamma
+    @fact sg(:subgraph2).internal_pre_schedule[1].outbound_type --> Gaussian
+    @fact sg(:subgraph1).internal_pre_schedule[1].outbound_type --> Gaussian
+    @fact sg(:subgraph1).internal_pre_schedule[2].outbound_type --> Gamma
 
-    @fact algo.recognition_factorization.subgraphs[2].internal_iterative_schedule[1].inbound_types --> [NormalGamma, NormalGamma, Void]
-    @fact algo.recognition_factorization.subgraphs[2].internal_iterative_schedule[1].outbound_type --> Gaussian
-    @fact algo.recognition_factorization.subgraphs[1].internal_iterative_schedule[1].inbound_types --> [Void,Message{Gamma},Gaussian]
-    @fact algo.recognition_factorization.subgraphs[1].internal_iterative_schedule[1].outbound_type --> StudentsT
-    @fact algo.recognition_factorization.subgraphs[1].internal_iterative_schedule[2].inbound_types --> [Message{Gaussian},Void,Gaussian]
-    @fact algo.recognition_factorization.subgraphs[1].internal_iterative_schedule[2].outbound_type --> Gamma
+    @fact sg(:subgraph2).internal_iterative_schedule[1].inbound_types --> [NormalGamma, NormalGamma, Void]
+    @fact sg(:subgraph2).internal_iterative_schedule[1].outbound_type --> Gaussian
+    @fact sg(:subgraph1).internal_iterative_schedule[1].inbound_types --> [Void,Message{Gamma},Gaussian]
+    @fact sg(:subgraph1).internal_iterative_schedule[1].outbound_type --> StudentsT
+    @fact sg(:subgraph1).internal_iterative_schedule[2].inbound_types --> [Message{Gaussian},Void,Gaussian]
+    @fact sg(:subgraph1).internal_iterative_schedule[2].outbound_type --> Gamma
 end
 
 facts("Naive vmp implementation integration tests") do
@@ -132,11 +137,9 @@ facts("Naive vmp implementation integration tests") do
         # Apply mean field factorization
         rf = RecognitionFactorization()
         factorizeMeanField()
-        for sec in 1:n_sections
-            initialize(eg(:q_y*sec), Delta())
-            initialize(eg(:q_m*sec), vague(Gaussian))
-            initialize(eg(:q_gam*sec), vague(Gamma))
-        end
+        initialize(eg(:q_y*(1:n_sections)), Delta())
+        initialize(eg(:q_m*(1:n_sections)), vague(Gaussian))
+        initialize(eg(:q_gam*(1:n_sections)), vague(Gamma))
 
         # Construct algorithm
         algo = VariationalBayes(n_iterations=50)
@@ -169,11 +172,9 @@ facts("Naive vmp implementation integration tests") do
         # Apply mean field factorization
         rf = RecognitionFactorization()
         factorizeMeanField()
-        for sec in 1:n_sections
-            initialize(eg(:q_y*sec), MvDelta(zeros(2)))
-            initialize(eg(:q_m*sec), vague(MvGaussian{2}))
-            initialize(eg(:q_gam*sec), vague(Wishart{2}))
-        end
+        initialize(eg(:q_y*(1:n_sections)), MvDelta(zeros(2)))
+        initialize(eg(:q_m*(1:n_sections)), vague(MvGaussian{2}))
+        initialize(eg(:q_gam*(1:n_sections)), vague(Wishart{2}))
 
         # Construct algorithm
         algo = VariationalBayes(n_iterations=50)
@@ -242,9 +243,9 @@ facts("Structured vmp implementation integration tests") do
 
         # Structured factorization
         rf = RecognitionFactorization()
-        factor([eg(:q_m1), eg(:q_gam1)])
+        factor((eg(:q_m1), eg(:q_gam1)))
         factor(eg(:q_y1))
-        initialize([eg(:q_m1), eg(:q_gam1)], vague(NormalGamma))
+        initialize((eg(:q_m1), eg(:q_gam1)), vague(NormalGamma))
         initialize(eg(:q_y1), vague(Gaussian))
 
         # Construct algorithm

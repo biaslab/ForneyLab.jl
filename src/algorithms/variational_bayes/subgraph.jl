@@ -1,8 +1,9 @@
 import ForneyLab.draw, ForneyLab.drawPdf, ForneyLab.nodes, ForneyLab.edges # Import in order to extend
 export Subgraph
-export draw, drawPdf, nodes, edges
+export draw, drawPdf, nodes, edges, subgraph, sg
 
 type Subgraph
+    id::Symbol
     internal_edges::Set{Edge}
     external_edges::Set{Edge}
     nodes_connected_to_external_edges::Vector{Node} # This is a vector instead of a set, so marginal updates have a fixed order
@@ -12,11 +13,11 @@ type Subgraph
     internal_iterative_schedule::Schedule
     internal_post_schedule::Schedule
 
-    Subgraph(internal_edges, external_edges, nodes_connected_to_external_edges) = new(internal_edges, external_edges, nodes_connected_to_external_edges)
+    Subgraph(id, internal_edges, external_edges, nodes_connected_to_external_edges) = new(id, internal_edges, external_edges, nodes_connected_to_external_edges)
 end
 
 function show(io::IO, sg::Subgraph)
-    println(io, "Subgraph with $(length(sg.internal_edges)) internal edge(s), $(length(sg.external_edges)) external edge(s) and $(length(sg.nodes_connected_to_external_edges)) node(s) connected to external edges.")
+    println(io, "Subgraph with id $(sg.id), $(length(sg.internal_edges)) internal edge(s), $(length(sg.external_edges)) external edge(s) and $(length(sg.nodes_connected_to_external_edges)) node(s) connected to external edges.")
     println(io, "\nSee also:")
     println(io, " draw(::SubGraph)")
     println(io, " show(nodes(::SubGraph))")

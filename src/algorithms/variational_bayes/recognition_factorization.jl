@@ -6,7 +6,8 @@ type RecognitionFactorization
     graph::FactorGraph
 
     # Recognition factorization
-    subgraphs::Vector{Subgraph}
+    subgraphs::Dict{Symbol, Subgraph}
+    subgraph_id_counter::Int64 # Counter for next default subgraph identifier
     edge_to_subgraph::Dict{Edge, Subgraph}
     node_subgraph_to_internal_edges::Dict{Tuple{Node, Subgraph}, Set{Edge}}
 
@@ -15,13 +16,18 @@ type RecognitionFactorization
     recognition_distributions::Partitioned
     node_subgraph_to_recognition_distribution::Dict{Tuple{Node, Subgraph}, ProbabilityDistribution}
 
+    # This update schedule gets copied to the algorithm as the default
+    default_update_order::Vector{Subgraph}
+
     RecognitionFactorization(graph) = new(  graph,
-                                            Subgraph[],
+                                            Dict{Symbol, Subgraph}(),
+                                            0,
                                             Dict{Edge, Subgraph}(),
                                             Dict{Tuple{Node, Subgraph}, Set{Edge}}(),
                                             Partitioned{ProbabilityDistribution,0}(ProbabilityDistribution[]),
                                             Partitioned{ProbabilityDistribution,0}(ProbabilityDistribution[]),
-                                            Dict{Tuple{Node, Subgraph}, ProbabilityDistribution}())
+                                            Dict{Tuple{Node, Subgraph}, ProbabilityDistribution}(),
+                                            Subgraph[])
 end
 
 """
@@ -40,19 +46,32 @@ setCurrentRecognitionFactorization(rf::RecognitionFactorization) = global curren
 
 RecognitionFactorization() = setCurrentRecognitionFactorization(RecognitionFactorization(currentGraph()))
 
-show(io::IO, rf::RecognitionFactorization) = println(io, "RecognitionFactorization with $(length(rf.subgraphs)) factors")
+show(io::IO, rf::RecognitionFactorization) = println(io, "RecognitionFactorization with $(length(subgraphs)) factors")
+
+function generateSubgraphId(rf::RecognitionFactorization=currentRecognitionFactorization())
+    # Automatically generates a unique subgraph id
+    rf.subgraph_id_counter += 1
+    return Symbol("subgraph$(rf.subgraph_id_counter)")
+end
+
+# Subgraph getters
+subgraph(id::Symbol, rf::RecognitionFactorization=currentRecognitionFactorization()) = rf.subgraphs[id]
+subgraphs(ids::Vector{Symbol}, rf::RecognitionFactorization=currentRecognitionFactorization()) = Subgraph[subgraph(id, rf) for id in ids]
+sg(id::Symbol, rf::RecognitionFactorization=currentRecognitionFactorization()) = subgraph(id, rf)
+sg(ids::Vector{Symbol}, rf::RecognitionFactorization=currentRecognitionFactorization()) = subgraphs(ids, rf)
 
 """
 Add a subgraph to the recognition factorization
+A factor is contructed for each set/tuple (structured) or edge (naive) in the argument list
 """
-function factor(edge_set::Set{Edge}, rf::RecognitionFactorization=currentRecognitionFactorization())
+function factor(edge_set::Set{Edge}, rf::RecognitionFactorization=currentRecognitionFactorization(); id::Symbol=generateSubgraphId(rf))
     # Construct a new Subgraph
     internal_edges = extend(edge_set)
     external_edges = setdiff(edges(nodes(internal_edges)), internal_edges) # external_edges are the difference between all edges connected to nodes, and the internal edges
     nodes_connected_to_external_edges = intersect(nodes(external_edges), nodes(internal_edges)) # nodes_connected_to_external_edges are the nodes connected to external edges that are also connected to internal edges
 
-    subgraph = Subgraph(internal_edges, external_edges, sort(collect(nodes_connected_to_external_edges)))
-    push!(rf.subgraphs, subgraph) # Add subgraph to factorization
+    subgraph = Subgraph(id, internal_edges, external_edges, sort(collect(nodes_connected_to_external_edges)))
+    rf.subgraphs[id] = subgraph # Add subgraph to factorization
     
     # Initialize lookup tables
     for node in nodes_connected_to_external_edges
@@ -62,11 +81,24 @@ function factor(edge_set::Set{Edge}, rf::RecognitionFactorization=currentRecogni
         rf.edge_to_subgraph[internal_edge] = subgraph
     end
 
-    return rf
+    # Add the subgraph to the default update order
+    push!(rf.default_update_order, subgraph)
+
+    return subgraph
 end
 
-factor(edge::Edge, rf::RecognitionFactorization=currentRecognitionFactorization()) = factor(Set([edge]), rf)
-factor(edges::Vector{Edge}, rf::RecognitionFactorization=currentRecognitionFactorization()) = factor(Set(edges), rf)
+factor(edge::Edge, rf::RecognitionFactorization=currentRecognitionFactorization(); id::Symbol=generateSubgraphId(rf)) = factor(Set([edge]), rf; id=id)
+
+# Tuple specifies a structured factor
+factor(edge_tuple::Tuple, rf::RecognitionFactorization=currentRecognitionFactorization(); id::Symbol=generateSubgraphId(rf)) = factor(Set(edge_tuple), rf; id=id)
+
+# Vector specifies a separate factor for each entry (Edge, tuple of Set{Edge})
+function factor(edge_factors::Vector, rf::RecognitionFactorization=currentRecognitionFactorization(); ids::Vector{Symbol}=Symbol[])
+    for (k, edge_factor) in enumerate(edge_factors)
+        isempty(ids) ? id = generateSubgraphId(rf) : id = ids[k]
+        factor(edge_factor, rf; id=id)
+    end
+end
 
 """
 Find the smallest legal subgraph (connected through deterministic nodes) that includes the argument edges
@@ -100,8 +132,8 @@ function factorizeMeanField(rf::RecognitionFactorization=currentRecognitionFacto
     unfactored_edges = copy(edges(rf.graph)) # Iterate through ordered vector of edges
     while length(unfactored_edges) > 0
         current_edge = sort(collect(unfactored_edges))[1] # Pick the next edge from an ordered set of edges; this ensures that the factorization is deterministic
-        factor(current_edge, rf)
-        cluster = rf.subgraphs[end].internal_edges # Get edges that were just added to factor
+        subgraph = factor(current_edge, rf)
+        cluster = subgraph.internal_edges # Get edges that were just added to factor
         setdiff!(unfactored_edges, cluster) # Remove factored edges
     end
 
@@ -109,7 +141,7 @@ function factorizeMeanField(rf::RecognitionFactorization=currentRecognitionFacto
 end
 
 """
-Define the initial recognition distribution for an Edge, Set{Edge} or Node-Subgraph combination
+Define the initial recognition distribution for an Edge, Set{Edge}, tuple of edges or Node-Subgraph combination
 """
 function initialize(node::Node, sg::Subgraph, initial_rd::ProbabilityDistribution, rf::RecognitionFactorization=currentRecognitionFactorization())
     # Set initial distribution
@@ -142,7 +174,16 @@ function initialize(edges::Set{Edge}, initial_rd::ProbabilityDistribution, rf::R
 end
 
 initialize(edge::Edge, initial_rd::ProbabilityDistribution, rf::RecognitionFactorization=currentRecognitionFactorization()) = initialize(Set([edge]), initial_rd, rf)
-initialize(edges::Vector{Edge}, initial_rd::ProbabilityDistribution, rf::RecognitionFactorization=currentRecognitionFactorization()) = initialize(Set(edges), initial_rd, rf)
+
+# Specify a joint recognition distribution
+initialize(edges::Tuple, initial_rd::ProbabilityDistribution, rf::RecognitionFactorization=currentRecognitionFactorization()) = initialize(Set(edges), initial_rd, rf)
+
+# A vector argument initializes a recognition distribution for each entry
+function initialize(edge_clusters::Vector, initial_rd::ProbabilityDistribution, rf::RecognitionFactorization=currentRecognitionFactorization())
+    for edge_cluster in edge_clusters
+        initialize(edge_cluster, initial_rd, rf)
+    end
+end
 
 """
 Verify whether the recognition factorization is proper and all distributions are set.
@@ -160,7 +201,7 @@ function verifyProper(rf::RecognitionFactorization)
 
     # All node-subgraph combinations should be coupled to a recognition distribution;
     # And all node-subgraph combinations should be coupled to a set of internal edges
-    for subgraph in rf.subgraphs
+    for subgraph in values(rf.subgraphs)
         for external_node in subgraph.nodes_connected_to_external_edges
             haskey(rf.node_subgraph_to_recognition_distribution, (external_node, subgraph)) || error("A node-subgraph combination for $(external_node) is not yet associated with a recognition distribution")
             haskey(rf.node_subgraph_to_internal_edges, (external_node, subgraph)) || error("A node-subgraph combination for $(external_node) is not yet associated with internal edges")

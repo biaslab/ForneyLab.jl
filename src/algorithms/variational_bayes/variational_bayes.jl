@@ -15,6 +15,7 @@ type VariationalBayes <: InferenceAlgorithm
     graph::FactorGraph
     n_iterations::Int64
     recognition_factorization::RecognitionFactorization
+    update_order::Vector{Subgraph}
 end
 
 function show(io::IO, algo::VariationalBayes)
@@ -41,13 +42,14 @@ end
 function VariationalBayes(  targets::Vector{Interface},
                             graph::FactorGraph=currentGraph(),
                             recognition_factorization::RecognitionFactorization=currentRecognitionFactorization();
-                            n_iterations::Int64=50,
-                            message_types::Dict{Interface,DataType}=Dict{Interface,DataType}())
+                            n_iterations::Int64 = 50,
+                            message_types::Dict{Interface,DataType}=Dict{Interface,DataType}(),
+                            update_order::Vector{Subgraph}=copy(recognition_factorization.default_update_order))
     
     verifyProper(recognition_factorization)
 
     # Generate the internal schedule for each subgraph sg
-    for sg in recognition_factorization.subgraphs
+    for sg in values(recognition_factorization.subgraphs)
         dg = summaryDependencyGraph(sg) # Dependency graph of subgraph internal edges
         rdg = summaryDependencyGraph(sg, reverse_edges=true)
 
@@ -135,7 +137,7 @@ function VariationalBayes(  targets::Vector{Interface},
         end
     end
 
-    algo = VariationalBayes(graph, n_iterations, recognition_factorization)
+    algo = VariationalBayes(graph, n_iterations, recognition_factorization, update_order)
 
     return algo
 end
@@ -189,7 +191,7 @@ function inferTypes!(entry::ScheduleEntry{VariationalRule}, inferred_outbound_ty
 end
 
 function prepare!(algo::VariationalBayes)
-    for factor in algo.recognition_factorization.subgraphs
+    for factor in values(algo.recognition_factorization.subgraphs)
         schedules = (factor.internal_pre_schedule, factor.internal_iterative_schedule, factor.internal_post_schedule)
 
         # Populate the subgraph with vague messages of the correct types
@@ -229,6 +231,9 @@ function compile!(entry::ScheduleEntry{VariationalRule}, algo::VariationalBayes)
     return buildExecute!(entry, inbounds)
 end
 
+"""
+Prepare and execute variational message passing
+"""
 function execute(algo::VariationalBayes)
     # Make sure algo is prepared
     (algo.graph.prepared_algorithm == algo) || prepare!(algo)
@@ -238,35 +243,44 @@ function execute(algo::VariationalBayes)
     resetRecognitionDistributions!(rf)
 
     # Execute internal pre schedules
-    for subgraph in rf.subgraphs
+    for subgraph in values(rf.subgraphs)
         isempty(subgraph.internal_pre_schedule) || execute(subgraph.internal_pre_schedule)
     end
 
     # Execute iterative schedules
     for iteration = 1:algo.n_iterations
-        for subgraph in rf.subgraphs
-            # Execute internal schedule
-            isempty(subgraph.internal_iterative_schedule) || execute(subgraph.internal_iterative_schedule)
-
-            # Update recognition distributions at external edges
-            if ForneyLab.verbose
-                println(" ")
-                println("Marginals (node), result")
-                println("--------------------------------------------")
-            end
-            for node in subgraph.nodes_connected_to_external_edges
-                d = calculateRecognitionDistribution!(rf, node, subgraph)
-                if ForneyLab.verbose
-                    println("$(node.id) : $(format(d))")
-                end
-            end
+        for subgraph in algo.update_order
+            update!(rf, subgraph)
         end
     end
 
     # Execute internal post schedules
-    for subgraph in rf.subgraphs
+    for subgraph in values(rf.subgraphs)
         isempty(subgraph.internal_post_schedule) || execute(subgraph.internal_post_schedule)
     end
+end
+
+"""
+Perform one iteration on a subgraph: pass internal messages and update the recognition distribution
+"""
+function update!(rf::RecognitionFactorization, subgraph::Subgraph)
+    # Execute internal schedule
+    isempty(subgraph.internal_iterative_schedule) || execute(subgraph.internal_iterative_schedule)
+
+    # Update recognition distributions at external edges
+    if ForneyLab.verbose
+        println(" ")
+        println("Marginals (node), result")
+        println("--------------------------------------------")
+    end
+    for node in subgraph.nodes_connected_to_external_edges
+        d = calculateRecognitionDistribution!(rf, node, subgraph)
+        if ForneyLab.verbose
+            println("$(node.id) : $(format(d))")
+        end
+    end
+
+    return rf
 end
 
 """
