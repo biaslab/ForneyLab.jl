@@ -23,6 +23,7 @@ facts("MvDelta unit tests") do
         @fact MvDelta([2.0]) * MvDelta([2.0]) --> MvDelta([2.0])
         @fact_throws MvDelta([1.0]) * MvDelta([2.0])
         @fact_throws MethodError MvDelta([1.0]) * MvDelta([1.0; 1.0])
+        @fact ForneyLab.prod!(MvDelta([2.0]), nothing) --> MvDelta([2.0])
     end
 
     context("Numbers and vectors should convert to MvDelta") do
