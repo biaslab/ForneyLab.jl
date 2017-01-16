@@ -181,7 +181,7 @@ facts("initialize() should specify a recognition distribution for a node-subgrap
         @fact is(rf.initial_recognition_distributions, rf.recognition_distributions) --> false
         
         sg1 = sg(:subgraph1)
-        @fact is(rf.node_subgraph_to_recognition_distribution[(n(:g1), sg1)], rf.recognition_distributions.factors[1]) --> true
+        @fact rf.node_subgraph_to_recognition_distribution[(n(:g1), sg1)] --> rf.recognition_distributions.factors[1]
     end
 
     context("Structured case") do
@@ -201,8 +201,8 @@ facts("initialize() should specify a recognition distribution for a node-subgrap
         @fact is(rf.initial_recognition_distributions, rf.recognition_distributions) --> false
         
         sg1 = sg(:subgraph1)
-        @fact is(rf.node_subgraph_to_recognition_distribution[(n(:g2), sg1)], rf.recognition_distributions.factors[1]) --> true
-        @fact is(rf.node_subgraph_to_recognition_distribution[(n(:g2), sg1)], rf.initial_recognition_distributions.factors[1]) --> false
+        @fact rf.node_subgraph_to_recognition_distribution[(n(:g2), sg1)] --> rf.recognition_distributions.factors[1]
+        @fact rf.node_subgraph_to_recognition_distribution[(n(:g2), sg1)] --> rf.initial_recognition_distributions.factors[1]
     end
 
     context("Invalid cases") do

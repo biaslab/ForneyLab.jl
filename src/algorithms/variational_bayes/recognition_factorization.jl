@@ -148,9 +148,8 @@ function initialize(node::Node, sg::Subgraph, initial_rd::ProbabilityDistributio
     rf.initial_recognition_distributions = Partitioned(push!(rf.initial_recognition_distributions.factors, initial_rd))
     
     # Set iteration distribution
-    rd = deepcopy(initial_rd)
-    rf.recognition_distributions = Partitioned(push!(rf.recognition_distributions.factors, rd))
-    rf.node_subgraph_to_recognition_distribution[(node, sg)] = rd
+    rf.recognition_distributions = Partitioned(push!(rf.recognition_distributions.factors, deepcopy(initial_rd)))
+    rf.node_subgraph_to_recognition_distribution[(node, sg)] = deepcopy(initial_rd)
 
     return rf
 end

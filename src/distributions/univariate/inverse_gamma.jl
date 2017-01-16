@@ -7,7 +7,7 @@ Description:
 
 Pamameters:
 
-    Real scalars a > 0 (shape) and b > 0 (scale).
+    Real scalars a > 0 (shape) and b > 0 (rate).
 
 Construction:
 
