@@ -36,6 +36,13 @@ function prod!{T,dims_n,dims_m}(x::MatrixDelta{T,dims_n,dims_m}, y::MatrixDelta{
     return z
 end
 
+@symmetrical function prod!{T,dims_n,dims_m}(::Void, y::MatrixDelta{T,dims_n,dims_m}, z::MatrixDelta{T,dims_n,dims_m}=deepcopy(y))
+    # Product of an unknown PDF and MatrixDelta
+    (z.M == y.M) || (z.M = deepcopy(y.M))
+
+    return z
+end
+
 isProper(dist::MatrixDelta) = true
 
 vague{T,dims_n, dims_m}(::Type{MatrixDelta{T,dims_n,dims_m}}) = MatrixDelta(rand(T, dims_n, dims_m))

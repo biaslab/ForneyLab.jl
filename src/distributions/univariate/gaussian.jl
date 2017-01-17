@@ -87,9 +87,11 @@ function format(dist::Gaussian)
     elseif !isnan(dist.m) && !isnan(dist.W)
         return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
     elseif !isnan(dist.xi) && !isnan(dist.W)
-        return "N(ξ=$(format(dist.xi)), W=$(format(dist.W)))"
+        ensureParameters!(dist, (:m,))
+        return "N(m=$(format(dist.m)), W=$(format(dist.W)))"
     elseif !isnan(dist.xi) && !isnan(dist.V)
-        return "N(ξ=$(format(dist.xi)), V=$(format(dist.V)))"
+        ensureParameters!(dist, (:m,))
+        return "N(m=$(format(dist.m)), V=$(format(dist.V)))"
     else
         return "N(underdetermined)"
     end
@@ -261,7 +263,7 @@ convert(::Type{Gaussian}, delta::Delta{Float64}) = Gaussian(m=delta.m, V=tiny)
 convert(::Type{Message{Gaussian}}, msg::Message{Delta{Float64}}) = Message(Gaussian(m=msg.payload.m, V=tiny))
 
 # Entropy functional
-function H(dist::Gaussian)
+function differentialEntropy(dist::Gaussian)
     ensureParameters!(dist, (:m, :V))
 
     return  0.5*log(dist.V) +

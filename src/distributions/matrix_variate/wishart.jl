@@ -110,7 +110,7 @@ dimensions{dims}(distribution::Wishart{dims}) = (dims, dims)
 dimensions{T<:Wishart}(distribution_type::Type{T}) = (distribution_type.parameters[end], distribution_type.parameters[end])
 
 # Entropy functional
-function H{dims}(dist::Wishart{dims})
+function differentialEntropy{dims}(dist::Wishart{dims})
     return  0.5*(dims + 1.0)*log(det(dist.V)) +
             0.5*dims*(dims + 1.0)*log(2) +
             0.25*dims*(dims - 1.0)*log(pi) +

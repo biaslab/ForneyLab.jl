@@ -42,16 +42,13 @@ facts("Gamma unit tests") do
         @fact Gamma(a=1.0, b=2.0) * Gamma(a=3.0, b=4.0) --> Gamma(a=3.0, b=6.0)
         @fact Delta(0.5) * Gamma(a=3.0, b=4.0) --> Delta(0.5)
         @fact_throws DomainError Gamma(a=3.0, b=4.0) * Delta(-1.1)
-        @fact typeof(ForneyLab.prod!(Delta(0.5), Gamma(a=3.0, b=4.0), Gamma())) --> Gamma
-        @fact mean(ForneyLab.prod!(Gamma(a=3.0, b=4.0), Delta(0.5), Gamma())) --> roughly(0.5)
-        @fact var(ForneyLab.prod!(Gamma(a=3.0, b=4.0), Delta(0.5), Gamma())) --> less_than(1e-6)
     end
 
     context("unsafeLogMean() should return correct result") do
         @fact ForneyLab.unsafeLogMean(Gamma(a=1.0, b=2.0)) --> digamma(1) - log(2)
     end
 
-    context("H() should evaluate the entropy") do
-        @fact ForneyLab.H(Gamma(a=0.5, b=0.5)) --> roughly(0.7837571104739337)
+    context("differentialEntropy() should evaluate the differential entropy") do
+        @fact ForneyLab.differentialEntropy(Gamma(a=0.5, b=0.5)) --> roughly(0.7837571104739337)
     end
 end

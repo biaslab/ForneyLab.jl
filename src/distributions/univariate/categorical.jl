@@ -44,6 +44,8 @@ show(io::IO, dist::Categorical) = println(io, format(dist))
 
 isProper(dist::Categorical) = (abs(sum(dist.p)-1.) < 1e-6)
 
+unsafeMean(dist::Categorical) = deepcopy(dist.p)
+
 function prod!{k}(x::Categorical{k}, y::Categorical{k}, z::Categorical{k}=vague(Categorical{k}))
     # Multiplication of 2 categorical PMFs: p(z) = p(x) * p(y)
     z.p[:] = x.p .* y.p
