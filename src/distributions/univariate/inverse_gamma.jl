@@ -76,7 +76,7 @@ end
 ==(x::InverseGamma, y::InverseGamma) = (x.a==y.a && x.b==y.b)
 
 # Entropy functional
-function H(dist::InverseGamma)
+function differentialEntropy(dist::InverseGamma)
     return  dist.a +
             log(dist.b*gamma(dist.a)) -
             (1 + dist.a)*digamma(dist.a)

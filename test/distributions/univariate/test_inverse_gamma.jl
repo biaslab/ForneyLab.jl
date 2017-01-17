@@ -50,4 +50,12 @@ facts("InverseGamma unit tests") do
         @fact mean(ForneyLab.prod!(InverseGamma(a=3.0, b=4.0), Delta(0.5), InverseGamma())) --> roughly(0.5)
         @fact var(ForneyLab.prod!(InverseGamma(a=3.0, b=4.0), Delta(0.5), InverseGamma())) --> less_than(1e-6)
     end
+
+    context("unsafeLogMean() should return correct result") do
+        @fact ForneyLab.unsafeLogMean(InverseGamma(a=1.0, b=2.0)) --> log(2) - digamma(1)
+    end
+
+    context("differentialEntropy() should evaluate the differential entropy") do
+        @fact ForneyLab.differentialEntropy(InverseGamma(a=0.5, b=0.5)) --> roughly(3.32448280139689)
+    end
 end
