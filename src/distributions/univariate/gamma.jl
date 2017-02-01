@@ -68,8 +68,8 @@ end
 
 # Entropy functional
 function differentialEntropy(dist::Gamma)
-    return  log(gamma(dist.a)) -
-            (dist.a - 1.0)*digamma(dist.a) -
-            log(dist.b) +
-            dist.a
+    lgamma(dist.a) -
+    (dist.a - 1.0)*digamma(dist.a) -
+    log(dist.b) +
+    dist.a
 end

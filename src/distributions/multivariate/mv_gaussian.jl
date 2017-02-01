@@ -113,6 +113,11 @@ function pdf(dist::MvGaussian, x::Vector{Float64})
     end
 end
 
+function logpdf{dims}(dist::MvGaussian{dims}, x::Vector{Float64})
+    ensureParameters!(dist, (:m, :W))
+    return (-0.5*dims*log(2*pi) + log(det(dist.W)) - 0.5*(x - dist.m)'*dist.W*(x - dist.m))[1] # compute and convert to float
+end
+
 function vague!{dims}(dist::MvGaussian{dims})
     dist.m = zeros(dims)
     dist.V = huge*diageye(dims)

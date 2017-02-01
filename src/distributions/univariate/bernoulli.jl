@@ -75,3 +75,16 @@ end
 
 # Converts from Delta{Bool} -> Bernoulli
 Base.convert{T<:Bool}(::Type{Bernoulli}, delta::Delta{T}) = Bernoulli(float(delta.m))
+
+function differentialEntropy(dist::Bernoulli)
+    if dist.p < tiny
+        p = tiny
+    elseif dist.p > 1.0 - tiny
+        p = 1.0 - tiny
+    else
+        p = dist.p
+    end
+
+    return  -(1.0 - p)*log(1.0 - p) -
+            p*log(p)
+end

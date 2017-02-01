@@ -73,6 +73,19 @@ function pdf(dist::Gaussian, x::Float64)
     end
 end
 
+function logpdf(dist::Gaussian, x::Float64)
+    ensureParameter!(dist, Val{:m})
+    if !isnan(dist.W)
+        C = 0.5*log(dist.W) - 0.5*log(2.0*pi)
+        return C - 0.5*dist.W*(x - dist.m)^2
+    elseif !isnan(dist.V)
+        C = -0.5*log(dist.V) - 0.5*log(2.0*pi)
+        return C - 0.5*(1/dist.V)*(x - dist.m)^2
+    else
+        error("Cannot evaluate logpdf for underdetermined Gaussian")
+    end
+end
+
 function vague!(dist::Gaussian)
     dist.m = 0.0
     dist.V = huge

@@ -6,12 +6,14 @@ facts("RecognitionFactorization(::FactorGraph) should initialize a new recogniti
     g = FactorGraph()
     rf = RecognitionFactorization(g)
     @fact rf.graph --> g
-    @fact rf.subgraphs --> Subgraph[]
+    @fact rf.subgraphs --> Dict{Symbol, Subgraph}()
+    @fact rf.subgraph_id_counter --> 0
     @fact rf.edge_to_subgraph --> Dict{Edge, Subgraph}()
     @fact rf.node_subgraph_to_internal_edges --> Dict{Tuple{Node, Subgraph}, Set{Edge}}()
     @fact rf.initial_recognition_distributions --> Partitioned{ProbabilityDistribution,0}(ProbabilityDistribution[])
     @fact rf.recognition_distributions --> Partitioned{ProbabilityDistribution,0}(ProbabilityDistribution[])
     @fact rf.node_subgraph_to_recognition_distribution --> Dict{Tuple{Node, Subgraph}, ProbabilityDistribution}()
+    @fact rf.default_update_order --> Subgraph[]
 end
 
 facts("RecognitionFactorization() should initialize a new recognition factorization and create a current factorization") do
@@ -52,8 +54,9 @@ facts("factor() should specify a new custom subgraph for the recognition factori
         @fact typeof(rf) --> RecognitionFactorization
         @fact rf.graph --> g
         @fact length(rf.subgraphs) --> 1
+        @fact rf.subgraph_id_counter --> 1
 
-        sg1 = rf.subgraphs[1]
+        sg1 = sg(:subgraph1)
         @fact length(rf.edge_to_subgraph) --> 2
         @fact rf.edge_to_subgraph[eg(:t1_a1)] --> sg1
         @fact rf.edge_to_subgraph[eg(:a1_g1)] --> sg1
@@ -73,12 +76,13 @@ facts("factor() should specify a new custom subgraph for the recognition factori
         #                    ^
         #                   here
 
-        factor(eg(:g1_g2))
+        factor(eg(:g1_g2), id=:second_sg)
 
         # Verify factorization properties
         @fact length(rf.subgraphs) --> 2 # A subgraph should be added
+        @fact rf.subgraph_id_counter --> 1 # Custom name, so identifier counter should still be one
 
-        sg2 = rf.subgraphs[end]
+        sg2 = sg(:second_sg)
         @fact length(rf.edge_to_subgraph) --> 3
         @fact rf.edge_to_subgraph[eg(:g1_g2)] --> sg2
 
@@ -106,18 +110,18 @@ facts("factor() should specify a new custom subgraph for the recognition factori
         # Verify factorization properties
         @fact length(rf.subgraphs) --> 1
 
-        sg = rf.subgraphs[1]
+        sg1 = sg(:subgraph1)
         @fact length(rf.edge_to_subgraph) --> 2
-        @fact rf.edge_to_subgraph[eg(:t3_g2)] --> sg
-        @fact rf.edge_to_subgraph[eg(:g2_t4)] --> sg
+        @fact rf.edge_to_subgraph[eg(:t3_g2)] --> sg1
+        @fact rf.edge_to_subgraph[eg(:g2_t4)] --> sg1
 
         @fact length(rf.node_subgraph_to_internal_edges) --> 1
-        @fact rf.node_subgraph_to_internal_edges[(n(:g2), sg)] --> Set([eg(:t3_g2), eg(:g2_t4)])
+        @fact rf.node_subgraph_to_internal_edges[(n(:g2), sg1)] --> Set([eg(:t3_g2), eg(:g2_t4)])
 
         # Verify subgraph properties
-        @fact sg.internal_edges --> Set([eg(:t3_g2), eg(:g2_t4)])
-        @fact sg.external_edges --> Set([eg(:g1_g2)])
-        @fact sg.nodes_connected_to_external_edges --> [n(:g2)]
+        @fact sg1.internal_edges --> Set([eg(:t3_g2), eg(:g2_t4)])
+        @fact sg1.external_edges --> Set([eg(:g1_g2)])
+        @fact sg1.nodes_connected_to_external_edges --> [n(:g2)]
     end
 end
 
@@ -176,8 +180,8 @@ facts("initialize() should specify a recognition distribution for a node-subgrap
         @fact rf.recognition_distributions --> Partitioned([vague(Gaussian)])
         @fact is(rf.initial_recognition_distributions, rf.recognition_distributions) --> false
         
-        sg = rf.subgraphs[1]
-        @fact is(rf.node_subgraph_to_recognition_distribution[(n(:g1), sg)], rf.recognition_distributions.factors[1]) --> true
+        sg1 = sg(:subgraph1)
+        @fact rf.node_subgraph_to_recognition_distribution[(n(:g1), sg1)] --> rf.recognition_distributions.factors[1]
     end
 
     context("Structured case") do
@@ -196,9 +200,9 @@ facts("initialize() should specify a recognition distribution for a node-subgrap
         @fact rf.recognition_distributions --> Partitioned([vague(MvGaussian{2})])
         @fact is(rf.initial_recognition_distributions, rf.recognition_distributions) --> false
         
-        sg = rf.subgraphs[1]
-        @fact is(rf.node_subgraph_to_recognition_distribution[(n(:g2), sg)], rf.recognition_distributions.factors[1]) --> true
-        @fact is(rf.node_subgraph_to_recognition_distribution[(n(:g2), sg)], rf.initial_recognition_distributions.factors[1]) --> false
+        sg1 = sg(:subgraph1)
+        @fact rf.node_subgraph_to_recognition_distribution[(n(:g2), sg1)] --> rf.recognition_distributions.factors[1]
+        @fact rf.node_subgraph_to_recognition_distribution[(n(:g2), sg1)] --> rf.initial_recognition_distributions.factors[1]
     end
 
     context("Invalid cases") do

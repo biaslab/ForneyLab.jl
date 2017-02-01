@@ -6,7 +6,7 @@ facts("General node properties unit tests") do
     FactorGraph()
     c = 0
     for node_type in subtypes(Node)
-        if node_type!=MockNode
+        if (node_type != MockNode)
             context("$(node_type) properties should include interfaces and id") do
                 test_node = node_type()
                 @fact typeof(test_node) <: node_type --> true
@@ -35,14 +35,16 @@ facts("General node properties unit tests") do
                 @fact currentGraph().nodes[my_node.id] --> my_node
             end
 
-            facts("$(node_type) constructor should check for unique id") do
+            context("$(node_type) constructor should check for unique id") do
                 MockNode(id=Symbol("mock_$(c)"))
                 @fact_throws MockNode(id=Symbol("mock_$(c)"))
             end
         end
+
         c += 1
     end
 end
+
 
 #####################
 # Integration tests

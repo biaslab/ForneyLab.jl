@@ -5,7 +5,7 @@ using Optim, LaTeXStrings
 export ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, AbstractDelta
 export sumProductRule!, expectationRule!, variationalRule!
 export InferenceAlgorithm
-export vague, self, ==, isProper, sample, dimensions, pdf, mean, var, cov
+export vague, self, ==, isProper, sample, dimensions, pdf, logpdf, mean, var, cov
 export setVerbosity
 export prepare!
 export rules

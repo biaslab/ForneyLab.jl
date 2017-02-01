@@ -7,6 +7,10 @@ facts("TerminalNode unit tests") do
         @fact PriorNode --> TerminalNode
     end
 
+    context("DataNode should be a type alias to TerminalNode") do
+        @fact DataNode --> TerminalNode
+    end
+
     context("TerminalNode() should initialize a TerminalNode with 1 interface") do
         FactorGraph()
         TerminalNode(id=:node)
@@ -38,7 +42,10 @@ facts("TerminalNode unit tests") do
     end
 
     context("averageEnergy() should evaluate the average energy") do
-        @fact ForneyLab.averageEnergy(TerminalNode, Delta(0.0), Delta(1.0), Gaussian()) --> roughly(1.4189385332046727)
-        @fact ForneyLab.averageEnergy(TerminalNode, MvDelta([0.0]), MatrixDelta([1.0].'), MvGaussian()) --> roughly(1.4189385332046727)
+        @fact ForneyLab.averageEnergy(TerminalNode, Gaussian(m=0.0, W=1.0), Gaussian()) --> roughly(1.4189385332046727)
+        @fact ForneyLab.averageEnergy(TerminalNode, MvGaussian(m=[0.0], W=reshape([1.0], 1, 1)), MvGaussian()) --> roughly(1.4189385332046727)
+        @fact ForneyLab.averageEnergy(TerminalNode, Beta(a=1.0, b=2.0), Beta(a=2.0, b=1.0)) --> roughly(0.8068528194400549)
+        @fact ForneyLab.averageEnergy(TerminalNode, Gamma(a=1.0, b=2.0), Gamma(a=2.0, b=1.0)) --> roughly(3.3068528194400546)
+        @fact ForneyLab.averageEnergy(TerminalNode, Wishart(V=[0.25].', nu=2.0), Wishart(V=[0.5].', nu=4.0)) --> roughly(3.3068528194400546)
     end
 end

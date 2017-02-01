@@ -41,6 +41,10 @@ isProper(dist::Beta) = (dist.a >= tiny && dist.b >= tiny)
 
 unsafeMean(dist::Beta) = dist.a/(dist.a+dist.b)
 
+unsafeLogMean(dist::Beta) = digamma(dist.a) - digamma(dist.a + dist.b) # E[log(X)]
+
+unsafeMirroredLogMean(dist::Beta) = digamma(dist.b) - digamma(dist.a + dist.b) # E[log(1 - X)]
+
 unsafeVar(dist::Beta) = dist.a*dist.b/((dist.a+dist.b)^2*(dist.a+dist.b+1))
 
 format(dist::Beta) = "Bet(a=$(format(dist.a)), b=$(format(dist.b)))"
@@ -73,3 +77,10 @@ end
 end
 
 ==(x::Beta, y::Beta) = (x.a==y.a && x.b==y.b)
+
+function differentialEntropy(dist::Beta)
+    lbeta(dist.a, dist.b) -
+    (dist.a - 1.0)*digamma(dist.a) -
+    (dist.b - 1.0)*digamma(dist.b) +
+    (dist.a + dist.b - 2.0)*digamma(dist.a + dist.b)
+end

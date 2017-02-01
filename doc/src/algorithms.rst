@@ -150,13 +150,21 @@ The variational Bayes algorithm requires the specification of a recognition fact
 
     Factorize the cluster of the argument edge.
 
-.. function:: factor(::Vector{Edge})
+.. function:: factor(::Vector)
 
-    Factorize the cluster(s) of the argument edges. If the edges are in separate clusters, this function defines a structured factorization.
+    Call ``factor`` on each element in the argument vector.
+
+.. function:: factor(::Tuple)
+
+    Factorize the cluster(s) of the argument edges in the tuple. If the edges are in separate clusters, this function defines a structured factorization.
+
+The order in which the factors are defined also defines the algorithm's default update order of the subgraphs. The update order can be overwritten after algorithm constuction. A shorthand for the mean-field factorization is also available.
 
 .. function:: factorizeMeanField(::FactorGraph)
 
     Define a naive (mean-field) factorization on the argument graph.
+
+After the subgraphs are defined, the initial recognition distributions can be specified by ``initialize``.
 
 .. function:: initialize(::Edge, ::ProbabilityDistribution)
 
@@ -164,7 +172,11 @@ The variational Bayes algorithm requires the specification of a recognition fact
 
 .. function:: initialize(::Vector{Edge}, ::ProbabilityDistribution)
 
-    Initialize a joint recognition distribution on the edges. 
+    Call ``initalize`` on each element in the vector.
+
+.. function:: initialize(::Tuple, ::ProbabilityDistribution)
+
+    Initialize a joint recognition distribution on the edges in the tuple. 
 
 
 Algorithm constructors
