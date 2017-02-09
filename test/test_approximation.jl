@@ -1,7 +1,13 @@
-facts("Approximations") do
-    context("Parameters of Approximation should be subtype-constrained") do
-        @fact Approximation{Gaussian, Laplace} --> Approximation{Gaussian, Laplace}
-        @fact_throws Approximation{Gaussian, Int64}
-        @fact_throws Approximation{Int64, Laplace}
-    end
+module ApproximationTest
+
+using Base.Test
+import ForneyLab: Approximation, Laplace, Gaussian
+
+@testset "Approximation" begin
+    # parameters of approximations should be subtype-constrained
+    @test Approximation{Gaussian, Laplace} == Approximation{Gaussian, Laplace}
+    @test_throws Exception Approximation{Gaussian, Int64}
+    @test_throws Exception Approximation{Int64, Laplace}
 end
+
+end #module

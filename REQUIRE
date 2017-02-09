@@ -1,5 +1,4 @@
 julia 0.5
-FactCheck
 Optim
 LaTeXStrings
 ArgParse

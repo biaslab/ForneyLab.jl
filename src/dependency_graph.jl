@@ -10,8 +10,6 @@
 #      An edge v -> w in the DG denotes that the message out of interface v depends on the message out of w.
 #   2. Invoke the children algorithm on the DG to find a valid sequential message passing schedule.
 
-export children
-
 ###############################
 # Linked list datastructure
 ###############################

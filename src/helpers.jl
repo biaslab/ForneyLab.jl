@@ -1,8 +1,8 @@
-export isApproxEqual, huge, tiny, format, isValid, invalidate!, cholinv, diageye, *, .*, ^
+export huge, tiny, cholinv, diageye, *, .*, ^
 
 import Base.*, Base.(.*), Base.^, Base.==, Base.sqrt
 
-# ensureMatrix: ensure that the input is a 2D array or nothing
+"""ensureMatrix: cast input to a Matrix if necessary"""
 ensureMatrix{T<:Number}(arr::AbstractMatrix{T}) = arr
 ensureMatrix{T<:Number}(arr::Vector{T}) = Diagonal(arr)
 ensureMatrix(n::Number) = fill!(Array(typeof(n),1,1), n)
@@ -13,8 +13,7 @@ ensureMatrix(n::Void) = nothing
 const huge = 1e12
 const tiny = 1e-12
 
-# Functions for checking validity and invalidating arrays of floats
-# An array is invalid if and only if its first entry is NaN
+"""isValid: return true if the (first element of) the input is not NaN"""
 isValid(v::AbstractArray{Float64}) = !isnan(v[1])
 isValid(v::Float64) = !isnan(v)
 
@@ -39,7 +38,6 @@ sqrt(D::Diagonal) = Diagonal(sqrt(D.diag))
 *(sym::Symbol, num::Number) = Symbol(string(sym, num))
 *(num::Number, sym::Symbol) = Symbol(string(num, sym))
 *(sym1::Symbol, sym2::Symbol) = Symbol(string(sym1, sym2))
-
 *(sym::Symbol, rng::Range) = Symbol[sym*k for k in rng]
 *(rng::Range, sym::Symbol) = Symbol[k*sym for k in rng]
 *{T<:Number}(sym::Symbol, vec::Vector{T}) = Symbol[sym*k for k in vec]
@@ -94,10 +92,10 @@ function format(v::Vector{Any})
     return str
 end
 
-# isApproxEqual: check approximate equality
+"""isApproxEqual: check approximate equality"""
 isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < tiny
 
-# isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from.
+"""isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from."""
 isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round(Matrix(arr), round(Int, log(10, huge)))) && isposdef(Matrix(arr), :L)
 
 function viewFile(filename::AbstractString)
@@ -105,36 +103,18 @@ function viewFile(filename::AbstractString)
     is_windows() ? run(`cmd /c start $filename`) : (is_apple() ? run(`open $filename`) : (is_linux() ? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
 end
 
+"""truncate(str, max): truncate str to max positions"""
 function truncate(str::String, max::Integer)
-    # Truncate srt to max positions
     if length(str)>max
         return "$(str[1:max-3])..."
     end
     return str
 end
 
+"""pad(str, size): pad str with spaces until its length reaches size"""
 function pad(str::String, size::Integer)
-    # Pads str with spaces until its length reaches size
     str_trunc = truncate(str, size)
     return "$(str_trunc)$(repeat(" ",size-length(str_trunc)))"
-end
-
-function expand(d::Dict)
-    # Loop over keys in d and when the key is an Array,
-    # expand the entries of the array into separate dictionary entries.
-
-    d_expanded = Dict()
-    for (key, val) in d
-        if typeof(key) <: Array
-            for i = 1:length(key)
-                d_expanded[key[i]] = val
-            end
-        else
-            d_expanded[key] = val
-        end
-    end
-
-    return d_expanded
 end
 
 """
@@ -158,7 +138,6 @@ function trigammaInverse(x::Float64)
 
     return y
 end
-
 
 """
 Duplicate a method definition with the order of the first two arguments swapped.

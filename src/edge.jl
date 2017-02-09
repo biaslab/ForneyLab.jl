@@ -1,34 +1,28 @@
 export Edge
-export setForwardMessage!, setBackwardMessage!, forwardMessage, backwardMessage, ensureMarginal!, calculateMarginal, calculateMarginal!
 
 """
-An Edge joins two interfaces and has a direction (from tail to head).
-Forward messages flow in the direction of the Edge (tail to head).
-An Edge can contain a marginal, which is the product of the forward and backward message.
+An Edge joins two interfaces (half-edges) `a` and `b`.
 """
 type Edge <: AbstractEdge
     id::Symbol
-    tail::Interface
-    head::Interface
-    marginal::Union{ProbabilityDistribution, Void}
+    a::Interface
+    b::Interface
 
-    function Edge(tail::Interface, head::Interface; id=Symbol("$(tail.node.id)_$(head.node.id)"))
+    function Edge(a::Interface, b::Interface; id=Symbol("$(a.node.id)_$(b.node.id)"))
         # add_to_graph is false for edges that are internal in a composite node
         current_graph = currentGraph()
-        !is(head.node, tail.node) || error("Cannot connect two interfaces of the same node: $(typeof(head.node)) $(head.node.id)")
-        (head.partner == nothing && tail.partner == nothing) || error("Previously defined edges cannot be repositioned.")
-        hasNode(current_graph, head.node) || error("Head node does not belong to the current graph.")
-        hasNode(current_graph, tail.node) || error("Tail node does not belong to the current graph.")
+        (b.partner == nothing && a.partner == nothing) || error("Previously defined edges cannot be repositioned.")
+        (hasNode(current_graph, b.node) && hasNode(current_graph, a.node)) || error("Node does not belong to the current graph.")
         !haskey(current_graph.edges, id) || error("The edge id $(id) already exists in the current graph. Consider specifying an explicit id.")
 
-        self = new(id, tail, head, nothing)
+        self = new(id, a, b)
 
         # Assign pointed to edge from interfaces
-        tail.edge = self
-        head.edge = self
-        # Partner head and tail, and merge their families
-        tail.partner = head
-        head.partner = tail
+        a.edge = self
+        b.edge = self
+        # Partner b and a, and merge their families
+        a.partner = b
+        b.partner = a
 
         # Add edge to current_graph
         current_graph.edges[self.id] = self
@@ -38,28 +32,18 @@ type Edge <: AbstractEdge
     end
 end
 
-Base.deepcopy(::Edge) = error("deepcopy(::Edge) is not possible. You should construct a new Edge, or copy the entire FactorGraph using deepcopy(::FactorGraph).")
-
-# Edge constructors that accept nodes instead of a specific Interface
-# firstFreeInterface(node) should be overloaded for nodes with interface-invariant node functions
-firstFreeInterface(node::Node) = error("Cannot automatically pick a free interface on non-symmetrical $(typeof(node)) $(node.id)")
-Edge(tail_node::Node, head::Interface; args...) = Edge(firstFreeInterface(tail_node), head; args...)
-Edge(tail::Interface, head_node::Node; args...) = Edge(tail, firstFreeInterface(head_node); args...)
-Edge(tail_node::Node, head_node::Node; args...) = Edge(firstFreeInterface(tail_node), firstFreeInterface(head_node); args...)
-
-
 function show(io::IO, edge::Edge)
-    if (tail_handle = handle(edge.tail)) != ""
-        tail_interface = ((typeof(tail_handle)==Symbol) ? "i[:$(tail_handle)]" : "i[$(tail_handle)]")
+    if (a_handle = handle(edge.a)) != ""
+        a_interface = ((typeof(a_handle)==Symbol) ? "i[:$(a_handle)]" : "i[$(a_handle)]")
     else
-        tail_interface = "interfaces[$(findfirst(edge.tail.node.interfaces, edge.tail))]"
+        a_interface = "interfaces[$(findfirst(edge.a.node.interfaces, edge.a))]"
     end
-    if (head_handle = handle(edge.head)) != ""
-        head_interface = ((typeof(head_handle)==Symbol) ? "i[:$(head_handle)]" : "i[$(head_handle)]")
+    if (b_handle = handle(edge.b)) != ""
+        b_interface = ((typeof(b_handle)==Symbol) ? "i[:$(b_handle)]" : "i[$(b_handle)]")
     else
-        head_interface = "interfaces[$(findfirst(edge.head.node.interfaces, edge.head))]"
+        b_interface = "interfaces[$(findfirst(edge.b.node.interfaces, edge.b))]"
     end
-    println(io, "Edge with id $(edge.id) from $(edge.tail.node.id).$(tail_interface) to $(edge.head.node.id).$(head_interface).")
+    println(io, "Edge with id $(edge.id) from $(edge.a.node.id).$(a_interface) to $(edge.b.node.id).$(b_interface).")
 end
 
 function show(io::IO, edges::Union{Vector{Edge}, Set{Edge}})
@@ -69,48 +53,8 @@ function show(io::IO, edges::Union{Vector{Edge}, Set{Edge}})
     end
 end
 
-setForwardMessage!(edge::Edge, message::Message) = setMessage!(edge.tail, message)
-setBackwardMessage!(edge::Edge, message::Message) = setMessage!(edge.head, message)
-forwardMessage(edge::Edge) = edge.tail.message
-backwardMessage(edge::Edge) = edge.head.message
-
-function ensureMarginal!{T<:ProbabilityDistribution}(edge::Edge, distribution_type::Type{T})
-    # Ensure that edge carries a marginal of type distribution_type, used for in place updates
-    if edge.marginal==nothing || (typeof(edge.marginal) <: distribution_type)==false
-        if distribution_type <: Delta{Float64}
-            edge.marginal = Delta() # vague() not implemented
-        else
-            edge.marginal = vague(distribution_type)
-        end
-    end
-
-    return edge.marginal
-end
-
-# Compare edges by alphabetically comparing the ids in the order (head, tail)
+"""Compare edges by alphabetically comparing the ids in the order (b, a)"""
 Base.isless(e1::Edge, e2::Edge) = isless("$(e1.id)", "$(e2.id)")
 Base.isless(e_arr1::Array{Edge}, e_arr2::Array{Edge}) = isless("$(e_arr1[1,1].id)", "$(e_arr2[1,1].id)")
 Base.isless(e1::Edge, e_arr2::Array{Edge}) = isless("$(e1.id)", "$(e_arr2[1,1].id)")
 Base.isless(e_arr1::Array{Edge}, e2::Edge) = isless("$(e_arr1[1,1].id)", "$(e2.id)")
-
-"""
-Calculates the marginal without writing back to the edge
-"""
-function calculateMarginal(edge::Edge)
-    (edge.tail.message != nothing) || error("Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a forward message.")
-    (edge.head.message != nothing) || error("Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a backward message.")
-    return edge.tail.message.payload * edge.head.message.payload
-end
-
-"""
-Calculates and writes the marginal on edge
-"""
-function calculateMarginal!(edge::Edge)
-    (edge.tail.message != nothing) || error("Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a forward message.")
-    (edge.head.message != nothing) || error("Edge ($(edge.tail.node.id) --> $(edge.head.node.id)) should hold a backward message.")
-    if edge.marginal != nothing
-        return prod!(edge.tail.message.payload, edge.head.message.payload, edge.marginal)
-    else
-        return edge.marginal = edge.tail.message.payload * edge.head.message.payload
-    end
-end
