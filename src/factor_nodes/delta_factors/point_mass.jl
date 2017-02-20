@@ -15,7 +15,7 @@ Construction:
 
     No constructor available.
 """
-abstract PointMass <: DeltaNode
+abstract PointMass <: DeltaFactor
 
 mean(dist::ProbabilityDistribution{PointMass}) = dist.parameters[1]
 

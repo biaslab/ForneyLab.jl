@@ -33,10 +33,14 @@ include("message.jl")
 include("probability_distribution.jl")
 include("interface.jl")
 include("edge.jl")
-include("schedule.jl")
+include("variable.jl")
 
-# Nodes
-include("nodes/point_mass.jl")
+# Delta factors
+include("factor_nodes/delta_factors/point_mass.jl")
+
+# Soft factors
+
+
 # include("nodes/equality.jl")
 # include("nodes/addition.jl")
 # include("nodes/terminal.jl")
@@ -50,8 +54,8 @@ include("nodes/point_mass.jl")
 # include("nodes/bernoulli.jl")
 # include("nodes/categorical.jl")
 
-# # Graph, wraps and algorithm
-# include("factor_graph.jl")
+# Graph, wraps and algorithm
+include("factor_graph.jl")
 # include("wrap.jl")
 # include("inference_algorithm.jl")
 
