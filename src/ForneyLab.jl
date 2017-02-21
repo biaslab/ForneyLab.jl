@@ -24,22 +24,21 @@ import Base.show, Base.convert, Base.==, Base.mean, Base.var, Base.cov
 
 # High level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface
+abstract AbstractVariable
 abstract InferenceAlgorithm
 
 # Low-level internals
-include("approximation.jl")
 include("factor_node.jl")
+include("interface.jl")
 include("message.jl")
 include("probability_distribution.jl")
-include("interface.jl")
+include("approximation.jl")
 include("edge.jl")
 include("variable.jl")
 
-# Delta factors
-include("factor_nodes/delta_factors/point_mass.jl")
-
-# Soft factors
-
+# Factor nodes
+include("factor_nodes/constant.jl")
+include("factor_nodes/gaussian_mean_variance.jl")
 
 # include("nodes/equality.jl")
 # include("nodes/addition.jl")

@@ -18,5 +18,5 @@ type Message{rule<:MessageCalculationRule}
     rule_id::Symbol
     outbound_family::DataType
 
-    Message{rule<:MessageCalculationRule}(interface::Interface) = new{rule}(interface)
+    Message(interface::Interface) = new{rule}(interface)
 end
