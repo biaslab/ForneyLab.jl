@@ -24,13 +24,12 @@ type GaussianMeanVariance <: SoftFactor
 
     function GaussianMeanVariance(out::Variable, mean::Variable, variance::Variable; id=generateId(GaussianMeanVariance))
         self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
+        addNode!(currentGraph(), self)
         self.i[:mean] = self.interfaces[1] = associate!(Interface(self), mean)
         self.i[:variance] = self.interfaces[2] = associate!(Interface(self), variance)
         self.i[:out] = self.interfaces[3] = associate!(Interface(self), out)
 
-        addNode!(currentGraph(), self)
-
-        return out
+        return self
     end
 end
 

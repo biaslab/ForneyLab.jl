@@ -3,7 +3,7 @@ export Variable
 """
 A Variable encompasses one or more edges in a FactorGraph.
 """
-immutable Variable <: AbstractVariable
+type Variable <: AbstractVariable
     id::Symbol
     edges::Vector{Edge}
 
@@ -21,14 +21,19 @@ end
 function associate!(iface::Interface, var::Variable)
     if isempty(var.edges)
         # Make a new Edge
-        edge = Edge(iface)
+        Edge(var, iface)
     elseif var.edges[end].b == nothing
         # Connect to the loose end of an existing Edge
-
-        # update partner, update edge, update interface
+        connect!(var.edges[end], iface)
     else
         # Insert an equality constraint node
-
+        equ_idx = Int((length(var.edges) - 1) / 2) + 1
+        equ = Equality(id=Symbol("equ_$(var.id)_$(equ_idx)"))
+        disconnected_iface = var.edges[end].b
+        disconnect!(var.edges[end], disconnected_iface)
+        connect!(var.edges[end], equ.interfaces[1])
+        Edge(var, disconnected_iface, equ.interfaces[2])
+        Edge(var, iface, equ.interfaces[3])
     end
 
     return iface

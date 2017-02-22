@@ -1,4 +1,4 @@
-export Constant
+export Constant, constant
 
 """
 Description:
@@ -25,12 +25,17 @@ type Constant <: DeltaFactor
 
     function Constant(out::Variable, value::Any; id=generateId(Constant))
         self = new(id, Array(Interface, 1), Dict{Symbol,Interface}(), value)
+        addNode!(currentGraph(), self)
+        
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
 
-        addNode!(currentGraph(), self)
-
-        return out
+        return self
     end
 end
 
-Constant(value::Any; id=generateNodeId(Constant)) = Constant(Variable(id=id), value, id=id)
+function constant(value::Any; id=generateId(Variable))
+    var = Variable(id=id)
+    Constant(var, value, id=id)
+
+    return var
+end

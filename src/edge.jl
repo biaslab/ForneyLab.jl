@@ -14,10 +14,10 @@ type Edge <: AbstractEdge
         hasNode(current_graph, a.node) || error("Node does not belong to the current graph.")
         hasVariable(current_graph, var) || error("Variable does not belong to the current graph.")
 
-        self = new(id, a, nothing)
+        self = new(var, a, nothing)
         a.edge = self
 
-        # Add edge to current_graph
+        push!(var.edges, self)
         push!(current_graph.edges, self)
 
         return self
@@ -34,9 +34,10 @@ function connect!(edge::Edge, b::Interface)
     (b.partner == nothing && b.edge == nothing) || error("Interface is already connected to an Edge.")
     hasNode(currentGraph(), b.node) || error("Node does not belong to the current graph.")
     
+    edge.b = b
     b.edge = edge
-    a.partner = b
-    b.partner = a
+    edge.a.partner = b
+    b.partner = edge.a
 
     return edge
 end

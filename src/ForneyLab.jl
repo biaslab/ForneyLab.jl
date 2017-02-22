@@ -38,6 +38,7 @@ include("variable.jl")
 
 # Factor nodes
 include("factor_nodes/constant.jl")
+include("factor_nodes/equality.jl")
 include("factor_nodes/gaussian_mean_variance.jl")
 
 # include("nodes/equality.jl")
