@@ -26,7 +26,7 @@ type Constant <: DeltaFactor
     function Constant(out::Variable, value::Any; id=generateId(Constant))
         self = new(id, Array(Interface, 1), Dict{Symbol,Interface}(), value)
         addNode!(currentGraph(), self)
-        
+
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
 
         return self
