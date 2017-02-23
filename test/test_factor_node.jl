@@ -1,88 +1,50 @@
-#####################
-# Unit tests
-#####################
+module FactorNodeTest
 
-# facts("General node properties unit tests") do
-#     FactorGraph()
-#     c = 0
-#     for node_type in subtypes(Node)
-#         if (node_type != MockNode)
-#             context("$(node_type) properties should include interfaces and id") do
-#                 test_node = node_type()
-#                 @fact typeof(test_node) <: node_type --> true
-#                 @fact typeof(test_node.interfaces) --> Array{Interface, 1} # Check for interface array
-#                 @fact length(test_node.interfaces) >= 1 --> true # Check length of interface array
-#                 @fact typeof(test_node.id) --> Symbol
-#                 @fact typeof(test_node.i) <: Dict --> true
-#                 @fact_throws deepcopy(test_node)
-#             end
+using Base.Test
+import ForneyLab: FactorGraph, SoftFactor, DeltaFactor, Constant, Variable, Interface, PointMass
 
-#             context("$(node_type) constructor should assign an id") do
-#                 my_node = node_type(;id=Symbol("my_id_$(c)"))
-#                 @fact my_node.id --> Symbol("my_id_$(c)")
-#             end
+@testset "FactorNode" begin
+    g = FactorGraph()
+    
+    for node_type in [subtypes(SoftFactor); subtypes(DeltaFactor)]
+        if node_type == PointMass
+            continue
+        end
 
-#             context("$(node_type) constructor should assign interfaces to itself") do
-#                 my_node = node_type()
-#                 for interface_index in 1:length(my_node.interfaces)
-#                     # Check if the node interfaces couple back to the same node
-#                     @fact my_node.interfaces[interface_index].node --> my_node
-#                 end
-#             end
+        # Instantiate a test node
+        if isa(node_type, Constant)
+            test_node = Constant(Variable(), 0.0)
+        else
+            constructor_argument_length = length(first(methods(node_type)).sig.parameters) - 1
+            vars = [Variable() for v = 1:constructor_argument_length]
+            test_node = node_type(vars...)
+        end
+        
+        # Node fields should be of correct types
+        @test isa(test_node.id, Symbol)
+        @test isa(test_node.interfaces, Vector{Interface})
+        @test isa(test_node.i, Dict)
 
-#             context("$(node_type) constructor should add node to the current graph") do
-#                 my_node = node_type()
-#                 @fact currentGraph().nodes[my_node.id] --> my_node
-#             end
+        # Node constructor should automatically assign an id and check uniqueness
+        @test !isempty(string(test_node.id))
+        if isa(node_type, Constant)
+            @test_throws Exception Constant(Variable(), 0.0; id=test_node.id)
+        else
+            @test_throws Exception node_type(vars...; id=test_node.id)
+        end
 
-#             context("$(node_type) constructor should check for unique id") do
-#                 MockNode(id=Symbol("mock_$(c)"))
-#                 @fact_throws MockNode(id=Symbol("mock_$(c)"))
-#             end
-#         end
+        # Node constructor should assign interfaces to itself
+        for iface in test_node.interfaces
+            @test is(iface.node, test_node)
+        end
 
-#         c += 1
-#     end
-# end
+        # Node constructor should add node to graph
+        @test is(g.nodes[test_node.id], test_node)
 
+    end
 
-# #####################
-# # Integration tests
-# #####################
+    # isless should be defined for nodes
+    @test isless(Constant(Variable(), 0.0; id=:a), Constant(Variable(), 0.0; id=:b))
+end
 
-# facts("Connections between nodes integration tests") do
-#     context("Nodes can directly be coupled through interfaces by using the interfaces array") do
-#         initializePairOfNodes()
-#         # Couple the interfaces that carry GeneralMessage
-#         n(:node1).interfaces[1].partner = n(:node2).interfaces[1]
-#         n(:node2).interfaces[1].partner = n(:node1).interfaces[1]
-#         testInterfaceConnections(n(:node1), n(:node2))
-#     end
-
-#     context("Nodes can directly be coupled through interfaces by using the explicit interface handles") do
-#         initializePairOfNodes()
-#         # Couple the interfaces that carry GeneralMessage
-#         n(:node1).i[:in].partner = n(:node2).i[:out]
-#         n(:node2).i[:out].partner = n(:node1).i[:in]
-#         testInterfaceConnections(n(:node1), n(:node2))
-#     end
-
-#     context("Nodes can be coupled by edges by using the interfaces array") do
-#         initializePairOfNodes()
-#         # Couple the interfaces that carry GeneralMessage
-#         edge = Edge(n(:node2).interfaces[1], n(:node1).interfaces[1]) # Edge from node 2 to node 1
-#         testInterfaceConnections(n(:node1), n(:node2))
-#     end
-# end
-
-# facts("Nodes can be sorted") do
-#     FactorGraph()
-#     node_a = TerminalNode(id=:a)
-#     node_b = GainNode(id=:b)
-#     node_c = GainNode(id=:c)
-#     node_d = TerminalNode(id=:d)
-#     sorted = sort!([node_d, node_b, node_a, node_c])
-#     @fact sorted --> [node_a, node_b, node_c, node_d]
-# end
-
-# end # module
+end #module

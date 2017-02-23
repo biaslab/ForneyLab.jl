@@ -27,12 +27,12 @@ abstract ExponentMomentMatching <: ApproximationType
 abstract LogMomentMatching <: ApproximationType
 
 """
-    Approximation{dist<:ProbabilityDistribution, approx_type<:ApproximationType}
+    Approximation{family<:SoftFactor, approx_type<:ApproximationType}
 
-Used to specify an approximation of a probability distribution.
-`dist` is the type of the approximating distribution.
+Used to specify an approximation of a probability distribution family.
+`family` is the type of the approximating distribution.
 `approx_type` is the approximation type. Example:
 
-    Approximation{Gaussian, MomentMatching}
+    Approximation{GaussianMeanVariance, MomentMatching}
 """
-abstract Approximation{dist<:ProbabilityDistribution, approx_type<:ApproximationType}
+abstract Approximation{family<:SoftFactor, approx_type<:ApproximationType}
