@@ -16,7 +16,6 @@ Construction:
     Constant(out, value, id=:some_id)
     Constant(value, id=:some_id)
 """
-
 type Constant <: DeltaFactor
     id::Symbol
     interfaces::Vector{Interface}

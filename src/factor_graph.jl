@@ -1,6 +1,7 @@
 export
 FactorGraph,
-currentGraph
+currentGraph,
+Terminal
 
 
 """
@@ -70,3 +71,31 @@ hasNode(graph::FactorGraph, nd::FactorNode) = (haskey(graph.nodes, nd.id) && is(
 `hasVariable(graph, var)` checks if `var` is part of `graph`.
 """
 hasVariable(graph::FactorGraph, var::Variable) = (haskey(graph.variables, var.id) && is(graph.variables[var.id], var))
+
+"""
+Description:
+
+    Terminal is a special node to terminate an Edge.
+
+Interfaces:
+
+    1. out
+
+Construction:
+
+    Terminal(id=:some_id)
+"""
+type Terminal <: FactorNode
+    id::Symbol
+    interfaces::Vector{Interface}
+    i::Dict{Symbol,Interface}
+
+    function Terminal(out::Variable; id=generateId(Terminal))
+        self = new(id, Array(Interface, 1), Dict{Symbol,Interface}())
+        addNode!(currentGraph(), self)
+
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+
+        return self
+    end
+end

@@ -38,22 +38,23 @@ macro ~(variable_id::Symbol, dist_expr::Expr)
     (dist_expr.head == :call) || error("Incorrect use of ~ operator.")
     (eval(dist_expr.args[1]) <: FactorNode) || error("~ operator should be followed by subtype of FactorNode.")
 
-    # Create variable
-    var = eval(parse("$(variable_id) = Variable(id=:$(variable_id))"))
-    
+    # Create variable if it does not exist
+    eval(parse("if !isdefined(:($(variable_id))); $(variable_id) = Variable() end"))
+    var = eval(parse("$(variable_id)"))
+
     # Build argument list for FactorNode constructor
     args = Any[dist_expr.args[1]; variable_id]
     for arg in dist_expr.args[2:end]
-        if typeof(arg) == Expr && arg.head == :kw
+        if isa(arg, Expr) && arg.head == :kw
             # Keyword arguments are passed through
             push!(args, arg)
-        elseif typeof(arg) == Variable
+        elseif isa(arg, Variable)
             # Arguments of type Variable are passed through
             push!(args, arg)
-        elseif typeof(arg) == Expr
+        elseif isa(arg, Expr)
             # Resolve expression to ensure that it yields a Variable
             resolved_arg = eval(arg)
-            if typeof(resolved_arg) == Variable
+            if isa(resolved_arg, Variable)
                 push!(args, resolved_arg)
             else
                 # Wrap argument into constant(.)

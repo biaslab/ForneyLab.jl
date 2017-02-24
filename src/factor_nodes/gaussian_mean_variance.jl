@@ -1,4 +1,4 @@
-export GaussianMeanVariance
+export GaussianMeanVariance, Gaussian
 
 """
 Description:
@@ -32,5 +32,7 @@ type GaussianMeanVariance <: SoftFactor
         return self
     end
 end
+
+typealias Gaussian GaussianMeanVariance
 
 # TODO: rules id dictionary
