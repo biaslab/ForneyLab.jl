@@ -44,6 +44,9 @@ macro ~(variable_id::Symbol, dist_expr::Expr)
     ex = parse("""
                 begin
                 $(variable_id) = try $(variable_id) catch Variable(id=:($(variable_id))) end
+                if !haskey(currentGraph().variables, :($(variable_id))) || !is(currentGraph().variables[:($(variable_id))], $(variable_id))
+                    $(variable_id) = Variable(id=:($(variable_id)))
+                end
                 $(dist_expr)
                 end
             """)
