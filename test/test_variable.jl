@@ -1,11 +1,16 @@
 module VariableTest
 
 using Base.Test
-import ForneyLab: Variable, Constant, Equality, FactorGraph
+import ForneyLab: Variable, Constant, Gaussian, Equality, FactorGraph, @~, currentGraph, constant
 
 @testset "Variable" begin
-    # Variable should construct
-    @test isa(Variable(), Variable)
+    g = FactorGraph()
+
+    # Variable should construct and be assigned to graph
+    var = Variable(id=:my_var)
+    @test isa(var, Variable)
+    @test length(g.variables) == 1
+    @test is(g.variables[:my_var], var)
 end
 
 @testset "associate!" begin
@@ -20,11 +25,11 @@ end
     @test is(var.edges[1], edge1)
     @test is(edge1.variable, var) # Check Edge
     @test is(edge1.a, iface1)
-    @test edge1.b == nothing    
+    @test edge1.b == nothing
     @test is(iface1.edge, edge1) # Check Interface
-    @test iface1.partner == nothing    
+    @test iface1.partner == nothing
 
-    # Variable should be associated with an existing edge 
+    # Variable should be associated with an existing edge
     node2 = Constant(var, 0.0)
     iface2 = node2.interfaces[1]
     @test length(var.edges) == 1 # Check Variable
@@ -72,6 +77,28 @@ end
     @test is(eq_iface3.edge, edge3)
     @test is(iface3.partner, eq_iface3)
     @test is(eq_iface3.partner, iface3)
+end
+
+@testset "@~" begin
+    g = FactorGraph()
+
+    # @~ should construct a new variable
+    y ~ Gaussian(constant(0.0), constant(1.0))
+    @test length(g.variables) == 3 # including constants
+    @test haskey(g.variables, :y)
+    @test is(g.variables[:y], y)
+
+    # @~ should assign to an existing variable, and handle keyword agruments
+    y ~ Gaussian(constant(0.0), constant(1.0); id=:g_node)
+    @test length(g.variables) == 5 # including constants
+    @test haskey(g.nodes, :g_node)
+
+    # @~ should not reuse variables from other factor graphs
+    g2 = FactorGraph()
+    y ~ Gaussian(constant(0.0), constant(1.0))
+    @test length(g2.variables) == 3 # including constants
+    @test haskey(g2.variables, :y)
+    @test is(g2.variables[:y], y)
 end
 
 end #module

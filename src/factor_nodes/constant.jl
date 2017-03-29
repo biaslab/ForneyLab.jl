@@ -5,7 +5,7 @@ Description:
 
     A factor that clamps a variable to a constant value.
 
-    f(x, value) = δ(x - value)
+    f(x) = δ(x - value)
 
 Interfaces:
 
@@ -32,7 +32,11 @@ type Constant <: DeltaFactor
     end
 end
 
-function constant(value::Any; id=generateId(Variable))
+function constant(value::Any; id=generateId(Constant))
+    # This is basically an outer constructor for Constant,
+    # but it returns the corresponding Variable object rather
+    # than the Constant object.
+    # Therefore, the function name is not capitalized.
     var = Variable(id=id)
     Constant(var, value, id=id)
 

@@ -30,16 +30,20 @@ mean(dist::ProbabilityDistribution{PointMass}) = dist.parameters[1]
 isProper(::ProbabilityDistribution{PointMass}) = true
 
 """
-`x ~ GaussianMeanVariance(0.0, 1.0, id=:some_optional_id)` is a shorthand notation
+`x ~ GaussianMeanVariance(constant(0.0), constant(1.0), id=:some_optional_id)` is a shorthand notation
 for `x = Variable(); GaussianMeanVariance(x, constant(0.0), constant(1.0))`
 """
 macro ~(variable_id::Symbol, dist_expr::Expr)
     # Sanity checks
     (dist_expr.head == :call) || error("Incorrect use of ~ operator.")
-    (eval(dist_expr.args[1]) <: FactorNode) || error("~ operator should be followed by subtype of FactorNode.")
+    (eval(dist_expr.args[1]) <: SoftFactor) || error("~ operator should be followed by subtype of SoftFactor.")
 
     # Build FactorNode constructor call
-    dist_expr.args = vcat([dist_expr.args[1]; variable_id], dist_expr.args[2:end])
+    if dist_expr.args[2].head == :parameters
+        dist_expr.args = vcat(dist_expr.args[1:2], [variable_id], dist_expr.args[3:end])
+    else
+        dist_expr.args = vcat([dist_expr.args[1]; variable_id], dist_expr.args[2:end])
+    end
 
     ex = parse("""
                 begin
@@ -48,6 +52,7 @@ macro ~(variable_id::Symbol, dist_expr::Expr)
                     $(variable_id) = Variable(id=:($(variable_id)))
                 end
                 $(dist_expr)
+                $(variable_id)
                 end
             """)
     esc(ex)

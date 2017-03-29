@@ -1,12 +1,12 @@
 module FactorNodeTest
 
 using Base.Test
-import ForneyLab: FactorGraph, SoftFactor, DeltaFactor, Constant, Variable, Interface, PointMass
+import ForneyLab: FactorGraph, SoftFactor, DeltaFactor, Constant, Variable, Interface, PointMass, Terminal
 
 @testset "FactorNode" begin
     g = FactorGraph()
-    
-    for node_type in [subtypes(SoftFactor); subtypes(DeltaFactor)]
+
+    for node_type in [subtypes(SoftFactor); subtypes(DeltaFactor); Terminal]
         if node_type == PointMass
             continue
         end
@@ -19,7 +19,7 @@ import ForneyLab: FactorGraph, SoftFactor, DeltaFactor, Constant, Variable, Inte
             vars = [Variable() for v = 1:constructor_argument_length]
             test_node = node_type(vars...)
         end
-        
+
         # Node fields should be of correct types
         @test isa(test_node.id, Symbol)
         @test isa(test_node.interfaces, Vector{Interface})

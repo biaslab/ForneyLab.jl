@@ -15,6 +15,7 @@ using Base.Test
     include("./test_approximation.jl")
     include("./test_edge.jl")
     include("./test_variable.jl")
+    include("./test_factor_graph.jl")
 
     # Factor nodes
     # include("factor_nodes/constant.jl")
