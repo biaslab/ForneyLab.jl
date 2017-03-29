@@ -85,20 +85,15 @@ end
     # @~ should construct a new variable
     y ~ Gaussian(constant(0.0), constant(1.0))
     @test length(g.variables) == 3 # including constants
-    @test haskey(g.variables, :y)
-    @test is(g.variables[:y], y)
+    @test haskey(g.variables, y.id)
+    @test is(g.variables[y.id], y)
 
-    # @~ should assign to an existing variable, and handle keyword agruments
+    # @~ should not assign to an existing variable, and handle keyword agruments
+    y_old = y
     y ~ Gaussian(constant(0.0), constant(1.0); id=:g_node)
-    @test length(g.variables) == 5 # including constants
+    @test length(g.variables) == 6 # including constants
     @test haskey(g.nodes, :g_node)
-
-    # @~ should not reuse variables from other factor graphs
-    g2 = FactorGraph()
-    y ~ Gaussian(constant(0.0), constant(1.0))
-    @test length(g2.variables) == 3 # including constants
-    @test haskey(g2.variables, :y)
-    @test is(g2.variables[:y], y)
+    @test !is(y, y_old)
 end
 
 end #module

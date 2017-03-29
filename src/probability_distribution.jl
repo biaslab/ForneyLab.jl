@@ -33,26 +33,23 @@ isProper(::ProbabilityDistribution{PointMass}) = true
 `x ~ GaussianMeanVariance(constant(0.0), constant(1.0), id=:some_optional_id)` is a shorthand notation
 for `x = Variable(); GaussianMeanVariance(x, constant(0.0), constant(1.0))`
 """
-macro ~(variable_id::Symbol, dist_expr::Expr)
+macro ~(variable_expr::Any, dist_expr::Expr)
     # Sanity checks
     (dist_expr.head == :call) || error("Incorrect use of ~ operator.")
     (eval(dist_expr.args[1]) <: SoftFactor) || error("~ operator should be followed by subtype of SoftFactor.")
 
     # Build FactorNode constructor call
     if dist_expr.args[2].head == :parameters
-        dist_expr.args = vcat(dist_expr.args[1:2], [variable_id], dist_expr.args[3:end])
+        dist_expr.args = vcat(dist_expr.args[1:2], [variable_expr], dist_expr.args[3:end])
     else
-        dist_expr.args = vcat([dist_expr.args[1]; variable_id], dist_expr.args[2:end])
+        dist_expr.args = vcat([dist_expr.args[1]; variable_expr], dist_expr.args[2:end])
     end
 
     ex = parse("""
                 begin
-                $(variable_id) = try $(variable_id) catch Variable(id=:($(variable_id))) end
-                if !haskey(currentGraph().variables, :($(variable_id))) || !is(currentGraph().variables[:($(variable_id))], $(variable_id))
-                    $(variable_id) = Variable(id=:($(variable_id)))
-                end
+                $(variable_expr) = Variable()
                 $(dist_expr)
-                $(variable_id)
+                $(variable_expr)
                 end
             """)
     esc(ex)
