@@ -1,6 +1,7 @@
 export
 FactorGraph,
 currentGraph,
+setCurrentGraph,
 Terminal
 
 

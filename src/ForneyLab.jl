@@ -60,8 +60,8 @@ include("factor_graph.jl")
 # include("inference_algorithm.jl")
 
 # # Composite nodes
-include("factor_nodes/state_transition.jl")
-# include("nodes/composite.jl")
+# include("factor_nodes/state_transition.jl")
+include("factor_nodes/composite.jl")
 
 # # Generic methods
 # include("message_passing.jl")

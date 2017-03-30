@@ -83,7 +83,8 @@ end
     g = FactorGraph()
 
     # @~ should construct a new variable
-    y ~ Gaussian(constant(0.0), constant(1.0))
+    x = constant(0.0)
+    y ~ Gaussian(x, constant(1.0))
     @test length(g.variables) == 3 # including constants
     @test haskey(g.variables, y.id)
     @test is(g.variables[y.id], y)
