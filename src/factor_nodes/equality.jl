@@ -33,3 +33,5 @@ type Equality <: DeltaFactor
         return self
     end
 end
+
+slug(::Type{Equality}) = "="

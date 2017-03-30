@@ -45,12 +45,24 @@ macro ~(variable_expr::Any, dist_expr::Expr)
         dist_expr.args = vcat([dist_expr.args[1]; variable_expr], dist_expr.args[2:end])
     end
 
-    ex = parse("""
+    expr = parse("""
                 begin
-                $(variable_expr) = Variable()
+                # Use existing object if it exists, otherwise create a new Variable
+                $(variable_expr) = try $(variable_expr) catch Variable() end
+
+                # Create new variable if:
+                #   - the existing object is not a Variable
+                #   - the existing object is a Variable from another FactorGraph
+                if (!isa($(variable_expr), Variable)
+                    || !haskey(currentGraph().variables, $(variable_expr).id)
+                    || !is(currentGraph().variables[$(variable_expr).id], $(variable_expr)))
+
+                    $(variable_expr) = Variable()
+                end
+
                 $(dist_expr)
                 $(variable_expr)
                 end
             """)
-    esc(ex)
+    return esc(expr)
 end

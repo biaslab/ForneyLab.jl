@@ -59,16 +59,15 @@ include("factor_graph.jl")
 # include("wrap.jl")
 # include("inference_algorithm.jl")
 
-# # Composite nodes
-# include("factor_nodes/state_transition.jl")
+# Composite nodes
 include("factor_nodes/composite.jl")
 
 # # Generic methods
 # include("message_passing.jl")
 # include("step.jl")
 
-# # Utils
-# include("visualization.jl")
+# Utils
+include("visualization.jl")
 
 # # InferenceAlgorithms
 # include("algorithms/sum_product/sum_product.jl")

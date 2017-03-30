@@ -35,4 +35,6 @@ end
 
 typealias Gaussian GaussianMeanVariance
 
+slug(::Type{GaussianMeanVariance}) = "𝒩"
+
 # TODO: rules id dictionary

@@ -21,7 +21,7 @@ macro composite(name::Symbol, exposed_vars::Expr, model::Expr)
         exposed_var_definitions *= "push!(self.terminals, Terminal($varname, id=:$varname))\n"
     end
 
-    str = """
+    expr = parse("""
     type $name <: FactorNode
         id::Symbol
         interfaces::Vector{Interface}
@@ -47,7 +47,7 @@ macro composite(name::Symbol, exposed_vars::Expr, model::Expr)
             return self
         end
     end
-    """
+    """)
 
-    return esc(parse(str))
+    return esc(expr)
 end

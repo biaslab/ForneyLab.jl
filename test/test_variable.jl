@@ -89,12 +89,20 @@ end
     @test haskey(g.variables, y.id)
     @test is(g.variables[y.id], y)
 
-    # @~ should not assign to an existing variable, and handle keyword agruments
+    # @~ should reuse existing variable and handle keyword agruments
     y_old = y
     y ~ Gaussian(constant(0.0), constant(1.0); id=:g_node)
-    @test length(g.variables) == 6 # including constants
+    @test length(g.variables) == 5 # including constants
     @test haskey(g.nodes, :g_node)
-    @test !is(y, y_old)
+    @test is(y, y_old)
+
+    # @~ should handle array element assignments
+    g = FactorGraph()
+    vars = Vector{Variable}(2)
+    vars[1] ~ Gaussian(constant(0.0), constant(1.0); id=:tst1) # new Variable
+    @test length(g.variables) == 3 # including constants
+    vars[1] ~ Gaussian(constant(0.0), constant(1.0); id=:tst2) # existing Variable
+    @test length(g.variables) == 5 # including constants
 end
 
 end #module

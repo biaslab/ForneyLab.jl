@@ -14,3 +14,5 @@ function show(io::IO, nodes::Union{Vector{FactorNode},Set{FactorNode}})
         show(io, node)
     end
 end
+
+slug{T<:FactorNode}(node_type::Type{T}) = replace(string(T), "ForneyLab.", "")

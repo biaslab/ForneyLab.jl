@@ -2,6 +2,8 @@ export
 FactorGraph,
 currentGraph,
 setCurrentGraph,
+nodes,
+edges,
 Terminal
 
 
@@ -75,6 +77,11 @@ hasNode(graph::FactorGraph, nd::FactorNode) = (haskey(graph.nodes, nd.id) && is(
 """
 hasVariable(graph::FactorGraph, var::Variable) = (haskey(graph.variables, var.id) && is(graph.variables[var.id], var))
 
+nodes(graph::FactorGraph = currentGraph()) = Set{FactorNode}(values(graph.nodes))
+
+edges(graph::FactorGraph=currentGraph()) = Set{Edge}(graph.edges)
+edges(nodeset::Set{FactorNode}) = union(map(edges, nodeset)...)
+
 """
 Description:
 
@@ -96,7 +103,6 @@ type Terminal <: FactorNode
     function Terminal(out::Variable; id=generateId(Terminal))
         self = new(id, Array(Interface, 1), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
-
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
 
         return self
