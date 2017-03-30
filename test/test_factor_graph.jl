@@ -2,7 +2,7 @@ module FactorGraphTest
 
 using Base.Test
 import ForneyLab: FactorGraph, FactorNode, Interface, Edge, Variable, generateId, currentGraph, setCurrentGraph,
-generateId, addNode!, hasNode, addVariable!, hasVariable
+generateId, addNode!, hasNode, addVariable!, hasVariable, Constant
 
 # Integration helper
 type MockNode <: FactorNode
@@ -26,6 +26,7 @@ end
     @test isa(g.edges, Vector{Edge})
     @test isa(g.variables, Dict{Symbol, Variable})
     @test isa(g.counters, Dict{DataType, Int})
+    @test isa(g.placeholders, Dict{Constant, Tuple{Symbol, Int}})
 
     # currentGraph() should point to the current graph
     @test is(currentGraph(), g)

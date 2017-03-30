@@ -1,4 +1,4 @@
-export Constant, constant
+export Constant, constant, placeholder
 
 """
 Description:
@@ -39,6 +39,34 @@ function constant(value::Any; id=generateId(Constant))
     # Therefore, the function name is not capitalized.
     var = Variable(id=id)
     Constant(var, value, id=id)
+
+    return var
+end
+
+function placeholder(   var::Variable,
+                        buffer_id::Symbol;
+                        index::Int=0,
+                        default::Any=nothing,
+                        datatype::DataType=Float64,
+                        dims::Tuple=())
+
+    # Build placeholder id
+    constant_id = :placeholder_*buffer_id
+    if index > 0
+        constant_id *= :_*index
+    end
+
+    # Define a default value
+    if default != nothing
+        value = default
+    elseif isempty(dims)
+        value = zero(datatype)
+    else
+        value = zeros(datatype, dims)
+    end
+
+    node = Constant(var, value, id=constant_id)
+    current_graph.placeholders[node] = (buffer_id, index)
 
     return var
 end

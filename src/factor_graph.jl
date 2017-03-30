@@ -12,6 +12,7 @@ type FactorGraph
     edges::Vector{Edge}
     variables::Dict{Symbol, Variable}
     counters::Dict{DataType, Int} # Counters for automatic node id assignments
+    placeholders::Dict{Constant, Tuple{Symbol, Int}}
 end
 
 """
@@ -31,7 +32,8 @@ setCurrentGraph(graph::FactorGraph) = global current_graph = graph
 FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, FactorNode}(),
                                             Edge[],
                                             Dict{Symbol, Variable}(),
-                                            Dict{DataType, Int}()))
+                                            Dict{DataType, Int}(),
+                                            Dict{Constant, Tuple{Symbol, Int}}()))
 
 """
 Automatically generate a unique id based on the current counter value for the element type.
