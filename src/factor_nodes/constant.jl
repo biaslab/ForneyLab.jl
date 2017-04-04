@@ -32,17 +32,38 @@ type Constant <: DeltaFactor
     end
 end
 
+"""
+`constant` creates a `Variable` which is linked to a new `Constant`,
+and returns this variable.
+
+    y = constant(3.0, id=:y)
+"""
 function constant(value::Any; id=generateId(Constant))
     # This is basically an outer constructor for Constant,
-    # but it returns the corresponding Variable object rather
-    # than the Constant object.
-    # Therefore, the function name is not capitalized.
+    # but the function is not capitalized because it returns the
+    # new variable linked to the Constant.
     var = Variable(id=id)
     Constant(var, value, id=id)
 
     return var
 end
 
+"""
+`placeholder(...)` creates a `Constant` node and registers this node
+as a data placeholder with the current graph.
+
+    # Link variable y to buffer with id :y,
+    # indicate that Constant will hold Float64 values.
+    placeholder(y, :y, datatype=Float64)
+
+    # Link variable y to index 3 of buffer with id :y.
+    # Specify the data type by passing a default value for the Constant.
+    placeholder(y, :y, index=3, default=0.0)
+
+    # Indicate that the Constant will hold an array of size `dims`,
+    # with Float64 elements.
+    placeholder(X, :X, datatype=Float64, dims=(3,2))
+"""
 function placeholder(   var::Variable,
                         buffer_id::Symbol;
                         index::Int=0,
