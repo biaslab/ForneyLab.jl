@@ -30,7 +30,6 @@ abstract InferenceAlgorithm
 # Low-level internals
 include("factor_node.jl")
 include("interface.jl")
-include("message.jl")
 include("probability_distribution.jl")
 include("approximation.jl")
 include("edge.jl")
@@ -39,6 +38,7 @@ include("variable.jl")
 # Factor nodes
 include("factor_nodes/constant.jl")
 include("factor_nodes/equality.jl")
+include("factor_nodes/gaussian.jl")
 include("factor_nodes/gaussian_mean_variance.jl")
 
 # include("nodes/equality.jl")
@@ -54,23 +54,28 @@ include("factor_nodes/gaussian_mean_variance.jl")
 # include("nodes/bernoulli.jl")
 # include("nodes/categorical.jl")
 
-# Graph, wraps and algorithm
+
+
+# Graph and algorithm
 include("factor_graph.jl")
-# include("wrap.jl")
 # include("inference_algorithm.jl")
 
 # Composite nodes
 include("factor_nodes/composite.jl")
 
-# # Generic methods
-# include("message_passing.jl")
+# Generic methods
+include("message_passing.jl")
 # include("step.jl")
+
+# Update rules
+include("update_rules/constant.jl")
+include("update_rules/gaussian_mean_variance.jl")
 
 # Utils
 include("visualization.jl")
 
-# # InferenceAlgorithms
-# include("algorithms/sum_product/sum_product.jl")
+# InferenceAlgorithms
+include("algorithms/sum_product/sum_product.jl")
 # include("algorithms/loopy_sum_product/loopy_sum_product.jl")
 # include("algorithms/variational_bayes/variational_bayes.jl")
 # include("algorithms/expectation_propagation/expectation_propagation.jl")

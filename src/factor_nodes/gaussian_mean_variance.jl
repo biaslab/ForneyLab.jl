@@ -1,4 +1,4 @@
-export GaussianMeanVariance, Gaussian
+export GaussianMeanVariance
 
 """
 Description:
@@ -17,7 +17,7 @@ Construction:
 
     GaussianMeanVariance(out, mean, variance, id=:some_id)
 """
-type GaussianMeanVariance <: SoftFactor
+type GaussianMeanVariance <: Gaussian
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
@@ -33,8 +33,10 @@ type GaussianMeanVariance <: SoftFactor
     end
 end
 
-typealias Gaussian GaussianMeanVariance
-
 slug(::Type{GaussianMeanVariance}) = "𝒩"
 
-# TODO: rules id dictionary
+# unsafeMean(d::ProbabilityDistribution{GaussianMeanVariance}) = d.parameters[1]
+
+# unsafeCov(d::ProbabilityDistribution{GaussianMeanVariance}) = d.parameters[2]
+
+# unsafeVar(d::ProbabilityDistribution{GaussianMeanVariance}) = d.parameters[2]
