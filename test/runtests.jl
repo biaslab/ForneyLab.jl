@@ -22,7 +22,7 @@ using Base.Test
     # include("factor_nodes/equality.jl")
     # include("factor_nodes/gaussian_mean_variance.jl")
 
-    # include("./test_dependency_graph.jl")
+    include("./test_dependency_graph.jl")
 end
 
 end

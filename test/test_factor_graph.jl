@@ -17,7 +17,6 @@ type MockNode <: FactorNode
     end
 end
 
-
 @testset "FactorGraph" begin
     # FactorGraph should initiate a new factor graph
     g = FactorGraph()
