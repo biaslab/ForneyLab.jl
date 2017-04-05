@@ -10,7 +10,6 @@ using Base.Test
     include("./test_helpers.jl")
     include("./test_factor_node.jl")
     include("./test_interface.jl")
-    # include("./test_message.jl")
     include("./test_probability_distribution.jl")
     include("./test_approximation.jl")
     include("./test_edge.jl")
@@ -18,11 +17,16 @@ using Base.Test
     include("./test_factor_graph.jl")
 
     # Factor nodes
-    # include("factor_nodes/constant.jl")
-    # include("factor_nodes/equality.jl")
-    # include("factor_nodes/gaussian_mean_variance.jl")
+    # include("factor_nodes/test_constant.jl")
+    # include("factor_nodes/test_equality.jl")
+    # include("factor_nodes/test_gaussian_mean_variance.jl")
+    # include("factor_nodes/test_composite.jl")
 
     include("./test_dependency_graph.jl")
+    include("./test_message_passing.jl")
+
+    # Algorithms
+    include("./algorithms/sum_product/test_sum_product.jl")
 end
 
 end
