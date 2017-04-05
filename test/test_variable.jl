@@ -1,7 +1,7 @@
 module VariableTest
 
 using Base.Test
-import ForneyLab: Variable, Constant, Gaussian, Equality, FactorGraph, @~, currentGraph, constant
+import ForneyLab: Variable, Constant, GaussianMeanVariance, Equality, FactorGraph, @~, currentGraph, constant
 
 @testset "Variable" begin
     g = FactorGraph()
@@ -84,14 +84,14 @@ end
 
     # @~ should construct a new variable
     x = constant(0.0)
-    y ~ Gaussian(x, constant(1.0))
+    y ~ GaussianMeanVariance(x, constant(1.0))
     @test length(g.variables) == 3 # including constants
     @test haskey(g.variables, y.id)
     @test is(g.variables[y.id], y)
 
     # @~ should reuse existing variable and handle keyword agruments
     y_old = y
-    y ~ Gaussian(constant(0.0), constant(1.0); id=:g_node)
+    y ~ GaussianMeanVariance(constant(0.0), constant(1.0); id=:g_node)
     @test length(g.variables) == 5 # including constants
     @test haskey(g.nodes, :g_node)
     @test is(y, y_old)
@@ -99,9 +99,9 @@ end
     # @~ should handle array element assignments
     g = FactorGraph()
     vars = Vector{Variable}(2)
-    vars[1] ~ Gaussian(constant(0.0), constant(1.0); id=:tst1) # new Variable
+    vars[1] ~ GaussianMeanVariance(constant(0.0), constant(1.0); id=:tst1) # new Variable
     @test length(g.variables) == 3 # including constants
-    vars[1] ~ Gaussian(constant(0.0), constant(1.0); id=:tst2) # existing Variable
+    vars[1] ~ GaussianMeanVariance(constant(0.0), constant(1.0); id=:tst2) # existing Variable
     @test length(g.variables) == 5 # including constants
 end
 

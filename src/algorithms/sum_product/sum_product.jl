@@ -1,15 +1,4 @@
-function generateSchedule(variable::Variable;
-                    graph::FactorGraph=currentGraph())
+export
+SumProductRule
 
-    # Generate schedule
-    dg = summaryDependencyGraph(graph)
-    iface_list = children([edge.head, edge.tail], dg)
-
-    # Infer message types
-    schedule = inferTypes(iface_list, SumProductRule)
-
-....
-
-    return schedule
-
-end
+abstract SumProductRule{factor_type} <: MessageUpdateRule

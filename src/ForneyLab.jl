@@ -67,10 +67,6 @@ include("factor_nodes/composite.jl")
 include("message_passing.jl")
 # include("step.jl")
 
-# Update rules
-include("update_rules/constant.jl")
-include("update_rules/gaussian_mean_variance.jl")
-
 # Utils
 include("visualization.jl")
 
@@ -82,6 +78,10 @@ include("algorithms/sum_product/sum_product.jl")
 
 # # Shared preparation methods for inference algorithms
 # include("algorithms/preparation.jl")
+
+# Update rules
+include("update_rules/constant.jl")
+include("update_rules/gaussian_mean_variance.jl")
 
 # vague{T<:Univariate}(dist_type::Type{T}) = vague!(T())
 # *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
