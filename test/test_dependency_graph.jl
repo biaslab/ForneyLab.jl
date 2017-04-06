@@ -81,6 +81,9 @@ end
         addEdge!(dg, vertices[5], vertices[7])
 
         @test children(vertices[1], dg) == MockVertex[vertices[3], vertices[2], vertices[6], vertices[4], vertices[1]]
+
+        # TODO: allow loops, restrictions and breakers
+        @test true == false
     end
 
     @testset "Loopy dependengy graph" begin
@@ -91,7 +94,7 @@ end
         #  (1)-->(2)
         #   ^    /
         #    \  v
-        #     (3)  
+        #     (3)
 
         dg = DependencyGraph{MockVertex}()
         vertices = MockVertex[]

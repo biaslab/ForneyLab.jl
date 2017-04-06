@@ -165,3 +165,22 @@ macro symmetrical(orig::Expr)
     mirrored.args[1].args[swap_arg_indexes] = orig.args[1].args[reverse(swap_arg_indexes)]
     eval(mirrored)
 end
+
+"""
+`leaftypes(datatype)` returns all subtypes of `datatype` that are leafs in the type tree.
+"""
+function leaftypes(datatype::DataType)
+    leafs = DataType[]
+    stack = [datatype]
+    while !isempty(stack)
+        for T in subtypes(pop!(stack))
+            if isleaftype(T)
+                push!(leafs, T)
+            else
+                push!(stack, T)
+            end
+        end
+    end
+
+    return leafs
+end

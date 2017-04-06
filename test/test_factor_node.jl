@@ -11,12 +11,11 @@ import ForneyLab: FactorGraph, FactorNode, Constant, Variable, Interface, PointM
     stack = [FactorNode]
     while !isempty(stack)
         for node_type in subtypes(pop!(stack))
-            if node_type.abstract
-                push!(stack, node_type)
-            elseif node_type == PointMass
-                continue # skip these node types
-            else
+            if isleaftype(node_type)
+                (node_type == PointMass) && continue # skip PointMass
                 push!(node_types, node_type)
+            else
+                push!(stack, node_type)
             end
         end
     end

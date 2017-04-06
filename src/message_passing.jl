@@ -1,7 +1,14 @@
 export
+Message,
 MessageUpdateRule,
 ScheduleEntry,
 Schedule
+
+"""Encodes a message, which is a probability distribution with a scaling factor"""
+immutable Message{family<:FactorNode}
+    dist::ProbabilityDistribution
+    scaling_factor::Any
+end
 
 """
 A MessageCalculationRule specifies how a Message is calculated from the node function and the incoming messages.
@@ -42,6 +49,30 @@ function summaryPropagationSchedule(variables::Vector{Variable})
     iface_list = children(unique(seed_interfaces), dg)
     # Build a schedule; Void indicates an unspecified message update rule
     schedule = [ScheduleEntry(iface, Void) for iface in iface_list]
+
+    return schedule
+end
+
+summaryPropagationSchedule(variable::Variable) = summaryPropagationSchedule([variable])
+
+"""
+inferUpdateRules!(schedule) infers specific message update rules for all schedule entries.
+"""
+function inferUpdateRules!(schedule::Schedule)
+    # Dict to hold all inferred message types
+    inferred_outbound_types::Dict{Interface, DataType}
+    for entry in schedule
+        (entry.msg_update_rule == Void) && error("No msg update rule type specified for $(entry)")
+        if isleaftype(entry.msg_update_rule)
+            # The message update rule is already fixed.
+            inferred_outbound_types[entry.interface] = outboundType(entry.msg_update_rule)
+        else
+            # In this case entry.msg_update_rule is a update rule type, but not a specific rule.
+            # Here we infer the specific rule that is applicable, which should be a subtype of entry.msg_update_rule.
+            inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
+            inferred_outbound_types[entry.interface] = entry.msg_update_rule
+        end
+    end
 
     return schedule
 end
