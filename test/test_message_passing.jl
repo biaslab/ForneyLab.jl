@@ -1,7 +1,7 @@
 module MessagePassingTest
 
 using Base.Test
-import ForneyLab: ScheduleEntry, Schedule, summaryPropagationSchedule, Interface, generateId, addNode!, currentGraph, FactorGraph, Variable, FactorNode
+import ForneyLab: ScheduleEntry, Schedule, summaryPropagationSchedule, Interface, generateId, addNode!, currentGraph, FactorGraph, Variable, FactorNode, associate!
 
 # Integration helper
 type MockNode <: FactorNode
@@ -9,12 +9,13 @@ type MockNode <: FactorNode
     interfaces::Vector{Interface}
     i::Dict{Int,Interface}
 
-    function MockNode(n_interfaces::Int; id=generateId(MockNode))
+    function MockNode(vars::Vector{Variable}; id=generateId(MockNode))
+        n_interfaces = length(vars)
         self = new(id, Array(Interface, n_interfaces), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
 
         for idx = 1:n_interfaces
-            self.i[idx] = self.interfaces[idx] = Interface(self)
+            self.i[idx] = self.interfaces[idx] = associate!(Interface(self), vars[idx])
         end
 
         return self
@@ -23,7 +24,7 @@ end
 
 @testset "ScheduleEntry" begin
     FactorGraph()
-    nd = MockNode(2)
+    nd = MockNode([Variable(), Variable()])
 
     # Schedule should be constructable by hand
     schedule = [ScheduleEntry(nd.i[1], Void), ScheduleEntry(nd.i[2], Void)]
@@ -37,6 +38,22 @@ end
     # [1]--[2]--[3]--[4]
     #            |d
     #           [5]
+
+    FactorGraph()
+
+    a = Variable()
+    b = Variable()
+    c = Variable()
+    d = Variable()
+
+    MockNode([a])
+    MockNode([a, b])
+    MockNode([b, c, d])
+    MockNode([c])
+    MockNode([d])
+
+    schedule = summaryPropagationSchedule([d])
+    println(schedule)
 
     @test true == false
 end
