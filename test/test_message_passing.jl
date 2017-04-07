@@ -46,15 +46,21 @@ end
     c = Variable()
     d = Variable()
 
-    MockNode([a])
-    MockNode([a, b])
-    MockNode([b, c, d])
-    MockNode([c])
-    MockNode([d])
+    n1 = MockNode([a])
+    n2 = MockNode([a, b])
+    n3 = MockNode([b, c, d])
+    n4 = MockNode([c])
+    n5 = MockNode([d])
 
-    schedule = summaryPropagationSchedule([d])
-    println(schedule)
+    schedule = summaryPropagationSchedule(d)
 
+    @test schedule == [ ScheduleEntry(n4.i[1], Void),
+                        ScheduleEntry(n1.i[1], Void),
+                        ScheduleEntry(n2.i[2], Void),
+                        ScheduleEntry(n3.i[3], Void),
+                        ScheduleEntry(n5.i[1], Void)]
+
+    # TODO: there is some source of non-deterministicness
     @test true == false
 end
 

@@ -1,14 +1,14 @@
 export
 SumProductRule,
-SumProduct
+sumProductSchedule
 
 abstract SumProductRule{factor_type} <: MessageUpdateRule
 
 """
-SumProduct() generates a sum-product message passing schedule that computes the
+sumProductSchedule() generates a sum-product message passing schedule that computes the
 marginals for each of the argument variables.
 """
-function SumProduct(variables::Vector{Variable})
+function sumProductSchedule(variables::Vector{Variable})
     # Generate a feasible summary propagation schedule
     schedule = summaryPropagationSchedule(variables)
 
@@ -22,16 +22,18 @@ function SumProduct(variables::Vector{Variable})
     return schedule
 end
 
-function inferUpdateRule!(  entry::ScheduleEntry,
-                            ::Type{SumProductRule},
-                            inferred_outbound_types::Dict{Interface, DataType})
+sumProductSchedule(variable::Variable) = sumProductSchedule([variable])
+
+function inferUpdateRule!{T<:SumProductRule}(   entry::ScheduleEntry,
+                                                ::Type{T},
+                                                inferred_outbound_types::Dict{Interface, DataType})
     # Collect inbound types
     inbound_types = DataType[]
-    for node_interface in entry.node.interfaces
+    for node_interface in entry.interface.node.interfaces
         if is(node_interface, entry.interface)
             push!(inbound_types, Void)
         else
-            push!(inbound_types, inferred_outbound_types[interface.partner])
+            push!(inbound_types, inferred_outbound_types[node_interface.partner])
         end
     end
 

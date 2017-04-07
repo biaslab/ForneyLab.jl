@@ -107,6 +107,11 @@ import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, truncate, pad, h
         @test format([7.345345456456456464564645645645, 0.00005345, -0.000145, -108.0]) == "[7.35, 5.34e-05, -1.45e-04, -1.08e+02]"
         @test format([7.345345456456456464564645645645 0.00005345; -0.000145 -108.0]) == "[[7.35, 5.34e-05][-1.45e-04, -1.08e+02]]"
     end
+
+    @testset "leaftypes" begin
+        # should return all subtypes that are leafs on the type tree
+        @test true == false
+    end
 end
 
 end # module

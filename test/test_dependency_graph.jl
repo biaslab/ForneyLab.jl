@@ -81,9 +81,8 @@ end
         addEdge!(dg, vertices[5], vertices[7])
 
         @test children(vertices[1], dg) == MockVertex[vertices[3], vertices[2], vertices[6], vertices[4], vertices[1]]
-
-        # TODO: allow loops, restrictions and breakers
-        @test true == false
+        @test children(vertices[1], dg, breakers=Set{MockVertex}([vertices[4]])) == MockVertex[vertices[3], vertices[2], vertices[1]]
+        @test children(vertices[1], dg, restrict_to=Set{MockVertex}(vertices[1:4])) == MockVertex[vertices[3], vertices[2], vertices[4], vertices[1]]
     end
 
     @testset "Loopy dependengy graph" begin
@@ -114,7 +113,8 @@ end
         @test (vertices[3] in neighbors(vertices[2], dg))
         @test !(vertices[1] in neighbors(vertices[2], dg))
 
-        @test_throws Exception children(vertices[1], dg) # children function errors for a loopy graph
+        @test_throws Exception children(vertices[1], dg) # children function errors when cycles are not allowed
+        @test children(vertices[1], dg, allow_cycles=true) == MockVertex[vertices[3], vertices[2], vertices[1]]
     end
 end
 

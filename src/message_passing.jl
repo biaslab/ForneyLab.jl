@@ -60,18 +60,16 @@ inferUpdateRules!(schedule) infers specific message update rules for all schedul
 """
 function inferUpdateRules!(schedule::Schedule)
     # Dict to hold all inferred message types
-    inferred_outbound_types::Dict{Interface, DataType}
+    inferred_outbound_types = Dict{Interface, DataType}()
     for entry in schedule
         (entry.msg_update_rule == Void) && error("No msg update rule type specified for $(entry)")
-        if isleaftype(entry.msg_update_rule)
-            # The message update rule is already fixed.
-            inferred_outbound_types[entry.interface] = outboundType(entry.msg_update_rule)
-        else
+        if !isleaftype(entry.msg_update_rule)
             # In this case entry.msg_update_rule is a update rule type, but not a specific rule.
             # Here we infer the specific rule that is applicable, which should be a subtype of entry.msg_update_rule.
             inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
-            inferred_outbound_types[entry.interface] = entry.msg_update_rule
         end
+        # Store the rule's outbound type
+        inferred_outbound_types[entry.interface] = outboundType(entry.msg_update_rule)
     end
 
     return schedule
