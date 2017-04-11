@@ -27,6 +27,9 @@ using Base.Test
 
     # Algorithms
     include("./algorithms/sum_product/test_sum_product.jl")
+
+    # Engines
+    include("./engines/julia/test_message_passing.jl")
 end
 
 end

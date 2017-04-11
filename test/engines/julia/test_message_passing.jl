@@ -1,7 +1,8 @@
-module SumProductTest
+module JuliaMessagePassingTest
 
 using Base.Test
 import ForneyLab: FactorGraph, Variable, GaussianMeanVariance, constant, sumProductSchedule
+import ForneyLab.Julia: messagePassingAlgorithm
 
 @testset "sumProductSchedule" begin
     FactorGraph()
@@ -9,11 +10,10 @@ import ForneyLab: FactorGraph, Variable, GaussianMeanVariance, constant, sumProd
     GaussianMeanVariance(x, constant(0.0), constant(1.0))
 
     schedule = sumProductSchedule(x)
+    algo = messagePassingAlgorithm(schedule)
 
-    @test true == false
-end
+    println(algo)
 
-@testset "inferUpdateRule!" begin
     @test true == false
 end
 

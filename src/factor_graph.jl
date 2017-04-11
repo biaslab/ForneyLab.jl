@@ -123,7 +123,7 @@ function summaryDependencyGraph(fg::FactorGraph; reverse_edges=false)
     dg = DependencyGraph{Interface}()
 
     # Add all Interfaces in fg as vertices in dg
-    for node in nodes(fg)
+    for node in sort(collect(nodes(fg))) # nodes are sorted for the sake of deterministicness
         for interface in node.interfaces
             addVertex!(dg, interface)
         end

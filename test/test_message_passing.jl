@@ -54,14 +54,11 @@ end
 
     schedule = summaryPropagationSchedule(d)
 
-    @test schedule == [ ScheduleEntry(n4.i[1], Void),
-                        ScheduleEntry(n1.i[1], Void),
+    @test schedule == [ ScheduleEntry(n1.i[1], Void),
                         ScheduleEntry(n2.i[2], Void),
+                        ScheduleEntry(n4.i[1], Void),
                         ScheduleEntry(n3.i[3], Void),
                         ScheduleEntry(n5.i[1], Void)]
-
-    # TODO: there is some source of non-deterministicness
-    @test true == false
 end
 
 end # module

@@ -89,4 +89,7 @@ include("update_rules/gaussian_mean_variance.jl")
 
 # include("docstrings.jl")
 
+# Engines
+include("engines/julia/julia.jl")
+
 end # module ForneyLab
