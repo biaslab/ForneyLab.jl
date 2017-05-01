@@ -45,8 +45,6 @@ function messagePassingAlgorithm(schedule::Schedule)
     end
 
     # TODO: define ForneyLab.Julia.MessagePassing()
-    # TODO: Constant and Placeholder are special cases for which the values
-    # should be read from the data dictionary or node.value respectively
 
     code *= "\nend"
 

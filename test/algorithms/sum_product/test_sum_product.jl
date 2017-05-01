@@ -10,6 +10,8 @@ import ForneyLab: FactorGraph, Variable, GaussianMeanVariance, constant, sumProd
 
     schedule = sumProductSchedule(x)
 
+    # se1 = ScheduleEntry()
+    # @test schedule == ScheduleEntry[]
     @test true == false
 end
 

@@ -10,7 +10,9 @@ import ForneyLab.Julia: messagePassingAlgorithm
     GaussianMeanVariance(x, constant(0.0), constant(1.0))
 
     schedule = sumProductSchedule(x)
-    algo = messagePassingAlgorithm(schedule)
+    algo = Julia.messagePassingAlgorithm(schedule)
+
+    marginals = computeMarginals!(algo, x)
 
     println(algo)
 
