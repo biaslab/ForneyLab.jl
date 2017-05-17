@@ -1,6 +1,7 @@
 export
 SumProductRule,
-sumProductSchedule
+sumProductSchedule,
+@sumProductRule
 
 abstract SumProductRule{factor_type} <: MessageUpdateRule
 
@@ -55,4 +56,64 @@ function inferUpdateRule!{T<:SumProductRule}(   entry::ScheduleEntry,
     end
 
     return entry
+end
+
+"""
+@sumProductRule registers a sum-product update rule by defining the rule type
+and the corresponding methods for the outboundType and isApplicable functions.
+If no name (type) for the new rule is passed, a unique name (type) will be
+generated. Returns the rule type.
+"""
+macro sumProductRule(fields...)
+    # Init required fields in macro scope
+    node_type = :unknown
+    outbound_type = :unknown
+    inbound_types = :unknown
+    name = :auto # Triggers automatic naming unless overwritten
+
+    # Loop over fields because order is unknown
+    for arg in fields
+        (arg.head == :(=>)) || error("Invalid call to @sumProductRule")
+
+        if arg.args[1].args[1] == :node_type
+            node_type = arg.args[2]
+        elseif arg.args[1].args[1] == :outbound_type
+            outbound_type = arg.args[2]
+            (outbound_type.head == :curly && outbound_type.args[1] == :Message) || error("Outbound type for SumProductRule should be a Message")
+        elseif arg.args[1].args[1] == :inbound_types
+            inbound_types = arg.args[2]
+            (inbound_types.head == :tuple) || error("Inbound types should be passed as Tuple")
+        elseif arg.args[1].args[1] == :name
+            name = arg.args[2]
+        else
+            error("Unrecognized field $(arg.args[1].args[1]) in call to @sumProductRule")
+        end
+    end
+
+    # Assign unique name if not set already
+    if name == :auto
+        # Added hash ensures that the rule name is unique
+        msg_types_hash = string(hash(vcat([outbound_type], inbound_types)))[1:6]
+        name = Symbol("SP$(node_type)$(msg_types_hash)")
+    end
+
+    # Build validators for isApplicable
+    input_type_validators = String[]
+    for (i, i_type) in enumerate(inbound_types.args)
+        if i_type != :Void
+            # Only validate inbounds required for message update
+            push!(input_type_validators, "(input_types[$i]==$i_type)")
+        end
+    end
+
+    expr = parse("""
+        begin
+            type $name <: SumProductRule{$node_type} end
+            ForneyLab.outboundType(::Type{$name}) = $outbound_type
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{DataType}) = $(join(input_type_validators, " && "))
+            $name
+        end
+    """)
+
+    return esc(expr)
 end
