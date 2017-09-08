@@ -75,7 +75,7 @@ include("visualization.jl")
 # InferenceAlgorithms
 include("algorithms/sum_product/sum_product.jl")
 
-include("algorithms/variational_bayes/recognition_factor.jl")
+include("algorithms/variational_bayes/recognition_factorization.jl")
 include("algorithms/variational_bayes/variational_bayes.jl")
 
 # include("algorithms/loopy_sum_product/loopy_sum_product.jl")

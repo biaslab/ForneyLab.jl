@@ -18,7 +18,7 @@ function sumProductSchedule(variables::Vector{Variable})
         entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
     end
 
-    # inferUpdateRules!(schedule)
+    inferUpdateRules!(schedule)
 
     return schedule
 end

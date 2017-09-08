@@ -1,4 +1,4 @@
-export RecognitionFactor
+export RecognitionFactor, RecognitionFactorization
 
 """
 A RecognitionFactor specifies the subset of variables that comprise
@@ -6,17 +6,21 @@ a joint factor in the recognition factorization.
 """
 type RecognitionFactor
     id::Symbol
+    variables::Set{Variable}
     internal_edges::Set{Edge}
-    recognition_distributions::Dict{Variable, ProbabilityDistribution}
 
-    function RecognitionFactor(variables::Set{Variable}, dist::ProbabilityDistribution; id=generateId(RecognitionFactor))
+    function RecognitionFactor(variables::Set{Variable}, dist::ProbabilityDistribution; rfz=currentRecognitionFactorization(), id=generateId(RecognitionFactor))
+        # TODO: allow for joint factorizations
         internal_edges = extend(edges(variables))
-        recognition_distributions = Dict{Variable, ProbabilityDistribution}()
         for variable in variables
-            recognition_distributions[variable] = dist
+            # Initialize a separate recognition distribution for each variable in the set
+            rfz.recognition_distributions[variable] = deepcopy(dist)
         end
 
-        return new(id, internal_edges, recognition_distributions)
+        self = new(id, variables, internal_edges)
+        rfz.recognition_factors[id] = self # Register new factor with recognition factorization
+
+        return self 
     end
 end
 
@@ -51,23 +55,38 @@ function extend(edge_set::Set{Edge})
     return cluster
 end
 
-# type RecognitionFactorization
-#     recognition_factors::Vector{RecognitionFactor}
-# end
+type RecognitionFactorization
+    recognition_factors::Dict{Symbol, RecognitionFactor}
+    recognition_distributions::Dict{Variable, ProbabilityDistribution}
+end
 
-# """
-# Return currently active RecognitionFactorization.
-# Create one if there is none.
-# """
-# function currentRecognitionFactorization()
-#     try
-#         return current_recognition_factorization
-#     catch
-#         return RecognitionFactorization()
-#     end
-# end
+"""
+Return currently active RecognitionFactorization.
+Create one if there is none.
+"""
+function currentRecognitionFactorization()
+    try
+        return current_recognition_factorization
+    catch
+        return RecognitionFactorization()
+    end
+end
 
-# setCurrentRecognitionFactorization(rf::RecognitionFactorization) = global current_recognition_factorization = rf
+setCurrentRecognitionFactorization(rf::RecognitionFactorization) = global current_recognition_factorization = rf
 
-# RecognitionFactorization() = setCurrentRecognitionFactorization(RecognitionFactorization(RecognitionFactor[]))
+RecognitionFactorization() = setCurrentRecognitionFactorization(
+    RecognitionFactorization(
+        Dict{Symbol, RecognitionFactor}(),
+        Dict{Variable, ProbabilityDistribution}()))
 
+"""
+Find the RecognitionFactor in which `edge` is internal.
+"""
+function recognitionFactor(edge::Edge)
+    for rf in values(current_recognition_factorization.recognition_factors)
+        if edge in rf.internal_edges
+            return rf
+        end
+    end
+    error("$(edge) not found in current recognition factorization")
+end

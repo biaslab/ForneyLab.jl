@@ -14,7 +14,7 @@ function variationalSchedule(recognition_factor::RecognitionFactor)
 
     internal_edges = recognition_factor.internal_edges
     # Schedule messages towards recognition distributions, limited to the internal edges
-    schedule = summaryPropagationSchedule(sort(collect(keys(recognition_factor.recognition_distributions))), limit_set=internal_edges)
+    schedule = summaryPropagationSchedule(sort(collect(recognition_factor.variables)), limit_set=internal_edges)
 
     # external_edges are the difference between all edges connected to nodes, and the internal edges
     subgraph_nodes = nodes(internal_edges)
@@ -29,7 +29,7 @@ function variationalSchedule(recognition_factor::RecognitionFactor)
         end
     end
 
-    # inferUpdateRules!(schedule)
+    inferUpdateRules!(schedule)
 
     return schedule
 end
@@ -42,12 +42,13 @@ function inferUpdateRule!{T<:VariationalRule}(  entry::ScheduleEntry,
     for node_interface in entry.interface.node.interfaces
         if is(node_interface, entry.interface)
             push!(inbound_types, Void)
-        elseif is(node_interface.edge.variable.recognition_factor, entry.interface.edge.variable.recognition_factor)
-            # Both variables are in the same recognition factor, require message
+        elseif is(recognitionFactor(node_interface.edge), recognitionFactor(entry.interface.edge))
+            # Both edges are internal in the same recognition factor, require message
             push!(inbound_types, inferred_outbound_types[node_interface.partner])
         else
             # A recognition factor border is crossed, require recognition distribution
-            push!(inbound_types, typeof(current_recognition_fectorization.recognition_distributions[node_interface.edge.variable]))
+            # for the variable corresponding to the external edge
+            push!(inbound_types, typeof(current_recognition_factorization.recognition_distributions[node_interface.edge.variable]))
         end
     end
 
