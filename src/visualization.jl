@@ -23,7 +23,7 @@ function graphviz(dot_graph::AbstractString; external_viewer::Symbol=:None)
     end
 end
 
-draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph), edges(factor_graph)); args...)
+draw(factor_graph::FactorGraph; schedule=ScheduleEntry[], args...) = graphviz(genDot(nodes(factor_graph), edges(factor_graph), schedule=schedule); args...)
 draw(; args...) = draw(currentGraph(); args...)
 
 function drawPng(factor_graph::FactorGraph, filename::AbstractString)
@@ -55,12 +55,11 @@ drawPdf(filename::AbstractString) = drawPdf(currentGraph(), filename)
 drawPdf(nodes::Set{FactorNode}, filename::AbstractString) = dot2pdf(genDot(nodes, edges(nodes)), filename)
 drawPdf(nodes::Vector{FactorNode}, filename::AbstractString) = drawPdf(Set(nodes), filename)
 
-
 ####################################################
 # Internal functions
 ####################################################
 
-function genDot(nodes::Set{FactorNode}, edges::Set{Edge}; external_edges::Set{Edge}=Set{Edge}())
+function genDot(nodeset::Set{FactorNode}, edgeset::Set{Edge}; schedule::Schedule=ScheduleEntry[], external_edges::Set{Edge}=Set{Edge}())
     # Return a string representing the graph in DOT format
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)
 
@@ -68,7 +67,8 @@ function genDot(nodes::Set{FactorNode}, edges::Set{Edge}; external_edges::Set{Ed
     dot *= "\tnode [shape=box, width=1.0, height=1.0, fontsize=9];\n"
     dot *= "\tedge [fontsize=8, arrowhead=onormal];\n"
 
-    for node in nodes
+    # Draw nodes
+    for node in nodeset
         if isa(node, Constant)
             dot *= "\t$(object_id(node)) [label=\"$(node.id)\", style=filled, width=0.75, height=0.75]\n"
         elseif isa(node, Terminal)
@@ -78,8 +78,33 @@ function genDot(nodes::Set{FactorNode}, edges::Set{Edge}; external_edges::Set{Ed
         end
     end
 
-    for edge in edges
-        dot *= edgeDot(edge)
+    # Build dictionary for message labels
+    msg_labels = Dict{Interface, String}()
+    for (i, entry) in enumerate(schedule)
+        if entry.msg_update_rule <: SumProductRule
+            str = "($i)"
+        else
+            str = "(($i))"
+        end
+        msg_labels[entry.interface] = str
+    end
+
+    for edge in edgeset
+        dot *= edgeDot(edge, msg_labels=msg_labels)
+    end
+
+    # Draw external edges
+    if length(external_edges) > 0
+        # Add invisible nodes to external edges
+        external_nodes = setdiff(nodes(external_edges), nodeset)
+        for node in external_nodes
+            dot *= "\t$(object_id(node)) [label=\"\", shape=none,  width=0.15, height=0.15]\n"
+        end
+
+        # Add the external edges themselves
+        for edge in external_edges
+            dot *= edgeDot(edge, is_external_edge=true)
+        end
     end
 
     dot *= "}";
@@ -87,7 +112,7 @@ function genDot(nodes::Set{FactorNode}, edges::Set{Edge}; external_edges::Set{Ed
     return dot
 end
 
-function edgeDot(edge::Edge)
+function edgeDot(edge::Edge; msg_labels=Dict{Interface, String}(), is_external_edge=false)
     # Generate DOT code for an edge
     dot = ""
     if edge.b != nothing
@@ -111,7 +136,13 @@ function edgeDot(edge::Edge)
     end
 
     dot *= "\t$b_object_id -- $a_object_id "
-    dot *= "[taillabel=\"$(b_label)\", headlabel=\"$(a_label)\" color=\"black\"]"
+    if is_external_edge
+        dot *= "[taillabel=\"$(b_label)\", headlabel=\"$(a_label)\", style=\"dashed\" color=\"black\"]\n"
+    else
+        msg_label_a = (haskey(msg_labels, edge.a) ? msg_labels[edge.a] : "")
+        msg_label_b = (haskey(msg_labels, edge.b) ? msg_labels[edge.b] : "")
+        dot *= "[taillabel=\"$(b_label)\n$(msg_label_b)\", headlabel=\"$(a_label)\n$(msg_label_a)\" color=\"black\"]"
+    end
 end
 
 function dot2gif(dot_graph::AbstractString)

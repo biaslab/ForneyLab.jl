@@ -22,7 +22,11 @@ end
 
 RecognitionFactor(variable, dist; id=generateId(RecognitionFactor)) = RecognitionFactor(Set([variable]), dist, id=id)
 
-draw(rf::RecognitionFactor; args...) = draw(nodes(rf.internal_edges); args...)
+function draw(rf::RecognitionFactor; schedule=ScheduleEntry[], args...)
+    subgraph_nodes = nodes(rf.internal_edges)
+    external_edges = setdiff(edges(subgraph_nodes), rf.internal_edges)
+    ForneyLab.graphviz(ForneyLab.genDot(subgraph_nodes, rf.internal_edges, schedule=schedule, external_edges=external_edges); args...)
+end
 
 """
 Find the smallest legal subgraph (connected through deterministic nodes) that includes the argument edges
