@@ -89,6 +89,8 @@ function show(io::IO, edge::Edge)
     println(io, "Edge belonging to variable $(edge.variable.id): ( $(a) )----( $(b) ).")
 end
 
+Base.isless(e1::Edge, e2::Edge) = isless("$(e1.variable.id)", "$(e2.variable.id)")
+
 function show(io::IO, edges::Union{Vector{Edge}, Set{Edge}})
     println(io, "Edges:")
     for edge in edges

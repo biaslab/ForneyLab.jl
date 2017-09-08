@@ -22,7 +22,7 @@ type GaussianMeanVariance <: Gaussian
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function GaussianMeanVariance(out::Variable, mean::Variable, variance::Variable; id=generateId(GaussianMeanVariance))
+    function GaussianMeanVariance(out::Variable, mean::Variable, variance::Variable; id=generateId(Gaussian))
         self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:mean] = self.interfaces[1] = associate!(Interface(self), mean)

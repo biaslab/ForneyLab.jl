@@ -60,7 +60,7 @@ drawPdf(nodes::Vector{FactorNode}, filename::AbstractString) = drawPdf(Set(nodes
 # Internal functions
 ####################################################
 
-function genDot(nodes::Set{FactorNode}, edges::Set{Edge})
+function genDot(nodes::Set{FactorNode}, edges::Set{Edge}; external_edges::Set{Edge}=Set{Edge}())
     # Return a string representing the graph in DOT format
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)
 

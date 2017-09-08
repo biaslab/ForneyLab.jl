@@ -35,11 +35,47 @@ end
 typealias Schedule Vector{ScheduleEntry}
 
 """
+summaryDependencyGraph(edgeset)
+
+Returns a DependencyGraph (directed graph) that encodes the dependencies among
+summary messages (such as sum-product messages) in `edgeset`.
+All Interfaces in `edgeset` are vertices in the dependency graph.
+The dependency graph can be used for loop detection, scheduling, etc.
+"""
+function summaryDependencyGraph(edgeset::Set{Edge}; reverse_edges=false)
+    # Create dependency graph object
+    dg = DependencyGraph{Interface}()
+
+    # Add all Interfaces in edgeset as vertices in dg
+    for edge in sort(collect(edgeset))
+        isa(edge.a, Interface) && addVertex!(dg, edge.a)
+        isa(edge.b, Interface) && addVertex!(dg, edge.b)
+    end
+
+    # Add all summary dependencies
+    for interface in dg.vertices
+        if isa(interface.partner, Interface) # interface is connected to an Edge
+            for node_interface in interface.partner.node.interfaces
+                is(node_interface, interface.partner) && continue
+                (node_interface.edge in edgeset) || continue
+                if reverse_edges
+                    addEdge!(dg, interface, node_interface)
+                else
+                    addEdge!(dg, node_interface, interface)
+                end
+            end
+        end
+    end
+
+    return dg
+end
+
+"""
 `summaryPropagationSchedule(variables)` builds a generic summary propagation
 `Schedule` for calculating the marginal distributions of every variable in
 `variables`. The message update rule in the schedule entries is set to `Void`.
 """
-function summaryPropagationSchedule(variables::Vector{Variable})
+function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges(current_graph))
     # We require the marginal distribution of every variable in variables.
     # If a variable relates to multiple edges, this indicates an equality constraint.
     # Therefore, we only need to consider one arbitrary edge to calculate the marginal.
@@ -51,7 +87,7 @@ function summaryPropagationSchedule(variables::Vector{Variable})
     end
 
     # Determine a feasible ordering of message updates
-    dg = summaryDependencyGraph(current_graph)
+    dg = summaryDependencyGraph(limit_set)
     iface_list = children(unique(seed_interfaces), dg)
     # Build a schedule; Void indicates an unspecified message update rule
     schedule = [ScheduleEntry(iface, Void) for iface in iface_list]

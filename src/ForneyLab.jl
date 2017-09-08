@@ -40,6 +40,8 @@ include("factor_nodes/constant.jl")
 include("factor_nodes/equality.jl")
 include("factor_nodes/gaussian.jl")
 include("factor_nodes/gaussian_mean_variance.jl")
+include("factor_nodes/gaussian_mean_precision.jl")
+include("factor_nodes/gamma.jl")
 
 # include("nodes/equality.jl")
 # include("nodes/addition.jl")
@@ -72,8 +74,11 @@ include("visualization.jl")
 
 # InferenceAlgorithms
 include("algorithms/sum_product/sum_product.jl")
+
+include("algorithms/variational_bayes/recognition_factor.jl")
+include("algorithms/variational_bayes/variational_bayes.jl")
+
 # include("algorithms/loopy_sum_product/loopy_sum_product.jl")
-# include("algorithms/variational_bayes/variational_bayes.jl")
 # include("algorithms/expectation_propagation/expectation_propagation.jl")
 
 # # Shared preparation methods for inference algorithms

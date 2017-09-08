@@ -79,7 +79,19 @@ hasVariable(graph::FactorGraph, var::Variable) = (haskey(graph.variables, var.id
 
 nodes(graph::FactorGraph = currentGraph()) = Set{FactorNode}(values(graph.nodes))
 
+function nodes(edgeset::Set{Edge})
+    # Return all nodes connected to edgeset
+    connected_nodes = Set{FactorNode}()
+    for edge in edgeset
+        push!(connected_nodes, edge.a.node)
+        push!(connected_nodes, edge.b.node)
+    end
+
+    return connected_nodes
+end
+
 edges(graph::FactorGraph=currentGraph()) = Set{Edge}(graph.edges)
+edges(node::FactorNode) = Set{Edge}([intf.edge for intf in node.interfaces])
 edges(nodeset::Set{FactorNode}) = union(map(edges, nodeset)...)
 
 """
@@ -107,41 +119,4 @@ type Terminal <: FactorNode
 
         return self
     end
-end
-
-"""
-summaryDependencyGraph(fg)
-
-Returns a DependencyGraph (directed graph) that encodes the dependencies among
-summary messages (such as sum-product messages) in FactorGraph `fg`.
-All Interfaces in `fg` are vertices in the dependency graph.
-An edge `V1 --> V2` represents the dependency of summary `V1` on `V2`.
-The dependency graph can be used for loop detection, scheduling, etc.
-"""
-function summaryDependencyGraph(fg::FactorGraph; reverse_edges=false)
-    # Create dependency graph object
-    dg = DependencyGraph{Interface}()
-
-    # Add all Interfaces in fg as vertices in dg
-    for node in sort(collect(nodes(fg))) # nodes are sorted for the sake of deterministicness
-        for interface in node.interfaces
-            addVertex!(dg, interface)
-        end
-    end
-
-    # Add all summary dependencies
-    for interface in dg.vertices
-        if isa(interface.partner, Interface) # interface is connected to an Edge
-            for node_interface in interface.partner.node.interfaces
-                is(node_interface, interface.partner) && continue
-                if reverse_edges
-                    addEdge!(dg, interface, node_interface)
-                else
-                    addEdge!(dg, node_interface, interface)
-                end
-            end
-        end
-    end
-
-    return dg
 end

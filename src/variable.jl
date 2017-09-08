@@ -38,3 +38,9 @@ function associate!(iface::Interface, var::Variable)
 
     return iface
 end
+
+"""
+Collect all edges corresponding with variable(s)
+"""
+edges(variable::Variable) = Set{Edge}(variable.edges)
+edges(variables::Set{Variable}) = union(map(edges, variables)...)
