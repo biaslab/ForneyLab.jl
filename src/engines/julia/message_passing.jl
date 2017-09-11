@@ -1,9 +1,10 @@
-function messagePassingAlgorithm(schedule::Schedule)
+function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=Variable[])
     n_messages = length(schedule)
 
-    code = "(data::Dict) -> begin\n\n"
+    code = "(data::Dict, marginals::Dict) -> begin\n\n"
     code *= "messages = Array{Message}($n_messages)\n"
 
+    # Write message passing code
     interface_to_msg_idx = Dict{Interface, Int}()
     for (msg_idx, schedule_entry) in enumerate(schedule)
         interface_to_msg_idx[schedule_entry.interface] = msg_idx
@@ -44,9 +45,20 @@ function messagePassingAlgorithm(schedule::Schedule)
         end
     end
 
+    # Write marginal computation code
+    code *= "\n"
+    for variable in targets
+        target_edge = first(variable.edges) # For the sake of consistency, we always take the first edge.
+        msg_id_a = interface_to_msg_idx[target_edge.a]
+        msg_id_b = interface_to_msg_idx[target_edge.b]
+        code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist * messages[$msg_id_b].dist"
+    end
+
     # TODO: define ForneyLab.Julia.MessagePassing()
 
-    code *= "\nend"
+    code *= "\n\nend"
 
     return code
 end
+
+messagePassingAlgorithm(schedule::Schedule, target::Variable) = messagePassingAlgorithm(schedule, [target])
