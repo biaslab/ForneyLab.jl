@@ -81,6 +81,7 @@ include("algorithms/sum_product/sum_product.jl")
 
 # Update rules
 include("update_rules/constant.jl")
+include("update_rules/equality.jl")
 include("update_rules/gaussian_mean_variance.jl")
 
 # vague{T<:Univariate}(dist_type::Type{T}) = vague!(T())
