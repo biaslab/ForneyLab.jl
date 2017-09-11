@@ -86,6 +86,7 @@ include("algorithms/variational_bayes/variational_bayes.jl")
 
 # Update rules
 include("update_rules/constant.jl")
+include("update_rules/equality.jl")
 include("update_rules/gaussian_mean_variance.jl")
 
 # vague{T<:Univariate}(dist_type::Type{T}) = vague!(T())

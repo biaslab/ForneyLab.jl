@@ -28,11 +28,21 @@ type ScheduleEntry
     msg_update_rule::DataType
 end
 
+function show(io::IO, entry::ScheduleEntry)
+    print(io, "$(entry.msg_update_rule) on $(entry.interface)")
+end
+
 function ==(a::ScheduleEntry, b::ScheduleEntry)
     return (a.interface == b.interface) && (a.msg_update_rule == b.msg_update_rule)
 end
 
 typealias Schedule Vector{ScheduleEntry}
+
+function show(io::IO, schedule::Schedule)
+    for (idx, entry) in enumerate(schedule)
+        print(io, "$idx.\t$(entry)")
+    end
+end
 
 """
 summaryDependencyGraph(edgeset)
