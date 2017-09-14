@@ -9,14 +9,9 @@ type RecognitionFactor
     variables::Set{Variable}
     internal_edges::Set{Edge}
 
-    function RecognitionFactor(variables::Set{Variable}, dist::ProbabilityDistribution; rfz=currentRecognitionFactorization(), id=generateId(RecognitionFactor))
+    function RecognitionFactor(variables::Set{Variable}; rfz=currentRecognitionFactorization(), id=generateId(RecognitionFactor))
         # TODO: allow for joint factorizations
         internal_edges = extend(edges(variables))
-        for variable in variables
-            # Initialize a separate recognition distribution for each variable in the set
-            rfz.recognition_distributions[variable] = deepcopy(dist)
-        end
-
         self = new(id, variables, internal_edges)
         rfz.recognition_factors[id] = self # Register new factor with recognition factorization
 
@@ -24,7 +19,7 @@ type RecognitionFactor
     end
 end
 
-RecognitionFactor(variable, dist; id=generateId(RecognitionFactor)) = RecognitionFactor(Set([variable]), dist, id=id)
+RecognitionFactor(variable; id=generateId(RecognitionFactor)) = RecognitionFactor(Set([variable]), id=id)
 
 function draw(rf::RecognitionFactor; schedule=ScheduleEntry[], args...)
     subgraph_nodes = nodes(rf.internal_edges)
@@ -57,7 +52,6 @@ end
 
 type RecognitionFactorization
     recognition_factors::Dict{Symbol, RecognitionFactor}
-    recognition_distributions::Dict{Variable, ProbabilityDistribution}
 end
 
 """
@@ -74,10 +68,7 @@ end
 
 setCurrentRecognitionFactorization(rf::RecognitionFactorization) = global current_recognition_factorization = rf
 
-RecognitionFactorization() = setCurrentRecognitionFactorization(
-    RecognitionFactorization(
-        Dict{Symbol, RecognitionFactor}(),
-        Dict{Variable, ProbabilityDistribution}()))
+RecognitionFactorization() = setCurrentRecognitionFactorization(RecognitionFactorization(Dict{Symbol, RecognitionFactor}()))
 
 """
 Find the RecognitionFactor in which `edge` is internal.
