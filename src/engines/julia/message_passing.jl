@@ -24,19 +24,7 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
                 code *= "messages[$msg_idx] = Message{PointMass}($(node.value))\n"
             end
         else
-            # Apply message update rule
-
-            # Collect inbounds
-            inbounds = String[]
-            for node_interface in node.interfaces
-                inbound_interface = node_interface.partner
-                if haskey(interface_to_msg_idx, inbound_interface)
-                    inbound_idx = interface_to_msg_idx[inbound_interface]
-                    push!(inbounds, "messages[$inbound_idx]")
-                else
-                    push!(inbounds, "nothing")
-                end
-            end
+            inbounds = collectInbounds(schedule_entry, schedule_entry.msg_update_rule, interface_to_msg_idx)
 
             # Apply update rule
             rule_id = schedule_entry.msg_update_rule
@@ -59,6 +47,36 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
     code *= "\n\nend"
 
     return code
+end
+
+function collectInbounds{T<:SumProductRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
+    # Collect inbounds
+    inbound_messages = String[]
+    for node_interface in entry.interface.node.interfaces
+        inbound_interface = node_interface.partner
+        if node_interface == entry.interface
+            push!(inbound_messages, "nothing")
+        else
+            inbound_idx = interface_to_msg_idx[inbound_interface]
+            push!(inbound_messages, "messages[$inbound_idx]")
+        end
+    end
+
+    return inbound_messages
+end
+
+function collectInbounds{T<:VariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
+    # Collect inbounds
+    inbound_marginals = String[]
+    for node_interface in entry.interface.node.interfaces
+        if node_interface == entry.interface
+            push!(inbound_marginals, "nothing") # Could also just push the marginal on the edge instead of "nothing"
+        else
+            push!(inbound_marginals, "marginals[:$(node_interface.edge.variable.id)]")
+        end
+    end
+
+    return inbound_marginals
 end
 
 messagePassingAlgorithm(schedule::Schedule, target::Variable) = messagePassingAlgorithm(schedule, [target])

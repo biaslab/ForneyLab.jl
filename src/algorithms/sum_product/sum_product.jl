@@ -26,17 +26,10 @@ end
 sumProductSchedule(variable::Variable) = sumProductSchedule([variable])
 
 function inferUpdateRule!{T<:SumProductRule}(   entry::ScheduleEntry,
-                                                ::Type{T},
+                                                rule_type::Type{T},
                                                 inferred_outbound_types::Dict{Interface, DataType})
     # Collect inbound types
-    inbound_types = DataType[]
-    for node_interface in entry.interface.node.interfaces
-        if is(node_interface, entry.interface)
-            push!(inbound_types, Void)
-        else
-            push!(inbound_types, inferred_outbound_types[node_interface.partner])
-        end
-    end
+    inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
 
     # Find applicable rule(s)
     applicable_rules = DataType[]
@@ -56,6 +49,21 @@ function inferUpdateRule!{T<:SumProductRule}(   entry::ScheduleEntry,
     end
 
     return entry
+end
+
+function collectInboundTypes{T<:SumProductRule}(entry::ScheduleEntry,
+                                                ::Type{T},
+                                                inferred_outbound_types::Dict{Interface, DataType})
+    inbound_message_types = DataType[]
+    for node_interface in entry.interface.node.interfaces
+        if node_interface == entry.interface
+            push!(inbound_message_types, Void)
+        else
+            push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
+        end
+    end
+
+    return inbound_message_types
 end
 
 """

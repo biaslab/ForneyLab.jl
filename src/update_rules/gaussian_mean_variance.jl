@@ -14,3 +14,7 @@
                 :inbound_types => (Message{GaussianMeanVariance}, Message{PointMass}, Void),
                 :name          => SPGaussianMeanVarianceGPV)
 
+@variationalRule(:node_type     => GaussianMeanVariance,
+                 :outbound_type => Message{GaussianMeanVariance},
+                 :outbound_id   => 3,
+                 :name          => VBGaussianMeanVariance3)
