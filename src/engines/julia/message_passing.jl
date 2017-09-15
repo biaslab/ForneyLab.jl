@@ -1,4 +1,5 @@
 function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=Variable[])
+    schedule = ForneyLab.condense(schedule) # Remove Constant node entries
     n_messages = length(schedule)
 
     code = "(data::Dict, marginals::Dict) -> begin\n\n"
@@ -7,42 +8,15 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
     # Write message passing code
     interface_to_msg_idx = Dict{Interface, Int}()
     for (msg_idx, schedule_entry) in enumerate(schedule)
+        # Collect inbounds and assign message id
         interface_to_msg_idx[schedule_entry.interface] = msg_idx
-        node = schedule_entry.interface.node
+        inbounds = collectInbounds(schedule_entry, schedule_entry.msg_update_rule, interface_to_msg_idx)
 
-        if isa(node, Constant)
-            if node in keys(ForneyLab.current_graph.placeholders)
-                # Read from data array
-                buffer, idx = ForneyLab.current_graph.placeholders[node]
-                if idx > 0
-                    code *= "messages[$msg_idx] = Message{PointMass}(data[:$buffer][$idx])\n"
-                else
-                    code *= "messages[$msg_idx] = Message{PointMass}(data[:$buffer])\n"
-                end
-            else
-                # Insert constant
-                code *= "messages[$msg_idx] = Message{PointMass}($(node.value))\n"
-            end
-        else
-            # Apply message update rule
-
-            # Collect inbounds
-            inbounds = String[]
-            for node_interface in node.interfaces
-                inbound_interface = node_interface.partner
-                if haskey(interface_to_msg_idx, inbound_interface)
-                    inbound_idx = interface_to_msg_idx[inbound_interface]
-                    push!(inbounds, "messages[$inbound_idx]")
-                else
-                    push!(inbounds, "nothing")
-                end
-            end
-
-            # Apply update rule
-            rule_id = schedule_entry.msg_update_rule
-            inbounds_str = join(inbounds, ", ")
-            code *= "messages[$msg_idx] = rule($rule_id, [$inbounds_str])\n"
-        end
+        # Apply update rule
+        rule_id = schedule_entry.msg_update_rule
+        inbounds_str = join(inbounds, ", ")
+        code *= "messages[$msg_idx] = rule($rule_id, [$inbounds_str])\n"
+        msg_idx += 1
     end
 
     # Write marginal computation code
@@ -51,14 +25,60 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
         target_edge = first(variable.edges) # For the sake of consistency, we always take the first edge.
         msg_id_a = interface_to_msg_idx[target_edge.a]
         msg_id_b = interface_to_msg_idx[target_edge.b]
-        code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist * messages[$msg_id_b].dist"
+        code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist * messages[$msg_id_b].dist\n"
     end
 
     # TODO: define ForneyLab.Julia.MessagePassing()
 
-    code *= "\n\nend"
+    code *= "\nend"
 
     return code
+end
+
+"""
+Collect and construct algorithm code for each inbound.
+"""
+function collectInbounds{T<:SumProductRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
+    inbound_messages = String[]
+    node = entry.interface.node
+    for node_interface in node.interfaces
+        inbound_interface = node_interface.partner
+        partner_node = inbound_interface.node
+        if node_interface == entry.interface
+            # Ignore inbound message on outbound interface
+            push!(inbound_messages, "nothing")
+        elseif isa(partner_node, Constant)
+            # Hard-code outbound message of constant node in schedule
+            push!(inbound_messages, messageString(partner_node))
+        else
+            # Collect message from previous result
+            inbound_idx = interface_to_msg_idx[inbound_interface]
+            push!(inbound_messages, "messages[$inbound_idx]")
+        end
+    end
+
+    return inbound_messages
+end
+
+"""
+Depending on the origin of the Constant node message,
+contruct the outbound message code.
+"""
+function messageString(node::Constant)
+    if node in keys(ForneyLab.current_graph.placeholders)
+        # Message comes from data array
+        buffer, idx = ForneyLab.current_graph.placeholders[node]
+        if idx > 0
+            str = "Message{PointMass}(data[:$buffer][$idx])"
+        else
+            str = "Message{PointMass}(data[:$buffer])"
+        end
+    else
+        # Insert constant
+        str = "Message{PointMass}($(node.value))"
+    end
+
+    return str
 end
 
 messagePassingAlgorithm(schedule::Schedule, target::Variable) = messagePassingAlgorithm(schedule, [target])

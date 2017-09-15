@@ -23,7 +23,7 @@ function graphviz(dot_graph::AbstractString; external_viewer::Symbol=:None)
     end
 end
 
-draw(factor_graph::FactorGraph; args...) = graphviz(genDot(nodes(factor_graph), edges(factor_graph)); args...)
+draw(factor_graph::FactorGraph; schedule=ScheduleEntry[], args...) = graphviz(genDot(nodes(factor_graph), edges(factor_graph), schedule=schedule); args...)
 draw(; args...) = draw(currentGraph(); args...)
 
 function drawPng(factor_graph::FactorGraph, filename::AbstractString)
@@ -60,7 +60,7 @@ drawPdf(nodes::Vector{FactorNode}, filename::AbstractString) = drawPdf(Set(nodes
 # Internal functions
 ####################################################
 
-function genDot(nodes::Set{FactorNode}, edges::Set{Edge})
+function genDot(nodes::Set{FactorNode}, edges::Set{Edge}; schedule::Schedule=ScheduleEntry[])
     # Return a string representing the graph in DOT format
     # http://en.wikipedia.org/wiki/DOT_(graph_description_language)
 
@@ -78,8 +78,14 @@ function genDot(nodes::Set{FactorNode}, edges::Set{Edge})
         end
     end
 
+    # Build dictionary for message labels
+    msg_labels = Dict{Interface, String}()
+    for (i, entry) in enumerate(condense(schedule))
+        msg_labels[entry.interface] = "($i)"
+    end
+
     for edge in edges
-        dot *= edgeDot(edge)
+        dot *= edgeDot(edge, msg_labels=msg_labels)
     end
 
     dot *= "}";
@@ -87,7 +93,7 @@ function genDot(nodes::Set{FactorNode}, edges::Set{Edge})
     return dot
 end
 
-function edgeDot(edge::Edge)
+function edgeDot(edge::Edge; msg_labels=Dict{Interface, String}())
     # Generate DOT code for an edge
     dot = ""
     if edge.b != nothing
@@ -111,7 +117,9 @@ function edgeDot(edge::Edge)
     end
 
     dot *= "\t$b_object_id -- $a_object_id "
-    dot *= "[taillabel=\"$(b_label)\", headlabel=\"$(a_label)\" color=\"black\"]"
+    msg_label_a = (haskey(msg_labels, edge.a) ? msg_labels[edge.a] : "")
+    msg_label_b = (haskey(msg_labels, edge.b) ? msg_labels[edge.b] : "")
+    dot *= "[taillabel=\"$(b_label)\n$(msg_label_b)\", headlabel=\"$(a_label)\n$(msg_label_a)\" color=\"black\"]"
 end
 
 function dot2gif(dot_graph::AbstractString)

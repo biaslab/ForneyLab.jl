@@ -39,8 +39,14 @@ end
 typealias Schedule Vector{ScheduleEntry}
 
 function show(io::IO, schedule::Schedule)
-    for (idx, entry) in enumerate(schedule)
-        print(io, "$idx.\t$(entry)")
+    idx = 1
+    for entry in schedule
+        if isa(entry.interface.node, Constant)
+            print(io, "\t$(entry)")
+        else
+            print(io, "$idx.\t$(entry)")
+            idx += 1
+        end
     end
 end
 
@@ -89,4 +95,18 @@ function inferUpdateRules!(schedule::Schedule)
     end
 
     return schedule
+end
+
+"""
+Contruct a condensed schedule without Constant node entries.
+"""
+function condense(schedule::Schedule)
+    condensed_schedule = ScheduleEntry[]
+    for entry in schedule
+        if !isa(entry.interface.node, Constant)
+            push!(condensed_schedule, entry)
+        end
+    end
+
+    return condensed_schedule
 end
