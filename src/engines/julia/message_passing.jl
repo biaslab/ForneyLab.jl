@@ -39,12 +39,12 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
         target_edge = first(variable.edges) # For the sake of consistency, we always take the first edge.
         msg_id_a = interface_to_msg_idx[target_edge.a]
         msg_id_b = interface_to_msg_idx[target_edge.b]
-        code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist * messages[$msg_id_b].dist"
+        code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist * messages[$msg_id_b].dist\n"
     end
 
     # TODO: define ForneyLab.Julia.MessagePassing()
 
-    code *= "\n\nend"
+    code *= "\nend"
 
     return code
 end

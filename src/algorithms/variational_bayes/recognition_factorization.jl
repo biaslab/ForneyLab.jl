@@ -19,7 +19,8 @@ type RecognitionFactor
     end
 end
 
-RecognitionFactor(variable; id=generateId(RecognitionFactor)) = RecognitionFactor(Set([variable]), id=id)
+RecognitionFactor(variable::Variable; id=generateId(RecognitionFactor)) = RecognitionFactor(Set([variable]), id=id)
+RecognitionFactor(variables::Vector{Variable}; id=generateId(RecognitionFactor)) = RecognitionFactor(Set(variables), id=id)
 
 function draw(rf::RecognitionFactor; schedule=ScheduleEntry[], args...)
     subgraph_nodes = nodes(rf.internal_edges)

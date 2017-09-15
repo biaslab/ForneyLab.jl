@@ -89,6 +89,7 @@ include("update_rules/constant.jl")
 include("update_rules/equality.jl")
 include("update_rules/gaussian_mean_variance.jl")
 include("update_rules/gaussian_mean_precision.jl")
+include("update_rules/gamma.jl")
 
 # vague{T<:Univariate}(dist_type::Type{T}) = vague!(T())
 # *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
