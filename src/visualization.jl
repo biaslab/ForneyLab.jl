@@ -80,7 +80,7 @@ function genDot(nodeset::Set{FactorNode}, edgeset::Set{Edge}; schedule::Schedule
 
     # Build dictionary for message labels
     msg_labels = Dict{Interface, String}()
-    for (i, entry) in enumerate(schedule)
+    for (i, entry) in enumerate(condense(schedule))
         if entry.msg_update_rule <: SumProductRule
             str = "($i)"
         else
