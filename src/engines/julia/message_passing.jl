@@ -23,9 +23,17 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
     code *= "\n"
     for variable in targets
         target_edge = first(variable.edges) # For the sake of consistency, we always take the first edge.
-        msg_id_a = interface_to_msg_idx[target_edge.a]
-        msg_id_b = interface_to_msg_idx[target_edge.b]
-        code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist * messages[$msg_id_b].dist\n"
+        if target_edge.a == nothing # Handle cases where there is a `dangling` edge
+            msg_id_b = interface_to_msg_idx[target_edge.b]
+            code *= "marginals[:$(variable.id)] = messages[$msg_id_b].dist\n"
+        elseif target_edge.b == nothing
+            msg_id_a = interface_to_msg_idx[target_edge.a]
+            code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist\n"
+        else
+            msg_id_a = interface_to_msg_idx[target_edge.a]
+            msg_id_b = interface_to_msg_idx[target_edge.b]
+            code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist * messages[$msg_id_b].dist\n"
+        end
     end
 
     # TODO: define ForneyLab.Julia.MessagePassing()
@@ -43,13 +51,12 @@ function collectInbounds{T<:SumProductRule}(entry::ScheduleEntry, ::Type{T}, int
     node = entry.interface.node
     for node_interface in node.interfaces
         inbound_interface = node_interface.partner
-        partner_node = inbound_interface.node
         if node_interface == entry.interface
             # Ignore inbound message on outbound interface
             push!(inbound_messages, "nothing")
-        elseif isa(partner_node, Constant)
+        elseif isa(inbound_interface.node, Constant)
             # Hard-code outbound message of constant node in schedule
-            push!(inbound_messages, messageString(partner_node))
+            push!(inbound_messages, messageString(inbound_interface.node))
         else
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]

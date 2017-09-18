@@ -103,20 +103,6 @@ function viewFile(filename::AbstractString)
     is_windows() ? run(`cmd /c start $filename`) : (is_apple() ? run(`open $filename`) : (is_linux() ? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
 end
 
-"""truncate(str, max): truncate str to max positions"""
-function truncate(str::String, max::Integer)
-    if length(str)>max
-        return "$(str[1:max-3])..."
-    end
-    return str
-end
-
-"""pad(str, size): pad str with spaces until its length reaches size"""
-function pad(str::String, size::Integer)
-    str_trunc = truncate(str, size)
-    return "$(str_trunc)$(repeat(" ",size-length(str_trunc)))"
-end
-
 """
 trigammaInverse(x): solve `trigamma(y) = x` for `y`.
 
