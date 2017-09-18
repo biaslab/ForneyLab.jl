@@ -1,4 +1,4 @@
-export RecognitionFactor, RecognitionFactorization
+export RecognitionFactor, RecognitionFactorization, currentRecognitionFactorization
 
 """
 A RecognitionFactor specifies the subset of variables that comprise

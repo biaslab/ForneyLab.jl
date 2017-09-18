@@ -3,6 +3,7 @@
                  :outbound_id   => 1,
                  :name          => VBGaussianMeanPrecision1)
 
+# TODO: how to handle Wishart
 @variationalRule(:node_type     => GaussianMeanPrecision,
                  :outbound_type => Message{Gamma},
                  :outbound_id   => 2,
