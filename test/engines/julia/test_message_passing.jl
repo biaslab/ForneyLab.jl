@@ -2,9 +2,8 @@ module JuliaMessagePassingTest
 
 using Base.Test
 using ForneyLab
-using ForneyLab.Julia
 
-@testset "Julia.messagePassingAlgorithm" begin
+@testset "Julia messagePassingAlgorithm" begin
     @testset "Read from data" begin
         g = FactorGraph()
         x = Variable()
@@ -14,7 +13,7 @@ using ForneyLab.Julia
         placeholder(x, :x)
 
         schedule = sumProductSchedule(m)
-        algo = ForneyLab.Julia.messagePassingAlgorithm(schedule, m)
+        algo = ForneyLab.messagePassingAlgorithm(schedule, m)
 
         @test contains(algo, "messages = Array{Message}(2)")
         @test contains(algo, "messages[1] = ruleSPGaussianMeanVariancePPV(Message(PointMass, m=0.0), Message(PointMass, m=1.0), nothing)")
@@ -28,7 +27,7 @@ using ForneyLab.Julia
         GaussianMeanVariance(x, constant(0.0), constant(1.0))
 
         schedule = sumProductSchedule(x)
-        algo = ForneyLab.Julia.messagePassingAlgorithm(schedule, x)
+        algo = ForneyLab.messagePassingAlgorithm(schedule, x)
 
         @test contains(algo, "messages = Array{Message}(1)")
         @test contains(algo, "messages[1] = ruleSPGaussianMeanVariancePPV(Message(PointMass, m=0.0), Message(PointMass, m=1.0), nothing)")
@@ -49,9 +48,9 @@ end
     messages[1] = ruleSPGaussianMeanVariancePPV(Message(PointMass, m=0.0), Message(PointMass, m=1.0), nothing)
     messages[2] = ruleSPGaussianMeanVarianceVPP(nothing, Message(PointMass, m=1.0), Message(PointMass, m=data[:y][2]))
     messages[3] = ruleSPGaussianMeanVarianceVPP(nothing, Message(PointMass, m=1.0), Message(PointMass, m=data[:y][3]))
-    messages[4] = ruleSPEqualityGaussianMV(messages[2], nothing, messages[3])
+    messages[4] = ruleSPEqualityGaussian(messages[2], nothing, messages[3])
     messages[5] = ruleSPGaussianMeanVarianceVPP(nothing, Message(PointMass, m=1.0), Message(PointMass, m=data[:y][1]))
-    messages[6] = ruleSPEqualityGaussianMV(nothing, messages[5], messages[4])
+    messages[6] = ruleSPEqualityGaussian(nothing, messages[5], messages[4])
 
     marginals[:variable_1] = messages[1].dist * messages[6].dist
 
@@ -62,8 +61,8 @@ end
     data = Dict(:y => [1.0, 2.0, 3.0])
     step!(marginals, data)
 
-    @test isa(marginals[:variable_1], ProbabilityDistribution{GaussianMeanVariance})
-    @test marginals[:variable_1].params == Dict(:m=>1.5, :v=>0.25)
+    @test isa(marginals[:variable_1], ProbabilityDistribution{GaussianWeightedMeanPrecision})
+    @test marginals[:variable_1].params == Dict(:xi=>6.0, :w=>4.0)
 end
 
 end # module

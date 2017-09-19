@@ -23,8 +23,8 @@ include("variable.jl")
 # Factor nodes
 include("factor_nodes/constant.jl")
 include("factor_nodes/equality.jl")
-include("factor_nodes/gaussian.jl")
 include("factor_nodes/gaussian_mean_variance.jl")
+include("factor_nodes/gaussian_weighted_mean_precision.jl")
 
 # include("nodes/equality.jl")
 # include("nodes/addition.jl")
@@ -69,9 +69,7 @@ include("update_rules/constant.jl")
 include("update_rules/equality.jl")
 include("update_rules/gaussian_mean_variance.jl")
 
-# vague{T<:Univariate}(dist_type::Type{T}) = vague!(T())
 *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
-# *(x::Message, y::Message) = prod!(x.payload, y.payload) # * operator for messages
 
 # include("docstrings.jl")
 
