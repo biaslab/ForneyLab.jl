@@ -4,7 +4,8 @@ PointMass,
 @~,
 mean,
 var,
-cov
+cov,
+==
 
 # TODO: correctness of distribution parameters is not enforced
 # TODO: current use of ProbabilityDistribution{family} leads to very long calling signatures
@@ -70,3 +71,5 @@ macro ~(variable_expr::Any, dist_expr::Expr)
             """)
     return esc(expr)
 end
+
+=={T, U}(t::ProbabilityDistribution{T}, u::ProbabilityDistribution{U}) = (T == U) && (t.params == u.params)

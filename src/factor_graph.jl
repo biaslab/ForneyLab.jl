@@ -45,7 +45,7 @@ function generateId(t::DataType)
     current_graph = currentGraph()
     haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
     count = current_graph.counters[t]
-    str = lowercase(split(string(t.name),'.')[end]) # Remove "ForneyLab." from typename
+    str = lowercase(split(string(t.name),'.')[end]) # Remove module prefix from typename
     return Symbol("$(str)_$(count)")
 end
 

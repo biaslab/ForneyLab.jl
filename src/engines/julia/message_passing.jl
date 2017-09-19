@@ -15,7 +15,7 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
 
         # Apply update rule
         rule_id = schedule_entry.msg_update_rule
-        rule_str = split("$(rule_id)", '.')[end] # Remove "Forneylab."
+        rule_str = replace(string(rule_id), "ForneyLab.", "") # Remove "Forneylab."
         inbounds_str = join(inbounds, ", ")
         code *= "messages[$msg_idx] = rule$(rule_str)($inbounds_str)\n"
         msg_idx += 1

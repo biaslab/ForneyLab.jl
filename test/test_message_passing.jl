@@ -1,7 +1,15 @@
 module MessagePassingTest
 
 using Base.Test
-import ForneyLab: ScheduleEntry, Schedule, summaryPropagationSchedule, Interface, generateId, addNode!, currentGraph, FactorGraph, Variable, FactorNode, associate!
+using ForneyLab
+import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule
+
+# TODO: handle scaling factors
+@testset "Message" begin
+    @test Message(PointMass, m=0.0) == Message(PointMass, m=0.0)
+    @test Message(PointMass, m=0.0) != Message(GaussianMeanVariance, m=0.0, v=1.0)
+    @test Message(PointMass, m=0.0) != Message(PointMass, m=1.0)
+end
 
 # Integration helper
 type MockNode <: FactorNode

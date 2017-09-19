@@ -1,6 +1,6 @@
 export huge, tiny, cholinv, diageye, *, .*, ^
 
-import Base.*, Base.(.*), Base.^, Base.==, Base.sqrt
+import Base: *, .*, ^, ==, sqrt
 
 """ensureMatrix: cast input to a Matrix if necessary"""
 ensureMatrix{T<:Number}(arr::AbstractMatrix{T}) = arr

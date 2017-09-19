@@ -19,6 +19,18 @@ Message{T<:SoftFactor}(family::Type{T}; kwargs...) = Message{family}(Probability
 
 Message(family::Type{PointMass}; kwargs...) = Message{family}(ProbabilityDistribution{family}(Dict(kwargs)))
 
+function =={T, U}(t::Message{T}, u::Message{U})
+    (T == U) || return false
+    (t.dist == u.dist) || return false
+    if isdefined(t, :scaling_factor) && isdefined(u, :scaling_factor)
+        (t.scaling_factor == u.scaling_factor) || return false
+    end
+    isdefined(t, :scaling_factor) && !isdefined(u, :scaling_factor) && return false
+    !isdefined(t, :scaling_factor) && isdefined(u, :scaling_factor) && return false
+    
+    return true
+end
+
 """
 A MessageCalculationRule specifies how a Message is calculated from the node function and the incoming messages.
 Use `subtypes(MessageCalculationRule)` to list the available rules.
@@ -36,7 +48,7 @@ type ScheduleEntry
 end
 
 function show(io::IO, entry::ScheduleEntry)
-    rule_str = split("$(entry.msg_update_rule)", '.')[end] # Remove "Forneylab."
+    rule_str = replace(string(entry.msg_update_rule), "ForneyLab.", "") # Remove "Forneylab."
     print(io, "$(rule_str) on $(entry.interface)")
 end
 
