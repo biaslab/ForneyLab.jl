@@ -1,26 +1,11 @@
 module ForneyLab
 
-# using Optim, LaTeXStrings
-
-# export ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, AbstractDelta
-# export sumProductRule!, expectationRule!, variationalRule!
-# export InferenceAlgorithm
-# export vague, self, ==, isProper, sample, dimensions, pdf, logpdf, mean, var, cov
-export setVerbosity
-# export prepare!
-# export rules
-
-# Verbosity
-verbose = false
-setVerbosity(is_verbose=true) = global verbose = is_verbose
-printVerbose(msg) = if verbose println(msg) end
-
 # Helpers
 include("helpers.jl")
 include("dependency_graph.jl")
 
 # Other includes
-import Base.show, Base.convert, Base.==, Base.mean, Base.var, Base.cov
+import Base: show, convert, ==, mean, var, cov, *
 
 # High level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface
@@ -85,7 +70,7 @@ include("update_rules/equality.jl")
 include("update_rules/gaussian_mean_variance.jl")
 
 # vague{T<:Univariate}(dist_type::Type{T}) = vague!(T())
-# *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
+*(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
 # *(x::Message, y::Message) = prod!(x.payload, y.payload) # * operator for messages
 
 # include("docstrings.jl")

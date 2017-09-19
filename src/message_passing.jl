@@ -6,11 +6,18 @@ Schedule
 
 import Base: ==
 
+# TODO: handle scaling factor
 """Encodes a message, which is a probability distribution with a scaling factor"""
 immutable Message{family<:FactorNode}
     dist::ProbabilityDistribution
     scaling_factor::Any
+
+    Message{family}(dist::ProbabilityDistribution{family}) = new{family}(dist)
 end
+
+Message{T<:SoftFactor}(family::Type{T}; kwargs...) = Message{family}(ProbabilityDistribution{family}(Dict(kwargs)))
+
+Message(family::Type{PointMass}; kwargs...) = Message{family}(ProbabilityDistribution{family}(Dict(kwargs)))
 
 """
 A MessageCalculationRule specifies how a Message is calculated from the node function and the incoming messages.
@@ -29,7 +36,8 @@ type ScheduleEntry
 end
 
 function show(io::IO, entry::ScheduleEntry)
-    print(io, "$(entry.msg_update_rule) on $(entry.interface)")
+    rule_str = split("$(entry.msg_update_rule)", '.')[end] # Remove "Forneylab."
+    print(io, "$(rule_str) on $(entry.interface)")
 end
 
 function ==(a::ScheduleEntry, b::ScheduleEntry)
@@ -97,6 +105,8 @@ function inferUpdateRules!(schedule::Schedule)
     return schedule
 end
 
+# TODO: condensing schedules in this disallows execution of schedules 
+# with just one message outcoming from a Constant
 """
 Contruct a condensed schedule without Constant node entries.
 """

@@ -1,6 +1,12 @@
-function rule(::Type{ForneyLab.SPGaussianMeanVariancePPV}, inputs)
-    m = unsafeMean(inputs[1].payload)
-    v = unsafeMean(inputs[2].payload)
+export ruleSPGaussianMeanVariancePPV, ruleSPGaussianMeanVarianceVPP
 
-    return Message{GaussianMeanVariance}(m, v)
-end
+# TODO: in-place operation on outbound?
+ruleSPGaussianMeanVariancePPV(  msg_mean::Message{PointMass},
+                                msg_var::Message{PointMass},
+                                msg_out::Void) =
+    Message(GaussianMeanVariance, m=msg_mean.dist.params[:m], v=msg_var.dist.params[:m])
+
+ruleSPGaussianMeanVarianceVPP(  msg_mean::Void,
+                                msg_var::Message{PointMass},
+                                msg_out::Message{PointMass}) =
+    Message(GaussianMeanVariance, m=msg_out.dist.params[:m], v=msg_var.dist.params[:m])

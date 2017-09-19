@@ -35,8 +35,23 @@ end
 
 slug(::Type{GaussianMeanVariance}) = "𝒩"
 
-# unsafeMean(d::ProbabilityDistribution{GaussianMeanVariance}) = d.parameters[1]
+ProbabilityDistribution(::Type{GaussianMeanVariance}) = ProbabilityDistribution(GaussianMeanVariance, m=0.0, v=1.0)
 
-# unsafeCov(d::ProbabilityDistribution{GaussianMeanVariance}) = d.parameters[2]
+# TODO: make more efficient by introducing alternative Gaussian parameterizations
+function prod!( x::ProbabilityDistribution{GaussianMeanVariance},
+                y::ProbabilityDistribution{GaussianMeanVariance},
+                z::ProbabilityDistribution{GaussianMeanVariance}=ProbabilityDistribution(GaussianMeanVariance))
 
-# unsafeVar(d::ProbabilityDistribution{GaussianMeanVariance}) = d.parameters[2]
+    # Multiplication of 2 Gaussian PDFs: p(z) = p(x) * p(y)
+    w_x = 1/x.params[:v]
+    xi_x = w_x*x.params[:m]
+    w_y = 1/y.params[:v]
+    xi_y = w_y*y.params[:m]
+    w_z = w_x + w_y
+    xi_z = xi_x + xi_y
+
+    z.params[:m] = xi_z/w_z
+    z.params[:v] = 1/w_z
+
+    return z
+end

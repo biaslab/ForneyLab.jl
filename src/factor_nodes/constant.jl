@@ -32,6 +32,7 @@ type Constant <: DeltaFactor
     end
 end
 
+# TODO: rename constant and placeholder functions to avoid confusion with constructors
 """
 `constant` creates a `Variable` which is linked to a new `Constant`,
 and returns this variable.
