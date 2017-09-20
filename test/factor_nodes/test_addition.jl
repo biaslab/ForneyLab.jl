@@ -2,7 +2,7 @@ module AdditionTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, SPAdditionGGV, SPAdditionGVG, SPAdditionVGG
+import ForneyLab: outboundType, isApplicable, SPAdditionGGV, SPAdditionGVG, SPAdditionVGG, SPAdditionVGP
 
 @testset "Addition node construction through + syntax" begin
     g = FactorGraph()
@@ -44,6 +44,14 @@ end
     @test isApplicable(SPAdditionVGG, [Void, Message{Gaussian}, Message{Gaussian}]) 
 
     @test ruleSPAdditionVGG(nothing, Message(Gaussian, m=1.0, v=2.0), Message(Gaussian, m=3.0, v=4.0)) == Message(Gaussian, m=2.0, v=6.0)
+end
+
+@testset "SPAdditionVGP" begin
+    @test SPAdditionVGP <: SumProductRule{Addition}
+    @test outboundType(SPAdditionVGP) == Message{Gaussian}
+    @test isApplicable(SPAdditionVGP, [Void, Message{Gaussian}, Message{PointMass}]) 
+
+    @test ruleSPAdditionVGP(nothing, Message(Gaussian, m=1.0, v=2.0), Message(PointMass, m=3.0)) == Message(Gaussian, m=2.0, v=2.0)
 end
 
 end # module

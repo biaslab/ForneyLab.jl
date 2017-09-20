@@ -1,4 +1,4 @@
-export ruleSPAdditionGGV, ruleSPAdditionGVG, ruleSPAdditionVGG
+export ruleSPAdditionGGV, ruleSPAdditionGVG, ruleSPAdditionVGG, ruleSPAdditionVGP
 
 function ruleSPAdditionGGV( msg_in1::Message{Gaussian},
                             msg_in2::Message{Gaussian},
@@ -21,3 +21,13 @@ function ruleSPAdditionGVG( msg_in1::Message{Gaussian},
 end
 
 ruleSPAdditionVGG(msg_in1::Void, msg_in2::Message{Gaussian}, msg_out::Message{Gaussian}) = ruleSPAdditionGVG(msg_in2, msg_in1, msg_out)
+
+# TODO: add other combinations
+function ruleSPAdditionVGP( msg_in1::Void,
+                            msg_in2::Message{Gaussian},
+                            msg_out::Message{PointMass})
+
+    ensureParameters!(msg_in2.dist, (:m, :v))
+
+    Message(Gaussian, m=msg_out.dist.params[:m] - msg_in2.dist.params[:m], v=msg_in2.dist.params[:v])
+end
