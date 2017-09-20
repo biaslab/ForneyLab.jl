@@ -74,7 +74,7 @@ end
     @test schedule[4] == ScheduleEntry(cnd.i[:y].partner, SPConstant)
     @test schedule[5] == ScheduleEntry(cnd.i[:x], SPStateTransitionGVP)
 
-    # Build SP algorithm
+    # Build SP algorithm for Julia execution
     algo = ForneyLab.messagePassingAlgorithm(schedule, x)
     @test contains(algo, "messages = Array{Message}(2)")
     @test contains(algo, "messages[1] = ruleSPGaussianMeanVariancePPV(Message(PointMass, m=0.0), Message(PointMass, m=1.0), nothing)")
