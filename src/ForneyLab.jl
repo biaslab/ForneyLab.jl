@@ -24,6 +24,7 @@ include("variable.jl")
 include("factor_nodes/clamp.jl")
 include("factor_nodes/equality.jl")
 include("factor_nodes/addition.jl")
+include("factor_nodes/multiplication.jl")
 include("factor_nodes/gaussian.jl")
 include("factor_nodes/gaussian_mean_variance.jl")
 
@@ -69,6 +70,7 @@ include("algorithms/sum_product/sum_product.jl")
 include("update_rules/clamp.jl")
 include("update_rules/equality.jl")
 include("update_rules/addition.jl")
+include("update_rules/multiplication.jl")
 include("update_rules/gaussian_mean_variance.jl")
 
 *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions

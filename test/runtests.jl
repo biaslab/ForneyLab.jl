@@ -20,6 +20,7 @@ using Base.Test
     include("factor_nodes/test_clamp.jl")
     include("factor_nodes/test_equality.jl")
     include("factor_nodes/test_addition.jl")
+    include("factor_nodes/test_multiplication.jl")
     include("factor_nodes/test_gaussian.jl")
     include("factor_nodes/test_gaussian_mean_variance.jl")
 

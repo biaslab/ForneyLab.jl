@@ -32,7 +32,6 @@ type Clamp <: DeltaFactor
     end
 end
 
-# TODO: rename constant and placeholder functions to avoid confusion with constructors
 """
 `constant` creates a `Variable` which is linked to a new `Clamp`,
 and returns this variable.
