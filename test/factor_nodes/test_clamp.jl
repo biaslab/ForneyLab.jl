@@ -1,14 +1,14 @@
-module ConstantTest
+module ClampTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, SPConstant
+import ForneyLab: outboundType, isApplicable, SPClamp
 
-@testset "Constant" begin
+@testset "Clamp" begin
     g = FactorGraph()
-    nd = Constant(Variable(), 1.0)
+    nd = Clamp(Variable(), 1.0)
 
-    @test isa(nd, Constant)
+    @test isa(nd, Clamp)
     @test nd.value == 1.0
 end
 
@@ -18,7 +18,7 @@ end
     nd = g.nodes[:my_constant]
 
     @test isa(var, Variable)
-    @test isa(nd, Constant)
+    @test isa(nd, Clamp)
     @test nd.value == 1.0
 end
 
@@ -30,7 +30,7 @@ end
     placeholder(var, :y)
     nd = g.nodes[:placeholder_y]
 
-    @test isa(nd, Constant)
+    @test isa(nd, Clamp)
     @test g.placeholders[nd] == (:y, 0)
 
     # Indexed placeholder
@@ -38,7 +38,7 @@ end
     placeholder(var_i, :y, index=1)
     nd_i = g.nodes[:placeholder_y_1]
 
-    @test isa(nd_i, Constant)
+    @test isa(nd_i, Clamp)
     @test g.placeholders[nd_i] == (:y, 1)
 end
 
@@ -47,10 +47,10 @@ end
 # Update rules
 #-------------
 
-@testset "SPConstant" begin
-    @test SPConstant <: SumProductRule{Constant}
-    @test outboundType(SPConstant) == Message{PointMass}
-    @test isApplicable(SPConstant, DataType[]) 
+@testset "SPClamp" begin
+    @test SPClamp <: SumProductRule{Clamp}
+    @test outboundType(SPClamp) == Message{PointMass}
+    @test isApplicable(SPClamp, DataType[]) 
 end
 
 end #module

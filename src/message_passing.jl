@@ -61,7 +61,7 @@ typealias Schedule Vector{ScheduleEntry}
 function show(io::IO, schedule::Schedule)
     idx = 1
     for entry in schedule
-        if isa(entry.interface.node, Constant)
+        if isa(entry.interface.node, Clamp)
             print(io, "\t$(entry)")
         else
             print(io, "$idx.\t$(entry)")
@@ -118,14 +118,14 @@ function inferUpdateRules!(schedule::Schedule)
 end
 
 # TODO: condensing schedules in this disallows execution of schedules 
-# with just one message outcoming from a Constant
+# with just one message outcoming from a Clamp
 """
-Contruct a condensed schedule without Constant node entries.
+Contruct a condensed schedule without Clamp node entries.
 """
 function condense(schedule::Schedule)
     condensed_schedule = ScheduleEntry[]
     for entry in schedule
-        if !isa(entry.interface.node, Constant)
+        if !isa(entry.interface.node, Clamp)
             push!(condensed_schedule, entry)
         end
     end

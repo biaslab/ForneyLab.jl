@@ -2,7 +2,7 @@ module CompositeTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: @composite, outboundType, isApplicable, SPConstant, SPGaussianMeanVariancePPV
+import ForneyLab: @composite, outboundType, isApplicable, SPClamp, SPGaussianMeanVariancePPV
 
 
 # Define new node type called StateTransition, with exposed variables called (x_prev, x, y):
@@ -68,10 +68,10 @@ end
     # Build SP schedule
     schedule = sumProductSchedule(x)
     @test length(schedule) == 5
-    @test schedule[1] == ScheduleEntry(nd.i[:mean].partner, SPConstant)
-    @test schedule[2] == ScheduleEntry(nd.i[:variance].partner, SPConstant)
+    @test schedule[1] == ScheduleEntry(nd.i[:mean].partner, SPClamp)
+    @test schedule[2] == ScheduleEntry(nd.i[:variance].partner, SPClamp)
     @test schedule[3] == ScheduleEntry(nd.i[:out], SPGaussianMeanVariancePPV)
-    @test schedule[4] == ScheduleEntry(cnd.i[:y].partner, SPConstant)
+    @test schedule[4] == ScheduleEntry(cnd.i[:y].partner, SPClamp)
     @test schedule[5] == ScheduleEntry(cnd.i[:x], SPStateTransitionGVP)
 
     # Build SP algorithm for Julia execution

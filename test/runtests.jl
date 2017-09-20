@@ -17,7 +17,7 @@ using Base.Test
     include("./test_factor_graph.jl")
 
     # Factor nodes
-    include("factor_nodes/test_constant.jl")
+    include("factor_nodes/test_clamp.jl")
     include("factor_nodes/test_equality.jl")
     include("factor_nodes/test_addition.jl")
     include("factor_nodes/test_gaussian.jl")

@@ -1,6 +1,6 @@
 # TODO: in-place operations for message and marginal computations?
 function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=Variable[]; file::String="")
-    schedule = ForneyLab.condense(schedule) # Remove Constant node entries
+    schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
     n_messages = length(schedule)
 
     code = "function step!(marginals::Dict, data::Dict)\n\n"
@@ -59,7 +59,7 @@ function collectInbounds{T<:SumProductRule}(entry::ScheduleEntry, ::Type{T}, int
         if node_interface == entry.interface
             # Ignore inbound message on outbound interface
             push!(inbound_messages, "nothing")
-        elseif isa(inbound_interface.node, Constant)
+        elseif isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
             push!(inbound_messages, messageString(inbound_interface.node))
         else
@@ -73,10 +73,10 @@ function collectInbounds{T<:SumProductRule}(entry::ScheduleEntry, ::Type{T}, int
 end
 
 """
-Depending on the origin of the Constant node message,
+Depending on the origin of the Clamp node message,
 contruct the outbound message code.
 """
-function messageString(node::Constant)
+function messageString(node::Clamp)
     if node in keys(ForneyLab.current_graph.placeholders)
         # Message comes from data array
         buffer, idx = ForneyLab.current_graph.placeholders[node]

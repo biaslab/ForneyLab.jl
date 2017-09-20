@@ -1,4 +1,4 @@
-export Constant, constant, placeholder
+export Clamp, constant, placeholder
 
 """
 Description:
@@ -13,16 +13,16 @@ Interfaces:
 
 Construction:
 
-    Constant(out, value, id=:some_id)
-    Constant(value, id=:some_id)
+    Clamp(out, value, id=:some_id)
+    Clamp(value, id=:some_id)
 """
-type Constant <: DeltaFactor
+type Clamp <: DeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
     value::Any
 
-    function Constant(out::Variable, value::Any; id=generateId(Constant))
+    function Clamp(out::Variable, value::Any; id=generateId(Clamp))
         self = new(id, Array(Interface, 1), Dict{Symbol,Interface}(), value)
         addNode!(currentGraph(), self)
 
@@ -34,34 +34,33 @@ end
 
 # TODO: rename constant and placeholder functions to avoid confusion with constructors
 """
-`constant` creates a `Variable` which is linked to a new `Constant`,
+`constant` creates a `Variable` which is linked to a new `Clamp`,
 and returns this variable.
 
     y = constant(3.0, id=:y)
 """
-function constant(value::Any; id=generateId(Constant))
-    # This is basically an outer constructor for Constant,
-    # but the function is not capitalized because it returns the
-    # new variable linked to the Constant.
+function constant(value::Any; id=generateId(Clamp))
+    # This is basically an outer constructor for Clamp,
+    # but the function returns the new variable linked to the Clamp.
     var = Variable(id=id)
-    Constant(var, value, id=id)
+    Clamp(var, value, id=id)
 
     return var
 end
 
 """
-`placeholder(...)` creates a `Constant` node and registers this node
+`placeholder(...)` creates a `Clamp` node and registers this node
 as a data placeholder with the current graph.
 
     # Link variable y to buffer with id :y,
-    # indicate that Constant will hold Float64 values.
+    # indicate that Clamp will hold Float64 values.
     placeholder(y, :y, datatype=Float64)
 
     # Link variable y to index 3 of buffer with id :y.
-    # Specify the data type by passing a default value for the Constant.
+    # Specify the data type by passing a default value for the Clamp.
     placeholder(y, :y, index=3, default=0.0)
 
-    # Indicate that the Constant will hold an array of size `dims`,
+    # Indicate that the Clamp will hold an array of size `dims`,
     # with Float64 elements.
     placeholder(X, :X, datatype=Float64, dims=(3,2))
 """
@@ -87,7 +86,7 @@ function placeholder(   var::Variable,
         value = zeros(datatype, dims)
     end
 
-    node = Constant(var, value, id=constant_id)
+    node = Clamp(var, value, id=constant_id)
     current_graph.placeholders[node] = (buffer_id, index)
 
     return var

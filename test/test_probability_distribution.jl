@@ -19,7 +19,7 @@ import ForneyLab: ProbabilityDistribution, GaussianMeanVariance, PointMass, Equa
 
     # Remaining DeltaFactors should not be allowed as a distribution family
     @test_throws Exception ProbabilityDistribution(Equality)
-    @test_throws Exception ProbabilityDistribution(Constant, m=0.0)
+    @test_throws Exception ProbabilityDistribution(Clamp, m=0.0)
 
     @test ProbabilityDistribution(PointMass, m=0.0) == ProbabilityDistribution(PointMass, m=0.0)
     @test ProbabilityDistribution(PointMass, m=0.0) != ProbabilityDistribution(GaussianMeanVariance, m=0.0, v=1.0)

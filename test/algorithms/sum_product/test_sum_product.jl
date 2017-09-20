@@ -2,7 +2,7 @@ module SumProductTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, SPConstant
+import ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, SPClamp
 
 # Integration helper
 type MockNode <: FactorNode
@@ -51,8 +51,8 @@ end
     schedule = sumProductSchedule(x)
 
     @test length(schedule) == 3
-    @test schedule[1] == ScheduleEntry(nd.i[1].partner, SPConstant)
-    @test schedule[2] == ScheduleEntry(nd.i[2].partner, SPConstant)
+    @test schedule[1] == ScheduleEntry(nd.i[1].partner, SPClamp)
+    @test schedule[2] == ScheduleEntry(nd.i[2].partner, SPClamp)
     @test schedule[3] == ScheduleEntry(nd.i[3], SPMockPPV)
 end
 

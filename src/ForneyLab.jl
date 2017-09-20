@@ -21,7 +21,7 @@ include("edge.jl")
 include("variable.jl")
 
 # Factor nodes
-include("factor_nodes/constant.jl")
+include("factor_nodes/clamp.jl")
 include("factor_nodes/equality.jl")
 include("factor_nodes/addition.jl")
 include("factor_nodes/gaussian.jl")
@@ -66,7 +66,7 @@ include("algorithms/sum_product/sum_product.jl")
 # include("algorithms/preparation.jl")
 
 # Update rules
-include("update_rules/constant.jl")
+include("update_rules/clamp.jl")
 include("update_rules/equality.jl")
 include("update_rules/addition.jl")
 include("update_rules/gaussian_mean_variance.jl")
