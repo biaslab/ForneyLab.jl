@@ -1,7 +1,5 @@
 export Gaussian, GaussianMeanVariance
 
-abstract Gaussian <: SoftFactor
-
 """
 Description:
 
@@ -36,5 +34,3 @@ type GaussianMeanVariance <: Gaussian
 end
 
 slug(::Type{GaussianMeanVariance}) = "𝒩"
-
-ProbabilityDistribution(::Type{GaussianMeanVariance}) = ProbabilityDistribution(GaussianMeanVariance, m=0.0, v=1.0)

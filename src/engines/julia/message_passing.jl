@@ -15,7 +15,7 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
 
         # Apply update rule
         rule_id = schedule_entry.msg_update_rule
-        rule_str = replace(string(rule_id), "ForneyLab.", "") # Remove "Forneylab."
+        rule_str = split(string(rule_id),'.')[end] # Remove module prefixes
         inbounds_str = join(inbounds, ", ")
         code *= "messages[$msg_idx] = rule$(rule_str)($inbounds_str)\n"
         msg_idx += 1
@@ -27,10 +27,10 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
         target_edge = first(variable.edges) # For the sake of consistency, we always take the first edge.
         if target_edge.a == nothing # Handle cases where there is a `dangling` edge
             msg_id_b = interface_to_msg_idx[target_edge.b]
-            code *= "marginals[:$(variable.id)] = messages[$msg_id_b].dist)\n"
+            code *= "marginals[:$(variable.id)] = messages[$msg_id_b].dist\n"
         elseif target_edge.b == nothing
             msg_id_a = interface_to_msg_idx[target_edge.a]
-            code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist)\n"
+            code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist\n"
         else
             msg_id_a = interface_to_msg_idx[target_edge.a]
             msg_id_b = interface_to_msg_idx[target_edge.b]

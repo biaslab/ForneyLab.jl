@@ -10,19 +10,26 @@ import ForneyLab: outboundType, isApplicable, SPGaussianMeanVariancePPV, SPGauss
 #-------------
 
 @testset "SPGaussianMeanVariancePPV" begin
-    @test true == false
+    @test SPGaussianMeanVariancePPV <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVariancePPV) == Message{Gaussian}
+    @test isApplicable(SPGaussianMeanVariancePPV, [Message{PointMass}, Message{PointMass}, Void]) 
+    @test !isApplicable(SPGaussianMeanVariancePPV, [Void, Message{PointMass}, Message{PointMass}]) 
 end
 
 @testset "SPGaussianMeanVarianceVPP" begin
-    @test true == false
+    @test SPGaussianMeanVarianceVPP <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceVPP) == Message{Gaussian}
+    @test !isApplicable(SPGaussianMeanVarianceVPP, [Message{PointMass}, Message{PointMass}, Void]) 
+    @test isApplicable(SPGaussianMeanVarianceVPP, [Void, Message{PointMass}, Message{PointMass}]) 
 end
 
+# TODO: Add more tests
 @testset "ruleSPGaussianMeanVariancePPV" begin
-    @test true == false
+    @test ruleSPGaussianMeanVariancePPV(Message(PointMass, m=1.0), Message(PointMass, m=2.0), nothing) == Message(Gaussian, m=1.0, v=2.0)
 end
 
 @testset "ruleSPGaussianMeanVarianceVPP" begin
-    @test true == false
+    @test ruleSPGaussianMeanVarianceVPP(nothing, Message(PointMass, m=2.0), Message(PointMass, m=1.0)) == Message(Gaussian, m=1.0, v=2.0)
 end
 
 end #module

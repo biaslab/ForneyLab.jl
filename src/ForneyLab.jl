@@ -23,8 +23,8 @@ include("variable.jl")
 # Factor nodes
 include("factor_nodes/constant.jl")
 include("factor_nodes/equality.jl")
+include("factor_nodes/gaussian.jl")
 include("factor_nodes/gaussian_mean_variance.jl")
-include("factor_nodes/gaussian_weighted_mean_precision.jl")
 
 # include("nodes/equality.jl")
 # include("nodes/addition.jl")

@@ -4,9 +4,9 @@ export ruleSPGaussianMeanVariancePPV, ruleSPGaussianMeanVarianceVPP
 ruleSPGaussianMeanVariancePPV(  msg_mean::Message{PointMass},
                                 msg_var::Message{PointMass},
                                 msg_out::Void) =
-    Message(GaussianMeanVariance, m=msg_mean.dist.params[:m], v=msg_var.dist.params[:m])
+    Message(Gaussian, m=msg_mean.dist.params[:m], v=msg_var.dist.params[:m])
 
 ruleSPGaussianMeanVarianceVPP(  msg_mean::Void,
                                 msg_var::Message{PointMass},
                                 msg_out::Message{PointMass}) =
-    Message(GaussianMeanVariance, m=msg_out.dist.params[:m], v=msg_var.dist.params[:m])
+    Message(Gaussian, m=msg_out.dist.params[:m], v=msg_var.dist.params[:m])

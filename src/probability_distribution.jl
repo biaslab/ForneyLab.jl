@@ -8,7 +8,6 @@ cov,
 ==
 
 # TODO: correctness of distribution parameters is not enforced
-# TODO: current use of ProbabilityDistribution{family} leads to very long calling signatures
 """Encodes a probability distribution as a FactorNode of type `family` with fixed interfaces"""
 immutable ProbabilityDistribution{family<:FactorNode}
     params::Dict
