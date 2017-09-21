@@ -2,7 +2,7 @@ module AdditionTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, SPAdditionGGV, SPAdditionGVG, SPAdditionVGG, SPAdditionVGP
+import ForneyLab: outboundType, isApplicable, SPAdditionGGV, SPAdditionGVG, SPAdditionVGG, SPAdditionVGP, SPAdditionGPV, SPAdditionPGV
 
 @testset "Addition node construction through + syntax" begin
     g = FactorGraph()
