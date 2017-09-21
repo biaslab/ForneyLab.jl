@@ -16,5 +16,15 @@
 # TODO: add other combinations
 @sumProductRule(:node_type     => Addition,
                 :outbound_type => Message{Gaussian},
+                :inbound_types => (Message{Gaussian}, Message{PointMass}, Void),
+                :name          => SPAdditionGPV)
+
+@sumProductRule(:node_type     => Addition,
+                :outbound_type => Message{Gaussian},
+                :inbound_types => (Message{PointMass}, Message{Gaussian}, Void),
+                :name          => SPAdditionPGV)
+
+@sumProductRule(:node_type     => Addition,
+                :outbound_type => Message{Gaussian},
                 :inbound_types => (Void, Message{Gaussian}, Message{PointMass}),
                 :name          => SPAdditionVGP)

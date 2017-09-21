@@ -2,6 +2,33 @@ abstract Gaussian <: SoftFactor
 
 ProbabilityDistribution(::Type{Gaussian}) = ProbabilityDistribution(Gaussian, m=0.0, v=1.0)
 
+unsafeMean(dist::ProbabilityDistribution{Gaussian}) = ensureParameter!(dist, Val{:m}).params[:m] # unsafe mean
+
+unsafeVar(dist::ProbabilityDistribution{Gaussian}) = ensureParameter!(dist, Val{:v}).params[:v] # unsafe variance
+
+function isProper(dist::ProbabilityDistribution{Gaussian})
+    if isWellDefined(dist)
+        if haskey(dist.params, :w) && !isnan(dist.params[:w])
+            param = dist.params[:w]
+        elseif haskey(dist.params, :v) && !isnan(dist.params[:v])
+            param = dist.params[:v]
+        else
+            return false
+        end
+        return (realmin(Float64) < param < realmax(Float64))
+    else
+        return false
+    end
+end
+
+function isWellDefined(dist::ProbabilityDistribution{Gaussian})
+    # Check if dist is not underdetermined
+    location_present = (haskey(dist.params, :m) && !isnan(dist.params[:m])) || (haskey(dist.params, :xi) && !isnan(dist.params[:xi]))
+    scale_present    = (haskey(dist.params, :v) && !isnan(dist.params[:v])) || (haskey(dist.params, :w)  && !isnan(dist.params[:w]))
+
+    return location_present && scale_present
+end
+
 function prod!( x::ProbabilityDistribution{Gaussian},
                 y::ProbabilityDistribution{Gaussian},
                 z::ProbabilityDistribution{Gaussian}=ProbabilityDistribution(Gaussian, xi=0.0, w=1.0))

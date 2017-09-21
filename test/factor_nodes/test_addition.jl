@@ -46,6 +46,21 @@ end
     @test ruleSPAdditionVGG(nothing, Message(Gaussian, m=1.0, v=2.0), Message(Gaussian, m=3.0, v=4.0)) == Message(Gaussian, m=2.0, v=6.0)
 end
 
+@testset "SPAdditionGPV" begin
+    @test SPAdditionGPV <: SumProductRule{Addition}
+    @test outboundType(SPAdditionGPV) == Message{Gaussian}
+    @test isApplicable(SPAdditionGPV, [Message{Gaussian}, Message{PointMass}, Void]) 
+
+    @test ruleSPAdditionGPV(Message(Gaussian, m=1.0, v=2.0), Message(PointMass, m=3.0), nothing) == Message(Gaussian, m=4.0, v=2.0)
+end
+
+@testset "SPAdditionPGV" begin
+    @test SPAdditionPGV <: SumProductRule{Addition}
+    @test outboundType(SPAdditionPGV) == Message{Gaussian}
+    @test isApplicable(SPAdditionPGV, [Message{PointMass}, Message{Gaussian}, Void]) 
+
+    @test ruleSPAdditionPGV(Message(PointMass, m=3.0), Message(Gaussian, m=1.0, v=2.0), nothing) == Message(Gaussian, m=4.0, v=2.0)
+end
 @testset "SPAdditionVGP" begin
     @test SPAdditionVGP <: SumProductRule{Addition}
     @test outboundType(SPAdditionVGP) == Message{Gaussian}
