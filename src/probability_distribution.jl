@@ -29,6 +29,8 @@ ProbabilityDistribution(family::Type{PointMass}; kwargs...) = ProbabilityDistrib
 
 unsafeMean(dist::ProbabilityDistribution{PointMass}) = dist.params[:m]
 
+unsafeVar(dist::ProbabilityDistribution{PointMass}) = 0.0
+
 mean(dist::ProbabilityDistribution{PointMass}) = unsafeMean(dist)
 
 isProper(::ProbabilityDistribution{PointMass}) = true

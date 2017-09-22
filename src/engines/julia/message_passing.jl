@@ -86,7 +86,7 @@ function collectInbounds{T<:VariationalRule}(entry::ScheduleEntry, ::Type{T}, in
         partner_node = inbound_interface.node
         if node_interface == entry.interface
             push!(inbound_marginals, "nothing") # Could also just push the marginal on the edge instead of "nothing"
-        elseif isa(partner_node, Constant)
+        elseif isa(partner_node, Clamp)
             # Hard-code marginal of constant node in schedule
             push!(inbound_marginals, marginalString(partner_node))
         else
@@ -128,13 +128,13 @@ function marginalString(node::Clamp)
         # Message comes from data array
         buffer, idx = ForneyLab.current_graph.placeholders[node]
         if idx > 0
-            str = "ProbabilityDistribution{PointMass}((data[:$buffer][$idx]))"
+            str = "ProbabilityDistribution(PointMass, m=data[:$buffer][$idx])"
         else
-            str = "ProbabilityDistribution{PointMass}((data[:$buffer]))"
+            str = "ProbabilityDistribution(PointMass, m=data[:$buffer])"
         end
     else
         # Insert constant
-        str = "ProbabilityDistribution{PointMass}(($(node.value)))"
+        str = "ProbabilityDistribution(PointMass, m=$(node.value))"
     end
 
     return str

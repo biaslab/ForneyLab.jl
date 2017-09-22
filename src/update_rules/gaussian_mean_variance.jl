@@ -19,6 +19,6 @@
                 :name          => SPGaussianMeanVarianceVPG)
 
 @variationalRule(:node_type     => GaussianMeanVariance,
-                 :outbound_type => Message{GaussianMeanVariance},
+                 :outbound_type => Message{Gaussian},
                  :outbound_id   => 3,
                  :name          => VBGaussianMeanVariance3)

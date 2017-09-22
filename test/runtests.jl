@@ -23,6 +23,8 @@ using Base.Test
     include("factor_nodes/test_multiplication.jl")
     include("factor_nodes/test_gaussian.jl")
     include("factor_nodes/test_gaussian_mean_variance.jl")
+    include("factor_nodes/test_gaussian_mean_precision.jl")
+    include("factor_nodes/test_gamma.jl")
 
     include("./test_dependency_graph.jl")
     include("./test_message_passing.jl")

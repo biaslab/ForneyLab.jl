@@ -14,7 +14,7 @@ import ForneyLab: ProbabilityDistribution, GaussianMeanVariance, PointMass, Equa
     @test isa(point_mass, ProbabilityDistribution{PointMass})
     @test point_mass.params == Dict(:m=>0.0)
     @test mean(point_mass) == 0.0
-    @test_throws Exception var(point_mass)
+    @test var(point_mass) == 0.0
     @test isProper(point_mass)
 
     # Remaining DeltaFactors should not be allowed as a distribution family

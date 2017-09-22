@@ -34,3 +34,21 @@ type Gamma <: SoftFactor
 end
 
 slug(::Type{Gamma}) = "Gam"
+
+ProbabilityDistribution(::Type{Gamma}) = ProbabilityDistribution(Gamma, a=1.0, b=1.0)
+
+unsafeMean(dist::ProbabilityDistribution{Gamma}) = dist.params[:a]/dist.params[:b] # unsafe mean
+
+unsafeVar(dist::ProbabilityDistribution{Gamma}) = dist.params[:a]/dist.params[:b]^2 # unsafe variance
+
+isProper(dist::ProbabilityDistribution{Gamma}) = (dist.params[:a] >= tiny) && (dist.params[:b] >= tiny)
+
+function prod!( x::ProbabilityDistribution{Gamma},
+                y::ProbabilityDistribution{Gamma},
+                z::ProbabilityDistribution{Gamma}=ProbabilityDistribution(Gamma, a=0.0, b=0.0))
+
+    z.params[:a] = x.params[:a] + y.params[:a] - 1.0
+    z.params[:b] = x.params[:b] + y.params[:b]
+
+    return z
+end
