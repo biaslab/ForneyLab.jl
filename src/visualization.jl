@@ -69,7 +69,7 @@ function genDot(nodeset::Set{FactorNode}, edgeset::Set{Edge}; schedule::Schedule
 
     # Draw nodes
     for node in nodeset
-        if isa(node, Constant)
+        if isa(node, Clamp)
             dot *= "\t$(object_id(node)) [label=\"$(node.id)\", style=filled, width=0.75, height=0.75]\n"
         elseif isa(node, Terminal)
             dot *= "\t$(object_id(node)) [shape=none, label=\"\", width=0.75, height=0.75]\n"

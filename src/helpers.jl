@@ -1,6 +1,6 @@
 export huge, tiny, cholinv, diageye, *, .*, ^
 
-import Base.*, Base.(.*), Base.^, Base.==, Base.sqrt
+import Base: *, .*, ^, ==, sqrt
 
 """ensureMatrix: cast input to a Matrix if necessary"""
 ensureMatrix{T<:Number}(arr::AbstractMatrix{T}) = arr
@@ -101,20 +101,6 @@ isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round(Matrix(arr), r
 function viewFile(filename::AbstractString)
     # Open a file with the application associated with the file type
     is_windows() ? run(`cmd /c start $filename`) : (is_apple() ? run(`open $filename`) : (is_linux() ? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
-end
-
-"""truncate(str, max): truncate str to max positions"""
-function truncate(str::String, max::Integer)
-    if length(str)>max
-        return "$(str[1:max-3])..."
-    end
-    return str
-end
-
-"""pad(str, size): pad str with spaces until its length reaches size"""
-function pad(str::String, size::Integer)
-    str_trunc = truncate(str, size)
-    return "$(str_trunc)$(repeat(" ",size-length(str_trunc)))"
 end
 
 """

@@ -15,7 +15,7 @@ type FactorGraph
     edges::Vector{Edge}
     variables::Dict{Symbol, Variable}
     counters::Dict{DataType, Int} # Counters for automatic node id assignments
-    placeholders::Dict{Constant, Tuple{Symbol, Int}}
+    placeholders::Dict{Clamp, Tuple{Symbol, Int}}
 end
 
 """
@@ -36,7 +36,7 @@ FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, FactorNode}(),
                                             Edge[],
                                             Dict{Symbol, Variable}(),
                                             Dict{DataType, Int}(),
-                                            Dict{Constant, Tuple{Symbol, Int}}()))
+                                            Dict{Clamp, Tuple{Symbol, Int}}()))
 
 """
 Automatically generate a unique id based on the current counter value for the element type.
@@ -45,7 +45,7 @@ function generateId(t::DataType)
     current_graph = currentGraph()
     haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
     count = current_graph.counters[t]
-    str = lowercase(split(string(t.name),'.')[end]) # Remove "ForneyLab." from typename
+    str = lowercase(split(string(t.name),'.')[end]) # Remove module prefix from typename
     return Symbol("$(str)_$(count)")
 end
 

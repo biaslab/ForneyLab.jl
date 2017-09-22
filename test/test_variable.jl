@@ -1,7 +1,7 @@
 module VariableTest
 
 using Base.Test
-import ForneyLab: Variable, Constant, GaussianMeanVariance, Equality, FactorGraph, @~, currentGraph, constant
+import ForneyLab: Variable, Clamp, GaussianMeanVariance, Equality, FactorGraph, @~, currentGraph, constant
 
 @testset "Variable" begin
     g = FactorGraph()
@@ -18,7 +18,7 @@ end
     var = Variable()
 
     # Variable should be associated with a new edge
-    node1 = Constant(var, 0.0)
+    node1 = Clamp(var, 0.0)
     iface1 = node1.interfaces[1]
     edge1 = iface1.edge
     @test length(var.edges) == 1 # Check Variable
@@ -30,7 +30,7 @@ end
     @test iface1.partner == nothing
 
     # Variable should be associated with an existing edge
-    node2 = Constant(var, 0.0)
+    node2 = Clamp(var, 0.0)
     iface2 = node2.interfaces[1]
     @test length(var.edges) == 1 # Check Variable
     @test is(var.edges[1], edge1)
@@ -43,7 +43,7 @@ end
     @test is(iface2.partner, iface1)
 
     # Variable should become equality constrained
-    node3 = Constant(var, 0.0)
+    node3 = Clamp(var, 0.0)
     eq = node1.interfaces[1].partner.node
     @test isa(eq, Equality) # Check new Equality
     eq_iface1 = eq.interfaces[1]

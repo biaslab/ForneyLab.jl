@@ -1,7 +1,7 @@
 module FactorNodeTest
 
 using Base.Test
-import ForneyLab: FactorGraph, FactorNode, Constant, Variable, Interface, PointMass
+import ForneyLab: FactorGraph, FactorNode, Clamp, Variable, Interface, PointMass
 
 @testset "FactorNode" begin
     g = FactorGraph()
@@ -22,8 +22,8 @@ import ForneyLab: FactorGraph, FactorNode, Constant, Variable, Interface, PointM
 
     for node_type in node_types
         # Instantiate a test node
-        if isa(node_type, Constant)
-            test_node = Constant(Variable(), 0.0)
+        if isa(node_type, Clamp)
+            test_node = Clamp(Variable(), 0.0)
         else
             constructor_argument_length = length(first(methods(node_type)).sig.parameters) - 1
             vars = [Variable() for v = 1:constructor_argument_length]
@@ -37,8 +37,8 @@ import ForneyLab: FactorGraph, FactorNode, Constant, Variable, Interface, PointM
 
         # Node constructor should automatically assign an id and check uniqueness
         @test !isempty(string(test_node.id))
-        if isa(node_type, Constant)
-            @test_throws Exception Constant(Variable(), 0.0; id=test_node.id)
+        if isa(node_type, Clamp)
+            @test_throws Exception Clamp(Variable(), 0.0; id=test_node.id)
         else
             @test_throws Exception node_type(vars...; id=test_node.id)
         end
@@ -54,7 +54,7 @@ import ForneyLab: FactorGraph, FactorNode, Constant, Variable, Interface, PointM
     end
 
     # isless should be defined for nodes
-    @test isless(Constant(Variable(), 0.0; id=:a), Constant(Variable(), 0.0; id=:b))
+    @test isless(Clamp(Variable(), 0.0; id=:a), Clamp(Variable(), 0.0; id=:b))
 end
 
 end #module

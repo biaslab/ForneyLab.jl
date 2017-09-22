@@ -1,7 +1,7 @@
 module HelpersTest
 
 using Base.Test
-import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, truncate, pad, huge, tiny, format, isValid, invalidate!, cholinv, diageye, *, .*, ^
+import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, cholinv, diageye, *, .*, ^
  
 @testset "Helpers" begin
     @testset "ensureMatrix" begin
@@ -86,18 +86,6 @@ import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, truncate, pad, h
         @test sqrt(D) == Diagonal([1.0, sqrt(2.0)])
     end
 
-    @testset "truncate" begin
-        # should truncate a string to a specified length
-        @test truncate("spsbrats", 9) == "spsbrats"
-        @test truncate("spsbrats", 7) == "spsb..."
-    end
-
-    @testset "pad" begin
-        # should pad a string with spaces to a specified length
-        @test pad("spsbrats", 9) == "spsbrats "
-        @test pad("spsbrats", 7) == "spsb..."
-    end
-
     @testset "format" begin
         " should return formatted strings for various input types"
         @test format(0.0000001) == "1.00e-07"
@@ -110,7 +98,7 @@ import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, truncate, pad, h
 
     @testset "leaftypes" begin
         # should return all subtypes that are leafs on the type tree
-        @test true == false
+        @test Set(leaftypes(Real)) == Set([BigInt, Bool, UInt128, UInt16, UInt32, UInt64, UInt8, Int128, Int16, Int32, Int64, Int8, BigFloat, Float16, Float32, Float64])
     end
 end
 

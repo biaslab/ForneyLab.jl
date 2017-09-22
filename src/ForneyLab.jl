@@ -1,26 +1,11 @@
 module ForneyLab
 
-# using Optim, LaTeXStrings
-
-# export ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, AbstractDelta
-# export sumProductRule!, expectationRule!, variationalRule!
-# export InferenceAlgorithm
-# export vague, self, ==, isProper, sample, dimensions, pdf, logpdf, mean, var, cov
-export setVerbosity
-# export prepare!
-# export rules
-
-# Verbosity
-verbose = false
-setVerbosity(is_verbose=true) = global verbose = is_verbose
-printVerbose(msg) = if verbose println(msg) end
-
 # Helpers
 include("helpers.jl")
 include("dependency_graph.jl")
 
 # Other includes
-import Base.show, Base.convert, Base.==, Base.mean, Base.var, Base.cov
+import Base: show, convert, ==, mean, var, cov, *
 
 # High level abstracts
 abstract AbstractEdge # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface
@@ -36,8 +21,10 @@ include("edge.jl")
 include("variable.jl")
 
 # Factor nodes
-include("factor_nodes/constant.jl")
+include("factor_nodes/clamp.jl")
 include("factor_nodes/equality.jl")
+include("factor_nodes/addition.jl")
+include("factor_nodes/multiplication.jl")
 include("factor_nodes/gaussian.jl")
 include("factor_nodes/gaussian_mean_variance.jl")
 include("factor_nodes/gaussian_mean_precision.jl")
@@ -85,15 +72,15 @@ include("algorithms/variational_bayes/variational_bayes.jl")
 # include("algorithms/preparation.jl")
 
 # Update rules
-include("update_rules/constant.jl")
+include("update_rules/clamp.jl")
 include("update_rules/equality.jl")
+include("update_rules/addition.jl")
+include("update_rules/multiplication.jl")
 include("update_rules/gaussian_mean_variance.jl")
 include("update_rules/gaussian_mean_precision.jl")
 include("update_rules/gamma.jl")
 
-# vague{T<:Univariate}(dist_type::Type{T}) = vague!(T())
-# *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
-# *(x::Message, y::Message) = prod!(x.payload, y.payload) # * operator for messages
+*(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
 
 # include("docstrings.jl")
 

@@ -4,14 +4,16 @@ PointMass,
 @~,
 mean,
 var,
-cov
+cov,
+==
 
+# TODO: correctness of distribution parameters is not enforced
 """Encodes a probability distribution as a FactorNode of type `family` with fixed interfaces"""
 immutable ProbabilityDistribution{family<:FactorNode}
-    parameters::Tuple
+    params::Dict
 end
 
-ProbabilityDistribution{T<:SoftFactor}(family::Type{T}, args...) = ProbabilityDistribution{family}(args)
+ProbabilityDistribution{T<:SoftFactor}(family::Type{T}; kwargs...) = ProbabilityDistribution{family}(Dict(kwargs))
 
 mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error("mean($(dist)) is undefined because the distribution is improper.")
 var(dist::ProbabilityDistribution) = isProper(dist) ? unsafeVar(dist) : error("var($(dist)) is undefined because the distribution is improper.")
@@ -23,9 +25,11 @@ It never occurs in a FactorGraph, but it is used as a probability distribution t
 """
 abstract PointMass <: DeltaFactor
 
-ProbabilityDistribution(family::Type{PointMass}, args...) = ProbabilityDistribution{family}(args)
+ProbabilityDistribution(family::Type{PointMass}; kwargs...) = ProbabilityDistribution{family}(Dict(kwargs))
 
-mean(dist::ProbabilityDistribution{PointMass}) = dist.parameters[1]
+unsafeMean(dist::ProbabilityDistribution{PointMass}) = dist.params[:m]
+
+mean(dist::ProbabilityDistribution{PointMass}) = unsafeMean(dist)
 
 isProper(::ProbabilityDistribution{PointMass}) = true
 
@@ -66,3 +70,5 @@ macro ~(variable_expr::Any, dist_expr::Expr)
             """)
     return esc(expr)
 end
+
+=={T, U}(t::ProbabilityDistribution{T}, u::ProbabilityDistribution{U}) = (T == U) && (t.params == u.params)

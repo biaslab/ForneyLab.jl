@@ -6,10 +6,29 @@ Schedule
 
 import Base: ==
 
+# TODO: handle scaling factor
 """Encodes a message, which is a probability distribution with a scaling factor"""
 immutable Message{family<:FactorNode}
     dist::ProbabilityDistribution
     scaling_factor::Any
+
+    Message{family}(dist::ProbabilityDistribution{family}) = new{family}(dist)
+end
+
+Message{T<:SoftFactor}(family::Type{T}; kwargs...) = Message{family}(ProbabilityDistribution{family}(Dict(kwargs)))
+
+Message(family::Type{PointMass}; kwargs...) = Message{family}(ProbabilityDistribution{family}(Dict(kwargs)))
+
+function =={T, U}(t::Message{T}, u::Message{U})
+    (T == U) || return false
+    (t.dist == u.dist) || return false
+    if isdefined(t, :scaling_factor) && isdefined(u, :scaling_factor)
+        (t.scaling_factor == u.scaling_factor) || return false
+    end
+    isdefined(t, :scaling_factor) && !isdefined(u, :scaling_factor) && return false
+    !isdefined(t, :scaling_factor) && isdefined(u, :scaling_factor) && return false
+    
+    return true
 end
 
 """
@@ -29,7 +48,8 @@ type ScheduleEntry
 end
 
 function show(io::IO, entry::ScheduleEntry)
-    print(io, "$(entry.msg_update_rule) on $(entry.interface)")
+    rule_str = replace(string(entry.msg_update_rule), "ForneyLab.", "") # Remove "Forneylab."
+    print(io, "$(rule_str) on $(entry.interface)")
 end
 
 function ==(a::ScheduleEntry, b::ScheduleEntry)
@@ -134,13 +154,15 @@ function inferUpdateRules!(schedule::Schedule)
     return schedule
 end
 
+# TODO: condensing schedules in this disallows execution of schedules 
+# with just one message outcoming from a Clamp
 """
 Contruct a condensed schedule.
 """
 function condense(schedule::Schedule)
     condensed_schedule = ScheduleEntry[]
     for entry in schedule
-        if !isa(entry.interface.node, Constant)
+        if !isa(entry.interface.node, Clamp)
             push!(condensed_schedule, entry)
         end
     end

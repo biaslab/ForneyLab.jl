@@ -34,9 +34,3 @@ type GaussianMeanVariance <: Gaussian
 end
 
 slug(::Type{GaussianMeanVariance}) = "𝒩"
-
-# unsafeMean(d::ProbabilityDistribution{GaussianMeanVariance}) = d.parameters[1]
-
-# unsafeCov(d::ProbabilityDistribution{GaussianMeanVariance}) = d.parameters[2]
-
-# unsafeVar(d::ProbabilityDistribution{GaussianMeanVariance}) = d.parameters[2]
