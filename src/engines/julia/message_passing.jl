@@ -1,44 +1,91 @@
 # TODO: in-place operations for message and marginal computations?
 function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=Variable[]; file::String="")
     schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
-    n_messages = length(schedule)
 
-    code = "function step!(marginals::Dict, data::Dict)\n\n"
-    code *= "messages = Array{Message}($n_messages)\n\n"
-
-    # Write message passing code
+    # Assign message numbers to each interface in the schedule
     interface_to_msg_idx = Dict{Interface, Int}()
     for (msg_idx, schedule_entry) in enumerate(schedule)
-        # Collect inbounds and assign message id
         interface_to_msg_idx[schedule_entry.interface] = msg_idx
+    end
+
+    # Consruct breaker types, in case of an EP algorithm
+    # TODO: remove this hack
+    breaker_types = Dict{Interface, DataType}()
+    for node in nodes(current_graph)
+        if isa(node, Sigmoid) # Find Sigmoid nodes
+            breaker_types[node.i[:real].partner] = Message{Gaussian}
+        end
+    end
+
+
+    #--------------------------------
+    # Write initialization code block
+    #--------------------------------
+
+    n_messages = length(schedule)
+
+    init_code = "function init()\n"
+    
+    # Write marginal initialization code
+    init_code *= "\tmarginals = Dict{Symbol, ProbabilityDistribution}()\n"
+    # TODO: preset types for VB?
+    # for variable in targets
+    #     init_code *= "\tmarginals[:$(variable.id)] = ProbabilityDistribution(...)\n"
+    # end
+
+    # Write message (breaker) initialization code
+    init_code *= "\n\tmessages = Array{Message}($n_messages)\n"
+    for (breaker_site, breaker_type) in breaker_types
+        msg_idx = interface_to_msg_idx[breaker_site]
+        breaker_str = replace(string(breaker_type),"ForneyLab.", "") # Remove module prefixes
+        init_code *= "\tmessages[$(msg_idx)] = vague($(breaker_str))\n"
+    end
+
+    init_code *= "\n\treturn (marginals, messages)\n"
+    init_code *= "end\n\n"
+
+
+    #---------------------------------
+    # Write message passing code block
+    #---------------------------------
+
+    step_code = "function step!(\tmarginals::Dict{Symbol, ProbabilityDistribution}, \n\t\tmessages::Vector{Message}, \n\t\tdata::Dict)\n\n"
+
+    # Write message computation code
+    for schedule_entry in schedule
+        # Collect inbounds and assign message id
         inbounds = collectInbounds(schedule_entry, schedule_entry.msg_update_rule, interface_to_msg_idx)
 
         # Apply update rule
         rule_id = schedule_entry.msg_update_rule
         rule_str = split(string(rule_id),'.')[end] # Remove module prefixes
         inbounds_str = join(inbounds, ", ")
-        code *= "messages[$msg_idx] = rule$(rule_str)($inbounds_str)\n"
-        msg_idx += 1
+        msg_idx = interface_to_msg_idx[schedule_entry.interface]
+        step_code *= "\tmessages[$msg_idx] = rule$(rule_str)($inbounds_str)\n"
     end
 
     # Write marginal computation code
-    code *= "\n"
+    step_code *= "\n"
     for variable in targets
         target_edge = first(variable.edges) # For the sake of consistency, we always take the first edge.
         if target_edge.a == nothing # Handle cases where there is a `dangling` edge
             msg_id_b = interface_to_msg_idx[target_edge.b]
-            code *= "marginals[:$(variable.id)] = messages[$msg_id_b].dist\n"
+            step_code *= "\tmarginals[:$(variable.id)] = messages[$msg_id_b].dist\n"
         elseif target_edge.b == nothing
             msg_id_a = interface_to_msg_idx[target_edge.a]
-            code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist\n"
+            step_code *= "\tmarginals[:$(variable.id)] = messages[$msg_id_a].dist\n"
         else
             msg_id_a = interface_to_msg_idx[target_edge.a]
             msg_id_b = interface_to_msg_idx[target_edge.b]
-            code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist * messages[$msg_id_b].dist\n"
+            step_code *= "\tmarginals[:$(variable.id)] = messages[$msg_id_a].dist * messages[$msg_id_b].dist\n"
         end
     end
 
-    code *= "\nend"
+    step_code *= "end"
+
+
+    # Combine code blocks
+    code = init_code * step_code
 
     # Write to file
     if !isempty(file)
@@ -96,6 +143,27 @@ function collectInbounds{T<:VariationalRule}(entry::ScheduleEntry, ::Type{T}, in
     end
 
     return inbound_marginals
+end
+
+"""
+Collect and construct EP update code for each inbound.
+"""
+function collectInbounds{T<:ExpectationPropagationRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
+    inbound_messages = String[]
+    node = entry.interface.node
+    for node_interface in node.interfaces
+        inbound_interface = node_interface.partner
+        if isa(inbound_interface.node, Clamp)
+            # Hard-code outbound message of constant node in schedule
+            push!(inbound_messages, messageString(inbound_interface.node))
+        else
+            # Collect message from previous result
+            inbound_idx = interface_to_msg_idx[inbound_interface]
+            push!(inbound_messages, "messages[$inbound_idx]")
+        end
+    end
+
+    return inbound_messages
 end
 
 """

@@ -99,7 +99,7 @@ end
 #########################################
 
 """
-children(vertices, graph; allow_cycles=false, breakers=[], restrict_to=[])
+children(vertices, graph; allow_cycles=false, breaker_sites=[], restrict_to=[])
 
 Return a vector consisting of `vertices` and all their children in `graph`.
 `v` is a child of `u` iff there exists a path from `u` to `v`.
@@ -109,7 +109,7 @@ i.e. for each directed edge `u -> v`, `v` (child of `u`) appears before `u`.
 Optional keyword arguments:
 
 - `allow_cycles`: set to true to accept cycles.
-- `breakers`: a Set of vertices on which the search will terminate.
+- `breaker_sites`: a Set of vertices on which the search will terminate.
 - `restrict_to`: a Set of vertices to restrict the search to.
 
 This function can be used to generate message passing schedules
@@ -118,11 +118,11 @@ if `graph` is a dependency graph.
 function children{V}(   vertices::Vector{V},
                         graph::DependencyGraph{V};
                         allow_cycles::Bool=false,
-                        breakers::Set{V}=Set{V}(),
+                        breaker_sites::Set{V}=Set{V}(),
                         restrict_to::Set{V}=Set{V}())
 
-    # Find vertex indexes of breakers
-    breaker_vertices = Set{Int}(map((v) -> findfirst(graph.vertices, v), breakers))
+    # Find vertex indexes of breaker_sites
+    breaker_vertices = Set{Int}(map((v) -> findfirst(graph.vertices, v), breaker_sites))
     restrict_to_vertices = Set{Int}(map((v) -> findfirst(graph.vertices, v), restrict_to))
 
     visited = Int[] # Hold topologically sorted list of indices of child vertices

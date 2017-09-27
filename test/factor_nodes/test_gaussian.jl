@@ -27,4 +27,8 @@ end
     @test ProbabilityDistribution(Gaussian, m=0.0, v=1.0) * ProbabilityDistribution(Gaussian, m=0.0, v=1.0) == ProbabilityDistribution(Gaussian, xi=0.0, w=2.0)
 end
 
+@testset "vague" begin
+    @test vague(ProbabilityDistribution{Gaussian}) == ProbabilityDistribution(Gaussian, m=0.0, v=1e12)
+end
+
 end #module

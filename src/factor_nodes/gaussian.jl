@@ -4,6 +4,8 @@ abstract Gaussian <: SoftFactor
 
 ProbabilityDistribution(::Type{Gaussian}) = ProbabilityDistribution(Gaussian, m=0.0, v=1.0)
 
+vague(::Type{ProbabilityDistribution{Gaussian}}) = ProbabilityDistribution(Gaussian, m=0.0, v=huge)
+
 unsafeMean(dist::ProbabilityDistribution{Gaussian}) = ensureParameter!(dist, Val{:m}).params[:m] # unsafe mean
 
 unsafeVar(dist::ProbabilityDistribution{Gaussian}) = ensureParameter!(dist, Val{:v}).params[:v] # unsafe variance

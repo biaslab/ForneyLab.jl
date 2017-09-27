@@ -48,8 +48,8 @@ end
 @testset "VBGaussianMeanVariance3" begin
     @test VBGaussianMeanVariance3 <: VariationalRule{GaussianMeanVariance}
     @test outboundType(VBGaussianMeanVariance3) == Message{Gaussian}
-    @test isApplicable(VBGaussianMeanVariance3, GaussianMeanVariance, 3) 
-    @test !isApplicable(VBGaussianMeanVariance3, GaussianMeanVariance, 2) 
+    @test isApplicable(VBGaussianMeanVariance3, 3)
+    @test !isApplicable(VBGaussianMeanVariance3, 2) 
 
     @test ruleVBGaussianMeanVariance3(ProbabilityDistribution(Gaussian, m=1.0, v=2.0), ProbabilityDistribution(PointMass, m=3.0), nothing) == Message(Gaussian, m=1.0, v=3.0)
 end

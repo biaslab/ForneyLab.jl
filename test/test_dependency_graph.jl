@@ -81,7 +81,7 @@ end
         addEdge!(dg, vertices[5], vertices[7])
 
         @test children(vertices[1], dg) == MockVertex[vertices[3], vertices[2], vertices[6], vertices[4], vertices[1]]
-        @test children(vertices[1], dg, breakers=Set{MockVertex}([vertices[4]])) == MockVertex[vertices[3], vertices[2], vertices[1]]
+        @test children(vertices[1], dg, breaker_sites=Set{MockVertex}([vertices[4]])) == MockVertex[vertices[3], vertices[2], vertices[1]]
         @test children(vertices[1], dg, restrict_to=Set{MockVertex}(vertices[1:4])) == MockVertex[vertices[3], vertices[2], vertices[4], vertices[1]]
     end
 

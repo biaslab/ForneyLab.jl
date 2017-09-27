@@ -19,6 +19,8 @@ Message{T<:SoftFactor}(family::Type{T}; kwargs...) = Message{family}(Probability
 
 Message(family::Type{PointMass}; kwargs...) = Message{family}(ProbabilityDistribution{family}(Dict(kwargs)))
 
+vague{T}(::Type{Message{T}}) = Message{T}(vague(ProbabilityDistribution{T}))
+
 function =={T, U}(t::Message{T}, u::Message{U})
     (T == U) || return false
     (t.dist == u.dist) || return false
@@ -110,36 +112,34 @@ end
 """
 `summaryPropagationSchedule(variables)` builds a generic summary propagation
 `Schedule` for calculating the marginal distributions of every variable in
-`variables`. The message update rule in the schedule entries is set to `Void`.
+`variables`. The message update rule in each schedule entry is set to `Void`.
 """
-function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges(current_graph))
+function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges(current_graph), target_sites=Interface[], breaker_sites=Interface[])
     # We require the marginal distribution of every variable in variables.
     # If a variable relates to multiple edges, this indicates an equality constraint.
     # Therefore, we only need to consider one arbitrary edge to calculate the marginal.
-    seed_interfaces = Interface[]
     for variable in variables
         edge = first(variable.edges) # For the sake of consistency, we always take the first edge.
-        (edge.a != nothing) && push!(seed_interfaces, edge.a)
-        (edge.b != nothing) && push!(seed_interfaces, edge.b)
+        (edge.a != nothing) && push!(target_sites, edge.a)
+        (edge.b != nothing) && push!(target_sites, edge.b)
     end
 
     # Determine a feasible ordering of message updates
     dg = summaryDependencyGraph(limit_set)
-    iface_list = children(unique(seed_interfaces), dg)
+    iface_list = children(unique(target_sites), dg, breaker_sites=Set(breaker_sites))
     # Build a schedule; Void indicates an unspecified message update rule
     schedule = [ScheduleEntry(iface, Void) for iface in iface_list]
-
+    
     return schedule
 end
 
-summaryPropagationSchedule(variable::Variable) = summaryPropagationSchedule([variable])
+summaryPropagationSchedule(variable::Variable; limit_set=edges(current_graph), target_sites=Interface[], breaker_sites=Interface[]) = summaryPropagationSchedule([variable], limit_set=limit_set, target_sites=target_sites, breaker_sites=breaker_sites)
 
 """
 inferUpdateRules!(schedule) infers specific message update rules for all schedule entries.
 """
-function inferUpdateRules!(schedule::Schedule)
+function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Interface, DataType}())
     # Dict to hold all inferred message types
-    inferred_outbound_types = Dict{Interface, DataType}()
     for entry in schedule
         (entry.msg_update_rule == Void) && error("No msg update rule type specified for $(entry)")
         if !isleaftype(entry.msg_update_rule)

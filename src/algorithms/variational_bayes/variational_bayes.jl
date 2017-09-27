@@ -38,13 +38,13 @@ end
 function inferUpdateRule!{T<:VariationalRule}(  entry::ScheduleEntry,
                                                 rule_type::Type{T},
                                                 inferred_outbound_types::Dict{Interface, DataType})
-    # Collect inbound types
+    # Find outbound id
     outbound_id = findfirst(entry.interface.node.interfaces, entry.interface)    
     
     # Find applicable rule(s)
     applicable_rules = DataType[]
     for rule in leaftypes(entry.msg_update_rule)
-        if isApplicable(rule, typeof(entry.interface.node), outbound_id)
+        if isApplicable(rule, outbound_id)
             push!(applicable_rules, rule)
         end
     end
@@ -103,7 +103,7 @@ macro variationalRule(fields...)
         begin
             type $name <: VariationalRule{$node_type} end
             ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, ::Type{$(node_type)}, outbound_id::Int64) = (outbound_id == $outbound_id)
+            ForneyLab.isApplicable(::Type{$name}, outbound_id::Int64) = (outbound_id == $outbound_id)
             $name
         end
     """)
