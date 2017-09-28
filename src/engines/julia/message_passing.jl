@@ -1,6 +1,9 @@
+export load
+
 # TODO: in-place operations for message and marginal computations?
-function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=Variable[]; file::String="")
+function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=Variable[]; breaker_types::Dict=breakerTypes(findEPSites(currentGraph())), file::String="", name::String="")
     schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
+    n_messages = length(schedule)
 
     # Assign message numbers to each interface in the schedule
     interface_to_msg_idx = Dict{Interface, Int}()
@@ -8,48 +11,34 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
         interface_to_msg_idx[schedule_entry.interface] = msg_idx
     end
 
-    # Consruct breaker types, in case of an EP algorithm
-    # TODO: remove this hack
-    breaker_types = Dict{Interface, DataType}()
-    for node in nodes(current_graph)
-        if isa(node, Sigmoid) # Find Sigmoid nodes
-            breaker_types[node.i[:real].partner] = Message{Gaussian}
-        end
-    end
+    code = ""
 
 
     #--------------------------------
     # Write initialization code block
     #--------------------------------
 
-    n_messages = length(schedule)
+    if !isempty(breaker_types) # Initialization is only required when breakers are present
+        code *= "function init$(name)()\n\n"
+        
+        # Write message (breaker) initialization code
+        code *= "messages = Array{Message}($n_messages)\n"
+        for (breaker_site, breaker_type) in breaker_types
+            msg_idx = interface_to_msg_idx[breaker_site]
+            breaker_str = replace(string(breaker_type),"ForneyLab.", "") # Remove module prefixes
+            code *= "messages[$(msg_idx)] = vague($(breaker_str))\n"
+        end
 
-    init_code = "function init()\n"
-    
-    # Write marginal initialization code
-    init_code *= "\tmarginals = Dict{Symbol, ProbabilityDistribution}()\n"
-    # TODO: preset types for VB?
-    # for variable in targets
-    #     init_code *= "\tmarginals[:$(variable.id)] = ProbabilityDistribution(...)\n"
-    # end
-
-    # Write message (breaker) initialization code
-    init_code *= "\n\tmessages = Array{Message}($n_messages)\n"
-    for (breaker_site, breaker_type) in breaker_types
-        msg_idx = interface_to_msg_idx[breaker_site]
-        breaker_str = replace(string(breaker_type),"ForneyLab.", "") # Remove module prefixes
-        init_code *= "\tmessages[$(msg_idx)] = vague($(breaker_str))\n"
+        code *= "\nreturn messages\n\n"
+        code *= "end\n\n"
     end
-
-    init_code *= "\n\treturn (marginals, messages)\n"
-    init_code *= "end\n\n"
 
 
     #---------------------------------
     # Write message passing code block
     #---------------------------------
 
-    step_code = "function step!(\tmarginals::Dict{Symbol, ProbabilityDistribution}, \n\t\tmessages::Vector{Message}, \n\t\tdata::Dict)\n\n"
+    code *= "function step$(name)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}($n_messages))\n\n"
 
     # Write message computation code
     for schedule_entry in schedule
@@ -61,31 +50,28 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
         rule_str = split(string(rule_id),'.')[end] # Remove module prefixes
         inbounds_str = join(inbounds, ", ")
         msg_idx = interface_to_msg_idx[schedule_entry.interface]
-        step_code *= "\tmessages[$msg_idx] = rule$(rule_str)($inbounds_str)\n"
+        code *= "messages[$msg_idx] = rule$(rule_str)($inbounds_str)\n"
     end
 
     # Write marginal computation code
-    step_code *= "\n"
+    code *= "\n"
     for variable in targets
         target_edge = first(variable.edges) # For the sake of consistency, we always take the first edge.
         if target_edge.a == nothing # Handle cases where there is a `dangling` edge
             msg_id_b = interface_to_msg_idx[target_edge.b]
-            step_code *= "\tmarginals[:$(variable.id)] = messages[$msg_id_b].dist\n"
+            code *= "marginals[:$(variable.id)] = messages[$msg_id_b].dist\n"
         elseif target_edge.b == nothing
             msg_id_a = interface_to_msg_idx[target_edge.a]
-            step_code *= "\tmarginals[:$(variable.id)] = messages[$msg_id_a].dist\n"
+            code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist\n"
         else
             msg_id_a = interface_to_msg_idx[target_edge.a]
             msg_id_b = interface_to_msg_idx[target_edge.b]
-            step_code *= "\tmarginals[:$(variable.id)] = messages[$msg_id_a].dist * messages[$msg_id_b].dist\n"
+            code *= "marginals[:$(variable.id)] = messages[$msg_id_a].dist * messages[$msg_id_b].dist\n"
         end
     end
 
-    step_code *= "end"
-
-
-    # Combine code blocks
-    code = init_code * step_code
+    code *= "\nreturn marginals\n\n"
+    code *= "end"
 
     # Write to file
     if !isempty(file)
@@ -95,7 +81,7 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
     return code
 end
 
-messagePassingAlgorithm(schedule::Schedule, target::Variable; file::String="") = messagePassingAlgorithm(schedule, [target], file=file)
+messagePassingAlgorithm(schedule::Schedule, target::Variable; breaker_types::Dict=breakerTypes(findEPSites(currentGraph())), file::String="", name::String="") = messagePassingAlgorithm(schedule, [target], breaker_types=breaker_types, file=file, name=name)
 
 """
 Collect and construct SP update code for each inbound.

@@ -9,18 +9,9 @@ abstract ExpectationPropagationRule{factor_type} <: MessageUpdateRule
 expectationPropagationSchedule() generates a expectation propagation message passing schedule.
 """
 function expectationPropagationSchedule(variables::Vector{Variable})
-    # TODO: because we no longer have access to the interfaces on model construction, we have
-    # to find the EP sites in another way.
-    ep_sites = Interface[]
-    breaker_sites = Interface[]
-    breaker_types = Dict{Interface, DataType}()
-    for node in nodes(current_graph)
-        if isa(node, Sigmoid) # Find Sigmoid nodes
-            push!(ep_sites, node.i[:real])
-            push!(breaker_sites, node.i[:real].partner)
-            breaker_types[node.i[:real].partner] = Message{Gaussian} # TODO: this is a hack
-        end
-    end
+    ep_sites = findEPSites(current_graph)
+    breaker_sites = [site.partner for site in ep_sites]
+    breaker_types = breakerTypes(ep_sites)
 
     schedule = summaryPropagationSchedule(variables; target_sites=[ep_sites; breaker_sites])
 
@@ -35,6 +26,34 @@ function expectationPropagationSchedule(variables::Vector{Variable})
     inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
 
     return schedule
+end
+
+# TODO: because we no longer have access to the interfaces on model construction, we have
+# to find the EP sites in another way.
+"""
+Find default EP sites present in the graph
+"""
+function findEPSites(g::FactorGraph=currentGraph())
+    ep_sites = Interface[]
+    for node in nodes(g)
+        if isa(node, Sigmoid) # Find Sigmoid nodes
+            push!(ep_sites, node.i[:real])
+        end
+    end
+
+    return ep_sites
+end
+
+"""
+Constructs breaker types dictionary for ep sites
+"""
+function breakerTypes(ep_sites::Vector{Interface})
+    breaker_types = Dict{Interface, DataType}()
+    for site in ep_sites
+        breaker_types[site.partner] = Message{Gaussian} # site partner requires breaker
+    end
+
+    return breaker_types
 end
 
 expectationPropagationSchedule(variable::Variable) = expectationPropagationSchedule([variable])

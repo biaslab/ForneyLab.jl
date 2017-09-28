@@ -76,7 +76,7 @@ end
 
     # Build SP algorithm for Julia execution
     algo = ForneyLab.messagePassingAlgorithm(schedule, x)
-    @test contains(algo, "messages = Array{Message}(2)")
+    @test contains(algo, "Array{Message}(2)")
     @test contains(algo, "messages[1] = ruleSPGaussianMeanVariancePPV(Message(PointMass, m=0.0), Message(PointMass, m=1.0), nothing)")
     @test contains(algo, "messages[2] = ruleSPStateTransitionGVP(messages[1], nothing, Message(PointMass, m=data[:y]))")
     @test contains(algo, "marginals[:x] = messages[2].dist")

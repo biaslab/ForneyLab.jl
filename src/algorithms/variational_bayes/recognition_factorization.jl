@@ -10,7 +10,6 @@ type RecognitionFactor
     internal_edges::Set{Edge}
 
     function RecognitionFactor(variables::Set{Variable}; rfz=currentRecognitionFactorization(), id=generateId(RecognitionFactor))
-        # TODO: allow for joint factorizations
         internal_edges = extend(edges(variables))
         self = new(id, variables, internal_edges)
         rfz.recognition_factors[id] = self # Register new factor with recognition factorization
@@ -70,15 +69,3 @@ end
 setCurrentRecognitionFactorization(rf::RecognitionFactorization) = global current_recognition_factorization = rf
 
 RecognitionFactorization() = setCurrentRecognitionFactorization(RecognitionFactorization(Dict{Symbol, RecognitionFactor}()))
-
-"""
-Find the RecognitionFactor in which `edge` is internal.
-"""
-function recognitionFactor(edge::Edge)
-    for rf in values(current_recognition_factorization.recognition_factors)
-        if edge in rf.internal_edges
-            return rf
-        end
-    end
-    error("$(edge) not found in current recognition factorization")
-end

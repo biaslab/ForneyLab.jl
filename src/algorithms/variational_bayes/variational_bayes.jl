@@ -37,7 +37,7 @@ end
 
 function inferUpdateRule!{T<:VariationalRule}(  entry::ScheduleEntry,
                                                 rule_type::Type{T},
-                                                inferred_outbound_types::Dict{Interface, DataType})
+                                                ::Dict{Interface, DataType})
     # Find outbound id
     outbound_id = findfirst(entry.interface.node.interfaces, entry.interface)    
     

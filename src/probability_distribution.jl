@@ -28,6 +28,8 @@ abstract PointMass <: DeltaFactor
 
 ProbabilityDistribution(family::Type{PointMass}; kwargs...) = ProbabilityDistribution{family}(Dict(kwargs))
 
+vague(::Type{ProbabilityDistribution{PointMass}}) = ProbabilityDistribution(PointMass, m=1.0)
+
 unsafeMean(dist::ProbabilityDistribution{PointMass}) = dist.params[:m]
 
 unsafeVar(dist::ProbabilityDistribution{PointMass}) = 0.0
