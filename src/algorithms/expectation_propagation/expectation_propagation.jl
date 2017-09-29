@@ -1,6 +1,7 @@
 export
 ExpectationPropagationRule,
 expectationPropagationSchedule,
+variationalExpectationPropagationSchedule,
 @expectationPropagationRule
 
 abstract ExpectationPropagationRule{factor_type} <: MessageUpdateRule
@@ -9,11 +10,11 @@ abstract ExpectationPropagationRule{factor_type} <: MessageUpdateRule
 expectationPropagationSchedule() generates a expectation propagation message passing schedule.
 """
 function expectationPropagationSchedule(variables::Vector{Variable})
-    ep_sites = findEPSites(current_graph)
+    ep_sites = collectEPSites(nodes(current_graph))
     breaker_sites = [site.partner for site in ep_sites]
-    breaker_types = breakerTypes(ep_sites)
+    breaker_types = breakerTypes(breaker_sites)
 
-    schedule = summaryPropagationSchedule(variables; target_sites=[ep_sites; breaker_sites])
+    schedule = summaryPropagationSchedule(variables; target_sites=[breaker_sites; ep_sites])
 
     for entry in schedule
         if entry.interface in ep_sites
@@ -28,29 +29,65 @@ function expectationPropagationSchedule(variables::Vector{Variable})
     return schedule
 end
 
-# TODO: because we no longer have access to the interfaces on model construction, we have
-# to find the EP sites in another way.
 """
-Find default EP sites present in the graph
+variationalExpectationPropagationSchedule() generates an expectation propagation message passing schedule
+that is limited to the `recognition_factor`. Updates on EP sites are computed with an `ExpectationPropagationRule`,
+and updates for external nodes are computed with a `VariationalRule`.
 """
-function findEPSites(g::FactorGraph=currentGraph())
+function variationalExpectationPropagationSchedule(recognition_factor::RecognitionFactor)
+    internal_edges = recognition_factor.internal_edges
+    subgraph_nodes = nodes(internal_edges)
+    ep_sites = collectEPSites(subgraph_nodes)
+    breaker_sites = [site.partner for site in ep_sites]
+    breaker_types = breakerTypes(breaker_sites)
+
+    # Schedule messages towards recognition distributions and target sites, limited to the internal edges
+    schedule = summaryPropagationSchedule(sort(collect(recognition_factor.variables)); target_sites=[breaker_sites; ep_sites], limit_set=internal_edges)
+
+    external_edges = setdiff(edges(subgraph_nodes), internal_edges)
+    nodes_connected_to_external_edges = intersect(nodes(external_edges), subgraph_nodes)
+    for entry in schedule
+        if entry.interface in ep_sites
+            entry.msg_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
+        elseif entry.interface.node in nodes_connected_to_external_edges
+            entry.msg_update_rule = VariationalRule{typeof(entry.interface.node)}
+        else
+            entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
+        end
+    end
+
+    inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
+
+    return schedule
+end
+
+# Because we no longer have access to the interfaces on model construction, we have
+# to find the EP sites automatically.
+# TODO: this method should be refactored to generalize to other node types
+"""
+Find default EP sites present in `node_set`
+"""
+function collectEPSites(node_set::Set{FactorNode})
     ep_sites = Interface[]
-    for node in sort(collect(nodes(g)))
-        if isa(node, Sigmoid) # Find Sigmoid nodes
-            push!(ep_sites, node.i[:real])
+    for node in sort(collect(node_set))
+        if isa(node, Sigmoid)
+            push!(ep_sites, node.i[:real]) # EP site for a Sigmoid node is i[:real]
         end
     end
 
     return ep_sites
 end
 
+# TODO: this method should be refactored to generalize to other node types
 """
-Constructs breaker types dictionary for ep sites
+Constructs breaker types dictionary for breaker sites
 """
-function breakerTypes(ep_sites::Vector{Interface})
+function breakerTypes(breaker_sites::Vector{Interface})
     breaker_types = Dict{Interface, DataType}()
-    for site in ep_sites
-        breaker_types[site.partner] = Message{Gaussian} # site partner requires breaker
+    for site in breaker_sites
+        if isa(site.partner.node, Sigmoid)
+            breaker_types[site] = Message{Gaussian} # Sigmoid EP site partner requires Gaussian breaker
+        end
     end
 
     return breaker_types

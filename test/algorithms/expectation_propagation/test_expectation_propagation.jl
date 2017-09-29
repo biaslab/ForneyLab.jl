@@ -2,7 +2,7 @@ module ExpectationPropagationTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, EPSigmoidGP1, SPGaussianMeanVariancePPV
+import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, EPSigmoidGP1, SPGaussianMeanVariancePPV, SPClamp, VBGaussianMeanPrecision3, SPSigmoidGV
 
 # Integration helper
 type MockNode <: SoftFactor
@@ -62,10 +62,34 @@ end
     schedule = expectationPropagationSchedule(m)
 
     @test length(schedule) == 15
-    @test schedule[2] == ScheduleEntry(nd_z[1].i[:real], EPSigmoidGP1)
-    @test schedule[4] == ScheduleEntry(nd_z[2].i[:real], EPSigmoidGP1)
-    @test schedule[6] == ScheduleEntry(nd_z[3].i[:real], EPSigmoidGP1)
-    @test schedule[10] == ScheduleEntry(nd_m.i[:out], SPGaussianMeanVariancePPV)
+    @test schedule[2] == ScheduleEntry(nd_z[2].i[:real], EPSigmoidGP1)
+    @test schedule[4] == ScheduleEntry(nd_z[3].i[:real], EPSigmoidGP1)
+    @test schedule[8] == ScheduleEntry(nd_m.i[:out], SPGaussianMeanVariancePPV)
+    @test schedule[11] == ScheduleEntry(nd_z[1].i[:real], EPSigmoidGP1)
+end
+
+@testset "variationalExpectationPropagationSchedule" begin
+    g = FactorGraph()
+    m = Variable()
+    nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
+    w = Variable()
+    nd_w = Gamma(w, constant(0.01), constant(0.01))
+    y = Variable()
+    nd_y = GaussianMeanPrecision(y, m, w)
+    z = Variable()
+    nd_z = Sigmoid(z, y)
+    placeholder(z, :z)
+
+    rf = RecognitionFactorization()
+    q_y_z = RecognitionFactor([y, z])
+
+    schedule = variationalExpectationPropagationSchedule(q_y_z)
+
+    @test length(schedule) == 4
+    @test schedule[1] == ScheduleEntry(nd_y.i[:out], VBGaussianMeanPrecision3)
+    @test schedule[2] == ScheduleEntry(nd_z.i[:bin].partner, SPClamp)
+    @test schedule[3] == ScheduleEntry(nd_z.i[:real], EPSigmoidGP1)
+    @test schedule[4] == ScheduleEntry(nd_z.i[:bin], SPSigmoidGV)
 end
 
 end # module

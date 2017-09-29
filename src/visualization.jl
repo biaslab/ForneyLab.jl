@@ -83,8 +83,12 @@ function genDot(nodeset::Set{FactorNode}, edgeset::Set{Edge}; schedule::Schedule
     for (i, entry) in enumerate(condense(schedule))
         if entry.msg_update_rule <: SumProductRule
             str = "($i)"
-        else
+        elseif entry.msg_update_rule <: VariationalRule
             str = "(($i))"
+        elseif entry.msg_update_rule <: ExpectationPropagationRule
+            str = "[$i]"
+        else
+            str = "?$i?"
         end
         msg_labels[entry.interface] = str
     end

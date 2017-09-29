@@ -1,7 +1,7 @@
 export load
 
 # TODO: in-place operations for message and marginal computations?
-function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=Variable[]; breaker_types::Dict=breakerTypes(findEPSites(currentGraph())), file::String="", name::String="")
+function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=Variable[]; file::String="", name::String="")
     schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
     n_messages = length(schedule)
 
@@ -11,6 +11,12 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
         interface_to_msg_idx[schedule_entry.interface] = msg_idx
     end
 
+    # Collect outbound types from schedule
+    outbound_types = Dict()
+    for entry in schedule
+        outbound_types[entry.interface] = outboundType(entry.msg_update_rule)
+    end
+
     code = ""
 
 
@@ -18,7 +24,15 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
     # Write initialization code block
     #--------------------------------
 
-    if !isempty(breaker_types) # Initialization is only required when breakers are present
+    # Find breaker types from schedule outbound types
+    breaker_types = Dict()
+    for entry in schedule
+        if entry.msg_update_rule <: ExpectationPropagationRule
+            breaker_types[entry.interface.partner] = outbound_types[entry.interface.partner]
+        end
+    end
+
+    if !isempty(breaker_types) # Initialization block is only required when breakers are present
         code *= "function init$(name)()\n\n"
         
         # Write message (breaker) initialization code
@@ -81,7 +95,7 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
     return code
 end
 
-messagePassingAlgorithm(schedule::Schedule, target::Variable; breaker_types::Dict=breakerTypes(findEPSites(currentGraph())), file::String="", name::String="") = messagePassingAlgorithm(schedule, [target], breaker_types=breaker_types, file=file, name=name)
+messagePassingAlgorithm(schedule::Schedule, target::Variable; file::String="", name::String="") = messagePassingAlgorithm(schedule, [target], file=file, name=name)
 
 """
 Collect and construct SP update code for each inbound.
