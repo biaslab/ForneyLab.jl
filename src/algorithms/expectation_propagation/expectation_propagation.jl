@@ -35,7 +35,7 @@ Find default EP sites present in the graph
 """
 function findEPSites(g::FactorGraph=currentGraph())
     ep_sites = Interface[]
-    for node in nodes(g)
+    for node in sort(collect(nodes(g)))
         if isa(node, Sigmoid) # Find Sigmoid nodes
             push!(ep_sites, node.i[:real])
         end

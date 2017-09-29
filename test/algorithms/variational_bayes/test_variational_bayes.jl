@@ -63,14 +63,13 @@ end
 
     schedule = variationalSchedule(q_m)
 
-    # TODO: scheduling is somehow not deterministic
     @test length(schedule) == 6
-    @test ScheduleEntry(nd_m.i[:out], VBGaussianMeanVariance3) in schedule
-    @test ScheduleEntry(nd_y[3].i[:mean], VBGaussianMeanPrecision1) in schedule
-    @test ScheduleEntry(nd_y[2].i[:mean], VBGaussianMeanPrecision1) in schedule
-    @test ScheduleEntry(nd_m.i[:out].partner.node.i[3].partner, SPEqualityGaussian) in schedule
-    @test ScheduleEntry(nd_y[1].i[:mean], VBGaussianMeanPrecision1) in schedule
-    @test ScheduleEntry(nd_m.i[:out].partner, SPEqualityGaussian) in schedule
+    @test schedule[1] == ScheduleEntry(nd_m.i[:out], VBGaussianMeanVariance3)
+    @test schedule[2] == ScheduleEntry(nd_y[2].i[:mean], VBGaussianMeanPrecision1)
+    @test schedule[3] == ScheduleEntry(nd_y[3].i[:mean], VBGaussianMeanPrecision1)
+    @test schedule[4] == ScheduleEntry(nd_m.i[:out].partner.node.i[3].partner, SPEqualityGaussian)
+    @test schedule[5] == ScheduleEntry(nd_y[1].i[:mean], VBGaussianMeanPrecision1)
+    @test schedule[6] == ScheduleEntry(nd_m.i[:out].partner, SPEqualityGaussian)
 end
 
 end # module
