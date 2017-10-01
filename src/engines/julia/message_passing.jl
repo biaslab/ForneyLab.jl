@@ -1,4 +1,55 @@
-export load
+export load, freeEnergyAlgorithm
+
+function freeEnergyAlgorithm(recognition_factorization::RecognitionFactorization=currentRecognitionFactorization())
+    nodes_connected_to_external_edges = Set{FactorNode}()
+    recognition_variables = Set{Variable}()
+    for rf in values(recognition_factorization.recognition_factors)
+        union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(rf))
+        union!(recognition_variables, rf.variables)
+    end
+
+    # Write evaluation function for free energy
+    code = "function freeEnergy(data::Dict, marginals::Dict)\n\n"
+    code *= "F = 0.0\n\n"
+
+    # Average energy block
+    for node in sort(collect(nodes_connected_to_external_edges))
+        inbounds = collectMarginals(node)
+        inbounds_str = join(inbounds, ", ")
+        node_str = replace(string(typeof(node)),"ForneyLab.", "") # Remove module prefixes
+        code *= "F += averageEnergy($(node_str), $(inbounds_str))\n"
+    end
+    code *= "\n"
+
+    # Differential entropy block
+    for variable in sort(collect(recognition_variables))
+        code *= "F -= differentialEntropy(marginals[:$(variable.id)])\n"
+    end
+    code *= "\nreturn F\n" 
+    code *= "end"
+
+    return code
+end
+
+"""
+Collect marginals associated with all edges connected to `node`
+"""
+function collectMarginals(node::FactorNode)
+    # Collect marginals
+    inbound_marginals = String[]
+    for interface in node.interfaces
+        partner_node = interface.partner.node
+        if isa(partner_node, Clamp)
+            # Hard-code marginal of constant node
+            push!(inbound_marginals, marginalString(partner_node))
+        else
+            # Collect marginal from marginal dictionary
+            push!(inbound_marginals, "marginals[:$(interface.edge.variable.id)]")
+        end
+    end
+
+    return inbound_marginals
+end
 
 # TODO: in-place operations for message and marginal computations?
 function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=Variable[]; file::String="", name::String="")

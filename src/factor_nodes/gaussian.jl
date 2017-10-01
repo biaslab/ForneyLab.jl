@@ -10,6 +10,8 @@ unsafeMean(dist::ProbabilityDistribution{Gaussian}) = ensureParameter!(dist, Val
 
 unsafeVar(dist::ProbabilityDistribution{Gaussian}) = ensureParameter!(dist, Val{:v}).params[:v] # unsafe variance
 
+unsafeCov(dist::ProbabilityDistribution{Gaussian}) = ensureParameter!(dist, Val{:v}).params[:v] # unsafe covariance
+
 function isProper(dist::ProbabilityDistribution{Gaussian})
     if isWellDefined(dist)
         if haskey(dist.params, :w) && !isnan(dist.params[:w])
@@ -88,4 +90,13 @@ function ==(t::ProbabilityDistribution{Gaussian}, u::ProbabilityDistribution{Gau
     ensureParameters!(t, (:xi, :w))
     ensureParameters!(u, (:xi, :w))
     return isApproxEqual(t.params[:xi], u.params[:xi]) && isApproxEqual(t.params[:w], u.params[:w])
+end
+
+# Entropy functional
+function differentialEntropy(dist::ProbabilityDistribution{Gaussian})
+    ensureParameters!(dist, (:v,))
+
+    return  0.5*log(dist.params[:v]) +
+            0.5*log(2*pi) +
+            0.5
 end

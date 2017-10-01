@@ -36,16 +36,14 @@ and updates for external nodes are computed with a `VariationalRule`.
 """
 function variationalExpectationPropagationSchedule(recognition_factor::RecognitionFactor)
     internal_edges = recognition_factor.internal_edges
-    subgraph_nodes = nodes(internal_edges)
-    ep_sites = collectEPSites(subgraph_nodes)
+    ep_sites = collectEPSites(nodes(internal_edges))
     breaker_sites = [site.partner for site in ep_sites]
     breaker_types = breakerTypes(breaker_sites)
 
     # Schedule messages towards recognition distributions and target sites, limited to the internal edges
     schedule = summaryPropagationSchedule(sort(collect(recognition_factor.variables)); target_sites=[breaker_sites; ep_sites], limit_set=internal_edges)
 
-    external_edges = setdiff(edges(subgraph_nodes), internal_edges)
-    nodes_connected_to_external_edges = intersect(nodes(external_edges), subgraph_nodes)
+    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(recognition_factor)
     for entry in schedule
         if entry.interface in ep_sites
             entry.msg_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}

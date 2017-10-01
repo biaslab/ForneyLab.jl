@@ -34,3 +34,10 @@ type GaussianMeanVariance <: Gaussian
 end
 
 slug(::Type{GaussianMeanVariance}) = "𝒩"
+
+# Average energy functional
+function averageEnergy(::Type{GaussianMeanVariance}, marg_mean::ProbabilityDistribution, marg_var::ProbabilityDistribution, marg_out::ProbabilityDistribution)
+    0.5*log(2*pi) +
+    0.5*unsafeLogMean(marg_var) +
+    0.5*unsafeInverseMean(marg_var)*( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))^2 )
+end

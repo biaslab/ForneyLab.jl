@@ -5,6 +5,8 @@ PointMass,
 mean,
 var,
 cov,
+differentialEntropy,
+averageEnergy,
 ==,
 vague
 
@@ -32,7 +34,13 @@ vague(::Type{ProbabilityDistribution{PointMass}}) = ProbabilityDistribution(Poin
 
 unsafeMean(dist::ProbabilityDistribution{PointMass}) = dist.params[:m]
 
+unsafeInverseMean(dist::ProbabilityDistribution{PointMass}) = 1.0/dist.params[:m]
+
+unsafeLogMean(dist::ProbabilityDistribution{PointMass}) = log(dist.params[:m])
+
 unsafeVar(dist::ProbabilityDistribution{PointMass}) = 0.0
+
+unsafeCov(dist::ProbabilityDistribution{PointMass}) = 0.0
 
 mean(dist::ProbabilityDistribution{PointMass}) = unsafeMean(dist)
 

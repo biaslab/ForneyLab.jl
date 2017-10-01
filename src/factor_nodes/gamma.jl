@@ -41,6 +41,8 @@ vague(::Type{ProbabilityDistribution{Gamma}}) = ProbabilityDistribution(Gamma, a
 
 unsafeMean(dist::ProbabilityDistribution{Gamma}) = dist.params[:a]/dist.params[:b] # unsafe mean
 
+unsafeLogMean(dist::ProbabilityDistribution{Gamma}) = digamma(dist.params[:a]) - log(dist.params[:b])
+
 unsafeVar(dist::ProbabilityDistribution{Gamma}) = dist.params[:a]/dist.params[:b]^2 # unsafe variance
 
 isProper(dist::ProbabilityDistribution{Gamma}) = (dist.params[:a] >= tiny) && (dist.params[:b] >= tiny)
@@ -53,4 +55,20 @@ function prod!( x::ProbabilityDistribution{Gamma},
     z.params[:b] = x.params[:b] + y.params[:b]
 
     return z
+end
+
+# Entropy functional
+function differentialEntropy(dist::ProbabilityDistribution{Gamma})
+    lgamma(dist.params[:a]) -
+    (dist.params[:a] - 1.0)*digamma(dist.params[:a]) -
+    log(dist.params[:b]) +
+    dist.params[:a]
+end
+
+# Average energy functional
+function averageEnergy(::Type{Gamma}, marg_a::ProbabilityDistribution{PointMass}, marg_b::ProbabilityDistribution, marg_out::ProbabilityDistribution)
+    lgamma(marg_a.params[:m]) -
+    marg_a.params[:m]*unsafeLogMean(marg_b) -
+    (marg_a.params[:m] - 1.0)*unsafeLogMean(marg_out) +
+    unsafeMean(marg_b)*unsafeMean(marg_out)
 end

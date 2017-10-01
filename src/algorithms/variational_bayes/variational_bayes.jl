@@ -13,15 +13,10 @@ function variationalSchedule(recognition_factor::RecognitionFactor)
     # TODO: more efficient scheduling (see e.g. commit a5272c in master branch)
     # TODO: incorporate structured updates
 
-    internal_edges = recognition_factor.internal_edges
     # Schedule messages towards recognition distributions, limited to the internal edges
-    schedule = summaryPropagationSchedule(sort(collect(recognition_factor.variables)), limit_set=internal_edges)
+    schedule = summaryPropagationSchedule(sort(collect(recognition_factor.variables)), limit_set=recognition_factor.internal_edges)
 
-    # external_edges are the difference between all edges connected to nodes, and the internal edges
-    subgraph_nodes = nodes(internal_edges)
-    external_edges = setdiff(edges(subgraph_nodes), internal_edges)
-    # nodes_connected_to_external_edges are the nodes connected to external edges that are also connected to internal edges
-    nodes_connected_to_external_edges = intersect(nodes(external_edges), subgraph_nodes)
+    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(recognition_factor)
     for entry in schedule
         if entry.interface.node in nodes_connected_to_external_edges
             entry.msg_update_rule = VariationalRule{typeof(entry.interface.node)}
@@ -33,6 +28,16 @@ function variationalSchedule(recognition_factor::RecognitionFactor)
     inferUpdateRules!(schedule)
 
     return schedule
+end
+
+function nodesConnectedToExternalEdges(recognition_factor::RecognitionFactor)
+    internal_edges = recognition_factor.internal_edges
+    subgraph_nodes = nodes(internal_edges)
+    external_edges = setdiff(edges(subgraph_nodes), internal_edges)
+    # nodes_connected_to_external_edges are the nodes connected to external edges that are also connected to internal edges
+    nodes_connected_to_external_edges = intersect(nodes(external_edges), subgraph_nodes)
+
+    return nodes_connected_to_external_edges
 end
 
 function inferUpdateRule!{T<:VariationalRule}(  entry::ScheduleEntry,
