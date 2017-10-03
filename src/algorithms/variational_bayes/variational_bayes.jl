@@ -10,9 +10,6 @@ variationalSchedule() generates a variational message passing schedule that comp
 marginals for each of the recognition distributions in the recognition factor.
 """
 function variationalSchedule(recognition_factor::RecognitionFactor)
-    # TODO: more efficient scheduling (see e.g. commit a5272c in master branch)
-    # TODO: incorporate structured updates
-
     # Schedule messages towards recognition distributions, limited to the internal edges
     schedule = summaryPropagationSchedule(sort(collect(recognition_factor.variables)), limit_set=recognition_factor.internal_edges)
 

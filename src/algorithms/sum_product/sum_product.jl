@@ -58,6 +58,8 @@ function collectInboundTypes{T<:SumProductRule}(entry::ScheduleEntry,
     for node_interface in entry.interface.node.interfaces
         if node_interface == entry.interface
             push!(inbound_message_types, Void)
+        elseif (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
+            push!(inbound_message_types, Message{PointMass})
         else
             push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
         end

@@ -59,3 +59,9 @@ function differentialEntropy(dist::ProbabilityDistribution{Bernoulli})
     -(1.0 - dist.params[:p])*log(1.0 - dist.params[:p]) -
     dist.params[:p]*log(dist.params[:p])
 end
+
+# Average energy functional
+function averageEnergy(::Type{Bernoulli}, marg_in::ProbabilityDistribution, marg_out::ProbabilityDistribution)
+    -unsafeMean(marg_out)*unsafeLogMean(marg_in) -
+    (1.0 - unsafeMean(marg_out))*unsafeMirroredLogMean(marg_in)
+end

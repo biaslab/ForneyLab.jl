@@ -38,6 +38,8 @@ unsafeInverseMean(dist::ProbabilityDistribution{PointMass}) = 1.0/dist.params[:m
 
 unsafeLogMean(dist::ProbabilityDistribution{PointMass}) = log(dist.params[:m])
 
+unsafeMirroredLogMean(dist::ProbabilityDistribution{PointMass}) = log(1.0 - dist.params[:m])
+
 unsafeVar(dist::ProbabilityDistribution{PointMass}) = 0.0
 
 unsafeCov(dist::ProbabilityDistribution{PointMass}) = 0.0

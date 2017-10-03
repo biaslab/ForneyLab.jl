@@ -2,7 +2,7 @@ module BernoulliTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, SPBernoulliPV, prod!, unsafeMean, unsafeVar
+import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, SPBernoulliPV, VBBernoulli2
 
 @testset "unsafe mean and variance" begin
     @test unsafeMean(ProbabilityDistribution(Bernoulli, p=0.2)) == 0.2
@@ -24,6 +24,15 @@ end
     @test isApplicable(SPBernoulliPV, [Message{PointMass}, Void]) 
 
     @test ruleSPBernoulliPV(Message(PointMass, m=0.2), nothing) == Message(Bernoulli, p=0.2)
+end
+
+@testset "VBBernoulli2" begin
+    @test VBBernoulli2 <: VariationalRule{Bernoulli}
+    @test outboundType(VBBernoulli2) == Message{Bernoulli}
+    @test isApplicable(VBBernoulli2, 2)
+    @test !isApplicable(VBBernoulli2, 1)
+
+    @test ruleVBBernoulli2(ProbabilityDistribution(PointMass, m=0.2), nothing) == Message(Bernoulli, p=0.2)
 end
 
 end # module
