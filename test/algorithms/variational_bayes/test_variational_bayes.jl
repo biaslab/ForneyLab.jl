@@ -65,10 +65,10 @@ end
 
     @test length(schedule) == 6
     @test schedule[1] == ScheduleEntry(nd_m.i[:out], VBGaussianMeanVariance3)
-    @test schedule[2] == ScheduleEntry(nd_y[2].i[:mean], VBGaussianMeanPrecision1)
-    @test schedule[3] == ScheduleEntry(nd_y[3].i[:mean], VBGaussianMeanPrecision1)
+    @test schedule[2] == ScheduleEntry(nd_y[2].i[:m], VBGaussianMeanPrecision1)
+    @test schedule[3] == ScheduleEntry(nd_y[3].i[:m], VBGaussianMeanPrecision1)
     @test schedule[4] == ScheduleEntry(nd_m.i[:out].partner.node.i[3].partner, SPEqualityGaussian)
-    @test schedule[5] == ScheduleEntry(nd_y[1].i[:mean], VBGaussianMeanPrecision1)
+    @test schedule[5] == ScheduleEntry(nd_y[1].i[:m], VBGaussianMeanPrecision1)
     @test schedule[6] == ScheduleEntry(nd_m.i[:out].partner, SPEqualityGaussian)
 end
 

@@ -66,19 +66,7 @@ function ruleEPSigmoidGB1(msg_real::Message{Gaussian}, msg_bin::Message{Bernoull
 end
 
 function ruleEPSigmoidGP1(msg_real::Message{Gaussian}, msg_bin::Message{PointMass})
-    m = msg_bin.dist.params[:m]
-    
-    # Map m to range of Bernoulli parameter p
-    if (m == true)
-        p = 1.0
-    elseif (m == false)
-        p = 0.0
-    elseif isnan(m)
-        p = 0.5
-    else
-        (-1.0 <= m <= 1.0) || error("Value $m not allowed for ruleEPSigmoidGP1")
-        p = 0.5*m + 0.5
-    end
-    
+    p = mapToBernoulliParameterRange(msg_bin.dist.params[:m])
+        
     return ruleEPSigmoidGB1(msg_real, Message(Bernoulli, p=p))
 end

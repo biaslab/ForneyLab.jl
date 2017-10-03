@@ -2,7 +2,18 @@ module SigmoidTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, SPSigmoidGV, EPSigmoidGB1, EPSigmoidGP1
+import ForneyLab: outboundType, isApplicable, mapToBernoulliParameterRange, SPSigmoidGV, EPSigmoidGB1, EPSigmoidGP1
+
+@testset "mapToBernoulliParameterRange" begin
+    @test mapToBernoulliParameterRange(1.0) == 1.0
+    @test mapToBernoulliParameterRange(0.5) == 0.75
+    @test mapToBernoulliParameterRange(0.0) == 0.5
+    @test mapToBernoulliParameterRange(-1.0) == 0.0
+    @test mapToBernoulliParameterRange(true) == 1.0
+    @test mapToBernoulliParameterRange(false) == 0.0
+    @test mapToBernoulliParameterRange(NaN) == 0.5
+    @test_throws Exception mapToBernoulliParameterRange(2.0)
+end
 
 
 #-------------

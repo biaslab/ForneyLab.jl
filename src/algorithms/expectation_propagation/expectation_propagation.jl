@@ -127,7 +127,11 @@ function collectInboundTypes{T<:ExpectationPropagationRule}(entry::ScheduleEntry
                                                             inferred_outbound_types::Dict{Interface, DataType})
     inbound_message_types = DataType[]
     for node_interface in entry.interface.node.interfaces
-        push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
+        if (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
+            push!(inbound_message_types, Message{PointMass})
+        else
+            push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
+        end
     end
 
     return inbound_message_types

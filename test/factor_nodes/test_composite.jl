@@ -68,8 +68,8 @@ end
     # Build SP schedule
     schedule = sumProductSchedule(x)
     @test length(schedule) == 5
-    @test schedule[1] == ScheduleEntry(nd.i[:mean].partner, SPClamp)
-    @test schedule[2] == ScheduleEntry(nd.i[:variance].partner, SPClamp)
+    @test schedule[1] == ScheduleEntry(nd.i[:m].partner, SPClamp)
+    @test schedule[2] == ScheduleEntry(nd.i[:v].partner, SPClamp)
     @test schedule[3] == ScheduleEntry(nd.i[:out], SPGaussianMeanVariancePPV)
     @test schedule[4] == ScheduleEntry(cnd.i[:y].partner, SPClamp)
     @test schedule[5] == ScheduleEntry(cnd.i[:x], SPStateTransitionGVP)

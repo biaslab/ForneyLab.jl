@@ -30,6 +30,7 @@ include("factor_nodes/gaussian_mean_variance.jl")
 include("factor_nodes/gaussian_mean_precision.jl")
 include("factor_nodes/gamma.jl")
 include("factor_nodes/bernoulli.jl")
+include("factor_nodes/gaussian_mixture.jl")
 include("factor_nodes/sigmoid.jl")
 
 # include("nodes/gaussian_mixture.jl")
@@ -65,6 +66,7 @@ include("update_rules/gaussian_mean_variance.jl")
 include("update_rules/gaussian_mean_precision.jl")
 include("update_rules/gamma.jl")
 include("update_rules/bernoulli.jl")
+include("update_rules/gaussian_mixture.jl")
 include("update_rules/sigmoid.jl")
 
 *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions

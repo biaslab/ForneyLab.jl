@@ -9,24 +9,24 @@ Description:
 
 Interfaces:
 
-    1. shape
-    2. rate
+    1. a (shape)
+    2. b (rate)
     3. out
 
 Construction:
 
-    Gamma(out, shape, rate, id=:some_id)
+    Gamma(out, a, b, id=:some_id)
 """
 type Gamma <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function Gamma(out::Variable, shape::Variable, rate::Variable; id=generateId(Gamma))
+    function Gamma(out::Variable, a::Variable, b::Variable; id=generateId(Gamma))
         self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
-        self.i[:shape] = self.interfaces[1] = associate!(Interface(self), shape)
-        self.i[:rate] = self.interfaces[2] = associate!(Interface(self), rate)
+        self.i[:a] = self.interfaces[1] = associate!(Interface(self), a)
+        self.i[:b] = self.interfaces[2] = associate!(Interface(self), b)
         self.i[:out] = self.interfaces[3] = associate!(Interface(self), out)
 
         return self

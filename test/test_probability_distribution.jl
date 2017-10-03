@@ -1,7 +1,7 @@
 module ProbabilityDistributionTest
 
 using Base.Test
-import ForneyLab: ProbabilityDistribution, GaussianMeanVariance, PointMass, Equality, mean, var, isProper
+import ForneyLab: ProbabilityDistribution, GaussianMeanVariance, PointMass, Equality, mean, var, isProper, gaussianQuadrature
 
 @testset "ProbabilityDistribution" begin
     # ProbabilityDistribution should be parameterized on a node type (distribution family)
@@ -24,6 +24,12 @@ import ForneyLab: ProbabilityDistribution, GaussianMeanVariance, PointMass, Equa
     @test ProbabilityDistribution(PointMass, m=0.0) == ProbabilityDistribution(PointMass, m=0.0)
     @test ProbabilityDistribution(PointMass, m=0.0) != ProbabilityDistribution(GaussianMeanVariance, m=0.0, v=1.0)
     @test ProbabilityDistribution(PointMass, m=0.0) != ProbabilityDistribution(PointMass, m=1.0)
+end
+
+@testset "gaussianQuadrature" begin
+    @test gaussianQuadrature(x -> 1.0, m=-1.0, v=2.0) == 0.9999996733487053
+    @test gaussianQuadrature(x -> x, m=-1.0, v=2.0) == -0.9999996733487055
+    @test gaussianQuadrature(x -> x^2, m=-1.0, v=2.0) == 3.0000013419448215
 end
 
 end #module

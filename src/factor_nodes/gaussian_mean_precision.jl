@@ -9,24 +9,24 @@ Description:
 
 Interfaces:
 
-    1. mean
-    2. precision
+    1. m (mean)
+    2. w (precision)
     3. out
 
 Construction:
 
-    GaussianMeanPrecision(out, mean, precision, id=:some_id)
+    GaussianMeanPrecision(out, m, w, id=:some_id)
 """
 type GaussianMeanPrecision <: Gaussian
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function GaussianMeanPrecision(out::Variable, mean::Variable, precision::Variable; id=generateId(Gaussian))
+    function GaussianMeanPrecision(out::Variable, m::Variable, w::Variable; id=generateId(Gaussian))
         self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
-        self.i[:mean] = self.interfaces[1] = associate!(Interface(self), mean)
-        self.i[:precision] = self.interfaces[2] = associate!(Interface(self), precision)
+        self.i[:m] = self.interfaces[1] = associate!(Interface(self), m)
+        self.i[:w] = self.interfaces[2] = associate!(Interface(self), w)
         self.i[:out] = self.interfaces[3] = associate!(Interface(self), out)
 
         return self

@@ -4,13 +4,13 @@ export Bernoulli
 Description:
     Bernoulli factor node
 
-    c ∈ {0, 1}
-    x ∈ [0, 1]
+    z ∈ {0, 1}
+    p ∈ [0, 1]
     
-    f(c,x) = Ber(c|x)
+    f(z,p) = Ber(z|p)
 
 Interfaces:
-    1. in
+    1. p
     2. out
 
 Construction:
@@ -21,10 +21,10 @@ type Bernoulli <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function Bernoulli(out::Variable, in1::Variable; id=generateId(Bernoulli))
+    function Bernoulli(out::Variable, p::Variable; id=generateId(Bernoulli))
         self = new(id, Array(Interface, 2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
-        self.i[:in] = self.interfaces[1] = associate!(Interface(self), in1)
+        self.i[:p] = self.interfaces[1] = associate!(Interface(self), p)
         self.i[:out] = self.interfaces[2] = associate!(Interface(self), out)
 
         return self
@@ -52,4 +52,10 @@ function prod!( x::ProbabilityDistribution{Bernoulli},
     z.params[:p] = (x.params[:p] * y.params[:p]) / norm
 
     return z
+end
+
+# Entropy functional
+function differentialEntropy(dist::ProbabilityDistribution{Bernoulli})
+    -(1.0 - dist.params[:p])*log(1.0 - dist.params[:p]) -
+    dist.params[:p]*log(dist.params[:p])
 end
