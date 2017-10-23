@@ -25,7 +25,7 @@ end
 
 @variationalRule(   :node_type     => MockNode,
                     :outbound_type => Message{PointMass},
-                    :outbound_id   => 3,
+                    :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void),
                     :name          => VBMock3)
 
 @testset "@variationalRule" begin

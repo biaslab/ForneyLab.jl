@@ -37,7 +37,7 @@ slug(::Type{Gamma}) = "Gam"
 
 ProbabilityDistribution(::Type{Gamma}) = ProbabilityDistribution(Gamma, a=1.0, b=1.0)
 
-vague(::Type{ProbabilityDistribution{Gamma}}) = ProbabilityDistribution(Gamma, a=tiny, b=tiny)
+vague(::Type{ProbabilityDistribution{Gamma}}) = ProbabilityDistribution(Gamma, a=1.0, b=tiny) # Flat prior leads to more stable behaviour than Jeffrey's prior
 
 unsafeMean(dist::ProbabilityDistribution{Gamma}) = dist.params[:a]/dist.params[:b] # unsafe mean
 

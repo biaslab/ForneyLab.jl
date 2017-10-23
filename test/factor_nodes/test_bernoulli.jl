@@ -29,10 +29,14 @@ end
 @testset "VBBernoulli2" begin
     @test VBBernoulli2 <: VariationalRule{Bernoulli}
     @test outboundType(VBBernoulli2) == Message{Bernoulli}
-    @test isApplicable(VBBernoulli2, 2)
-    @test !isApplicable(VBBernoulli2, 1)
+    @test isApplicable(VBBernoulli2, [ProbabilityDistribution, Void])
+    @test !isApplicable(VBBernoulli2, [Void, ProbabilityDistribution])
 
     @test ruleVBBernoulli2(ProbabilityDistribution(PointMass, m=0.2), nothing) == Message(Bernoulli, p=0.2)
+end
+
+@testset "averageEnergy and differentialEntropy" begin
+    @test differentialEntropy(ProbabilityDistribution(Bernoulli, p=0.25)) == averageEnergy(Bernoulli, ProbabilityDistribution(PointMass, m=0.25), ProbabilityDistribution(Bernoulli, p=0.25))
 end
 
 end # module

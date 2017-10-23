@@ -1,15 +1,15 @@
 @variationalRule(:node_type     => GaussianMeanPrecision,
                  :outbound_type => Message{Gaussian},
-                 :outbound_id   => 1,
+                 :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),
                  :name          => VBGaussianMeanPrecision1)
 
 # TODO: how to handle Wishart
 @variationalRule(:node_type     => GaussianMeanPrecision,
                  :outbound_type => Message{Gamma},
-                 :outbound_id   => 2,
+                 :inbound_types => (ProbabilityDistribution, Void, ProbabilityDistribution),
                  :name          => VBGaussianMeanPrecision2)
 
 @variationalRule(:node_type     => GaussianMeanPrecision,
                  :outbound_type => Message{Gaussian},
-                 :outbound_id   => 3,
+                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void),
                  :name          => VBGaussianMeanPrecision3)

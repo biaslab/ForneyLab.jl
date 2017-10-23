@@ -9,11 +9,15 @@ abstract VariationalRule{factor_type} <: MessageUpdateRule
 variationalSchedule() generates a variational message passing schedule that computes the
 marginals for each of the recognition distributions in the recognition factor.
 """
-function variationalSchedule(recognition_factor::RecognitionFactor)
+function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
     # Schedule messages towards recognition distributions, limited to the internal edges
-    schedule = summaryPropagationSchedule(sort(collect(recognition_factor.variables)), limit_set=recognition_factor.internal_edges)
+    schedule = ScheduleEntry[]
+    nodes_connected_to_external_edges = Set{FactorNode}()
+    for recognition_factor in recognition_factors
+        schedule = [schedule; summaryPropagationSchedule(sort(collect(recognition_factor.variables)), limit_set=recognition_factor.internal_edges)]
+        union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(recognition_factor))
+    end
 
-    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(recognition_factor)
     for entry in schedule
         if entry.interface.node in nodes_connected_to_external_edges
             entry.msg_update_rule = VariationalRule{typeof(entry.interface.node)}
@@ -27,40 +31,61 @@ function variationalSchedule(recognition_factor::RecognitionFactor)
     return schedule
 end
 
-function nodesConnectedToExternalEdges(recognition_factor::RecognitionFactor)
-    internal_edges = recognition_factor.internal_edges
-    subgraph_nodes = nodes(internal_edges)
-    external_edges = setdiff(edges(subgraph_nodes), internal_edges)
-    # nodes_connected_to_external_edges are the nodes connected to external edges that are also connected to internal edges
-    nodes_connected_to_external_edges = intersect(nodes(external_edges), subgraph_nodes)
-
-    return nodes_connected_to_external_edges
-end
+variationalSchedule(recognition_factor::RecognitionFactor) = variationalSchedule([recognition_factor])
 
 function inferUpdateRule!{T<:VariationalRule}(  entry::ScheduleEntry,
                                                 rule_type::Type{T},
-                                                ::Dict{Interface, DataType})
-    # Find outbound id
-    outbound_id = findfirst(entry.interface.node.interfaces, entry.interface)    
+                                                inferred_outbound_types::Dict{Interface, DataType})
+    # Collect inbound types
+    inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
     
     # Find applicable rule(s)
     applicable_rules = DataType[]
     for rule in leaftypes(entry.msg_update_rule)
-        if isApplicable(rule, outbound_id)
+        if isApplicable(rule, inbound_types)
             push!(applicable_rules, rule)
         end
     end
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        error("No applicable msg update rule for $(entry) with outbound id $(outbound_id)")
+        error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
     elseif length(applicable_rules) > 1
-        error("Multiple applicable msg update rules for $(entry) with outbound id $(outbound_id)")
+        error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types)")
     else
         entry.msg_update_rule = first(applicable_rules)
     end
 
     return entry
+end
+
+function collectInboundTypes{T<:VariationalRule}(entry::ScheduleEntry,
+                                                 ::Type{T},
+                                                 inferred_outbound_types::Dict{Interface, DataType})
+    inbound_types = DataType[]
+    entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
+    for node_interface in entry.interface.node.interfaces
+        if node_interface == entry.interface
+            push!(inbound_types, Void)
+        elseif recognitionFactorId(node_interface.edge) == entry_recognition_factor_id
+            # Edge is internal, accept message
+            push!(inbound_types, inferred_outbound_types[node_interface.partner])
+        else
+            # Edge is external, accept marginal
+            push!(inbound_types, ProbabilityDistribution)
+        end
+    end
+
+    return inbound_types
+end
+
+function recognitionFactorId(edge::Edge)
+    for rf in values(current_recognition_factorization.recognition_factors)
+        if edge in rf.internal_edges
+            return rf.id
+        end
+    end
+    return Symbol(name(edge)) # No recognition factor is found, return a unique id
 end
 
 """
@@ -73,7 +98,7 @@ macro variationalRule(fields...)
     # Init required fields in macro scope
     node_type = :unknown
     outbound_type = :unknown
-    outbound_id = :unknown # Mean-field variational rule does not depend on inbounds; only on node type and outbound id
+    inbound_types = :unknown
     name = :auto # Triggers automatic naming unless overwritten
 
     # Loop over fields because order is unknown
@@ -85,8 +110,9 @@ macro variationalRule(fields...)
         elseif arg.args[1].args[1] == :outbound_type
             outbound_type = arg.args[2]
             (outbound_type.head == :curly && outbound_type.args[1] == :Message) || error("Outbound type for VariationalRule should be a Message")
-        elseif arg.args[1].args[1] == :outbound_id
-            outbound_id = arg.args[2]
+        elseif arg.args[1].args[1] == :inbound_types
+            inbound_types = arg.args[2]
+            (inbound_types.head == :tuple) || error("Inbound types should be passed as Tuple")
         elseif arg.args[1].args[1] == :name
             name = arg.args[2]
         else
@@ -101,11 +127,20 @@ macro variationalRule(fields...)
         name = Symbol("VB$(node_type)$(msg_types_hash)")
     end
 
+    # Build validators for isApplicable
+    input_type_validators = String[]
+    for (i, i_type) in enumerate(inbound_types.args)
+        if i_type != :Void
+            # Only validate inbounds required for message update
+            push!(input_type_validators, "(input_types[$i]==$i_type)")
+        end
+    end
+
     expr = parse("""
         begin
             type $name <: VariationalRule{$node_type} end
             ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, outbound_id::Int64) = (outbound_id == $outbound_id)
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{DataType}) = $(join(input_type_validators, " && "))
             $name
         end
     """)

@@ -2,7 +2,7 @@ module GaussianMeanVarianceTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, SPGaussianMeanVariancePPV, SPGaussianMeanVarianceVPP, SPGaussianMeanVarianceGPV, SPGaussianMeanVarianceVPG, VBGaussianMeanVariance3
+import ForneyLab: outboundType, isApplicable, SPGaussianMeanVariancePPV, SPGaussianMeanVarianceVPP, SPGaussianMeanVarianceGPV, SPGaussianMeanVarianceVPG, VBGaussianMeanVariance1, VBGaussianMeanVariance3
 
 
 #-------------
@@ -45,13 +45,26 @@ end
     @test ruleSPGaussianMeanVarianceVPG(nothing, Message(PointMass, m=2.0), Message(Gaussian, m=1.0, v=1.0)) == Message(Gaussian, m=1.0, v=3.0)
 end
 
+@testset "VBGaussianMeanVariance1" begin
+    @test VBGaussianMeanVariance1 <: VariationalRule{GaussianMeanVariance}
+    @test outboundType(VBGaussianMeanVariance1) == Message{Gaussian}
+    @test isApplicable(VBGaussianMeanVariance1, [Void, ProbabilityDistribution, ProbabilityDistribution])
+    @test !isApplicable(VBGaussianMeanVariance1, [ProbabilityDistribution, Void, ProbabilityDistribution]) 
+
+    @test ruleVBGaussianMeanVariance3(ProbabilityDistribution(Gaussian, m=1.0, v=2.0), ProbabilityDistribution(PointMass, m=3.0), nothing) == Message(Gaussian, m=1.0, v=3.0)
+end
+
 @testset "VBGaussianMeanVariance3" begin
     @test VBGaussianMeanVariance3 <: VariationalRule{GaussianMeanVariance}
     @test outboundType(VBGaussianMeanVariance3) == Message{Gaussian}
-    @test isApplicable(VBGaussianMeanVariance3, 3)
-    @test !isApplicable(VBGaussianMeanVariance3, 2) 
+    @test isApplicable(VBGaussianMeanVariance3, [ProbabilityDistribution, ProbabilityDistribution, Void])
+    @test !isApplicable(VBGaussianMeanVariance3, [ProbabilityDistribution, Void, ProbabilityDistribution]) 
 
     @test ruleVBGaussianMeanVariance3(ProbabilityDistribution(Gaussian, m=1.0, v=2.0), ProbabilityDistribution(PointMass, m=3.0), nothing) == Message(Gaussian, m=1.0, v=3.0)
+end
+
+@testset "averageEnergy and differentialEntropy" begin
+    @test differentialEntropy(ProbabilityDistribution(Gaussian, m=0.0, v=2.0)) == averageEnergy(GaussianMeanVariance, ProbabilityDistribution(PointMass, m=0.0), ProbabilityDistribution(PointMass, m=2.0), ProbabilityDistribution(Gaussian, m=0.0, v=2.0))
 end
 
 end #module

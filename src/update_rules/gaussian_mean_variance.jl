@@ -20,5 +20,10 @@
 
 @variationalRule(:node_type     => GaussianMeanVariance,
                  :outbound_type => Message{Gaussian},
-                 :outbound_id   => 3,
+                 :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),
+                 :name          => VBGaussianMeanVariance1)
+
+@variationalRule(:node_type     => GaussianMeanVariance,
+                 :outbound_type => Message{Gaussian},
+                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void),
                  :name          => VBGaussianMeanVariance3)

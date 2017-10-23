@@ -7,8 +7,11 @@ function ruleSPSigmoidGV(   msg_real::Message{Gaussian},
                             msg_bin::Void)
 
     ensureParameters!(msg_real.dist, (:m, :v))
+    
+    p = Φ(msg_real.dist.params[:m] / sqrt(1 + msg_real.dist.params[:v]))
+    isnan(p) && (p = 0.5)
 
-    Message(Bernoulli, p=Φ(msg_real.dist.params[:m] / sqrt(1 + msg_real.dist.params[:v])))
+    Message(Bernoulli, p=p)
 end
 
 function ruleEPSigmoidGB1(msg_real::Message{Gaussian}, msg_bin::Message{Bernoulli})
@@ -55,12 +58,14 @@ function ruleEPSigmoidGB1(msg_real::Message{Gaussian}, msg_bin::Message{Bernoull
     # Calculate the approximate message towards i[:real]
     ensureParameters!(dist_cavity, (:xi, :w))
     outbound_dist_w = marginal_w - dist_cavity.params[:w] # This can be < 0, yielding an improper Gaussian msg
+    isnan(outbound_dist_w) && (outbound_dist_w = tiny)
     if outbound_dist_w < 0
         outbound_dist_w = clamp(outbound_dist_w, -1*huge, -1*tiny)
     else
         outbound_dist_w = clamp(outbound_dist_w, tiny, huge)
     end
     outbound_dist_xi = marginal_xi - dist_cavity.params[:xi]
+    isnan(outbound_dist_xi) && (outbound_dist_xi = 0.0)
 
     return Message(Gaussian, xi=outbound_dist_xi, w=outbound_dist_w)
 end

@@ -1,4 +1,4 @@
-export ruleSPGaussianMeanVariancePPV, ruleSPGaussianMeanVarianceVPP, ruleSPGaussianMeanVarianceGPV, ruleSPGaussianMeanVarianceVPG, ruleVBGaussianMeanVariance3
+export ruleSPGaussianMeanVariancePPV, ruleSPGaussianMeanVarianceVPP, ruleSPGaussianMeanVarianceGPV, ruleSPGaussianMeanVarianceVPG, ruleVBGaussianMeanVariance1, ruleVBGaussianMeanVariance3
 
 # TODO: in-place operation on outbound?
 ruleSPGaussianMeanVariancePPV(  msg_mean::Message{PointMass},
@@ -18,6 +18,11 @@ function ruleSPGaussianMeanVarianceGPV( msg_mean::Message{Gaussian},
 end
 
 ruleSPGaussianMeanVarianceVPG(msg_mean::Void, msg_var::Message{PointMass}, msg_out::Message{Gaussian}) = ruleSPGaussianMeanVarianceGPV(msg_out, msg_var, msg_mean)
+
+ruleVBGaussianMeanVariance1(dist_mean::Any,
+                            dist_var::ProbabilityDistribution,
+                            dist_out::ProbabilityDistribution) =
+    Message(Gaussian, m=unsafeMean(dist_out), v=unsafeMean(dist_var))
 
 ruleVBGaussianMeanVariance3(dist_mean::ProbabilityDistribution,
                             dist_var::ProbabilityDistribution,

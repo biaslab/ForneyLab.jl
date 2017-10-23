@@ -14,8 +14,8 @@ function GMBackwardWRule(q_m_k::ProbabilityDistribution, q_x::ProbabilityDistrib
             b = 0.5*z_k_hat*( (unsafeMean(q_x) - unsafeMean(q_m_k))^2 + unsafeCov(q_x) + unsafeCov(q_m_k) ))
 end
 
-function GMBackwardZRule(   q_m::Vector{ProbabilityDistribution{Gaussian}},
-                            q_w::Vector{ProbabilityDistribution{Gamma}},
+function GMBackwardZRule(   q_m::Vector,
+                            q_w::Vector,
                             q_x::ProbabilityDistribution)
     rho = zeros(2)
     for k = 1:2
@@ -25,8 +25,8 @@ function GMBackwardZRule(   q_m::Vector{ProbabilityDistribution{Gaussian}},
     Message(Bernoulli, p=rho[1]/sum(rho))
 end
 
-function GMForwardRule( q_m::Vector{ProbabilityDistribution{Gaussian}},
-                        q_w::Vector{ProbabilityDistribution{Gamma}},
+function GMForwardRule( q_m::Vector,
+                        q_w::Vector,
                         z_hat::Vector{Float64})
     w  = 0.0
     xi = 0.0

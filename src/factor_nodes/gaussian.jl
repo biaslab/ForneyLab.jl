@@ -94,7 +94,7 @@ end
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Gaussian})
-    ensureParameters!(dist, (:v,))
+    ensureParameter!(dist, Val{:v})
 
     return  0.5*log(dist.params[:v]) +
             0.5*log(2*pi) +

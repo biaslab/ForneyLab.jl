@@ -11,8 +11,8 @@ type Edge <: AbstractEdge
     function Edge(var::AbstractVariable, a::Interface)
         current_graph = currentGraph()
         (a.partner == nothing && a.edge == nothing) || error("Interface is already connected to an Edge.")
-        hasNode(current_graph, a.node) || error("Node does not belong to the current graph.")
-        hasVariable(current_graph, var) || error("Variable does not belong to the current graph.")
+        hasNode(current_graph, a.node) || error("Node $(a.node.id) does not belong to the current graph.")
+        hasVariable(current_graph, var) || error("Variable $(var.id) does not belong to the current graph.")
 
         self = new(var, a, nothing)
         a.edge = self
@@ -32,7 +32,7 @@ Connect loose end of edge to interface b.
 function connect!(edge::Edge, b::Interface)
     (edge.b == nothing) || error("The edge does not have a loose end.")
     (b.partner == nothing && b.edge == nothing) || error("Interface is already connected to an Edge.")
-    hasNode(currentGraph(), b.node) || error("Node does not belong to the current graph.")
+    hasNode(currentGraph(), b.node) || error("Node $(b.node.id) does not belong to the current graph.")
     
     edge.b = b
     b.edge = edge

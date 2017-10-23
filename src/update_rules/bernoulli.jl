@@ -5,5 +5,5 @@
 
 @variationalRule(:node_type     => Bernoulli,
                  :outbound_type => Message{Bernoulli},
-                 :outbound_id   => 2,
+                 :inbound_types => (ProbabilityDistribution, Void),
                  :name          => VBBernoulli2)

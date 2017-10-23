@@ -20,11 +20,14 @@ end
 @testset "VBGamma3" begin
     @test VBGamma3 <: VariationalRule{Gamma}
     @test outboundType(VBGamma3) == Message{Gamma}
-    @test isApplicable(VBGamma3, 3) 
-    @test !isApplicable(VBGamma3, 2) 
+    @test isApplicable(VBGamma3, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
+    @test !isApplicable(VBGamma3, [ProbabilityDistribution, Void, ProbabilityDistribution]) 
 
     @test ruleVBGamma3(ProbabilityDistribution(PointMass, m=1.5), ProbabilityDistribution(PointMass, m=3.0), nothing) == Message(Gamma, a=1.5, b=3.0)
 end
 
+@testset "averageEnergy and differentialEntropy" begin
+    @test differentialEntropy(ProbabilityDistribution(Gamma, a=1.0, b=2.0)) == averageEnergy(Gamma, ProbabilityDistribution(PointMass, m=1.0), ProbabilityDistribution(PointMass, m=2.0), ProbabilityDistribution(Gamma, a=1.0, b=2.0))
+end
 
 end #module

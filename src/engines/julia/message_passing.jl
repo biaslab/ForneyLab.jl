@@ -1,30 +1,32 @@
 export load, freeEnergyAlgorithm
 
-function freeEnergyAlgorithm(recognition_factorization::RecognitionFactorization=currentRecognitionFactorization())
+function freeEnergyAlgorithm(recognition_factors::Vector{RecognitionFactor}=collect(values(current_recognition_factorization.recognition_factors)))
+    # Collect nodes connected to external edges
     nodes_connected_to_external_edges = Set{FactorNode}()
-    recognition_variables = Set{Variable}()
-    for rf in values(recognition_factorization.recognition_factors)
+    for rf in recognition_factors
         union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(rf))
-        union!(recognition_variables, rf.variables)
     end
 
     # Write evaluation function for free energy
-    code = "function freeEnergy(data::Dict, marginals::Dict)\n\n"
-    code *= "F = 0.0\n\n"
-
-    # Average energy block
+    energy_block = ""
+    entropy_block = ""
     for node in sort(collect(nodes_connected_to_external_edges))
+        # Average energy
         inbounds = collectMarginals(node)
         inbounds_str = join(inbounds, ", ")
         node_str = replace(string(typeof(node)),"ForneyLab.", "") # Remove module prefixes
-        code *= "F += averageEnergy($(node_str), $(inbounds_str))\n"
+        energy_block *= "F += averageEnergy($(node_str), $(inbounds_str))\n"
+        
+        # Differential entropy
+        if !(node.interfaces[end].partner == nothing) && !isa(node.interfaces[end].partner.node, Clamp)
+            entropy_block *= "F -= differentialEntropy(marginals[:$(node.interfaces[end].edge.variable.id)])\n"
+        end
     end
-    code *= "\n"
 
-    # Differential entropy block
-    for variable in sort(collect(recognition_variables))
-        code *= "F -= differentialEntropy(marginals[:$(variable.id)])\n"
-    end
+    # Combine blocks
+    code = "function freeEnergy(data::Dict, marginals::Dict)\n\n"
+    code *= "F = 0.0\n\n"
+    code *= energy_block*"\n"entropy_block
     code *= "\nreturn F\n" 
     code *= "end"
 
@@ -153,8 +155,7 @@ Collect and construct SP update code for each inbound.
 """
 function collectInbounds{T<:SumProductRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
     inbound_messages = String[]
-    node = entry.interface.node
-    for node_interface in node.interfaces
+    for node_interface in entry.interface.node.interfaces
         inbound_interface = node_interface.partner
         if node_interface == entry.interface
             # Ignore inbound message on outbound interface
@@ -177,23 +178,27 @@ Collect and construct VMP update code for each inbound.
 """
 function collectInbounds{T<:VariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
     # Collect inbounds
-    inbound_marginals = String[]
-    node = entry.interface.node
-    for node_interface in node.interfaces
+    inbounds = String[]
+    entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
+    for node_interface in entry.interface.node.interfaces
         inbound_interface = node_interface.partner
         partner_node = inbound_interface.node
         if node_interface == entry.interface
-            push!(inbound_marginals, "nothing") # Could also just push the marginal on the edge instead of "nothing"
+            push!(inbounds, "nothing") # Could also just push the marginal on the edge instead of "nothing"
         elseif isa(partner_node, Clamp)
             # Hard-code marginal of constant node in schedule
-            push!(inbound_marginals, marginalString(partner_node))
+            push!(inbounds, marginalString(partner_node))
+        elseif recognitionFactorId(node_interface.edge) == entry_recognition_factor_id
+            # Collect message from previous result
+            inbound_idx = interface_to_msg_idx[inbound_interface]
+            push!(inbounds, "messages[$inbound_idx]")
         else
             # Collect marginal from marginal dictionary
-            push!(inbound_marginals, "marginals[:$(node_interface.edge.variable.id)]")
+            push!(inbounds, "marginals[:$(node_interface.edge.variable.id)]")
         end
     end
 
-    return inbound_marginals
+    return inbounds
 end
 
 """
@@ -201,8 +206,7 @@ Collect and construct EP update code for each inbound.
 """
 function collectInbounds{T<:ExpectationPropagationRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
     inbound_messages = String[]
-    node = entry.interface.node
-    for node_interface in node.interfaces
+    for node_interface in entry.interface.node.interfaces
         inbound_interface = node_interface.partner
         if isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
@@ -213,7 +217,6 @@ function collectInbounds{T<:ExpectationPropagationRule}(entry::ScheduleEntry, ::
             push!(inbound_messages, "messages[$inbound_idx]")
         end
     end
-
     return inbound_messages
 end
 

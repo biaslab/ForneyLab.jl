@@ -1,29 +1,29 @@
 @variationalRule(:node_type     => GaussianMixture,
                  :outbound_type => Message{Gaussian},
-                 :outbound_id   => 1,
+                 :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution),
                  :name          => VBGaussianMixture1)
 
 @variationalRule(:node_type     => GaussianMixture,
                  :outbound_type => Message{Gamma},
-                 :outbound_id   => 2,
+                 :inbound_types => (ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution),
                  :name          => VBGaussianMixture2)
 
 @variationalRule(:node_type     => GaussianMixture,
                  :outbound_type => Message{Gaussian},
-                 :outbound_id   => 3,
+                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution),
                  :name          => VBGaussianMixture3)
 
 @variationalRule(:node_type     => GaussianMixture,
                  :outbound_type => Message{Gamma},
-                 :outbound_id   => 4,
+                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution),
                  :name          => VBGaussianMixture4)
 
 @variationalRule(:node_type     => GaussianMixture,
                  :outbound_type => Message{Bernoulli},
-                 :outbound_id   => 5,
+                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution),
                  :name          => VBGaussianMixture5)
 
 @variationalRule(:node_type     => GaussianMixture,
                  :outbound_type => Message{Gaussian},
-                 :outbound_id   => 6,
+                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void),
                  :name          => VBGaussianMixture6)

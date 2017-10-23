@@ -33,7 +33,7 @@ slug(::Type{Sigmoid}) = "σ"
 # Average energy functional
 function averageEnergy(::Type{Sigmoid}, marg_real::ProbabilityDistribution{Gaussian}, marg_bin::ProbabilityDistribution{Bernoulli})
     ensureParameters!(marg_real, (:m, :v))
-    h = (x -> log(0.5*erf(x) + 0.5 + tiny))   
+    h = (x -> log(0.5*erf(x) + 0.5 + tiny)) # Add `tiny` for numeric stability  
     
     (1 - marg_bin.params[:p])*gaussianQuadrature(h, m=-marg_real.params[:m], v=marg_real.params[:v]) +
     marg_bin.params[:p]*gaussianQuadrature(h, m=marg_real.params[:m], v=marg_real.params[:v])
