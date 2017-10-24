@@ -1,5 +1,8 @@
 export
 ProbabilityDistribution,
+Univariate,
+Multivariate,
+MatrixVariate,
 PointMass,
 @~,
 mean,
@@ -12,11 +15,22 @@ vague
 
 # TODO: correctness of distribution parameters is not enforced
 """Encodes a probability distribution as a FactorNode of type `family` with fixed interfaces"""
-immutable ProbabilityDistribution{family<:FactorNode}
-    params::Dict
+abstract ProbabilityDistribution{family<:FactorNode}
+
+"""Univariate ProbabilityDistribution"""
+immutable Univariate{family<:FactorNode} <: ProbabilityDistribution{family}
+   params::Dict 
 end
 
-ProbabilityDistribution{T<:SoftFactor}(family::Type{T}; kwargs...) = ProbabilityDistribution{family}(Dict(kwargs))
+"""Multivariate ProbabilityDistribution over a vector of length dims"""
+immutable Multivariate{family<:FactorNode, dims} <: ProbabilityDistribution{family}
+   params::Dict 
+end
+
+"""Matrix Variate ProbabilityDistribution over a matrix of size dims_m (rows) by dims_n (columns)"""
+immutable MatrixVariate{family<:FactorNode, dims_m, dims_n} <: ProbabilityDistribution{family}
+   params::Dict 
+end
 
 mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error("mean($(dist)) is undefined because the distribution is improper.")
 var(dist::ProbabilityDistribution) = isProper(dist) ? unsafeVar(dist) : error("var($(dist)) is undefined because the distribution is improper.")
@@ -28,23 +42,26 @@ It never occurs in a FactorGraph, but it is used as a probability distribution t
 """
 abstract PointMass <: DeltaFactor
 
-ProbabilityDistribution(family::Type{PointMass}; kwargs...) = ProbabilityDistribution{family}(Dict(kwargs))
+# PointMass distribution constructors
+Univariate(family::Type{PointMass}; m::Number=1.0) = Univariate{family}(Dict(:m=>m))
+Multivariate(family::Type{PointMass}; m::Vector=[1.0]) = Multivariate{family, length(m)}(Dict(:m=>m))
+MatrixVariate(family::Type{PointMass}; M::Matrix=[1.0].') = MatrixVariate{family, size(M, 1), size(M, 2)}(Dict(:M=>M))
 
-vague(::Type{ProbabilityDistribution{PointMass}}) = ProbabilityDistribution(PointMass, m=1.0)
+unsafeMean(dist::Univariate{PointMass}) = dist.params[:m]
+unsafeMean(dist::Multivariate{PointMass}) = deepcopy(dist.params[:m])
+unsafeMean(dist::MatrixVariate{PointMass}) = deepcopy(dist.params[:M])
 
-unsafeMean(dist::ProbabilityDistribution{PointMass}) = dist.params[:m]
+unsafeInverseMean(dist::Univariate{PointMass}) = 1.0/dist.params[:m]
 
-unsafeInverseMean(dist::ProbabilityDistribution{PointMass}) = 1.0/dist.params[:m]
+unsafeLogMean(dist::Univariate{PointMass}) = log(dist.params[:m])
 
-unsafeLogMean(dist::ProbabilityDistribution{PointMass}) = log(dist.params[:m])
+unsafeMirroredLogMean(dist::Univariate{PointMass}) = log(1.0 - dist.params[:m])
 
-unsafeMirroredLogMean(dist::ProbabilityDistribution{PointMass}) = log(1.0 - dist.params[:m])
+unsafeVar(dist::Univariate{PointMass}) = 0.0
+unsafeVar(dist::Multivariate{PointMass, dims}) = zeros(dims)
 
-unsafeVar(dist::ProbabilityDistribution{PointMass}) = 0.0
-
-unsafeCov(dist::ProbabilityDistribution{PointMass}) = 0.0
-
-mean(dist::ProbabilityDistribution{PointMass}) = unsafeMean(dist)
+unsafeCov(dist::Univariate{PointMass}) = 0.0
+unsafeCov(dist::Multivariate{PointMass, dims}) = zeros(dims, dims)
 
 isProper(::ProbabilityDistribution{PointMass}) = true
 

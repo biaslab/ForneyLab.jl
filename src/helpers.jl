@@ -13,13 +13,13 @@ ensureMatrix(n::Void) = nothing
 const huge = 1e12
 const tiny = 1e-12
 
-"""isValid: return true if the (first element of) the input is not NaN"""
-isValid(v::AbstractArray{Float64}) = !isnan(v[1])
-isValid(v::Float64) = !isnan(v)
+"""isValid: return true if the parameter field exists and (the first element of) the parameter is not NaN"""
+isValid(dist::ProbabilityDistribution, field::Symbol) = ( haskey(dist.params, field) && !isnan(dist.params[field][1]) )
 
-function invalidate!(v::AbstractArray{Float64})
-    v[1] = NaN
-    return v
+function invalidate!(dist::ProbabilityDistribution, field::Symbol)
+    if haskey(dist, field)
+        dist.params[field][1] = NaN
+    end
 end
 
 # Operations related to diagonal matrices
@@ -96,7 +96,7 @@ end
 isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < tiny
 
 """isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from."""
-isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round(Matrix(arr), round(Int, log(10, huge)))) && isposdef(Matrix(arr), :L)
+isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round(Matrix(arr), round(Int, log10(huge)))) && isposdef(Matrix(arr), :L)
 
 function viewFile(filename::AbstractString)
     # Open a file with the application associated with the file type

@@ -64,7 +64,9 @@ end
 end
 
 @testset "averageEnergy and differentialEntropy" begin
-    @test differentialEntropy(ProbabilityDistribution(Gaussian, m=0.0, v=2.0)) == averageEnergy(GaussianMeanVariance, ProbabilityDistribution(PointMass, m=0.0), ProbabilityDistribution(PointMass, m=2.0), ProbabilityDistribution(Gaussian, m=0.0, v=2.0))
+    @test differentialEntropy(Univariate(Gaussian, m=0.0, v=2.0)) == averageEnergy(GaussianMeanVariance, Univariate(PointMass, m=0.0), Univariate(PointMass, m=2.0), Univariate(Gaussian, m=0.0, v=2.0))
+    @test differentialEntropy(Univariate(Gaussian, m=0.0, v=2.0)) == differentialEntropy(Multivariate(Gaussian, m=[0.0], V=[2.0].'))
+    @test averageEnergy(GaussianMeanVariance, Univariate(PointMass, m=0.0), Univariate(PointMass, m=2.0), Univariate(Gaussian, m=0.0, v=2.0)) == averageEnergy(GaussianMeanVariance, Multivariate(PointMass, m=[0.0]), Multivariate(PointMass, m=[2.0]), Multivariate(Gaussian, m=[0.0], V=[2.0].'))
 end
 
 end #module
