@@ -66,6 +66,31 @@ end
     @test mean(point_mass) == [0.0].'
 end
 
+@testset "isValid" begin
+    # should check validity of distribution parameters
+    @test isValid(Univariate(PointMass, m=1.0), :m)
+    @test !isValid(Univariate(PointMass, m=NaN), :m)
+    @test isValid(Multivariate(PointMass, m=[1.0, 2.0]), :m)
+    @test !isValid(Multivariate(PointMass, m=[NaN, 2.0]), :m)
+    @test isValid(MatrixVariate(PointMass, M=eye(2)), :M)
+    @test !isValid(MatrixVariate(PointMass, M=[NaN 1.0; 2.0 3.0]), :M)
+    @test isValid(MatrixVariate(PointMass, M=Diagonal([1.0, 2.0])), :M)
+    @test !isValid(MatrixVariate(PointMass, M=Diagonal([NaN, 2.0])), :M)
+end
+
+@testset "invalidate!" begin
+    # should invalidate vectors and matrices
+    A = [1.0, 2.0]
+    @test isValid(invalidate!(A)) == false
+    @test isValid(A) == false
+    A = [1.0 2.0; 3.0 4.0]
+    @test isValid(invalidate!(A)) == false
+    @test isValid(A) == false
+    A = Diagonal([1.0, 2.0])
+    @test isValid(invalidate!(A)) == false
+    @test isValid(A) == false
+end
+
 @testset "gaussianQuadrature" begin
     @test gaussianQuadrature(x -> 1.0, m=-1.0, v=2.0) == 0.9999996733487053
     @test gaussianQuadrature(x -> x, m=-1.0, v=2.0) == -0.9999996733487055

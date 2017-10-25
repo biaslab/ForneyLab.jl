@@ -58,10 +58,10 @@ unsafeLogMean(dist::Univariate{PointMass}) = log(dist.params[:m])
 unsafeMirroredLogMean(dist::Univariate{PointMass}) = log(1.0 - dist.params[:m])
 
 unsafeVar(dist::Univariate{PointMass}) = 0.0
-unsafeVar(dist::Multivariate{PointMass, dims}) = zeros(dims)
+unsafeVar{dims}(dist::Multivariate{PointMass, dims}) = zeros(dims)
 
 unsafeCov(dist::Univariate{PointMass}) = 0.0
-unsafeCov(dist::Multivariate{PointMass, dims}) = zeros(dims, dims)
+unsafeCov{dims}(dist::Multivariate{PointMass, dims}) = zeros(dims, dims)
 
 isProper(::ProbabilityDistribution{PointMass}) = true
 
@@ -110,4 +110,13 @@ function gaussianQuadrature(h::Function; m::Float64=0.0, v::Float64=1.0)
     weights = [7.31068e-23, 9.23174e-19, 1.19734e-15, 4.21501e-13, 5.93329e-11, 4.09883e-9, 1.57417e-7, 3.65059e-6, 5.41658e-5, 0.000536268, 0.00365489, 0.0175534, 0.0604581, 0.15127, 0.277458, 0.375238, 0.375238, 0.277458, 0.15127, 0.0604581, 0.0175534, 0.00365489, 0.000536268, 5.41658e-5, 3.65059e-6, 1.57417e-7, 4.09883e-9, 5.93329e-11, 4.21501e-13, 1.19734e-15, 9.23174e-19, 7.31068e-23]
 
     1/sqrt(pi) * sum([weights[i]*h(sqrt(2*v)*abscissas[i] + m) for i=1:32])
+end
+
+"""isValid: return true if the parameter field exists and (the first element of) the parameter is not NaN"""
+isValid(dist::ProbabilityDistribution, field::Symbol) = ( haskey(dist.params, field) && !isnan(dist.params[field][1]) )
+
+function invalidate!(dist::ProbabilityDistribution, field::Symbol)
+    if haskey(dist, field)
+        dist.params[field][1] = NaN
+    end
 end

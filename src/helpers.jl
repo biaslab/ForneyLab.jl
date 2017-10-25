@@ -13,15 +13,6 @@ ensureMatrix(n::Void) = nothing
 const huge = 1e12
 const tiny = 1e-12
 
-"""isValid: return true if the parameter field exists and (the first element of) the parameter is not NaN"""
-isValid(dist::ProbabilityDistribution, field::Symbol) = ( haskey(dist.params, field) && !isnan(dist.params[field][1]) )
-
-function invalidate!(dist::ProbabilityDistribution, field::Symbol)
-    if haskey(dist, field)
-        dist.params[field][1] = NaN
-    end
-end
-
 # Operations related to diagonal matrices
 cholinv(M::Matrix) = inv(cholfact(Hermitian(M)))
 cholinv(D::Diagonal) = Diagonal(1./D.diag)

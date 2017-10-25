@@ -11,7 +11,6 @@ using Base.Test
     include("./test_factor_node.jl")
     include("./test_interface.jl")
     include("./test_probability_distribution.jl")
-    include("./test_approximation.jl")
     include("./test_edge.jl")
     include("./test_variable.jl")
     include("./test_factor_graph.jl")

@@ -42,7 +42,7 @@ function averageEnergy(::Type{GaussianMeanVariance}, marg_mean::Univariate, marg
     0.5*unsafeInverseMean(marg_var)*( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))^2 )
 end
 
-function averageEnergy{dims}(::Type{GaussianMeanVariance}, marg_mean::Multivariate{dims}, marg_var::MatrixVariate{dims, dims}, marg_out::Multivariate{dims})
+function averageEnergy{T<:FactorNode, U<:FactorNode, V<:FactorNode, dims}(::Type{GaussianMeanVariance}, marg_mean::Multivariate{T, dims}, marg_var::MatrixVariate{U, dims, dims}, marg_out::Multivariate{V, dims})
     0.5*dims*log(2*pi) +
     0.5*unsafeDetLogMean(marg_var) +
     0.5*trace( unsafeInverseMean(marg_var)*(unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))*(unsafeMean(marg_out) - unsafeMean(marg_mean))' ))

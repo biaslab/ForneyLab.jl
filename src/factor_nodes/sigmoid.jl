@@ -31,7 +31,7 @@ end
 slug(::Type{Sigmoid}) = "σ"
 
 # Average energy functional
-function averageEnergy(::Type{Sigmoid}, marg_real::ProbabilityDistribution{Gaussian}, marg_bin::ProbabilityDistribution{Bernoulli})
+function averageEnergy(::Type{Sigmoid}, marg_real::Univariate{Gaussian}, marg_bin::Univariate{Bernoulli})
     ensureParameters!(marg_real, (:m, :v))
     h = (x -> log(0.5*erf(x) + 0.5 + tiny)) # Add `tiny` for numeric stability  
     
@@ -39,10 +39,10 @@ function averageEnergy(::Type{Sigmoid}, marg_real::ProbabilityDistribution{Gauss
     marg_bin.params[:p]*gaussianQuadrature(h, m=marg_real.params[:m], v=marg_real.params[:v])
 end
 
-function averageEnergy(::Type{Sigmoid}, marg_real::ProbabilityDistribution{Gaussian}, marg_bin::ProbabilityDistribution{PointMass})
+function averageEnergy(::Type{Sigmoid}, marg_real::Univariate{Gaussian}, marg_bin::Univariate{PointMass})
     p = mapToBernoulliParameterRange(marg_bin.params[:m])
 
-    return averageEnergy(Sigmoid, marg_real, ProbabilityDistribution(Bernoulli, p=p))
+    return averageEnergy(Sigmoid, marg_real, Univariate(Bernoulli, p=p))
 end
 
 """

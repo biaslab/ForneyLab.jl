@@ -33,19 +33,19 @@ end
 
 slug(::Type{Bernoulli}) = "Ber"
 
-ProbabilityDistribution(::Type{Bernoulli}) = ProbabilityDistribution(Bernoulli, p=0.5)
+Univariate(::Type{Bernoulli}; p=0.5) = Univariate{Bernoulli}(Dict(p=>0.5))
 
-vague(::Type{ProbabilityDistribution{Bernoulli}}) = ProbabilityDistribution(Bernoulli, p=0.5)
+vague(::Type{Univariate{Bernoulli}}) = Univariate(Bernoulli, p=0.5)
 
-isProper(dist::ProbabilityDistribution{Bernoulli}) = (0 <= dist.params[:p] <= 1)
+isProper(dist::Univariate{Bernoulli}) = (0 <= dist.params[:p] <= 1)
 
-unsafeMean(dist::ProbabilityDistribution{Bernoulli}) = dist.params[:p]
+unsafeMean(dist::Univariate{Bernoulli}) = dist.params[:p]
 
-unsafeVar(dist::ProbabilityDistribution{Bernoulli}) = dist.params[:p]*(1-dist.params[:p])
+unsafeVar(dist::Univariate{Bernoulli}) = dist.params[:p]*(1-dist.params[:p])
 
-function prod!( x::ProbabilityDistribution{Bernoulli},
-                y::ProbabilityDistribution{Bernoulli},
-                z::ProbabilityDistribution{Bernoulli}=ProbabilityDistribution(Bernoulli, p=0.5))
+function prod!( x::Univariate{Bernoulli},
+                y::Univariate{Bernoulli},
+                z::Univariate{Bernoulli}=Univariate(Bernoulli, p=0.5))
 
     norm = x.params[:p] * y.params[:p] + (1 - x.params[:p]) * (1 - y.params[:p])
     (norm > 0) || error("Product of $(x) and $(y) cannot be normalized")
@@ -55,13 +55,13 @@ function prod!( x::ProbabilityDistribution{Bernoulli},
 end
 
 # Entropy functional
-function differentialEntropy(dist::ProbabilityDistribution{Bernoulli})
+function differentialEntropy(dist::Univariate{Bernoulli})
     -(1.0 - dist.params[:p])*log(1.0 - dist.params[:p]) -
     dist.params[:p]*log(dist.params[:p])
 end
 
 # Average energy functional
-function averageEnergy(::Type{Bernoulli}, marg_in::ProbabilityDistribution, marg_out::ProbabilityDistribution)
+function averageEnergy(::Type{Bernoulli}, marg_in::Univariate, marg_out::Univariate)
     -unsafeMean(marg_out)*unsafeLogMean(marg_in) -
     (1.0 - unsafeMean(marg_out))*unsafeMirroredLogMean(marg_in)
 end

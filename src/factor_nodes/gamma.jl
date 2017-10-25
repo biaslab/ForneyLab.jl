@@ -35,21 +35,21 @@ end
 
 slug(::Type{Gamma}) = "Gam"
 
-ProbabilityDistribution(::Type{Gamma}) = ProbabilityDistribution(Gamma, a=1.0, b=1.0)
+Univariate(::Type{Gamma}; a=1.0, b=1.0) = Univariate{Gamma}(Dict(a=>1.0, b=>1.0))
 
-vague(::Type{ProbabilityDistribution{Gamma}}) = ProbabilityDistribution(Gamma, a=1.0, b=tiny) # Flat prior leads to more stable behaviour than Jeffrey's prior
+vague(::Type{Univariate{Gamma}}) = Univariate(Gamma, a=1.0, b=tiny) # Flat prior leads to more stable behaviour than Jeffrey's prior
 
-unsafeMean(dist::ProbabilityDistribution{Gamma}) = dist.params[:a]/dist.params[:b] # unsafe mean
+unsafeMean(dist::Univariate{Gamma}) = dist.params[:a]/dist.params[:b] # unsafe mean
 
-unsafeLogMean(dist::ProbabilityDistribution{Gamma}) = digamma(dist.params[:a]) - log(dist.params[:b])
+unsafeLogMean(dist::Univariate{Gamma}) = digamma(dist.params[:a]) - log(dist.params[:b])
 
-unsafeVar(dist::ProbabilityDistribution{Gamma}) = dist.params[:a]/dist.params[:b]^2 # unsafe variance
+unsafeVar(dist::Univariate{Gamma}) = dist.params[:a]/dist.params[:b]^2 # unsafe variance
 
-isProper(dist::ProbabilityDistribution{Gamma}) = (dist.params[:a] >= tiny) && (dist.params[:b] >= tiny)
+isProper(dist::Univariate{Gamma}) = (dist.params[:a] >= tiny) && (dist.params[:b] >= tiny)
 
-function prod!( x::ProbabilityDistribution{Gamma},
-                y::ProbabilityDistribution{Gamma},
-                z::ProbabilityDistribution{Gamma}=ProbabilityDistribution(Gamma, a=0.0, b=0.0))
+function prod!( x::Univariate{Gamma},
+                y::Univariate{Gamma},
+                z::Univariate{Gamma}=Univariate(Gamma, a=0.0, b=0.0))
 
     z.params[:a] = x.params[:a] + y.params[:a] - 1.0
     z.params[:b] = x.params[:b] + y.params[:b]
@@ -58,7 +58,7 @@ function prod!( x::ProbabilityDistribution{Gamma},
 end
 
 # Entropy functional
-function differentialEntropy(dist::ProbabilityDistribution{Gamma})
+function differentialEntropy(dist::Univariate{Gamma})
     lgamma(dist.params[:a]) -
     (dist.params[:a] - 1.0)*digamma(dist.params[:a]) -
     log(dist.params[:b]) +
@@ -66,7 +66,7 @@ function differentialEntropy(dist::ProbabilityDistribution{Gamma})
 end
 
 # Average energy functional
-function averageEnergy(::Type{Gamma}, marg_a::ProbabilityDistribution{PointMass}, marg_b::ProbabilityDistribution, marg_out::ProbabilityDistribution)
+function averageEnergy(::Type{Gamma}, marg_a::Univariate{PointMass}, marg_b::Univariate, marg_out::Univariate)
     lgamma(marg_a.params[:m]) -
     marg_a.params[:m]*unsafeLogMean(marg_b) -
     (marg_a.params[:m] - 1.0)*unsafeLogMean(marg_out) +

@@ -43,12 +43,12 @@ slug(::Type{GaussianMixture}) = "GM"
 
 # Average energy functional
 function ForneyLab.averageEnergy(   ::Type{GaussianMixture},
-                                    marg_mean_1::ProbabilityDistribution,
-                                    marg_prec_1::ProbabilityDistribution, 
-                                    marg_mean_2::ProbabilityDistribution,
-                                    marg_prec_2::ProbabilityDistribution, 
-                                    marg_switch::ProbabilityDistribution{Bernoulli},
-                                    marg_out::ProbabilityDistribution)
+                                    marg_mean_1::Univariate,
+                                    marg_prec_1::Univariate, 
+                                    marg_mean_2::Univariate,
+                                    marg_prec_2::Univariate, 
+                                    marg_switch::Univariate{Bernoulli},
+                                    marg_out::Univariate)
 
     unsafeMean(marg_switch)*averageEnergy(GaussianMeanPrecision, marg_mean_1, marg_prec_1, marg_out) +
     (1.0 - unsafeMean(marg_switch))*averageEnergy(GaussianMeanPrecision, marg_mean_2, marg_prec_2, marg_out)

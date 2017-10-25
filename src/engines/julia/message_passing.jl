@@ -183,9 +183,7 @@ function collectInbounds{T<:VariationalRule}(entry::ScheduleEntry, ::Type{T}, in
     for node_interface in entry.interface.node.interfaces
         inbound_interface = node_interface.partner
         partner_node = inbound_interface.node
-        if node_interface == entry.interface
-            push!(inbounds, "nothing") # Could also just push the marginal on the edge instead of "nothing"
-        elseif isa(partner_node, Clamp)
+        if isa(partner_node, Clamp)
             # Hard-code marginal of constant node in schedule
             push!(inbounds, marginalString(partner_node))
         elseif recognitionFactorId(node_interface.edge) == entry_recognition_factor_id
@@ -194,6 +192,7 @@ function collectInbounds{T<:VariationalRule}(entry::ScheduleEntry, ::Type{T}, in
             push!(inbounds, "messages[$inbound_idx]")
         else
             # Collect marginal from marginal dictionary
+            # This also pushes the marginal on the inbound edge to the inbounds array (instead of "nothing")
             push!(inbounds, "marginals[:$(node_interface.edge.variable.id)]")
         end
     end

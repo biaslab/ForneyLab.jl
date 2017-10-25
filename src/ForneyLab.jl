@@ -16,7 +16,6 @@ abstract InferenceAlgorithm
 include("factor_node.jl")
 include("interface.jl")
 include("probability_distribution.jl")
-include("approximation.jl")
 include("edge.jl")
 include("variable.jl")
 

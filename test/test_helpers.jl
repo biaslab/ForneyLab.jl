@@ -33,33 +33,6 @@ import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, form
         @test isRoundedPosDef(Diagonal([1.0, 2.0, 3.0])) == true
     end
 
-    @testset "isValid" begin
-        # should check validity of scalars, vectors and matrices
-        @test isValid(1.0) == true
-        @test isValid(NaN) == false
-        @test isValid([1.0, 2.0]) == true
-        @test isValid([1.0, NaN]) == true
-        @test isValid([NaN, 2.0]) == false
-        @test isValid(eye(2)) == true
-        @test isValid([1.0 NaN; 2.0 3.0]) == true
-        @test isValid([NaN 1.0; 2.0 3.0]) == false
-        @test isValid(Diagonal([1.0, 2.0])) == true
-        @test isValid(Diagonal([NaN, 2.0])) == false
-    end
-
-    @testset "invalidate!" begin
-        # should invalidate vectors and matrices
-        A = [1.0, 2.0]
-        @test isValid(invalidate!(A)) == false
-        @test isValid(A) == false
-        A = [1.0 2.0; 3.0 4.0]
-        @test isValid(invalidate!(A)) == false
-        @test isValid(A) == false
-        A = Diagonal([1.0, 2.0])
-        @test isValid(invalidate!(A)) == false
-        @test isValid(A) == false
-    end
-
     @testset "cholinv" begin
         # should perform a matrix inversion on a positive (semi)definite matrix
         A = [2.0 1.0; 1.0 2.0]

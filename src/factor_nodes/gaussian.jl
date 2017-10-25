@@ -6,7 +6,7 @@ Univariate(family::Type{Gaussian}; kwargs...) = Univariate{family}(Dict(kwargs))
 Multivariate(family::Type{Gaussian}; kwargs...) = Multivariate{family, size(kwargs[1][2])[1]}(Dict(kwargs))
 
 vague(::Type{Univariate{Gaussian}}) = Univariate(Gaussian, m=0.0, v=huge)
-vague(::Type{Multivariate{Gaussian, dims}}) = Multivariate(Gaussian, m=zeros(dims), V=huge*diageye(dims))
+vague{dims}(::Type{Multivariate{Gaussian, dims}}) = Multivariate(Gaussian, m=zeros(dims), V=huge*diageye(dims))
 
 unsafeMean(dist::ProbabilityDistribution{Gaussian}) = deepcopy(ensureParameter!(dist, Val{:m}).params[:m]) # unsafe mean
 
@@ -67,7 +67,7 @@ function isWellDefined(dist::Multivariate{Gaussian})
 
     dimensions=0
     for field in [:m, :xi, :V, :W]
-        if haskey(dist.params, field) && isValid(dist.params[field]))
+        if isValid(dist, field)
             if dimensions>0
                 if maximum(size(dist.params[field])) != dimensions
                     return false
@@ -108,9 +108,9 @@ function prod!( x::Univariate{Gaussian},
     return z
 end
 
-function prod!( x::Multivariate{Gaussian, dims},
-                y::Multivariate{Gaussian, dims},
-                z::Multivariate{Gaussian, dims}=Multivariate(Gaussian, xi=zeros(dims), w=diageye(dims)))
+function prod!{dims}(x::Multivariate{Gaussian, dims},
+                     y::Multivariate{Gaussian, dims},
+                     z::Multivariate{Gaussian, dims}=Multivariate(Gaussian, xi=zeros(dims), w=diageye(dims)))
 
     ensureParameters!(x, (:xi, :W))
     ensureParameters!(y, (:xi, :W))
