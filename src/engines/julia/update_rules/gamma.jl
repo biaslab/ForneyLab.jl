@@ -1,6 +1,6 @@
-export ruleVBGamma3
+export ruleVBGammaOut
 
-ruleVBGamma3(   dist_a::ProbabilityDistribution,
-                dist_b::ProbabilityDistribution,
-                dist_out::Any) =
-    Message(Gamma, a=unsafeMean(dist_a), b=unsafeMean(dist_b))
+ruleVBGammaOut( dist_out::Any,
+                dist_a::Univariate,
+                dist_b::Univariate) =
+    Message(Univariate(Gamma, a=unsafeMean(dist_a), b=unsafeMean(dist_b)))

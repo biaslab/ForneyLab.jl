@@ -1,29 +1,29 @@
 @variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{Gaussian},
-                 :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution),
-                 :name          => VBGaussianMixture1)
+                 :outbound_type => Message{Univariate{Gaussian}},
+                 :inbound_types => (Univariate, Void, Univariate, Univariate, Univariate, Univariate),
+                 :name          => VBGaussianMixtureM1)
 
 @variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{Gamma},
-                 :inbound_types => (ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution),
-                 :name          => VBGaussianMixture2)
+                 :outbound_type => Message{Univariate{Gamma}},
+                 :inbound_types => (Univariate, Univariate, Void, Univariate, Univariate, Univariate),
+                 :name          => VBGaussianMixtureW1)
 
 @variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{Gaussian},
-                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution),
-                 :name          => VBGaussianMixture3)
+                 :outbound_type => Message{Univariate{Gaussian}},
+                 :inbound_types => (Univariate, Univariate, Univariate, Void, Univariate, Univariate),
+                 :name          => VBGaussianMixtureM2)
 
 @variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{Gamma},
-                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution),
-                 :name          => VBGaussianMixture4)
+                 :outbound_type => Message{Univariate{Gamma}},
+                 :inbound_types => (Univariate, Univariate, Univariate, Univariate, Void, Univariate),
+                 :name          => VBGaussianMixtureW2)
 
 @variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{Bernoulli},
-                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution),
-                 :name          => VBGaussianMixture5)
+                 :outbound_type => Message{Univariate{Bernoulli}},
+                 :inbound_types => (Univariate, Univariate, Univariate, Univariate, Univariate, Void),
+                 :name          => VBGaussianMixtureZ)
 
 @variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{Gaussian},
-                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void),
-                 :name          => VBGaussianMixture6)
+                 :outbound_type => Message{Univariate{Gaussian}},
+                 :inbound_types => (Void, Univariate, Univariate, Univariate, Univariate, Univariate),
+                 :name          => VBGaussianMixtureOut)

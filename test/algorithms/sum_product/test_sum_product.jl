@@ -2,7 +2,8 @@ module SumProductTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, SPClamp
+import ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
+import ForneyLab: SPClamp
 
 # Integration helper
 type MockNode <: FactorNode
@@ -24,36 +25,36 @@ type MockNode <: FactorNode
 end
 
 @sumProductRule(:node_type     => MockNode,
-                :outbound_type => Message{PointMass},
-                :inbound_types => (Message{PointMass}, Message{PointMass}, Void),
-                :name          => SPMockPPV)
+                :outbound_type => Message{Univariate{PointMass}},
+                :inbound_types => (Void, Message{Univariate{PointMass}}, Message{Univariate{PointMass}}),
+                :name          => SPMockOutPP)
 
 @testset "@SumProductRule" begin
-    @test SPMockPPV <: SumProductRule{MockNode}
+    @test SPMockOutPP <: SumProductRule{MockNode}
 end
 
 @testset "inferUpdateRule!" begin
     FactorGraph()
-    nd = MockNode([constant(0.0), constant(0.0), Variable()])
-    inferred_outbound_types = Dict(nd.i[1].partner => Message{PointMass}, nd.i[2].partner => Message{PointMass})
+    nd = MockNode([Variable(), constant(0.0), constant(0.0)])
+    inferred_outbound_types = Dict(nd.i[2].partner => Message{Univariate{PointMass}}, nd.i[3].partner => Message{Univariate{PointMass}})
 
-    entry = ScheduleEntry(nd.i[3], SumProductRule{MockNode})
+    entry = ScheduleEntry(nd.i[1], SumProductRule{MockNode})
     inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
 
-    @test entry.msg_update_rule == SPMockPPV
+    @test entry.msg_update_rule == SPMockOutPP
 end
 
 @testset "sumProductSchedule" begin
     FactorGraph()
     x = Variable()
-    nd = MockNode([constant(0.0), constant(0.0), x])
+    nd = MockNode([x, constant(0.0), constant(0.0)])
 
     schedule = sumProductSchedule(x)
 
     @test length(schedule) == 3
-    @test schedule[1] == ScheduleEntry(nd.i[1].partner, SPClamp)
-    @test schedule[2] == ScheduleEntry(nd.i[2].partner, SPClamp)
-    @test schedule[3] == ScheduleEntry(nd.i[3], SPMockPPV)
+    @test ScheduleEntry(nd.i[2].partner, SPClamp) in schedule
+    @test ScheduleEntry(nd.i[3].partner, SPClamp) in schedule
+    @test ScheduleEntry(nd.i[1], SPMockOutPP) in schedule
 end
 
 end # module

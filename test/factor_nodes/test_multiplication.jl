@@ -2,7 +2,8 @@ module MultiplicationTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, SPMultiplicationGPV, SPMultiplicationVPG
+import ForneyLab: outboundType, isApplicable
+import ForneyLab: SPMultiplicationOutGP, SPMultiplicationInGP
 
 @testset "Multiplication node construction through * syntax" begin
     g = FactorGraph()
@@ -20,24 +21,24 @@ end
 # Update rules
 #-------------
 
-@testset "SPMultiplicationGPV" begin
-    @test SPMultiplicationGPV <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationGPV) == Message{Gaussian}
-    @test isApplicable(SPMultiplicationGPV, [Message{Gaussian}, Message{PointMass}, Void]) 
-    @test !isApplicable(SPMultiplicationGPV, [Message{PointMass}, Message{Gaussian}, Void]) 
-    @test !isApplicable(SPMultiplicationGPV, [Void, Message{PointMass}, Message{Gaussian}]) 
+@testset "SPMultiplicationOutGP" begin
+    @test SPMultiplicationOutGP <: SumProductRule{Multiplication}
+    @test outboundType(SPMultiplicationOutGP) == Message{Univariate{Gaussian}}
+    @test isApplicable(SPMultiplicationOutGP, [Void, Message{Univariate{Gaussian}}, Message{Univariate{PointMass}}]) 
+    @test !isApplicable(SPMultiplicationOutGP, [Void, Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}]) 
+    @test !isApplicable(SPMultiplicationOutGP, [Message{Univariate{Gaussian}}, Void, Message{Univariate{PointMass}}]) 
 
-    @test ruleSPMultiplicationGPV(Message(Gaussian, m=1.0, v=3.0), Message(PointMass, m=2.0), nothing) == Message(Gaussian, m=2.0, v=12.0)
+    @test ruleSPMultiplicationOutGP(nothing, Message(Univariate(Gaussian, m=1.0, v=3.0)), Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=2.0, v=12.0))
 end
 
-@testset "SPMultiplicationVPG" begin
-    @test SPMultiplicationVPG <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationVPG) == Message{Gaussian}
-    @test !isApplicable(SPMultiplicationVPG, [Message{Gaussian}, Message{PointMass}, Void]) 
-    @test !isApplicable(SPMultiplicationVPG, [Void, Message{Gaussian}, Message{PointMass}]) 
-    @test isApplicable(SPMultiplicationVPG, [Void, Message{PointMass}, Message{Gaussian}]) 
+@testset "SPMultiplicationInGP" begin
+    @test SPMultiplicationInGP <: SumProductRule{Multiplication}
+    @test outboundType(SPMultiplicationInGP) == Message{Univariate{Gaussian}}
+    @test !isApplicable(SPMultiplicationInGP, [Void, Message{Univariate{Gaussian}}, Message{Univariate{PointMass}}]) 
+    @test !isApplicable(SPMultiplicationInGP, [Message{Univariate{PointMass}}, Void, Message{Univariate{Gaussian}}]) 
+    @test isApplicable(SPMultiplicationInGP, [Message{Univariate{Gaussian}}, Void, Message{Univariate{PointMass}}]) 
 
-    @test ruleSPMultiplicationVPG(nothing, Message(PointMass, m=2.0), Message(Gaussian, m=1.0, v=3.0)) == Message(Gaussian, m=0.5, v=0.75)
+    @test ruleSPMultiplicationInGP(Message(Univariate(Gaussian, m=1.0, v=3.0)), nothing, Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=0.5, v=0.75))
 end
 
 end # module

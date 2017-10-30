@@ -1,16 +1,16 @@
 @sumProductRule(:node_type     => Sigmoid,
-                :outbound_type => Message{Bernoulli},
-                :inbound_types => (Message{Gaussian}, Void),
-                :name          => SPSigmoidGV)
+                :outbound_type => Message{Univariate{Bernoulli}},
+                :inbound_types => (Void, Message{Univariate{Gaussian}}),
+                :name          => SPSigmoidBinG)
 
 @expectationPropagationRule(:node_type     => Sigmoid,
-                            :outbound_type => Message{Gaussian},
-                            :inbound_types => (Message{Gaussian}, Message{Bernoulli}),
-                            :outbound_id   => 1,
-                            :name          => EPSigmoidGB1)
+                            :outbound_type => Message{Univariate{Gaussian}},
+                            :inbound_types => (Message{Univariate{Bernoulli}}, Message{Univariate{Gaussian}}),
+                            :outbound_id   => 2,
+                            :name          => EPSigmoidRealGB)
 
 @expectationPropagationRule(:node_type     => Sigmoid,
-                            :outbound_type => Message{Gaussian},
-                            :inbound_types => (Message{Gaussian}, Message{PointMass}),
-                            :outbound_id   => 1,
-                            :name          => EPSigmoidGP1)
+                            :outbound_type => Message{Univariate{Gaussian}},
+                            :inbound_types => (Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}),
+                            :outbound_id   => 2,
+                            :name          => EPSigmoidRealGP)

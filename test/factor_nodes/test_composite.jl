@@ -2,11 +2,12 @@ module CompositeTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: @composite, outboundType, isApplicable, SPClamp, SPGaussianMeanVariancePPV
+import ForneyLab: @composite, outboundType, isApplicable
+import ForneyLab: SPClamp, SPGaussianMeanVarianceOutPP
 
 
-# Define new node type called StateTransition, with exposed variables called (x_prev, x, y):
-@composite StateTransition (x_prev, x, y) begin
+# Define new node type called StateTransition, with exposed variables called (y, x_prev, x):
+@composite StateTransition (y, x_prev, x) begin
     x ~ GaussianMeanVariance(x_prev, constant(1.0))
     y ~ GaussianMeanVariance(x, constant(1.0))
 end
@@ -45,15 +46,15 @@ end
 
 # Define custom rule for sum-product message towards x
 @sumProductRule(:node_type     => StateTransition,
-                :outbound_type => Message{Gaussian},
-                :inbound_types => (Message{Gaussian}, Void, Message{PointMass}),
-                :name          => SPStateTransitionGVP)
+                :outbound_type => Message{Univariate{Gaussian}},
+                :inbound_types => (Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}, Void),
+                :name          => SPStateTransitionX)
 
-@testset "Custom SPStateTransitionGVP" begin
-    @test SPStateTransitionGVP <: SumProductRule{StateTransition}
-    @test outboundType(SPStateTransitionGVP) == Message{Gaussian}
-    @test isApplicable(SPStateTransitionGVP, [Message{Gaussian}, Void, Message{PointMass}]) 
-    @test !isApplicable(SPStateTransitionGVP, [Message{PointMass}, Void, Message{Gaussian}]) 
+@testset "Custom SPStateTransitionX" begin
+    @test SPStateTransitionX <: SumProductRule{StateTransition}
+    @test outboundType(SPStateTransitionX) == Message{Univariate{Gaussian}}
+    @test isApplicable(SPStateTransitionX, [Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}, Void]) 
+    @test !isApplicable(SPStateTransitionX, [Message{Univariate{Gaussian}}, Message{Univariate{PointMass}}, Void]) 
 end
 
 @testset "Composite node scheduling and algorithm compilation" begin
@@ -63,36 +64,36 @@ end
     nd = GaussianMeanVariance(x_prev, constant(0.0), constant(1.0))
     x = Variable(id=:x)
     y = Variable(id=:y)
-    cnd = StateTransition(x_prev, x, placeholder(y, :y))
+    cnd = StateTransition(placeholder(y, :y), x_prev, x)
 
     # Build SP schedule
     schedule = sumProductSchedule(x)
     @test length(schedule) == 5
-    @test schedule[1] == ScheduleEntry(nd.i[:m].partner, SPClamp)
-    @test schedule[2] == ScheduleEntry(nd.i[:v].partner, SPClamp)
-    @test schedule[3] == ScheduleEntry(nd.i[:out], SPGaussianMeanVariancePPV)
-    @test schedule[4] == ScheduleEntry(cnd.i[:y].partner, SPClamp)
-    @test schedule[5] == ScheduleEntry(cnd.i[:x], SPStateTransitionGVP)
+    @test ScheduleEntry(nd.i[:m].partner, SPClamp) in schedule
+    @test ScheduleEntry(nd.i[:v].partner, SPClamp) in schedule
+    @test ScheduleEntry(nd.i[:out], SPGaussianMeanVarianceOutPP) in schedule
+    @test ScheduleEntry(cnd.i[:y].partner, SPClamp) in schedule
+    @test ScheduleEntry(cnd.i[:x], SPStateTransitionX) in schedule
 
     # Build SP algorithm for Julia execution
     algo = ForneyLab.messagePassingAlgorithm(schedule, x)
     @test contains(algo, "Array{Message}(2)")
-    @test contains(algo, "messages[1] = ruleSPGaussianMeanVariancePPV(Message(PointMass, m=0.0), Message(PointMass, m=1.0), nothing)")
-    @test contains(algo, "messages[2] = ruleSPStateTransitionGVP(messages[1], nothing, Message(PointMass, m=data[:y]))")
+    @test contains(algo, "messages[1] = ruleSPGaussianMeanVarianceOutPP(nothing, Message(Univariate(PointMass, m=0.0)), Message(Univariate(PointMass, m=1.0)))")
+    @test contains(algo, "messages[2] = ruleSPStateTransitionX(Message(Univariate(PointMass, m=data[:y])), messages[1], nothing)")
     @test contains(algo, "marginals[:x] = messages[2].dist")
 end
 
 @testset "Composite node algorithm execution" begin
     # Implement custom rule for Julia execution
-    ruleSPStateTransitionGVP(::Message{Gaussian}, ::Void, ::Message{PointMass}) = Message(Gaussian, m=2.0, v=3.0) # Send some dummy message
+    ruleSPStateTransitionX(::Message{Univariate{PointMass}}, ::Message{Univariate{Gaussian}}, ::Void) = Message(Univariate(Gaussian, m=2.0, v=3.0)) # Send some dummy message
 
     # Resulting algorithm ---
     function step!(marginals::Dict, data::Dict)
 
     messages = Array{Message}(2)
 
-    messages[1] = ruleSPGaussianMeanVariancePPV(Message(PointMass, m=0.0), Message(PointMass, m=1.0), nothing)
-    messages[2] = ruleSPStateTransitionGVP(messages[1], nothing, Message(PointMass, m=data[:y]))
+    messages[1] = ruleSPGaussianMeanVarianceOutPP(nothing, Message(Univariate(PointMass, m=0.0)), Message(Univariate(PointMass, m=1.0)))
+    messages[2] = ruleSPStateTransitionX(Message(Univariate(PointMass, m=data[:y])), messages[1], nothing)
 
     marginals[:x] = messages[2].dist
 
@@ -103,7 +104,7 @@ end
     data = Dict(:y => 1.0)
     step!(marginals, data)
 
-    @test marginals[:x] == ProbabilityDistribution(Gaussian, m=2.0, v=3.0)
+    @test marginals[:x] == Univariate(Gaussian, m=2.0, v=3.0)
 end
 
 end #module

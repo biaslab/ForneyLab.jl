@@ -4,11 +4,11 @@ export Sigmoid
 Description:
     Constrains a continuous, real-valued variable with a binary (boolean) variable.
 
-    f(x,y) = σ(x⋅y)
+    f(bin, real) = σ(bin⋅real)
 
 Interfaces:
-    1. real
-    2. bin
+    1. bin
+    2. real
 
 Construction:
     Sigmoid(id=:some_id)
@@ -21,8 +21,8 @@ type Sigmoid <: SoftFactor
     function Sigmoid(bin::Variable, real::Variable; id=generateId(Sigmoid))
         self = new(id, Array(Interface, 2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
-        self.i[:real] = self.interfaces[1] = associate!(Interface(self), real)
-        self.i[:bin] = self.interfaces[2] = associate!(Interface(self), bin)
+        self.i[:bin] = self.interfaces[1] = associate!(Interface(self), bin)
+        self.i[:real] = self.interfaces[2] = associate!(Interface(self), real)
 
         return self
     end
@@ -31,7 +31,7 @@ end
 slug(::Type{Sigmoid}) = "σ"
 
 # Average energy functional
-function averageEnergy(::Type{Sigmoid}, marg_real::Univariate{Gaussian}, marg_bin::Univariate{Bernoulli})
+function averageEnergy(::Type{Sigmoid}, marg_bin::Univariate{Bernoulli}, marg_real::Univariate{Gaussian})
     ensureParameters!(marg_real, (:m, :v))
     h = (x -> log(0.5*erf(x) + 0.5 + tiny)) # Add `tiny` for numeric stability  
     
@@ -39,10 +39,10 @@ function averageEnergy(::Type{Sigmoid}, marg_real::Univariate{Gaussian}, marg_bi
     marg_bin.params[:p]*gaussianQuadrature(h, m=marg_real.params[:m], v=marg_real.params[:v])
 end
 
-function averageEnergy(::Type{Sigmoid}, marg_real::Univariate{Gaussian}, marg_bin::Univariate{PointMass})
+function averageEnergy(::Type{Sigmoid}, marg_bin::Univariate{PointMass}, marg_real::Univariate{Gaussian})
     p = mapToBernoulliParameterRange(marg_bin.params[:m])
 
-    return averageEnergy(Sigmoid, marg_real, Univariate(Bernoulli, p=p))
+    return averageEnergy(Sigmoid, Univariate(Bernoulli, p=p), marg_real)
 end
 
 """

@@ -1,30 +1,35 @@
-export ruleSPGaussianMeanVariancePPV, ruleSPGaussianMeanVarianceVPP, ruleSPGaussianMeanVarianceGPV, ruleSPGaussianMeanVarianceVPG, ruleVBGaussianMeanVariance1, ruleVBGaussianMeanVariance3
+export
+ruleSPGaussianMeanVarianceOutPP,
+ruleSPGaussianMeanVarianceMPP,
+ruleSPGaussianMeanVarianceOutGP, 
+ruleSPGaussianMeanVarianceMPG, 
+ruleVBGaussianMeanVarianceM,
+ruleVBGaussianMeanVarianceOut
 
-# TODO: in-place operation on outbound?
-ruleSPGaussianMeanVariancePPV(  msg_mean::Message{PointMass},
-                                msg_var::Message{PointMass},
-                                msg_out::Void) =
-    Message(Gaussian, m=msg_mean.dist.params[:m], v=msg_var.dist.params[:m])
+ruleSPGaussianMeanVarianceOutPP(msg_out::Void,
+                                msg_mean::Message{Univariate{PointMass}},
+                                msg_var::Message{Univariate{PointMass}}) =
+    Message(Univariate(Gaussian, m=msg_mean.dist.params[:m], v=msg_var.dist.params[:m]))
 
-ruleSPGaussianMeanVarianceVPP(msg_mean::Void, msg_var::Message{PointMass}, msg_out::Message{PointMass}) = ruleSPGaussianMeanVariancePPV(msg_out, msg_var, msg_mean)
+ruleSPGaussianMeanVarianceMPP(msg_out::Message{Univariate{PointMass}}, msg_mean::Void, msg_var::Message{Univariate{PointMass}}) = ruleSPGaussianMeanVarianceOutPP(msg_mean, msg_out, msg_var)
 
-function ruleSPGaussianMeanVarianceGPV( msg_mean::Message{Gaussian},
-                                        msg_var::Message{PointMass},
-                                        msg_out::Void)
+function ruleSPGaussianMeanVarianceOutGP(   msg_out::Void,
+                                            msg_mean::Message{Univariate{Gaussian}},
+                                            msg_var::Message{Univariate{PointMass}})
 
     ensureParameters!(msg_mean.dist, (:m, :v))
 
-    Message(Gaussian, m=msg_mean.dist.params[:m], v=msg_mean.dist.params[:v] + msg_var.dist.params[:m])
+    Message(Univariate(Gaussian, m=msg_mean.dist.params[:m], v=msg_mean.dist.params[:v] + msg_var.dist.params[:m]))
 end
 
-ruleSPGaussianMeanVarianceVPG(msg_mean::Void, msg_var::Message{PointMass}, msg_out::Message{Gaussian}) = ruleSPGaussianMeanVarianceGPV(msg_out, msg_var, msg_mean)
+ruleSPGaussianMeanVarianceMPG(msg_out::Message{Univariate{Gaussian}}, msg_mean::Void, msg_var::Message{Univariate{PointMass}}) = ruleSPGaussianMeanVarianceOutGP(msg_mean, msg_out, msg_var)
 
-ruleVBGaussianMeanVariance1(dist_mean::Any,
-                            dist_var::ProbabilityDistribution,
-                            dist_out::ProbabilityDistribution) =
-    Message(Gaussian, m=unsafeMean(dist_out), v=unsafeMean(dist_var))
+ruleVBGaussianMeanVarianceM(dist_out::Univariate,
+                            dist_mean::Any,
+                            dist_var::Univariate) =
+    Message(Univariate(Gaussian, m=unsafeMean(dist_out), v=unsafeMean(dist_var)))
 
-ruleVBGaussianMeanVariance3(dist_mean::ProbabilityDistribution,
-                            dist_var::ProbabilityDistribution,
-                            dist_out::Any) =
-    Message(Gaussian, m=unsafeMean(dist_mean), v=unsafeMean(dist_var))
+ruleVBGaussianMeanVarianceOut(  dist_out::Any,
+                                dist_mean::Univariate,
+                                dist_var::Univariate) =
+    Message(Univariate(Gaussian, m=unsafeMean(dist_mean), v=unsafeMean(dist_var)))

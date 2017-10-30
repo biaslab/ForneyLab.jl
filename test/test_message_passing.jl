@@ -4,11 +4,10 @@ using Base.Test
 using ForneyLab
 import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule
 
-# TODO: handle scaling factors
 @testset "Message" begin
-    @test Message(PointMass, m=0.0) == Message(PointMass, m=0.0)
-    @test Message(PointMass, m=0.0) != Message(GaussianMeanVariance, m=0.0, v=1.0)
-    @test Message(PointMass, m=0.0) != Message(PointMass, m=1.0)
+    @test Message(Univariate(PointMass, m=0.0)) == Message(Univariate(PointMass, m=0.0))
+    @test Message(Univariate(PointMass, m=0.0)) != Message(Univariate(Gaussian, m=0.0, v=1.0))
+    @test Message(Univariate(PointMass, m=0.0)) != Message(Univariate(PointMass, m=1.0))
 end
 
 # Integration helper
@@ -62,11 +61,12 @@ end
 
     schedule = summaryPropagationSchedule(d)
 
-    @test schedule == [ ScheduleEntry(n1.i[1], Void),
-                        ScheduleEntry(n2.i[2], Void),
-                        ScheduleEntry(n4.i[1], Void),
-                        ScheduleEntry(n3.i[3], Void),
-                        ScheduleEntry(n5.i[1], Void)]
+    @test length(schedule) == 5
+    @test ScheduleEntry(n1.i[1], Void) in schedule
+    @test ScheduleEntry(n2.i[2], Void) in schedule
+    @test ScheduleEntry(n4.i[1], Void) in schedule
+    @test ScheduleEntry(n3.i[3], Void) in schedule
+    @test ScheduleEntry(n5.i[1], Void) in schedule
 end
 
 end # module

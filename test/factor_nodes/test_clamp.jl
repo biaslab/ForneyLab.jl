@@ -2,7 +2,8 @@ module ClampTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, SPClamp
+import ForneyLab: outboundType, isApplicable
+import ForneyLab: SPClamp
 
 @testset "Clamp" begin
     g = FactorGraph()
@@ -49,7 +50,7 @@ end
 
 @testset "SPClamp" begin
     @test SPClamp <: SumProductRule{Clamp}
-    @test outboundType(SPClamp) == Message{PointMass}
+    @test outboundType(SPClamp) == Message{Univariate{PointMass}}
     @test isApplicable(SPClamp, DataType[]) 
 end
 

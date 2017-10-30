@@ -2,41 +2,42 @@ module BernoulliTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, SPBernoulliPV, VBBernoulli2
+import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar
+import ForneyLab: SPBernoulliOutP, VBBernoulliOut
 
 @testset "unsafe mean and variance" begin
-    @test unsafeMean(ProbabilityDistribution(Bernoulli, p=0.2)) == 0.2
-    @test unsafeVar(ProbabilityDistribution(Bernoulli, p=0.5)) == 0.25
+    @test unsafeMean(Univariate(Bernoulli, p=0.2)) == 0.2
+    @test unsafeVar(Univariate(Bernoulli, p=0.5)) == 0.25
 end
 
 @testset "prod!" begin
-    @test ProbabilityDistribution(Bernoulli, p=0.2) * ProbabilityDistribution(Bernoulli, p=0.8) == ProbabilityDistribution(Bernoulli, p=0.5000000000000001)
-    @test_throws Exception ProbabilityDistribution(Bernoulli, p=0.0) * ProbabilityDistribution(Bernoulli, p=1.0)
+    @test Univariate(Bernoulli, p=0.2) * Univariate(Bernoulli, p=0.8) == Univariate(Bernoulli, p=0.5000000000000001)
+    @test_throws Exception Univariate(Bernoulli, p=0.0) * Univariate(Bernoulli, p=1.0)
 end
 
 #-------------
 # Update rules
 #-------------
 
-@testset "SPBernoulliPV" begin
-    @test SPBernoulliPV <: SumProductRule{Bernoulli}
-    @test outboundType(SPBernoulliPV) == Message{Bernoulli}
-    @test isApplicable(SPBernoulliPV, [Message{PointMass}, Void]) 
+@testset "SPBernoulliOutP" begin
+    @test SPBernoulliOutP <: SumProductRule{Bernoulli}
+    @test outboundType(SPBernoulliOutP) == Message{Univariate{Bernoulli}}
+    @test isApplicable(SPBernoulliOutP, [Void, Message{Univariate{PointMass}}]) 
 
-    @test ruleSPBernoulliPV(Message(PointMass, m=0.2), nothing) == Message(Bernoulli, p=0.2)
+    @test ruleSPBernoulliOutP(nothing, Message(Univariate(PointMass, m=0.2))) == Message(Univariate(Bernoulli, p=0.2))
 end
 
-@testset "VBBernoulli2" begin
-    @test VBBernoulli2 <: VariationalRule{Bernoulli}
-    @test outboundType(VBBernoulli2) == Message{Bernoulli}
-    @test isApplicable(VBBernoulli2, [ProbabilityDistribution, Void])
-    @test !isApplicable(VBBernoulli2, [Void, ProbabilityDistribution])
+@testset "VBBernoulliOut" begin
+    @test VBBernoulliOut <: VariationalRule{Bernoulli}
+    @test outboundType(VBBernoulliOut) == Message{Univariate{Bernoulli}}
+    @test isApplicable(VBBernoulliOut, [Void, Univariate])
+    @test !isApplicable(VBBernoulliOut, [Univariate, Void])
 
-    @test ruleVBBernoulli2(ProbabilityDistribution(PointMass, m=0.2), nothing) == Message(Bernoulli, p=0.2)
+    @test ruleVBBernoulliOut(nothing, Univariate(PointMass, m=0.2)) == Message(Univariate(Bernoulli, p=0.2))
 end
 
 @testset "averageEnergy and differentialEntropy" begin
-    @test differentialEntropy(ProbabilityDistribution(Bernoulli, p=0.25)) == averageEnergy(Bernoulli, ProbabilityDistribution(PointMass, m=0.25), ProbabilityDistribution(Bernoulli, p=0.25))
+    @test differentialEntropy(Univariate(Bernoulli, p=0.25)) == averageEnergy(Bernoulli, Univariate(Bernoulli, p=0.25), Univariate(PointMass, m=0.25))
 end
 
 end # module

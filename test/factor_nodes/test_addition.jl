@@ -2,7 +2,8 @@ module AdditionTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, SPAdditionGGV, SPAdditionGVG, SPAdditionVGG, SPAdditionVGP, SPAdditionGPV, SPAdditionPGV
+import ForneyLab: outboundType, isApplicable
+import ForneyLab: SPAdditionOutGG, SPAdditionOutGP, SPAdditionOutPG, SPAdditionIn1GG, SPAdditionIn1PG, SPAdditionIn2GG
 
 @testset "Addition node construction through + syntax" begin
     g = FactorGraph()
@@ -20,53 +21,53 @@ end
 # Update rules
 #-------------
 
-@testset "SPAdditionGGV" begin
-    @test SPAdditionGGV <: SumProductRule{Addition}
-    @test outboundType(SPAdditionGGV) == Message{Gaussian}
-    @test isApplicable(SPAdditionGGV, [Message{Gaussian}, Message{Gaussian}, Void]) 
-    @test !isApplicable(SPAdditionGGV, [Message{PointMass}, Message{PointMass}, Void]) 
-    @test !isApplicable(SPAdditionGGV, [Void, Message{Gaussian}, Message{Gaussian}]) 
+@testset "SPAdditionOutGG" begin
+    @test SPAdditionOutGG <: SumProductRule{Addition}
+    @test outboundType(SPAdditionOutGG) == Message{Univariate{Gaussian}}
+    @test isApplicable(SPAdditionOutGG, [Void, Message{Univariate{Gaussian}}, Message{Univariate{Gaussian}}])
+    @test !isApplicable(SPAdditionOutGG, [Void, Message{Univariate{PointMass}}, Message{Univariate{PointMass}}])
+    @test !isApplicable(SPAdditionOutGG, [Message{Univariate{Gaussian}}, Message{Univariate{Gaussian}}, Void])
 
-    @test ruleSPAdditionGGV(Message(Gaussian, m=1.0, v=2.0), Message(Gaussian, m=3.0, v=4.0), nothing) == Message(Gaussian, m=4.0, v=6.0)
+    @test ruleSPAdditionOutGG(nothing, Message(Univariate(Gaussian, m=1.0, v=2.0)), Message(Univariate(Gaussian, m=3.0, v=4.0))) == Message(Univariate(Gaussian, m=4.0, v=6.0))
 end
 
-@testset "SPAdditionGVG" begin
-    @test SPAdditionGVG <: SumProductRule{Addition}
-    @test outboundType(SPAdditionGVG) == Message{Gaussian}
-    @test isApplicable(SPAdditionGVG, [Message{Gaussian}, Void, Message{Gaussian}]) 
+@testset "SPAdditionIn2GG" begin
+    @test SPAdditionIn2GG <: SumProductRule{Addition}
+    @test outboundType(SPAdditionIn2GG) == Message{Univariate{Gaussian}}
+    @test isApplicable(SPAdditionIn2GG, [Message{Univariate{Gaussian}}, Message{Univariate{Gaussian}}, Void])
 
-    @test ruleSPAdditionGVG(Message(Gaussian, m=1.0, v=2.0), nothing, Message(Gaussian, m=3.0, v=4.0)) == Message(Gaussian, m=2.0, v=6.0)
+    @test ruleSPAdditionIn2GG(Message(Univariate(Gaussian, m=3.0, v=4.0)), Message(Univariate(Gaussian, m=1.0, v=2.0)), nothing) == Message(Univariate(Gaussian, m=2.0, v=6.0))
 end
 
-@testset "SPAdditionVGG" begin
-    @test SPAdditionVGG <: SumProductRule{Addition}
-    @test outboundType(SPAdditionVGG) == Message{Gaussian}
-    @test isApplicable(SPAdditionVGG, [Void, Message{Gaussian}, Message{Gaussian}]) 
+@testset "SPAdditionIn1GG" begin
+    @test SPAdditionIn1GG <: SumProductRule{Addition}
+    @test outboundType(SPAdditionIn1GG) == Message{Univariate{Gaussian}}
+    @test isApplicable(SPAdditionIn1GG, [Message{Univariate{Gaussian}}, Void, Message{Univariate{Gaussian}}])
 
-    @test ruleSPAdditionVGG(nothing, Message(Gaussian, m=1.0, v=2.0), Message(Gaussian, m=3.0, v=4.0)) == Message(Gaussian, m=2.0, v=6.0)
+    @test ruleSPAdditionIn1GG(Message(Univariate(Gaussian, m=3.0, v=4.0)), nothing, Message(Univariate(Gaussian, m=1.0, v=2.0))) == Message(Univariate(Gaussian, m=2.0, v=6.0))
 end
 
-@testset "SPAdditionGPV" begin
-    @test SPAdditionGPV <: SumProductRule{Addition}
-    @test outboundType(SPAdditionGPV) == Message{Gaussian}
-    @test isApplicable(SPAdditionGPV, [Message{Gaussian}, Message{PointMass}, Void]) 
+@testset "SPAdditionOutGP" begin
+    @test SPAdditionOutGP <: SumProductRule{Addition}
+    @test outboundType(SPAdditionOutGP) == Message{Univariate{Gaussian}}
+    @test isApplicable(SPAdditionOutGP, [Void, Message{Univariate{Gaussian}}, Message{Univariate{PointMass}}])
 
-    @test ruleSPAdditionGPV(Message(Gaussian, m=1.0, v=2.0), Message(PointMass, m=3.0), nothing) == Message(Gaussian, m=4.0, v=2.0)
+    @test ruleSPAdditionOutGP(nothing, Message(Univariate(Gaussian, m=1.0, v=2.0)), Message(Univariate(PointMass, m=3.0))) == Message(Univariate(Gaussian, m=4.0, v=2.0))
 end
 
-@testset "SPAdditionPGV" begin
-    @test SPAdditionPGV <: SumProductRule{Addition}
-    @test outboundType(SPAdditionPGV) == Message{Gaussian}
-    @test isApplicable(SPAdditionPGV, [Message{PointMass}, Message{Gaussian}, Void]) 
+@testset "SPAdditionOutPG" begin
+    @test SPAdditionOutPG <: SumProductRule{Addition}
+    @test outboundType(SPAdditionOutPG) == Message{Univariate{Gaussian}}
+    @test isApplicable(SPAdditionOutPG, [Void, Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}])
 
-    @test ruleSPAdditionPGV(Message(PointMass, m=3.0), Message(Gaussian, m=1.0, v=2.0), nothing) == Message(Gaussian, m=4.0, v=2.0)
+    @test ruleSPAdditionOutPG(nothing, Message(Univariate(PointMass, m=3.0)), Message(Univariate(Gaussian, m=1.0, v=2.0))) == Message(Univariate(Gaussian, m=4.0, v=2.0))
 end
-@testset "SPAdditionVGP" begin
-    @test SPAdditionVGP <: SumProductRule{Addition}
-    @test outboundType(SPAdditionVGP) == Message{Gaussian}
-    @test isApplicable(SPAdditionVGP, [Void, Message{Gaussian}, Message{PointMass}]) 
+@testset "SPAdditionIn1PG" begin
+    @test SPAdditionIn1PG <: SumProductRule{Addition}
+    @test outboundType(SPAdditionIn1PG) == Message{Univariate{Gaussian}}
+    @test isApplicable(SPAdditionIn1PG, [Message{Univariate{PointMass}}, Void, Message{Univariate{Gaussian}}])
 
-    @test ruleSPAdditionVGP(nothing, Message(Gaussian, m=1.0, v=2.0), Message(PointMass, m=3.0)) == Message(Gaussian, m=2.0, v=2.0)
+    @test ruleSPAdditionIn1PG(Message(Univariate(PointMass, m=3.0)), nothing, Message(Univariate(Gaussian, m=1.0, v=2.0))) == Message(Univariate(Gaussian, m=2.0, v=2.0))
 end
 
 end # module

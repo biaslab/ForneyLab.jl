@@ -1,29 +1,29 @@
 @sumProductRule(:node_type     => GaussianMeanVariance,
-                :outbound_type => Message{Gaussian},
-                :inbound_types => (Message{PointMass}, Message{PointMass}, Void),
-                :name          => SPGaussianMeanVariancePPV)
+                :outbound_type => Message{Univariate{Gaussian}},
+                :inbound_types => (Void, Message{Univariate{PointMass}}, Message{Univariate{PointMass}}),
+                :name          => SPGaussianMeanVarianceOutPP)
 
 @sumProductRule(:node_type     => GaussianMeanVariance,
-                :outbound_type => Message{Gaussian},
-                :inbound_types => (Void, Message{PointMass}, Message{PointMass}),
-                :name          => SPGaussianMeanVarianceVPP)
+                :outbound_type => Message{Univariate{Gaussian}},
+                :inbound_types => (Message{Univariate{PointMass}}, Void, Message{Univariate{PointMass}}),
+                :name          => SPGaussianMeanVarianceMPP)
 
 @sumProductRule(:node_type     => GaussianMeanVariance,
-                :outbound_type => Message{Gaussian},
-                :inbound_types => (Message{Gaussian}, Message{PointMass}, Void),
-                :name          => SPGaussianMeanVarianceGPV)
+                :outbound_type => Message{Univariate{Gaussian}},
+                :inbound_types => (Void, Message{Univariate{Gaussian}}, Message{Univariate{PointMass}}),
+                :name          => SPGaussianMeanVarianceOutGP)
 
 @sumProductRule(:node_type     => GaussianMeanVariance,
-                :outbound_type => Message{Gaussian},
-                :inbound_types => (Void, Message{PointMass}, Message{Gaussian}),
-                :name          => SPGaussianMeanVarianceVPG)
+                :outbound_type => Message{Univariate{Gaussian}},
+                :inbound_types => (Message{Univariate{Gaussian}}, Void, Message{Univariate{PointMass}}),
+                :name          => SPGaussianMeanVarianceMPG)
 
 @variationalRule(:node_type     => GaussianMeanVariance,
-                 :outbound_type => Message{Gaussian},
-                 :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),
-                 :name          => VBGaussianMeanVariance1)
+                 :outbound_type => Message{Univariate{Gaussian}},
+                 :inbound_types => (Univariate, Void, Univariate),
+                 :name          => VBGaussianMeanVarianceM)
 
 @variationalRule(:node_type     => GaussianMeanVariance,
-                 :outbound_type => Message{Gaussian},
-                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void),
-                 :name          => VBGaussianMeanVariance3)
+                 :outbound_type => Message{Univariate{Gaussian}},
+                 :inbound_types => (Void, Univariate, Univariate),
+                 :name          => VBGaussianMeanVarianceOut)

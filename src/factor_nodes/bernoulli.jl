@@ -4,14 +4,14 @@ export Bernoulli
 Description:
     Bernoulli factor node
 
-    z ∈ {0, 1}
+    out ∈ {0, 1}
     p ∈ [0, 1]
     
-    f(z,p) = Ber(z|p)
+    f(out, p) = Ber(out|p)
 
 Interfaces:
-    1. p
-    2. out
+    1. out
+    2. p
 
 Construction:
     Bernoulli(id=:some_id)
@@ -24,8 +24,8 @@ type Bernoulli <: SoftFactor
     function Bernoulli(out::Variable, p::Variable; id=generateId(Bernoulli))
         self = new(id, Array(Interface, 2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
-        self.i[:p] = self.interfaces[1] = associate!(Interface(self), p)
-        self.i[:out] = self.interfaces[2] = associate!(Interface(self), out)
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+        self.i[:p] = self.interfaces[2] = associate!(Interface(self), p)
 
         return self
     end
@@ -33,7 +33,7 @@ end
 
 slug(::Type{Bernoulli}) = "Ber"
 
-Univariate(::Type{Bernoulli}; p=0.5) = Univariate{Bernoulli}(Dict(p=>0.5))
+Univariate(::Type{Bernoulli}; p=0.5) = Univariate{Bernoulli}(Dict(:p=>p))
 
 vague(::Type{Univariate{Bernoulli}}) = Univariate(Bernoulli, p=0.5)
 
@@ -61,7 +61,7 @@ function differentialEntropy(dist::Univariate{Bernoulli})
 end
 
 # Average energy functional
-function averageEnergy(::Type{Bernoulli}, marg_in::Univariate, marg_out::Univariate)
-    -unsafeMean(marg_out)*unsafeLogMean(marg_in) -
-    (1.0 - unsafeMean(marg_out))*unsafeMirroredLogMean(marg_in)
+function averageEnergy(::Type{Bernoulli}, marg_out::Univariate, marg_p::Univariate)
+    -unsafeMean(marg_out)*unsafeLogMean(marg_p) -
+    (1.0 - unsafeMean(marg_out))*unsafeMirroredLogMean(marg_p)
 end

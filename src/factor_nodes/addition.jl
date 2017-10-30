@@ -8,13 +8,13 @@ Description:
 
     An addition constraint factor node
 
-    f(x,y,z) = δ(x + y - z)
+    f(out,in1,in2) = δ(in1 + in2 - out)
 
 Interfaces:
 
-    1. in1
-    2. in2
-    3. out
+    1. out
+    2. in1
+    3. in2
 
 Construction:
 
@@ -28,9 +28,9 @@ type Addition <: DeltaFactor
     function Addition(out::Variable, in1::Variable, in2::Variable; id=generateId(Addition))
         self = new(id, Array(Interface, 3), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
-        self.i[:in1] = self.interfaces[1] = associate!(Interface(self), in1)
-        self.i[:in2] = self.interfaces[2] = associate!(Interface(self), in2)
-        self.i[:out] = self.interfaces[3] = associate!(Interface(self), out)
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+        self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)
+        self.i[:in2] = self.interfaces[3] = associate!(Interface(self), in2)
 
         return self
     end

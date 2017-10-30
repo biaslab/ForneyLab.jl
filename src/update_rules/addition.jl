@@ -1,30 +1,29 @@
 @sumProductRule(:node_type     => Addition,
-                :outbound_type => Message{Gaussian},
-                :inbound_types => (Message{Gaussian}, Message{Gaussian}, Void),
-                :name          => SPAdditionGGV)
+                :outbound_type => Message{Univariate{Gaussian}},
+                :inbound_types => (Void, Message{Univariate{Gaussian}}, Message{Univariate{Gaussian}}),
+                :name          => SPAdditionOutGG)
 
 @sumProductRule(:node_type     => Addition,
-                :outbound_type => Message{Gaussian},
-                :inbound_types => (Message{Gaussian}, Void, Message{Gaussian}),
-                :name          => SPAdditionGVG)
+                :outbound_type => Message{Univariate{Gaussian}},
+                :inbound_types => (Message{Univariate{Gaussian}}, Message{Univariate{Gaussian}}, Void),
+                :name          => SPAdditionIn2GG)
 
 @sumProductRule(:node_type     => Addition,
-                :outbound_type => Message{Gaussian},
-                :inbound_types => (Void, Message{Gaussian}, Message{Gaussian}),
-                :name          => SPAdditionVGG)
-
-# TODO: add other combinations
-@sumProductRule(:node_type     => Addition,
-                :outbound_type => Message{Gaussian},
-                :inbound_types => (Message{Gaussian}, Message{PointMass}, Void),
-                :name          => SPAdditionGPV)
+                :outbound_type => Message{Univariate{Gaussian}},
+                :inbound_types => (Message{Univariate{Gaussian}}, Void, Message{Univariate{Gaussian}}),
+                :name          => SPAdditionIn1GG)
 
 @sumProductRule(:node_type     => Addition,
-                :outbound_type => Message{Gaussian},
-                :inbound_types => (Message{PointMass}, Message{Gaussian}, Void),
-                :name          => SPAdditionPGV)
+                :outbound_type => Message{Univariate{Gaussian}},
+                :inbound_types => (Void, Message{Univariate{Gaussian}}, Message{Univariate{PointMass}}),
+                :name          => SPAdditionOutGP)
 
 @sumProductRule(:node_type     => Addition,
-                :outbound_type => Message{Gaussian},
-                :inbound_types => (Void, Message{Gaussian}, Message{PointMass}),
-                :name          => SPAdditionVGP)
+                :outbound_type => Message{Univariate{Gaussian}},
+                :inbound_types => (Void, Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}),
+                :name          => SPAdditionOutPG)
+
+@sumProductRule(:node_type     => Addition,
+                :outbound_type => Message{Univariate{Gaussian}},
+                :inbound_types => (Message{Univariate{PointMass}}, Void, Message{Univariate{Gaussian}}),
+                :name          => SPAdditionIn1PG)

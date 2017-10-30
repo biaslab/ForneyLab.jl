@@ -5,13 +5,13 @@ Description:
 
     A gamma node with shape-rate parameterization:
 
-    f(x,a,b) = Gam(x|a,b)
+    f(out,a,b) = Gam(out|a,b)
 
 Interfaces:
 
-    1. a (shape)
-    2. b (rate)
-    3. out
+    1. out
+    2. a (shape)
+    3. b (rate)
 
 Construction:
 
@@ -25,9 +25,9 @@ type Gamma <: SoftFactor
     function Gamma(out::Variable, a::Variable, b::Variable; id=generateId(Gamma))
         self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
-        self.i[:a] = self.interfaces[1] = associate!(Interface(self), a)
-        self.i[:b] = self.interfaces[2] = associate!(Interface(self), b)
-        self.i[:out] = self.interfaces[3] = associate!(Interface(self), out)
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+        self.i[:a] = self.interfaces[2] = associate!(Interface(self), a)
+        self.i[:b] = self.interfaces[3] = associate!(Interface(self), b)
 
         return self
     end
@@ -35,7 +35,7 @@ end
 
 slug(::Type{Gamma}) = "Gam"
 
-Univariate(::Type{Gamma}; a=1.0, b=1.0) = Univariate{Gamma}(Dict(a=>1.0, b=>1.0))
+Univariate(::Type{Gamma}; a=1.0, b=1.0) = Univariate{Gamma}(Dict(:a=>a, :b=>b))
 
 vague(::Type{Univariate{Gamma}}) = Univariate(Gamma, a=1.0, b=tiny) # Flat prior leads to more stable behaviour than Jeffrey's prior
 
@@ -66,7 +66,7 @@ function differentialEntropy(dist::Univariate{Gamma})
 end
 
 # Average energy functional
-function averageEnergy(::Type{Gamma}, marg_a::Univariate{PointMass}, marg_b::Univariate, marg_out::Univariate)
+function averageEnergy(::Type{Gamma}, marg_out::Univariate, marg_a::Univariate{PointMass}, marg_b::Univariate)
     lgamma(marg_a.params[:m]) -
     marg_a.params[:m]*unsafeLogMean(marg_b) -
     (marg_a.params[:m] - 1.0)*unsafeLogMean(marg_out) +

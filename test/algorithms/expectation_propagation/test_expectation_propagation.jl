@@ -2,7 +2,8 @@ module ExpectationPropagationTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, EPSigmoidGP1, SPGaussianMeanVariancePPV, SPClamp, VBGaussianMeanPrecision3, SPSigmoidGV
+import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
+import ForneyLab: EPSigmoidRealGP, SPGaussianMeanVarianceOutPP, SPClamp, VBGaussianMeanPrecisionOut, SPSigmoidBinG
 
 # Integration helper
 type MockNode <: SoftFactor
@@ -24,25 +25,25 @@ type MockNode <: SoftFactor
 end
 
 @expectationPropagationRule(:node_type     => MockNode,
-                            :outbound_type => Message{Gaussian},
-                            :inbound_types => (Message{Gaussian}, Message{PointMass}),
-                            :outbound_id   => 1,
-                            :name          => EPMockGP1)
+                            :outbound_type => Message{Univariate{Gaussian}},
+                            :inbound_types => (Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}),
+                            :outbound_id   => 2,
+                            :name          => EPMockRealGP)
 
 @testset "@expectationPropagationRule" begin
-    @test EPMockGP1 <: ExpectationPropagationRule{MockNode}
+    @test EPMockRealGP <: ExpectationPropagationRule{MockNode}
 end
 
 @testset "inferUpdateRule!" begin
     FactorGraph()
     m ~ GaussianMeanVariance(constant(0.0), constant(1.0))
-    nd = MockNode([m, constant(0.0)])
-    inferred_outbound_types = Dict(nd.i[1].partner => Message{Gaussian}, nd.i[2].partner => Message{PointMass})
+    nd = MockNode([constant(0.0), m])
+    inferred_outbound_types = Dict(nd.i[2].partner => Message{Univariate{Gaussian}}, nd.i[1].partner => Message{Univariate{PointMass}})
 
-    entry = ScheduleEntry(nd.i[1], ExpectationPropagationRule{MockNode})
+    entry = ScheduleEntry(nd.i[2], ExpectationPropagationRule{MockNode})
     inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
 
-    @test entry.msg_update_rule == EPMockGP1
+    @test entry.msg_update_rule == EPMockRealGP
 end
 
 @testset "expectationPropagationSchedule" begin
@@ -62,10 +63,10 @@ end
     schedule = expectationPropagationSchedule(m)
 
     @test length(schedule) == 15
-    @test schedule[2] == ScheduleEntry(nd_z[2].i[:real], EPSigmoidGP1)
-    @test schedule[4] == ScheduleEntry(nd_z[3].i[:real], EPSigmoidGP1)
-    @test schedule[8] == ScheduleEntry(nd_m.i[:out], SPGaussianMeanVariancePPV)
-    @test schedule[11] == ScheduleEntry(nd_z[1].i[:real], EPSigmoidGP1)
+    @test schedule[2] == ScheduleEntry(nd_z[2].i[:real], EPSigmoidRealGP)
+    @test schedule[4] == ScheduleEntry(nd_z[3].i[:real], EPSigmoidRealGP)
+    @test schedule[8] == ScheduleEntry(nd_m.i[:out], SPGaussianMeanVarianceOutPP)
+    @test schedule[11] == ScheduleEntry(nd_z[1].i[:real], EPSigmoidRealGP)
 end
 
 @testset "variationalExpectationPropagationSchedule" begin
@@ -86,10 +87,10 @@ end
     schedule = variationalExpectationPropagationSchedule(q_y_z)
 
     @test length(schedule) == 4
-    @test schedule[1] == ScheduleEntry(nd_y.i[:out], VBGaussianMeanPrecision3)
-    @test schedule[2] == ScheduleEntry(nd_z.i[:bin].partner, SPClamp)
-    @test schedule[3] == ScheduleEntry(nd_z.i[:real], EPSigmoidGP1)
-    @test schedule[4] == ScheduleEntry(nd_z.i[:bin], SPSigmoidGV)
+    @test ScheduleEntry(nd_y.i[:out], VBGaussianMeanPrecisionOut) in schedule
+    @test ScheduleEntry(nd_z.i[:bin].partner, SPClamp) in schedule
+    @test ScheduleEntry(nd_z.i[:real], EPSigmoidRealGP) in schedule
+    @test ScheduleEntry(nd_z.i[:bin], SPSigmoidBinG) in schedule
 end
 
 end # module

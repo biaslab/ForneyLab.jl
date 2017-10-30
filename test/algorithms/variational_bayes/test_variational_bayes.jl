@@ -2,7 +2,8 @@ module VariationalBayesTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, VBGaussianMeanVariance3, VBGaussianMeanPrecision1, SPEqualityGaussian
+import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
+import ForneyLab: VBGaussianMeanVarianceOut, VBGaussianMeanPrecisionM, SPEqualityGaussian
 
 # Integration helper
 type MockNode <: SoftFactor
@@ -24,22 +25,22 @@ type MockNode <: SoftFactor
 end
 
 @variationalRule(   :node_type     => MockNode,
-                    :outbound_type => Message{PointMass},
-                    :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void),
-                    :name          => VBMock3)
+                    :outbound_type => Message{Univariate{PointMass}},
+                    :inbound_types => (Void, Univariate, Univariate),
+                    :name          => VBMockOut)
 
 @testset "@variationalRule" begin
-    @test VBMock3 <: VariationalRule{MockNode}
+    @test VBMockOut <: VariationalRule{MockNode}
 end
 
 @testset "inferUpdateRule!" begin
     FactorGraph()
-    nd = MockNode([constant(0.0), constant(0.0), Variable()])
+    nd = MockNode([Variable(), constant(0.0), constant(0.0)])
 
-    entry = ScheduleEntry(nd.i[3], VariationalRule{MockNode})
+    entry = ScheduleEntry(nd.i[1], VariationalRule{MockNode})
     inferUpdateRule!(entry, entry.msg_update_rule, Dict{Interface, DataType}())
 
-    @test entry.msg_update_rule == VBMock3
+    @test entry.msg_update_rule == VBMockOut
 end
 
 @testset "variationalSchedule" begin
@@ -64,12 +65,12 @@ end
     schedule = variationalSchedule(q_m)
 
     @test length(schedule) == 6
-    @test schedule[1] == ScheduleEntry(nd_m.i[:out], VBGaussianMeanVariance3)
-    @test schedule[2] == ScheduleEntry(nd_y[2].i[:m], VBGaussianMeanPrecision1)
-    @test schedule[3] == ScheduleEntry(nd_y[3].i[:m], VBGaussianMeanPrecision1)
-    @test schedule[4] == ScheduleEntry(nd_m.i[:out].partner.node.i[3].partner, SPEqualityGaussian)
-    @test schedule[5] == ScheduleEntry(nd_y[1].i[:m], VBGaussianMeanPrecision1)
-    @test schedule[6] == ScheduleEntry(nd_m.i[:out].partner, SPEqualityGaussian)
+    @test ScheduleEntry(nd_m.i[:out], VBGaussianMeanVarianceOut) in schedule
+    @test ScheduleEntry(nd_y[2].i[:m], VBGaussianMeanPrecisionM) in schedule
+    @test ScheduleEntry(nd_y[3].i[:m], VBGaussianMeanPrecisionM) in schedule
+    @test ScheduleEntry(nd_m.i[:out].partner.node.i[3].partner, SPEqualityGaussian) in schedule
+    @test ScheduleEntry(nd_y[1].i[:m], VBGaussianMeanPrecisionM) in schedule
+    @test ScheduleEntry(nd_m.i[:out].partner, SPEqualityGaussian) in schedule
 end
 
 end # module

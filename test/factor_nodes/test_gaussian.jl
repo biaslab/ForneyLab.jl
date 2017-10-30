@@ -2,14 +2,14 @@ module GaussianWeightedMeanPrecisionTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: ensureParameters!, prod!, ==, unsafeMean, unsafeVar
+import ForneyLab: ensureParameters!, prod!, ==, unsafeMean, unsafeVar, unsafeCov, isWellDefined, isProper, sample
 
 @testset "vague" begin
     # Univariate
     @test vague(Univariate{Gaussian}) == Univariate(Gaussian, m=0.0, v=huge)
 
     # Multivariate
-    @test vague(Multivariate{Gaussian, 2}) == Multivariate(Gaussian, m=[0.0, 0.0], V=huge*eye(2))
+    @test vague(Multivariate{Gaussian, 2}) == Multivariate(Gaussian, m=[0.0, 0.0], v=huge*eye(2))
 end
 
 @testset "isProper" begin
@@ -19,19 +19,19 @@ end
     @test !isProper(Univariate(Gaussian, m=0.0, w=-1.0))
 
     # Multivariate
-    @test isProper(Multivariate(Gaussian, m=[0.0], V=[1.0].'))
-    @test isProper(Multivariate(Gaussian, m=ones(2), V=diageye(2)))
-    @test !isProper(Multivariate(Gaussian, m=[0.0], V=[-1.0].'))
-    @test !isProper(Multivariate(Gaussian, m=[0.0], W=[-1.0].'))
+    @test isProper(Multivariate(Gaussian, m=[0.0], v=[1.0].'))
+    @test isProper(Multivariate(Gaussian, m=ones(2), v=diageye(2)))
+    @test !isProper(Multivariate(Gaussian, m=[0.0], v=[-1.0].'))
+    @test !isProper(Multivariate(Gaussian, m=[0.0], w=[-1.0].'))
 end
 
 @testset "sample" begin
     # Univariate
-    @test isa(Float64, sample(Univariate(Gaussian, m=1.0, v=2.0)))
+    @test isa(sample(Univariate(Gaussian, m=1.0, v=2.0)), Float64)
 
     # Multivariate
-    @test isa(Vector{Float64}, sample(Multivariate(Gaussian, m=[1.2, 2.7], V=[2.0 -0.5; -0.5 1.5])))
-    @test isa(Vector{Float64}, sample(Multivariate(Gaussian, m=[1.2, 2.7], V=Diagonal([2.0, 1.5]))))
+    @test isa(sample(Multivariate(Gaussian, m=[1.2, 2.7], v=[2.0 -0.5; -0.5 1.5])), Vector{Float64})
+    @test isa(sample(Multivariate(Gaussian, m=[1.2, 2.7], v=Diagonal([2.0, 1.5]))), Vector{Float64})
 end
 
 @testset "prod!" begin
@@ -40,8 +40,8 @@ end
     @test Univariate(Gaussian, m=0.0, v=1.0) * Univariate(Gaussian, m=0.0, v=1.0) == Univariate(Gaussian, xi=0.0, w=2.0)
 
     # Multivariate
-    @test Multivariate(Gaussian, xi=zeros(2), W=diageye(2)) * Multivariate(Gaussian, xi=zeros(2), W=diageye(2)) == Multivariate(Gaussian, xi=zeros(2), W=2.0*diageye(2))
-    @test Multivariate(Gaussian, m=zeros(2), V=diageye(2)) * Multivariate(Gaussian, m=zeros(2), V=diageye(2)) == Multivariate(Gaussian, m=zeros(2), V=0.5*diageye(2))
+    @test Multivariate(Gaussian, xi=zeros(2), w=diageye(2)) * Multivariate(Gaussian, xi=zeros(2), w=diageye(2)) == Multivariate(Gaussian, xi=zeros(2), w=2.0*diageye(2))
+    @test Multivariate(Gaussian, m=zeros(2), v=diageye(2)) * Multivariate(Gaussian, m=zeros(2), v=diageye(2)) == Multivariate(Gaussian, m=zeros(2), v=0.5*diageye(2))
 end
 
 @testset "isWellDefined" begin
@@ -58,17 +58,17 @@ end
     @test !isWellDefined(Univariate(Gaussian, m=0.0, xi=0.0, v=NaN))
 
     # Multivariate
-    @test isWellDefined(Multivariate(Gaussian, m=[0.0], V=[1.0].'))
-    @test isWellDefined(Multivariate(Gaussian, m=[0.0], W=[1.0].'))
-    @test isWellDefined(Multivariate(Gaussian, m=zeros(2), W=diageye(2)))
-    @test isWellDefined(Multivariate(Gaussian, xi=[0.0], W=[1.0].'))
-    @test isWellDefined(Multivariate(Gaussian, m=[0.0], xi=[0.0], W=[1.0].', V=[1.0].'))
-    @test !isWellDefined(Multivariate(Gaussian, m=[NaN], V=[1.0].'))
-    @test !isWellDefined(Multivariate(Gaussian, m=[0.0], W=[NaN].'))
-    @test !isWellDefined(Multivariate(Gaussian, V=[1.0].', W=[1.0].'))
+    @test isWellDefined(Multivariate(Gaussian, m=[0.0], v=[1.0].'))
+    @test isWellDefined(Multivariate(Gaussian, m=[0.0], w=[1.0].'))
+    @test isWellDefined(Multivariate(Gaussian, m=zeros(2), w=diageye(2)))
+    @test isWellDefined(Multivariate(Gaussian, xi=[0.0], w=[1.0].'))
+    @test isWellDefined(Multivariate(Gaussian, m=[0.0], xi=[0.0], w=[1.0].', v=[1.0].'))
+    @test !isWellDefined(Multivariate(Gaussian, m=[NaN], v=[1.0].'))
+    @test !isWellDefined(Multivariate(Gaussian, m=[0.0], w=[NaN].'))
+    @test !isWellDefined(Multivariate(Gaussian, v=[1.0].', w=[1.0].'))
     @test !isWellDefined(Multivariate(Gaussian, m=[0.0], xi=[0.0]))
-    @test !isWellDefined(Multivariate(Gaussian, m=[NaN], V=[1.0].', W=[1.0].'))
-    @test !isWellDefined(Multivariate(Gaussian, m=[0.0], xi=[0.0], V=[NaN].'))
+    @test !isWellDefined(Multivariate(Gaussian, m=[NaN], v=[1.0].', w=[1.0].'))
+    @test !isWellDefined(Multivariate(Gaussian, m=[0.0], xi=[0.0], v=[NaN].'))
 end
 
 @testset "ensureParameters!" begin
@@ -79,10 +79,10 @@ end
     @test ensureParameters!(dist, (:xi, :w)).params == Dict(:m=>0.0, :v=>1.0, :xi=>0.0, :w=>1.0)
 
     # Multivariate
-    dist = Multivariate(Gaussian, m=[0.0], V=[1.0].')
-    @test ensureParameters!(dist, (:m, :V)).params == Dict(:m=>[0.0], :V=>[1.0].')
-    dist = Multivariate(Gaussian, m=[0.0], V=[1.0].')
-    @test ensureParameters!(dist, (:xi, :W)).params == Dict(:m=>[0.0], :V=>[1.0].', :xi=>[0.0], :W=>[1.0].')
+    dist = Multivariate(Gaussian, m=[0.0], v=[1.0].')
+    @test ensureParameters!(dist, (:m, :v)).params == Dict(:m=>[0.0], :v=>[1.0].')
+    dist = Multivariate(Gaussian, m=[0.0], v=[1.0].')
+    @test ensureParameters!(dist, (:xi, :w)).params == Dict(:m=>[0.0], :v=>[1.0].', :xi=>[0.0], :w=>[1.0].')
 end
 
 @testset "==" begin
@@ -91,8 +91,8 @@ end
     @test Univariate(Gaussian, xi=0.0, w=1.0) == Univariate(Gaussian, m=0.0, v=1.0)
 
     # Multivariate
-    @test Multivariate(Gaussian, xi=[0.0], W=[1.0].') == Multivariate(Gaussian, xi=[0.0], W=[1.0].')
-    @test Multivariate(Gaussian, xi=[0.0], W=[1.0].') == Multivariate(Gaussian, m=[0.0], V=[1.0].')
+    @test Multivariate(Gaussian, xi=[0.0], w=[1.0].') == Multivariate(Gaussian, xi=[0.0], w=[1.0].')
+    @test Multivariate(Gaussian, xi=[0.0], w=[1.0].') == Multivariate(Gaussian, m=[0.0], v=[1.0].')
 end
 
 @testset "unsafe mean and variance" begin
@@ -104,11 +104,7 @@ end
     # Multivariate
     @test unsafeMean(Multivariate(Gaussian, m=zeros(2), v=2.0*eye(2))) == zeros(2)
     @test unsafeVar(Multivariate(Gaussian, m=zeros(2), v=2.0*eye(2))) == 2.0*ones(2)
-    @test unsafeCov(Multivariate(Gaussian, m=zeros(2), w=2.0*eye(2))) == 0.5*eye(2)
+    @test unsafeCov(Multivariate(Gaussian, m=zeros(2), w=2.0*eye(2))) == [0.4999999999999999 -0.0; -0.0 0.4999999999999999]
 end
-
-
-
-
 
 end #module

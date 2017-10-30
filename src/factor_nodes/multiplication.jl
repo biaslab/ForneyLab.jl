@@ -8,13 +8,13 @@ Description:
 
     A multiplication constraint factor node
 
-    f(x,a,z) = δ(a*x - z)
+    f(out, in, gain) = δ(gain*in - out)
 
 Interfaces:
 
-    1. in
-    2. gain
-    3. out
+    1. out
+    2. in
+    3. gain
 
 Construction:
 
@@ -28,9 +28,9 @@ type Multiplication <: DeltaFactor
     function Multiplication(out::Variable, in1::Variable, gain::Variable; id=generateId(Multiplication))
         self = new(id, Array(Interface, 3), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
-        self.i[:in] = self.interfaces[1] = associate!(Interface(self), in1)
-        self.i[:gain] = self.interfaces[2] = associate!(Interface(self), gain)
-        self.i[:out] = self.interfaces[3] = associate!(Interface(self), out)
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+        self.i[:in] = self.interfaces[2] = associate!(Interface(self), in1)
+        self.i[:gain] = self.interfaces[3] = associate!(Interface(self), gain)
 
         return self
     end

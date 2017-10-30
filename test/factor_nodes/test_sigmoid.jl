@@ -2,7 +2,8 @@ module SigmoidTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, mapToBernoulliParameterRange, SPSigmoidGV, EPSigmoidGB1, EPSigmoidGP1
+import ForneyLab: outboundType, isApplicable, mapToBernoulliParameterRange
+import ForneyLab: SPSigmoidBinG, EPSigmoidRealGB, EPSigmoidRealGP
 
 @testset "mapToBernoulliParameterRange" begin
     @test mapToBernoulliParameterRange(1.0) == 1.0
@@ -20,34 +21,34 @@ end
 # Update rules
 #-------------
 
-@testset "SPSigmoidGV" begin
-    @test SPSigmoidGV <: SumProductRule{Sigmoid}
-    @test outboundType(SPSigmoidGV) == Message{Bernoulli}
-    @test isApplicable(SPSigmoidGV, [Message{Gaussian}, Void]) 
-    @test !isApplicable(SPSigmoidGV, [Void, Message{Bernoulli}])
+@testset "SPSigmoidBinG" begin
+    @test SPSigmoidBinG <: SumProductRule{Sigmoid}
+    @test outboundType(SPSigmoidBinG) == Message{Univariate{Bernoulli}}
+    @test isApplicable(SPSigmoidBinG, [Void, Message{Univariate{Gaussian}}]) 
+    @test !isApplicable(SPSigmoidBinG, [Message{Univariate{Bernoulli}}, Void])
 
-    @test ruleSPSigmoidGV(Message(Gaussian, m=1.0, v=0.5), nothing) == Message(Bernoulli, p=ForneyLab.Φ(1/sqrt(1+0.5)))
+    @test ruleSPSigmoidBinG(nothing, Message(Univariate(Gaussian, m=1.0, v=0.5))) == Message(Univariate(Bernoulli, p=ForneyLab.Φ(1/sqrt(1+0.5))))
 end
 
-@testset "EPSigmoidGB1" begin
-    @test EPSigmoidGB1 <: ExpectationPropagationRule{Sigmoid}
-    @test outboundType(EPSigmoidGB1) == Message{Gaussian}
-    @test isApplicable(EPSigmoidGB1, [Message{Gaussian}, Message{Bernoulli}], 1) 
-    @test !isApplicable(EPSigmoidGB1, [Message{Gaussian}, Message{PointMass}], 1) 
+@testset "EPSigmoidRealGB" begin
+    @test EPSigmoidRealGB <: ExpectationPropagationRule{Sigmoid}
+    @test outboundType(EPSigmoidRealGB) == Message{Univariate{Gaussian}}
+    @test isApplicable(EPSigmoidRealGB, [Message{Univariate{Bernoulli}}, Message{Univariate{Gaussian}}], 2) 
+    @test !isApplicable(EPSigmoidRealGB, [Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}], 2)
 
-    @test ruleEPSigmoidGB1(Message(Gaussian, m=1.0, v=0.5), Message(Bernoulli, p=1.0)) == Message(Gaussian, xi=0.6723616582693994, w=0.3295003993960708)
-    @test ruleEPSigmoidGB1(Message(Gaussian, m=1.0, v=0.5), Message(Bernoulli, p=0.8)) == Message(Gaussian, xi=0.4270174959448596, w=0.19914199922339604)
-    @test ruleEPSigmoidGB1(Message(Gaussian, m=1.0, v=0.5), Message(Bernoulli, p=0.5)) == Message(Gaussian, xi=0.0, w=1e-12)
+    @test ruleEPSigmoidRealGB(Message(Univariate(Bernoulli, p=1.0)), Message(Univariate(Gaussian, m=1.0, v=0.5))) == Message(Univariate(Gaussian, xi=0.6723616582693994, w=0.3295003993960708))
+    @test ruleEPSigmoidRealGB(Message(Univariate(Bernoulli, p=0.8)), Message(Univariate(Gaussian, m=1.0, v=0.5))) == Message(Univariate(Gaussian, xi=0.4270174959448596, w=0.19914199922339604))
+    @test ruleEPSigmoidRealGB(Message(Univariate(Bernoulli, p=0.5)), Message(Univariate(Gaussian, m=1.0, v=0.5))) == Message(Univariate(Gaussian, xi=0.0, w=1e-12))
 end
 
-@testset "EPSigmoidGP1" begin
-    @test EPSigmoidGP1 <: ExpectationPropagationRule{Sigmoid}
-    @test outboundType(EPSigmoidGP1) == Message{Gaussian}
-    @test isApplicable(EPSigmoidGP1, [Message{Gaussian}, Message{PointMass}], 1) 
-    @test !isApplicable(EPSigmoidGP1, [Message{Gaussian}, Message{Bernoulli}], 1) 
+@testset "EPSigmoidRealGP" begin
+    @test EPSigmoidRealGP <: ExpectationPropagationRule{Sigmoid}
+    @test outboundType(EPSigmoidRealGP) == Message{Univariate{Gaussian}}
+    @test isApplicable(EPSigmoidRealGP, [Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}], 2) 
+    @test !isApplicable(EPSigmoidRealGP, [Message{Univariate{Bernoulli}}, Message{Univariate{Gaussian}}], 2) 
 
-    @test ruleEPSigmoidGP1(Message(Gaussian, m=1.0, v=0.5), Message(PointMass, m=true)) == Message(Gaussian, xi=0.6723616582693994, w=0.3295003993960708)
-    @test ruleEPSigmoidGP1(Message(Gaussian, m=1.0, v=0.5), Message(PointMass, m=NaN)) == Message(Gaussian, xi=0.0, w=1e-12)
+    @test ruleEPSigmoidRealGP(Message(Univariate(PointMass, m=true)), Message(Univariate(Gaussian, m=1.0, v=0.5))) == Message(Univariate(Gaussian, xi=0.6723616582693994, w=0.3295003993960708))
+    @test ruleEPSigmoidRealGP(Message(Univariate(PointMass, m=NaN)), Message(Univariate(Gaussian, m=1.0, v=0.5))) == Message(Univariate(Gaussian, xi=0.0, w=1e-12))
 end
 
 end # module

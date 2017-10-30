@@ -5,7 +5,7 @@ Description:
 
     An equality constraint factor node
 
-    f(x,y,z) = δ(x - y) δ(x - z)
+    f([1],[2],[3]) = δ([1] - [2]) δ([1] - [3])
 
 Interfaces:
 

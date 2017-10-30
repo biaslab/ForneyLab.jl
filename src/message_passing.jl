@@ -6,22 +6,17 @@ Schedule
 
 import Base: ==
 
-# TODO: handle scaling factor
 """Encodes a message, which is a probability distribution with a scaling factor"""
-immutable Message{family<:FactorNode}
-    dist::ProbabilityDistribution
+immutable Message{T<:ProbabilityDistribution}
+    dist::T
     scaling_factor::Any
 
-    Message{family}(dist::ProbabilityDistribution{family}) = new{family}(dist)
+    Message{U<:ProbabilityDistribution}(dist::U) = new{U}(dist) # Constructor for unspecified scaling factor
 end
 
-Message{T<:SoftFactor}(family::Type{T}; kwargs...) = Message{family}(ProbabilityDistribution{family}(Dict(kwargs)))
+Message{T}(dist::T) = Message{T}(dist)
 
-Message(family::Type{PointMass}; kwargs...) = Message{family}(ProbabilityDistribution{family}(Dict(kwargs)))
-
-vague{T}(::Type{Message{T}}) = Message{T}(vague(ProbabilityDistribution{T}))
-
-function =={T, U}(t::Message{T}, u::Message{U})
+function =={T<:ProbabilityDistribution, U<:ProbabilityDistribution}(t::Message{T}, u::Message{U})
     (T == U) || return false
     (t.dist == u.dist) || return false
     if isdefined(t, :scaling_factor) && isdefined(u, :scaling_factor)

@@ -16,8 +16,8 @@ using ForneyLab
         algo = ForneyLab.messagePassingAlgorithm(schedule, m)
 
         @test contains(algo, "Array{Message}(2)")
-        @test contains(algo, "messages[1] = ruleSPGaussianMeanVariancePPV(Message(PointMass, m=0.0), Message(PointMass, m=1.0), nothing)")
-        @test contains(algo, "messages[2] = ruleSPGaussianMeanVarianceVPP(nothing, Message(PointMass, m=1.0), Message(PointMass, m=data[:x]))")
+        @test contains(algo, "messages[1] = ruleSPGaussianMeanVarianceOutPP(nothing, Message(Univariate(PointMass, m=0.0)), Message(Univariate(PointMass, m=1.0)))")
+        @test contains(algo, "messages[2] = ruleSPGaussianMeanVarianceMPP(Message(Univariate(PointMass, m=data[:x])), nothing, Message(Univariate(PointMass, m=1.0)))")
         @test contains(algo, "marginals[:variable_2] = messages[1].dist * messages[2].dist")
     end
 
@@ -30,7 +30,7 @@ using ForneyLab
         algo = ForneyLab.messagePassingAlgorithm(schedule, x)
 
         @test contains(algo, "Array{Message}(1)")
-        @test contains(algo, "messages[1] = ruleSPGaussianMeanVariancePPV(Message(PointMass, m=0.0), Message(PointMass, m=1.0), nothing)")
+        @test contains(algo, "messages[1] = ruleSPGaussianMeanVarianceOutPP(nothing, Message(Univariate(PointMass, m=0.0)), Message(Univariate(PointMass, m=1.0)))")
         @test contains(algo, "marginals[:variable_1] = messages[1].dist")
     end
 end
@@ -45,11 +45,11 @@ end
 
     messages = Array{Message}(6)
 
-    messages[1] = ruleSPGaussianMeanVariancePPV(Message(PointMass, m=0.0), Message(PointMass, m=1.0), nothing)
-    messages[2] = ruleSPGaussianMeanVarianceVPP(nothing, Message(PointMass, m=1.0), Message(PointMass, m=data[:y][2]))
-    messages[3] = ruleSPGaussianMeanVarianceVPP(nothing, Message(PointMass, m=1.0), Message(PointMass, m=data[:y][3]))
-    messages[4] = ruleSPEqualityGaussian(messages[2], nothing, messages[3])
-    messages[5] = ruleSPGaussianMeanVarianceVPP(nothing, Message(PointMass, m=1.0), Message(PointMass, m=data[:y][1]))
+    messages[1] = ruleSPGaussianMeanVarianceOutPP(nothing, Message(Univariate(PointMass, m=0.0)), Message(Univariate(PointMass, m=1.0)))
+    messages[2] = ruleSPGaussianMeanVarianceMPP(Message(Univariate(PointMass, m=data[:y][2])), nothing, Message(Univariate(PointMass, m=1.0)))
+    messages[3] = ruleSPGaussianMeanVarianceMPP(Message(Univariate(PointMass, m=data[:y][3])), nothing, Message(Univariate(PointMass, m=1.0)))
+    messages[4] = ruleSPEqualityGaussian(messages[3], messages[2], nothing)
+    messages[5] = ruleSPGaussianMeanVarianceMPP(Message(Univariate(PointMass, m=data[:y][1])), nothing, Message(Univariate(PointMass, m=1.0)))
     messages[6] = ruleSPEqualityGaussian(nothing, messages[5], messages[4])
 
     marginals[:variable_1] = messages[1].dist * messages[6].dist
@@ -61,7 +61,7 @@ end
     data = Dict(:y => [1.0, 2.0, 3.0])
     step!(marginals, data)
 
-    @test marginals[:variable_1] == ProbabilityDistribution(Gaussian, xi=6.0, w=4.0)
+    @test marginals[:variable_1] == Univariate(Gaussian, xi=6.0, w=4.0)
 end
 
 end # module

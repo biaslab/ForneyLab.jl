@@ -2,32 +2,33 @@ module GammaTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable, VBGamma3
+import ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable
+import ForneyLab: VBGammaOut
 
 @testset "prod!" begin
-    @test ProbabilityDistribution(Gamma, a=1.0, b=2.0) * ProbabilityDistribution(Gamma, a=3.0, b=4.0) == ProbabilityDistribution(Gamma, a=3.0, b=6.0)
+    @test Univariate(Gamma, a=1.0, b=2.0) * Univariate(Gamma, a=3.0, b=4.0) == Univariate(Gamma, a=3.0, b=6.0)
 end
 
 @testset "unsafe mean and variance" begin
-    @test unsafeMean(ProbabilityDistribution(Gamma, a=1.0, b=2.0)) == 0.5
-    @test unsafeVar(ProbabilityDistribution(Gamma, a=1.0, b=2.0)) == 0.25
+    @test unsafeMean(Univariate(Gamma, a=1.0, b=2.0)) == 0.5
+    @test unsafeVar(Univariate(Gamma, a=1.0, b=2.0)) == 0.25
 end
 
 #-------------
 # Update rules
 #-------------
 
-@testset "VBGamma3" begin
-    @test VBGamma3 <: VariationalRule{Gamma}
-    @test outboundType(VBGamma3) == Message{Gamma}
-    @test isApplicable(VBGamma3, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
-    @test !isApplicable(VBGamma3, [ProbabilityDistribution, Void, ProbabilityDistribution]) 
+@testset "VBGammaOut" begin
+    @test VBGammaOut <: VariationalRule{Gamma}
+    @test outboundType(VBGammaOut) == Message{Univariate{Gamma}}
+    @test isApplicable(VBGammaOut, [Void, Univariate, Univariate]) 
+    @test !isApplicable(VBGammaOut, [Univariate, Univariate, Void]) 
 
-    @test ruleVBGamma3(ProbabilityDistribution(PointMass, m=1.5), ProbabilityDistribution(PointMass, m=3.0), nothing) == Message(Gamma, a=1.5, b=3.0)
+    @test ruleVBGammaOut(nothing, Univariate(PointMass, m=1.5), Univariate(PointMass, m=3.0)) == Message(Univariate(Gamma, a=1.5, b=3.0))
 end
 
 @testset "averageEnergy and differentialEntropy" begin
-    @test differentialEntropy(ProbabilityDistribution(Gamma, a=1.0, b=2.0)) == averageEnergy(Gamma, ProbabilityDistribution(PointMass, m=1.0), ProbabilityDistribution(PointMass, m=2.0), ProbabilityDistribution(Gamma, a=1.0, b=2.0))
+    @test differentialEntropy(Univariate(Gamma, a=1.0, b=2.0)) == averageEnergy(Gamma, Univariate(Gamma, a=1.0, b=2.0), Univariate(PointMass, m=1.0), Univariate(PointMass, m=2.0))
 end
 
 end #module

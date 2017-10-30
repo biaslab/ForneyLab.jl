@@ -19,17 +19,17 @@ abstract ProbabilityDistribution{family<:FactorNode}
 
 """Univariate ProbabilityDistribution"""
 immutable Univariate{family<:FactorNode} <: ProbabilityDistribution{family}
-   params::Dict 
+    params::Dict 
 end
 
 """Multivariate ProbabilityDistribution over a vector of length dims"""
 immutable Multivariate{family<:FactorNode, dims} <: ProbabilityDistribution{family}
-   params::Dict 
+    params::Dict 
 end
 
 """Matrix Variate ProbabilityDistribution over a matrix of size dims_m (rows) by dims_n (columns)"""
 immutable MatrixVariate{family<:FactorNode, dims_m, dims_n} <: ProbabilityDistribution{family}
-   params::Dict 
+    params::Dict 
 end
 
 mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error("mean($(dist)) is undefined because the distribution is improper.")
@@ -45,15 +45,17 @@ abstract PointMass <: DeltaFactor
 # PointMass distribution constructors
 Univariate(family::Type{PointMass}; m::Number=1.0) = Univariate{family}(Dict(:m=>m))
 Multivariate(family::Type{PointMass}; m::Vector=[1.0]) = Multivariate{family, length(m)}(Dict(:m=>m))
-MatrixVariate(family::Type{PointMass}; M::Matrix=[1.0].') = MatrixVariate{family, size(M, 1), size(M, 2)}(Dict(:M=>M))
+MatrixVariate(family::Type{PointMass}; m::AbstractMatrix=[1.0].') = MatrixVariate{family, size(m, 1), size(m, 2)}(Dict(:m=>m))
 
 unsafeMean(dist::Univariate{PointMass}) = dist.params[:m]
 unsafeMean(dist::Multivariate{PointMass}) = deepcopy(dist.params[:m])
-unsafeMean(dist::MatrixVariate{PointMass}) = deepcopy(dist.params[:M])
+unsafeMean(dist::MatrixVariate{PointMass}) = deepcopy(dist.params[:m])
 
 unsafeInverseMean(dist::Univariate{PointMass}) = 1.0/dist.params[:m]
+unsafeInverseMean(dist::MatrixVariate{PointMass}) = cholinv(dist.params[:m])
 
 unsafeLogMean(dist::Univariate{PointMass}) = log(dist.params[:m])
+unsafeDetLogMean(dist::MatrixVariate{PointMass}) = log(det(dist.params[:m]))
 
 unsafeMirroredLogMean(dist::Univariate{PointMass}) = log(1.0 - dist.params[:m])
 
@@ -116,7 +118,8 @@ end
 isValid(dist::ProbabilityDistribution, field::Symbol) = ( haskey(dist.params, field) && !isnan(dist.params[field][1]) )
 
 function invalidate!(dist::ProbabilityDistribution, field::Symbol)
-    if haskey(dist, field)
+    if haskey(dist.params, field)
         dist.params[field][1] = NaN
     end
+    return dist
 end

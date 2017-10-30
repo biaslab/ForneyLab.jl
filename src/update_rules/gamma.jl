@@ -1,4 +1,4 @@
 @variationalRule(:node_type     => Gamma,
-                 :outbound_type => Message{Gamma},
-                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void),
-                 :name          => VBGamma3)
+                 :outbound_type => Message{Univariate{Gamma}},
+                 :inbound_types => (Void, Univariate, Univariate),
+                 :name          => VBGammaOut)

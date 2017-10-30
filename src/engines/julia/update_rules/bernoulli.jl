@@ -1,10 +1,12 @@
-export ruleSPBernoulliPV, ruleVBBernoulli2
+export
+ruleSPBernoulliOutP,
+ruleVBBernoulliOut
 
-ruleSPBernoulliPV(msg_in::Message{PointMass}, msg_out::Void) = Message(Bernoulli, p=msg_in.dist.params[:m])
+ruleSPBernoulliOutP(msg_out::Void, msg_in::Message{Univariate{PointMass}}) = Message(Univariate(Bernoulli, p=msg_in.dist.params[:m]))
 
-function ruleVBBernoulli2(marg_in::ProbabilityDistribution, marg_out::Any)
+function ruleVBBernoulliOut(marg_out::Any, marg_in::Univariate)
     rho_1 = clamp(exp(unsafeLogMean(marg_in)), tiny, huge)
     rho_2 = clamp(exp(unsafeMirroredLogMean(marg_in)), tiny, huge)
     
-    Message(Bernoulli, p=rho_1/(rho_1 + rho_2))
+    Message(Univariate(Bernoulli, p=rho_1/(rho_1 + rho_2)))
 end

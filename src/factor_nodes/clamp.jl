@@ -5,7 +5,7 @@ Description:
 
     A factor that clamps a variable to a constant value.
 
-    f(x) = δ(x - value)
+    f(out) = δ(out - value)
 
 Interfaces:
 

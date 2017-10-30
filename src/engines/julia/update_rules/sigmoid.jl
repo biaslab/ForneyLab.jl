@@ -1,20 +1,23 @@
 # Cummulative Gaussian (CDF of standard normal distribution)
 Φ(x::Union{Float64, Vector{Float64}}) = 0.5*erfc(-x./sqrt(2.))
 
-export ruleSPSigmoidGV, ruleEPSigmoidGB1, ruleEPSigmoidGP1
+export
+ruleSPSigmoidBinG, 
+ruleEPSigmoidRealGB, 
+ruleEPSigmoidRealGP
 
-function ruleSPSigmoidGV(   msg_real::Message{Gaussian},
-                            msg_bin::Void)
+function ruleSPSigmoidBinG( msg_bin::Void,
+                            msg_real::Message{Univariate{Gaussian}})
 
     ensureParameters!(msg_real.dist, (:m, :v))
     
     p = Φ(msg_real.dist.params[:m] / sqrt(1 + msg_real.dist.params[:v]))
     isnan(p) && (p = 0.5)
 
-    Message(Bernoulli, p=p)
+    Message(Univariate(Bernoulli, p=p))
 end
 
-function ruleEPSigmoidGB1(msg_real::Message{Gaussian}, msg_bin::Message{Bernoulli})
+function ruleEPSigmoidRealGB(msg_bin::Message{Univariate{Bernoulli}}, msg_real::Message{Univariate{Gaussian}})
     # Calculate approximate (Gaussian) message towards i[:real]
     # The approximate message is an 'expectation' under the context (cavity distribution) encoded by incoming message msg_cavity.
     # Propagating the resulting approximate msg through the factor graph results in the expectation propagation (EP) algorithm.
@@ -67,11 +70,11 @@ function ruleEPSigmoidGB1(msg_real::Message{Gaussian}, msg_bin::Message{Bernoull
     outbound_dist_xi = marginal_xi - dist_cavity.params[:xi]
     isnan(outbound_dist_xi) && (outbound_dist_xi = 0.0)
 
-    return Message(Gaussian, xi=outbound_dist_xi, w=outbound_dist_w)
+    return Message(Univariate(Gaussian, xi=outbound_dist_xi, w=outbound_dist_w))
 end
 
-function ruleEPSigmoidGP1(msg_real::Message{Gaussian}, msg_bin::Message{PointMass})
+function ruleEPSigmoidRealGP(msg_bin::Message{Univariate{PointMass}}, msg_real::Message{Univariate{Gaussian}})
     p = mapToBernoulliParameterRange(msg_bin.dist.params[:m])
         
-    return ruleEPSigmoidGB1(msg_real, Message(Bernoulli, p=p))
+    return ruleEPSigmoidRealGB(Message(Univariate(Bernoulli, p=p)), msg_real)
 end
