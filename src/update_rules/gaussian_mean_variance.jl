@@ -16,7 +16,7 @@
 @sumProductRule(:node_type     => GaussianMeanVariance,
                 :outbound_type => Message{Univariate{Gaussian}},
                 :inbound_types => (Message{Univariate{Gaussian}}, Void, Message{Univariate{PointMass}}),
-                :name          => SPGaussianMeanVarianceMPG)
+                :name          => SPGaussianMeanVarianceMGP)
 
 @variationalRule(:node_type     => GaussianMeanVariance,
                  :outbound_type => Message{Univariate{Gaussian}},

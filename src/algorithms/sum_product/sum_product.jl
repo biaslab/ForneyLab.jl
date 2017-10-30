@@ -59,7 +59,7 @@ function collectInboundTypes{T<:SumProductRule}(entry::ScheduleEntry,
         if node_interface == entry.interface
             push!(inbound_message_types, Void)
         elseif (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
-            push!(inbound_message_types, Message{Univariate{PointMass}}) # TODO: not always univariate
+            push!(inbound_message_types, Message{distType(node_interface.partner.node)})
         else
             push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
         end

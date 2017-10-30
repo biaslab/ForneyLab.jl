@@ -228,13 +228,13 @@ function messageString(node::Clamp)
         # Message comes from data array
         buffer, idx = ForneyLab.current_graph.placeholders[node]
         if idx > 0
-            str = "Message(Univariate(PointMass, m=data[:$buffer][$idx]))" # TODO: Multivariate case
+            str = "Message($(distTypeString(node))(PointMass, m=data[:$buffer][$idx]))"
         else
-            str = "Message(Univariate(PointMass, m=data[:$buffer]))"
+            str = "Message($(distTypeString(node))(PointMass, m=data[:$buffer]))"
         end
     else
         # Insert constant
-        str = "Message(Univariate(PointMass, m=$(node.value)))"
+        str = "Message($(distTypeString(node))(PointMass, m=$(node.value)))"
     end
 
     return str
@@ -244,19 +244,23 @@ end
 Depending on the origin of the Clamp node message,
 contruct the marginal code.
 """
-function marginalString(node::Clamp) # TODO: not always univariate
+function marginalString(node::Clamp)
     if node in keys(ForneyLab.current_graph.placeholders)
         # Message comes from data array
         buffer, idx = ForneyLab.current_graph.placeholders[node]
         if idx > 0
-            str = "Univariate(PointMass, m=data[:$buffer][$idx])" 
+            str = "$(distTypeString(node))(PointMass, m=data[:$buffer][$idx])" 
         else
-            str = "Univariate(PointMass, m=data[:$buffer])"
+            str = "$(distTypeString(node))(PointMass, m=data[:$buffer])"
         end
     else
         # Insert constant
-        str = "Univariate(PointMass, m=$(node.value))"
+        str = "$(distTypeString(node))(PointMass, m=$(node.value))"
     end
 
     return str
 end
+
+distTypeString{T<:Univariate}(node::Clamp{T}) = "Univariate"
+distTypeString{T<:Multivariate}(node::Clamp{T}) = "Multivariate"
+distTypeString{T<:MatrixVariate}(node::Clamp{T}) = "MatrixVariate"

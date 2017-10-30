@@ -72,7 +72,7 @@ function collectInboundTypes{T<:VariationalRule}(entry::ScheduleEntry,
             push!(inbound_types, inferred_outbound_types[node_interface.partner])
         else
             # Edge is external, accept marginal
-            push!(inbound_types, Univariate) # TODO: not always univariate
+            push!(inbound_types, Univariate) # TODO: not always Univariate 
         end
     end
 

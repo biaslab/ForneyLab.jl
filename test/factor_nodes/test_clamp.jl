@@ -49,7 +49,7 @@ end
 #-------------
 
 @testset "SPClamp" begin
-    @test SPClamp <: SumProductRule{Clamp}
+    @test SPClamp <: SumProductRule{Clamp{Univariate{PointMass}}}
     @test outboundType(SPClamp) == Message{Univariate{PointMass}}
     @test isApplicable(SPClamp, DataType[]) 
 end

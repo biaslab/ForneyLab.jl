@@ -149,8 +149,6 @@ function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Inte
     return schedule
 end
 
-# TODO: condensing schedules in this disallows execution of schedules 
-# with just one message outcoming from a Clamp
 """
 Contruct a condensed schedule.
 """

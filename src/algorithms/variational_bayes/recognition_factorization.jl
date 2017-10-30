@@ -38,7 +38,6 @@ function factor(variables::Set{Variable}; factorization=:structured, id=generate
             if haskey(cluster_sig_to_variables_dict, cluster_sig)
                 # Cluster is already registered, push variable to registered cluster
                 push!(cluster_sig_to_variables_dict[cluster_sig], variable)
-                # TODO: this might lead to problems when computing the free energy
             else
                 # Register new cluster
                 cluster_sig_to_variables_dict[cluster_sig] = [variable]
@@ -53,7 +52,6 @@ function factor(variables::Set{Variable}; factorization=:structured, id=generate
         end
         return recognition_factors
     elseif factorization == :structured
-        # 
         return RecognitionFactor(variables, id=id)
     else
         error("Unknown factorization keyword $(factorization), choose `:naive` or `:structured` instead")

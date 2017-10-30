@@ -59,9 +59,6 @@ function variationalExpectationPropagationSchedule(recognition_factor::Recogniti
     return schedule
 end
 
-# Because we no longer have access to the interfaces on model construction, we have
-# to find the EP sites automatically.
-# TODO: this method should be refactored to generalize to other node types
 """
 Find default EP sites present in `node_set`
 """
@@ -76,7 +73,6 @@ function collectEPSites(node_set::Set{FactorNode})
     return ep_sites
 end
 
-# TODO: this method should be refactored to generalize to other node types
 """
 Constructs breaker types dictionary for breaker sites
 """
@@ -128,7 +124,7 @@ function collectInboundTypes{T<:ExpectationPropagationRule}(entry::ScheduleEntry
     inbound_message_types = DataType[]
     for node_interface in entry.interface.node.interfaces
         if (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
-            push!(inbound_message_types, Message{Univariate{PointMass}}) # TODO: not always univariate
+            push!(inbound_message_types, Message{distType(node_interface.partner.node)})
         else
             push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
         end

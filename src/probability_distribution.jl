@@ -13,7 +13,6 @@ averageEnergy,
 ==,
 vague
 
-# TODO: correctness of distribution parameters is not enforced
 """Encodes a probability distribution as a FactorNode of type `family` with fixed interfaces"""
 abstract ProbabilityDistribution{family<:FactorNode}
 

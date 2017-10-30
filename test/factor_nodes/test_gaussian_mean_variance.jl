@@ -3,7 +3,7 @@ module GaussianMeanVarianceTest
 using Base.Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPGaussianMeanVarianceOutPP, SPGaussianMeanVarianceMPP, SPGaussianMeanVarianceOutGP, SPGaussianMeanVarianceMPG, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
+import ForneyLab: SPGaussianMeanVarianceOutPP, SPGaussianMeanVarianceMPP, SPGaussianMeanVarianceOutGP, SPGaussianMeanVarianceMGP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
 
 #-------------
 # Update rules
@@ -36,13 +36,13 @@ end
     @test ruleSPGaussianMeanVarianceOutGP(nothing, Message(Univariate(Gaussian, m=1.0, v=1.0)), Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=1.0, v=3.0))
 end
 
-@testset "SPGaussianMeanVarianceMPG" begin
-    @test SPGaussianMeanVarianceMPG <: SumProductRule{GaussianMeanVariance}
-    @test outboundType(SPGaussianMeanVarianceMPG) == Message{Univariate{Gaussian}}
-    @test !isApplicable(SPGaussianMeanVarianceMPG, [Void, Message{Univariate{Gaussian}}, Message{Univariate{PointMass}}]) 
-    @test isApplicable(SPGaussianMeanVarianceMPG, [Message{Univariate{Gaussian}}, Void, Message{Univariate{PointMass}}]) 
+@testset "SPGaussianMeanVarianceMGP" begin
+    @test SPGaussianMeanVarianceMGP <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceMGP) == Message{Univariate{Gaussian}}
+    @test !isApplicable(SPGaussianMeanVarianceMGP, [Void, Message{Univariate{Gaussian}}, Message{Univariate{PointMass}}]) 
+    @test isApplicable(SPGaussianMeanVarianceMGP, [Message{Univariate{Gaussian}}, Void, Message{Univariate{PointMass}}]) 
 
-    @test ruleSPGaussianMeanVarianceMPG(Message(Univariate(Gaussian, m=1.0, v=1.0)), nothing, Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=1.0, v=3.0))
+    @test ruleSPGaussianMeanVarianceMGP(Message(Univariate(Gaussian, m=1.0, v=1.0)), nothing, Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=1.0, v=3.0))
 end
 
 @testset "VBGaussianMeanVarianceM" begin

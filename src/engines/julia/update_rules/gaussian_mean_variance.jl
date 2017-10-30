@@ -2,7 +2,7 @@ export
 ruleSPGaussianMeanVarianceOutPP,
 ruleSPGaussianMeanVarianceMPP,
 ruleSPGaussianMeanVarianceOutGP, 
-ruleSPGaussianMeanVarianceMPG, 
+ruleSPGaussianMeanVarianceMGP, 
 ruleVBGaussianMeanVarianceM,
 ruleVBGaussianMeanVarianceOut
 
@@ -22,7 +22,7 @@ function ruleSPGaussianMeanVarianceOutGP(   msg_out::Void,
     Message(Univariate(Gaussian, m=msg_mean.dist.params[:m], v=msg_mean.dist.params[:v] + msg_var.dist.params[:m]))
 end
 
-ruleSPGaussianMeanVarianceMPG(msg_out::Message{Univariate{Gaussian}}, msg_mean::Void, msg_var::Message{Univariate{PointMass}}) = ruleSPGaussianMeanVarianceOutGP(msg_mean, msg_out, msg_var)
+ruleSPGaussianMeanVarianceMGP(msg_out::Message{Univariate{Gaussian}}, msg_mean::Void, msg_var::Message{Univariate{PointMass}}) = ruleSPGaussianMeanVarianceOutGP(msg_mean, msg_out, msg_var)
 
 ruleVBGaussianMeanVarianceM(dist_out::Univariate,
                             dist_mean::Any,
