@@ -80,7 +80,7 @@ function breakerTypes(breaker_sites::Vector{Interface})
     breaker_types = Dict{Interface, DataType}()
     for site in breaker_sites
         if isa(site.partner.node, Sigmoid)
-            breaker_types[site] = Message{Univariate{Gaussian}} # Sigmoid EP site partner requires Gaussian breaker
+            breaker_types[site] = Message{Gaussian, Univariate} # Sigmoid EP site partner requires Gaussian breaker
         end
     end
 
@@ -124,7 +124,7 @@ function collectInboundTypes{T<:ExpectationPropagationRule}(entry::ScheduleEntry
     inbound_message_types = DataType[]
     for node_interface in entry.interface.node.interfaces
         if (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
-            push!(inbound_message_types, Message{distType(node_interface.partner.node)})
+            push!(inbound_message_types, Message{PointMass})
         else
             push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
         end
@@ -180,7 +180,7 @@ macro expectationPropagationRule(fields...)
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Void
             # Only validate inbounds required for message update
-            push!(input_type_validators, "(input_types[$i]==$i_type)")
+            push!(input_type_validators, "(input_types[$i]<:$i_type)")
         end
     end
 

@@ -59,7 +59,7 @@ function collectInboundTypes{T<:SumProductRule}(entry::ScheduleEntry,
         if node_interface == entry.interface
             push!(inbound_message_types, Void)
         elseif (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
-            push!(inbound_message_types, Message{distType(node_interface.partner.node)})
+            push!(inbound_message_types, Message{PointMass})
         else
             push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
         end
@@ -112,7 +112,7 @@ macro sumProductRule(fields...)
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Void
             # Only validate inbounds required for message update
-            push!(input_type_validators, "(input_types[$i]==$i_type)")
+            push!(input_type_validators, "(input_types[$i]<:$i_type)")
         end
     end
 

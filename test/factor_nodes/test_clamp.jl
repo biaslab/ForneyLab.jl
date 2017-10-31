@@ -49,9 +49,17 @@ end
 #-------------
 
 @testset "SPClamp" begin
-    @test SPClamp <: SumProductRule{Clamp{Univariate{PointMass}}}
-    @test outboundType(SPClamp) == Message{Univariate{PointMass}}
-    @test isApplicable(SPClamp, DataType[]) 
+    @test SPClamp{Univariate} <: SumProductRule{Clamp{Univariate}}
+    @test outboundType(SPClamp{Univariate}) == Message{PointMass, Univariate}
+    @test isApplicable(SPClamp{Univariate}, DataType[]) 
+
+    @test SPClamp{Multivariate} <: SumProductRule{Clamp{Multivariate}}
+    @test outboundType(SPClamp{Multivariate}) == Message{PointMass, Multivariate}
+    @test isApplicable(SPClamp{Multivariate}, DataType[]) 
+
+    @test SPClamp{MatrixVariate} <: SumProductRule{Clamp{MatrixVariate}}
+    @test outboundType(SPClamp{MatrixVariate}) == Message{PointMass, MatrixVariate}
+    @test isApplicable(SPClamp{MatrixVariate}, DataType[]) 
 end
 
 end #module

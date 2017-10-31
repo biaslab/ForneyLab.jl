@@ -23,18 +23,18 @@ end
 
 @testset "SPSigmoidBinG" begin
     @test SPSigmoidBinG <: SumProductRule{Sigmoid}
-    @test outboundType(SPSigmoidBinG) == Message{Univariate{Bernoulli}}
-    @test isApplicable(SPSigmoidBinG, [Void, Message{Univariate{Gaussian}}]) 
-    @test !isApplicable(SPSigmoidBinG, [Message{Univariate{Bernoulli}}, Void])
+    @test outboundType(SPSigmoidBinG) == Message{Bernoulli}
+    @test isApplicable(SPSigmoidBinG, [Void, Message{Gaussian}]) 
+    @test !isApplicable(SPSigmoidBinG, [Message{Bernoulli}, Void])
 
     @test ruleSPSigmoidBinG(nothing, Message(Univariate(Gaussian, m=1.0, v=0.5))) == Message(Univariate(Bernoulli, p=ForneyLab.Φ(1/sqrt(1+0.5))))
 end
 
 @testset "EPSigmoidRealGB" begin
     @test EPSigmoidRealGB <: ExpectationPropagationRule{Sigmoid}
-    @test outboundType(EPSigmoidRealGB) == Message{Univariate{Gaussian}}
-    @test isApplicable(EPSigmoidRealGB, [Message{Univariate{Bernoulli}}, Message{Univariate{Gaussian}}], 2) 
-    @test !isApplicable(EPSigmoidRealGB, [Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}], 2)
+    @test outboundType(EPSigmoidRealGB) == Message{Gaussian}
+    @test isApplicable(EPSigmoidRealGB, [Message{Bernoulli}, Message{Gaussian}], 2) 
+    @test !isApplicable(EPSigmoidRealGB, [Message{PointMass}, Message{Gaussian}], 2)
 
     @test ruleEPSigmoidRealGB(Message(Univariate(Bernoulli, p=1.0)), Message(Univariate(Gaussian, m=1.0, v=0.5))) == Message(Univariate(Gaussian, xi=0.6723616582693994, w=0.3295003993960708))
     @test ruleEPSigmoidRealGB(Message(Univariate(Bernoulli, p=0.8)), Message(Univariate(Gaussian, m=1.0, v=0.5))) == Message(Univariate(Gaussian, xi=0.4270174959448596, w=0.19914199922339604))
@@ -43,9 +43,9 @@ end
 
 @testset "EPSigmoidRealGP" begin
     @test EPSigmoidRealGP <: ExpectationPropagationRule{Sigmoid}
-    @test outboundType(EPSigmoidRealGP) == Message{Univariate{Gaussian}}
-    @test isApplicable(EPSigmoidRealGP, [Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}], 2) 
-    @test !isApplicable(EPSigmoidRealGP, [Message{Univariate{Bernoulli}}, Message{Univariate{Gaussian}}], 2) 
+    @test outboundType(EPSigmoidRealGP) == Message{Gaussian}
+    @test isApplicable(EPSigmoidRealGP, [Message{PointMass}, Message{Gaussian}], 2) 
+    @test !isApplicable(EPSigmoidRealGP, [Message{Bernoulli}, Message{Gaussian}], 2) 
 
     @test ruleEPSigmoidRealGP(Message(Univariate(PointMass, m=true)), Message(Univariate(Gaussian, m=1.0, v=0.5))) == Message(Univariate(Gaussian, xi=0.6723616582693994, w=0.3295003993960708))
     @test ruleEPSigmoidRealGP(Message(Univariate(PointMass, m=NaN)), Message(Univariate(Gaussian, m=1.0, v=0.5))) == Message(Univariate(Gaussian, xi=0.0, w=1e-12))

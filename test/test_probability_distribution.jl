@@ -1,20 +1,20 @@
 module ProbabilityDistributionTest
 
 using Base.Test
-import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, isProper, isValid, invalidate!, gaussianQuadrature
+import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, isProper, isValid, invalidate!, gaussianQuadrature, dims, diageye
 
 @testset "Univariate" begin
     # ProbabilityDistribution should be parameterized on a node type (distribution family)
     gaussian = Univariate(Gaussian, m=0.0, v=1.0)
-    @test isa(gaussian, ProbabilityDistribution{Gaussian})
-    @test isa(gaussian, Univariate{Gaussian})
-    @test !isa(gaussian, Multivariate)
-    @test !isa(gaussian, MatrixVariate)
+    @test isa(gaussian, ProbabilityDistribution{Univariate})
+    @test isa(gaussian, ProbabilityDistribution{Univariate, Gaussian})
+    @test !isa(gaussian, ProbabilityDistribution{Multivariate})
+    @test !isa(gaussian, ProbabilityDistribution{MatrixVariate})
     @test gaussian.params == Dict(:m=>0.0, :v=>1.0)
 
     # PointMass should be defined as a special family 
     point_mass = Univariate(PointMass, m=0.0)
-    @test isa(point_mass, Univariate{PointMass})
+    @test isa(point_mass, ProbabilityDistribution{Univariate, PointMass})
     @test point_mass.params == Dict(:m=>0.0)
     @test isProper(point_mass)
     @test mean(point_mass) == 0.0
@@ -31,15 +31,15 @@ end
 
 @testset "Multivariate" begin
     gaussian = Multivariate(Gaussian, m=[0.0], v=[1.0].')
-    @test isa(gaussian, ProbabilityDistribution{Gaussian})
-    @test isa(gaussian, Multivariate{Gaussian, 1})
+    @test isa(gaussian, ProbabilityDistribution{Multivariate})
+    @test isa(gaussian, ProbabilityDistribution{Multivariate, Gaussian})
     @test !isa(gaussian, Univariate)
     @test !isa(gaussian, MatrixVariate)
     @test gaussian.params == Dict(:m=>[0.0], :v=>[1.0].')
 
     # PointMass should be defined as a special family 
     point_mass = Multivariate(PointMass, m=[0.0])
-    @test isa(point_mass, Multivariate{PointMass, 1})
+    @test isa(point_mass, ProbabilityDistribution{Multivariate, PointMass})
     @test point_mass.params == Dict(:m=>[0.0])
     @test isProper(point_mass)
     @test mean(point_mass) == [0.0]
@@ -49,10 +49,17 @@ end
 
 @testset "MatrixVariate" begin
     point_mass = MatrixVariate(PointMass, m=[0.0].')
-    @test isa(point_mass, MatrixVariate{PointMass, 1, 1})
+    @test isa(point_mass, ProbabilityDistribution{MatrixVariate, PointMass})
     @test point_mass.params == Dict(:m=>[0.0].')
     @test isProper(point_mass)
     @test mean(point_mass) == [0.0].'
+end
+
+@testset "dims" begin
+    @test dims(Univariate(PointMass, m=0.0)) == 1
+    @test dims(Multivariate(PointMass, m=ones(2))) == 2
+    @test dims(MatrixVariate(PointMass, m=eye(2))) == (2, 2)
+    @test dims(MatrixVariate(PointMass, m=diageye(2))) == (2, 2)
 end
 
 @testset "isValid" begin

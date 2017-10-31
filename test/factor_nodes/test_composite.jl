@@ -46,15 +46,15 @@ end
 
 # Define custom rule for sum-product message towards x
 @sumProductRule(:node_type     => StateTransition,
-                :outbound_type => Message{Univariate{Gaussian}},
-                :inbound_types => (Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}, Void),
+                :outbound_type => Message{Gaussian},
+                :inbound_types => (Message{PointMass}, Message{Gaussian}, Void),
                 :name          => SPStateTransitionX)
 
 @testset "Custom SPStateTransitionX" begin
     @test SPStateTransitionX <: SumProductRule{StateTransition}
-    @test outboundType(SPStateTransitionX) == Message{Univariate{Gaussian}}
-    @test isApplicable(SPStateTransitionX, [Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}, Void]) 
-    @test !isApplicable(SPStateTransitionX, [Message{Univariate{Gaussian}}, Message{Univariate{PointMass}}, Void]) 
+    @test outboundType(SPStateTransitionX) == Message{Gaussian}
+    @test isApplicable(SPStateTransitionX, [Message{PointMass}, Message{Gaussian}, Void]) 
+    @test !isApplicable(SPStateTransitionX, [Message{Gaussian}, Message{PointMass}, Void]) 
 end
 
 @testset "Composite node scheduling and algorithm compilation" begin
@@ -69,10 +69,10 @@ end
     # Build SP schedule
     schedule = sumProductSchedule(x)
     @test length(schedule) == 5
-    @test ScheduleEntry(nd.i[:m].partner, SPClamp) in schedule
-    @test ScheduleEntry(nd.i[:v].partner, SPClamp) in schedule
+    @test ScheduleEntry(nd.i[:m].partner, SPClamp{Univariate}) in schedule
+    @test ScheduleEntry(nd.i[:v].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd.i[:out], SPGaussianMeanVarianceOutPP) in schedule
-    @test ScheduleEntry(cnd.i[:y].partner, SPClamp) in schedule
+    @test ScheduleEntry(cnd.i[:y].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(cnd.i[:x], SPStateTransitionX) in schedule
 
     # Build SP algorithm for Julia execution
@@ -85,7 +85,7 @@ end
 
 @testset "Composite node algorithm execution" begin
     # Implement custom rule for Julia execution
-    ruleSPStateTransitionX(::Message{Univariate{PointMass}}, ::Message{Univariate{Gaussian}}, ::Void) = Message(Univariate(Gaussian, m=2.0, v=3.0)) # Send some dummy message
+    ruleSPStateTransitionX(::Message{PointMass, Univariate}, ::Message{Gaussian, Univariate}, ::Void) = Message(Univariate(Gaussian, m=2.0, v=3.0)) # Send some dummy message
 
     # Resulting algorithm ---
     function step!(marginals::Dict, data::Dict)

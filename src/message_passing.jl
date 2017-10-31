@@ -7,17 +7,18 @@ Schedule
 import Base: ==
 
 """Encodes a message, which is a probability distribution with a scaling factor"""
-immutable Message{T<:ProbabilityDistribution}
-    dist::T
+immutable Message{family<:FactorNode, var_type<:VariateType} # Note that parameter order is switched w.r.t. ProbabilityDistribution, for ease of overloading
+    dist::ProbabilityDistribution{var_type, family}
     scaling_factor::Any
 
-    Message{U<:ProbabilityDistribution}(dist::U) = new{U}(dist) # Constructor for unspecified scaling factor
+    Message{F<:FactorNode, V<:VariateType}(dist::ProbabilityDistribution{V, F}) = new{F, V}(dist) # Constructor for unspecified scaling factor
 end
 
-Message{T}(dist::T) = Message{T}(dist)
+Message{F<:FactorNode, V<:VariateType}(dist::ProbabilityDistribution{V, F}) = Message{F, V}(dist)
 
-function =={T<:ProbabilityDistribution, U<:ProbabilityDistribution}(t::Message{T}, u::Message{U})
-    (T == U) || return false
+function =={fam_t<:FactorNode, var_t<:VariateType, fam_u<:FactorNode, var_u<:VariateType}(t::Message{fam_t, var_t}, u::Message{fam_u, var_u})
+    (fam_t == fam_u) || return false
+    (var_t == var_u) || return false
     (t.dist == u.dist) || return false
     if isdefined(t, :scaling_factor) && isdefined(u, :scaling_factor)
         (t.scaling_factor == u.scaling_factor) || return false

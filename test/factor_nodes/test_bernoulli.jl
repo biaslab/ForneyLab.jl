@@ -2,8 +2,16 @@ module BernoulliTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar
+import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims
 import ForneyLab: SPBernoulliOutP, VBBernoulliOut
+
+@testset "dims" begin
+    @test dims(Univariate(Bernoulli, p=0.5)) == 1
+end
+
+@testset "vague" begin
+    @test vague(Bernoulli) == Univariate(Bernoulli, p=0.5)
+end
 
 @testset "unsafe mean and variance" begin
     @test unsafeMean(Univariate(Bernoulli, p=0.2)) == 0.2
@@ -21,17 +29,17 @@ end
 
 @testset "SPBernoulliOutP" begin
     @test SPBernoulliOutP <: SumProductRule{Bernoulli}
-    @test outboundType(SPBernoulliOutP) == Message{Univariate{Bernoulli}}
-    @test isApplicable(SPBernoulliOutP, [Void, Message{Univariate{PointMass}}]) 
+    @test outboundType(SPBernoulliOutP) == Message{Bernoulli}
+    @test isApplicable(SPBernoulliOutP, [Void, Message{PointMass}]) 
 
     @test ruleSPBernoulliOutP(nothing, Message(Univariate(PointMass, m=0.2))) == Message(Univariate(Bernoulli, p=0.2))
 end
 
 @testset "VBBernoulliOut" begin
     @test VBBernoulliOut <: VariationalRule{Bernoulli}
-    @test outboundType(VBBernoulliOut) == Message{Univariate{Bernoulli}}
-    @test isApplicable(VBBernoulliOut, [Void, Univariate])
-    @test !isApplicable(VBBernoulliOut, [Univariate, Void])
+    @test outboundType(VBBernoulliOut) == Message{Bernoulli}
+    @test isApplicable(VBBernoulliOut, [Void, ProbabilityDistribution])
+    @test !isApplicable(VBBernoulliOut, [ProbabilityDistribution, Void])
 
     @test ruleVBBernoulliOut(nothing, Univariate(PointMass, m=0.2)) == Message(Univariate(Bernoulli, p=0.2))
 end

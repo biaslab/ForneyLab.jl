@@ -7,7 +7,7 @@ ruleEPSigmoidRealGB,
 ruleEPSigmoidRealGP
 
 function ruleSPSigmoidBinG( msg_bin::Void,
-                            msg_real::Message{Univariate{Gaussian}})
+                            msg_real::Message{Gaussian, Univariate})
 
     ensureParameters!(msg_real.dist, (:m, :v))
     
@@ -17,7 +17,7 @@ function ruleSPSigmoidBinG( msg_bin::Void,
     Message(Univariate(Bernoulli, p=p))
 end
 
-function ruleEPSigmoidRealGB(msg_bin::Message{Univariate{Bernoulli}}, msg_real::Message{Univariate{Gaussian}})
+function ruleEPSigmoidRealGB(msg_bin::Message{Bernoulli, Univariate}, msg_real::Message{Gaussian, Univariate})
     # Calculate approximate (Gaussian) message towards i[:real]
     # The approximate message is an 'expectation' under the context (cavity distribution) encoded by incoming message msg_cavity.
     # Propagating the resulting approximate msg through the factor graph results in the expectation propagation (EP) algorithm.
@@ -73,7 +73,7 @@ function ruleEPSigmoidRealGB(msg_bin::Message{Univariate{Bernoulli}}, msg_real::
     return Message(Univariate(Gaussian, xi=outbound_dist_xi, w=outbound_dist_w))
 end
 
-function ruleEPSigmoidRealGP(msg_bin::Message{Univariate{PointMass}}, msg_real::Message{Univariate{Gaussian}})
+function ruleEPSigmoidRealGP(msg_bin::Message{PointMass, Univariate}, msg_real::Message{Gaussian, Univariate})
     p = mapToBernoulliParameterRange(msg_bin.dist.params[:m])
         
     return ruleEPSigmoidRealGB(Message(Univariate(Bernoulli, p=p)), msg_real)

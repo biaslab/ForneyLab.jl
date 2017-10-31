@@ -223,18 +223,19 @@ end
 Depending on the origin of the Clamp node message,
 contruct the outbound message code.
 """
-function messageString(node::Clamp)
+function messageString{T<:VariateType}(node::Clamp{T})
+    var_type_str = split(string(T),'.')[end] # Remove module prefixes
     if node in keys(ForneyLab.current_graph.placeholders)
         # Message comes from data array
         buffer, idx = ForneyLab.current_graph.placeholders[node]
         if idx > 0
-            str = "Message($(distTypeString(node))(PointMass, m=data[:$buffer][$idx]))"
+            str = "Message($(var_type_str)(PointMass, m=data[:$buffer][$idx]))"
         else
-            str = "Message($(distTypeString(node))(PointMass, m=data[:$buffer]))"
+            str = "Message($(var_type_str)(PointMass, m=data[:$buffer]))"
         end
     else
         # Insert constant
-        str = "Message($(distTypeString(node))(PointMass, m=$(node.value)))"
+        str = "Message($(var_type_str)(PointMass, m=$(node.value)))"
     end
 
     return str
@@ -244,23 +245,20 @@ end
 Depending on the origin of the Clamp node message,
 contruct the marginal code.
 """
-function marginalString(node::Clamp)
+function marginalString{T<:VariateType}(node::Clamp{T})
+    var_type_str = split(string(T),'.')[end] # Remove module prefixes
     if node in keys(ForneyLab.current_graph.placeholders)
         # Message comes from data array
         buffer, idx = ForneyLab.current_graph.placeholders[node]
         if idx > 0
-            str = "$(distTypeString(node))(PointMass, m=data[:$buffer][$idx])" 
+            str = "$(var_type_str)(PointMass, m=data[:$buffer][$idx])" 
         else
-            str = "$(distTypeString(node))(PointMass, m=data[:$buffer])"
+            str = "$(var_type_str)(PointMass, m=data[:$buffer])"
         end
     else
         # Insert constant
-        str = "$(distTypeString(node))(PointMass, m=$(node.value))"
+        str = "$(var_type_str)(PointMass, m=$(node.value))"
     end
 
     return str
 end
-
-distTypeString{T<:Univariate}(node::Clamp{T}) = "Univariate"
-distTypeString{T<:Multivariate}(node::Clamp{T}) = "Multivariate"
-distTypeString{T<:MatrixVariate}(node::Clamp{T}) = "MatrixVariate"

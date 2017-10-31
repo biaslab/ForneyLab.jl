@@ -6,13 +6,13 @@ ruleVBGaussianMixtureW2,
 ruleVBGaussianMixtureZ, 
 ruleVBGaussianMixtureOut
 
-function GMBackwardMRule(q_w_k::Univariate, q_x::Univariate, z_k_hat::Float64)
+function GMBackwardMRule(q_w_k::ProbabilityDistribution{Univariate}, q_x::ProbabilityDistribution{Univariate}, z_k_hat::Float64)
     z_k_hat = clamp(z_k_hat, tiny, 1.0 - tiny)
 
     Message(Univariate(Gaussian, m=unsafeMean(q_x), w=z_k_hat*unsafeMean(q_w_k)))
 end
 
-function GMBackwardWRule(q_m_k::Univariate, q_x::Univariate, z_k_hat::Float64)
+function GMBackwardWRule(q_m_k::ProbabilityDistribution{Univariate}, q_x::ProbabilityDistribution{Univariate}, z_k_hat::Float64)
     z_k_hat = clamp(z_k_hat, tiny, 1.0 - tiny)
 
     Message(Univariate(Gamma,
@@ -22,7 +22,7 @@ end
 
 function GMBackwardZRule(   q_m::Vector,
                             q_w::Vector,
-                            q_x::Univariate)
+                            q_x::ProbabilityDistribution{Univariate})
     rho = zeros(2)
     for k = 1:2
         rho[k] = clamp(exp(-averageEnergy(GaussianMeanPrecision, q_x, q_m[k], q_w[k])), tiny, huge)
@@ -44,62 +44,62 @@ function GMForwardRule( q_m::Vector,
     Message(Univariate(Gaussian, xi=xi, w=w))
 end
 
-function ruleVBGaussianMixtureM1(   dist_out::Univariate,
+function ruleVBGaussianMixtureM1(   dist_out::ProbabilityDistribution{Univariate},
                                     dist_mean_1::Any,
-                                    dist_prec_1::Univariate,
-                                    dist_mean_2::Univariate,
-                                    dist_prec_2::Univariate,
-                                    dist_switch::Univariate{Bernoulli})
+                                    dist_prec_1::ProbabilityDistribution{Univariate},
+                                    dist_mean_2::ProbabilityDistribution{Univariate},
+                                    dist_prec_2::ProbabilityDistribution{Univariate},
+                                    dist_switch::ProbabilityDistribution{Univariate, Bernoulli})
 
     GMBackwardMRule(dist_prec_1, dist_out, unsafeMean(dist_switch))
 end
 
-function ruleVBGaussianMixtureW1(   dist_out::Univariate,
-                                    dist_mean_1::Univariate,
+function ruleVBGaussianMixtureW1(   dist_out::ProbabilityDistribution{Univariate},
+                                    dist_mean_1::ProbabilityDistribution{Univariate},
                                     dist_prec_1::Any,
-                                    dist_mean_2::Univariate,
-                                    dist_prec_2::Univariate,
-                                    dist_switch::Univariate{Bernoulli})
+                                    dist_mean_2::ProbabilityDistribution{Univariate},
+                                    dist_prec_2::ProbabilityDistribution{Univariate},
+                                    dist_switch::ProbabilityDistribution{Univariate, Bernoulli})
 
     GMBackwardWRule(dist_mean_1, dist_out, unsafeMean(dist_switch))
 end
 
-function ruleVBGaussianMixtureM2(   dist_out::Univariate,
-                                    dist_mean_1::Univariate,
-                                    dist_prec_1::Univariate,
+function ruleVBGaussianMixtureM2(   dist_out::ProbabilityDistribution{Univariate},
+                                    dist_mean_1::ProbabilityDistribution{Univariate},
+                                    dist_prec_1::ProbabilityDistribution{Univariate},
                                     dist_mean_2::Any,
-                                    dist_prec_2::Univariate,
-                                    dist_switch::Univariate{Bernoulli})
+                                    dist_prec_2::ProbabilityDistribution{Univariate},
+                                    dist_switch::ProbabilityDistribution{Univariate, Bernoulli})
 
     GMBackwardMRule(dist_prec_2, dist_out, 1.0 - unsafeMean(dist_switch))
 end
 
-function ruleVBGaussianMixtureW2(   dist_out::Univariate,
-                                    dist_mean_1::Univariate,
-                                    dist_prec_1::Univariate,
-                                    dist_mean_2::Univariate,
+function ruleVBGaussianMixtureW2(   dist_out::ProbabilityDistribution{Univariate},
+                                    dist_mean_1::ProbabilityDistribution{Univariate},
+                                    dist_prec_1::ProbabilityDistribution{Univariate},
+                                    dist_mean_2::ProbabilityDistribution{Univariate},
                                     dist_prec_2::Any,
-                                    dist_switch::Univariate{Bernoulli})
+                                    dist_switch::ProbabilityDistribution{Univariate, Bernoulli})
 
     GMBackwardWRule(dist_mean_2, dist_out, 1.0 - unsafeMean(dist_switch))
 end
 
-function ruleVBGaussianMixtureZ(dist_out::Univariate,
-                                dist_mean_1::Univariate,
-                                dist_prec_1::Univariate,
-                                dist_mean_2::Univariate,
-                                dist_prec_2::Univariate,
+function ruleVBGaussianMixtureZ(dist_out::ProbabilityDistribution{Univariate},
+                                dist_mean_1::ProbabilityDistribution{Univariate},
+                                dist_prec_1::ProbabilityDistribution{Univariate},
+                                dist_mean_2::ProbabilityDistribution{Univariate},
+                                dist_prec_2::ProbabilityDistribution{Univariate},
                                 dist_switch::Any)
 
     GMBackwardZRule([dist_mean_1, dist_mean_2], [dist_prec_1, dist_prec_2], dist_out)
 end
 
 function ruleVBGaussianMixtureOut(  dist_out::Any,
-                                    dist_mean_1::Univariate,
-                                    dist_prec_1::Univariate,
-                                    dist_mean_2::Univariate,
-                                    dist_prec_2::Univariate,
-                                    dist_switch::Univariate{Bernoulli})
+                                    dist_mean_1::ProbabilityDistribution{Univariate},
+                                    dist_prec_1::ProbabilityDistribution{Univariate},
+                                    dist_mean_2::ProbabilityDistribution{Univariate},
+                                    dist_prec_2::ProbabilityDistribution{Univariate},
+                                    dist_switch::ProbabilityDistribution{Univariate, Bernoulli})
 
     GMForwardRule([dist_mean_1, dist_mean_2], [dist_prec_1, dist_prec_2], [unsafeMean(dist_switch), 1.0 - unsafeMean(dist_switch)])
 end

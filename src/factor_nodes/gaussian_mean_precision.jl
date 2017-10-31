@@ -36,14 +36,14 @@ end
 slug(::Type{GaussianMeanPrecision}) = "𝒩"
 
 # Average energy functional
-function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::Univariate, marg_mean::Univariate, marg_prec::Univariate)
+function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistribution{Univariate}, marg_mean::ProbabilityDistribution{Univariate}, marg_prec::ProbabilityDistribution{Univariate})
     0.5*log(2*pi) -
     0.5*unsafeLogMean(marg_prec) +
     0.5*unsafeMean(marg_prec)*( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))^2 )
 end
 
-function averageEnergy{T<:FactorNode, U<:FactorNode, V<:FactorNode, dims}(::Type{GaussianMeanPrecision}, marg_out::Multivariate{T, dims}, marg_mean::Multivariate{U, dims}, marg_prec::MatrixVariate{V, dims, dims})
-    0.5*dims*log(2*pi) -
+function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistribution{Multivariate}, marg_mean::ProbabilityDistribution{Multivariate}, marg_prec::ProbabilityDistribution{MatrixVariate})
+    0.5*dims(marg_out)*log(2*pi) -
     0.5*unsafeDetLogMean(marg_prec) +
     0.5*trace( unsafeMean(marg_prec)*(unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))*(unsafeMean(marg_out) - unsafeMean(marg_mean))' ))
 end

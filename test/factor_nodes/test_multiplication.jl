@@ -23,20 +23,20 @@ end
 
 @testset "SPMultiplicationOutGP" begin
     @test SPMultiplicationOutGP <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationOutGP) == Message{Univariate{Gaussian}}
-    @test isApplicable(SPMultiplicationOutGP, [Void, Message{Univariate{Gaussian}}, Message{Univariate{PointMass}}]) 
-    @test !isApplicable(SPMultiplicationOutGP, [Void, Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}]) 
-    @test !isApplicable(SPMultiplicationOutGP, [Message{Univariate{Gaussian}}, Void, Message{Univariate{PointMass}}]) 
+    @test outboundType(SPMultiplicationOutGP) == Message{Gaussian}
+    @test isApplicable(SPMultiplicationOutGP, [Void, Message{Gaussian}, Message{PointMass}]) 
+    @test !isApplicable(SPMultiplicationOutGP, [Void, Message{PointMass}, Message{Gaussian}]) 
+    @test !isApplicable(SPMultiplicationOutGP, [Message{Gaussian}, Void, Message{PointMass}]) 
 
     @test ruleSPMultiplicationOutGP(nothing, Message(Univariate(Gaussian, m=1.0, v=3.0)), Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=2.0, v=12.0))
 end
 
 @testset "SPMultiplicationInGP" begin
     @test SPMultiplicationInGP <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationInGP) == Message{Univariate{Gaussian}}
-    @test !isApplicable(SPMultiplicationInGP, [Void, Message{Univariate{Gaussian}}, Message{Univariate{PointMass}}]) 
-    @test !isApplicable(SPMultiplicationInGP, [Message{Univariate{PointMass}}, Void, Message{Univariate{Gaussian}}]) 
-    @test isApplicable(SPMultiplicationInGP, [Message{Univariate{Gaussian}}, Void, Message{Univariate{PointMass}}]) 
+    @test outboundType(SPMultiplicationInGP) == Message{Gaussian}
+    @test !isApplicable(SPMultiplicationInGP, [Void, Message{Gaussian}, Message{PointMass}]) 
+    @test !isApplicable(SPMultiplicationInGP, [Message{PointMass}, Void, Message{Gaussian}]) 
+    @test isApplicable(SPMultiplicationInGP, [Message{Gaussian}, Void, Message{PointMass}]) 
 
     @test ruleSPMultiplicationInGP(Message(Univariate(Gaussian, m=1.0, v=3.0)), nothing, Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=0.5, v=0.75))
 end

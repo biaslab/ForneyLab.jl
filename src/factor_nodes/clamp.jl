@@ -16,7 +16,7 @@ Construction:
     Clamp(out, value, id=:some_id)
     Clamp(value, id=:some_id)
 """
-type Clamp{T<:ProbabilityDistribution} <: DeltaFactor
+type Clamp{T<:VariateType} <: DeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
@@ -24,18 +24,7 @@ type Clamp{T<:ProbabilityDistribution} <: DeltaFactor
 end
 
 function Clamp(out::Variable, value::Any; id=generateId(Clamp))
-    # Select parametric type
-    if isa(value, Number)
-        dtype = Univariate{PointMass}
-    elseif isa(value, Vector)
-        dtype = Multivariate{PointMass, length(value)}
-    elseif isa(value, AbstractMatrix)
-        dtype = MatrixVariate{PointMass, size(value, 1), size(value, 2)}
-    else
-        error("No distribution type for value $(value)")
-    end
-
-    self = Clamp{dtype}(id, Array(Interface, 1), Dict{Symbol,Interface}(), value)
+    self = Clamp{variateType(value)}(id, Array(Interface, 1), Dict{Symbol,Interface}(), value)
     addNode!(currentGraph(), self)
 
     self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
@@ -43,7 +32,9 @@ function Clamp(out::Variable, value::Any; id=generateId(Clamp))
     return self
 end
 
-distType{T<:ProbabilityDistribution}(nd::Clamp{T}) = T
+variateType(value::Number) = Univariate
+variateType(value::Vector) = Multivariate
+variateType(value::AbstractMatrix) = MatrixVariate
 
 """
 `constant` creates a `Variable` which is linked to a new `Clamp`,

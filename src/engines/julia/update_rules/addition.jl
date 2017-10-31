@@ -7,8 +7,8 @@ ruleSPAdditionIn1PG,
 ruleSPAdditionIn2GG
 
 function ruleSPAdditionOutGG(   msg_out::Void,
-                                msg_in1::Message{Univariate{Gaussian}},
-                                msg_in2::Message{Univariate{Gaussian}})
+                                msg_in1::Message{Gaussian, Univariate},
+                                msg_in2::Message{Gaussian, Univariate})
 
     ensureParameters!(msg_in1.dist, (:m, :v))
     ensureParameters!(msg_in2.dist, (:m, :v))
@@ -16,8 +16,8 @@ function ruleSPAdditionOutGG(   msg_out::Void,
     Message(Univariate(Gaussian, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m], v=msg_in1.dist.params[:v] + msg_in2.dist.params[:v]))
 end
 
-function ruleSPAdditionIn2GG(   msg_out::Message{Univariate{Gaussian}},
-                                msg_in1::Message{Univariate{Gaussian}},
+function ruleSPAdditionIn2GG(   msg_out::Message{Gaussian, Univariate},
+                                msg_in1::Message{Gaussian, Univariate},
                                 msg_in2::Void)
 
     ensureParameters!(msg_in1.dist, (:m, :v))
@@ -26,22 +26,22 @@ function ruleSPAdditionIn2GG(   msg_out::Message{Univariate{Gaussian}},
     Message(Univariate(Gaussian, m=msg_out.dist.params[:m] - msg_in1.dist.params[:m], v=msg_out.dist.params[:v] + msg_in1.dist.params[:v]))
 end
 
-ruleSPAdditionIn1GG(msg_out::Message{Univariate{Gaussian}}, ::Void, msg_in2::Message{Univariate{Gaussian}}) = ruleSPAdditionIn2GG(msg_out, msg_in2, nothing)
+ruleSPAdditionIn1GG(msg_out::Message{Gaussian, Univariate}, ::Void, msg_in2::Message{Gaussian, Univariate}) = ruleSPAdditionIn2GG(msg_out, msg_in2, nothing)
 
 # TODO: add other combinations
 function ruleSPAdditionOutGP(   msg_out::Void,
-                                msg_in1::Message{Univariate{Gaussian}},
-                                msg_in2::Message{Univariate{PointMass}})
+                                msg_in1::Message{Gaussian, Univariate},
+                                msg_in2::Message{PointMass, Univariate})
 
     ensureParameters!(msg_in1.dist, (:m, :v))
 
     Message(Univariate(Gaussian, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m], v=msg_in1.dist.params[:v]))
 end
-ruleSPAdditionOutPG(::Void, msg_in1::Message{Univariate{PointMass}}, msg_in2::Message{Univariate{Gaussian}}) = ruleSPAdditionOutGP(nothing, msg_in2, msg_in1)
+ruleSPAdditionOutPG(::Void, msg_in1::Message{PointMass, Univariate}, msg_in2::Message{Gaussian, Univariate}) = ruleSPAdditionOutGP(nothing, msg_in2, msg_in1)
 
-function ruleSPAdditionIn1PG(   msg_out::Message{Univariate{PointMass}},
+function ruleSPAdditionIn1PG(   msg_out::Message{PointMass, Univariate},
                                 msg_in1::Void,
-                                msg_in2::Message{Univariate{Gaussian}})
+                                msg_in2::Message{Gaussian, Univariate})
 
     ensureParameters!(msg_in2.dist, (:m, :v))
 

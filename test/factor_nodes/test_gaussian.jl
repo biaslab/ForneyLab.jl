@@ -2,14 +2,19 @@ module GaussianWeightedMeanPrecisionTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: ensureParameters!, prod!, ==, unsafeMean, unsafeVar, unsafeCov, isWellDefined, isProper, sample
+import ForneyLab: ensureParameters!, prod!, ==, unsafeMean, unsafeVar, unsafeCov, isWellDefined, isProper, sample, dims
+
+@testset "dims" begin
+    @test dims(Univariate(Gaussian, m=0.0, v=1.0)) == 1
+    @test dims(Multivariate(Gaussian, m=ones(2), v=diageye(2))) == 2
+end
 
 @testset "vague" begin
     # Univariate
-    @test vague(Univariate{Gaussian}) == Univariate(Gaussian, m=0.0, v=huge)
+    @test vague(Gaussian) == Univariate(Gaussian, m=0.0, v=huge)
 
     # Multivariate
-    @test vague(Multivariate{Gaussian, 2}) == Multivariate(Gaussian, m=[0.0, 0.0], v=huge*eye(2))
+    @test vague(Gaussian, 2) == Multivariate(Gaussian, m=[0.0, 0.0], v=huge*eye(2))
 end
 
 @testset "isProper" begin

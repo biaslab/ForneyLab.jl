@@ -25,8 +25,8 @@ type MockNode <: SoftFactor
 end
 
 @variationalRule(   :node_type     => MockNode,
-                    :outbound_type => Message{Univariate{PointMass}},
-                    :inbound_types => (Void, Univariate, Univariate),
+                    :outbound_type => Message{PointMass},
+                    :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),
                     :name          => VBMockOut)
 
 @testset "@variationalRule" begin

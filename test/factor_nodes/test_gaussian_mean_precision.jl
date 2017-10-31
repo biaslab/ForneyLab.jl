@@ -12,25 +12,26 @@ import ForneyLab: VBGaussianMeanPrecisionOut, VBGaussianMeanPrecisionM, VBGaussi
 
 @testset "VBGaussianMeanPrecisionM" begin
     @test VBGaussianMeanPrecisionM <: VariationalRule{GaussianMeanPrecision}
-    @test outboundType(VBGaussianMeanPrecisionM) == Message{Univariate{Gaussian}}
-    @test isApplicable(VBGaussianMeanPrecisionM, [Univariate, Void, Univariate]) 
-    @test !isApplicable(VBGaussianMeanPrecisionM, [Univariate, Univariate, Void]) 
+    @test outboundType(VBGaussianMeanPrecisionM) == Message{Gaussian}
+    @test isApplicable(VBGaussianMeanPrecisionM, [ProbabilityDistribution, Void, ProbabilityDistribution]) 
+    @test !isApplicable(VBGaussianMeanPrecisionM, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
 
     @test ruleVBGaussianMeanPrecisionM(Univariate(Gaussian, m=3.0, v=4.0), nothing, Univariate(Gamma, a=1.0, b=2.0)) == Message(Univariate(Gaussian, m=3.0, w=0.5))
 end
 
 @testset "VBGaussianMeanPrecisionW" begin
     @test VBGaussianMeanPrecisionW <: VariationalRule{GaussianMeanPrecision}
-    @test outboundType(VBGaussianMeanPrecisionW) == Message{Univariate{Gamma}}
-    @test isApplicable(VBGaussianMeanPrecisionW, [Univariate, Univariate, Void]) 
+    @test outboundType(VBGaussianMeanPrecisionW) == Message{Gamma}
+    @test isApplicable(VBGaussianMeanPrecisionW, [ProbabilityDistribution{Univariate}, ProbabilityDistribution{Univariate}, Void]) 
+    @test !isApplicable(VBGaussianMeanPrecisionW, [ProbabilityDistribution{Multivariate}, ProbabilityDistribution{Multivariate}, Void]) 
 
     @test ruleVBGaussianMeanPrecisionW(Univariate(Gaussian, m=3.0, v=4.0), Univariate(Gaussian, m=1.0, v=2.0), nothing) == Message(Univariate(Gamma, a=1.5, b=0.5*(2.0 + 4.0 + (3.0 - 1.0)^2)))
 end
 
 @testset "VBGaussianMeanPrecisionOut" begin
     @test VBGaussianMeanPrecisionOut <: VariationalRule{GaussianMeanPrecision}
-    @test outboundType(VBGaussianMeanPrecisionOut) == Message{Univariate{Gaussian}}
-    @test isApplicable(VBGaussianMeanPrecisionOut, [Void, Univariate, Univariate]) 
+    @test outboundType(VBGaussianMeanPrecisionOut) == Message{Gaussian}
+    @test isApplicable(VBGaussianMeanPrecisionOut, [Void, ProbabilityDistribution, ProbabilityDistribution]) 
 
     @test ruleVBGaussianMeanPrecisionOut(nothing, Univariate(Gaussian, m=3.0, v=4.0), Univariate(Gamma, a=1.0, b=2.0)) == Message(Univariate(Gaussian, m=3.0, w=0.5))
 end

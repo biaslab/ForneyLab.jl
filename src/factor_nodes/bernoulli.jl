@@ -33,19 +33,21 @@ end
 
 slug(::Type{Bernoulli}) = "Ber"
 
-Univariate(::Type{Bernoulli}; p=0.5) = Univariate{Bernoulli}(Dict(:p=>p))
+Univariate(::Type{Bernoulli}; p=0.5) = ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>p))
 
-vague(::Type{Univariate{Bernoulli}}) = Univariate(Bernoulli, p=0.5)
+dims(dist::ProbabilityDistribution{Univariate, Bernoulli}) = 1
 
-isProper(dist::Univariate{Bernoulli}) = (0 <= dist.params[:p] <= 1)
+vague(::Type{Bernoulli}) = Univariate(Bernoulli, p=0.5)
 
-unsafeMean(dist::Univariate{Bernoulli}) = dist.params[:p]
+isProper(dist::ProbabilityDistribution{Univariate, Bernoulli}) = (0 <= dist.params[:p] <= 1)
 
-unsafeVar(dist::Univariate{Bernoulli}) = dist.params[:p]*(1-dist.params[:p])
+unsafeMean(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:p]
 
-function prod!( x::Univariate{Bernoulli},
-                y::Univariate{Bernoulli},
-                z::Univariate{Bernoulli}=Univariate(Bernoulli, p=0.5))
+unsafeVar(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:p]*(1-dist.params[:p])
+
+function prod!( x::ProbabilityDistribution{Univariate, Bernoulli},
+                y::ProbabilityDistribution{Univariate, Bernoulli},
+                z::ProbabilityDistribution{Univariate, Bernoulli}=Univariate(Bernoulli, p=0.5))
 
     norm = x.params[:p] * y.params[:p] + (1 - x.params[:p]) * (1 - y.params[:p])
     (norm > 0) || error("Product of $(x) and $(y) cannot be normalized")
@@ -55,13 +57,13 @@ function prod!( x::Univariate{Bernoulli},
 end
 
 # Entropy functional
-function differentialEntropy(dist::Univariate{Bernoulli})
+function differentialEntropy(dist::ProbabilityDistribution{Univariate, Bernoulli})
     -(1.0 - dist.params[:p])*log(1.0 - dist.params[:p]) -
     dist.params[:p]*log(dist.params[:p])
 end
 
 # Average energy functional
-function averageEnergy(::Type{Bernoulli}, marg_out::Univariate, marg_p::Univariate)
+function averageEnergy(::Type{Bernoulli}, marg_out::ProbabilityDistribution{Univariate}, marg_p::ProbabilityDistribution{Univariate})
     -unsafeMean(marg_out)*unsafeLogMean(marg_p) -
     (1.0 - unsafeMean(marg_out))*unsafeMirroredLogMean(marg_p)
 end

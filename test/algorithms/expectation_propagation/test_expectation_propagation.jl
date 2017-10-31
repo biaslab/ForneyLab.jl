@@ -25,8 +25,8 @@ type MockNode <: SoftFactor
 end
 
 @expectationPropagationRule(:node_type     => MockNode,
-                            :outbound_type => Message{Univariate{Gaussian}},
-                            :inbound_types => (Message{Univariate{PointMass}}, Message{Univariate{Gaussian}}),
+                            :outbound_type => Message{Gaussian},
+                            :inbound_types => (Message{PointMass}, Message{Gaussian}),
                             :outbound_id   => 2,
                             :name          => EPMockRealGP)
 
@@ -38,7 +38,7 @@ end
     FactorGraph()
     m ~ GaussianMeanVariance(constant(0.0), constant(1.0))
     nd = MockNode([constant(0.0), m])
-    inferred_outbound_types = Dict(nd.i[2].partner => Message{Univariate{Gaussian}}, nd.i[1].partner => Message{Univariate{PointMass}})
+    inferred_outbound_types = Dict(nd.i[2].partner => Message{Gaussian}, nd.i[1].partner => Message{PointMass})
 
     entry = ScheduleEntry(nd.i[2], ExpectationPropagationRule{MockNode})
     inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
@@ -88,7 +88,7 @@ end
 
     @test length(schedule) == 4
     @test ScheduleEntry(nd_y.i[:out], VBGaussianMeanPrecisionOut) in schedule
-    @test ScheduleEntry(nd_z.i[:bin].partner, SPClamp) in schedule
+    @test ScheduleEntry(nd_z.i[:bin].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd_z.i[:real], EPSigmoidRealGP) in schedule
     @test ScheduleEntry(nd_z.i[:bin], SPSigmoidBinG) in schedule
 end

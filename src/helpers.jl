@@ -14,6 +14,7 @@ const huge = 1e12
 const tiny = 1e-12
 
 # Operations related to diagonal matrices
+cholinv(m::Number) = 1.0/m
 cholinv(M::Matrix) = inv(cholfact(Hermitian(M)))
 cholinv(D::Diagonal) = Diagonal(1./D.diag)
 diageye(dims::Int64) = Diagonal(ones(dims))

@@ -2,21 +2,32 @@ export Gaussian
 
 abstract Gaussian <: SoftFactor
 
-Univariate(family::Type{Gaussian}; kwargs...) = Univariate{family}(Dict(kwargs))
-Multivariate(family::Type{Gaussian}; kwargs...) = Multivariate{family, size(kwargs[1][2])[1]}(Dict(kwargs))
+Univariate(family::Type{Gaussian}; kwargs...) = ProbabilityDistribution{Univariate, family}(Dict(kwargs))
+Multivariate(family::Type{Gaussian}; kwargs...) = ProbabilityDistribution{Multivariate, family}(Dict(kwargs))
 
-vague(::Type{Univariate{Gaussian}}) = Univariate(Gaussian, m=0.0, v=huge)
-vague{dims}(::Type{Multivariate{Gaussian, dims}}) = Multivariate(Gaussian, m=zeros(dims), v=huge*diageye(dims))
+dims(dist::ProbabilityDistribution{Univariate, Gaussian}) = 1
+function dims(dist::ProbabilityDistribution{Multivariate, Gaussian})
+    if isValid(dist, :m)
+        return length(dist.params[:m])
+    elseif isValid(dist, :xi)
+        return length(dist.params[:xi])
+    else
+        error("Invalid distribution $(dist)")
+    end
+end
 
-unsafeMean(dist::ProbabilityDistribution{Gaussian}) = deepcopy(ensureParameter!(dist, Val{:m}).params[:m]) # unsafe mean
+vague(::Type{Gaussian}) = Univariate(Gaussian, m=0.0, v=huge)
+vague(::Type{Gaussian}, dims::Int64) = Multivariate(Gaussian, m=zeros(dims), v=huge*diageye(dims))
 
-unsafeVar(dist::Univariate{Gaussian}) = ensureParameter!(dist, Val{:v}).params[:v] # unsafe variance
-unsafeVar(dist::Multivariate{Gaussian}) = diag(ensureParameter!(dist, Val{:v}).params[:v])
+unsafeMean{T<:VariateType}(dist::ProbabilityDistribution{T, Gaussian}) = deepcopy(ensureParameter!(dist, Val{:m}).params[:m]) # unsafe mean
 
-unsafeCov(dist::Univariate{Gaussian}) = ensureParameter!(dist, Val{:v}).params[:v] # unsafe covariance
-unsafeCov(dist::Multivariate{Gaussian}) = deepcopy(ensureParameter!(dist, Val{:v}).params[:v])
+unsafeVar(dist::ProbabilityDistribution{Univariate, Gaussian}) = ensureParameter!(dist, Val{:v}).params[:v] # unsafe variance
+unsafeVar(dist::ProbabilityDistribution{Multivariate, Gaussian}) = diag(ensureParameter!(dist, Val{:v}).params[:v])
 
-function isProper(dist::Univariate{Gaussian})
+unsafeCov(dist::ProbabilityDistribution{Univariate, Gaussian}) = ensureParameter!(dist, Val{:v}).params[:v] # unsafe covariance
+unsafeCov(dist::ProbabilityDistribution{Multivariate, Gaussian}) = deepcopy(ensureParameter!(dist, Val{:v}).params[:v])
+
+function isProper(dist::ProbabilityDistribution{Univariate, Gaussian})
     if isWellDefined(dist)
         if isValid(dist, :w)
             param = dist.params[:w]
@@ -32,7 +43,7 @@ function isProper(dist::Univariate{Gaussian})
     return false
 end
 
-function isProper(dist::Multivariate{Gaussian})
+function isProper(dist::ProbabilityDistribution{Multivariate, Gaussian})
     if isWellDefined(dist)
         if isValid(dist, :w)
             param = dist.params[:w]
@@ -48,7 +59,7 @@ function isProper(dist::Multivariate{Gaussian})
     return false
 end
 
-function isWellDefined(dist::Univariate{Gaussian})
+function isWellDefined(dist::ProbabilityDistribution{Univariate, Gaussian})
     # Check if dist is not underdetermined
     location_valid = isValid(dist, :m) || isValid(dist, :xi)
     scale_valid    = isValid(dist, :v) || isValid(dist, :w)
@@ -56,7 +67,7 @@ function isWellDefined(dist::Univariate{Gaussian})
     return location_valid && scale_valid
 end
 
-function isWellDefined(dist::Multivariate{Gaussian})
+function isWellDefined(dist::ProbabilityDistribution{Multivariate, Gaussian})
     # Check if dist is not underdetermined
     location_valid = isValid(dist, :m) || isValid(dist, :xi)
     scale_valid    = isValid(dist, :v) || isValid(dist, :w)
@@ -81,21 +92,21 @@ function isWellDefined(dist::Multivariate{Gaussian})
     return true
 end
 
-function sample(dist::Univariate{Gaussian})
+function sample(dist::ProbabilityDistribution{Univariate, Gaussian})
     isProper(dist) || error("Cannot sample from improper distribution")
     ensureParameters!(dist, (:m, :v))
     return sqrt(dist.params[:v])*randn() + dist.params[:m]
 end
 
-function sample{dims}(dist::Multivariate{Gaussian, dims})
+function sample(dist::ProbabilityDistribution{Multivariate, Gaussian})
     isProper(dist) || error("Cannot sample from improper distribution")
     ensureParameters!(dist, (:m, :v))
-    return chol(dist.params[:v])' *randn(dims) + dist.params[:m]
+    return chol(dist.params[:v])' *randn(dims(dist)) + dist.params[:m]
 end
 
-function prod!( x::Univariate{Gaussian},
-                y::Univariate{Gaussian},
-                z::Univariate{Gaussian}=Univariate(Gaussian, xi=0.0, w=1.0))
+function prod!( x::ProbabilityDistribution{Univariate, Gaussian},
+                y::ProbabilityDistribution{Univariate, Gaussian},
+                z::ProbabilityDistribution{Univariate, Gaussian}=Univariate(Gaussian, xi=0.0, w=1.0))
 
     ensureParameters!(x, (:xi, :w))
     ensureParameters!(y, (:xi, :w))
@@ -108,9 +119,9 @@ function prod!( x::Univariate{Gaussian},
     return z
 end
 
-function prod!{dims}(x::Multivariate{Gaussian, dims},
-                     y::Multivariate{Gaussian, dims},
-                     z::Multivariate{Gaussian, dims}=Multivariate(Gaussian, xi=zeros(dims), w=diageye(dims)))
+function prod!( x::ProbabilityDistribution{Multivariate, Gaussian},
+                y::ProbabilityDistribution{Multivariate, Gaussian},
+                z::ProbabilityDistribution{Multivariate, Gaussian}=Multivariate(Gaussian, xi=[NaN], w=[NaN].'))
 
     ensureParameters!(x, (:xi, :w))
     ensureParameters!(y, (:xi, :w))
@@ -131,58 +142,35 @@ function ensureParameters!(dist::ProbabilityDistribution, params::Tuple{Symbol, 
 end
 
 # In all ensureParameter! methods we check if the required parameter defined and, if not, calculate it.
-function ensureParameter!(dist::ProbabilityDistribution{Gaussian}, param::Type{Val{:m}})
+function ensureParameter!{T<:VariateType}(dist::ProbabilityDistribution{T, Gaussian}, param::Type{Val{:m}})
     if !isValid(dist, :m)
         dist.params[:m] = ensureParameter!(dist, Val{:v}).params[:v] * dist.params[:xi]
     end
     return dist
 end
 
-function ensureParameter!(dist::Univariate{Gaussian}, param::Type{Val{:v}})
-    if !isValid(dist, :v)
-        dist.params[:v] = 1/dist.params[:w]
-    end
-    return dist
-end
-
-function ensureParameter!(dist::Multivariate{Gaussian}, param::Type{Val{:v}})
+function ensureParameter!{T<:VariateType}(dist::ProbabilityDistribution{T, Gaussian}, param::Type{Val{:v}})
     if !isValid(dist, :v)
         dist.params[:v] = cholinv(dist.params[:w])
     end
     return dist
 end
 
-function ensureParameter!(dist::ProbabilityDistribution{Gaussian}, param::Type{Val{:xi}})
+function ensureParameter!{T<:VariateType}(dist::ProbabilityDistribution{T, Gaussian}, param::Type{Val{:xi}})
     if !isValid(dist, :xi)
         dist.params[:xi] = ensureParameter!(dist, Val{:w}).params[:w] * dist.params[:m]
     end
     return dist
 end
 
-function ensureParameter!(dist::Univariate{Gaussian}, param::Type{Val{:w}})
-    if !isValid(dist, :w)
-        dist.params[:w] = 1/dist.params[:v]
-    end
-    return dist
-end
-
-function ensureParameter!(dist::Multivariate{Gaussian}, param::Type{Val{:w}})
+function ensureParameter!{T<:VariateType}(dist::ProbabilityDistribution{T, Gaussian}, param::Type{Val{:w}})
     if !isValid(dist, :w)
         dist.params[:w] = cholinv(dist.params[:v])
     end
     return dist
 end
 
-function ==(t::Univariate{Gaussian}, u::Univariate{Gaussian})
-    if is(t, u)
-        return true
-    end
-    ensureParameters!(t, (:xi, :w))
-    ensureParameters!(u, (:xi, :w))
-    return isApproxEqual(t.params[:xi], u.params[:xi]) && isApproxEqual(t.params[:w], u.params[:w])
-end
-
-function ==(t::Multivariate{Gaussian}, u::Multivariate{Gaussian})
+function =={T<:VariateType}(t::ProbabilityDistribution{T, Gaussian}, u::ProbabilityDistribution{T, Gaussian})
     if is(t, u)
         return true
     end
@@ -192,14 +180,14 @@ function ==(t::Multivariate{Gaussian}, u::Multivariate{Gaussian})
 end
 
 # Entropy functional
-function differentialEntropy(dist::Univariate{Gaussian})
+function differentialEntropy(dist::ProbabilityDistribution{Univariate, Gaussian})
     return  0.5*log(unsafeCov(dist)) +
             0.5*log(2*pi) +
             0.5
 end
 
-function differentialEntropy{dims}(dist::Multivariate{Gaussian, dims})
+function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Gaussian})
     return  0.5*log(det(unsafeCov(dist))) +
-            (dims/2)*log(2*pi) +
-            (dims/2)
+            (dims(dist)/2)*log(2*pi) +
+            (dims(dist)/2)
 end

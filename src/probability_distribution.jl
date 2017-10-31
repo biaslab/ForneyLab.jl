@@ -13,22 +13,14 @@ averageEnergy,
 ==,
 vague
 
+abstract VariateType
+abstract Univariate <: VariateType
+abstract Multivariate <: VariateType
+abstract MatrixVariate <: VariateType
+
 """Encodes a probability distribution as a FactorNode of type `family` with fixed interfaces"""
-abstract ProbabilityDistribution{family<:FactorNode}
-
-"""Univariate ProbabilityDistribution"""
-immutable Univariate{family<:FactorNode} <: ProbabilityDistribution{family}
-    params::Dict 
-end
-
-"""Multivariate ProbabilityDistribution over a vector of length dims"""
-immutable Multivariate{family<:FactorNode, dims} <: ProbabilityDistribution{family}
-    params::Dict 
-end
-
-"""Matrix Variate ProbabilityDistribution over a matrix of size dims_m (rows) by dims_n (columns)"""
-immutable MatrixVariate{family<:FactorNode, dims_m, dims_n} <: ProbabilityDistribution{family}
-    params::Dict 
+immutable ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
+    params::Dict
 end
 
 mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error("mean($(dist)) is undefined because the distribution is improper.")
@@ -41,30 +33,32 @@ It never occurs in a FactorGraph, but it is used as a probability distribution t
 """
 abstract PointMass <: DeltaFactor
 
+dims(dist::ProbabilityDistribution{Univariate, PointMass}) = 1
+dims(dist::ProbabilityDistribution{Multivariate, PointMass}) = length(dist.params[:m])
+dims(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = size(dist.params[:m])
+
 # PointMass distribution constructors
-Univariate(family::Type{PointMass}; m::Number=1.0) = Univariate{family}(Dict(:m=>m))
-Multivariate(family::Type{PointMass}; m::Vector=[1.0]) = Multivariate{family, length(m)}(Dict(:m=>m))
-MatrixVariate(family::Type{PointMass}; m::AbstractMatrix=[1.0].') = MatrixVariate{family, size(m, 1), size(m, 2)}(Dict(:m=>m))
+Univariate(family::Type{PointMass}; m::Number=1.0) = ProbabilityDistribution{Univariate, family}(Dict(:m=>m))
+Multivariate(family::Type{PointMass}; m::Vector=[1.0]) = ProbabilityDistribution{Multivariate, family}(Dict(:m=>m))
+MatrixVariate(family::Type{PointMass}; m::AbstractMatrix=[1.0].') = ProbabilityDistribution{MatrixVariate, family}(Dict(:m=>m))
 
-unsafeMean(dist::Univariate{PointMass}) = dist.params[:m]
-unsafeMean(dist::Multivariate{PointMass}) = deepcopy(dist.params[:m])
-unsafeMean(dist::MatrixVariate{PointMass}) = deepcopy(dist.params[:m])
+unsafeMean{T<:VariateType}(dist::ProbabilityDistribution{T, PointMass}) = deepcopy(dist.params[:m])
 
-unsafeInverseMean(dist::Univariate{PointMass}) = 1.0/dist.params[:m]
-unsafeInverseMean(dist::MatrixVariate{PointMass}) = cholinv(dist.params[:m])
+unsafeInverseMean(dist::ProbabilityDistribution{Univariate, PointMass}) = 1.0/dist.params[:m]
+unsafeInverseMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = cholinv(dist.params[:m])
 
-unsafeLogMean(dist::Univariate{PointMass}) = log(dist.params[:m])
-unsafeDetLogMean(dist::MatrixVariate{PointMass}) = log(det(dist.params[:m]))
+unsafeLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(dist.params[:m])
+unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = log(det(dist.params[:m]))
 
-unsafeMirroredLogMean(dist::Univariate{PointMass}) = log(1.0 - dist.params[:m])
+unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(1.0 - dist.params[:m])
 
-unsafeVar(dist::Univariate{PointMass}) = 0.0
-unsafeVar{dims}(dist::Multivariate{PointMass, dims}) = zeros(dims)
+unsafeVar(dist::ProbabilityDistribution{Univariate, PointMass}) = 0.0
+unsafeVar(dist::ProbabilityDistribution{Multivariate, PointMass}) = zeros(dims(dist))
 
-unsafeCov(dist::Univariate{PointMass}) = 0.0
-unsafeCov{dims}(dist::Multivariate{PointMass, dims}) = zeros(dims, dims)
+unsafeCov(dist::ProbabilityDistribution{Univariate, PointMass}) = 0.0
+unsafeCov(dist::ProbabilityDistribution{Multivariate, PointMass}) = zeros(dims(dist), dims(dist))
 
-isProper(::ProbabilityDistribution{PointMass}) = true
+isProper{T<:VariateType}(::ProbabilityDistribution{T, PointMass}) = true
 
 """
 `x ~ GaussianMeanVariance(constant(0.0), constant(1.0), id=:some_optional_id)` is a shorthand notation
@@ -104,7 +98,7 @@ macro ~(variable_expr::Any, dist_expr::Expr)
     return esc(expr)
 end
 
-=={T, U}(t::ProbabilityDistribution{T}, u::ProbabilityDistribution{U}) = (T == U) && (t.params == u.params)
+=={fam_t, fam_u, var_t, var_u}(t::ProbabilityDistribution{var_t, fam_t}, u::ProbabilityDistribution{var_u, fam_u}) = (fam_t == fam_u) && (var_t == var_u) && (t.params == u.params)
 
 function gaussianQuadrature(h::Function; m::Float64=0.0, v::Float64=1.0)
     abscissas = [-7.12581, -6.4095, -5.81223, -5.27555, -4.77716, -4.30555, -3.85376, -3.41717, -2.99249, -2.57725, -2.1695, -1.76765, -1.37038, -0.9765, -0.584979, -0.194841, 0.194841, 0.584979, 0.9765, 1.37038, 1.76765, 2.1695, 2.57725, 2.99249, 3.41717, 3.85376, 4.30555, 4.77716, 5.27555, 5.81223, 6.4095, 7.12581]

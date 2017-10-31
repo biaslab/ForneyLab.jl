@@ -25,8 +25,8 @@ type MockNode <: FactorNode
 end
 
 @sumProductRule(:node_type     => MockNode,
-                :outbound_type => Message{Univariate{PointMass}},
-                :inbound_types => (Void, Message{Univariate{PointMass}}, Message{Univariate{PointMass}}),
+                :outbound_type => Message{PointMass},
+                :inbound_types => (Void, Message{PointMass}, Message{PointMass}),
                 :name          => SPMockOutPP)
 
 @testset "@SumProductRule" begin
@@ -36,7 +36,7 @@ end
 @testset "inferUpdateRule!" begin
     FactorGraph()
     nd = MockNode([Variable(), constant(0.0), constant(0.0)])
-    inferred_outbound_types = Dict(nd.i[2].partner => Message{Univariate{PointMass}}, nd.i[3].partner => Message{Univariate{PointMass}})
+    inferred_outbound_types = Dict(nd.i[2].partner => Message{PointMass}, nd.i[3].partner => Message{PointMass})
 
     entry = ScheduleEntry(nd.i[1], SumProductRule{MockNode})
     inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
@@ -52,8 +52,8 @@ end
     schedule = sumProductSchedule(x)
 
     @test length(schedule) == 3
-    @test ScheduleEntry(nd.i[2].partner, SPClamp) in schedule
-    @test ScheduleEntry(nd.i[3].partner, SPClamp) in schedule
+    @test ScheduleEntry(nd.i[2].partner, SPClamp{Univariate}) in schedule
+    @test ScheduleEntry(nd.i[3].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd.i[1], SPMockOutPP) in schedule
 end
 
