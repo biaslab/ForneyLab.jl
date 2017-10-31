@@ -19,9 +19,8 @@ end
 
 @testset "VBGaussianMixtureW1" begin
     @test VBGaussianMixtureW1 <: VariationalRule{GaussianMixture}
-    @test outboundType(VBGaussianMixtureW1) == Message{Gamma}
-    @test isApplicable(VBGaussianMixtureW1, [ProbabilityDistribution{Univariate}, ProbabilityDistribution{Univariate}, Void, ProbabilityDistribution{Univariate}, ProbabilityDistribution{Univariate}, ProbabilityDistribution{Univariate}]) 
-    @test !isApplicable(VBGaussianMixtureW1, [ProbabilityDistribution{Multivariate}, ProbabilityDistribution{Multivariate}, Void, ProbabilityDistribution{Multivariate}, ProbabilityDistribution{MatrixVariate}, ProbabilityDistribution{Univariate}]) 
+    @test outboundType(VBGaussianMixtureW1) == Message{AbstractGamma}
+    @test isApplicable(VBGaussianMixtureW1, [ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
 
     @test ruleVBGaussianMixtureW1(Univariate(Gaussian, m=8.5, v=0.5), Univariate(Gaussian, m=5.0, v=2.0), nothing, Univariate(Gaussian, m=10.0, v=3.0), Univariate(Gamma, a=2.0, b=1.0), Univariate(Bernoulli, p=0.2)) == Message(Univariate(Gamma, a=1.1, b=1.475))
 end
@@ -36,9 +35,8 @@ end
 
 @testset "VBGaussianMixtureW2" begin
     @test VBGaussianMixtureW2 <: VariationalRule{GaussianMixture}
-    @test outboundType(VBGaussianMixtureW2) == Message{Gamma}
-    @test isApplicable(VBGaussianMixtureW2, [ProbabilityDistribution{Univariate}, ProbabilityDistribution{Univariate}, ProbabilityDistribution{Univariate}, ProbabilityDistribution{Univariate}, Void, ProbabilityDistribution{Univariate}]) 
-    @test !isApplicable(VBGaussianMixtureW2, [ProbabilityDistribution{Multivariate}, ProbabilityDistribution{Multivariate}, ProbabilityDistribution{MatrixVariate}, ProbabilityDistribution{Multivariate}, Void, ProbabilityDistribution{Univariate}]) 
+    @test outboundType(VBGaussianMixtureW2) == Message{AbstractGamma}
+    @test isApplicable(VBGaussianMixtureW2, [ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution]) 
 
     @test ruleVBGaussianMixtureW2(Univariate(Gaussian, m=8.5, v=0.5), Univariate(Gaussian, m=5.0, v=2.0), Univariate(Gamma, a=1.0, b=2.0), Univariate(Gaussian, m=10.0, v=3.0), nothing, Univariate(Bernoulli, p=0.2)) == Message(Univariate(Gamma, a=1.4, b=2.3000000000000003))
 end

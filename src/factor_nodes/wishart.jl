@@ -1,0 +1,96 @@
+export Wishart
+
+"""
+Description:
+
+    A Wishart node:
+
+    f(out,v,nu) = W(out|v, nu)
+
+Interfaces:
+
+    1. out
+    2. v (scale matrix)
+    3. nu (degrees of freedom)
+
+Construction:
+
+    Wishart(out, v, nu, id=:some_id)
+"""
+type Wishart <: AbstractGamma
+    id::Symbol
+    interfaces::Vector{Interface}
+    i::Dict{Symbol,Interface}
+
+    function Wishart(out::Variable, v::Variable, nu::Variable; id=generateId(Wishart))
+        self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
+        addNode!(currentGraph(), self)
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+        self.i[:v] = self.interfaces[2] = associate!(Interface(self), v)
+        self.i[:nu] = self.interfaces[3] = associate!(Interface(self), nu)
+
+        return self
+    end
+end
+
+slug(::Type{Wishart}) = "W"
+
+MatrixVariate(::Type{Wishart}; v=[1.0].', nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+
+dims(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = size(dist.params[:v])
+
+vague(::Type{Wishart}, dims::Int64) = MatrixVariate(Wishart, v=huge*diageye(dims), nu=Float64(dims)) # Flat prior
+
+unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = dist.params[:nu]*dist.params[:v] # unsafe mean
+
+function unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, Wishart})
+    d = dims(dist)[1]
+    sum([digamma(0.5*(dist.params[:nu] + 1 - i)) for i = 1:d]) +
+    d*log(2) +
+    log(det(dist.params[:v]))
+end
+
+function unsafeVar(dist::ProbabilityDistribution{MatrixVariate, Wishart}) # unsafe variance
+    d = dims(dist)[1]
+    M = fill!(similar(Matrix(dist.params[:v])), NaN)
+    for i = 1:d
+        for j = 1:d
+            M[i, j] = dist.params[:nu]*(dist.params[:v][i, j]^2 + dist.params[:v][i, i]*dist.params[:v][j, j])
+        end
+    end
+    return M
+end
+
+function isProper(dist::ProbabilityDistribution{MatrixVariate, Wishart})
+    (size(dist.params[:v], 1) == size(dist.params[:v], 2)) || return false
+    (dist.params[:nu] > size(dist.params[:v], 1) - 1) || return false
+    isRoundedPosDef(dist.params[:v]) || return false
+    return true
+end
+
+function prod!( x::ProbabilityDistribution{MatrixVariate, Wishart},
+                y::ProbabilityDistribution{MatrixVariate, Wishart},
+                z::ProbabilityDistribution{MatrixVariate, Wishart}=MatrixVariate(Wishart, v=[1.0].', nu=1.0))
+
+    d = dims(x)[1]
+    z.params[:v] = x.params[:v] * cholinv(x.params[:v] + y.params[:v]) * y.params[:v]
+    z.params[:nu] = x.params[:nu] + y.params[:nu] - d - 1.0
+
+    return z
+end
+
+# Entropy functional
+function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Wishart})
+    d = dims(dist)[1]
+    0.5*(d + 1.0)*log(det(dist.params[:v])) +
+    0.5*d*(d + 1.0)*log(2) +
+    0.25*d*(d - 1.0)*log(pi) +
+    sum([lgamma(0.5*(dist.params[:nu] + 1.0 - i)) for i=1:d]) -
+    0.5*(dist.params[:nu] - d - 1.0) * sum([digamma(0.5*(dist.params[:nu] + 1.0 - i)) for i=1:d]) +
+    0.5*dist.params[:nu]*d
+end
+
+# Average energy functional
+function averageEnergy(::Type{Wishart}, marg_out::ProbabilityDistribution{MatrixVariate}, marg_v::ProbabilityDistribution{MatrixVariate}, marg_nu::ProbabilityDistribution{Univariate, PointMass})
+    error("averageEnergy not yet implemented for Wishart") # TODO
+end

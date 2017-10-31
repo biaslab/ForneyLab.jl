@@ -6,7 +6,7 @@ function isApplicable(::Type{SPEqualityGaussian}, input_types::Vector{DataType})
     for input_type in input_types
         if input_type == Void
             void_inputs += 1
-        elseif input_type <: Message{Gaussian}
+        elseif input_type == Message{Gaussian}
             gaussian_inputs += 1
         end
     end
@@ -15,14 +15,14 @@ function isApplicable(::Type{SPEqualityGaussian}, input_types::Vector{DataType})
 end
 
 type SPEqualityGamma <: SumProductRule{Equality} end
-outboundType(::Type{SPEqualityGamma}) = Message{Gamma}
+outboundType(::Type{SPEqualityGamma}) = Message{AbstractGamma}
 function isApplicable(::Type{SPEqualityGamma}, input_types::Vector{DataType})
     void_inputs = 0
     gamma_inputs = 0
     for input_type in input_types
         if input_type == Void
             void_inputs += 1
-        elseif input_type <: Message{Gamma}
+        elseif input_type == Message{AbstractGamma}
             gamma_inputs += 1
         end
     end

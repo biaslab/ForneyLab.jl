@@ -9,6 +9,6 @@
                  :name          => VBGaussianMeanPrecisionM)
 
 @variationalRule(:node_type     => GaussianMeanPrecision,
-                 :outbound_type => Message{Gamma},
+                 :outbound_type => Message{AbstractGamma},
                  :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void),
                  :name          => VBGaussianMeanPrecisionW)

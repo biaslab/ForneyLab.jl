@@ -4,7 +4,7 @@
                  :name          => VBGaussianMixtureM1)
 
 @variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{Gamma},
+                 :outbound_type => Message{AbstractGamma},
                  :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution),
                  :name          => VBGaussianMixtureW1)
 
@@ -14,7 +14,7 @@
                  :name          => VBGaussianMixtureM2)
 
 @variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{Gamma},
+                 :outbound_type => Message{AbstractGamma},
                  :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution),
                  :name          => VBGaussianMixtureW2)
 

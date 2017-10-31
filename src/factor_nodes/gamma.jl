@@ -1,4 +1,6 @@
-export Gamma
+export AbstractGamma, Gamma
+
+abstract AbstractGamma <: SoftFactor
 
 """
 Description:
@@ -17,7 +19,7 @@ Construction:
 
     Gamma(out, a, b, id=:some_id)
 """
-type Gamma <: SoftFactor
+type Gamma <: AbstractGamma
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
