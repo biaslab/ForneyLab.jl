@@ -1,12 +1,12 @@
 export  
-ruleSPAdditionOutGG,
-ruleSPAdditionOutGP,
-ruleSPAdditionOutPG,
-ruleSPAdditionIn1GG,
-ruleSPAdditionIn1PG,
-ruleSPAdditionIn2GG
+ruleSPAdditionOutVGG,
+ruleSPAdditionOutVGP,
+ruleSPAdditionOutVPG,
+ruleSPAdditionIn1GVG,
+ruleSPAdditionIn1PVG,
+ruleSPAdditionIn2GGV
 
-function ruleSPAdditionOutGG(   msg_out::Void,
+function ruleSPAdditionOutVGG(   msg_out::Void,
                                 msg_in1::Message{Gaussian, Univariate},
                                 msg_in2::Message{Gaussian, Univariate})
 
@@ -16,7 +16,7 @@ function ruleSPAdditionOutGG(   msg_out::Void,
     Message(Univariate(Gaussian, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m], v=msg_in1.dist.params[:v] + msg_in2.dist.params[:v]))
 end
 
-function ruleSPAdditionIn2GG(   msg_out::Message{Gaussian, Univariate},
+function ruleSPAdditionIn2GGV(   msg_out::Message{Gaussian, Univariate},
                                 msg_in1::Message{Gaussian, Univariate},
                                 msg_in2::Void)
 
@@ -26,10 +26,10 @@ function ruleSPAdditionIn2GG(   msg_out::Message{Gaussian, Univariate},
     Message(Univariate(Gaussian, m=msg_out.dist.params[:m] - msg_in1.dist.params[:m], v=msg_out.dist.params[:v] + msg_in1.dist.params[:v]))
 end
 
-ruleSPAdditionIn1GG(msg_out::Message{Gaussian, Univariate}, ::Void, msg_in2::Message{Gaussian, Univariate}) = ruleSPAdditionIn2GG(msg_out, msg_in2, nothing)
+ruleSPAdditionIn1GVG(msg_out::Message{Gaussian, Univariate}, ::Void, msg_in2::Message{Gaussian, Univariate}) = ruleSPAdditionIn2GGV(msg_out, msg_in2, nothing)
 
 # TODO: add other combinations
-function ruleSPAdditionOutGP(   msg_out::Void,
+function ruleSPAdditionOutVGP(   msg_out::Void,
                                 msg_in1::Message{Gaussian, Univariate},
                                 msg_in2::Message{PointMass, Univariate})
 
@@ -37,9 +37,9 @@ function ruleSPAdditionOutGP(   msg_out::Void,
 
     Message(Univariate(Gaussian, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m], v=msg_in1.dist.params[:v]))
 end
-ruleSPAdditionOutPG(::Void, msg_in1::Message{PointMass, Univariate}, msg_in2::Message{Gaussian, Univariate}) = ruleSPAdditionOutGP(nothing, msg_in2, msg_in1)
+ruleSPAdditionOutVPG(::Void, msg_in1::Message{PointMass, Univariate}, msg_in2::Message{Gaussian, Univariate}) = ruleSPAdditionOutVGP(nothing, msg_in2, msg_in1)
 
-function ruleSPAdditionIn1PG(   msg_out::Message{PointMass, Univariate},
+function ruleSPAdditionIn1PVG(   msg_out::Message{PointMass, Univariate},
                                 msg_in1::Void,
                                 msg_in2::Message{Gaussian, Univariate})
 

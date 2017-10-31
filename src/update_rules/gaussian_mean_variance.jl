@@ -1,22 +1,22 @@
 @sumProductRule(:node_type     => GaussianMeanVariance,
                 :outbound_type => Message{Gaussian},
                 :inbound_types => (Void, Message{PointMass}, Message{PointMass}),
-                :name          => SPGaussianMeanVarianceOutPP)
+                :name          => SPGaussianMeanVarianceOutVPP)
 
 @sumProductRule(:node_type     => GaussianMeanVariance,
                 :outbound_type => Message{Gaussian},
                 :inbound_types => (Message{PointMass}, Void, Message{PointMass}),
-                :name          => SPGaussianMeanVarianceMPP)
+                :name          => SPGaussianMeanVarianceMPVP)
 
 @sumProductRule(:node_type     => GaussianMeanVariance,
                 :outbound_type => Message{Gaussian},
                 :inbound_types => (Void, Message{Gaussian}, Message{PointMass}),
-                :name          => SPGaussianMeanVarianceOutGP)
+                :name          => SPGaussianMeanVarianceOutVGP)
 
 @sumProductRule(:node_type     => GaussianMeanVariance,
                 :outbound_type => Message{Gaussian},
                 :inbound_types => (Message{Gaussian}, Void, Message{PointMass}),
-                :name          => SPGaussianMeanVarianceMGP)
+                :name          => SPGaussianMeanVarianceMGVP)
 
 @variationalRule(:node_type     => GaussianMeanVariance,
                  :outbound_type => Message{Gaussian},

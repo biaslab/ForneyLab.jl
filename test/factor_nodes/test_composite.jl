@@ -3,7 +3,7 @@ module CompositeTest
 using Base.Test
 using ForneyLab
 import ForneyLab: @composite, outboundType, isApplicable
-import ForneyLab: SPClamp, SPGaussianMeanVarianceOutPP
+import ForneyLab: SPClamp, SPGaussianMeanVarianceOutVPP
 
 
 # Define new node type called StateTransition, with exposed variables called (y, x_prev, x):
@@ -71,14 +71,14 @@ end
     @test length(schedule) == 5
     @test ScheduleEntry(nd.i[:m].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd.i[:v].partner, SPClamp{Univariate}) in schedule
-    @test ScheduleEntry(nd.i[:out], SPGaussianMeanVarianceOutPP) in schedule
+    @test ScheduleEntry(nd.i[:out], SPGaussianMeanVarianceOutVPP) in schedule
     @test ScheduleEntry(cnd.i[:y].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(cnd.i[:x], SPStateTransitionX) in schedule
 
     # Build SP algorithm for Julia execution
     algo = ForneyLab.messagePassingAlgorithm(schedule, x)
     @test contains(algo, "Array{Message}(2)")
-    @test contains(algo, "messages[1] = ruleSPGaussianMeanVarianceOutPP(nothing, Message(Univariate(PointMass, m=0.0)), Message(Univariate(PointMass, m=1.0)))")
+    @test contains(algo, "messages[1] = ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate(PointMass, m=0.0)), Message(Univariate(PointMass, m=1.0)))")
     @test contains(algo, "messages[2] = ruleSPStateTransitionX(Message(Univariate(PointMass, m=data[:y])), messages[1], nothing)")
     @test contains(algo, "marginals[:x] = messages[2].dist")
 end
@@ -92,7 +92,7 @@ end
 
     messages = Array{Message}(2)
 
-    messages[1] = ruleSPGaussianMeanVarianceOutPP(nothing, Message(Univariate(PointMass, m=0.0)), Message(Univariate(PointMass, m=1.0)))
+    messages[1] = ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate(PointMass, m=0.0)), Message(Univariate(PointMass, m=1.0)))
     messages[2] = ruleSPStateTransitionX(Message(Univariate(PointMass, m=data[:y])), messages[1], nothing)
 
     marginals[:x] = messages[2].dist

@@ -1,19 +1,19 @@
 export
-ruleSPGaussianMeanVarianceOutPP,
-ruleSPGaussianMeanVarianceMPP,
-ruleSPGaussianMeanVarianceOutGP, 
-ruleSPGaussianMeanVarianceMGP, 
+ruleSPGaussianMeanVarianceOutVPP,
+ruleSPGaussianMeanVarianceMPVP,
+ruleSPGaussianMeanVarianceOutVGP, 
+ruleSPGaussianMeanVarianceMGVP, 
 ruleVBGaussianMeanVarianceM,
 ruleVBGaussianMeanVarianceOut
 
-ruleSPGaussianMeanVarianceOutPP(msg_out::Void,
+ruleSPGaussianMeanVarianceOutVPP(msg_out::Void,
                                 msg_mean::Message{PointMass, Univariate},
                                 msg_var::Message{PointMass, Univariate}) =
     Message(Univariate(Gaussian, m=msg_mean.dist.params[:m], v=msg_var.dist.params[:m]))
 
-ruleSPGaussianMeanVarianceMPP(msg_out::Message{PointMass, Univariate}, msg_mean::Void, msg_var::Message{PointMass, Univariate}) = ruleSPGaussianMeanVarianceOutPP(msg_mean, msg_out, msg_var)
+ruleSPGaussianMeanVarianceMPVP(msg_out::Message{PointMass, Univariate}, msg_mean::Void, msg_var::Message{PointMass, Univariate}) = ruleSPGaussianMeanVarianceOutVPP(msg_mean, msg_out, msg_var)
 
-function ruleSPGaussianMeanVarianceOutGP(   msg_out::Void,
+function ruleSPGaussianMeanVarianceOutVGP(   msg_out::Void,
                                             msg_mean::Message{Gaussian, Univariate},
                                             msg_var::Message{PointMass, Univariate})
 
@@ -22,7 +22,7 @@ function ruleSPGaussianMeanVarianceOutGP(   msg_out::Void,
     Message(Univariate(Gaussian, m=msg_mean.dist.params[:m], v=msg_mean.dist.params[:v] + msg_var.dist.params[:m]))
 end
 
-ruleSPGaussianMeanVarianceMGP(msg_out::Message{Gaussian, Univariate}, msg_mean::Void, msg_var::Message{PointMass, Univariate}) = ruleSPGaussianMeanVarianceOutGP(msg_mean, msg_out, msg_var)
+ruleSPGaussianMeanVarianceMGVP(msg_out::Message{Gaussian, Univariate}, msg_mean::Void, msg_var::Message{PointMass, Univariate}) = ruleSPGaussianMeanVarianceOutVGP(msg_mean, msg_out, msg_var)
 
 ruleVBGaussianMeanVarianceM(dist_out::ProbabilityDistribution{Univariate},
                             dist_mean::Any,

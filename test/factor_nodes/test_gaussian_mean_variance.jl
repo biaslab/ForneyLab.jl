@@ -3,46 +3,46 @@ module GaussianMeanVarianceTest
 using Base.Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPGaussianMeanVarianceOutPP, SPGaussianMeanVarianceMPP, SPGaussianMeanVarianceOutGP, SPGaussianMeanVarianceMGP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
+import ForneyLab: SPGaussianMeanVarianceOutVPP, SPGaussianMeanVarianceMPVP, SPGaussianMeanVarianceOutVGP, SPGaussianMeanVarianceMGVP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
 
 #-------------
 # Update rules
 #-------------
 
-@testset "SPGaussianMeanVarianceOutPP" begin
-    @test SPGaussianMeanVarianceOutPP <: SumProductRule{GaussianMeanVariance}
-    @test outboundType(SPGaussianMeanVarianceOutPP) == Message{Gaussian}
-    @test isApplicable(SPGaussianMeanVarianceOutPP, [Void, Message{PointMass}, Message{PointMass}]) 
-    @test !isApplicable(SPGaussianMeanVarianceOutPP, [Message{PointMass}, Void, Message{PointMass}]) 
+@testset "SPGaussianMeanVarianceOutVPP" begin
+    @test SPGaussianMeanVarianceOutVPP <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceOutVPP) == Message{Gaussian}
+    @test isApplicable(SPGaussianMeanVarianceOutVPP, [Void, Message{PointMass}, Message{PointMass}]) 
+    @test !isApplicable(SPGaussianMeanVarianceOutVPP, [Message{PointMass}, Void, Message{PointMass}]) 
 
-    @test ruleSPGaussianMeanVarianceOutPP(nothing, Message(Univariate(PointMass, m=1.0)), Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=1.0, v=2.0))
+    @test ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate(PointMass, m=1.0)), Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=1.0, v=2.0))
 end
 
-@testset "SPGaussianMeanVarianceMPP" begin
-    @test SPGaussianMeanVarianceMPP <: SumProductRule{GaussianMeanVariance}
-    @test outboundType(SPGaussianMeanVarianceMPP) == Message{Gaussian}
-    @test !isApplicable(SPGaussianMeanVarianceMPP, [Void, Message{PointMass}, Message{PointMass}]) 
-    @test isApplicable(SPGaussianMeanVarianceMPP, [Message{PointMass}, Void, Message{PointMass}]) 
+@testset "SPGaussianMeanVarianceMPVP" begin
+    @test SPGaussianMeanVarianceMPVP <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceMPVP) == Message{Gaussian}
+    @test !isApplicable(SPGaussianMeanVarianceMPVP, [Void, Message{PointMass}, Message{PointMass}]) 
+    @test isApplicable(SPGaussianMeanVarianceMPVP, [Message{PointMass}, Void, Message{PointMass}]) 
 
-    @test ruleSPGaussianMeanVarianceMPP(Message(Univariate(PointMass, m=1.0)), nothing, Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=1.0, v=2.0))
+    @test ruleSPGaussianMeanVarianceMPVP(Message(Univariate(PointMass, m=1.0)), nothing, Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=1.0, v=2.0))
 end
 
-@testset "SPGaussianMeanVarianceOutGP" begin
-    @test SPGaussianMeanVarianceOutGP <: SumProductRule{GaussianMeanVariance}
-    @test outboundType(SPGaussianMeanVarianceOutGP) == Message{Gaussian}
-    @test isApplicable(SPGaussianMeanVarianceOutGP, [Void, Message{Gaussian}, Message{PointMass}]) 
-    @test !isApplicable(SPGaussianMeanVarianceOutGP, [Message{Gaussian}, Void, Message{PointMass}]) 
+@testset "SPGaussianMeanVarianceOutVGP" begin
+    @test SPGaussianMeanVarianceOutVGP <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceOutVGP) == Message{Gaussian}
+    @test isApplicable(SPGaussianMeanVarianceOutVGP, [Void, Message{Gaussian}, Message{PointMass}]) 
+    @test !isApplicable(SPGaussianMeanVarianceOutVGP, [Message{Gaussian}, Void, Message{PointMass}]) 
 
-    @test ruleSPGaussianMeanVarianceOutGP(nothing, Message(Univariate(Gaussian, m=1.0, v=1.0)), Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=1.0, v=3.0))
+    @test ruleSPGaussianMeanVarianceOutVGP(nothing, Message(Univariate(Gaussian, m=1.0, v=1.0)), Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=1.0, v=3.0))
 end
 
-@testset "SPGaussianMeanVarianceMGP" begin
-    @test SPGaussianMeanVarianceMGP <: SumProductRule{GaussianMeanVariance}
-    @test outboundType(SPGaussianMeanVarianceMGP) == Message{Gaussian}
-    @test !isApplicable(SPGaussianMeanVarianceMGP, [Void, Message{Gaussian}, Message{PointMass}]) 
-    @test isApplicable(SPGaussianMeanVarianceMGP, [Message{Gaussian}, Void, Message{PointMass}]) 
+@testset "SPGaussianMeanVarianceMGVP" begin
+    @test SPGaussianMeanVarianceMGVP <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceMGVP) == Message{Gaussian}
+    @test !isApplicable(SPGaussianMeanVarianceMGVP, [Void, Message{Gaussian}, Message{PointMass}]) 
+    @test isApplicable(SPGaussianMeanVarianceMGVP, [Message{Gaussian}, Void, Message{PointMass}]) 
 
-    @test ruleSPGaussianMeanVarianceMGP(Message(Univariate(Gaussian, m=1.0, v=1.0)), nothing, Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=1.0, v=3.0))
+    @test ruleSPGaussianMeanVarianceMGVP(Message(Univariate(Gaussian, m=1.0, v=1.0)), nothing, Message(Univariate(PointMass, m=2.0))) == Message(Univariate(Gaussian, m=1.0, v=3.0))
 end
 
 @testset "VBGaussianMeanVarianceM" begin

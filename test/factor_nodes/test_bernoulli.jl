@@ -3,7 +3,7 @@ module BernoulliTest
 using Base.Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims
-import ForneyLab: SPBernoulliOutP, VBBernoulliOut
+import ForneyLab: SPBernoulliOutVP, VBBernoulliOut
 
 @testset "dims" begin
     @test dims(Univariate(Bernoulli, p=0.5)) == 1
@@ -27,12 +27,12 @@ end
 # Update rules
 #-------------
 
-@testset "SPBernoulliOutP" begin
-    @test SPBernoulliOutP <: SumProductRule{Bernoulli}
-    @test outboundType(SPBernoulliOutP) == Message{Bernoulli}
-    @test isApplicable(SPBernoulliOutP, [Void, Message{PointMass}]) 
+@testset "SPBernoulliOutVP" begin
+    @test SPBernoulliOutVP <: SumProductRule{Bernoulli}
+    @test outboundType(SPBernoulliOutVP) == Message{Bernoulli}
+    @test isApplicable(SPBernoulliOutVP, [Void, Message{PointMass}]) 
 
-    @test ruleSPBernoulliOutP(nothing, Message(Univariate(PointMass, m=0.2))) == Message(Univariate(Bernoulli, p=0.2))
+    @test ruleSPBernoulliOutVP(nothing, Message(Univariate(PointMass, m=0.2))) == Message(Univariate(Bernoulli, p=0.2))
 end
 
 @testset "VBBernoulliOut" begin

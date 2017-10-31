@@ -2,11 +2,11 @@
 Φ(x::Union{Float64, Vector{Float64}}) = 0.5*erfc(-x./sqrt(2.))
 
 export
-ruleSPSigmoidBinG, 
+ruleSPSigmoidBinVG, 
 ruleEPSigmoidRealGB, 
 ruleEPSigmoidRealGP
 
-function ruleSPSigmoidBinG( msg_bin::Void,
+function ruleSPSigmoidBinVG( msg_bin::Void,
                             msg_real::Message{Gaussian, Univariate})
 
     ensureParameters!(msg_real.dist, (:m, :v))

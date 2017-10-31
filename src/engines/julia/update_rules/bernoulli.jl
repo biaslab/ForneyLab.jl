@@ -1,8 +1,8 @@
 export
-ruleSPBernoulliOutP,
+ruleSPBernoulliOutVP,
 ruleVBBernoulliOut
 
-ruleSPBernoulliOutP(msg_out::Void, msg_in::Message{PointMass, Univariate}) = Message(Univariate(Bernoulli, p=msg_in.dist.params[:m]))
+ruleSPBernoulliOutVP(msg_out::Void, msg_in::Message{PointMass, Univariate}) = Message(Univariate(Bernoulli, p=msg_in.dist.params[:m]))
 
 function ruleVBBernoulliOut(marg_out::Any, marg_in::ProbabilityDistribution{Univariate})
     rho_1 = clamp(exp(unsafeLogMean(marg_in)), tiny, huge)
