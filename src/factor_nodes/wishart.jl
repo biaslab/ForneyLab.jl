@@ -92,5 +92,11 @@ end
 
 # Average energy functional
 function averageEnergy(::Type{Wishart}, marg_out::ProbabilityDistribution{MatrixVariate}, marg_v::ProbabilityDistribution{MatrixVariate}, marg_nu::ProbabilityDistribution{Univariate, PointMass})
-    error("averageEnergy not yet implemented for Wishart") # TODO
+    d = dims(marg_out)[1]
+    0.5*marg_nu.params[:m]*unsafeDetLogMean(marg_v) +
+    0.5*marg_nu.params[:m]*d*log(2) +
+    0.25*d*(d - 1.0)*log(pi) +
+    sum([lgamma(0.5*(marg_nu.params[:m] + 1.0 - i)) for i=1:d]) -
+    0.5*(marg_nu.params[:m] - d - 1.0)*unsafeDetLogMean(marg_out) +
+    0.5*trace(unsafeInverseMean(marg_v)*unsafeMean(marg_out))
 end
