@@ -28,6 +28,8 @@ end
     @test isApplicable(SPEqualityGamma, [Message{AbstractGamma}, Message{AbstractGamma}, Void]) 
     @test isApplicable(SPEqualityGamma, [Message{AbstractGamma}, Void, Message{AbstractGamma}]) 
     @test isApplicable(SPEqualityGamma, [Void, Message{AbstractGamma}, Message{AbstractGamma}]) 
+    @test isApplicable(SPEqualityGamma, [Message{Gamma}, Message{Gamma}, Void]) 
+    @test isApplicable(SPEqualityGamma, [Message{Wishart}, Message{Wishart}, Void]) 
 
     @test ruleSPEqualityGamma(Message(Univariate(Gamma, a=1.0, b=2.0)), Message(Univariate(Gamma, a=3.0, b=4.0)), nothing) == Message(Univariate(Gamma, a=3.0, b=6.0))
     @test ruleSPEqualityGamma(Message(Univariate(Gamma, a=1.0, b=2.0)), nothing, Message(Univariate(Gamma, a=3.0, b=4.0))) == Message(Univariate(Gamma, a=3.0, b=6.0))

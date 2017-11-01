@@ -6,7 +6,7 @@ function isApplicable(::Type{SPEqualityGaussian}, input_types::Vector{DataType})
     for input_type in input_types
         if input_type == Void
             void_inputs += 1
-        elseif input_type == Message{Gaussian}
+        elseif matches(input_type, Message{Gaussian})
             gaussian_inputs += 1
         end
     end
@@ -22,7 +22,7 @@ function isApplicable(::Type{SPEqualityGamma}, input_types::Vector{DataType})
     for input_type in input_types
         if input_type == Void
             void_inputs += 1
-        elseif input_type == Message{AbstractGamma}
+        elseif matches(input_type, Message{AbstractGamma})
             gamma_inputs += 1
         end
     end

@@ -1,7 +1,16 @@
 module ProbabilityDistributionTest
 
 using Base.Test
-import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, isProper, isValid, invalidate!, gaussianQuadrature, dims, diageye
+import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, isProper, isValid, invalidate!, gaussianQuadrature, dims, diageye, matches
+
+@testset "matches" begin
+    @test matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution{Univariate, Gaussian})
+    @test !matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution{Univariate, PointMass})
+    @test matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution{Univariate})
+    @test matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution)
+    @test matches(ProbabilityDistribution{Univariate}, ProbabilityDistribution{Univariate})
+    @test !matches(ProbabilityDistribution{Univariate}, ProbabilityDistribution{Multivariate})
+end
 
 @testset "Univariate" begin
     # ProbabilityDistribution should be parameterized on a node type (distribution family)

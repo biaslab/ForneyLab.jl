@@ -112,7 +112,7 @@ macro sumProductRule(fields...)
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Void
             # Only validate inbounds required for message update
-            push!(input_type_validators, "(input_types[$i]<:$i_type)")
+            push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
         end
     end
 

@@ -23,6 +23,9 @@ immutable ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
     params::Dict
 end
 
+matches{Pa<:ProbabilityDistribution, Pb<:ProbabilityDistribution}(Ta::Type{Pa}, Tb::Type{Pb}) = (Pa<:Pb)
+matches{T<:ProbabilityDistribution}(::Type{Void}, ::Type{T}) = false
+
 mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error("mean($(dist)) is undefined because the distribution is improper.")
 var(dist::ProbabilityDistribution) = isProper(dist) ? unsafeVar(dist) : error("var($(dist)) is undefined because the distribution is improper.")
 cov(dist::ProbabilityDistribution) = isProper(dist) ? unsafeCov(dist) : error("cov($(dist)) is undefined because the distribution is improper.")

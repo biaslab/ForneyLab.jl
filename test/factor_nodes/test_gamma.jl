@@ -28,7 +28,7 @@ end
 
 @testset "VBGammaOut" begin
     @test VBGammaOut <: VariationalRule{Gamma}
-    @test outboundType(VBGammaOut) == Message{AbstractGamma}
+    @test outboundType(VBGammaOut) == Message{Gamma}
     @test isApplicable(VBGammaOut, [Void, ProbabilityDistribution, ProbabilityDistribution]) 
     @test !isApplicable(VBGammaOut, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
 

@@ -2,7 +2,7 @@ module MessagePassingTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule
+import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, matches
 
 @testset "Message" begin
     msg = Message(Univariate(Gaussian, m=0.0, v=1.0))
@@ -16,6 +16,17 @@ import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule
     @test Message(Univariate(PointMass, m=0.0)) == Message(Univariate(PointMass, m=0.0))
     @test Message(Univariate(PointMass, m=0.0)) != Message(Univariate(Gaussian, m=0.0, v=1.0))
     @test Message(Univariate(PointMass, m=0.0)) != Message(Univariate(PointMass, m=1.0))
+end
+
+@testset "matches" begin
+    @test matches(Message{Gaussian, Univariate}, Message{Gaussian, Univariate})
+    @test !matches(Message{Gaussian, Univariate}, Message{Gaussian, Multivariate})
+    @test !matches(Message{Gaussian, Univariate}, Message{PointMass, Univariate})
+    @test matches(Message{Gaussian, Univariate}, Message{Gaussian})
+    @test matches(Message{Gaussian}, Message{Gaussian})
+    @test !matches(Void, Message{Gaussian})
+    @test matches(Message{Gamma, Univariate}, Message{AbstractGamma, Univariate})
+    @test matches(Message{Gamma}, Message{AbstractGamma})
 end
 
 # Integration helper

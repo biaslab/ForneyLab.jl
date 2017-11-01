@@ -38,7 +38,7 @@ end
 
 @testset "VBWishartOut" begin
     @test VBWishartOut <: VariationalRule{Wishart}
-    @test outboundType(VBWishartOut) == Message{AbstractGamma}
+    @test outboundType(VBWishartOut) == Message{Wishart}
     @test isApplicable(VBWishartOut, [Void, ProbabilityDistribution, ProbabilityDistribution]) 
     @test !isApplicable(VBWishartOut, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
 
