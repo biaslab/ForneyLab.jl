@@ -17,6 +17,7 @@ end
 Message{F<:FactorNode, V<:VariateType}(dist::ProbabilityDistribution{V, F}) = Message{F, V}(dist)
 
 """Special inheritance rules for parametric Message types"""
+matches{T<:Message}(::Type{T}, ::Type{T}) = true
 matches{Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType, Vb<:VariateType}(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) = (Va==Vb) && (Fa<:Fb)
 matches{Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType}(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) = (Fa<:Fb)
 matches{Fa<:FactorNode, Fb<:FactorNode}(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) = (Fa<:Fb)
