@@ -81,62 +81,60 @@ function GMForwardRule{T<:ProbabilityDistribution{Multivariate}, U<:ProbabilityD
 end
 
 function ruleVBGaussianMixtureM1(   dist_out::ProbabilityDistribution,
-                                    dist_switch::ProbabilityDistribution{Univariate, Bernoulli},
-                                    dist_mean_1::Any,
-                                    dist_prec_1::ProbabilityDistribution,
-                                    dist_mean_2::ProbabilityDistribution,
-                                    dist_prec_2::ProbabilityDistribution)
+                                    dist_switch::ProbabilityDistribution{Univariate},
+                                    dist_factors::Vararg)
 
-    GMBackwardMRule(dist_prec_1, dist_out, unsafeMean(dist_switch))
+    dist_means = collect(dist_factors[1:2:end])
+    dist_precs = collect(dist_factors[2:2:end])
+    fact = findfirst(dist_means .== nothing)
+    GMBackwardMRule(dist_precs[fact], dist_out, unsafeMeanVector(dist_switch)[fact])
 end
 
 function ruleVBGaussianMixtureW1(   dist_out::ProbabilityDistribution,
-                                    dist_switch::ProbabilityDistribution{Univariate, Bernoulli},
-                                    dist_mean_1::ProbabilityDistribution,
-                                    dist_prec_1::Any,
-                                    dist_mean_2::ProbabilityDistribution,
-                                    dist_prec_2::ProbabilityDistribution)
+                                    dist_switch::ProbabilityDistribution{Univariate},
+                                    dist_factors::Vararg)
 
-    GMBackwardWRule(dist_mean_1, dist_out, unsafeMean(dist_switch))
+    dist_means = collect(dist_factors[1:2:end])
+    dist_precs = collect(dist_factors[2:2:end])
+    fact = findfirst(dist_precs .== nothing)
+    GMBackwardWRule(dist_means[fact], dist_out, unsafeMeanVector(dist_switch)[fact])
 end
 
 function ruleVBGaussianMixtureM2(   dist_out::ProbabilityDistribution,
-                                    dist_switch::ProbabilityDistribution{Univariate, Bernoulli},
-                                    dist_mean_1::ProbabilityDistribution,
-                                    dist_prec_1::ProbabilityDistribution,
-                                    dist_mean_2::Any,
-                                    dist_prec_2::ProbabilityDistribution)
+                                    dist_switch::ProbabilityDistribution{Univariate},
+                                    dist_factors::Vararg)
 
-    GMBackwardMRule(dist_prec_2, dist_out, 1.0 - unsafeMean(dist_switch))
+    dist_means = collect(dist_factors[1:2:end])
+    dist_precs = collect(dist_factors[2:2:end])
+    fact = findfirst(dist_means .== nothing)
+    GMBackwardMRule(dist_precs[fact], dist_out, unsafeMeanVector(dist_switch)[fact])
 end
 
 function ruleVBGaussianMixtureW2(   dist_out::ProbabilityDistribution,
-                                    dist_switch::ProbabilityDistribution{Univariate, Bernoulli},
-                                    dist_mean_1::ProbabilityDistribution,
-                                    dist_prec_1::ProbabilityDistribution,
-                                    dist_mean_2::ProbabilityDistribution,
-                                    dist_prec_2::Any)
+                                    dist_switch::ProbabilityDistribution{Univariate},
+                                    dist_factors::Vararg)
 
-    GMBackwardWRule(dist_mean_2, dist_out, 1.0 - unsafeMean(dist_switch))
+    dist_means = collect(dist_factors[1:2:end])
+    dist_precs = collect(dist_factors[2:2:end])
+    fact = findfirst(dist_precs .== nothing)
+    GMBackwardWRule(dist_means[fact], dist_out, unsafeMeanVector(dist_switch)[fact])
 end
 
 function ruleVBGaussianMixtureZ(dist_out::ProbabilityDistribution,
                                 dist_switch::Any,
-                                dist_mean_1::ProbabilityDistribution,
-                                dist_prec_1::ProbabilityDistribution,
-                                dist_mean_2::ProbabilityDistribution,
-                                dist_prec_2::ProbabilityDistribution)
+                                dist_factors::Vararg)
 
-    GMBackwardZRule([dist_mean_1, dist_mean_2], [dist_prec_1, dist_prec_2], dist_out)
+    dist_means = collect(dist_factors[1:2:end])
+    dist_precs = collect(dist_factors[2:2:end])
+    GMBackwardZRule(dist_means, dist_precs, dist_out)
 end
 
 function ruleVBGaussianMixtureOut(  dist_out::Any,
-                                    dist_switch::ProbabilityDistribution{Univariate, Bernoulli},
-                                    dist_mean_1::ProbabilityDistribution,
-                                    dist_prec_1::ProbabilityDistribution,
-                                    dist_mean_2::ProbabilityDistribution,
-                                    dist_prec_2::ProbabilityDistribution)
+                                    dist_switch::ProbabilityDistribution{Univariate},
+                                    dist_factors::Vararg)
 
-    GMForwardRule([dist_mean_1, dist_mean_2], [dist_prec_1, dist_prec_2], [unsafeMean(dist_switch), 1.0 - unsafeMean(dist_switch)])
+    dist_means = collect(dist_factors[1:2:end])
+    dist_precs = collect(dist_factors[2:2:end])
+    GMForwardRule(dist_means, dist_precs, unsafeMeanVector(dist_switch))
 end
     

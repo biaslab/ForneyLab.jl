@@ -43,7 +43,9 @@ isProper(dist::ProbabilityDistribution{Univariate, Bernoulli}) = (0 <= dist.para
 
 unsafeMean(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:p]
 
-unsafeVar(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:p]*(1-dist.params[:p])
+unsafeMeanVector(dist::ProbabilityDistribution{Univariate, Bernoulli}) = [dist.params[:p], 1 - dist.params[:p]]
+
+unsafeVar(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:p]*(1 - dist.params[:p])
 
 function prod!( x::ProbabilityDistribution{Univariate, Bernoulli},
                 y::ProbabilityDistribution{Univariate, Bernoulli},
