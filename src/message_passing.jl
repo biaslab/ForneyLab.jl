@@ -15,6 +15,7 @@ immutable Message{family<:FactorNode, var_type<:VariateType} # Note that paramet
 end
 
 Message{F<:FactorNode, V<:VariateType}(dist::ProbabilityDistribution{V, F}) = Message{F, V}(dist)
+Message{F<:FactorNode, V<:VariateType}(var_type::Type{V}, family::Type{F}; kwargs...) = Message{family, var_type}(ProbabilityDistribution(var_type, family; kwargs...))
 
 """Special inheritance rules for parametric Message types"""
 matches{T<:Message}(::Type{T}, ::Type{T}) = true

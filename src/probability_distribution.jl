@@ -22,6 +22,7 @@ abstract MatrixVariate <: VariateType
 immutable ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
     params::Dict
 end
+ProbabilityDistribution{V<:VariateType, F<:FactorNode}(var_type::Type{V}, family::Type{F}; kwargs...) = ProbabilityDistribution{var_type, family}(Dict(kwargs))
 
 matches{Pa<:ProbabilityDistribution, Pb<:ProbabilityDistribution}(Ta::Type{Pa}, Tb::Type{Pb}) = (Pa<:Pb)
 matches{T<:ProbabilityDistribution}(::Type{Void}, ::Type{T}) = false

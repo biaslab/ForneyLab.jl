@@ -13,6 +13,8 @@ import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, 
     @test !isa(msg, Message{Gaussian, MatrixVariate})
     @test msg.dist == Univariate(Gaussian, m=0.0, v=1.0)
 
+    @test Message(Univariate, Gaussian, m=0.0, v=1.0) == msg
+
     @test Message(Univariate(PointMass, m=0.0)) == Message(Univariate(PointMass, m=0.0))
     @test Message(Univariate(PointMass, m=0.0)) != Message(Univariate(Gaussian, m=0.0, v=1.0))
     @test Message(Univariate(PointMass, m=0.0)) != Message(Univariate(PointMass, m=1.0))

@@ -21,6 +21,9 @@ end
     @test !isa(gaussian, ProbabilityDistribution{MatrixVariate})
     @test gaussian.params == Dict(:m=>0.0, :v=>1.0)
 
+    # Test ProbabilityDistribution constructor
+    @test ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0) == gaussian 
+
     # PointMass should be defined as a special family 
     point_mass = Univariate(PointMass, m=0.0)
     @test isa(point_mass, ProbabilityDistribution{Univariate, PointMass})
