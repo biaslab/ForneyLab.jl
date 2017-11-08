@@ -61,7 +61,7 @@ function isApplicable(::Type{VBGaussianMixtureM}, input_types::Vector{DataType})
 end
 
 type VBGaussianMixtureW <: VariationalRule{GaussianMixture} end
-outboundType(::Type{VBGaussianMixtureW}) = Message{AbstractGamma}
+outboundType(::Type{VBGaussianMixtureW}) = Message{Scale}
 function isApplicable(::Type{VBGaussianMixtureW}, input_types::Vector{DataType})
     n_inputs = length(input_types)
     iseven(n_inputs) || return false

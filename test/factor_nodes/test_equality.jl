@@ -24,10 +24,10 @@ end
 
 @testset "SPEqualityGamma" begin
     @test SPEqualityGamma <: SumProductRule{Equality}
-    @test outboundType(SPEqualityGamma) == Message{AbstractGamma}
-    @test isApplicable(SPEqualityGamma, [Message{AbstractGamma}, Message{AbstractGamma}, Void]) 
-    @test isApplicable(SPEqualityGamma, [Message{AbstractGamma}, Void, Message{AbstractGamma}]) 
-    @test isApplicable(SPEqualityGamma, [Void, Message{AbstractGamma}, Message{AbstractGamma}]) 
+    @test outboundType(SPEqualityGamma) == Message{Scale}
+    @test isApplicable(SPEqualityGamma, [Message{Scale}, Message{Scale}, Void]) 
+    @test isApplicable(SPEqualityGamma, [Message{Scale}, Void, Message{Scale}]) 
+    @test isApplicable(SPEqualityGamma, [Void, Message{Scale}, Message{Scale}]) 
     @test isApplicable(SPEqualityGamma, [Message{Gamma}, Message{Gamma}, Void]) 
     @test isApplicable(SPEqualityGamma, [Message{Wishart}, Message{Wishart}, Void]) 
 

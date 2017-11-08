@@ -27,8 +27,8 @@ end
     @test matches(Message{Gaussian, Univariate}, Message{Gaussian})
     @test matches(Message{Gaussian}, Message{Gaussian})
     @test !matches(Void, Message{Gaussian})
-    @test matches(Message{Gamma, Univariate}, Message{AbstractGamma, Univariate})
-    @test matches(Message{Gamma}, Message{AbstractGamma})
+    @test matches(Message{Gamma, Univariate}, Message{Scale, Univariate})
+    @test matches(Message{Gamma}, Message{Scale})
 end
 
 # Integration helper

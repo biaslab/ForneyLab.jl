@@ -22,7 +22,7 @@ end
 
 @testset "VBGaussianMeanPrecisionW" begin
     @test VBGaussianMeanPrecisionW <: VariationalRule{GaussianMeanPrecision}
-    @test outboundType(VBGaussianMeanPrecisionW) == Message{AbstractGamma}
+    @test outboundType(VBGaussianMeanPrecisionW) == Message{Scale}
     @test isApplicable(VBGaussianMeanPrecisionW, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
 
     @test ruleVBGaussianMeanPrecisionW(Univariate(Gaussian, m=3.0, v=4.0), Univariate(Gaussian, m=1.0, v=2.0), nothing) == Message(Univariate(Gamma, a=1.5, b=0.5*(2.0 + 4.0 + (3.0 - 1.0)^2)))

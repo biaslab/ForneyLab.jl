@@ -15,14 +15,14 @@ function isApplicable(::Type{SPEqualityGaussian}, input_types::Vector{DataType})
 end
 
 type SPEqualityGamma <: SumProductRule{Equality} end
-outboundType(::Type{SPEqualityGamma}) = Message{AbstractGamma}
+outboundType(::Type{SPEqualityGamma}) = Message{Scale}
 function isApplicable(::Type{SPEqualityGamma}, input_types::Vector{DataType})
     void_inputs = 0
     gamma_inputs = 0
     for input_type in input_types
         if input_type == Void
             void_inputs += 1
-        elseif matches(input_type, Message{AbstractGamma})
+        elseif matches(input_type, Message{Scale})
             gamma_inputs += 1
         end
     end

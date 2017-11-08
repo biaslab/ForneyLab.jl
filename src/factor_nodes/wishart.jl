@@ -1,4 +1,4 @@
-export Wishart
+export Wishart, Scale
 
 """
 Description:
@@ -17,7 +17,7 @@ Construction:
 
     Wishart(out, v, nu, id=:some_id)
 """
-type Wishart <: AbstractGamma
+type Wishart <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
@@ -32,6 +32,8 @@ type Wishart <: AbstractGamma
         return self
     end
 end
+
+typealias Scale Union{Gamma, Wishart}
 
 slug(::Type{Wishart}) = "W"
 
