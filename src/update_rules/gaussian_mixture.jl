@@ -1,29 +1,94 @@
-@variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{Bernoulli},
-                 :inbound_types => (ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution),
-                 :name          => VBGaussianMixtureZ)
+type VBGaussianMixtureZBer <: VariationalRule{GaussianMixture} end
+outboundType(::Type{VBGaussianMixtureZBer}) = Message{Bernoulli}
+function isApplicable(::Type{VBGaussianMixtureZBer}, input_types::Vector{DataType})
+    (length(input_types) == 6) || return false
+    for (i, input_type) in enumerate(input_types)
+        if (i == 2)
+            (input_type == Void) || return false
+        else
+            matches(input_type, ProbabilityDistribution) || return false
+        end
+    end
+    return true
+end
 
-@variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{Gaussian},
-                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution),
-                 :name          => VBGaussianMixtureM1)
+type VBGaussianMixtureZCat <: VariationalRule{GaussianMixture} end
+outboundType(::Type{VBGaussianMixtureZCat}) = Message{Categorical}
+function isApplicable(::Type{VBGaussianMixtureZCat}, input_types::Vector{DataType})
+    (length(input_types) > 6) || return false
+    iseven(length(input_types)) || return false
+    for (i, input_type) in enumerate(input_types)
+        if (i == 2)
+            (input_type == Void) || return false
+        else
+            matches(input_type, ProbabilityDistribution) || return false
+        end
+    end
+    return true
+end
 
-@variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{AbstractGamma},
-                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution),
-                 :name          => VBGaussianMixtureW1)
+function matchGMInputs(input_types::Vector{DataType})
+    void_positions = []
+    p_positions = []
+    for (i, input_type) in enumerate(input_types)
+        if matches(input_type, ProbabilityDistribution)
+            push!(p_positions, i)
+        elseif (input_type == Void)
+            push!(void_positions, i)
+        end
+    end
 
-@variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{Gaussian},
-                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution),
-                 :name          => VBGaussianMixtureM2)
+    return (void_positions, p_positions)
+end
 
-@variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{AbstractGamma},
-                 :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void),
-                 :name          => VBGaussianMixtureW2)
+type VBGaussianMixtureM <: VariationalRule{GaussianMixture} end
+outboundType(::Type{VBGaussianMixtureM}) = Message{Gaussian}
+function isApplicable(::Type{VBGaussianMixtureM}, input_types::Vector{DataType})
+    n_inputs = length(input_types)
+    iseven(n_inputs) || return false
+    
+    (void_positions, p_positions) = matchGMInputs(input_types)
+    n_voids = length(void_positions)
+    n_ps = length(p_positions)
 
-@variationalRule(:node_type     => GaussianMixture,
-                 :outbound_type => Message{Gaussian},
-                 :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution),
-                 :name          => VBGaussianMixtureOut)
+    (n_voids == 1) || return false
+    (n_voids + n_ps == n_inputs) || return false
+    (1 in p_positions) || return false
+    (2 in p_positions) || return false
+    isodd(void_positions[1]) || return false
+    
+    return true
+end
+
+type VBGaussianMixtureW <: VariationalRule{GaussianMixture} end
+outboundType(::Type{VBGaussianMixtureW}) = Message{AbstractGamma}
+function isApplicable(::Type{VBGaussianMixtureW}, input_types::Vector{DataType})
+    n_inputs = length(input_types)
+    iseven(n_inputs) || return false
+    
+    (void_positions, p_positions) = matchGMInputs(input_types)
+    n_voids = length(void_positions)
+    n_ps = length(p_positions)
+
+    (n_voids == 1) || return false
+    (n_voids + n_ps == n_inputs) || return false
+    (1 in p_positions) || return false
+    (2 in p_positions) || return false
+    iseven(void_positions[1]) || return false
+    
+    return true
+end
+
+type VBGaussianMixtureOut <: VariationalRule{GaussianMixture} end
+outboundType(::Type{VBGaussianMixtureOut}) = Message{Gaussian}
+function isApplicable(::Type{VBGaussianMixtureOut}, input_types::Vector{DataType})
+    iseven(length(input_types)) || return false
+    for (i, input_type) in enumerate(input_types)
+        if (i == 1)
+            (input_type == Void) || return false
+        else
+            matches(input_type, ProbabilityDistribution) || return false
+        end
+    end
+    return true
+end

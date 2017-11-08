@@ -30,6 +30,7 @@ include("factor_nodes/gaussian_mean_precision.jl")
 include("factor_nodes/gamma.jl")
 include("factor_nodes/wishart.jl")
 include("factor_nodes/bernoulli.jl")
+include("factor_nodes/categorical.jl")
 include("factor_nodes/gaussian_mixture.jl")
 include("factor_nodes/sigmoid.jl")
 

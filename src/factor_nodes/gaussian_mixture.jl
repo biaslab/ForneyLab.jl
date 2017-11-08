@@ -27,15 +27,16 @@ type GaussianMixture <: SoftFactor
     i::Dict{Symbol,Interface}
 
     function GaussianMixture(out::Variable, z::Variable, args::Vararg{Variable}; id=generateId(GaussianMixture))
-        n = length(args)
-        iseven(n) || error("Number of mixture variables should be even")
+        n_args = length(args)
+        iseven(n_args) || error("Number of mixture arguments should be even")
         self = new(id, Array(Interface, length(args) + 2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:z] = self.interfaces[2] = associate!(Interface(self), z)
-        for c = 1:Int64(n/2)
-            self.i[:m*c] = self.interfaces[2*c + 1] = associate!(Interface(self), args[2*c - 1])
-            self.i[:w*c] = self.interfaces[2*c + 2] = associate!(Interface(self), args[2*c])
+        n_factors = Int64(n_args/2)
+        for k = 1:n_factors
+            self.i[:m*k] = self.interfaces[2*k + 1] = associate!(Interface(self), args[2*k - 1])
+            self.i[:w*k] = self.interfaces[2*k + 2] = associate!(Interface(self), args[2*k])
         end
 
         return self
@@ -46,13 +47,19 @@ slug(::Type{GaussianMixture}) = "GM"
 
 # Average energy functional
 function ForneyLab.averageEnergy(   ::Type{GaussianMixture},
-                                    marg_out::ProbabilityDistribution,
-                                    marg_switch::ProbabilityDistribution{Univariate, Bernoulli},
-                                    marg_mean_1::ProbabilityDistribution,
-                                    marg_prec_1::ProbabilityDistribution, 
-                                    marg_mean_2::ProbabilityDistribution,
-                                    marg_prec_2::ProbabilityDistribution)
+                                    dist_out::ProbabilityDistribution,
+                                    dist_switch::ProbabilityDistribution{Univariate},
+                                    dist_factors::Vararg{ProbabilityDistribution})
+    
+    dist_means = collect(dist_factors[1:2:end])
+    dist_precs = collect(dist_factors[2:2:end])
+    n_factors = length(dist_means)
+    z_bar = unsafeMeanVector(dist_switch)
 
-    unsafeMean(marg_switch)*averageEnergy(GaussianMeanPrecision, marg_out, marg_mean_1, marg_prec_1) +
-    (1.0 - unsafeMean(marg_switch))*averageEnergy(GaussianMeanPrecision, marg_out, marg_mean_2, marg_prec_2)
+    U = 0.0
+    for k = 1:n_factors
+        U += z_bar[k]*averageEnergy(GaussianMeanPrecision, dist_out, dist_means[k], dist_precs[k])
+    end
+
+    return U
 end
