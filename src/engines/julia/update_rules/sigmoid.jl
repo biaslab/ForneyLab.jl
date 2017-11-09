@@ -14,7 +14,7 @@ function ruleSPSigmoidBinVG( msg_bin::Void,
     p = Φ(msg_real.dist.params[:m] / sqrt(1 + msg_real.dist.params[:v]))
     isnan(p) && (p = 0.5)
 
-    Message(Univariate(Bernoulli, p=p))
+    Message(Univariate, Bernoulli, p=p)
 end
 
 function ruleEPSigmoidRealGB(msg_bin::Message{Bernoulli, Univariate}, msg_real::Message{Gaussian, Univariate})
@@ -70,11 +70,11 @@ function ruleEPSigmoidRealGB(msg_bin::Message{Bernoulli, Univariate}, msg_real::
     outbound_dist_xi = marginal_xi - dist_cavity.params[:xi]
     isnan(outbound_dist_xi) && (outbound_dist_xi = 0.0)
 
-    return Message(Univariate(Gaussian, xi=outbound_dist_xi, w=outbound_dist_w))
+    return Message(Univariate, Gaussian, xi=outbound_dist_xi, w=outbound_dist_w)
 end
 
 function ruleEPSigmoidRealGP(msg_bin::Message{PointMass, Univariate}, msg_real::Message{Gaussian, Univariate})
     p = mapToBernoulliParameterRange(msg_bin.dist.params[:m])
         
-    return ruleEPSigmoidRealGB(Message(Univariate(Bernoulli, p=p)), msg_real)
+    return ruleEPSigmoidRealGB(Message(Univariate, Bernoulli, p=p), msg_real)
 end

@@ -2,8 +2,8 @@ export Gaussian
 
 abstract Gaussian <: SoftFactor
 
-Univariate(family::Type{Gaussian}; kwargs...) = ProbabilityDistribution{Univariate, family}(Dict(kwargs))
-Multivariate(family::Type{Gaussian}; kwargs...) = ProbabilityDistribution{Multivariate, family}(Dict(kwargs))
+ProbabilityDistribution{V<:VariateType}(var_type::Type{V}, ::Type{Gaussian}; kwargs...) = ProbabilityDistribution{var_type, Gaussian}(Dict(kwargs))
+ProbabilityDistribution(::Type{Gaussian}; kwargs...) = ProbabilityDistribution{Univariate, Gaussian}(Dict(kwargs))
 
 dims(dist::ProbabilityDistribution{Univariate, Gaussian}) = 1
 function dims(dist::ProbabilityDistribution{Multivariate, Gaussian})
@@ -16,8 +16,8 @@ function dims(dist::ProbabilityDistribution{Multivariate, Gaussian})
     end
 end
 
-vague(::Type{Gaussian}) = Univariate(Gaussian, m=0.0, v=huge)
-vague(::Type{Gaussian}, dims::Int64) = Multivariate(Gaussian, m=zeros(dims), v=huge*diageye(dims))
+vague(::Type{Gaussian}) = ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=huge)
+vague(::Type{Gaussian}, dims::Int64) = ProbabilityDistribution(Multivariate, Gaussian, m=zeros(dims), v=huge*diageye(dims))
 
 unsafeMean{T<:VariateType}(dist::ProbabilityDistribution{T, Gaussian}) = deepcopy(ensureParameter!(dist, Val{:m}).params[:m]) # unsafe mean
 
@@ -106,7 +106,7 @@ end
 
 function prod!( x::ProbabilityDistribution{Univariate, Gaussian},
                 y::ProbabilityDistribution{Univariate, Gaussian},
-                z::ProbabilityDistribution{Univariate, Gaussian}=Univariate(Gaussian, xi=0.0, w=1.0))
+                z::ProbabilityDistribution{Univariate, Gaussian}=ProbabilityDistribution(Univariate, Gaussian, xi=0.0, w=1.0))
 
     ensureParameters!(x, (:xi, :w))
     ensureParameters!(y, (:xi, :w))
@@ -121,7 +121,7 @@ end
 
 function prod!( x::ProbabilityDistribution{Multivariate, Gaussian},
                 y::ProbabilityDistribution{Multivariate, Gaussian},
-                z::ProbabilityDistribution{Multivariate, Gaussian}=Multivariate(Gaussian, xi=[NaN], w=[NaN].'))
+                z::ProbabilityDistribution{Multivariate, Gaussian}=ProbabilityDistribution(Multivariate, Gaussian, xi=[NaN], w=[NaN].'))
 
     ensureParameters!(x, (:xi, :w))
     ensureParameters!(y, (:xi, :w))

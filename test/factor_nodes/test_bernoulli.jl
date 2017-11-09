@@ -5,22 +5,32 @@ using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims
 import ForneyLab: SPBernoulliOutVP, VBBernoulliOut
 
+@testset "Bernoulli ProbabilityDistribution and Message construction" begin
+    @test ProbabilityDistribution(Univariate, Bernoulli, p=0.2) == ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>0.2))
+    @test_throws Exception ProbabilityDistribution(Multivariate, Bernoulli)
+    @test ProbabilityDistribution(Bernoulli, p=0.2) == ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>0.2))
+    @test ProbabilityDistribution(Bernoulli) == ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>0.5))
+    @test Message(Bernoulli) == Message{Bernoulli, Univariate}(ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>0.5)))
+    @test Message(Univariate, Bernoulli) == Message{Bernoulli, Univariate}(ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>0.5)))
+    @test_throws Exception Message(Multivariate, Bernoulli)
+end
+
 @testset "dims" begin
-    @test dims(Univariate(Bernoulli, p=0.5)) == 1
+    @test dims(ProbabilityDistribution(Bernoulli, p=0.5)) == 1
 end
 
 @testset "vague" begin
-    @test vague(Bernoulli) == Univariate(Bernoulli, p=0.5)
+    @test vague(Bernoulli) == ProbabilityDistribution(Bernoulli, p=0.5)
 end
 
 @testset "unsafe mean and variance" begin
-    @test unsafeMean(Univariate(Bernoulli, p=0.2)) == 0.2
-    @test unsafeVar(Univariate(Bernoulli, p=0.5)) == 0.25
+    @test unsafeMean(ProbabilityDistribution(Bernoulli, p=0.2)) == 0.2
+    @test unsafeVar(ProbabilityDistribution(Bernoulli, p=0.5)) == 0.25
 end
 
 @testset "prod!" begin
-    @test Univariate(Bernoulli, p=0.2) * Univariate(Bernoulli, p=0.8) == Univariate(Bernoulli, p=0.5000000000000001)
-    @test_throws Exception Univariate(Bernoulli, p=0.0) * Univariate(Bernoulli, p=1.0)
+    @test ProbabilityDistribution(Bernoulli, p=0.2) * ProbabilityDistribution(Bernoulli, p=0.8) == ProbabilityDistribution(Bernoulli, p=0.5000000000000001)
+    @test_throws Exception ProbabilityDistribution(Bernoulli, p=0.0) * ProbabilityDistribution(Bernoulli, p=1.0)
 end
 
 #-------------
@@ -32,7 +42,7 @@ end
     @test outboundType(SPBernoulliOutVP) == Message{Bernoulli}
     @test isApplicable(SPBernoulliOutVP, [Void, Message{PointMass}]) 
 
-    @test ruleSPBernoulliOutVP(nothing, Message(Univariate(PointMass, m=0.2))) == Message(Univariate(Bernoulli, p=0.2))
+    @test ruleSPBernoulliOutVP(nothing, Message(Univariate, PointMass, m=0.2)) == Message(Univariate, Bernoulli, p=0.2)
 end
 
 @testset "VBBernoulliOut" begin
@@ -41,11 +51,11 @@ end
     @test isApplicable(VBBernoulliOut, [Void, ProbabilityDistribution])
     @test !isApplicable(VBBernoulliOut, [ProbabilityDistribution, Void])
 
-    @test ruleVBBernoulliOut(nothing, Univariate(PointMass, m=0.2)) == Message(Univariate(Bernoulli, p=0.2))
+    @test ruleVBBernoulliOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=0.2)) == Message(Univariate, Bernoulli, p=0.2)
 end
 
 @testset "averageEnergy and differentialEntropy" begin
-    @test differentialEntropy(Univariate(Bernoulli, p=0.25)) == averageEnergy(Bernoulli, Univariate(Bernoulli, p=0.25), Univariate(PointMass, m=0.25))
+    @test differentialEntropy(ProbabilityDistribution(Univariate, Bernoulli, p=0.25)) == averageEnergy(Bernoulli, ProbabilityDistribution(Univariate, Bernoulli, p=0.25), ProbabilityDistribution(Univariate, PointMass, m=0.25))
 end
 
 end # module

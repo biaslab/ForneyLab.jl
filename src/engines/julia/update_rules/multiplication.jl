@@ -8,7 +8,7 @@ function ruleSPMultiplicationOutVGP( msg_out::Void,
 
     ensureParameters!(msg_in.dist, (:m, :v))
 
-    Message(Univariate(Gaussian, m=msg_gain.dist.params[:m]*msg_in.dist.params[:m], v=msg_gain.dist.params[:m]^2 * msg_in.dist.params[:v]))
+    Message(Univariate, Gaussian, m=msg_gain.dist.params[:m]*msg_in.dist.params[:m], v=msg_gain.dist.params[:m]^2 * msg_in.dist.params[:v])
 end
 
 function ruleSPMultiplicationInGVP(  msg_out::Message{Gaussian, Univariate},
@@ -17,5 +17,5 @@ function ruleSPMultiplicationInGVP(  msg_out::Message{Gaussian, Univariate},
 
     ensureParameters!(msg_out.dist, (:m, :v))
 
-    Message(Univariate(Gaussian, m=msg_out.dist.params[:m]/msg_gain.dist.params[:m], v=msg_out.dist.params[:v]/msg_gain.dist.params[:m]^2))
+    Message(Univariate, Gaussian, m=msg_out.dist.params[:m]/msg_gain.dist.params[:m], v=msg_out.dist.params[:v]/msg_gain.dist.params[:m]^2)
 end

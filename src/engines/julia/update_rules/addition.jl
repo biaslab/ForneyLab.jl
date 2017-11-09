@@ -13,7 +13,7 @@ function ruleSPAdditionOutVGG(   msg_out::Void,
     ensureParameters!(msg_in1.dist, (:m, :v))
     ensureParameters!(msg_in2.dist, (:m, :v))
 
-    Message(Univariate(Gaussian, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m], v=msg_in1.dist.params[:v] + msg_in2.dist.params[:v]))
+    Message(Univariate, Gaussian, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m], v=msg_in1.dist.params[:v] + msg_in2.dist.params[:v])
 end
 
 function ruleSPAdditionIn2GGV(   msg_out::Message{Gaussian, Univariate},
@@ -23,7 +23,7 @@ function ruleSPAdditionIn2GGV(   msg_out::Message{Gaussian, Univariate},
     ensureParameters!(msg_in1.dist, (:m, :v))
     ensureParameters!(msg_out.dist, (:m, :v))
 
-    Message(Univariate(Gaussian, m=msg_out.dist.params[:m] - msg_in1.dist.params[:m], v=msg_out.dist.params[:v] + msg_in1.dist.params[:v]))
+    Message(Univariate, Gaussian, m=msg_out.dist.params[:m] - msg_in1.dist.params[:m], v=msg_out.dist.params[:v] + msg_in1.dist.params[:v])
 end
 
 ruleSPAdditionIn1GVG(msg_out::Message{Gaussian, Univariate}, ::Void, msg_in2::Message{Gaussian, Univariate}) = ruleSPAdditionIn2GGV(msg_out, msg_in2, nothing)
@@ -35,7 +35,7 @@ function ruleSPAdditionOutVGP(   msg_out::Void,
 
     ensureParameters!(msg_in1.dist, (:m, :v))
 
-    Message(Univariate(Gaussian, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m], v=msg_in1.dist.params[:v]))
+    Message(Univariate, Gaussian, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m], v=msg_in1.dist.params[:v])
 end
 ruleSPAdditionOutVPG(::Void, msg_in1::Message{PointMass, Univariate}, msg_in2::Message{Gaussian, Univariate}) = ruleSPAdditionOutVGP(nothing, msg_in2, msg_in1)
 
@@ -45,5 +45,5 @@ function ruleSPAdditionIn1PVG(   msg_out::Message{PointMass, Univariate},
 
     ensureParameters!(msg_in2.dist, (:m, :v))
 
-    Message(Univariate(Gaussian, m=msg_out.dist.params[:m] - msg_in2.dist.params[:m], v=msg_in2.dist.params[:v]))
+    Message(Univariate, Gaussian, m=msg_out.dist.params[:m] - msg_in2.dist.params[:m], v=msg_in2.dist.params[:v])
 end

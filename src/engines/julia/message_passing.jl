@@ -231,13 +231,13 @@ function messageString{T<:VariateType}(node::Clamp{T})
         # Message comes from data array
         buffer, idx = ForneyLab.current_graph.placeholders[node]
         if idx > 0
-            str = "Message($(var_type_str)(PointMass, m=data[:$buffer][$idx]))"
+            str = "Message($(var_type_str), PointMass, m=data[:$buffer][$idx])"
         else
-            str = "Message($(var_type_str)(PointMass, m=data[:$buffer]))"
+            str = "Message($(var_type_str), PointMass, m=data[:$buffer])"
         end
     else
         # Insert constant
-        str = "Message($(var_type_str)(PointMass, m=$(node.value)))"
+        str = "Message($(var_type_str), PointMass, m=$(node.value))"
     end
 
     return str
@@ -253,13 +253,13 @@ function marginalString{T<:VariateType}(node::Clamp{T})
         # Message comes from data array
         buffer, idx = ForneyLab.current_graph.placeholders[node]
         if idx > 0
-            str = "$(var_type_str)(PointMass, m=data[:$buffer][$idx])" 
+            str = "ProbabilityDistribution($(var_type_str), PointMass, m=data[:$buffer][$idx])" 
         else
-            str = "$(var_type_str)(PointMass, m=data[:$buffer])"
+            str = "ProbabilityDistribution($(var_type_str), PointMass, m=data[:$buffer])"
         end
     else
         # Insert constant
-        str = "$(var_type_str)(PointMass, m=$(node.value))"
+        str = "ProbabilityDistribution($(var_type_str), PointMass, m=$(node.value))"
     end
 
     return str

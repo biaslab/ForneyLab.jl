@@ -35,11 +35,12 @@ end
 
 slug(::Type{Gamma}) = "Gam"
 
-Univariate(::Type{Gamma}; a=1.0, b=1.0) = ProbabilityDistribution{Univariate, Gamma}(Dict(:a=>a, :b=>b))
+ProbabilityDistribution(::Type{Univariate}, ::Type{Gamma}; a=1.0, b=1.0) = ProbabilityDistribution{Univariate, Gamma}(Dict(:a=>a, :b=>b))
+ProbabilityDistribution(::Type{Gamma}; a=1.0, b=1.0) = ProbabilityDistribution{Univariate, Gamma}(Dict(:a=>a, :b=>b))
 
 dims(dist::ProbabilityDistribution{Univariate, Gamma}) = 1
 
-vague(::Type{Gamma}) = Univariate(Gamma, a=1.0, b=tiny) # Flat prior leads to more stable behaviour than Jeffrey's prior
+vague(::Type{Gamma}) = ProbabilityDistribution(Univariate, Gamma, a=1.0, b=tiny) # Flat prior leads to more stable behaviour than Jeffrey's prior
 
 unsafeMean(dist::ProbabilityDistribution{Univariate, Gamma}) = dist.params[:a]/dist.params[:b] # unsafe mean
 
@@ -51,7 +52,7 @@ isProper(dist::ProbabilityDistribution{Univariate, Gamma}) = (dist.params[:a] >=
 
 function prod!( x::ProbabilityDistribution{Univariate, Gamma},
                 y::ProbabilityDistribution{Univariate, Gamma},
-                z::ProbabilityDistribution{Univariate, Gamma}=Univariate(Gamma, a=0.0, b=0.0))
+                z::ProbabilityDistribution{Univariate, Gamma}=ProbabilityDistribution(Univariate, Gamma, a=0.0, b=0.0))
 
     z.params[:a] = x.params[:a] + y.params[:a] - 1.0
     z.params[:b] = x.params[:b] + y.params[:b]

@@ -37,11 +37,12 @@ typealias Scale Union{Gamma, Wishart}
 
 slug(::Type{Wishart}) = "W"
 
-MatrixVariate(::Type{Wishart}; v=[1.0].', nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Wishart}; v=[1.0].', nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+ProbabilityDistribution(::Type{Wishart}; v=[1.0].', nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
 
 dims(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = size(dist.params[:v])
 
-vague(::Type{Wishart}, dims::Int64) = MatrixVariate(Wishart, v=huge*diageye(dims), nu=Float64(dims)) # Flat prior
+vague(::Type{Wishart}, dims::Int64) = ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(dims), nu=Float64(dims)) # Flat prior
 
 unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = dist.params[:nu]*dist.params[:v] # unsafe mean
 
@@ -72,7 +73,7 @@ end
 
 function prod!( x::ProbabilityDistribution{MatrixVariate, Wishart},
                 y::ProbabilityDistribution{MatrixVariate, Wishart},
-                z::ProbabilityDistribution{MatrixVariate, Wishart}=MatrixVariate(Wishart, v=[1.0].', nu=1.0))
+                z::ProbabilityDistribution{MatrixVariate, Wishart}=ProbabilityDistribution(MatrixVariate, Wishart, v=[1.0].', nu=1.0))
 
     d = dims(x)[1]
     z.params[:v] = x.params[:v] * cholinv(x.params[:v] + y.params[:v]) * y.params[:v]

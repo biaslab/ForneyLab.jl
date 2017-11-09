@@ -42,7 +42,7 @@ end
 function averageEnergy(::Type{Sigmoid}, marg_bin::ProbabilityDistribution{Univariate, PointMass}, marg_real::ProbabilityDistribution{Univariate, Gaussian})
     p = mapToBernoulliParameterRange(marg_bin.params[:m])
 
-    return averageEnergy(Sigmoid, Univariate(Bernoulli, p=p), marg_real)
+    return averageEnergy(Sigmoid, ProbabilityDistribution(Univariate, Bernoulli, p=p), marg_real)
 end
 
 """

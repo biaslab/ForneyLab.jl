@@ -5,19 +5,17 @@ using ForneyLab
 import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, matches
 
 @testset "Message" begin
-    msg = Message(Univariate(Gaussian, m=0.0, v=1.0))
+    msg = Message(Univariate, Gaussian, m=0.0, v=1.0)
     @test isa(msg, Message{Gaussian})
     @test isa(msg, Message{Gaussian, Univariate})
     @test !isa(msg, Message{PointMass})
     @test !isa(msg, Message{Gaussian, Multivariate})
     @test !isa(msg, Message{Gaussian, MatrixVariate})
-    @test msg.dist == Univariate(Gaussian, m=0.0, v=1.0)
+    @test msg.dist == ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0)
 
-    @test Message(Univariate, Gaussian, m=0.0, v=1.0) == msg
-
-    @test Message(Univariate(PointMass, m=0.0)) == Message(Univariate(PointMass, m=0.0))
-    @test Message(Univariate(PointMass, m=0.0)) != Message(Univariate(Gaussian, m=0.0, v=1.0))
-    @test Message(Univariate(PointMass, m=0.0)) != Message(Univariate(PointMass, m=1.0))
+    @test Message(Univariate, PointMass, m=0.0) == Message(Univariate, PointMass, m=0.0)
+    @test Message(Univariate, PointMass, m=0.0) != Message(Univariate, Gaussian, m=0.0, v=1.0)
+    @test Message(Univariate, PointMass, m=0.0) != Message(Univariate, PointMass, m=1.0)
 end
 
 @testset "matches" begin

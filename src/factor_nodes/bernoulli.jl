@@ -33,11 +33,12 @@ end
 
 slug(::Type{Bernoulli}) = "Ber"
 
-Univariate(::Type{Bernoulli}; p=0.5) = ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>p))
+ProbabilityDistribution(::Type{Univariate}, ::Type{Bernoulli}; p=0.5) = ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>p))
+ProbabilityDistribution(::Type{Bernoulli}; p=0.5) = ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>p))
 
 dims(dist::ProbabilityDistribution{Univariate, Bernoulli}) = 1
 
-vague(::Type{Bernoulli}) = Univariate(Bernoulli, p=0.5)
+vague(::Type{Bernoulli}) = ProbabilityDistribution(Univariate, Bernoulli, p=0.5)
 
 isProper(dist::ProbabilityDistribution{Univariate, Bernoulli}) = (0 <= dist.params[:p] <= 1)
 
@@ -49,7 +50,7 @@ unsafeVar(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:p
 
 function prod!( x::ProbabilityDistribution{Univariate, Bernoulli},
                 y::ProbabilityDistribution{Univariate, Bernoulli},
-                z::ProbabilityDistribution{Univariate, Bernoulli}=Univariate(Bernoulli, p=0.5))
+                z::ProbabilityDistribution{Univariate, Bernoulli}=ProbabilityDistribution(Univariate, Bernoulli, p=0.5))
 
     norm = x.params[:p] * y.params[:p] + (1 - x.params[:p]) * (1 - y.params[:p])
     (norm > 0) || error("Product of $(x) and $(y) cannot be normalized")

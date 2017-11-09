@@ -22,7 +22,9 @@ abstract MatrixVariate <: VariateType
 immutable ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
     params::Dict
 end
-ProbabilityDistribution{V<:VariateType, F<:FactorNode}(var_type::Type{V}, family::Type{F}; kwargs...) = ProbabilityDistribution{var_type, family}(Dict(kwargs))
+
+"""Extract VariateType from dist"""
+variateType{V<:VariateType, F<:FactorNode}(dist::ProbabilityDistribution{V, F}) = V
 
 matches{Pa<:ProbabilityDistribution, Pb<:ProbabilityDistribution}(Ta::Type{Pa}, Tb::Type{Pb}) = (Pa<:Pb)
 matches{T<:ProbabilityDistribution}(::Type{Void}, ::Type{T}) = false
@@ -42,9 +44,10 @@ dims(dist::ProbabilityDistribution{Multivariate, PointMass}) = length(dist.param
 dims(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = size(dist.params[:m])
 
 # PointMass distribution constructors
-Univariate(family::Type{PointMass}; m::Number=1.0) = ProbabilityDistribution{Univariate, family}(Dict(:m=>m))
-Multivariate(family::Type{PointMass}; m::Vector=[1.0]) = ProbabilityDistribution{Multivariate, family}(Dict(:m=>m))
-MatrixVariate(family::Type{PointMass}; m::AbstractMatrix=[1.0].') = ProbabilityDistribution{MatrixVariate, family}(Dict(:m=>m))
+ProbabilityDistribution(var_type::Type{Univariate}, ::Type{PointMass}; m::Number=1.0) = ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>m))
+ProbabilityDistribution(::Type{PointMass}; m::Number=1.0) = ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>m))
+ProbabilityDistribution(var_type::Type{Multivariate}, ::Type{PointMass}; m::Vector=[1.0]) = ProbabilityDistribution{Multivariate, PointMass}(Dict(:m=>m))
+ProbabilityDistribution(var_type::Type{MatrixVariate}, ::Type{PointMass}; m::AbstractMatrix=[1.0].') = ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>m))
 
 unsafeMean{T<:VariateType}(dist::ProbabilityDistribution{T, PointMass}) = deepcopy(dist.params[:m])
 

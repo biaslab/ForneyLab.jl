@@ -78,22 +78,22 @@ end
     # Build SP algorithm for Julia execution
     algo = ForneyLab.messagePassingAlgorithm(schedule, x)
     @test contains(algo, "Array{Message}(2)")
-    @test contains(algo, "messages[1] = ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate(PointMass, m=0.0)), Message(Univariate(PointMass, m=1.0)))")
-    @test contains(algo, "messages[2] = ruleSPStateTransitionX(Message(Univariate(PointMass, m=data[:y])), messages[1], nothing)")
+    @test contains(algo, "messages[1] = ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))")
+    @test contains(algo, "messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)")
     @test contains(algo, "marginals[:x] = messages[2].dist")
 end
 
 @testset "Composite node algorithm execution" begin
     # Implement custom rule for Julia execution
-    ruleSPStateTransitionX(::Message{PointMass, Univariate}, ::Message{Gaussian, Univariate}, ::Void) = Message(Univariate(Gaussian, m=2.0, v=3.0)) # Send some dummy message
+    ruleSPStateTransitionX(::Message{PointMass, Univariate}, ::Message{Gaussian, Univariate}, ::Void) = Message(Univariate, Gaussian, m=2.0, v=3.0) # Send some dummy message
 
     # Resulting algorithm ---
     function step!(marginals::Dict, data::Dict)
 
     messages = Array{Message}(2)
 
-    messages[1] = ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate(PointMass, m=0.0)), Message(Univariate(PointMass, m=1.0)))
-    messages[2] = ruleSPStateTransitionX(Message(Univariate(PointMass, m=data[:y])), messages[1], nothing)
+    messages[1] = ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))
+    messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)
 
     marginals[:x] = messages[2].dist
 
@@ -104,7 +104,7 @@ end
     data = Dict(:y => 1.0)
     step!(marginals, data)
 
-    @test marginals[:x] == Univariate(Gaussian, m=2.0, v=3.0)
+    @test marginals[:x] == ProbabilityDistribution(Univariate, Gaussian, m=2.0, v=3.0)
 end
 
 end #module

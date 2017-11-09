@@ -17,9 +17,9 @@ import ForneyLab: SPEqualityGaussian, SPEqualityGamma
     @test isApplicable(SPEqualityGaussian, [Message{Gaussian}, Void, Message{Gaussian}]) 
     @test isApplicable(SPEqualityGaussian, [Void, Message{Gaussian}, Message{Gaussian}]) 
 
-    @test ruleSPEqualityGaussian(Message(Univariate(Gaussian, xi=1.0, w=2.0)), Message(Univariate(Gaussian, xi=3.0, w=4.0)), nothing) == Message(Univariate(Gaussian, xi=4.0, w=6.0))
-    @test ruleSPEqualityGaussian(Message(Univariate(Gaussian, xi=1.0, w=2.0)), nothing, Message(Univariate(Gaussian, xi=3.0, w=4.0))) == Message(Univariate(Gaussian, xi=4.0, w=6.0))
-    @test ruleSPEqualityGaussian(nothing, Message(Univariate(Gaussian, xi=1.0, w=2.0)), Message(Univariate(Gaussian, xi=3.0, w=4.0))) == Message(Univariate(Gaussian, xi=4.0, w=6.0))
+    @test ruleSPEqualityGaussian(Message(Univariate, Gaussian, xi=1.0, w=2.0), Message(Univariate, Gaussian, xi=3.0, w=4.0), nothing) == Message(Univariate, Gaussian, xi=4.0, w=6.0)
+    @test ruleSPEqualityGaussian(Message(Univariate, Gaussian, xi=1.0, w=2.0), nothing, Message(Univariate, Gaussian, xi=3.0, w=4.0)) == Message(Univariate, Gaussian, xi=4.0, w=6.0)
+    @test ruleSPEqualityGaussian(nothing, Message(Univariate, Gaussian, xi=1.0, w=2.0), Message(Univariate, Gaussian, xi=3.0, w=4.0)) == Message(Univariate, Gaussian, xi=4.0, w=6.0)
 end
 
 @testset "SPEqualityGamma" begin
@@ -31,9 +31,9 @@ end
     @test isApplicable(SPEqualityGamma, [Message{Gamma}, Message{Gamma}, Void]) 
     @test isApplicable(SPEqualityGamma, [Message{Wishart}, Message{Wishart}, Void]) 
 
-    @test ruleSPEqualityGamma(Message(Univariate(Gamma, a=1.0, b=2.0)), Message(Univariate(Gamma, a=3.0, b=4.0)), nothing) == Message(Univariate(Gamma, a=3.0, b=6.0))
-    @test ruleSPEqualityGamma(Message(Univariate(Gamma, a=1.0, b=2.0)), nothing, Message(Univariate(Gamma, a=3.0, b=4.0))) == Message(Univariate(Gamma, a=3.0, b=6.0))
-    @test ruleSPEqualityGamma(nothing, Message(Univariate(Gamma, a=1.0, b=2.0)), Message(Univariate(Gamma, a=3.0, b=4.0))) == Message(Univariate(Gamma, a=3.0, b=6.0))
+    @test ruleSPEqualityGamma(Message(Univariate, Gamma, a=1.0, b=2.0), Message(Univariate, Gamma, a=3.0, b=4.0), nothing) == Message(Univariate, Gamma, a=3.0, b=6.0)
+    @test ruleSPEqualityGamma(Message(Univariate, Gamma, a=1.0, b=2.0), nothing, Message(Univariate, Gamma, a=3.0, b=4.0)) == Message(Univariate, Gamma, a=3.0, b=6.0)
+    @test ruleSPEqualityGamma(nothing, Message(Univariate, Gamma, a=1.0, b=2.0), Message(Univariate, Gamma, a=3.0, b=4.0)) == Message(Univariate, Gamma, a=3.0, b=6.0)
 end
 
 end #module
