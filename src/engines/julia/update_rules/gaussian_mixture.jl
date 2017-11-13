@@ -36,7 +36,7 @@ function ruleVBGaussianMixtureW(dist_out::ProbabilityDistribution,
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])
     k = findfirst(dist_precs .== nothing) # Find factor
-    z_bar = clamp(unsafeMeanVector(dist_switch), tiny, 1.0 - tiny)
+    z_bar = unsafeMeanVector(dist_switch)
 
     return Message(Univariate, Gamma,
         a = 1.0 + 0.5*z_bar[k],
@@ -50,7 +50,7 @@ function ruleVBGaussianMixtureW(dist_out::ProbabilityDistribution,
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])
     k = findfirst(dist_precs .== nothing) # Find factor
-    z_bar = clamp(unsafeMeanVector(dist_switch), tiny, 1.0 - tiny)
+    z_bar = unsafeMeanVector(dist_switch)
     d = dims(dist_means[1])
 
     return Message(MatrixVariate, Wishart,

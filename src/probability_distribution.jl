@@ -11,7 +11,8 @@ cov,
 differentialEntropy,
 averageEnergy,
 ==,
-vague
+vague,
+sample
 
 abstract VariateType
 abstract Univariate <: VariateType
@@ -50,6 +51,15 @@ ProbabilityDistribution(var_type::Type{Multivariate}, ::Type{PointMass}; m::Vect
 ProbabilityDistribution(var_type::Type{MatrixVariate}, ::Type{PointMass}; m::AbstractMatrix=[1.0].') = ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>m))
 
 unsafeMean{T<:VariateType}(dist::ProbabilityDistribution{T, PointMass}) = deepcopy(dist.params[:m])
+
+function unsafeMeanVector(dist::ProbabilityDistribution{Univariate, PointMass}) # For observed bernoulli
+    p = dist.params[:m]
+    if length(p) == 1
+        return [first(p), 1 - first(p)]
+    else
+        return p
+    end
+end
 
 unsafeInverseMean(dist::ProbabilityDistribution{Univariate, PointMass}) = 1.0/dist.params[:m]
 unsafeInverseMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = cholinv(dist.params[:m])

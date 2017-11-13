@@ -48,6 +48,8 @@ unsafeMeanVector(dist::ProbabilityDistribution{Univariate, Bernoulli}) = [dist.p
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:p]*(1 - dist.params[:p])
 
+sample(dist::ProbabilityDistribution{Univariate, Bernoulli}) = 1.0*(rand() < dist.params[:p])
+
 function prod!( x::ProbabilityDistribution{Univariate, Bernoulli},
                 y::ProbabilityDistribution{Univariate, Bernoulli},
                 z::ProbabilityDistribution{Univariate, Bernoulli}=ProbabilityDistribution(Univariate, Bernoulli, p=0.5))

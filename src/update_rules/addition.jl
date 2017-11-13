@@ -27,3 +27,8 @@
                 :outbound_type => Message{Gaussian},
                 :inbound_types => (Message{PointMass}, Void, Message{Gaussian}),
                 :name          => SPAdditionIn1PVG)
+
+@sumProductRule(:node_type     => Addition,
+                :outbound_type => Message{Gaussian},
+                :inbound_types => (Message{PointMass}, Message{Gaussian}, Void),
+                :name          => SPAdditionIn2PGV)

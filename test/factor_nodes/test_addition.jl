@@ -3,7 +3,7 @@ module AdditionTest
 using Base.Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPAdditionOutVGG, SPAdditionOutVGP, SPAdditionOutVPG, SPAdditionIn1GVG, SPAdditionIn1PVG, SPAdditionIn2GGV
+import ForneyLab: SPAdditionOutVGG, SPAdditionOutVGP, SPAdditionOutVPG, SPAdditionIn1GVG, SPAdditionIn1PVG, SPAdditionIn2GGV, SPAdditionIn2PGV
 
 @testset "Addition node construction through + syntax" begin
     g = FactorGraph()
@@ -62,12 +62,21 @@ end
 
     @test ruleSPAdditionOutVPG(nothing, Message(Univariate, PointMass, m=3.0), Message(Univariate, Gaussian, m=1.0, v=2.0)) == Message(Univariate, Gaussian, m=4.0, v=2.0)
 end
+
 @testset "SPAdditionIn1PVG" begin
     @test SPAdditionIn1PVG <: SumProductRule{Addition}
     @test outboundType(SPAdditionIn1PVG) == Message{Gaussian}
     @test isApplicable(SPAdditionIn1PVG, [Message{PointMass}, Void, Message{Gaussian}])
 
     @test ruleSPAdditionIn1PVG(Message(Univariate, PointMass, m=3.0), nothing, Message(Univariate, Gaussian, m=1.0, v=2.0)) == Message(Univariate, Gaussian, m=2.0, v=2.0)
+end
+
+@testset "SPAdditionIn2PGV" begin
+    @test SPAdditionIn2PGV <: SumProductRule{Addition}
+    @test outboundType(SPAdditionIn2PGV) == Message{Gaussian}
+    @test isApplicable(SPAdditionIn2PGV, [Message{PointMass}, Message{Gaussian}, Void])
+
+    @test ruleSPAdditionIn2PGV(Message(Univariate, PointMass, m=3.0), Message(Univariate, Gaussian, m=1.0, v=2.0), nothing) == Message(Univariate, Gaussian, m=2.0, v=2.0)
 end
 
 end # module
