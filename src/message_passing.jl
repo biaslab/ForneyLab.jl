@@ -14,13 +14,18 @@ immutable Message{family<:FactorNode, var_type<:VariateType} # Note that paramet
     Message{F<:FactorNode, V<:VariateType}(dist::ProbabilityDistribution{V, F}) = new{F, V}(dist) # Constructor for unspecified scaling factor
 end
 
+Message{F<:FactorNode, V<:VariateType}(dist::ProbabilityDistribution{V, F}) = Message{F, V}(dist)
+
 Message{F<:FactorNode, V<:VariateType}(var_type::Type{V}, family::Type{F}; kwargs...) = Message{family, var_type}(ProbabilityDistribution(var_type, family; kwargs...))
+
 function Message{F<:FactorNode}(family::Type{F}; kwargs...)
     dist = ProbabilityDistribution(family; kwargs...)
     var_type = variateType(dist)
 
     return Message{family, var_type}(dist)
 end
+
+family{F<:FactorNode}(msg_type::Type{Message{F}}) = F
 
 """Special inheritance rules for parametric Message types"""
 matches{T<:Message}(::Type{T}, ::Type{T}) = true

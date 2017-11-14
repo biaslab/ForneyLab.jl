@@ -92,8 +92,8 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
         code *= "messages = Array{Message}($n_messages)\n"
         for (breaker_site, breaker_type) in breaker_types
             msg_idx = interface_to_msg_idx[breaker_site]
-            breaker_str = replace(string(breaker_type),"ForneyLab.", "") # Remove module prefixes
-            code *= "messages[$(msg_idx)] = vague($(breaker_str))\n"
+            breaker_str = replace(string(family(breaker_type)),"ForneyLab.", "") # Remove module prefixes
+            code *= "messages[$(msg_idx)] = Message(vague($(breaker_str)))\n"
         end
 
         code *= "\nreturn messages\n\n"
