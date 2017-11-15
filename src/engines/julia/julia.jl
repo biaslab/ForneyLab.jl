@@ -1,6 +1,7 @@
 export messagePassingAlgorithm
 
 include("message_passing.jl")
+include("algorithms.jl")
 
 include("update_rules/equality.jl")
 include("update_rules/addition.jl")

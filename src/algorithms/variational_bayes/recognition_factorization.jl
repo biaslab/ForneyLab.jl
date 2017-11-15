@@ -11,8 +11,12 @@ type RecognitionFactor
     internal_edges::Set{Edge}
 
     function RecognitionFactor(variables::Set{Variable}; rfz=currentRecognitionFactorization(), id=generateId(RecognitionFactor))
+        # Collect variables on internal edges connected to external nodes
         internal_edges = extend(edges(variables))
-        self = new(id, variables, internal_edges)
+        internal_edges_connected_to_external_nodes = intersect(edges(nodes(internal_edges)), internal_edges)
+        recognition_variables = Set{Variable}([edge.variable for edge in internal_edges_connected_to_external_nodes])
+
+        self = new(id, union(variables, recognition_variables), internal_edges)
         rfz.recognition_factors[id] = self # Register new factor with recognition factorization
 
         return self 
@@ -21,44 +25,6 @@ end
 
 RecognitionFactor(variable::Variable; id=generateId(RecognitionFactor)) = RecognitionFactor(Set([variable]), id=id)
 RecognitionFactor(variables::Vector{Variable}; id=generateId(RecognitionFactor)) = RecognitionFactor(Set(variables), id=id)
-
-"""
-factor() returns a (list of) recognition factor(s) that can be used for convenient scheduling
-"""
-function factor(variables::Set{Variable}; factorization=:structured, id=generateId(RecognitionFactor))
-    if factorization == :naive
-        # Factorize the subgraph in deterministically-connected clusters.
-        # This is convenient when constructing schedules, because
-        # several clusters can be grouped under one schedule/algorithm.
-
-        cluster_sig_to_variables_dict = Dict{UInt64, Vector{Variable}}()
-        # Find which variables belong to the same cluster
-        for variable in sort(collect(variables))
-            cluster_sig = hash(extend(edges(variable))) # Generate a unique cluster signature
-            if haskey(cluster_sig_to_variables_dict, cluster_sig)
-                # Cluster is already registered, push variable to registered cluster
-                push!(cluster_sig_to_variables_dict[cluster_sig], variable)
-            else
-                # Register new cluster
-                cluster_sig_to_variables_dict[cluster_sig] = [variable]
-            end
-        end
-
-        # For each unique cluster, construct a recognition factor
-        recognition_factors = RecognitionFactor[]
-        for (i, cluster_sig) in enumerate(sort(collect(keys(cluster_sig_to_variables_dict))))
-            rf = RecognitionFactor(cluster_sig_to_variables_dict[cluster_sig], id=id*:_*i)
-            push!(recognition_factors, rf)
-        end
-        return recognition_factors
-    elseif factorization == :structured
-        return RecognitionFactor(variables, id=id)
-    else
-        error("Unknown factorization keyword $(factorization), choose `:naive` or `:structured` instead")
-    end
-end
-factor(variable::Variable; factorization=:structured, id=generateId(RecognitionFactor)) = factor(Set([variable]), factorization=factorization, id=id)
-factor(variables::Vector{Variable}; factorization=:structured, id=generateId(RecognitionFactor)) = factor(Set(variables), factorization=factorization, id=id)
 
 function draw(rf::RecognitionFactor; schedule=ScheduleEntry[], args...)
     subgraph_nodes = nodes(rf.internal_edges)
