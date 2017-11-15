@@ -1,7 +1,7 @@
 module VariableTest
 
 using Base.Test
-import ForneyLab: Variable, Clamp, GaussianMeanVariance, Equality, FactorGraph, @~, currentGraph, constant
+using ForneyLab
 
 @testset "Variable" begin
     g = FactorGraph()

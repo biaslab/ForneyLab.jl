@@ -93,10 +93,17 @@ macro ~(variable_expr::Any, dist_expr::Expr)
         dist_expr.args = vcat([dist_expr.args[1]; variable_expr], dist_expr.args[2:end])
     end
 
+    # Build the expression for constructing the node id, either an id is passed; or we generate our own
+    if isa(dist_expr.args[end], Expr) && (dist_expr.args[end].head == :kw) && (dist_expr.args[end].args[1] == :id)
+        node_id_expr = dist_expr.args[end].args[2]
+    else
+        node_id_expr = parse("ForneyLab.generateId(Variable)")
+    end
+
     expr = parse("""
                 begin
                 # Use existing object if it exists, otherwise create a new Variable
-                $(variable_expr) = try $(variable_expr) catch Variable() end
+                $(variable_expr) = try $(variable_expr) catch Variable(id=ForneyLab.pack($(node_id_expr))) end
 
                 # Create new variable if:
                 #   - the existing object is not a Variable
@@ -105,7 +112,7 @@ macro ~(variable_expr::Any, dist_expr::Expr)
                     || !haskey(currentGraph().variables, $(variable_expr).id)
                     || !is(currentGraph().variables[$(variable_expr).id], $(variable_expr)))
 
-                    $(variable_expr) = Variable()
+                    $(variable_expr) = Variable(id=ForneyLab.pack($(node_id_expr)))
                 end
 
                 $(dist_expr)
@@ -114,6 +121,11 @@ macro ~(variable_expr::Any, dist_expr::Expr)
             """)
     return esc(expr)
 end
+
+"""
+This function ensures the argument expression is evaluated at runtime, allowing access to local variables
+"""
+pack(expr) = expr
 
 =={fam_t, fam_u, var_t, var_u}(t::ProbabilityDistribution{var_t, fam_t}, u::ProbabilityDistribution{var_u, fam_u}) = (fam_t == fam_u) && (var_t == var_u) && (t.params == u.params)
 
