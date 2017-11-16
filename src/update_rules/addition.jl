@@ -30,5 +30,15 @@
 
 @sumProductRule(:node_type     => Addition,
                 :outbound_type => Message{Gaussian},
+                :inbound_types => (Message{Gaussian}, Void, Message{PointMass}),
+                :name          => SPAdditionIn1GVP)
+
+@sumProductRule(:node_type     => Addition,
+                :outbound_type => Message{Gaussian},
                 :inbound_types => (Message{PointMass}, Message{Gaussian}, Void),
                 :name          => SPAdditionIn2PGV)
+
+@sumProductRule(:node_type     => Addition,
+                :outbound_type => Message{Gaussian},
+                :inbound_types => (Message{Gaussian}, Message{PointMass}, Void),
+                :name          => SPAdditionIn2GPV)
