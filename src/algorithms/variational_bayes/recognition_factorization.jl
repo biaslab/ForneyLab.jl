@@ -12,8 +12,11 @@ type RecognitionFactor
 
     function RecognitionFactor(variables::Set{Variable}; rfz=currentRecognitionFactorization(), id=generateId(RecognitionFactor))
         # Collect variables on internal edges connected to external nodes
-        internal_edges = extend(edges(variables))
-        internal_edges_connected_to_external_nodes = intersect(edges(nodes(internal_edges)), internal_edges)
+        internal_edges = ForneyLab.extend(edges(variables))
+        subgraph_nodes = nodes(internal_edges)
+        external_edges = setdiff(edges(subgraph_nodes), internal_edges)
+        nodes_connected_to_external_edges = intersect(nodes(external_edges), subgraph_nodes)
+        internal_edges_connected_to_external_nodes = intersect(edges(nodes_connected_to_external_edges), internal_edges)
         recognition_variables = Set{Variable}([edge.variable for edge in internal_edges_connected_to_external_nodes])
 
         self = new(id, union(variables, recognition_variables), internal_edges)
