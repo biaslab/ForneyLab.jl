@@ -23,7 +23,8 @@ import ForneyLab: VBGaussianMixtureM, VBGaussianMixtureW, VBGaussianMixtureZBer,
     @test ruleVBGaussianMixtureM(ProbabilityDistribution(Multivariate, Gaussian, m=[8.5], v=[0.5].'), ProbabilityDistribution(Univariate, Bernoulli, p=0.2), nothing, ProbabilityDistribution(MatrixVariate, Wishart, nu=2.0, v=[0.25].'), ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=[1.0].'), ProbabilityDistribution(MatrixVariate, Wishart, nu=4.0, v=[0.5].')) == Message(Multivariate, Gaussian, m=[8.5], v=[9.999999999999998].')
     @test ruleVBGaussianMixtureM(ProbabilityDistribution(Univariate, Gaussian, m=8.5, v=0.5), ProbabilityDistribution(Univariate, Bernoulli, p=0.2), ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0), ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0), nothing, ProbabilityDistribution(Univariate, Gamma, a=2.0, b=1.0)) == Message(Univariate, Gaussian, m=8.5, v=0.625)
     @test ruleVBGaussianMixtureM(ProbabilityDistribution(Multivariate, Gaussian, m=[8.5], v=[0.5].'), ProbabilityDistribution(Univariate, Bernoulli, p=0.2), ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=[1.0].'), ProbabilityDistribution(MatrixVariate, Wishart, nu=2.0, v=[0.25].'), nothing, ProbabilityDistribution(MatrixVariate, Wishart, nu=4.0, v=[0.5].')) == Message(Multivariate, Gaussian, m=[8.5], v=[0.6249999999999999].')
-    # TODO: test Categorical updates
+    @test ruleVBGaussianMixtureM(ProbabilityDistribution(Univariate, Gaussian, m=8.5, v=0.5), ProbabilityDistribution(Univariate, Categorical, p=[0.2, 0.8]), nothing, ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0), ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0), ProbabilityDistribution(Univariate, Gamma, a=2.0, b=1.0)) == Message(Univariate, Gaussian, m=8.5, v=10.0)
+    @test ruleVBGaussianMixtureM(ProbabilityDistribution(Multivariate, Gaussian, m=[8.5], v=[0.5].'), ProbabilityDistribution(Univariate, Categorical, p=[0.2, 0.8]), nothing, ProbabilityDistribution(MatrixVariate, Wishart, nu=2.0, v=[0.25].'), ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=[1.0].'), ProbabilityDistribution(MatrixVariate, Wishart, nu=4.0, v=[0.5].')) == Message(Multivariate, Gaussian, m=[8.5], v=[9.999999999999998].')
 end
 
 @testset "VBGaussianMixtureW" begin
@@ -40,7 +41,8 @@ end
     @test ruleVBGaussianMixtureW(ProbabilityDistribution(Multivariate, Gaussian, m=[8.5], v=[0.5].'), ProbabilityDistribution(Univariate, Bernoulli, p=0.2), ProbabilityDistribution(Multivariate, Gaussian, m=[5.0], v=[2.0].'), nothing, ProbabilityDistribution(Multivariate, Gaussian, m=[10.0], v=[3.0].'), ProbabilityDistribution(MatrixVariate, Wishart, nu=4.0, v=[0.5].')) == Message(MatrixVariate, Wishart, nu=2.2, v=[0.33898305084745767].')
     @test ruleVBGaussianMixtureW(ProbabilityDistribution(Univariate, Gaussian, m=8.5, v=0.5), ProbabilityDistribution(Univariate, Bernoulli, p=0.2), ProbabilityDistribution(Univariate, Gaussian, m=5.0, v=2.0), ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0), ProbabilityDistribution(Univariate, Gaussian, m=10.0, v=3.0), nothing) == Message(Univariate, Gamma, a=1.4, b=2.3000000000000003)
     @test ruleVBGaussianMixtureW(ProbabilityDistribution(Multivariate, Gaussian, m=[8.5], v=[0.5].'), ProbabilityDistribution(Univariate, Bernoulli, p=0.2), ProbabilityDistribution(Multivariate, Gaussian, m=[5.0], v=[2.0].'), ProbabilityDistribution(MatrixVariate, Wishart, nu=2.0, v=[0.25].'), ProbabilityDistribution(Multivariate, Gaussian, m=[10.0], v=[3.0].'), nothing) == Message(MatrixVariate, Wishart, nu=2.8, v=[0.2173913043478261].')
-    # TODO: test Categorical updates
+    @test ruleVBGaussianMixtureW(ProbabilityDistribution(Univariate, Gaussian, m=8.5, v=0.5), ProbabilityDistribution(Univariate, Categorical, p=[0.2, 0.8]), ProbabilityDistribution(Univariate, Gaussian, m=5.0, v=2.0), nothing, ProbabilityDistribution(Univariate, Gaussian, m=10.0, v=3.0), ProbabilityDistribution(Univariate, Gamma, a=2.0, b=1.0)) == Message(Univariate, Gamma, a=1.1, b=1.475)
+    @test ruleVBGaussianMixtureW(ProbabilityDistribution(Multivariate, Gaussian, m=[8.5], v=[0.5].'), ProbabilityDistribution(Univariate, Categorical, p=[0.2, 0.8]), ProbabilityDistribution(Multivariate, Gaussian, m=[5.0], v=[2.0].'), nothing, ProbabilityDistribution(Multivariate, Gaussian, m=[10.0], v=[3.0].'), ProbabilityDistribution(MatrixVariate, Wishart, nu=4.0, v=[0.5].')) == Message(MatrixVariate, Wishart, nu=2.2, v=[0.33898305084745767].')
 end
 
 @testset "VBGaussianMixtureZBer" begin
@@ -58,7 +60,9 @@ end
     @test outboundType(VBGaussianMixtureZCat) == Message{Categorical}
     @test isApplicable(VBGaussianMixtureZCat, [ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
     @test !isApplicable(VBGaussianMixtureZCat, [ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
-    # TODO: test Categorical updates
+
+    @test ruleVBGaussianMixtureZCat(ProbabilityDistribution(Univariate, Gaussian, m=8.5, v=0.5), nothing, ProbabilityDistribution(Univariate, Gaussian, m=5.0, v=2.0), ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0), ProbabilityDistribution(Univariate, Gaussian, m=10.0, v=3.0), ProbabilityDistribution(Univariate, Gamma, a=2.0, b=1.0)) == Message(Univariate, Categorical, p=[0.7713458788198754, 0.2286541211801246])
+    @test ruleVBGaussianMixtureZCat(ProbabilityDistribution(Multivariate, Gaussian, m=[8.5], v=[0.5].'), nothing, ProbabilityDistribution(Multivariate, Gaussian, m=[5.0], v=[2.0].'), ProbabilityDistribution(MatrixVariate, Wishart, nu=2.0, v=[0.25].'), ProbabilityDistribution(Multivariate, Gaussian, m=[10.0], v=[3.0].'), ProbabilityDistribution(MatrixVariate, Wishart, nu=4.0, v=[0.5].')) == Message(Univariate, Categorical, p=[0.7713458788198754, 0.2286541211801246])
 end
 
 @testset "VBGaussianMixtureOut" begin
@@ -69,7 +73,8 @@ end
 
     @test ruleVBGaussianMixtureOut(nothing, ProbabilityDistribution(Univariate, Bernoulli, p=0.2), ProbabilityDistribution(Univariate, Gaussian, m=5.0, v=2.0), ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0), ProbabilityDistribution(Univariate, Gaussian, m=10.0, v=3.0), ProbabilityDistribution(Univariate, Gamma, a=2.0, b=1.0)) == Message(Univariate, Gaussian, m=9.705882352941178, v=0.5882352941176471)
     @test ruleVBGaussianMixtureOut(nothing, ProbabilityDistribution(Univariate, Bernoulli, p=0.2), ProbabilityDistribution(Multivariate, Gaussian, m=[5.0], v=[2.0].'), ProbabilityDistribution(MatrixVariate, Wishart, nu=2.0, v=[0.25].'), ProbabilityDistribution(Multivariate, Gaussian, m=[10.0], v=[3.0].'), ProbabilityDistribution(MatrixVariate, Wishart, nu=4.0, v=[0.5].')) == Message(Multivariate, Gaussian, m=[9.705882352941176], v=[0.588235294117647].')
-    # TODO: test Categorical updates
+    @test ruleVBGaussianMixtureOut(nothing, ProbabilityDistribution(Univariate, Categorical, p=[0.2, 0.8]), ProbabilityDistribution(Univariate, Gaussian, m=5.0, v=2.0), ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0), ProbabilityDistribution(Univariate, Gaussian, m=10.0, v=3.0), ProbabilityDistribution(Univariate, Gamma, a=2.0, b=1.0)) == Message(Univariate, Gaussian, m=9.705882352941178, v=0.5882352941176471)
+    @test ruleVBGaussianMixtureOut(nothing, ProbabilityDistribution(Univariate, Categorical, p=[0.2, 0.8]), ProbabilityDistribution(Multivariate, Gaussian, m=[5.0], v=[2.0].'), ProbabilityDistribution(MatrixVariate, Wishart, nu=2.0, v=[0.25].'), ProbabilityDistribution(Multivariate, Gaussian, m=[10.0], v=[3.0].'), ProbabilityDistribution(MatrixVariate, Wishart, nu=4.0, v=[0.5].')) == Message(Multivariate, Gaussian, m=[9.705882352941176], v=[0.588235294117647].')
 end
 
 @testset "averageEnergy" begin
@@ -85,6 +90,9 @@ end
 
     @test averageEnergy(GaussianMixture, marg_out, marg_switch, marg_mean_1, marg_prec_1, marg_mean_2, marg_prec_2) == ref_val
 
+    marg_switch = ProbabilityDistribution(Univariate, Categorical, p=[0.2, 0.8])
+    @test averageEnergy(GaussianMixture, marg_out, marg_switch, marg_mean_1, marg_prec_1, marg_mean_2, marg_prec_2) == ref_val
+
     # Multivariate
     marg_out = ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=[1.0].')
     marg_switch = ProbabilityDistribution(Univariate, Bernoulli, p=0.2)
@@ -96,7 +104,9 @@ end
               0.8*averageEnergy(GaussianMeanPrecision, marg_out, marg_mean_2, marg_prec_2)
 
     @test averageEnergy(GaussianMixture, marg_out, marg_switch, marg_mean_1, marg_prec_1, marg_mean_2, marg_prec_2) == ref_val
-    # TODO: test Categorical updates
+
+    marg_switch = ProbabilityDistribution(Univariate, Categorical, p=[0.2, 0.8])
+    @test averageEnergy(GaussianMixture, marg_out, marg_switch, marg_mean_1, marg_prec_1, marg_mean_2, marg_prec_2) == ref_val
 end
 
 end #module

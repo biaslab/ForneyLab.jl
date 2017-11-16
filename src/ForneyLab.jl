@@ -68,6 +68,7 @@ include("update_rules/gaussian_mean_precision.jl")
 include("update_rules/gamma.jl")
 include("update_rules/wishart.jl")
 include("update_rules/bernoulli.jl")
+include("update_rules/categorical.jl")
 include("update_rules/gaussian_mixture.jl")
 include("update_rules/sigmoid.jl")
 
