@@ -43,7 +43,7 @@ dims(dist::ProbabilityDistribution{Univariate, Beta}) = 1
 
 vague(::Type{Beta}) = ProbabilityDistribution(Univariate, Beta, a=1.0, b=1.0)
 
-isProper(dist::ProbabilityDistribution{Univariate, Beta}) = (dist.params[:a] >= tiny) && (dist.params[:b] >= tiny)
+isProper(dist::ProbabilityDistribution{Univariate, Beta}) = (dist.params[:a] > 0.0) && (dist.params[:b] > 0.0)
 
 unsafeMean(dist::ProbabilityDistribution{Univariate, Beta}) = dist.params[:a]/(dist.params[:a] + dist.params[:b])
 

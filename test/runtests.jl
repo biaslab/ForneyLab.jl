@@ -28,6 +28,7 @@ using Base.Test
     include("factor_nodes/test_bernoulli.jl")
     include("factor_nodes/test_categorical.jl")
     include("factor_nodes/test_beta.jl")
+    include("factor_nodes/test_dirichlet.jl")
     include("factor_nodes/test_gaussian_mixture.jl")
     include("factor_nodes/test_sigmoid.jl")
 

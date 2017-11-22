@@ -32,14 +32,9 @@ include("factor_nodes/wishart.jl")
 include("factor_nodes/bernoulli.jl")
 include("factor_nodes/categorical.jl")
 include("factor_nodes/beta.jl")
+include("factor_nodes/dirichlet.jl")
 include("factor_nodes/gaussian_mixture.jl")
 include("factor_nodes/sigmoid.jl")
-
-# include("nodes/gaussian_mixture.jl")
-# include("nodes/exponential.jl")
-# include("nodes/gain_addition.jl")
-# include("nodes/gain_equality.jl")
-# include("nodes/categorical.jl")
 
 # Factor graph
 include("factor_graph.jl")
@@ -71,6 +66,7 @@ include("update_rules/wishart.jl")
 include("update_rules/bernoulli.jl")
 include("update_rules/categorical.jl")
 include("update_rules/beta.jl")
+include("update_rules/dirichlet.jl")
 include("update_rules/gaussian_mixture.jl")
 include("update_rules/sigmoid.jl")
 
