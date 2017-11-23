@@ -35,6 +35,8 @@ end
 
 slug(::Type{Gamma}) = "Gam"
 
+format(dist::ProbabilityDistribution{Univariate, Gamma}) = "$(slug(Gamma))(a=$(format(dist.params[:a])), b=$(format(dist.params[:b])))"
+
 ProbabilityDistribution(::Type{Univariate}, ::Type{Gamma}; a=1.0, b=1.0) = ProbabilityDistribution{Univariate, Gamma}(Dict(:a=>a, :b=>b))
 ProbabilityDistribution(::Type{Gamma}; a=1.0, b=1.0) = ProbabilityDistribution{Univariate, Gamma}(Dict(:a=>a, :b=>b))
 

@@ -33,7 +33,9 @@ type LogNormal <: SoftFactor
     end
 end
 
-slug(::Type{LogNormal}) = "logN"
+slug(::Type{LogNormal}) = "log𝒩"
+
+format(dist::ProbabilityDistribution{Univariate, LogNormal}) = "$(slug(LogNormal))(m=$(format(dist.params[:m])), s=$(format(dist.params[:s])))"
 
 ProbabilityDistribution(::Type{Univariate}, ::Type{LogNormal}; m::Float64=1.0, s::Float64=1.0) = ProbabilityDistribution{Univariate, LogNormal}(Dict(:m=>m, :s=>s))
 ProbabilityDistribution(::Type{LogNormal}; m::Float64=1.0, s::Float64=1.0) = ProbabilityDistribution{Univariate, LogNormal}(Dict(:m=>m, :s=>s))

@@ -19,7 +19,10 @@ end
     @test isa(gaussian, ProbabilityDistribution{Univariate, Gaussian})
     @test !isa(gaussian, ProbabilityDistribution{Multivariate})
     @test !isa(gaussian, ProbabilityDistribution{MatrixVariate})
-    @test gaussian.params == Dict(:m=>0.0, :v=>1.0)
+    @test gaussian.params[:m] == 0.0
+    @test gaussian.params[:v] == 1.0
+    @test isnan(gaussian.params[:w])
+    @test isnan(gaussian.params[:xi])
 
     # PointMass should be defined as a special family 
     point_mass = ProbabilityDistribution(Univariate, PointMass, m=0.0)
@@ -43,7 +46,10 @@ end
     @test isa(gaussian, ProbabilityDistribution{Multivariate, Gaussian})
     @test !isa(gaussian, ProbabilityDistribution{Univariate})
     @test !isa(gaussian, ProbabilityDistribution{MatrixVariate})
-    @test gaussian.params == Dict(:m=>[0.0], :v=>[1.0].')
+    @test gaussian.params[:m] == [0.0]
+    @test gaussian.params[:v] == [1.0].'
+    @test isnan(gaussian.params[:w][1])
+    @test isnan(gaussian.params[:xi][1])
 
     # PointMass should be defined as a special family 
     point_mass = ProbabilityDistribution(Multivariate, PointMass, m=[0.0])

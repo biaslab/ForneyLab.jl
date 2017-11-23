@@ -27,6 +27,14 @@ end
 
 family{F<:FactorNode}(msg_type::Type{Message{F}}) = F
 
+function show(io::IO, msg::Message)
+    if isdefined(msg, :scaling_factor)
+        println(io, "Message: 1/$(format(msg.scaling_factor)) * $(format(msg.dist))")
+    else
+        println(io, "Message: $(format(msg.dist))")
+    end
+end
+
 """Special inheritance rules for parametric Message types"""
 matches{T<:Message}(::Type{T}, ::Type{T}) = true
 matches{Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType, Vb<:VariateType}(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) = (Va==Vb) && (Fa<:Fb)

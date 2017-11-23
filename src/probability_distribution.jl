@@ -27,6 +27,8 @@ end
 """Extract VariateType from dist"""
 variateType{V<:VariateType, F<:FactorNode}(dist::ProbabilityDistribution{V, F}) = V
 
+show(io::IO, dist::ProbabilityDistribution) = println(io, format(dist))
+
 matches{Pa<:ProbabilityDistribution, Pb<:ProbabilityDistribution}(Ta::Type{Pa}, Tb::Type{Pb}) = (Pa<:Pb)
 matches{T<:ProbabilityDistribution}(::Type{Void}, ::Type{T}) = false
 
@@ -40,15 +42,19 @@ It never occurs in a FactorGraph, but it is used as a probability distribution t
 """
 abstract PointMass <: DeltaFactor
 
+slug(::Type{PointMass}) = "δ"
+
+format{V<:VariateType}(dist::ProbabilityDistribution{V, PointMass}) = "$(slug(PointMass))(m=$(format(dist.params[:m])))"
+
 dims(dist::ProbabilityDistribution{Univariate, PointMass}) = 1
 dims(dist::ProbabilityDistribution{Multivariate, PointMass}) = length(dist.params[:m])
 dims(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = size(dist.params[:m])
 
 # PointMass distribution constructors
-ProbabilityDistribution(var_type::Type{Univariate}, ::Type{PointMass}; m::Number=1.0) = ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>m))
+ProbabilityDistribution(::Type{Univariate}, ::Type{PointMass}; m::Number=1.0) = ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>m))
 ProbabilityDistribution(::Type{PointMass}; m::Number=1.0) = ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>m))
-ProbabilityDistribution(var_type::Type{Multivariate}, ::Type{PointMass}; m::Vector=[1.0]) = ProbabilityDistribution{Multivariate, PointMass}(Dict(:m=>m))
-ProbabilityDistribution(var_type::Type{MatrixVariate}, ::Type{PointMass}; m::AbstractMatrix=[1.0].') = ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>m))
+ProbabilityDistribution(::Type{Multivariate}, ::Type{PointMass}; m::Vector=[1.0]) = ProbabilityDistribution{Multivariate, PointMass}(Dict(:m=>m))
+ProbabilityDistribution(::Type{MatrixVariate}, ::Type{PointMass}; m::AbstractMatrix=[1.0].') = ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>m))
 
 unsafeMean{T<:VariateType}(dist::ProbabilityDistribution{T, PointMass}) = deepcopy(dist.params[:m])
 

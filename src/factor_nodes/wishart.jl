@@ -35,6 +35,8 @@ end
 
 slug(::Type{Wishart}) = "W"
 
+format(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = "$(slug(Wishart))(v=$(format(dist.params[:v])), nu=$(format(dist.params[:nu])))"
+
 ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Wishart}; v=[1.0].', nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
 ProbabilityDistribution(::Type{Wishart}; v=[1.0].', nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
 

@@ -33,6 +33,8 @@ end
 
 slug(::Type{Dirichlet}) = "Dir"
 
+format(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = "$(slug(Dirichlet))(a=$(format(dist.params[:a])))"
+
 ProbabilityDistribution(::Type{Multivariate}, ::Type{Dirichlet}; a=ones(3)) = ProbabilityDistribution{Multivariate, Dirichlet}(Dict(:a=>a))
 ProbabilityDistribution(::Type{Dirichlet}; a=ones(3)) = ProbabilityDistribution{Multivariate, Dirichlet}(Dict(:a=>a))
 

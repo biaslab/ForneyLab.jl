@@ -2,8 +2,16 @@ export Gaussian
 
 abstract Gaussian <: SoftFactor
 
-ProbabilityDistribution{V<:VariateType}(var_type::Type{V}, ::Type{Gaussian}; kwargs...) = ProbabilityDistribution{var_type, Gaussian}(Dict(kwargs))
-ProbabilityDistribution(::Type{Gaussian}; kwargs...) = ProbabilityDistribution{Univariate, Gaussian}(Dict(kwargs))
+slug(::Type{Gaussian}) = "𝒩"
+
+function format{V<:VariateType}(dist::ProbabilityDistribution{V, Gaussian})
+    ensureParameters!(dist, (:m, :v))
+    return "$(slug(Gaussian))(m=$(format(dist.params[:m])), v=$(format(dist.params[:v])))"
+end
+
+ProbabilityDistribution(::Type{Univariate}, ::Type{Gaussian}; m::Number=NaN, v::Number=NaN, w::Number=NaN, xi::Number=NaN) = ProbabilityDistribution{Univariate, Gaussian}(Dict(:m=>m, :v=>v, :w=>w, :xi=>xi))
+ProbabilityDistribution(::Type{Gaussian}; m::Number=NaN, v::Number=NaN, w::Number=NaN, xi::Number=NaN) = ProbabilityDistribution{Univariate, Gaussian}(Dict(:m=>m, :v=>v, :w=>w, :xi=>xi))
+ProbabilityDistribution(::Type{Multivariate}, ::Type{Gaussian}; m::Vector=[NaN], v::AbstractMatrix=[NaN].', w::AbstractMatrix=[NaN].', xi::Vector=[NaN]) = ProbabilityDistribution{Multivariate, Gaussian}(Dict(:m=>m, :v=>v, :w=>w, :xi=>xi))
 
 dims(dist::ProbabilityDistribution{Univariate, Gaussian}) = 1
 function dims(dist::ProbabilityDistribution{Multivariate, Gaussian})

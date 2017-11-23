@@ -36,6 +36,8 @@ end
 
 slug(::Type{Beta}) = "Beta"
 
+format(dist::ProbabilityDistribution{Univariate, Beta}) = "$(slug(Beta))(a=$(format(dist.params[:a])), b=$(format(dist.params[:b])))"
+
 ProbabilityDistribution(::Type{Univariate}, ::Type{Beta}; a=1.0, b=1.0) = ProbabilityDistribution{Univariate, Beta}(Dict(:a=>a, :b=>b))
 ProbabilityDistribution(::Type{Beta}; a=1.0, b=1.0) = ProbabilityDistribution{Univariate, Beta}(Dict(:a=>a, :b=>b))
 

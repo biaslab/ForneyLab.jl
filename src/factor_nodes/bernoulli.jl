@@ -33,6 +33,8 @@ end
 
 slug(::Type{Bernoulli}) = "Ber"
 
+format(dist::ProbabilityDistribution{Univariate, Bernoulli}) = "$(slug(Bernoulli))(p=$(format(dist.params[:p])))"
+
 ProbabilityDistribution(::Type{Univariate}, ::Type{Bernoulli}; p=0.5) = ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>p))
 ProbabilityDistribution(::Type{Bernoulli}; p=0.5) = ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>p))
 

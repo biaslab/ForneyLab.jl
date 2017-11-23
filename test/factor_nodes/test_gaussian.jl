@@ -83,13 +83,9 @@ end
 @testset "ensureParameters!" begin
     # Univariate
     dist = ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0)
-    @test ensureParameters!(dist, (:m, :v)).params == Dict(:m=>0.0, :v=>1.0)
-    dist = ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0)
     @test ensureParameters!(dist, (:xi, :w)).params == Dict(:m=>0.0, :v=>1.0, :xi=>0.0, :w=>1.0)
 
     # Multivariate
-    dist = ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=[1.0].')
-    @test ensureParameters!(dist, (:m, :v)).params == Dict(:m=>[0.0], :v=>[1.0].')
     dist = ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=[1.0].')
     @test ensureParameters!(dist, (:xi, :w)).params == Dict(:m=>[0.0], :v=>[1.0].', :xi=>[0.0], :w=>[1.0].')
 end
