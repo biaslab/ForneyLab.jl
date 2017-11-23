@@ -1,4 +1,4 @@
-export Wishart, Scale
+export Wishart
 
 """
 Description:
@@ -32,8 +32,6 @@ type Wishart <: SoftFactor
         return self
     end
 end
-
-typealias Scale Union{Gamma, Wishart}
 
 slug(::Type{Wishart}) = "W"
 
@@ -78,6 +76,16 @@ function prod!( x::ProbabilityDistribution{MatrixVariate, Wishart},
     d = dims(x)[1]
     z.params[:v] = x.params[:v] * cholinv(x.params[:v] + y.params[:v]) * y.params[:v]
     z.params[:nu] = x.params[:nu] + y.params[:nu] - d - 1.0
+
+    return z
+end
+
+@symmetrical function prod!(x::ProbabilityDistribution{MatrixVariate, Wishart},
+                            y::ProbabilityDistribution{MatrixVariate, PointMass},
+                            z::ProbabilityDistribution{MatrixVariate, PointMass}=ProbabilityDistribution(MatrixVariate, PointMass, m=[NaN].'))
+
+    isRoundedPosDef(y.params[:m]) || error("PointMass location $(y.params[:m]) should be positive definite")
+    z.params[:m] = deepcopy(y.params[:m])
 
     return z
 end

@@ -119,6 +119,14 @@ function prod!( x::ProbabilityDistribution{Univariate, Gaussian},
     return z
 end
 
+@symmetrical function prod!(x::ProbabilityDistribution{Univariate, Gaussian},
+                            y::ProbabilityDistribution{Univariate, PointMass},
+                            z::ProbabilityDistribution{Univariate, PointMass}=ProbabilityDistribution(Univariate, PointMass, m=0.0))
+
+    z.params[:m] = y.params[:m]
+    return z
+end
+
 function prod!( x::ProbabilityDistribution{Multivariate, Gaussian},
                 y::ProbabilityDistribution{Multivariate, Gaussian},
                 z::ProbabilityDistribution{Multivariate, Gaussian}=ProbabilityDistribution(Multivariate, Gaussian, xi=[NaN], w=[NaN].'))
@@ -131,6 +139,14 @@ function prod!( x::ProbabilityDistribution{Multivariate, Gaussian},
     z.params[:xi] = x.params[:xi] + y.params[:xi]
     z.params[:w] = x.params[:w] + y.params[:w]
 
+    return z
+end
+
+@symmetrical function prod!(x::ProbabilityDistribution{Multivariate, Gaussian},
+                            y::ProbabilityDistribution{Multivariate, PointMass},
+                            z::ProbabilityDistribution{Multivariate, PointMass}=ProbabilityDistribution(Multivariate, PointMass, m=[NaN]))
+
+    z.params[:m] = deepcopy(y.params[:m])
     return z
 end
 

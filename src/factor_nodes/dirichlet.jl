@@ -60,6 +60,17 @@ function prod!( x::ProbabilityDistribution{Multivariate, Dirichlet},
     return z
 end
 
+@symmetrical function prod!(x::ProbabilityDistribution{Multivariate, Dirichlet},
+                            y::ProbabilityDistribution{Multivariate, PointMass},
+                            z::ProbabilityDistribution{Multivariate, PointMass}=ProbabilityDistribution(Multivariate, PointMass, m=[NaN]))
+
+    all(0.0 .<= y.params[:m] .<= 1.0) || error("PointMass location entries $(y.params[:m]) should all be between 0 and 1")
+    isapprox(sum(y.params[:m]), 1.0) || error("Pointmass location entries $(y.params[:m]) should sum to one")
+    z.params[:m] = deepcopy(y.params[:m])
+
+    return z
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])

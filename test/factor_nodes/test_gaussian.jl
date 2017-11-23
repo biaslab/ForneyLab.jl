@@ -43,10 +43,14 @@ end
     # Univariate
     @test ProbabilityDistribution(Univariate, Gaussian, xi=0.0, w=1.0) * ProbabilityDistribution(Univariate, Gaussian, xi=0.0, w=1.0) == ProbabilityDistribution(Univariate, Gaussian, xi=0.0, w=2.0)
     @test ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0) * ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0) == ProbabilityDistribution(Univariate, Gaussian, xi=0.0, w=2.0)
+    @test ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0) * ProbabilityDistribution(Univariate, PointMass, m=1.0) == ProbabilityDistribution(Univariate, PointMass, m=1.0)
+    @test ProbabilityDistribution(Univariate, PointMass, m=1.0) * ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0) == ProbabilityDistribution(Univariate, PointMass, m=1.0)
 
     # Multivariate
     @test ProbabilityDistribution(Multivariate, Gaussian, xi=zeros(2), w=diageye(2)) * ProbabilityDistribution(Multivariate, Gaussian, xi=zeros(2), w=diageye(2)) == ProbabilityDistribution(Multivariate, Gaussian, xi=zeros(2), w=2.0*diageye(2))
     @test ProbabilityDistribution(Multivariate, Gaussian, m=zeros(2), v=diageye(2)) * ProbabilityDistribution(Multivariate, Gaussian, m=zeros(2), v=diageye(2)) == ProbabilityDistribution(Multivariate, Gaussian, m=zeros(2), v=0.5*diageye(2))
+    @test ProbabilityDistribution(Multivariate, Gaussian, m=zeros(2), v=diageye(2)) * ProbabilityDistribution(Multivariate, PointMass, m=ones(2)) == ProbabilityDistribution(Multivariate, PointMass, m=ones(2))
+    @test ProbabilityDistribution(Multivariate, PointMass, m=ones(2)) * ProbabilityDistribution(Multivariate, Gaussian, m=zeros(2), v=diageye(2)) == ProbabilityDistribution(Multivariate, PointMass, m=ones(2))
 end
 
 @testset "isWellDefined" begin

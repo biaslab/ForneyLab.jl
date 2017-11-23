@@ -20,7 +20,10 @@ end
 end
 
 @testset "prod!" begin
-    @test ProbabilityDistribution(MatrixVariate, Wishart, v=[1.0].',nu=2.0) * ProbabilityDistribution(MatrixVariate, Wishart, v=[1.0].',nu=2.0) == ProbabilityDistribution(MatrixVariate, Wishart, v=[0.4999999999999999].',nu=2.0)
+    @test ProbabilityDistribution(MatrixVariate, Wishart, v=[1.0].', nu=2.0) * ProbabilityDistribution(MatrixVariate, Wishart, v=[1.0].',nu=2.0) == ProbabilityDistribution(MatrixVariate, Wishart, v=[0.4999999999999999].',nu=2.0)
+    @test ProbabilityDistribution(MatrixVariate, Wishart, v=[1.0].', nu=2.0) * ProbabilityDistribution(MatrixVariate, PointMass, m=[1.0].') == ProbabilityDistribution(MatrixVariate, PointMass, m=[1.0].')
+    @test ProbabilityDistribution(MatrixVariate, PointMass, m=[1.0].') * ProbabilityDistribution(MatrixVariate, Wishart, v=[1.0].', nu=2.0) == ProbabilityDistribution(MatrixVariate, PointMass, m=[1.0].')
+    @test_throws Exception ProbabilityDistribution(MatrixVariate, PointMass, m=[-1.0].') * ProbabilityDistribution(MatrixVariate, Wishart, v=[1.0].', nu=2.0)
 end
 
 @testset "unsafe mean and variance" begin

@@ -1,27 +1,36 @@
 export
 ruleSPEqualityGaussian, 
-ruleSPEqualityGamma
+ruleSPEqualityGammaWishart,
+ruleSPEqualityBernoulli,
+ruleSPEqualityBeta,
+ruleSPEqualityCategorical,
+ruleSPEqualityDirichlet,
+ruleSPEqualityPointMass
 
-function ruleSPEqualityGaussian(msg_1::Message{Gaussian, Univariate},
-                                msg_2::Message{Gaussian, Univariate},
-                                msg_3::Void)
-    
-    outbound_dist = ProbabilityDistribution(Univariate, Gaussian, xi=0.0, w=1.0)
-    prod!(msg_1.dist, msg_2.dist, outbound_dist)
+ruleSPEqualityGaussian(msg_1::Message{Gaussian}, msg_2::Message{Gaussian}, msg_3::Void) = Message(prod!(msg_1.dist, msg_2.dist))
+ruleSPEqualityGaussian(msg_1::Message{Gaussian}, msg_2::Void, msg_3::Message{Gaussian}) = Message(prod!(msg_1.dist, msg_3.dist))
+ruleSPEqualityGaussian(msg_1::Void, msg_2::Message{Gaussian}, msg_3::Message{Gaussian}) = Message(prod!(msg_2.dist, msg_3.dist))
 
-    return Message{Gaussian, Univariate}(outbound_dist)
-end
-ruleSPEqualityGaussian(msg_1::Message{Gaussian, Univariate}, msg_2::Void, msg_3::Message{Gaussian, Univariate}) = ruleSPEqualityGaussian(msg_1, msg_3, msg_2)
-ruleSPEqualityGaussian(msg_1::Void, msg_2::Message{Gaussian, Univariate}, msg_3::Message{Gaussian, Univariate}) = ruleSPEqualityGaussian(msg_2, msg_3, msg_1)
+ruleSPEqualityGammaWishart{F<:Union{Gamma, Wishart}}(msg_1::Message{F}, msg_2::Message{F}, msg_3::Void) = Message(prod!(msg_1.dist, msg_2.dist))
+ruleSPEqualityGammaWishart{F<:Union{Gamma, Wishart}}(msg_1::Message{F}, msg_2::Void, msg_3::Message{F}) = Message(prod!(msg_1.dist, msg_3.dist))
+ruleSPEqualityGammaWishart{F<:Union{Gamma, Wishart}}(msg_1::Void, msg_2::Message{F}, msg_3::Message{F}) = Message(prod!(msg_2.dist, msg_3.dist))
 
-function ruleSPEqualityGamma(   msg_1::Message{Gamma, Univariate},
-                                msg_2::Message{Gamma, Univariate},
-                                msg_3::Void)
-    
-    outbound_dist = ProbabilityDistribution(Univariate, Gamma, a=0.0, b=0.0)
-    prod!(msg_1.dist, msg_2.dist, outbound_dist)
+ruleSPEqualityBernoulli(msg_1::Message{Bernoulli}, msg_2::Message{Bernoulli}, msg_3::Void) = Message(prod!(msg_1.dist, msg_2.dist))
+ruleSPEqualityBernoulli(msg_1::Message{Bernoulli}, msg_2::Void, msg_3::Message{Bernoulli}) = Message(prod!(msg_1.dist, msg_3.dist))
+ruleSPEqualityBernoulli(msg_1::Void, msg_2::Message{Bernoulli}, msg_3::Message{Bernoulli}) = Message(prod!(msg_2.dist, msg_3.dist))
 
-    return Message{Gamma, Univariate}(outbound_dist)
-end
-ruleSPEqualityGamma(msg_1::Message{Gamma, Univariate}, msg_2::Void, msg_3::Message{Gamma, Univariate}) = ruleSPEqualityGamma(msg_1, msg_3, msg_2)
-ruleSPEqualityGamma(msg_1::Void, msg_2::Message{Gamma, Univariate}, msg_3::Message{Gamma, Univariate}) = ruleSPEqualityGamma(msg_2, msg_3, msg_1)
+ruleSPEqualityBeta(msg_1::Message{Beta}, msg_2::Message{Beta}, msg_3::Void) = Message(prod!(msg_1.dist, msg_2.dist))
+ruleSPEqualityBeta(msg_1::Message{Beta}, msg_2::Void, msg_3::Message{Beta}) = Message(prod!(msg_1.dist, msg_3.dist))
+ruleSPEqualityBeta(msg_1::Void, msg_2::Message{Beta}, msg_3::Message{Beta}) = Message(prod!(msg_2.dist, msg_3.dist))
+
+ruleSPEqualityCategorical(msg_1::Message{Categorical}, msg_2::Message{Categorical}, msg_3::Void) = Message(prod!(msg_1.dist, msg_2.dist))
+ruleSPEqualityCategorical(msg_1::Message{Categorical}, msg_2::Void, msg_3::Message{Categorical}) = Message(prod!(msg_1.dist, msg_3.dist))
+ruleSPEqualityCategorical(msg_1::Void, msg_2::Message{Categorical}, msg_3::Message{Categorical}) = Message(prod!(msg_2.dist, msg_3.dist))
+
+ruleSPEqualityDirichlet(msg_1::Message{Dirichlet}, msg_2::Message{Dirichlet}, msg_3::Void) = Message(prod!(msg_1.dist, msg_2.dist))
+ruleSPEqualityDirichlet(msg_1::Message{Dirichlet}, msg_2::Void, msg_3::Message{Dirichlet}) = Message(prod!(msg_1.dist, msg_3.dist))
+ruleSPEqualityDirichlet(msg_1::Void, msg_2::Message{Dirichlet}, msg_3::Message{Dirichlet}) = Message(prod!(msg_2.dist, msg_3.dist))
+
+ruleSPEqualityPointMass(msg_1::Message, msg_2::Message, msg_3::Void) = Message(prod!(msg_1.dist, msg_2.dist))
+ruleSPEqualityPointMass(msg_1::Message, msg_2::Void, msg_3::Message) = Message(prod!(msg_1.dist, msg_3.dist))
+ruleSPEqualityPointMass(msg_1::Void, msg_2::Message, msg_3::Message) = Message(prod!(msg_2.dist, msg_3.dist))

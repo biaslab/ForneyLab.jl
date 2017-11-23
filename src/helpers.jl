@@ -123,9 +123,8 @@ This macro is used to duplicate methods that are symmetrical in their first two 
 but require explicit definitions for the different argument orders.
 Example:
 
-    @symmetrical function prod!(x::Gaussian, y::Delta{Float64}, z::Delta)
-        z.m = y.m
-        return z
+    @symmetrical function prod!(x, y, z)
+        ...
     end
 """
 macro symmetrical(orig::Expr)

@@ -24,13 +24,17 @@ end
 end
 
 @testset "unsafe mean and variance" begin
-    @test unsafeMean(ProbabilityDistribution(Dirichlet, a=[2.0, 2.0])) == [0.5, 0.5]
-    @test unsafeLogMean(ProbabilityDistribution(Dirichlet, a=[2.0, 3.0])) == [digamma(2.0), digamma(3.0)] - digamma(5.0)
-    @test unsafeVar(ProbabilityDistribution(Dirichlet, a=[2.0, 2.0])) == [0.05, 0.05]
+    @test unsafeMean(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 2.0])) == [0.5, 0.5]
+    @test unsafeLogMean(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0])) == [digamma(2.0), digamma(3.0)] - digamma(5.0)
+    @test unsafeVar(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 2.0])) == [0.05, 0.05]
 end
 
 @testset "prod!" begin
-    @test ProbabilityDistribution(Dirichlet, a=[2.0, 2.0]) * ProbabilityDistribution(Dirichlet, a=[2.0, 3.0]) == ProbabilityDistribution(Dirichlet, a=[3.0, 4.0])
+    @test ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 2.0]) * ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0]) == ProbabilityDistribution(Multivariate, Dirichlet, a=[3.0, 4.0])
+    @test ProbabilityDistribution(Multivariate, Dirichlet, a=[1.0, 2.0, 3.0]) * ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1]) == ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1])
+    @test ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1]) * ProbabilityDistribution(Multivariate, Dirichlet, a=[1.0, 2.0, 3.0]) == ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1])
+    @test_throws Exception ProbabilityDistribution(Multivariate, PointMass, m=[-0.1, 0.8, 0.1]) * ProbabilityDistribution(Multivariate, Dirichlet, a=[1.0, 2.0, 3.0])
+    @test_throws Exception ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.9, 0.1]) * ProbabilityDistribution(Multivariate, Dirichlet, a=[1.0, 2.0, 3.0])
 end
 
 #-------------

@@ -29,7 +29,7 @@ end
 
 @testset "VBGaussianMixtureW" begin
     @test VBGaussianMixtureW <: VariationalRule{GaussianMixture}
-    @test outboundType(VBGaussianMixtureW) == Message{Scale}
+    @test outboundType(VBGaussianMixtureW) == Message{Union{Gamma, Wishart}}
     @test !isApplicable(VBGaussianMixtureW, [Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
     @test !isApplicable(VBGaussianMixtureW, [ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
     @test !isApplicable(VBGaussianMixtureW, [ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution]) 

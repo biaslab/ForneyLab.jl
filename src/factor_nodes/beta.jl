@@ -63,6 +63,16 @@ function prod!( x::ProbabilityDistribution{Univariate, Beta},
     return z
 end
 
+@symmetrical function prod!(x::ProbabilityDistribution{Univariate, Beta},
+                            y::ProbabilityDistribution{Univariate, PointMass},
+                            z::ProbabilityDistribution{Univariate, PointMass}=ProbabilityDistribution(Univariate, PointMass, m=0.0))
+
+    (0.0 <= y.params[:m] <= 1.0) || error("PointMass location $(y.params[:m]) should be between 0 and 1")
+    z.params[:m] = y.params[:m]
+
+    return z
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Beta})
     lbeta(dist.params[:a], dist.params[:b]) -
