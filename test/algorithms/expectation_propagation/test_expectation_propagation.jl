@@ -1,146 +1,96 @@
-facts("ExpectationPropagation algorithm integration tests") do
-    # Perform expectation propagation in a graph consisting
-    # of SigmoidNode sections:
-    #
-    # ... ---[=]--- ... X
-    #         |
-    #         |
-    #        [σ]
-    #         |
-    #         |  Y
-    #
-    # We assume X ~ 𝓝(μ,σ2) and we observe Y ∈ [false, true]
-    # The goal is to infer X from the Y observations.
+module ExpectationPropagationTest
 
-    ###############
-    # Generate data
-    ###############
+using Base.Test
+using ForneyLab
+import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
+import ForneyLab: EPSigmoidRealGP, SPGaussianMeanVarianceOutVPP, SPClamp, VBGaussianMeanPrecisionOut, SPSigmoidBinVG
 
-    const NUM_SECTIONS = 50
-    srand(1234) # make tests deterministic
-    g_gen = FactorGraph()
-    X = TerminalNode(Gaussian(m=-0.5, V=0.1), id=:t_X)
-    sig = SigmoidNode(id=:sig)
-    Y = TerminalNode(Delta(false), id=:t_Y)
-    Edge(X, sig.i[:real])
-    Edge(sig.i[:bin], Y)
-    generating_distributions = [Gaussian(m=-0.5, V=0.1) for i = 1:NUM_SECTIONS]
-    attachReadBuffer(X, generating_distributions)
-    y_predictions = attachWriteBuffer(Y.i[:out].partner)
-    algo = SumProduct()
-    run(algo)
-    samples = map(sample, y_predictions)
+# Integration helper
+type MockNode <: SoftFactor
+    id::Symbol
+    interfaces::Vector{Interface}
+    i::Dict{Int,Interface}
 
-    ###############
-    # Build graph
-    ###############
+    function MockNode(vars::Vector{Variable}; id=generateId(MockNode))
+        n_interfaces = length(vars)
+        self = new(id, Array(Interface, n_interfaces), Dict{Int,Interface}())
+        addNode!(currentGraph(), self)
 
-    g = FactorGraph()
-    X_prior = TerminalNode(Gaussian(m=0.0, V=20.0), id=:t_X_prior)
-    prev_section_connector = X_prior.i[:out]
-    sites = Vector{Tuple{Interface, DataType}}()
-    for section = 1:NUM_SECTIONS
-        equ = EqualityNode(id=Symbol("equ$(section)"))
-        sig = SigmoidNode(id=Symbol("sig$(section)"))
-        y = TerminalNode(samples[section], id=Symbol("t_Y$(section)"))
-        Edge(prev_section_connector, equ.interfaces[1])
-        Edge(equ.interfaces[2], sig.i[:real], id=Symbol("X$(section)"))
-        Edge(sig.i[:bin], y)
-        prev_section_connector = equ.interfaces[3]
-        push!(sites, (sig.i[:real], Gaussian))
-    end
-    Edge(prev_section_connector, TerminalNode(vague(Gaussian), id=:t_X_term), id=:X_marg) # Terminate equality chain
-
-    # ForneyLab.draw(g)
-
-    ###############
-    # EP algorithm
-    ###############
-    #setVerbosity(true)
-
-    # Define callback function to collect the posterior dist. of X after each iteration for later reference
-    X_marg = Vector{Gaussian}()
-    function log_results()
-        push!(X_marg, deepcopy(ensureParameters!(edge(:X1).marginal, (:m, :V))))
-        return (length(X_marg) >= 5) # terminate the EP algorithm after 5 iterations
-    end
-
-    ep_algo = ExpectationPropagation(prev_section_connector, sites, n_iterations=10, callback=log_results)
-
-    sitelist = [site for (site, distribution) in sites]
-    context("ExpectationPropagation construction") do
-        @fact ep_algo.n_iterations --> 10
-        @fact is(ep_algo.callback, log_results) --> true
-        for entry in vcat(ep_algo.pre_schedule, ep_algo.post_schedule)
-            @fact calculationRule(entry) --> SumProductRule
+        for idx = 1:n_interfaces
+            self.i[idx] = self.interfaces[idx] = associate!(Interface(self), vars[idx])
         end
-        for site in ep_algo.sites
-            for entry in site.schedule
-                if entry.node.interfaces[entry.outbound_interface_id] in sitelist
-                    @fact calculationRule(entry) --> ExpectationRule
-                else
-                    @fact calculationRule(entry) --> SumProductRule
-                end
-            end
-        end
-    end
 
-    run(ep_algo)
-
-    ###############
-    # Compare sample mean with predictive mean after inference
-    ###############
-
-    context("Inference results") do
-        @fact length(X_marg) --> 5
-        predictive = Bernoulli()
-        sumProductRule!(n(:sig1), Val{2}, predictive, n(:equ1).interfaces[2].message, nothing)
-        @fact predictive.p --> roughly(mean(samples), atol=0.1)
-    end
-
-
-    ###############
-    # EP in a graph with wraps
-    ###############
-    FactorGraph()
-    EqualityNode(id=:eq)
-    SigmoidNode(id=:sig)
-    TerminalNode(Delta(false), id=:Y)
-    PriorNode(Gaussian(m=-0.5, V=0.1), id=:X0)
-    TerminalNode(vague(Gaussian), id=:XN)
-    Y_dists = ProbabilityDistribution[samples[section] for section in 1:NUM_SECTIONS]
-    Y_buffer = attachReadBuffer(n(:Y), deepcopy(Y_dists))
-    # Connect
-    Edge(n(:X0),n(:eq).i[1])
-    Edge(n(:eq).i[2], n(:sig).i[:real], id=:X)
-    Edge(n(:eq).i[3], n(:XN))
-    Edge(n(:sig).i[:bin], n(:Y))
-    Wrap(n(:XN),n(:X0), block_size=NUM_SECTIONS)
-
-    sites = Vector{Tuple{Interface, DataType}}()
-    push!(sites, (n(:sig).i[:real], Gaussian))
-
-    context("ExpectationPropagation constructor should handle wraps gracefully") do
-        algo = ExpectationPropagation(currentGraph(), sites; n_iterations=1)
-    end
-
-    sitelist = [site for (site, distribution) in sites]
-    context("ExpectationPropagation construction with wraps") do
-        @fact algo.n_iterations --> 1
-        @fact typeof(algo.pre_schedule) --> Schedule
-        @fact typeof(algo.post_schedule) --> Schedule
-
-        for entry in vcat(algo.pre_schedule, algo.post_schedule)
-            @fact calculationRule(entry) --> SumProductRule
-        end
-        for site in algo.sites
-            for entry in site.schedule
-                if entry.node.interfaces[entry.outbound_interface_id] in sitelist
-                    @fact calculationRule(entry) --> ExpectationRule
-                else
-                    @fact calculationRule(entry) --> SumProductRule
-                end
-            end
-        end
+        return self
     end
 end
+
+@expectationPropagationRule(:node_type     => MockNode,
+                            :outbound_type => Message{Gaussian},
+                            :inbound_types => (Message{PointMass}, Message{Gaussian}),
+                            :outbound_id   => 2,
+                            :name          => EPMockRealGP)
+
+@testset "@expectationPropagationRule" begin
+    @test EPMockRealGP <: ExpectationPropagationRule{MockNode}
+end
+
+@testset "inferUpdateRule!" begin
+    FactorGraph()
+    m ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    nd = MockNode([constant(0.0), m])
+    inferred_outbound_types = Dict(nd.i[2].partner => Message{Gaussian}, nd.i[1].partner => Message{PointMass})
+
+    entry = ScheduleEntry(nd.i[2], ExpectationPropagationRule{MockNode})
+    inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
+
+    @test entry.msg_update_rule == EPMockRealGP
+end
+
+@testset "expectationPropagationSchedule" begin
+    g = FactorGraph()
+    m = Variable()
+    nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
+    z = Variable[]
+    nd_z = FactorNode[]
+    for i = 1:3
+        z_i = Variable()
+        nd_z_i = Sigmoid(z_i, m)
+        placeholder(z_i, :y, index=i)
+        push!(z, z_i)
+        push!(nd_z, nd_z_i)
+    end
+
+    schedule = expectationPropagationSchedule(m)
+
+    @test length(schedule) == 15
+    @test schedule[2] == ScheduleEntry(nd_z[2].i[:real], EPSigmoidRealGP)
+    @test schedule[4] == ScheduleEntry(nd_z[3].i[:real], EPSigmoidRealGP)
+    @test schedule[8] == ScheduleEntry(nd_m.i[:out], SPGaussianMeanVarianceOutVPP)
+    @test schedule[11] == ScheduleEntry(nd_z[1].i[:real], EPSigmoidRealGP)
+end
+
+@testset "variationalExpectationPropagationSchedule" begin
+    g = FactorGraph()
+    m = Variable()
+    nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
+    w = Variable()
+    nd_w = Gamma(w, constant(0.01), constant(0.01))
+    y = Variable()
+    nd_y = GaussianMeanPrecision(y, m, w)
+    z = Variable()
+    nd_z = Sigmoid(z, y)
+    placeholder(z, :z)
+
+    rf = RecognitionFactorization()
+    q_y_z = RecognitionFactor([y, z])
+
+    schedule = variationalExpectationPropagationSchedule(q_y_z)
+
+    @test length(schedule) == 4
+    @test ScheduleEntry(nd_y.i[:out], VBGaussianMeanPrecisionOut) in schedule
+    @test ScheduleEntry(nd_z.i[:bin].partner, SPClamp{Univariate}) in schedule
+    @test ScheduleEntry(nd_z.i[:real], EPSigmoidRealGP) in schedule
+    @test ScheduleEntry(nd_z.i[:bin], SPSigmoidBinVG) in schedule
+end
+
+end # module

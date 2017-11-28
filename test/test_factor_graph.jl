@@ -1,107 +1,61 @@
-#####################
-# Unit tests
-#####################
+module FactorGraphTest
 
-facts("FactorGraph unit tests") do
-    context("FactorGraph() should construct a factor graph") do
-        fg = FactorGraph()
-        @fact typeof(fg) --> FactorGraph
-        @fact fg.nodes --> Dict{Symbol, Node}()
-        @fact fg.edges --> Dict{Symbol, Edge}()
-        @fact fg.wraps --> Dict{Symbol, ForneyLab.AbstractWrap}()
-        @fact fg.counters --> Dict{DataType, Int}()
-        @fact ForneyLab.current_graph --> fg # Global should be set
-    end
+using Base.Test
+import ForneyLab: FactorGraph, FactorNode, Interface, Edge, Variable, generateId, currentGraph, setCurrentGraph,
+generateId, addNode!, hasNode, addVariable!, hasVariable, Clamp
 
-    context("currentGraph() should return the current graph and create one if necessary") do
-        @fact typeof(currentGraph()) --> FactorGraph
-        @fact currentGraph() --> ForneyLab.current_graph
-        @fact is(currentGraph(), currentGraph()) --> true # Create new graph only if necessary
-    end
+# Integration helper
+type MockNode <: FactorNode
+    id::Symbol
+    interfaces::Vector{Interface}
+    i::Dict{Symbol,Interface}
 
-    context("setCurrentGraph() should set a new current graph object") do
-        graph1 = FactorGraph()
-        graph2 = FactorGraph()
-        @fact currentGraph() --> graph2
-        setCurrentGraph(graph1)
-        @fact currentGraph() --> graph1
-    end
+    function MockNode(; id=generateId(MockNode))
+        self = new(id, Interface[], Dict{Symbol,Interface}())
 
-    context("generateNodeId should generate a unique node id") do
-        FactorGraph()
-        node1 = MockNode()
-        node2 = MockNode()
-        @fact node1.id --> :mock1
-        @fact node2.id --> :mock2
+        return self
     end
 end
 
-#####################
-# Integration tests
-#####################
+@testset "FactorGraph" begin
+    # FactorGraph should initiate a new factor graph
+    g = FactorGraph()
 
-import ForneyLab.neighbors
+    @test isa(g.nodes, Dict{Symbol, FactorNode})
+    @test isa(g.edges, Vector{Edge})
+    @test isa(g.variables, Dict{Symbol, Variable})
+    @test isa(g.counters, Dict{DataType, Int})
+    @test isa(g.placeholders, Dict{Clamp, Tuple{Symbol, Int}})
 
-facts("FactorGraph related functions") do
-    context("edges() should get all edges connected to the node set") do
-        initializeLoopyGraph()
-        @fact edges(Set{Node}(Node[n(:driver), n(:inhibitor)])) --> Set{Edge}(Edge[n(:driver).i[:in].edge, n(:add).i[:in1].edge, n(:add).i[:out].edge])
-    end
+    # currentGraph() should point to the current graph
+    @test is(currentGraph(), g)
+    f = FactorGraph()
+    @test is(currentGraph(), f)
+    setCurrentGraph(g)
+    @test is(currentGraph(), g)
+end
 
-    context("nodes() should return a set of all nodes in the graph") do
-        # FactorGraph test
-        initializeLoopyGraph()
-        @fact nodes(currentGraph()) --> Set{Node}([n(:driver), n(:inhibitor), n(:noise), n(:add)])
-    end
+@testset "generateId" begin
+    g = FactorGraph()
 
-    context("edge(id::Symbol) should return edge with matching id") do
-        graph_1 = FactorGraph()
-        graph_2 = FactorGraph()
-        my_edge = Edge(MockNode().i[:out], MockNode().i[:out])
-        @fact_throws edge(:something)
-        @fact_throws edge(:mock1_mock2, graph_1)
-        setCurrentGraph(graph_1)
-        @fact_throws edge(:mock1_mock2)
-        @fact edge(:mock1_mock2, graph_2) --> my_edge
-        setCurrentGraph(graph_2)
-        @fact edge(:mock1_mock2) --> my_edge
-    end
+    # generateId should generate a unique id based on type
+    @test generateId(MockNode) == :mocknode_1
+    @test generateId(MockNode) == :mocknode_2
+    @test g.counters[MockNode] == 2
+end
 
-    context("node(id::Symbol) should return node with matching id") do
-        graph_1 = FactorGraph()
-        graph_2 = FactorGraph()
-        mocknode = MockNode(id=:my_mocknode)
-        Edge(mocknode.i[:out], MockNode().i[:out])
-        @fact_throws node(:some_id)
-        @fact_throws node(:my_mocknode, graph_1)
-        setCurrentGraph(graph_1)
-        @fact_throws node(:my_mocknode)
-        @fact node(:my_mocknode, graph_2) --> mocknode
-        setCurrentGraph(graph_2)
-        @fact node(:my_mocknode) --> mocknode
-    end
+@testset "addNode!" begin
+    g = FactorGraph()
+    nd = MockNode(id=:nd)
 
-    context("addNode!() should add a node to a graph") do
-        FactorGraph()
-        nd = TerminalNode(id=:tnode)
-        g = FactorGraph()
-        ForneyLab.addNode!(g, nd)
-        @fact g.nodes[:tnode] --> nd
-    end
+    # addNode! should register a node with a graph
+    @test isempty(g.nodes)
+    addNode!(g, nd)
+    @test is(g.nodes[:nd], nd)
+    @test hasNode(g, nd)
 
-    context("summaryDependencyGraph(fg) should build correct dependency graph") do
-        initializeLoopyGraph()
-        fg = currentGraph()
-        dg = summaryDependencyGraph(fg)
-        @fact length(dg.vertices) --> 8
-        for nd in nodes(fg)
-            for iface in nd.interfaces
-                @fact iface in dg.vertices --> true
-            end
-        end
-        @fact length(neighbors(n(:noise).i[:out], dg)) --> 0
-        @fact length(neighbors(n(:add).i[:in1], dg)) --> 2
-        @fact n(:noise).i[:out] in neighbors(n(:add).i[:in1], dg) --> true
-        @fact n(:inhibitor).i[:in] in neighbors(n(:add).i[:in1], dg) --> true
-    end
+    # addNode should not add the same node twice
+    @test_throws Exception addNode!(g, nd)
+end
+
 end

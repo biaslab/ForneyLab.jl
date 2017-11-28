@@ -1,339 +1,149 @@
-import Base.show
-export VariationalBayes
+export
+VariationalRule,
+variationalSchedule,
+@variationalRule
 
-include("subgraph.jl")
-include("recognition_factorization.jl")
-
-"""
-Variational message passing algorithm.
-
-Usage:
-
-    VariationalBayes(recognition_distribution_types::Dict, graph::Graph; n_iterations, message_types)
-"""
-type VariationalBayes <: InferenceAlgorithm
-    graph::FactorGraph
-    n_iterations::Int64
-    recognition_factorization::RecognitionFactorization
-    update_order::Vector{Subgraph}
-end
-
-function show(io::IO, algo::VariationalBayes)
-    println("VariationalBayes inference algorithm")
-    println("    number of subgraphs: $(length(algo.recognition_factorization.subgraphs))")
-    println("    number of iterations: $(algo.n_iterations)")
-end
-
-
-############################################
-# VariationalBayes algorithm constructors
-############################################
+abstract VariationalRule{factor_type} <: MessageUpdateRule
 
 """
-Generate a VariationalBayes algorithm
+variationalSchedule() generates a variational message passing schedule that computes the
+marginals for each of the recognition distributions in the recognition factor.
 """
-function VariationalBayes(  graph::FactorGraph=currentGraph(),
-                            recognition_factorization::RecognitionFactorization=currentRecognitionFactorization();
-                            kwargs...)
-
-    VariationalBayes(interfacesFacingWrapsOrBuffers(graph), graph, recognition_factorization; kwargs...)
-end
-
-function VariationalBayes(  targets::Vector{Interface},
-                            graph::FactorGraph=currentGraph(),
-                            recognition_factorization::RecognitionFactorization=currentRecognitionFactorization();
-                            n_iterations::Int64 = 50,
-                            message_types::Dict{Interface,DataType}=Dict{Interface,DataType}(),
-                            update_order::Vector{Subgraph}=copy(recognition_factorization.default_update_order))
-    
-    verifyProper(recognition_factorization)
-
-    # Generate the internal schedule for each subgraph sg
-    for sg in values(recognition_factorization.subgraphs)
-        dg = summaryDependencyGraph(sg) # Dependency graph of subgraph internal edges
-        rdg = summaryDependencyGraph(sg, reverse_edges=true)
-
-        # Find the interfaces whose messages are computed by the variational update rule.
-        # All messages that are dependent on a variational message need to be part of the iterative schedule,
-        # since the dependent messages might be altered during an iteration. Messages independent of a variational update
-        # only need to be computer once, since they will never change during iterations.
-        variational_interfaces = Interface[] # Interfaces for messages that need to be computed through the variational update rule
-        partner_variational_interfaces = Interface[]
-        for node in sg.nodes_connected_to_external_edges
-            for interface in node.interfaces
-                if interface.edge in sg.internal_edges
-                    push!(variational_interfaces, interface) # The message on this interface must be computed by the variational update
-                    push!(partner_variational_interfaces, interface.partner) # The message on this interface is not necessarily dependent on a variational update
-                end
-            end
-        end
-        influenced_by_variational_update = children(variational_interfaces, rdg)
-
-        # TODO: this scheduler requires messages for the structured factorization that are not always required;
-        # e.g. backward messages over the mean and precision edges present in a joint factorization when there
-        # are no target dependencies.
-
-        # TODO: when terminal nodes are also included in the nodes_connected_to_external_edges (which technically they don't belong to; except in case of a precision factor),
-        # this might add messages dependent on prior nodes to the iterative schedule instead of the pre schedule (even though the prior node has a variational update,
-        # the outbound message never changes; except in the case of a precision factor). 
-
-        # Based on the variationally dependent messages, distinguish between the pre and iterative schedule
-        pre_interface_list = Interface[]
-        iterative_interface_list = Interface[]
-        for interface in children(partner_variational_interfaces, dg)
-            if interface in influenced_by_variational_update # Interface is influenced by a variational update, add to iterative schedule
-                push!(iterative_interface_list, interface)
-            else # Interface is not influenced by a variational update, only compute once in pre schedule
-                push!(pre_interface_list, interface)
-            end
-        end
-        iterative_interface_list = unique([iterative_interface_list; variational_interfaces]) # Add variational interfaces at the end because these may depend in internal messages in the case of a structured factorization.
-
-        # Propagate messages towards targets (such as wraps and write buffers)
-        post_interface_list = Interface[]
-        for interface in targets
-            if interface.edge in sg.internal_edges # target is the responsibility of the subgraph sg
-                post_interface_list = [post_interface_list; children(interface, dg, breakers=union(Set(pre_interface_list), Set(iterative_interface_list)))]
-            end
-        end
-        
-        # Covert interface lists to schedule; assign variational update rules to variational interfaces
-        sg.internal_pre_schedule = convertToVariationalSchedule(pre_interface_list, variational_interfaces)
-        sg.internal_iterative_schedule = convertToVariationalSchedule(iterative_interface_list, variational_interfaces)
-        sg.internal_post_schedule = convertToVariationalSchedule(post_interface_list, variational_interfaces)
-
-        # Infer types on pre schedule
-        skip_update_interfaces = Interface[] # Interfaces for which the variational update need not be computed
-        for entry in sg.internal_pre_schedule
-            inferTypes!(entry, message_types, recognition_factorization)
-
-            # Find interfaces of superfluous variational updates
-            outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
-            if (outbound_interface in partner_variational_interfaces) && (entry.outbound_type <: AbstractDelta)
-                # The variational message will be combined with a delta message to yield the recognition distribution.
-                # In this case the recognition distribution will become equal to the delta message,
-                # so it is superfluous to compute the variational message.
-                push!(skip_update_interfaces, outbound_interface.partner)
-            end
-        end
-
-        # Delete schedule entries of superfluous variational updates
-        # TODO: optionally turn skipping off
-        for entry in copy(sg.internal_iterative_schedule)
-            outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
-            if outbound_interface in skip_update_interfaces
-                deleteat!(sg.internal_iterative_schedule, findfirst(sg.internal_iterative_schedule, entry)) # Remove entry from schedule
-            end            
-        end
-
-        # Infer types on iterative schedule
-        for entry in sg.internal_iterative_schedule
-            inferTypes!(entry, message_types, recognition_factorization)
-        end
-
-        # Infer types on post schedule
-        for entry in sg.internal_post_schedule
-            inferTypes!(entry, message_types, recognition_factorization)
-        end
-    end
-
-    algo = VariationalBayes(graph, n_iterations, recognition_factorization, update_order)
-
-    return algo
-end
-
-function convertToVariationalSchedule(interface_list::Vector{Interface}, variational_interfaces::Vector{Interface})
+function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
+    # Schedule messages towards recognition distributions, limited to the internal edges
     schedule = ScheduleEntry[]
-    for interface in interface_list
-        if interface in variational_interfaces
-            push!(schedule, convert(ScheduleEntry{VariationalRule}, interface))
+    nodes_connected_to_external_edges = Set{FactorNode}()
+    for recognition_factor in recognition_factors
+        schedule = [schedule; summaryPropagationSchedule(sort(collect(recognition_factor.variables)), limit_set=recognition_factor.internal_edges)]
+        union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(recognition_factor))
+    end
+
+    for entry in schedule
+        if entry.interface.node in nodes_connected_to_external_edges
+            entry.msg_update_rule = VariationalRule{typeof(entry.interface.node)}
         else
-            push!(schedule, convert(ScheduleEntry{SumProductRule}, interface))
+            entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
         end
     end
+
+    inferUpdateRules!(schedule)
 
     return schedule
 end
 
+variationalSchedule(recognition_factor::RecognitionFactor) = variationalSchedule([recognition_factor])
 
-############################################
-# Type inference and preparation
-############################################
-
-inferTypes!(entry::ScheduleEntry{SumProductRule}, inferred_outbound_types::Dict{Interface, DataType}, ::RecognitionFactorization) = inferTypes!(entry, inferred_outbound_types) # Default to sum-product rule
-
-function inferTypes!(entry::ScheduleEntry{VariationalRule}, inferred_outbound_types::Dict{Interface, DataType}, rf::RecognitionFactorization)
-    outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
-
+function inferUpdateRule!{T<:VariationalRule}(  entry::ScheduleEntry,
+                                                rule_type::Type{T},
+                                                inferred_outbound_types::Dict{Interface, DataType})
     # Collect inbound types
-    entry.inbound_types = DataType[]
-    for (id, interface) in enumerate(entry.node.interfaces)
-        sg = rf.edge_to_subgraph[interface.edge]
-        if id == entry.outbound_interface_id
-            push!(entry.inbound_types, Void)
-        elseif is(sg, rf.edge_to_subgraph[outbound_interface.edge])
-            # Both edges are in the same subgraph (structured factorization), require message
-            push!(entry.inbound_types, Message{inferred_outbound_types[interface.partner]})
-        else
-            # A subgraph border is crossed, require recognition distribution
-            push!(entry.inbound_types, typeof(rf.node_subgraph_to_recognition_distribution[(entry.node, sg)]))
+    inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
+    
+    # Find applicable rule(s)
+    applicable_rules = DataType[]
+    for rule in leaftypes(entry.msg_update_rule)
+        if isApplicable(rule, inbound_types)
+            push!(applicable_rules, rule)
         end
     end
 
-    # Infer outbound type
-    if outbound_interface in keys(inferred_outbound_types)
-        setOutboundType!(entry, inferred_outbound_types[outbound_interface])
+    # Select and set applicable rule
+    if isempty(applicable_rules)
+        error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
+    elseif length(applicable_rules) > 1
+        error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types)")
+    else
+        entry.msg_update_rule = first(applicable_rules)
     end
-    inferOutboundType!(entry) # If entry.outbound_type is already set, this will validate that there is a suitable rule available
-    inferred_outbound_types[outbound_interface] = entry.outbound_type
 
     return entry
 end
 
-function prepare!(algo::VariationalBayes)
-    for factor in values(algo.recognition_factorization.subgraphs)
-        schedules = (factor.internal_pre_schedule, factor.internal_iterative_schedule, factor.internal_post_schedule)
-
-        # Populate the subgraph with vague messages of the correct types
-        for schedule in schedules
-            for entry in schedule
-                ensureMessage!(entry.node.interfaces[entry.outbound_interface_id], entry.outbound_type)
-            end
-        end
-
-        # Compile the schedules (define schedule_entry.execute)
-        for schedule in schedules
-            compile!(schedule, algo)
-        end
-    end
-
-    return algo.graph.prepared_algorithm = algo
-end
-
-function compile!(entry::ScheduleEntry{VariationalRule}, algo::VariationalBayes)
-    rf = algo.recognition_factorization
-    outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
-
-    inbounds = []
-    for (id, interface) in enumerate(entry.node.interfaces)
-        sg = rf.edge_to_subgraph[interface.edge]
-        if id == entry.outbound_interface_id
-            push!(inbounds, rf.node_subgraph_to_recognition_distribution[(entry.node, sg)])
-        elseif is(sg, rf.edge_to_subgraph[outbound_interface.edge])
-            # Both edges are in the same subgraph (structured factorization), require message
-            push!(inbounds, interface.partner.message)
+function collectInboundTypes{T<:VariationalRule}(entry::ScheduleEntry,
+                                                 ::Type{T},
+                                                 inferred_outbound_types::Dict{Interface, DataType})
+    inbound_types = DataType[]
+    entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
+    for node_interface in entry.interface.node.interfaces
+        if node_interface == entry.interface
+            push!(inbound_types, Void) # TODO: make exception for piecewise linear node
+        elseif recognitionFactorId(node_interface.edge) == entry_recognition_factor_id
+            # Edge is internal, accept message
+            push!(inbound_types, inferred_outbound_types[node_interface.partner])
         else
-            # A subgraph border is crossed, require recognition distribution
-            push!(inbounds, rf.node_subgraph_to_recognition_distribution[(entry.node, sg)])
+            # Edge is external, accept marginal
+            push!(inbound_types, ProbabilityDistribution) 
         end
     end
 
-    return buildExecute!(entry, inbounds)
+    return inbound_types
+end
+
+function recognitionFactorId(edge::Edge)
+    for rf in values(current_recognition_factorization.recognition_factors)
+        if edge in rf.internal_edges
+            return rf.id
+        end
+    end
+    return Symbol(name(edge)) # No recognition factor is found, return a unique id
 end
 
 """
-Prepare and execute variational message passing
+@variationalRule registers a variational update rule by defining the rule type
+and the corresponding methods for the outboundType and isApplicable functions.
+If no name (type) for the new rule is passed, a unique name (type) will be
+generated. Returns the rule type.
 """
-function execute(algo::VariationalBayes)
-    # Make sure algo is prepared
-    (algo.graph.prepared_algorithm == algo) || prepare!(algo)
+macro variationalRule(fields...)
+    # Init required fields in macro scope
+    node_type = :unknown
+    outbound_type = :unknown
+    inbound_types = :unknown
+    name = :auto # Triggers automatic naming unless overwritten
 
-    # Reset recognition distributions to vague before next step
-    rf = algo.recognition_factorization
-    resetRecognitionDistributions!(rf)
+    # Loop over fields because order is unknown
+    for arg in fields
+        (arg.head == :(=>)) || error("Invalid call to @variationalRule")
 
-    # Execute internal pre schedules
-    for subgraph in values(rf.subgraphs)
-        isempty(subgraph.internal_pre_schedule) || execute(subgraph.internal_pre_schedule)
-    end
-
-    # Execute iterative schedules
-    for iteration = 1:algo.n_iterations
-        for subgraph in algo.update_order
-            update!(rf, subgraph)
+        if arg.args[1].args[1] == :node_type
+            node_type = arg.args[2]
+        elseif arg.args[1].args[1] == :outbound_type
+            outbound_type = arg.args[2]
+            (outbound_type.head == :curly && outbound_type.args[1] == :Message) || error("Outbound type for VariationalRule should be a Message")
+        elseif arg.args[1].args[1] == :inbound_types
+            inbound_types = arg.args[2]
+            (inbound_types.head == :tuple) || error("Inbound types should be passed as Tuple")
+        elseif arg.args[1].args[1] == :name
+            name = arg.args[2]
+        else
+            error("Unrecognized field $(arg.args[1].args[1]) in call to @variationalRule")
         end
     end
 
-    # Execute internal post schedules
-    for subgraph in values(rf.subgraphs)
-        isempty(subgraph.internal_post_schedule) || execute(subgraph.internal_post_schedule)
+    # Assign unique name if not set already
+    if name == :auto
+        # Added hash ensures that the rule name is unique
+        msg_types_hash = string(hash(vcat([outbound_type], inbound_types)))[1:6]
+        name = Symbol("VB$(node_type)$(msg_types_hash)")
     end
-end
 
-"""
-Perform one iteration on a subgraph: pass internal messages and update the recognition distribution
-"""
-function update!(rf::RecognitionFactorization, subgraph::Subgraph)
-    # Execute internal schedule
-    isempty(subgraph.internal_iterative_schedule) || execute(subgraph.internal_iterative_schedule)
-
-    # Update recognition distributions at external edges
-    if ForneyLab.verbose
-        println(" ")
-        println("Marginals (node), result")
-        println("--------------------------------------------")
-    end
-    for node in subgraph.nodes_connected_to_external_edges
-        d = calculateRecognitionDistribution!(rf, node, subgraph)
-        if ForneyLab.verbose
-            println("$(node.id) : $(format(d))")
+    # Build validators for isApplicable
+    input_type_validators = String[]
+    for (i, i_type) in enumerate(inbound_types.args)
+        if i_type != :Void
+            # Only validate inbounds required for message update
+            push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
         end
     end
 
-    return rf
-end
-
-"""
-Calculate the recognition distribution for the node-subgraph combination
-"""
-function calculateRecognitionDistribution!(rf::RecognitionFactorization, node::Node, subgraph::Subgraph)
-    recognition_distribution = rf.node_subgraph_to_recognition_distribution[(node, subgraph)]
-    internal_edges = rf.node_subgraph_to_internal_edges[(node, subgraph)]
-
-    if length(internal_edges) == 1
-        # Update for univariate recognition distribution
-        internal_edge = first(internal_edges)
-        (internal_edge.tail.message == nothing) ? tail_dist = nothing : tail_dist = internal_edge.tail.message.payload
-        (internal_edge.head.message == nothing) ? head_dist = nothing : head_dist = internal_edge.head.message.payload
-        return prod!(tail_dist, head_dist, recognition_distribution)
-    else
-        # Update for multivariate recognition distribution
-        required_inputs = Array(Any, 0)
-        for interface in node.interfaces # Iterate over all interfaces connected to node
-            neighbouring_subgraph = rf.edge_to_subgraph[interface.edge]
-            if neighbouring_subgraph == subgraph # edge is internal
-                push!(required_inputs, interface.partner.message)
-            else # edge is external
-                push!(required_inputs, rf.node_subgraph_to_recognition_distribution[(node, neighbouring_subgraph)])
-            end
+    expr = parse("""
+        begin
+            type $name <: VariationalRule{$node_type} end
+            ForneyLab.outboundType(::Type{$name}) = $outbound_type
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{DataType}) = $(join(input_type_validators, " && "))
+            $name
         end
-        return recognitionRule!(node, recognition_distribution, required_inputs...)
-    end
-end
+    """)
 
-
-#########################################################
-# Update rules for multivariate recognition distributions
-#########################################################
-
-"""
-NormalGamma update rule for variational message passing
-"""
-function recognitionRule!(  node::GaussianNode,
-                            recognition_dist::NormalGamma,
-                            msg_mean::Message{Gaussian},
-                            msg_prec::Message{Gamma},
-                            dist_y::Gaussian)
-
-    dist_mean = msg_mean.payload
-    dist_prec = msg_prec.payload
-    ForneyLab.ensureParameters!(dist_mean, (:m,))
-    ForneyLab.ensureParameters!(dist_y, (:W,))
-
-    recognition_dist.m = dist_mean.m
-    recognition_dist.beta = huge
-    recognition_dist.a = dist_prec.a + 0.5
-    recognition_dist.b = (1.0/(2.0*dist_y.W)) + dist_prec.b
-
-    return recognition_dist
+    return esc(expr)
 end

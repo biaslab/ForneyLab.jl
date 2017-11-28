@@ -1,238 +1,198 @@
-import Base.show
-export ExpectationPropagation
+export
+ExpectationPropagationRule,
+expectationPropagationSchedule,
+variationalExpectationPropagationSchedule,
+@expectationPropagationRule
 
-type EPSite
-    interface::Interface
-    expectation_type::DataType
-    schedule::Schedule # last entry applies the ExpectationRule
+abstract ExpectationPropagationRule{factor_type} <: MessageUpdateRule
 
-    function EPSite{T<:ProbabilityDistribution}(interface::Interface, expectation_type::Type{T})
-        new(interface, expectation_type)
+"""
+expectationPropagationSchedule() generates a expectation propagation message passing schedule.
+"""
+function expectationPropagationSchedule(variables::Vector{Variable})
+    ep_sites = collectEPSites(nodes(current_graph))
+    breaker_sites = [site.partner for site in ep_sites]
+    breaker_types = breakerTypes(breaker_sites)
+
+    schedule = summaryPropagationSchedule(variables; target_sites=[breaker_sites; ep_sites])
+
+    for entry in schedule
+        if entry.interface in ep_sites
+            entry.msg_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
+        else
+            entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
+        end
     end
+
+    inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
+
+    return schedule
 end
 
 """
-Expectation propagation algorithm.
-
-Usage:
-
-    ExpectationPropagation(sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
-    ExpectationPropagation(target::Interface, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
-    ExpectationPropagation(targets::Vector{Interface}, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
-    ExpectationPropagation(graph::FactorGraph, sites::Vector{Tuple{Interface, DataType}}; n_iterations, callback)
-
-Builds an expectation propagation message passing algorithm for the specified sites. Arguments:
-
-    - `sites`: a list of `(interface, expectation_type)` tuples, where `interface` specifies where the expectation message
-      is calculated, and `expectation_type <: ProbabilityDistribution` specifies the type of the expectation message.
-    - `n_iterations`: the maximum number of iterations.
-    - `callback`: a function that gets called after every iteration. If it returns true, the algorithm is terminated.
+variationalExpectationPropagationSchedule() generates an expectation propagation message passing schedule
+that is limited to the `recognition_factor`. Updates on EP sites are computed with an `ExpectationPropagationRule`,
+and updates for external nodes are computed with a `VariationalRule`.
 """
-type ExpectationPropagation <: InferenceAlgorithm
-    graph::FactorGraph
-    sites::Vector{EPSite}
-    pre_schedule::Schedule                          # executed once before iterating of the sites
-    post_schedule::Schedule                         # executed once after convergence
-    n_iterations::Int64
-    callback::Function
-end
+function variationalExpectationPropagationSchedule(recognition_factor::RecognitionFactor)
+    internal_edges = recognition_factor.internal_edges
+    ep_sites = collectEPSites(nodes(internal_edges))
+    breaker_sites = [site.partner for site in ep_sites]
+    breaker_types = breakerTypes(breaker_sites)
 
-function show(io::IO, algo::ExpectationPropagation)
-    println("ExpectationPropagation inference algorithm")
-    println("    # sites: $(length(algo.sites))")
-    println("    max. number of iterations: $(algo.n_iterations)")
-    println("    callback function: $(algo.callback)")
-end
+    # Schedule messages towards recognition distributions and target sites, limited to the internal edges
+    schedule = summaryPropagationSchedule(sort(collect(recognition_factor.variables)); target_sites=[breaker_sites; ep_sites], limit_set=internal_edges)
 
-function ExpectationPropagation(
-            sites::Vector{Tuple{Interface, DataType}};
-            kwargs...)
-
-    ExpectationPropagation(Interface[], sites; kwargs...)
-end
-
-function ExpectationPropagation(
-            target::Interface,
-            sites::Vector{Tuple{Interface, DataType}};
-            kwargs...)
-
-    ExpectationPropagation([target], sites; kwargs...)
-end
-
-function ExpectationPropagation(
-            graph::FactorGraph,
-            sites::Vector{Tuple{Interface, DataType}};
-            kwargs...)
-
-    ExpectationPropagation(interfacesFacingWrapsOrBuffers(graph), sites; kwargs...)
-end
-
-function ExpectationPropagation(
-            targets::Vector{Interface},
-            sites::Vector{Tuple{Interface, DataType}};
-            n_iterations::Int64 = 100,
-            callback::Function = ( () -> false ),
-            graph::FactorGraph=currentGraph(),
-            message_types::Dict{Interface,DataType}=Dict{Interface,DataType}())
-    # Algorithm pseudo code:
-    #
-    # init all sites with vague expectation messages.
-    # execute algo.pre_schedule
-    # while (algo.callback()!=true && algo.n_iterations not exceeded):
-    #     for every site in algo.sites:
-    #         execute site.schedule
-    # execute algo.post_convergence_schedule
-
-    (length(sites) > 0) || throw(ArgumentError("Specify at least one site"))
-
-    # unzip sites
-    interface_to_site = Dict{Interface, EPSite}()
-    ep_sites = EPSite[]
-    for (interface, expectation_type) in sites
-        push!(ep_sites, EPSite(interface, expectation_type))
-        interface_to_site[interface] = ep_sites[end]
-    end
-
-    # build schedules
-    site_interfaces_set = Set(keys(interface_to_site))
-    dg = summaryDependencyGraph(graph)
-    rdg = summaryDependencyGraph(graph, reverse_edges=true)
-    influenced_by_site = [Set(children(site_interface, rdg)) for site_interface in site_interfaces_set]
-
-    # build pre-schedule
-    site_dependencies = Interface[]
-    for site in ep_sites
-        push!(site_dependencies, site.interface.partner) # prior/cavity distribution
-        for interface in neighbors(site.interface, dg)
-            push!(site_dependencies, interface) # direct dependency of site
+    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(recognition_factor)
+    for entry in schedule
+        if entry.interface in ep_sites
+            entry.msg_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
+        elseif entry.interface.node in nodes_connected_to_external_edges
+            entry.msg_update_rule = VariationalRule{typeof(entry.interface.node)}
+        else
+            entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
         end
     end
-    pre_schedule = children(site_dependencies, dg, breakers=site_interfaces_set)
 
-    # build site schedules
-    # the last entry of site.schedule produces the expectation message
-    for i = 1:length(ep_sites)
-        site = ep_sites[i]
-        prev_site_idx = (i==1) ? length(ep_sites) : i-1
-        message_types[site.interface] = site.expectation_type # Add sites to the fixed msg type dictionary
-        schedule = children([site.interface.partner; site.interface],
-                            dg,
-                            breakers = setdiff(site_interfaces_set, Set([site.interface])),
-                            restrict_to = union(influenced_by_site[prev_site_idx], Set([site.interface])))
-        site.schedule = ScheduleEntry[ScheduleEntry{SumProductRule}(interface) for interface in schedule[1:end-1]]
-        expectation_entry = ScheduleEntry{ExpectationRule}(site.interface)
-        expectation_entry.outbound_type = site.expectation_type
-        push!(site.schedule, expectation_entry)
-    end
+    inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
 
-    # build post-schedule
-    post_schedule = children(targets, dg, breakers=union(site_interfaces_set, Set(pre_schedule)))
-
-    # type inference
-    pre_schedule = convert(Schedule, pre_schedule, SumProductRule)
-    post_schedule = convert(Schedule, post_schedule, SumProductRule)
-    for entry in pre_schedule
-        inferTypes!(entry, message_types)
-    end
-    for site in ep_sites
-        for entry in site.schedule
-            inferTypes!(entry, message_types)
-        end
-    end
-    for entry in post_schedule
-        inferTypes!(entry, message_types)
-    end
-
-    algo = ExpectationPropagation(graph,
-                                  ep_sites,
-                                  pre_schedule,
-                                  post_schedule,
-                                  n_iterations,
-                                  callback)
-
-    return algo
+    return schedule
 end
 
-############################################
-# Type inference and preparation
-############################################
+"""
+Find default EP sites present in `node_set`
+"""
+function collectEPSites(node_set::Set{FactorNode})
+    ep_sites = Interface[]
+    for node in sort(collect(node_set))
+        if isa(node, Sigmoid)
+            push!(ep_sites, node.i[:real]) # EP site for a Sigmoid node is i[:real]
+        end
+    end
 
-function inferTypes!(   entry::ScheduleEntry{ExpectationRule},
-                        inferred_outbound_types::Dict{Interface, DataType})
+    return ep_sites
+end
+
+"""
+Constructs breaker types dictionary for breaker sites
+"""
+function breakerTypes(breaker_sites::Vector{Interface})
+    breaker_types = Dict{Interface, DataType}()
+    for site in breaker_sites
+        if isa(site.partner.node, Sigmoid)
+            breaker_types[site] = Message{Gaussian, Univariate} # Sigmoid EP site partner requires Gaussian breaker
+        end
+    end
+
+    return breaker_types
+end
+
+expectationPropagationSchedule(variable::Variable) = expectationPropagationSchedule([variable])
+
+function inferUpdateRule!{T<:ExpectationPropagationRule}(   entry::ScheduleEntry,
+                                                            rule_type::Type{T},
+                                                            inferred_outbound_types::Dict{Interface, DataType})
     # Collect inbound types
-    entry.inbound_types = DataType[]
-    for (id, interface) in enumerate(entry.node.interfaces)
-        push!(entry.inbound_types, Message{inferred_outbound_types[interface.partner]})
+    inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
+
+    # Find outbound id
+    outbound_id = findfirst(entry.interface.node.interfaces, entry.interface)    
+    
+    # Find applicable rule(s)
+    applicable_rules = DataType[]
+    for rule in leaftypes(entry.msg_update_rule)
+        if isApplicable(rule, inbound_types, outbound_id)
+            push!(applicable_rules, rule)
+        end
     end
 
-    # Infer outbound type
-    outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
-    if outbound_interface in keys(inferred_outbound_types)
-        setOutboundType!(entry, inferred_outbound_types[outbound_interface])
+    # Select and set applicable rule
+    if isempty(applicable_rules)
+        error("No applicable msg update rule for $(entry) with outbound id $(outbound_id)")
+    elseif length(applicable_rules) > 1
+        error("Multiple applicable msg update rules for $(entry) with outbound id $(outbound_id)")
+    else
+        entry.msg_update_rule = first(applicable_rules)
     end
-    inferOutboundType!(entry) # If entry.outbound_type is already set, this will validate that there is a suitable rule available
-    inferred_outbound_types[outbound_interface] = entry.outbound_type
 
     return entry
 end
 
-
-function prepare!(algo::ExpectationPropagation)
-    # Populate the graph with messages of the correct types and compile the schedules
-    for entry in vcat(algo.pre_schedule, algo.post_schedule)
-        interface = entry.node.interfaces[entry.outbound_interface_id]
-        ensureMessage!(interface, entry.outbound_type)
-    end
-    for site in algo.sites
-        for entry in site.schedule
-            interface = entry.node.interfaces[entry.outbound_interface_id]
-            ensureMessage!(interface, entry.outbound_type)
+function collectInboundTypes{T<:ExpectationPropagationRule}(entry::ScheduleEntry,
+                                                            ::Type{T},
+                                                            inferred_outbound_types::Dict{Interface, DataType})
+    inbound_message_types = DataType[]
+    for node_interface in entry.interface.node.interfaces
+        if (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
+            push!(inbound_message_types, Message{PointMass})
+        else
+            push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
         end
     end
 
-    # Compile the schedules
-    compile!(algo.pre_schedule, algo)
-    for site in algo.sites
-        compile!(site.schedule, algo)
-    end
-    compile!(algo.post_schedule, algo)
-
-    return algo.graph.prepared_algorithm = algo
+    return inbound_message_types
 end
 
+"""
+@expectationPropagationRule registers a expectation propagation update 
+rule by defining the rule type and the corresponding methods for the outboundType 
+and isApplicable functions. If no name (type) for the new rule is passed, a 
+unique name (type) will be generated. Returns the rule type.
+"""
+macro expectationPropagationRule(fields...)
+    # Init required fields in macro scope
+    node_type = :unknown
+    outbound_type = :unknown
+    inbound_types = :unknown
+    outbound_id = :unknown
+    name = :auto # Triggers automatic naming unless overwritten
 
-function compile!(entry::ScheduleEntry{ExpectationRule}, ::InferenceAlgorithm)
-    # Generate entry.execute
-    inbound_messages = [interface.partner.message for interface in entry.node.interfaces]
+    # Loop over fields because order is unknown
+    for arg in fields
+        (arg.head == :(=>)) || error("Invalid call to @expectationPropagationRule")
 
-    return buildExecute!(entry, inbound_messages)
-end
-
-
-function execute(algo::ExpectationPropagation)
-    # Make sure algo is prepared
-    (algo.graph.prepared_algorithm == algo) || prepare!(algo)
-
-    # Init all sites with vague messages
-    for site in algo.sites
-        vague!(site.interface.message.payload)
+        if arg.args[1].args[1] == :node_type
+            node_type = arg.args[2]
+        elseif arg.args[1].args[1] == :outbound_type
+            outbound_type = arg.args[2]
+            (outbound_type.head == :curly && outbound_type.args[1] == :Message) || error("Outbound type for ExpectationPropagationRule should be a Message")
+        elseif arg.args[1].args[1] == :inbound_types
+            inbound_types = arg.args[2]
+            (inbound_types.head == :tuple) || error("Inbound types should be passed as Tuple")
+        elseif arg.args[1].args[1] == :outbound_id
+            outbound_id = arg.args[2]
+        elseif arg.args[1].args[1] == :name
+            name = arg.args[2]
+        else
+            error("Unrecognized field $(arg.args[1].args[1]) in call to @expectationPropagationRule")
+        end
     end
 
-    # Execute pre schedule once
-    isempty(algo.pre_schedule) || execute(algo.pre_schedule)
+    # Assign unique name if not set already
+    if name == :auto
+        # Added hash ensures that the rule name is unique
+        msg_types_hash = string(hash(vcat([outbound_type], inbound_types)))[1:6]
+        name = Symbol("EP$(node_type)$(msg_types_hash)")
+    end
 
-    # Loop over sites until stopping criterium is met
-    for iteration_count = 1:algo.n_iterations
-        for site in algo.sites
-            execute(site.schedule)
-        end
-
-        # Check stopping criteria
-        if algo.callback()
-            break
+    # Build validators for isApplicable
+    input_type_validators = String[]
+    for (i, i_type) in enumerate(inbound_types.args)
+        if i_type != :Void
+            # Only validate inbounds required for message update
+            push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
         end
     end
 
-    # Execute post convergence schedule once
-    isempty(algo.post_schedule) || execute(algo.post_schedule)
+    expr = parse("""
+        begin
+            type $name <: ExpectationPropagationRule{$node_type} end
+            ForneyLab.outboundType(::Type{$name}) = $outbound_type
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{DataType}, outbound_id::Int64) = $(join(input_type_validators, " && ")) && (outbound_id == $outbound_id)
+            $name
+        end
+    """)
+
+    return esc(expr)
+
 end

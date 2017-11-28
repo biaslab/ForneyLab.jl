@@ -1,67 +1,60 @@
-facts("SumProduct") do
-    context("SumProduct should perform message type inference") do
-        initializeAdditionNode([Gaussian(), Gaussian(), Gaussian()])
+module SumProductTest
 
-        # Forcing a message to a distribution type for which no rule is implemented should throw an error
-        message_types = Dict{Interface,DataType}(n(:add_node).i[:out] => Gamma)
-        @fact_throws SumProduct(n(:add_node).i[:out], message_types=message_types)
+using Base.Test
+using ForneyLab
+import ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
+import ForneyLab: SPClamp
 
-        # Forcing a message to a supported distribution type should be ok.
-        message_types = Dict{Interface,DataType}(n(:add_node).i[:out] => Gaussian)
-        algo = SumProduct(n(:add_node).i[:out], message_types=message_types)
-        @fact algo.schedule[end].inbound_types --> [Message{Gaussian}, Message{Gaussian}, Void]
-        @fact algo.schedule[end].outbound_type --> Gaussian
-        @fact isdefined(algo.schedule[end], :approximation) --> false
-    end
+# Integration helper
+type MockNode <: FactorNode
+    id::Symbol
+    interfaces::Vector{Interface}
+    i::Dict{Int,Interface}
 
-    context("Should generate a schedule that propagates messages to wraps") do
-        g = FactorGraph()
-        TerminalNode(id=:t1)
-        TerminalNode(id=:t2)
-        e = Edge(n(:t1), n(:t2))
-        algo = SumProduct(g)
-        @fact length(algo.schedule) --> 0
-        Wrap(n(:t1), n(:t2))
-        algo2 = SumProduct(g)
-        @fact algo2.schedule --> ForneyLab.convert(Schedule, [n(:t1).i[:out].partner], SumProductRule)
-    end
+    function MockNode(vars::Vector{Variable}; id=generateId(MockNode))
+        n_interfaces = length(vars)
+        self = new(id, Array(Interface, n_interfaces), Dict{Int,Interface}())
+        addNode!(currentGraph(), self)
 
-    context("Should generate a schedule that propagates messages to write buffers defined on interfaces") do
-        g = FactorGraph()
-        TerminalNode(id=:t1)
-        TerminalNode(id=:t2)
-        e = Edge(n(:t1), n(:t2))
-        algo = SumProduct(g)
-        @fact length(algo.schedule) --> 0
-        attachWriteBuffer(n(:t1).i[:out])
-        algo = SumProduct(g)
-        @fact algo.schedule --> ForneyLab.convert(Schedule, [n(:t1).i[:out]], SumProductRule)
-    end
-
-    context("Should generate a schedule that propagates messages to write buffers defined on edges") do
-        g = FactorGraph()
-        TerminalNode(id=:t1)
-        TerminalNode(id=:t2)
-        e = Edge(n(:t1), n(:t2))
-        algo = SumProduct(g)
-        @fact length(algo.schedule) --> 0
-        attachWriteBuffer(n(:t1).i[:out].edge)
-        algo = SumProduct(g)
-        @fact algo.schedule --> ForneyLab.convert(Schedule, [n(:t1).i[:out].partner, n(:t1).i[:out]], SumProductRule)
-    end
-end
-
-
-facts("SumProduct message passing tests") do
-    context("SumProduct execute()") do
-        context("Should correctly execute a schedule and return the result of the last step") do
-            initializeAdditionNode()
-
-            algo = SumProduct(n(:add_node).i[:out])
-            prepare!(algo)
-            msg = execute(algo)
-
-            @fact msg.payload --> Gaussian(m=0.0, V=2.0)
+        for idx = 1:n_interfaces
+            self.i[idx] = self.interfaces[idx] = associate!(Interface(self), vars[idx])
         end
+
+        return self
     end
 end
+
+@sumProductRule(:node_type     => MockNode,
+                :outbound_type => Message{PointMass},
+                :inbound_types => (Void, Message{PointMass}, Message{PointMass}),
+                :name          => SPMockOutPP)
+
+@testset "@SumProductRule" begin
+    @test SPMockOutPP <: SumProductRule{MockNode}
+end
+
+@testset "inferUpdateRule!" begin
+    FactorGraph()
+    nd = MockNode([Variable(), constant(0.0), constant(0.0)])
+    inferred_outbound_types = Dict(nd.i[2].partner => Message{PointMass}, nd.i[3].partner => Message{PointMass})
+
+    entry = ScheduleEntry(nd.i[1], SumProductRule{MockNode})
+    inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
+
+    @test entry.msg_update_rule == SPMockOutPP
+end
+
+@testset "sumProductSchedule" begin
+    FactorGraph()
+    x = Variable()
+    nd = MockNode([x, constant(0.0), constant(0.0)])
+
+    schedule = sumProductSchedule(x)
+
+    @test length(schedule) == 3
+    @test ScheduleEntry(nd.i[2].partner, SPClamp{Univariate}) in schedule
+    @test ScheduleEntry(nd.i[3].partner, SPClamp{Univariate}) in schedule
+    @test ScheduleEntry(nd.i[1], SPMockOutPP) in schedule
+end
+
+end # module

@@ -1,136 +1,129 @@
-import Base.show
-export SumProduct
+export
+SumProductRule,
+sumProductSchedule,
+@sumProductRule
 
-abstract AbstractSumProduct <: InferenceAlgorithm
+abstract SumProductRule{factor_type} <: MessageUpdateRule
 
 """
-Sum-product message passing algorithm.
-
-Usage:
-
-    SumProduct(graph::Graph)
-    SumProduct(outbound_interface::Interface)
-    SumProduct(partial_list::Vector{Interface})
-    SumProduct(edge::Edge)
-
-Optionally, keyword argument `message_types::Dict{Interface,Any}` can used to constain messages to a specific distribution type.
-To force the use of a specific approximation method, use a tuple: `(dist_type::DataType, approximation::Symbol)`. Examples:
-
-    message_types = Dict{Interface,DataType}(my_node.i[:out] => Gaussian)
-    message_types = Dict{Interface,DataType}(my_node.i[:out] => Approximation{Gaussian,:laplace})
+sumProductSchedule() generates a sum-product message passing schedule that computes the
+marginals for each of the argument variables.
 """
-type SumProduct <: AbstractSumProduct
-    graph::FactorGraph
-    schedule::Schedule
-end
+function sumProductSchedule(variables::Vector{Variable})
+    # Generate a feasible summary propagation schedule
+    schedule = summaryPropagationSchedule(variables)
 
-function show(io::IO, algo::SumProduct)
-    println("SumProduct inference algorithm")
-    println("    message passing schedule length: $(length(algo.schedule))")
-    println("Use show(algo.schedule) to view the message passing schedule.")
-end
-
-############################################
-# SumProduct algorithm constructors
-############################################
-
-function SumProduct(graph::FactorGraph=currentGraph();
-                    kwargs...)
-    return SumProduct(interfacesFacingWrapsOrBuffers(graph); graph=graph, kwargs...)
-end
-
-function SumProduct(outbound_interface::Interface;
-                    kwargs...)
-    return SumProduct(Interface[outbound_interface]; kwargs...)
-end
-
-function SumProduct(edge::Edge;
-                    message_types::Dict{Interface,DataType}=Dict{Interface,DataType}(),
-                    graph::FactorGraph=currentGraph())
-    # Generate schedule
-    dg = summaryDependencyGraph(graph)
-    schedule = convert(Schedule, children([edge.head, edge.tail], dg), SumProductRule)
-
-    # Infer message types
+    # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule
-        inferTypes!(entry, message_types)
+        entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
     end
 
-    return SumProduct(graph, schedule)
+    inferUpdateRules!(schedule)
+
+    return schedule
 end
 
-function SumProduct(outbound_interfaces::Vector{Interface};
-                    message_types::Dict{Interface,DataType}=Dict{Interface,DataType}(),
-                    graph::FactorGraph=currentGraph())
-    # Generate schedule
-    dg = summaryDependencyGraph(graph)
-    schedule = convert(Schedule, children(outbound_interfaces, dg), SumProductRule)
+sumProductSchedule(variable::Variable) = sumProductSchedule([variable])
 
-    # Infer message types
-    for entry in schedule
-        inferTypes!(entry, message_types)
-    end
-
-    return SumProduct(graph, schedule)
-end
-
-############################################
-# Type inference and preparation
-############################################
-
-function inferTypes!(   entry::ScheduleEntry{SumProductRule},
-                        inferred_outbound_types::Dict{Interface, DataType})
+function inferUpdateRule!{T<:SumProductRule}(   entry::ScheduleEntry,
+                                                rule_type::Type{T},
+                                                inferred_outbound_types::Dict{Interface, DataType})
     # Collect inbound types
-    entry.inbound_types = DataType[]
-    for (id, interface) in enumerate(entry.node.interfaces)
-        if id == entry.outbound_interface_id
-            push!(entry.inbound_types, Void)
-        else
-            push!(entry.inbound_types, Message{inferred_outbound_types[interface.partner]})
+    inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
+
+    # Find applicable rule(s)
+    applicable_rules = DataType[]
+    for rule in leaftypes(entry.msg_update_rule)
+        if isApplicable(rule, inbound_types)
+            push!(applicable_rules, rule)
         end
     end
 
-    # Infer outbound type
-    outbound_interface = entry.node.interfaces[entry.outbound_interface_id]
-    if outbound_interface in keys(inferred_outbound_types)
-        setOutboundType!(entry, inferred_outbound_types[outbound_interface])
+    # Select and set applicable rule
+    if isempty(applicable_rules)
+        error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
+    elseif length(applicable_rules) > 1
+        error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types): $(applicable_rules)")
+    else
+        entry.msg_update_rule = first(applicable_rules)
     end
-    inferOutboundType!(entry) # If entry.outbound_type is already set, this will validate that there is a suitable rule available
-    inferred_outbound_types[outbound_interface] = entry.outbound_type
 
     return entry
 end
 
-function prepare!(algo::SumProduct)
-    # Populate the graph with vague messages of the correct types
-    for entry in algo.schedule
-        ensureMessage!(entry.node.interfaces[entry.outbound_interface_id], entry.outbound_type)
-    end
-
-    # Compile the schedule (define entry.execute)
-    compile!(algo.schedule, algo)
-
-    return algo.graph.prepared_algorithm = algo
-end
-
-function compile!(entry::ScheduleEntry{SumProductRule}, ::InferenceAlgorithm)
-    # Generate entry.execute
-
-    inbound_rule_arguments = []
-    # Add inbound messages to inbound_rule_arguments
-    for (id, interface) in enumerate(entry.node.interfaces)
-        if id == entry.outbound_interface_id
-            push!(inbound_rule_arguments, nothing)
+function collectInboundTypes{T<:SumProductRule}(entry::ScheduleEntry,
+                                                ::Type{T},
+                                                inferred_outbound_types::Dict{Interface, DataType})
+    inbound_message_types = DataType[]
+    for node_interface in entry.interface.node.interfaces
+        if node_interface == entry.interface
+            push!(inbound_message_types, Void)
+        elseif (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
+            push!(inbound_message_types, Message{PointMass})
         else
-            push!(inbound_rule_arguments, interface.partner.message)
+            push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
         end
     end
 
-    return buildExecute!(entry, inbound_rule_arguments)
+    return inbound_message_types
 end
 
-function execute(algo::SumProduct)
-    (algo.graph.prepared_algorithm == algo) || prepare!(algo)
+"""
+@sumProductRule registers a sum-product update rule by defining the rule type
+and the corresponding methods for the outboundType and isApplicable functions.
+If no name (type) for the new rule is passed, a unique name (type) will be
+generated. Returns the rule type.
+"""
+macro sumProductRule(fields...)
+    # Init required fields in macro scope
+    node_type = :unknown
+    outbound_type = :unknown
+    inbound_types = :unknown
+    name = :auto # Triggers automatic naming unless overwritten
 
-    execute(algo.schedule)
+    # Loop over fields because order is unknown
+    for arg in fields
+        (arg.head == :(=>)) || error("Invalid call to @sumProductRule")
+
+        if arg.args[1].args[1] == :node_type
+            node_type = arg.args[2]
+        elseif arg.args[1].args[1] == :outbound_type
+            outbound_type = arg.args[2]
+            (outbound_type.head == :curly && outbound_type.args[1] == :Message) || error("Outbound type for SumProductRule should be a Message")
+        elseif arg.args[1].args[1] == :inbound_types
+            inbound_types = arg.args[2]
+            (inbound_types.head == :tuple) || error("Inbound types should be passed as Tuple")
+        elseif arg.args[1].args[1] == :name
+            name = arg.args[2]
+        else
+            error("Unrecognized field $(arg.args[1].args[1]) in call to @sumProductRule")
+        end
+    end
+
+    # Assign unique name if not set already
+    if name == :auto
+        # Added hash ensures that the rule name is unique
+        msg_types_hash = string(hash(vcat([outbound_type], inbound_types)))[1:6]
+        name = Symbol("SP$(node_type)$(msg_types_hash)")
+    end
+
+    # Build validators for isApplicable
+    input_type_validators = String[]
+    for (i, i_type) in enumerate(inbound_types.args)
+        if i_type != :Void
+            # Only validate inbounds required for message update
+            push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
+        end
+    end
+
+    expr = parse("""
+        begin
+            type $name <: SumProductRule{$node_type} end
+            ForneyLab.outboundType(::Type{$name}) = $outbound_type
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{DataType}) = $(join(input_type_validators, " && "))
+            $name
+        end
+    """)
+
+    return esc(expr)
 end
