@@ -1,4 +1,4 @@
-export LogNormal
+export LogNormal, momentMatching, logMomentMatching
 
 """
 Description:
@@ -54,6 +54,32 @@ unsafeCov(dist::ProbabilityDistribution{Univariate, LogNormal}) = unsafeVar(dist
 unsafeLogCov(dist::ProbabilityDistribution{Univariate, LogNormal}) = dist.params[:s]
 
 isProper(dist::ProbabilityDistribution{Univariate, LogNormal}) = (dist.params[:s] > 0.0)
+
+"""
+Gamma approximation to the log-normal distribution using Laplace's method
+"""
+laplace(::Type{Gamma}, dist::ProbabilityDistribution{Univariate, LogNormal}) = ProbabilityDistribution(Univariate, Gamma, a=1/dist.params[:s], b=1/dist.params[:s]*exp(-dist.params[:m]))
+
+@symmetrical function prod!(x::ProbabilityDistribution{Univariate, LogNormal},
+                            y::ProbabilityDistribution{Univariate, Gamma},
+                            z::ProbabilityDistribution{Univariate, Gamma}=ProbabilityDistribution(Univariate, Gamma, a=1.0, b=1.0))
+
+    x_approx = laplace(Gamma, x)
+    z.params[:a] = x_approx.params[:a] + y.params[:a] - 1.0
+    z.params[:b] = x_approx.params[:b] + y.params[:b]
+
+    return z
+end
+
+@symmetrical function prod!(x::ProbabilityDistribution{Univariate, LogNormal},
+                            y::ProbabilityDistribution{Univariate, PointMass},
+                            z::ProbabilityDistribution{Univariate, PointMass}=ProbabilityDistribution(Univariate, PointMass, m=0.0))
+
+    (y.params[:m] > 0.0) || error("PointMass location $(y.params[:m]) should be positive")
+    z.params[:m] = y.params[:m]
+
+    return z
+end
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, LogNormal})

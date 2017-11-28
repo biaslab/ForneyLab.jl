@@ -22,6 +22,17 @@ end
     @test unsafeLogCov(ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=2.0)) == 2.0
 end
 
+@testset "Gamma approximatons to LogNormal" begin
+    @test ForneyLab.laplace(Gamma, ProbabilityDistribution(Univariate, LogNormal, m=0.0, s=2.0)) == ProbabilityDistribution(Univariate, Gamma, a=0.5, b=0.5)
+end
+
+@testset "prod!" begin
+    @test ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=2.0) * ProbabilityDistribution(Univariate, PointMass, m=1.0) == ProbabilityDistribution(Univariate, PointMass, m=1.0)
+    @test_throws Exception ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=2.0) * ProbabilityDistribution(Univariate, PointMass, m=-1.0)
+    @test ProbabilityDistribution(Univariate, LogNormal, m=0.0, s=2.0) * ProbabilityDistribution(Univariate, Gamma, a=3.0, b=4.0) == ProbabilityDistribution(Univariate, Gamma, a=2.5, b=4.5)
+end
+
+
 #-------------
 # Update rules
 #-------------
