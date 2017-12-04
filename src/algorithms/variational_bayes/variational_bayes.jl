@@ -66,7 +66,7 @@ function collectInboundTypes{T<:VariationalRule}(entry::ScheduleEntry,
     entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
     for node_interface in entry.interface.node.interfaces
         if node_interface == entry.interface
-            push!(inbound_types, Void) # TODO: make exception for piecewise linear node
+            push!(inbound_types, Void)
         elseif recognitionFactorId(node_interface.edge) == entry_recognition_factor_id
             # Edge is internal, accept message
             push!(inbound_types, inferred_outbound_types[node_interface.partner])

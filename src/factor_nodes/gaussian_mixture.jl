@@ -3,9 +3,9 @@ export GaussianMixture
 """
 Description:
 
-    A Gaussian with mean-precision parameterization. For two components:
+    A Gaussian mixture with mean-precision parameterization:
 
-    f(out, m1, w1, m2, w2, z) = 𝒩(out|m1,w1)^z * 𝒩(out|m1,w1)^(1-z)
+    f(out, z, m1, w1, m2, w2, ...) = 𝒩(out|m1, w1)^z_1 * 𝒩(out|m2, w2)^z_2 * ...
 
 Interfaces:
 

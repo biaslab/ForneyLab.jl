@@ -12,7 +12,8 @@ differentialEntropy,
 averageEnergy,
 ==,
 vague,
-sample
+sample,
+dims
 
 abstract VariateType
 abstract Univariate <: VariateType

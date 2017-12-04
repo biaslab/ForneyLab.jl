@@ -27,7 +27,7 @@ function isApplicable(::Type{VBGaussianMixtureZCat}, input_types::Vector{DataTyp
     return true
 end
 
-function matchGMInputs(input_types::Vector{DataType})
+function matchPVInputs(input_types::Vector{DataType})
     void_positions = []
     p_positions = []
     for (i, input_type) in enumerate(input_types)
@@ -47,7 +47,7 @@ function isApplicable(::Type{VBGaussianMixtureM}, input_types::Vector{DataType})
     n_inputs = length(input_types)
     iseven(n_inputs) || return false
     
-    (void_positions, p_positions) = matchGMInputs(input_types)
+    (void_positions, p_positions) = matchPVInputs(input_types)
     n_voids = length(void_positions)
     n_ps = length(p_positions)
 
@@ -66,7 +66,7 @@ function isApplicable(::Type{VBGaussianMixtureW}, input_types::Vector{DataType})
     n_inputs = length(input_types)
     iseven(n_inputs) || return false
     
-    (void_positions, p_positions) = matchGMInputs(input_types)
+    (void_positions, p_positions) = matchPVInputs(input_types)
     n_voids = length(void_positions)
     n_ps = length(p_positions)
 
