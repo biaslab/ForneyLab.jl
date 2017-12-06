@@ -3,7 +3,7 @@ module BernoulliTest
 using Base.Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims
-import ForneyLab: SPBernoulliOutVP, VBBernoulliOut
+import ForneyLab: SPBernoulliOutVP, VBBernoulliOut, VBBernoulliIn1
 
 @testset "Bernoulli ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Univariate, Bernoulli, p=0.2) == ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>0.2))
@@ -52,6 +52,15 @@ end
     @test !isApplicable(VBBernoulliOut, [ProbabilityDistribution, Void])
 
     @test ruleVBBernoulliOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=0.2)) == Message(Univariate, Bernoulli, p=0.2)
+    @test ruleVBBernoulliOut(nothing, ProbabilityDistribution(Univariate, Beta, a=1.0, b=1.0)) == Message(Univariate, Bernoulli, p=0.5)
+end
+
+@testset "VBBernoulliIn1" begin
+    @test VBBernoulliIn1 <: VariationalRule{Bernoulli}
+    @test outboundType(VBBernoulliIn1) == Message{Beta}
+    @test isApplicable(VBBernoulliIn1, [ProbabilityDistribution, Void])
+
+    @test ruleVBBernoulliIn1(ProbabilityDistribution(Univariate, Bernoulli, p=0.2), nothing) == Message(Univariate, Beta, a=1.2, b=1.8)
 end
 
 @testset "averageEnergy and differentialEntropy" begin
