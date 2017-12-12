@@ -1,3 +1,23 @@
+@sumProductRule(:node_type     => GaussianMeanPrecision,
+                :outbound_type => Message{Gaussian},
+                :inbound_types => (Void, Message{PointMass}, Message{PointMass}),
+                :name          => SPGaussianMeanPrecisionOutVPP)
+
+@sumProductRule(:node_type     => GaussianMeanPrecision,
+                :outbound_type => Message{Gaussian},
+                :inbound_types => (Message{PointMass}, Void, Message{PointMass}),
+                :name          => SPGaussianMeanPrecisionMPVP)
+
+@sumProductRule(:node_type     => GaussianMeanPrecision,
+                :outbound_type => Message{Gaussian},
+                :inbound_types => (Void, Message{Gaussian}, Message{PointMass}),
+                :name          => SPGaussianMeanPrecisionOutVGP)
+
+@sumProductRule(:node_type     => GaussianMeanPrecision,
+                :outbound_type => Message{Gaussian},
+                :inbound_types => (Message{Gaussian}, Void, Message{PointMass}),
+                :name          => SPGaussianMeanPrecisionMGVP)
+
 @variationalRule(:node_type     => GaussianMeanPrecision,
                  :outbound_type => Message{Gaussian},
                  :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),

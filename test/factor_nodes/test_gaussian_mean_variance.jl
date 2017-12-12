@@ -16,6 +16,7 @@ import ForneyLab: SPGaussianMeanVarianceOutVPP, SPGaussianMeanVarianceMPVP, SPGa
     @test !isApplicable(SPGaussianMeanVarianceOutVPP, [Message{PointMass}, Void, Message{PointMass}]) 
 
     @test ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian, m=1.0, v=2.0)
+    @test ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Multivariate, PointMass, m=[1.0]), Message(MatrixVariate, PointMass, m=[2.0].')) == Message(Multivariate, Gaussian, m=[1.0], v=[2.0].')
 end
 
 @testset "SPGaussianMeanVarianceMPVP" begin
@@ -25,6 +26,7 @@ end
     @test isApplicable(SPGaussianMeanVarianceMPVP, [Message{PointMass}, Void, Message{PointMass}]) 
 
     @test ruleSPGaussianMeanVarianceMPVP(Message(Univariate, PointMass, m=1.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian, m=1.0, v=2.0)
+    @test ruleSPGaussianMeanVarianceMPVP(Message(Multivariate, PointMass, m=[1.0]), nothing, Message(MatrixVariate, PointMass, m=[2.0].')) == Message(Multivariate, Gaussian, m=[1.0], v=[2.0].')
 end
 
 @testset "SPGaussianMeanVarianceOutVGP" begin
@@ -34,6 +36,7 @@ end
     @test !isApplicable(SPGaussianMeanVarianceOutVGP, [Message{Gaussian}, Void, Message{PointMass}]) 
 
     @test ruleSPGaussianMeanVarianceOutVGP(nothing, Message(Univariate, Gaussian, m=1.0, v=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian, m=1.0, v=3.0)
+    @test ruleSPGaussianMeanVarianceOutVGP(nothing, Message(Multivariate, Gaussian, m=[1.0], v=[1.0].'), Message(MatrixVariate, PointMass, m=[2.0].')) == Message(Multivariate, Gaussian, m=[1.0], v=[3.0].')
 end
 
 @testset "SPGaussianMeanVarianceMGVP" begin
@@ -43,6 +46,7 @@ end
     @test isApplicable(SPGaussianMeanVarianceMGVP, [Message{Gaussian}, Void, Message{PointMass}]) 
 
     @test ruleSPGaussianMeanVarianceMGVP(Message(Univariate, Gaussian, m=1.0, v=1.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian, m=1.0, v=3.0)
+    @test ruleSPGaussianMeanVarianceMGVP(Message(Multivariate, Gaussian, m=[1.0], v=[1.0].'), nothing, Message(MatrixVariate, PointMass, m=[2.0].')) == Message(Multivariate, Gaussian, m=[1.0], v=[3.0].')
 end
 
 @testset "VBGaussianMeanVarianceM" begin
@@ -52,6 +56,7 @@ end
     @test !isApplicable(VBGaussianMeanVarianceM, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
 
     @test ruleVBGaussianMeanVarianceM(ProbabilityDistribution(Univariate, Gaussian, m=1.0, v=2.0), nothing, ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, Gaussian, m=1.0, v=3.0)
+    @test ruleVBGaussianMeanVarianceM(ProbabilityDistribution(Multivariate, Gaussian, m=[1.0], v=[2.0].'), nothing, ProbabilityDistribution(MatrixVariate, PointMass, m=[3.0].')) == Message(Multivariate, Gaussian, m=[1.0], v=[3.0].')
 end
 
 @testset "VBGaussianMeanVarianceOut" begin
@@ -61,6 +66,7 @@ end
     @test !isApplicable(VBGaussianMeanVarianceOut, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
 
     @test ruleVBGaussianMeanVarianceOut(nothing, ProbabilityDistribution(Univariate, Gaussian, m=1.0, v=2.0), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, Gaussian, m=1.0, v=3.0)
+    @test ruleVBGaussianMeanVarianceOut(nothing, ProbabilityDistribution(Multivariate, Gaussian, m=[1.0], v=[2.0].'), ProbabilityDistribution(MatrixVariate, PointMass, m=[3.0].')) == Message(Multivariate, Gaussian, m=[1.0], v=[3.0].')
 end
 
 @testset "averageEnergy and differentialEntropy" begin

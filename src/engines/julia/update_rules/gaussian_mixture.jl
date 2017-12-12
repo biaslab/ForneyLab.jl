@@ -93,7 +93,7 @@ function ruleVBGaussianMixtureZCat( dist_out::ProbabilityDistribution,
 end
 
 function ruleVBGaussianMixtureOut(  dist_out::Any,
-                                    dist_switch::ProbabilityDistribution{Univariate},
+                                    dist_switch::ProbabilityDistribution,
                                     dist_factors::Vararg{ProbabilityDistribution{Univariate}})
     # Univariate update
     dist_means = collect(dist_factors[1:2:end])
@@ -111,7 +111,7 @@ function ruleVBGaussianMixtureOut(  dist_out::Any,
 end
 
 function ruleVBGaussianMixtureOut(  dist_out::Any,
-                                    dist_switch::ProbabilityDistribution{Univariate},
+                                    dist_switch::ProbabilityDistribution,
                                     dist_factors::Vararg{Union{ProbabilityDistribution{Multivariate}, ProbabilityDistribution{MatrixVariate}}})
     # Multivariate update
     dist_means = collect(dist_factors[1:2:end])
