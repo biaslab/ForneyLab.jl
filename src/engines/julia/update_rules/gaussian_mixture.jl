@@ -61,12 +61,12 @@ end
 function rho(dist_means::Vector, dist_precs::Vector, dist_out::ProbabilityDistribution)
     n_factors = length(dist_means)
 
-    rho = zeros(n_factors)
+    U = zeros(n_factors)
     for k = 1:n_factors
-        rho[k] = clamp(exp(-averageEnergy(GaussianMeanPrecision, dist_out, dist_means[k], dist_precs[k])), tiny, huge)
+        U[k] = averageEnergy(GaussianMeanPrecision, dist_out, dist_means[k], dist_precs[k])
     end
 
-    return rho
+    return exp(-U + maximum(U))
 end
 
 function ruleVBGaussianMixtureZBer( dist_out::ProbabilityDistribution,
