@@ -33,6 +33,8 @@ end
 
 slug(::Type{Categorical}) = "Cat"
 
+format(dist::ProbabilityDistribution{Univariate, Categorical}) = "$(slug(Categorical))(p=$(format(dist.params[:p])))"
+
 ProbabilityDistribution(::Type{Univariate}, ::Type{Categorical}; p=[1/3, 1/3, 1/3]) = ProbabilityDistribution{Univariate, Categorical}(Dict(:p=>p))
 ProbabilityDistribution(::Type{Categorical}; p=[1/3, 1/3, 1/3]) = ProbabilityDistribution{Univariate, Categorical}(Dict(:p=>p))
 

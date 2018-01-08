@@ -35,6 +35,10 @@ end
 
 slug(::Type{GaussianMeanVariance}) = "𝒩"
 
+ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianMeanVariance}; m=0.0, v=1.0) = ProbabilityDistribution(Univariate, Gaussian, m=m, v=v)
+ProbabilityDistribution(::Type{GaussianMeanVariance}; m::Number=0.0, v::Number=1.0) = ProbabilityDistribution(Univariate, Gaussian, m=m, v=v)
+ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanVariance}; m=[0.0], v=[1.0].') = ProbabilityDistribution(Multivariate, Gaussian, m=m, v=v)
+
 # Average energy functional
 function averageEnergy(::Type{GaussianMeanVariance}, marg_out::ProbabilityDistribution{Univariate}, marg_mean::ProbabilityDistribution{Univariate}, marg_var::ProbabilityDistribution{Univariate})
     0.5*log(2*pi) +

@@ -35,6 +35,10 @@ end
 
 slug(::Type{GaussianMeanPrecision}) = "𝒩"
 
+ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianMeanPrecision}; m=0.0, w=1.0) = ProbabilityDistribution(Univariate, Gaussian, m=m, w=w)
+ProbabilityDistribution(::Type{GaussianMeanPrecision}; m::Number=0.0, w::Number=1.0) = ProbabilityDistribution(Univariate, Gaussian, m=m, w=w)
+ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanPrecision}; m=[0.0], w=[1.0].') = ProbabilityDistribution(Multivariate, Gaussian, m=m, w=w)
+
 # Average energy functional
 function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistribution{Univariate}, marg_mean::ProbabilityDistribution{Univariate}, marg_prec::ProbabilityDistribution{Univariate})
     0.5*log(2*pi) -

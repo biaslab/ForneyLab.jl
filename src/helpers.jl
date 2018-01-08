@@ -1,4 +1,4 @@
-export huge, tiny, cholinv, diageye, *, .*, ^
+export huge, tiny, cholinv, diageye, format, *, .*, ^
 
 import Base: *, .*, ^, ==, sqrt
 

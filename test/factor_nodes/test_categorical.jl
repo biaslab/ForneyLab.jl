@@ -3,7 +3,7 @@ module CategoricalTest
 using Base.Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims
-import ForneyLab: SPCategoricalOutVP, VBCategoricalOut
+import ForneyLab: SPCategoricalOutVP, VBCategoricalOut, VBCategoricalIn1
 
 @testset "Categorical ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Univariate, Categorical, p=[0.1, 0.8, 0.1]) == ProbabilityDistribution{Univariate, Categorical}(Dict(:p=>[0.1, 0.8, 0.1]))
@@ -53,6 +53,17 @@ end
     @test !isApplicable(VBCategoricalOut, [ProbabilityDistribution, Void])
 
     @test ruleVBCategoricalOut(nothing, ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1])) == Message(Univariate, Categorical, p=[0.10000000000000002, 0.8, 0.10000000000000002])
+    @test ruleVBCategoricalOut(nothing, ProbabilityDistribution(Multivariate, Dirichlet, a=[0.1, 0.8, 0.1])) == Message(Univariate, Categorical, p=[7.799215056092699e-5, 0.999844015698878, 7.799215056092699e-5])
+end
+
+@testset "VBCategoricalIn1" begin
+    @test VBCategoricalIn1 <: VariationalRule{Categorical}
+    @test outboundType(VBCategoricalIn1) == Message{Dirichlet}
+    @test isApplicable(VBCategoricalIn1, [ProbabilityDistribution, Void])
+
+    @test ruleVBCategoricalIn1(ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1]), nothing) == Message(Multivariate, Dirichlet, a=[1.1, 1.8, 1.1])
+    @test ruleVBCategoricalIn1(ProbabilityDistribution(Univariate, Categorical, p=[0.1, 0.8, 0.1]), nothing) == Message(Multivariate, Dirichlet, a=[1.1, 1.8, 1.1])
+    @test ruleVBCategoricalIn1(ProbabilityDistribution(Univariate, Bernoulli, p=0.1), nothing) == Message(Multivariate, Dirichlet, a=[1.1, 1.9])
 end
 
 @testset "averageEnergy and differentialEntropy" begin

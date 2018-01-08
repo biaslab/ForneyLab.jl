@@ -176,7 +176,9 @@ end
 """
 Collect and construct VMP update code for each inbound.
 """
-function collectInbounds{T<:VariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
+collectInbounds{T<:VariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) = collectVariationalNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
+
+function collectVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
     # Collect inbounds
     inbounds = String[]
     entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)

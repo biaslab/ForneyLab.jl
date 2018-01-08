@@ -3,12 +3,52 @@ module GaussianMeanPrecisionTest
 using Base.Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
-import ForneyLab: VBGaussianMeanPrecisionOut, VBGaussianMeanPrecisionM, VBGaussianMeanPrecisionW
+import ForneyLab: SPGaussianMeanPrecisionOutVPP, SPGaussianMeanPrecisionMPVP, SPGaussianMeanPrecisionOutVGP, SPGaussianMeanPrecisionMGVP, VBGaussianMeanPrecisionOut, VBGaussianMeanPrecisionM, VBGaussianMeanPrecisionW
 
 
 #-------------
 # Update rules
 #-------------
+
+@testset "SPGaussianMeanPrecisionOutVPP" begin
+    @test SPGaussianMeanPrecisionOutVPP <: SumProductRule{GaussianMeanPrecision}
+    @test outboundType(SPGaussianMeanPrecisionOutVPP) == Message{Gaussian}
+    @test isApplicable(SPGaussianMeanPrecisionOutVPP, [Void, Message{PointMass}, Message{PointMass}]) 
+    @test !isApplicable(SPGaussianMeanPrecisionOutVPP, [Message{PointMass}, Void, Message{PointMass}]) 
+
+    @test ruleSPGaussianMeanPrecisionOutVPP(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian, m=1.0, w=2.0)
+    @test ruleSPGaussianMeanPrecisionOutVPP(nothing, Message(Multivariate, PointMass, m=[1.0]), Message(MatrixVariate, PointMass, m=[2.0].')) == Message(Multivariate, Gaussian, m=[1.0], w=[2.0].')
+end
+
+@testset "SPGaussianMeanPrecisionMPVP" begin
+    @test SPGaussianMeanPrecisionMPVP <: SumProductRule{GaussianMeanPrecision}
+    @test outboundType(SPGaussianMeanPrecisionMPVP) == Message{Gaussian}
+    @test !isApplicable(SPGaussianMeanPrecisionMPVP, [Void, Message{PointMass}, Message{PointMass}]) 
+    @test isApplicable(SPGaussianMeanPrecisionMPVP, [Message{PointMass}, Void, Message{PointMass}]) 
+
+    @test ruleSPGaussianMeanPrecisionMPVP(Message(Univariate, PointMass, m=1.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian, m=1.0, w=2.0)
+    @test ruleSPGaussianMeanPrecisionMPVP(Message(Multivariate, PointMass, m=[1.0]), nothing, Message(MatrixVariate, PointMass, m=[2.0].')) == Message(Multivariate, Gaussian, m=[1.0], w=[2.0].')
+end
+
+@testset "SPGaussianMeanPrecisionOutVGP" begin
+    @test SPGaussianMeanPrecisionOutVGP <: SumProductRule{GaussianMeanPrecision}
+    @test outboundType(SPGaussianMeanPrecisionOutVGP) == Message{Gaussian}
+    @test isApplicable(SPGaussianMeanPrecisionOutVGP, [Void, Message{Gaussian}, Message{PointMass}]) 
+    @test !isApplicable(SPGaussianMeanPrecisionOutVGP, [Message{Gaussian}, Void, Message{PointMass}]) 
+
+    @test ruleSPGaussianMeanPrecisionOutVGP(nothing, Message(Univariate, Gaussian, m=1.0, v=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian, m=1.0, v=1.5)
+    @test ruleSPGaussianMeanPrecisionOutVGP(nothing, Message(Multivariate, Gaussian, m=[1.0], v=[1.0].'), Message(MatrixVariate, PointMass, m=[2.0].')) == Message(Multivariate, Gaussian, m=[1.0], v=[1.5].')
+end
+
+@testset "SPGaussianMeanPrecisionMGVP" begin
+    @test SPGaussianMeanPrecisionMGVP <: SumProductRule{GaussianMeanPrecision}
+    @test outboundType(SPGaussianMeanPrecisionMGVP) == Message{Gaussian}
+    @test !isApplicable(SPGaussianMeanPrecisionMGVP, [Void, Message{Gaussian}, Message{PointMass}]) 
+    @test isApplicable(SPGaussianMeanPrecisionMGVP, [Message{Gaussian}, Void, Message{PointMass}]) 
+
+    @test ruleSPGaussianMeanPrecisionMGVP(Message(Univariate, Gaussian, m=1.0, v=1.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian, m=1.0, v=1.5)
+    @test ruleSPGaussianMeanPrecisionMGVP(Message(Multivariate, Gaussian, m=[1.0], v=[1.0].'), nothing, Message(MatrixVariate, PointMass, m=[2.0].')) == Message(Multivariate, Gaussian, m=[1.0], v=[1.5].')
+end
 
 @testset "VBGaussianMeanPrecisionM" begin
     @test VBGaussianMeanPrecisionM <: VariationalRule{GaussianMeanPrecision}
