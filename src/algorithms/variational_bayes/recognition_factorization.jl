@@ -22,6 +22,11 @@ type RecognitionFactor
         self = new(id, union(variables, recognition_variables), internal_edges)
         rfz.recognition_factors[id] = self # Register new factor with recognition factorization
 
+        # Register internal edges with the recognition factorization for fast lookup during scheduling
+        for edge in self.internal_edges
+            rfz.edge_to_recognition_factor[edge] = self
+        end
+
         return self 
     end
 end
@@ -48,7 +53,8 @@ function extend(edge_set::Set{Edge})
             if isa(node, DeltaFactor)
                 for interface in node.interfaces
                     if !is(interface.edge, current_edge) && !(interface.edge in cluster) # Is next level edge not seen yet?
-                        push!(edges, interface.edge) # Add to buffer to visit sometime in the future
+                        # If the node is a DeltaFactor, add unseen edges to the stack (to visit sometime in the future)
+                        push!(edges, interface.edge)
                     end
                 end
             end
@@ -61,6 +67,9 @@ end
 type RecognitionFactorization
     graph::FactorGraph
     recognition_factors::Dict{Symbol, RecognitionFactor}
+
+    # Bookkeeping for faster lookup during scheduling
+    edge_to_recognition_factor::Dict{Edge, RecognitionFactor}
 end
 
 """
@@ -77,7 +86,34 @@ end
 
 setCurrentRecognitionFactorization(rf::RecognitionFactorization) = global current_recognition_factorization = rf
 
-RecognitionFactorization() = setCurrentRecognitionFactorization(RecognitionFactorization(currentGraph(), Dict{Symbol, RecognitionFactor}()))
+RecognitionFactorization() = setCurrentRecognitionFactorization(RecognitionFactorization(currentGraph(), Dict{Symbol, RecognitionFactor}(), Dict{Edge, RecognitionFactor}()))
+
+"""
+Return the id of the RecognitionFactor that `edge` belongs to
+"""
+function recognitionFactorId(edge::Edge)
+    dict = current_recognition_factorization.edge_to_recognition_factor
+    if haskey(dict, edge)
+        rf_id = dict[edge].id
+    else # No recognition factor is found, return a unique id
+        rf_id = Symbol(name(edge))
+    end
+
+    return rf_id
+end
+
+"""
+Return the ids of the recognition factors to which edges connected to `node` belong
+"""
+function localRecognitionFactorIds(node::FactorNode)
+    rf_ids = Vector{Symbol}()
+    for interface in node.interfaces
+        rf_id = recognitionFactorId(interface.edge)
+        push!(rf_ids, rf_id)
+    end
+
+    return rf_ids
+end
 
 function nodesConnectedToExternalEdges(recognition_factor::RecognitionFactor)
     internal_edges = recognition_factor.internal_edges

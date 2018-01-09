@@ -3,7 +3,7 @@ module LogNormalTest
 using Base.Test
 using ForneyLab
 import ForneyLab: prod!, unsafeMean, unsafeLogMean, unsafeVar, unsafeLogVar, unsafeCov, unsafeLogCov, outboundType, isApplicable, dims
-import ForneyLab: VBLogNormalOut
+import ForneyLab: SPLogNormalOutVPP, VBLogNormalOut
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=1.0)) == 1
@@ -37,8 +37,16 @@ end
 # Update rules
 #-------------
 
+@testset "SPLogNormalOutVPP" begin
+    @test SPLogNormalOutVPP <: SumProductRule{LogNormal}
+    @test outboundType(SPLogNormalOutVPP) == Message{LogNormal}
+    @test isApplicable(SPLogNormalOutVPP, [Void, Message{PointMass}, Message{PointMass}]) 
+
+    @test ruleSPLogNormalOutVPP(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, LogNormal, m=1.0, s=2.0)
+end
+
 @testset "VBLogNormalOut" begin
-    @test VBLogNormalOut <: VariationalRule{LogNormal}
+    @test VBLogNormalOut <: NaiveVariationalRule{LogNormal}
     @test outboundType(VBLogNormalOut) == Message{LogNormal}
     @test isApplicable(VBLogNormalOut, [Void, ProbabilityDistribution, ProbabilityDistribution]) 
     @test !isApplicable(VBLogNormalOut, [ProbabilityDistribution, ProbabilityDistribution, Void]) 

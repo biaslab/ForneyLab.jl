@@ -50,7 +50,7 @@ end
 end
 
 @testset "VBGaussianMeanVarianceM" begin
-    @test VBGaussianMeanVarianceM <: VariationalRule{GaussianMeanVariance}
+    @test VBGaussianMeanVarianceM <: NaiveVariationalRule{GaussianMeanVariance}
     @test outboundType(VBGaussianMeanVarianceM) == Message{Gaussian}
     @test isApplicable(VBGaussianMeanVarianceM, [ProbabilityDistribution, Void, ProbabilityDistribution])
     @test !isApplicable(VBGaussianMeanVarianceM, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
@@ -60,7 +60,7 @@ end
 end
 
 @testset "VBGaussianMeanVarianceOut" begin
-    @test VBGaussianMeanVarianceOut <: VariationalRule{GaussianMeanVariance}
+    @test VBGaussianMeanVarianceOut <: NaiveVariationalRule{GaussianMeanVariance}
     @test outboundType(VBGaussianMeanVarianceOut) == Message{Gaussian}
     @test isApplicable(VBGaussianMeanVarianceOut, [Void, ProbabilityDistribution, ProbabilityDistribution])
     @test !isApplicable(VBGaussianMeanVarianceOut, [ProbabilityDistribution, ProbabilityDistribution, Void]) 

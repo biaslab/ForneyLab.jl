@@ -50,7 +50,7 @@ end
 end
 
 @testset "VBDirichletOut" begin
-    @test VBDirichletOut <: VariationalRule{Dirichlet}
+    @test VBDirichletOut <: NaiveVariationalRule{Dirichlet}
     @test outboundType(VBDirichletOut) == Message{Dirichlet}
     @test isApplicable(VBDirichletOut, [Void, ProbabilityDistribution])
 

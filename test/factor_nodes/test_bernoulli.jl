@@ -46,7 +46,7 @@ end
 end
 
 @testset "VBBernoulliOut" begin
-    @test VBBernoulliOut <: VariationalRule{Bernoulli}
+    @test VBBernoulliOut <: NaiveVariationalRule{Bernoulli}
     @test outboundType(VBBernoulliOut) == Message{Bernoulli}
     @test isApplicable(VBBernoulliOut, [Void, ProbabilityDistribution])
     @test !isApplicable(VBBernoulliOut, [ProbabilityDistribution, Void])
@@ -56,7 +56,7 @@ end
 end
 
 @testset "VBBernoulliIn1" begin
-    @test VBBernoulliIn1 <: VariationalRule{Bernoulli}
+    @test VBBernoulliIn1 <: NaiveVariationalRule{Bernoulli}
     @test outboundType(VBBernoulliIn1) == Message{Beta}
     @test isApplicable(VBBernoulliIn1, [ProbabilityDistribution, Void])
 

@@ -51,7 +51,7 @@ end
 end
 
 @testset "VBGaussianMeanPrecisionM" begin
-    @test VBGaussianMeanPrecisionM <: VariationalRule{GaussianMeanPrecision}
+    @test VBGaussianMeanPrecisionM <: NaiveVariationalRule{GaussianMeanPrecision}
     @test outboundType(VBGaussianMeanPrecisionM) == Message{Gaussian}
     @test isApplicable(VBGaussianMeanPrecisionM, [ProbabilityDistribution, Void, ProbabilityDistribution]) 
     @test !isApplicable(VBGaussianMeanPrecisionM, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
@@ -61,7 +61,7 @@ end
 end
 
 @testset "VBGaussianMeanPrecisionW" begin
-    @test VBGaussianMeanPrecisionW <: VariationalRule{GaussianMeanPrecision}
+    @test VBGaussianMeanPrecisionW <: NaiveVariationalRule{GaussianMeanPrecision}
     @test outboundType(VBGaussianMeanPrecisionW) == Message{Union{Gamma, Wishart}}
     @test isApplicable(VBGaussianMeanPrecisionW, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
 
@@ -70,7 +70,7 @@ end
 end
 
 @testset "VBGaussianMeanPrecisionOut" begin
-    @test VBGaussianMeanPrecisionOut <: VariationalRule{GaussianMeanPrecision}
+    @test VBGaussianMeanPrecisionOut <: NaiveVariationalRule{GaussianMeanPrecision}
     @test outboundType(VBGaussianMeanPrecisionOut) == Message{Gaussian}
     @test isApplicable(VBGaussianMeanPrecisionOut, [Void, ProbabilityDistribution, ProbabilityDistribution]) 
 

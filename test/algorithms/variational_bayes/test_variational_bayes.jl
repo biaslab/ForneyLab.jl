@@ -24,20 +24,20 @@ type MockNode <: SoftFactor
     end
 end
 
-@variationalRule(   :node_type     => MockNode,
-                    :outbound_type => Message{PointMass},
-                    :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),
-                    :name          => VBMockOut)
+@naiveVariationalRule(:node_type     => MockNode,
+                      :outbound_type => Message{PointMass},
+                      :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),
+                      :name          => VBMockOut)
 
-@testset "@variationalRule" begin
-    @test VBMockOut <: VariationalRule{MockNode}
+@testset "@naiveVariationalRule" begin
+    @test VBMockOut <: NaiveVariationalRule{MockNode}
 end
 
 @testset "inferUpdateRule!" begin
     FactorGraph()
     nd = MockNode([Variable(), constant(0.0), constant(0.0)])
 
-    entry = ScheduleEntry(nd.i[1], VariationalRule{MockNode})
+    entry = ScheduleEntry(nd.i[1], NaiveVariationalRule{MockNode})
     inferUpdateRule!(entry, entry.msg_update_rule, Dict{Interface, DataType}())
 
     @test entry.msg_update_rule == VBMockOut

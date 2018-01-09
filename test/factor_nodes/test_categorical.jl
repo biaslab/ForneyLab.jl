@@ -47,7 +47,7 @@ end
 end
 
 @testset "VBCategoricalOut" begin
-    @test VBCategoricalOut <: VariationalRule{Categorical}
+    @test VBCategoricalOut <: NaiveVariationalRule{Categorical}
     @test outboundType(VBCategoricalOut) == Message{Categorical}
     @test isApplicable(VBCategoricalOut, [Void, ProbabilityDistribution])
     @test !isApplicable(VBCategoricalOut, [ProbabilityDistribution, Void])
@@ -57,7 +57,7 @@ end
 end
 
 @testset "VBCategoricalIn1" begin
-    @test VBCategoricalIn1 <: VariationalRule{Categorical}
+    @test VBCategoricalIn1 <: NaiveVariationalRule{Categorical}
     @test outboundType(VBCategoricalIn1) == Message{Dirichlet}
     @test isApplicable(VBCategoricalIn1, [ProbabilityDistribution, Void])
 

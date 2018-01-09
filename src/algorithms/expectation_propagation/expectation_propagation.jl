@@ -31,8 +31,7 @@ end
 
 """
 variationalExpectationPropagationSchedule() generates an expectation propagation message passing schedule
-that is limited to the `recognition_factor`. Updates on EP sites are computed with an `ExpectationPropagationRule`,
-and updates for external nodes are computed with a `VariationalRule`.
+that is limited to the `recognition_factor`. Updates on EP sites are computed with an `ExpectationPropagationRule`.
 """
 function variationalExpectationPropagationSchedule(recognition_factor::RecognitionFactor)
     internal_edges = recognition_factor.internal_edges
@@ -48,7 +47,12 @@ function variationalExpectationPropagationSchedule(recognition_factor::Recogniti
         if entry.interface in ep_sites
             entry.msg_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
         elseif entry.interface.node in nodes_connected_to_external_edges
-            entry.msg_update_rule = VariationalRule{typeof(entry.interface.node)}
+            local_recognition_factor_ids = localRecognitionFactorIds(entry.interface.node)
+            if unique(local_recognition_factor_ids) == local_recognition_factor_ids # Local recognition factorization is naive
+                entry.msg_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
+            else
+                entry.msg_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}
+            end
         else
             entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
         end

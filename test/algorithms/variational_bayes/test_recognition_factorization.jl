@@ -6,6 +6,7 @@ using ForneyLab
 @testset "RecognitionFactorization" begin
     rf = RecognitionFactorization()
     @test rf.recognition_factors == Dict{Symbol, RecognitionFactor}()
+    @test rf.edge_to_recognition_factor == Dict{Edge, RecognitionFactor}()
     @test is(currentRecognitionFactorization(), rf)
 end
 
@@ -26,6 +27,9 @@ end
     @test q_m.variables == Set([m])
     @test q_m.internal_edges == edges(m)
     @test is(rf.recognition_factors[:recognitionfactor_1], q_m)
+    for edge in edges(m)
+        @test rf.edge_to_recognition_factor[edge] == q_m
+    end
 
     q_w = RecognitionFactor(w)
     @test q_w.id == :recognitionfactor_2
@@ -39,6 +43,9 @@ end
     @test q_m_w.variables == Set([m, w])
     @test q_m_w.internal_edges == edges(Set([m, w]))
     @test is(rf.recognition_factors[:recognitionfactor_3], q_m_w)
+    for edge in edges(Set([m, w]))
+        @test rf.edge_to_recognition_factor[edge] == q_m_w
+    end
 
     q_y = RecognitionFactor(y)
     @test q_y.id == :recognitionfactor_4
