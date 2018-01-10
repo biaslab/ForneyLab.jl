@@ -97,7 +97,7 @@ macro sumProductRule(fields...)
         elseif arg.args[2].args[1] == :name
             name = arg.args[3]
         else
-            error("Unrecognized field $(arg.args[1].args[1]) in call to @sumProductRule")
+            error("Unrecognized field $(arg.args[2].args[1]) in call to @sumProductRule")
         end
     end
     
