@@ -5,7 +5,7 @@ import Base: *, .*, ^, ==, sqrt
 """ensureMatrix: cast input to a Matrix if necessary"""
 ensureMatrix{T<:Number}(arr::AbstractMatrix{T}) = arr
 ensureMatrix{T<:Number}(arr::Vector{T}) = Diagonal(arr)
-ensureMatrix(n::Number) = fill!(Array(typeof(n),1,1), n)
+ensureMatrix(n::Number) = fill!(Array{typeof(n)}(1,1), n)
 ensureMatrix(n::Void) = nothing
 
 # Constants to define smallest/largest supported numbers.
@@ -24,7 +24,7 @@ Base.broadcast(::typeof(*), D1::Matrix, D2::Diagonal) = Diagonal(diag(D1).*D2.di
 Base.broadcast(::typeof(*), D1::Diagonal, D2::Matrix) = D2.*D1
 
 ^(D::Diagonal, p::Float64) = Diagonal(D.diag.^p)
-sqrt(D::Diagonal) = Diagonal(sqrt(D.diag))
+sqrt(D::Diagonal) = Diagonal(sqrt.(D.diag))
 
 # Symbol concatenation
 *(sym::Symbol, num::Number) = Symbol(string(sym, num))
@@ -85,10 +85,10 @@ function format(v::Vector{Any})
 end
 
 """isApproxEqual: check approximate equality"""
-isApproxEqual(arg1, arg2) = maximum(abs(arg1-arg2)) < tiny
+isApproxEqual(arg1, arg2) = maximum(abs.(arg1-arg2)) < tiny
 
 """isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from."""
-isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round(Matrix(arr), round(Int, log10(huge)))) && isposdef(Matrix(arr), :L)
+isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round.(Matrix(arr), round(Int, log10(huge)))) && isposdef(Matrix(arr), :L)
 
 function viewFile(filename::AbstractString)
     # Open a file with the application associated with the file type
@@ -147,13 +147,14 @@ end
 `leaftypes(datatype)` returns all subtypes of `datatype` that are leafs in the type tree.
 """
 function leaftypes(datatype::DataType)
-    leafs = DataType[]
-    stack = [datatype]
+    leafs = []
+    stack = Union{UnionAll, DataType}[datatype]
     while !isempty(stack)
         for T in subtypes(pop!(stack))
             if isleaftype(T)
                 push!(leafs, T)
             else
+                println(T)
                 push!(stack, T)
             end
         end
