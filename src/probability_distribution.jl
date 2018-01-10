@@ -15,10 +15,10 @@ vague,
 sample,
 dims
 
-abstract VariateType
-abstract Univariate <: VariateType
-abstract Multivariate <: VariateType
-abstract MatrixVariate <: VariateType
+abstract type VariateType end
+abstract type Univariate <: VariateType end
+abstract type Multivariate <: VariateType end
+abstract type MatrixVariate <: VariateType end
 
 """Encodes a probability distribution as a FactorNode of type `family` with fixed interfaces"""
 struct ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
@@ -41,7 +41,7 @@ cov(dist::ProbabilityDistribution) = isProper(dist) ? unsafeCov(dist) : error("c
 PointMass is an abstract type used to describe point mass distributions.
 It never occurs in a FactorGraph, but it is used as a probability distribution type.
 """
-abstract PointMass <: DeltaFactor
+abstract type PointMass <: DeltaFactor end
 
 slug(::Type{PointMass}) = "δ"
 

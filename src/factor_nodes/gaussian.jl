@@ -1,6 +1,6 @@
 export Gaussian
 
-abstract Gaussian <: SoftFactor
+abstract type Gaussian <: SoftFactor end
 
 slug(::Type{Gaussian}) = "𝒩"
 
