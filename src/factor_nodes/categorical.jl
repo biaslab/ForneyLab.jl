@@ -16,7 +16,7 @@ Interfaces:
 Construction:
     Categorical(id=:some_id)
 """
-type Categorical <: SoftFactor
+mutable struct Categorical <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

@@ -6,7 +6,7 @@ import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!
 import ForneyLab: EPSigmoidRealGP, SPGaussianMeanVarianceOutVPP, SPClamp, VBGaussianMeanPrecisionOut, SPSigmoidBinVG
 
 # Integration helper
-type MockNode <: SoftFactor
+mutable struct MockNode <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Int,Interface}

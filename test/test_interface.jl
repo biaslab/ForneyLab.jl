@@ -4,7 +4,7 @@ using Base.Test
 import ForneyLab: Interface, FactorNode
 
 # Integration helper
-type MockNode <: FactorNode end
+mutable struct MockNode <: FactorNode end
 
 @testset "Interface" begin
     # Interface should construct

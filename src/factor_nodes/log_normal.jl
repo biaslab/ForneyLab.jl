@@ -17,7 +17,7 @@ Construction:
 
     LogNormal(out, m, s, id=:some_id)
 """
-type LogNormal <: SoftFactor
+mutable struct LogNormal <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

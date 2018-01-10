@@ -3,7 +3,7 @@ export Edge
 """
 An Edge joins two interfaces (half-edges) `a` and `b`.
 """
-type Edge <: AbstractEdge
+mutable struct Edge <: AbstractEdge
     variable::AbstractVariable
     a::Union{Interface, Void}
     b::Union{Interface, Void}

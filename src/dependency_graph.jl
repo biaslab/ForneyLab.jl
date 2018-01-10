@@ -14,7 +14,7 @@
 # Linked list datastructure
 ###############################
 
-type LinkedListElement{T}
+mutable struct LinkedListElement{T}
     payload::T
     next::LinkedListElement{T}
 
@@ -23,7 +23,7 @@ end
 
 LinkedListElement{T}(payload::T) = LinkedListElement{T}(payload)
 
-type LinkedList{T}
+mutable struct LinkedList{T}
     first::LinkedListElement{T}
     last::LinkedListElement{T}
 
@@ -67,7 +67,7 @@ A `DependencyGraph` is a directed graph in which an edge `v -> w`
 represents a dependency of vertex `v` on vertex `w`.
 Dependency graphs are used for example by message scheduling algorithms.
 """
-type DependencyGraph{VT}
+mutable struct DependencyGraph{VT}
     vertices::Vector{VT}
     neighbors::Vector{LinkedList}
 

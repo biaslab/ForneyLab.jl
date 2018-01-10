@@ -16,7 +16,7 @@ Construction:
     Clamp(out, value, id=:some_id)
     Clamp(value, id=:some_id)
 """
-type Clamp{T<:VariateType} <: DeltaFactor
+mutable struct Clamp{T<:VariateType} <: DeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

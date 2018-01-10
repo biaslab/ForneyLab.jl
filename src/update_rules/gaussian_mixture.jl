@@ -1,4 +1,4 @@
-type VBGaussianMixtureZBer <: VariationalRule{GaussianMixture} end
+mutable struct VBGaussianMixtureZBer <: VariationalRule{GaussianMixture} end
 outboundType(::Type{VBGaussianMixtureZBer}) = Message{Bernoulli}
 function isApplicable(::Type{VBGaussianMixtureZBer}, input_types::Vector{DataType})
     (length(input_types) == 6) || return false
@@ -12,7 +12,7 @@ function isApplicable(::Type{VBGaussianMixtureZBer}, input_types::Vector{DataTyp
     return true
 end
 
-type VBGaussianMixtureZCat <: VariationalRule{GaussianMixture} end
+mutable struct VBGaussianMixtureZCat <: VariationalRule{GaussianMixture} end
 outboundType(::Type{VBGaussianMixtureZCat}) = Message{Categorical}
 function isApplicable(::Type{VBGaussianMixtureZCat}, input_types::Vector{DataType})
     (length(input_types) > 6) || return false
@@ -41,7 +41,7 @@ function matchPVInputs(input_types::Vector{DataType})
     return (void_positions, p_positions)
 end
 
-type VBGaussianMixtureM <: VariationalRule{GaussianMixture} end
+mutable struct VBGaussianMixtureM <: VariationalRule{GaussianMixture} end
 outboundType(::Type{VBGaussianMixtureM}) = Message{Gaussian}
 function isApplicable(::Type{VBGaussianMixtureM}, input_types::Vector{DataType})
     n_inputs = length(input_types)
@@ -60,7 +60,7 @@ function isApplicable(::Type{VBGaussianMixtureM}, input_types::Vector{DataType})
     return true
 end
 
-type VBGaussianMixtureW <: VariationalRule{GaussianMixture} end
+mutable struct VBGaussianMixtureW <: VariationalRule{GaussianMixture} end
 outboundType(::Type{VBGaussianMixtureW}) = Message{Union{Gamma, Wishart}}
 function isApplicable(::Type{VBGaussianMixtureW}, input_types::Vector{DataType})
     n_inputs = length(input_types)
@@ -79,7 +79,7 @@ function isApplicable(::Type{VBGaussianMixtureW}, input_types::Vector{DataType})
     return true
 end
 
-type VBGaussianMixtureOut <: VariationalRule{GaussianMixture} end
+mutable struct VBGaussianMixtureOut <: VariationalRule{GaussianMixture} end
 outboundType(::Type{VBGaussianMixtureOut}) = Message{Gaussian}
 function isApplicable(::Type{VBGaussianMixtureOut}, input_types::Vector{DataType})
     iseven(length(input_types)) || return false

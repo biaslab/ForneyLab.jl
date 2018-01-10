@@ -10,7 +10,7 @@ Terminal
 """
 A factor graph consisting of factor nodes and edges.
 """
-type FactorGraph
+mutable struct FactorGraph
     nodes::Dict{Symbol, FactorNode}
     edges::Vector{Edge}
     variables::Dict{Symbol, Variable}
@@ -107,7 +107,7 @@ Construction:
 
     Terminal(id=:some_id)
 """
-type Terminal <: FactorNode
+mutable struct Terminal <: FactorNode
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

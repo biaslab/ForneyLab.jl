@@ -5,7 +5,7 @@ import ForneyLab: FactorGraph, FactorNode, Interface, Edge, Variable, generateId
 generateId, addNode!, hasNode, addVariable!, hasVariable, Clamp
 
 # Integration helper
-type MockNode <: FactorNode
+mutable struct MockNode <: FactorNode
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

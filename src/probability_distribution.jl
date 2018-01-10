@@ -21,7 +21,7 @@ abstract Multivariate <: VariateType
 abstract MatrixVariate <: VariateType
 
 """Encodes a probability distribution as a FactorNode of type `family` with fixed interfaces"""
-immutable ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
+struct ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
     params::Dict
 end
 

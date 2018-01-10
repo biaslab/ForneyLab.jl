@@ -4,7 +4,7 @@ using Base.Test
 import ForneyLab: Interface, Edge, Variable, Interface, FactorNode, FactorGraph, currentGraph, addNode!, disconnect!, generateId
 
 # Integration helper
-type MockNode <: FactorNode
+mutable struct MockNode <: FactorNode
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

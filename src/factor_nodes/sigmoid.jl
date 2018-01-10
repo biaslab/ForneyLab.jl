@@ -13,7 +13,7 @@ Interfaces:
 Construction:
     Sigmoid(id=:some_id)
 """
-type Sigmoid <: SoftFactor
+mutable struct Sigmoid <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

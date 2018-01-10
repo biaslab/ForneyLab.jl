@@ -6,7 +6,7 @@ import ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundTy
 import ForneyLab: SPClamp
 
 # Integration helper
-type MockNode <: FactorNode
+mutable struct MockNode <: FactorNode
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Int,Interface}

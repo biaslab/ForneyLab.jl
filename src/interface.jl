@@ -5,7 +5,7 @@ export handle
 An Interface belongs to a FactorNode and represents a half-edge.
 An Interface has at most one partner interface, with wich it forms an edge.
 """
-type Interface
+mutable struct Interface
     node::FactorNode
     edge::Union{AbstractEdge, Void}
     partner::Union{Interface, Void}

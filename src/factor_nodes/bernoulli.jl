@@ -16,7 +16,7 @@ Interfaces:
 Construction:
     Bernoulli(id=:some_id)
 """
-type Bernoulli <: SoftFactor
+mutable struct Bernoulli <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

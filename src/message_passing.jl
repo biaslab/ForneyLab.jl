@@ -7,7 +7,7 @@ Schedule
 import Base: ==
 
 """Encodes a message, which is a probability distribution with a scaling factor"""
-immutable Message{family<:FactorNode, var_type<:VariateType} # Note that parameter order is switched w.r.t. ProbabilityDistribution, for ease of overloading
+struct Message{family<:FactorNode, var_type<:VariateType} # Note that parameter order is switched w.r.t. ProbabilityDistribution, for ease of overloading
     dist::ProbabilityDistribution{var_type, family}
     scaling_factor::Any
 
@@ -66,7 +66,7 @@ A `ScheduleEntry` defines a message computation.
 The `msg_update_rule <: MessageUpdateRule` defines the rule that is used
 to calculate the message coming out of `interface`.
 """
-type ScheduleEntry
+mutable struct ScheduleEntry
     interface::Interface
     msg_update_rule::DataType
 end

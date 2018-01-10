@@ -17,7 +17,7 @@ Construction:
 
     Wishart(out, v, nu, id=:some_id)
 """
-type Wishart <: SoftFactor
+mutable struct Wishart <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

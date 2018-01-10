@@ -20,7 +20,7 @@ Construction:
 
     Multiplication(out, in1, in2, id=:some_id)
 """
-type Multiplication <: DeltaFactor
+mutable struct Multiplication <: DeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

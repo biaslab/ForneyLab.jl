@@ -16,7 +16,7 @@ Interfaces:
 Construction:
     Dirichlet(id=:some_id)
 """
-type Dirichlet <: SoftFactor
+mutable struct Dirichlet <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

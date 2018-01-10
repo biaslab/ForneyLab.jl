@@ -21,7 +21,7 @@ Construction:
 
     GaussianMixture(out, z, m1, m2, w1, w2, ..., id=:some_id)
 """
-type GaussianMixture <: SoftFactor
+mutable struct GaussianMixture <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

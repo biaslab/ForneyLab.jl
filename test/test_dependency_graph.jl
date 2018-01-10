@@ -3,7 +3,7 @@ module DependencyGraphTest
 using Base.Test
 import ForneyLab: LinkedList, DependencyGraph, addVertex!, addEdge!, children, neighbors
 
-type MockVertex
+mutable struct MockVertex
     id::Symbol
 end
 

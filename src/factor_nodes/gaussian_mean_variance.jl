@@ -17,7 +17,7 @@ Construction:
 
     GaussianMeanVariance(out, m, v, id=:some_id)
 """
-type GaussianMeanVariance <: Gaussian
+mutable struct GaussianMeanVariance <: Gaussian
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

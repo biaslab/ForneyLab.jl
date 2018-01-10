@@ -20,7 +20,7 @@ Construction:
 
     Addition(out, in1, in2, id=:some_id)
 """
-type Addition <: DeltaFactor
+mutable struct Addition <: DeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

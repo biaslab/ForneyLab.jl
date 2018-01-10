@@ -3,7 +3,7 @@ export Variable
 """
 A Variable encompasses one or more edges in a FactorGraph.
 """
-type Variable <: AbstractVariable
+mutable struct Variable <: AbstractVariable
     id::Symbol
     edges::Vector{Edge}
 

@@ -19,7 +19,7 @@ Construction:
 
     Exponential(out, in1, id=:some_id)
 """
-type Exponential <: DeltaFactor
+mutable struct Exponential <: DeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

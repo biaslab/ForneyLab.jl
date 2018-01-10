@@ -18,7 +18,7 @@ Interfaces:
 Construction:
     Beta(id=:some_id)
 """
-type Beta <: SoftFactor
+mutable struct Beta <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

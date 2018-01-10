@@ -5,7 +5,7 @@ export factor, RecognitionFactor, RecognitionFactorization, currentRecognitionFa
 A RecognitionFactor specifies the subset of variables that comprise
 a joint factor in the recognition factorization.
 """
-type RecognitionFactor
+mutable struct RecognitionFactor
     id::Symbol
     variables::Set{Variable}
     internal_edges::Set{Edge}
@@ -58,7 +58,7 @@ function extend(edge_set::Set{Edge})
     return cluster
 end
 
-type RecognitionFactorization
+mutable struct RecognitionFactorization
     graph::FactorGraph
     recognition_factors::Dict{Symbol, RecognitionFactor}
 end

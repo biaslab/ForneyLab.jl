@@ -17,7 +17,7 @@ Construction:
 
     Gamma(out, a, b, id=:some_id)
 """
-type Gamma <: SoftFactor
+mutable struct Gamma <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

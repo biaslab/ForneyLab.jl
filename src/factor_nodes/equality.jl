@@ -17,7 +17,7 @@ Construction:
 
     The interfaces of an Equality node have to be connected manually.
 """
-type Equality <: DeltaFactor
+mutable struct Equality <: DeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Int,Interface}

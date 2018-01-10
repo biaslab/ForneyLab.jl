@@ -17,7 +17,7 @@ Construction:
 
     GaussianMeanPrecision(out, m, w, id=:some_id)
 """
-type GaussianMeanPrecision <: Gaussian
+mutable struct GaussianMeanPrecision <: Gaussian
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
