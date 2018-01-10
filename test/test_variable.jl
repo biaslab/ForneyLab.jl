@@ -10,7 +10,7 @@ using ForneyLab
     var = Variable(id=:my_var)
     @test isa(var, Variable)
     @test length(g.variables) == 1
-    @test is(g.variables[:my_var], var)
+    @test ===(g.variables[:my_var], var)
 end
 
 @testset "associate!" begin
@@ -22,25 +22,25 @@ end
     iface1 = node1.interfaces[1]
     edge1 = iface1.edge
     @test length(var.edges) == 1 # Check Variable
-    @test is(var.edges[1], edge1)
-    @test is(edge1.variable, var) # Check Edge
-    @test is(edge1.a, iface1)
+    @test ===(var.edges[1], edge1)
+    @test ===(edge1.variable, var) # Check Edge
+    @test ===(edge1.a, iface1)
     @test edge1.b == nothing
-    @test is(iface1.edge, edge1) # Check Interface
+    @test ===(iface1.edge, edge1) # Check Interface
     @test iface1.partner == nothing
 
     # Variable should be associated with an existing edge
     node2 = Clamp(var, 0.0)
     iface2 = node2.interfaces[1]
     @test length(var.edges) == 1 # Check Variable
-    @test is(var.edges[1], edge1)
-    @test is(edge1.variable, var) # Check edge
-    @test is(edge1.a, iface1)
-    @test is(edge1.b, iface2)
-    @test is(iface1.edge, edge1) # Check Interfaces
-    @test is(iface2.edge, edge1)
-    @test is(iface1.partner, iface2)
-    @test is(iface2.partner, iface1)
+    @test ===(var.edges[1], edge1)
+    @test ===(edge1.variable, var) # Check edge
+    @test ===(edge1.a, iface1)
+    @test ===(edge1.b, iface2)
+    @test ===(iface1.edge, edge1) # Check Interfaces
+    @test ===(iface2.edge, edge1)
+    @test ===(iface1.partner, iface2)
+    @test ===(iface2.partner, iface1)
 
     # Variable should become equality constrained
     node3 = Clamp(var, 0.0)
@@ -53,30 +53,30 @@ end
     edge2 = iface2.edge
     edge3 = iface3.edge
     @test length(var.edges) == 3 # Check Variable
-    @test is(var.edges[1], edge1)
-    @test is(var.edges[2], edge2)
-    @test is(var.edges[3], edge3)
-    @test is(edge1.variable, var) # Check Edges
-    @test is(edge2.variable, var)
-    @test is(edge3.variable, var)
-    @test is(edge1.a, iface1)
-    @test is(edge1.b, eq_iface1)
-    @test is(edge2.a, iface2)
-    @test is(edge2.b, eq_iface2)
-    @test is(edge3.a, iface3)
-    @test is(edge3.b, eq_iface3)
-    @test is(iface1.edge, edge1) # Check Interfaces
-    @test is(eq_iface1.edge, edge1)
-    @test is(iface1.partner, eq_iface1)
-    @test is(eq_iface1.partner, iface1)
-    @test is(iface2.edge, edge2)
-    @test is(eq_iface2.edge, edge2)
-    @test is(iface2.partner, eq_iface2)
-    @test is(eq_iface2.partner, iface2)
-    @test is(iface3.edge, edge3)
-    @test is(eq_iface3.edge, edge3)
-    @test is(iface3.partner, eq_iface3)
-    @test is(eq_iface3.partner, iface3)
+    @test ===(var.edges[1], edge1)
+    @test ===(var.edges[2], edge2)
+    @test ===(var.edges[3], edge3)
+    @test ===(edge1.variable, var) # Check Edges
+    @test ===(edge2.variable, var)
+    @test ===(edge3.variable, var)
+    @test ===(edge1.a, iface1)
+    @test ===(edge1.b, eq_iface1)
+    @test ===(edge2.a, iface2)
+    @test ===(edge2.b, eq_iface2)
+    @test ===(edge3.a, iface3)
+    @test ===(edge3.b, eq_iface3)
+    @test ===(iface1.edge, edge1) # Check Interfaces
+    @test ===(eq_iface1.edge, edge1)
+    @test ===(iface1.partner, eq_iface1)
+    @test ===(eq_iface1.partner, iface1)
+    @test ===(iface2.edge, edge2)
+    @test ===(eq_iface2.edge, edge2)
+    @test ===(iface2.partner, eq_iface2)
+    @test ===(eq_iface2.partner, iface2)
+    @test ===(iface3.edge, edge3)
+    @test ===(eq_iface3.edge, edge3)
+    @test ===(iface3.partner, eq_iface3)
+    @test ===(eq_iface3.partner, iface3)
 end
 
 @testset "@~" begin
@@ -87,14 +87,14 @@ end
     y ~ GaussianMeanVariance(x, constant(1.0))
     @test length(g.variables) == 3 # including constants
     @test haskey(g.variables, y.id)
-    @test is(g.variables[y.id], y)
+    @test ===(g.variables[y.id], y)
 
     # @~ should reuse existing variable and handle keyword agruments
     y_old = y
     y ~ GaussianMeanVariance(constant(0.0), constant(1.0); id=:g_node)
     @test length(g.variables) == 5 # including constants
     @test haskey(g.nodes, :g_node)
-    @test is(y, y_old)
+    @test ===(y, y_old)
 
     # @~ should handle array element assignments
     g = FactorGraph()

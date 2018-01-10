@@ -10,7 +10,7 @@ mutable struct MockNode <: FactorNode end
     # Interface should construct
     node = MockNode()
     iface = Interface(node)
-    @test is(iface.node, node)
+    @test ===(iface.node, node)
     @test iface.edge == nothing
     @test iface.partner == nothing
 end

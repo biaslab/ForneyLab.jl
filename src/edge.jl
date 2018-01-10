@@ -46,13 +46,13 @@ end
 Disconnect edge from interface.
 """
 function disconnect!(edge::Edge, interface::Interface)
-    if !is(edge.a, interface) && !is(edge.b, interface)
+    if (edge.a !== interface) && (edge.b !== interface)
         error("Cannot disconnect from an interface that is not connected.")
     end
 
     edge.a.partner = nothing
     edge.b.partner = nothing
-    if is(edge.a, interface)
+    if edge.a === interface
         edge.a.edge = nothing
         edge.a = edge.b
     else 

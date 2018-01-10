@@ -25,12 +25,12 @@ end
     b = Interface(MockNode())
     edge = Edge(Variable(), a, b)
 
-    @test is(edge.a, a)
-    @test is(edge.b, b)
-    @test is(a.edge, edge)
-    @test is(b.edge, edge)
-    @test is(a.partner, b)
-    @test is(b.partner, a)
+    @test ===(edge.a, a)
+    @test ===(edge.b, b)
+    @test ===(a.edge, edge)
+    @test ===(b.edge, edge)
+    @test ===(a.partner, b)
+    @test ===(b.partner, a)
 end
 
 @testset "disconnect!" begin
@@ -41,10 +41,10 @@ end
 
     # disconnect! from 'a' side should decouple interfaces
     disconnect!(edge, a)
-    @test is(edge.a, b)
+    @test ===(edge.a, b)
     @test edge.b == nothing
     @test a.edge == nothing
-    @test is(b.edge, edge)
+    @test ===(b.edge, edge)
     @test a.partner == nothing
     @test b.partner == nothing
 
@@ -55,9 +55,9 @@ end
 
     # disconnect! from 'b' side should decouple interfaces
     disconnect!(edge, b)
-    @test is(edge.a, a)
+    @test ===(edge.a, a)
     @test edge.b == nothing
-    @test is(a.edge, edge)
+    @test ===(a.edge, edge)
     @test b.edge == nothing
     @test a.partner == nothing
     @test b.partner == nothing

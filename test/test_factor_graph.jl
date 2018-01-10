@@ -28,11 +28,11 @@ end
     @test isa(g.placeholders, Dict{Clamp, Tuple{Symbol, Int}})
 
     # currentGraph() should point to the current graph
-    @test is(currentGraph(), g)
+    @test ===(currentGraph(), g)
     f = FactorGraph()
-    @test is(currentGraph(), f)
+    @test ===(currentGraph(), f)
     setCurrentGraph(g)
-    @test is(currentGraph(), g)
+    @test ===(currentGraph(), g)
 end
 
 @testset "generateId" begin
@@ -51,7 +51,7 @@ end
     # addNode! should register a node with a graph
     @test isempty(g.nodes)
     addNode!(g, nd)
-    @test is(g.nodes[:nd], nd)
+    @test ===(g.nodes[:nd], nd)
     @test hasNode(g, nd)
 
     # addNode should not add the same node twice
