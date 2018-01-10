@@ -19,9 +19,9 @@ cholinv(M::Matrix) = inv(cholfact(Hermitian(M)))
 cholinv(D::Diagonal) = Diagonal(1./D.diag)
 diageye(dims::Int64) = Diagonal(ones(dims))
 
-.*(D1::Diagonal, D2::Diagonal) = Diagonal(D1.diag.*D2.diag)
-.*(D1::Matrix, D2::Diagonal) = Diagonal(diag(D1).*D2.diag)
-.*(D1::Diagonal, D2::Matrix) = D2.*D1
+Base.broadcast(::typeof(*), D1::Diagonal, D2::Diagonal) = Diagonal(D1.diag.*D2.diag)
+Base.broadcast(::typeof(*), D1::Matrix, D2::Diagonal) = Diagonal(diag(D1).*D2.diag)
+Base.broadcast(::typeof(*), D1::Diagonal, D2::Matrix) = D2.*D1
 
 ^(D::Diagonal, p::Float64) = Diagonal(D.diag.^p)
 sqrt(D::Diagonal) = Diagonal(sqrt(D.diag))
