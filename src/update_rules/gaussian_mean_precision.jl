@@ -33,17 +33,17 @@
                       :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void),
                       :name          => VBGaussianMeanPrecisionW)
 
-# @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
-#                            :outbound_type => Message{Gaussian},
-#                            :inbound_types => (Void, Message{Gaussian}, ProbabilityDistribution),
-#                            :name          => SVBGaussianMeanPrecisionOutVGD)
+@structuredVariationalRule(:node_type     => GaussianMeanPrecision,
+                           :outbound_type => Message{Gaussian},
+                           :inbound_types => (Void, Message{Gaussian}, ProbabilityDistribution),
+                           :name          => SVBGaussianMeanPrecisionOutVGD)
 
-# @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
-#                            :outbound_type => Message{Gaussian},
-#                            :inbound_types => (Message{Gaussian}, Void, ProbabilityDistribution),
-#                            :name          => SVBGaussianMeanPrecisionOutGVD)
+@structuredVariationalRule(:node_type     => GaussianMeanPrecision,
+                           :outbound_type => Message{Gaussian},
+                           :inbound_types => (Message{Gaussian}, Void, ProbabilityDistribution),
+                           :name          => SVBGaussianMeanPrecisionOutGVD)
 
-# @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
-#                            :outbound_type => Message{Gamma},
-#                            :inbound_types => (ProbabilityDistribution, Void, ProbabilityDistribution),
-#                            :name          => SVBGaussianMeanPrecisionW)
+@structuredVariationalRule(:node_type     => GaussianMeanPrecision,
+                           :outbound_type => Message{Gamma},
+                           :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void),
+                           :name          => SVBGaussianMeanPrecisionW)

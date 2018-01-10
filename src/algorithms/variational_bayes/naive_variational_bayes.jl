@@ -1,12 +1,9 @@
 export
 NaiveVariationalRule,
-StructuredVariationalRule,
 variationalSchedule,
 @naiveVariationalRule
-# @structuredVariationalRule
 
 abstract NaiveVariationalRule{factor_type} <: MessageUpdateRule
-abstract StructuredVariationalRule{factor_type} <: MessageUpdateRule
 
 """
 variationalSchedule() generates a variational message passing schedule that computes the
@@ -83,59 +80,6 @@ function collectInboundTypes{T<:NaiveVariationalRule}(  entry::ScheduleEntry,
     return inbound_types
 end
 
-# TODO
-
-# function inferUpdateRule!{T<:StructuredVariationalRule}( entry::ScheduleEntry,
-#                                                     rule_type::Type{T},
-#                                                     inferred_outbound_types::Dict{Interface, DataType})
-#     # Collect inbound types
-#     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
-    
-#     # Find applicable rule(s)
-#     applicable_rules = DataType[]
-#     for rule in leaftypes(entry.msg_update_rule)
-#         if isApplicable(rule, inbound_types)
-#             push!(applicable_rules, rule)
-#         end
-#     end
-
-#     # Select and set applicable rule
-#     if isempty(applicable_rules)
-#         error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
-#     elseif length(applicable_rules) > 1
-#         error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types)")
-#     else
-#         entry.msg_update_rule = first(applicable_rules)
-#     end
-
-#     return entry
-# end
-
-# function collectInboundTypes{T<:StructuredVariationalRule}( entry::ScheduleEntry,
-#                                                             ::Type{T},
-#                                                             inferred_outbound_types::Dict{Interface, DataType})
-#     inbound_types = DataType[]
-#     entry_recognition_factor_id = recognitionFactorId(entry.interface.edge) # Recognition factor id for outbound edge
-#     recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
-#     for node_interface in entry.interface.node.interfaces
-#         node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
-
-#         if node_interface == entry.interface
-#             push!(inbound_types, Void)
-#         elseif node_interface_recognition_factor_id == entry_recognition_factor_id
-#             # Edge is internal, accept message
-#             push!(inbound_types, inferred_outbound_types[node_interface.partner])
-#         elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
-#             # Edge is external, accept marginal if marginal is not already accepted
-#             push!(inbound_types, ProbabilityDistribution) 
-#         end
-
-#         push!(recognition_factor_ids, node_interface_recognition_factor_id)
-#     end
-
-#     return inbound_types
-# end
-
 """
 @naiveVariationalRule registers a variational update rule for the naive (mean-field)
 factorization by defining the rule type and the corresponding methods for the 
@@ -195,8 +139,3 @@ macro naiveVariationalRule(fields...)
 
     return esc(expr)
 end
-
-# TODO
-# macro structuredVariationalRule(fields...)
-#     ...
-# end

@@ -174,7 +174,7 @@ function collectInbounds{T<:SumProductRule}(entry::ScheduleEntry, ::Type{T}, int
 end
 
 """
-Collect and construct VMP update code for each inbound.
+Construct argument code for naive VB updates
 """
 collectInbounds{T<:NaiveVariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) = collectNaiveVariationalNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
 
@@ -199,33 +199,34 @@ function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry,
     return inbounds
 end
 
-# TODO
+"""
+Construct argument code for structured VB updates
+"""
+function collectInbounds{T<:StructuredVariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
+    # Collect inbounds
+    inbounds = String[]
+    entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
+    for node_interface in entry.interface.node.interfaces
+        inbound_interface = node_interface.partner
+        partner_node = inbound_interface.node
+        if node_interface == entry.interface
+            # Ignore marginal of outbound edge
+            push!(inbounds, "nothing")
+        elseif isa(partner_node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, marginalString(partner_node))
+        elseif recognitionFactorId(node_interface.edge) == entry_recognition_factor_id
+            # Collect message from previous result
+            inbound_idx = interface_to_msg_idx[inbound_interface]
+            push!(inbounds, "messages[$inbound_idx]")
+        else
+            # Collect marginal from marginal dictionary
+            push!(inbounds, "marginals[:$(node_interface.edge.variable.id)]")
+        end
+    end
 
-# function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
-#     # Collect inbounds
-#     inbounds = String[]
-#     entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
-#     for node_interface in entry.interface.node.interfaces
-#         inbound_interface = node_interface.partner
-#         partner_node = inbound_interface.node
-#         if node_interface == entry.interface
-#             # Ignore marginal of outbound edge
-#             push!(inbounds, "nothing")
-#         elseif isa(partner_node, Clamp)
-#             # Hard-code marginal of constant node in schedule
-#             push!(inbounds, marginalString(partner_node))
-#         elseif recognitionFactorId(node_interface.edge) == entry_recognition_factor_id
-#             # Collect message from previous result
-#             inbound_idx = interface_to_msg_idx[inbound_interface]
-#             push!(inbounds, "messages[$inbound_idx]")
-#         else
-#             # Collect marginal from marginal dictionary
-#             push!(inbounds, "marginals[:$(node_interface.edge.variable.id)]")
-#         end
-#     end
-
-#     return inbounds
-# end
+    return inbounds
+end
 
 """
 Collect and construct EP update code for each inbound.
