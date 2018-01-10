@@ -11,7 +11,7 @@ struct Message{family<:FactorNode, var_type<:VariateType} # Note that parameter 
     dist::ProbabilityDistribution{var_type, family}
     scaling_factor::Any
 
-    Message{F<:FactorNode, V<:VariateType}(dist::ProbabilityDistribution{V, F}) = new{F, V}(dist) # Constructor for unspecified scaling factor
+    Message{F, V}(dist::ProbabilityDistribution{V, F}) where {F<:FactorNode, V<:VariateType} = new(dist) # Constructor for unspecified scaling factor
 end
 
 Message{F<:FactorNode, V<:VariateType}(dist::ProbabilityDistribution{V, F}) = Message{F, V}(dist)
@@ -80,7 +80,7 @@ function ==(a::ScheduleEntry, b::ScheduleEntry)
     return (a.interface == b.interface) && (a.msg_update_rule == b.msg_update_rule)
 end
 
-typealias Schedule Vector{ScheduleEntry}
+const Schedule = Vector{ScheduleEntry}
 
 function show(io::IO, schedule::Schedule)
     condensed_schedule = condense(schedule)

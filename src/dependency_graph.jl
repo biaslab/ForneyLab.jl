@@ -18,7 +18,7 @@ mutable struct LinkedListElement{T}
     payload::T
     next::LinkedListElement{T}
 
-    LinkedListElement{T}(payload::T) = new{T}(payload)
+    LinkedListElement{T}(payload::T) where T = new(payload)
 end
 
 LinkedListElement{T}(payload::T) = LinkedListElement{T}(payload)
@@ -27,7 +27,7 @@ mutable struct LinkedList{T}
     first::LinkedListElement{T}
     last::LinkedListElement{T}
 
-    LinkedList() = new{T}()
+    LinkedList{T}() where T = new{T}()
 end
 
 function Base.push!(list::LinkedList, payload)
@@ -71,7 +71,7 @@ mutable struct DependencyGraph{VT}
     vertices::Vector{VT}
     neighbors::Vector{LinkedList}
 
-    DependencyGraph() = new(Vector{VT}(), Vector{LinkedList{Int}}())
+    DependencyGraph{VT}() where VT = new(Vector{VT}(), Vector{LinkedList{Int}}())
 end
 
 function addVertex!{VT}(dg::DependencyGraph{VT}, v::VT)
