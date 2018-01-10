@@ -4,7 +4,7 @@ expectationPropagationSchedule,
 variationalExpectationPropagationSchedule,
 @expectationPropagationRule
 
-abstract ExpectationPropagationRule{factor_type} <: MessageUpdateRule
+abstract type ExpectationPropagationRule{factor_type} <: MessageUpdateRule end
 
 """
 expectationPropagationSchedule() generates a expectation propagation message passing schedule.
@@ -149,22 +149,22 @@ macro expectationPropagationRule(fields...)
 
     # Loop over fields because order is unknown
     for arg in fields
-        (arg.head == :(=>)) || error("Invalid call to @expectationPropagationRule")
+        (arg.args[1] == :(=>)) || error("Invalid call to @expectationPropagationRule")
 
-        if arg.args[1].args[1] == :node_type
-            node_type = arg.args[2]
-        elseif arg.args[1].args[1] == :outbound_type
-            outbound_type = arg.args[2]
+        if arg.args[2].args[1] == :node_type
+            node_type = arg.args[3]
+        elseif arg.args[2].args[1] == :outbound_type
+            outbound_type = arg.args[3]
             (outbound_type.head == :curly && outbound_type.args[1] == :Message) || error("Outbound type for ExpectationPropagationRule should be a Message")
-        elseif arg.args[1].args[1] == :inbound_types
-            inbound_types = arg.args[2]
+        elseif arg.args[2].args[1] == :inbound_types
+            inbound_types = arg.args[3]
             (inbound_types.head == :tuple) || error("Inbound types should be passed as Tuple")
-        elseif arg.args[1].args[1] == :outbound_id
-            outbound_id = arg.args[2]
-        elseif arg.args[1].args[1] == :name
-            name = arg.args[2]
+        elseif arg.args[2].args[1] == :outbound_id
+            outbound_id = arg.args[3]
+        elseif arg.args[2].args[1] == :name
+            name = arg.args[3]
         else
-            error("Unrecognized field $(arg.args[1].args[1]) in call to @expectationPropagationRule")
+            error("Unrecognized field $(arg.args[2].args[1]) in call to @expectationPropagationRule")
         end
     end
 
