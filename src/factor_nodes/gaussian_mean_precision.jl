@@ -5,7 +5,7 @@ Description:
 
     A Gaussian with mean-precision parameterization:
 
-    f(out,m,w) = 𝒩(out|m,w)
+    f(out,m,w) = 𝒩(out|m,w) = (2π)^{-D/2} |w|^{1/2} exp(-1/2 (out - m)' w (out - m))
 
 Interfaces:
 

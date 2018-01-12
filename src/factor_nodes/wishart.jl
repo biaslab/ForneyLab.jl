@@ -5,7 +5,7 @@ Description:
 
     A Wishart node:
 
-    f(out,v,nu) = W(out|v, nu)
+    f(out,v,nu) = W(out|v, nu) = B(v, nu) |out|^{(nu - D - 1)/2} exp(-1/2 tr(v^{-1} out))
 
 Interfaces:
 
