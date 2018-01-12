@@ -7,7 +7,7 @@ Description:
     out ∈ {0, 1}
     p ∈ [0, 1]
     
-    f(out, p) = Ber(out|p)
+    f(out, p) = Ber(out|p) = p^out (1 - p)^{1 - out}
 
 Interfaces:
     1. out
