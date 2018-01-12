@@ -8,7 +8,7 @@ Installation
 
 Add the ForneyLab package to your Julia installation:
 ```jl
-Pkg.clone("https://github.com/spsbrats/ForneyLab.jl.git")
+Pkg.clone("https://github.com/biaslab/ForneyLab.jl.git")
 ```
 To update, use:
 ```jl
@@ -25,7 +25,5 @@ Import ForneyLab:
 ```jl
 using ForneyLab
 ```
-Once imported, one can instantiate nodes and edges to build a factor graph. It is also possible to create custom nodes and distribution types. When the factor graph has been defined, message passing can be performed on the graph. 
 
-There are [demos](https://github.com/spsbrats/ForneyLab.jl/wiki/ForneyLab-demos) available to get you started. 
-More details can be found in the [documentation](http://spsbrats.github.io/ForneyLab/documentation/).
+There are [demos](https://github.com/biaslab/ForneyLab.jl/tree/master/demo) available to get you started.
