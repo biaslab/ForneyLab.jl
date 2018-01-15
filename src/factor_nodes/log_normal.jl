@@ -5,7 +5,7 @@ Description:
 
     A log-normal node with location-scale parameterization:
 
-    f(out,m,s) = logN(out|m, s)
+    f(out,m,s) = logN(out|m, s) = 1/out (2π s)^{-1/2} exp(-1/(2s) (log(out) - m)^2))
 
 Interfaces:
 

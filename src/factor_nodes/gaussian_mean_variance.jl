@@ -5,7 +5,7 @@ Description:
 
     A Gaussian with mean-variance parameterization:
 
-    f(out,m,v) = 𝒩(out|m,v)
+    f(out,m,v) = 𝒩(out|m,v) = (2π)^{-D/2} |v|^{-1/2} exp(-1/2 (out - m)' v^{-1} (out - m))
 
 Interfaces:
 
