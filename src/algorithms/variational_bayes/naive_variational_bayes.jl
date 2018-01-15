@@ -21,7 +21,7 @@ function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
     for entry in schedule
         if entry.interface.node in nodes_connected_to_external_edges
             local_recognition_factor_ids = localRecognitionFactorIds(entry.interface.node)
-            if unique(local_recognition_factor_ids) == local_recognition_factor_ids # Local recognition factorization is naive
+            if allunique(local_recognition_factor_ids) # Local recognition factorization is naive
                 entry.msg_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
             else
                 entry.msg_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}

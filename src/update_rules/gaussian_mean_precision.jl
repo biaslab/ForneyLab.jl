@@ -45,5 +45,5 @@
 
 @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
                            :outbound_type => Message{Gamma},
-                           :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void),
+                           :inbound_types => (ProbabilityDistribution, Void),
                            :name          => SVBGaussianMeanPrecisionW)

@@ -206,9 +206,14 @@ function collectInbounds{T<:StructuredVariationalRule}(entry::ScheduleEntry, ::T
     # Collect inbounds
     inbounds = String[]
     entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
+    local_rf = localRecognitionFactorization(entry.interface.node)
+
+    recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
     for node_interface in entry.interface.node.interfaces
         inbound_interface = node_interface.partner
         partner_node = inbound_interface.node
+        node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
+
         if node_interface == entry.interface
             # Ignore marginal of outbound edge
             push!(inbounds, "nothing")
@@ -219,10 +224,13 @@ function collectInbounds{T<:StructuredVariationalRule}(entry::ScheduleEntry, ::T
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]
             push!(inbounds, "messages[$inbound_idx]")
-        else
-            # Collect marginal from marginal dictionary
-            push!(inbounds, "marginals[:$(node_interface.edge.variable.id)]")
+        elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
+            # Collect marginal from marginal dictionary (if marginal is not already accepted)
+            marginal_str = join(local_rf[node_interface_recognition_factor_id], "_")
+            push!(inbounds, "marginals[:$marginal_str]")
         end
+
+        push!(recognition_factor_ids, node_interface_recognition_factor_id)
     end
 
     return inbounds

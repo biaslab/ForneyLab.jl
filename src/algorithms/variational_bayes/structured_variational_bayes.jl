@@ -44,7 +44,7 @@ function collectInboundTypes{T<:StructuredVariationalRule}( entry::ScheduleEntry
         elseif node_interface_recognition_factor_id == entry_recognition_factor_id
             # Edge is internal, accept message
             push!(inbound_types, inferred_outbound_types[node_interface.partner])
-        else #if !(node_interface_recognition_factor_id in recognition_factor_ids)
+        elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
             # Edge is external, accept marginal (if marginal is not already accepted)
             push!(inbound_types, ProbabilityDistribution) 
         end

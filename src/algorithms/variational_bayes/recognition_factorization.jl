@@ -23,7 +23,7 @@ type RecognitionFactor
         rfz.recognition_factors[id] = self # Register new factor with recognition factorization
 
         # Register internal edges with the recognition factorization for fast lookup during scheduling
-        for edge in self.internal_edges
+        for edge in internal_edges_connected_to_external_nodes
             rfz.edge_to_recognition_factor[edge] = self
         end
 
@@ -105,14 +105,27 @@ end
 """
 Return the ids of the recognition factors to which edges connected to `node` belong
 """
-function localRecognitionFactorIds(node::FactorNode)
-    rf_ids = Vector{Symbol}()
-    for interface in node.interfaces
-        rf_id = recognitionFactorId(interface.edge)
-        push!(rf_ids, rf_id)
+localRecognitionFactorIds(node::FactorNode) = [recognitionFactorId(interface.edge) for interface in node.interfaces]
+
+"""
+Return a dictionary from recognition factor to a vector of variable-ids that belong
+to that recognition factor
+"""
+function localRecognitionFactorization(node::FactorNode)
+    local_recognition_factor_ids = localRecognitionFactorIds(node)
+    local_variable_ids = localVariableIds(node)
+    (length(local_recognition_factor_ids) == length(local_variable_ids)) || error("Lengths of local recognition factorization and local variables must agree")
+
+    local_recognition_factorization = Dict{Symbol, Vector}()
+    for (idx, factor) in enumerate(local_recognition_factor_ids)
+        if haskey(local_recognition_factorization, factor)
+            push!(local_recognition_factorization[factor], local_variable_ids[idx])
+        else
+            local_recognition_factorization[factor] = [local_variable_ids[idx]]
+        end
     end
 
-    return rf_ids
+    return local_recognition_factorization
 end
 
 function nodesConnectedToExternalEdges(recognition_factor::RecognitionFactor)

@@ -46,3 +46,8 @@ edges(variable::Variable) = Set{Edge}(variable.edges)
 edges(variables::Set{Variable}) = union(map(edges, variables)...)
 
 Base.isless(v1::Variable, v2::Variable) = isless("$(v1.id)", "$(v2.id)")
+
+"""
+Return the ids of the variables to which edges connected to `node` belong
+"""
+localVariableIds(node::FactorNode) = [interface.edge.variable.id for interface in node.interfaces]
