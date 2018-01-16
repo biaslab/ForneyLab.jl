@@ -58,8 +58,8 @@ function =={fam_t<:FactorNode, var_t<:VariateType, fam_u<:FactorNode, var_u<:Var
 end
 
 """
-A MessageCalculationRule specifies how a Message is calculated from the node function and the incoming messages.
-Use `subtypes(MessageCalculationRule)` to list the available rules.
+A MessageUpdateRule specifies how a Message is calculated from the node function and the incoming messages.
+Use `subtypes(MessageUpdateRule)` to list the available rules.
 """
 abstract MessageUpdateRule
 

@@ -1,5 +1,5 @@
 import Base.factor
-export factor, RecognitionFactor, RecognitionFactorization, currentRecognitionFactorization
+export RecognitionFactor, RecognitionFactorization, currentRecognitionFactorization
 
 """
 A RecognitionFactor specifies the subset of variables that comprise
@@ -8,6 +8,7 @@ a joint factor in the recognition factorization.
 type RecognitionFactor
     id::Symbol
     variables::Set{Variable}
+    clusters::Set{Cluster}
     internal_edges::Set{Edge}
 
     function RecognitionFactor(variables::Set{Variable}; rfz=currentRecognitionFactorization(), id=generateId(RecognitionFactor))
@@ -18,8 +19,9 @@ type RecognitionFactor
         nodes_connected_to_external_edges = intersect(nodes(external_edges), subgraph_nodes)
         internal_edges_connected_to_external_nodes = intersect(edges(nodes_connected_to_external_edges), internal_edges)
         recognition_variables = Set{Variable}([edge.variable for edge in internal_edges_connected_to_external_nodes])
+        clusters = Set{Cluster}(...) # TODO: determine clusters
 
-        self = new(id, union(variables, recognition_variables), internal_edges)
+        self = new(id, clusters, union(variables, recognition_variables), internal_edges)
         rfz.recognition_factors[id] = self # Register new factor with recognition factorization
 
         # Register internal edges with the recognition factorization for fast lookup during scheduling
@@ -108,21 +110,26 @@ Return the ids of the recognition factors to which edges connected to `node` bel
 localRecognitionFactorIds(node::FactorNode) = [recognitionFactorId(interface.edge) for interface in node.interfaces]
 
 """
-Return a dictionary from recognition factor to a vector of variable-ids that belong
-to that recognition factor
+Return the ids of the clusters/variables to which edges connected to `node` belong
+"""
+function localClusterIds(node::FactorNode)
+    # Note, a single edge might belong to multiple clusters
+    for interface in node.interfaces
+        ... # TODO
+    end
+end
+
+"""
+Return a dictionary from recognition factor-id to variable/cluster-ids local to node
 """
 function localRecognitionFactorization(node::FactorNode)
     local_recognition_factor_ids = localRecognitionFactorIds(node)
-    local_variable_ids = localVariableIds(node)
-    (length(local_recognition_factor_ids) == length(local_variable_ids)) || error("Lengths of local recognition factorization and local variables must agree")
+    local_cluster_ids = localClusterIds(node)
+    (length(local_recognition_factor_ids) == length(local_cluster_ids)) || error("Lengths of local recognition factorization and local clusters must agree")
 
     local_recognition_factorization = Dict{Symbol, Vector}()
     for (idx, factor) in enumerate(local_recognition_factor_ids)
-        if haskey(local_recognition_factorization, factor)
-            push!(local_recognition_factorization[factor], local_variable_ids[idx])
-        else
-            local_recognition_factorization[factor] = [local_variable_ids[idx]]
-        end
+        local_recognition_factorization[factor] = [local_cluster_ids[idx]]
     end
 
     return local_recognition_factorization
