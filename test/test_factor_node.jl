@@ -1,7 +1,7 @@
 module FactorNodeTest
 
 using Base.Test
-import ForneyLab: FactorGraph, FactorNode, Clamp, Variable, Interface, PointMass, GaussianMixture
+import ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture
 
 @testset "FactorNode" begin
     g = FactorGraph()
@@ -25,6 +25,8 @@ import ForneyLab: FactorGraph, FactorNode, Clamp, Variable, Interface, PointMass
         # Instantiate a test node
         if node_type == Clamp
             test_node = Clamp(Variable(), 0.0)
+        elseif node_type == Terminal
+            test_node = Terminal(Variable(), Clamp(Variable(), 0.0).interfaces[1])
         elseif node_type == GaussianMixture # Required for Vararg argument
             test_node = GaussianMixture(Variable(), Variable(), Variable(), Variable(), Variable(), Variable())
         else

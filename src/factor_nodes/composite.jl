@@ -1,4 +1,6 @@
-export @composite
+export CompositeNode, @composite
+
+abstract CompositeNode <: FactorNode
 
 macro composite(name::Symbol, exposed_vars::Expr, model::Expr)
     (exposed_vars.head == :tuple) || error("Exposed variables should be passed as Tuple")
@@ -18,16 +20,18 @@ macro composite(name::Symbol, exposed_vars::Expr, model::Expr)
     for idx = 1:n_vars
         varname = exposed_vars.args[idx]
         exposed_var_definitions *= "local $varname = Variable(id=:$varname)\n"
-        exposed_var_definitions *= "push!(self.terminals, Terminal($varname, id=:$varname))\n"
+        exposed_var_definitions *= "push!(self.terminals, Terminal($varname, self.interfaces[$idx], id=:$varname))\n"
+        exposed_var_definitions *= "self.interface2terminal[self.interfaces[$idx]] = self.terminals[$idx]\n"
     end
 
     expr = parse("""
-    type $name <: FactorNode
+    type $name <: CompositeNode
         id::Symbol
         interfaces::Vector{Interface}
         i::Dict{Symbol, Interface}
         inner_graph::FactorGraph
         terminals::Vector{Terminal}
+        interface2terminal::Dict{Interface,Terminal}
 
         function $name($exposed_var_arguments; id=ForneyLab.generateId($name))
             self = new(id, Array{Interface}($n_vars), Dict{Symbol,Interface}())
@@ -38,6 +42,7 @@ macro composite(name::Symbol, exposed_vars::Expr, model::Expr)
             # Build internal graph
             self.inner_graph = FactorGraph()
             self.terminals = Terminal[]
+            self.interface2terminal = Dict{Interface,Terminal}()
             let
                 $exposed_var_definitions
                 $model

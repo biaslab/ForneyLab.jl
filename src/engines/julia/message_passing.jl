@@ -16,10 +16,11 @@ function freeEnergyAlgorithm(recognition_factors::Vector{RecognitionFactor}=coll
         inbounds_str = join(inbounds, ", ")
         node_str = replace(string(typeof(node)),"ForneyLab.", "") # Remove module prefixes
         energy_block *= "F += averageEnergy($(node_str), $(inbounds_str))\n"
-        
+
         # Differential entropy
-        if !(node.interfaces[1].partner == nothing) && !isa(node.interfaces[1].partner.node, Clamp)
-            entropy_block *= "F -= differentialEntropy(marginals[:$(node.interfaces[1].edge.variable.id)])\n"
+        partner_iface = ultimatePartner(node.interfaces[1])
+        if !(partner_iface == nothing) && !isa(partner_iface.node, Clamp)
+            entropy_block *= "F -= differentialEntropy(marginals[:$(partner_iface.edge.variable.id)])\n"
         end
     end
 
@@ -27,7 +28,7 @@ function freeEnergyAlgorithm(recognition_factors::Vector{RecognitionFactor}=coll
     code = "function freeEnergy(data::Dict, marginals::Dict)\n\n"
     code *= "F = 0.0\n\n"
     code *= energy_block*"\n"entropy_block
-    code *= "\nreturn F\n" 
+    code *= "\nreturn F\n"
     code *= "end"
 
     return code
@@ -40,7 +41,7 @@ function collectMarginals(node::FactorNode)
     # Collect marginals
     inbound_marginals = String[]
     for interface in node.interfaces
-        partner_node = interface.partner.node
+        partner_node = ultimatePartner(interface).node
         if isa(partner_node, Clamp)
             # Hard-code marginal of constant node
             push!(inbound_marginals, marginalString(partner_node))
@@ -55,14 +56,12 @@ end
 
 # TODO: in-place operations for message and marginal computations?
 function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=Variable[]; file::String="", name::String="")
+    schedule = ForneyLab.flatten(schedule) # Inline all internal message passing
     schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
     n_messages = length(schedule)
 
     # Assign message numbers to each interface in the schedule
-    interface_to_msg_idx = Dict{Interface, Int}()
-    for (msg_idx, schedule_entry) in enumerate(schedule)
-        interface_to_msg_idx[schedule_entry.interface] = msg_idx
-    end
+    interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
 
     # Collect outbound types from schedule
     outbound_types = Dict()
@@ -81,13 +80,14 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
     breaker_types = Dict()
     for entry in schedule
         if entry.msg_update_rule <: ExpectationPropagationRule
-            breaker_types[entry.interface.partner] = outbound_types[entry.interface.partner]
+            partner = ultimatePartner(entry.interface)
+            breaker_types[partner] = outbound_types[partner]
         end
     end
 
     if !isempty(breaker_types) # Initialization block is only required when breakers are present
         code *= "function init$(name)()\n\n"
-        
+
         # Write message (breaker) initialization code
         code *= "messages = Array{Message}($n_messages)\n"
         for (breaker_site, breaker_type) in breaker_types
@@ -156,7 +156,7 @@ Collect and construct SP update code for each inbound.
 function collectInbounds{T<:SumProductRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
     inbound_messages = String[]
     for node_interface in entry.interface.node.interfaces
-        inbound_interface = node_interface.partner
+        inbound_interface = ultimatePartner(node_interface)
         if node_interface == entry.interface
             # Ignore inbound message on outbound interface
             push!(inbound_messages, "nothing")
@@ -183,7 +183,7 @@ function collectVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, inte
     inbounds = String[]
     entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
     for node_interface in entry.interface.node.interfaces
-        inbound_interface = node_interface.partner
+        inbound_interface = ultimatePartner(node_interface)
         partner_node = inbound_interface.node
         if node_interface == entry.interface
             # Ignore marginal of outbound edge
@@ -210,7 +210,7 @@ Collect and construct EP update code for each inbound.
 function collectInbounds{T<:ExpectationPropagationRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
     inbound_messages = String[]
     for node_interface in entry.interface.node.interfaces
-        inbound_interface = node_interface.partner
+        inbound_interface = ultimatePartner(node_interface)
         if isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
             push!(inbound_messages, messageString(inbound_interface.node))
@@ -255,7 +255,7 @@ function marginalString{T<:VariateType}(node::Clamp{T})
         # Message comes from data array
         buffer, idx = ForneyLab.current_graph.placeholders[node]
         if idx > 0
-            str = "ProbabilityDistribution($(var_type_str), PointMass, m=data[:$buffer][$idx])" 
+            str = "ProbabilityDistribution($(var_type_str), PointMass, m=data[:$buffer][$idx])"
         else
             str = "ProbabilityDistribution($(var_type_str), PointMass, m=data[:$buffer])"
         end
