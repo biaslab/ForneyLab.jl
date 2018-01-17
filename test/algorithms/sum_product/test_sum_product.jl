@@ -33,6 +33,12 @@ end
     @test SPMockOutPP <: SumProductRule{MockNode}
 end
 
+# Composite definition for inferUpdateRule! testset
+@composite TestComposite (b,a) begin
+    z ~ GaussianMeanVariance(a, constant(1.0))
+    b = constant(2.0) + z
+end
+
 @testset "inferUpdateRule!" begin
     FactorGraph()
     nd = MockNode([Variable(), constant(0.0), constant(0.0)])
@@ -42,6 +48,20 @@ end
     inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
 
     @test entry.msg_update_rule == SPMockOutPP
+
+    # Internal msg passing tests
+    FactorGraph()
+    a = constant(0.0, id=:a)
+    b = Variable(id=:b)
+    tc = TestComposite(b, a)
+    inferred_outbound_types = Dict(tc.i[:a].partner => Message{PointMass})
+    entry = ScheduleEntry(tc.i[:b], SumProductRule{Void})
+
+    inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
+
+    @test isdefined(entry, :internal_schedule)
+    @test length(entry.internal_schedule) == 4
+    @test entry.msg_update_rule == entry.internal_schedule[end].msg_update_rule
 end
 
 @testset "sumProductSchedule" begin

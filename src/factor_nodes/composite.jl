@@ -17,11 +17,12 @@ macro composite(name::Symbol, exposed_vars::Expr, model::Expr)
 
     # Code for constructing exposed variables in inner graph
     exposed_var_definitions = ""
+    terminal_definitions = ""
     for idx = 1:n_vars
         varname = exposed_vars.args[idx]
         exposed_var_definitions *= "local $varname = Variable(id=:$varname)\n"
-        exposed_var_definitions *= "push!(self.terminals, Terminal($varname, self.interfaces[$idx], id=:$varname))\n"
-        exposed_var_definitions *= "self.interface2terminal[self.interfaces[$idx]] = self.terminals[$idx]\n"
+        terminal_definitions *= "push!(self.terminals, Terminal($varname, self.interfaces[$idx], id=:$varname))\n"
+        terminal_definitions *= "self.interface2terminal[self.interfaces[$idx]] = self.terminals[$idx]\n"
     end
 
     expr = parse("""
@@ -46,6 +47,7 @@ macro composite(name::Symbol, exposed_vars::Expr, model::Expr)
             let
                 $exposed_var_definitions
                 $model
+                $terminal_definitions
             end
             setCurrentGraph(outer_graph)
 
