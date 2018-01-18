@@ -1,89 +1,29 @@
-export
-MarginalUpdateRule,
-MarginalScheduleEntry,
-MarginalSchedule
-@marginalRule
+export @marginalRule
 
 """
-A Cluster specifies a collection of `edges` adjacent to `node` that belong to the same
-RecognitionFactor. Over a Cluster, a joint marginal can be computed.
+Construct a MarginalScheduleEntry for computing the marginal over `cluster`
+through a node-specific joint marginal update rule.
 """
-type Cluster
-    id::Symbol
-    node::FactorNode
-    edges::Vector{Edge}
-
-    function Cluster(node::FactorNode, edges::Vector{Edge})
-        id = Symbol(join([edge.variable.id for edge in edges], "_"))
-        self = new(id, node, edges)
-        return self
-    end
-end
-
-"""
-A MarginalUpdateRule specifies how a marginal is calculated from incoming messages,
-and an optional node function.
-"""
-abstract MarginalUpdateRule
-abstract MarginalRule{factor_type} <: MarginalUpdateRule
-abstract Product <: MarginalUpdateRule
-
-"""
-A `MarginalScheduleEntry` defines a marginal computation.
-The `marginal_update_rule <: MarginalUpdateRule` defines the rule that is used
-to calculate the (joint) marginal over `target`.
-"""
-type MarginalScheduleEntry
-    target::Union{Cluster, Variable}
-    interfaces::Vector{Interface}
-    marginal_update_rule::DataType
-end
-
-typealias MarginalSchedule Vector{MarginalScheduleEntry}
-
-"""
-marginalSchedule() generates a marginal schedule that computes the
-marginals for each target argument.
-"""
-function marginalSchedule(targets::Vector{Union{Variable, Cluster}})
-    marginal_schedule = MarginalScheduleEntry[]
-
-    # Schedule a marginal update rule for each of the targets
-    for target in targets
-        if isa(target, Variable)
-            # Target is over a single variable, compute marginal through multiplication
-            target_edge = first(target.edges) # For the sake of consistency, we always take the first edge.
-            if target_edge.a == nothing # First handle cases where there is a `dangling` edge
-                entry = MarginalScheduleEntry(target, [target_edge.b], Void)
-            elseif target_edge.b == nothing
-                entry = MarginalScheduleEntry(target, [target_edge.a], Void)
-            else
-                entry = MarginalScheduleEntry(target, [target_edge.a, target_edge.b], Product)
-            end
+function MarginalScheduleEntry(cluster::Cluster, outbound_types::Dict{Interface, DataType})
+    inbound_types = collectInboundTypes(cluster, outbound_types)
+    marginal_update_rule = inferMarginalRule(cluster, inbound_types)
+    
+    # Collect inbound interfaces 
+    inbound_interfaces = Interface[]
+    for edge in cluster.edges
+        if edge.a in cluster.node.interfaces
+            push!(inbound_interfaces, edge.b) # Partner is the required inbound interface
         else
-            # Target is over multiple edges, compute joint marginal through specific marginal update rule
-            inbound_types = collectInboundTypes(target, inferred_outbound_types) # TODO: how to obtain inferred_outbound_types
-            marginal_update_rule = inferMarginalRule(target, inbound_types)
-            
-            # Collect inbound interfaces 
-            target_interfaces = Interface[]
-            for target_edge in target.edges
-                if target_edge.a in target.node.interfaces
-                    push!(target_interfaces, target_edge.b) # Push partner to target interfaces
-                else
-                    push!(target_interfaces, target_edge.a)
-                end
-            end
-
-            entry = MarginalScheduleEntry(target, target_interfaces, marginal_update_rule)
+            push!(inbound_interfaces, edge.a)
         end
-
-        push!(marginal_schedule, entry)
     end
 
-    return marginal_schedule
+    return MarginalScheduleEntry(cluster, inbound_interfaces, marginal_update_rule)
 end
 
+"""
+Infer the rule that computes the joint marginal over `cluster`
+"""
 function inferMarginalRule(cluster::Cluster, inbound_types::Vector{DataType})
     # Find applicable rule(s)
     applicable_rules = DataType[]
@@ -95,9 +35,9 @@ function inferMarginalRule(cluster::Cluster, inbound_types::Vector{DataType})
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
+        error("No applicable msg update rule for $(cluster) with inbound types $(inbound_types)")
     elseif length(applicable_rules) > 1
-        error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types): $(applicable_rules)")
+        error("Multiple applicable msg update rules for $(cluster) with inbound types $(inbound_types): $(applicable_rules)")
     else
         marginal_update_rule = first(applicable_rules)
     end
@@ -109,7 +49,7 @@ end
 Find the inbound types that are required to compute a joint marginal over `target`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
-function collectInboundTypes(cluster::Cluster, inferred_outbound_types::Dict{Interface, DataType})
+function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, DataType})
     inbound_types = DataType[]
     cluster_recognition_factor_id = recognitionFactorId(first(cluster.edges)) # Recognition factor id for cluster
     recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
@@ -118,7 +58,7 @@ function collectInboundTypes(cluster::Cluster, inferred_outbound_types::Dict{Int
 
         if node_interface_recognition_factor_id == cluster_recognition_factor_id
             # Edge is internal, accept message
-            push!(inbound_types, inferred_outbound_types[node_interface.partner])
+            push!(inbound_types, outbound_types[node_interface.partner])
         elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
             # Edge is external, accept marginal (if marginal is not already accepted)
             push!(inbound_types, ProbabilityDistribution) 
@@ -129,6 +69,29 @@ function collectInboundTypes(cluster::Cluster, inferred_outbound_types::Dict{Int
 
     return inbound_types
 end
+
+function marginalSchedule(q_factors::Vector{RecognitionFactor}, schedule::Schedule)
+    # Construct outbound types dictionary
+    outbound_types = Dict{Interface, DataType}()
+    for entry in schedule
+        outbound_types[entry.interface] = outboundType(entry.msg_update_rule)
+    end
+
+    # Construct marginal schedule
+    marginal_schedule = MarginalScheduleEntry[]
+    for q_factor in q_factors
+        # Construct schedule for computing marginals over variables
+        variable_schedule = [MarginalScheduleEntry(variable) for variable in sort(collect(q_factor.variables))]
+        marginal_schedule = [marginal_schedule; variable_schedule]
+
+        # Construct schedule for computing marginals over clusters
+        cluster_schedule = [MarginalScheduleEntry(cluster, outbound_types) for cluster in sort(collect(q_factor.clusters))]
+        marginal_schedule = [marginal_schedule; cluster_schedule]
+    end
+
+    return marginal_schedule
+end
+marginalSchedule(q_factor::RecognitionFactor, schedule::Schedule) = MarginalSchedule([q_factor], schedule)
 
 """
 @marginalRule registers a marginal update rule for a (joint) marginal

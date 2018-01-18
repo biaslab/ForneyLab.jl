@@ -5,7 +5,9 @@ Create an expectation propagation algorithm to infer marginals over `variables`,
 """
 function expectationPropagationAlgorithm(variables::Vector{Variable}; file::String="", name::String="")
     schedule = expectationPropagationSchedule(variables)
-    algo = messagePassingAlgorithm(schedule, variables, file=file, name=name)
+    marginal_schedule = marginalSchedule(variables)
+
+    algo = messagePassingAlgorithm(schedule, marginal_schedule, file=file, name=name)
 
     return algo
 end
@@ -16,23 +18,16 @@ Create a variational EP algorithm to infer marginals over a recognition distribu
 """
 function variationalExpectationPropagationAlgorithm(q_factor::RecognitionFactor; file::String="", name::String="")
     q_schedule = variationalExpectationPropagationSchedule(q_factor)
-    algo = messagePassingAlgorithm(q_schedule, collect(q_factor.variables), file=file, name=name)
+    marginal_schedule = marginalSchedule(q_factor)
+
+    algo = messagePassingAlgorithm(q_schedule, marginal_schedule, file=file, name=name)
 
     return algo
 end
 
 """
-Create a variational EP algorithm to infer marginals over the recognition distribution that includes `variables`, and compile it to Julia code
-"""
-function variationalExpectationPropagationAlgorithm(variables::Vector{Variable}; file::String="", name::String="")
-    q_factor = RecognitionFactor(variables)
-
-    return variationalExpectationPropagationAlgorithm(q_factor, file=file, name=name)
-end
-variationalExpectationPropagationAlgorithm(variable::Variable; file::String="", name::String="") = variationalExpectationPropagationAlgorithm([variable], file=file, name=name)
-
-"""
-Collect and construct EP update code for each inbound.
+Find the inbound types that are required to compute the message for `entry`.
+Returns a vector with inbound types that correspond with required interfaces.
 """
 function collectInbounds{T<:ExpectationPropagationRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
     inbound_messages = String[]

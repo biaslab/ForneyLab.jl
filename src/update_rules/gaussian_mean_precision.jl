@@ -47,3 +47,7 @@
                            :outbound_type => Message{Gamma},
                            :inbound_types => (ProbabilityDistribution, Void),
                            :name          => SVBGaussianMeanPrecisionW)
+
+@marginalRule(:node_type => GaussianMeanPrecision,
+              :inbound_types => (Message{Gaussian}, Message{Gaussian}, ProbabilityDistribution),
+              :name => MGaussianMeanPrecisionGGD)

@@ -35,9 +35,11 @@ function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
 
     return schedule
 end
-
 variationalSchedule(recognition_factor::RecognitionFactor) = variationalSchedule([recognition_factor])
 
+"""
+Infer the update rule that computes the message for `entry`, as dependent on the inbound types
+"""
 function inferUpdateRule!{T<:NaiveVariationalRule}( entry::ScheduleEntry,
                                                     rule_type::Type{T},
                                                     inferred_outbound_types::Dict{Interface, DataType})
@@ -64,6 +66,10 @@ function inferUpdateRule!{T<:NaiveVariationalRule}( entry::ScheduleEntry,
     return entry
 end
 
+"""
+Find the inbound types that are required to compute the message for `entry`.
+Returns a vector with inbound types that correspond with required interfaces.
+"""
 function collectInboundTypes{T<:NaiveVariationalRule}(  entry::ScheduleEntry,
                                                         ::Type{T},
                                                         inferred_outbound_types::Dict{Interface, DataType})

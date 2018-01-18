@@ -80,16 +80,17 @@ function writeMarginalsComputationBlock(schedule::MarginalSchedule, interface_to
 end
 
 """
-Construct argument code for joint marginal computation
+Construct the inbound code that computes the marginal for `entry`.
+Returns a vector with inbounds that correspond with required interfaces.
 """
 function collectInbounds(entry::MarginalScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
     # Collect inbounds
     inbounds = String[]
     entry_recognition_factor_id = recognitionFactorId(first(entry.target.edges))
-    local_cluster_ids = localRecognitionFactorization(entry.interface.node)
+    local_cluster_ids = localRecognitionFactorization(entry.target.node)
 
     recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
-    for node_interface in entry.interface.node.interfaces
+    for node_interface in entry.target.node.interfaces
         inbound_interface = node_interface.partner
         partner_node = inbound_interface.node
         node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
@@ -113,7 +114,7 @@ function collectInbounds(entry::MarginalScheduleEntry, interface_to_msg_idx::Dic
     return inbounds
 end
 
-function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=Variable[]; file::String="", name::String="")
+function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::MarginalSchedule; file::String="", name::String="")
     schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
     n_messages = length(schedule)
 
@@ -128,7 +129,7 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
     code *= "function step$(name)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}($n_messages))\n\n"
     code *= writeMessagePassingBlock(schedule, interface_to_msg_idx)
     code *= "\n"
-    code *= writeMarginalsComputationBlock(targets, interface_to_msg_idx)  # TODO: adapt for structured VMP
+    code *= writeMarginalsComputationBlock(marginal_schedule, interface_to_msg_idx)  # TODO: adapt for structured VMP
     code *= "\nreturn marginals\n\n"
     code *= "end"
 
@@ -139,8 +140,6 @@ function messagePassingAlgorithm(schedule::Schedule, targets::Vector{Variable}=V
 
     return code
 end
-
-messagePassingAlgorithm(schedule::Schedule, target::Variable; file::String="", name::String="") = messagePassingAlgorithm(schedule, [target], file=file, name=name)
 
 """
 Depending on the origin of the Clamp node message,
