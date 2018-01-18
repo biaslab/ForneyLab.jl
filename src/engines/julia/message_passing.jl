@@ -59,11 +59,11 @@ function writeMarginalsComputationBlock(schedule::MarginalSchedule, interface_to
     for schedule_entry in schedule
         if schedule_entry.marginal_update_rule == Void
             iface = schedule_entry.interfaces[1]
-            code *= "marginals[$(schedule_entry.target.id)] = message[$(interface_to_msg_idx[iface])].dist\n"
+            code *= "marginals[:$(schedule_entry.target.id)] = messages[$(interface_to_msg_idx[iface])].dist\n"
         elseif schedule_entry.marginal_update_rule == Product
             iface1 = schedule_entry.interfaces[1]
             iface2 = schedule_entry.interfaces[2]
-            code *= "marginals[$(schedule_entry.target.id)] = message[$(interface_to_msg_idx[iface1])].dist * message[$(interface_to_msg_idx[iface2])].dist\n"
+            code *= "marginals[:$(schedule_entry.target.id)] = messages[$(interface_to_msg_idx[iface1])].dist * messages[$(interface_to_msg_idx[iface2])].dist\n"
         else
             # Collect inbounds for marginal computation
             inbounds = collectInbounds(schedule_entry, interface_to_msg_idx)
@@ -72,7 +72,7 @@ function writeMarginalsComputationBlock(schedule::MarginalSchedule, interface_to
             rule_id = schedule_entry.marginal_update_rule
             rule_str = split(string(rule_id),'.')[end] # Remove module prefixes
             inbounds_str = join(inbounds, ", ")
-            code *= "marginals[$(schedule_entry.target.id)] = rule$(rule_str)($inbounds_str)\n"
+            code *= "marginals[:$(schedule_entry.target.id)] = rule$(rule_str)($inbounds_str)\n"
         end
     end
 

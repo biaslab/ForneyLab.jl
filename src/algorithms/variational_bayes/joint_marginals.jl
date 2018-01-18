@@ -1,4 +1,12 @@
-export @marginalRule
+export
+MarginalRule,
+@marginalRule
+
+"""
+MarginalRule{factor_type} specifies a joint marginal update rule with respect
+to a node of type `factor_type`.
+"""
+abstract MarginalRule{factor_type} <: MarginalUpdateRule
 
 """
 Construct a MarginalScheduleEntry for computing the marginal over `cluster`
@@ -12,9 +20,9 @@ function MarginalScheduleEntry(cluster::Cluster, outbound_types::Dict{Interface,
     inbound_interfaces = Interface[]
     for edge in cluster.edges
         if edge.a in cluster.node.interfaces
-            push!(inbound_interfaces, edge.b) # Partner is the required inbound interface
+            push!(inbound_interfaces, edge.a.partner) # Partner is the required inbound interface
         else
-            push!(inbound_interfaces, edge.a)
+            push!(inbound_interfaces, edge.b.partner)
         end
     end
 
@@ -91,7 +99,8 @@ function marginalSchedule(q_factors::Vector{RecognitionFactor}, schedule::Schedu
 
     return marginal_schedule
 end
-marginalSchedule(q_factor::RecognitionFactor, schedule::Schedule) = MarginalSchedule([q_factor], schedule)
+
+marginalSchedule(q_factor::RecognitionFactor, schedule::Schedule) = marginalSchedule([q_factor], schedule)
 
 """
 @marginalRule registers a marginal update rule for a (joint) marginal

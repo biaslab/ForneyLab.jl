@@ -1,7 +1,8 @@
 export
 MarginalUpdateRule,
 MarginalScheduleEntry,
-MarginalSchedule
+MarginalSchedule,
+marginalSchedule
 
 abstract AbstractCluster
 
@@ -10,7 +11,6 @@ A MarginalUpdateRule specifies how a (joint) marginal is calculated from
 incoming messages (and a node function).
 """
 abstract MarginalUpdateRule
-abstract MarginalRule{factor_type} <: MarginalUpdateRule
 abstract Product <: MarginalUpdateRule
 
 """
@@ -47,3 +47,5 @@ end
 marginalSchedule() generates a marginal schedule that computes the marginals for each target entry
 """
 marginalSchedule(targets::Vector{Variable}) = [MarginalScheduleEntry(target) for target in targets]
+
+marginalSchedule(target::Variable) = marginalSchedule([target])

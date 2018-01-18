@@ -3,6 +3,8 @@ module RecognitionFactorizationTest
 using Base.Test
 using ForneyLab
 
+import ForneyLab: nodesConnectedToExternalEdges, Cluster
+
 @testset "RecognitionFactorization" begin
     rf = RecognitionFactorization()
     @test rf.recognition_factors == Dict{Symbol, RecognitionFactor}()
@@ -25,15 +27,14 @@ end
     q_m = RecognitionFactor(m)
     @test q_m.id == :recognitionfactor_1
     @test q_m.variables == Set([m])
+    @test q_m.clusters == Set{Cluster}()
     @test q_m.internal_edges == edges(m)
     @test is(rf.recognition_factors[:recognitionfactor_1], q_m)
-    for edge in edges(m)
-        @test rf.edge_to_recognition_factor[edge] == q_m
-    end
 
     q_w = RecognitionFactor(w)
     @test q_w.id == :recognitionfactor_2
     @test q_w.variables == Set([w])
+    @test q_w.clusters == Set{Cluster}()
     @test q_w.internal_edges == edges(w)
     @test is(rf.recognition_factors[:recognitionfactor_2], q_w)
 
@@ -41,17 +42,34 @@ end
     q_m_w = RecognitionFactor([m, w])
     @test q_m_w.id == :recognitionfactor_3
     @test q_m_w.variables == Set([m, w])
+    @test length(q_m_w.clusters) == 3 
     @test q_m_w.internal_edges == edges(Set([m, w]))
     @test is(rf.recognition_factors[:recognitionfactor_3], q_m_w)
-    for edge in edges(Set([m, w]))
-        @test rf.edge_to_recognition_factor[edge] == q_m_w
-    end
 
     q_y = RecognitionFactor(y)
     @test q_y.id == :recognitionfactor_4
     @test q_y.variables == Set(y)
+    @test q_y.clusters == Set{Cluster}()
     @test q_y.internal_edges == edges(Set(y))
     @test is(rf.recognition_factors[:recognitionfactor_4], q_y)
+end
+
+@testset "Cluster" begin
+    g = FactorGraph()
+
+    m = Variable(id=:m)
+    v = Variable(id=:v)
+    y = Variable(id=:y)
+    nd = GaussianMeanVariance(y, m, v)
+    em = nd.i[:m].edge
+    ev = nd.i[:v].edge
+
+    cluster = Cluster(nd, [em, ev])
+
+    @test cluster.id == :m_v
+    @test cluster.node == nd
+    @test cluster.edges[1] == em
+    @test cluster.edges[2] == ev
 end
 
 end # module

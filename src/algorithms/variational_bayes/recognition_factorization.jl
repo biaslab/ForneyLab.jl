@@ -45,9 +45,9 @@ type RecognitionFactor
         for node in nodes_connected_to_external_edges
             # Cluster edges must be ordered according to interfaces (therefore, intersect(edges(node), internal_edges) will not suffice)
             cluster_edges = Edge[]
-            for edge in edges(node)
-                if edge in internal_edges
-                    push!(cluster_edges, edge)
+            for interface in node.interfaces
+                if interface.edge in internal_edges
+                    push!(cluster_edges, interface.edge)
                 end
             end
 
@@ -60,7 +60,7 @@ type RecognitionFactor
         self = new(id, union(variables, recognition_variables), recognition_clusters, internal_edges)
         rfz.recognition_factors[id] = self # Register self with recognition factorization
 
-        # Register internal edges with the recognition factorization for fast lookup during scheduling
+        # Register relevant edges with the recognition factorization for fast lookup during scheduling
         for edge in internal_edges_connected_to_external_nodes
             rfz.edge_to_recognition_factor[edge] = self
         end

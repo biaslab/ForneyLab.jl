@@ -1,4 +1,4 @@
-module VariationalBayesTest
+module NaiveVariationalBayesTest
 
 using Base.Test
 using ForneyLab
