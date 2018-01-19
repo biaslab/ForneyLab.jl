@@ -51,3 +51,26 @@ function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistr
     0.5*unsafeDetLogMean(marg_prec) +
     0.5*trace( unsafeMean(marg_prec)*(unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))*(unsafeMean(marg_out) - unsafeMean(marg_mean))' ))
 end
+
+function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, Gaussian}, marg_prec::ProbabilityDistribution{Univariate})
+    ensureParameters!(marg_out_mean, (:m, :v))
+
+    V = marg_out_mean.params[:v]
+    m = marg_out_mean.params[:m]
+
+    0.5*log(2*pi) -
+    0.5*unsafeLogMean(marg_prec) +
+    0.5*unsafeMean(marg_prec)*( V[1,1] - 2*V[1,2] + V[2,2] + (m[1] - m[2])^2 )
+end
+
+function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, Gaussian}, marg_prec::ProbabilityDistribution{MatrixVariate})
+    ensureParameters!(marg_out_mean, (:m, :v))
+
+    V = marg_out_mean.params[:v]
+    m = marg_out_mean.params[:m]
+    d = Int64(dims(marg_out_mean)/2)
+
+    0.5*d*log(2*pi) -
+    0.5*unsafeDetLogMean(marg_prec) +
+    0.5*trace( unsafeMean(marg_prec)*( V[1:d,1:d] - 2*V[1:d,d+1:end] + V[d+1:end,d+1:end] + (m[1:d] - m[d+1:end])*(m[1:d] - m[d+1:end])' ) )
+end

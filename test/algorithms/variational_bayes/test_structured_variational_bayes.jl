@@ -3,7 +3,7 @@ module StructuredVariationalBayesTest
 using Base.Test
 using ForneyLab
 import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
-import ForneyLab: VBGaussianMeanVarianceOut, SVBGaussianMeanPrecisionOutGVD, SVBGaussianMeanPrecisionOutVGD, VBGammaOut, SVBGaussianMeanPrecisionW
+import ForneyLab: VBGaussianMeanVarianceOut, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionOutVGD, VBGammaOut, SVBGaussianMeanPrecisionW
 
 # Integration helper
 type MockNode <: SoftFactor
@@ -99,9 +99,9 @@ end
     @test length(schedule_q_s) == 8
     @test ScheduleEntry(nd_s_0.i[:out], VBGaussianMeanVarianceOut) in schedule_q_s
     @test ScheduleEntry(nd_s[4].i[:out], VBGaussianMeanVarianceOut) in schedule_q_s
-    @test ScheduleEntry(nd_s[3].i[:m], SVBGaussianMeanPrecisionOutGVD) in schedule_q_s
-    @test ScheduleEntry(nd_s[2].i[:m], SVBGaussianMeanPrecisionOutGVD) in schedule_q_s
-    @test ScheduleEntry(nd_s[1].i[:m], SVBGaussianMeanPrecisionOutGVD) in schedule_q_s
+    @test ScheduleEntry(nd_s[3].i[:m], SVBGaussianMeanPrecisionMGVD) in schedule_q_s
+    @test ScheduleEntry(nd_s[2].i[:m], SVBGaussianMeanPrecisionMGVD) in schedule_q_s
+    @test ScheduleEntry(nd_s[1].i[:m], SVBGaussianMeanPrecisionMGVD) in schedule_q_s
     @test ScheduleEntry(nd_s[1].i[:out], SVBGaussianMeanPrecisionOutVGD) in schedule_q_s
     @test ScheduleEntry(nd_s[2].i[:out], SVBGaussianMeanPrecisionOutVGD) in schedule_q_s
     @test ScheduleEntry(nd_s[3].i[:out], SVBGaussianMeanPrecisionOutVGD) in schedule_q_s
