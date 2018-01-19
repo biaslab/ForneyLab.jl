@@ -72,5 +72,5 @@ function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::Probability
 
     0.5*d*log(2*pi) -
     0.5*unsafeDetLogMean(marg_prec) +
-    0.5*trace( unsafeMean(marg_prec)*( V[1:d,1:d] - 2*V[1:d,d+1:end] + V[d+1:end,d+1:end] + (m[1:d] - m[d+1:end])*(m[1:d] - m[d+1:end])' ) )
+    0.5*trace( unsafeMean(marg_prec)*( V[1:d,1:d] - V[1:d,d+1:end] - V[d+1:end, 1:d] + V[d+1:end,d+1:end] + (m[1:d] - m[d+1:end])*(m[1:d] - m[d+1:end])' ) )
 end

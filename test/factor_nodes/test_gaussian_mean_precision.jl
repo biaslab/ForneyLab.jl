@@ -3,7 +3,7 @@ module GaussianMeanPrecisionTest
 using Base.Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPGaussianMeanPrecisionOutVPP, SPGaussianMeanPrecisionMPVP, SPGaussianMeanPrecisionOutVGP, SPGaussianMeanPrecisionMGVP, VBGaussianMeanPrecisionOut, VBGaussianMeanPrecisionM, VBGaussianMeanPrecisionW, SVBGaussianMeanPrecisionOutVGD, SVBGaussianMeanPrecisionMGVD, ruleSVBGaussianMeanPrecisionW, MGaussianMeanPrecisionGGD
+import ForneyLab: SPGaussianMeanPrecisionOutVPP, SPGaussianMeanPrecisionMPVP, SPGaussianMeanPrecisionOutVGP, SPGaussianMeanPrecisionMGVP, VBGaussianMeanPrecisionOut, VBGaussianMeanPrecisionM, VBGaussianMeanPrecisionW, SVBGaussianMeanPrecisionOutVGD, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionW, MGaussianMeanPrecisionGGD
 
 
 #-------------
@@ -87,13 +87,13 @@ end
     @test ruleSVBGaussianMeanPrecisionMGVD(Message(Multivariate, Gaussian, m=[3.0], v=[4.0].'), nothing, ProbabilityDistribution(MatrixVariate, Wishart, v=[0.25].', nu=2.0)) == Message(Multivariate, Gaussian, m=[3.0], v=[6.0].')
 end
 
-@testset "ruleSVBGaussianMeanPrecisionW" begin
-    @test ruleSVBGaussianMeanPrecisionW <: StructuredVariationalRule{GaussianMeanPrecision}
-    @test outboundType(ruleSVBGaussianMeanPrecisionW) == Message{Union{Gamma, Wishart}}
-    @test isApplicable(ruleSVBGaussianMeanPrecisionW, [ProbabilityDistribution, Void]) 
+@testset "SVBGaussianMeanPrecisionW" begin
+    @test SVBGaussianMeanPrecisionW <: StructuredVariationalRule{GaussianMeanPrecision}
+    @test outboundType(SVBGaussianMeanPrecisionW) == Message{Union{Gamma, Wishart}}
+    @test isApplicable(SVBGaussianMeanPrecisionW, [ProbabilityDistribution, Void]) 
 
-    @test ruleruleSVBGaussianMeanPrecisionW(ProbabilityDistribution(Multivariate, Gaussian, m=[2.0, 3.0], v=[5.0 1.0; 1.0 4.0]), nothing) == Message(Univariate, Gamma, a=1.5, b=0.5*(5.0 - 2*1.0 + 4.0 + (3.0 - 2.0)^2))
-    @test ruleSVBGaussianMeanPrecisionWWishart(ProbabilityDistribution(Multivariate, Gaussian, m=[1.0, 2.0, 3.0, 4.0], v=[5.0 1.0 0.5 0.0; 1.0 4.0 2.0 0.5; 0.5 2.0 3.0 1.0; 0.0 0.5 1.0 2.0]), nothing) == Message(MatrixVariate, Wishart, v=[1/([5.0 1.0; 1.0 4.0] - [0.5 0.0; 2.0 0.5] - [0.5 2.0; 0.0 0.5] + [3.0 1.0; 1.0 2.0] + ([1.0 2.0] - [3.0 4.0])*([1.0 2.0] - [3.0 4.0])')].', nu=4.0)
+    @test ruleSVBGaussianMeanPrecisionW(ProbabilityDistribution(Multivariate, Gaussian, m=[2.0, 3.0], v=[5.0 1.0; 1.0 4.0]), nothing) == Message(Univariate, Gamma, a=1.5, b=0.5*(5.0 - 2*1.0 + 4.0 + (3.0 - 2.0)^2))
+    @test ruleSVBGaussianMeanPrecisionW(ProbabilityDistribution(Multivariate, Gaussian, m=[1.0, 2.0, 3.0, 4.0], v=[5.0 1.0 0.5 0.0; 1.0 4.0 2.0 0.5; 0.5 2.0 3.0 1.0; 0.0 0.5 1.0 2.0]), nothing) == Message(MatrixVariate, Wishart, v=cholinv([5.0 1.0; 1.0 4.0] - [0.5 0.0; 2.0 0.5] - [0.5 2.0; 0.0 0.5] + [3.0 1.0; 1.0 2.0] + ([1.0, 2.0] - [3.0, 4.0])*([1.0, 2.0] - [3.0, 4.0])'), nu=4.0)
 end
 
 @testset "SVBGaussianMeanPrecisionOutVGD" begin
@@ -109,8 +109,8 @@ end
     @test MGaussianMeanPrecisionGGD <: MarginalRule{GaussianMeanPrecision}
     @test isApplicable(MGaussianMeanPrecisionGGD, [Message{Gaussian}, Message{Gaussian}, ProbabilityDistribution]) 
 
-    @test ruleMGaussianMeanPrecisionGGD(Message(Univariate, Gaussian, m=1.0, w=2.0), Message(Univariate, Gaussian, m=3.0, w=4.0), ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0)) == Message(Multivariate, Gaussian, m=[1.0, 3.0], w=[2.0+0.5 -0.5; -0.5 4.0+0.5])
-    @test ruleMGaussianMeanPrecisionGGD(Message(Multivariate, Gaussian, m=[1.0], w=[2.0].'), Message(Multivariate, Gaussian, m=[3.0], w=[4.0].'), ProbabilityDistribution(MatrixVariate, Wishart, v=[0.25].', nu=2.0)) == Message(Multivariate, Gaussian, m=[1.0, 3.0], w=[2.0+0.5 -0.5; -0.5 4.0+0.5])
+    @test ruleMGaussianMeanPrecisionGGD(Message(Univariate, Gaussian, m=1.0, w=2.0), Message(Univariate, Gaussian, m=3.0, w=4.0), ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0)) == ProbabilityDistribution(Multivariate, Gaussian, m=[1.0, 3.0], w=[2.0+0.5 -0.5; -0.5 4.0+0.5])
+    @test ruleMGaussianMeanPrecisionGGD(Message(Multivariate, Gaussian, m=[1.0], w=[2.0].'), Message(Multivariate, Gaussian, m=[3.0], w=[4.0].'), ProbabilityDistribution(MatrixVariate, Wishart, v=[0.25].', nu=2.0)) == ProbabilityDistribution(Multivariate, Gaussian, m=[1.0, 3.0], w=[2.0+0.5 -0.5; -0.5 4.0+0.5])
 end
 
 @testset "averageEnergy and differentialEntropy" begin

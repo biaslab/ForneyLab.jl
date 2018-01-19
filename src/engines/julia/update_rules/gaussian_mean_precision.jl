@@ -67,13 +67,13 @@ function ruleSVBGaussianMeanPrecisionW( dist_out_mean::ProbabilityDistribution{M
         V = dist_out_mean.params[:v]
         m = dist_out_mean.params[:m]
         
-        return Message(Univariate, Gamma, a=1.5, b=0.5*(V[1,1] - 2*V[1,2] + V[2,2] + (m[1] - m[2])^2)) # TODO: check 2*V[1,2], also further on!
+        return Message(Univariate, Gamma, a=1.5, b=0.5*(V[1,1] - V[1,2] - V[2,1] + V[2,2] + (m[1] - m[2])^2)) # TODO: check 2*V[1,2], also further on!
     else
         V = dist_out_mean.params[:v]
         m = dist_out_mean.params[:m]
         d = Int64(joint_dims/2)
         
-        return Message(MatrixVariate, Wishart, v=cholinv( V[1:d,1:d] - 2*V[1:d,d+1:end] + V[d+1:end,d+1:end] + (m[1:d] - m[d+1:end])*(m[1:d] - m[d+1:end])' ), nu=d + 2.0) 
+        return Message(MatrixVariate, Wishart, v=cholinv( V[1:d,1:d] - V[1:d,d+1:end] - V[d+1:end, 1:d] + V[d+1:end,d+1:end] + (m[1:d] - m[d+1:end])*(m[1:d] - m[d+1:end])' ), nu=d + 2.0) 
     end
 end
 
@@ -94,6 +94,7 @@ function ruleMGaussianMeanPrecisionGGD{V<:VariateType}( msg_out::Message{Gaussia
     W_11 = msg_out.dist.params[:w] + unsafeMean(dist_prec)
     W_22 = msg_mean.dist.params[:w] + unsafeMean(dist_prec)
     W_12 = -unsafeMean(dist_prec)
+    W_21 = -unsafeMean(dist_prec)
 
-    ProbabilityDistribution(Multivariate, Gaussian, m=[msg_out.dist.params[:m]; msg_mean.dist.params[:m]], w=[W_11 W_12; W_12; W_22])
+    ProbabilityDistribution(Multivariate, Gaussian, m=[msg_out.dist.params[:m]; msg_mean.dist.params[:m]], w=[W_11 W_12; W_21 W_22])
 end

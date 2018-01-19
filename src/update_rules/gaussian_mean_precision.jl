@@ -46,7 +46,7 @@
 @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
                            :outbound_type => Message{Union{Gamma, Wishart}},
                            :inbound_types => (ProbabilityDistribution, Void),
-                           :name          => ruleSVBGaussianMeanPrecisionW)
+                           :name          => SVBGaussianMeanPrecisionW)
 
 @marginalRule(:node_type => GaussianMeanPrecision,
               :inbound_types => (Message{Gaussian}, Message{Gaussian}, ProbabilityDistribution),
