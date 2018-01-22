@@ -121,7 +121,7 @@ macro sumProductRule(fields...)
         begin
             type $name <: SumProductRule{$node_type} end
             ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{DataType}) = $(join(input_type_validators, " && "))
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{Type}) = $(join(input_type_validators, " && "))
             $name
         end
     """)
