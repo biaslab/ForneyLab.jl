@@ -101,7 +101,7 @@ macro ~(variable_expr::Any, dist_expr::Expr)
     else
         node_id_expr = parse("ForneyLab.generateId(Variable)")
     end
-
+    
     expr = parse("""
                 begin
                 # Use existing object if it exists, otherwise create a new Variable
@@ -112,11 +112,11 @@ macro ~(variable_expr::Any, dist_expr::Expr)
                 #   - the existing object is a Variable from another FactorGraph
                 if (!isa($(variable_expr), Variable)
                     || !haskey(currentGraph().variables, $(variable_expr).id)
-                    || !is(currentGraph().variables[$(variable_expr).id], $(variable_expr)))
+                    || currentGraph().variables[$(variable_expr).id] !== $(variable_expr))
 
                     $(variable_expr) = Variable(id=ForneyLab.pack($(node_id_expr)))
                 end
-
+                
                 $(dist_expr)
                 $(variable_expr)
                 end

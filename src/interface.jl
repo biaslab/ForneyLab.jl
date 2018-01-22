@@ -21,9 +21,9 @@ end
 
 """Return interface handle name"""
 function handle(interface::Interface)
-    if isdefined(interface.node, :i)
+    if defined(interface.node, :i)
         for h in keys(interface.node.i)
-            if (typeof(h)==Symbol || typeof(h)==Int) && is(interface.node.i[h], interface)
+            if (typeof(h)==Symbol || typeof(h)==Int) && (interface.node.i[h] === interface)
                 return string(h)
             end
         end
