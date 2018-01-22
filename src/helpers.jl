@@ -1,4 +1,4 @@
-export huge, tiny, cholinv, diageye, format, *, .*, ^
+export huge, tiny, cholinv, diageye, format, *, .*, ^, mat
 
 import Base: *, .*, ^, ==, sqrt
 
@@ -161,3 +161,8 @@ function leaftypes(datatype::DataType)
 
     return leafs
 end
+
+"""
+Helper function to construct 1x1 Matrix
+"""
+mat(sc) = reshape([sc],1,1)

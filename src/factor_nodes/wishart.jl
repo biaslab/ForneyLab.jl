@@ -37,8 +37,8 @@ slug(::Type{Wishart}) = "W"
 
 format(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = "$(slug(Wishart))(v=$(format(dist.params[:v])), nu=$(format(dist.params[:nu])))"
 
-ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Wishart}; v=[1.0].', nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
-ProbabilityDistribution(::Type{Wishart}; v=[1.0].', nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Wishart}; v=mat(1.0), nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+ProbabilityDistribution(::Type{Wishart}; v=mat(1.0), nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
 
 dims(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = size(dist.params[:v])
 
@@ -73,7 +73,7 @@ end
 
 function prod!( x::ProbabilityDistribution{MatrixVariate, Wishart},
                 y::ProbabilityDistribution{MatrixVariate, Wishart},
-                z::ProbabilityDistribution{MatrixVariate, Wishart}=ProbabilityDistribution(MatrixVariate, Wishart, v=[1.0].', nu=1.0))
+                z::ProbabilityDistribution{MatrixVariate, Wishart}=ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=1.0))
 
     d = dims(x)[1]
     z.params[:v] = x.params[:v] * cholinv(x.params[:v] + y.params[:v]) * y.params[:v]
@@ -84,7 +84,7 @@ end
 
 @symmetrical function prod!(x::ProbabilityDistribution{MatrixVariate, Wishart},
                             y::ProbabilityDistribution{MatrixVariate, PointMass},
-                            z::ProbabilityDistribution{MatrixVariate, PointMass}=ProbabilityDistribution(MatrixVariate, PointMass, m=[NaN].'))
+                            z::ProbabilityDistribution{MatrixVariate, PointMass}=ProbabilityDistribution(MatrixVariate, PointMass, m=mat(NaN)))
 
     isRoundedPosDef(y.params[:m]) || error("PointMass location $(y.params[:m]) should be positive definite")
     z.params[:m] = deepcopy(y.params[:m])

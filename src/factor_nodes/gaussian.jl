@@ -195,7 +195,7 @@ function ensureParameter!{T<:VariateType}(dist::ProbabilityDistribution{T, Gauss
 end
 
 function =={T<:VariateType}(t::ProbabilityDistribution{T, Gaussian}, u::ProbabilityDistribution{T, Gaussian})
-    if is(t, u)
+    if t === u
         return true
     end
     ensureParameters!(t, (:xi, :w))
