@@ -140,7 +140,7 @@ macro variationalRule(fields...)
         begin
             type $name <: VariationalRule{$node_type} end
             ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{DataType}) = $(join(input_type_validators, " && "))
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{Type}) = $(join(input_type_validators, " && "))
             $name
         end
     """)
