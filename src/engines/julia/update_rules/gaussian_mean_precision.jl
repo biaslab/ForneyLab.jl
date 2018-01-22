@@ -91,10 +91,11 @@ function ruleMGaussianMeanPrecisionGGD{V<:VariateType}( msg_out::Message{Gaussia
     ensureParameters!(msg_out.dist, (:m, :w))
     ensureParameters!(msg_mean.dist, (:m, :w))
 
-    W_11 = msg_out.dist.params[:w] + unsafeMean(dist_prec)
-    W_22 = msg_mean.dist.params[:w] + unsafeMean(dist_prec)
-    W_12 = -unsafeMean(dist_prec)
-    W_21 = -unsafeMean(dist_prec)
+    W_bar = unsafeMean(dist_prec)
+    W_11 = msg_out.dist.params[:w] + W_bar
+    W_22 = msg_mean.dist.params[:w] + W_bar
+    W_12 = -W_bar
+    W_21 = -W_bar
 
-    ProbabilityDistribution(Multivariate, Gaussian, m=[msg_out.dist.params[:m]; msg_mean.dist.params[:m]], w=[W_11 W_12; W_21 W_22])
+    d = ProbabilityDistribution(Multivariate, Gaussian, m=[msg_out.dist.params[:m]; msg_mean.dist.params[:m]], w=[W_11 W_12; W_21 W_22])
 end

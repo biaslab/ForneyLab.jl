@@ -190,9 +190,9 @@ function localRecognitionFactorization(node::FactorNode)
     local_cluster_ids = localClusterIds(node)
 
     # Construct dictionary for local recognition factorization
-    local_recognition_factorization = Dict{Symbol, Vector}()
-    for (idx, factor) in enumerate(local_recognition_factor_ids)
-        local_recognition_factorization[factor] = [local_cluster_ids[idx]]
+    local_recognition_factorization = Dict{Symbol, Symbol}()
+    for (idx, factor_id) in enumerate(local_recognition_factor_ids)
+        local_recognition_factorization[factor_id] = local_cluster_ids[idx]
     end
 
     return local_recognition_factorization
