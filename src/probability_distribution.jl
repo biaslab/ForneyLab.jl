@@ -87,7 +87,7 @@ macro ~(variable_expr::Any, dist_expr::Expr)
     # Sanity checks
     (dist_expr.head == :call) || error("Incorrect use of ~ operator.")
     (eval(dist_expr.args[1]) <: SoftFactor) || error("~ operator should be followed by subtype of SoftFactor.")
-
+    
     # Build FactorNode constructor call
     if isa(dist_expr.args[2], Expr) && (dist_expr.args[2].head == :parameters)
         dist_expr.args = vcat(dist_expr.args[1:2], [variable_expr], dist_expr.args[3:end])

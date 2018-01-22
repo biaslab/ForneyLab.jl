@@ -23,7 +23,7 @@ mutable struct Clamp{T<:VariateType} <: DeltaFactor
     value::Any
 end
 
-function Clamp(out::Variable, value::Any; id=generateId(Clamp))
+function Clamp(out::Variable, value::Any; id=generateId(Clamp{variateType(value)}))
     self = Clamp{variateType(value)}(id, Array{Interface}(1), Dict{Symbol,Interface}(), value)
     addNode!(currentGraph(), self)
 
@@ -42,7 +42,7 @@ and returns this variable.
 
     y = constant(3.0, id=:y)
 """
-function constant(value::Any; id=generateId(Clamp))
+function constant(value::Any; id=generateId(Clamp{variateType(value)}))
     # This is basically an outer constructor for Clamp,
     # but the function returns the new variable linked to the Clamp.
     var = Variable(id=id)

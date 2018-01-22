@@ -41,7 +41,7 @@ FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, FactorNode}(),
 """
 Automatically generate a unique id based on the current counter value for the element type.
 """
-function generateId(t::Union{DataType, UnionAll})
+function generateId(t::DataType)
     current_graph = currentGraph()
     haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
     count = current_graph.counters[t]

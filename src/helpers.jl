@@ -154,7 +154,6 @@ function leaftypes(datatype::DataType)
             if isleaftype(T)
                 push!(leafs, T)
             else
-                println(T)
                 push!(stack, T)
             end
         end
