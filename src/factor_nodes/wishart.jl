@@ -48,7 +48,7 @@ unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = dist.params[
 
 function unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
-    sum([digamma(0.5*(dist.params[:nu] + 1 - i)) for i = 1:d]) +
+    sum([digamma.(0.5*(dist.params[:nu] + 1 - i)) for i = 1:d]) +
     d*log(2) +
     log(det(dist.params[:v]))
 end
@@ -99,7 +99,7 @@ function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Wishar
     0.5*d*(d + 1.0)*log(2) +
     0.25*d*(d - 1.0)*log(pi) +
     sum([lgamma(0.5*(dist.params[:nu] + 1.0 - i)) for i=1:d]) -
-    0.5*(dist.params[:nu] - d - 1.0) * sum([digamma(0.5*(dist.params[:nu] + 1.0 - i)) for i=1:d]) +
+    0.5*(dist.params[:nu] - d - 1.0) * sum([digamma.(0.5*(dist.params[:nu] + 1.0 - i)) for i=1:d]) +
     0.5*dist.params[:nu]*d
 end
 

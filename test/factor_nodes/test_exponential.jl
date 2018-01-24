@@ -8,8 +8,8 @@ import ForneyLab: SPExponentialOutVG, SPExponentialOutVP, SPExponentialIn1LV, SP
 @testset "Exponential node construction through exp() syntax" begin
     g = FactorGraph()
 
-    x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
-    z = exp(x)
+    @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV z = exp(x)
 
     @test isa(z, Variable)
     @test isa(g.nodes[:exponential_1], Exponential)

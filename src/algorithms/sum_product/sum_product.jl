@@ -27,12 +27,12 @@ sumProductSchedule(variable::Variable) = sumProductSchedule([variable])
 
 function inferUpdateRule!{T<:SumProductRule}(   entry::ScheduleEntry,
                                                 rule_type::Type{T},
-                                                inferred_outbound_types::Dict{Interface, DataType})
+                                                inferred_outbound_types::Dict{Interface, <:Type})
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
 
     # Find applicable rule(s)
-    applicable_rules = DataType[]
+    applicable_rules = Type[]
     for rule in leaftypes(entry.msg_update_rule)
         if isApplicable(rule, inbound_types)
             push!(applicable_rules, rule)
@@ -53,8 +53,8 @@ end
 
 function collectInboundTypes{T<:SumProductRule}(entry::ScheduleEntry,
                                                 ::Type{T},
-                                                inferred_outbound_types::Dict{Interface, DataType})
-    inbound_message_types = DataType[]
+                                                inferred_outbound_types::Dict{Interface, <:Type})
+    inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces
         if node_interface == entry.interface
             push!(inbound_message_types, Void)
@@ -119,12 +119,12 @@ macro sumProductRule(fields...)
 
     expr = parse("""
         begin
-            type $name <: SumProductRule{$node_type} end
+            mutable struct $name <: SumProductRule{$node_type} end
             ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{Type}) = $(join(input_type_validators, " && "))
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = $(join(input_type_validators, " && "))
             $name
         end
     """)
-
+    
     return esc(expr)
 end

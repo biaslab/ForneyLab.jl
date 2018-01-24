@@ -77,7 +77,7 @@ end
 Constructs breaker types dictionary for breaker sites
 """
 function breakerTypes(breaker_sites::Vector{Interface})
-    breaker_types = Dict{Interface, DataType}()
+    breaker_types = Dict{Interface, Type}()
     for site in breaker_sites
         if isa(site.partner.node, Sigmoid)
             breaker_types[site] = Message{Gaussian, Univariate} # Sigmoid EP site partner requires Gaussian breaker
@@ -91,7 +91,7 @@ expectationPropagationSchedule(variable::Variable) = expectationPropagationSched
 
 function inferUpdateRule!{T<:ExpectationPropagationRule}(   entry::ScheduleEntry,
                                                             rule_type::Type{T},
-                                                            inferred_outbound_types::Dict{Interface, DataType})
+                                                            inferred_outbound_types::Dict{Interface, <:Type})
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
 
@@ -99,7 +99,7 @@ function inferUpdateRule!{T<:ExpectationPropagationRule}(   entry::ScheduleEntry
     outbound_id = findfirst(entry.interface.node.interfaces, entry.interface)    
     
     # Find applicable rule(s)
-    applicable_rules = DataType[]
+    applicable_rules = Type[]
     for rule in leaftypes(entry.msg_update_rule)
         if isApplicable(rule, inbound_types, outbound_id)
             push!(applicable_rules, rule)
@@ -120,8 +120,8 @@ end
 
 function collectInboundTypes{T<:ExpectationPropagationRule}(entry::ScheduleEntry,
                                                             ::Type{T},
-                                                            inferred_outbound_types::Dict{Interface, DataType})
-    inbound_message_types = DataType[]
+                                                            inferred_outbound_types::Dict{Interface, <:Type})
+    inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces
         if (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
             push!(inbound_message_types, Message{PointMass})
@@ -188,7 +188,7 @@ macro expectationPropagationRule(fields...)
         begin
             type $name <: ExpectationPropagationRule{$node_type} end
             ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{DataType}, outbound_id::Int64) = $(join(input_type_validators, " && ")) && (outbound_id == $outbound_id)
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}, outbound_id::Int64) = $(join(input_type_validators, " && ")) && (outbound_id == $outbound_id)
             $name
         end
     """)

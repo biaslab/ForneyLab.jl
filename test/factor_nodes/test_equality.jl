@@ -21,9 +21,9 @@ import ForneyLab: SPEqualityGaussian, SPEqualityGammaWishart, SPEqualityBernoull
     @test ruleSPEqualityGaussian(Message(Univariate, Gaussian, xi=1.0, w=2.0), nothing, Message(Univariate, Gaussian, xi=3.0, w=4.0)) == Message(Univariate, Gaussian, xi=4.0, w=6.0)
     @test ruleSPEqualityGaussian(nothing, Message(Univariate, Gaussian, xi=1.0, w=2.0), Message(Univariate, Gaussian, xi=3.0, w=4.0)) == Message(Univariate, Gaussian, xi=4.0, w=6.0)
 
-    @test ruleSPEqualityGaussian(Message(Multivariate, Gaussian, xi=[1.0], w=[2.0].'), Message(Multivariate, Gaussian, xi=[3.0], w=[4.0].'), nothing) == Message(Multivariate, Gaussian, xi=[4.0], w=[6.0].')
-    @test ruleSPEqualityGaussian(Message(Multivariate, Gaussian, xi=[1.0], w=[2.0].'), nothing, Message(Multivariate, Gaussian, xi=[3.0], w=[4.0].')) == Message(Multivariate, Gaussian, xi=[4.0], w=[6.0].')
-    @test ruleSPEqualityGaussian(nothing, Message(Multivariate, Gaussian, xi=[1.0], w=[2.0].'), Message(Multivariate, Gaussian, xi=[3.0], w=[4.0].')) == Message(Multivariate, Gaussian, xi=[4.0], w=[6.0].')
+    @test ruleSPEqualityGaussian(Message(Multivariate, Gaussian, xi=[1.0], w=mat(2.0)), Message(Multivariate, Gaussian, xi=[3.0], w=mat(4.0)), nothing) == Message(Multivariate, Gaussian, xi=[4.0], w=mat(6.0))
+    @test ruleSPEqualityGaussian(Message(Multivariate, Gaussian, xi=[1.0], w=mat(2.0)), nothing, Message(Multivariate, Gaussian, xi=[3.0], w=mat(4.0))) == Message(Multivariate, Gaussian, xi=[4.0], w=mat(6.0))
+    @test ruleSPEqualityGaussian(nothing, Message(Multivariate, Gaussian, xi=[1.0], w=mat(2.0)), Message(Multivariate, Gaussian, xi=[3.0], w=mat(4.0))) == Message(Multivariate, Gaussian, xi=[4.0], w=mat(6.0))
 end
 
 @testset "SPEqualityGammaWishart" begin
@@ -39,9 +39,9 @@ end
     @test ruleSPEqualityGammaWishart(Message(Univariate, Gamma, a=1.0, b=2.0), nothing, Message(Univariate, Gamma, a=3.0, b=4.0)) == Message(Univariate, Gamma, a=3.0, b=6.0)
     @test ruleSPEqualityGammaWishart(nothing, Message(Univariate, Gamma, a=1.0, b=2.0), Message(Univariate, Gamma, a=3.0, b=4.0)) == Message(Univariate, Gamma, a=3.0, b=6.0)
 
-    @test ruleSPEqualityGammaWishart(Message(MatrixVariate, Wishart, nu=2.0, v=[0.25].'), Message(MatrixVariate, Wishart, nu=6.0, v=[0.125].'), nothing) == Message(MatrixVariate, Wishart, nu=6.0, v=[0.08333333333333336].')
-    @test ruleSPEqualityGammaWishart(Message(MatrixVariate, Wishart, nu=2.0, v=[0.25].'), nothing, Message(MatrixVariate, Wishart, nu=6.0, v=[0.125].')) == Message(MatrixVariate, Wishart, nu=6.0, v=[0.08333333333333336].')
-    @test ruleSPEqualityGammaWishart(nothing, Message(MatrixVariate, Wishart, nu=2.0, v=[0.25].'), Message(MatrixVariate, Wishart, nu=6.0, v=[0.125].')) == Message(MatrixVariate, Wishart, nu=6.0, v=[0.08333333333333336].')
+    @test ruleSPEqualityGammaWishart(Message(MatrixVariate, Wishart, nu=2.0, v=mat(0.25)), Message(MatrixVariate, Wishart, nu=6.0, v=mat(0.125)), nothing) == Message(MatrixVariate, Wishart, nu=6.0, v=mat(0.08333333333333336))
+    @test ruleSPEqualityGammaWishart(Message(MatrixVariate, Wishart, nu=2.0, v=mat(0.25)), nothing, Message(MatrixVariate, Wishart, nu=6.0, v=mat(0.125))) == Message(MatrixVariate, Wishart, nu=6.0, v=mat(0.08333333333333336))
+    @test ruleSPEqualityGammaWishart(nothing, Message(MatrixVariate, Wishart, nu=2.0, v=mat(0.25)), Message(MatrixVariate, Wishart, nu=6.0, v=mat(0.125))) == Message(MatrixVariate, Wishart, nu=6.0, v=mat(0.08333333333333336))
 end
 
 @testset "SPEqualityBernoulli" begin

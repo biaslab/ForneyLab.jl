@@ -47,7 +47,7 @@ function extend(edge_set::Set{Edge})
         for node in [current_edge.a.node, current_edge.b.node] # Check both head and tail node for deterministic type
             if isa(node, DeltaFactor)
                 for interface in node.interfaces
-                    if !is(interface.edge, current_edge) && !(interface.edge in cluster) # Is next level edge not seen yet?
+                    if (interface.edge !== current_edge) && !(interface.edge in cluster) # Is next level edge not seen yet?
                         push!(edges, interface.edge) # Add to buffer to visit sometime in the future
                     end
                 end

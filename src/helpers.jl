@@ -146,9 +146,10 @@ end
 """
 `leaftypes(datatype)` returns all subtypes of `datatype` that are leafs in the type tree.
 """
-function leaftypes(datatype::DataType)
+function leaftypes(datatype::Type)
     leafs = []
-    stack = Union{UnionAll, DataType}[datatype]
+    stack = Type[datatype]
+    # push!(stack, datatype)
     while !isempty(stack)
         for T in subtypes(pop!(stack))
             if isleaftype(T)

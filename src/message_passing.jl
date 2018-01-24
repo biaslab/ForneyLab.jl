@@ -117,7 +117,7 @@ function summaryDependencyGraph(edgeset::Set{Edge}; reverse_edges=false)
     for interface in dg.vertices
         if isa(interface.partner, Interface) # interface is connected to an Edge
             for node_interface in interface.partner.node.interfaces
-                is(node_interface, interface.partner) && continue
+                (node_interface === interface.partner) && continue
                 (node_interface.edge in edgeset) || continue
                 if reverse_edges
                     addEdge!(dg, interface, node_interface)
@@ -160,7 +160,7 @@ summaryPropagationSchedule(variable::Variable; limit_set=edges(current_graph), t
 """
 inferUpdateRules!(schedule) infers specific message update rules for all schedule entries.
 """
-function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Interface, DataType}())
+function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Interface, Type}())
     # Dict to hold all inferred message types
     for entry in schedule
         (entry.msg_update_rule == Void) && error("No msg update rule type specified for $(entry)")

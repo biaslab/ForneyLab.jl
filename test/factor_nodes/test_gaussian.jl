@@ -24,10 +24,10 @@ end
     @test !isProper(ProbabilityDistribution(Univariate, Gaussian, m=0.0, w=-1.0))
 
     # Multivariate
-    @test isProper(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=[1.0].'))
+    @test isProper(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=mat(1.0)))
     @test isProper(ProbabilityDistribution(Multivariate, Gaussian, m=ones(2), v=diageye(2)))
-    @test !isProper(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=[-1.0].'))
-    @test !isProper(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], w=[-1.0].'))
+    @test !isProper(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=mat(-1.0)))
+    @test !isProper(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], w=mat(-1.0)))
 end
 
 @testset "sample" begin
@@ -67,17 +67,17 @@ end
     @test !isWellDefined(ProbabilityDistribution(Univariate, Gaussian, m=0.0, xi=0.0, v=NaN))
 
     # Multivariate
-    @test isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=[1.0].'))
-    @test isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], w=[1.0].'))
+    @test isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=mat(1.0)))
+    @test isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], w=mat(1.0)))
     @test isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=zeros(2), w=diageye(2)))
-    @test isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, xi=[0.0], w=[1.0].'))
-    @test isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], xi=[0.0], w=[1.0].', v=[1.0].'))
-    @test !isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[NaN], v=[1.0].'))
-    @test !isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], w=[NaN].'))
-    @test !isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, v=[1.0].', w=[1.0].'))
+    @test isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, xi=[0.0], w=mat(1.0)))
+    @test isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], xi=[0.0], w=mat(1.0), v=mat(1.0)))
+    @test !isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[NaN], v=mat(1.0)))
+    @test !isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], w=mat(NaN)))
+    @test !isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, v=mat(1.0), w=mat(1.0)))
     @test !isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], xi=[0.0]))
-    @test !isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[NaN], v=[1.0].', w=[1.0].'))
-    @test !isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], xi=[0.0], v=[NaN].'))
+    @test !isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[NaN], v=mat(1.0), w=mat(1.0)))
+    @test !isWellDefined(ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], xi=[0.0], v=mat(NaN)))
 end
 
 @testset "ensureParameters!" begin
@@ -86,8 +86,8 @@ end
     @test ensureParameters!(dist, (:xi, :w)).params == Dict(:m=>0.0, :v=>1.0, :xi=>0.0, :w=>1.0)
 
     # Multivariate
-    dist = ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=[1.0].')
-    @test ensureParameters!(dist, (:xi, :w)).params == Dict(:m=>[0.0], :v=>[1.0].', :xi=>[0.0], :w=>[1.0].')
+    dist = ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=mat(1.0))
+    @test ensureParameters!(dist, (:xi, :w)).params == Dict(:m=>[0.0], :v=>mat(1.0), :xi=>[0.0], :w=>mat(1.0))
 end
 
 @testset "==" begin
@@ -96,8 +96,8 @@ end
     @test ProbabilityDistribution(Univariate, Gaussian, xi=0.0, w=1.0) == ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0)
 
     # Multivariate
-    @test ProbabilityDistribution(Multivariate, Gaussian, xi=[0.0], w=[1.0].') == ProbabilityDistribution(Multivariate, Gaussian, xi=[0.0], w=[1.0].')
-    @test ProbabilityDistribution(Multivariate, Gaussian, xi=[0.0], w=[1.0].') == ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=[1.0].')
+    @test ProbabilityDistribution(Multivariate, Gaussian, xi=[0.0], w=mat(1.0)) == ProbabilityDistribution(Multivariate, Gaussian, xi=[0.0], w=mat(1.0))
+    @test ProbabilityDistribution(Multivariate, Gaussian, xi=[0.0], w=mat(1.0)) == ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=mat(1.0))
 end
 
 @testset "unsafe mean and variance" begin

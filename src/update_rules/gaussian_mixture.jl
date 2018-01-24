@@ -1,6 +1,6 @@
 mutable struct VBGaussianMixtureZBer <: VariationalRule{GaussianMixture} end
 outboundType(::Type{VBGaussianMixtureZBer}) = Message{Bernoulli}
-function isApplicable(::Type{VBGaussianMixtureZBer}, input_types::Vector{DataType})
+function isApplicable(::Type{VBGaussianMixtureZBer}, input_types::Vector{<:Type})
     (length(input_types) == 6) || return false
     for (i, input_type) in enumerate(input_types)
         if (i == 2)
@@ -14,7 +14,7 @@ end
 
 mutable struct VBGaussianMixtureZCat <: VariationalRule{GaussianMixture} end
 outboundType(::Type{VBGaussianMixtureZCat}) = Message{Categorical}
-function isApplicable(::Type{VBGaussianMixtureZCat}, input_types::Vector{DataType})
+function isApplicable(::Type{VBGaussianMixtureZCat}, input_types::Vector{<:Type})
     (length(input_types) > 6) || return false
     iseven(length(input_types)) || return false
     for (i, input_type) in enumerate(input_types)
@@ -27,7 +27,7 @@ function isApplicable(::Type{VBGaussianMixtureZCat}, input_types::Vector{DataTyp
     return true
 end
 
-function matchPVInputs(input_types::Vector{DataType})
+function matchPVInputs(input_types::Vector{<:Type})
     void_positions = []
     p_positions = []
     for (i, input_type) in enumerate(input_types)
@@ -43,7 +43,7 @@ end
 
 mutable struct VBGaussianMixtureM <: VariationalRule{GaussianMixture} end
 outboundType(::Type{VBGaussianMixtureM}) = Message{Gaussian}
-function isApplicable(::Type{VBGaussianMixtureM}, input_types::Vector{DataType})
+function isApplicable(::Type{VBGaussianMixtureM}, input_types::Vector{<:Type})
     n_inputs = length(input_types)
     iseven(n_inputs) || return false
     
@@ -62,7 +62,7 @@ end
 
 mutable struct VBGaussianMixtureW <: VariationalRule{GaussianMixture} end
 outboundType(::Type{VBGaussianMixtureW}) = Message{Union{Gamma, Wishart}}
-function isApplicable(::Type{VBGaussianMixtureW}, input_types::Vector{DataType})
+function isApplicable(::Type{VBGaussianMixtureW}, input_types::Vector{<:Type})
     n_inputs = length(input_types)
     iseven(n_inputs) || return false
     
@@ -81,7 +81,7 @@ end
 
 mutable struct VBGaussianMixtureOut <: VariationalRule{GaussianMixture} end
 outboundType(::Type{VBGaussianMixtureOut}) = Message{Gaussian}
-function isApplicable(::Type{VBGaussianMixtureOut}, input_types::Vector{DataType})
+function isApplicable(::Type{VBGaussianMixtureOut}, input_types::Vector{<:Type})
     iseven(length(input_types)) || return false
     for (i, input_type) in enumerate(input_types)
         if (i == 1)

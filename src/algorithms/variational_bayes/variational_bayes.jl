@@ -35,12 +35,12 @@ variationalSchedule(recognition_factor::RecognitionFactor) = variationalSchedule
 
 function inferUpdateRule!{T<:VariationalRule}(  entry::ScheduleEntry,
                                                 rule_type::Type{T},
-                                                inferred_outbound_types::Dict{Interface, DataType})
+                                                inferred_outbound_types::Dict{Interface, <:Type})
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
     
     # Find applicable rule(s)
-    applicable_rules = DataType[]
+    applicable_rules = Type[]
     for rule in leaftypes(entry.msg_update_rule)
         if isApplicable(rule, inbound_types)
             push!(applicable_rules, rule)
@@ -61,8 +61,8 @@ end
 
 function collectInboundTypes{T<:VariationalRule}(entry::ScheduleEntry,
                                                  ::Type{T},
-                                                 inferred_outbound_types::Dict{Interface, DataType})
-    inbound_types = DataType[]
+                                                 inferred_outbound_types::Dict{Interface, <:Type})
+    inbound_types = Type[]
     entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
     for node_interface in entry.interface.node.interfaces
         if node_interface == entry.interface
@@ -140,7 +140,7 @@ macro variationalRule(fields...)
         begin
             type $name <: VariationalRule{$node_type} end
             ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{Type}) = $(join(input_type_validators, " && "))
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = $(join(input_type_validators, " && "))
             $name
         end
     """)

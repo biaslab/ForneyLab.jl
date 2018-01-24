@@ -12,7 +12,7 @@ function ruleVBGaussianMixtureM(dist_out::ProbabilityDistribution,
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])
     k = findfirst(dist_means .== nothing) # Find factor
-    z_bar = clamp(unsafeMeanVector(dist_switch), tiny, 1.0 - tiny)
+    z_bar = clamp.(unsafeMeanVector(dist_switch), tiny, 1.0 - tiny)
 
     return Message(Univariate, Gaussian, m=unsafeMean(dist_out), w=z_bar[k]*unsafeMean(dist_precs[k]))
 end
@@ -24,7 +24,7 @@ function ruleVBGaussianMixtureM(dist_out::ProbabilityDistribution,
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])
     k = findfirst(dist_means .== nothing) # Find factor
-    z_bar = clamp(unsafeMeanVector(dist_switch), tiny, 1.0 - tiny)
+    z_bar = clamp.(unsafeMeanVector(dist_switch), tiny, 1.0 - tiny)
 
     return Message(Multivariate, Gaussian, m=unsafeMean(dist_out), w=z_bar[k]*unsafeMean(dist_precs[k]))
 end
@@ -61,7 +61,7 @@ end
 function softmax(v::Vector{Float64})
     r = v - maximum(v)
     clamp!(r, -100.0, 0.0)
-    exp(r)./sum(exp(r))
+    exp.(r)./sum(exp.(r))
 end
 
 function ruleVBGaussianMixtureZBer( dist_out::ProbabilityDistribution,

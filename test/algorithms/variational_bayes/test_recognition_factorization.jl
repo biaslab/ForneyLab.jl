@@ -11,11 +11,11 @@ end
 
 @testset "RecognitionFactor" begin
     g = FactorGraph()
-    m ~ GaussianMeanVariance(constant(0.0), constant(1.0))
-    w ~ Gamma(constant(1.0), constant(1.0))
+    @RV m ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV w ~ Gamma(constant(1.0), constant(1.0))
     y = Variable[]
     for i = 1:3
-        y_i ~ GaussianMeanPrecision(m, w)
+        @RV y_i ~ GaussianMeanPrecision(m, w)
         placeholder(y_i, :y, index=i)
         push!(y, y_i)
     end
