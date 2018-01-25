@@ -5,7 +5,7 @@ Description:
 
     A Gaussian with mean-variance parameterization:
 
-    f(out,m,v) = 𝒩(out|m,v)
+    f(out,m,v) = 𝒩(out|m,v) = (2π)^{-D/2} |v|^{-1/2} exp(-1/2 (out - m)' v^{-1} (out - m))
 
 Interfaces:
 
@@ -37,7 +37,7 @@ slug(::Type{GaussianMeanVariance}) = "𝒩"
 
 ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianMeanVariance}; m=0.0, v=1.0) = ProbabilityDistribution(Univariate, Gaussian, m=m, v=v)
 ProbabilityDistribution(::Type{GaussianMeanVariance}; m::Number=0.0, v::Number=1.0) = ProbabilityDistribution(Univariate, Gaussian, m=m, v=v)
-ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanVariance}; m=[0.0], v=[1.0].') = ProbabilityDistribution(Multivariate, Gaussian, m=m, v=v)
+ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanVariance}; m=[0.0], v=mat(1.0)) = ProbabilityDistribution(Multivariate, Gaussian, m=m, v=v)
 
 # Average energy functional
 function averageEnergy(::Type{GaussianMeanVariance}, marg_out::ProbabilityDistribution{Univariate}, marg_mean::ProbabilityDistribution{Univariate}, marg_var::ProbabilityDistribution{Univariate})

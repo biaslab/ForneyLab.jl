@@ -8,7 +8,7 @@ Description:
     a > 0
     b > 0
     
-    f(out, a, b) = Beta(out|a, b)
+    f(out, a, b) = Beta(out|a, b) = Γ(a + b)/(Γ(a) Γ(b)) out^{a - 1} (1 - out)^{b - 1}
 
 Interfaces:
     1. out

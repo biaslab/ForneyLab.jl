@@ -7,7 +7,7 @@ Description:
     out ∈ {0, 1}^d
     p ∈ [0, 1]^d
     
-    f(out, p) = Cat(out|p)
+    f(out, p) = Cat(out|p) = Π p_i^{out_i}
 
 Interfaces:
     1. out

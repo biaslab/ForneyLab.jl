@@ -1,4 +1,3 @@
-import Base.factor
 export factor, RecognitionFactor, RecognitionFactorization, currentRecognitionFactorization
 
 """

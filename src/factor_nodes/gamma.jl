@@ -5,7 +5,7 @@ Description:
 
     A gamma node with shape-rate parameterization:
 
-    f(out,a,b) = Gam(out|a,b)
+    f(out,a,b) = Gam(out|a,b) = 1/Γ(a) b^a out^{a - 1} exp(-b out)
 
 Interfaces:
 

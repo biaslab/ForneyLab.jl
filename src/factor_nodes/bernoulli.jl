@@ -7,7 +7,7 @@ Description:
     out ∈ {0, 1}
     p ∈ [0, 1]
     
-    f(out, p) = Ber(out|p)
+    f(out, p) = Ber(out|p) = p^out (1 - p)^{1 - out}
 
 Interfaces:
     1. out
@@ -65,8 +65,10 @@ end
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Bernoulli})
-    -(1.0 - dist.params[:p])*log(1.0 - dist.params[:p]) -
-    dist.params[:p]*log(dist.params[:p])
+    p = clamp(dist.params[:p], tiny, 1.0 - tiny)
+
+    -(1.0 - p)*log(1.0 - p) -
+    p*log(p)
 end
 
 # Average energy functional

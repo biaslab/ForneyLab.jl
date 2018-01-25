@@ -7,7 +7,7 @@ Description:
     Real vector
     a .> 0
     
-    f(out, a) = Dirichlet(out|a)
+    f(out, a) = Dir(out|a) = Γ(Σ a_i)/(Π Γ(a_i)) Π out_i^{a_i}
 
 Interfaces:
     1. out
