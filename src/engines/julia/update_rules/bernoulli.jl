@@ -3,7 +3,7 @@ ruleSPBernoulliOutVP,
 ruleVBBernoulliOut,
 ruleVBBernoulliIn1
 
-ruleSPBernoulliOutVP(msg_out::Void, msg_p::Message{PointMass, Univariate}) = Message(Univariate, Bernoulli, p=msg_p.dist.params[:m])
+ruleSPBernoulliOutVP(msg_out::Void, msg_p::Message{PointMass, Univariate}) = Message(Univariate, Bernoulli, p=deepcopy(msg_p.dist.params[:m]))
 
 function ruleVBBernoulliOut(marg_out::Any, marg_p::ProbabilityDistribution{Univariate})
     rho_1 = clamp(exp(unsafeLogMean(marg_p)), tiny, huge)

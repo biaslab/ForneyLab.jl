@@ -54,12 +54,11 @@ function ruleSVBGaussianMeanPrecisionOutVGD{V<:VariateType}(dist_out::Any,
                                                             dist_prec::ProbabilityDistribution)
     ensureParameters!(msg_mean.dist, (:m, :v))
 
-    Message(V, Gaussian, m=msg_mean.dist.params[:m], v=msg_mean.dist.params[:v] + cholinv(unsafeMean(dist_prec)))
+    Message(V, Gaussian, m=deepcopy(msg_mean.dist.params[:m]), v=msg_mean.dist.params[:v] + cholinv(unsafeMean(dist_prec)))
 end
 
 function ruleSVBGaussianMeanPrecisionW( dist_out_mean::ProbabilityDistribution{Multivariate, Gaussian},
                                         dist_prec::Any)
-
     ensureParameters!(dist_out_mean, (:m, :v))
 
     joint_dims = dims(dist_out_mean)
@@ -67,7 +66,7 @@ function ruleSVBGaussianMeanPrecisionW( dist_out_mean::ProbabilityDistribution{M
         V = dist_out_mean.params[:v]
         m = dist_out_mean.params[:m]
         
-        return Message(Univariate, Gamma, a=1.5, b=0.5*(V[1,1] - V[1,2] - V[2,1] + V[2,2] + (m[1] - m[2])^2)) # TODO: check 2*V[1,2], also further on!
+        return Message(Univariate, Gamma, a=1.5, b=0.5*(V[1,1] - V[1,2] - V[2,1] + V[2,2] + (m[1] - m[2])^2))
     else
         V = dist_out_mean.params[:v]
         m = dist_out_mean.params[:m]
@@ -82,7 +81,7 @@ function ruleSVBGaussianMeanPrecisionMGVD{V<:VariateType}(  msg_out::Message{Gau
                                                             dist_prec::ProbabilityDistribution)
     ensureParameters!(msg_out.dist, (:m, :v))
 
-    Message(V, Gaussian, m=msg_out.dist.params[:m], v=msg_out.dist.params[:v] + cholinv(unsafeMean(dist_prec)))
+    Message(V, Gaussian, m=deepcopy(msg_out.dist.params[:m]), v=msg_out.dist.params[:v] + cholinv(unsafeMean(dist_prec)))
 end
 
 function ruleMGaussianMeanPrecisionGGD{V<:VariateType}( msg_out::Message{Gaussian, V},
@@ -91,11 +90,13 @@ function ruleMGaussianMeanPrecisionGGD{V<:VariateType}( msg_out::Message{Gaussia
     ensureParameters!(msg_out.dist, (:m, :w))
     ensureParameters!(msg_mean.dist, (:m, :w))
 
+    m_y = msg_out.dist.params[:m]
+    W_y = msg_out.dist.params[:w]
+    m_m = msg_mean.dist.params[:m]
+    W_m = msg_mean.dist.params[:w]
     W_bar = unsafeMean(dist_prec)
-    W_11 = msg_out.dist.params[:w] + W_bar
-    W_22 = msg_mean.dist.params[:w] + W_bar
-    W_12 = -W_bar
-    W_21 = -W_bar
 
-    d = ProbabilityDistribution(Multivariate, Gaussian, m=[msg_out.dist.params[:m]; msg_mean.dist.params[:m]], w=[W_11 W_12; W_21 W_22])
+    V_q = cholinv([W_y+W_bar -W_bar; -W_bar W_m+W_bar])
+
+    return ProbabilityDistribution(Multivariate, Gaussian, m=V_q*[W_y*m_y; W_m*m_m], v=V_q)
 end

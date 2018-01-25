@@ -109,8 +109,8 @@ end
     @test MGaussianMeanPrecisionGGD <: MarginalRule{GaussianMeanPrecision}
     @test isApplicable(MGaussianMeanPrecisionGGD, [Message{Gaussian}, Message{Gaussian}, ProbabilityDistribution]) 
 
-    @test ruleMGaussianMeanPrecisionGGD(Message(Univariate, Gaussian, m=1.0, w=2.0), Message(Univariate, Gaussian, m=3.0, w=4.0), ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0)) == ProbabilityDistribution(Multivariate, Gaussian, m=[1.0, 3.0], w=[2.0+0.5 -0.5; -0.5 4.0+0.5])
-    @test ruleMGaussianMeanPrecisionGGD(Message(Multivariate, Gaussian, m=[1.0], w=[2.0].'), Message(Multivariate, Gaussian, m=[3.0], w=[4.0].'), ProbabilityDistribution(MatrixVariate, Wishart, v=[0.25].', nu=2.0)) == ProbabilityDistribution(Multivariate, Gaussian, m=[1.0, 3.0], w=[2.0+0.5 -0.5; -0.5 4.0+0.5])
+    @test ruleMGaussianMeanPrecisionGGD(Message(Univariate, Gaussian, m=1.0, w=2.0), Message(Univariate, Gaussian, m=3.0, w=4.0), ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0)) == ProbabilityDistribution(Multivariate, Gaussian, m=[1.3636363636363638, 2.8181818181818175], v=[0.4090909090909091 0.04545454545454545; 0.04545454545454545 0.22727272727272724])
+    @test ruleMGaussianMeanPrecisionGGD(Message(Multivariate, Gaussian, m=[1.0], w=[2.0].'), Message(Multivariate, Gaussian, m=[3.0], w=[4.0].'), ProbabilityDistribution(MatrixVariate, Wishart, v=[0.25].', nu=2.0)) == ProbabilityDistribution(Multivariate, Gaussian, m=[1.3636363636363638, 2.8181818181818175], v=[0.4090909090909091 0.04545454545454545; 0.04545454545454545 0.22727272727272724])
 end
 
 @testset "averageEnergy and differentialEntropy" begin
