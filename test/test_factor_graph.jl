@@ -24,7 +24,7 @@ end
     @test isa(g.nodes, Dict{Symbol, FactorNode})
     @test isa(g.edges, Vector{Edge})
     @test isa(g.variables, Dict{Symbol, Variable})
-    @test isa(g.counters, Dict{DataType, Int})
+    @test isa(g.counters, Dict{Type, Int})
     @test isa(g.placeholders, Dict{Clamp, Tuple{Symbol, Int}})
 
     # currentGraph() should point to the current graph

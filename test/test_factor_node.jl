@@ -7,8 +7,8 @@ import ForneyLab: FactorGraph, FactorNode, Clamp, Variable, Interface, PointMass
     g = FactorGraph()
 
     # Collect all node types
-    node_types = Union{DataType, UnionAll}[]
-    stack = Union{DataType, UnionAll}[FactorNode]
+    node_types = Type[]
+    stack = Type[FactorNode]
     
     while !isempty(stack)
         for node_type in subtypes(pop!(stack))

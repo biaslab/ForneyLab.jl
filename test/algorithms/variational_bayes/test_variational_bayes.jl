@@ -38,7 +38,7 @@ end
     nd = MockNode([Variable(), constant(0.0), constant(0.0)])
 
     entry = ScheduleEntry(nd.i[1], VariationalRule{MockNode})
-    inferUpdateRule!(entry, entry.msg_update_rule, Dict{Interface, DataType}())
+    inferUpdateRule!(entry, entry.msg_update_rule, Dict{Interface, Type}())
 
     @test entry.msg_update_rule == VBMockOut
 end

@@ -1,4 +1,4 @@
-function matchPermutedCanonical(input_types::Vector{Type}, outbound_type::UnionAll)
+function matchPermutedCanonical(input_types::Vector{Type}, outbound_type::Type)
     # TODO: this implementation only works when the inbound types match the outbound type
     void_inputs = 0
     message_inputs = 0

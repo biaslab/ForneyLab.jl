@@ -14,7 +14,7 @@ mutable struct FactorGraph
     nodes::Dict{Symbol, FactorNode}
     edges::Vector{Edge}
     variables::Dict{Symbol, Variable}
-    counters::Dict{DataType, Int} # Counters for automatic node id assignments
+    counters::Dict{Type, Int} # Counters for automatic node id assignments
     placeholders::Dict{Clamp, Tuple{Symbol, Int}}
 end
 
@@ -35,13 +35,13 @@ setCurrentGraph(graph::FactorGraph) = global current_graph = graph
 FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, FactorNode}(),
                                             Edge[],
                                             Dict{Symbol, Variable}(),
-                                            Dict{DataType, Int}(),
+                                            Dict{Type, Int}(),
                                             Dict{Clamp, Tuple{Symbol, Int}}()))
 
 """
 Automatically generate a unique id based on the current counter value for the element type.
 """
-function generateId(t::DataType)
+function generateId(t::Type)
     current_graph = currentGraph()
     haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
     count = current_graph.counters[t]

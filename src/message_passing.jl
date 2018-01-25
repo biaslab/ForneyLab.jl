@@ -68,7 +68,7 @@ to calculate the message coming out of `interface`.
 """
 mutable struct ScheduleEntry
     interface::Interface
-    msg_update_rule::DataType
+    msg_update_rule::Type
 end
 
 function show(io::IO, entry::ScheduleEntry)
