@@ -6,14 +6,14 @@ import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!
 import ForneyLab: EPSigmoidRealGP, SPGaussianMeanVarianceOutVPP, SPClamp, VBGaussianMeanPrecisionOut, SPSigmoidBinVG
 
 # Integration helper
-type MockNode <: SoftFactor
+mutable struct MockNode <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Int,Interface}
 
     function MockNode(vars::Vector{Variable}; id=generateId(MockNode))
         n_interfaces = length(vars)
-        self = new(id, Array(Interface, n_interfaces), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(n_interfaces), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
 
         for idx = 1:n_interfaces
@@ -36,7 +36,7 @@ end
 
 @testset "inferUpdateRule!" begin
     FactorGraph()
-    m ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV m ~ GaussianMeanVariance(constant(0.0), constant(1.0))
     nd = MockNode([constant(0.0), m])
     inferred_outbound_types = Dict(nd.i[2].partner => Message{Gaussian}, nd.i[1].partner => Message{PointMass})
 

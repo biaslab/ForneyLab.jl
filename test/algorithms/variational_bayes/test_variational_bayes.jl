@@ -6,14 +6,14 @@ import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!
 import ForneyLab: VBGaussianMeanVarianceOut, VBGaussianMeanPrecisionM, SPEqualityGaussian
 
 # Integration helper
-type MockNode <: SoftFactor
+mutable struct MockNode <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Int,Interface}
 
     function MockNode(vars::Vector{Variable}; id=generateId(MockNode))
         n_interfaces = length(vars)
-        self = new(id, Array(Interface, n_interfaces), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(n_interfaces), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
 
         for idx = 1:n_interfaces
@@ -38,7 +38,7 @@ end
     nd = MockNode([Variable(), constant(0.0), constant(0.0)])
 
     entry = ScheduleEntry(nd.i[1], VariationalRule{MockNode})
-    inferUpdateRule!(entry, entry.msg_update_rule, Dict{Interface, DataType}())
+    inferUpdateRule!(entry, entry.msg_update_rule, Dict{Interface, Type}())
 
     @test entry.msg_update_rule == VBMockOut
 end

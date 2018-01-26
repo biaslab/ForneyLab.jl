@@ -15,13 +15,13 @@ vague,
 sample,
 dims
 
-abstract VariateType
-abstract Univariate <: VariateType
-abstract Multivariate <: VariateType
-abstract MatrixVariate <: VariateType
+abstract type VariateType end
+abstract type Univariate <: VariateType end
+abstract type Multivariate <: VariateType end
+abstract type MatrixVariate <: VariateType end
 
 """Encodes a probability distribution as a FactorNode of type `family` with fixed interfaces"""
-immutable ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
+struct ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
     params::Dict
 end
 
@@ -41,7 +41,7 @@ cov(dist::ProbabilityDistribution) = isProper(dist) ? unsafeCov(dist) : error("c
 PointMass is an abstract type used to describe point mass distributions.
 It never occurs in a FactorGraph, but it is used as a probability distribution type.
 """
-abstract PointMass <: DeltaFactor
+abstract type PointMass <: DeltaFactor end
 
 slug(::Type{PointMass}) = "δ"
 
@@ -66,7 +66,7 @@ unsafeInverseMean(dist::ProbabilityDistribution{Univariate, PointMass}) = 1.0/di
 unsafeInverseMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = cholinv(dist.params[:m])
 
 unsafeLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(dist.params[:m])
-unsafeLogMean(dist::ProbabilityDistribution{Multivariate, PointMass}) = log(dist.params[:m])
+unsafeLogMean(dist::ProbabilityDistribution{Multivariate, PointMass}) = log.(dist.params[:m])
 unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = log(det(dist.params[:m]))
 
 unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(1.0 - dist.params[:m])
@@ -87,7 +87,7 @@ macro ~(variable_expr::Any, dist_expr::Expr)
     # Sanity checks
     (dist_expr.head == :call) || error("Incorrect use of ~ operator.")
     (eval(dist_expr.args[1]) <: SoftFactor) || error("~ operator should be followed by subtype of SoftFactor.")
-
+    
     # Build FactorNode constructor call
     if isa(dist_expr.args[2], Expr) && (dist_expr.args[2].head == :parameters)
         dist_expr.args = vcat(dist_expr.args[1:2], [variable_expr], dist_expr.args[3:end])
@@ -101,7 +101,7 @@ macro ~(variable_expr::Any, dist_expr::Expr)
     else
         node_id_expr = parse("ForneyLab.generateId(Variable)")
     end
-
+    
     expr = parse("""
                 begin
                 # Use existing object if it exists, otherwise create a new Variable
@@ -112,11 +112,11 @@ macro ~(variable_expr::Any, dist_expr::Expr)
                 #   - the existing object is a Variable from another FactorGraph
                 if (!isa($(variable_expr), Variable)
                     || !haskey(currentGraph().variables, $(variable_expr).id)
-                    || !is(currentGraph().variables[$(variable_expr).id], $(variable_expr)))
+                    || currentGraph().variables[$(variable_expr).id] !== $(variable_expr))
 
                     $(variable_expr) = Variable(id=ForneyLab.pack($(node_id_expr)))
                 end
-
+                
                 $(dist_expr)
                 $(variable_expr)
                 end

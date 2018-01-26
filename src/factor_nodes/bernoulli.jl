@@ -16,13 +16,13 @@ Interfaces:
 Construction:
     Bernoulli(id=:some_id)
 """
-type Bernoulli <: SoftFactor
+mutable struct Bernoulli <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
     function Bernoulli(out::Variable, p::Variable; id=generateId(Bernoulli))
-        self = new(id, Array(Interface, 2), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:p] = self.interfaces[2] = associate!(Interface(self), p)

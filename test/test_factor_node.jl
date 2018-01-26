@@ -7,8 +7,9 @@ import ForneyLab: FactorGraph, FactorNode, Clamp, Variable, Interface, PointMass
     g = FactorGraph()
 
     # Collect all node types
-    node_types = DataType[]
-    stack = [FactorNode]
+    node_types = Type[]
+    stack = Type[FactorNode]
+    
     while !isempty(stack)
         for node_type in subtypes(pop!(stack))
             if isleaftype(node_type)
@@ -47,11 +48,11 @@ import ForneyLab: FactorGraph, FactorNode, Clamp, Variable, Interface, PointMass
 
         # Node constructor should assign interfaces to itself
         for iface in test_node.interfaces
-            @test is(iface.node, test_node)
+            @test ===(iface.node, test_node)
         end
 
         # Node constructor should add node to graph
-        @test is(g.nodes[test_node.id], test_node)
+        @test ===(g.nodes[test_node.id], test_node)
 
     end
 

@@ -1,7 +1,7 @@
 module ProbabilityDistributionTest
 
 using Base.Test
-import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, isProper, isValid, invalidate!, gaussianQuadrature, dims, diageye, matches, Message
+import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, mat, isProper, isValid, invalidate!, gaussianQuadrature, dims, diageye, matches, Message
 
 @testset "matches" begin
     @test matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution{Univariate, Gaussian})
@@ -41,13 +41,13 @@ end
 end
 
 @testset "Multivariate" begin
-    gaussian = ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=[1.0].')
+    gaussian = ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=mat(1.0))
     @test isa(gaussian, ProbabilityDistribution{Multivariate})
     @test isa(gaussian, ProbabilityDistribution{Multivariate, Gaussian})
     @test !isa(gaussian, ProbabilityDistribution{Univariate})
     @test !isa(gaussian, ProbabilityDistribution{MatrixVariate})
     @test gaussian.params[:m] == [0.0]
-    @test gaussian.params[:v] == [1.0].'
+    @test gaussian.params[:v] == mat(1.0)
     @test isnan(gaussian.params[:w][1])
     @test isnan(gaussian.params[:xi][1])
 
@@ -78,7 +78,7 @@ end
     @test ProbabilityDistribution(Univariate, PointMass) == ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>1.0))
     @test ProbabilityDistribution(PointMass) == ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>1.0))
     @test ProbabilityDistribution(Multivariate, PointMass) == ProbabilityDistribution{Multivariate, PointMass}(Dict(:m=>[1.0]))
-    @test ProbabilityDistribution(MatrixVariate, PointMass) == ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>[1.0].'))
+    @test ProbabilityDistribution(MatrixVariate, PointMass) == ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>mat(1.0)))
     @test Message(PointMass) == Message{PointMass, Univariate}(ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>1.0)))
     @test Message(Univariate, PointMass) == Message{PointMass, Univariate}(ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>1.0)))
     @test_throws Exception Message(Multivariate, PointMass, m=0.2)

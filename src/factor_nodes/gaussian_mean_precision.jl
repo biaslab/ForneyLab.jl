@@ -17,13 +17,13 @@ Construction:
 
     GaussianMeanPrecision(out, m, w, id=:some_id)
 """
-type GaussianMeanPrecision <: Gaussian
+mutable struct GaussianMeanPrecision <: Gaussian
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
     function GaussianMeanPrecision(out::Variable, m::Variable, w::Variable; id=generateId(Gaussian))
-        self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:m] = self.interfaces[2] = associate!(Interface(self), m)

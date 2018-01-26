@@ -13,13 +13,13 @@ Interfaces:
 Construction:
     Sigmoid(id=:some_id)
 """
-type Sigmoid <: SoftFactor
+mutable struct Sigmoid <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
     function Sigmoid(bin::Variable, real::Variable; id=generateId(Sigmoid))
-        self = new(id, Array(Interface, 2), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:bin] = self.interfaces[1] = associate!(Interface(self), bin)
         self.i[:real] = self.interfaces[2] = associate!(Interface(self), real)

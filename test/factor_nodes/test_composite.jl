@@ -8,8 +8,8 @@ import ForneyLab: SPClamp, SPGaussianMeanVarianceOutVPP
 
 # Define new node type called StateTransition, with exposed variables called (y, x_prev, x):
 @composite StateTransition (y, x_prev, x) begin
-    x ~ GaussianMeanVariance(x_prev, constant(1.0))
-    y ~ GaussianMeanVariance(x, constant(1.0))
+    @RV x ~ GaussianMeanVariance(x_prev, constant(1.0))
+    @RV y ~ GaussianMeanVariance(x, constant(1.0))
 end
 
 @testset "@composite" begin
@@ -32,7 +32,7 @@ end
 
     # Node constructor should assign interfaces to itself
     for iface in nd.interfaces
-        @test is(iface.node, nd)
+        @test ===(iface.node, nd)
     end
 
     # Node constructor should add node to graph

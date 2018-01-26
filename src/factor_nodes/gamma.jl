@@ -17,13 +17,13 @@ Construction:
 
     Gamma(out, a, b, id=:some_id)
 """
-type Gamma <: SoftFactor
+mutable struct Gamma <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
     function Gamma(out::Variable, a::Variable, b::Variable; id=generateId(Gamma))
-        self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:a] = self.interfaces[2] = associate!(Interface(self), a)

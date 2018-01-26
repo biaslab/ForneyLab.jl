@@ -1,4 +1,4 @@
-function matchPermutedCanonical(input_types::Vector{DataType}, outbound_type::DataType)
+function matchPermutedCanonical(input_types::Vector{Type}, outbound_type::Type)
     # TODO: this implementation only works when the inbound types match the outbound type
     void_inputs = 0
     message_inputs = 0
@@ -13,33 +13,33 @@ function matchPermutedCanonical(input_types::Vector{DataType}, outbound_type::Da
     return (void_inputs == 1) && (message_inputs == 2)
 end
 
-type SPEqualityGaussian <: SumProductRule{Equality} end
+mutable struct SPEqualityGaussian <: SumProductRule{Equality} end
 outboundType(::Type{SPEqualityGaussian}) = Message{Gaussian}
-isApplicable(::Type{SPEqualityGaussian}, input_types::Vector{DataType}) = matchPermutedCanonical(input_types, Message{Gaussian})
+isApplicable(::Type{SPEqualityGaussian}, input_types::Vector{Type}) = matchPermutedCanonical(input_types, Message{Gaussian})
 
-type SPEqualityGammaWishart <: SumProductRule{Equality} end
+mutable struct SPEqualityGammaWishart <: SumProductRule{Equality} end
 outboundType(::Type{SPEqualityGammaWishart}) = Message{Union{Gamma, Wishart}}
-isApplicable(::Type{SPEqualityGammaWishart}, input_types::Vector{DataType}) = matchPermutedCanonical(input_types, Message{Union{Gamma, Wishart}})
+isApplicable(::Type{SPEqualityGammaWishart}, input_types::Vector{Type}) = matchPermutedCanonical(input_types, Message{Union{Gamma, Wishart}})
 
-type SPEqualityBernoulli <: SumProductRule{Equality} end
+mutable struct SPEqualityBernoulli <: SumProductRule{Equality} end
 outboundType(::Type{SPEqualityBernoulli}) = Message{Bernoulli}
-isApplicable(::Type{SPEqualityBernoulli}, input_types::Vector{DataType}) = matchPermutedCanonical(input_types, Message{Bernoulli})
+isApplicable(::Type{SPEqualityBernoulli}, input_types::Vector{Type}) = matchPermutedCanonical(input_types, Message{Bernoulli})
 
-type SPEqualityBeta <: SumProductRule{Equality} end
+mutable struct SPEqualityBeta <: SumProductRule{Equality} end
 outboundType(::Type{SPEqualityBeta}) = Message{Beta}
-isApplicable(::Type{SPEqualityBeta}, input_types::Vector{DataType}) = matchPermutedCanonical(input_types, Message{Beta})
+isApplicable(::Type{SPEqualityBeta}, input_types::Vector{Type}) = matchPermutedCanonical(input_types, Message{Beta})
 
-type SPEqualityCategorical <: SumProductRule{Equality} end
+mutable struct SPEqualityCategorical <: SumProductRule{Equality} end
 outboundType(::Type{SPEqualityCategorical}) = Message{Categorical}
-isApplicable(::Type{SPEqualityCategorical}, input_types::Vector{DataType}) = matchPermutedCanonical(input_types, Message{Categorical})
+isApplicable(::Type{SPEqualityCategorical}, input_types::Vector{Type}) = matchPermutedCanonical(input_types, Message{Categorical})
 
-type SPEqualityDirichlet <: SumProductRule{Equality} end
+mutable struct SPEqualityDirichlet <: SumProductRule{Equality} end
 outboundType(::Type{SPEqualityDirichlet}) = Message{Dirichlet}
-isApplicable(::Type{SPEqualityDirichlet}, input_types::Vector{DataType}) = matchPermutedCanonical(input_types, Message{Dirichlet})
+isApplicable(::Type{SPEqualityDirichlet}, input_types::Vector{Type}) = matchPermutedCanonical(input_types, Message{Dirichlet})
 
-type SPEqualityPointMass <: SumProductRule{Equality} end
+mutable struct SPEqualityPointMass <: SumProductRule{Equality} end
 outboundType(::Type{SPEqualityPointMass}) = Message{PointMass}
-function isApplicable(::Type{SPEqualityPointMass}, input_types::Vector{DataType})
+function isApplicable(::Type{SPEqualityPointMass}, input_types::Vector{Type})
     void_inputs = 0
     soft_inputs = 0
     point_mass_inputs = 0
