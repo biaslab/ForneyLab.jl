@@ -32,12 +32,12 @@ message out of the specified outbound_interface.
 """
 function internalSumProductSchedule(cnode::CompositeNode,
                                     outbound_interface::Interface,
-                                    inferred_outbound_types::Dict{Interface, DataType})
+                                    inferred_outbound_types::Dict{Interface, <:Type})
 
     # Collect types of messages towards the CompositeNode
-    msg_types = Dict{Interface, DataType}()
+    msg_types = Dict{Interface, Type}()
     for (idx, terminal) in enumerate(cnode.terminals)
-        is(cnode.interfaces[idx], outbound_interface) && continue # don't need incoming msg on outbound interface
+        (cnode.interfaces[idx] === outbound_interface) && continue # don't need incoming msg on outbound interface
         msg_types[terminal.interfaces[1]] = inferred_outbound_types[cnode.interfaces[idx].partner]
     end
 
@@ -57,7 +57,7 @@ function internalSumProductSchedule(cnode::CompositeNode,
     end
 
     # Sanity check
-    if !is(schedule[end].interface, internal_outbound_interface)
+    if schedule[end].interface !== internal_outbound_interface
         error("The last schedule entry should correspond to the message going out of the CompositeNode")
     end
 
@@ -132,7 +132,7 @@ macro sumProductRule(fields...)
 
     # Loop over fields because order is unknown
     for arg in fields
-     
+
         (arg.args[1] == :(=>)) || error("Invalid call to @sumProductRule")
 
         if arg.args[2].args[1] == :node_type
@@ -149,7 +149,7 @@ macro sumProductRule(fields...)
             error("Unrecognized field $(arg.args[2].args[1]) in call to @sumProductRule")
         end
     end
-    
+
     # Assign unique name if not set already
     if name == :auto
         # Added hash ensures that the rule name is unique
@@ -174,6 +174,6 @@ macro sumProductRule(fields...)
             $name
         end
     """)
-    
+
     return esc(expr)
 end

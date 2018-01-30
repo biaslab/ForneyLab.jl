@@ -1,6 +1,6 @@
 export CompositeNode, @composite
 
-abstract CompositeNode <: FactorNode
+abstract type CompositeNode <: FactorNode end
 
 macro composite(name::Symbol, exposed_vars::Expr, model::Expr)
     (exposed_vars.head == :tuple) || error("Exposed variables should be passed as Tuple")

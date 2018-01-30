@@ -35,7 +35,7 @@ end
 
 # Composite definition for inferUpdateRule! testset
 @composite TestComposite (b,a) begin
-    z ~ GaussianMeanVariance(a, constant(1.0))
+    @RV z ~ GaussianMeanVariance(a, constant(1.0))
     b = constant(2.0) + z
 end
 
