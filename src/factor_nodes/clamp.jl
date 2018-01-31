@@ -94,3 +94,14 @@ function placeholder(   var::Variable,
 
     return var
 end
+
+function placeholder(   buffer_id::Symbol;
+                        index::Int=0,
+                        default::Any=nothing,
+                        datatype::DataType=Float64,
+                        dims::Tuple=(),
+                        var_id=generateId(Variable))
+
+    var = Variable(id=var_id)
+    return placeholder(var, buffer_id, index=index, default=default, datatype=datatype, dims=dims)
+end

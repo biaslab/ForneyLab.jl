@@ -34,7 +34,19 @@ end
     @test isa(nd, Clamp)
     @test g.placeholders[nd] == (:y, 0)
 
+    # Placeholder without explicit variable initialization
+    g = FactorGraph()
+    
+    placeholder(:y)
+    nd = g.nodes[:placeholder_y]
+
+    @test length(g.variables) == 1
+    @test isa(nd, Clamp)
+    @test g.placeholders[nd] == (:y, 0)
+   
     # Indexed placeholder
+    g = FactorGraph()
+
     var_i = Variable()
     placeholder(var_i, :y, index=1)
     nd_i = g.nodes[:placeholder_y_1]
