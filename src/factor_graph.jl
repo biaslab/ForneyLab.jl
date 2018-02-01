@@ -14,7 +14,7 @@ mutable struct FactorGraph
     nodes::Dict{Symbol, FactorNode}
     edges::Vector{Edge}
     variables::Dict{Symbol, Variable}
-    counters::Dict{Type, Int} # Counters for automatic node id assignments
+    counters::Dict{String, Int} # Counters for automatic node id assignments
     placeholders::Dict{Clamp, Tuple{Symbol, Int}}
 end
 
@@ -42,11 +42,31 @@ FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, FactorNode}(),
 Automatically generate a unique id based on the current counter value for the element type.
 """
 function generateId(t::Type)
-    current_graph = currentGraph()
-    haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
-    count = current_graph.counters[t]
-    str = lowercase(split(string(t.name),'.')[end]) # Remove module prefix from typename
-    return Symbol("$(str)_$(count)")
+    graph = currentGraph()
+    tname = lowercase(split(string(t.name),'.')[end]) # Remove module prefix from typename
+    counter = haskey(graph.counters, tname) ? graph.counters[tname]+1 : 1
+    id = Symbol("$(tname)_$(counter)")
+
+    # Make sure we have a unique id (if we can check it)
+    collection =
+        if t <: FactorNode
+            graph.nodes
+        elseif t <: Edge
+            graph.edges
+        elseif t <: Variable
+            graph.variables
+        end
+    if collection != nothing
+        # Increase counter until we have a unique id
+        while haskey(collection, id)
+            counter += 1
+            id = Symbol("$(tname)_$(counter)")
+        end
+    end
+
+    graph.counters[tname] = counter # save counter
+
+    return id
 end
 
 """
