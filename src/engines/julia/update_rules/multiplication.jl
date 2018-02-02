@@ -32,6 +32,27 @@ ruleSPMultiplicationOutVPP(msg_out::Void, msg_in1::Message{PointMass, Univariate
 ruleSPMultiplicationIn1PVP(msg_out::Message{PointMass, Univariate}, msg_in1::Void, msg_in2::Message{PointMass, Univariate}) = Message(Univariate, PointMass, m=msg_out.dist.params[:m]/msg_in2.dist.params[:m])
 ruleSPMultiplicationIn2PPV(msg_out::Message{PointMass, Univariate}, msg_in1::Message{PointMass, Univariate}, msg_in2::Void) = Message(Univariate, PointMass, m=msg_out.dist.params[:m]/msg_in1.dist.params[:m])
 
+# Univariate*multivariate
+function ruleSPMultiplicationOutVPG(msg_out::Void,
+                                    msg_in1::Message{PointMass, Multivariate},
+                                    msg_in2::Message{Gaussian, Univariate})
+
+    ensureParameters!(msg_in2.dist, (:m, :v))
+
+    Message(Multivariate, Gaussian, m=msg_in1.dist.params[:m]*msg_in2.dist.params[:m], v=msg_in2.dist.params[:v]*msg_in1.dist.params[:m]*msg_in1.dist.params[:m]')
+end
+ruleSPMultiplicationOutVGP(msg_out::Void, msg_in1::Message{Gaussian, Univariate}, msg_in2::Message{PointMass, Multivariate}) = ruleSPMultiplicationOutVPG(nothing, msg_in2, msg_in1)
+
+function ruleSPMultiplicationIn1GVP(msg_out::Message{Gaussian, Multivariate},
+                                    msg_in1::Void,
+                                    msg_in2::Message{PointMass, Multivariate})
+
+    ensureParameters!(msg_out.dist, (:xi, :w))
+    a = msg_in2.dist.m
+    Message(Univariate, Gaussian, xi=a'*msg_out.dist.params[:xi], w=a'*msg_out.dist.params[:w]*a)
+end
+ruleSPMultiplicationIn2GPV(msg_out::Message{Gaussian, Multivariate}, msg_in1::Message{PointMass, Multivariate}, msg_in2::Void) = ruleSPMultiplicationIn1GVP(msg_out, nothing, msg_in1)
+
 # Multivariate
 function ruleSPMultiplicationOutVPG(msg_out::Void,
                                     msg_in1::Message{PointMass, MatrixVariate},
