@@ -26,7 +26,7 @@ macro composite(name::Symbol, exposed_vars::Expr, model::Expr)
     end
 
     expr = parse("""
-    type $name <: CompositeNode
+    mutable struct $name <: CompositeNode
         id::Symbol
         interfaces::Vector{Interface}
         i::Dict{Symbol, Interface}
