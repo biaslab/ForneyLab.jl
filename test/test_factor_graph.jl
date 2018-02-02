@@ -24,7 +24,7 @@ end
     @test isa(g.nodes, Dict{Symbol, FactorNode})
     @test isa(g.edges, Vector{Edge})
     @test isa(g.variables, Dict{Symbol, Variable})
-    @test isa(g.counters, Dict{Type, Int})
+    @test isa(g.counters, Dict{String, Int})
     @test isa(g.placeholders, Dict{Clamp, Tuple{Symbol, Int}})
 
     # currentGraph() should point to the current graph
@@ -41,7 +41,7 @@ end
     # generateId should generate a unique id based on type
     @test generateId(MockNode) == :mocknode_1
     @test generateId(MockNode) == :mocknode_2
-    @test g.counters[MockNode] == 2
+    @test g.counters["mocknode"] == 2
 end
 
 @testset "addNode!" begin
