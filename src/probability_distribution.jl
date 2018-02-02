@@ -86,8 +86,8 @@ for `x = Variable(); GaussianMeanVariance(x, constant(0.0), constant(1.0))`
 macro ~(variable_expr::Any, dist_expr::Expr)
     # Sanity checks
     (dist_expr.head == :call) || error("Incorrect use of ~ operator.")
-    (eval(dist_expr.args[1]) <: SoftFactor) || error("~ operator should be followed by subtype of SoftFactor.")
-    
+    (eval(Main, dist_expr.args[1]) <: SoftFactor) || error("~ operator should be followed by subtype of SoftFactor.")
+
     # Build FactorNode constructor call
     if isa(dist_expr.args[2], Expr) && (dist_expr.args[2].head == :parameters)
         dist_expr.args = vcat(dist_expr.args[1:2], [variable_expr], dist_expr.args[3:end])
@@ -101,7 +101,7 @@ macro ~(variable_expr::Any, dist_expr::Expr)
     else
         node_id_expr = parse("ForneyLab.generateId(Variable)")
     end
-    
+
     expr = parse("""
                 begin
                 # Use existing object if it exists, otherwise create a new Variable
@@ -116,7 +116,7 @@ macro ~(variable_expr::Any, dist_expr::Expr)
 
                     $(variable_expr) = Variable(id=ForneyLab.pack($(node_id_expr)))
                 end
-                
+
                 $(dist_expr)
                 $(variable_expr)
                 end
