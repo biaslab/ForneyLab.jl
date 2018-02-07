@@ -4,27 +4,27 @@ MarginalScheduleEntry,
 MarginalSchedule,
 marginalSchedule
 
-abstract AbstractCluster
+abstract type AbstractCluster end
 
 """
 A MarginalUpdateRule specifies how a (joint) marginal is calculated from
 incoming messages (and a node function).
 """
-abstract MarginalUpdateRule
-abstract Product <: MarginalUpdateRule
+abstract type MarginalUpdateRule end
+abstract type Product <: MarginalUpdateRule end
 
 """
 A `MarginalScheduleEntry` defines a marginal computation.
 The `marginal_update_rule <: MarginalUpdateRule` defines the rule that is used
 to calculate the (joint) marginal over `target`.
 """
-type MarginalScheduleEntry
+mutable struct MarginalScheduleEntry
     target::Union{Variable, AbstractCluster}
     interfaces::Vector{Interface}
     marginal_update_rule::DataType
 end
 
-typealias MarginalSchedule Vector{MarginalScheduleEntry}
+const MarginalSchedule = Vector{MarginalScheduleEntry}
 
 """
 Construct a MarginalScheduleEntry for computing the marginal over `variable`

@@ -16,13 +16,13 @@ Interfaces:
 Construction:
     Dirichlet(id=:some_id)
 """
-type Dirichlet <: SoftFactor
+mutable struct Dirichlet <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
     function Dirichlet(out::Variable, a::Variable; id=generateId(Dirichlet))
-        self = new(id, Array(Interface, 2), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:a] = self.interfaces[2] = associate!(Interface(self), a)
@@ -46,7 +46,7 @@ isProper(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = all(dist.para
 
 unsafeMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a])
 
-unsafeLogMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = digamma(dist.params[:a]) - digamma(sum(dist.params[:a]))
+unsafeLogMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = digamma.(dist.params[:a]) - digamma.(sum(dist.params[:a]))
 
 function unsafeVar(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])
@@ -77,9 +77,9 @@ end
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])
 
-    -sum( (dist.params[:a] - 1.0).*(digamma(dist.params[:a]) - digamma(a_sum)) ) -
+    -sum( (dist.params[:a] - 1.0).*(digamma.(dist.params[:a]) - digamma.(a_sum)) ) -
     lgamma(a_sum) +
-    sum( lgamma(dist.params[:a]) )
+    sum( lgamma.(dist.params[:a]) )
 end
 
 # Average energy functional
@@ -87,6 +87,6 @@ function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Mult
     a_sum = sum(marg_a.params[:m])
 
     -lgamma(a_sum) +
-    sum( lgamma(marg_a.params[:m]) ) -
+    sum( lgamma.(marg_a.params[:m]) ) -
     sum( (marg_a.params[:m] - 1.0).*unsafeLogMean(marg_out) )
 end

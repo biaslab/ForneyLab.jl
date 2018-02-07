@@ -6,7 +6,7 @@ ruleVBCategoricalIn1
 ruleSPCategoricalOutVP(msg_out::Void, msg_p::Message{PointMass, Multivariate}) = Message(Univariate, Categorical, p=deepcopy(msg_p.dist.params[:m]))
 
 function ruleVBCategoricalOut(marg_out::Any, marg_p::ProbabilityDistribution{Multivariate})
-    rho = clamp(exp(unsafeLogMean(marg_p)), tiny, huge)
+    rho = clamp.(exp.(unsafeLogMean(marg_p)), tiny, huge)
     
     Message(Univariate, Categorical, p=rho./sum(rho))
 end

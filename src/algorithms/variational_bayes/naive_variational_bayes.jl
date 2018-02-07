@@ -3,7 +3,7 @@ NaiveVariationalRule,
 variationalSchedule,
 @naiveVariationalRule
 
-abstract NaiveVariationalRule{factor_type} <: MessageUpdateRule
+abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
 
 """
 variationalSchedule() generates a variational message passing schedule that computes the
@@ -42,12 +42,12 @@ Infer the update rule that computes the message for `entry`, as dependent on the
 """
 function inferUpdateRule!{T<:NaiveVariationalRule}( entry::ScheduleEntry,
                                                     rule_type::Type{T},
-                                                    inferred_outbound_types::Dict{Interface, DataType})
+                                                    inferred_outbound_types::Dict{Interface, Type})
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
     
     # Find applicable rule(s)
-    applicable_rules = DataType[]
+    applicable_rules = Type[]
     for rule in leaftypes(entry.msg_update_rule)
         if isApplicable(rule, inbound_types)
             push!(applicable_rules, rule)
@@ -72,8 +72,8 @@ Returns a vector with inbound types that correspond with required interfaces.
 """
 function collectInboundTypes{T<:NaiveVariationalRule}(  entry::ScheduleEntry,
                                                         ::Type{T},
-                                                        inferred_outbound_types::Dict{Interface, DataType})
-    inbound_types = DataType[]
+                                                        inferred_outbound_types::Dict{Interface, Type})
+    inbound_types = Type[]
     for node_interface in entry.interface.node.interfaces
         if node_interface == entry.interface
             push!(inbound_types, Void)
@@ -101,20 +101,20 @@ macro naiveVariationalRule(fields...)
 
     # Loop over fields because order is unknown
     for arg in fields
-        (arg.head == :(=>)) || error("Invalid call to @naiveVariationalRule")
+        (arg.args[1] == :(=>)) || error("Invalid call to @naiveVariationalRule")
 
-        if arg.args[1].args[1] == :node_type
-            node_type = arg.args[2]
-        elseif arg.args[1].args[1] == :outbound_type
-            outbound_type = arg.args[2]
-            (outbound_type.head == :curly && outbound_type.args[1] == :Message) || error("Outbound type for NaiveVariationalRule should be a Message")
-        elseif arg.args[1].args[1] == :inbound_types
-            inbound_types = arg.args[2]
+        if arg.args[2].args[1] == :node_type
+            node_type = arg.args[3]
+        elseif arg.args[2].args[1] == :outbound_type
+            outbound_type = arg.args[3]
+            (outbound_type.head == :curly && outbound_type.args[1] == :Message) || error("Outbound type for VariationalRule should be a Message")
+        elseif arg.args[2].args[1] == :inbound_types
+            inbound_types = arg.args[3]
             (inbound_types.head == :tuple) || error("Inbound types should be passed as Tuple")
-        elseif arg.args[1].args[1] == :name
-            name = arg.args[2]
+        elseif arg.args[2].args[1] == :name
+            name = arg.args[3]
         else
-            error("Unrecognized field $(arg.args[1].args[1]) in call to @naiveVariationalRule")
+            error("Unrecognized field $(arg.args[2].args[1]) in call to @naiveVariationalRule")
         end
     end
 
@@ -136,9 +136,9 @@ macro naiveVariationalRule(fields...)
 
     expr = parse("""
         begin
-            type $name <: NaiveVariationalRule{$node_type} end
+            mutable struct $name <: NaiveVariationalRule{$node_type} end
             ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{DataType}) = $(join(input_type_validators, " && "))
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = $(join(input_type_validators, " && "))
             $name
         end
     """)

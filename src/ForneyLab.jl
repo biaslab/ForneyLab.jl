@@ -6,11 +6,12 @@ include("dependency_graph.jl")
 
 # Other includes
 import Base: show, convert, ==, mean, var, cov, *
+import SpecialFunctions: digamma
 
 # High level abstracts
-abstract AbstractEdge # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface
-abstract AbstractVariable
-abstract InferenceAlgorithm
+abstract type AbstractEdge end # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface
+abstract type AbstractVariable end
+abstract type InferenceAlgorithm end
 
 # Low-level internals
 include("factor_node.jl")

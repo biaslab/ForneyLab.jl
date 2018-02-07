@@ -20,13 +20,13 @@ Construction:
 
     Multiplication(out, in1, in2, id=:some_id)
 """
-type Multiplication <: DeltaFactor
+mutable struct Multiplication <: DeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
     function Multiplication(out::Variable, in1::Variable, in2::Variable; id=generateId(Multiplication))
-        self = new(id, Array(Interface, 3), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(3), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)

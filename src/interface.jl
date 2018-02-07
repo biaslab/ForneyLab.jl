@@ -5,7 +5,7 @@ export handle
 An Interface belongs to a FactorNode and represents a half-edge.
 An Interface has at most one partner interface, with wich it forms an edge.
 """
-type Interface
+mutable struct Interface
     node::FactorNode
     edge::Union{AbstractEdge, Void}
     partner::Union{Interface, Void}
@@ -23,7 +23,7 @@ end
 function handle(interface::Interface)
     if isdefined(interface.node, :i)
         for h in keys(interface.node.i)
-            if (typeof(h)==Symbol || typeof(h)==Int) && is(interface.node.i[h], interface)
+            if (typeof(h)==Symbol || typeof(h)==Int) && (interface.node.i[h] === interface)
                 return string(h)
             end
         end

@@ -4,7 +4,7 @@ expectationPropagationSchedule,
 variationalExpectationPropagationSchedule,
 @expectationPropagationRule
 
-abstract ExpectationPropagationRule{factor_type} <: MessageUpdateRule
+abstract type ExpectationPropagationRule{factor_type} <: MessageUpdateRule end
 
 """
 expectationPropagationSchedule() generates a expectation propagation message passing schedule.
@@ -81,7 +81,7 @@ end
 Constructs breaker types dictionary for breaker sites
 """
 function breakerTypes(breaker_sites::Vector{Interface})
-    breaker_types = Dict{Interface, DataType}()
+    breaker_types = Dict{Interface, Type}()
     for site in breaker_sites
         if isa(site.partner.node, Sigmoid)
             breaker_types[site] = Message{Gaussian, Univariate} # Sigmoid EP site partner requires Gaussian breaker
@@ -95,7 +95,7 @@ expectationPropagationSchedule(variable::Variable) = expectationPropagationSched
 
 function inferUpdateRule!{T<:ExpectationPropagationRule}(   entry::ScheduleEntry,
                                                             rule_type::Type{T},
-                                                            inferred_outbound_types::Dict{Interface, DataType})
+                                                            inferred_outbound_types::Dict{Interface, <:Type})
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
 
@@ -103,7 +103,7 @@ function inferUpdateRule!{T<:ExpectationPropagationRule}(   entry::ScheduleEntry
     outbound_id = findfirst(entry.interface.node.interfaces, entry.interface)    
     
     # Find applicable rule(s)
-    applicable_rules = DataType[]
+    applicable_rules = Type[]
     for rule in leaftypes(entry.msg_update_rule)
         if isApplicable(rule, inbound_types, outbound_id)
             push!(applicable_rules, rule)
@@ -124,8 +124,8 @@ end
 
 function collectInboundTypes{T<:ExpectationPropagationRule}(entry::ScheduleEntry,
                                                             ::Type{T},
-                                                            inferred_outbound_types::Dict{Interface, DataType})
-    inbound_message_types = DataType[]
+                                                            inferred_outbound_types::Dict{Interface, <:Type})
+    inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces
         if (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
             push!(inbound_message_types, Message{PointMass})
@@ -153,22 +153,22 @@ macro expectationPropagationRule(fields...)
 
     # Loop over fields because order is unknown
     for arg in fields
-        (arg.head == :(=>)) || error("Invalid call to @expectationPropagationRule")
+        (arg.args[1] == :(=>)) || error("Invalid call to @expectationPropagationRule")
 
-        if arg.args[1].args[1] == :node_type
-            node_type = arg.args[2]
-        elseif arg.args[1].args[1] == :outbound_type
-            outbound_type = arg.args[2]
+        if arg.args[2].args[1] == :node_type
+            node_type = arg.args[3]
+        elseif arg.args[2].args[1] == :outbound_type
+            outbound_type = arg.args[3]
             (outbound_type.head == :curly && outbound_type.args[1] == :Message) || error("Outbound type for ExpectationPropagationRule should be a Message")
-        elseif arg.args[1].args[1] == :inbound_types
-            inbound_types = arg.args[2]
+        elseif arg.args[2].args[1] == :inbound_types
+            inbound_types = arg.args[3]
             (inbound_types.head == :tuple) || error("Inbound types should be passed as Tuple")
-        elseif arg.args[1].args[1] == :outbound_id
-            outbound_id = arg.args[2]
-        elseif arg.args[1].args[1] == :name
-            name = arg.args[2]
+        elseif arg.args[2].args[1] == :outbound_id
+            outbound_id = arg.args[3]
+        elseif arg.args[2].args[1] == :name
+            name = arg.args[3]
         else
-            error("Unrecognized field $(arg.args[1].args[1]) in call to @expectationPropagationRule")
+            error("Unrecognized field $(arg.args[2].args[1]) in call to @expectationPropagationRule")
         end
     end
 
@@ -190,9 +190,9 @@ macro expectationPropagationRule(fields...)
 
     expr = parse("""
         begin
-            type $name <: ExpectationPropagationRule{$node_type} end
+            mutable struct $name <: ExpectationPropagationRule{$node_type} end
             ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{DataType}, outbound_id::Int64) = $(join(input_type_validators, " && ")) && (outbound_id == $outbound_id)
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}, outbound_id::Int64) = $(join(input_type_validators, " && ")) && (outbound_id == $outbound_id)
             $name
         end
     """)

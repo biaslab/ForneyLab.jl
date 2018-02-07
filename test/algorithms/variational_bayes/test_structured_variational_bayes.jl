@@ -13,7 +13,7 @@ type MockNode <: SoftFactor
 
     function MockNode(vars::Vector{Variable}; id=generateId(MockNode))
         n_interfaces = length(vars)
-        self = new(id, Array(Interface, n_interfaces), Dict{Int,Interface}())
+        self = new(id, Vector{Interface}(n_interfaces), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
 
         for idx = 1:n_interfaces
@@ -57,15 +57,15 @@ end
     RecognitionFactor(v3)
 
     entry1 = ScheduleEntry(nd.i[1], StructuredVariationalRule{MockNode})
-    inferUpdateRule!(entry1, entry1.msg_update_rule, Dict{Interface, DataType}(nd.i[2].partner => Message{PointMass}))
+    inferUpdateRule!(entry1, entry1.msg_update_rule, Dict{Interface, Type}(nd.i[2].partner => Message{PointMass}))
     @test entry1.msg_update_rule == SVBMock1VGD
 
     entry2 = ScheduleEntry(nd.i[2], StructuredVariationalRule{MockNode})
-    inferUpdateRule!(entry2, entry2.msg_update_rule, Dict{Interface, DataType}(nd.i[1].partner => Message{PointMass}))
+    inferUpdateRule!(entry2, entry2.msg_update_rule, Dict{Interface, Type}(nd.i[1].partner => Message{PointMass}))
     @test entry2.msg_update_rule == SVBMock2GVD
 
     entry3 = ScheduleEntry(nd.i[3], StructuredVariationalRule{MockNode})
-    inferUpdateRule!(entry3, entry3.msg_update_rule, Dict{Interface, DataType}())
+    inferUpdateRule!(entry3, entry3.msg_update_rule, Dict{Interface, Type}())
     @test entry3.msg_update_rule == SVBMock3DV
 end
 

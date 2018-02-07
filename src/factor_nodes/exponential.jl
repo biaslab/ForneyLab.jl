@@ -19,13 +19,13 @@ Construction:
 
     Exponential(out, in1, id=:some_id)
 """
-type Exponential <: DeltaFactor
+mutable struct Exponential <: DeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
     function Exponential(out::Variable, in1::Variable; id=generateId(Exponential))
-        self = new(id, Array(Interface, 2), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(2), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)

@@ -17,13 +17,13 @@ Construction:
 
     GaussianMeanVariance(out, m, v, id=:some_id)
 """
-type GaussianMeanVariance <: Gaussian
+mutable struct GaussianMeanVariance <: Gaussian
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
     function GaussianMeanVariance(out::Variable, m::Variable, v::Variable; id=generateId(Gaussian))
-        self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:m] = self.interfaces[2] = associate!(Interface(self), m)
@@ -37,7 +37,7 @@ slug(::Type{GaussianMeanVariance}) = "𝒩"
 
 ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianMeanVariance}; m=0.0, v=1.0) = ProbabilityDistribution(Univariate, Gaussian, m=m, v=v)
 ProbabilityDistribution(::Type{GaussianMeanVariance}; m::Number=0.0, v::Number=1.0) = ProbabilityDistribution(Univariate, Gaussian, m=m, v=v)
-ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanVariance}; m=[0.0], v=[1.0].') = ProbabilityDistribution(Multivariate, Gaussian, m=m, v=v)
+ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanVariance}; m=[0.0], v=mat(1.0)) = ProbabilityDistribution(Multivariate, Gaussian, m=m, v=v)
 
 # Average energy functional
 function averageEnergy(::Type{GaussianMeanVariance}, marg_out::ProbabilityDistribution{Univariate}, marg_mean::ProbabilityDistribution{Univariate}, marg_var::ProbabilityDistribution{Univariate})

@@ -18,13 +18,13 @@ Interfaces:
 Construction:
     Beta(id=:some_id)
 """
-type Beta <: SoftFactor
+mutable struct Beta <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
     function Beta(out::Variable, a::Variable, b::Variable; id=generateId(Beta))
-        self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:a] = self.interfaces[2] = associate!(Interface(self), a)

@@ -10,11 +10,11 @@ Terminal
 """
 A factor graph consisting of factor nodes and edges.
 """
-type FactorGraph
+mutable struct FactorGraph
     nodes::Dict{Symbol, FactorNode}
     edges::Vector{Edge}
     variables::Dict{Symbol, Variable}
-    counters::Dict{DataType, Int} # Counters for automatic node id assignments
+    counters::Dict{Type, Int} # Counters for automatic node id assignments
     placeholders::Dict{Clamp, Tuple{Symbol, Int}}
 end
 
@@ -35,13 +35,13 @@ setCurrentGraph(graph::FactorGraph) = global current_graph = graph
 FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, FactorNode}(),
                                             Edge[],
                                             Dict{Symbol, Variable}(),
-                                            Dict{DataType, Int}(),
+                                            Dict{Type, Int}(),
                                             Dict{Clamp, Tuple{Symbol, Int}}()))
 
 """
 Automatically generate a unique id based on the current counter value for the element type.
 """
-function generateId(t::DataType)
+function generateId(t::Type)
     current_graph = currentGraph()
     haskey(current_graph.counters, t) ? current_graph.counters[t] += 1 : current_graph.counters[t] = 1
     count = current_graph.counters[t]
@@ -70,12 +70,12 @@ end
 """
 `hasNode(graph, node)` checks if `node` is part of `graph`.
 """
-hasNode(graph::FactorGraph, nd::FactorNode) = (haskey(graph.nodes, nd.id) && is(graph.nodes[nd.id], nd))
+hasNode(graph::FactorGraph, nd::FactorNode) = (haskey(graph.nodes, nd.id) && (graph.nodes[nd.id] === nd))
 
 """
 `hasVariable(graph, var)` checks if `var` is part of `graph`.
 """
-hasVariable(graph::FactorGraph, var::Variable) = (haskey(graph.variables, var.id) && is(graph.variables[var.id], var))
+hasVariable(graph::FactorGraph, var::Variable) = (haskey(graph.variables, var.id) && (graph.variables[var.id] === var))
 
 nodes(graph::FactorGraph = currentGraph()) = Set{FactorNode}(values(graph.nodes))
 
@@ -107,13 +107,13 @@ Construction:
 
     Terminal(id=:some_id)
 """
-type Terminal <: FactorNode
+mutable struct Terminal <: FactorNode
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
     function Terminal(out::Variable; id=generateId(Terminal))
-        self = new(id, Array(Interface, 1), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(1), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
 

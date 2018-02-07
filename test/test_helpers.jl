@@ -36,7 +36,7 @@ import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, form
     @testset "cholinv" begin
         # should perform a matrix inversion on a positive (semi)definite matrix
         A = [2.0 1.0; 1.0 2.0]
-        @test_approx_eq cholinv(A) inv(A)
+        @test cholinv(A) ≈ inv(A)
         A = Diagonal([2.0, 3.0])
         @test cholinv(A) == inv(A)
     end
@@ -60,7 +60,7 @@ import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, form
     end
 
     @testset "format" begin
-        " should return formatted strings for various input types"
+        # should return formatted strings for various input types
         @test format(0.0000001) == "1.00e-07"
         @test format(0.0) == "0.00"
         @test format(true) == "true"

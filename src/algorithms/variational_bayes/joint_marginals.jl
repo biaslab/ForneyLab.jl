@@ -6,13 +6,13 @@ MarginalRule,
 MarginalRule{factor_type} specifies a joint marginal update rule with respect
 to a node of type `factor_type`.
 """
-abstract MarginalRule{factor_type} <: MarginalUpdateRule
+abstract type MarginalRule{factor_type} <: MarginalUpdateRule end
 
 """
 Construct a MarginalScheduleEntry for computing the marginal over `cluster`
 through a node-specific joint marginal update rule.
 """
-function MarginalScheduleEntry(cluster::Cluster, outbound_types::Dict{Interface, DataType})
+function MarginalScheduleEntry(cluster::Cluster, outbound_types::Dict{Interface, Type})
     inbound_types = collectInboundTypes(cluster, outbound_types)
     marginal_update_rule = inferMarginalRule(cluster, inbound_types)
     
@@ -32,9 +32,9 @@ end
 """
 Infer the rule that computes the joint marginal over `cluster`
 """
-function inferMarginalRule(cluster::Cluster, inbound_types::Vector{DataType})
+function inferMarginalRule(cluster::Cluster, inbound_types::Vector{<:Type})
     # Find applicable rule(s)
-    applicable_rules = DataType[]
+    applicable_rules = Type[]
     for rule in leaftypes(MarginalRule{typeof(cluster.node)})
         if isApplicable(rule, inbound_types)
             push!(applicable_rules, rule)
@@ -57,8 +57,8 @@ end
 Find the inbound types that are required to compute a joint marginal over `target`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
-function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, DataType})
-    inbound_types = DataType[]
+function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, Type})
+    inbound_types = Type[]
     cluster_recognition_factor_id = recognitionFactorId(first(cluster.edges)) # Recognition factor id for cluster
     recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
     for node_interface in cluster.node.interfaces
@@ -80,7 +80,7 @@ end
 
 function marginalSchedule(q_factors::Vector{RecognitionFactor}, schedule::Schedule)
     # Construct outbound types dictionary
-    outbound_types = Dict{Interface, DataType}()
+    outbound_types = Dict{Interface, Type}()
     for entry in schedule
         outbound_types[entry.interface] = outboundType(entry.msg_update_rule)
     end
@@ -116,17 +116,17 @@ macro marginalRule(fields...)
 
     # Loop over fields because order is unknown
     for arg in fields
-        (arg.head == :(=>)) || error("Invalid call to @marginalRule")
+        (arg.args[1] == :(=>)) || error("Invalid call to @marginalRule")
 
-        if arg.args[1].args[1] == :node_type
-            node_type = arg.args[2]
-        elseif arg.args[1].args[1] == :inbound_types
-            inbound_types = arg.args[2]
+        if arg.args[2].args[1] == :node_type
+            node_type = arg.args[3]
+        elseif arg.args[2].args[1] == :inbound_types
+            inbound_types = arg.args[3]
             (inbound_types.head == :tuple) || error("Inbound types should be passed as Tuple")
-        elseif arg.args[1].args[1] == :name
-            name = arg.args[2]
+        elseif arg.args[2].args[1] == :name
+            name = arg.args[3]
         else
-            error("Unrecognized field $(arg.args[1].args[1]) in call to @marginalRule")
+            error("Unrecognized field $(arg.args[2].args[1]) in call to @marginalRule")
         end
     end
 
@@ -148,8 +148,8 @@ macro marginalRule(fields...)
 
     expr = parse("""
         begin
-            type $name <: MarginalRule{$node_type} end
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{DataType}) = $(join(input_type_validators, " && "))
+            mutable struct $name <: MarginalRule{$node_type} end
+            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = $(join(input_type_validators, " && "))
             $name
         end
     """)

@@ -1,11 +1,10 @@
-import Base.factor
 export RecognitionFactor, RecognitionFactorization, currentRecognitionFactorization
 
 """
 A Cluster specifies a collection of `edges` adjacent to `node` that belong to the same
 RecognitionFactor. A joint marginal can be computed over a cluster.
 """
-type Cluster <: AbstractCluster
+mutable struct Cluster <: AbstractCluster
     id::Symbol
     node::FactorNode
     edges::Vector{Edge}
@@ -23,7 +22,7 @@ Base.isless(c1::Cluster, c2::Cluster) = isless("$(c1.id)", "$(c2.id)")
 A RecognitionFactor specifies the subset of variables that comprise
 a joint factor in the recognition factorization.
 """
-type RecognitionFactor
+mutable struct RecognitionFactor
     id::Symbol
     variables::Set{Variable}
     clusters::Set{Cluster}
@@ -97,7 +96,7 @@ function extend(edge_set::Set{Edge})
         for node in [current_edge.a.node, current_edge.b.node] # Check both head and tail node for deterministic type
             if isa(node, DeltaFactor)
                 for interface in node.interfaces
-                    if !is(interface.edge, current_edge) && !(interface.edge in cluster) # Is next level edge not seen yet?
+                    if (interface.edge !== current_edge) && !(interface.edge in cluster) # Is next level edge not seen yet?
                         # If the node is a DeltaFactor, add unseen edges to the stack (to visit sometime in the future)
                         push!(edges, interface.edge)
                     end
@@ -113,7 +112,7 @@ end
 A RecognitionFactorization holds a collection of (non-overlapping) recognition factors that
 specify the recognition factorization over a factor graph that is used for variational inference.
 """
-type RecognitionFactorization
+mutable struct RecognitionFactorization
     graph::FactorGraph
     recognition_factors::Dict{Symbol, RecognitionFactor}
 

@@ -17,13 +17,13 @@ Construction:
 
     Wishart(out, v, nu, id=:some_id)
 """
-type Wishart <: SoftFactor
+mutable struct Wishart <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
     function Wishart(out::Variable, v::Variable, nu::Variable; id=generateId(Wishart))
-        self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:v] = self.interfaces[2] = associate!(Interface(self), v)
@@ -37,8 +37,8 @@ slug(::Type{Wishart}) = "W"
 
 format(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = "$(slug(Wishart))(v=$(format(dist.params[:v])), nu=$(format(dist.params[:nu])))"
 
-ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Wishart}; v=[1.0].', nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
-ProbabilityDistribution(::Type{Wishart}; v=[1.0].', nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Wishart}; v=mat(1.0), nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+ProbabilityDistribution(::Type{Wishart}; v=mat(1.0), nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
 
 dims(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = size(dist.params[:v])
 
@@ -48,7 +48,7 @@ unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = dist.params[
 
 function unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
-    sum([digamma(0.5*(dist.params[:nu] + 1 - i)) for i = 1:d]) +
+    sum([digamma.(0.5*(dist.params[:nu] + 1 - i)) for i = 1:d]) +
     d*log(2) +
     log(det(dist.params[:v]))
 end
@@ -73,7 +73,7 @@ end
 
 function prod!( x::ProbabilityDistribution{MatrixVariate, Wishart},
                 y::ProbabilityDistribution{MatrixVariate, Wishart},
-                z::ProbabilityDistribution{MatrixVariate, Wishart}=ProbabilityDistribution(MatrixVariate, Wishart, v=[1.0].', nu=1.0))
+                z::ProbabilityDistribution{MatrixVariate, Wishart}=ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=1.0))
 
     d = dims(x)[1]
     z.params[:v] = x.params[:v] * cholinv(x.params[:v] + y.params[:v]) * y.params[:v]
@@ -84,7 +84,7 @@ end
 
 @symmetrical function prod!(x::ProbabilityDistribution{MatrixVariate, Wishart},
                             y::ProbabilityDistribution{MatrixVariate, PointMass},
-                            z::ProbabilityDistribution{MatrixVariate, PointMass}=ProbabilityDistribution(MatrixVariate, PointMass, m=[NaN].'))
+                            z::ProbabilityDistribution{MatrixVariate, PointMass}=ProbabilityDistribution(MatrixVariate, PointMass, m=mat(NaN)))
 
     isRoundedPosDef(y.params[:m]) || error("PointMass location $(y.params[:m]) should be positive definite")
     z.params[:m] = deepcopy(y.params[:m])
@@ -99,7 +99,7 @@ function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Wishar
     0.5*d*(d + 1.0)*log(2) +
     0.25*d*(d - 1.0)*log(pi) +
     sum([lgamma(0.5*(dist.params[:nu] + 1.0 - i)) for i=1:d]) -
-    0.5*(dist.params[:nu] - d - 1.0) * sum([digamma(0.5*(dist.params[:nu] + 1.0 - i)) for i=1:d]) +
+    0.5*(dist.params[:nu] - d - 1.0) * sum([digamma.(0.5*(dist.params[:nu] + 1.0 - i)) for i=1:d]) +
     0.5*dist.params[:nu]*d
 end
 

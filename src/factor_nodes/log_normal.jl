@@ -17,13 +17,13 @@ Construction:
 
     LogNormal(out, m, s, id=:some_id)
 """
-type LogNormal <: SoftFactor
+mutable struct LogNormal <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
     function LogNormal(out::Variable, m::Variable, s::Variable; id=generateId(LogNormal))
-        self = new(id, Array(Interface, 3), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:m] = self.interfaces[2] = associate!(Interface(self), m)
