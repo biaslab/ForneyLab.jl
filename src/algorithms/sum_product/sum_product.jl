@@ -25,6 +25,48 @@ end
 
 sumProductSchedule(variable::Variable) = sumProductSchedule([variable])
 
+"""
+internalSumProductSchedule() generates a sum-product message passing schedule
+for the inner graph of a CompositeNode. This schedule produces the sum-product
+message out of the specified outbound_interface.
+"""
+function internalSumProductSchedule(cnode::CompositeNode,
+                                    outbound_interface::Interface,
+                                    inferred_outbound_types::Dict{Interface, <:Type})
+
+    # Collect types of messages towards the CompositeNode
+    msg_types = Dict{Interface, Type}()
+    for (idx, terminal) in enumerate(cnode.terminals)
+        (cnode.interfaces[idx] === outbound_interface) && continue # don't need incoming msg on outbound interface
+        msg_types[terminal.interfaces[1]] = inferred_outbound_types[cnode.interfaces[idx].partner]
+    end
+
+    terminal_interfaces = [term.interfaces[1] for term in cnode.terminals]
+    target_terminal = cnode.interface2terminal[outbound_interface]
+    internal_outbound_interface = target_terminal.interfaces[1].partner
+
+    # Generate a feasible summary propagation schedule
+    schedule = summaryPropagationSchedule(  Variable[],
+                                            limit_set=edges(cnode.inner_graph),
+                                            target_sites=[internal_outbound_interface],
+                                            breaker_sites=terminal_interfaces)
+
+    # Assign the sum-product update rule to each of the schedule entries
+    for entry in schedule
+        entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
+    end
+
+    # Sanity check
+    if schedule[end].interface !== internal_outbound_interface
+        error("The last schedule entry should correspond to the message going out of the CompositeNode")
+    end
+
+    # Type inference for internal messages
+    inferUpdateRules!(schedule, inferred_outbound_types=msg_types)
+
+    return schedule
+end
+
 function inferUpdateRule!{T<:SumProductRule}(   entry::ScheduleEntry,
                                                 rule_type::Type{T},
                                                 inferred_outbound_types::Dict{Interface, <:Type})
@@ -41,7 +83,14 @@ function inferUpdateRule!{T<:SumProductRule}(   entry::ScheduleEntry,
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
+        if isa(entry.interface.node, CompositeNode)
+            # No 'shortcut rule' available for CompositeNode.
+            # Try to fall back to msg passing on the internal graph.
+            entry.internal_schedule = internalSumProductSchedule(entry.interface.node, entry.interface, inferred_outbound_types)
+            entry.msg_update_rule = entry.internal_schedule[end].msg_update_rule
+        else
+            error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
+        end
     elseif length(applicable_rules) > 1
         error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types): $(applicable_rules)")
     else
@@ -83,7 +132,7 @@ macro sumProductRule(fields...)
 
     # Loop over fields because order is unknown
     for arg in fields
-     
+
         (arg.args[1] == :(=>)) || error("Invalid call to @sumProductRule")
 
         if arg.args[2].args[1] == :node_type
@@ -100,7 +149,7 @@ macro sumProductRule(fields...)
             error("Unrecognized field $(arg.args[2].args[1]) in call to @sumProductRule")
         end
     end
-    
+
     # Assign unique name if not set already
     if name == :auto
         # Added hash ensures that the rule name is unique
@@ -125,6 +174,6 @@ macro sumProductRule(fields...)
             $name
         end
     """)
-    
+
     return esc(expr)
 end

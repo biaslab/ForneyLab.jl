@@ -86,7 +86,6 @@ for `x = Variable(); GaussianMeanVariance(x, constant(0.0), constant(1.0))`
 macro ~(variable_expr::Any, dist_expr::Expr)
     # Sanity checks
     (dist_expr.head == :call) || error("Incorrect use of ~ operator.")
-    (eval(Main, dist_expr.args[1]) <: SoftFactor) || error("~ operator should be followed by subtype of SoftFactor.")
 
     # Build FactorNode constructor call
     if isa(dist_expr.args[2], Expr) && (dist_expr.args[2].head == :parameters)

@@ -4,7 +4,8 @@ currentGraph,
 setCurrentGraph,
 nodes,
 edges,
-Terminal
+Terminal,
+ultimatePartner
 
 
 """
@@ -117,7 +118,12 @@ edges(nodeset::Set{FactorNode}) = union(map(edges, nodeset)...)
 """
 Description:
 
-    Terminal is a special node to terminate an Edge.
+    Terminal is a special type of node that is only used in the internal
+    graph of a CompositeNode. A Terminal is used to terminate an Edge in the
+    internal graph that is linked to an interface of the CompositeNode.
+
+    A Terminal is linked to an interface of the
+    CompositeNode containing the Terminal.
 
 Interfaces:
 
@@ -131,12 +137,28 @@ mutable struct Terminal <: FactorNode
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
+    outer_interface::Interface # Interface of CompositeNode linked to this Terminal
 
-    function Terminal(out::Variable; id=generateId(Terminal))
-        self = new(id, Array{Interface}(1), Dict{Symbol,Interface}())
+    function Terminal(out::Variable, outer_interface::Interface; id=generateId(Terminal))
+        self = new(id, Array{Interface}(1), Dict{Symbol,Interface}(), outer_interface)
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
 
         return self
+    end
+end
+
+
+"""
+ultimatePartner(interface) finds the 'ultimate partner' of interface.
+If interface.partner does not belong to a Terminal, it simply returns
+interface.partner. In case of a Terminal node, it finds the first
+non-Terminal partner on a higher level factor graph.
+"""
+function ultimatePartner(interface::Interface)
+    if (interface.partner != nothing) && isa(interface.partner.node, Terminal)
+        return ultimatePartner(interface.partner.node.outer_interface)
+    else
+        return interface.partner
     end
 end
