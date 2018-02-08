@@ -72,7 +72,7 @@ function genDot(nodeset::Set{FactorNode}, edgeset::Set{Edge}; schedule::Schedule
         if isa(node, Clamp)
             dot *= "\t$(object_id(node)) [label=\"$(node.id)\", style=filled, width=0.75, height=0.75]\n"
         elseif isa(node, Terminal)
-            dot *= "\t$(object_id(node)) [shape=none, label=\"\", width=0.75, height=0.75]\n"
+            dot *= "\t$(object_id(node)) [label=\"Terminal $(node.id)\", style=filled, width=0.75, height=0.75]\n"
         else
             dot *= "\t$(object_id(node)) [label=\"$(slug(typeof(node)))\\n$(node.id)\"]\n"
         end
@@ -143,9 +143,19 @@ function edgeDot(edge::Edge; msg_labels=Dict{Interface, String}(), is_external_e
     if is_external_edge
         dot *= "[taillabel=\"$(b_label)\", headlabel=\"$(a_label)\", style=\"dashed\" color=\"black\"]\n"
     else
-        msg_label_a = (haskey(msg_labels, edge.a) ? msg_labels[edge.a] : "")
-        msg_label_b = (haskey(msg_labels, edge.b) ? msg_labels[edge.b] : "")
-        dot *= "[taillabel=\"$(b_label)\n$(msg_label_b)\", headlabel=\"$(a_label)\n$(msg_label_a)\" color=\"black\"]"
+        msg_label_a = haskey(msg_labels, edge.a) ? "<B><FONT COLOR=\"blue\">"*msg_labels[edge.a]*"</FONT></B>" : ""
+        msg_label_b = haskey(msg_labels, edge.b) ? "<B><FONT COLOR=\"blue\">"*msg_labels[edge.b]*"</FONT></B>" : ""
+
+        props = String[]
+        if !isempty(b_label) || !isempty(msg_label_b)
+            push!(props, "taillabel=<$(b_label) \n$(msg_label_b)>")
+        end
+        if !isempty(a_label) || !isempty(msg_label_a)
+            push!(props, "taillabel=<$(a_label) \n$(msg_label_a)>")
+        end
+        if !isempty(props)
+            dot *= "[$(join(props,", "))]"
+        end
     end
 end
 

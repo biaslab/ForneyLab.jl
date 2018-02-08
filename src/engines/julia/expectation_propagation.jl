@@ -32,7 +32,7 @@ Returns a vector with inbound types that correspond with required interfaces.
 function collectInbounds{T<:ExpectationPropagationRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
     inbound_messages = String[]
     for node_interface in entry.interface.node.interfaces
-        inbound_interface = node_interface.partner
+        inbound_interface = ultimatePartner(node_interface)
         if isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
             push!(inbound_messages, messageString(inbound_interface.node))

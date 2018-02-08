@@ -19,7 +19,7 @@ Collect and construct SP update code for each inbound.
 function collectInbounds{T<:SumProductRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
     inbound_messages = String[]
     for node_interface in entry.interface.node.interfaces
-        inbound_interface = node_interface.partner
+        inbound_interface = ultimatePartner(node_interface)
         if node_interface == entry.interface
             # Ignore inbound message on outbound interface
             push!(inbound_messages, "nothing")

@@ -2,7 +2,7 @@ module MessagePassingTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, matches
+import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, matches, flatten
 
 @testset "Message" begin
     msg = Message(Univariate, Gaussian, m=0.0, v=1.0)
@@ -89,5 +89,32 @@ end
     @test ScheduleEntry(n3.i[3], Void) in schedule
     @test ScheduleEntry(n5.i[1], Void) in schedule
 end
+
+@testset "flatten" begin
+    FactorGraph()
+
+    a = Variable()
+    b = Variable()
+    c = Variable()
+
+    n1 = MockNode([a])
+    n2 = MockNode([a, b])
+    n3 = MockNode([b, c])
+    n4 = MockNode([Variable()])
+
+    schedule = [ScheduleEntry(n1.i[1], Void),
+                ScheduleEntry(n2.i[2], Void),
+                ScheduleEntry(n3.i[2], Void)]
+    schedule[2].internal_schedule = [   ScheduleEntry(n1.i[1], Void),
+                                        ScheduleEntry(n4.i[1], Void)]
+
+    flat_schedule = flatten(schedule)
+
+    @test length(flat_schedule) == 3
+    @test flat_schedule[1] == schedule[1]
+    @test flat_schedule[2] == schedule[2].internal_schedule[2]
+    @test flat_schedule[3] == schedule[3]
+end
+
 
 end # module

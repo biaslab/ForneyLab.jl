@@ -53,7 +53,7 @@ function =={fam_t<:FactorNode, var_t<:VariateType, fam_u<:FactorNode, var_u<:Var
     end
     isdefined(t, :scaling_factor) && !isdefined(u, :scaling_factor) && return false
     !isdefined(t, :scaling_factor) && isdefined(u, :scaling_factor) && return false
-    
+
     return true
 end
 
@@ -71,11 +71,15 @@ to calculate the message coming out of `interface`.
 mutable struct ScheduleEntry
     interface::Interface
     msg_update_rule::Type
+    internal_schedule::Vector{ScheduleEntry}
+
+    ScheduleEntry(interface::Interface, msg_update_rule::Type) = new(interface, msg_update_rule)
 end
 
 function show(io::IO, entry::ScheduleEntry)
     rule_str = replace(string(entry.msg_update_rule), "ForneyLab.", "") # Remove "Forneylab."
-    print(io, "$(rule_str) on $(entry.interface)")
+    internal_schedule = isdefined(entry, :internal_schedule) ? "(INTERNAL SCHEDULE) " : ""
+    print(io, "$(internal_schedule)$(rule_str) on $(entry.interface)")
 end
 
 function ==(a::ScheduleEntry, b::ScheduleEntry)
@@ -144,8 +148,8 @@ function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges
     # Therefore, we only need to consider one arbitrary edge to calculate the marginal.
     for variable in variables
         edge = first(variable.edges) # For the sake of consistency, we always take the first edge.
-        (edge.a != nothing) && push!(target_sites, edge.a)
-        (edge.b != nothing) && push!(target_sites, edge.b)
+        (edge.a != nothing && !isa(edge.a.node, Terminal)) && push!(target_sites, edge.a)
+        (edge.b != nothing && !isa(edge.b.node, Terminal)) && push!(target_sites, edge.b)
     end
 
     # Determine a feasible ordering of message updates
@@ -153,7 +157,7 @@ function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges
     iface_list = children(unique(target_sites), dg, breaker_sites=Set(breaker_sites))
     # Build a schedule; Void indicates an unspecified message update rule
     schedule = [ScheduleEntry(iface, Void) for iface in iface_list]
-    
+
     return schedule
 end
 
@@ -178,6 +182,40 @@ function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Inte
     return schedule
 end
 
+
+"""
+Flatten a schedule by inlining all internal message passing schedules.
+This yields a simple, linear schedule.
+"""
+function flatten(schedule::Schedule)
+    # Check if there are any internal schedules to inline
+    if !any([isdefined(entry, :internal_schedule) for entry in schedule])
+        return schedule
+    end
+
+    flat_schedule = ScheduleEntry[]
+    passed_interfaces = Dict{Interface,Bool}()
+    for entry in schedule
+        if isdefined(entry, :internal_schedule)
+            flat_subschedule = flatten(entry.internal_schedule)
+            for internal_entry in flat_subschedule
+                if !haskey(passed_interfaces, internal_entry.interface)
+                    push!(flat_schedule, internal_entry)
+                    passed_interfaces[internal_entry.interface] = true
+                end
+            end
+        else
+            if !haskey(passed_interfaces, entry.interface)
+                push!(flat_schedule, entry)
+                passed_interfaces[entry.interface] = true
+            end
+        end
+    end
+
+    return flat_schedule
+end
+
+
 """
 Contruct a condensed schedule.
 """
@@ -190,4 +228,24 @@ function condense(schedule::Schedule)
     end
 
     return condensed_schedule
+end
+
+
+"""
+Generate a mapping from interface to schedule entry index.
+Multiple interfaces can map to the same schedule entry if the
+graph contains composite nodes.
+"""
+function interfaceToScheduleEntryIdx(schedule::Schedule)
+    mapping = Dict{Interface, Int}()
+    for (idx, entry) in enumerate(schedule)
+        interface = entry.interface
+        mapping[interface] = idx
+        while (interface.partner != nothing) && isa(interface.partner.node, Terminal)
+            interface = interface.partner.node.outer_interface
+            mapping[interface] = idx
+        end
+    end
+
+    return mapping
 end

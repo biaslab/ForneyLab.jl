@@ -30,7 +30,7 @@ function collectInbounds{T<:StructuredVariationalRule}(entry::ScheduleEntry, ::T
 
     recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
     for node_interface in entry.interface.node.interfaces
-        inbound_interface = node_interface.partner
+        inbound_interface = ultimatePartner(node_interface)
         partner_node = inbound_interface.node
         node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
 
@@ -65,7 +65,7 @@ function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry,
     # Collect inbounds
     inbounds = String[]
     for node_interface in entry.interface.node.interfaces
-        inbound_interface = node_interface.partner
+        inbound_interface = ultimatePartner(node_interface)
         partner_node = inbound_interface.node
         if node_interface == entry.interface
             # Ignore marginal of outbound edge
@@ -100,7 +100,8 @@ function freeEnergyAlgorithm(; name::String="")
 
         # Construct differential entropy term
         outbound_interface = node.interfaces[1]
-        if !(outbound_interface.partner == nothing) && !isa(outbound_interface.partner.node, Clamp) # Differential entropy is required
+        outbound_partner = ultimatePartner(outbound_interface)
+        if !(outbound_partner == nothing) && !isa(outbound_partner.node, Clamp) # Differential entropy is required
             dict = current_recognition_factorization.node_edge_to_cluster
             if haskey(dict, (node, outbound_interface.edge)) # Outbound edge is part of a cluster
                 inbounds = collectConditionalDifferentialEntropyInbounds(node) # Collect conditioning terms for conditional differential entropy
@@ -130,7 +131,8 @@ function collectAverageEnergyInbounds(node::FactorNode)
 
     recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
     for node_interface in node.interfaces
-        partner_node = node_interface.partner.node
+        inbound_interface = ultimatePartner(node_interface)
+        partner_node = inbound_interface.node
         node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
 
         if isa(partner_node, Clamp)
@@ -159,7 +161,8 @@ function collectConditionalDifferentialEntropyInbounds(node::FactorNode)
 
     # Add conditioning terms to inbounds
     for node_interface in node.interfaces
-        partner_node = node_interface.partner.node
+        inbound_interface = ultimatePartner(node_interface)
+        partner_node = inbound_interface.node
 
         if !(node_interface.edge in cluster.edges)
             # Only collect conditioning variables that are part of the cluster

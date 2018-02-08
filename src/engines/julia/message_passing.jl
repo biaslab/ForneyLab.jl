@@ -1,5 +1,3 @@
-export load
-
 function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
     code = ""
 
@@ -13,13 +11,14 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
     breaker_types = Dict()
     for entry in schedule
         if entry.msg_update_rule <: ExpectationPropagationRule
-            breaker_types[entry.interface.partner] = outbound_types[entry.interface.partner]
+            partner = ultimatePartner(entry.interface)
+            breaker_types[partner] = outbound_types[partner]
         end
     end
 
     if !isempty(breaker_types) # Initialization block is only required when breakers are present
         code *= "function init$(name)()\n\n"
-        
+
         # Write message (breaker) initialization code
         code *= "messages = Array{Message}($n_messages)\n"
         for (breaker_site, breaker_type) in breaker_types
@@ -91,7 +90,7 @@ function collectInbounds(entry::MarginalScheduleEntry, interface_to_msg_idx::Dic
 
     recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
     for node_interface in entry.target.node.interfaces
-        inbound_interface = node_interface.partner
+        inbound_interface = ultimatePartner(node_interface)
         partner_node = inbound_interface.node
         node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
 
@@ -119,17 +118,16 @@ function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::Marginal
     n_messages = length(schedule)
 
     # Assign message numbers to each interface in the schedule
-    interface_to_msg_idx = Dict{Interface, Int}()
-    for (msg_idx, schedule_entry) in enumerate(schedule)
-        interface_to_msg_idx[schedule_entry.interface] = msg_idx
-    end
+    schedule = ForneyLab.flatten(schedule) # Inline all internal message passing
+    schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
+    interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
 
     code = ""
     code *= writeInitializationBlock(schedule, interface_to_msg_idx)
     code *= "function step$(name)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}($n_messages))\n\n"
     code *= writeMessagePassingBlock(schedule, interface_to_msg_idx)
     code *= "\n"
-    code *= writeMarginalsComputationBlock(marginal_schedule, interface_to_msg_idx)  # TODO: adapt for structured VMP
+    code *= writeMarginalsComputationBlock(marginal_schedule, interface_to_msg_idx)
     code *= "\nreturn marginals\n\n"
     code *= "end"
 
@@ -173,7 +171,7 @@ function marginalString{T<:VariateType}(node::Clamp{T})
         # Message comes from data array
         buffer, idx = ForneyLab.current_graph.placeholders[node]
         if idx > 0
-            str = "ProbabilityDistribution($(var_type_str), PointMass, m=data[:$buffer][$idx])" 
+            str = "ProbabilityDistribution($(var_type_str), PointMass, m=data[:$buffer][$idx])"
         else
             str = "ProbabilityDistribution($(var_type_str), PointMass, m=data[:$buffer])"
         end
