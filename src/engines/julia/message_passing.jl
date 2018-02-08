@@ -113,7 +113,7 @@ function collectInbounds(entry::MarginalScheduleEntry, interface_to_msg_idx::Dic
     return inbounds
 end
 
-function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::MarginalSchedule; file::String="", name::String="")
+function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::MarginalSchedule=MarginalScheduleEntry[]; file::String="", name::String="")
     schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
     n_messages = length(schedule)
 
