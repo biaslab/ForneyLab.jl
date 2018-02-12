@@ -3,7 +3,7 @@ module GammaTest
 using Base.Test
 using ForneyLab
 import ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable, dims
-import ForneyLab: VBGammaOut
+import ForneyLab: SPGammaOutVPP, VBGammaOut
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=1.0)) == 1
@@ -25,12 +25,21 @@ end
     @test unsafeVar(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=2.0)) == 0.25
 end
 
+
 #-------------
 # Update rules
 #-------------
 
+@testset "SPGammaOutVPP" begin
+    @test SPGammaOutVPP <: SumProductRule{Gamma}
+    @test outboundType(SPGammaOutVPP) == Message{Gamma}
+    @test isApplicable(SPGammaOutVPP, [Void, Message{PointMass}, Message{PointMass}]) 
+
+    @test ruleSPGammaOutVPP(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gamma, a=1.0, b=2.0)
+end
+
 @testset "VBGammaOut" begin
-    @test VBGammaOut <: VariationalRule{Gamma}
+    @test VBGammaOut <: NaiveVariationalRule{Gamma}
     @test outboundType(VBGammaOut) == Message{Gamma}
     @test isApplicable(VBGammaOut, [Void, ProbabilityDistribution, ProbabilityDistribution]) 
     @test !isApplicable(VBGammaOut, [ProbabilityDistribution, ProbabilityDistribution, Void]) 

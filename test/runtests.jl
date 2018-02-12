@@ -36,11 +36,14 @@ using Base.Test
 
     include("./test_dependency_graph.jl")
     include("./test_message_passing.jl")
+    include("./test_marginals.jl")
 
     # Algorithms
     include("./algorithms/sum_product/test_sum_product.jl")
     include("./algorithms/variational_bayes/test_recognition_factorization.jl")
-    include("./algorithms/variational_bayes/test_variational_bayes.jl")
+    include("./algorithms/variational_bayes/test_joint_marginals.jl")
+    include("./algorithms/variational_bayes/test_naive_variational_bayes.jl")
+    include("./algorithms/variational_bayes/test_structured_variational_bayes.jl")
     include("./algorithms/expectation_propagation/test_expectation_propagation.jl")
 
     # Engines

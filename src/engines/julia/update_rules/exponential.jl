@@ -9,7 +9,7 @@ function ruleSPExponentialOutVG(msg_out::Void,
 
     ensureParameters!(msg_in1.dist, (:m, :v))
 
-    return Message(Univariate, LogNormal, m=msg_in1.dist.params[:m], s=msg_in1.dist.params[:v])
+    return Message(Univariate, LogNormal, m=deepcopy(msg_in1.dist.params[:m]), s=deepcopy(msg_in1.dist.params[:v]))
 end
 
 ruleSPExponentialIn1LV(msg_out::Message{LogNormal, Univariate}, msg_in1::Void) = Message(Univariate, Gaussian, m=msg_out.dist.params[:m], v=msg_out.dist.params[:s])

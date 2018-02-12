@@ -51,7 +51,7 @@ end
 end
 
 @testset "VBBetaOut" begin
-    @test VBBetaOut <: VariationalRule{Beta}
+    @test VBBetaOut <: NaiveVariationalRule{Beta}
     @test outboundType(VBBetaOut) == Message{Beta}
     @test isApplicable(VBBetaOut, [Void, ProbabilityDistribution, ProbabilityDistribution])
 

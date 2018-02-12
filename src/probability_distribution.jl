@@ -9,6 +9,7 @@ mean,
 var,
 cov,
 differentialEntropy,
+conditionalDifferentialEntropy,
 averageEnergy,
 ==,
 vague,
@@ -78,6 +79,11 @@ unsafeCov(dist::ProbabilityDistribution{Univariate, PointMass}) = 0.0
 unsafeCov(dist::ProbabilityDistribution{Multivariate, PointMass}) = zeros(dims(dist), dims(dist))
 
 isProper{T<:VariateType}(::ProbabilityDistribution{T, PointMass}) = true
+
+"""
+Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)
+"""
+conditionalDifferentialEntropy(marg_joint::ProbabilityDistribution{Multivariate}, marg_condition::Vararg{ProbabilityDistribution}) = differentialEntropy(marg_joint) - sum([differentialEntropy(marg) for marg in marg_condition])
 
 """
 `x ~ GaussianMeanVariance(constant(0.0), constant(1.0), id=:some_optional_id)` is a shorthand notation

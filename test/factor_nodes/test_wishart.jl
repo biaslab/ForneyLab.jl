@@ -3,7 +3,7 @@ module WishartTest
 using Base.Test
 using ForneyLab
 import ForneyLab: prod!, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper
-import ForneyLab: VBWishartOut
+import ForneyLab: SPWishartOutVPP, VBWishartOut
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(MatrixVariate, Wishart, v=diageye(3), nu=4.0)) == (3, 3)
@@ -39,8 +39,16 @@ end
 # Update rules
 #-------------
 
+@testset "SPWishartOutVPP" begin
+    @test SPWishartOutVPP <: SumProductRule{Wishart}
+    @test outboundType(SPWishartOutVPP) == Message{Wishart}
+    @test isApplicable(SPWishartOutVPP, [Void, Message{PointMass}, Message{PointMass}]) 
+
+    @test ruleSPWishartOutVPP(nothing, Message(MatrixVariate, PointMass, m=[1.0].'), Message(Univariate, PointMass, m=2.0)) == Message(MatrixVariate, Wishart, v=[1.0].', nu=2.0)
+end
+
 @testset "VBWishartOut" begin
-    @test VBWishartOut <: VariationalRule{Wishart}
+    @test VBWishartOut <: NaiveVariationalRule{Wishart}
     @test outboundType(VBWishartOut) == Message{Wishart}
     @test isApplicable(VBWishartOut, [Void, ProbabilityDistribution, ProbabilityDistribution]) 
     @test !isApplicable(VBWishartOut, [ProbabilityDistribution, ProbabilityDistribution, Void]) 

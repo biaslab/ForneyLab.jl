@@ -1,7 +1,9 @@
 export messagePassingAlgorithm
 
 include("message_passing.jl")
-include("algorithms.jl")
+include("sum_product.jl")
+include("variational_bayes.jl")
+include("expectation_propagation.jl")
 
 include("update_rules/equality.jl")
 include("update_rules/addition.jl")

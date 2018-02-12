@@ -10,7 +10,7 @@ import ForneyLab: VBGaussianMixtureM, VBGaussianMixtureW, VBGaussianMixtureZBer,
 #-------------
 
 @testset "VBGaussianMixtureM" begin
-    @test VBGaussianMixtureM <: VariationalRule{GaussianMixture}
+    @test VBGaussianMixtureM <: NaiveVariationalRule{GaussianMixture}
     @test outboundType(VBGaussianMixtureM) == Message{Gaussian}
     @test !isApplicable(VBGaussianMixtureM, [Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
     @test !isApplicable(VBGaussianMixtureM, [ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution]) 
@@ -28,7 +28,7 @@ import ForneyLab: VBGaussianMixtureM, VBGaussianMixtureW, VBGaussianMixtureZBer,
 end
 
 @testset "VBGaussianMixtureW" begin
-    @test VBGaussianMixtureW <: VariationalRule{GaussianMixture}
+    @test VBGaussianMixtureW <: NaiveVariationalRule{GaussianMixture}
     @test outboundType(VBGaussianMixtureW) == Message{Union{Gamma, Wishart}}
     @test !isApplicable(VBGaussianMixtureW, [Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
     @test !isApplicable(VBGaussianMixtureW, [ProbabilityDistribution, ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
@@ -46,7 +46,7 @@ end
 end
 
 @testset "VBGaussianMixtureZBer" begin
-    @test VBGaussianMixtureZBer <: VariationalRule{GaussianMixture}
+    @test VBGaussianMixtureZBer <: NaiveVariationalRule{GaussianMixture}
     @test outboundType(VBGaussianMixtureZBer) == Message{Bernoulli}
     @test !isApplicable(VBGaussianMixtureZBer, [ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
     @test isApplicable(VBGaussianMixtureZBer, [ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
@@ -56,7 +56,7 @@ end
 end
 
 @testset "VBGaussianMixtureZCat" begin
-    @test VBGaussianMixtureZCat <: VariationalRule{GaussianMixture}
+    @test VBGaussianMixtureZCat <: NaiveVariationalRule{GaussianMixture}
     @test outboundType(VBGaussianMixtureZCat) == Message{Categorical}
     @test isApplicable(VBGaussianMixtureZCat, [ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
     @test !isApplicable(VBGaussianMixtureZCat, [ProbabilityDistribution, Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
@@ -66,7 +66,7 @@ end
 end
 
 @testset "VBGaussianMixtureOut" begin
-    @test VBGaussianMixtureOut <: VariationalRule{GaussianMixture}
+    @test VBGaussianMixtureOut <: NaiveVariationalRule{GaussianMixture}
     @test outboundType(VBGaussianMixtureOut) == Message{Gaussian}
     @test isApplicable(VBGaussianMixtureOut, [Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 
     @test isApplicable(VBGaussianMixtureOut, [Void, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution]) 

@@ -1,4 +1,11 @@
-export ruleVBGammaOut
+export 
+ruleVBGammaOut,
+ruleSPGammaOutVPP
+
+ruleSPGammaOutVPP(  msg_out::Void, 
+                    msg_a::Message{PointMass, Univariate},
+                    msg_b::Message{PointMass, Univariate}) =
+    Message(Univariate, Gamma, a=deepcopy(msg_a.dist.params[:m]), b=deepcopy(msg_b.dist.params[:m]))
 
 ruleVBGammaOut( dist_out::Any,
                 dist_a::ProbabilityDistribution{Univariate},

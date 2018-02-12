@@ -27,6 +27,8 @@ end
     @test !matches(Void, Message{Gaussian})
     @test matches(Message{Gamma, Univariate}, Message{Union{Gamma, Wishart}, Univariate})
     @test matches(Message{Gamma}, Message{Union{Gamma, Wishart}})
+    @test !matches(Message{Gaussian, Univariate}, ProbabilityDistribution{Univariate, Gaussian})
+    @test !matches(ProbabilityDistribution{Univariate, Gaussian}, Message{Gaussian, Univariate})
 end
 
 # Integration helper

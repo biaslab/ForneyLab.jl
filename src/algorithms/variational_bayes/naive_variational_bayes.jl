@@ -1,9 +1,9 @@
 export
-VariationalRule,
+NaiveVariationalRule,
 variationalSchedule,
-@variationalRule
+@naiveVariationalRule
 
-abstract type VariationalRule{factor_type} <: MessageUpdateRule end
+abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
 
 """
 variationalSchedule() generates a variational message passing schedule that computes the
@@ -20,7 +20,12 @@ function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
 
     for entry in schedule
         if entry.interface.node in nodes_connected_to_external_edges
-            entry.msg_update_rule = VariationalRule{typeof(entry.interface.node)}
+            local_recognition_factor_ids = localRecognitionFactorIds(entry.interface.node)
+            if allunique(local_recognition_factor_ids) # Local recognition factorization is naive
+                entry.msg_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
+            else
+                entry.msg_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}
+            end        
         else
             entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
         end
@@ -30,12 +35,14 @@ function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
 
     return schedule
 end
-
 variationalSchedule(recognition_factor::RecognitionFactor) = variationalSchedule([recognition_factor])
 
-function inferUpdateRule!{T<:VariationalRule}(  entry::ScheduleEntry,
-                                                rule_type::Type{T},
-                                                inferred_outbound_types::Dict{Interface, <:Type})
+"""
+Infer the update rule that computes the message for `entry`, as dependent on the inbound types
+"""
+function inferUpdateRule!{T<:NaiveVariationalRule}( entry::ScheduleEntry,
+                                                    rule_type::Type{T},
+                                                    inferred_outbound_types::Dict{Interface, Type})
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
     
@@ -59,17 +66,17 @@ function inferUpdateRule!{T<:VariationalRule}(  entry::ScheduleEntry,
     return entry
 end
 
-function collectInboundTypes{T<:VariationalRule}(entry::ScheduleEntry,
-                                                 ::Type{T},
-                                                 inferred_outbound_types::Dict{Interface, <:Type})
+"""
+Find the inbound types that are required to compute the message for `entry`.
+Returns a vector with inbound types that correspond with required interfaces.
+"""
+function collectInboundTypes{T<:NaiveVariationalRule}(  entry::ScheduleEntry,
+                                                        ::Type{T},
+                                                        inferred_outbound_types::Dict{Interface, Type})
     inbound_types = Type[]
-    entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
     for node_interface in entry.interface.node.interfaces
         if node_interface == entry.interface
             push!(inbound_types, Void)
-        elseif recognitionFactorId(node_interface.edge) == entry_recognition_factor_id
-            # Edge is internal, accept message
-            push!(inbound_types, inferred_outbound_types[node_interface.partner])
         else
             # Edge is external, accept marginal
             push!(inbound_types, ProbabilityDistribution) 
@@ -79,22 +86,13 @@ function collectInboundTypes{T<:VariationalRule}(entry::ScheduleEntry,
     return inbound_types
 end
 
-function recognitionFactorId(edge::Edge)
-    for rf in values(current_recognition_factorization.recognition_factors)
-        if edge in rf.internal_edges
-            return rf.id
-        end
-    end
-    return Symbol(name(edge)) # No recognition factor is found, return a unique id
-end
-
 """
-@variationalRule registers a variational update rule by defining the rule type
-and the corresponding methods for the outboundType and isApplicable functions.
-If no name (type) for the new rule is passed, a unique name (type) will be
-generated. Returns the rule type.
+@naiveVariationalRule registers a variational update rule for the naive (mean-field)
+factorization by defining the rule type and the corresponding methods for the 
+outboundType and isApplicable functions. If no name (type) for the new rule is
+passed, a unique name (type) will be generated. Returns the rule type.
 """
-macro variationalRule(fields...)
+macro naiveVariationalRule(fields...)
     # Init required fields in macro scope
     node_type = :unknown
     outbound_type = :unknown
@@ -103,7 +101,7 @@ macro variationalRule(fields...)
 
     # Loop over fields because order is unknown
     for arg in fields
-        (arg.args[1] == :(=>)) || error("Invalid call to @variationalRule")
+        (arg.args[1] == :(=>)) || error("Invalid call to @naiveVariationalRule")
 
         if arg.args[2].args[1] == :node_type
             node_type = arg.args[3]
@@ -116,7 +114,7 @@ macro variationalRule(fields...)
         elseif arg.args[2].args[1] == :name
             name = arg.args[3]
         else
-            error("Unrecognized field $(arg.args[2].args[1]) in call to @variationalRule")
+            error("Unrecognized field $(arg.args[2].args[1]) in call to @naiveVariationalRule")
         end
     end
 
@@ -138,7 +136,7 @@ macro variationalRule(fields...)
 
     expr = parse("""
         begin
-            type $name <: VariationalRule{$node_type} end
+            mutable struct $name <: NaiveVariationalRule{$node_type} end
             ForneyLab.outboundType(::Type{$name}) = $outbound_type
             ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = $(join(input_type_validators, " && "))
             $name

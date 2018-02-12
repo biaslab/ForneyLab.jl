@@ -1,0 +1,183 @@
+export variationalAlgorithm, freeEnergyAlgorithm
+
+"""
+Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
+"""
+function variationalAlgorithm(q_factors::Vector{RecognitionFactor}; file::String="", name::String="")
+    q_schedule = variationalSchedule(q_factors)
+    marginal_schedule = marginalSchedule(q_factors, q_schedule)
+
+    algo = messagePassingAlgorithm(q_schedule, marginal_schedule, file=file, name=name)
+
+    return algo
+end
+variationalAlgorithm(q_factor::RecognitionFactor; file::String="", name::String="") = variationalAlgorithm([q_factor]; file=file, name=name)
+
+"""
+Construct argument code for naive VB updates
+"""
+collectInbounds{T<:NaiveVariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) = collectNaiveVariationalNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
+
+"""
+Construct the inbound code that computes the message for `entry`.
+Returns a vector with inbounds that correspond with required interfaces.
+"""
+function collectInbounds{T<:StructuredVariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
+    # Collect inbounds
+    inbounds = String[]
+    entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
+    local_cluster_ids = localRecognitionFactorization(entry.interface.node)
+
+    recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
+    for node_interface in entry.interface.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        partner_node = inbound_interface.node
+        node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
+
+        if node_interface == entry.interface
+            # Ignore marginal of outbound edge
+            push!(inbounds, "nothing")
+        elseif isa(partner_node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, marginalString(partner_node))
+        elseif node_interface_recognition_factor_id == entry_recognition_factor_id
+            # Collect message from previous result
+            inbound_idx = interface_to_msg_idx[inbound_interface]
+            push!(inbounds, "messages[$inbound_idx]")
+        elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
+            # Collect marginal from marginal dictionary (if marginal is not already accepted)
+            marginal_idx = local_cluster_ids[node_interface_recognition_factor_id]
+            push!(inbounds, "marginals[:$marginal_idx]")
+        end
+
+        push!(recognition_factor_ids, node_interface_recognition_factor_id)
+    end
+
+    return inbounds
+end
+
+"""
+Construct the inbound code that computes the message for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
+Returns a vector with inbounds that correspond with required interfaces.
+"""
+function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
+    # Collect inbounds
+    inbounds = String[]
+    for node_interface in entry.interface.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        partner_node = inbound_interface.node
+        if node_interface == entry.interface
+            # Ignore marginal of outbound edge
+            push!(inbounds, "nothing")
+        elseif isa(partner_node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, marginalString(partner_node))
+        else
+            # Collect marginal from marginal dictionary
+            push!(inbounds, "marginals[:$(node_interface.edge.variable.id)]")
+        end
+    end
+
+    return inbounds
+end
+
+function freeEnergyAlgorithm(; name::String="")
+    # Collect nodes connected to external edges
+    nodes_connected_to_external_edges = Set{FactorNode}()
+    for rf in collect(values(current_recognition_factorization.recognition_factors))
+        union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(rf))
+    end
+
+    # Write evaluation function for free energy
+    energy_block = ""
+    entropy_block = ""
+    for node in sort(collect(nodes_connected_to_external_edges))
+        # Construct average energy term
+        inbounds = collectAverageEnergyInbounds(node)
+        inbounds_str = join(inbounds, ", ")
+        energy_block *= "F += averageEnergy($(typeof(node)), $inbounds_str)\n"
+
+        # Construct differential entropy term
+        outbound_interface = node.interfaces[1]
+        outbound_partner = ultimatePartner(outbound_interface)
+        if !(outbound_partner == nothing) && !isa(outbound_partner.node, Clamp) # Differential entropy is required
+            dict = current_recognition_factorization.node_edge_to_cluster
+            if haskey(dict, (node, outbound_interface.edge)) # Outbound edge is part of a cluster
+                inbounds = collectConditionalDifferentialEntropyInbounds(node) # Collect conditioning terms for conditional differential entropy
+                inbounds_str = join(inbounds, ", ")
+                entropy_block *= "F -= conditionalDifferentialEntropy($inbounds_str)\n"
+            else
+                marginal_idx = outbound_interface.edge.variable.id
+                entropy_block *= "F -= differentialEntropy(marginals[:$marginal_idx])\n"
+            end
+        end        
+    end
+
+    # Combine blocks
+    code = "function freeEnergy$(name)(data::Dict, marginals::Dict)\n\n"
+    code *= "F = 0.0\n\n"
+    code *= energy_block*"\n"entropy_block
+    code *= "\nreturn F\n" 
+    code *= "end"
+
+    return code
+end
+
+function collectAverageEnergyInbounds(node::FactorNode)
+    inbounds = String[]
+
+    local_cluster_ids = localRecognitionFactorization(node)
+
+    recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
+    for node_interface in node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        partner_node = inbound_interface.node
+        node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
+
+        if isa(partner_node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, marginalString(partner_node))
+        elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
+            # Collect marginal from marginal dictionary (if marginal is not already accepted)
+            marginal_idx = local_cluster_ids[node_interface_recognition_factor_id]
+            push!(inbounds, "marginals[:$marginal_idx]")
+        end
+
+        push!(recognition_factor_ids, node_interface_recognition_factor_id)
+    end
+
+    return inbounds
+end
+
+function collectConditionalDifferentialEntropyInbounds(node::FactorNode)
+    inbounds = String[]
+
+    outbound_edge = node.interfaces[1].edge
+    dict = current_recognition_factorization.node_edge_to_cluster
+    cluster = dict[(node, outbound_edge)]
+
+    push!(inbounds, "marginals[:$(cluster.id)]") # Add joint term to inbounds
+
+    # Add conditioning terms to inbounds
+    for node_interface in node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        partner_node = inbound_interface.node
+
+        if !(node_interface.edge in cluster.edges)
+            # Only collect conditioning variables that are part of the cluster
+            continue
+        elseif (node_interface.edge == outbound_edge)
+            # Skip the outbound edge, whose variable is not part of the conditioning term
+            continue
+        elseif isa(partner_node, Clamp)
+            # Hard-code marginal of constant node in inbounds
+            push!(inbounds, marginalString(partner_node))
+        else
+            marginal_idx = node_interface.edge.variable.id
+            push!(inbounds, "marginals[:$marginal_idx]")
+        end
+    end
+
+    return inbounds
+end

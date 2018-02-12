@@ -41,6 +41,8 @@ matches{Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType, Vb<:VariateType}(Ta::Ty
 matches{Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType}(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) = (Fa<:Fb)
 matches{Fa<:FactorNode, Fb<:FactorNode}(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) = (Fa<:Fb)
 matches{T<:Message}(::Type{Void}, ::Type{T}) = false
+matches{P<:ProbabilityDistribution, M<:Message}(::Type{P}, ::Type{M}) = false
+matches{P<:ProbabilityDistribution, M<:Message}(::Type{M}, ::Type{P}) = false
 
 function =={fam_t<:FactorNode, var_t<:VariateType, fam_u<:FactorNode, var_u<:VariateType}(t::Message{fam_t, var_t}, u::Message{fam_u, var_u})
     (fam_t == fam_u) || return false
@@ -56,8 +58,8 @@ function =={fam_t<:FactorNode, var_t<:VariateType, fam_u<:FactorNode, var_u<:Var
 end
 
 """
-A MessageCalculationRule specifies how a Message is calculated from the node function and the incoming messages.
-Use `subtypes(MessageCalculationRule)` to list the available rules.
+A MessageUpdateRule specifies how a Message is calculated from the node function and the incoming messages.
+Use `subtypes(MessageUpdateRule)` to list the available rules.
 """
 abstract type MessageUpdateRule end
 
