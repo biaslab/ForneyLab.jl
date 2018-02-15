@@ -28,7 +28,7 @@ function ruleSPTransitionIn1CVP(msg_out::Message{Categorical, Univariate},
 end
 
 function ruleVBTransitionOut(   dist_out::Void,
-                                dist_in1::ProbabilityDistribution{Univariate},
+                                dist_in1::ProbabilityDistribution,
                                 dist_a::ProbabilityDistribution{MatrixVariate})
 
     a = exp.(unsafeLogMean(dist_a)*unsafeMeanVector(dist_in1))
@@ -36,7 +36,7 @@ function ruleVBTransitionOut(   dist_out::Void,
     Message(Univariate, Categorical, p=a./sum(a))
 end
 
-function ruleVBTransitionIn1(   dist_out::ProbabilityDistribution{Univariate},
+function ruleVBTransitionIn1(   dist_out::ProbabilityDistribution,
                                 dist_in1::Void,
                                 dist_a::ProbabilityDistribution{MatrixVariate})
 
@@ -45,8 +45,8 @@ function ruleVBTransitionIn1(   dist_out::ProbabilityDistribution{Univariate},
     Message(Univariate, Categorical, p=a./sum(a))
 end
 
-ruleVBTransitionA(  dist_out::ProbabilityDistribution{Univariate},
-                    dist_in1::ProbabilityDistribution{Univariate},
+ruleVBTransitionA(  dist_out::ProbabilityDistribution,
+                    dist_in1::ProbabilityDistribution,
                     dist_a::Void) =
     Message(MatrixVariate, Dirichlet, a=unsafeMeanVector(dist_out)*unsafeMeanVector(dist_in1)' + 1)
 

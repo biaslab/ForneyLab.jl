@@ -21,7 +21,7 @@ Construction:
 
     Transition(out, in1, a, id=:some_id)
 """
-mutable struct Transition <: DeltaFactor
+mutable struct Transition <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
@@ -40,7 +40,7 @@ end
 slug(::Type{Transition}) = "T"
 
 # Average energy functional
-function averageEnergy(::Type{Transition}, marg_out::ProbabilityDistribution{Univariate}, marg_in1::ProbabilityDistribution{Univariate}, marg_a::ProbabilityDistribution{MatrixVariate})
+function averageEnergy(::Type{Transition}, marg_out::ProbabilityDistribution, marg_in1::ProbabilityDistribution, marg_a::ProbabilityDistribution{MatrixVariate})
     -unsafeMeanVector(marg_out)'*unsafeLogMean(marg_a)*unsafeMeanVector(marg_in1)
 end
 
