@@ -26,9 +26,9 @@
 @sumProductRule(:node_type     => Multiplication,
                 :outbound_type => Message{Gaussian},
                 :inbound_types => (Message{Gaussian}, Message{PointMass}, Void),
-                :name          => SPMultiplicationIn2GPV)
+                :name          => SPMultiplicationAGPV)
 
 @sumProductRule(:node_type     => Multiplication,
                 :outbound_type => Message{PointMass},
                 :inbound_types => (Message{PointMass}, Message{PointMass}, Void),
-                :name          => SPMultiplicationIn2PPV)
+                :name          => SPMultiplicationAPPV)

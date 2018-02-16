@@ -4,10 +4,14 @@ export Categorical
 Description:
     Categorical factor node
 
-    out ∈ {0, 1}^d
-    p ∈ [0, 1]^d
+    The categorical node defines a one-dimensional probability 
+    distribution over the normal basis vectors of dimension d
     
-    f(out, p) = Cat(out|p) = Π p_i^{out_i}
+    out ∈ {0, 1}^d where Σ_k out_k = 1
+    p ∈ [0, 1]^d, where Σ_k p_k = 1
+    
+    f(out, p) = Cat(out | p) 
+              = Π_i p_i^{out_i}
 
 Interfaces:
     1. out
@@ -48,6 +52,29 @@ unsafeMean(dist::ProbabilityDistribution{Univariate, Categorical}) = deepcopy(di
 
 unsafeMeanVector(dist::ProbabilityDistribution{Univariate, Categorical}) = deepcopy(dist.params[:p])
 
+function sample(dist::ProbabilityDistribution{Univariate, Categorical})
+    isProper(dist) || error("Cannot sample from improper distribution $dist")
+    
+    p = dist.params[:p]
+    p_sum = cumsum(p);
+    z = rand()
+    
+    d = length(p)
+    idx = 0
+    for i = 1:d
+        if z < p_sum[i]
+            idx = i
+            break
+        end
+        idx = d
+    end
+    
+    x = zeros(Float64, d)
+    x[idx] = 1.0
+    
+    return x
+end
+
 function prod!( x::ProbabilityDistribution{Univariate, Categorical},
                 y::ProbabilityDistribution{Univariate, Categorical},
                 z::ProbabilityDistribution{Univariate, Categorical}=ProbabilityDistribution(Univariate, Categorical, p=ones(x.params[:p])./length(x.params[:p])))
@@ -63,10 +90,10 @@ end
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Categorical})
-    sum([ -p_i*log(p_i) for p_i in dist.params[:p] ])
+    -sum(dist.params[:p].*log.(dist.params[:p]))
 end
 
 # Average energy functional
 function averageEnergy(::Type{Categorical}, marg_out::ProbabilityDistribution{Univariate}, marg_p::ProbabilityDistribution{Multivariate})
-    sum(-unsafeMean(marg_out).*unsafeLogMean(marg_p))
+    -sum(unsafeMean(marg_out).*unsafeLogMean(marg_p))
 end
