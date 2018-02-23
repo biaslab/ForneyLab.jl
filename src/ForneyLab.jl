@@ -40,6 +40,7 @@ include("factor_nodes/beta.jl")
 include("factor_nodes/dirichlet.jl")
 include("factor_nodes/gaussian_mixture.jl")
 include("factor_nodes/sigmoid.jl")
+include("factor_nodes/nonlinear.jl")
 
 # Factor graph
 include("factor_graph.jl")
@@ -80,6 +81,7 @@ include("update_rules/beta.jl")
 include("update_rules/dirichlet.jl")
 include("update_rules/gaussian_mixture.jl")
 include("update_rules/sigmoid.jl")
+include("update_rules/nonlinear.jl")
 
 *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
 
