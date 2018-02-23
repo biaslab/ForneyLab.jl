@@ -38,3 +38,20 @@ mutable struct Nonlinear <: SoftFactor
 end
 
 slug(::Type{Nonlinear}) = "g"
+
+# Average energy functional
+function averageEnergy(::Type{Nonlinear}, marg_out::ProbabilityDistribution{Univariate}, marg_in1::ProbabilityDistribution{Univariate}, marg_w::ProbabilityDistribution{Univariate}, g::Function, J_g::Function)
+    (A, b) = approximate(unsafeMean(marg_in1), g, J_g)
+
+    0.5*log(2*pi) -
+    0.5*unsafeLogMean(marg_w) +
+    0.5*unsafeMean(marg_w)*( A^2*unsafeCov(marg_in1) + unsafeCov(marg_out) + (A*unsafeMean(marg_in1) + b - unsafeMean(marg_out))^2 )
+end
+
+function averageEnergy(::Type{Nonlinear}, marg_out::ProbabilityDistribution{Multivariate}, marg_in1::ProbabilityDistribution{Multivariate}, marg_w::ProbabilityDistribution{MatrixVariate}, g::Function, J_g::Function)
+    (A, b) = approximate(unsafeMean(marg_in1), g, J_g)
+
+    0.5*dims(marg_out)*log(2*pi) -
+    0.5*unsafeDetLogMean(marg_w) +
+    0.5*trace( unsafeMean(marg_w)*( A*unsafeCov(marg_in1)*A' + unsafeCov(marg_out) + (A*unsafeMean(marg_in1) + b - unsafeMean(marg_out))*(A*unsafeMean(marg_in1) + b - unsafeMean(marg_out))' ))
+end
