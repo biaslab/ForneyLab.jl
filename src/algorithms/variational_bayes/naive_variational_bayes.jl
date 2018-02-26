@@ -14,7 +14,7 @@ function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
     schedule = ScheduleEntry[]
     nodes_connected_to_external_edges = Set{FactorNode}()
     for recognition_factor in recognition_factors
-        schedule = [schedule; summaryPropagationSchedule(sort(collect(recognition_factor.variables)), limit_set=recognition_factor.internal_edges)]
+        schedule = [schedule; summaryPropagationSchedule(sort(collect(recognition_factor.variables), rev=true), limit_set=recognition_factor.internal_edges)]
         union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(recognition_factor))
     end
 

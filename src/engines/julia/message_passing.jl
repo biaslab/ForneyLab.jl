@@ -79,10 +79,13 @@ function writeMarginalsComputationBlock(schedule::MarginalSchedule, interface_to
 end
 
 """
-Construct the inbound code that computes the marginal for `entry`.
+Construct the inbound code that computes the marginal for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
-function collectInbounds(entry::MarginalScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
+collectInbounds(entry::MarginalScheduleEntry, interface_to_msg_idx::Dict{Interface, Int}) = collectMarginalNodeInbounds(entry.target.node, entry, interface_to_msg_idx)
+
+function collectMarginalNodeInbounds(::FactorNode, entry::MarginalScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
     # Collect inbounds
     inbounds = String[]
     entry_recognition_factor_id = recognitionFactorId(first(entry.target.edges))

@@ -55,3 +55,28 @@ function averageEnergy(::Type{Nonlinear}, marg_out::ProbabilityDistribution{Mult
     0.5*unsafeDetLogMean(marg_w) +
     0.5*trace( unsafeMean(marg_w)*( A*unsafeCov(marg_in1)*A' + unsafeCov(marg_out) + (A*unsafeMean(marg_in1) + b - unsafeMean(marg_out))*(A*unsafeMean(marg_in1) + b - unsafeMean(marg_out))' ))
 end
+
+function averageEnergy(::Type{Nonlinear}, marg_out_in1::ProbabilityDistribution{Multivariate, Gaussian}, marg_prec::ProbabilityDistribution{Univariate}, g::Function, J_g::Function)
+    ensureParameters!(marg_out_in1, (:m, :v))
+
+    V = marg_out_in1.params[:v]
+    m = marg_out_in1.params[:m]
+    (A, b) = approximate(m[2], g, J_g)
+
+    0.5*log(2*pi) -
+    0.5*unsafeLogMean(marg_prec) +
+    0.5*unsafeMean(marg_prec)*( A^2*V[2,2] - A*(V[2,1] + V[1,2]) + V[1,1] + (A*m[2] + b - m[1])^2 )
+end
+
+function averageEnergy(::Type{Nonlinear}, marg_out_in1::ProbabilityDistribution{Multivariate, Gaussian}, marg_prec::ProbabilityDistribution{MatrixVariate}, g::Function, J_g::Function)
+    ensureParameters!(marg_out_in1, (:m, :v))
+
+    V = marg_out_in1.params[:v]
+    m = marg_out_in1.params[:m]
+    d = Int64(dims(marg_out_in1)/2)
+    (A, b) = approximate(m[d+1:end], g, J_g)
+
+    0.5*d*log(2*pi) -
+    0.5*unsafeDetLogMean(marg_prec) +
+    0.5*trace( unsafeMean(marg_prec)*( A*V[d+1:end,d+1:end]*A' - A*V[d+1:end,1:d] - V[1:d,d+1:end]*A' + V[1:d,1:d] + (A*m[d+1:end] + b - m[1:d])*(A*m[d+1:end] + b - m[1:d])' ) )
+end
