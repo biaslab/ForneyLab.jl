@@ -1,4 +1,4 @@
-function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
+function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int}, n_messages::Int, name::String)
     code = ""
 
     # Collect outbound types from schedule
@@ -126,7 +126,7 @@ function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::Marginal
     interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
 
     code = ""
-    code *= writeInitializationBlock(schedule, interface_to_msg_idx)
+    code *= writeInitializationBlock(schedule, interface_to_msg_idx, n_messages, name)
     code *= "function step$(name)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}($n_messages))\n\n"
     code *= writeMessagePassingBlock(schedule, interface_to_msg_idx)
     code *= "\n"
