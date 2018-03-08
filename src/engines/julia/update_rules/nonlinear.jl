@@ -20,6 +20,7 @@ function ruleSPNonlinearOutVG{V<:VariateType}(  msg_out::Void,
 
     ensureParameters!(msg_in1.dist, (:m, :v))
     (A, b) = approximate(msg_in1.dist.params[:m], g, J_g)
+    (A != 0.0) || (A = tiny*sign(randn())) # Perturb A
 
     Message(V, Gaussian, m=A*msg_in1.dist.params[:m] + b, v=A*msg_in1.dist.params[:v]*A')
 end
@@ -31,6 +32,7 @@ function ruleSPNonlinearIn1GV{V<:VariateType}(  msg_out::Message{Gaussian, V},
 
     ensureParameters!(msg_out.dist, (:m, :w))
     (A, b) = approximate(unsafeMean(msg_in1.dist), g, J_g)
+    (A != 0.0) || (A = tiny*sign(randn())) # Perturb A
     A_inv = pinv(A)
     
     Message(V, Gaussian, m=A_inv*(msg_out.dist.params[:m] - b), w=A'*msg_out.dist.params[:w]*A)
