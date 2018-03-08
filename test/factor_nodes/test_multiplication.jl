@@ -58,7 +58,7 @@ end
 
     @test ruleSPMultiplicationIn1GVP(Message(Univariate, Gaussian, m=1.0, v=3.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian, m=0.5, v=0.75)
     # @test ruleSPMultiplicationIn1GVP(Message(Multivariate, Gaussian, m=[1.0], v=mat(3.0)), nothing, Message(Multivariate, PointMass, m=[2.0])) == Message(Univariate, Gaussian, m=0.5, v=0.75)
-    @test ruleSPMultiplicationIn1GVP(Message(Multivariate, Gaussian, m=[1.0], v=mat(3.0)), nothing, Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, Gaussian, m=[0.5], v=mat(0.75))
+    @test ruleSPMultiplicationIn1GVP(Message(Multivariate, Gaussian, m=[1.0], v=mat(3.0)), nothing, Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, Gaussian, m=[0.49999999999962497], v=mat(0.7499999999994372))
 end
 
 @testset "SPMultiplicationIn1PVP" begin

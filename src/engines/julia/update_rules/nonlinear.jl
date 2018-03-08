@@ -13,29 +13,55 @@ function approximate(x_hat::Union{Float64, Vector{Float64}}, g::Function, J_g::F
     return (A, b)
 end
 
-function ruleSPNonlinearOutVG{V<:VariateType}(  msg_out::Void,
-                                                msg_in1::Message{Gaussian, V},
-                                                g::Function,
-                                                J_g::Function)
+function ruleSPNonlinearOutVG(  msg_out::Void,
+                                msg_in1::Message{Gaussian, Multivariate},
+                                g::Function,
+                                J_g::Function)
 
     ensureParameters!(msg_in1.dist, (:m, :v))
     (A, b) = approximate(msg_in1.dist.params[:m], g, J_g)
-    (A != 0.0) || (A = tiny*sign(randn())) # Perturb A
+    V_q = A*msg_in1.dist.params[:v]*A'
+    V_q = V_q + tiny*diageye(size(V_q)[1]) # Ensure V_q is invertible
 
-    Message(V, Gaussian, m=A*msg_in1.dist.params[:m] + b, v=A*msg_in1.dist.params[:v]*A')
+    Message(Multivariate, Gaussian, m=A*msg_in1.dist.params[:m] + b, v=V_q)
 end
 
-function ruleSPNonlinearIn1GV{V<:VariateType}(  msg_out::Message{Gaussian, V},
-                                                msg_in1::Message, # Any type of message, used for determining the approximation point
-                                                g::Function,
-                                                J_g::Function)
+function ruleSPNonlinearOutVG(  msg_out::Void,
+                                msg_in1::Message{Gaussian, Univariate},
+                                g::Function,
+                                J_g::Function)
+
+    ensureParameters!(msg_in1.dist, (:m, :v))
+    (a, b) = approximate(msg_in1.dist.params[:m], g, J_g)
+    v_q = clamp(msg_in1.dist.params[:v]*a^2, tiny, huge)
+
+    Message(Univariate, Gaussian, m=a*msg_in1.dist.params[:m] + b, v=v_q)
+end
+
+function ruleSPNonlinearIn1GV(  msg_out::Message{Gaussian, Multivariate},
+                                msg_in1::Message, # Any type of message, used for determining the approximation point
+                                g::Function,
+                                J_g::Function)
 
     ensureParameters!(msg_out.dist, (:m, :w))
     (A, b) = approximate(unsafeMean(msg_in1.dist), g, J_g)
-    (A != 0.0) || (A = tiny*sign(randn())) # Perturb A
     A_inv = pinv(A)
+    W_q = A'*msg_out.dist.params[:w]*A
+    W_q = W_q + tiny*diageye(size(W_q)[1]) # Ensure W_q is invertible
     
-    Message(V, Gaussian, m=A_inv*(msg_out.dist.params[:m] - b), w=A'*msg_out.dist.params[:w]*A)
+    Message(Multivariate, Gaussian, m=A_inv*(msg_out.dist.params[:m] - b), w=W_q)
+end
+
+function ruleSPNonlinearIn1GV(  msg_out::Message{Gaussian, Univariate},
+                                msg_in1::Message, # Any type of message, used for determining the approximation point
+                                g::Function,
+                                J_g::Function)
+
+    ensureParameters!(msg_out.dist, (:m, :w))
+    (a, b) = approximate(unsafeMean(msg_in1.dist), g, J_g)
+    w_q = clamp(msg_out.dist.params[:w]*a^2, tiny, huge)
+    
+    Message(Univariate, Gaussian, m=(msg_out.dist.params[:m] - b)/a, w=w_q)
 end
 
 

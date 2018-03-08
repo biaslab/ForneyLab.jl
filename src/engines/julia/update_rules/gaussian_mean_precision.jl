@@ -96,7 +96,5 @@ function ruleMGaussianMeanPrecisionGGD{V<:VariateType}( msg_out::Message{Gaussia
     W_m = msg_mean.dist.params[:w]
     W_bar = unsafeMean(dist_prec)
 
-    V_q = cholinv([W_y+W_bar -W_bar; -W_bar W_m+W_bar])
-
-    return ProbabilityDistribution(Multivariate, Gaussian, m=V_q*[W_y*m_y; W_m*m_m], v=V_q)
+    return ProbabilityDistribution(Multivariate, Gaussian, xi=[W_y*m_y; W_m*m_m], w=[W_y+W_bar -W_bar; -W_bar W_m+W_bar])
 end

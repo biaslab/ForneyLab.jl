@@ -52,7 +52,7 @@ end
     @test isApplicable(SPNonlinearIn1GV, [Message{Gaussian}, Void]) 
 
     @test ruleSPNonlinearIn1GV(Message(Univariate, Gaussian, m=2.0, v=3.0), Message(Univariate, PointMass, m=2.0), g, J_g) == Message(Univariate, Gaussian, m=0.25*(2.0 + 9.0), v=0.25*3.0*0.25)
-    @test ruleSPNonlinearIn1GV(Message(Multivariate, Gaussian, m=[2.0], v=mat(3.0)), Message(Multivariate, PointMass, m=[2.0]), g, J_g) == Message(Multivariate, Gaussian, m=[0.25*(2.0 + 9.0)], v=mat(0.25*3.0*0.25))
+    @test ruleSPNonlinearIn1GV(Message(Multivariate, Gaussian, m=[2.0], v=mat(3.0)), Message(Multivariate, PointMass, m=[2.0]), g, J_g) == Message(Multivariate, Gaussian, m=[0.25*(2.0 + 9.0)], v=mat(0.18749999999996475))
 end
 
 end # module
