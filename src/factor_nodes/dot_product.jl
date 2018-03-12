@@ -14,11 +14,11 @@ Description:
       in1  V   out
     ----->[⋅]----->
 
-    f(in1, in2, out) =  δ(out - in1'*in2)
+    f(out, in1, in2) =  δ(out - in1'*in2)
 
 Interfaces:
 
-    1 i[:in1], 2 i[:in2], 3 i[:out]
+    1 i[:out], 2 i[:in1], 3 i[:in2]
 
 Construction:
 

@@ -5,8 +5,9 @@ ruleSPDotProductIn2GPV,
 ruleSPDotProductIn1GVP
 
 function ruleSPDotProductOutVPG(msg_out::Void,
-                            msg_in1::Message{PointMass, Multivariate},
-                            msg_in2::Message{Gaussian, Multivariate})
+                                msg_in1::Message{PointMass, Multivariate},
+                                msg_in2::Message{Gaussian, Multivariate})
+
     x = msg_in1.dist.params[:m]
     β = ensureParameters!(msg_in2.dist, (:m, :v))
     out_m = x' * β.params[:m]
@@ -18,15 +19,17 @@ end
 
 
 function ruleSPDotProductOutVGP(msg_out::Void,
-                            msg_in1::Message{Gaussian, Multivariate},
-                            msg_in2::Message{PointMass, Multivariate})
+                                msg_in1::Message{Gaussian, Multivariate},
+                                msg_in2::Message{PointMass, Multivariate})
+
     ruleSPDotProductOutVPG(msg_out, msg_in2, msg_in1)
 end
 
 
 function ruleSPDotProductIn2GPV(msg_out::Message{Gaussian, Univariate},
-                            msg_in1::Message{PointMass, Multivariate},
-                            msg_in2::Void)
+                                msg_in1::Message{PointMass, Multivariate},
+                                msg_in2::Void)
+
     x = msg_in1.dist.params[:m] # We'll call in1 x
     d = length(x)
 
@@ -39,7 +42,8 @@ end
 
 
 function ruleSPDotProductIn1GVP(msg_out::Message{Gaussian, Univariate},
-                            msg_in1::Void,
-                            msg_in2::Message{PointMass, Multivariate})
+                                msg_in1::Void,
+                                msg_in2::Message{PointMass, Multivariate})
+
     ruleSPDotProductIn2GPV(msg_out, msg_in2, msg_in1)
 end
