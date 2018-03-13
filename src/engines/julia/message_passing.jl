@@ -10,9 +10,12 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
     # Find breaker types from schedule outbound types
     breaker_types = Dict()
     for entry in schedule
-        if entry.msg_update_rule <: ExpectationPropagationRule
+        if (entry.msg_update_rule <: ExpectationPropagationRule)
             partner = ultimatePartner(entry.interface)
             breaker_types[partner] = outbound_types[partner]
+        elseif isa(entry.interface.node, Nonlinear)
+            iface = ultimatePartner(entry.interface.node.interfaces[2])
+            breaker_types[iface] = outbound_types[iface]
         end
     end
 

@@ -36,6 +36,7 @@ using Base.Test
     include("factor_nodes/test_gaussian_mixture.jl")
     include("factor_nodes/test_sigmoid.jl")
     include("factor_nodes/test_nonlinear.jl")
+    include("factor_nodes/test_dot_product.jl")
 
     include("./test_dependency_graph.jl")
     include("./test_message_passing.jl")
