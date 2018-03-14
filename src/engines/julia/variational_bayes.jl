@@ -19,10 +19,43 @@ Construct argument code for naive VB updates
 collectInbounds{T<:NaiveVariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) = collectNaiveVariationalNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
 
 """
-Construct the inbound code that computes the message for `entry`.
+Construct the inbound code that computes the message for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
-function collectInbounds{T<:StructuredVariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
+function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
+    # Collect inbounds
+    inbounds = String[]
+    for node_interface in entry.interface.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        partner_node = inbound_interface.node
+        if node_interface == entry.interface
+            # Ignore marginal of outbound edge
+            push!(inbounds, "nothing")
+        elseif isa(partner_node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, marginalString(partner_node))
+        else
+            # Collect marginal from marginal dictionary
+            push!(inbounds, "marginals[:$(node_interface.edge.variable.id)]")
+        end
+    end
+
+    return inbounds
+end
+
+
+"""
+Construct argument code for structured VB updates
+"""
+collectInbounds{T<:StructuredVariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) = collectStructuredVariationalNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
+
+"""
+Construct the inbound code that computes the message for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
+Returns a vector with inbounds that correspond with required interfaces.
+"""
+function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
     # Collect inbounds
     inbounds = String[]
     entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
@@ -51,32 +84,6 @@ function collectInbounds{T<:StructuredVariationalRule}(entry::ScheduleEntry, ::T
         end
 
         push!(recognition_factor_ids, node_interface_recognition_factor_id)
-    end
-
-    return inbounds
-end
-
-"""
-Construct the inbound code that computes the message for `entry`. Allows for
-overloading and for a user the define custom node-specific inbounds collection.
-Returns a vector with inbounds that correspond with required interfaces.
-"""
-function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
-    # Collect inbounds
-    inbounds = String[]
-    for node_interface in entry.interface.node.interfaces
-        inbound_interface = ultimatePartner(node_interface)
-        partner_node = inbound_interface.node
-        if node_interface == entry.interface
-            # Ignore marginal of outbound edge
-            push!(inbounds, "nothing")
-        elseif isa(partner_node, Clamp)
-            # Hard-code marginal of constant node in schedule
-            push!(inbounds, marginalString(partner_node))
-        else
-            # Collect marginal from marginal dictionary
-            push!(inbounds, "marginals[:$(node_interface.edge.variable.id)]")
-        end
     end
 
     return inbounds

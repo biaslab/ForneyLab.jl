@@ -1,4 +1,4 @@
-function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
+function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int}, n_messages::Int, name::String)
     code = ""
 
     # Collect outbound types from schedule
@@ -10,9 +10,12 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
     # Find breaker types from schedule outbound types
     breaker_types = Dict()
     for entry in schedule
-        if entry.msg_update_rule <: ExpectationPropagationRule
+        if (entry.msg_update_rule <: ExpectationPropagationRule)
             partner = ultimatePartner(entry.interface)
             breaker_types[partner] = outbound_types[partner]
+        elseif isa(entry.interface.node, Nonlinear)
+            iface = ultimatePartner(entry.interface.node.interfaces[2])
+            breaker_types[iface] = outbound_types[iface]
         end
     end
 
@@ -79,10 +82,13 @@ function writeMarginalsComputationBlock(schedule::MarginalSchedule, interface_to
 end
 
 """
-Construct the inbound code that computes the marginal for `entry`.
+Construct the inbound code that computes the marginal for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
-function collectInbounds(entry::MarginalScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
+collectInbounds(entry::MarginalScheduleEntry, interface_to_msg_idx::Dict{Interface, Int}) = collectMarginalNodeInbounds(entry.target.node, entry, interface_to_msg_idx)
+
+function collectMarginalNodeInbounds(::FactorNode, entry::MarginalScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
     # Collect inbounds
     inbounds = String[]
     entry_recognition_factor_id = recognitionFactorId(first(entry.target.edges))
@@ -123,7 +129,7 @@ function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::Marginal
     interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
 
     code = ""
-    code *= writeInitializationBlock(schedule, interface_to_msg_idx)
+    code *= writeInitializationBlock(schedule, interface_to_msg_idx, n_messages, name)
     code *= "function step$(name)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}($n_messages))\n\n"
     code *= writeMessagePassingBlock(schedule, interface_to_msg_idx)
     code *= "\n"
@@ -155,7 +161,11 @@ function messageString{T<:VariateType}(node::Clamp{T})
         end
     else
         # Insert constant
-        str = "Message($(var_type_str), PointMass, m=$(node.value))"
+        if size(node.value) == (1,1)
+            str = "Message($(var_type_str), PointMass, m=mat($(node.value[1])))"
+        else
+            str = "Message($(var_type_str), PointMass, m=$(node.value))"
+        end
     end
 
     return str
@@ -177,7 +187,11 @@ function marginalString{T<:VariateType}(node::Clamp{T})
         end
     else
         # Insert constant
-        str = "ProbabilityDistribution($(var_type_str), PointMass, m=$(node.value))"
+        if size(node.value) == (1,1)
+            str = "ProbabilityDistribution($(var_type_str), PointMass, m=mat($(node.value[1])))"
+        else
+            str = "ProbabilityDistribution($(var_type_str), PointMass, m=$(node.value))"
+        end
     end
 
     return str

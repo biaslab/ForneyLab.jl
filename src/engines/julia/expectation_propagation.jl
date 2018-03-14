@@ -1,24 +1,11 @@
 export expectationPropagationAlgorithm, variationalExpectationPropagationAlgorithm
 
 """
-Create an expectation propagation algorithm to infer marginals over `variables`, and compile it to Julia code
-"""
-function expectationPropagationAlgorithm(variables::Vector{Variable}; file::String="", name::String="")
-    schedule = expectationPropagationSchedule(variables)
-    marginal_schedule = marginalSchedule(variables)
-
-    algo = messagePassingAlgorithm(schedule, marginal_schedule, file=file, name=name)
-
-    return algo
-end
-expectationPropagationAlgorithm(variable::Variable; file::String="", name::String="") = expectationPropagationAlgorithm([variable], file=file, name=name)
-
-"""
 Create a variational EP algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
 function variationalExpectationPropagationAlgorithm(q_factor::RecognitionFactor; file::String="", name::String="")
     q_schedule = variationalExpectationPropagationSchedule(q_factor)
-    marginal_schedule = marginalSchedule(q_factor)
+    marginal_schedule = marginalSchedule(q_factor, q_schedule)
 
     algo = messagePassingAlgorithm(q_schedule, marginal_schedule, file=file, name=name)
 

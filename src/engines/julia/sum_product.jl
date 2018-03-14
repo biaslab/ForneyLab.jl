@@ -16,7 +16,14 @@ sumProductAlgorithm(variable::Variable; file::String="", name::String="") = sumP
 """
 Collect and construct SP update code for each inbound.
 """
-function collectInbounds{T<:SumProductRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
+collectInbounds{T<:SumProductRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) = collectSumProductNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
+
+"""
+Construct the inbound code that computes the message for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
+Returns a vector with inbounds that correspond with required interfaces.
+"""
+function collectSumProductNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
     inbound_messages = String[]
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)

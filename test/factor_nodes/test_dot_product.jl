@@ -31,7 +31,7 @@ end
     @test outboundType(SPDotProductIn1GVP) == Message{Gaussian}
     @test isApplicable(SPDotProductIn1GVP, [Message{Gaussian}, Void, Message{PointMass}])
 
-    @test ruleSPDotProductIn1GVP(Message(Univariate, Gaussian, xi=3.0, w=2.0), nothing, Message(Multivariate, PointMass, m=[4.0])) == Message(Multivariate, Gaussian, xi=[12.0], w=mat(32.0))
+    @test ruleSPDotProductIn1GVP(Message(Univariate, Gaussian, xi=3.0, w=2.0), nothing, Message(Multivariate, PointMass, m=[4.0])) == Message(Multivariate, Gaussian, xi=[12.0], w=mat(32.000000000001))
 end
 
 @testset "SPDotProductIn2GPV" begin
@@ -39,7 +39,7 @@ end
     @test outboundType(SPDotProductIn2GPV) == Message{Gaussian}
     @test isApplicable(SPDotProductIn2GPV, [Message{Gaussian}, Message{PointMass}, Void])
 
-    @test ruleSPDotProductIn2GPV(Message(Univariate, Gaussian, xi=3.0, w=2.0), Message(Multivariate, PointMass, m=[4.0]), nothing) == Message(Multivariate, Gaussian, xi=[12.0], w=mat(32.0))
+    @test ruleSPDotProductIn2GPV(Message(Univariate, Gaussian, xi=3.0, w=2.0), Message(Multivariate, PointMass, m=[4.0]), nothing) == Message(Multivariate, Gaussian, xi=[12.0], w=mat(32.000000000001))
 end
 
 end # module

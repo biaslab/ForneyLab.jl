@@ -36,6 +36,7 @@ function ruleSPDotProductIn2GPV(msg_out::Message{Gaussian, Univariate},
     y = ensureParameters!(msg_out.dist, (:xi, :w))
     xi = x * y.params[:xi]
     w = x * y.params[:w] * x'
+    w += tiny*diageye(size(w)[1]) # Ensure w is invertible
 
     return Message(Multivariate, Gaussian, xi=xi, w=w)
 end
