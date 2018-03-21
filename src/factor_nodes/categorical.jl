@@ -69,7 +69,7 @@ function sample(dist::ProbabilityDistribution{Univariate, Categorical})
         idx = d
     end
     
-    x = zeros(Float64, d)
+    x = spzeros(Float64, d)
     x[idx] = 1.0
     
     return x
