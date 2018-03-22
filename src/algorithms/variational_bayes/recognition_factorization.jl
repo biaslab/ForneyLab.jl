@@ -143,6 +143,23 @@ RecognitionFactorization() = setCurrentRecognitionFactorization(
         Dict{Tuple{FactorNode, Edge}, Symbol}()))
 
 """
+Construct a RecognitionFactorization consisting of one
+RecognitionFactor for each argument
+"""
+function RecognitionFactorization(args...; ids=Symbol[])
+    rf = RecognitionFactorization()
+    isempty(ids) || (length(ids) == length(args)) || error("Length of ids must match length of recognition factor arguments")
+    for (i, arg) in enumerate(args)
+        if isempty(ids)
+            RecognitionFactor(arg, id=generateId(RecognitionFactor))
+        else        
+            RecognitionFactor(arg, id=ids[i])
+        end
+    end
+    return rf
+end
+
+"""
 Return the id of the RecognitionFactor that `edge` belongs to
 """
 function recognitionFactorId(edge::Edge)

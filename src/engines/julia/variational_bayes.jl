@@ -12,6 +12,16 @@ function variationalAlgorithm(q_factors::Vector{RecognitionFactor}; file::String
     return algo
 end
 variationalAlgorithm(q_factor::RecognitionFactor; file::String="", name::String="") = variationalAlgorithm([q_factor]; file=file, name=name)
+function variationalAlgorithm(q::RecognitionFactorization=currentRecognitionFactorization())
+    algos = "begin\n\n"
+    for (id, q_factor) in q.recognition_factors
+        algos *= variationalAlgorithm(q_factor, name="$(id)")
+        algos *= "\n\n"
+    end
+    algos *= "\nend # block"
+    
+    return algos
+end
 
 """
 Construct argument code for naive VB updates
@@ -89,10 +99,10 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
     return inbounds
 end
 
-function freeEnergyAlgorithm(; name::String="")
+function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="")
     # Collect nodes connected to external edges
     nodes_connected_to_external_edges = Set{FactorNode}()
-    for rf in collect(values(current_recognition_factorization.recognition_factors))
+    for rf in collect(values(q.recognition_factors))
         union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(rf))
     end
 
@@ -109,7 +119,7 @@ function freeEnergyAlgorithm(; name::String="")
         outbound_interface = node.interfaces[1]
         outbound_partner = ultimatePartner(outbound_interface)
         if !(outbound_partner == nothing) && !isa(outbound_partner.node, Clamp) # Differential entropy is required
-            dict = current_recognition_factorization.node_edge_to_cluster
+            dict = q.node_edge_to_cluster
             if haskey(dict, (node, outbound_interface.edge)) # Outbound edge is part of a cluster
                 inbounds = collectConditionalDifferentialEntropyInbounds(node) # Collect conditioning terms for conditional differential entropy
                 inbounds_str = join(inbounds, ", ")
