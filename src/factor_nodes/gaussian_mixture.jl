@@ -26,8 +26,12 @@ mutable struct GaussianMixture <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function GaussianMixture(out::Variable, z::Variable, args::Vararg{Variable}; id=generateId(GaussianMixture))
+    function GaussianMixture(out, z, args::Vararg; id=generateId(GaussianMixture))
         n_args = length(args)
+        @vars(out, z)
+        for i=1:n_args
+            @vars(args[i])
+        end
         iseven(n_args) || error("Number of mixture arguments should be even")
         self = new(id, Array{Interface}(length(args) + 2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
@@ -50,7 +54,7 @@ function ForneyLab.averageEnergy(   ::Type{GaussianMixture},
                                     dist_out::ProbabilityDistribution,
                                     dist_switch::ProbabilityDistribution,
                                     dist_factors::Vararg{ProbabilityDistribution})
-    
+
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])
     n_factors = length(dist_means)

@@ -22,7 +22,8 @@ mutable struct LogNormal <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function LogNormal(out::Variable, m::Variable, s::Variable; id=generateId(LogNormal))
+    function LogNormal(out, m, s; id=generateId(LogNormal))
+        @vars(out, m, s)
         self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

@@ -18,7 +18,8 @@ mutable struct Sigmoid <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function Sigmoid(bin::Variable, real::Variable; id=generateId(Sigmoid))
+    function Sigmoid(bin, real; id=generateId(Sigmoid))
+        @vars(bin, real)
         self = new(id, Array{Interface}(2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:bin] = self.interfaces[1] = associate!(Interface(self), bin)
@@ -33,8 +34,8 @@ slug(::Type{Sigmoid}) = "σ"
 # Average energy functional
 function averageEnergy(::Type{Sigmoid}, marg_bin::ProbabilityDistribution{Univariate, Bernoulli}, marg_real::ProbabilityDistribution{Univariate, Gaussian})
     ensureParameters!(marg_real, (:m, :v))
-    h = (x -> log(0.5*erf(x) + 0.5 + tiny)) # Add `tiny` for numeric stability  
-    
+    h = (x -> log(0.5*erf(x) + 0.5 + tiny)) # Add `tiny` for numeric stability
+
     (1 - marg_bin.params[:p])*gaussianQuadrature(h, m=-marg_real.params[:m], v=marg_real.params[:v]) +
     marg_bin.params[:p]*gaussianQuadrature(h, m=marg_real.params[:m], v=marg_real.params[:v])
 end

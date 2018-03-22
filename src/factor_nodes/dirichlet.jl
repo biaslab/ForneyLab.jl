@@ -6,11 +6,11 @@ Description:
 
     Real vector
     a .> 0
-    
+
     Multivariate:
     f(out, a) = Dir(out|a)
               = Γ(Σ_i a_i)/(Π_i Γ(a_i)) Π_i out_i^{a_i}
-    
+
     Matrix variate with independent rows:
     f(out, a) = Π_j Dir(out|a_j.)
               = Π_j Γ(Σ_k a_jk)/(Π_k Γ(a_jk)) Π_k out_jk^{a_jk}
@@ -27,7 +27,8 @@ mutable struct Dirichlet <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function Dirichlet(out::Variable, a::Variable; id=generateId(Dirichlet))
+    function Dirichlet(out, a; id=generateId(Dirichlet))
+        @vars(out, a)
         self = new(id, Array{Interface}(2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
@@ -131,9 +132,9 @@ end
 
 function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{MatrixVariate}, marg_a::ProbabilityDistribution{MatrixVariate, PointMass})
     (dims(marg_out) == dims(marg_a)) || error("Distribution dimensions must agree")
-    
+
     log_mean_marg_out = unsafeLogMean(marg_out)
-    
+
     H = 0.0
     for j = 1:dims(marg_out)[1]
         a_sum = sum(marg_a.params[:m][j,:])

@@ -7,7 +7,7 @@ Description:
     Real scalars
     a > 0
     b > 0
-    
+
     f(out, a, b) = Beta(out|a, b) = Γ(a + b)/(Γ(a) Γ(b)) out^{a - 1} (1 - out)^{b - 1}
 
 Interfaces:
@@ -23,7 +23,8 @@ mutable struct Beta <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function Beta(out::Variable, a::Variable, b::Variable; id=generateId(Beta))
+    function Beta(out, a, b; id=generateId(Beta))
+        @vars(out, a, b)
         self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
@@ -78,7 +79,7 @@ end
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Beta})
     lbeta(dist.params[:a], dist.params[:b]) -
-    (dist.params[:a] - 1.0)*digamma(dist.params[:a]) - 
+    (dist.params[:a] - 1.0)*digamma(dist.params[:a]) -
     (dist.params[:b] - 1.0)*digamma(dist.params[:b]) +
     (dist.params[:a] + dist.params[:b] - 2.0)*digamma(dist.params[:a] + dist.params[:b])
 end
@@ -86,6 +87,6 @@ end
 # Average energy functional
 function averageEnergy(::Type{Beta}, marg_out::ProbabilityDistribution{Univariate}, marg_a::ProbabilityDistribution{Univariate, PointMass}, marg_b::ProbabilityDistribution{Univariate, PointMass})
     lbeta(marg_a.params[:m], marg_b.params[:m]) -
-    (marg_a.params[:m] - 1.0)*unsafeLogMean(marg_out) - 
+    (marg_a.params[:m] - 1.0)*unsafeLogMean(marg_out) -
     (marg_b.params[:m] - 1.0)*unsafeMirroredLogMean(marg_out)
 end

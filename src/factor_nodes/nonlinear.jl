@@ -3,7 +3,7 @@ export Nonlinear
 """
 Description:
 
-    Nonlinear node modeling a nonlinear relation. Updates for 
+    Nonlinear node modeling a nonlinear relation. Updates for
     the nonlinear node are computed through local linearization.
 
     f(out, in1) = δ(out - g(in1))
@@ -25,7 +25,8 @@ mutable struct Nonlinear <: DeltaFactor
     g::Function # Vector function that expresses the output vector as a function of the input vector; reduces to scalar for 1-d
     J_g::Function # Jacobi matrix of g, as a function of the input vector; in the 1-d case this reduces to the first derivative of g
 
-    function Nonlinear(out::Variable, in1::Variable, g::Function, J_g::Function; id=ForneyLab.generateId(Nonlinear))
+    function Nonlinear(out, in1, g::Function, J_g::Function; id=ForneyLab.generateId(Nonlinear))
+        @vars(out, in1)
         self = new(id, Vector{Interface}(2), Dict{Symbol,Interface}(), g, J_g)
         ForneyLab.addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
