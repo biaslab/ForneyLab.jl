@@ -28,6 +28,13 @@ end
     @test unsafeMean(ProbabilityDistribution(Categorical, p=[0.1, 0.8, 0.1])) == [0.1, 0.8, 0.1]
 end
 
+@testset "sample" begin
+    s = sample(ProbabilityDistribution(Categorical, p=[0.1, 0.8, 0.1]))
+    @test isa(s, SparseVector)
+    @test sum(s.==1.0) == 1
+    @test sum(s.==0.0) == 2
+end
+
 @testset "prod!" begin
     @test ProbabilityDistribution(Categorical, p=[0.2, 0.8])*ProbabilityDistribution(Categorical, p=[0.8, 0.2]) == ProbabilityDistribution(Categorical, p=[0.5, 0.5])    
     @test ProbabilityDistribution(Categorical, p=[0.25, 0.5, 0.25]) * ProbabilityDistribution(Categorical, p=[1/3, 1/3, 1/3]) == ProbabilityDistribution(Categorical, p=[0.25, 0.5, 0.25])
