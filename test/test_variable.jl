@@ -100,7 +100,8 @@ end
     # @RV should handle array element assignments and explicit Variable ids
     g = FactorGraph()
     vars = Vector{Variable}(2)
-    @RV [id=:v1] vars[1] ~ GaussianMeanVariance(constant(0.0), constant(1.0); id=:tst1) # new Variable
+    t = 1
+    @RV [id=:v*t] vars[1] ~ GaussianMeanVariance(constant(0.0), constant(1.0); id=:tst1) # new Variable
     @test length(g.variables) == 3 # including constants
     @test vars[1].id == :v1
     @RV vars[1] ~ GaussianMeanVariance(constant(0.0), constant(1.0); id=:tst2) # existing Variable
@@ -114,6 +115,15 @@ end
     @RV [id=:my_y] y = x + constant(2.0)
     @test length(g.variables) == 5
     @test y.id == :my_y
+
+    # @RV without node definition should create a new Variable
+    g = FactorGraph()
+    @RV x
+    @test isa(x, Variable)
+    @test g.variables[:x] === x
+    @RV [id=:x_new] x
+    @test g.variables[:x_new] === x
+    @test length(g.variables) == 2
 end
 
 end #module

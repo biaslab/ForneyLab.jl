@@ -98,38 +98,43 @@ Examples:
 # Explicitly specify the id of the Variable
 @RV [id=:my_y] y ~ GaussianMeanVariance(constant(0.0), constant(1.0))
 
-# Automatically assign z.id = :z if this is id is not yet taken
+# Automatically assign z.id = :z if this id is not yet taken
 @RV z = x + y
 
 # Manual assignment
 @RV [id=:my_u] u = x + y
+
+# Just create a variable
+@RV x
+@RV [id=:my_x] x
 ```
 """
-macro RV(expr_options::Expr, expr_def::Expr)
+macro RV(expr_options::Expr, expr_def::Any)
     # Parse options
     (expr_options.head == :vect) || error("Incorrect use of @RV macro")
     options = Dict{Symbol,Any}()
     for arg in expr_options.args
         (arg.head == :(=)) || error("Incorrect use of @RV macro")
-        options[arg.args[1]] = eval(arg.args[2])
+        options[arg.args[1]] = arg.args[2]
     end
 
     # Parse RV definition expression
-    # It can take two forms.
-    # FORM 1: x ~ Probdist(...)
-    # FORM 2: x = a + b
-    if expr_def.head === :call && expr_def.args[1] === :(~)
-        # Form 1
+    # It can take trhee forms.
+    # FORM 1: @RV x ~ Probdist(...)
+    # FORM 2: @RV x = a + b
+    # FORM 3: @RV x
+    if isa(expr_def, Expr) && expr_def.head === :call && expr_def.args[1] === :(~)
+        form = 1
         target_expr = expr_def.args[2]
         node_expr = expr_def.args[3]
-        sim_notation = true
-    elseif expr_def.head === :(=)
-        # Form 2
+
+    elseif isa(expr_def, Expr) && expr_def.head === :(=)
+        form = 2
         target_expr = expr_def.args[1]
         node_expr = expr_def.args[2]
-        sim_notation = false
     else
-        error("Incorrect use of @RV macro")
+        form = 3
+        target_expr = expr_def
     end
 
     # Extract variable id from expression?
@@ -141,7 +146,7 @@ macro RV(expr_options::Expr, expr_def::Expr)
         end
     end
 
-    if sim_notation
+    if form == 1
         # Build FactorNode constructor call
         node_expr = expr_def.args[3]
         if isa(node_expr.args[2], Expr) && (node_expr.args[2].head == :parameters)
@@ -152,7 +157,7 @@ macro RV(expr_options::Expr, expr_def::Expr)
 
         # Logic for determining Variable id
         if haskey(options, :id)
-            var_id_expr = ":$(options[:id])"
+            var_id_expr = "$(options[:id])"
         elseif haskey(options, :id_suggestion)
             var_id_expr = "!haskey(currentGraph().variables, :($(options[:id_suggestion]))) ? :($(options[:id_suggestion])) : ForneyLab.generateId(Variable)"
         else
@@ -179,13 +184,13 @@ macro RV(expr_options::Expr, expr_def::Expr)
                 $(target_expr)
                 end
             """)
-    else
+    elseif form == 2
         # Form 2 always creates a new Variable
         # We try to update the id after the Variable has been created
         if haskey(options, :id)
             # Verify that the user-specified id is available
-            before_node_expr = "!haskey(currentGraph().variables, :($(options[:id]))) || error(\"Specified id is already assigned to another Variable\")"
-            var_id_expr = ":$(options[:id])"
+            before_node_expr = "!haskey(currentGraph().variables, $(options[:id])) || error(\"Specified id is already assigned to another Variable\")"
+            var_id_expr = "$(options[:id])"
         elseif haskey(options, :id_suggestion)
             before_node_expr = ""
             var_id_expr = "!haskey(currentGraph().variables, :($(options[:id_suggestion]))) ? :($(options[:id_suggestion])) : :auto"
@@ -210,12 +215,25 @@ macro RV(expr_options::Expr, expr_def::Expr)
                 $(target_expr)
                 end
             """)
+    elseif form == 3
+        # Determine Variable id
+        if haskey(options, :id)
+            var_id_expr = "$(options[:id])"
+        elseif haskey(options, :id_suggestion)
+            var_id_expr = "!haskey(currentGraph().variables, :($(options[:id_suggestion]))) ? :($(options[:id_suggestion])) : ForneyLab.generateId(Variable)"
+        else
+            var_id_expr = "ForneyLab.generateId(Variable)"
+        end
+
+        expr = parse("$(target_expr) = Variable(id=$(var_id_expr))")
+    else
+        error("Unsupported usage of @RV.")
     end
 
     return esc(expr)
 end
 
-macro RV(expr::Expr)
+macro RV(expr::Any)
     # No options
     :(@RV [] $(esc(expr)))
 end
