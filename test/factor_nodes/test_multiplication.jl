@@ -11,7 +11,11 @@ import ForneyLab: SPMultiplicationOutVGP, SPMultiplicationOutVPG, SPMultiplicati
     a = constant(1.0)
     @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
     @RV z = a*x
+    @test isa(z, Variable)
+    @test isa(g.nodes[:multiplication_1], Multiplication)
 
+    @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV z = 1.0*x
     @test isa(z, Variable)
     @test isa(g.nodes[:multiplication_1], Multiplication)
 end

@@ -22,7 +22,8 @@ mutable struct Gamma <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function Gamma(out::Variable, a::Variable, b::Variable; id=generateId(Gamma))
+    function Gamma(out, a, b; id=generateId(Gamma))
+        @ensureVariables(out, a, b)
         self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

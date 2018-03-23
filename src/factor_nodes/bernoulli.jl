@@ -6,7 +6,7 @@ Description:
 
     out ∈ {0, 1}
     p ∈ [0, 1]
-    
+
     f(out, p) = Ber(out|p) = p^out (1 - p)^{1 - out}
 
 Interfaces:
@@ -21,7 +21,8 @@ mutable struct Bernoulli <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function Bernoulli(out::Variable, p::Variable; id=generateId(Bernoulli))
+    function Bernoulli(out, p; id=generateId(Bernoulli))
+        @ensureVariables(out, p)
         self = new(id, Array{Interface}(2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

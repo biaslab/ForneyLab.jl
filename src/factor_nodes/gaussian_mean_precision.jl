@@ -22,7 +22,8 @@ mutable struct GaussianMeanPrecision <: Gaussian
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function GaussianMeanPrecision(out::Variable, m::Variable, w::Variable; id=generateId(Gaussian))
+    function GaussianMeanPrecision(out, m, w; id=generateId(Gaussian))
+        @ensureVariables(out, m, w)
         self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

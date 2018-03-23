@@ -5,15 +5,15 @@ Description:
     Contingency factor node
 
     The contingency distribution is a multivariate generalization of
-    the categorical distribution. As a bivariate distribution, the 
-    contingency distribution defines the joint probability 
+    the categorical distribution. As a bivariate distribution, the
+    contingency distribution defines the joint probability
     over two unit vectors. The parameter p encodes a contingency matrix
     that specifies the probability of co-occurrence.
 
     out1 ∈ {0, 1}^d1 where Σ_j out1_j = 1
     out2 ∈ {0, 1}^d2 where Σ_k out2_k = 1
     p ∈ [0, 1]^{d1 × d2}, where Σ_jk p_jk = 1
-        
+
     f(out1, out2, p) = Con(out1, out2 | p)
                      = Π_jk p_jk^{out1_j * out2_k}
 
@@ -33,7 +33,8 @@ mutable struct Contingency <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function Contingency(out1::Variable, out2::Variable, p::Variable; id=generateId(Contingency))
+    function Contingency(out1, out2, p; id=generateId(Contingency))
+        @ensureVariables(out1, out2, p)
         self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out1] = self.interfaces[1] = associate!(Interface(self), out1)
