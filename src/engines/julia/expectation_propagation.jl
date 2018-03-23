@@ -1,6 +1,21 @@
 export expectationPropagationAlgorithm, variationalExpectationPropagationAlgorithm
 
 """
+Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
+"""
+function expectationPropagationAlgorithm(variables::Vector{Variable}; file::String="", name::String="")
+    schedule = expectationPropagationSchedule(variables)
+    marginal_schedule = marginalSchedule(variables)
+    
+    algo = "begin\n\n"
+    algo *= messagePassingAlgorithm(schedule, marginal_schedule, file=file, name=name)
+    algo *= "\n\nend # block"
+
+    return algo
+end
+expectationPropagationAlgorithm(variable::Variable; file::String="", name::String="") = expectationPropagationAlgorithm([variable], file=file, name=name)
+
+"""
 Create a variational EP algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
 function variationalExpectationPropagationAlgorithm(q_factor::RecognitionFactor; file::String="", name::String="")
@@ -10,6 +25,16 @@ function variationalExpectationPropagationAlgorithm(q_factor::RecognitionFactor;
     algo = messagePassingAlgorithm(q_schedule, marginal_schedule, file=file, name=name)
 
     return algo
+end
+function variationalExpectationPropagationAlgorithm(q::RecognitionFactorization=currentRecognitionFactorization())
+    algos = "begin\n\n"
+    for (id, q_factor) in q.recognition_factors
+        algos *= variationalExpectationPropagationAlgorithm(q_factor, name="$(id)")
+        algos *= "\n\n"
+    end
+    algos *= "\nend # block"
+    
+    return algos
 end
 
 """
