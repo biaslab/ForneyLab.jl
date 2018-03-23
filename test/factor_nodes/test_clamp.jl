@@ -2,8 +2,33 @@ module ClampTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable
+import ForneyLab: outboundType, isApplicable, @ensureVariables, generateId, addNode!, associate!
 import ForneyLab: SPClamp
+
+# Integration helper
+mutable struct MockNode <: FactorNode
+    id::Symbol
+    interfaces::Vector{Interface}
+    i::Dict{Symbol,Interface}
+
+    function MockNode(out; id=generateId(MockNode))
+        @ensureVariables(out)
+        self = new(id, Array{Interface}(1), Dict{Int,Interface}())
+        addNode!(currentGraph(), self)
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+
+        return self
+    end
+end
+
+@testset "@ensureVariables" begin
+    g = FactorGraph()
+    nd_c = MockNode(constant(1.0))
+    @test isa(nd_c.i[:out].partner.node, Clamp)
+
+    nd_v = MockNode(1.0)    
+    @test isa(nd_v.i[:out].partner.node, Clamp)
+end
 
 @testset "Clamp" begin
     g = FactorGraph()

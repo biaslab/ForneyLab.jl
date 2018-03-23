@@ -19,7 +19,7 @@ mutable struct Sigmoid <: SoftFactor
     i::Dict{Symbol,Interface}
 
     function Sigmoid(bin, real; id=generateId(Sigmoid))
-        @vars(bin, real)
+        @ensureVariables(bin, real)
         self = new(id, Array{Interface}(2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:bin] = self.interfaces[1] = associate!(Interface(self), bin)

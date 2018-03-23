@@ -28,9 +28,9 @@ mutable struct GaussianMixture <: SoftFactor
 
     function GaussianMixture(out, z, args::Vararg; id=generateId(GaussianMixture))
         n_args = length(args)
-        @vars(out, z)
+        @ensureVariables(out, z)
         for i=1:n_args
-            @vars(args[i])
+            @ensureVariables(args[i])
         end
         iseven(n_args) || error("Number of mixture arguments should be even")
         self = new(id, Array{Interface}(length(args) + 2), Dict{Symbol,Interface}())

@@ -25,7 +25,7 @@ mutable struct Exponential <: DeltaFactor
     i::Dict{Symbol,Interface}
 
     function Exponential(out, in1; id=generateId(Exponential))
-        @vars(out, in1)
+        @ensureVariables(out, in1)
         self = new(id, Array{Interface}(2), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

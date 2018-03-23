@@ -34,7 +34,7 @@ mutable struct Contingency <: SoftFactor
     i::Dict{Symbol,Interface}
 
     function Contingency(out1, out2, p; id=generateId(Contingency))
-        @vars(out1, out2, p)
+        @ensureVariables(out1, out2, p)
         self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out1] = self.interfaces[1] = associate!(Interface(self), out1)

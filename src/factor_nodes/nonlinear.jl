@@ -26,7 +26,7 @@ mutable struct Nonlinear <: DeltaFactor
     J_g::Function # Jacobi matrix of g, as a function of the input vector; in the 1-d case this reduces to the first derivative of g
 
     function Nonlinear(out, in1, g::Function, J_g::Function; id=ForneyLab.generateId(Nonlinear))
-        @vars(out, in1)
+        @ensureVariables(out, in1)
         self = new(id, Vector{Interface}(2), Dict{Symbol,Interface}(), g, J_g)
         ForneyLab.addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

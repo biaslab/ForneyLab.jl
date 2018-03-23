@@ -27,7 +27,7 @@ mutable struct Multiplication <: DeltaFactor
     i::Dict{Symbol,Interface}
 
     function Multiplication(out, in1, a; id=generateId(Multiplication))
-        @vars(out, in1, a)
+        @ensureVariables(out, in1, a)
         self = new(id, Array{Interface}(3), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
@@ -47,11 +47,11 @@ function *(a::Variable, in1::Variable)
 end
 
 function *(a::Variable, in1)
-    @vars(in1)
+    @ensureVariables(in1)
     *(a, in1)
 end
 
 function *(a, in1::Variable)
-    @vars(a)
+    @ensureVariables(a)
     *(a, in1)
 end

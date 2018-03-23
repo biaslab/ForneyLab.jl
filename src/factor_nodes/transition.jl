@@ -27,7 +27,7 @@ mutable struct Transition <: SoftFactor
     i::Dict{Symbol,Interface}
 
     function Transition(out, in1, a; id=generateId(Transition))
-        @vars(out, in1, a)
+        @ensureVariables(out, in1, a)
         self = new(id, Array{Interface}(3), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

@@ -22,7 +22,7 @@ mutable struct Bernoulli <: SoftFactor
     i::Dict{Symbol,Interface}
 
     function Bernoulli(out, p; id=generateId(Bernoulli))
-        @vars(out, p)
+        @ensureVariables(out, p)
         self = new(id, Array{Interface}(2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

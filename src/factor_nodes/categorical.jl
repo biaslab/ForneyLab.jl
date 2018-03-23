@@ -26,7 +26,7 @@ mutable struct Categorical <: SoftFactor
     i::Dict{Symbol,Interface}
 
     function Categorical(out, p; id=generateId(Categorical))
-        @vars(out, p)
+        @ensureVariables(out, p)
         self = new(id, Array{Interface}(2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

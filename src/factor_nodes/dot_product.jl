@@ -30,7 +30,7 @@ mutable struct DotProduct <: DeltaFactor
     i::Dict{Symbol,Interface}
 
     function DotProduct(out, in1, in2; id=generateId(DotProduct))
-        @vars(out, in1, in2)
+        @ensureVariables(out, in1, in2)
         self = new(id, Array{Interface}(3), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

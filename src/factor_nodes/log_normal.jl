@@ -23,7 +23,7 @@ mutable struct LogNormal <: SoftFactor
     i::Dict{Symbol,Interface}
 
     function LogNormal(out, m, s; id=generateId(LogNormal))
-        @vars(out, m, s)
+        @ensureVariables(out, m, s)
         self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

@@ -23,7 +23,7 @@ mutable struct Wishart <: SoftFactor
     i::Dict{Symbol,Interface}
 
     function Wishart(out, v, nu; id=generateId(Wishart))
-        @vars(out, v, nu)
+        @ensureVariables(out, v, nu)
         self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

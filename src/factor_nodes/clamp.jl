@@ -1,4 +1,4 @@
-export Clamp, constant, placeholder, @vars
+export Clamp, constant, placeholder, @ensureVariables
 
 """
 Description:
@@ -52,9 +52,9 @@ function constant(value::Any; id=generateId(Clamp{variateType(value)}))
 end
 
 """
-@vars(...) casts all non-Variable arguments to Variable through constant(arg).
+@ensureVariables(...) casts all non-Variable arguments to Variable through constant(arg).
 """
-macro vars(args...)
+macro ensureVariables(args...)
     lines = ["isa($arg, Variable) || ($arg = constant($arg))" for arg in args]
     expr = "begin\n"
     expr *= join(lines, "\n")
