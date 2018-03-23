@@ -153,6 +153,7 @@ function edgeDot(edge::Edge; msg_labels=Dict{Interface, String}(), is_external_e
         if !isempty(a_label) || !isempty(msg_label_a)
             push!(props, "taillabel=<$(a_label) \n$(msg_label_a)>")
         end
+        push!(props, "label=<<FONT COLOR=\"red\">$(edge.variable.id)</FONT>>")
         if !isempty(props)
             dot *= "[$(join(props,", "))]"
         end
