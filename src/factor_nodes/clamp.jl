@@ -112,7 +112,7 @@ function placeholder(   buffer_id::Symbol;
                         default::Any=nothing,
                         datatype::DataType=Float64,
                         dims::Tuple=(),
-                        var_id=generateId(Variable))
+                        var_id=buffer_id)
 
     var = Variable(id=var_id)
     return placeholder(var, buffer_id, index=index, default=default, datatype=datatype, dims=dims)
