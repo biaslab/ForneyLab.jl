@@ -140,9 +140,10 @@ macro RV(expr_options::Expr, expr_def::Any)
     # Extract variable id from expression?
     if !(:id in keys(options))
         if isa(target_expr, Symbol)
-            options[:id_suggestion] = target_expr
+            options[:id_suggestion] = "Symbol(\"$(target_expr)\")"
         elseif isa(target_expr, Expr) && target_expr.head == :ref
-            options[:id_suggestion] = target_expr.args[1]
+            arg_strings = ["\$($(arg))" for arg in target_expr.args[2:end]]
+            options[:id_suggestion] = "Symbol(\"" * string(target_expr.args[1]) * "_" * join(arg_strings, "_")*"\")"
         end
     end
 
@@ -159,7 +160,7 @@ macro RV(expr_options::Expr, expr_def::Any)
         if haskey(options, :id)
             var_id_expr = "$(options[:id])"
         elseif haskey(options, :id_suggestion)
-            var_id_expr = "!haskey(currentGraph().variables, :($(options[:id_suggestion]))) ? :($(options[:id_suggestion])) : ForneyLab.generateId(Variable)"
+            var_id_expr = "!haskey(currentGraph().variables, $(options[:id_suggestion])) ? $(options[:id_suggestion]) : ForneyLab.generateId(Variable)"
         else
             var_id_expr = "ForneyLab.generateId(Variable)"
         end
@@ -193,7 +194,7 @@ macro RV(expr_options::Expr, expr_def::Any)
             var_id_expr = "$(options[:id])"
         elseif haskey(options, :id_suggestion)
             before_node_expr = ""
-            var_id_expr = "!haskey(currentGraph().variables, :($(options[:id_suggestion]))) ? :($(options[:id_suggestion])) : :auto"
+            var_id_expr = "!haskey(currentGraph().variables, $(options[:id_suggestion])) ? $(options[:id_suggestion]) : :auto"
         else
             before_node_expr = ""
             var_id_expr = ":auto"
@@ -220,7 +221,7 @@ macro RV(expr_options::Expr, expr_def::Any)
         if haskey(options, :id)
             var_id_expr = "$(options[:id])"
         elseif haskey(options, :id_suggestion)
-            var_id_expr = "!haskey(currentGraph().variables, :($(options[:id_suggestion]))) ? :($(options[:id_suggestion])) : ForneyLab.generateId(Variable)"
+            var_id_expr = "!haskey(currentGraph().variables, $(options[:id_suggestion])) ? $(options[:id_suggestion]) : ForneyLab.generateId(Variable)"
         else
             var_id_expr = "ForneyLab.generateId(Variable)"
         end
