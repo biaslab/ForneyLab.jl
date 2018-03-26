@@ -11,7 +11,7 @@ expectationPropagationSchedule() generates a expectation propagation message pas
 """
 function expectationPropagationSchedule(variables::Vector{Variable})
     ep_sites = collectEPSites(nodes(current_graph))
-    breaker_sites = [site.partner for site in ep_sites]
+    breaker_sites = Interface[site.partner for site in ep_sites]
     breaker_types = breakerTypes(breaker_sites)
 
     schedule = summaryPropagationSchedule(variables; target_sites=[breaker_sites; ep_sites])
@@ -36,7 +36,7 @@ that is limited to the `recognition_factor`. Updates on EP sites are computed wi
 function variationalExpectationPropagationSchedule(recognition_factor::RecognitionFactor)
     internal_edges = recognition_factor.internal_edges
     ep_sites = collectEPSites(nodes(internal_edges))
-    breaker_sites = [site.partner for site in ep_sites]
+    breaker_sites = Interface[site.partner for site in ep_sites]
     breaker_types = breakerTypes(breaker_sites)
 
     # Schedule messages towards recognition distributions and target sites, limited to the internal edges
