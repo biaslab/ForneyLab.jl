@@ -111,9 +111,10 @@ function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="
     entropy_block = ""
     for node in sort(collect(nodes_connected_to_external_edges))
         # Construct average energy term
+        node_str = replace(string(typeof(node)),"ForneyLab.", "") # Remove module prefixes
         inbounds = collectAverageEnergyInbounds(node)
         inbounds_str = join(inbounds, ", ")
-        energy_block *= "F += averageEnergy($(typeof(node)), $inbounds_str)\n"
+        energy_block *= "F += averageEnergy($node_str, $inbounds_str)\n"
 
         # Construct differential entropy term
         outbound_interface = node.interfaces[1]
@@ -135,7 +136,7 @@ function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="
     code = "function freeEnergy$(name)(data::Dict, marginals::Dict)\n\n"
     code *= "F = 0.0\n\n"
     code *= energy_block*"\n"entropy_block
-    code *= "\nreturn F\n" 
+    code *= "\nreturn F\n\n" 
     code *= "end"
 
     return code
