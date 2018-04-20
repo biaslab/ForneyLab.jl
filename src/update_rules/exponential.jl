@@ -4,7 +4,7 @@
                 :name          => SPExponentialOutVG)
 
 @sumProductRule(:node_type     => Exponential,
-                :outbound_type => Message{Gaussian},
+                :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Message{LogNormal}, Void),
                 :name          => SPExponentialIn1LV)
 

@@ -42,11 +42,11 @@ function matchPVInputs(input_types::Vector{<:Type})
 end
 
 mutable struct VBGaussianMixtureM <: NaiveVariationalRule{GaussianMixture} end
-outboundType(::Type{VBGaussianMixtureM}) = Message{Gaussian}
+outboundType(::Type{VBGaussianMixtureM}) = Message{GaussianMeanPrecision}
 function isApplicable(::Type{VBGaussianMixtureM}, input_types::Vector{<:Type})
     n_inputs = length(input_types)
     iseven(n_inputs) || return false
-    
+
     (void_positions, p_positions) = matchPVInputs(input_types)
     n_voids = length(void_positions)
     n_ps = length(p_positions)
@@ -56,7 +56,7 @@ function isApplicable(::Type{VBGaussianMixtureM}, input_types::Vector{<:Type})
     (1 in p_positions) || return false
     (2 in p_positions) || return false
     isodd(void_positions[1]) || return false
-    
+
     return true
 end
 
@@ -65,7 +65,7 @@ outboundType(::Type{VBGaussianMixtureW}) = Message{Union{Gamma, Wishart}}
 function isApplicable(::Type{VBGaussianMixtureW}, input_types::Vector{<:Type})
     n_inputs = length(input_types)
     iseven(n_inputs) || return false
-    
+
     (void_positions, p_positions) = matchPVInputs(input_types)
     n_voids = length(void_positions)
     n_ps = length(p_positions)
@@ -75,12 +75,12 @@ function isApplicable(::Type{VBGaussianMixtureW}, input_types::Vector{<:Type})
     (1 in p_positions) || return false
     (2 in p_positions) || return false
     iseven(void_positions[1]) || return false
-    
+
     return true
 end
 
 mutable struct VBGaussianMixtureOut <: NaiveVariationalRule{GaussianMixture} end
-outboundType(::Type{VBGaussianMixtureOut}) = Message{Gaussian}
+outboundType(::Type{VBGaussianMixtureOut}) = Message{GaussianWeightedMeanPrecision}
 function isApplicable(::Type{VBGaussianMixtureOut}, input_types::Vector{<:Type})
     iseven(length(input_types)) || return false
     for (i, input_type) in enumerate(input_types)
