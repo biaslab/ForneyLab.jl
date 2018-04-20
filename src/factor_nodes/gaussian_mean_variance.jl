@@ -52,20 +52,25 @@ unsafeMean{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance
 unsafeVar(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = dist.params[:v] # unsafe variance
 unsafeVar(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = diag(dist.params[:v])
 
-unsafeCov(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = dist.params[:v] # unsafe covariance
-unsafeCov(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = deepcopy(dist.params[:v])
+unsafeCov{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = deepcopy(dist.params[:v]) # unsafe covariance
+
+unsafeWeightedMean(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = dist.params[:m]/dist.params[:v] # unsafe weighted mean
+unsafeWeightedMean(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = cholinv(dist.params[:v])*dist.params[:m]
+
+unsafePrecision(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = 1/dist.params[:v] # unsafe precision
+unsafePrecision(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = cholinv(dist.params[:v])
 
 isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = (realmin(Float64) < dist.params[:v] < realmax(Float64))
 isProper(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = isRoundedPosDef(dist.params[:v])
 
-function sample(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance})
-    isProper(dist) || error("Cannot sample from improper distribution")
-    return sqrt(dist.params[:v])*randn() + dist.params[:m]
+function =={V<:VariateType}(t::ProbabilityDistribution{V, GaussianMeanVariance}, u::ProbabilityDistribution{V, GaussianMeanVariance})
+    (t === u) && return true
+    isApproxEqual(t.params[:m], u.params[:m]) && isApproxEqual(t.params[:v], u.params[:v])
 end
 
-function sample(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance})
-    isProper(dist) || error("Cannot sample from improper distribution")
-    return chol(dist.params[:v])' *randn(dims(dist)) + dist.params[:m]
+function =={V<:VariateType, F<:Gaussian}(t::ProbabilityDistribution{V, GaussianMeanVariance}, u::ProbabilityDistribution{V, F})
+    (t === u) && return true
+    isApproxEqual(t.params[:m], unsafeMean(u)) && isApproxEqual(t.params[:v], unsafeCov(u))
 end
 
 # Average energy functional

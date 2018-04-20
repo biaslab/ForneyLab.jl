@@ -2,8 +2,55 @@ module GaussianMeanPrecisionTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable
+import ForneyLab: outboundType, isApplicable, isProper
 import ForneyLab: SPGaussianMeanPrecisionOutVPP, SPGaussianMeanPrecisionMPVP, SPGaussianMeanPrecisionOutVGP, SPGaussianMeanPrecisionMGVP, VBGaussianMeanPrecisionOut, VBGaussianMeanPrecisionM, VBGaussianMeanPrecisionW, SVBGaussianMeanPrecisionOutVGD, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionW, MGaussianMeanPrecisionGGD
+
+@testset "dims" begin
+    @test dims(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=1.0)) == 1
+    @test dims(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=ones(2), w=diageye(2))) == 2
+end
+
+@testset "vague" begin
+    @test vague(GaussianMeanPrecision) == ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=tiny)
+    @test vague(GaussianMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(2), w=tiny*eye(2))
+end
+
+@testset "isProper" begin
+    # Univariate
+    @test isProper(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=1.0))
+    @test !isProper(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=-1.0))
+
+    # Multivariate
+    @test isProper(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0.0], w=mat(1.0)))
+    @test isProper(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=ones(2), w=diageye(2)))
+    @test !isProper(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0.0], w=mat(-1.0)))
+end
+
+@testset "==" begin
+    # Univariate
+    @test ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=1.0) == ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=1.0)
+    @test ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=1.0) == ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=1.0)
+
+    # Multivariate
+    @test ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0.0], w=mat(1.0)) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0.0], w=mat(1.0))
+    @test ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0.0], w=mat(1.0)) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[0.0], w=mat(1.0))
+end
+
+@testset "unsafe statistics" begin
+    # Univariate
+    @test unsafeMean(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 2.0
+    @test unsafeVar(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 0.25
+    @test unsafeCov(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 0.25
+    @test unsafePrecision(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 4.0
+    @test unsafeWeightedMean(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 8.0
+
+    # Multivariate
+    @test unsafeMean(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [2.0]
+    @test unsafeVar(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [0.25]
+    @test unsafeCov(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == mat(0.25)
+    @test unsafePrecision(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == mat(4.0)
+    @test unsafeWeightedMean(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [8.0]
+end
 
 
 #-------------

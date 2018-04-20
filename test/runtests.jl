@@ -24,6 +24,7 @@ using Base.Test
     include("factor_nodes/test_gaussian.jl")
     include("factor_nodes/test_gaussian_mean_variance.jl")
     include("factor_nodes/test_gaussian_mean_precision.jl")
+    include("factor_nodes/test_gaussian_weighted_mean_precision.jl")
     include("factor_nodes/test_gamma.jl")
     include("factor_nodes/test_log_normal.jl")
     include("factor_nodes/test_wishart.jl")

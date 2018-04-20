@@ -55,17 +55,21 @@ unsafeVar(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}) = 
 unsafeCov(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}) = 1.0/dist.params[:w] # unsafe covariance
 unsafeCov(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}) = cholinv(dist.params[:w])
 
+unsafeWeightedMean{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) = dist.params[:w]*dist.params[:m] # unsafe weighted mean
+
+unsafePrecision{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) = deepcopy(dist.params[:w]) # unsafe precision
+
 isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}) = (realmin(Float64) < dist.params[:w] < realmax(Float64))
 isProper(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}) = isRoundedPosDef(dist.params[:w])
 
-function sample(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision})
-    isProper(dist) || error("Cannot sample from improper distribution")
-    return sqrt(1/dist.params[:w])*randn() + dist.params[:m]
+function =={V<:VariateType}(t::ProbabilityDistribution{V, GaussianMeanPrecision}, u::ProbabilityDistribution{V, GaussianMeanPrecision})
+    (t === u) && return true
+    isApproxEqual(t.params[:m], u.params[:m]) && isApproxEqual(t.params[:w], u.params[:w])
 end
 
-function sample(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision})
-    isProper(dist) || error("Cannot sample from improper distribution")
-    return chol(cholinv(dist.params[:w]))' *randn(dims(dist)) + dist.params[:m]
+function =={V<:VariateType, F<:Gaussian}(t::ProbabilityDistribution{V, GaussianMeanPrecision}, u::ProbabilityDistribution{V, F})
+    (t === u) && return true
+    isApproxEqual(t.params[:m], unsafeMean(u)) && isApproxEqual(t.params[:w], unsafePrecision(u))
 end
 
 # Average energy functional
