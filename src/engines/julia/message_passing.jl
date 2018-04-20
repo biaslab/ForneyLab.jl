@@ -163,6 +163,8 @@ function messageString{T<:VariateType}(node::Clamp{T})
         # Insert constant
         if size(node.value) == (1,1)
             str = "Message($(var_type_str), PointMass, m=mat($(node.value[1])))"
+        elseif isa(node.value, Diagonal)
+            str = "Message($(var_type_str), PointMass, m=Diagonal($(node.value.diag)))"
         else
             str = "Message($(var_type_str), PointMass, m=$(node.value))"
         end
@@ -189,6 +191,8 @@ function marginalString{T<:VariateType}(node::Clamp{T})
         # Insert constant
         if size(node.value) == (1,1)
             str = "ProbabilityDistribution($(var_type_str), PointMass, m=mat($(node.value[1])))"
+        elseif isa(node.value, Diagonal)
+            str = "ProbabilityDistribution($(var_type_str), PointMass, m=Diagonal($(node.value.diag)))"
         else
             str = "ProbabilityDistribution($(var_type_str), PointMass, m=$(node.value))"
         end
