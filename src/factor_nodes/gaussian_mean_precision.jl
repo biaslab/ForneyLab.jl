@@ -22,7 +22,7 @@ mutable struct GaussianMeanPrecision <: Gaussian
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function GaussianMeanPrecision(out, m, w; id=generateId(Gaussian))
+    function GaussianMeanPrecision(out, m, w; id=generateId(GaussianMeanPrecision))
         @ensureVariables(out, m, w)
         self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
@@ -36,9 +36,37 @@ end
 
 slug(::Type{GaussianMeanPrecision}) = "𝒩"
 
-ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianMeanPrecision}; m=0.0, w=1.0) = ProbabilityDistribution(Univariate, Gaussian, m=m, w=w)
-ProbabilityDistribution(::Type{GaussianMeanPrecision}; m::Number=0.0, w::Number=1.0) = ProbabilityDistribution(Univariate, Gaussian, m=m, w=w)
-ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanPrecision}; m=[0.0], w=[1.0].') = ProbabilityDistribution(Multivariate, Gaussian, m=m, w=w)
+format{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) = "$(slug(GaussianMeanPrecision))(m=$(format(dist.params[:m])), w=$(format(dist.params[:w])))"
+
+ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianMeanPrecision}; m=0.0, w=1.0) = ProbabilityDistribution{Univariate, GaussianMeanPrecision}(Dict(m=m, w=w))
+ProbabilityDistribution(::Type{GaussianMeanPrecision}; m::Number=0.0, w::Number=1.0) = ProbabilityDistribution{Univariate, GaussianMeanPrecision}(Dict(m=m, w=w))
+ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanPrecision}; m=[0.0], w=[1.0].') = ProbabilityDistribution{Multivariate, GaussianMeanPrecision}(Dict(m=m, w=w))
+
+dims{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) = length(dist.params[:m])
+
+vague(::Type{GaussianMeanPrecision}) = ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=tiny)
+vague(::Type{GaussianMeanPrecision}, dims::Int64) = ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(dims), w=tiny*diageye(dims))
+
+unsafeMean{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) = deepcopy(dist.params[:m]) # unsafe mean
+
+unsafeVar(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}) = 1.0/dist.params[:w] # unsafe variance
+unsafeVar(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}) = diag(cholinv(dist.params[:w]))
+
+unsafeCov(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}) = 1.0/dist.params[:w] # unsafe covariance
+unsafeCov(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}) = cholinv(dist.params[:w])
+
+isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}) = (realmin(Float64) < dist.params[:w] < realmax(Float64))
+isProper(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}) = isRoundedPosDef(dist.params[:w])
+
+function sample(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision})
+    isProper(dist) || error("Cannot sample from improper distribution")
+    return sqrt(1/dist.params[:w])*randn() + dist.params[:m]
+end
+
+function sample(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision})
+    isProper(dist) || error("Cannot sample from improper distribution")
+    return chol(cholinv(dist.params[:w]))' *randn(dims(dist)) + dist.params[:m]
+end
 
 # Average energy functional
 function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistribution{Univariate}, marg_mean::ProbabilityDistribution{Univariate}, marg_prec::ProbabilityDistribution{Univariate})
@@ -53,22 +81,18 @@ function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistr
     0.5*trace( unsafeMean(marg_prec)*(unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))*(unsafeMean(marg_out) - unsafeMean(marg_mean))' ))
 end
 
-function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, Gaussian}, marg_prec::ProbabilityDistribution{Univariate})
-    ensureParameters!(marg_out_mean, (:m, :v))
-
-    V = marg_out_mean.params[:v]
-    m = marg_out_mean.params[:m]
+function averageEnergy{F<:Gaussian}(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, F}, marg_prec::ProbabilityDistribution{Univariate})
+    V = unsafeCov(marg_out_mean)
+    m = unsafeMean(marg_out_mean)
 
     0.5*log(2*pi) -
     0.5*unsafeLogMean(marg_prec) +
     0.5*unsafeMean(marg_prec)*( V[1,1] - V[1,2] - V[2,1] + V[2,2] + (m[1] - m[2])^2 )
 end
 
-function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, Gaussian}, marg_prec::ProbabilityDistribution{MatrixVariate})
-    ensureParameters!(marg_out_mean, (:m, :v))
-
-    V = marg_out_mean.params[:v]
-    m = marg_out_mean.params[:m]
+function averageEnergy{F<:Gaussian}(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, F}, marg_prec::ProbabilityDistribution{MatrixVariate})
+    V = unsafeCov(marg_out_mean)
+    m = unsafeMean(marg_out_mean)
     d = Int64(dims(marg_out_mean)/2)
 
     0.5*d*log(2*pi) -
