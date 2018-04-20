@@ -1,10 +1,10 @@
 @sumProductRule(:node_type     => Multiplication,
-                :outbound_type => Message{Gaussian},
+                :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Void, Message{Gaussian}, Message{PointMass}),
                 :name          => SPMultiplicationOutVGP)
 
 @sumProductRule(:node_type     => Multiplication,
-                :outbound_type => Message{Gaussian},
+                :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Void, Message{PointMass}, Message{Gaussian}),
                 :name          => SPMultiplicationOutVPG)
 
@@ -13,6 +13,7 @@
                 :inbound_types => (Void, Message{PointMass}, Message{PointMass}),
                 :name          => SPMultiplicationOutVPP)
 
+# TODO: below rule is not stable in its outbound message type
 @sumProductRule(:node_type     => Multiplication,
                 :outbound_type => Message{Gaussian},
                 :inbound_types => (Message{Gaussian}, Void, Message{PointMass}),
@@ -24,7 +25,7 @@
                 :name          => SPMultiplicationIn1PVP)
 
 @sumProductRule(:node_type     => Multiplication,
-                :outbound_type => Message{Gaussian},
+                :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Message{Gaussian}, Message{PointMass}, Void),
                 :name          => SPMultiplicationAGPV)
 
