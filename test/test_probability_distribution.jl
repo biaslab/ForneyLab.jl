@@ -5,25 +5,21 @@ import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVaria
 using ForneyLab
 
 @testset "matches" begin
-    @test matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution{Univariate, Gaussian})
-    @test !matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution{Univariate, PointMass})
-    @test matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution{Univariate})
     @test matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution)
-    @test matches(ProbabilityDistribution{Univariate}, ProbabilityDistribution{Univariate})
-    @test !matches(ProbabilityDistribution{Univariate}, ProbabilityDistribution{Multivariate})
+    @test matches(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution)
+    @test matches(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, ProbabilityDistribution)
+    @test !matches(Void, ProbabilityDistribution)
 end
 
 @testset "Univariate" begin
     # ProbabilityDistribution should be parameterized on a node type (distribution family)
-    gaussian = ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0)
+    gaussian = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
     @test isa(gaussian, ProbabilityDistribution{Univariate})
-    @test isa(gaussian, ProbabilityDistribution{Univariate, Gaussian})
+    @test isa(gaussian, ProbabilityDistribution{Univariate, GaussianMeanVariance})
     @test !isa(gaussian, ProbabilityDistribution{Multivariate})
     @test !isa(gaussian, ProbabilityDistribution{MatrixVariate})
     @test gaussian.params[:m] == 0.0
     @test gaussian.params[:v] == 1.0
-    @test isnan(gaussian.params[:w])
-    @test isnan(gaussian.params[:xi])
 
     # PointMass should be defined as a special family
     point_mass = ProbabilityDistribution(Univariate, PointMass, m=0.0)
@@ -37,20 +33,18 @@ end
     @test_throws Exception ProbabilityDistribution(Univariate, Equality)
     @test_throws Exception ProbabilityDistribution(Univariate, Clamp, m=0.0)
 
-    @test ProbabilityDistribution(Univariate, PointMass, m=0.0) != ProbabilityDistribution(Univariate, Gaussian, m=0.0, v=1.0)
+    @test ProbabilityDistribution(Univariate, PointMass, m=0.0) != ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
     @test ProbabilityDistribution(Univariate, PointMass, m=0.0) != ProbabilityDistribution(Univariate, PointMass, m=1.0)
 end
 
 @testset "Multivariate" begin
-    gaussian = ProbabilityDistribution(Multivariate, Gaussian, m=[0.0], v=mat(1.0))
+    gaussian = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))
     @test isa(gaussian, ProbabilityDistribution{Multivariate})
-    @test isa(gaussian, ProbabilityDistribution{Multivariate, Gaussian})
+    @test isa(gaussian, ProbabilityDistribution{Multivariate, GaussianMeanVariance})
     @test !isa(gaussian, ProbabilityDistribution{Univariate})
     @test !isa(gaussian, ProbabilityDistribution{MatrixVariate})
     @test gaussian.params[:m] == [0.0]
     @test gaussian.params[:v] == mat(1.0)
-    @test isnan(gaussian.params[:w][1])
-    @test isnan(gaussian.params[:xi][1])
 
     # PointMass should be defined as a special family
     point_mass = ProbabilityDistribution(Multivariate, PointMass, m=[0.0])
@@ -102,16 +96,6 @@ end
     @test !isValid(ProbabilityDistribution(MatrixVariate, PointMass, m=[NaN 1.0; 2.0 3.0]), :m)
     @test isValid(ProbabilityDistribution(MatrixVariate, PointMass, m=Diagonal([1.0, 2.0])), :m)
     @test !isValid(ProbabilityDistribution(MatrixVariate, PointMass, m=Diagonal([NaN, 2.0])), :m)
-end
-
-@testset "invalidate!" begin
-    # should invalidate vectors and matrices
-    d = ProbabilityDistribution(Multivariate, PointMass, m=[1.0, 2.0])
-    @test !isValid(invalidate!(d, :m), :m)
-    d = ProbabilityDistribution(MatrixVariate, PointMass, m=[NaN 1.0; 2.0 3.0])
-    @test !isValid(invalidate!(d, :m), :m)
-    d = ProbabilityDistribution(MatrixVariate, PointMass, m=Diagonal([1.0, 2.0]))
-    @test !isValid(invalidate!(d, :m), :m)
 end
 
 @testset "gaussianQuadrature" begin

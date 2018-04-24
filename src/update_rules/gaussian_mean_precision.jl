@@ -4,7 +4,7 @@
                 :name          => SPGaussianMeanPrecisionOutVPP)
 
 @sumProductRule(:node_type     => GaussianMeanPrecision,
-                :outbound_type => Message{GaussianMeanVariance},
+                :outbound_type => Message{GaussianMeanPrecision},
                 :inbound_types => (Message{PointMass}, Void, Message{PointMass}),
                 :name          => SPGaussianMeanPrecisionMPVP)
 
@@ -24,7 +24,7 @@
                       :name          => VBGaussianMeanPrecisionOut)
 
 @naiveVariationalRule(:node_type     => GaussianMeanPrecision,
-                      :outbound_type => Message{GaussianMeanVariance},
+                      :outbound_type => Message{GaussianMeanPrecision},
                       :inbound_types => (ProbabilityDistribution, Void, ProbabilityDistribution),
                       :name          => VBGaussianMeanPrecisionM)
 

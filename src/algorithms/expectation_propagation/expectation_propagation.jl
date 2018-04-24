@@ -84,7 +84,7 @@ function breakerTypes(breaker_sites::Vector{Interface})
     breaker_types = Dict{Interface, Type}()
     for site in breaker_sites
         if isa(site.partner.node, Sigmoid)
-            breaker_types[site] = Message{Gaussian, Univariate} # Sigmoid EP site partner requires Gaussian breaker
+            breaker_types[site] = Message{GaussianMeanVariance, Univariate} # Sigmoid EP site partner requires Gaussian breaker
         end
     end
 

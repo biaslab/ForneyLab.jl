@@ -65,7 +65,7 @@ end
     data = Dict(:y => [1.0, 2.0, 3.0])
     step!(marginals, data)
 
-    @test marginals[:variable_1] == ProbabilityDistribution(Univariate, Gaussian, xi=6.0, w=4.0)
+    @test marginals[:variable_1] == ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=6.0, w=4.0)
 end
 
 end # module

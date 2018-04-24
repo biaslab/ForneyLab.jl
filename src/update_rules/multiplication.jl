@@ -13,9 +13,8 @@
                 :inbound_types => (Void, Message{PointMass}, Message{PointMass}),
                 :name          => SPMultiplicationOutVPP)
 
-# TODO: below rule is not stable in its outbound message type
 @sumProductRule(:node_type     => Multiplication,
-                :outbound_type => Message{Gaussian},
+                :outbound_type => Message{GaussianWeightedMeanPrecision},
                 :inbound_types => (Message{Gaussian}, Void, Message{PointMass}),
                 :name          => SPMultiplicationIn1GVP)
 
@@ -25,7 +24,7 @@
                 :name          => SPMultiplicationIn1PVP)
 
 @sumProductRule(:node_type     => Multiplication,
-                :outbound_type => Message{GaussianMeanVariance},
+                :outbound_type => Message{GaussianWeightedMeanPrecision},
                 :inbound_types => (Message{Gaussian}, Message{PointMass}, Void),
                 :name          => SPMultiplicationAGPV)
 

@@ -6,18 +6,20 @@ ruleSPSigmoidBinVG,
 ruleEPSigmoidRealGB, 
 ruleEPSigmoidRealGP
 
-function ruleSPSigmoidBinVG( msg_bin::Void,
-                            msg_real::Message{Gaussian, Univariate})
+function ruleSPSigmoidBinVG{F<:Gaussian}(   msg_bin::Void,
+                                            msg_real::Message{F, Univariate})
 
-    ensureParameters!(msg_real.dist, (:m, :v))
+    d_real = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_real.dist)
     
-    p = Φ(msg_real.dist.params[:m] / sqrt(1 + msg_real.dist.params[:v]))
+    p = Φ(d_real.params[:m] / sqrt(1 + d_real.params[:v]))
     isnan(p) && (p = 0.5)
 
     Message(Univariate, Bernoulli, p=p)
 end
 
-function ruleEPSigmoidRealGB(msg_bin::Message{Bernoulli, Univariate}, msg_real::Message{Gaussian, Univariate})
+function ruleEPSigmoidRealGB{F<:Gaussian}(  msg_bin::Message{Bernoulli, Univariate}, 
+                                            msg_real::Message{F, Univariate})
+
     # Calculate approximate (Gaussian) message towards i[:real]
     # The approximate message is an 'expectation' under the context (cavity distribution) encoded by incoming message msg_cavity.
     # Propagating the resulting approximate msg through the factor graph results in the expectation propagation (EP) algorithm.
@@ -32,8 +34,8 @@ function ruleEPSigmoidRealGB(msg_bin::Message{Bernoulli, Univariate}, msg_real::
 
     # Shordhand notations
     p = msg_bin.dist.params[:p]
-    dist_cavity = ensureParameters!(msg_real.dist, (:m, :v))
-    μ = dist_cavity.params[:m]; σ2 = dist_cavity.params[:v]
+    (μ, σ2) = unsafeMeanCov(msg_real.dist) # Moments of cavity distribution
+    (ξ, γ) = unsafeWeightedMeanPrecision(msg_real.dist)
 
     # Calculate first and second moment (mp_1, mp_2) of the 'true' marginal p(x) on edge connected to i[:real]
     # p(x) = f(x) / Z
@@ -59,21 +61,22 @@ function ruleEPSigmoidRealGB(msg_bin::Message{Bernoulli, Univariate}, msg_real::
     marginal_xi = marginal_w * mp_1
 
     # Calculate the approximate message towards i[:real]
-    ensureParameters!(dist_cavity, (:xi, :w))
-    outbound_dist_w = marginal_w - dist_cavity.params[:w] # This can be < 0, yielding an improper Gaussian msg
+    outbound_dist_w = marginal_w - γ # This can be < 0, yielding an improper Gaussian msg
     isnan(outbound_dist_w) && (outbound_dist_w = tiny)
     if outbound_dist_w < 0
         outbound_dist_w = clamp(outbound_dist_w, -1*huge, -1*tiny)
     else
         outbound_dist_w = clamp(outbound_dist_w, tiny, huge)
     end
-    outbound_dist_xi = marginal_xi - dist_cavity.params[:xi]
+    outbound_dist_xi = marginal_xi - ξ
     isnan(outbound_dist_xi) && (outbound_dist_xi = 0.0)
 
-    return Message(Univariate, Gaussian, xi=outbound_dist_xi, w=outbound_dist_w)
+    return Message(Univariate, GaussianWeightedMeanPrecision, xi=outbound_dist_xi, w=outbound_dist_w)
 end
 
-function ruleEPSigmoidRealGP(msg_bin::Message{PointMass, Univariate}, msg_real::Message{Gaussian, Univariate})
+function ruleEPSigmoidRealGP{F<:Gaussian}(  msg_bin::Message{PointMass, Univariate}, 
+                                            msg_real::Message{F, Univariate})
+
     p = mapToBernoulliParameterRange(msg_bin.dist.params[:m])
         
     return ruleEPSigmoidRealGB(Message(Univariate, Bernoulli, p=p), msg_real)

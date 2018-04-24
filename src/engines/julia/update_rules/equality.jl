@@ -7,9 +7,9 @@ ruleSPEqualityCategorical,
 ruleSPEqualityDirichlet,
 ruleSPEqualityPointMass
 
-ruleSPEqualityGaussian(msg_1::Message{Gaussian}, msg_2::Message{Gaussian}, msg_3::Void) = Message(prod!(msg_1.dist, msg_2.dist))
-ruleSPEqualityGaussian(msg_1::Message{Gaussian}, msg_2::Void, msg_3::Message{Gaussian}) = Message(prod!(msg_1.dist, msg_3.dist))
-ruleSPEqualityGaussian(msg_1::Void, msg_2::Message{Gaussian}, msg_3::Message{Gaussian}) = Message(prod!(msg_2.dist, msg_3.dist))
+ruleSPEqualityGaussian{F1<:Gaussian, F2<:Gaussian}(msg_1::Message{F1}, msg_2::Message{F2}, msg_3::Void) = Message(prod!(msg_1.dist, msg_2.dist))
+ruleSPEqualityGaussian{F1<:Gaussian, F2<:Gaussian}(msg_1::Message{F1}, msg_2::Void, msg_3::Message{F2}) = Message(prod!(msg_1.dist, msg_3.dist))
+ruleSPEqualityGaussian{F1<:Gaussian, F2<:Gaussian}(msg_1::Void, msg_2::Message{F1}, msg_3::Message{F2}) = Message(prod!(msg_2.dist, msg_3.dist))
 
 ruleSPEqualityGammaWishart{F<:Union{Gamma, Wishart}}(msg_1::Message{F}, msg_2::Message{F}, msg_3::Void) = Message(prod!(msg_1.dist, msg_2.dist))
 ruleSPEqualityGammaWishart{F<:Union{Gamma, Wishart}}(msg_1::Message{F}, msg_2::Void, msg_3::Message{F}) = Message(prod!(msg_1.dist, msg_3.dist))

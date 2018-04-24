@@ -1,5 +1,7 @@
 export GaussianMeanVariance
 
+abstract type Gaussian <: SoftFactor end
+
 """
 Description:
 
@@ -54,11 +56,18 @@ unsafeVar(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = d
 
 unsafeCov{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = deepcopy(dist.params[:v]) # unsafe covariance
 
-unsafeWeightedMean(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = dist.params[:m]/dist.params[:v] # unsafe weighted mean
-unsafeWeightedMean(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = cholinv(dist.params[:v])*dist.params[:m]
+unsafeMeanCov{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = (deepcopy(dist.params[:m]), deepcopy(dist.params[:v]))
 
-unsafePrecision(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = 1/dist.params[:v] # unsafe precision
-unsafePrecision(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = cholinv(dist.params[:v])
+unsafeWeightedMean{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = cholinv(dist.params[:v])*dist.params[:m]
+
+unsafePrecision{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = cholinv(dist.params[:v])
+
+# Converting from m,v to xi,w would require two separate inversions of the covariance matrix;
+# thid function ensures only a singly inversion is performed
+function unsafeWeightedMeanPrecision{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance})
+    W = cholinv(dist.params[:v])
+    return (W*dist.params[:m], W)
+end
 
 isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = (realmin(Float64) < dist.params[:v] < realmax(Float64))
 isProper(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = isRoundedPosDef(dist.params[:v])
@@ -75,13 +84,19 @@ end
 
 # Average energy functional
 function averageEnergy(::Type{GaussianMeanVariance}, marg_out::ProbabilityDistribution{Univariate}, marg_mean::ProbabilityDistribution{Univariate}, marg_var::ProbabilityDistribution{Univariate})
+    (m_mean, v_mean) = unsafeMeanCov(marg_mean)
+    (m_out, v_out) = unsafeMeanCov(marg_out)    
+    
     0.5*log(2*pi) +
     0.5*unsafeLogMean(marg_var) +
-    0.5*unsafeInverseMean(marg_var)*( unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))^2 )
+    0.5*unsafeInverseMean(marg_var)*(v_out + v_mean + (m_out - m_mean)^2)
 end
 
 function averageEnergy(::Type{GaussianMeanVariance}, marg_out::ProbabilityDistribution{Multivariate}, marg_mean::ProbabilityDistribution{Multivariate}, marg_var::ProbabilityDistribution{MatrixVariate})
+    (m_mean, v_mean) = unsafeMeanCov(marg_mean)
+    (m_out, v_out) = unsafeMeanCov(marg_out)    
+
     0.5*dims(marg_out)*log(2*pi) +
     0.5*unsafeDetLogMean(marg_var) +
-    0.5*trace( unsafeInverseMean(marg_var)*(unsafeCov(marg_out) + unsafeCov(marg_mean) + (unsafeMean(marg_out) - unsafeMean(marg_mean))*(unsafeMean(marg_out) - unsafeMean(marg_mean))' ))
+    0.5*trace( unsafeInverseMean(marg_var)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)'))
 end

@@ -1,8 +1,48 @@
-import Base: prod!
+import Base: prod!, convert
 
-export Gaussian, prod!
+export Gaussian, prod!, convert
 
-abstract type Gaussian <: SoftFactor end
+function convert{V<:VariateType}(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianMeanVariance})
+    w = cholinv(dist.params[:v])
+    m = deepcopy(dist.params[:m])
+
+    return ProbabilityDistribution(V, GaussianMeanPrecision, m=m, w=w)
+end
+
+function convert{V<:VariateType}(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision})
+    w = deepcopy(dist.params[:w])
+    m = cholinv(w)*dist.params[:xi]
+
+    return ProbabilityDistribution(V, GaussianMeanPrecision, m=m, w=w)
+end
+
+function convert{V<:VariateType}(::Type{ProbabilityDistribution{V, GaussianMeanVariance}}, dist::ProbabilityDistribution{V, GaussianMeanPrecision})
+    v = cholinv(dist.params[:w])
+    m = deepcopy(dist.params[:m])
+
+    return ProbabilityDistribution(V, GaussianMeanVariance, m=m, v=v)
+end
+
+function convert{V<:VariateType}(::Type{ProbabilityDistribution{V, GaussianMeanVariance}}, dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision})
+    v = cholinv(dist.params[:w])
+    m = v*dist.params[:xi]
+
+    return ProbabilityDistribution(V, GaussianMeanVariance, m=m, v=v)
+end
+
+function convert{V<:VariateType}(::Type{ProbabilityDistribution{V, GaussianWeightedMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianMeanPrecision})
+    w = deepcopy(dist.params[:w])
+    xi = w*dist.params[:m]
+
+    return ProbabilityDistribution(V, GaussianWeightedMeanPrecision, xi=xi, w=w)
+end
+
+function convert{V<:VariateType}(::Type{ProbabilityDistribution{V, GaussianWeightedMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianMeanVariance})
+    w = cholinv(dist.params[:v])
+    xi = w*dist.params[:m]
+
+    return ProbabilityDistribution(V, GaussianWeightedMeanPrecision, xi=xi, w=w)
+end
 
 function prod!{F1<:Gaussian, F2<:Gaussian}(
     x::ProbabilityDistribution{Univariate, F1},

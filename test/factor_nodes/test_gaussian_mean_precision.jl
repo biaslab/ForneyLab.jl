@@ -2,7 +2,7 @@ module GaussianMeanPrecisionTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, isProper
+import ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
 import ForneyLab: SPGaussianMeanPrecisionOutVPP, SPGaussianMeanPrecisionMPVP, SPGaussianMeanPrecisionOutVGP, SPGaussianMeanPrecisionMGVP, VBGaussianMeanPrecisionOut, VBGaussianMeanPrecisionM, VBGaussianMeanPrecisionW, SVBGaussianMeanPrecisionOutVGD, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionW, MGaussianMeanPrecisionGGD
 
 @testset "dims" begin
@@ -41,15 +41,26 @@ end
     @test unsafeMean(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 2.0
     @test unsafeVar(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 0.25
     @test unsafeCov(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 0.25
+    @test unsafeMeanCov(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == (2.0, 0.25)
     @test unsafePrecision(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 4.0
     @test unsafeWeightedMean(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 8.0
+    @test unsafeWeightedMeanPrecision(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == (8.0, 4.0)
 
     # Multivariate
     @test unsafeMean(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [2.0]
     @test unsafeVar(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [0.25]
     @test unsafeCov(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == mat(0.25)
+    @test unsafeMeanCov(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == ([2.0], mat(0.25))
     @test unsafePrecision(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == mat(4.0)
     @test unsafeWeightedMean(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [8.0]
+    @test unsafeWeightedMeanPrecision(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == ([8.0], mat(4.0))
+end
+
+@testset "convert" begin
+    @test convert(ProbabilityDistribution{Univariate, GaussianMeanPrecision}, ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=8.0, w=4.0)) == ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)
+    @test convert(ProbabilityDistribution{Univariate, GaussianMeanPrecision}, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=0.25)) == ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)
+    @test convert(ProbabilityDistribution{Multivariate, GaussianMeanPrecision}, ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[8.0], w=mat(4.0))) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))
+    @test convert(ProbabilityDistribution{Multivariate, GaussianMeanPrecision}, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.25))) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))
 end
 
 
@@ -164,7 +175,7 @@ end
     @test differentialEntropy(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=2.0)) == averageEnergy(GaussianMeanPrecision, ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=2.0), ProbabilityDistribution(Univariate, PointMass, m=0.0), ProbabilityDistribution(Univariate, PointMass, m=2.0))
     @test differentialEntropy(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=2.0)) == differentialEntropy(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0.0], w=mat(2.0)))
     @test averageEnergy(GaussianMeanPrecision, ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=2.0), ProbabilityDistribution(Univariate, PointMass, m=0.0), ProbabilityDistribution(Univariate, PointMass, m=2.0)) == averageEnergy(GaussianMeanPrecision, ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0.0], w=mat(2.0)), ProbabilityDistribution(Multivariate, PointMass, m=[0.0]), ProbabilityDistribution(MatrixVariate, PointMass, m=mat(2.0)))
-    @test averageEnergy(GaussianMeanPrecision, ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0.0, 1.0], v=[3.0 1.0; 1.0 2.0]), ProbabilityDistribution(Univariate, PointMass, m=2.0)) == averageEnergy(GaussianMeanPrecision, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0, 1.0], v=[3.0 1.0; 1.0 2.0]), ProbabilityDistribution(MatrixVariate, PointMass, m=mat(2.0)))
+    @test averageEnergy(GaussianMeanPrecision, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0, 1.0], v=[3.0 1.0; 1.0 2.0]), ProbabilityDistribution(Univariate, PointMass, m=2.0)) == averageEnergy(GaussianMeanPrecision, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0, 1.0], v=[3.0 1.0; 1.0 2.0]), ProbabilityDistribution(MatrixVariate, PointMass, m=mat(2.0)))
 end
 
 end #module

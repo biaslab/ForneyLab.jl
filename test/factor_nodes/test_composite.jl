@@ -92,7 +92,7 @@ end
 
 @testset "Composite node algorithm execution" begin
     # Implement custom rule for Julia execution
-    ruleSPStateTransitionX(::Message{PointMass, Univariate}, ::Message{Gaussian, Univariate}, ::Void) = Message(Univariate, Gaussian, m=2.0, v=3.0) # Send some dummy message
+    ruleSPStateTransitionX{F<:Gaussian}(::Message{PointMass, Univariate}, ::Message{F, Univariate}, ::Void) = Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0) # Send some dummy message
 
     # Resulting algorithm ---
     function step!(marginals::Dict, data::Dict)
@@ -111,7 +111,7 @@ end
     data = Dict(:y => 1.0)
     step!(marginals, data)
 
-    @test marginals[:x] == ProbabilityDistribution(Univariate, Gaussian, m=2.0, v=3.0)
+    @test marginals[:x] == ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0)
 end
 
 end #module
