@@ -72,6 +72,7 @@ mutable struct ScheduleEntry
     interface::Interface
     msg_update_rule::Type
     internal_schedule::Vector{ScheduleEntry}
+    breaker_type::Type
 
     ScheduleEntry(interface::Interface, msg_update_rule::Type) = new(interface, msg_update_rule)
 end
@@ -167,7 +168,6 @@ summaryPropagationSchedule(variable::Variable; limit_set=edges(current_graph), t
 inferUpdateRules!(schedule) infers specific message update rules for all schedule entries.
 """
 function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Interface, Type}())
-    # Dict to hold all inferred message types
     for entry in schedule
         (entry.msg_update_rule == Void) && error("No msg update rule type specified for $(entry)")
         if !isleaftype(entry.msg_update_rule)

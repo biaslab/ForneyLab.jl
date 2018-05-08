@@ -9,21 +9,22 @@ abstract type SumProductRule{factor_type} <: MessageUpdateRule end
 sumProductSchedule() generates a sum-product message passing schedule that computes the
 marginals for each of the argument variables.
 """
-function sumProductSchedule(variables::Vector{Variable})
+function sumProductSchedule(variables::Vector{Variable}; breakers=Dict{Interface, Type}())
     # Generate a feasible summary propagation schedule
-    schedule = summaryPropagationSchedule(variables)
+    breaker_sites = collect(keys(breakers)) # TODO: sort?
+    schedule = summaryPropagationSchedule(variables, breaker_sites=breaker_sites)
 
     # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule
         entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
     end
 
-    inferUpdateRules!(schedule)
+    inferUpdateRules!(schedule, inferred_outbound_types=breakers)
 
     return schedule
 end
 
-sumProductSchedule(variable::Variable) = sumProductSchedule([variable])
+sumProductSchedule(variable::Variable; breakers=Dict{Interface, Type}()) = sumProductSchedule([variable], breakers=breakers)
 
 """
 internalSumProductSchedule() generates a sum-product message passing schedule
@@ -32,7 +33,7 @@ message out of the specified outbound_interface.
 """
 function internalSumProductSchedule(cnode::CompositeNode,
                                     outbound_interface::Interface,
-                                    inferred_outbound_types::Dict{Interface, <:Type})
+                                    inferred_outbound_types::Dict{Interface, Type})
 
     # Collect types of messages towards the CompositeNode
     msg_types = Dict{Interface, Type}()

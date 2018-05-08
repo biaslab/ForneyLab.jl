@@ -1,21 +1,12 @@
 function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int}, n_messages::Int, name::String)
     code = ""
 
-    # Collect outbound types from schedule
-    outbound_types = Dict()
-    for entry in schedule
-        outbound_types[entry.interface] = outboundType(entry.msg_update_rule)
-    end
-
-    # Find breaker types from schedule outbound types
+    # Collect breaker types from schedule
     breaker_types = Dict()
     for entry in schedule
-        if (entry.msg_update_rule <: ExpectationPropagationRule)
-            partner = ultimatePartner(entry.interface)
-            breaker_types[partner] = outbound_types[partner]
-        elseif isa(entry.interface.node, Nonlinear)
+        if isdefined(entry, :breaker_type)
             iface = ultimatePartner(entry.interface.node.interfaces[2])
-            breaker_types[iface] = outbound_types[iface]
+            breaker_types[entry.interface] = entry.breaker_type
         end
     end
 
