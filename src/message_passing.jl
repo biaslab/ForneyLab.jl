@@ -72,7 +72,6 @@ mutable struct ScheduleEntry
     interface::Interface
     msg_update_rule::Type
     internal_schedule::Vector{ScheduleEntry}
-    breaker_type::Type
 
     ScheduleEntry(interface::Interface, msg_update_rule::Type) = new(interface, msg_update_rule)
 end

@@ -3,15 +3,15 @@ export sumProductAlgorithm
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function sumProductAlgorithm(variables::Vector{Variable}; file::String="", name::String="", breakers=Dict{Interface, Type}())
-    schedule = sumProductSchedule(variables, breakers=breakers)
+function sumProductAlgorithm(variables::Vector{Variable}; file::String="", name::String="")
+    schedule = sumProductSchedule(variables)
     marginal_schedule = marginalSchedule(variables)
     
     algo = messagePassingAlgorithm(schedule, marginal_schedule, file=file, name=name)
 
     return algo
 end
-sumProductAlgorithm(variable::Variable; file::String="", name::String="", breakers=Dict{Interface, Type}()) = sumProductAlgorithm([variable], file=file, name=name, breakers=breakers)
+sumProductAlgorithm(variable::Variable; file::String="", name::String="") = sumProductAlgorithm([variable], file=file, name=name)
 
 """
 Collect and construct SP update code for each inbound.
