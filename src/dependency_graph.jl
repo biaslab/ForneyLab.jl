@@ -117,7 +117,7 @@ if `graph` is a dependency graph.
 """
 function children{V}(   vertices::Vector{V},
                         graph::DependencyGraph{V};
-                        allow_cycles::Bool=false,
+                        allow_cycles::Bool=true,
                         breaker_sites::Set{V}=Set{V}(),
                         restrict_to::Set{V}=Set{V}())
 

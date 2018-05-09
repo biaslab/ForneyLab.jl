@@ -9,17 +9,17 @@ abstract type SumProductRule{factor_type} <: MessageUpdateRule end
 sumProductSchedule() generates a sum-product message passing schedule that computes the
 marginals for each of the argument variables.
 """
-function sumProductSchedule(variables::Vector{Variable}; breakers=Dict{Interface, Type}())
+function sumProductSchedule(variables::Vector{Variable})#; breakers=Dict{Interface, Type}())
     # Generate a feasible summary propagation schedule
-    breaker_sites = collect(keys(breakers)) # TODO: sort?
-    schedule = summaryPropagationSchedule(variables, breaker_sites=breaker_sites)
+    #breaker_sites = collect(keys(breakers)) # TODO: sort?
+    schedule = summaryPropagationSchedule(variables)#, breaker_sites=breaker_sites)
 
     # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule
         entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
     end
 
-    inferUpdateRules!(schedule, inferred_outbound_types=breakers)
+    inferUpdateRules!(schedule)#, inferred_outbound_types=breakers)
 
     return schedule
 end
