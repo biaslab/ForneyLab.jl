@@ -24,10 +24,11 @@ mutable struct Nonlinear <: DeltaFactor
 
     g::Function # Vector function that expresses the output vector as a function of the input vector; reduces to scalar for 1-d
     J_g::Function # Jacobi matrix of g, as a function of the input vector; in the 1-d case this reduces to the first derivative of g
+    dims::Tuple # Dimension of breaker message on input interface
 
-    function Nonlinear(out, in1, g::Function, J_g::Function; id=ForneyLab.generateId(Nonlinear))
+    function Nonlinear(out, in1, g::Function, J_g::Function; dims=(1,), id=ForneyLab.generateId(Nonlinear))
         @ensureVariables(out, in1)
-        self = new(id, Vector{Interface}(2), Dict{Symbol,Interface}(), g, J_g)
+        self = new(id, Vector{Interface}(2), Dict{Symbol,Interface}(), g, J_g, dims)
         ForneyLab.addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)
