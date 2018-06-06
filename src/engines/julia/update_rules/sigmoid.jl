@@ -2,15 +2,16 @@
 Φ(x::Union{Float64, Vector{Float64}}) = 0.5*erfc(-x./sqrt(2.))
 
 export
-ruleSPSigmoidBinVG, 
-ruleEPSigmoidRealGB, 
+ruleSPSigmoidBinVG,
+ruleEPSigmoidRealGB,
+ruleEPSigmoidRealGC,
 ruleEPSigmoidRealGP
 
 function ruleSPSigmoidBinVG( msg_bin::Void,
                             msg_real::Message{Gaussian, Univariate})
 
     ensureParameters!(msg_real.dist, (:m, :v))
-    
+
     p = Φ(msg_real.dist.params[:m] / sqrt(1 + msg_real.dist.params[:v]))
     isnan(p) && (p = 0.5)
 
@@ -24,13 +25,12 @@ function ruleEPSigmoidRealGB(msg_bin::Message{Bernoulli, Univariate}, msg_real::
     # Approximation procedure:
     #  1. Calculate exact (non-Gaussian) message towards i[:real].
     #  2. Combine exact outbound msg on i[:real] with exact inbound msg (cavity distribution) to find exact marginal.
-    #  3. Approximate the exact (non-Gaussian) marginal with a Gaussian one using moment matching.
+    #  3. Approximate the exact (non-Gaussian) marginal with a Gaussian one using moment matching, under the constraint VAR[approximate marginal] > VAR[cavity].
     #  4. Calculate back the Gaussian outbound msg on i[:real] that yields this approximate Gaussian marginal.
     # IMPORTANT NOTES:
     #  - This calculation results in an implicit cycle in the factor graph since the outbound message depends on the inbound message (cavity dist.).
-    #  - The outbound message is not guaranteed to be proper iff 0 < msg_bin.p < 1: variance/precision parameters might be negative.
 
-    # Shordhand notations
+    # Shorthand notations
     p = msg_bin.dist.params[:p]
     dist_cavity = ensureParameters!(msg_real.dist, (:m, :v))
     μ = dist_cavity.params[:m]; σ2 = dist_cavity.params[:v]
@@ -55,26 +55,28 @@ function ruleEPSigmoidRealGB(msg_bin::Message{Bernoulli, Univariate}, msg_real::
     mp_2 = ((1-p)*(μ^2+σ2) + (2*p-1)*mg_2) / Z
 
     # Calculate Gaussian marginal with identical first and second moments (moment matching approximation)
-    marginal_w = clamp(1/(mp_2 - mp_1^2), tiny, huge) # This quantity is guaranteed to be positive
+    marginal_v = mp_2 - mp_1^2
+    marginal_v = clamp(marginal_v, tiny, σ2-tiny) # ensure variance of marginal is not larger than variance of cavity distribution
+    marginal_w = 1.0 / marginal_v
     marginal_xi = marginal_w * mp_1
 
     # Calculate the approximate message towards i[:real]
     ensureParameters!(dist_cavity, (:xi, :w))
-    outbound_dist_w = marginal_w - dist_cavity.params[:w] # This can be < 0, yielding an improper Gaussian msg
-    isnan(outbound_dist_w) && (outbound_dist_w = tiny)
-    if outbound_dist_w < 0
-        outbound_dist_w = clamp(outbound_dist_w, -1*huge, -1*tiny)
-    else
-        outbound_dist_w = clamp(outbound_dist_w, tiny, huge)
-    end
+    outbound_dist_w = marginal_w - dist_cavity.params[:w]
     outbound_dist_xi = marginal_xi - dist_cavity.params[:xi]
-    isnan(outbound_dist_xi) && (outbound_dist_xi = 0.0)
 
     return Message(Univariate, Gaussian, xi=outbound_dist_xi, w=outbound_dist_w)
 end
 
+function ruleEPSigmoidRealGC(msg_cat::Message{Categorical, Univariate}, msg_real::Message{Gaussian, Univariate})
+    (length(msg_cat.dist.params[:p]) == 2) || error("Sigmoid node only supports categorical messages with 2 categories")
+    p = msg_cat.dist.params[:p][1]
+
+    return ruleEPSigmoidRealGB(Message(Univariate, Bernoulli, p=p), msg_real)
+end
+
 function ruleEPSigmoidRealGP(msg_bin::Message{PointMass, Univariate}, msg_real::Message{Gaussian, Univariate})
     p = mapToBernoulliParameterRange(msg_bin.dist.params[:m])
-        
+
     return ruleEPSigmoidRealGB(Message(Univariate, Bernoulli, p=p), msg_real)
 end
