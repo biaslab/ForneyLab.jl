@@ -27,3 +27,8 @@ using ForneyLab
 ```
 
 There are [demos](https://github.com/biaslab/ForneyLab.jl/tree/master/demo) available to get you started.
+
+License
+=======
+
+(c) 2018 GN Store Nord A/S. Permission to use this software for any non-commercial purpose is granted. See `LICENSE.md` file for details.
