@@ -30,7 +30,7 @@ function ruleEPSigmoidRealGB(msg_bin::Message{Bernoulli, Univariate}, msg_real::
     # IMPORTANT NOTES:
     #  - This calculation results in an implicit cycle in the factor graph since the outbound message depends on the inbound message (cavity dist.).
 
-    # Shordhand notations
+    # Shorthand notations
     p = msg_bin.dist.params[:p]
     dist_cavity = ensureParameters!(msg_real.dist, (:m, :v))
     μ = dist_cavity.params[:m]; σ2 = dist_cavity.params[:v]
@@ -56,7 +56,7 @@ function ruleEPSigmoidRealGB(msg_bin::Message{Bernoulli, Univariate}, msg_real::
 
     # Calculate Gaussian marginal with identical first and second moments (moment matching approximation)
     marginal_v = mp_2 - mp_1^2
-    marginal_v = clamp(marginal_v, tiny, σ2) # ensure variance of marginal is not larger than variance of cavity distribution
+    marginal_v = clamp(marginal_v, tiny, σ2-tiny) # ensure variance of marginal is not larger than variance of cavity distribution
     marginal_w = 1.0 / marginal_v
     marginal_xi = marginal_w * mp_1
 
@@ -70,7 +70,7 @@ end
 
 function ruleEPSigmoidRealGC(msg_cat::Message{Categorical, Univariate}, msg_real::Message{Gaussian, Univariate})
     (length(msg_cat.dist.params[:p]) == 2) || error("Sigmoid node only supports categorical messages with 2 categories")
-    p = msg_cat.dist.params[:p][2]
+    p = msg_cat.dist.params[:p][1]
 
     return ruleEPSigmoidRealGB(Message(Univariate, Bernoulli, p=p), msg_real)
 end
