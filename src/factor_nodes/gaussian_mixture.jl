@@ -19,7 +19,7 @@ Interfaces:
 
 Construction:
 
-    GaussianMixture(out, z, m1, m2, w1, w2, ..., id=:some_id)
+    GaussianMixture(out, z, m1, w1, m2, w2, ..., id=:some_id)
 """
 mutable struct GaussianMixture <: SoftFactor
     id::Symbol

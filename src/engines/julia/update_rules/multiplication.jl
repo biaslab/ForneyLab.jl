@@ -53,17 +53,6 @@ function ruleSPMultiplicationOutVGP(msg_out::Void,
 end
 ruleSPMultiplicationOutVPG(msg_out::Void, msg_in1::Message{PointMass, Univariate}, msg_a::Message{Gaussian, Multivariate}) = ruleSPMultiplicationOutVGP(nothing, msg_a, msg_in1)
 
-# Multivariate inproduct # TODO: move to inproduct node
-# function ruleSPMultiplicationIn1GVP(msg_out::Message{Gaussian, Multivariate},
-#                                     msg_in1::Void,
-#                                     msg_a::Message{PointMass, Multivariate})
-
-#     ensureParameters!(msg_out.dist, (:xi, :w))
-#     a = msg_a.dist.params[:m]
-#     Message(Univariate, Gaussian, xi=a'*msg_out.dist.params[:xi], w=a'*msg_out.dist.params[:w]*a)
-# end
-# ruleSPMultiplicationAGPV(msg_out::Message{Gaussian, Multivariate}, msg_in1::Message{PointMass, Multivariate}, msg_a::Void) = ruleSPMultiplicationIn1GVP(msg_out, nothing, msg_in1)
-
 # MatrixVariate*multivariate (in1 and a do NOT commute)
 function ruleSPMultiplicationOutVGP(msg_out::Void,
                                     msg_in1::Message{Gaussian, Multivariate},

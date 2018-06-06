@@ -1,5 +1,8 @@
 export DotProduct
 
+import Base: dot
+export dot
+
 """
 Description:
 
@@ -42,3 +45,19 @@ mutable struct DotProduct <: DeltaFactor
 end
 
 slug(::Type{DotProduct}) = "dot"
+
+function dot(a::Variable, in1::Variable)
+    out = Variable()
+    DotProduct(out, in1, a)
+    return out
+end
+
+function dot(a::Variable, in1)
+    @ensureVariables(in1)
+    dot(a, in1)
+end
+
+function dot(a, in1::Variable)
+    @ensureVariables(a)
+    dot(a, in1)
+end

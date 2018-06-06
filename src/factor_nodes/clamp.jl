@@ -87,10 +87,7 @@ function placeholder(   var::Variable,
                         dims::Tuple=())
 
     # Build placeholder id
-    constant_id = :placeholder_*buffer_id
-    if index > 0
-        constant_id *= :_*index
-    end
+    constant_id = :placeholder_*var.id
 
     # Define a default value
     if default != nothing
