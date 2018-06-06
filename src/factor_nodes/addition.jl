@@ -25,7 +25,8 @@ mutable struct Addition <: DeltaFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function Addition(out::Variable, in1::Variable, in2::Variable; id=generateId(Addition))
+    function Addition(out, in1, in2; id=generateId(Addition))
+        @ensureVariables(out, in1, in2)
         self = new(id, Array{Interface}(3), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
@@ -43,3 +44,10 @@ function +(in1::Variable, in2::Variable)
     Addition(out, in1, in2)
     return out
 end
+
+function +(in1::Variable, in2)
+    @ensureVariables(in2)
+    in1 + in2
+end
+
++(in1, in2::Variable) = +(in2, in1)

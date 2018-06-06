@@ -4,7 +4,7 @@ Univariate,
 Multivariate,
 MatrixVariate,
 PointMass,
-@~,
+@RV,
 mean,
 var,
 cov,
@@ -87,47 +87,156 @@ Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)
 conditionalDifferentialEntropy(marg_joint::ProbabilityDistribution{Multivariate}, marg_condition::Vararg{ProbabilityDistribution}) = differentialEntropy(marg_joint) - sum([differentialEntropy(marg) for marg in marg_condition])
 
 """
-`x ~ GaussianMeanVariance(constant(0.0), constant(1.0), id=:some_optional_id)` is a shorthand notation
-for `x = Variable(); GaussianMeanVariance(x, constant(0.0), constant(1.0))`
+@RV provides a convenient way to add Variables and FactorNodes to the graph.
+
+Examples:
+
+```
+# Automatically create new Variable x, try to assign x.id = :x if this id is available
+@RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+
+# Explicitly specify the id of the Variable
+@RV [id=:my_y] y ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+
+# Automatically assign z.id = :z if this id is not yet taken
+@RV z = x + y
+
+# Manual assignment
+@RV [id=:my_u] u = x + y
+
+# Just create a variable
+@RV x
+@RV [id=:my_x] x
+```
 """
-macro ~(variable_expr::Any, dist_expr::Expr)
-    # Sanity checks
-    (dist_expr.head == :call) || error("Incorrect use of ~ operator.")
-
-    # Build FactorNode constructor call
-    if isa(dist_expr.args[2], Expr) && (dist_expr.args[2].head == :parameters)
-        dist_expr.args = vcat(dist_expr.args[1:2], [variable_expr], dist_expr.args[3:end])
-    else
-        dist_expr.args = vcat([dist_expr.args[1]; variable_expr], dist_expr.args[2:end])
+macro RV(expr_options::Expr, expr_def::Any)
+    # Parse options
+    (expr_options.head == :vect) || error("Incorrect use of @RV macro")
+    options = Dict{Symbol,Any}()
+    for arg in expr_options.args
+        (arg.head == :(=)) || error("Incorrect use of @RV macro")
+        options[arg.args[1]] = arg.args[2]
     end
 
-    # Build the expression for constructing the node id, either an id is passed; or we generate our own
-    if isa(dist_expr.args[end], Expr) && (dist_expr.args[end].head == :kw) && (dist_expr.args[end].args[1] == :id)
-        node_id_expr = dist_expr.args[end].args[2]
+    # Parse RV definition expression
+    # It can take trhee forms.
+    # FORM 1: @RV x ~ Probdist(...)
+    # FORM 2: @RV x = a + b
+    # FORM 3: @RV x
+    if isa(expr_def, Expr) && expr_def.head === :call && expr_def.args[1] === :(~)
+        form = 1
+        target_expr = expr_def.args[2]
+        node_expr = expr_def.args[3]
+
+    elseif isa(expr_def, Expr) && expr_def.head === :(=)
+        form = 2
+        target_expr = expr_def.args[1]
+        node_expr = expr_def.args[2]
     else
-        node_id_expr = parse("ForneyLab.generateId(Variable)")
+        form = 3
+        target_expr = expr_def
     end
 
-    expr = parse("""
+    # Extract variable id from expression?
+    if !(:id in keys(options))
+        if isa(target_expr, Symbol)
+            options[:id_suggestion] = "Symbol(\"$(target_expr)\")"
+        elseif isa(target_expr, Expr) && target_expr.head == :ref
+            arg_strings = ["\$($(arg))" for arg in target_expr.args[2:end]]
+            options[:id_suggestion] = "Symbol(\"" * string(target_expr.args[1]) * "_" * join(arg_strings, "_")*"\")"
+        end
+    end
+
+    if form == 1
+        # Build FactorNode constructor call
+        node_expr = expr_def.args[3]
+        if isa(node_expr.args[2], Expr) && (node_expr.args[2].head == :parameters)
+            node_expr.args = vcat(node_expr.args[1:2], [target_expr], node_expr.args[3:end])
+        else
+            node_expr.args = vcat([node_expr.args[1]; target_expr], node_expr.args[2:end])
+        end
+
+        # Logic for determining Variable id
+        if haskey(options, :id)
+            var_id_expr = "$(options[:id])"
+        elseif haskey(options, :id_suggestion)
+            var_id_expr = "!haskey(currentGraph().variables, $(options[:id_suggestion])) ? $(options[:id_suggestion]) : ForneyLab.generateId(Variable)"
+        else
+            var_id_expr = "ForneyLab.generateId(Variable)"
+        end
+
+        # Build total expression
+        expr = parse("""
                 begin
-                # Use existing object if it exists, otherwise create a new Variable
-                $(variable_expr) = try $(variable_expr) catch Variable(id=ForneyLab.pack($(node_id_expr))) end
+                # Use existing Variable if it exists, otherwise create a new one
+                $(target_expr) = try $(target_expr) catch Variable(id=ForneyLab.pack($(var_id_expr))) end
 
                 # Create new variable if:
                 #   - the existing object is not a Variable
                 #   - the existing object is a Variable from another FactorGraph
-                if (!isa($(variable_expr), Variable)
-                    || !haskey(currentGraph().variables, $(variable_expr).id)
-                    || currentGraph().variables[$(variable_expr).id] !== $(variable_expr))
+                if (!isa($(target_expr), Variable)
+                    || !haskey(currentGraph().variables, $(target_expr).id)
+                    || currentGraph().variables[$(target_expr).id] !== $(target_expr))
 
-                    $(variable_expr) = Variable(id=ForneyLab.pack($(node_id_expr)))
+                    $(target_expr) = Variable(id=ForneyLab.pack($(var_id_expr)))
                 end
 
-                $(dist_expr)
-                $(variable_expr)
+                $(node_expr)
+                $(target_expr)
                 end
             """)
+    elseif form == 2
+        # Form 2 always creates a new Variable
+        # We try to update the id after the Variable has been created
+        if haskey(options, :id)
+            # Verify that the user-specified id is available
+            before_node_expr = "!haskey(currentGraph().variables, $(options[:id])) || error(\"Specified id is already assigned to another Variable\")"
+            var_id_expr = "$(options[:id])"
+        elseif haskey(options, :id_suggestion)
+            before_node_expr = ""
+            var_id_expr = "!haskey(currentGraph().variables, $(options[:id_suggestion])) ? $(options[:id_suggestion]) : :auto"
+        else
+            before_node_expr = ""
+            var_id_expr = ":auto"
+        end
+
+        # Build total expression
+        expr = parse("""
+                begin
+                $(before_node_expr)
+                var_id = $(var_id_expr)
+                $(expr_def)
+                var_id = $(var_id_expr)
+                if var_id != :auto
+                    # update id of newly created Variable
+                    currentGraph().variables[var_id] = $(target_expr)
+                    delete!(currentGraph().variables, $(target_expr).id)
+                    $(target_expr).id = var_id
+                end
+                $(target_expr)
+                end
+            """)
+    elseif form == 3
+        # Determine Variable id
+        if haskey(options, :id)
+            var_id_expr = "$(options[:id])"
+        elseif haskey(options, :id_suggestion)
+            var_id_expr = "!haskey(currentGraph().variables, $(options[:id_suggestion])) ? $(options[:id_suggestion]) : ForneyLab.generateId(Variable)"
+        else
+            var_id_expr = "ForneyLab.generateId(Variable)"
+        end
+
+        expr = parse("$(target_expr) = Variable(id=$(var_id_expr))")
+    else
+        error("Unsupported usage of @RV.")
+    end
+
     return esc(expr)
+end
+
+macro RV(expr::Any)
+    # No options
+    :(@RV [] $(esc(expr)))
 end
 
 """

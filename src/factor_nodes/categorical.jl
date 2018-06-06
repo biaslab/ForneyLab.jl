@@ -4,13 +4,13 @@ export Categorical
 Description:
     Categorical factor node
 
-    The categorical node defines a one-dimensional probability 
+    The categorical node defines a one-dimensional probability
     distribution over the normal basis vectors of dimension d
-    
+
     out ∈ {0, 1}^d where Σ_k out_k = 1
     p ∈ [0, 1]^d, where Σ_k p_k = 1
-    
-    f(out, p) = Cat(out | p) 
+
+    f(out, p) = Cat(out | p)
               = Π_i p_i^{out_i}
 
 Interfaces:
@@ -25,7 +25,8 @@ mutable struct Categorical <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function Categorical(out::Variable, p::Variable; id=generateId(Categorical))
+    function Categorical(out, p; id=generateId(Categorical))
+        @ensureVariables(out, p)
         self = new(id, Array{Interface}(2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
@@ -54,11 +55,11 @@ unsafeMeanVector(dist::ProbabilityDistribution{Univariate, Categorical}) = deepc
 
 function sample(dist::ProbabilityDistribution{Univariate, Categorical})
     isProper(dist) || error("Cannot sample from improper distribution $dist")
-    
+
     p = dist.params[:p]
     p_sum = cumsum(p);
     z = rand()
-    
+
     d = length(p)
     idx = 0
     for i = 1:d
@@ -68,10 +69,10 @@ function sample(dist::ProbabilityDistribution{Univariate, Categorical})
         end
         idx = d
     end
-    
-    x = zeros(Float64, d)
+
+    x = spzeros(Float64, d)
     x[idx] = 1.0
-    
+
     return x
 end
 

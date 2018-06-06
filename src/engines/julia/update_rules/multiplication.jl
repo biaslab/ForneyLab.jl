@@ -80,7 +80,9 @@ function ruleSPMultiplicationIn1GVP(msg_out::Message{Gaussian, Multivariate},
 
     ensureParameters!(msg_out.dist, (:xi, :w))
     a = msg_a.dist.params[:m]
-    Message(Multivariate, Gaussian, xi=a'*msg_out.dist.params[:xi], w=a'*msg_out.dist.params[:w]*a)
+    w_q = a'*msg_out.dist.params[:w]*a
+    w_q = w_q + tiny*diageye(size(w_q)[1]) # Ensure precision is always invertible
+    Message(Multivariate, Gaussian, xi=a'*msg_out.dist.params[:xi], w=w_q)
 end
 
 ruleSPMultiplicationOutVPP(msg_out::Void, msg_in1::Message{PointMass, Multivariate}, msg_a::Message{PointMass, MatrixVariate}) = Message(Multivariate, PointMass, m=msg_a.dist.params[:m]*msg_in1.dist.params[:m])

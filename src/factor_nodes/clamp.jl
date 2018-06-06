@@ -1,4 +1,4 @@
-export Clamp, constant, placeholder
+export Clamp, constant, placeholder, @ensureVariables
 
 """
 Description:
@@ -52,6 +52,18 @@ function constant(value::Any; id=generateId(Clamp{variateType(value)}))
 end
 
 """
+@ensureVariables(...) casts all non-Variable arguments to Variable through constant(arg).
+"""
+macro ensureVariables(args...)
+    lines = ["isa($arg, Variable) || ($arg = constant($arg))" for arg in args]
+    expr = "begin\n"
+    expr *= join(lines, "\n")
+    expr *= "end"
+
+    return esc(parse(expr))
+end
+
+"""
 `placeholder(...)` creates a `Clamp` node and registers this node
 as a data placeholder with the current graph.
 
@@ -100,7 +112,7 @@ function placeholder(   buffer_id::Symbol;
                         default::Any=nothing,
                         datatype::DataType=Float64,
                         dims::Tuple=(),
-                        var_id=generateId(Variable))
+                        var_id=buffer_id)
 
     var = Variable(id=var_id)
     return placeholder(var, buffer_id, index=index, default=default, datatype=datatype, dims=dims)

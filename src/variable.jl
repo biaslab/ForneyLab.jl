@@ -1,6 +1,5 @@
-export 
-Variable, 
-@RV
+export
+Variable
 
 """
 A Variable encompasses one or more edges in a FactorGraph.
@@ -14,13 +13,6 @@ mutable struct Variable <: AbstractVariable
         addVariable!(currentGraph(), self)
         return self
     end
-end
-
-macro RV(expr::Expr)
-    if (expr.head === :call && expr.args[1] === :(~))
-        expr.head = :macrocall; expr.args[1] = Symbol("@~")
-    end
-    return esc(expr)
 end
 
 """

@@ -6,7 +6,7 @@ export Transition
 """
 Description:
 
-    The transition node models a transition between discrete 
+    The transition node models a transition between discrete
     random variables, with node function
 
     f(out, in1, a) = Cat(out | a*in1)
@@ -26,7 +26,8 @@ mutable struct Transition <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function Transition(out::Variable, in1::Variable, a::Variable; id=generateId(Transition))
+    function Transition(out, in1, a; id=generateId(Transition))
+        @ensureVariables(out, in1, a)
         self = new(id, Array{Interface}(3), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

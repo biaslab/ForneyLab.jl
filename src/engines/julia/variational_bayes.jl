@@ -12,6 +12,16 @@ function variationalAlgorithm(q_factors::Vector{RecognitionFactor}; file::String
     return algo
 end
 variationalAlgorithm(q_factor::RecognitionFactor; file::String="", name::String="") = variationalAlgorithm([q_factor]; file=file, name=name)
+function variationalAlgorithm(q::RecognitionFactorization=currentRecognitionFactorization())
+    algos = "begin\n\n"
+    for (id, q_factor) in q.recognition_factors
+        algos *= variationalAlgorithm(q_factor, name="$(id)")
+        algos *= "\n\n"
+    end
+    algos *= "\nend # block"
+    
+    return algos
+end
 
 """
 Construct argument code for naive VB updates
@@ -19,10 +29,43 @@ Construct argument code for naive VB updates
 collectInbounds{T<:NaiveVariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) = collectNaiveVariationalNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
 
 """
-Construct the inbound code that computes the message for `entry`.
+Construct the inbound code that computes the message for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
-function collectInbounds{T<:StructuredVariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
+function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
+    # Collect inbounds
+    inbounds = String[]
+    for node_interface in entry.interface.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        partner_node = inbound_interface.node
+        if node_interface == entry.interface
+            # Ignore marginal of outbound edge
+            push!(inbounds, "nothing")
+        elseif isa(partner_node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, marginalString(partner_node))
+        else
+            # Collect marginal from marginal dictionary
+            push!(inbounds, "marginals[:$(node_interface.edge.variable.id)]")
+        end
+    end
+
+    return inbounds
+end
+
+
+"""
+Construct argument code for structured VB updates
+"""
+collectInbounds{T<:StructuredVariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) = collectStructuredVariationalNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
+
+"""
+Construct the inbound code that computes the message for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
+Returns a vector with inbounds that correspond with required interfaces.
+"""
+function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
     # Collect inbounds
     inbounds = String[]
     entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
@@ -56,36 +99,10 @@ function collectInbounds{T<:StructuredVariationalRule}(entry::ScheduleEntry, ::T
     return inbounds
 end
 
-"""
-Construct the inbound code that computes the message for `entry`. Allows for
-overloading and for a user the define custom node-specific inbounds collection.
-Returns a vector with inbounds that correspond with required interfaces.
-"""
-function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
-    # Collect inbounds
-    inbounds = String[]
-    for node_interface in entry.interface.node.interfaces
-        inbound_interface = ultimatePartner(node_interface)
-        partner_node = inbound_interface.node
-        if node_interface == entry.interface
-            # Ignore marginal of outbound edge
-            push!(inbounds, "nothing")
-        elseif isa(partner_node, Clamp)
-            # Hard-code marginal of constant node in schedule
-            push!(inbounds, marginalString(partner_node))
-        else
-            # Collect marginal from marginal dictionary
-            push!(inbounds, "marginals[:$(node_interface.edge.variable.id)]")
-        end
-    end
-
-    return inbounds
-end
-
-function freeEnergyAlgorithm(; name::String="")
+function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="")
     # Collect nodes connected to external edges
     nodes_connected_to_external_edges = Set{FactorNode}()
-    for rf in collect(values(current_recognition_factorization.recognition_factors))
+    for rf in collect(values(q.recognition_factors))
         union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(rf))
     end
 
@@ -102,7 +119,7 @@ function freeEnergyAlgorithm(; name::String="")
         outbound_interface = node.interfaces[1]
         outbound_partner = ultimatePartner(outbound_interface)
         if !(outbound_partner == nothing) && !isa(outbound_partner.node, Clamp) # Differential entropy is required
-            dict = current_recognition_factorization.node_edge_to_cluster
+            dict = q.node_edge_to_cluster
             if haskey(dict, (node, outbound_interface.edge)) # Outbound edge is part of a cluster
                 inbounds = collectConditionalDifferentialEntropyInbounds(node) # Collect conditioning terms for conditional differential entropy
                 inbounds_str = join(inbounds, ", ")
