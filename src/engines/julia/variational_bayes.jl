@@ -99,37 +99,54 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
     return inbounds
 end
 
-function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="")
-    # Collect nodes connected to external edges
-    nodes_connected_to_external_edges = Set{FactorNode}()
-    for rf in collect(values(q.recognition_factors))
-        union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(rf))
-    end
+function isCollider(node::FactorNode)
+    local_rf_ids = localRecognitionFactorIds(node)
 
+    outbound_rf = local_rf_ids[1]
+    parents = 0
+    for (i, iface) in enumerate(node.interfaces)
+        rf = local_rf_ids[i]
+        if i > 1
+            partner = ultimatePartner(iface)
+            partner_node = partner.node
+            if (rf==outbound_rf) && !isa(partner_node, Clamp) && (partner==partner_node.interfaces[1])
+                parents += 1
+            end
+        end
+    end        
+
+    return (parents > 1)
+end
+
+function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="")
     # Write evaluation function for free energy
     energy_block = ""
     entropy_block = ""
-    for node in sort(collect(nodes_connected_to_external_edges))
-        # Construct average energy term
-        node_str = replace(string(typeof(node)),"ForneyLab.", "") # Remove module prefixes
-        inbounds = collectAverageEnergyInbounds(node)
-        inbounds_str = join(inbounds, ", ")
-        energy_block *= "F += averageEnergy($node_str, $inbounds_str)\n"
 
-        # Construct differential entropy term
-        outbound_interface = node.interfaces[1]
-        outbound_partner = ultimatePartner(outbound_interface)
-        if !(outbound_partner == nothing) && !isa(outbound_partner.node, Clamp) # Differential entropy is required
-            dict = q.node_edge_to_cluster
-            if haskey(dict, (node, outbound_interface.edge)) # Outbound edge is part of a cluster
-                inbounds = collectConditionalDifferentialEntropyInbounds(node) # Collect conditioning terms for conditional differential entropy
-                inbounds_str = join(inbounds, ", ")
-                entropy_block *= "F -= conditionalDifferentialEntropy($inbounds_str)\n"
-            else
-                marginal_idx = outbound_interface.edge.variable.id
-                entropy_block *= "F -= differentialEntropy(marginals[:$marginal_idx])\n"
-            end
-        end        
+    for node in sort(collect(values(q.graph.nodes)))
+        isCollider(node) && error("Cannot construct localized free energy algorithm. Recognition distribution does not factor because node with id :$(node.id) introduces conditional dependencies in the posterior. Consider wrapping this node in a composite.")
+        if !isa(node, DeltaFactor) # Non-deterministic node, add to free energy functional
+            # Construct average energy term
+            node_str = replace(string(typeof(node)),"ForneyLab.", "") # Remove module prefixes
+            inbounds = collectAverageEnergyInbounds(node)
+            inbounds_str = join(inbounds, ", ")
+            energy_block *= "F += averageEnergy($node_str, $inbounds_str)\n"
+
+            # Construct differential entropy term
+            outbound_interface = node.interfaces[1]
+            outbound_partner = ultimatePartner(outbound_interface)
+            if !(outbound_partner == nothing) && !isa(outbound_partner.node, Clamp) # Differential entropy is required
+                dict = q.node_edge_to_cluster
+                if haskey(dict, (node, outbound_interface.edge)) # Outbound edge is part of a cluster
+                    inbounds = collectConditionalDifferentialEntropyInbounds(node) # Collect conditioning terms for conditional differential entropy
+                    inbounds_str = join(inbounds, ", ")
+                    entropy_block *= "F -= conditionalDifferentialEntropy($inbounds_str)\n"
+                else
+                    marginal_idx = outbound_interface.edge.variable.id
+                    entropy_block *= "F -= differentialEntropy(marginals[:$marginal_idx])\n"
+                end
+            end        
+        end
     end
 
     # Combine blocks
