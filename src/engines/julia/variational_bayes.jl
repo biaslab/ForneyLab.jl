@@ -99,33 +99,17 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
     return inbounds
 end
 
-function isCollider(node::FactorNode)
-    local_rf_ids = localRecognitionFactorIds(node)
-
-    outbound_rf = local_rf_ids[1]
-    parents = 0
-    for (i, iface) in enumerate(node.interfaces)
-        rf = local_rf_ids[i]
-        if i > 1
-            partner = ultimatePartner(iface)
-            partner_node = partner.node
-            if (rf==outbound_rf) && !isa(partner_node, Clamp) && (partner==partner_node.interfaces[1])
-                parents += 1
-            end
-        end
-    end        
-
-    return (parents > 1)
-end
-
 function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="")
     # Write evaluation function for free energy
     energy_block = ""
     entropy_block = ""
 
+    for rf in values(q.recognition_factors)
+        hasCollider(rf) && error("Cannot construct localized free energy algorithm. Recognition distribution for factor with id :$(rf.id) does not factor according to local graph structure. This is likely due to a conditional dependence in the posterior distribution (see Bishop p.485). Consider wrapping conditionally dependent variables in a composite node.")
+    end
+
     for node in sort(collect(values(q.graph.nodes)))
-        isCollider(node) && error("Cannot construct localized free energy algorithm. Recognition distribution does not factor because node with id :$(node.id) introduces conditional dependencies in the posterior. Consider wrapping this node in a composite.")
-        if !isa(node, DeltaFactor) # Non-deterministic node, add to free energy functional
+        if !isa(node, DeltaFactor) # Non-deterministic factor, add to free energy functional
             # Construct average energy term
             node_str = replace(string(typeof(node)),"ForneyLab.", "") # Remove module prefixes
             inbounds = collectAverageEnergyInbounds(node)
