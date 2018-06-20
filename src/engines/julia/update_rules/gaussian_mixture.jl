@@ -14,7 +14,7 @@ function ruleVBGaussianMixtureM(dist_out::ProbabilityDistribution,
     k = findfirst(dist_means .== nothing) # Find factor
     z_bar = clamp.(unsafeMeanVector(dist_switch), tiny, 1.0 - tiny)
 
-    return Message(Univariate, Gaussian, m=unsafeMean(dist_out), w=z_bar[k]*unsafeMean(dist_precs[k]))
+    return Message(Univariate, GaussianMeanPrecision, m=unsafeMean(dist_out), w=z_bar[k]*unsafeMean(dist_precs[k]))
 end
 
 function ruleVBGaussianMixtureM(dist_out::ProbabilityDistribution,
@@ -26,21 +26,23 @@ function ruleVBGaussianMixtureM(dist_out::ProbabilityDistribution,
     k = findfirst(dist_means .== nothing) # Find factor
     z_bar = clamp.(unsafeMeanVector(dist_switch), tiny, 1.0 - tiny)
 
-    return Message(Multivariate, Gaussian, m=unsafeMean(dist_out), w=z_bar[k]*unsafeMean(dist_precs[k]))
+    return Message(Multivariate, GaussianMeanPrecision, m=unsafeMean(dist_out), w=z_bar[k]*unsafeMean(dist_precs[k]))
 end
 
 function ruleVBGaussianMixtureW(dist_out::ProbabilityDistribution,
                                 dist_switch::ProbabilityDistribution,
                                 dist_factors::Vararg{Union{Void, ProbabilityDistribution{Univariate}}})
     # Univariate update
-    dist_means = collect(dist_factors[1:2:end])
+    dist_means = collect(dist_factors[1:2:end]) # TODO: make more efficient use of conversions to compute m and v in one go
     dist_precs = collect(dist_factors[2:2:end])
     k = findfirst(dist_precs .== nothing) # Find factor
+    (m_mean_k, v_mean_k) = unsafeMeanCov(dist_means[k])
+    (m_out, v_out) = unsafeMeanCov(dist_out)
     z_bar = unsafeMeanVector(dist_switch)
 
     return Message(Univariate, Gamma,
         a = 1.0 + 0.5*z_bar[k],
-        b = 0.5*z_bar[k]*( (unsafeMean(dist_out) - unsafeMean(dist_means[k]))^2 + unsafeCov(dist_out) + unsafeCov(dist_means[k]) ) )
+        b = 0.5*z_bar[k]*(v_out + v_mean_k + (m_out - m_mean_k)^2))
 end
 
 function ruleVBGaussianMixtureW(dist_out::ProbabilityDistribution,
@@ -50,12 +52,14 @@ function ruleVBGaussianMixtureW(dist_out::ProbabilityDistribution,
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])
     k = findfirst(dist_precs .== nothing) # Find factor
+    (m_mean_k, v_mean_k) = unsafeMeanCov(dist_means[k])
+    (m_out, v_out) = unsafeMeanCov(dist_out)
     z_bar = unsafeMeanVector(dist_switch)
     d = dims(dist_means[1])
 
     return Message(MatrixVariate, Wishart,
         nu = 1.0 + z_bar[k] + d,
-        v  = cholinv( z_bar[k]*( (unsafeMean(dist_out) - unsafeMean(dist_means[k]))*(unsafeMean(dist_out) - unsafeMean(dist_means[k]))' + unsafeCov(dist_out) + unsafeCov(dist_means[k]) ) ))
+        v  = cholinv(z_bar[k]*( v_out + v_mean_k + (m_out - m_mean_k)*(m_out - m_mean_k)')))
 end
 
 function softmax(v::Vector{Float64})
@@ -109,7 +113,7 @@ function ruleVBGaussianMixtureOut(  dist_out::Any,
         xi += unsafeMean(dist_precs[k])*unsafeMean(dist_means[k])*z_bar[k]
     end
 
-    return Message(Univariate, Gaussian, xi=xi, w=w)
+    return Message(Univariate, GaussianWeightedMeanPrecision, xi=xi, w=w)
 end
 
 function ruleVBGaussianMixtureOut(  dist_out::Any,
@@ -128,5 +132,5 @@ function ruleVBGaussianMixtureOut(  dist_out::Any,
         xi += unsafeMean(dist_precs[k])*unsafeMean(dist_means[k])*z_bar[k]
     end
 
-    return Message(Multivariate, Gaussian, xi=xi, w=w)
+    return Message(Multivariate, GaussianWeightedMeanPrecision, xi=xi, w=w)
 end    

@@ -9,12 +9,12 @@ function matchPermutedCanonical(input_types::Vector{Type}, outbound_type::Type)
             message_inputs += 1
         end
     end
-    
+
     return (void_inputs == 1) && (message_inputs == 2)
 end
 
 mutable struct SPEqualityGaussian <: SumProductRule{Equality} end
-outboundType(::Type{SPEqualityGaussian}) = Message{Gaussian}
+outboundType(::Type{SPEqualityGaussian}) = Message{GaussianWeightedMeanPrecision}
 isApplicable(::Type{SPEqualityGaussian}, input_types::Vector{Type}) = matchPermutedCanonical(input_types, Message{Gaussian})
 
 mutable struct SPEqualityGammaWishart <: SumProductRule{Equality} end
@@ -52,6 +52,6 @@ function isApplicable(::Type{SPEqualityPointMass}, input_types::Vector{Type})
             point_mass_inputs += 1
         end
     end
-    
+
     return (void_inputs == 1) && (soft_inputs == 1) && (point_mass_inputs == 1)
 end

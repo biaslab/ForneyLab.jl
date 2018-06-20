@@ -25,7 +25,7 @@ end
     @test outboundType(SPExponentialOutVG) == Message{LogNormal}
     @test isApplicable(SPExponentialOutVG, [Void, Message{Gaussian}])
 
-    @test ruleSPExponentialOutVG(nothing, Message(Univariate, Gaussian, m=1.0, v=2.0)) == Message(Univariate, LogNormal, m=1.0, s=2.0)
+    @test ruleSPExponentialOutVG(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=2.0)) == Message(Univariate, LogNormal, m=1.0, s=2.0)
 end
 
 @testset "SPExponentialOutVP" begin
@@ -38,10 +38,10 @@ end
 
 @testset "SPExponentialIn1LV" begin
     @test SPExponentialIn1LV <: SumProductRule{Exponential}
-    @test outboundType(SPExponentialIn1LV) == Message{Gaussian}
+    @test outboundType(SPExponentialIn1LV) == Message{GaussianMeanVariance}
     @test isApplicable(SPExponentialIn1LV, [Message{LogNormal}, Void])
 
-    @test ruleSPExponentialIn1LV(Message(Univariate, LogNormal, m=1.0, s=2.0), nothing) == Message(Univariate, Gaussian, m=1.0, v=2.0)
+    @test ruleSPExponentialIn1LV(Message(Univariate, LogNormal, m=1.0, s=2.0), nothing) == Message(Univariate, GaussianMeanVariance, m=1.0, v=2.0)
 end
 
 @testset "SPExponentialIn1PV" begin

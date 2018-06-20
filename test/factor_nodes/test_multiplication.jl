@@ -27,23 +27,23 @@ end
 
 @testset "SPMultiplicationOutVGP" begin
     @test SPMultiplicationOutVGP <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationOutVGP) == Message{Gaussian}
+    @test outboundType(SPMultiplicationOutVGP) == Message{GaussianMeanVariance}
     @test isApplicable(SPMultiplicationOutVGP, [Void, Message{Gaussian}, Message{PointMass}]) 
 
-    @test ruleSPMultiplicationOutVGP(nothing, Message(Univariate, Gaussian, m=1.0, v=3.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian, m=2.0, v=12.0)
-    @test ruleSPMultiplicationOutVGP(nothing, Message(Univariate, Gaussian, m=1.0, v=3.0), Message(Multivariate, PointMass, m=[2.0])) == Message(Multivariate, Gaussian, m=[2.0], v=mat(12.0))
-    @test ruleSPMultiplicationOutVGP(nothing, Message(Multivariate, Gaussian, m=[1.0], v=mat(3.0)), Message(Univariate, PointMass, m=2.0)) == Message(Multivariate, Gaussian, m=[2.0], v=mat(12.0))
-    @test ruleSPMultiplicationOutVGP(nothing, Message(Multivariate, Gaussian, m=[1.0], v=mat(3.0)), Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, Gaussian, m=[2.0], v=mat(12.0))
+    @test ruleSPMultiplicationOutVGP(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianMeanVariance, m=2.0, v=12.0)
+    @test ruleSPMultiplicationOutVGP(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0), Message(Multivariate, PointMass, m=[2.0])) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
+    @test ruleSPMultiplicationOutVGP(nothing, Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(3.0)), Message(Univariate, PointMass, m=2.0)) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
+    @test ruleSPMultiplicationOutVGP(nothing, Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(3.0)), Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
 end
 
 @testset "SPMultiplicationOutVPG" begin
     @test SPMultiplicationOutVPG <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationOutVPG) == Message{Gaussian}
+    @test outboundType(SPMultiplicationOutVPG) == Message{GaussianMeanVariance}
     @test isApplicable(SPMultiplicationOutVPG, [Void, Message{PointMass}, Message{Gaussian}]) 
 
-    @test ruleSPMultiplicationOutVPG(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, Gaussian, m=1.0, v=3.0)) == Message(Univariate, Gaussian, m=2.0, v=12.0)
-    @test ruleSPMultiplicationOutVPG(nothing, Message(Univariate, PointMass, m=2.0), Message(Multivariate, Gaussian, m=[1.0], v=mat(3.0))) == Message(Multivariate, Gaussian, m=[2.0], v=mat(12.0))
-    @test ruleSPMultiplicationOutVPG(nothing, Message(Multivariate, PointMass, m=[2.0]), Message(Univariate, Gaussian, m=1.0, v=3.0)) == Message(Multivariate, Gaussian, m=[2.0], v=mat(12.0))
+    @test ruleSPMultiplicationOutVPG(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0)) == Message(Univariate, GaussianMeanVariance, m=2.0, v=12.0)
+    @test ruleSPMultiplicationOutVPG(nothing, Message(Univariate, PointMass, m=2.0), Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(3.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
+    @test ruleSPMultiplicationOutVPG(nothing, Message(Multivariate, PointMass, m=[2.0]), Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0)) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
 end
 
 @testset "SPMultiplicationOutVPP" begin
@@ -57,12 +57,11 @@ end
 
 @testset "SPMultiplicationIn1GVP" begin
     @test SPMultiplicationIn1GVP <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationIn1GVP) == Message{Gaussian}
+    @test outboundType(SPMultiplicationIn1GVP) == Message{GaussianWeightedMeanPrecision}
     @test isApplicable(SPMultiplicationIn1GVP, [Message{Gaussian}, Void, Message{PointMass}]) 
 
-    @test ruleSPMultiplicationIn1GVP(Message(Univariate, Gaussian, m=1.0, v=3.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gaussian, m=0.5, v=0.75)
-    # @test ruleSPMultiplicationIn1GVP(Message(Multivariate, Gaussian, m=[1.0], v=mat(3.0)), nothing, Message(Multivariate, PointMass, m=[2.0])) == Message(Univariate, Gaussian, m=0.5, v=0.75)
-    @test ruleSPMultiplicationIn1GVP(Message(Multivariate, Gaussian, m=[1.0], v=mat(3.0)), nothing, Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, Gaussian, m=[0.49999999999962497], v=mat(0.7499999999994372))
+    @test ruleSPMultiplicationIn1GVP(Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=3.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=12.0)
+    @test ruleSPMultiplicationIn1GVP(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(3.0)), nothing, Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(12.0 + tiny))
 end
 
 @testset "SPMultiplicationIn1PVP" begin
@@ -76,11 +75,10 @@ end
 
 @testset "SPMultiplicationAGPV" begin
     @test SPMultiplicationAGPV <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationAGPV) == Message{Gaussian}
+    @test outboundType(SPMultiplicationAGPV) == Message{GaussianWeightedMeanPrecision}
     @test isApplicable(SPMultiplicationAGPV, [Message{Gaussian}, Message{PointMass}, Void]) 
 
-    @test ruleSPMultiplicationAGPV(Message(Univariate, Gaussian, m=1.0, v=3.0), Message(Univariate, PointMass, m=2.0), nothing) == Message(Univariate, Gaussian, m=0.5, v=0.75)
-    # @test ruleSPMultiplicationAGPV(Message(Multivariate, Gaussian, m=[1.0], v=mat(3.0)), Message(Multivariate, PointMass, m=[2.0]), nothing) == Message(Univariate, Gaussian, m=0.5, v=0.75)
+    @test ruleSPMultiplicationAGPV(Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=3.0), Message(Univariate, PointMass, m=2.0), nothing) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=12.0)
 end
 
 @testset "SPMultiplicationAPPV" begin

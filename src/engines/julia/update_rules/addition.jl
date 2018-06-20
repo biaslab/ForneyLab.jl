@@ -12,58 +12,110 @@ ruleSPAdditionIn2PGV,
 ruleSPAdditionIn2GPV,
 ruleSPAdditionIn2PPV
 
-function ruleSPAdditionOutVGG{V<:Union{Univariate, Multivariate}}(  msg_out::Void,
-                                                                    msg_in1::Message{Gaussian, V},
-                                                                    msg_in2::Message{Gaussian, V})
+function ruleSPAdditionOutVGG{F1<:Gaussian, F2<:Gaussian, V<:Union{Univariate, Multivariate}}(
+    msg_out::Void,
+    msg_in1::Message{F1, V},
+    msg_in2::Message{F2, V})
 
-    ensureParameters!(msg_in1.dist, (:m, :v))
-    ensureParameters!(msg_in2.dist, (:m, :v))
+    d_in1 = convert(ProbabilityDistribution{V, GaussianMeanVariance}, msg_in1.dist)
+    d_in2 = convert(ProbabilityDistribution{V, GaussianMeanVariance}, msg_in2.dist)
 
-    Message(V, Gaussian, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m], v=msg_in1.dist.params[:v] + msg_in2.dist.params[:v])
+    Message(V, GaussianMeanVariance, m=d_in1.params[:m] + d_in2.params[:m], v=d_in1.params[:v] + d_in2.params[:v])
 end
 
-function ruleSPAdditionIn2GGV{V<:Union{Univariate, Multivariate}}(  msg_out::Message{Gaussian, V},
-                                                                    msg_in1::Message{Gaussian, V},
-                                                                    msg_in2::Void)
+function ruleSPAdditionIn2GGV{F1<:Gaussian, F2<:Gaussian, V<:Union{Univariate, Multivariate}}(
+    msg_out::Message{F1, V},
+    msg_in1::Message{F2, V},
+    msg_in2::Void)
 
-    ensureParameters!(msg_in1.dist, (:m, :v))
-    ensureParameters!(msg_out.dist, (:m, :v))
+    d_in1 = convert(ProbabilityDistribution{V, GaussianMeanVariance}, msg_in1.dist)
+    d_out = convert(ProbabilityDistribution{V, GaussianMeanVariance}, msg_out.dist)
 
-    Message(V, Gaussian, m=msg_out.dist.params[:m] - msg_in1.dist.params[:m], v=msg_out.dist.params[:v] + msg_in1.dist.params[:v])
+    Message(V, GaussianMeanVariance, m=d_out.params[:m] - d_in1.params[:m], v=d_out.params[:v] + d_in1.params[:v])
 end
 
-ruleSPAdditionIn1GVG{V<:Union{Univariate, Multivariate}}(msg_out::Message{Gaussian, V}, ::Void, msg_in2::Message{Gaussian, V}) = ruleSPAdditionIn2GGV(msg_out, msg_in2, nothing)
+function ruleSPAdditionIn1GVG{F1<:Gaussian, F2<:Gaussian, V<:Union{Univariate, Multivariate}}(
+    msg_out::Message{F1, V},
+    ::Void, 
+    msg_in2::Message{F2, V})
 
-function ruleSPAdditionOutVGP{V<:Union{Univariate, Multivariate}}(  msg_out::Void,
-                                                                    msg_in1::Message{Gaussian, V},
-                                                                    msg_in2::Message{PointMass, V})
-
-    ensureParameters!(msg_in1.dist, (:m, :v))
-
-    Message(V, Gaussian, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m], v=msg_in1.dist.params[:v])
+    ruleSPAdditionIn2GGV(msg_out, msg_in2, nothing)
 end
-ruleSPAdditionOutVPG{V<:Union{Univariate, Multivariate}}(::Void, msg_in1::Message{PointMass, V}, msg_in2::Message{Gaussian, V}) = ruleSPAdditionOutVGP(nothing, msg_in2, msg_in1)
 
-function ruleSPAdditionIn1PVG{V<:Union{Univariate, Multivariate}}(  msg_out::Message{PointMass, V},
-                                                                    msg_in1::Void,
-                                                                    msg_in2::Message{Gaussian, V})
+function ruleSPAdditionOutVGP{F<:Gaussian, V<:Union{Univariate, Multivariate}}(  
+    msg_out::Void,
+    msg_in1::Message{F, V},
+    msg_in2::Message{PointMass, V})
 
-    ensureParameters!(msg_in2.dist, (:m, :v))
+    d_in1 = convert(ProbabilityDistribution{V, GaussianMeanVariance}, msg_in1.dist)
 
-    Message(V, Gaussian, m=msg_out.dist.params[:m] - msg_in2.dist.params[:m], v=msg_in2.dist.params[:v])
+    Message(V, GaussianMeanVariance, m=d_in1.params[:m] + msg_in2.dist.params[:m], v=d_in1.params[:v])
 end
-ruleSPAdditionIn2PGV{V<:Union{Univariate, Multivariate}}(msg_out::Message{PointMass, V}, msg_in1::Message{Gaussian, V}, msg_in2::Void) = ruleSPAdditionIn1PVG(msg_out, nothing, msg_in1)
 
-function ruleSPAdditionIn1GVP{V<:Union{Univariate, Multivariate}}(  msg_out::Message{Gaussian, V},
-                                                                    msg_in1::Void,
-                                                                    msg_in2::Message{PointMass, V})
+function ruleSPAdditionOutVPG{F<:Gaussian, V<:Union{Univariate, Multivariate}}(
+    ::Void, 
+    msg_in1::Message{PointMass, V}, 
+    msg_in2::Message{F, V})
 
-    ensureParameters!(msg_out.dist, (:m, :v))
-
-    Message(V, Gaussian, m=msg_out.dist.params[:m] - msg_in2.dist.params[:m], v=msg_out.dist.params[:v])
+    ruleSPAdditionOutVGP(nothing, msg_in2, msg_in1)
 end
-ruleSPAdditionIn2GPV{V<:Union{Univariate, Multivariate}}(msg_out::Message{Gaussian, V}, msg_in1::Message{PointMass, V}, msg_in2::Void) = ruleSPAdditionIn1GVP(msg_out, nothing, msg_in1)
 
-ruleSPAdditionOutVPP{V<:Union{Univariate, Multivariate}}(msg_out::Void, msg_in1::Message{PointMass, V}, msg_in2::Message{PointMass, V}) = Message(V, PointMass, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m])
-ruleSPAdditionIn2PPV{V<:Union{Univariate, Multivariate}}(msg_out::Message{PointMass, V}, msg_in1::Message{PointMass, V}, msg_in2::Void) = Message(V, PointMass, m=msg_out.dist.params[:m] - msg_in1.dist.params[:m])
-ruleSPAdditionIn1PVP{V<:Union{Univariate, Multivariate}}(msg_out::Message{PointMass, V}, msg_in1::Void, msg_in2::Message{PointMass, V}) = Message(V, PointMass, m=msg_out.dist.params[:m] - msg_in2.dist.params[:m])
+function ruleSPAdditionIn1PVG{F<:Gaussian, V<:Union{Univariate, Multivariate}}(  
+    msg_out::Message{PointMass, V},
+    msg_in1::Void,
+    msg_in2::Message{F, V})
+
+    d_in2 = convert(ProbabilityDistribution{V, GaussianMeanVariance}, msg_in2.dist)
+
+    Message(V, GaussianMeanVariance, m=msg_out.dist.params[:m] - d_in2.params[:m], v=d_in2.params[:v])
+end
+
+function ruleSPAdditionIn2PGV{F<:Gaussian, V<:Union{Univariate, Multivariate}}(
+    msg_out::Message{PointMass, V}, 
+    msg_in1::Message{F, V}, 
+    msg_in2::Void)
+    
+    ruleSPAdditionIn1PVG(msg_out, nothing, msg_in1)
+end
+
+function ruleSPAdditionIn1GVP{F<:Gaussian, V<:Union{Univariate, Multivariate}}(  
+    msg_out::Message{F, V},
+    msg_in1::Void,
+    msg_in2::Message{PointMass, V})
+
+    d_out = convert(ProbabilityDistribution{V, GaussianMeanVariance}, msg_out.dist)
+
+    Message(V, GaussianMeanVariance, m=d_out.params[:m] - msg_in2.dist.params[:m], v=d_out.params[:v])
+end
+
+function ruleSPAdditionIn2GPV{F<:Gaussian, V<:Union{Univariate, Multivariate}}(
+    msg_out::Message{F, V}, 
+    msg_in1::Message{PointMass, V}, 
+    msg_in2::Void)
+
+    ruleSPAdditionIn1GVP(msg_out, nothing, msg_in1)
+end
+
+function ruleSPAdditionOutVPP{V<:Union{Univariate, Multivariate}}(
+    msg_out::Void, 
+    msg_in1::Message{PointMass, V}, 
+    msg_in2::Message{PointMass, V})
+
+    Message(V, PointMass, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m])
+end
+
+function ruleSPAdditionIn2PPV{V<:Union{Univariate, Multivariate}}(
+    msg_out::Message{PointMass, V}, 
+    msg_in1::Message{PointMass, V}, 
+    msg_in2::Void)
+
+    Message(V, PointMass, m=msg_out.dist.params[:m] - msg_in1.dist.params[:m])
+end
+
+function ruleSPAdditionIn1PVP{V<:Union{Univariate, Multivariate}}(
+    msg_out::Message{PointMass, V}, 
+    msg_in1::Void, 
+    msg_in2::Message{PointMass, V})
+
+    Message(V, PointMass, m=msg_out.dist.params[:m] - msg_in2.dist.params[:m])
+end

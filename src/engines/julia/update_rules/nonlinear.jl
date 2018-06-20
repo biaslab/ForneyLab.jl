@@ -13,55 +13,59 @@ function approximate(x_hat::Union{Float64, Vector{Float64}}, g::Function, J_g::F
     return (A, b)
 end
 
-function ruleSPNonlinearOutVG(  msg_out::Void,
-                                msg_in1::Message{Gaussian, Multivariate},
-                                g::Function,
-                                J_g::Function)
+function ruleSPNonlinearOutVG{F<:Gaussian}( msg_out::Void,
+                                            msg_in1::Message{F, Multivariate},
+                                            g::Function,
+                                            J_g::Function)
 
-    ensureParameters!(msg_in1.dist, (:m, :v))
-    (A, b) = approximate(msg_in1.dist.params[:m], g, J_g)
-    V_q = A*msg_in1.dist.params[:v]*A'
+    d_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
+
+    (A, b) = approximate(d_in1.params[:m], g, J_g)
+    V_q = A*d_in1.params[:v]*A'
     V_q = V_q + tiny*diageye(size(V_q)[1]) # Ensure V_q is invertible
 
-    Message(Multivariate, Gaussian, m=A*msg_in1.dist.params[:m] + b, v=V_q)
+    Message(Multivariate, GaussianMeanVariance, m=A*d_in1.params[:m] + b, v=V_q)
 end
 
-function ruleSPNonlinearOutVG(  msg_out::Void,
-                                msg_in1::Message{Gaussian, Univariate},
-                                g::Function,
-                                J_g::Function)
+function ruleSPNonlinearOutVG{F<:Gaussian}( msg_out::Void,
+                                            msg_in1::Message{F, Univariate},
+                                            g::Function,
+                                            J_g::Function)
 
-    ensureParameters!(msg_in1.dist, (:m, :v))
-    (a, b) = approximate(msg_in1.dist.params[:m], g, J_g)
-    v_q = clamp(msg_in1.dist.params[:v]*a^2, tiny, huge)
+    d_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
 
-    Message(Univariate, Gaussian, m=a*msg_in1.dist.params[:m] + b, v=v_q)
+    (a, b) = approximate(d_in1.params[:m], g, J_g)
+    v_q = clamp(d_in1.params[:v]*a^2, tiny, huge)
+
+    Message(Univariate, GaussianMeanVariance, m=a*d_in1.params[:m] + b, v=v_q)
 end
 
-function ruleSPNonlinearIn1GV(  msg_out::Message{Gaussian, Multivariate},
-                                msg_in1::Message, # Any type of message, used for determining the approximation point
-                                g::Function,
-                                J_g::Function)
+function ruleSPNonlinearIn1GV{F<:Gaussian}( msg_out::Message{F, Multivariate},
+                                            msg_in1::Message, # Any type of message, used for determining the approximation point
+                                            g::Function,
+                                            J_g::Function)
 
-    ensureParameters!(msg_out.dist, (:m, :w))
+    d_out = convert(ProbabilityDistribution{Multivariate, GaussianMeanPrecision}, msg_out.dist)
+
     (A, b) = approximate(unsafeMean(msg_in1.dist), g, J_g)
     A_inv = pinv(A)
-    W_q = A'*msg_out.dist.params[:w]*A
+    W_q = A'*d_out.params[:w]*A
     W_q = W_q + tiny*diageye(size(W_q)[1]) # Ensure W_q is invertible
     
-    Message(Multivariate, Gaussian, m=A_inv*(msg_out.dist.params[:m] - b), w=W_q)
+    Message(Multivariate, GaussianMeanPrecision, m=A_inv*(d_out.params[:m] - b), w=W_q)
 end
 
-function ruleSPNonlinearIn1GV(  msg_out::Message{Gaussian, Univariate},
-                                msg_in1::Message, # Any type of message, used for determining the approximation point
-                                g::Function,
-                                J_g::Function)
+function ruleSPNonlinearIn1GV{F<:Gaussian}( msg_out::Message{F, Univariate},
+                                            msg_in1::Message, # Any type of message, used for determining the approximation point
+                                            g::Function,
+                                            J_g::Function)
 
-    ensureParameters!(msg_out.dist, (:m, :w))
+    d_out = convert(ProbabilityDistribution{Univariate, GaussianMeanPrecision}, msg_out.dist)
+
     (a, b) = approximate(unsafeMean(msg_in1.dist), g, J_g)
-    w_q = clamp(msg_out.dist.params[:w]*a^2, tiny, huge)
+    w_q = clamp(d_out.params[:w]*a^2, tiny, huge)
     
-    Message(Univariate, Gaussian, m=(msg_out.dist.params[:m] - b)/a, w=w_q)
+    Message(Univariate, GaussianMeanPrecision, m=(d_out.params[:m] - b)/a, w=w_q)
 end
 
 

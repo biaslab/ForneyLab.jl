@@ -79,6 +79,10 @@ unsafeVar(dist::ProbabilityDistribution{Multivariate, PointMass}) = zeros(dims(d
 unsafeCov(dist::ProbabilityDistribution{Univariate, PointMass}) = 0.0
 unsafeCov(dist::ProbabilityDistribution{Multivariate, PointMass}) = zeros(dims(dist), dims(dist))
 
+unsafeMeanCov(dist::ProbabilityDistribution) = (unsafeMean(dist), unsafeCov(dist)) # Can be overloaded for efficiency
+
+unsafeWeightedMeanPrecision(dist::ProbabilityDistribution) = (unsafeWeightedMean(dist), unsafePrecision(dist)) # Can be overloaded for efficiency
+
 isProper{T<:VariateType}(::ProbabilityDistribution{T, PointMass}) = true
 
 """
