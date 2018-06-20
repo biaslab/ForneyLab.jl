@@ -32,15 +32,15 @@ end
 slug(::Type{Sigmoid}) = "σ"
 
 # Average energy functional
-function averageEnergy(::Type{Sigmoid}, marg_bin::ProbabilityDistribution{Univariate, Bernoulli}, marg_real::ProbabilityDistribution{Univariate, Gaussian})
-    ensureParameters!(marg_real, (:m, :v))
+function averageEnergy{F<:Gaussian}(::Type{Sigmoid}, marg_bin::ProbabilityDistribution{Univariate, Bernoulli}, marg_real::ProbabilityDistribution{Univariate, F})
+    (marg_real_m, marg_real_v) = unsafeMeanCov(marg_real)
     h = (x -> log(0.5*erf(x) + 0.5 + tiny)) # Add `tiny` for numeric stability
 
-    (1 - marg_bin.params[:p])*gaussianQuadrature(h, m=-marg_real.params[:m], v=marg_real.params[:v]) +
-    marg_bin.params[:p]*gaussianQuadrature(h, m=marg_real.params[:m], v=marg_real.params[:v])
+    (1 - marg_bin.params[:p])*gaussianQuadrature(h, m=-marg_real_m, v=marg_real_v) +
+    marg_bin.params[:p]*gaussianQuadrature(h, m=marg_real_m, v=marg_real_v)
 end
 
-function averageEnergy(::Type{Sigmoid}, marg_bin::ProbabilityDistribution{Univariate, PointMass}, marg_real::ProbabilityDistribution{Univariate, Gaussian})
+function averageEnergy{F<:Gaussian}(::Type{Sigmoid}, marg_bin::ProbabilityDistribution{Univariate, PointMass}, marg_real::ProbabilityDistribution{Univariate, F})
     p = mapToBernoulliParameterRange(marg_bin.params[:m])
 
     return averageEnergy(Sigmoid, ProbabilityDistribution(Univariate, Bernoulli, p=p), marg_real)
