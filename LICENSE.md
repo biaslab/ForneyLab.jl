@@ -1,9 +1,8 @@
-ForneyLab.jl is licensed under the MIT License:
+Copyright (c) 2018 GN Store Nord A/S 
 
-Copyright (c) 2018: BIASlab
+This software is distributed under a modified MIT license. The intention of this license is to allow free use of this software for any non-commercial purpose. For instance, any type of exploitation of this Software for academic purposes is granted. Permission for commercial applications of this software is not automatically granted. Anyone who wishes to exploit this software for a commercial purpose is requested to contact the copyright holder at (email) bdevries@gnresound.com.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+The formal terms of the license are as follows:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to use the Software for any non-commercial purpose, including the rights to use, copy, modify, merge, publish and/or distribute copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following condition: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. Furthermore, permission for exploitation of this Software for a commercial purpose is not automatically granted.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

@@ -7,15 +7,18 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
         outbound_types[entry.interface] = outboundType(entry.msg_update_rule)
     end
 
-    # Find breaker types from schedule outbound types
+    # Find breaker types and dimensions
     breaker_types = Dict()
+    breaker_dims = Dict()
     for entry in schedule
         if (entry.msg_update_rule <: ExpectationPropagationRule)
             partner = ultimatePartner(entry.interface)
             breaker_types[partner] = outbound_types[partner]
+            breaker_dims[partner] = 1
         elseif isa(entry.interface.node, Nonlinear)
             iface = ultimatePartner(entry.interface.node.interfaces[2])
             breaker_types[iface] = outbound_types[iface]
+            breaker_dims[iface] = entry.interface.node.dims[1]
         end
     end
 
@@ -26,8 +29,12 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
         code *= "messages = Array{Message}($n_messages)\n"
         for (breaker_site, breaker_type) in breaker_types
             msg_idx = interface_to_msg_idx[breaker_site]
-            breaker_str = replace(string(family(breaker_type)),"ForneyLab.", "") # Remove module prefixes
-            code *= "messages[$(msg_idx)] = Message(vague($(breaker_str)))\n"
+            breaker_type_str = replace(string(family(breaker_type)),"ForneyLab.", "") # Remove module prefixes
+            if breaker_dims[breaker_site] == 1
+                code *= "messages[$(msg_idx)] = Message(vague($(breaker_type_str)))\n"
+            else
+                code *= "messages[$(msg_idx)] = Message(vague($(breaker_type_str), $(breaker_dims[breaker_site])))\n"
+            end
         end
 
         code *= "\nreturn messages\n\n"
@@ -163,6 +170,10 @@ function messageString{T<:VariateType}(node::Clamp{T})
         # Insert constant
         if size(node.value) == (1,1)
             str = "Message($(var_type_str), PointMass, m=mat($(node.value[1])))"
+        elseif isa(node.value, Diagonal)
+            str = "Message($(var_type_str), PointMass, m=Diagonal($(node.value.diag)))"
+        elseif isa(node.value, AbstractMatrix) && (size(node.value)[2] == 1)
+            str = "Message($(var_type_str), PointMass, m=[$(join(node.value, " "))]')"
         else
             str = "Message($(var_type_str), PointMass, m=$(node.value))"
         end
@@ -189,6 +200,10 @@ function marginalString{T<:VariateType}(node::Clamp{T})
         # Insert constant
         if size(node.value) == (1,1)
             str = "ProbabilityDistribution($(var_type_str), PointMass, m=mat($(node.value[1])))"
+        elseif isa(node.value, Diagonal)
+            str = "ProbabilityDistribution($(var_type_str), PointMass, m=Diagonal($(node.value.diag)))"
+        elseif isa(node.value, AbstractMatrix) && (size(node.value)[2] == 1)
+            str = "ProbabilityDistribution($(var_type_str), PointMass, m=[$(join(node.value, " "))]')"
         else
             str = "ProbabilityDistribution($(var_type_str), PointMass, m=$(node.value))"
         end
