@@ -85,19 +85,72 @@ function draw(rf::RecognitionFactor; schedule=ScheduleEntry[], args...)
 end
 
 """
-Find the smallest legal subgraph (connected through deterministic nodes) that includes the argument edges
+Return whether the subgraph contains a collider. If a collider is found, this will lead to conditional dependencies in the recognition distribution (posterior).
 """
-function extend(edge_set::Set{Edge})
+function hasCollider(rf::RecognitionFactor)
+    stack = copy(rf.internal_edges)
+    while !isempty(stack)
+        # Choose a maximal connected cluster in the subgraph
+        seed_edge = first(stack)
+        connected_cluster = extend(seed_edge, terminate_at_soft_factors=false, limit_set=rf.internal_edges) # Extend the seed edge to find a maximal connected cluster within the subgraph
+
+        if hasCollider(connected_cluster)
+            # If one of the connected clusters has a collider, the subgraph has a collider
+            return true
+        end
+
+        stack = setdiff(stack, connected_cluster)
+    end
+
+    return false
+end
+
+"""
+Return whether connected_cluster contains a collider. This function assumes the graph for connected_cluster is a connected tree.
+"""
+function hasCollider(connected_cluster::Set{Edge})
+    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(connected_cluster)
+
+    # A prior node is a node for which only the outbound edge is internal to the cluster.
+    # It represents a prior belief over a single variable in the present subgraph.
+    n_prior_nodes = 0
+    for node in nodes_connected_to_external_edges
+        if node.interfaces[1].edge in connected_cluster # Check if the outbound edge is internal to the subgraph
+            # If so, check if there are no other edges internal to the subgraph
+            prior_flag = true
+            for iface in node.interfaces
+                (iface == node.interfaces[1]) && continue
+                if iface.edge in connected_cluster # There is another edge besides the outbound in the cluster
+                    prior_flag = false
+                    break
+                end
+            end
+            prior_flag && (n_prior_nodes += 1) # If there is no other edge internal to the subgraph, the node is a prior node
+        end
+
+        # If the subgraph contains more than one prior node, the variables on the outbound
+        # edges of these nodes are conditionally dependent in the recognition distibution (posterior)
+        (n_prior_nodes > 1) && return true
+    end
+
+    return false
+end
+
+"""
+Find the smallest legal subgraph that includes the argument edges. Default setting terminates the search at soft factors
+and does not constrain the search to a limiting set (as specified by an empty limit_set argument).
+"""
+function extend(edge_set::Set{Edge}; terminate_at_soft_factors=true, limit_set=Set{Edge}())
     cluster = Set{Edge}() # Set to fill with edges in cluster
     edges = copy(edge_set)
-    while length(edges) > 0 # As long as there are unchecked edges connected through deterministic nodes
+    while !isempty(edges) # As long as there are unchecked edges connected through deterministic nodes
         current_edge = pop!(edges) # Pick one
         push!(cluster, current_edge) # Add to edge cluster
-        for node in [current_edge.a.node, current_edge.b.node] # Check both head and tail node for deterministic type
-            if isa(node, DeltaFactor)
+        for node in [current_edge.a.node, current_edge.b.node] # Check both head and tail node
+            if (terminate_at_soft_factors==false) || isa(node, DeltaFactor)
                 for interface in node.interfaces
-                    if (interface.edge !== current_edge) && !(interface.edge in cluster) # Is next level edge not seen yet?
-                        # If the node is a DeltaFactor, add unseen edges to the stack (to visit sometime in the future)
+                    if (interface.edge !== current_edge) && !(interface.edge in cluster) && ( isempty(limit_set) || (interface.edge in limit_set) ) # Is next level edge not seen yet, and is it contained in the limiting set?
+                        # Add unseen edges to the stack (to visit sometime in the future)
                         push!(edges, interface.edge)
                     end
                 end
@@ -107,6 +160,8 @@ function extend(edge_set::Set{Edge})
 
     return cluster
 end
+
+extend(edge::Edge; terminate_at_soft_factors=true, limit_set=Set{Edge}()) = extend(Set{Edge}([edge]), terminate_at_soft_factors=terminate_at_soft_factors, limit_set=limit_set)
 
 """
 A RecognitionFactorization holds a collection of (non-overlapping) recognition factors that
@@ -217,8 +272,12 @@ end
 """
 Find the nodes in `recognition_factor` that are connected to external edges
 """
-function nodesConnectedToExternalEdges(recognition_factor::RecognitionFactor)
-    internal_edges = recognition_factor.internal_edges
+nodesConnectedToExternalEdges(recognition_factor::RecognitionFactor) = nodesConnectedToExternalEdges(recognition_factor.internal_edges)
+
+"""
+Find the nodes connected to `internal_edges` that are also connected to external edges
+"""
+function nodesConnectedToExternalEdges(internal_edges::Set{Edge})
     subgraph_nodes = nodes(internal_edges)
     external_edges = setdiff(edges(subgraph_nodes), internal_edges)
     # nodes_connected_to_external_edges are the nodes connected to external edges that are also connected to internal edges
@@ -226,3 +285,4 @@ function nodesConnectedToExternalEdges(recognition_factor::RecognitionFactor)
 
     return nodes_connected_to_external_edges
 end
+

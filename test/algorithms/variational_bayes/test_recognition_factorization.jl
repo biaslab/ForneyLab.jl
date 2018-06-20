@@ -3,7 +3,7 @@ module RecognitionFactorizationTest
 using Base.Test
 using ForneyLab
 
-import ForneyLab: nodesConnectedToExternalEdges, Cluster
+import ForneyLab: nodesConnectedToExternalEdges, Cluster, hasCollider
 
 @testset "RecognitionFactorization" begin
     rf = RecognitionFactorization()
@@ -52,6 +52,112 @@ end
     @test q_y.clusters == Set{Cluster}()
     @test q_y.internal_edges == edges(Set(y))
     @test rf.recognition_factors[:recognitionfactor_4] === q_y
+end
+
+@testset "hasCollider()" begin
+
+    # [N]--->[+]<---[N]
+    #     a   |   b
+    #         v c
+    #        [N]
+    #         |
+    #         v d
+    #         ■
+
+    g = FactorGraph()
+    @RV a ~ GaussianMeanVariance(0.0, 1.0)
+    @RV b ~ GaussianMeanVariance(0.0, 1.0)
+    @RV c = a + b
+    @RV d ~ GaussianMeanVariance(c, 1.0)
+    placeholder(d, :d)
+    rf = RecognitionFactorization()
+    q = RecognitionFactor([a,b,c])
+    @test hasCollider(q) == true
+
+    # [N]--->[=]<---[N]
+    #     a   |   b
+    #         v c
+    #        [N]
+    #         |
+    #         v d
+    #         ■
+
+    g = FactorGraph()
+    @RV a ~ GaussianMeanVariance(0.0, 1.0)
+    @RV b ~ GaussianMeanVariance(0.0, 1.0)
+    @RV c = equal(a, b)
+    @RV d ~ GaussianMeanVariance(c, 1.0)
+    placeholder(d, :d)
+    rf = RecognitionFactorization()
+    q = RecognitionFactor([a,b,c])
+    @test hasCollider(q) == true
+
+    # [N]--->[=]--->[N]--->■
+    #         |  a      b
+    #         v 
+    #        [N]
+    #         |
+    #         v c
+    #         ■
+
+    g = FactorGraph()
+    @RV a ~ GaussianMeanVariance(0.0, 1.0)
+    @RV b ~ GaussianMeanVariance(a, 1.0)
+    @RV c ~ GaussianMeanVariance(a, 1.0)
+    placeholder(b, :b)
+    placeholder(c, :c)
+    rf = RecognitionFactorization()
+    q = RecognitionFactor(a)
+    @test hasCollider(q) == false
+
+    # [N]--->[N]--->[N]--->■
+    #     a      b      c
+
+    g = FactorGraph()
+    @RV a ~ GaussianMeanVariance(0.0, 1.0)
+    @RV b ~ GaussianMeanVariance(a, 1.0)
+    @RV c ~ GaussianMeanVariance(b, 1.0)
+    placeholder(c, :c)
+    rf = RecognitionFactorization()
+    q = RecognitionFactor([a,b])
+    @test hasCollider(q) == false
+
+    # [N]--->[N]--->■
+    #     a      b 
+    #
+    # [N]--->[N]--->■
+    #     c      d    
+
+    g = FactorGraph()
+    @RV a ~ GaussianMeanVariance(0.0, 1.0)
+    @RV b ~ GaussianMeanVariance(a, 1.0)
+    @RV c ~ GaussianMeanVariance(0.0, 1.0)
+    @RV d ~ GaussianMeanVariance(c, 1.0)
+    placeholder(b, :b)
+    placeholder(d, :d)
+    rf = RecognitionFactorization()
+    q = RecognitionFactor([a,c])
+    @test hasCollider(q) == false
+
+    # [N]--->[+]<---[N]
+    #     a   |   b
+    #         v c
+    # [N]<---[=]--->[N]
+    #  |             |
+    #  v d           v e 
+    #  ■             ■
+
+    g = FactorGraph()
+    @RV a ~ GaussianMeanVariance(0.0, 1.0)
+    @RV b ~ GaussianMeanVariance(0.0, 1.0)
+    @RV c = a + b
+    @RV d ~ GaussianMeanVariance(c, 1.0)
+    @RV e ~ GaussianMeanVariance(c, 1.0)
+    placeholder(d, :d)
+    placeholder(e, :e)
+    rf = RecognitionFactorization()
+    q = RecognitionFactor([a,b,c])
+    @test hasCollider(q) == true
 end
 
 @testset "Cluster" begin
