@@ -87,12 +87,14 @@ end
 
 function sample{F<:Gaussian}(dist::ProbabilityDistribution{Univariate, F})
     isProper(dist) || error("Cannot sample from improper distribution")
-    return sqrt(unsafeCov(dist))*randn() + dist.params[:m]
+    (m,v) = unsafeMeanCov(dist)
+    return sqrt(v)*randn() + m
 end
 
 function sample{F<:Gaussian}(dist::ProbabilityDistribution{Multivariate, F})
     isProper(dist) || error("Cannot sample from improper distribution")
-    return chol(unsafeCov(dist))' *randn(dims(dist)) + dist.params[:m]
+    (m,V) = unsafeMeanCov(dist)
+    return chol(V)' *randn(dims(dist)) + m
 end
 
 # Entropy functional
