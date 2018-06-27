@@ -1,7 +1,17 @@
 ForneyLab.jl
 ============
 
-Forney-style Factor Graph framework in Julia.
+ForneyLab.jl is a Julia package for automatic generation of (Bayesian) inference algorithms. Given a probabilistic model, ForneyLab generates efficient Julia code for message-passing based inference. It uses the model structure to generate an algorithm that consists of a sequence of local computations on a Forney-style factor graph (FFG) representation of the model. For an excellent introduction to message passing and FFGs, see [The Factor Graph Approach to Model-Based Signal Processing](https://ieeexplore.ieee.org/document/4282128/) by Loeliger et al.
+
+We designed ForneyLab with a focus on flexible and modular modeling of time-series data. ForneyLab enables a user to:
+
+- Conveniently specify a probabilistic model;
+- Automatically generate an efficient inference algorithm;
+- Compile the inference algorithm to executable Julia code.
+
+The current version supports [belief propagation](https://en.wikipedia.org/wiki/Belief_propagation) (sum-product message passing), [variational message passing](https://en.wikipedia.org/wiki/Variational_message_passing) and [expectation propagation](https://en.wikipedia.org/wiki/Expectation_propagation).
+
+For a more detailed introduction we refer to the [demos](https://github.com/biaslab/ForneyLab.jl/tree/master/demo).
 
 Installation
 ============
