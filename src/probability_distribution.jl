@@ -248,7 +248,21 @@ This function ensures the argument expression is evaluated at runtime, allowing 
 """
 pack(expr) = expr
 
-=={fam_t, fam_u, var_t, var_u}(t::ProbabilityDistribution{var_t, fam_t}, u::ProbabilityDistribution{var_u, fam_u}) = (fam_t == fam_u) && (var_t == var_u) && (t.params == u.params)
+function =={fam_t, fam_u, var_t, var_u}(t::ProbabilityDistribution{var_t, fam_t}, u::ProbabilityDistribution{var_u, fam_u})
+    (fam_t == fam_u) || return false
+    (var_t == var_u) || return false
+
+    # Parameter values are checked for approximate equality
+    t.params === u.params && return true
+    if length(t.params) != length(u.params) return false end
+    for pair in t.params
+        if !in(pair, u.params, (a,b)->isapprox(a, b, atol=tiny))
+            return false
+        end
+    end
+
+    return true
+end
 
 function gaussianQuadrature(h::Function; m::Float64=0.0, v::Float64=1.0)
     abscissas = [-7.12581, -6.4095, -5.81223, -5.27555, -4.77716, -4.30555, -3.85376, -3.41717, -2.99249, -2.57725, -2.1695, -1.76765, -1.37038, -0.9765, -0.584979, -0.194841, 0.194841, 0.584979, 0.9765, 1.37038, 1.76765, 2.1695, 2.57725, 2.99249, 3.41717, 3.85376, 4.30555, 4.77716, 5.27555, 5.81223, 6.4095, 7.12581]
