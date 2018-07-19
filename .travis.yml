@@ -1,0 +1,10 @@
+language: julia
+os:
+  - linux
+  - osx
+julia:
+  - 0.6
+notifications:
+  email: false
+script:
+  - julia -e 'Pkg.clone(pwd()); Pkg.build("ForneyLab"); Pkg.test("ForneyLab"; coverage=true)'
