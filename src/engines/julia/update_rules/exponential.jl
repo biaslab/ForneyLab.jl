@@ -4,8 +4,8 @@ ruleSPExponentialOutVP,
 ruleSPExponentialIn1LV,
 ruleSPExponentialIn1PV
 
-function ruleSPExponentialOutVG{F<:Gaussian}(	msg_out::Nothing, 
-                                				msg_in1::Message{F, Univariate})
+function ruleSPExponentialOutVG(msg_out::Nothing, 
+								msg_in1::Message{F, Univariate}) where F<:Gaussian
 
     d_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
 

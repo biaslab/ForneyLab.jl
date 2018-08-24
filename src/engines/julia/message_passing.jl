@@ -156,7 +156,7 @@ end
 Depending on the origin of the Clamp node message,
 contruct the outbound message code.
 """
-function messageString{T<:VariateType}(node::Clamp{T})
+function messageString(node::Clamp{T}) where T<:VariateType
     var_type_str = split(string(T),'.')[end] # Remove module prefixes
     if node in keys(ForneyLab.current_graph.placeholders)
         # Message comes from data array
@@ -186,7 +186,7 @@ end
 Depending on the origin of the Clamp node message,
 contruct the marginal code.
 """
-function marginalString{T<:VariateType}(node::Clamp{T})
+function marginalString(node::Clamp{T}) where T<:VariateType
     var_type_str = split(string(T),'.')[end] # Remove module prefixes
     if node in keys(ForneyLab.current_graph.placeholders)
         # Message comes from data array

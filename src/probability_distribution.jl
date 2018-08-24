@@ -58,7 +58,7 @@ ProbabilityDistribution(::Type{PointMass}; m::Number=1.0) = ProbabilityDistribut
 ProbabilityDistribution(::Type{Multivariate}, ::Type{PointMass}; m::Vector=[1.0]) = ProbabilityDistribution{Multivariate, PointMass}(Dict(:m=>m))
 ProbabilityDistribution(::Type{MatrixVariate}, ::Type{PointMass}; m::AbstractMatrix=[1.0].') = ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>m))
 
-unsafeMean{T<:VariateType}(dist::ProbabilityDistribution{T, PointMass}) = deepcopy(dist.params[:m])
+unsafeMean(dist::ProbabilityDistribution{T, PointMass}) where T<:VariateType = deepcopy(dist.params[:m])
 
 unsafeMeanVector(dist::ProbabilityDistribution{Univariate, PointMass}) = [dist.params[:m]]
 unsafeMeanVector(dist::ProbabilityDistribution{Multivariate, PointMass}) = deepcopy(dist.params[:m])
@@ -83,7 +83,7 @@ unsafeMeanCov(dist::ProbabilityDistribution) = (unsafeMean(dist), unsafeCov(dist
 
 unsafeWeightedMeanPrecision(dist::ProbabilityDistribution) = (unsafeWeightedMean(dist), unsafePrecision(dist)) # Can be overloaded for efficiency
 
-isProper{T<:VariateType}(::ProbabilityDistribution{T, PointMass}) = true
+isProper(::ProbabilityDistribution{T, PointMass}) where T<:VariateType = true
 
 """
 Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)
@@ -248,7 +248,7 @@ This function ensures the argument expression is evaluated at runtime, allowing 
 """
 pack(expr) = expr
 
-function =={fam_t, fam_u, var_t, var_u}(t::ProbabilityDistribution{var_t, fam_t}, u::ProbabilityDistribution{var_u, fam_u})
+function ==(t::ProbabilityDistribution{var_t, fam_t}, u::ProbabilityDistribution{var_u, fam_u}) where {fam_t, fam_u, var_t, var_u}
     (fam_t == fam_u) || return false
     (var_t == var_u) || return false
 

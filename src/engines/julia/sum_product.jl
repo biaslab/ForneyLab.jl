@@ -16,7 +16,7 @@ sumProductAlgorithm(variable::Variable; file::String="", name::String="") = sumP
 """
 Collect and construct SP update code for each inbound.
 """
-collectInbounds{T<:SumProductRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) = collectSumProductNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
+collectInbounds(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) where T<:SumProductRule = collectSumProductNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
 
 """
 Construct the inbound code that computes the message for `entry`. Allows for

@@ -8,6 +8,7 @@ include("dependency_graph.jl")
 import Base: show, convert, ==, *
 import Statistics: mean, var, cov
 import SpecialFunctions: digamma
+import Base.Meta: parse
 
 # High level abstracts
 abstract type AbstractEdge end # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface

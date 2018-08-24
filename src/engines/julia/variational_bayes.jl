@@ -26,7 +26,7 @@ end
 """
 Construct argument code for naive VB updates
 """
-collectInbounds{T<:NaiveVariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) = collectNaiveVariationalNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
+collectInbounds(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) where T<:NaiveVariationalRule = collectNaiveVariationalNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
 
 """
 Construct the inbound code that computes the message for `entry`. Allows for
@@ -58,7 +58,7 @@ end
 """
 Construct argument code for structured VB updates
 """
-collectInbounds{T<:StructuredVariationalRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) = collectStructuredVariationalNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
+collectInbounds(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) where T<:StructuredVariationalRule = collectStructuredVariationalNodeInbounds(entry.interface.node, entry, interface_to_msg_idx)
 
 """
 Construct the inbound code that computes the message for `entry`. Allows for
