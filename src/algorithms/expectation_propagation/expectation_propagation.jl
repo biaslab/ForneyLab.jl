@@ -93,9 +93,10 @@ end
 
 expectationPropagationSchedule(variable::Variable) = expectationPropagationSchedule([variable])
 
-function inferUpdateRule!{T<:ExpectationPropagationRule}(   entry::ScheduleEntry,
-                                                            rule_type::Type{T},
-                                                            inferred_outbound_types::Dict{Interface, <:Type})
+function inferUpdateRule!(entry::ScheduleEntry,
+                          rule_type::Type{T},
+                          inferred_outbound_types::Dict{Interface, <:Type}
+                         ) where T<:ExpectationPropagationRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
 
@@ -122,9 +123,10 @@ function inferUpdateRule!{T<:ExpectationPropagationRule}(   entry::ScheduleEntry
     return entry
 end
 
-function collectInboundTypes{T<:ExpectationPropagationRule}(entry::ScheduleEntry,
-                                                            ::Type{T},
-                                                            inferred_outbound_types::Dict{Interface, <:Type})
+function collectInboundTypes(entry::ScheduleEntry,
+                             ::Type{T},
+                             inferred_outbound_types::Dict{Interface, <:Type}
+                            ) where T<:ExpectationPropagationRule
     inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces
         if (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)

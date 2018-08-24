@@ -7,9 +7,10 @@ abstract type StructuredVariationalRule{factor_type} <: MessageUpdateRule end
 """
 Infer the update rule that computes the message for `entry`, as dependent on the inbound types
 """
-function inferUpdateRule!{T<:StructuredVariationalRule}(entry::ScheduleEntry,
-                                                        rule_type::Type{T},
-                                                        inferred_outbound_types::Dict{Interface, Type})
+function inferUpdateRule!(entry::ScheduleEntry,
+                          rule_type::Type{T},
+                          inferred_outbound_types::Dict{Interface, Type}
+                         ) where T<:StructuredVariationalRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
     
@@ -37,9 +38,10 @@ end
 Find the inbound types that are required to compute the message for `entry`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
-function collectInboundTypes{T<:StructuredVariationalRule}( entry::ScheduleEntry,
-                                                            ::Type{T},
-                                                            inferred_outbound_types::Dict{Interface, Type})
+function collectInboundTypes(entry::ScheduleEntry,
+                             ::Type{T},
+                             inferred_outbound_types::Dict{Interface, Type}
+                            ) where T<:StructuredVariationalRule
     inbound_types = Type[]
     entry_recognition_factor_id = recognitionFactorId(entry.interface.edge) # Recognition factor id for outbound edge
     recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids

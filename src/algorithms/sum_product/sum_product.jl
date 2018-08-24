@@ -67,9 +67,10 @@ function internalSumProductSchedule(cnode::CompositeNode,
     return schedule
 end
 
-function inferUpdateRule!{T<:SumProductRule}(   entry::ScheduleEntry,
-                                                rule_type::Type{T},
-                                                inferred_outbound_types::Dict{Interface, <:Type})
+function inferUpdateRule!(entry::ScheduleEntry,
+                          rule_type::Type{T},
+                          inferred_outbound_types::Dict{Interface, <:Type}
+                         ) where T<:SumProductRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
 
@@ -100,9 +101,10 @@ function inferUpdateRule!{T<:SumProductRule}(   entry::ScheduleEntry,
     return entry
 end
 
-function collectInboundTypes{T<:SumProductRule}(entry::ScheduleEntry,
-                                                ::Type{T},
-                                                inferred_outbound_types::Dict{Interface, <:Type})
+function collectInboundTypes(entry::ScheduleEntry,
+                             ::Type{T},
+                             inferred_outbound_types::Dict{Interface, <:Type}
+                            ) where T<:SumProductRule
     inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces
         if node_interface == entry.interface

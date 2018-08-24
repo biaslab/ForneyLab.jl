@@ -14,18 +14,18 @@ struct Message{family<:FactorNode, var_type<:VariateType} # Note that parameter 
     Message{F, V}(dist::ProbabilityDistribution{V, F}) where {F, V}= new(dist) # Constructor for unspecified scaling factor
 end
 
-Message{F<:FactorNode, V<:VariateType}(dist::ProbabilityDistribution{V, F}) = Message{F, V}(dist)
+Message(dist::ProbabilityDistribution{V, F}) where {F<:FactorNode, V<:VariateType} = Message{F, V}(dist)
 
-Message{F<:FactorNode, V<:VariateType}(var_type::Type{V}, family::Type{F}; kwargs...) = Message{family, var_type}(ProbabilityDistribution(var_type, family; kwargs...))
+Message(var_type::Type{V}, family::Type{F}; kwargs...) where {F<:FactorNode, V<:VariateType} = Message{family, var_type}(ProbabilityDistribution(var_type, family; kwargs...))
 
-function Message{F<:FactorNode}(family::Type{F}; kwargs...)
+function Message(family::Type{F}; kwargs...) where F
     dist = ProbabilityDistribution(family; kwargs...)
     var_type = variateType(dist)
 
     return Message{family, var_type}(dist)
 end
 
-family{F<:FactorNode}(msg_type::Type{Message{F}}) = F
+family(msg_type::Type{Message{F}}) where F<:FactorNode = F
 
 function show(io::IO, msg::Message)
     if isdefined(msg, :scaling_factor)
@@ -36,15 +36,15 @@ function show(io::IO, msg::Message)
 end
 
 """Special inheritance rules for parametric Message types"""
-matches{T<:Message}(::Type{T}, ::Type{T}) = true
-matches{Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType, Vb<:VariateType}(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) = (Va==Vb) && (Fa<:Fb)
-matches{Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType}(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) = (Fa<:Fb)
-matches{Fa<:FactorNode, Fb<:FactorNode}(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) = (Fa<:Fb)
-matches{T<:Message}(::Type{Nothing}, ::Type{T}) = false
-matches{P<:ProbabilityDistribution, M<:Message}(::Type{P}, ::Type{M}) = false
-matches{P<:ProbabilityDistribution, M<:Message}(::Type{M}, ::Type{P}) = false
+matches(::Type{T}, ::Type{T}) where T<:Message = true
+matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) where {Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType, Vb<:VariateType} = (Va==Vb) && (Fa<:Fb)
+matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) where {Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType} = (Fa<:Fb)
+matches(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) where {Fa<:FactorNode, Fb<:FactorNode} = (Fa<:Fb)
+matches(::Type{Nothing}, ::Type{T}) where T<:Message = false
+matches(::Type{P}, ::Type{M}) where {P<:ProbabilityDistribution, M<:Message} = false
+matches(::Type{M}, ::Type{P}) where {P<:ProbabilityDistribution, M<:Message} = false
 
-function =={fam_t<:FactorNode, var_t<:VariateType, fam_u<:FactorNode, var_u<:VariateType}(t::Message{fam_t, var_t}, u::Message{fam_u, var_u})
+function ==(t::Message{fam_t, var_t}, u::Message{fam_u, var_u}) where {fam_t<:FactorNode, var_t<:VariateType, fam_u<:FactorNode, var_u<:VariateType}
     (fam_t == fam_u) || return false
     (var_t == var_u) || return false
     (t.dist == u.dist) || return false
