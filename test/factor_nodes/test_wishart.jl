@@ -42,7 +42,7 @@ end
 @testset "SPWishartOutVPP" begin
     @test SPWishartOutVPP <: SumProductRule{Wishart}
     @test outboundType(SPWishartOutVPP) == Message{Wishart}
-    @test isApplicable(SPWishartOutVPP, [Void, Message{PointMass}, Message{PointMass}]) 
+    @test isApplicable(SPWishartOutVPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
 
     @test ruleSPWishartOutVPP(nothing, Message(MatrixVariate, PointMass, m=[1.0].'), Message(Univariate, PointMass, m=2.0)) == Message(MatrixVariate, Wishart, v=[1.0].', nu=2.0)
 end
@@ -50,8 +50,8 @@ end
 @testset "VBWishartOut" begin
     @test VBWishartOut <: NaiveVariationalRule{Wishart}
     @test outboundType(VBWishartOut) == Message{Wishart}
-    @test isApplicable(VBWishartOut, [Void, ProbabilityDistribution, ProbabilityDistribution]) 
-    @test !isApplicable(VBWishartOut, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
+    @test isApplicable(VBWishartOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution]) 
+    @test !isApplicable(VBWishartOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing]) 
 
     @test ruleVBWishartOut(nothing, ProbabilityDistribution(MatrixVariate, PointMass, m=[1.5].'), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(MatrixVariate, Wishart, v=[1.5].', nu=3.0)
 end

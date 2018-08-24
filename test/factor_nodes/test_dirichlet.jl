@@ -57,7 +57,7 @@ end
 @testset "SPDirichletOutVP" begin
     @test SPDirichletOutVP <: SumProductRule{Dirichlet}
     @test outboundType(SPDirichletOutVP) == Message{Dirichlet}
-    @test isApplicable(SPDirichletOutVP, [Void, Message{PointMass}])
+    @test isApplicable(SPDirichletOutVP, [Nothing, Message{PointMass}])
 
     @test ruleSPDirichletOutVP(nothing, Message(Multivariate, PointMass, m=[2.0, 3.0])) == Message(Multivariate, Dirichlet, a=[2.0, 3.0])
     @test ruleSPDirichletOutVP(nothing, Message(MatrixVariate, PointMass, m=[2.0 3.0; 4.0 5.0])) == Message(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])
@@ -66,7 +66,7 @@ end
 @testset "VBDirichletOut" begin
     @test VBDirichletOut <: NaiveVariationalRule{Dirichlet}
     @test outboundType(VBDirichletOut) == Message{Dirichlet}
-    @test isApplicable(VBDirichletOut, [Void, ProbabilityDistribution])
+    @test isApplicable(VBDirichletOut, [Nothing, ProbabilityDistribution])
 
     @test ruleVBDirichletOut(nothing, ProbabilityDistribution(Multivariate, PointMass, m=[2.0, 3.0])) == Message(Multivariate, Dirichlet, a=[2.0, 3.0])
     @test ruleVBDirichletOut(nothing, ProbabilityDistribution(MatrixVariate, PointMass, m=[2.0 3.0; 4.0 5.0])) == Message(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])

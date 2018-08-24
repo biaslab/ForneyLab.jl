@@ -13,7 +13,7 @@ function approximate(x_hat::Union{Float64, Vector{Float64}}, g::Function, J_g::F
     return (A, b)
 end
 
-function ruleSPNonlinearOutVG{F<:Gaussian}( msg_out::Void,
+function ruleSPNonlinearOutVG{F<:Gaussian}( msg_out::Nothing,
                                             msg_in1::Message{F, Multivariate},
                                             g::Function,
                                             J_g::Function)
@@ -27,7 +27,7 @@ function ruleSPNonlinearOutVG{F<:Gaussian}( msg_out::Void,
     Message(Multivariate, GaussianMeanVariance, m=A*d_in1.params[:m] + b, v=V_q)
 end
 
-function ruleSPNonlinearOutVG{F<:Gaussian}( msg_out::Void,
+function ruleSPNonlinearOutVG{F<:Gaussian}( msg_out::Nothing,
                                             msg_in1::Message{F, Univariate},
                                             g::Function,
                                             J_g::Function)

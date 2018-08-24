@@ -7,8 +7,8 @@ An Interface has at most one partner interface, with wich it forms an edge.
 """
 mutable struct Interface
     node::FactorNode
-    edge::Union{AbstractEdge, Void}
-    partner::Union{Interface, Void}
+    edge::Union{AbstractEdge, Nothing}
+    partner::Union{Interface, Nothing}
 end
 
 Interface(node::FactorNode) = Interface(node, nothing, nothing)

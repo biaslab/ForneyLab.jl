@@ -11,7 +11,7 @@ ruleSPMultiplicationAPPV
 # Univariate (in1 and a commute)
 #-------------------------------
 
-function ruleSPMultiplicationOutVPG{F<:Gaussian}(   msg_out::Void,
+function ruleSPMultiplicationOutVPG{F<:Gaussian}(   msg_out::Nothing,
                                                     msg_in1::Message{PointMass, Univariate},
                                                     msg_a::Message{F, Univariate})
 
@@ -20,11 +20,11 @@ function ruleSPMultiplicationOutVPG{F<:Gaussian}(   msg_out::Void,
     Message(Univariate, GaussianMeanVariance, m=msg_in1.dist.params[:m]*d_a.params[:m], v=d_a.params[:v]*msg_in1.dist.params[:m]^2)
 end
 
-ruleSPMultiplicationOutVGP{F<:Gaussian}(msg_out::Void, msg_in1::Message{F, Univariate}, msg_a::Message{PointMass, Univariate}) = 
+ruleSPMultiplicationOutVGP{F<:Gaussian}(msg_out::Nothing, msg_in1::Message{F, Univariate}, msg_a::Message{PointMass, Univariate}) = 
     ruleSPMultiplicationOutVPG(nothing, msg_a, msg_in1)
 
 function ruleSPMultiplicationIn1GVP{F<:Gaussian}(   msg_out::Message{F, Univariate},
-                                                    msg_in1::Void,
+                                                    msg_in1::Nothing,
                                                     msg_a::Message{PointMass, Univariate})
 
     d_out = convert(ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}, msg_out.dist)
@@ -34,16 +34,16 @@ function ruleSPMultiplicationIn1GVP{F<:Gaussian}(   msg_out::Message{F, Univaria
     Message(Univariate, GaussianWeightedMeanPrecision, xi=a*d_out.params[:xi], w=d_out.params[:w]*a^2)
 end
 
-ruleSPMultiplicationAGPV{F<:Gaussian}(msg_out::Message{F, Univariate}, msg_in1::Message{PointMass, Univariate}, msg_a::Void) = 
+ruleSPMultiplicationAGPV{F<:Gaussian}(msg_out::Message{F, Univariate}, msg_in1::Message{PointMass, Univariate}, msg_a::Nothing) = 
     ruleSPMultiplicationIn1GVP(msg_out, nothing, msg_in1)
 
-ruleSPMultiplicationOutVPP(msg_out::Void, msg_in1::Message{PointMass, Univariate}, msg_a::Message{PointMass, Univariate}) = 
+ruleSPMultiplicationOutVPP(msg_out::Nothing, msg_in1::Message{PointMass, Univariate}, msg_a::Message{PointMass, Univariate}) = 
     Message(Univariate, PointMass, m=msg_in1.dist.params[:m]*msg_a.dist.params[:m])
 
-ruleSPMultiplicationIn1PVP(msg_out::Message{PointMass, Univariate}, msg_in1::Void, msg_a::Message{PointMass, Univariate}) = 
+ruleSPMultiplicationIn1PVP(msg_out::Message{PointMass, Univariate}, msg_in1::Nothing, msg_a::Message{PointMass, Univariate}) = 
     Message(Univariate, PointMass, m=msg_out.dist.params[:m]/msg_a.dist.params[:m])
 
-ruleSPMultiplicationAPPV(msg_out::Message{PointMass, Univariate}, msg_in1::Message{PointMass, Univariate}, msg_a::Void) = 
+ruleSPMultiplicationAPPV(msg_out::Message{PointMass, Univariate}, msg_in1::Message{PointMass, Univariate}, msg_a::Nothing) = 
     Message(Univariate, PointMass, m=msg_out.dist.params[:m]/msg_in1.dist.params[:m])
 
 
@@ -51,7 +51,7 @@ ruleSPMultiplicationAPPV(msg_out::Message{PointMass, Univariate}, msg_in1::Messa
 # Univariate*multivariate (in1 and a commute)
 #--------------------------------------------
 
-function ruleSPMultiplicationOutVPG{F<:Gaussian}(   msg_out::Void,
+function ruleSPMultiplicationOutVPG{F<:Gaussian}(   msg_out::Nothing,
                                                     msg_in1::Message{PointMass, Multivariate},
                                                     msg_a::Message{F, Univariate})
 
@@ -60,10 +60,10 @@ function ruleSPMultiplicationOutVPG{F<:Gaussian}(   msg_out::Void,
     Message(Multivariate, GaussianMeanVariance, m=msg_in1.dist.params[:m]*d_a.params[:m], v=d_a.params[:v]*msg_in1.dist.params[:m]*msg_in1.dist.params[:m]')
 end
 
-ruleSPMultiplicationOutVGP{F<:Gaussian}(msg_out::Void, msg_in1::Message{F, Univariate}, msg_a::Message{PointMass, Multivariate}) = 
+ruleSPMultiplicationOutVGP{F<:Gaussian}(msg_out::Nothing, msg_in1::Message{F, Univariate}, msg_a::Message{PointMass, Multivariate}) = 
     ruleSPMultiplicationOutVPG(nothing, msg_a, msg_in1)
 
-function ruleSPMultiplicationOutVGP{F<:Gaussian}(   msg_out::Void, 
+function ruleSPMultiplicationOutVGP{F<:Gaussian}(   msg_out::Nothing, 
                                                     msg_in1::Message{F, Multivariate}, 
                                                     msg_a::Message{PointMass, Univariate})
 
@@ -72,7 +72,7 @@ function ruleSPMultiplicationOutVGP{F<:Gaussian}(   msg_out::Void,
     Message(Multivariate, GaussianMeanVariance, m=d_in1.params[:m]*msg_a.dist.params[:m], v=d_in1.params[:v]*msg_a.dist.params[:m]^2)
 end
 
-ruleSPMultiplicationOutVPG{F<:Gaussian}(msg_out::Void, msg_in1::Message{PointMass, Univariate}, msg_a::Message{F, Multivariate}) = 
+ruleSPMultiplicationOutVPG{F<:Gaussian}(msg_out::Nothing, msg_in1::Message{PointMass, Univariate}, msg_a::Message{F, Multivariate}) = 
     ruleSPMultiplicationOutVGP(nothing, msg_a, msg_in1)
 
 
@@ -80,7 +80,7 @@ ruleSPMultiplicationOutVPG{F<:Gaussian}(msg_out::Void, msg_in1::Message{PointMas
 # MatrixVariate*multivariate (in1 and a do NOT commute)
 #------------------------------------------------------
 
-function ruleSPMultiplicationOutVGP{F<:Gaussian}(   msg_out::Void,
+function ruleSPMultiplicationOutVGP{F<:Gaussian}(   msg_out::Nothing,
                                                     msg_in1::Message{F, Multivariate},
                                                     msg_a::Message{PointMass, MatrixVariate})
 
@@ -92,7 +92,7 @@ function ruleSPMultiplicationOutVGP{F<:Gaussian}(   msg_out::Void,
 end
 
 function ruleSPMultiplicationIn1GVP{F<:Gaussian}(   msg_out::Message{F, Multivariate},
-                                                    msg_in1::Void,
+                                                    msg_in1::Nothing,
                                                     msg_a::Message{PointMass, MatrixVariate})
 
     d_out = convert(ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}, msg_out.dist)
@@ -104,8 +104,8 @@ function ruleSPMultiplicationIn1GVP{F<:Gaussian}(   msg_out::Message{F, Multivar
     Message(Multivariate, GaussianWeightedMeanPrecision, xi=A'*d_out.params[:xi], w=W)
 end
 
-ruleSPMultiplicationOutVPP(msg_out::Void, msg_in1::Message{PointMass, Multivariate}, msg_a::Message{PointMass, MatrixVariate}) = 
+ruleSPMultiplicationOutVPP(msg_out::Nothing, msg_in1::Message{PointMass, Multivariate}, msg_a::Message{PointMass, MatrixVariate}) = 
     Message(Multivariate, PointMass, m=msg_a.dist.params[:m]*msg_in1.dist.params[:m])
 
-ruleSPMultiplicationIn1PVP(msg_out::Message{PointMass, Multivariate}, msg_in1::Void, msg_a::Message{PointMass, MatrixVariate}) = 
+ruleSPMultiplicationIn1PVP(msg_out::Message{PointMass, Multivariate}, msg_in1::Nothing, msg_a::Message{PointMass, MatrixVariate}) = 
     Message(Multivariate, PointMass, m=pinv(msg_a.dist.params[:m])*msg_out.dist.params[:m])

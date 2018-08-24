@@ -26,7 +26,7 @@ end
 
 @naiveVariationalRule(:node_type     => MockNode,
                       :outbound_type => Message{PointMass},
-                      :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),
+                      :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
                       :name          => VBMockOut)
 
 @testset "@naiveVariationalRule" begin

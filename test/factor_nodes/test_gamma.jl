@@ -33,7 +33,7 @@ end
 @testset "SPGammaOutVPP" begin
     @test SPGammaOutVPP <: SumProductRule{Gamma}
     @test outboundType(SPGammaOutVPP) == Message{Gamma}
-    @test isApplicable(SPGammaOutVPP, [Void, Message{PointMass}, Message{PointMass}]) 
+    @test isApplicable(SPGammaOutVPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
 
     @test ruleSPGammaOutVPP(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, Gamma, a=1.0, b=2.0)
 end
@@ -41,8 +41,8 @@ end
 @testset "VBGammaOut" begin
     @test VBGammaOut <: NaiveVariationalRule{Gamma}
     @test outboundType(VBGammaOut) == Message{Gamma}
-    @test isApplicable(VBGammaOut, [Void, ProbabilityDistribution, ProbabilityDistribution]) 
-    @test !isApplicable(VBGammaOut, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
+    @test isApplicable(VBGammaOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution]) 
+    @test !isApplicable(VBGammaOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing]) 
 
     @test ruleVBGammaOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=1.5), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, Gamma, a=1.5, b=3.0)
 end

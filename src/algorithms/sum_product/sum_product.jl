@@ -106,7 +106,7 @@ function collectInboundTypes{T<:SumProductRule}(entry::ScheduleEntry,
     inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces
         if node_interface == entry.interface
-            push!(inbound_message_types, Void)
+            push!(inbound_message_types, Nothing)
         elseif (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
             push!(inbound_message_types, Message{PointMass})
         else
@@ -160,7 +160,7 @@ macro sumProductRule(fields...)
     # Build validators for isApplicable
     input_type_validators = String[]
     for (i, i_type) in enumerate(inbound_types.args)
-        if i_type != :Void
+        if i_type != :Nothing
             # Only validate inbounds required for message update
             push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
         end

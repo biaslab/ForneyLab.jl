@@ -1,11 +1,11 @@
 module HelpersTest
 
-using Base.Test
+using Test
 import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, cholinv, diageye, *, .*, ^
  
 @testset "Helpers" begin
     @testset "ensureMatrix" begin
-        # should convert input argument to a Matrix or Void
+        # should convert input argument to a Matrix or Nothing
         @test ensureMatrix([1.0, 2.0]) == Diagonal([1.0, 2.0])
         @test ensureMatrix(Diagonal([1.0, 2.0])) == Diagonal([1.0, 2.0])
         @test ensureMatrix(eye(2)) == eye(2)

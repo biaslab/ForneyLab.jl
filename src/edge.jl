@@ -5,8 +5,8 @@ An Edge joins two interfaces (half-edges) `a` and `b`.
 """
 mutable struct Edge <: AbstractEdge
     variable::AbstractVariable
-    a::Union{Interface, Void}
-    b::Union{Interface, Void}
+    a::Union{Interface, Nothing}
+    b::Union{Interface, Nothing}
 
     function Edge(var::AbstractVariable, a::Interface)
         current_graph = currentGraph()

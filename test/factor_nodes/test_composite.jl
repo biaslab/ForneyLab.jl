@@ -47,14 +47,14 @@ end
 # Define custom rule for sum-product message towards x
 @sumProductRule(:node_type     => StateTransition,
                 :outbound_type => Message{Gaussian},
-                :inbound_types => (Message{PointMass}, Message{Gaussian}, Void),
+                :inbound_types => (Message{PointMass}, Message{Gaussian}, Nothing),
                 :name          => SPStateTransitionX)
 
 @testset "Custom SPStateTransitionX" begin
     @test SPStateTransitionX <: SumProductRule{StateTransition}
     @test outboundType(SPStateTransitionX) == Message{Gaussian}
-    @test isApplicable(SPStateTransitionX, [Message{PointMass}, Message{Gaussian}, Void]) 
-    @test !isApplicable(SPStateTransitionX, [Message{Gaussian}, Message{PointMass}, Void]) 
+    @test isApplicable(SPStateTransitionX, [Message{PointMass}, Message{Gaussian}, Nothing]) 
+    @test !isApplicable(SPStateTransitionX, [Message{Gaussian}, Message{PointMass}, Nothing]) 
 end
 
 @testset "Composite node scheduling and algorithm compilation" begin
@@ -80,7 +80,7 @@ end
     @test length(marginal_schedule) == 1
     @test marginal_schedule[1].target == x
     @test marginal_schedule[1].interfaces[1] == cnd.i[:x]
-    @test marginal_schedule[1].marginal_update_rule == Void
+    @test marginal_schedule[1].marginal_update_rule == Nothing
 
     # Build SP algorithm for Julia execution
     algo = ForneyLab.messagePassingAlgorithm(schedule, marginal_schedule)
@@ -92,7 +92,7 @@ end
 
 @testset "Composite node algorithm execution" begin
     # Implement custom rule for Julia execution
-    ruleSPStateTransitionX{F<:Gaussian}(::Message{PointMass, Univariate}, ::Message{F, Univariate}, ::Void) = Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0) # Send some dummy message
+    ruleSPStateTransitionX{F<:Gaussian}(::Message{PointMass, Univariate}, ::Message{F, Univariate}, ::Nothing) = Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0) # Send some dummy message
 
     # Resulting algorithm ---
     function step!(marginals::Dict, data::Dict)

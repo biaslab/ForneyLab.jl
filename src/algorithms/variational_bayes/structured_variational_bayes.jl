@@ -47,7 +47,7 @@ function collectInboundTypes{T<:StructuredVariationalRule}( entry::ScheduleEntry
         node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
 
         if node_interface == entry.interface
-            push!(inbound_types, Void)
+            push!(inbound_types, Nothing)
         elseif node_interface_recognition_factor_id == entry_recognition_factor_id
             # Edge is internal, accept message
             push!(inbound_types, inferred_outbound_types[node_interface.partner])
@@ -104,7 +104,7 @@ macro structuredVariationalRule(fields...)
     # Build validators for isApplicable
     input_type_validators = String[]
     for (i, i_type) in enumerate(inbound_types.args)
-        if i_type != :Void
+        if i_type != :Nothing
             # Only validate inbounds required for message update
             push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
         end

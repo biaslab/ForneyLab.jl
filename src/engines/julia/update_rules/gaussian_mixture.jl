@@ -7,7 +7,7 @@ ruleVBGaussianMixtureOut
 
 function ruleVBGaussianMixtureM(dist_out::ProbabilityDistribution,
                                 dist_switch::ProbabilityDistribution,
-                                dist_factors::Vararg{Union{Void, ProbabilityDistribution{Univariate}}})
+                                dist_factors::Vararg{Union{Nothing, ProbabilityDistribution{Univariate}}})
     # Univariate update
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])
@@ -19,7 +19,7 @@ end
 
 function ruleVBGaussianMixtureM(dist_out::ProbabilityDistribution,
                                 dist_switch::ProbabilityDistribution,
-                                dist_factors::Vararg{Union{Void, ProbabilityDistribution{Multivariate}, ProbabilityDistribution{MatrixVariate}}})
+                                dist_factors::Vararg{Union{Nothing, ProbabilityDistribution{Multivariate}, ProbabilityDistribution{MatrixVariate}}})
     # Multivariate update
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])
@@ -31,7 +31,7 @@ end
 
 function ruleVBGaussianMixtureW(dist_out::ProbabilityDistribution,
                                 dist_switch::ProbabilityDistribution,
-                                dist_factors::Vararg{Union{Void, ProbabilityDistribution{Univariate}}})
+                                dist_factors::Vararg{Union{Nothing, ProbabilityDistribution{Univariate}}})
     # Univariate update
     dist_means = collect(dist_factors[1:2:end]) # TODO: make more efficient use of conversions to compute m and v in one go
     dist_precs = collect(dist_factors[2:2:end])
@@ -47,7 +47,7 @@ end
 
 function ruleVBGaussianMixtureW(dist_out::ProbabilityDistribution,
                                 dist_switch::ProbabilityDistribution,
-                                dist_factors::Vararg{Union{Void, ProbabilityDistribution{Multivariate}, ProbabilityDistribution{MatrixVariate}}})
+                                dist_factors::Vararg{Union{Nothing, ProbabilityDistribution{Multivariate}, ProbabilityDistribution{MatrixVariate}}})
     # Multivariate update
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])

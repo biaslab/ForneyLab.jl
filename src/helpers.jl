@@ -1,12 +1,14 @@
 export huge, tiny, cholinv, diageye, format, *, .*, ^, mat
 
 import Base: *, .*, ^, ==, sqrt
+import LinearAlgebra: Diagonal
+import Printf: @sprintf
 
 """ensureMatrix: cast input to a Matrix if necessary"""
-ensureMatrix{T<:Number}(arr::AbstractMatrix{T}) = arr
-ensureMatrix{T<:Number}(arr::Vector{T}) = Diagonal(arr)
+ensureMatrix(arr::AbstractMatrix{T}) where T<:Number = arr
+ensureMatrix(arr::Vector{T}) where T<:Number = Diagonal(arr)
 ensureMatrix(n::Number) = fill!(Array{typeof(n)}(1,1), n)
-ensureMatrix(n::Void) = nothing
+ensureMatrix(n::Nothing) = nothing
 
 # Constants to define smallest/largest supported numbers.
 # Used for clipping quantities to ensure numerical stability.
@@ -16,7 +18,7 @@ const tiny = 1e-12
 # Operations related to diagonal matrices
 cholinv(m::Number) = 1.0/m
 cholinv(M::AbstractMatrix) = inv(cholfact(Hermitian(Matrix(M))))
-cholinv(D::Diagonal) = Diagonal(1./D.diag)
+cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
 diageye(dims::Int64) = Diagonal(ones(dims))
 
 Base.broadcast(::typeof(*), D1::Diagonal, D2::Diagonal) = Diagonal(D1.diag.*D2.diag)
@@ -30,10 +32,10 @@ sqrt(D::Diagonal) = Diagonal(sqrt.(D.diag))
 *(sym::Symbol, num::Number) = Symbol(string(sym, num))
 *(num::Number, sym::Symbol) = Symbol(string(num, sym))
 *(sym1::Symbol, sym2::Symbol) = Symbol(string(sym1, sym2))
-*(sym::Symbol, rng::Range) = Symbol[sym*k for k in rng]
-*(rng::Range, sym::Symbol) = Symbol[k*sym for k in rng]
-*{T<:Number}(sym::Symbol, vec::Vector{T}) = Symbol[sym*k for k in vec]
-*{T<:Number}(vec::Vector{T}, sym::Symbol) = Symbol[k*sym for k in vec]
+*(sym::Symbol, rng::AbstractRange) = Symbol[sym*k for k in rng]
+*(rng::AbstractRange, sym::Symbol) = Symbol[k*sym for k in rng]
+*(sym::Symbol, vec::Vector{T}) where T<:Number = Symbol[sym*k for k in vec]
+*(vec::Vector{T}, sym::Symbol) where T<:Number = Symbol[k*sym for k in vec]
 *(sym1::Symbol, sym2::Vector{Symbol}) = Symbol[sym1*s2 for s2 in sym2]
 *(sym1::Vector{Symbol}, sym2::Symbol) = Symbol[s1*sym2 for s1 in sym1]
 
@@ -49,7 +51,7 @@ function format(d::Float64)
     end
 end
 
-function format{T<:Union{Float64, Bool}}(d::Vector{T})
+function format(d::Vector{T}) where T<:Union{Float64, Bool}
     s = "["
     for d_k in d[1:end-1]
         s*=format(d_k)

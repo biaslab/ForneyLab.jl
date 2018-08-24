@@ -5,7 +5,8 @@ include("helpers.jl")
 include("dependency_graph.jl")
 
 # Other includes
-import Base: show, convert, ==, mean, var, cov, *
+import Base: show, convert, ==, *
+import Statistics: mean, var, cov
 import SpecialFunctions: digamma
 
 # High level abstracts

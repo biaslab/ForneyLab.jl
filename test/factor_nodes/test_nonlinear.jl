@@ -40,7 +40,7 @@ J_g(x::Vector{Float64}) = reshape(2*x, 1, 1)
 @testset "SPNonlinearOutVG" begin
     @test SPNonlinearOutVG <: SumProductRule{Nonlinear}
     @test outboundType(SPNonlinearOutVG) == Message{GaussianMeanVariance}
-    @test isApplicable(SPNonlinearOutVG, [Void, Message{Gaussian}]) 
+    @test isApplicable(SPNonlinearOutVG, [Nothing, Message{Gaussian}]) 
 
     @test ruleSPNonlinearOutVG(nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), g, J_g) == Message(Univariate, GaussianMeanVariance, m=-1.0, v=48.0)
     @test ruleSPNonlinearOutVG(nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), g, J_g) == Message(Multivariate, GaussianMeanVariance, m=[-1.0], v=mat(48.0 + tiny))
@@ -49,7 +49,7 @@ end
 @testset "SPNonlinearIn1GV" begin
     @test SPNonlinearIn1GV <: SumProductRule{Nonlinear}
     @test outboundType(SPNonlinearIn1GV) == Message{GaussianMeanPrecision}
-    @test isApplicable(SPNonlinearIn1GV, [Message{Gaussian}, Void]) 
+    @test isApplicable(SPNonlinearIn1GV, [Message{Gaussian}, Nothing]) 
 
     @test ruleSPNonlinearIn1GV(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, PointMass, m=2.0), g, J_g) == Message(Univariate, GaussianMeanPrecision, m=0.25*(2.0 + 9.0), w=1.0/(0.25*3.0*0.25))
     @test ruleSPNonlinearIn1GV(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, PointMass, m=[2.0]), g, J_g) == Message(Multivariate, GaussianMeanPrecision, m=[0.25*(2.0 + 9.0)], w=mat(1.0/(0.25*3.0*0.25) + tiny))

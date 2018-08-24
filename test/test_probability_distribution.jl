@@ -8,7 +8,7 @@ using ForneyLab
     @test matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution)
     @test matches(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution)
     @test matches(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, ProbabilityDistribution)
-    @test !matches(Void, ProbabilityDistribution)
+    @test !matches(Nothing, ProbabilityDistribution)
 end
 
 @testset "Univariate" begin

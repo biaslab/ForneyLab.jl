@@ -7,7 +7,7 @@ ruleEPSigmoidRealGB,
 ruleEPSigmoidRealGC,
 ruleEPSigmoidRealGP
 
-function ruleSPSigmoidBinVG{F<:Gaussian}(   msg_bin::Void,
+function ruleSPSigmoidBinVG{F<:Gaussian}(   msg_bin::Nothing,
                                             msg_real::Message{F, Univariate})
 
     d_real = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_real.dist)

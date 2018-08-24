@@ -27,8 +27,8 @@ end
     @test matches(Message{GaussianMeanVariance, Univariate}, Message{Gaussian})
     @test matches(Message{Gaussian}, Message{Gaussian})
     @test matches(Message{GaussianMeanVariance}, Message{Gaussian})
-    @test !matches(Void, Message{Gaussian})
-    @test !matches(Void, Message{GaussianMeanVariance})
+    @test !matches(Nothing, Message{Gaussian})
+    @test !matches(Nothing, Message{GaussianMeanVariance})
     @test matches(Message{Gamma, Univariate}, Message{Union{Gamma, Wishart}, Univariate})
     @test matches(Message{Gamma}, Message{Union{Gamma, Wishart}})
     @test !matches(Message{GaussianMeanVariance, Univariate}, ProbabilityDistribution{Univariate, GaussianMeanVariance})
@@ -59,7 +59,7 @@ end
     nd = MockNode([Variable(), Variable()])
 
     # Schedule should be constructable by hand
-    schedule = [ScheduleEntry(nd.i[1], Void), ScheduleEntry(nd.i[2], Void)]
+    schedule = [ScheduleEntry(nd.i[1], Nothing), ScheduleEntry(nd.i[2], Nothing)]
     @test isa(schedule, Schedule)
 end
 
@@ -87,11 +87,11 @@ end
     schedule = summaryPropagationSchedule(d)
 
     @test length(schedule) == 5
-    @test ScheduleEntry(n1.i[1], Void) in schedule
-    @test ScheduleEntry(n2.i[2], Void) in schedule
-    @test ScheduleEntry(n4.i[1], Void) in schedule
-    @test ScheduleEntry(n3.i[3], Void) in schedule
-    @test ScheduleEntry(n5.i[1], Void) in schedule
+    @test ScheduleEntry(n1.i[1], Nothing) in schedule
+    @test ScheduleEntry(n2.i[2], Nothing) in schedule
+    @test ScheduleEntry(n4.i[1], Nothing) in schedule
+    @test ScheduleEntry(n3.i[3], Nothing) in schedule
+    @test ScheduleEntry(n5.i[1], Nothing) in schedule
 end
 
 @testset "flatten" begin
@@ -106,11 +106,11 @@ end
     n3 = MockNode([b, c])
     n4 = MockNode([Variable()])
 
-    schedule = [ScheduleEntry(n1.i[1], Void),
-                ScheduleEntry(n2.i[2], Void),
-                ScheduleEntry(n3.i[2], Void)]
-    schedule[2].internal_schedule = [   ScheduleEntry(n1.i[1], Void),
-                                        ScheduleEntry(n4.i[1], Void)]
+    schedule = [ScheduleEntry(n1.i[1], Nothing),
+                ScheduleEntry(n2.i[2], Nothing),
+                ScheduleEntry(n3.i[2], Nothing)]
+    schedule[2].internal_schedule = [   ScheduleEntry(n1.i[1], Nothing),
+                                        ScheduleEntry(n4.i[1], Nothing)]
 
     flat_schedule = flatten(schedule)
 

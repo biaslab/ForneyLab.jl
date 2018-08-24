@@ -26,17 +26,17 @@ end
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (Void, Message{PointMass}, ProbabilityDistribution),
+                           :inbound_types => (Nothing, Message{PointMass}, ProbabilityDistribution),
                            :name          => SVBMock1VGD)
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (Message{PointMass}, Void, ProbabilityDistribution),
+                           :inbound_types => (Message{PointMass}, Nothing, ProbabilityDistribution),
                            :name          => SVBMock2GVD)
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (ProbabilityDistribution, Void),
+                           :inbound_types => (ProbabilityDistribution, Nothing),
                            :name          => SVBMock3DV)
 
 @testset "@structuredVariationalRule" begin

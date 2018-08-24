@@ -2,7 +2,7 @@ export
 ruleVBGammaOut,
 ruleSPGammaOutVPP
 
-ruleSPGammaOutVPP(  msg_out::Void, 
+ruleSPGammaOutVPP(  msg_out::Nothing, 
                     msg_a::Message{PointMass, Univariate},
                     msg_b::Message{PointMass, Univariate}) =
     Message(Univariate, Gamma, a=deepcopy(msg_a.dist.params[:m]), b=deepcopy(msg_b.dist.params[:m]))

@@ -27,12 +27,12 @@ struct ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
 end
 
 """Extract VariateType from dist"""
-variateType{V<:VariateType, F<:FactorNode}(dist::ProbabilityDistribution{V, F}) = V
+variateType(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorNode} = V
 
 show(io::IO, dist::ProbabilityDistribution) = println(io, format(dist))
 
-matches{Pa<:ProbabilityDistribution, Pb<:ProbabilityDistribution}(Ta::Type{Pa}, Tb::Type{Pb}) = (Pa<:Pb)
-matches{T<:ProbabilityDistribution}(::Type{Void}, ::Type{T}) = false
+matches(Ta::Type{Pa}, Tb::Type{Pb}) where {Pa<:ProbabilityDistribution, Pb<:ProbabilityDistribution} = (Pa<:Pb)
+matches(::Type{Nothing}, ::Type{T}) where T<:ProbabilityDistribution = false
 
 mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error("mean($(dist)) is undefined because the distribution is improper.")
 var(dist::ProbabilityDistribution) = isProper(dist) ? unsafeVar(dist) : error("var($(dist)) is undefined because the distribution is improper.")
@@ -46,7 +46,7 @@ abstract type PointMass <: DeltaFactor end
 
 slug(::Type{PointMass}) = "δ"
 
-format{V<:VariateType}(dist::ProbabilityDistribution{V, PointMass}) = "$(slug(PointMass))(m=$(format(dist.params[:m])))"
+format(dist::ProbabilityDistribution{V, PointMass}) where V<:VariateType = "$(slug(PointMass))(m=$(format(dist.params[:m])))"
 
 dims(dist::ProbabilityDistribution{Univariate, PointMass}) = 1
 dims(dist::ProbabilityDistribution{Multivariate, PointMass}) = length(dist.params[:m])

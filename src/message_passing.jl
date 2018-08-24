@@ -40,7 +40,7 @@ matches{T<:Message}(::Type{T}, ::Type{T}) = true
 matches{Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType, Vb<:VariateType}(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) = (Va==Vb) && (Fa<:Fb)
 matches{Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType}(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) = (Fa<:Fb)
 matches{Fa<:FactorNode, Fb<:FactorNode}(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) = (Fa<:Fb)
-matches{T<:Message}(::Type{Void}, ::Type{T}) = false
+matches{T<:Message}(::Type{Nothing}, ::Type{T}) = false
 matches{P<:ProbabilityDistribution, M<:Message}(::Type{P}, ::Type{M}) = false
 matches{P<:ProbabilityDistribution, M<:Message}(::Type{M}, ::Type{P}) = false
 
@@ -140,7 +140,7 @@ end
 """
 `summaryPropagationSchedule(variables)` builds a generic summary propagation
 `Schedule` for calculating the marginal distributions of every variable in
-`variables`. The message update rule in each schedule entry is set to `Void`.
+`variables`. The message update rule in each schedule entry is set to `Nothing`.
 """
 function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges(current_graph), target_sites=Interface[], breaker_sites=Interface[])
     # We require the marginal distribution of every variable in variables.
@@ -155,8 +155,8 @@ function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges
     # Determine a feasible ordering of message updates
     dg = summaryDependencyGraph(limit_set)
     iface_list = children(unique(target_sites), dg, breaker_sites=Set(breaker_sites))
-    # Build a schedule; Void indicates an unspecified message update rule
-    schedule = [ScheduleEntry(iface, Void) for iface in iface_list]
+    # Build a schedule; Nothing indicates an unspecified message update rule
+    schedule = [ScheduleEntry(iface, Nothing) for iface in iface_list]
 
     return schedule
 end
@@ -168,7 +168,7 @@ inferUpdateRules!(schedule) infers specific message update rules for all schedul
 """
 function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Interface, Type}())
     for entry in schedule
-        (entry.msg_update_rule == Void) && error("No msg update rule type specified for $(entry)")
+        (entry.msg_update_rule == Nothing) && error("No msg update rule type specified for $(entry)")
         if !isleaftype(entry.msg_update_rule)
             # In this case entry.msg_update_rule is a update rule type, but not a specific rule.
             # Here we infer the specific rule that is applicable, which should be a subtype of entry.msg_update_rule.

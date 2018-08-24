@@ -8,7 +8,7 @@
 
 @sumProductRule(:node_type     => DotProduct,
                 :outbound_type => Message{GaussianMeanVariance},
-                :inbound_types => (Void, Message{PointMass}, Message{Gaussian}),
+                :inbound_types => (Nothing, Message{PointMass}, Message{Gaussian}),
                 :name          => SPDotProductOutVPG)
 
 
@@ -22,7 +22,7 @@
 
 @sumProductRule(:node_type     => DotProduct,
                 :outbound_type => Message{GaussianMeanVariance},
-                :inbound_types => (Void, Message{Gaussian}, Message{PointMass}),
+                :inbound_types => (Nothing, Message{Gaussian}, Message{PointMass}),
                 :name          => SPDotProductOutVGP)
 
 
@@ -36,7 +36,7 @@
 
 @sumProductRule(:node_type     => DotProduct,
                 :outbound_type => Message{GaussianWeightedMeanPrecision},
-                :inbound_types => (Message{Gaussian}, Message{PointMass}, Void),
+                :inbound_types => (Message{Gaussian}, Message{PointMass}, Nothing),
                 :name          => SPDotProductIn2GPV)
 
 
@@ -50,5 +50,5 @@
 
 @sumProductRule(:node_type     => DotProduct,
                 :outbound_type => Message{GaussianWeightedMeanPrecision},
-                :inbound_types => (Message{Gaussian}, Void, Message{PointMass}),
+                :inbound_types => (Message{Gaussian}, Nothing, Message{PointMass}),
                 :name          => SPDotProductIn1GVP)

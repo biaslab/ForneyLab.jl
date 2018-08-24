@@ -45,7 +45,7 @@ end
 @testset "SPBetaOutVPP" begin
     @test SPBetaOutVPP <: SumProductRule{Beta}
     @test outboundType(SPBetaOutVPP) == Message{Beta}
-    @test isApplicable(SPBetaOutVPP, [Void, Message{PointMass}, Message{PointMass}])
+    @test isApplicable(SPBetaOutVPP, [Nothing, Message{PointMass}, Message{PointMass}])
 
     @test ruleSPBetaOutVPP(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
 end
@@ -53,7 +53,7 @@ end
 @testset "VBBetaOut" begin
     @test VBBetaOut <: NaiveVariationalRule{Beta}
     @test outboundType(VBBetaOut) == Message{Beta}
-    @test isApplicable(VBBetaOut, [Void, ProbabilityDistribution, ProbabilityDistribution])
+    @test isApplicable(VBBetaOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
 
     @test ruleVBBetaOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=2.0), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
 end

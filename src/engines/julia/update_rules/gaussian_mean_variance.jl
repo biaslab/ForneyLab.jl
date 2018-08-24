@@ -6,15 +6,15 @@ ruleSPGaussianMeanVarianceMGVP,
 ruleVBGaussianMeanVarianceM,
 ruleVBGaussianMeanVarianceOut
 
-ruleSPGaussianMeanVarianceOutVPP{V<:VariateType}(   msg_out::Void,
+ruleSPGaussianMeanVarianceOutVPP{V<:VariateType}(   msg_out::Nothing,
                                                     msg_mean::Message{PointMass, V},
                                                     msg_var::Message{PointMass}) =
     Message(V, GaussianMeanVariance, m=deepcopy(msg_mean.dist.params[:m]), v=deepcopy(msg_var.dist.params[:m]))
 
-ruleSPGaussianMeanVarianceMPVP(msg_out::Message{PointMass}, msg_mean::Void, msg_var::Message{PointMass}) =
+ruleSPGaussianMeanVarianceMPVP(msg_out::Message{PointMass}, msg_mean::Nothing, msg_var::Message{PointMass}) =
     ruleSPGaussianMeanVarianceOutVPP(msg_mean, msg_out, msg_var)
 
-function ruleSPGaussianMeanVarianceOutVGP{F<:Gaussian, V<:VariateType}( msg_out::Void,
+function ruleSPGaussianMeanVarianceOutVGP{F<:Gaussian, V<:VariateType}( msg_out::Nothing,
                                                                         msg_mean::Message{F, V},
                                                                         msg_var::Message{PointMass})
 
@@ -23,7 +23,7 @@ function ruleSPGaussianMeanVarianceOutVGP{F<:Gaussian, V<:VariateType}( msg_out:
     Message(V, GaussianMeanVariance, m=d_mean.params[:m], v=d_mean.params[:v] + msg_var.dist.params[:m])
 end
 
-ruleSPGaussianMeanVarianceMGVP{F<:Gaussian}(msg_out::Message{F}, msg_mean::Void, msg_var::Message{PointMass}) = 
+ruleSPGaussianMeanVarianceMGVP{F<:Gaussian}(msg_out::Message{F}, msg_mean::Nothing, msg_var::Message{PointMass}) = 
     ruleSPGaussianMeanVarianceOutVGP(msg_mean, msg_out, msg_var)
 
 ruleVBGaussianMeanVarianceM{V<:VariateType}(dist_out::ProbabilityDistribution{V},

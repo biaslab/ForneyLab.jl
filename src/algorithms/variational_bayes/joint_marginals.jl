@@ -140,7 +140,7 @@ macro marginalRule(fields...)
     # Build validators for isApplicable
     input_type_validators = String[]
     for (i, i_type) in enumerate(inbound_types.args)
-        if i_type != :Void
+        if i_type != :Nothing
             # Only validate inbounds required for update
             push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
         end

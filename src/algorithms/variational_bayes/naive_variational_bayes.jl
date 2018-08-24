@@ -76,7 +76,7 @@ function collectInboundTypes{T<:NaiveVariationalRule}(  entry::ScheduleEntry,
     inbound_types = Type[]
     for node_interface in entry.interface.node.interfaces
         if node_interface == entry.interface
-            push!(inbound_types, Void)
+            push!(inbound_types, Nothing)
         else
             # Edge is external, accept marginal
             push!(inbound_types, ProbabilityDistribution) 
@@ -128,7 +128,7 @@ macro naiveVariationalRule(fields...)
     # Build validators for isApplicable
     input_type_validators = String[]
     for (i, i_type) in enumerate(inbound_types.args)
-        if i_type != :Void
+        if i_type != :Nothing
             # Only validate inbounds required for message update
             push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
         end

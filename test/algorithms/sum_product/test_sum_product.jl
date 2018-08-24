@@ -26,7 +26,7 @@ end
 
 @sumProductRule(:node_type     => MockNode,
                 :outbound_type => Message{PointMass},
-                :inbound_types => (Void, Message{PointMass}, Message{PointMass}),
+                :inbound_types => (Nothing, Message{PointMass}, Message{PointMass}),
                 :name          => SPMockOutPP)
 
 @testset "@SumProductRule" begin
@@ -55,7 +55,7 @@ end
     b = Variable(id=:b)
     tc = TestComposite(b, a)
     inferred_outbound_types = Dict(tc.i[:a].partner => Message{PointMass})
-    entry = ScheduleEntry(tc.i[:b], SumProductRule{Void})
+    entry = ScheduleEntry(tc.i[:b], SumProductRule{Nothing})
 
     inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
 

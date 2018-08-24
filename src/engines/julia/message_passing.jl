@@ -66,7 +66,7 @@ function writeMarginalsComputationBlock(schedule::MarginalSchedule, interface_to
     code = ""
 
     for schedule_entry in schedule
-        if schedule_entry.marginal_update_rule == Void
+        if schedule_entry.marginal_update_rule == Nothing
             iface = schedule_entry.interfaces[1]
             code *= "marginals[:$(schedule_entry.target.id)] = messages[$(interface_to_msg_idx[iface])].dist\n"
         elseif schedule_entry.marginal_update_rule == Product

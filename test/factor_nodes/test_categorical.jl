@@ -48,7 +48,7 @@ end
 @testset "SPCategoricalOutVP" begin
     @test SPCategoricalOutVP <: SumProductRule{Categorical}
     @test outboundType(SPCategoricalOutVP) == Message{Categorical}
-    @test isApplicable(SPCategoricalOutVP, [Void, Message{PointMass}]) 
+    @test isApplicable(SPCategoricalOutVP, [Nothing, Message{PointMass}]) 
 
     @test ruleSPCategoricalOutVP(nothing, Message(Multivariate, PointMass, m=[0.1, 0.8, 0.1])) == Message(Univariate, Categorical, p=[0.1, 0.8, 0.1])
 end
@@ -56,8 +56,8 @@ end
 @testset "VBCategoricalOut" begin
     @test VBCategoricalOut <: NaiveVariationalRule{Categorical}
     @test outboundType(VBCategoricalOut) == Message{Categorical}
-    @test isApplicable(VBCategoricalOut, [Void, ProbabilityDistribution])
-    @test !isApplicable(VBCategoricalOut, [ProbabilityDistribution, Void])
+    @test isApplicable(VBCategoricalOut, [Nothing, ProbabilityDistribution])
+    @test !isApplicable(VBCategoricalOut, [ProbabilityDistribution, Nothing])
 
     @test ruleVBCategoricalOut(nothing, ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1])) == Message(Univariate, Categorical, p=[0.10000000000000002, 0.8, 0.10000000000000002])
     @test ruleVBCategoricalOut(nothing, ProbabilityDistribution(Multivariate, Dirichlet, a=[0.1, 0.8, 0.1])) == Message(Univariate, Categorical, p=[7.799215056092699e-5, 0.999844015698878, 7.799215056092699e-5])
@@ -66,7 +66,7 @@ end
 @testset "VBCategoricalIn1" begin
     @test VBCategoricalIn1 <: NaiveVariationalRule{Categorical}
     @test outboundType(VBCategoricalIn1) == Message{Dirichlet}
-    @test isApplicable(VBCategoricalIn1, [ProbabilityDistribution, Void])
+    @test isApplicable(VBCategoricalIn1, [ProbabilityDistribution, Nothing])
 
     @test ruleVBCategoricalIn1(ProbabilityDistribution(Multivariate, PointMass, m=[0.1, 0.8, 0.1]), nothing) == Message(Multivariate, Dirichlet, a=[1.1, 1.8, 1.1])
     @test ruleVBCategoricalIn1(ProbabilityDistribution(Univariate, Categorical, p=[0.1, 0.8, 0.1]), nothing) == Message(Multivariate, Dirichlet, a=[1.1, 1.8, 1.1])

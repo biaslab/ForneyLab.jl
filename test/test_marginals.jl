@@ -30,7 +30,7 @@ end
     nd = MockNode([x])
 
     # Marginal schedule should be constructable by hand
-    marginal_schedule = [MarginalScheduleEntry(x, [nd.i[1]], Void)]
+    marginal_schedule = [MarginalScheduleEntry(x, [nd.i[1]], Nothing)]
     @test isa(marginal_schedule, MarginalSchedule)
 end
 
@@ -58,7 +58,7 @@ end
 
     @test marginal_schedule[2].target == b
     @test marginal_schedule[2].interfaces[1] == n2.i[2]
-    @test marginal_schedule[2].marginal_update_rule == Void
+    @test marginal_schedule[2].marginal_update_rule == Nothing
 end
 
 end # module

@@ -11,15 +11,15 @@ ruleSVBGaussianMeanPrecisionW,
 ruleSVBGaussianMeanPrecisionMGVD,
 ruleMGaussianMeanPrecisionGGD
 
-ruleSPGaussianMeanPrecisionOutVPP{V<:VariateType}(  msg_out::Void,
+ruleSPGaussianMeanPrecisionOutVPP{V<:VariateType}(  msg_out::Nothing,
                                                     msg_mean::Message{PointMass, V},
                                                     msg_prec::Message{PointMass}) =
     Message(V, GaussianMeanPrecision, m=deepcopy(msg_mean.dist.params[:m]), w=deepcopy(msg_prec.dist.params[:m]))
 
-ruleSPGaussianMeanPrecisionMPVP(msg_out::Message{PointMass}, msg_mean::Void, msg_prec::Message{PointMass}) = 
+ruleSPGaussianMeanPrecisionMPVP(msg_out::Message{PointMass}, msg_mean::Nothing, msg_prec::Message{PointMass}) = 
     ruleSPGaussianMeanPrecisionOutVPP(msg_mean, msg_out, msg_prec)
 
-function ruleSPGaussianMeanPrecisionOutVGP{F<:Gaussian, V<:VariateType}(msg_out::Void,
+function ruleSPGaussianMeanPrecisionOutVGP{F<:Gaussian, V<:VariateType}(msg_out::Nothing,
                                                                         msg_mean::Message{F, V},
                                                                         msg_prec::Message{PointMass})
 
@@ -28,7 +28,7 @@ function ruleSPGaussianMeanPrecisionOutVGP{F<:Gaussian, V<:VariateType}(msg_out:
     Message(V, GaussianMeanVariance, m=d_mean.params[:m], v=d_mean.params[:v] + cholinv(msg_prec.dist.params[:m]))
 end
 
-ruleSPGaussianMeanPrecisionMGVP{F<:Gaussian}(msg_out::Message{F}, msg_mean::Void, msg_prec::Message{PointMass}) = 
+ruleSPGaussianMeanPrecisionMGVP{F<:Gaussian}(msg_out::Message{F}, msg_mean::Nothing, msg_prec::Message{PointMass}) = 
     ruleSPGaussianMeanPrecisionOutVGP(msg_mean, msg_out, msg_prec)
 
 ruleVBGaussianMeanPrecisionM{V<:VariateType}(   dist_out::ProbabilityDistribution{V},
