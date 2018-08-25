@@ -12,7 +12,7 @@ import ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface,
     
     while !isempty(stack)
         for node_type in subtypes(pop!(stack))
-            if isleaftype(node_type)
+            if isconcretetype(node_type)
                 (node_type == PointMass) && continue # skip PointMass
                 push!(node_types, node_type)
             else

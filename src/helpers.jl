@@ -1,7 +1,8 @@
 export huge, tiny, cholinv, diageye, format, *, .*, ^, mat
 
 import Base: *, .*, ^, ==, sqrt
-import LinearAlgebra: Diagonal
+import LinearAlgebra: Diagonal, cholfact, Hermitian, isposdef, ishermitian
+import InteractiveUtils: subtypes
 import Printf: @sprintf
 
 """ensureMatrix: cast input to a Matrix if necessary"""
@@ -165,7 +166,7 @@ function leaftypes(datatype::Type)
     # push!(stack, datatype)
     while !isempty(stack)
         for T in subtypes(pop!(stack))
-            if isleaftype(T)
+            if isconcretetype(T)
                 push!(leafs, T)
             else
                 push!(stack, T)

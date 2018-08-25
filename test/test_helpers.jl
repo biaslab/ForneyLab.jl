@@ -2,14 +2,15 @@ module HelpersTest
 
 using Test
 import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, cholinv, diageye, *, .*, ^
- 
+import LinearAlgebra: Diagonal, eye, isposdef
+
 @testset "Helpers" begin
     @testset "ensureMatrix" begin
         # should convert input argument to a Matrix or Nothing
         @test ensureMatrix([1.0, 2.0]) == Diagonal([1.0, 2.0])
         @test ensureMatrix(Diagonal([1.0, 2.0])) == Diagonal([1.0, 2.0])
-        @test ensureMatrix(eye(2)) == eye(2)
-        @test ensureMatrix(1.0) == eye(1)
+        @test ensureMatrix(Matrix(1.0I,2,2)) == Matrix(1.0I,2,2)
+        @test ensureMatrix(1.0) == Matrix(1.0I,1,1)
         @test ensureMatrix(nothing) == nothing
     end
 

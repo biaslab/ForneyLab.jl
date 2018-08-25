@@ -140,7 +140,7 @@ mutable struct Terminal <: FactorNode
     outer_interface::Interface # Interface of CompositeNode linked to this Terminal
 
     function Terminal(out::Variable, outer_interface::Interface; id=generateId(Terminal))
-        self = new(id, Array{Interface}(1), Dict{Symbol,Interface}(), outer_interface)
+        self = new(id, Array{Interface}(undef, 1), Dict{Symbol,Interface}(), outer_interface)
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
 
