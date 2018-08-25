@@ -1,14 +1,14 @@
 export huge, tiny, cholinv, diageye, format, *, .*, ^, mat
 
 import Base: *, .*, ^, ==, sqrt
-import LinearAlgebra: Diagonal, cholfact, Hermitian, isposdef, ishermitian
+import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky
 import InteractiveUtils: subtypes
 import Printf: @sprintf
 
 """ensureMatrix: cast input to a Matrix if necessary"""
 ensureMatrix(arr::AbstractMatrix{T}) where T<:Number = arr
 ensureMatrix(arr::Vector{T}) where T<:Number = Diagonal(arr)
-ensureMatrix(n::Number) = fill!(Array{typeof(n)}(1,1), n)
+ensureMatrix(n::Number) = fill!(Array{typeof(n)}(undef,1,1), n)
 ensureMatrix(n::Nothing) = nothing
 
 # Constants to define smallest/largest supported numbers.
@@ -18,7 +18,7 @@ const tiny = 1e-12
 
 # Operations related to diagonal matrices
 cholinv(m::Number) = 1.0/m
-cholinv(M::AbstractMatrix) = inv(cholfact(Hermitian(Matrix(M))))
+cholinv(M::AbstractMatrix) = inv(cholesky(Hermitian(Matrix(M)),Val(false)))
 cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
 diageye(dims::Int64) = Diagonal(ones(dims))
 
@@ -90,7 +90,7 @@ end
 isApproxEqual(arg1, arg2) = maximum(abs.(arg1-arg2)) < tiny
 
 """isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from."""
-isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round.(Matrix(arr), round(Int, log10(huge)))) && isposdef(Matrix(arr), :L)
+isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round.(Matrix(arr), digits=round(Int, log10(huge)))) && isposdef(Hermitian(Matrix(arr), :L))
 
 function viewFile(filename::AbstractString)
     # Open a file with the application associated with the file type

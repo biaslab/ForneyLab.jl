@@ -23,7 +23,7 @@ mutable struct Equality <: DeltaFactor
     i::Dict{Int,Interface}
 
     function Equality(; id=generateId(Equality))
-        self = new(id, Array{Interface}(3), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(undef, 3), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
 
         for idx = 1:3

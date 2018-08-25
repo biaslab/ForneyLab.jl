@@ -29,7 +29,7 @@ mutable struct Dirichlet <: SoftFactor
 
     function Dirichlet(out, a; id=generateId(Dirichlet))
         @ensureVariables(out, a)
-        self = new(id, Array{Interface}(2), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(undef, 2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:a] = self.interfaces[2] = associate!(Interface(self), a)

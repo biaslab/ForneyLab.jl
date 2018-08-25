@@ -24,7 +24,7 @@ mutable struct GaussianMeanPrecision <: Gaussian
 
     function GaussianMeanPrecision(out, m, w; id=generateId(GaussianMeanPrecision))
         @ensureVariables(out, m, w)
-        self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:m] = self.interfaces[2] = associate!(Interface(self), m)

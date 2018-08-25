@@ -26,7 +26,7 @@ mutable struct GaussianMeanVariance <: Gaussian
 
     function GaussianMeanVariance(out, m, v; id=generateId(GaussianMeanVariance))
         @ensureVariables(out, m, v)
-        self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:m] = self.interfaces[2] = associate!(Interface(self), m)

@@ -28,7 +28,7 @@ mutable struct Nonlinear <: DeltaFactor
 
     function Nonlinear(out, in1, g::Function, J_g::Function; dims=(1,), id=ForneyLab.generateId(Nonlinear))
         @ensureVariables(out, in1)
-        self = new(id, Vector{Interface}(2), Dict{Symbol,Interface}(), g, J_g, dims)
+        self = new(id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), g, J_g, dims)
         ForneyLab.addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)

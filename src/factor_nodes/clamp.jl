@@ -24,7 +24,7 @@ mutable struct Clamp{T<:VariateType} <: DeltaFactor
 end
 
 function Clamp(out::Variable, value::Any; id=generateId(Clamp{variateType(value)}))
-    self = Clamp{variateType(value)}(id, Array{Interface}(1), Dict{Symbol,Interface}(), value)
+    self = Clamp{variateType(value)}(id, Array{Interface}(undef, 1), Dict{Symbol,Interface}(), value)
     addNode!(currentGraph(), self)
 
     self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)

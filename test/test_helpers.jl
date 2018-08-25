@@ -2,7 +2,7 @@ module HelpersTest
 
 using Test
 import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, cholinv, diageye, *, .*, ^
-import LinearAlgebra: Diagonal, eye, isposdef
+import LinearAlgebra: Diagonal, isposdef, I, Hermitian
 
 @testset "Helpers" begin
     @testset "ensureMatrix" begin
@@ -18,10 +18,10 @@ import LinearAlgebra: Diagonal, eye, isposdef
         # should work for scalars, vectors and matrices
         @test isApproxEqual(1.0, 1.0+1e-15) == true
         @test isApproxEqual(1.0, 1.0+1e-9) == false
-        @test isApproxEqual([1.0, 1.0], [1.0, 1.0]+1e-15) == true
-        @test isApproxEqual([1.0, 1.0], [1.0, 1.0]+1e-9) == false
-        @test isApproxEqual(eye(3,3), eye(3,3)+1e-15) == true
-        @test isApproxEqual(eye(3,3), eye(3,3)+1e-9) == false
+        @test isApproxEqual([1.0, 1.0], [1.0, 1.0].+1e-15) == true
+        @test isApproxEqual([1.0, 1.0], [1.0, 1.0].+1e-9) == false
+        @test isApproxEqual(Matrix(1.0I,3,3), Matrix(1.0I,3,3).+1e-15) == true
+        @test isApproxEqual(Matrix(1.0I,3,3), Matrix(1.0I,3,3).+1e-9) == false
     end
 
     @testset "isRoundedPosDef" begin
