@@ -1,6 +1,6 @@
 module FactorGraphTest
 
-using Base.Test
+using Test
 import ForneyLab: FactorGraph, FactorNode, Interface, Edge, Variable, generateId, currentGraph, setCurrentGraph,
 generateId, addNode!, hasNode, addVariable!, hasVariable, Clamp
 

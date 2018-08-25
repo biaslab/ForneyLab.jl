@@ -1,6 +1,6 @@
 module MessagePassingTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, matches, flatten
 

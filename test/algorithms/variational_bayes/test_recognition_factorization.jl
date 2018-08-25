@@ -1,6 +1,6 @@
 module RecognitionFactorizationTest
 
-using Base.Test
+using Test
 using ForneyLab
 
 import ForneyLab: nodesConnectedToExternalEdges, Cluster, hasCollider

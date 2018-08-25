@@ -1,6 +1,6 @@
 module ExponentialTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
 import ForneyLab: SPExponentialOutVG, SPExponentialOutVP, SPExponentialIn1LV, SPExponentialIn1PV

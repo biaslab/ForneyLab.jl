@@ -26,7 +26,6 @@ Base.broadcast(::typeof(*), D1::Matrix, D2::Diagonal) = Diagonal(diag(D1).*D2.di
 Base.broadcast(::typeof(*), D1::Diagonal, D2::Matrix) = D2.*D1
 
 ^(D::Diagonal, p::Float64) = Diagonal(D.diag.^p)
-sqrt(D::Diagonal) = Diagonal(sqrt.(D.diag))
 
 # Symbol concatenation
 *(sym::Symbol, num::Number) = Symbol(string(sym, num))
@@ -130,19 +129,20 @@ Example:
     end
 """
 macro symmetrical(orig::Expr)
-    (orig.args[1].head == :call) || error("Invalid use of @symmetrical")
-    eval(orig)
-    swap_arg_indexes = Int64[]
-    for i=1:length(orig.args[1].args)
-        (typeof(orig.args[1].args[i]) == Expr) || continue
-        (orig.args[1].args[i].head == :(::)) || continue
-        push!(swap_arg_indexes, i)
-        (length(swap_arg_indexes) < 2) || break
-    end
+    # TODO: Fix the swap
+    # (orig.args[1].head == :call) || error("Invalid use of @symmetrical")
+    # eval(orig)
+    # swap_arg_indexes = Int64[]
+    # for i=1:length(orig.args[1].args)
+    #     (typeof(orig.args[1].args[i]) == Expr) || continue
+    #     (orig.args[1].args[i].head == :(::)) || continue
+    #     push!(swap_arg_indexes, i)
+    #     (length(swap_arg_indexes) < 2) || break
+    # end
 
-    mirrored = deepcopy(orig)
-    mirrored.args[1].args[swap_arg_indexes] = orig.args[1].args[reverse(swap_arg_indexes)]
-    eval(mirrored)
+    # mirrored = deepcopy(orig)
+    # mirrored.args[1].args[swap_arg_indexes] = orig.args[1].args[reverse(swap_arg_indexes)]
+    # eval(mirrored)
 end
 
 """

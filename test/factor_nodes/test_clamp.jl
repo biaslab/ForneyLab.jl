@@ -1,6 +1,6 @@
 module ClampTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, @ensureVariables, generateId, addNode!, associate!
 import ForneyLab: SPClamp

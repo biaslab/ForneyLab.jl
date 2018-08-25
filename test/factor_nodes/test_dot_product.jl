@@ -1,6 +1,6 @@
 module DotProductTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
 import ForneyLab: SPDotProductOutVPG, SPDotProductOutVGP, SPDotProductIn1GVP, SPDotProductIn2GPV

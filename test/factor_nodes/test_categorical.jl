@@ -1,6 +1,6 @@
 module CategoricalTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims
 import ForneyLab: SPCategoricalOutVP, VBCategoricalOut, VBCategoricalIn1

@@ -1,6 +1,6 @@
 module SigmoidTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, mapToBernoulliParameterRange
 import ForneyLab: SPSigmoidBinVG, EPSigmoidRealGB, EPSigmoidRealGC, EPSigmoidRealGP

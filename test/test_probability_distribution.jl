@@ -1,6 +1,6 @@
 module ProbabilityDistributionTest
 
-using Base.Test
+using Test
 import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, mat, isProper, isValid, invalidate!, gaussianQuadrature, dims, diageye, matches, Message
 using ForneyLab
 

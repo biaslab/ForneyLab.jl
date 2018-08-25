@@ -1,6 +1,6 @@
 module MultiplicationTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
 import ForneyLab: SPMultiplicationOutVGP, SPMultiplicationOutVPG, SPMultiplicationIn1GVP, SPMultiplicationAGPV, SPMultiplicationOutVPP, SPMultiplicationIn1PVP, SPMultiplicationAPPV

@@ -1,6 +1,6 @@
 module ContingencyTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: vague, dims
 

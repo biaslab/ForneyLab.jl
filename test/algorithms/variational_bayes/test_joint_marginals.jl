@@ -1,6 +1,6 @@
 module JointMarginalsTest
 
-using Base.Test
+using Test
 using ForneyLab
 
 import ForneyLab: generateId, addNode!, associate!, inferMarginalRule, isApplicable, Cluster, Product

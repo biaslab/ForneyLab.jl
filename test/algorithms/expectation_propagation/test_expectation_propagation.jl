@@ -1,6 +1,6 @@
 module ExpectationPropagationTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
 import ForneyLab: EPSigmoidRealGP, SPGaussianMeanVarianceOutVPP, SPClamp, VBGaussianMeanPrecisionOut, SPSigmoidBinVG

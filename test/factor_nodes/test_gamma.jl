@@ -1,6 +1,6 @@
 module GammaTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable, dims
 import ForneyLab: SPGammaOutVPP, VBGammaOut

@@ -1,6 +1,6 @@
 module AdditionTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
 import ForneyLab: SPAdditionOutVGG, SPAdditionOutVGP, SPAdditionOutVPG, SPAdditionIn1GVG, SPAdditionIn1PVG, SPAdditionIn2GGV, SPAdditionIn2PGV, SPAdditionIn1GVP, SPAdditionIn2GPV, SPAdditionOutVPP, SPAdditionIn1PVP, SPAdditionIn2PPV

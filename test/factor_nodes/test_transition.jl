@@ -1,6 +1,6 @@
 module TransitionTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
 import ForneyLab: SPTransitionOutVCP, SPTransitionIn1CVP, VBTransitionOut, VBTransitionIn1, VBTransitionA, SVBTransitionOutVCD, SVBTransitionIn1CVD, SVBTransitionADV, MTransitionCCD

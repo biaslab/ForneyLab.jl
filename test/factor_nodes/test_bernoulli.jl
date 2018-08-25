@@ -1,6 +1,6 @@
 module BernoulliTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims
 import ForneyLab: SPBernoulliOutVP, VBBernoulliOut, VBBernoulliIn1

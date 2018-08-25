@@ -1,6 +1,6 @@
 module NonlinearTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: approximate, outboundType, isApplicable
 import ForneyLab: SPNonlinearOutVG, SPNonlinearIn1GV

@@ -1,6 +1,6 @@
 module GaussianTest
 
-using Base.Test
+using Test
 using ForneyLab
 
 @testset "sample" begin

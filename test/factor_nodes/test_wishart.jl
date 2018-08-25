@@ -1,6 +1,6 @@
 module WishartTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: prod!, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper
 import ForneyLab: SPWishartOutVPP, VBWishartOut

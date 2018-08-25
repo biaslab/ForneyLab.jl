@@ -131,24 +131,24 @@ macro sumProductRule(fields...)
     outbound_type = :unknown
     inbound_types = :unknown
     name = :auto # Triggers automatic naming unless overwritten
-
+    
     # Loop over fields because order is unknown
     for arg in fields
 
         (arg.args[1] == :(=>)) || error("Invalid call to @sumProductRule")
-
-        if arg.args[2].args[1] == :node_type
+    
+        if arg.args[2].value == :node_type
             node_type = arg.args[3]
-        elseif arg.args[2].args[1] == :outbound_type
+        elseif arg.args[2].value == :outbound_type
             outbound_type = arg.args[3]
             (outbound_type.head == :curly && outbound_type.args[1] == :Message) || error("Outbound type for SumProductRule should be a Message")
-        elseif arg.args[2].args[1] == :inbound_types
+        elseif arg.args[2].value == :inbound_types
             inbound_types = arg.args[3]
             (inbound_types.head == :tuple) || error("Inbound types should be passed as Tuple")
-        elseif arg.args[2].args[1] == :name
+        elseif arg.args[2].value == :name
             name = arg.args[3]
         else
-            error("Unrecognized field $(arg.args[2].args[1]) in call to @sumProductRule")
+            error("Unrecognized field $(arg.args[2].value) in call to @sumProductRule")
         end
     end
 

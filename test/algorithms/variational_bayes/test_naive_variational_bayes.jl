@@ -1,6 +1,6 @@
 module NaiveVariationalBayesTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
 import ForneyLab: VBGaussianMeanVarianceOut, VBGaussianMeanPrecisionM, SPEqualityGaussian

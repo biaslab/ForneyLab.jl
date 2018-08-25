@@ -40,9 +40,9 @@ variationalSchedule(recognition_factor::RecognitionFactor) = variationalSchedule
 """
 Infer the update rule that computes the message for `entry`, as dependent on the inbound types
 """
-function inferUpdateRule!{T<:NaiveVariationalRule}( entry::ScheduleEntry,
-                                                    rule_type::Type{T},
-                                                    inferred_outbound_types::Dict{Interface, Type})
+function inferUpdateRule!(  entry::ScheduleEntry,
+                            rule_type::Type{T},
+                            inferred_outbound_types::Dict{Interface, Type}) where T<:NaiveVariationalRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
     
@@ -70,9 +70,9 @@ end
 Find the inbound types that are required to compute the message for `entry`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
-function collectInboundTypes{T<:NaiveVariationalRule}(  entry::ScheduleEntry,
-                                                        ::Type{T},
-                                                        inferred_outbound_types::Dict{Interface, Type})
+function collectInboundTypes(   entry::ScheduleEntry,
+                                ::Type{T},
+                                inferred_outbound_types::Dict{Interface, Type}) where T<:NaiveVariationalRule
     inbound_types = Type[]
     for node_interface in entry.interface.node.interfaces
         if node_interface == entry.interface

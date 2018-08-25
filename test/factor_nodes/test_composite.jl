@@ -1,6 +1,6 @@
 module CompositeTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: @composite, outboundType, isApplicable
 import ForneyLab: SPClamp, SPGaussianMeanVarianceOutVPP, Product

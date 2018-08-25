@@ -1,6 +1,6 @@
 module LogNormalTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: prod!, unsafeMean, unsafeLogMean, unsafeVar, unsafeLogVar, unsafeCov, unsafeLogCov, outboundType, isApplicable, dims
 import ForneyLab: SPLogNormalOutVPP, VBLogNormalOut

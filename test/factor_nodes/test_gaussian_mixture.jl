@@ -1,6 +1,6 @@
 module GaussianMixtureTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
 import ForneyLab: VBGaussianMixtureM, VBGaussianMixtureW, VBGaussianMixtureZBer, VBGaussianMixtureZCat, VBGaussianMixtureOut

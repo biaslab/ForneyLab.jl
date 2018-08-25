@@ -1,6 +1,6 @@
 export DotProduct
 
-import Base: dot
+import LinearAlgebra: dot
 export dot
 
 """

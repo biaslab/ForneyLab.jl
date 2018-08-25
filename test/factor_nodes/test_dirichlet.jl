@@ -1,6 +1,6 @@
 module DirichletTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeVar, vague, dims
 import ForneyLab: SPDirichletOutVP, VBDirichletOut

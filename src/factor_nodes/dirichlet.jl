@@ -40,7 +40,7 @@ end
 
 slug(::Type{Dirichlet}) = "Dir"
 
-format{V<:VariateType}(dist::ProbabilityDistribution{V, Dirichlet}) = "$(slug(Dirichlet))(a=$(format(dist.params[:a])))"
+format(dist::ProbabilityDistribution{V, Dirichlet}) where V<:VariateType = "$(slug(Dirichlet))(a=$(format(dist.params[:a])))"
 
 ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Dirichlet}; a=ones(3,3)) = ProbabilityDistribution{MatrixVariate, Dirichlet}(Dict(:a=>a))
 ProbabilityDistribution(::Type{Multivariate}, ::Type{Dirichlet}; a=ones(3)) = ProbabilityDistribution{Multivariate, Dirichlet}(Dict(:a=>a))
@@ -52,7 +52,7 @@ dims(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = size(dist.params
 vague(::Type{Dirichlet}, dims::Int64) = ProbabilityDistribution(Multivariate, Dirichlet, a=ones(dims))
 vague(::Type{Dirichlet}, dims::Tuple{Int64, Int64}) = ProbabilityDistribution(MatrixVariate, Dirichlet, a=ones(dims))
 
-isProper{V<:VariateType}(dist::ProbabilityDistribution{V, Dirichlet}) = all(dist.params[:a] .> 0.0)
+isProper(dist::ProbabilityDistribution{V, Dirichlet}) where V<:VariateType = all(dist.params[:a] .> 0.0)
 
 unsafeMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a])
 unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a],2)
@@ -65,9 +65,9 @@ function unsafeVar(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     return dist.params[:a].*(a_sum - dist.params[:a])./(a_sum^2*(a_sum + 1.0))
 end
 
-function prod!{V<:VariateType}( x::ProbabilityDistribution{V, Dirichlet},
-                                y::ProbabilityDistribution{V, Dirichlet},
-                                z::ProbabilityDistribution{V, Dirichlet}=ProbabilityDistribution(V, Dirichlet, a=ones(dims(x))))
+function prod!( x::ProbabilityDistribution{V, Dirichlet},
+                y::ProbabilityDistribution{V, Dirichlet},
+                z::ProbabilityDistribution{V, Dirichlet}=ProbabilityDistribution(V, Dirichlet, a=ones(dims(x)))) where V<:VariateType
 
     z.params[:a] = x.params[:a] + y.params[:a] - 1.0
 

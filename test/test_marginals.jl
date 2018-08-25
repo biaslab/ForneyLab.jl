@@ -1,6 +1,6 @@
 module MarginalsTest
 
-using Base.Test
+using Test
 using ForneyLab
 
 import ForneyLab: generateId, addNode!, associate!, Product

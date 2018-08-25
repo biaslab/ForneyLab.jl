@@ -1,6 +1,6 @@
 module BetaTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims
 import ForneyLab: SPBetaOutVPP, VBBetaOut

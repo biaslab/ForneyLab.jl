@@ -1,6 +1,6 @@
 module EdgeTest
 
-using Base.Test
+using Test
 import ForneyLab: Interface, Edge, Variable, Interface, FactorNode, FactorGraph, currentGraph, addNode!, disconnect!, generateId
 
 # Integration helper

@@ -1,6 +1,6 @@
 module JuliaMessagePassingTest
 
-using Base.Test
+using Test
 using ForneyLab
 
 @testset "Julia messagePassingAlgorithm" begin

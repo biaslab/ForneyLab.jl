@@ -1,6 +1,6 @@
 module EqualityTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
 import ForneyLab: SPEqualityGaussian, SPEqualityGammaWishart, SPEqualityBernoulli, SPEqualityBeta, SPEqualityCategorical, SPEqualityDirichlet, SPEqualityPointMass

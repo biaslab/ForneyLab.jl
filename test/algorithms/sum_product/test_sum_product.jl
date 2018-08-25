@@ -1,6 +1,6 @@
 module SumProductTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
 import ForneyLab: SPClamp
