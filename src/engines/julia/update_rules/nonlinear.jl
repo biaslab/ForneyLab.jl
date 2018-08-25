@@ -13,10 +13,10 @@ function approximate(x_hat::Union{Float64, Vector{Float64}}, g::Function, J_g::F
     return (A, b)
 end
 
-function ruleSPNonlinearOutVG{F<:Gaussian}( msg_out::Nothing,
-                                            msg_in1::Message{F, Multivariate},
-                                            g::Function,
-                                            J_g::Function)
+function ruleSPNonlinearOutVG(  msg_out::Nothing,
+                                msg_in1::Message{F, Multivariate},
+                                g::Function,
+                                J_g::Function) where F<:Gaussian
 
     d_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
 
@@ -27,10 +27,10 @@ function ruleSPNonlinearOutVG{F<:Gaussian}( msg_out::Nothing,
     Message(Multivariate, GaussianMeanVariance, m=A*d_in1.params[:m] + b, v=V_q)
 end
 
-function ruleSPNonlinearOutVG{F<:Gaussian}( msg_out::Nothing,
-                                            msg_in1::Message{F, Univariate},
-                                            g::Function,
-                                            J_g::Function)
+function ruleSPNonlinearOutVG(  msg_out::Nothing,
+                                msg_in1::Message{F, Univariate},
+                                g::Function,
+                                J_g::Function) where F<:Gaussian
 
     d_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
 
@@ -40,10 +40,10 @@ function ruleSPNonlinearOutVG{F<:Gaussian}( msg_out::Nothing,
     Message(Univariate, GaussianMeanVariance, m=a*d_in1.params[:m] + b, v=v_q)
 end
 
-function ruleSPNonlinearIn1GV{F<:Gaussian}( msg_out::Message{F, Multivariate},
-                                            msg_in1::Message, # Any type of message, used for determining the approximation point
-                                            g::Function,
-                                            J_g::Function)
+function ruleSPNonlinearIn1GV(  msg_out::Message{F, Multivariate},
+                                msg_in1::Message, # Any type of message, used for determining the approximation point
+                                g::Function,
+                                J_g::Function) where F<:Gaussian
 
     d_out = convert(ProbabilityDistribution{Multivariate, GaussianMeanPrecision}, msg_out.dist)
 
@@ -55,10 +55,10 @@ function ruleSPNonlinearIn1GV{F<:Gaussian}( msg_out::Message{F, Multivariate},
     Message(Multivariate, GaussianMeanPrecision, m=A_inv*(d_out.params[:m] - b), w=W_q)
 end
 
-function ruleSPNonlinearIn1GV{F<:Gaussian}( msg_out::Message{F, Univariate},
-                                            msg_in1::Message, # Any type of message, used for determining the approximation point
-                                            g::Function,
-                                            J_g::Function)
+function ruleSPNonlinearIn1GV(  msg_out::Message{F, Univariate},
+                                msg_in1::Message, # Any type of message, used for determining the approximation point
+                                g::Function,
+                                J_g::Function) where F<:Gaussian
 
     d_out = convert(ProbabilityDistribution{Univariate, GaussianMeanPrecision}, msg_out.dist)
 

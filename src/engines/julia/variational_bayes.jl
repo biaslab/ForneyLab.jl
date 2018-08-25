@@ -136,7 +136,7 @@ function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="
     # Combine blocks
     code = "function freeEnergy$(name)(data::Dict, marginals::Dict)\n\n"
     code *= "F = 0.0\n\n"
-    code *= energy_block*"\n"entropy_block
+    code *= energy_block*"\n"*entropy_block
     code *= "\nreturn F\n\n" 
     code *= "end"
 

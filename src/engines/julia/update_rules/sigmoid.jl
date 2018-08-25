@@ -7,8 +7,8 @@ ruleEPSigmoidRealGB,
 ruleEPSigmoidRealGC,
 ruleEPSigmoidRealGP
 
-function ruleSPSigmoidBinVG{F<:Gaussian}(   msg_bin::Nothing,
-                                            msg_real::Message{F, Univariate})
+function ruleSPSigmoidBinVG(msg_bin::Nothing,
+                            msg_real::Message{F, Univariate}) where F<:Gaussian
 
     d_real = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_real.dist)
     
@@ -18,8 +18,8 @@ function ruleSPSigmoidBinVG{F<:Gaussian}(   msg_bin::Nothing,
     Message(Univariate, Bernoulli, p=p)
 end
 
-function ruleEPSigmoidRealGB{F<:Gaussian}(  msg_bin::Message{Bernoulli, Univariate}, 
-                                            msg_real::Message{F, Univariate})
+function ruleEPSigmoidRealGB(   msg_bin::Message{Bernoulli, Univariate}, 
+                                msg_real::Message{F, Univariate}) where F<:Gaussian
 
     # Calculate approximate (Gaussian) message towards i[:real]
     # The approximate message is an 'expectation' under the context (cavity distribution) encoded by incoming message msg_cavity.
@@ -69,13 +69,13 @@ function ruleEPSigmoidRealGB{F<:Gaussian}(  msg_bin::Message{Bernoulli, Univaria
     return Message(Univariate, GaussianWeightedMeanPrecision, xi=outbound_dist_xi, w=outbound_dist_w)
 end
 
-function ruleEPSigmoidRealGP{F<:Gaussian}(msg_bin::Message{PointMass, Univariate}, msg_real::Message{F, Univariate})
+function ruleEPSigmoidRealGP(msg_bin::Message{PointMass, Univariate}, msg_real::Message{F, Univariate}) where F<:Gaussian
     p = mapToBernoulliParameterRange(msg_bin.dist.params[:m])
 
     return ruleEPSigmoidRealGB(Message(Univariate, Bernoulli, p=p), msg_real)
 end
 
-function ruleEPSigmoidRealGC{F<:Gaussian}(msg_cat::Message{Categorical, Univariate}, msg_real::Message{F, Univariate})
+function ruleEPSigmoidRealGC(msg_cat::Message{Categorical, Univariate}, msg_real::Message{F, Univariate}) where F<:Gaussian
     (length(msg_cat.dist.params[:p]) == 2) || error("Sigmoid node only supports categorical messages with 2 categories")
     p = msg_cat.dist.params[:p][1]
 

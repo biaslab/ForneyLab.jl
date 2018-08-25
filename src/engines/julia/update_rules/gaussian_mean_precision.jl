@@ -93,8 +93,7 @@ end
 function ruleMGaussianMeanPrecisionGGD(
     msg_out::Message{F1, V},
     msg_mean::Message{F2, V},
-    dist_prec::ProbabilityDistribution) 
-    where {F1<:Gaussian, F2<:Gaussian, V<:VariateType}
+    dist_prec::ProbabilityDistribution) where {F1<:Gaussian, F2<:Gaussian, V<:VariateType}
 
     d_mean = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_mean.dist)
     d_out = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_out.dist)
