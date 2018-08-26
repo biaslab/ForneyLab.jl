@@ -4,6 +4,7 @@ using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims
 import ForneyLab: SPCategoricalOutVP, VBCategoricalOut, VBCategoricalIn1
+import SparseArrays: SparseVector
 
 @testset "Categorical ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Univariate, Categorical, p=[0.1, 0.8, 0.1]) == ProbabilityDistribution{Univariate, Categorical}(Dict(:p=>[0.1, 0.8, 0.1]))

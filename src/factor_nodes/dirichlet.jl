@@ -55,21 +55,21 @@ vague(::Type{Dirichlet}, dims::Tuple{Int64, Int64}) = ProbabilityDistribution(Ma
 isProper(dist::ProbabilityDistribution{V, Dirichlet}) where V<:VariateType = all(dist.params[:a] .> 0.0)
 
 unsafeMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a])
-unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a],2)
+unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a],dims=2)
 
-unsafeLogMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = digamma.(dist.params[:a]) - digamma.(sum(dist.params[:a]))
-unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a],2))
+unsafeLogMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a]))
+unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a],dims=2))
 
 function unsafeVar(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])
-    return dist.params[:a].*(a_sum - dist.params[:a])./(a_sum^2*(a_sum + 1.0))
+    return dist.params[:a].*(a_sum .- dist.params[:a])./(a_sum^2*(a_sum + 1.0))
 end
 
 function prod!( x::ProbabilityDistribution{V, Dirichlet},
                 y::ProbabilityDistribution{V, Dirichlet},
                 z::ProbabilityDistribution{V, Dirichlet}=ProbabilityDistribution(V, Dirichlet, a=ones(dims(x)))) where V<:VariateType
 
-    z.params[:a] = x.params[:a] + y.params[:a] - 1.0
+    z.params[:a] = x.params[:a] + y.params[:a] .- 1.0
 
     return z
 end
@@ -103,7 +103,7 @@ end
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])
 
-    -sum( (dist.params[:a] - 1.0).*(digamma.(dist.params[:a]) - digamma.(a_sum)) ) -
+    -sum( (dist.params[:a] .- 1.0).*(digamma.(dist.params[:a]) .- digamma.(a_sum)) ) -
     lgamma(a_sum) +
     sum( lgamma.(dist.params[:a]) )
 end
@@ -113,7 +113,7 @@ function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Dirich
     for j = 1:dims(dist)[1]
         a_sum = sum(dist.params[:a][j,:])
 
-        H += -sum( (dist.params[:a][j,:] - 1.0).*(digamma.(dist.params[:a][j,:]) - digamma.(a_sum)) ) -
+        H += -sum( (dist.params[:a][j,:] .- 1.0).*(digamma.(dist.params[:a][j,:]) .- digamma.(a_sum)) ) -
         lgamma(a_sum) +
         sum( lgamma.(dist.params[:a][j,:]) )
     end
@@ -127,7 +127,7 @@ function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Mult
 
     -lgamma(a_sum) +
     sum( lgamma.(marg_a.params[:m]) ) -
-    sum( (marg_a.params[:m] - 1.0).*unsafeLogMean(marg_out) )
+    sum( (marg_a.params[:m] .- 1.0).*unsafeLogMean(marg_out) )
 end
 
 function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{MatrixVariate}, marg_a::ProbabilityDistribution{MatrixVariate, PointMass})
@@ -141,7 +141,7 @@ function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Matr
 
         H += -lgamma(a_sum) +
         sum( lgamma.(marg_a.params[:m][j,:]) ) -
-        sum( (marg_a.params[:m][j,:] - 1.0).*log_mean_marg_out[j,:] )
+        sum( (marg_a.params[:m][j,:] .- 1.0).*log_mean_marg_out[j,:] )
     end
 
     return H

@@ -34,7 +34,7 @@ end
 
 g(x::Float64) = x^2 - 5.0
 J_g(x::Float64) = 2*x
-g(x::Vector{Float64}) = x.^2 - 5.0
+g(x::Vector{Float64}) = x.^2 .- 5.0
 J_g(x::Vector{Float64}) = reshape(2*x, 1, 1)
 
 @testset "SPNonlinearOutVG" begin

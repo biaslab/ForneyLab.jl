@@ -33,7 +33,7 @@ unsafePrecision(dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision})
 
 unsafeWeightedMeanPrecision(dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType = (deepcopy(dist.params[:xi]), deepcopy(dist.params[:w]))
 
-isProper(dist::ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}) = (realmin(Float64) < dist.params[:w] < realmax(Float64))
+isProper(dist::ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}) = (floatmin(Float64) < dist.params[:w] < floatmax(Float64))
 isProper(dist::ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}) = isRoundedPosDef(dist.params[:w])
 
 function ==(t::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, u::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType

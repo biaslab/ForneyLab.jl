@@ -94,7 +94,7 @@ end
 function sample(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian
     isProper(dist) || error("Cannot sample from improper distribution")
     (m,V) = unsafeMeanCov(dist)
-    return chol(V)' *randn(dims(dist)) + m
+    return (cholesky(V)).U' *randn(dims(dist)) + m
 end
 
 # Entropy functional

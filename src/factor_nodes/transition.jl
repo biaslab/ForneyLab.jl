@@ -46,5 +46,5 @@ function averageEnergy(::Type{Transition}, marg_out::ProbabilityDistribution, ma
 end
 
 function averageEnergy(::Type{Transition}, marg_out_in1::ProbabilityDistribution{Multivariate, Contingency}, marg_a::ProbabilityDistribution{MatrixVariate})
-    -trace(marg_out_in1.params[:p]'*unsafeLogMean(marg_a))
+    -tr(marg_out_in1.params[:p]'*unsafeLogMean(marg_a))
 end

@@ -1,7 +1,7 @@
-export huge, tiny, cholinv, diageye, format, *, .*, ^, mat
+export huge, tiny, cholinv, diageye, eye, format, *, .*, ^, mat
 
 import Base: *, .*, ^, ==, sqrt
-import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky
+import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky, I
 import InteractiveUtils: subtypes
 import Printf: @sprintf
 
@@ -20,6 +20,7 @@ const tiny = 1e-12
 cholinv(m::Number) = 1.0/m
 cholinv(M::AbstractMatrix) = inv(cholesky(Hermitian(Matrix(M)),Val(false)))
 cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
+eye(n::Number) = Matrix(1.0I,n,n)
 diageye(dims::Int64) = Diagonal(ones(dims))
 
 Base.broadcast(::typeof(*), D1::Diagonal, D2::Diagonal) = Diagonal(D1.diag.*D2.diag)

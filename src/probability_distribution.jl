@@ -173,7 +173,7 @@ macro RV(expr_options::Expr, expr_def::Any)
         expr = parse("""
                 begin
                 # Use existing Variable if it exists, otherwise create a new one
-                $(target_expr) = try $(target_expr) catch Variable(id=ForneyLab.pack($(var_id_expr))) end
+                $(target_expr) = try $(target_expr) catch; Variable(id=ForneyLab.pack($(var_id_expr))) end
 
                 # Create new variable if:
                 #   - the existing object is not a Variable

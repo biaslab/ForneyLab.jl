@@ -4,6 +4,7 @@ using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
 import ForneyLab: SPGaussianMeanVarianceOutVPP, SPGaussianMeanVarianceMPVP, SPGaussianMeanVarianceOutVGP, SPGaussianMeanVarianceMGVP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
+import LinearAlgebra: det, diag
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == 1

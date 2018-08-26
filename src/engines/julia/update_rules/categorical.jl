@@ -11,4 +11,4 @@ function ruleVBCategoricalOut(marg_out::Any, marg_p::ProbabilityDistribution{Mul
     Message(Univariate, Categorical, p=rho./sum(rho))
 end
 
-ruleVBCategoricalIn1(marg_out::ProbabilityDistribution, marg_p::Any) = Message(Multivariate, Dirichlet, a=unsafeMeanVector(marg_out) + 1.0)
+ruleVBCategoricalIn1(marg_out::ProbabilityDistribution, marg_p::Any) = Message(Multivariate, Dirichlet, a=unsafeMeanVector(marg_out) .+ 1.0)

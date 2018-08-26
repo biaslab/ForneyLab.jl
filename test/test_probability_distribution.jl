@@ -1,7 +1,8 @@
 module ProbabilityDistributionTest
 
 using Test
-import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, mat, isProper, isValid, invalidate!, gaussianQuadrature, dims, diageye, matches, Message
+import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, mat, isProper, isValid, invalidate!, gaussianQuadrature, dims, eye, diageye, matches, Message
+import LinearAlgebra: Diagonal
 using ForneyLab
 
 @testset "matches" begin

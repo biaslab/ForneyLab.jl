@@ -4,6 +4,7 @@ using Test
 using ForneyLab
 import ForneyLab: prod!, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper
 import ForneyLab: SPWishartOutVPP, VBWishartOut
+import SpecialFunctions: digamma
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(MatrixVariate, Wishart, v=diageye(3), nu=4.0)) == (3, 3)

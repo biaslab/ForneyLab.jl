@@ -112,5 +112,5 @@ function averageEnergy(::Type{Wishart}, marg_out::ProbabilityDistribution{Matrix
     0.25*d*(d - 1.0)*log(pi) +
     sum([lgamma(0.5*(marg_nu.params[:m] + 1.0 - i)) for i=1:d]) -
     0.5*(marg_nu.params[:m] - d - 1.0)*unsafeDetLogMean(marg_out) +
-    0.5*trace(unsafeInverseMean(marg_v)*unsafeMean(marg_out))
+    0.5*tr(unsafeInverseMean(marg_v)*unsafeMean(marg_out))
 end

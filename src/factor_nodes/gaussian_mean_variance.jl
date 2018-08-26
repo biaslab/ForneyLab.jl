@@ -69,7 +69,7 @@ function unsafeWeightedMeanPrecision(dist::ProbabilityDistribution{V, GaussianMe
     return (W*dist.params[:m], W)
 end
 
-isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = (realmin(Float64) < dist.params[:v] < realmax(Float64))
+isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = (floatmin(Float64) < dist.params[:v] < floatmax(Float64))
 isProper(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = isRoundedPosDef(dist.params[:v])
 
 function ==(t::ProbabilityDistribution{V, GaussianMeanVariance}, u::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
@@ -98,5 +98,5 @@ function averageEnergy(::Type{GaussianMeanVariance}, marg_out::ProbabilityDistri
 
     0.5*dims(marg_out)*log(2*pi) +
     0.5*unsafeDetLogMean(marg_var) +
-    0.5*trace( unsafeInverseMean(marg_var)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)'))
+    0.5*tr( unsafeInverseMean(marg_var)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)'))
 end

@@ -48,7 +48,7 @@ end
 ruleVBTransitionA(  dist_out::ProbabilityDistribution,
                     dist_in1::ProbabilityDistribution,
                     dist_a::Nothing) =
-    Message(MatrixVariate, Dirichlet, a=unsafeMeanVector(dist_out)*unsafeMeanVector(dist_in1)' + 1)
+    Message(MatrixVariate, Dirichlet, a=unsafeMeanVector(dist_out)*unsafeMeanVector(dist_in1)' .+ 1)
 
 function ruleSVBTransitionOutVCD(   dist_out::Nothing,
                                     msg_in1::Message{Categorical, Univariate},
@@ -70,7 +70,7 @@ end
 
 ruleSVBTransitionADV(   dist_out_in1::ProbabilityDistribution{Multivariate, Contingency},
                         dist_a::Nothing)=
-    Message(MatrixVariate, Dirichlet, a=dist_out_in1.params[:p] + 1)
+    Message(MatrixVariate, Dirichlet, a=dist_out_in1.params[:p] .+ 1)
 
 function ruleMTransitionCCD(msg_out::Message{Categorical, Univariate},
                             msg_in1::Message{Categorical, Univariate},

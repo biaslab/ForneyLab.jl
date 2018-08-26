@@ -4,6 +4,7 @@ using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims
 import ForneyLab: SPBetaOutVPP, VBBetaOut
+import SpecialFunctions: digamma
 
 @testset "Beta ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Univariate, Beta, a=2.0, b=3.0) == ProbabilityDistribution{Univariate, Beta}(Dict(:a=>2.0, :b=>3.0))

@@ -8,7 +8,7 @@ Find a local linear approximation to the nonlinear vector function g at x_hat
 """
 function approximate(x_hat::Union{Float64, Vector{Float64}}, g::Function, J_g::Function)
     A = J_g(x_hat)
-    b = g(x_hat) - A*x_hat
+    b = g(x_hat) .- A*x_hat
 
     return (A, b)
 end

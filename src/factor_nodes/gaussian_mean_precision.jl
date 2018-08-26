@@ -62,7 +62,7 @@ unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V
 
 unsafeWeightedMeanPrecision(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = (dist.params[:w]*dist.params[:m], deepcopy(dist.params[:w]))
 
-isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}) = (realmin(Float64) < dist.params[:w] < realmax(Float64))
+isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}) = (floatmin(Float64) < dist.params[:w] < floatmax(Float64))
 isProper(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}) = isRoundedPosDef(dist.params[:w])
 
 function ==(t::ProbabilityDistribution{V, GaussianMeanPrecision}, u::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
@@ -91,7 +91,7 @@ function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistr
 
     0.5*dims(marg_out)*log(2*pi) -
     0.5*unsafeDetLogMean(marg_prec) +
-    0.5*trace( unsafeMean(marg_prec)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)' ))
+    0.5*tr( unsafeMean(marg_prec)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)' ))
 end
 
 function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::ProbabilityDistribution{Multivariate, F}, marg_prec::ProbabilityDistribution{Univariate}) where F<:Gaussian
@@ -108,5 +108,5 @@ function averageEnergy(::Type{GaussianMeanPrecision}, marg_out_mean::Probability
 
     0.5*d*log(2*pi) -
     0.5*unsafeDetLogMean(marg_prec) +
-    0.5*trace( unsafeMean(marg_prec)*( V[1:d,1:d] - V[1:d,d+1:end] - V[d+1:end,1:d] + V[d+1:end,d+1:end] + (m[1:d] - m[d+1:end])*(m[1:d] - m[d+1:end])' ) )
+    0.5*tr( unsafeMean(marg_prec)*( V[1:d,1:d] - V[1:d,d+1:end] - V[d+1:end,1:d] + V[d+1:end,d+1:end] + (m[1:d] - m[d+1:end])*(m[1:d] - m[d+1:end])' ) )
 end

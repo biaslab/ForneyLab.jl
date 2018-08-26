@@ -63,7 +63,7 @@ function ruleVBGaussianMixtureW(dist_out::ProbabilityDistribution,
 end
 
 function softmax(v::Vector{Float64})
-    r = v - maximum(v)
+    r = v .- maximum(v)
     clamp!(r, -100.0, 0.0)
     exp.(r)./sum(exp.(r))
 end
@@ -75,7 +75,7 @@ function ruleVBGaussianMixtureZBer( dist_out::ProbabilityDistribution,
                                     dist_m2::ProbabilityDistribution,
                                     dist_w2::ProbabilityDistribution)
     # Uni- and Multivariate update
-    U = Vector{Float64}(2)
+    U = Vector{Float64}(undef, 2)
     U[1] = averageEnergy(GaussianMeanPrecision, dist_out, dist_m1, dist_w1)
     U[2] = averageEnergy(GaussianMeanPrecision, dist_out, dist_m2, dist_w2)
 
@@ -90,7 +90,7 @@ function ruleVBGaussianMixtureZCat( dist_out::ProbabilityDistribution,
     dist_precs = collect(dist_factors[2:2:end])
 
     n_factors = length(dist_means)
-    U = Vector{Float64}(n_factors)
+    U = Vector{Float64}(undef, n_factors)
     for k = 1:n_factors
         U[k] = averageEnergy(GaussianMeanPrecision, dist_out, dist_means[k], dist_precs[k])
     end

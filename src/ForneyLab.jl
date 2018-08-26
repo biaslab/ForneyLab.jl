@@ -7,8 +7,10 @@ include("dependency_graph.jl")
 # Other includes
 import Base: show, convert, ==, *
 import Statistics: mean, var, cov
-import SpecialFunctions: digamma
+import SpecialFunctions: digamma, lgamma, lbeta, erfc
 import Base.Meta: parse
+import LinearAlgebra: diag, det, tr, cholesky, pinv
+import SparseArrays: spzeros
 
 # High level abstracts
 abstract type AbstractEdge end # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface
