@@ -1,6 +1,13 @@
 Contribution guidelines
 =======================
 
+
+Workflow
+--------
+
+We use the standard [GitHub Flow](https://guides.github.com/introduction/flow/) in which all contributions are added through pull requests. To contribute, [fork](https://guides.github.com/activities/forking/) the repository, commit your contributions to your fork and then create a pull request on the ForneyLab.jl repository.
+
+
 File structure
 --------------
 - `/demo/`: demos in Jupyter (iJulia) notebook format (`.ipynb`)
@@ -12,10 +19,11 @@ File structure
     + `engines/`: render message passing schedules to executable code
         * `julia/`: Julia engine and update rule implementations
     + `factor_nodes/`: all node-specific files
-    + `update_rules/`: message passing update rules 
+    + `update_rules/`: message passing update rules
 - `/test/`: test files with similar directory structure as `/src/`.
 
 File and directory names are always in `snake_case`, except for `REQUIRE` and markdown files in the root directory.
+
 
 Pre-commit hook for demos
 -------------------------
