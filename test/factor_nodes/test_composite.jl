@@ -84,7 +84,7 @@ end
 
     # Build SP algorithm for Julia execution
     algo = ForneyLab.messagePassingAlgorithm(schedule, marginal_schedule)
-    @test contains(algo, "Array{Message}(2)")
+    @test contains(algo, "Array{Message}(undef, 2)")
     @test contains(algo, "messages[1] = ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))")
     @test contains(algo, "messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)")
     @test contains(algo, "marginals[:x] = messages[2].dist")
@@ -97,7 +97,7 @@ end
     # Resulting algorithm ---
     function step!(marginals::Dict, data::Dict)
 
-    messages = Array{Message}(2)
+    messages = Array{Message}(undef, 2)
 
     messages[1] = ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))
     messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)

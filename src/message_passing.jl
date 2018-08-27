@@ -169,7 +169,7 @@ inferUpdateRules!(schedule) infers specific message update rules for all schedul
 function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Interface, Type}())
     for entry in schedule
         (entry.msg_update_rule == Nothing) && error("No msg update rule type specified for $(entry)")
-        if !isleaftype(entry.msg_update_rule)
+        if !isconcretetype(entry.msg_update_rule)
             # In this case entry.msg_update_rule is a update rule type, but not a specific rule.
             # Here we infer the specific rule that is applicable, which should be a subtype of entry.msg_update_rule.
             inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)

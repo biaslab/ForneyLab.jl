@@ -137,7 +137,7 @@ function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::Marginal
 
     code = ""
     code *= writeInitializationBlock(schedule, interface_to_msg_idx, n_messages, name)
-    code *= "function step$(name)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}($n_messages))\n\n"
+    code *= "function step$(name)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_messages))\n\n"
     code *= writeMessagePassingBlock(schedule, interface_to_msg_idx)
     code *= "\n"
     code *= writeMarginalsComputationBlock(marginal_schedule, interface_to_msg_idx)

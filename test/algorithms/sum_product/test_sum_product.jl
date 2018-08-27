@@ -13,7 +13,7 @@ mutable struct MockNode <: FactorNode
 
     function MockNode(vars::Vector{Variable}; id=generateId(MockNode))
         n_interfaces = length(vars)
-        self = new(id, Array{Interface}(n_interfaces), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(undef, n_interfaces), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
 
         for idx = 1:n_interfaces

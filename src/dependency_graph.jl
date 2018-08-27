@@ -115,11 +115,11 @@ Optional keyword arguments:
 This function can be used to generate message passing schedules
 if `graph` is a dependency graph.
 """
-function children(      vertices::Vector{V},
-                        graph::DependencyGraph{V};
-                        allow_cycles::Bool=false,
-                        breaker_sites::Set{V}=Set{V}(),
-                        restrict_to::Set{V}=Set{V}()) where V
+function children(  vertices::Vector{V},
+                    graph::DependencyGraph{V};
+                    allow_cycles::Bool=false,
+                    breaker_sites::Set{V}=Set{V}(),
+                    restrict_to::Set{V}=Set{V}()) where V
 
     # Find vertex indexes of breaker_sites
     breaker_vertices = Set{Int}(map((v) -> findfirst(graph.vertices, v), breaker_sites))
