@@ -16,7 +16,7 @@ Interface(node::FactorNode) = Interface(node, nothing, nothing)
 function show(io::IO, interface::Interface)
     iface_handle = handle(interface)
     (iface_handle == "") || (iface_handle = "($(iface_handle))")
-    println(io, "Interface $(findfirst(interface.node.interfaces, interface)) $(iface_handle) of $(typeof(interface.node)) $(interface.node.id)")
+    println(io, "Interface $(findfirst(isequal(interface), interface.node.interfaces)) $(iface_handle) of $(typeof(interface.node)) $(interface.node.id)")
 end
 
 """Return interface handle name"""

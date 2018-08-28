@@ -123,7 +123,7 @@ macro RV(expr_options::Expr, expr_def::Any)
     end
 
     # Parse RV definition expression
-    # It can take trhee forms.
+    # It can take three forms.
     # FORM 1: @RV x ~ Probdist(...)
     # FORM 2: @RV x = a + b
     # FORM 3: @RV x
@@ -131,7 +131,6 @@ macro RV(expr_options::Expr, expr_def::Any)
         form = 1
         target_expr = expr_def.args[2]
         node_expr = expr_def.args[3]
-
     elseif isa(expr_def, Expr) && expr_def.head === :(=)
         form = 2
         target_expr = expr_def.args[1]
@@ -174,7 +173,7 @@ macro RV(expr_options::Expr, expr_def::Any)
                 begin
                 # Use existing Variable if it exists, otherwise create a new one
                 $(target_expr) = try $(target_expr) catch; Variable(id=ForneyLab.pack($(var_id_expr))) end
-
+        
                 # Create new variable if:
                 #   - the existing object is not a Variable
                 #   - the existing object is a Variable from another FactorGraph
@@ -234,13 +233,12 @@ macro RV(expr_options::Expr, expr_def::Any)
     else
         error("Unsupported usage of @RV.")
     end
-
     return esc(expr)
 end
 
 macro RV(expr::Any)
     # No options
-    :(@RV [] $(esc(expr)))
+    esc(:(@RV [] $(expr)))
 end
 
 """

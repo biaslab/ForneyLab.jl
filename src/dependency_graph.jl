@@ -81,8 +81,8 @@ function addVertex!(dg::DependencyGraph{VT}, v::VT) where VT
 end
 
 function addEdge!(dg::DependencyGraph{VT}, from::VT, to::VT) where VT
-    v = findfirst(dg.vertices, from)
-    w = findfirst(dg.vertices, to)
+    v = something(findfirst(isequal(from), dg.vertices), 0)
+    w = something(findfirst(isequal(to), dg.vertices), 0)
     push!(dg.neighbors[v], w)
     return dg
 end
@@ -90,7 +90,7 @@ end
 neighbors(vertex_idx::Int, dg::DependencyGraph) = collect(dg.neighbors[vertex_idx])
 
 function neighbors(vertex::VT, dg::DependencyGraph{VT}) where VT
-    vertex_idx = findfirst(dg.vertices, vertex)
+    vertex_idx = something(findfirst(isequal(vertex), dg.vertices), 0)
     return dg.vertices[neighbors(vertex_idx, dg)]
 end
 
@@ -122,14 +122,14 @@ function children(  vertices::Vector{V},
                     restrict_to::Set{V}=Set{V}()) where V
 
     # Find vertex indexes of breaker_sites
-    breaker_vertices = Set{Int}(map((v) -> findfirst(graph.vertices, v), breaker_sites))
-    restrict_to_vertices = Set{Int}(map((v) -> findfirst(graph.vertices, v), restrict_to))
+    breaker_vertices = Set{Int}(map((v) -> something(findfirst(isequal(v), graph.vertices), 0), breaker_sites))
+    restrict_to_vertices = Set{Int}(map((v) -> something(findfirst(isequal(v), graph.vertices), 0), restrict_to))
 
     visited = Int[] # Hold topologically sorted list of indices of child vertices
 
     for root in vertices
         # Iterative depth-first search
-        stack = Int[findfirst(graph.vertices, root)]
+        stack = Int[something(findfirst(isequal(root), graph.vertices), 0)]
         visited_from_root = Int[]
         while !isempty(stack)
             v = pop!(stack)

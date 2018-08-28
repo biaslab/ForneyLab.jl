@@ -101,7 +101,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
 
     # Find outbound id
-    outbound_id = findfirst(entry.interface.node.interfaces, entry.interface)    
+    outbound_id = something(findfirst(isequal(entry.interface), entry.interface.node.interfaces), 0)
     
     # Find applicable rule(s)
     applicable_rules = Type[]

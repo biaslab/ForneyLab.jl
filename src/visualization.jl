@@ -120,7 +120,7 @@ function edgeDot(edge::Edge; msg_labels=Dict{Interface, String}(), is_external_e
     # Generate DOT code for an edge
     dot = ""
     if edge.b != nothing
-        b_id = findfirst(edge.b.node.interfaces, edge.b)
+        b_id = findfirst(isequal(edge.b), edge.b.node.interfaces)
         b_label = "$b_id $(handle(edge.b))"
         b_object_id = object_id(edge.b.node)
     else
@@ -130,7 +130,7 @@ function edgeDot(edge::Edge; msg_labels=Dict{Interface, String}(), is_external_e
     end
 
     if edge.a != nothing
-        a_id = findfirst(edge.a.node.interfaces, edge.a)
+        a_id = findfirst(isequal(edge.a), edge.a.node.interfaces)
         a_label = "$a_id $(handle(edge.a))"
         a_object_id = object_id(edge.a.node)
     else
