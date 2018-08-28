@@ -125,7 +125,7 @@ end
 
     # @RV should handle array element assignments and explicit Variable ids
     g = FactorGraph()
-    vars = Vector{Variable}(2)
+    vars = Vector{Variable}(undef, 2)
     i = 1
     @RV [id=:v*i] vars[1] ~ GaussianMeanVariance(constant(0.0), constant(1.0); id=:tst1) # new Variable
     @test length(g.variables) == 3 # including constants
@@ -134,7 +134,7 @@ end
     @test length(g.variables) == 5 # including constants
     @RV vars[2*i] ~ GaussianMeanVariance(constant(0.0), constant(1.0))
     @test vars[2*i].id == :vars_2
-    varmatrix = Matrix{Variable}(2,2)
+    varmatrix = Matrix{Variable}(undef,2,2)
     @RV varmatrix[1,2*i] ~ GaussianMeanVariance(constant(0.0), constant(1.0))
     @test varmatrix[1,2*i].id == :varmatrix_1_2
     vardict = Dict{Int,Variable}()

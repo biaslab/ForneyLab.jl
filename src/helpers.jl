@@ -95,7 +95,7 @@ isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round.(Matrix(arr), 
 
 function viewFile(filename::AbstractString)
     # Open a file with the application associated with the file type
-    is_windows() ? run(`cmd /c start $filename`) : (is_apple() ? run(`open $filename`) : (is_linux() ? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
+    Sys.iswindows() ? run(`cmd /c start $filename`) : (Sys.isapple() ? run(`open $filename`) : (is_linux() ? run(`xdg-open $filename`) : error("Cannot find an application for $filename")))
 end
 
 """
