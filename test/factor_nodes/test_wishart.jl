@@ -16,15 +16,15 @@ end
 
 @testset "isProper" begin
     @test isProper(ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=1.0)) == true
-    @test isProper(ProbabilityDistribution(MatrixVariate, Wishart, v=[-1.0].', nu=2.0)) == false
+    @test isProper(ProbabilityDistribution(MatrixVariate, Wishart, v=transpose([-1.0]), nu=2.0)) == false
     @test isProper(ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=0.0)) == false
 end
 
 @testset "prod!" begin
-    @test ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=2.0) * ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0),nu=2.0) == ProbabilityDistribution(MatrixVariate, Wishart, v=[0.4999999999999999].',nu=2.0)
+    @test ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=2.0) * ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0),nu=2.0) == ProbabilityDistribution(MatrixVariate, Wishart, v=transpose([0.4999999999999999]),nu=2.0)
     @test ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=2.0) * ProbabilityDistribution(MatrixVariate, PointMass, m=mat(1.0)) == ProbabilityDistribution(MatrixVariate, PointMass, m=mat(1.0))
     @test ProbabilityDistribution(MatrixVariate, PointMass, m=mat(1.0)) * ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=2.0) == ProbabilityDistribution(MatrixVariate, PointMass, m=mat(1.0))
-    @test_throws Exception ProbabilityDistribution(MatrixVariate, PointMass, m=[-1.0].') * ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=2.0)
+    @test_throws Exception ProbabilityDistribution(MatrixVariate, PointMass, m=transpose([-1.0])) * ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=2.0)
 end
 
 @testset "unsafe mean and variance" begin
@@ -45,7 +45,7 @@ end
     @test outboundType(SPWishartOutVPP) == Message{Wishart}
     @test isApplicable(SPWishartOutVPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
 
-    @test ruleSPWishartOutVPP(nothing, Message(MatrixVariate, PointMass, m=[1.0].'), Message(Univariate, PointMass, m=2.0)) == Message(MatrixVariate, Wishart, v=[1.0].', nu=2.0)
+    @test ruleSPWishartOutVPP(nothing, Message(MatrixVariate, PointMass, m=transpose([1.0])), Message(Univariate, PointMass, m=2.0)) == Message(MatrixVariate, Wishart, v=transpose([1.0]), nu=2.0)
 end
 
 @testset "VBWishartOut" begin
@@ -54,7 +54,7 @@ end
     @test isApplicable(VBWishartOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution]) 
     @test !isApplicable(VBWishartOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing]) 
 
-    @test ruleVBWishartOut(nothing, ProbabilityDistribution(MatrixVariate, PointMass, m=[1.5].'), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(MatrixVariate, Wishart, v=[1.5].', nu=3.0)
+    @test ruleVBWishartOut(nothing, ProbabilityDistribution(MatrixVariate, PointMass, m=transpose([1.5])), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(MatrixVariate, Wishart, v=transpose([1.5]), nu=3.0)
 end
 
 @testset "averageEnergy and differentialEntropy" begin

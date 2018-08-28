@@ -67,7 +67,7 @@ end
 function prod!(
     x::ProbabilityDistribution{Multivariate, F1},
     y::ProbabilityDistribution{Multivariate, F2},
-    z::ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}=ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[NaN], w=[NaN].')) where {F1<:Gaussian, F2<:Gaussian}
+    z::ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}=ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[NaN], w=transpose([NaN]))) where {F1<:Gaussian, F2<:Gaussian}
 
     z.params[:xi] = unsafeWeightedMean(x) + unsafeWeightedMean(y)
     z.params[:w] = unsafePrecision(x) + unsafePrecision(y)

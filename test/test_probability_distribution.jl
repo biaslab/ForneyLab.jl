@@ -54,22 +54,22 @@ end
     @test isProper(point_mass)
     @test mean(point_mass) == [0.0]
     @test var(point_mass) == [0.0]
-    @test cov(point_mass) == [0.0].'
+    @test cov(point_mass) == transpose([0.0])
 end
 
 @testset "MatrixVariate" begin
-    point_mass = ProbabilityDistribution(MatrixVariate, PointMass, m=[0.0].')
+    point_mass = ProbabilityDistribution(MatrixVariate, PointMass, m=transpose([0.0]))
     @test isa(point_mass, ProbabilityDistribution{MatrixVariate, PointMass})
-    @test point_mass.params == Dict(:m=>[0.0].')
+    @test point_mass.params == Dict(:m=>transpose([0.0]))
     @test isProper(point_mass)
-    @test mean(point_mass) == [0.0].'
+    @test mean(point_mass) == transpose([0.0])
 end
 
 @testset "PointMass ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Univariate, PointMass, m=0.2) == ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>0.2))
     @test_throws Exception ProbabilityDistribution(Multivariate, PointMass, m=0.2)
     @test ProbabilityDistribution(Multivariate, PointMass, m=[0.2]) == ProbabilityDistribution{Multivariate, PointMass}(Dict(:m=>[0.2]))
-    @test ProbabilityDistribution(MatrixVariate, PointMass, m=[0.2].') == ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>[0.2].'))
+    @test ProbabilityDistribution(MatrixVariate, PointMass, m=transpose([0.2])) == ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>transpose([0.2])))
     @test ProbabilityDistribution(PointMass, m=0.2) == ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>0.2))
     @test ProbabilityDistribution(Univariate, PointMass) == ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>1.0))
     @test ProbabilityDistribution(PointMass) == ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>1.0))

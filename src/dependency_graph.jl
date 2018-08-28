@@ -115,6 +115,10 @@ Optional keyword arguments:
 This function can be used to generate message passing schedules
 if `graph` is a dependency graph.
 """
+function find_vertex_indexes(vertex::V, graph::DependencyGraph{V}) where V
+    return something(findfirst(isequal(vertex), graph.vertices), 0)
+end
+
 function children(  vertices::Vector{V},
                     graph::DependencyGraph{V};
                     allow_cycles::Bool=false,
@@ -122,8 +126,8 @@ function children(  vertices::Vector{V},
                     restrict_to::Set{V}=Set{V}()) where V
 
     # Find vertex indexes of breaker_sites
-    breaker_vertices = Set{Int}(map((v) -> something(findfirst(isequal(v), graph.vertices), 0), breaker_sites))
-    restrict_to_vertices = Set{Int}(map((v) -> something(findfirst(isequal(v), graph.vertices), 0), restrict_to))
+    breaker_vertices = Set{Int}((find_vertex_indexes(v, graph) for v=breaker_sites))
+    restrict_to_vertices = Set{Int}((find_vertex_indexes(v, graph) for v=restrict_to))
 
     visited = Int[] # Hold topologically sorted list of indices of child vertices
 

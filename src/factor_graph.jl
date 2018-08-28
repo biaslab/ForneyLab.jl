@@ -113,7 +113,7 @@ end
 
 edges(graph::FactorGraph=currentGraph()) = Set{Edge}(graph.edges)
 edges(node::FactorNode) = Set{Edge}([intf.edge for intf in node.interfaces])
-edges(nodeset::Set{FactorNode}) = union(map(edges, nodeset)...)
+edges(nodeset::Set{FactorNode}) = union(Set((edges(node) for node=nodeset))...)
 
 """
 Description:

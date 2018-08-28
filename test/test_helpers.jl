@@ -45,7 +45,7 @@ import LinearAlgebra: Diagonal, isposdef, I, Hermitian
     @testset "diageye" begin
         # should be shorthand for Diagonal(eye(M))
         M = diageye(3)
-        @test typeof(M) == Diagonal{Float64}
+        @test typeof(M) == Diagonal{Float64, Array{Float64,1}}
         @test M == Diagonal(ones(3))
     end
 
