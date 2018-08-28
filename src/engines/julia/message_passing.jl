@@ -29,7 +29,7 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
         code *= "messages = Array{Message}(undef, $n_messages)\n"
         for (breaker_site, breaker_type) in breaker_types
             msg_idx = interface_to_msg_idx[breaker_site]
-            breaker_type_str = replace(string(family(breaker_type)),"ForneyLab.", "") # Remove module prefixes
+            breaker_type_str = replace(string(family(breaker_type)),"ForneyLab." => "") # Remove module prefixes
             if breaker_dims[breaker_site] == 1
                 code *= "messages[$(msg_idx)] = Message(vague($(breaker_type_str)))\n"
             else

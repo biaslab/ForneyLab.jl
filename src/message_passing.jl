@@ -77,7 +77,7 @@ mutable struct ScheduleEntry
 end
 
 function show(io::IO, entry::ScheduleEntry)
-    rule_str = replace(string(entry.msg_update_rule), "ForneyLab.", "") # Remove "Forneylab."
+    rule_str = replace(string(entry.msg_update_rule), "ForneyLab." => "") # Remove "Forneylab."
     internal_schedule = isdefined(entry, :internal_schedule) ? "(INTERNAL SCHEDULE) " : ""
     print(io, "$(internal_schedule)$(rule_str) on $(entry.interface)")
 end

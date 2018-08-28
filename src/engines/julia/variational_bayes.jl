@@ -111,7 +111,7 @@ function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="
     for node in sort(collect(values(q.graph.nodes)))
         if !isa(node, DeltaFactor) # Non-deterministic factor, add to free energy functional
             # Construct average energy term
-            node_str = replace(string(typeof(node)),"ForneyLab.", "") # Remove module prefixes
+            node_str = replace(string(typeof(node)), "ForneyLab." => "") # Remove module prefixes
             inbounds = collectAverageEnergyInbounds(node)
             inbounds_str = join(inbounds, ", ")
             energy_block *= "F += averageEnergy($node_str, $inbounds_str)\n"

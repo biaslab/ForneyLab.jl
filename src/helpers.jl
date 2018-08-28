@@ -77,7 +77,7 @@ format(d::Diagonal{Float64}) = "diag$(format(d.diag))"
 function format(v::Vector{Any})
     str = ""
     for (i, entry) in enumerate(v)
-        name = replace("$(entry)", "ForneyLab.", "")
+        name = replace("$(entry)", "ForneyLab." => "")
         if i < length(v)
             str *= "`$(name)`, "
         else
