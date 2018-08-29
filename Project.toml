@@ -1,0 +1,6 @@
+name = "ForneyLab"
+uuid = "9fc3f58a-c2cc-5bff-9419-6a294fefdca9"
+version = "0.9.0"
+
+[deps]
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
