@@ -1,6 +1,6 @@
-export huge, tiny, cholinv, diageye, eye, format, *, .*, ^, mat
+export huge, tiny, cholinv, diageye, eye, format, *, ^, mat
 
-import Base: *, .*, ^, ==, sqrt
+import Base: *, ^, ==, sqrt
 import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky, I
 import InteractiveUtils: subtypes
 import Printf: @sprintf

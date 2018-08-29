@@ -1,7 +1,7 @@
 module HelpersTest
 
 using Test
-import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, cholinv, diageye, *, .*, ^
+import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, cholinv, diageye, *, ^
 import LinearAlgebra: Diagonal, isposdef, I, Hermitian
 
 @testset "Helpers" begin
