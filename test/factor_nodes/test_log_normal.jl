@@ -1,6 +1,6 @@
 module LogNormalTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: prod!, unsafeMean, unsafeLogMean, unsafeVar, unsafeLogVar, unsafeCov, unsafeLogCov, outboundType, isApplicable, dims
 import ForneyLab: SPLogNormalOutVPP, VBLogNormalOut
@@ -40,7 +40,7 @@ end
 @testset "SPLogNormalOutVPP" begin
     @test SPLogNormalOutVPP <: SumProductRule{LogNormal}
     @test outboundType(SPLogNormalOutVPP) == Message{LogNormal}
-    @test isApplicable(SPLogNormalOutVPP, [Void, Message{PointMass}, Message{PointMass}]) 
+    @test isApplicable(SPLogNormalOutVPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
 
     @test ruleSPLogNormalOutVPP(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, LogNormal, m=1.0, s=2.0)
 end
@@ -48,8 +48,8 @@ end
 @testset "VBLogNormalOut" begin
     @test VBLogNormalOut <: NaiveVariationalRule{LogNormal}
     @test outboundType(VBLogNormalOut) == Message{LogNormal}
-    @test isApplicable(VBLogNormalOut, [Void, ProbabilityDistribution, ProbabilityDistribution]) 
-    @test !isApplicable(VBLogNormalOut, [ProbabilityDistribution, ProbabilityDistribution, Void]) 
+    @test isApplicable(VBLogNormalOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution]) 
+    @test !isApplicable(VBLogNormalOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing]) 
 
     @test ruleVBLogNormalOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=1.5), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, LogNormal, m=1.5, s=3.0)
 end

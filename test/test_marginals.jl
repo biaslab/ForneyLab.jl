@@ -1,19 +1,19 @@
 module MarginalsTest
 
-using Base.Test
+using Test
 using ForneyLab
 
 import ForneyLab: generateId, addNode!, associate!, Product
 
 # Integration helper
-type MockNode <: FactorNode
+mutable struct MockNode <: FactorNode
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Int,Interface}
 
     function MockNode(vars::Vector{Variable}; id=generateId(MockNode))
         n_interfaces = length(vars)
-        self = new(id, Vector{Interface}(n_interfaces), Dict{Int,Interface}())
+        self = new(id, Vector{Interface}(undef, n_interfaces), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
 
         for idx = 1:n_interfaces
@@ -30,7 +30,7 @@ end
     nd = MockNode([x])
 
     # Marginal schedule should be constructable by hand
-    marginal_schedule = [MarginalScheduleEntry(x, [nd.i[1]], Void)]
+    marginal_schedule = [MarginalScheduleEntry(x, [nd.i[1]], Nothing)]
     @test isa(marginal_schedule, MarginalSchedule)
 end
 
@@ -58,7 +58,7 @@ end
 
     @test marginal_schedule[2].target == b
     @test marginal_schedule[2].interfaces[1] == n2.i[2]
-    @test marginal_schedule[2].marginal_update_rule == Void
+    @test marginal_schedule[2].marginal_update_rule == Nothing
 end
 
 end # module

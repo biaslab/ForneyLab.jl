@@ -3,8 +3,8 @@ os:
   - linux
   - osx
 julia:
-  - 0.6
+  - 0.7
 notifications:
   email: false
 script:
-  - julia -e 'Pkg.clone(pwd()); Pkg.build("ForneyLab"); Pkg.test("ForneyLab"; coverage=true)'
+  - julia -e 'import Pkg; Pkg.build(); Pkg.test()'

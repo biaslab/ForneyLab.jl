@@ -70,11 +70,11 @@ function genDot(nodeset::Set{FactorNode}, edgeset::Set{Edge}; schedule::Schedule
     # Draw nodes
     for node in nodeset
         if isa(node, Clamp)
-            dot *= "\t$(object_id(node)) [label=\"$(node.id)\", style=filled, width=0.75, height=0.75]\n"
+            dot *= "\t$(objectid(node)) [label=\"$(node.id)\", style=filled, width=0.75, height=0.75]\n"
         elseif isa(node, Terminal)
-            dot *= "\t$(object_id(node)) [label=\"Terminal $(node.id)\", style=filled, width=0.75, height=0.75]\n"
+            dot *= "\t$(objectid(node)) [label=\"Terminal $(node.id)\", style=filled, width=0.75, height=0.75]\n"
         else
-            dot *= "\t$(object_id(node)) [label=\"$(slug(typeof(node)))\\n$(node.id)\"]\n"
+            dot *= "\t$(objectid(node)) [label=\"$(slug(typeof(node)))\\n$(node.id)\"]\n"
         end
     end
 
@@ -102,7 +102,7 @@ function genDot(nodeset::Set{FactorNode}, edgeset::Set{Edge}; schedule::Schedule
         # Add invisible nodes to external edges
         external_nodes = setdiff(nodes(external_edges), nodeset)
         for node in external_nodes
-            dot *= "\t$(object_id(node)) [label=\"\", shape=none,  width=0.15, height=0.15]\n"
+            dot *= "\t$(objectid(node)) [label=\"\", shape=none,  width=0.15, height=0.15]\n"
         end
 
         # Add the external edges themselves
@@ -120,21 +120,21 @@ function edgeDot(edge::Edge; msg_labels=Dict{Interface, String}(), is_external_e
     # Generate DOT code for an edge
     dot = ""
     if edge.b != nothing
-        b_id = findfirst(edge.b.node.interfaces, edge.b)
+        b_id = findfirst(isequal(edge.b), edge.b.node.interfaces)
         b_label = "$b_id $(handle(edge.b))"
-        b_object_id = object_id(edge.b.node)
+        b_object_id = objectid(edge.b.node)
     else
-        b_object_id = "$(object_id(edge))2"
+        b_object_id = "$(objectid(edge))2"
         dot *= "\t$b_object_id [shape=none, label=\"\", width=0.75, height=0.75]\n"
         b_label = ""
     end
 
     if edge.a != nothing
-        a_id = findfirst(edge.a.node.interfaces, edge.a)
+        a_id = findfirst(isequal(edge.a), edge.a.node.interfaces)
         a_label = "$a_id $(handle(edge.a))"
-        a_object_id = object_id(edge.a.node)
+        a_object_id = objectid(edge.a.node)
     else
-        a_object_id = "$(object_id(edge))1"
+        a_object_id = "$(objectid(edge))1"
         dot *= "\t$a_object_id [shape=none, label=\"\", width=0.75, height=0.75]\n"
         a_label = ""
     end
@@ -163,40 +163,40 @@ end
 function dot2gif(dot_graph::AbstractString)
     # Generate SVG image from DOT graph
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    stdout, stdin, proc = readandwrite(`dot -Tgif`)
-    write(stdin, dot_graph)
-    close(stdin)
-    return readstring(stdout)
+    proc = open(`dot -Tgif`, "r+")
+    write(proc.in, dot_graph)
+    close(proc.in)
+    return read(proc.out, String)
 end
 
 function dot2svg(dot_graph::AbstractString)
     # Generate SVG image from DOT graph
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    stdout, stdin, proc = readandwrite(`dot -Tsvg`)
-    write(stdin, dot_graph)
-    close(stdin)
-    return readstring(stdout)
+    proc = open(`dot -Tsvg`, "r+")
+    write(proc.in, dot_graph)
+    close(proc.in)
+    return read(proc.out, String)
 end
 
 function dot2png(dot_graph::AbstractString)
     # Generate PNG image from DOT graph
     validateGraphVizInstalled()
-    stdout, stdin, proc = readandwrite(`dot -Tpng`)
-    write(stdin, dot_graph)
-    close(stdin)
-    return readstring(stdout)
+    proc = open(`dot -Tpng`, "r+")
+    write(proc.in, dot_graph)
+    close(proc.in)
+    return read(proc.out, String)
 end
 
 function validateGraphVizInstalled()
     # Check if GraphViz is installed
     try
-        (readstring(`dot -'?'`)[1:10] == "Usage: dot") || error()
+        (read(`dot -'?'`, String)[1:10] == "Usage: dot") || error()
     catch
         error("GraphViz is not installed correctly. Make sure GraphViz is installed. If you are on Windows, manually add the path to GraphViz to your path variable. You should be able to run 'dot' from the command line.")
     end
 end
 
-viewDotExternal(dot_graph::AbstractString) = (is_linux() ? viewDotExternalInteractive(dot_graph::AbstractString) : viewDotExternalImage(dot_graph::AbstractString))
+viewDotExternal(dot_graph::AbstractString) = (Sys.islinux() ? viewDotExternalInteractive(dot_graph::AbstractString) : viewDotExternalImage(dot_graph::AbstractString))
 
 function viewDotExternalInteractive(dot_graph::AbstractString)
     # View a DOT graph in interactive viewer

@@ -1,6 +1,6 @@
 @sumProductRule(:node_type     => Sigmoid,
                 :outbound_type => Message{Bernoulli},
-                :inbound_types => (Void, Message{Gaussian}),
+                :inbound_types => (Nothing, Message{Gaussian}),
                 :name          => SPSigmoidBinVG)
 
 @expectationPropagationRule(:node_type     => Sigmoid,

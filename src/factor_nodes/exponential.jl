@@ -26,7 +26,7 @@ mutable struct Exponential <: DeltaFactor
 
     function Exponential(out, in1; id=generateId(Exponential))
         @ensureVariables(out, in1)
-        self = new(id, Array{Interface}(2), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(undef, 2), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)

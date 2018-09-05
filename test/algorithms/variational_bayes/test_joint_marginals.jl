@@ -1,19 +1,19 @@
 module JointMarginalsTest
 
-using Base.Test
+using Test
 using ForneyLab
 
 import ForneyLab: generateId, addNode!, associate!, inferMarginalRule, isApplicable, Cluster, Product
 
 # Integration helper
-type MockNode <: FactorNode
+mutable struct MockNode <: FactorNode
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Int,Interface}
 
     function MockNode(vars::Vector{Variable}; id=generateId(MockNode))
         n_interfaces = length(vars)
-        self = new(id, Vector{Interface}(n_interfaces), Dict{Int,Interface}())
+        self = new(id, Vector{Interface}(undef, n_interfaces), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
 
         for idx = 1:n_interfaces
@@ -42,12 +42,12 @@ end
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (Void, Message{PointMass}, ProbabilityDistribution),
+                           :inbound_types => (Nothing, Message{PointMass}, ProbabilityDistribution),
                            :name          => SVBMock1VGD)
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (Message{PointMass}, Void, ProbabilityDistribution),
+                           :inbound_types => (Message{PointMass}, Nothing, ProbabilityDistribution),
                            :name          => SVBMock2GVD)
 
 @testset "marginalSchedule" begin

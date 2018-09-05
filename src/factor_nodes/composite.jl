@@ -35,7 +35,7 @@ macro composite(name::Symbol, exposed_vars::Expr, model::Expr)
         interface2terminal::Dict{Interface,Terminal}
 
         function $name($exposed_var_arguments; id=ForneyLab.generateId($name))
-            self = new(id, Array{Interface}($n_vars), Dict{Symbol,Interface}())
+            self = new(id, Array{Interface}(undef, $n_vars), Dict{Symbol,Interface}())
             outer_graph = currentGraph()
             ForneyLab.addNode!(outer_graph, self)
             $interface_definitions

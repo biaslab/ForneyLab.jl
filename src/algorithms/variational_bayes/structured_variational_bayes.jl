@@ -7,9 +7,10 @@ abstract type StructuredVariationalRule{factor_type} <: MessageUpdateRule end
 """
 Infer the update rule that computes the message for `entry`, as dependent on the inbound types
 """
-function inferUpdateRule!{T<:StructuredVariationalRule}(entry::ScheduleEntry,
-                                                        rule_type::Type{T},
-                                                        inferred_outbound_types::Dict{Interface, Type})
+function inferUpdateRule!(entry::ScheduleEntry,
+                          rule_type::Type{T},
+                          inferred_outbound_types::Dict{Interface, Type}
+                         ) where T<:StructuredVariationalRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
     
@@ -37,9 +38,10 @@ end
 Find the inbound types that are required to compute the message for `entry`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
-function collectInboundTypes{T<:StructuredVariationalRule}( entry::ScheduleEntry,
-                                                            ::Type{T},
-                                                            inferred_outbound_types::Dict{Interface, Type})
+function collectInboundTypes(entry::ScheduleEntry,
+                             ::Type{T},
+                             inferred_outbound_types::Dict{Interface, Type}
+                            ) where T<:StructuredVariationalRule
     inbound_types = Type[]
     entry_recognition_factor_id = recognitionFactorId(entry.interface.edge) # Recognition factor id for outbound edge
     recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
@@ -47,7 +49,7 @@ function collectInboundTypes{T<:StructuredVariationalRule}( entry::ScheduleEntry
         node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
 
         if node_interface == entry.interface
-            push!(inbound_types, Void)
+            push!(inbound_types, Nothing)
         elseif node_interface_recognition_factor_id == entry_recognition_factor_id
             # Edge is internal, accept message
             push!(inbound_types, inferred_outbound_types[node_interface.partner])
@@ -79,18 +81,18 @@ macro structuredVariationalRule(fields...)
     for arg in fields
         (arg.args[1] == :(=>)) || error("Invalid call to @structuredVariationalRule")
 
-        if arg.args[2].args[1] == :node_type
+        if arg.args[2].value == :node_type
             node_type = arg.args[3]
-        elseif arg.args[2].args[1] == :outbound_type
+        elseif arg.args[2].value == :outbound_type
             outbound_type = arg.args[3]
             (outbound_type.head == :curly && outbound_type.args[1] == :Message) || error("Outbound type for StructuredVariationalRule should be a Message")
-        elseif arg.args[2].args[1] == :inbound_types
+        elseif arg.args[2].value == :inbound_types
             inbound_types = arg.args[3]
             (inbound_types.head == :tuple) || error("Inbound types should be passed as Tuple")
-        elseif arg.args[2].args[1] == :name
+        elseif arg.args[2].value == :name
             name = arg.args[3]
         else
-            error("Unrecognized field $(arg.args[2].args[1]) in call to @structuredVariationalRule")
+            error("Unrecognized field $(arg.args[2].value) in call to @structuredVariationalRule")
         end
     end
 
@@ -104,7 +106,7 @@ macro structuredVariationalRule(fields...)
     # Build validators for isApplicable
     input_type_validators = String[]
     for (i, i_type) in enumerate(inbound_types.args)
-        if i_type != :Void
+        if i_type != :Nothing
             # Only validate inbounds required for message update
             push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
         end

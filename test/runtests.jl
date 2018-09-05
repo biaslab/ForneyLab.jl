@@ -4,7 +4,7 @@
 
 module ForneyLabTest
 
-using Base.Test
+using Test
 
 @testset "ForneyLab" begin
     include("./test_helpers.jl")

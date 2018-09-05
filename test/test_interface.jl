@@ -1,6 +1,6 @@
 module InterfaceTest
 
-using Base.Test
+using Test
 import ForneyLab: Interface, FactorNode
 
 # Integration helper

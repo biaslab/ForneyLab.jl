@@ -28,7 +28,7 @@ mutable struct Transition <: SoftFactor
 
     function Transition(out, in1, a; id=generateId(Transition))
         @ensureVariables(out, in1, a)
-        self = new(id, Array{Interface}(3), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(undef, 3), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)
@@ -46,5 +46,5 @@ function averageEnergy(::Type{Transition}, marg_out::ProbabilityDistribution, ma
 end
 
 function averageEnergy(::Type{Transition}, marg_out_in1::ProbabilityDistribution{Multivariate, Contingency}, marg_a::ProbabilityDistribution{MatrixVariate})
-    -trace(marg_out_in1.params[:p]'*unsafeLogMean(marg_a))
+    -tr(marg_out_in1.params[:p]'*unsafeLogMean(marg_a))
 end

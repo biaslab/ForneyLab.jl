@@ -27,7 +27,7 @@ mutable struct Categorical <: SoftFactor
 
     function Categorical(out, p; id=generateId(Categorical))
         @ensureVariables(out, p)
-        self = new(id, Array{Interface}(2), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(undef, 2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:p] = self.interfaces[2] = associate!(Interface(self), p)
@@ -78,7 +78,7 @@ end
 
 function prod!( x::ProbabilityDistribution{Univariate, Categorical},
                 y::ProbabilityDistribution{Univariate, Categorical},
-                z::ProbabilityDistribution{Univariate, Categorical}=ProbabilityDistribution(Univariate, Categorical, p=ones(x.params[:p])./length(x.params[:p])))
+                z::ProbabilityDistribution{Univariate, Categorical}=ProbabilityDistribution(Univariate, Categorical, p=ones(size(x.params[:p]))./length(x.params[:p])))
 
     # Multiplication of 2 categorical PMFs: p(z) = p(x) * p(y)
     z.params[:p][:] = x.params[:p] .* y.params[:p]

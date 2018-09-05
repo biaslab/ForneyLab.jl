@@ -41,7 +41,7 @@ end
 Find the inbound types that are required to compute the message for `entry`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
-function collectInbounds{T<:ExpectationPropagationRule}(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int})
+function collectInbounds(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::Dict{Interface, Int}) where T<:ExpectationPropagationRule
     inbound_messages = String[]
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)

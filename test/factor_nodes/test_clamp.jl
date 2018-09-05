@@ -1,6 +1,6 @@
 module ClampTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, @ensureVariables, generateId, addNode!, associate!
 import ForneyLab: SPClamp
@@ -13,7 +13,7 @@ mutable struct MockNode <: FactorNode
 
     function MockNode(out; id=generateId(MockNode))
         @ensureVariables(out)
-        self = new(id, Array{Interface}(1), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(undef, 1), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
 

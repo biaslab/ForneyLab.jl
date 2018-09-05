@@ -23,7 +23,7 @@ mutable struct Equality <: DeltaFactor
     i::Dict{Int,Interface}
 
     function Equality(; id=generateId(Equality))
-        self = new(id, Array{Interface}(3), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(undef, 3), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
 
         for idx = 1:3
@@ -36,7 +36,7 @@ mutable struct Equality <: DeltaFactor
     function Equality(out, in1, in2; id=generateId(Equality))
         # Explicit node constructor for creating an equality node where all connected
         # variables are considered separately
-        self = new(id, Array{Interface}(3), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(undef, 3), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
         self.i[1] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[2] = self.interfaces[2] = associate!(Interface(self), in1)

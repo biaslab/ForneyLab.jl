@@ -26,10 +26,10 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
         code *= "function init$(name)()\n\n"
 
         # Write message (breaker) initialization code
-        code *= "messages = Array{Message}($n_messages)\n"
+        code *= "messages = Array{Message}(undef, $n_messages)\n"
         for (breaker_site, breaker_type) in breaker_types
             msg_idx = interface_to_msg_idx[breaker_site]
-            breaker_type_str = replace(string(family(breaker_type)),"ForneyLab.", "") # Remove module prefixes
+            breaker_type_str = replace(string(family(breaker_type)),"ForneyLab." => "") # Remove module prefixes
             if breaker_dims[breaker_site] == 1
                 code *= "messages[$(msg_idx)] = Message(vague($(breaker_type_str)))\n"
             else
@@ -66,7 +66,7 @@ function writeMarginalsComputationBlock(schedule::MarginalSchedule, interface_to
     code = ""
 
     for schedule_entry in schedule
-        if schedule_entry.marginal_update_rule == Void
+        if schedule_entry.marginal_update_rule == Nothing
             iface = schedule_entry.interfaces[1]
             code *= "marginals[:$(schedule_entry.target.id)] = messages[$(interface_to_msg_idx[iface])].dist\n"
         elseif schedule_entry.marginal_update_rule == Product
@@ -137,7 +137,7 @@ function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::Marginal
 
     code = ""
     code *= writeInitializationBlock(schedule, interface_to_msg_idx, n_messages, name)
-    code *= "function step$(name)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}($n_messages))\n\n"
+    code *= "function step$(name)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_messages))\n\n"
     code *= writeMessagePassingBlock(schedule, interface_to_msg_idx)
     code *= "\n"
     code *= writeMarginalsComputationBlock(marginal_schedule, interface_to_msg_idx)
@@ -156,7 +156,7 @@ end
 Depending on the origin of the Clamp node message,
 contruct the outbound message code.
 """
-function messageString{T<:VariateType}(node::Clamp{T})
+function messageString(node::Clamp{T}) where T<:VariateType
     var_type_str = split(string(T),'.')[end] # Remove module prefixes
     if node in keys(ForneyLab.current_graph.placeholders)
         # Message comes from data array
@@ -186,7 +186,7 @@ end
 Depending on the origin of the Clamp node message,
 contruct the marginal code.
 """
-function marginalString{T<:VariateType}(node::Clamp{T})
+function marginalString(node::Clamp{T}) where T<:VariateType
     var_type_str = split(string(T),'.')[end] # Remove module prefixes
     if node in keys(ForneyLab.current_graph.placeholders)
         # Message comes from data array

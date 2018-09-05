@@ -14,18 +14,18 @@ struct Message{family<:FactorNode, var_type<:VariateType} # Note that parameter 
     Message{F, V}(dist::ProbabilityDistribution{V, F}) where {F, V}= new(dist) # Constructor for unspecified scaling factor
 end
 
-Message{F<:FactorNode, V<:VariateType}(dist::ProbabilityDistribution{V, F}) = Message{F, V}(dist)
+Message(dist::ProbabilityDistribution{V, F}) where {F<:FactorNode, V<:VariateType} = Message{F, V}(dist)
 
-Message{F<:FactorNode, V<:VariateType}(var_type::Type{V}, family::Type{F}; kwargs...) = Message{family, var_type}(ProbabilityDistribution(var_type, family; kwargs...))
+Message(var_type::Type{V}, family::Type{F}; kwargs...) where {F<:FactorNode, V<:VariateType} = Message{family, var_type}(ProbabilityDistribution(var_type, family; kwargs...))
 
-function Message{F<:FactorNode}(family::Type{F}; kwargs...)
+function Message(family::Type{F}; kwargs...) where F
     dist = ProbabilityDistribution(family; kwargs...)
     var_type = variateType(dist)
 
     return Message{family, var_type}(dist)
 end
 
-family{F<:FactorNode}(msg_type::Type{Message{F}}) = F
+family(msg_type::Type{Message{F}}) where F<:FactorNode = F
 
 function show(io::IO, msg::Message)
     if isdefined(msg, :scaling_factor)
@@ -36,15 +36,15 @@ function show(io::IO, msg::Message)
 end
 
 """Special inheritance rules for parametric Message types"""
-matches{T<:Message}(::Type{T}, ::Type{T}) = true
-matches{Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType, Vb<:VariateType}(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) = (Va==Vb) && (Fa<:Fb)
-matches{Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType}(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) = (Fa<:Fb)
-matches{Fa<:FactorNode, Fb<:FactorNode}(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) = (Fa<:Fb)
-matches{T<:Message}(::Type{Void}, ::Type{T}) = false
-matches{P<:ProbabilityDistribution, M<:Message}(::Type{P}, ::Type{M}) = false
-matches{P<:ProbabilityDistribution, M<:Message}(::Type{M}, ::Type{P}) = false
+matches(::Type{T}, ::Type{T}) where T<:Message = true
+matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) where {Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType, Vb<:VariateType} = (Va==Vb) && (Fa<:Fb)
+matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) where {Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType} = (Fa<:Fb)
+matches(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) where {Fa<:FactorNode, Fb<:FactorNode} = (Fa<:Fb)
+matches(::Type{Nothing}, ::Type{T}) where T<:Message = false
+matches(::Type{P}, ::Type{M}) where {P<:ProbabilityDistribution, M<:Message} = false
+matches(::Type{M}, ::Type{P}) where {P<:ProbabilityDistribution, M<:Message} = false
 
-function =={fam_t<:FactorNode, var_t<:VariateType, fam_u<:FactorNode, var_u<:VariateType}(t::Message{fam_t, var_t}, u::Message{fam_u, var_u})
+function ==(t::Message{fam_t, var_t}, u::Message{fam_u, var_u}) where {fam_t<:FactorNode, var_t<:VariateType, fam_u<:FactorNode, var_u<:VariateType}
     (fam_t == fam_u) || return false
     (var_t == var_u) || return false
     (t.dist == u.dist) || return false
@@ -77,7 +77,7 @@ mutable struct ScheduleEntry
 end
 
 function show(io::IO, entry::ScheduleEntry)
-    rule_str = replace(string(entry.msg_update_rule), "ForneyLab.", "") # Remove "Forneylab."
+    rule_str = replace(string(entry.msg_update_rule), "ForneyLab." => "") # Remove "Forneylab."
     internal_schedule = isdefined(entry, :internal_schedule) ? "(INTERNAL SCHEDULE) " : ""
     print(io, "$(internal_schedule)$(rule_str) on $(entry.interface)")
 end
@@ -140,7 +140,7 @@ end
 """
 `summaryPropagationSchedule(variables)` builds a generic summary propagation
 `Schedule` for calculating the marginal distributions of every variable in
-`variables`. The message update rule in each schedule entry is set to `Void`.
+`variables`. The message update rule in each schedule entry is set to `Nothing`.
 """
 function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges(current_graph), target_sites=Interface[], breaker_sites=Interface[])
     # We require the marginal distribution of every variable in variables.
@@ -155,8 +155,8 @@ function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges
     # Determine a feasible ordering of message updates
     dg = summaryDependencyGraph(limit_set)
     iface_list = children(unique(target_sites), dg, breaker_sites=Set(breaker_sites))
-    # Build a schedule; Void indicates an unspecified message update rule
-    schedule = [ScheduleEntry(iface, Void) for iface in iface_list]
+    # Build a schedule; Nothing indicates an unspecified message update rule
+    schedule = [ScheduleEntry(iface, Nothing) for iface in iface_list]
 
     return schedule
 end
@@ -168,8 +168,8 @@ inferUpdateRules!(schedule) infers specific message update rules for all schedul
 """
 function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Interface, Type}())
     for entry in schedule
-        (entry.msg_update_rule == Void) && error("No msg update rule type specified for $(entry)")
-        if !isleaftype(entry.msg_update_rule)
+        (entry.msg_update_rule == Nothing) && error("No msg update rule type specified for $(entry)")
+        if !isconcretetype(entry.msg_update_rule)
             # In this case entry.msg_update_rule is a update rule type, but not a specific rule.
             # Here we infer the specific rule that is applicable, which should be a subtype of entry.msg_update_rule.
             inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)

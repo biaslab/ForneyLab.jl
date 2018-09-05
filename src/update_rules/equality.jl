@@ -1,16 +1,16 @@
 function matchPermutedCanonical(input_types::Vector{Type}, outbound_type::Type)
     # TODO: this implementation only works when the inbound types match the outbound type
-    void_inputs = 0
+    Nothing_inputs = 0
     message_inputs = 0
     for input_type in input_types
-        if input_type == Void
-            void_inputs += 1
+        if input_type == Nothing
+            Nothing_inputs += 1
         elseif matches(input_type, outbound_type)
             message_inputs += 1
         end
     end
 
-    return (void_inputs == 1) && (message_inputs == 2)
+    return (Nothing_inputs == 1) && (message_inputs == 2)
 end
 
 mutable struct SPEqualityGaussian <: SumProductRule{Equality} end
@@ -40,12 +40,12 @@ isApplicable(::Type{SPEqualityDirichlet}, input_types::Vector{Type}) = matchPerm
 mutable struct SPEqualityPointMass <: SumProductRule{Equality} end
 outboundType(::Type{SPEqualityPointMass}) = Message{PointMass}
 function isApplicable(::Type{SPEqualityPointMass}, input_types::Vector{Type})
-    void_inputs = 0
+    Nothing_inputs = 0
     soft_inputs = 0
     point_mass_inputs = 0
     for input_type in input_types
-        if input_type == Void
-            void_inputs += 1
+        if input_type == Nothing
+            Nothing_inputs += 1
         elseif matches(input_type, Message{SoftFactor})
             soft_inputs += 1
         elseif matches(input_type, Message{PointMass})
@@ -53,5 +53,5 @@ function isApplicable(::Type{SPEqualityPointMass}, input_types::Vector{Type})
         end
     end
 
-    return (void_inputs == 1) && (soft_inputs == 1) && (point_mass_inputs == 1)
+    return (Nothing_inputs == 1) && (soft_inputs == 1) && (point_mass_inputs == 1)
 end

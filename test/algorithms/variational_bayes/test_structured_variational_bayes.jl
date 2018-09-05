@@ -1,19 +1,19 @@
 module StructuredVariationalBayesTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
 import ForneyLab: VBGaussianMeanVarianceOut, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionOutVGD, VBGammaOut, SVBGaussianMeanPrecisionW
 
 # Integration helper
-type MockNode <: SoftFactor
+mutable struct MockNode <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Int,Interface}
 
     function MockNode(vars::Vector{Variable}; id=generateId(MockNode))
         n_interfaces = length(vars)
-        self = new(id, Vector{Interface}(n_interfaces), Dict{Int,Interface}())
+        self = new(id, Vector{Interface}(undef, n_interfaces), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
 
         for idx = 1:n_interfaces
@@ -26,17 +26,17 @@ end
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (Void, Message{PointMass}, ProbabilityDistribution),
+                           :inbound_types => (Nothing, Message{PointMass}, ProbabilityDistribution),
                            :name          => SVBMock1VGD)
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (Message{PointMass}, Void, ProbabilityDistribution),
+                           :inbound_types => (Message{PointMass}, Nothing, ProbabilityDistribution),
                            :name          => SVBMock2GVD)
 
 @structuredVariationalRule(:node_type     => MockNode,
                            :outbound_type => Message{PointMass},
-                           :inbound_types => (ProbabilityDistribution, Void),
+                           :inbound_types => (ProbabilityDistribution, Nothing),
                            :name          => SVBMock3DV)
 
 @testset "@structuredVariationalRule" begin
