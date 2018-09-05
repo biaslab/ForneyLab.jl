@@ -21,11 +21,13 @@ Installation
 
 Install ForneyLab through the Julia package manager:
 ```jl
-Pkg.add("ForneyLab")
+] add ForneyLab
 ```
 If you want to be able to use the graph visualization functions, you will also need to have [GraphViz](http://www.graphviz.org/) installed. On Linux, just use `apt-get install graphviz` or `yum install graphviz`. On Windows, run the installer and afterwards manually add the path of the GraphViz installation to the `PATH` system variable. On MacOS, use for example `brew install graphviz`. The `dot` command should work from the command line.
 
-Some demos use the [PyPlot](https://github.com/stevengj/PyPlot.jl) plotting module. Install it using `Pkg.add("PyPlot")`.
+Some demos use the [PyPlot](https://github.com/stevengj/PyPlot.jl) plotting module. Install it using `] add PyPlot`.
+
+Optionally, use `] test ForneyLab` to validate the installation by running the test suite.
 
 
 Getting started
