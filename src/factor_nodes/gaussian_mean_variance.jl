@@ -51,6 +51,8 @@ vague(::Type{GaussianMeanVariance}, dims::Int64) = ProbabilityDistribution(Multi
 
 unsafeMean{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = deepcopy(dist.params[:m]) # unsafe mean
 
+unsafeMode{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = deepcopy(dist.params[:m]) # unsafe mean
+
 unsafeVar(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = dist.params[:v] # unsafe variance
 unsafeVar(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = diag(dist.params[:v])
 

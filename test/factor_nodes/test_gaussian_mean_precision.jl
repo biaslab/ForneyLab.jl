@@ -2,7 +2,7 @@ module GaussianMeanPrecisionTest
 
 using Base.Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
+import ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
 import ForneyLab: SPGaussianMeanPrecisionOutVPP, SPGaussianMeanPrecisionMPVP, SPGaussianMeanPrecisionOutVGP, SPGaussianMeanPrecisionMGVP, VBGaussianMeanPrecisionOut, VBGaussianMeanPrecisionM, VBGaussianMeanPrecisionW, SVBGaussianMeanPrecisionOutVGD, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionW, MGaussianMeanPrecisionGGD
 
 @testset "dims" begin
@@ -39,6 +39,7 @@ end
 @testset "unsafe statistics" begin
     # Univariate
     @test unsafeMean(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 2.0
+    @test unsafeMode(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 2.0
     @test unsafeVar(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 0.25
     @test unsafeCov(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 0.25
     @test unsafeMeanCov(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == (2.0, 0.25)
@@ -48,6 +49,7 @@ end
 
     # Multivariate
     @test unsafeMean(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [2.0]
+    @test unsafeMode(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [2.0]
     @test unsafeVar(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [0.25]
     @test unsafeCov(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == mat(0.25)
     @test unsafeMeanCov(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == ([2.0], mat(0.25))
