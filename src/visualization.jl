@@ -201,9 +201,9 @@ viewDotExternal(dot_graph::AbstractString) = (Sys.islinux() ? viewDotExternalInt
 function viewDotExternalInteractive(dot_graph::AbstractString)
     # View a DOT graph in interactive viewer
     validateGraphVizInstalled() # Show an error if GraphViz is not installed correctly
-    open(`dot -Tx11`, "w", STDOUT) do io
-        println(io, dot_graph)
-    end
+    proc = open(`dot -Tx11`, "w")
+    write(proc.in, dot_graph)
+    close(proc.in)
 end
 
 function viewDotExternalImage(dot_graph::AbstractString)
