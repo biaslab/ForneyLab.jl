@@ -4,9 +4,9 @@ ruleSPDotProductOutVGP,
 ruleSPDotProductIn2GPV,
 ruleSPDotProductIn1GVP
 
-function ruleSPDotProductOutVPG{F<:Gaussian}(   msg_out::Void,
-                                                msg_in1::Message{PointMass, Multivariate},
-                                                msg_in2::Message{F, Multivariate})
+function ruleSPDotProductOutVPG(msg_out::Nothing,
+                                msg_in1::Message{PointMass, Multivariate},
+                                msg_in2::Message{F, Multivariate}) where F<:Gaussian
 
     x = msg_in1.dist.params[:m]
     β = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in2.dist)
@@ -18,17 +18,17 @@ function ruleSPDotProductOutVPG{F<:Gaussian}(   msg_out::Void,
 end
 
 
-function ruleSPDotProductOutVGP{F<:Gaussian}(   msg_out::Void,
-                                                msg_in1::Message{F, Multivariate},
-                                                msg_in2::Message{PointMass, Multivariate})
+function ruleSPDotProductOutVGP(msg_out::Nothing,
+                                msg_in1::Message{F, Multivariate},
+                                msg_in2::Message{PointMass, Multivariate}) where F<:Gaussian
 
     ruleSPDotProductOutVPG(msg_out, msg_in2, msg_in1)
 end
 
 
-function ruleSPDotProductIn2GPV{F<:Gaussian}(   msg_out::Message{F, Univariate},
-                                                msg_in1::Message{PointMass, Multivariate},
-                                                msg_in2::Void)
+function ruleSPDotProductIn2GPV(msg_out::Message{F, Univariate},
+                                msg_in1::Message{PointMass, Multivariate},
+                                msg_in2::Nothing) where F<:Gaussian
 
     x = msg_in1.dist.params[:m] # We'll call in1 x
     d = length(x)
@@ -42,9 +42,9 @@ function ruleSPDotProductIn2GPV{F<:Gaussian}(   msg_out::Message{F, Univariate},
 end
 
 
-function ruleSPDotProductIn1GVP{F<:Gaussian}(   msg_out::Message{F, Univariate},
-                                                msg_in1::Void,
-                                                msg_in2::Message{PointMass, Multivariate})
+function ruleSPDotProductIn1GVP(msg_out::Message{F, Univariate},
+                                msg_in1::Nothing,
+                                msg_in2::Message{PointMass, Multivariate}) where F<:Gaussian
 
     ruleSPDotProductIn2GPV(msg_out, msg_in2, msg_in1)
 end

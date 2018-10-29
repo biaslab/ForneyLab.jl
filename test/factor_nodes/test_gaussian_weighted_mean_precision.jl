@@ -1,6 +1,6 @@
 module GaussianWeightedMeanPrecisionTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
 

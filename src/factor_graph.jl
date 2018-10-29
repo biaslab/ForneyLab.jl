@@ -113,7 +113,7 @@ end
 
 edges(graph::FactorGraph=currentGraph()) = Set{Edge}(graph.edges)
 edges(node::FactorNode) = Set{Edge}([intf.edge for intf in node.interfaces])
-edges(nodeset::Set{FactorNode}) = union(map(edges, nodeset)...)
+edges(nodeset::Set{FactorNode}) = union(Set((edges(node) for node=nodeset))...)
 
 """
 Description:
@@ -140,7 +140,7 @@ mutable struct Terminal <: FactorNode
     outer_interface::Interface # Interface of CompositeNode linked to this Terminal
 
     function Terminal(out::Variable, outer_interface::Interface; id=generateId(Terminal))
-        self = new(id, Array{Interface}(1), Dict{Symbol,Interface}(), outer_interface)
+        self = new(id, Array{Interface}(undef, 1), Dict{Symbol,Interface}(), outer_interface)
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
 

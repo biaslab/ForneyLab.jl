@@ -1,6 +1,6 @@
 module SumProductTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
 import ForneyLab: SPClamp
@@ -13,7 +13,7 @@ mutable struct MockNode <: FactorNode
 
     function MockNode(vars::Vector{Variable}; id=generateId(MockNode))
         n_interfaces = length(vars)
-        self = new(id, Array{Interface}(n_interfaces), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(undef, n_interfaces), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
 
         for idx = 1:n_interfaces
@@ -26,7 +26,7 @@ end
 
 @sumProductRule(:node_type     => MockNode,
                 :outbound_type => Message{PointMass},
-                :inbound_types => (Void, Message{PointMass}, Message{PointMass}),
+                :inbound_types => (Nothing, Message{PointMass}, Message{PointMass}),
                 :name          => SPMockOutPP)
 
 @testset "@SumProductRule" begin
@@ -55,7 +55,7 @@ end
     b = Variable(id=:b)
     tc = TestComposite(b, a)
     inferred_outbound_types = Dict(tc.i[:a].partner => Message{PointMass})
-    entry = ScheduleEntry(tc.i[:b], SumProductRule{Void})
+    entry = ScheduleEntry(tc.i[:b], SumProductRule{Nothing})
 
     inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
 

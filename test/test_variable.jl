@@ -1,6 +1,6 @@
 module VariableTest
 
-using Base.Test
+using Test
 using ForneyLab
 
 @testset "Variable" begin

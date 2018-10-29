@@ -1,6 +1,6 @@
 module DependencyGraphTest
 
-using Base.Test
+using Test
 import ForneyLab: LinkedList, DependencyGraph, addVertex!, addEdge!, children, neighbors
 
 mutable struct MockVertex

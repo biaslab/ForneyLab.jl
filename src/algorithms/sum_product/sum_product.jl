@@ -67,9 +67,10 @@ function internalSumProductSchedule(cnode::CompositeNode,
     return schedule
 end
 
-function inferUpdateRule!{T<:SumProductRule}(   entry::ScheduleEntry,
-                                                rule_type::Type{T},
-                                                inferred_outbound_types::Dict{Interface, <:Type})
+function inferUpdateRule!(entry::ScheduleEntry,
+                          rule_type::Type{T},
+                          inferred_outbound_types::Dict{Interface, <:Type}
+                         ) where T<:SumProductRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
 
@@ -100,13 +101,14 @@ function inferUpdateRule!{T<:SumProductRule}(   entry::ScheduleEntry,
     return entry
 end
 
-function collectInboundTypes{T<:SumProductRule}(entry::ScheduleEntry,
-                                                ::Type{T},
-                                                inferred_outbound_types::Dict{Interface, <:Type})
+function collectInboundTypes(entry::ScheduleEntry,
+                             ::Type{T},
+                             inferred_outbound_types::Dict{Interface, <:Type}
+                            ) where T<:SumProductRule
     inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces
         if node_interface == entry.interface
-            push!(inbound_message_types, Void)
+            push!(inbound_message_types, Nothing)
         elseif (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
             push!(inbound_message_types, Message{PointMass})
         else
@@ -129,24 +131,24 @@ macro sumProductRule(fields...)
     outbound_type = :unknown
     inbound_types = :unknown
     name = :auto # Triggers automatic naming unless overwritten
-
+    
     # Loop over fields because order is unknown
     for arg in fields
 
         (arg.args[1] == :(=>)) || error("Invalid call to @sumProductRule")
-
-        if arg.args[2].args[1] == :node_type
+    
+        if arg.args[2].value == :node_type
             node_type = arg.args[3]
-        elseif arg.args[2].args[1] == :outbound_type
+        elseif arg.args[2].value == :outbound_type
             outbound_type = arg.args[3]
             (outbound_type.head == :curly && outbound_type.args[1] == :Message) || error("Outbound type for SumProductRule should be a Message")
-        elseif arg.args[2].args[1] == :inbound_types
+        elseif arg.args[2].value == :inbound_types
             inbound_types = arg.args[3]
             (inbound_types.head == :tuple) || error("Inbound types should be passed as Tuple")
-        elseif arg.args[2].args[1] == :name
+        elseif arg.args[2].value == :name
             name = arg.args[3]
         else
-            error("Unrecognized field $(arg.args[2].args[1]) in call to @sumProductRule")
+            error("Unrecognized field $(arg.args[2].value) in call to @sumProductRule")
         end
     end
 
@@ -160,7 +162,7 @@ macro sumProductRule(fields...)
     # Build validators for isApplicable
     input_type_validators = String[]
     for (i, i_type) in enumerate(inbound_types.args)
-        if i_type != :Void
+        if i_type != :Nothing
             # Only validate inbounds required for message update
             push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
         end

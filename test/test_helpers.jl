@@ -1,15 +1,16 @@
 module HelpersTest
 
-using Base.Test
-import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, cholinv, diageye, *, .*, ^
- 
+using Test
+import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, cholinv, diageye, *, ^
+import LinearAlgebra: Diagonal, isposdef, I, Hermitian
+
 @testset "Helpers" begin
     @testset "ensureMatrix" begin
-        # should convert input argument to a Matrix or Void
+        # should convert input argument to a Matrix or Nothing
         @test ensureMatrix([1.0, 2.0]) == Diagonal([1.0, 2.0])
         @test ensureMatrix(Diagonal([1.0, 2.0])) == Diagonal([1.0, 2.0])
-        @test ensureMatrix(eye(2)) == eye(2)
-        @test ensureMatrix(1.0) == eye(1)
+        @test ensureMatrix(Matrix(1.0I,2,2)) == Matrix(1.0I,2,2)
+        @test ensureMatrix(1.0) == Matrix(1.0I,1,1)
         @test ensureMatrix(nothing) == nothing
     end
 
@@ -17,10 +18,10 @@ import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, form
         # should work for scalars, vectors and matrices
         @test isApproxEqual(1.0, 1.0+1e-15) == true
         @test isApproxEqual(1.0, 1.0+1e-9) == false
-        @test isApproxEqual([1.0, 1.0], [1.0, 1.0]+1e-15) == true
-        @test isApproxEqual([1.0, 1.0], [1.0, 1.0]+1e-9) == false
-        @test isApproxEqual(eye(3,3), eye(3,3)+1e-15) == true
-        @test isApproxEqual(eye(3,3), eye(3,3)+1e-9) == false
+        @test isApproxEqual([1.0, 1.0], [1.0, 1.0].+1e-15) == true
+        @test isApproxEqual([1.0, 1.0], [1.0, 1.0].+1e-9) == false
+        @test isApproxEqual(Matrix(1.0I,3,3), Matrix(1.0I,3,3).+1e-15) == true
+        @test isApproxEqual(Matrix(1.0I,3,3), Matrix(1.0I,3,3).+1e-9) == false
     end
 
     @testset "isRoundedPosDef" begin
@@ -44,7 +45,7 @@ import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, form
     @testset "diageye" begin
         # should be shorthand for Diagonal(eye(M))
         M = diageye(3)
-        @test typeof(M) == Diagonal{Float64}
+        @test typeof(M) == Diagonal{Float64, Array{Float64,1}}
         @test M == Diagonal(ones(3))
     end
 

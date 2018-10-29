@@ -1,51 +1,51 @@
 @sumProductRule(:node_type     => GaussianMeanPrecision,
                 :outbound_type => Message{GaussianMeanPrecision},
-                :inbound_types => (Void, Message{PointMass}, Message{PointMass}),
+                :inbound_types => (Nothing, Message{PointMass}, Message{PointMass}),
                 :name          => SPGaussianMeanPrecisionOutVPP)
 
 @sumProductRule(:node_type     => GaussianMeanPrecision,
                 :outbound_type => Message{GaussianMeanPrecision},
-                :inbound_types => (Message{PointMass}, Void, Message{PointMass}),
+                :inbound_types => (Message{PointMass}, Nothing, Message{PointMass}),
                 :name          => SPGaussianMeanPrecisionMPVP)
 
 @sumProductRule(:node_type     => GaussianMeanPrecision,
                 :outbound_type => Message{GaussianMeanVariance},
-                :inbound_types => (Void, Message{Gaussian}, Message{PointMass}),
+                :inbound_types => (Nothing, Message{Gaussian}, Message{PointMass}),
                 :name          => SPGaussianMeanPrecisionOutVGP)
 
 @sumProductRule(:node_type     => GaussianMeanPrecision,
                 :outbound_type => Message{GaussianMeanVariance},
-                :inbound_types => (Message{Gaussian}, Void, Message{PointMass}),
+                :inbound_types => (Message{Gaussian}, Nothing, Message{PointMass}),
                 :name          => SPGaussianMeanPrecisionMGVP)
 
 @naiveVariationalRule(:node_type     => GaussianMeanPrecision,
                       :outbound_type => Message{GaussianMeanPrecision},
-                      :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),
+                      :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
                       :name          => VBGaussianMeanPrecisionOut)
 
 @naiveVariationalRule(:node_type     => GaussianMeanPrecision,
                       :outbound_type => Message{GaussianMeanPrecision},
-                      :inbound_types => (ProbabilityDistribution, Void, ProbabilityDistribution),
+                      :inbound_types => (ProbabilityDistribution, Nothing, ProbabilityDistribution),
                       :name          => VBGaussianMeanPrecisionM)
 
 @naiveVariationalRule(:node_type     => GaussianMeanPrecision,
                       :outbound_type => Message{Union{Gamma, Wishart}},
-                      :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void),
+                      :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Nothing),
                       :name          => VBGaussianMeanPrecisionW)
 
 @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
                            :outbound_type => Message{GaussianMeanVariance},
-                           :inbound_types => (Void, Message{Gaussian}, ProbabilityDistribution),
+                           :inbound_types => (Nothing, Message{Gaussian}, ProbabilityDistribution),
                            :name          => SVBGaussianMeanPrecisionOutVGD)
 
 @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
                            :outbound_type => Message{GaussianMeanVariance},
-                           :inbound_types => (Message{Gaussian}, Void, ProbabilityDistribution),
+                           :inbound_types => (Message{Gaussian}, Nothing, ProbabilityDistribution),
                            :name          => SVBGaussianMeanPrecisionMGVD)
 
 @structuredVariationalRule(:node_type     => GaussianMeanPrecision,
                            :outbound_type => Message{Union{Gamma, Wishart}},
-                           :inbound_types => (ProbabilityDistribution, Void),
+                           :inbound_types => (ProbabilityDistribution, Nothing),
                            :name          => SVBGaussianMeanPrecisionW)
 
 @marginalRule(:node_type => GaussianMeanPrecision,

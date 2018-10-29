@@ -1,9 +1,10 @@
 module DirichletTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeVar, vague, dims
 import ForneyLab: SPDirichletOutVP, VBDirichletOut
+import SpecialFunctions: digamma
 
 @testset "Dirichlet ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0]) == ProbabilityDistribution{Multivariate, Dirichlet}(Dict(:a=>[2.0, 3.0]))
@@ -30,7 +31,7 @@ end
 @testset "unsafe mean and variance" begin
     @test unsafeMean(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 2.0])) == [0.5, 0.5]
     @test unsafeMean(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 2.0; 1.0 3.0])) == [0.5 0.5; 0.25 0.75]
-    @test unsafeLogMean(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0])) == [digamma(2.0), digamma(3.0)] - digamma(5.0)
+    @test unsafeLogMean(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0])) == [digamma(2.0), digamma(3.0)] .- digamma(5.0)
     @test unsafeLogMean(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])) == [digamma(2.0) digamma(3.0); digamma(4.0) digamma(5.0)] - [digamma(5.0) digamma(5.0); digamma(9.0) digamma(9.0)]
     @test unsafeVar(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 2.0])) == [0.05, 0.05]
 end
@@ -57,7 +58,7 @@ end
 @testset "SPDirichletOutVP" begin
     @test SPDirichletOutVP <: SumProductRule{Dirichlet}
     @test outboundType(SPDirichletOutVP) == Message{Dirichlet}
-    @test isApplicable(SPDirichletOutVP, [Void, Message{PointMass}])
+    @test isApplicable(SPDirichletOutVP, [Nothing, Message{PointMass}])
 
     @test ruleSPDirichletOutVP(nothing, Message(Multivariate, PointMass, m=[2.0, 3.0])) == Message(Multivariate, Dirichlet, a=[2.0, 3.0])
     @test ruleSPDirichletOutVP(nothing, Message(MatrixVariate, PointMass, m=[2.0 3.0; 4.0 5.0])) == Message(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])
@@ -66,7 +67,7 @@ end
 @testset "VBDirichletOut" begin
     @test VBDirichletOut <: NaiveVariationalRule{Dirichlet}
     @test outboundType(VBDirichletOut) == Message{Dirichlet}
-    @test isApplicable(VBDirichletOut, [Void, ProbabilityDistribution])
+    @test isApplicable(VBDirichletOut, [Nothing, ProbabilityDistribution])
 
     @test ruleVBDirichletOut(nothing, ProbabilityDistribution(Multivariate, PointMass, m=[2.0, 3.0])) == Message(Multivariate, Dirichlet, a=[2.0, 3.0])
     @test ruleVBDirichletOut(nothing, ProbabilityDistribution(MatrixVariate, PointMass, m=[2.0 3.0; 4.0 5.0])) == Message(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])

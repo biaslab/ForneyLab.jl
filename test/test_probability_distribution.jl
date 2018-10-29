@@ -1,14 +1,15 @@
 module ProbabilityDistributionTest
 
-using Base.Test
-import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, mat, isProper, isValid, invalidate!, gaussianQuadrature, dims, diageye, matches, Message
+using Test
+import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, mat, isProper, isValid, invalidate!, gaussianQuadrature, dims, eye, diageye, matches, Message
+import LinearAlgebra: Diagonal
 using ForneyLab
 
 @testset "matches" begin
     @test matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution)
     @test matches(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution)
     @test matches(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, ProbabilityDistribution)
-    @test !matches(Void, ProbabilityDistribution)
+    @test !matches(Nothing, ProbabilityDistribution)
 end
 
 @testset "Univariate" begin
@@ -53,22 +54,22 @@ end
     @test isProper(point_mass)
     @test mean(point_mass) == [0.0]
     @test var(point_mass) == [0.0]
-    @test cov(point_mass) == [0.0].'
+    @test cov(point_mass) == transpose([0.0])
 end
 
 @testset "MatrixVariate" begin
-    point_mass = ProbabilityDistribution(MatrixVariate, PointMass, m=[0.0].')
+    point_mass = ProbabilityDistribution(MatrixVariate, PointMass, m=transpose([0.0]))
     @test isa(point_mass, ProbabilityDistribution{MatrixVariate, PointMass})
-    @test point_mass.params == Dict(:m=>[0.0].')
+    @test point_mass.params == Dict(:m=>transpose([0.0]))
     @test isProper(point_mass)
-    @test mean(point_mass) == [0.0].'
+    @test mean(point_mass) == transpose([0.0])
 end
 
 @testset "PointMass ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Univariate, PointMass, m=0.2) == ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>0.2))
     @test_throws Exception ProbabilityDistribution(Multivariate, PointMass, m=0.2)
     @test ProbabilityDistribution(Multivariate, PointMass, m=[0.2]) == ProbabilityDistribution{Multivariate, PointMass}(Dict(:m=>[0.2]))
-    @test ProbabilityDistribution(MatrixVariate, PointMass, m=[0.2].') == ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>[0.2].'))
+    @test ProbabilityDistribution(MatrixVariate, PointMass, m=transpose([0.2])) == ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>transpose([0.2])))
     @test ProbabilityDistribution(PointMass, m=0.2) == ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>0.2))
     @test ProbabilityDistribution(Univariate, PointMass) == ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>1.0))
     @test ProbabilityDistribution(PointMass) == ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>1.0))
@@ -124,7 +125,7 @@ end
 
     # @RV should handle array element assignments and explicit Variable ids
     g = FactorGraph()
-    vars = Vector{Variable}(2)
+    vars = Vector{Variable}(undef, 2)
     i = 1
     @RV [id=:v*i] vars[1] ~ GaussianMeanVariance(constant(0.0), constant(1.0); id=:tst1) # new Variable
     @test length(g.variables) == 3 # including constants
@@ -133,7 +134,7 @@ end
     @test length(g.variables) == 5 # including constants
     @RV vars[2*i] ~ GaussianMeanVariance(constant(0.0), constant(1.0))
     @test vars[2*i].id == :vars_2
-    varmatrix = Matrix{Variable}(2,2)
+    varmatrix = Matrix{Variable}(undef,2,2)
     @RV varmatrix[1,2*i] ~ GaussianMeanVariance(constant(0.0), constant(1.0))
     @test varmatrix[1,2*i].id == :varmatrix_1_2
     vardict = Dict{Int,Variable}()

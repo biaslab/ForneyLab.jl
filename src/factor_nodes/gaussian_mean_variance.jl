@@ -26,7 +26,7 @@ mutable struct GaussianMeanVariance <: Gaussian
 
     function GaussianMeanVariance(out, m, v; id=generateId(GaussianMeanVariance))
         @ensureVariables(out, m, v)
-        self = new(id, Array{Interface}(3), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:m] = self.interfaces[2] = associate!(Interface(self), m)
@@ -38,48 +38,48 @@ end
 
 slug(::Type{GaussianMeanVariance}) = "𝒩"
 
-format{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = "$(slug(GaussianMeanVariance))(m=$(format(dist.params[:m])), v=$(format(dist.params[:v])))"
+format(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = "$(slug(GaussianMeanVariance))(m=$(format(dist.params[:m])), v=$(format(dist.params[:v])))"
 
 ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianMeanVariance}; m=0.0, v=1.0) = ProbabilityDistribution{Univariate, GaussianMeanVariance}(Dict(:m=>m, :v=>v))
 ProbabilityDistribution(::Type{GaussianMeanVariance}; m::Number=0.0, v::Number=1.0) = ProbabilityDistribution{Univariate, GaussianMeanVariance}(Dict(:m=>m, :v=>v))
 ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanVariance}; m=[0.0], v=mat(1.0)) = ProbabilityDistribution{Multivariate, GaussianMeanVariance}(Dict(:m=>m, :v=>v))
 
-dims{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = length(dist.params[:m])
+dims(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = length(dist.params[:m])
 
 vague(::Type{GaussianMeanVariance}) = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=huge)
 vague(::Type{GaussianMeanVariance}, dims::Int64) = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(dims), v=huge*diageye(dims))
 
-unsafeMean{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = deepcopy(dist.params[:m]) # unsafe mean
+unsafeMean(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = deepcopy(dist.params[:m]) # unsafe mean
 
-unsafeMode{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = deepcopy(dist.params[:m]) # unsafe mean
+unsafeMode(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = deepcopy(dist.params[:m]) # unsafe mode
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = dist.params[:v] # unsafe variance
 unsafeVar(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = diag(dist.params[:v])
 
-unsafeCov{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = deepcopy(dist.params[:v]) # unsafe covariance
+unsafeCov(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = deepcopy(dist.params[:v]) # unsafe covariance
 
-unsafeMeanCov{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = (deepcopy(dist.params[:m]), deepcopy(dist.params[:v]))
+unsafeMeanCov(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = (deepcopy(dist.params[:m]), deepcopy(dist.params[:v]))
 
-unsafeWeightedMean{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = cholinv(dist.params[:v])*dist.params[:m]
+unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = cholinv(dist.params[:v])*dist.params[:m]
 
-unsafePrecision{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance}) = cholinv(dist.params[:v])
+unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = cholinv(dist.params[:v])
 
 # Converting from m,v to xi,w would require two separate inversions of the covariance matrix;
 # thid function ensures only a singly inversion is performed
-function unsafeWeightedMeanPrecision{V<:VariateType}(dist::ProbabilityDistribution{V, GaussianMeanVariance})
+function unsafeWeightedMeanPrecision(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
     W = cholinv(dist.params[:v])
     return (W*dist.params[:m], W)
 end
 
-isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = (realmin(Float64) < dist.params[:v] < realmax(Float64))
+isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) = (floatmin(Float64) < dist.params[:v] < floatmax(Float64))
 isProper(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}) = isRoundedPosDef(dist.params[:v])
 
-function =={V<:VariateType}(t::ProbabilityDistribution{V, GaussianMeanVariance}, u::ProbabilityDistribution{V, GaussianMeanVariance})
+function ==(t::ProbabilityDistribution{V, GaussianMeanVariance}, u::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
     (t === u) && return true
     isApproxEqual(t.params[:m], u.params[:m]) && isApproxEqual(t.params[:v], u.params[:v])
 end
 
-function =={V<:VariateType, F<:Gaussian}(t::ProbabilityDistribution{V, GaussianMeanVariance}, u::ProbabilityDistribution{V, F})
+function ==(t::ProbabilityDistribution{V, GaussianMeanVariance}, u::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:Gaussian}
     (t === u) && return true
     isApproxEqual(t.params[:m], unsafeMean(u)) && isApproxEqual(t.params[:v], unsafeCov(u))
 end
@@ -100,5 +100,5 @@ function averageEnergy(::Type{GaussianMeanVariance}, marg_out::ProbabilityDistri
 
     0.5*dims(marg_out)*log(2*pi) +
     0.5*unsafeDetLogMean(marg_var) +
-    0.5*trace( unsafeInverseMean(marg_var)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)'))
+    0.5*tr( unsafeInverseMean(marg_var)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)'))
 end

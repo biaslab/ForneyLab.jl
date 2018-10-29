@@ -5,8 +5,8 @@ An Edge joins two interfaces (half-edges) `a` and `b`.
 """
 mutable struct Edge <: AbstractEdge
     variable::AbstractVariable
-    a::Union{Interface, Void}
-    b::Union{Interface, Void}
+    a::Union{Interface, Nothing}
+    b::Union{Interface, Nothing}
 
     function Edge(var::AbstractVariable, a::Interface)
         current_graph = currentGraph()
@@ -69,7 +69,7 @@ function show(io::IO, edge::Edge)
         if (a_handle = handle(edge.a)) != ""
             a *= ((typeof(a_handle)==Symbol) ? "i[:$(a_handle)]" : "i[$(a_handle)]")
         else
-            a *= "interfaces[$(findfirst(edge.a.node.interfaces, edge.a))]"
+            a *= "interfaces[$(findfirst(isequal(edge.a), edge.a.node.interface))]"
         end
     else
         a = "NONE"
@@ -80,7 +80,7 @@ function show(io::IO, edge::Edge)
         if (b_handle = handle(edge.b)) != ""
             b *= ((typeof(b_handle)==Symbol) ? "i[:$(b_handle)]" : "i[$(b_handle)]")
         else
-            b *= "interfaces[$(findfirst(edge.b.node.interfaces, edge.b))]"
+            b *= "interfaces[$(findfirst(isequal(edge.b), edge.b.node.interfaces))]"
         end
     else
         b = "NONE"

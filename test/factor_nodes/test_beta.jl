@@ -1,9 +1,10 @@
 module BetaTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims
 import ForneyLab: SPBetaOutVPP, VBBetaOut
+import SpecialFunctions: digamma
 
 @testset "Beta ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Univariate, Beta, a=2.0, b=3.0) == ProbabilityDistribution{Univariate, Beta}(Dict(:a=>2.0, :b=>3.0))
@@ -45,7 +46,7 @@ end
 @testset "SPBetaOutVPP" begin
     @test SPBetaOutVPP <: SumProductRule{Beta}
     @test outboundType(SPBetaOutVPP) == Message{Beta}
-    @test isApplicable(SPBetaOutVPP, [Void, Message{PointMass}, Message{PointMass}])
+    @test isApplicable(SPBetaOutVPP, [Nothing, Message{PointMass}, Message{PointMass}])
 
     @test ruleSPBetaOutVPP(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
 end
@@ -53,7 +54,7 @@ end
 @testset "VBBetaOut" begin
     @test VBBetaOut <: NaiveVariationalRule{Beta}
     @test outboundType(VBBetaOut) == Message{Beta}
-    @test isApplicable(VBBetaOut, [Void, ProbabilityDistribution, ProbabilityDistribution])
+    @test isApplicable(VBBetaOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
 
     @test ruleVBBetaOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=2.0), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
 end

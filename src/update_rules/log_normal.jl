@@ -1,9 +1,9 @@
 @sumProductRule(:node_type     => LogNormal,
                 :outbound_type => Message{LogNormal},
-                :inbound_types => (Void, Message{PointMass}, Message{PointMass}),
+                :inbound_types => (Nothing, Message{PointMass}, Message{PointMass}),
                 :name          => SPLogNormalOutVPP)
 
 @naiveVariationalRule(:node_type     => LogNormal,
                  	  :outbound_type => Message{LogNormal},
-                 	  :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),
+                 	  :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
                  	  :name          => VBLogNormalOut)

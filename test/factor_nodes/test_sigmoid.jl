@@ -1,6 +1,6 @@
 module SigmoidTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, mapToBernoulliParameterRange
 import ForneyLab: SPSigmoidBinVG, EPSigmoidRealGB, EPSigmoidRealGC, EPSigmoidRealGP
@@ -24,8 +24,8 @@ end
 @testset "SPSigmoidBinVG" begin
     @test SPSigmoidBinVG <: SumProductRule{Sigmoid}
     @test outboundType(SPSigmoidBinVG) == Message{Bernoulli}
-    @test isApplicable(SPSigmoidBinVG, [Void, Message{Gaussian}]) 
-    @test !isApplicable(SPSigmoidBinVG, [Message{Bernoulli}, Void])
+    @test isApplicable(SPSigmoidBinVG, [Nothing, Message{Gaussian}]) 
+    @test !isApplicable(SPSigmoidBinVG, [Message{Bernoulli}, Nothing])
 
     @test ruleSPSigmoidBinVG(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=0.5)) == Message(Univariate, Bernoulli, p=ForneyLab.Φ(1/sqrt(1+0.5)))
 end

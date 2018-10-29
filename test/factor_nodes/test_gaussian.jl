@@ -1,7 +1,8 @@
 module GaussianTest
 
-using Base.Test
+using Test
 using ForneyLab
+import LinearAlgebra: Diagonal
 
 @testset "sample" begin
     # Univariate

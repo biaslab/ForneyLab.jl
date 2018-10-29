@@ -1,9 +1,9 @@
 @sumProductRule(:node_type     => Gamma,
                 :outbound_type => Message{Gamma},
-                :inbound_types => (Void, Message{PointMass}, Message{PointMass}),
+                :inbound_types => (Nothing, Message{PointMass}, Message{PointMass}),
                 :name          => SPGammaOutVPP)
 
 @naiveVariationalRule(:node_type     => Gamma,
                       :outbound_type => Message{Gamma},
-                      :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),
+                      :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
                       :name          => VBGammaOut)

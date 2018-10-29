@@ -1,6 +1,6 @@
 module NaiveVariationalBayesTest
 
-using Base.Test
+using Test
 using ForneyLab
 import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
 import ForneyLab: VBGaussianMeanVarianceOut, VBGaussianMeanPrecisionM, SPEqualityGaussian
@@ -13,7 +13,7 @@ mutable struct MockNode <: SoftFactor
 
     function MockNode(vars::Vector{Variable}; id=generateId(MockNode))
         n_interfaces = length(vars)
-        self = new(id, Array{Interface}(n_interfaces), Dict{Int,Interface}())
+        self = new(id, Array{Interface}(undef, n_interfaces), Dict{Int,Interface}())
         addNode!(currentGraph(), self)
 
         for idx = 1:n_interfaces
@@ -26,7 +26,7 @@ end
 
 @naiveVariationalRule(:node_type     => MockNode,
                       :outbound_type => Message{PointMass},
-                      :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),
+                      :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
                       :name          => VBMockOut)
 
 @testset "@naiveVariationalRule" begin

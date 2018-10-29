@@ -33,7 +33,7 @@ mutable struct GaussianMixture <: SoftFactor
             @ensureVariables(args[i])
         end
         iseven(n_args) || error("Number of mixture arguments should be even")
-        self = new(id, Array{Interface}(length(args) + 2), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(undef, length(args) + 2), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:z] = self.interfaces[2] = associate!(Interface(self), z)

@@ -21,7 +21,7 @@ mutable struct LinkedListElement{T}
     LinkedListElement{T}(payload::T) where T = new(payload)
 end
 
-LinkedListElement{T}(payload::T) = LinkedListElement{T}(payload)
+LinkedListElement(payload::T) where T = LinkedListElement{T}(payload)
 
 mutable struct LinkedList{T}
     first::LinkedListElement{T}
@@ -43,7 +43,7 @@ end
 
 Base.isempty(list::LinkedList) = !isdefined(list, :first)
 
-function Base.collect{T}(list::LinkedList{T})
+function Base.collect(list::LinkedList{T}) where T
     items = T[]
     if isdefined(list, :first)
         entry = list.first
@@ -74,23 +74,23 @@ mutable struct DependencyGraph{VT}
     DependencyGraph{VT}() where VT = new(Vector{VT}(), Vector{LinkedList{Int}}())
 end
 
-function addVertex!{VT}(dg::DependencyGraph{VT}, v::VT)
+function addVertex!(dg::DependencyGraph{VT}, v::VT) where VT
     push!(dg.vertices, v)
     push!(dg.neighbors, LinkedList{Int}())
     return dg
 end
 
-function addEdge!{VT}(dg::DependencyGraph{VT}, from::VT, to::VT)
-    v = findfirst(dg.vertices, from)
-    w = findfirst(dg.vertices, to)
+function addEdge!(dg::DependencyGraph{VT}, from::VT, to::VT) where VT
+    v = something(findfirst(isequal(from), dg.vertices), 0)
+    w = something(findfirst(isequal(to), dg.vertices), 0)
     push!(dg.neighbors[v], w)
     return dg
 end
 
 neighbors(vertex_idx::Int, dg::DependencyGraph) = collect(dg.neighbors[vertex_idx])
 
-function neighbors{VT}(vertex::VT, dg::DependencyGraph{VT})
-    vertex_idx = findfirst(dg.vertices, vertex)
+function neighbors(vertex::VT, dg::DependencyGraph{VT}) where VT
+    vertex_idx = something(findfirst(isequal(vertex), dg.vertices), 0)
     return dg.vertices[neighbors(vertex_idx, dg)]
 end
 
@@ -115,21 +115,25 @@ Optional keyword arguments:
 This function can be used to generate message passing schedules
 if `graph` is a dependency graph.
 """
-function children{V}(   vertices::Vector{V},
-                        graph::DependencyGraph{V};
-                        allow_cycles::Bool=false,
-                        breaker_sites::Set{V}=Set{V}(),
-                        restrict_to::Set{V}=Set{V}())
+function find_vertex_indexes(vertex::V, graph::DependencyGraph{V}) where V
+    return something(findfirst(isequal(vertex), graph.vertices), 0)
+end
+
+function children(  vertices::Vector{V},
+                    graph::DependencyGraph{V};
+                    allow_cycles::Bool=false,
+                    breaker_sites::Set{V}=Set{V}(),
+                    restrict_to::Set{V}=Set{V}()) where V
 
     # Find vertex indexes of breaker_sites
-    breaker_vertices = Set{Int}(map((v) -> findfirst(graph.vertices, v), breaker_sites))
-    restrict_to_vertices = Set{Int}(map((v) -> findfirst(graph.vertices, v), restrict_to))
+    breaker_vertices = Set{Int}((find_vertex_indexes(v, graph) for v=breaker_sites))
+    restrict_to_vertices = Set{Int}((find_vertex_indexes(v, graph) for v=restrict_to))
 
     visited = Int[] # Hold topologically sorted list of indices of child vertices
 
     for root in vertices
         # Iterative depth-first search
-        stack = Int[findfirst(graph.vertices, root)]
+        stack = Int[something(findfirst(isequal(root), graph.vertices), 0)]
         visited_from_root = Int[]
         while !isempty(stack)
             v = pop!(stack)
@@ -163,4 +167,4 @@ function children{V}(   vertices::Vector{V},
     return graph.vertices[visited] # Return actual vertices instead of their indexes
 end
 
-children{V}(vertex::V, graph::DependencyGraph{V}; kwargs...) = children(V[vertex], graph; kwargs...)
+children(vertex::V, graph::DependencyGraph{V}; kwargs...) where V = children(V[vertex], graph; kwargs...)

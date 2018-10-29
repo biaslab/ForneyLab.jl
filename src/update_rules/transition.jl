@@ -1,41 +1,41 @@
 @sumProductRule(:node_type     => Transition,
                 :outbound_type => Message{Categorical},
-                :inbound_types => (Void, Message{Categorical}, Message{PointMass}),
+                :inbound_types => (Nothing, Message{Categorical}, Message{PointMass}),
                 :name          => SPTransitionOutVCP)
 
 @sumProductRule(:node_type     => Transition,
                 :outbound_type => Message{Categorical},
-                :inbound_types => (Message{Categorical}, Void, Message{PointMass}),
+                :inbound_types => (Message{Categorical}, Nothing, Message{PointMass}),
                 :name          => SPTransitionIn1CVP)
 
 @naiveVariationalRule(:node_type     => Transition,
                       :outbound_type => Message{Categorical},
-                      :inbound_types => (Void, ProbabilityDistribution, ProbabilityDistribution),
+                      :inbound_types => (Nothing, ProbabilityDistribution, ProbabilityDistribution),
                       :name          => VBTransitionOut)
 
 @naiveVariationalRule(:node_type     => Transition,
                       :outbound_type => Message{Categorical},
-                      :inbound_types => (ProbabilityDistribution, Void, ProbabilityDistribution),
+                      :inbound_types => (ProbabilityDistribution, Nothing, ProbabilityDistribution),
                       :name          => VBTransitionIn1)
 
 @naiveVariationalRule(:node_type     => Transition,
                       :outbound_type => Message{Dirichlet},
-                      :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Void),
+                      :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Nothing),
                       :name          => VBTransitionA)
 
 @structuredVariationalRule(:node_type     => Transition,
                            :outbound_type => Message{Categorical},
-                           :inbound_types => (Void, Message{Categorical}, ProbabilityDistribution),
+                           :inbound_types => (Nothing, Message{Categorical}, ProbabilityDistribution),
                            :name          => SVBTransitionOutVCD)
 
 @structuredVariationalRule(:node_type     => Transition,
                            :outbound_type => Message{Categorical},
-                           :inbound_types => (Message{Categorical}, Void, ProbabilityDistribution),
+                           :inbound_types => (Message{Categorical}, Nothing, ProbabilityDistribution),
                            :name          => SVBTransitionIn1CVD)
 
 @structuredVariationalRule(:node_type     => Transition,
                            :outbound_type => Message{Dirichlet},
-                           :inbound_types => (ProbabilityDistribution, Void),
+                           :inbound_types => (ProbabilityDistribution, Nothing),
                            :name          => SVBTransitionADV)
 
 @marginalRule(:node_type => Transition,

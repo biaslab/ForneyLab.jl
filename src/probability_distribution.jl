@@ -28,12 +28,12 @@ struct ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
 end
 
 """Extract VariateType from dist"""
-variateType{V<:VariateType, F<:FactorNode}(dist::ProbabilityDistribution{V, F}) = V
+variateType(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorNode} = V
 
 show(io::IO, dist::ProbabilityDistribution) = println(io, format(dist))
 
-matches{Pa<:ProbabilityDistribution, Pb<:ProbabilityDistribution}(Ta::Type{Pa}, Tb::Type{Pb}) = (Pa<:Pb)
-matches{T<:ProbabilityDistribution}(::Type{Void}, ::Type{T}) = false
+matches(Ta::Type{Pa}, Tb::Type{Pb}) where {Pa<:ProbabilityDistribution, Pb<:ProbabilityDistribution} = (Pa<:Pb)
+matches(::Type{Nothing}, ::Type{T}) where T<:ProbabilityDistribution = false
 
 mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error("mean($(dist)) is undefined because the distribution is improper.")
 mode(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMode(dist) : error("mode($(dist)) is undefined because the distribution is improper.")
@@ -48,7 +48,7 @@ abstract type PointMass <: DeltaFactor end
 
 slug(::Type{PointMass}) = "δ"
 
-format{V<:VariateType}(dist::ProbabilityDistribution{V, PointMass}) = "$(slug(PointMass))(m=$(format(dist.params[:m])))"
+format(dist::ProbabilityDistribution{V, PointMass}) where V<:VariateType = "$(slug(PointMass))(m=$(format(dist.params[:m])))"
 
 dims(dist::ProbabilityDistribution{Univariate, PointMass}) = 1
 dims(dist::ProbabilityDistribution{Multivariate, PointMass}) = length(dist.params[:m])
@@ -58,9 +58,9 @@ dims(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = size(dist.params
 ProbabilityDistribution(::Type{Univariate}, ::Type{PointMass}; m::Number=1.0) = ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>m))
 ProbabilityDistribution(::Type{PointMass}; m::Number=1.0) = ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>m))
 ProbabilityDistribution(::Type{Multivariate}, ::Type{PointMass}; m::Vector=[1.0]) = ProbabilityDistribution{Multivariate, PointMass}(Dict(:m=>m))
-ProbabilityDistribution(::Type{MatrixVariate}, ::Type{PointMass}; m::AbstractMatrix=[1.0].') = ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>m))
+ProbabilityDistribution(::Type{MatrixVariate}, ::Type{PointMass}; m::AbstractMatrix=transpose([1.0])) = ProbabilityDistribution{MatrixVariate, PointMass}(Dict(:m=>m))
 
-unsafeMean{T<:VariateType}(dist::ProbabilityDistribution{T, PointMass}) = deepcopy(dist.params[:m])
+unsafeMean(dist::ProbabilityDistribution{T, PointMass}) where T<:VariateType = deepcopy(dist.params[:m])
 
 unsafeMeanVector(dist::ProbabilityDistribution{Univariate, PointMass}) = [dist.params[:m]]
 unsafeMeanVector(dist::ProbabilityDistribution{Multivariate, PointMass}) = deepcopy(dist.params[:m])
@@ -85,7 +85,7 @@ unsafeMeanCov(dist::ProbabilityDistribution) = (unsafeMean(dist), unsafeCov(dist
 
 unsafeWeightedMeanPrecision(dist::ProbabilityDistribution) = (unsafeWeightedMean(dist), unsafePrecision(dist)) # Can be overloaded for efficiency
 
-isProper{T<:VariateType}(::ProbabilityDistribution{T, PointMass}) = true
+isProper(::ProbabilityDistribution{T, PointMass}) where T<:VariateType = true
 
 """
 Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)
@@ -125,7 +125,7 @@ macro RV(expr_options::Expr, expr_def::Any)
     end
 
     # Parse RV definition expression
-    # It can take trhee forms.
+    # It can take three forms.
     # FORM 1: @RV x ~ Probdist(...)
     # FORM 2: @RV x = a + b
     # FORM 3: @RV x
@@ -133,7 +133,6 @@ macro RV(expr_options::Expr, expr_def::Any)
         form = 1
         target_expr = expr_def.args[2]
         node_expr = expr_def.args[3]
-
     elseif isa(expr_def, Expr) && expr_def.head === :(=)
         form = 2
         target_expr = expr_def.args[1]
@@ -175,8 +174,8 @@ macro RV(expr_options::Expr, expr_def::Any)
         expr = parse("""
                 begin
                 # Use existing Variable if it exists, otherwise create a new one
-                $(target_expr) = try $(target_expr) catch Variable(id=ForneyLab.pack($(var_id_expr))) end
-
+                $(target_expr) = try $(target_expr) catch; Variable(id=ForneyLab.pack($(var_id_expr))) end
+        
                 # Create new variable if:
                 #   - the existing object is not a Variable
                 #   - the existing object is a Variable from another FactorGraph
@@ -236,13 +235,12 @@ macro RV(expr_options::Expr, expr_def::Any)
     else
         error("Unsupported usage of @RV.")
     end
-
     return esc(expr)
 end
 
 macro RV(expr::Any)
     # No options
-    :(@RV [] $(esc(expr)))
+    esc(:(@RV [] $(expr)))
 end
 
 """
@@ -250,7 +248,21 @@ This function ensures the argument expression is evaluated at runtime, allowing 
 """
 pack(expr) = expr
 
-=={fam_t, fam_u, var_t, var_u}(t::ProbabilityDistribution{var_t, fam_t}, u::ProbabilityDistribution{var_u, fam_u}) = (fam_t == fam_u) && (var_t == var_u) && (t.params == u.params)
+function ==(t::ProbabilityDistribution{var_t, fam_t}, u::ProbabilityDistribution{var_u, fam_u}) where {fam_t, fam_u, var_t, var_u}
+    (fam_t == fam_u) || return false
+    (var_t == var_u) || return false
+
+    # Parameter values are checked for approximate equality
+    t.params === u.params && return true
+    if length(t.params) != length(u.params) return false end
+    for pair in t.params
+        if !in(pair, u.params, (a,b)->isapprox(a, b, atol=tiny))
+            return false
+        end
+    end
+
+    return true
+end
 
 function gaussianQuadrature(h::Function; m::Float64=0.0, v::Float64=1.0)
     abscissas = [-7.12581, -6.4095, -5.81223, -5.27555, -4.77716, -4.30555, -3.85376, -3.41717, -2.99249, -2.57725, -2.1695, -1.76765, -1.37038, -0.9765, -0.584979, -0.194841, 0.194841, 0.584979, 0.9765, 1.37038, 1.76765, 2.1695, 2.57725, 2.99249, 3.41717, 3.85376, 4.30555, 4.77716, 5.27555, 5.81223, 6.4095, 7.12581]

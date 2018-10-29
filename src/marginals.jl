@@ -33,9 +33,9 @@ through multiplication of colliding messages.
 function MarginalScheduleEntry(variable::Variable)
     edge = first(variable.edges) # For the sake of consistency, we always take the first edge as reference point for marginal computations.
     if edge.a == nothing # First handle cases where there is a `dangling` edge
-        entry = MarginalScheduleEntry(variable, [edge.b], Void)
+        entry = MarginalScheduleEntry(variable, [edge.b], Nothing)
     elseif edge.b == nothing
-        entry = MarginalScheduleEntry(variable, [edge.a], Void)
+        entry = MarginalScheduleEntry(variable, [edge.a], Nothing)
     else
         entry = MarginalScheduleEntry(variable, [edge.a, edge.b], Product)
     end
