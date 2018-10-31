@@ -16,7 +16,8 @@ end
 function ruleSPNonlinearOutVG(  msg_out::Nothing,
                                 msg_in1::Message{F, Multivariate},
                                 g::Function,
-                                J_g::Function) where F<:Gaussian
+                                J_g::Function,
+                                g_inv::Union{Function, Nothing}=nothing) where F<:Gaussian
 
     d_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
 
@@ -30,7 +31,8 @@ end
 function ruleSPNonlinearOutVG(  msg_out::Nothing,
                                 msg_in1::Message{F, Univariate},
                                 g::Function,
-                                J_g::Function) where F<:Gaussian
+                                J_g::Function,
+                                g_inv::Union{Function, Nothing}=nothing) where F<:Gaussian
 
     d_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
 
@@ -43,11 +45,18 @@ end
 function ruleSPNonlinearIn1GV(  msg_out::Message{F, Multivariate},
                                 msg_in1::Message, # Any type of message, used for determining the approximation point
                                 g::Function,
-                                J_g::Function) where F<:Gaussian
+                                J_g::Function,
+                                g_inv::Union{Function, Nothing}=nothing) where F<:Gaussian
 
     d_out = convert(ProbabilityDistribution{Multivariate, GaussianMeanPrecision}, msg_out.dist)
 
-    (A, b) = approximate(unsafeMean(msg_in1.dist), g, J_g)
+    if (g_inv != nothing)
+        x_hat = g_inv(unsafeMean(msg_out.dist))
+    else
+        x_hat = unsafeMean(msg_in1.dist)
+    end
+
+    (A, b) = approximate(x_hat, g, J_g)
     A_inv = pinv(A)
     W_q = A'*d_out.params[:w]*A
     W_q = W_q + tiny*diageye(size(W_q)[1]) # Ensure W_q is invertible
@@ -58,11 +67,18 @@ end
 function ruleSPNonlinearIn1GV(  msg_out::Message{F, Univariate},
                                 msg_in1::Message, # Any type of message, used for determining the approximation point
                                 g::Function,
-                                J_g::Function) where F<:Gaussian
+                                J_g::Function,
+                                g_inv::Union{Function, Nothing}=nothing) where F<:Gaussian
 
     d_out = convert(ProbabilityDistribution{Univariate, GaussianMeanPrecision}, msg_out.dist)
 
-    (a, b) = approximate(unsafeMean(msg_in1.dist), g, J_g)
+    if (g_inv != nothing)
+        x_hat = g_inv(unsafeMean(msg_out.dist))
+    else
+        x_hat = unsafeMean(msg_in1.dist)
+    end
+
+    (a, b) = approximate(x_hat, g, J_g)
     w_q = clamp(d_out.params[:w]*a^2, tiny, huge)
     
     Message(Univariate, GaussianMeanPrecision, m=(d_out.params[:m] - b)/a, w=w_q)
@@ -100,6 +116,9 @@ function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry, in
     # These functions need to be defined in the scope of the user
     push!(inbound_messages, "$(node.g)")
     push!(inbound_messages, "$(node.J_g)")
+    if (node.g_inv != nothing)
+        push!(inbound_messages, "$(node.g_inv)")
+    end
 
     return inbound_messages
 end
