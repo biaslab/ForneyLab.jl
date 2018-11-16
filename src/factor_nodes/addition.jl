@@ -1,12 +1,12 @@
 export Addition
 
-import Base: +
-export +
+import Base: +, -
+export +, -
 
 """
 Description:
 
-    An addition constraint factor node
+    An addition constraint factor node.
 
     f(out,in1,in2) = δ(in1 + in2 - out)
 
@@ -51,3 +51,23 @@ function +(in1::Variable, in2)
 end
 
 +(in1, in2::Variable) = +(in2, in1)
+
+
+"""
+    -(in1::Variable, in2::Variable)
+
+A subtraction constraint based on the addition factor node.
+
+"""
+function -(in1::Variable, in2::Variable)
+    out = Variable()
+    Addition(in1, out, in2)
+    return out
+end
+
+function -(in1::Variable, in2)
+    @ensureVariables(in2)
+    in1 - in2
+end
+
+-(in1, in2::Variable) = -(in2, in1)

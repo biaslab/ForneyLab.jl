@@ -20,6 +20,20 @@ import ForneyLab: SPAdditionOutVGG, SPAdditionOutVGP, SPAdditionOutVPG, SPAdditi
     @test isa(g.nodes[:addition_1], Addition)
 end
 
+@testset "Addition node construction through - syntax" begin
+    g = FactorGraph()
+    @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV y ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV z = x - y
+    @test isa(z, Variable)
+    @test isa(g.nodes[:addition_1], Addition)
+
+    g = FactorGraph()
+    @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV z = x - 1.0
+    @test isa(z, Variable)
+    @test isa(g.nodes[:addition_1], Addition)
+end
 
 #-------------
 # Update rules

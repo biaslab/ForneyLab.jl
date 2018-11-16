@@ -48,7 +48,6 @@ include("factor_nodes/gaussian_mixture.jl")
 include("factor_nodes/sigmoid.jl")
 include("factor_nodes/nonlinear.jl")
 include("factor_nodes/dot_product.jl")
-include("factor_nodes/subtraction.jl")
 
 # Factor graph
 include("factor_graph.jl")
