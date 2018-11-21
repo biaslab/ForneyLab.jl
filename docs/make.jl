@@ -7,7 +7,7 @@ makedocs(modules = [ForneyLab],
         "Home" => "index.md",
         "Getting Started" => "getting-started/introduction.md",
         "API" => "API/algorithms.md",
-        "Internals" => "internals/algorithms1.md"
+        #"Internals" => "internals/algorithms1.md"
             # ,
             # "Compositing" => "man/compositing.md",
             # "Backends" => "man/backends.md",
@@ -35,8 +35,4 @@ makedocs(modules = [ForneyLab],
         #     "Relationship with Compose.jl" => "dev/compose.md",
         # ]
     ]
-)
-
-deploydocs(
-    repo   = "github.com/GiovineItalia/Gadfly.jl.git",
 )
