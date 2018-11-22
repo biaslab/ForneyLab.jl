@@ -1,9 +1,9 @@
-# Factor Nodes
+# Engines
 
 ### Index
 ```@index
 Modules = [ForneyLab]
-Pages = ["factor_nodes.md"]
+Pages = ["engines.md"]
 Order = [:macro, :module, :constant, :type, :function]
 ```
 
@@ -11,6 +11,6 @@ Order = [:macro, :module, :constant, :type, :function]
 ```@autodocs
 Modules = [ForneyLab]
 Private = false
-Pages = collect(Iterators.flatten([[joinpath(root[4:end], file) for file in files] for (root, dirs, files) in walkdir("../src/factor_nodes/")]))
+Pages = collect(Iterators.flatten([[joinpath(root[4:end], file) for file in files] for (root, dirs, files) in walkdir("../src/engines/")]))
 Order = [:macro, :module, :constant, :type, :function]
 ```
