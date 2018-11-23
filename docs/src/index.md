@@ -28,27 +28,7 @@ Some demos use the [PyPlot](https://github.com/stevengj/PyPlot.jl) plotting modu
 
 Optionally, use `] test ForneyLab` to validate the installation by running the test suite.
 
-
-## Introduction to ForneyLab
-
-These demos assume that the user is familiar with the FFG formalism. We recommend the following introductions:
-
-1. H.-A. Loeliger, J. Dauwels, J. Hu, S. Korl, Li Ping, and F. Kschischang,
-[The factor graph approach to model-based signal processing](https://people.ee.ethz.ch/~papers/docu/aloe-jdau-juhu-skor-2007-1.pdf), Proceedings of the IEEE, vol. 95, no. 6, pp. 1295-1322, June 2007.
-2. Korl, Sascha, [A factor graph approach to signal modelling, system identification and filtering](https://www.research-collection.ethz.ch/handle/20.500.11850/82737), Series in signal and information processing
-Doctoral Thesis, 2005
-
-We designed ForneyLab to be practical, while retaining maximal flexibility. The inherent modularity of the FFG framework allowed us to make ForneyLab extensible at all levels (nodes, update rules, algorithms, inference engines). Although we had performance in mind while developing ForneyLab, optimally efficient execution of the resulting inference programs (specified in Julia as message passing sequence) may still require custom work.  
-
-The ForneyLab approach to solving inference problems consists of three phases:
-
-1. **Model specification**. ForneyLab provides a simple meta-language to specifiy models.
-2. **Message Passing Agorithm (MPA) Generation**. This task is automatically performed by ForneyLab.
-3. **MPA Execution**. This is simply evaluating a Julia program.
-
-Each of the demos will step through these phases in turn, showcasing the most important ForneyLab functionalities. For more detailed information we refer to the Julia help functionality (simply type `?` and the ForneyLab function you're interested in), or the source code itself.
-
-## Getting started
+## Demos
 
 There are [demos](https://github.com/biaslab/ForneyLab.jl/tree/master/demo) available to get you started.
 Additionally, the [ForneyLab project page](http://forneylab.org) contains a talk and other resources that might be helpful.
