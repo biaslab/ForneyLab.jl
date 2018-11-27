@@ -70,4 +70,7 @@ function -(in1::Variable, in2)
     in1 - in2
 end
 
--(in1, in2::Variable) = -(in2, in1)
+function -(in1, in2::Variable)
+    @ensureVariables(in1)
+    in1 - in2
+end

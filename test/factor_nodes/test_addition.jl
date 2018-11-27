@@ -27,6 +27,8 @@ end
     @RV z = x - y
     @test isa(z, Variable)
     @test isa(g.nodes[:addition_1], Addition)
+    @test g.nodes[:addition_1].i[:out] == g.nodes[:gaussianmeanvariance_1].i[:out].partner
+    @test g.nodes[:addition_1].i[:in2] == g.nodes[:gaussianmeanvariance_2].i[:out].partner
 
     g = FactorGraph()
     @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
