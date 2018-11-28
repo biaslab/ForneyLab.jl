@@ -20,6 +20,24 @@ import ForneyLab: SPAdditionOutVGG, SPAdditionOutVGP, SPAdditionOutVPG, SPAdditi
     @test isa(g.nodes[:addition_1], Addition)
 end
 
+@testset "Addition node construction through - syntax" begin
+    g = FactorGraph()
+    @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV y ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV z = x - y
+    @test isa(z, Variable)
+    @test isa(g.nodes[:addition_1], Addition)
+    # This syntax works by changing the order interfaces are attached in. Below checks whether the pairings are succesful by
+    # matching out and in2 interfaces of the corresponding nodes
+    @test g.nodes[:addition_1].i[:out] == g.nodes[:gaussianmeanvariance_1].i[:out].partner
+    @test g.nodes[:addition_1].i[:in2] == g.nodes[:gaussianmeanvariance_2].i[:out].partner
+
+    g = FactorGraph()
+    @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV z = x - 1.0
+    @test isa(z, Variable)
+    @test isa(g.nodes[:addition_1], Addition)
+end
 
 #-------------
 # Update rules
