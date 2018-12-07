@@ -9,7 +9,8 @@ makedocs(modules = [ForneyLab],
         "API" => Any[
             "Algorithms" => "API/algorithms.md",
             "Factor nodes" => "API/factor_nodes.md",
-            "Engines" => "API/engines.md"
+            "Engines" => "API/engines.md",
+            "General" => "API/general.md"
         ],
         "Internals" => "internals/internals.md",
     ]
