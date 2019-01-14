@@ -48,14 +48,20 @@ ForneyLab.unsafeMean(dist::ProbabilityDistribution{Univariate, Poisson}) = dist.
 
 ForneyLab.unsafeVar(dist::ProbabilityDistribution{Univariate, Poisson}) = dist.params[:l]
 
+ForneyLab.unsafeLogMean(dist::ProbabilityDistribution{Univariate, Poisson}) = dist.params[:l]
+
 # TODO: skip the implementation of entropy and average energy for now, they require additional work
 
 # Entropy functional
 # function ForneyLab.differentialEntropy(dist::ProbabilityDistribution{Univariate, Poisson})
-    # ...
+#     ...
 # end
 
 # Average energy functional
-# function ForneyLab.averageEnergy(::Type{Poisson}, marg_out::ProbabilityDistribution{Univariate}, marg_l::ProbabilityDistribution{Univariate})
-#     ...
-# end
+function ForneyLab.averageEnergy(::Type{Poisson}, marg_out::ProbabilityDistribution{Univariate}, marg_l::ProbabilityDistribution{Univariate})
+    # approximation of expectation of logX!
+    c_(j) = sum([binomial(j, k)*(-1)^(-k)*log(factorial(k)) for k in collect(0:j)])
+    Elog_fact(λ, lim=20) = sum([(-λ)^j/factorial(j)*c_(j) for j in collect(0:lim)])
+
+    -unsafeMean(marg_out)*unsafeLogMean(marg_l)+unsafeMean(marg_l)+Elog_fact(unsafeMean(marg_out))
+end
