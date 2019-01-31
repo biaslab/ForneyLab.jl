@@ -2,10 +2,9 @@ module PoissonTest
 
 using Test
 using ForneyLab
-using Herring
 
 import ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, FactorNode, SoftFactor, Interface, FactorGraph
-import Herring: VBPoissonOut, VBPoissonL, SPPoissonOutVP, SPPoissonLPV
+import ForneyLab: VBPoissonOut, VBPoissonL, SPPoissonOutVP, SPPoissonLPV
 
 @testset "Poisson ProbabilityDistribution construction" begin
     @test ProbabilityDistribution(Univariate, Poisson, l=2.0) == ProbabilityDistribution{Univariate, Poisson}(Dict(:l=>2.0))
