@@ -54,7 +54,7 @@ include("factor_graph.jl")
 
 # Composite nodes
 include("factor_nodes/composite.jl")
-include("factor_nodes/unit_equality.jl")
+include("factor_nodes/gain_equality.jl")
 
 # Generic methods
 include("message_passing.jl")
@@ -91,7 +91,7 @@ include("update_rules/gaussian_mixture.jl")
 include("update_rules/sigmoid.jl")
 include("update_rules/nonlinear.jl")
 include("update_rules/dot_product.jl")
-include("update_rules/unit_equality.jl")
+include("update_rules/gain_equality.jl")
 
 *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
 
