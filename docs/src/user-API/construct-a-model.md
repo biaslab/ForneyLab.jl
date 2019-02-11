@@ -1,13 +1,35 @@
-# Factor Nodes
+# Construct a model
 
 ### Index
 ```@index
 Modules = [ForneyLab]
-Pages = ["factor_nodes.md"]
+Pages = ["construct-a-model.md"]
 Order = [:macro, :module, :constant, :type, :function]
 ```
 
-### Description
+
+### Random variable
+```@docs
+ForneyLab.@RV
+```
+
+### Factor graph
+```@docs
+ForneyLab.FactorGraph
+```
+
+### Variable
+```@docs
+ForneyLab.Variable
+```
+
+### Current graph
+```@docs
+ForneyLab.currentGraph
+```
+
+### Node types
+
 ```@autodocs
 Modules = [ForneyLab]
 Private = false

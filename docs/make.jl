@@ -6,13 +6,20 @@ makedocs(modules = [ForneyLab],
     pages = [
         "Home" => "index.md",
         "Getting Started" => "getting-started/introduction.md",
-        "API" => Any[
-            "Algorithms" => "API/algorithms.md",
-            "Factor nodes" => "API/factor_nodes.md",
-            "Engines" => "API/engines.md",
-            "General" => "API/general.md"
+        "User API" => Any[
+            "Construct a model" => "user-API/construct-a-model.md",
+            "Schedule an algorithm" => "user-API/schedule-an-algorithm.md",
+            "Construct algorithm code" => "user-API/construct-algorithm-code.md",
+            "Execute an algorithm" => "user-API/execute-an-algorithm.md",
+            "Helpers" => "user-API/helpers.md",
         ],
-        "Internals" => "internals/internals.md",
+        "Developer API" => Any[
+            "Extended factor nodes" => "developer-API/extended-factor-nodes.md",
+            "Extended rules" => "developer-API/extended-rules.md",
+            "Graph (low-level)" => "developer-API/graph.md",
+            "Scheduler (low-level)" => "developer-API/scheduler.md",
+        ]
+
     ]
 )
 
