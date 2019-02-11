@@ -51,7 +51,7 @@ ForneyLab.unsafeVar(dist::ProbabilityDistribution{Univariate, Poisson}) = dist.p
 ForneyLab.unsafeLogMean(dist::ProbabilityDistribution{Univariate, Poisson}) = dist.params[:l]
 
 # ∑ [λ^k*log(k!)]/k! from k=0 to j
-k_sum(l, j=20) = sum([(l)^(k)*lfact(k)/factorial(k) for k in collect(0:j)])
+k_sum(l, j=20) = sum([(l)^(k)*log(factorial(k))/factorial(k) for k in collect(0:j)])
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Poisson})
@@ -62,7 +62,7 @@ end
 
 
 # ∑ binomial(j, k)*(-1)^{-k}*log(k!)
-coef(j::Int64) = sum([binomial(j, k)*(-1)^(-k)*lfact(k) for k in collect(0:j)])
+coef(j::Int64) = sum([binomial(j, k)*(-1)^(-k)*log(factorial(k)) for k in collect(0:j)])
 # approximation of expectation of logX!
 Elog_fact(λ::Float64, lim=20) = sum([(-λ)^j/factorial(j)*coef(j) for j in collect(0:lim)])
 
