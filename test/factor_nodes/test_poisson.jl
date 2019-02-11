@@ -82,8 +82,7 @@ end
 end
 
 @testset "averageEnergy and differentialEntropy" begin
-    # TODO: Eventually these need to be implemented, but they require additional work for the Poisson distribution
-    # @test isapprox(differentialEntropy(ProbabilityDistribution(Poisson, l=2.0)), averageEnergy(Poisson, ProbabilityDistribution(Poisson, l=2.0), ProbabilityDistribution(Univariate, PointMass, m=2.0)))
+    @test isapprox(differentialEntropy(ProbabilityDistribution(Poisson, l=2.0)), averageEnergy(Poisson, ProbabilityDistribution(Poisson, l=2.0), ProbabilityDistribution(Univariate, PointMass, m=2.0)))
     @test true == false
 end
 
