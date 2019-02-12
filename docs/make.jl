@@ -23,10 +23,9 @@ makedocs(modules = [ForneyLab],
     ]
 )
 
-# deploydocs(
-#     repo = "github.com/biaslab/ForneyLab.jl.git",
-#     target = "build",
-#     julia = "1.0.0",
-#     deps = nothing,
-#     make = nothing,
-# )
+deploydocs(
+    repo = "https://github.com/biaslab/ForneyLab.jl.git",
+    target = "build",
+    deps = nothing,
+    make = nothing,
+)

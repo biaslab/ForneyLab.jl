@@ -134,6 +134,7 @@ g2.variables[:m]
 
 
 Let's build another simple factor graph for
+
 $$\begin{align*}
 p(x,y,z) &= p(z|x,y)\,p(x)\,p(y) \\
   &= \delta(z-x-y)\,\mathcal{N}(x\,|\,0.0,1.0)\,\mathcal{N}(y\,|\,2.0,3.0)
