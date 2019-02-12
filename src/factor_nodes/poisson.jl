@@ -1,4 +1,5 @@
 export Poisson
+import SpecialFunctions.lfactorial
 
 """
 Description:
@@ -31,43 +32,45 @@ mutable struct Poisson <: SoftFactor
     end
 end
 
-ForneyLab.slug(::Type{Poisson}) = "Poisson"
+slug(::Type{Poisson}) = "Poisson"
 
-ForneyLab.format(dist::ProbabilityDistribution{Univariate, Poisson}) = "$(slug(Poisson))(l=$(format(dist.params[:l])))"
+format(dist::ProbabilityDistribution{Univariate, Poisson}) = "$(slug(Poisson))(l=$(format(dist.params[:l])))"
 
-ForneyLab.ProbabilityDistribution(::Type{Univariate}, ::Type{Poisson}; l=1.0) = ProbabilityDistribution{Univariate, Poisson}(Dict(:l=>l))
-ForneyLab.ProbabilityDistribution(::Type{Poisson}; l=1.0) = ProbabilityDistribution{Univariate, Poisson}(Dict(:l=>l))
+ProbabilityDistribution(::Type{Univariate}, ::Type{Poisson}; l=1.0) = ProbabilityDistribution{Univariate, Poisson}(Dict(:l=>l))
+ProbabilityDistribution(::Type{Poisson}; l=1.0) = ProbabilityDistribution{Univariate, Poisson}(Dict(:l=>l))
 
-ForneyLab.dims(dist::ProbabilityDistribution{Univariate, Poisson}) = 1
+dims(dist::ProbabilityDistribution{Univariate, Poisson}) = 1
 
-ForneyLab.vague(::Type{Poisson}) = ProbabilityDistribution(Univariate, Poisson, l=huge)
+vague(::Type{Poisson}) = ProbabilityDistribution(Univariate, Poisson, l=huge)
 
-ForneyLab.isProper(dist::ProbabilityDistribution{Univariate, Poisson}) = (0 < dist.params[:l] < huge)
+isProper(dist::ProbabilityDistribution{Univariate, Poisson}) = (0 < dist.params[:l] < huge)
 
-ForneyLab.unsafeMean(dist::ProbabilityDistribution{Univariate, Poisson}) = dist.params[:l]
+unsafeMean(dist::ProbabilityDistribution{Univariate, Poisson}) = dist.params[:l]
 
-ForneyLab.unsafeVar(dist::ProbabilityDistribution{Univariate, Poisson}) = dist.params[:l]
+unsafeVar(dist::ProbabilityDistribution{Univariate, Poisson}) = dist.params[:l]
 
-ForneyLab.unsafeLogMean(dist::ProbabilityDistribution{Univariate, Poisson}) = dist.params[:l]
-
-# ∑ [λ^k*log(k!)]/k! from k=0 to j
-k_sum(l, j=20) = sum([(l)^(k)*log(factorial(k))/factorial(k) for k in collect(0:j)])
+# ∑ [λ^k*log(k!)]/k! from k=0 to inf
+# Approximates the above sum for differentialEntropy calculation
+apprSum(l, j=66) = sum([(l)^(k)*lfactorial(k)/exp(lfactorial(k)) for k in collect(0:j)])
 
 # Entropy functional
+# @ref https://en.wikipedia.org/wiki/Poisson_distribution
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Poisson})
 
     l = clamp(dist.params[:l], tiny, huge)
-    l*(1-log(l)) + exp(-l)*k_sum(l)
+    l*(1-log(l)) + exp(-l)*apprSum(l)
 end
 
 
-# ∑ binomial(j, k)*(-1)^{-k}*log(k!)
-coef(j::Int64) = sum([binomial(j, k)*(-1)^(-k)*log(factorial(k)) for k in collect(0:j)])
+# ∑ binomial(j, k)*(-1)^{-k}*log(k!) k=0 to inf
+# logarithmic difference coefficient
+logDiffCoef(j::Int64) = sum([binomial(j, k)*(-1)^(-k)*lfactorial(k) for k in collect(0:j)])
 # approximation of expectation of logX!
-Elog_fact(λ, lim=20) = sum([(-λ)^j/factorial(j)*coef(j) for j in collect(0:lim)])
+# @ref https://arxiv.org/pdf/1708.06394.pdf
+unsafeLogFact(l, lim=66) = sum([(-l)^j/exp(lfactorial(j))*logDiffCoef(j) for j in collect(0:lim)])
 
 # Average energy functional
-function ForneyLab.averageEnergy(::Type{Poisson}, marg_out::ProbabilityDistribution{Univariate}, marg_l::ProbabilityDistribution{Univariate})
+function averageEnergy(::Type{Poisson}, marg_out::ProbabilityDistribution{Univariate}, marg_l::ProbabilityDistribution{Univariate})
 
-    -unsafeMean(marg_out)*unsafeLogMean(marg_l)+unsafeMean(marg_l)+Elog_fact(unsafeMean(marg_out))
+    -unsafeMean(marg_out)*unsafeLogMean(marg_l)+unsafeMean(marg_l)+unsafeLogFact(unsafeMean(marg_out))
 end
