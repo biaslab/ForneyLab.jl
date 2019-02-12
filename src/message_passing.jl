@@ -86,6 +86,9 @@ function ==(a::ScheduleEntry, b::ScheduleEntry)
     return (a.interface == b.interface) && (a.msg_update_rule == b.msg_update_rule)
 end
 
+"""
+A `Schedule` defines the update order for message computations.
+"""
 const Schedule = Vector{ScheduleEntry}
 
 function show(io::IO, schedule::Schedule)
