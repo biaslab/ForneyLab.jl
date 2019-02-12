@@ -64,7 +64,7 @@ end
 # ∑ binomial(j, k)*(-1)^{-k}*log(k!)
 coef(j::Int64) = sum([binomial(j, k)*(-1)^(-k)*log(factorial(k)) for k in collect(0:j)])
 # approximation of expectation of logX!
-Elog_fact(λ::Float64, lim=20) = sum([(-λ)^j/factorial(j)*coef(j) for j in collect(0:lim)])
+Elog_fact(λ, lim=20) = sum([(-λ)^j/factorial(j)*coef(j) for j in collect(0:lim)])
 
 # Average energy functional
 function ForneyLab.averageEnergy(::Type{Poisson}, marg_out::ProbabilityDistribution{Univariate}, marg_l::ProbabilityDistribution{Univariate})
