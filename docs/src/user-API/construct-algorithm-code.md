@@ -12,25 +12,22 @@ Order = [:macro, :module, :constant, :type, :function]
 ForneyLab.expectationPropagationAlgorithm
 ```
 
+### Free energy algorithm
+```@docs
+ForneyLab.freeEnergyAlgorithm
+```
+
 ### Sum-product algorithm
 ```@docs
 ForneyLab.sumProductAlgorithm
 ```
-
 
 ### Variational algorithm
 ```@docs
 ForneyLab.variationalAlgorithm
 ```
 
-
 ### Variational expectation propagation algorithm
 ```@docs
 ForneyLab.variationalExpectationPropagationAlgorithm
-```
-
-
-### Free energy algorithm
-```@docs
-ForneyLab.freeEnergyAlgorithm
 ```
