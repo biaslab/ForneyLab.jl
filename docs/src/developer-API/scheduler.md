@@ -1,9 +1,9 @@
-# Graph (low-level)
+# Scheduler (low-level)
 
 ### Index
 ```@index
 Modules = [ForneyLab]
-Pages = ["graph.md"]
+Pages = ["scheduler.md"]
 Order = [:macro, :module, :constant, :type, :function]
 ```
 
