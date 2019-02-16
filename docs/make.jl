@@ -3,6 +3,9 @@ using Documenter, ForneyLab
 makedocs(modules = [ForneyLab],
     clean = true,
     sitename = "ForneyLab.jl",
+    assets = [
+        joinpath("assets", "favicon.ico"),
+    ],
     pages = [
         "Home" => "index.md",
         "Getting Started" => "getting-started/introduction.md",
