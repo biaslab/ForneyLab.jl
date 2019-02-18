@@ -1,9 +1,6 @@
 ForneyLab.jl
 ============
 
-[![Build Status](https://travis-ci.org/biaslab/ForneyLab.jl.svg?branch=master)](https://travis-ci.org/biaslab/ForneyLab.jl)
-[![Documentation](https://img.shields.io/badge/doc-stable-blue.svg)](https://biaslab.github.io/forneylab/docs)
-
 ForneyLab.jl is a Julia package for automatic generation of (Bayesian) inference algorithms. Given a probabilistic model, ForneyLab generates efficient Julia code for message-passing based inference. It uses the model structure to generate an algorithm that consists of a sequence of local computations on a Forney-style factor graph (FFG) representation of the model. For an excellent introduction to message passing and FFGs, see [The Factor Graph Approach to Model-Based Signal Processing](https://ieeexplore.ieee.org/document/4282128/) by Loeliger et al. (2007). Moreover, for a comprehensive overview of the underlying principles behind this tool, see [A Factor Graph Approach to Automated Design of Bayesian Signal Processing Algorithms](https://arxiv.org/abs/1811.03407) by Cox et. al. (2018).
 
 We designed ForneyLab with a focus on flexible and modular modeling of time-series data. ForneyLab enables a user to:
@@ -17,8 +14,7 @@ The current version supports [belief propagation](https://en.wikipedia.org/wiki/
 The [ForneyLab project page](http://forneylab.org) provides more background on ForneyLab as well as pointers to related literature and talks. For a practical introduction, have a look at [the demos](https://github.com/biaslab/ForneyLab.jl/tree/master/demo).
 
 
-Installation
-============
+## Installation
 
 Install ForneyLab through the Julia package manager:
 ```jl
@@ -30,15 +26,12 @@ Some demos use the [PyPlot](https://github.com/stevengj/PyPlot.jl) plotting modu
 
 Optionally, use `] test ForneyLab` to validate the installation by running the test suite.
 
-
-Getting started
-===============
+## Demos
 
 There are [demos](https://github.com/biaslab/ForneyLab.jl/tree/master/demo) available to get you started.
 Additionally, the [ForneyLab project page](http://forneylab.org) contains a talk and other resources that might be helpful.
 
 
-License
-=======
+## License
 
 (c) 2018 GN Store Nord A/S. Permission to use this software for any non-commercial purpose is granted. See `LICENSE.md` file for details.

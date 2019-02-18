@@ -24,6 +24,9 @@ mutable struct MarginalScheduleEntry
     marginal_update_rule::DataType
 end
 
+"""
+A `MarginalSchedule` defines the update order for marginal computations.
+"""
 const MarginalSchedule = Vector{MarginalScheduleEntry}
 
 """
