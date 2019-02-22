@@ -1,5 +1,15 @@
 # User API
 
+Documentation for `ForneyLab.jl`'s public API.
+
+See [Internal API](@ref) for internal package docs.
+
+## Contents
+```@contents
+Pages = ["user-api.md"]
+Depth = 5
+```
+
 ## Index
 ```@index
 Modules = [ForneyLab]

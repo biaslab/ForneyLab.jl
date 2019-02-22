@@ -1,4 +1,12 @@
-# Internals API
+# Internal API
+
+Documentation for `ForneyLab.jl`'s internal API.
+
+## Contents
+```@contents
+Pages = ["internal-api.md"]
+Depth = 5
+```
 
 ## Index
 ```@index
