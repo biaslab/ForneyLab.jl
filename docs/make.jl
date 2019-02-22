@@ -10,8 +10,8 @@ makedocs(modules = [ForneyLab],
         "Home" => "index.md",
         "Getting started" => "getting-started/introduction.md",
         "Library" => Any[
-            "User API" => "library/public-api.md",
-            "Internals API" => "library/internal-api.md"
+            "Public API" => "library/public-api.md",
+            "Internal API" => "library/internal-api.md"
         ],
         "Contributing" => "contributing.md",
     ]
