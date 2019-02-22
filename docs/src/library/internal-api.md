@@ -11,7 +11,7 @@ Depth = 5
 ## Index
 ```@index
 Modules = [ForneyLab]
-Pages = ["user-api.md"]
+Pages = ["internal-api.md"]
 Order = [:macro, :module, :constant, :type, :function]
 ```
 

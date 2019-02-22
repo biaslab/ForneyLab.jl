@@ -6,14 +6,14 @@ See [Internal API](@ref) for internal package docs.
 
 ## Contents
 ```@contents
-Pages = ["user-api.md"]
+Pages = ["public-api.md"]
 Depth = 5
 ```
 
 ## Index
 ```@index
 Modules = [ForneyLab]
-Pages = ["user-api.md"]
+Pages = ["public-api.md"]
 Order = [:macro, :module, :constant, :type, :function]
 ```
 
