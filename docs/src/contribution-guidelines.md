@@ -54,8 +54,7 @@ failing! All demos (can be found in `/demo/` directory) have to run without erro
 
 ### Style conventions
 
-We use default [Julia style
-conventions](https://docs.julialang.org/en/stable/manual/style-guide/). We list here a few important points and our modifications to the Julia style guide:
+We use default [Julia styleconventions](https://docs.julialang.org/en/stable/manual/style-guide/). We list here a few important points and our modifications to the Julia style guide:
 
 - Use 4 spaces for indentation
 - Type names use `UpperCamelCase`. E.g., `FactorNode`, `Gaussian`
@@ -78,7 +77,7 @@ The tests can be evaluated by running following command in the Julia REPL:
 
 ## Additional materials
 
-ForneyLab.jl is written in the [Julia programming language](julialang.org). In case you are unfamiliar with Julia or would like to deepen your knowledge of Julia, we suggest following resources:
+ForneyLab.jl is written in the [Julia programming language](https://julialang.org/). In case you are unfamiliar with Julia or would like to deepen your knowledge of Julia, we suggest following resources:
 
 - [Official Julia documentation](https://docs.julialang.org/en/v1/)
 - [Learn Julia in Y minutes](https://learnxinyminutes.com/docs/julia/)
