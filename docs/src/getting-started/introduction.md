@@ -1,4 +1,4 @@
-# Getting Started
+# Getting started
 
 ForneyLab is a toolbox for deriving solutions to probabilistic inference problems by message passing on Forney-style factor graphs. A Forney-style factor graph (FFG) is a graphical representation of a factorized probabilistic model. Message passing solutions to inference tasks can be automatically derived from a probabilistic model specification. ForneyLab yields message passing algorithms (MPA) as Julia code. In other words, ForneyLab is a Julia program that automatically builds inference programs that are specified as Julia programs.
 

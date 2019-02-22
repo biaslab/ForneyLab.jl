@@ -8,7 +8,8 @@ makedocs(modules = [ForneyLab],
     ],
     pages = [
         "Home" => "index.md",
-        "Getting Started" => "getting-started/introduction.md",
+        "Getting started" => "getting-started/introduction.md",
+        "Contribution guidelines" => "contribution-guidelines.md",
         "User API" => Any[
             "Construct a model" => "user-API/construct-a-model.md",
             "Schedule an algorithm" => "user-API/schedule-an-algorithm.md",
@@ -22,7 +23,6 @@ makedocs(modules = [ForneyLab],
             "Graph (low-level)" => "developer-API/graph.md",
             "Scheduler (low-level)" => "developer-API/scheduler.md",
         ]
-
     ]
 )
 
