@@ -9,20 +9,11 @@ makedocs(modules = [ForneyLab],
     pages = [
         "Home" => "index.md",
         "Getting started" => "getting-started/introduction.md",
-        "Contribution guidelines" => "contribution-guidelines.md",
-        "User API" => Any[
-            "Construct a model" => "user-API/construct-a-model.md",
-            "Schedule an algorithm" => "user-API/schedule-an-algorithm.md",
-            "Construct algorithm code" => "user-API/construct-algorithm-code.md",
-            "Execute an algorithm" => "user-API/execute-an-algorithm.md",
-            "Helpers" => "user-API/helpers.md",
+        "Library" => Any[
+            "User API" => "library/user-api.md",
+            "Internals API" => "library/internals-api.md"
         ],
-        "Developer API" => Any[
-            "Extended factor nodes" => "developer-API/extended-factor-nodes.md",
-            "Extended rules" => "developer-API/extended-rules.md",
-            "Graph (low-level)" => "developer-API/graph.md",
-            "Scheduler (low-level)" => "developer-API/scheduler.md",
-        ]
+        "Contributing" => "contributing.md",
     ]
 )
 
