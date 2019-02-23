@@ -1,24 +1,6 @@
 # Contribution guidelines
 
-We welcome all possible contributors. We kindly ask you to read these guidelines before starting to work on this project.
-
-## Navigating the repository
-
-We organize the ForneyLab repository in the following way:
-
-- `/demo/`: demos in Jupyter (iJulia) notebook format (`.ipynb`)
-- `/src/`: all source files
-    + `algorithms/`: inference algorithm implementations
-        * `expectation_propagation/`: EP algorithm implementation
-        * `sum_product/`: SP algorithm implementation
-        * `variational_bayes/`: VMP algorithm implementation
-    + `engines/`: rendering of message passing schedules to executable code
-        * `julia/`: Julia engine and update rule implementations
-    + `factor_nodes/`: all node-specific files
-    + `update_rules/`: message passing update rules
-- `/test/`: test files with directory structure similar to `/src/`.
-
-File and directory names always use `snake_case`, except for `REQUIRE` and markdown files in the root directory.
+We welcome all possible contributors. This page details the some of the guidelines that should be followed when contributing to this package.
 
 ## Reporting bugs
 
@@ -74,16 +56,3 @@ The tests can be evaluated by running following command in the Julia REPL:
 ```jl
 ] test ForneyLab
 ```
-
-## Additional materials
-
-ForneyLab.jl is written in the [Julia programming language](https://julialang.org/). In case you are unfamiliar with Julia or would like to deepen your knowledge of Julia, we suggest following resources:
-
-- [Official Julia documentation](https://docs.julialang.org/en/v1/)
-- [Learn Julia in Y minutes](https://learnxinyminutes.com/docs/julia/)
-- [Think Julia: How to Think Like a Computer Scientist](https://benlauwens.github.io/ThinkJulia.jl/latest/book.html)
-
-If you would like to learn about Git, read for instance the
-[ProGit](https://git-scm.com/book/en/v2) book.
-
-We also advise you to use the [Revise.jl](https://github.com/timholy/Revise.jl) package since it reduces the need to restart the Julia REPL whenever you make changes to ForneyLab.jl code.

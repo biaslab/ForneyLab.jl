@@ -14,6 +14,7 @@ makedocs(modules = [ForneyLab],
             "Internal API" => "library/internal-api.md"
         ],
         "Contributing" => "contributing.md",
+        "Internals" => "internals.md"
     ]
 )
 

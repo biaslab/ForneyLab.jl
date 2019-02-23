@@ -17,7 +17,7 @@ Pages = ["public-api.md"]
 Order = [:macro, :module, :constant, :type, :function]
 ```
 
-## Model definition
+## Model specification
 ```@docs
 ForneyLab.@RV
 ForneyLab.FactorGraph
@@ -54,7 +54,7 @@ ForneyLab.variationalAlgorithm
 ForneyLab.variationalExpectationPropagationAlgorithm
 ```
 
-## Execute an algorithm (???)
+## Algorithm execution
 ```@docs
 ForneyLab.Message
 ForneyLab.PointMass
