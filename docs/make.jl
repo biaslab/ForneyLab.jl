@@ -8,7 +8,7 @@ makedocs(modules = [ForneyLab],
     ],
     pages = [
         "Home" => "index.md",
-        "Getting started" => "getting-started/getting-started.md",
+        "Getting started" => "getting-started.md",
         "Library" => Any[
             "Public API" => "library/public-api.md",
             "Internal API" => "library/internal-api.md"
