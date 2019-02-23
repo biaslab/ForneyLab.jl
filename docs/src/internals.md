@@ -60,3 +60,7 @@ The name of an update rule is composed of several parts:
 4. `Real`: outgoing message through 'Real' interface
 5. `GB`: incoming message types are: Gaussian - Bernoulli
 * *Note that EP update rules do not have `V` (void) in the set of incoming messages given that in EP there is an incoming message through the interface of the outgoing message that is being calculated.*
+
+## Implementing a factor node
+
+## Troubleshooting

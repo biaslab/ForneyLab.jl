@@ -23,6 +23,5 @@ Given a probabilistic model, ForneyLab generates efficient Julia code for messag
 - For an introduction to message passing and FFGs, see [The Factor Graph Approach to Model-Based Signal Processing](https://ieeexplore.ieee.org/document/4282128/) by Loeliger et al. (2007).
 - The [ForneyLab project page](http://forneylab.org) provides more background on ForneyLab as well as pointers to related literature and talks.
 
-## Demos
-
-There are [demos](https://github.com/biaslab/ForneyLab.jl/tree/master/demo) available to help getting you started.
+## How to get started?
+Head to the [Getting started](@ref) section to get up and running with ForneyLab in no time.
