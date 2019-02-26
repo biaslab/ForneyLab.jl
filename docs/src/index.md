@@ -1,7 +1,7 @@
 ForneyLab.jl
 ============
 
-*A Julia package for automatic generation of (Bayesian) inference algorithms.*
+*A Julia toolbox for automatic generation of (Bayesian) inference algorithms.*
 
 Given a probabilistic model, ForneyLab generates efficient Julia code for message-passing based inference. It uses the model structure to generate an algorithm that consists of a sequence of local computations on a Forney-style factor graph (FFG) representation of the model.
 
