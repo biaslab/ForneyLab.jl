@@ -55,6 +55,10 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
+[[PDMats]]
+deps = ["Arpack"]
+uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
+
 [[Pkg]]
 deps = ["Dates", "LibGit2", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
