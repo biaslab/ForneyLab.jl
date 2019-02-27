@@ -20,6 +20,12 @@ const tiny = 1e-12
 cholinv(m::Number) = 1.0/m
 cholinv(M::AbstractMatrix) = inv(cholesky(Hermitian(Matrix(M)),Val(false)))
 cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
+
+cholinv(M::PDMat) = inv(M.chol)
+cholinv(M::PDiagMat) = Diagonal(M.inv_diag)
+cholinv(M::ScalMat) = M.inv_value
+cholinv(M::PDSparseMat) = inv(M.chol)
+
 eye(n::Number) = Diagonal(I,n)
 diageye(dims::Int64) = Diagonal(ones(dims))
 
@@ -85,6 +91,26 @@ function format(v::Vector{Any})
         end
     end
     return str
+end
+
+function format(d::ScalMat{Float64})
+    n = d.dim
+    value = d.value
+    matrix = value*Matrix{Float64}(I,n,n)
+    format(matrix)
+end
+
+
+format(d::PDMat{Float64}) = format(d.mat)
+
+function format(d::PDiagMat{Float64})
+    diag = d.diag
+    format(diag)
+end
+
+function format(d::PDSparseMat{Float64})
+    matrix = d.mat
+    format(matrix)
 end
 
 """isApproxEqual: check approximate equality"""

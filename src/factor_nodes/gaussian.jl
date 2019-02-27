@@ -1,4 +1,5 @@
 import Base: prod!, convert
+import PDMats
 
 export Gaussian, prod!, convert
 
@@ -64,10 +65,21 @@ end
     return z
 end
 
+# function prod!(
+#     x::ProbabilityDistribution{Multivariate, F1},
+#     y::ProbabilityDistribution{Multivariate, F2},
+#     z::ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}=ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[NaN], w=transpose([NaN]))) where {F1<:Gaussian, F2<:Gaussian}
+#
+#     z.params[:xi] = unsafeWeightedMean(x) + unsafeWeightedMean(y)
+#     z.params[:w] = unsafePrecision(x) + unsafePrecision(y)
+#
+#     return z
+# end
+
 function prod!(
     x::ProbabilityDistribution{Multivariate, F1},
     y::ProbabilityDistribution{Multivariate, F2},
-    z::ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}=ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[NaN], w=transpose([NaN]))) where {F1<:Gaussian, F2<:Gaussian}
+    z::ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}=ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[NaN], w=ScalMat(1,NaN))) where {F1<:Gaussian, F2<:Gaussian}
 
     z.params[:xi] = unsafeWeightedMean(x) + unsafeWeightedMean(y)
     z.params[:w] = unsafePrecision(x) + unsafePrecision(y)

@@ -1,5 +1,8 @@
 module ForneyLab
 
+using PDMats
+
+
 # Helpers
 include("helpers.jl")
 include("dependency_graph.jl")
@@ -12,6 +15,7 @@ import LinearAlgebra: diag, det, tr, cholesky, pinv
 import SparseArrays: spzeros
 import SpecialFunctions: digamma, lgamma, lbeta, erfc
 import Statistics: mean, var, cov
+
 
 # High level abstracts
 abstract type AbstractEdge end # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface

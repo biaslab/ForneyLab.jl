@@ -45,7 +45,7 @@ ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanPrecision}; m=[
 dims(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = length(dist.params[:m])
 
 vague(::Type{GaussianMeanPrecision}) = ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=tiny)
-vague(::Type{GaussianMeanPrecision}, dims::Int64) = ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(dims), w=tiny*diageye(dims))
+vague(::Type{GaussianMeanPrecision}, dims::Int64) = ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(dims), w=ScalMat(dims,tiny))
 
 unsafeMean(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = deepcopy(dist.params[:m]) # unsafe mean
 
@@ -78,7 +78,7 @@ end
 # Average energy functional
 function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistribution{Univariate}, marg_mean::ProbabilityDistribution{Univariate}, marg_prec::ProbabilityDistribution{Univariate})
     (m_mean, v_mean) = unsafeMeanCov(marg_mean)
-    (m_out, v_out) = unsafeMeanCov(marg_out)    
+    (m_out, v_out) = unsafeMeanCov(marg_out)
 
     0.5*log(2*pi) -
     0.5*unsafeLogMean(marg_prec) +
@@ -87,7 +87,7 @@ end
 
 function averageEnergy(::Type{GaussianMeanPrecision}, marg_out::ProbabilityDistribution{Multivariate}, marg_mean::ProbabilityDistribution{Multivariate}, marg_prec::ProbabilityDistribution{MatrixVariate})
     (m_mean, v_mean) = unsafeMeanCov(marg_mean)
-    (m_out, v_out) = unsafeMeanCov(marg_out)    
+    (m_out, v_out) = unsafeMeanCov(marg_out)
 
     0.5*dims(marg_out)*log(2*pi) -
     0.5*unsafeDetLogMean(marg_prec) +
