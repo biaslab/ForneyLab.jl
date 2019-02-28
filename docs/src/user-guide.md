@@ -84,7 +84,7 @@ ForneyLab.draw(g)
 Edges that are not connected to any factor node are not drawn.
 
 ### Clamping
-Suppose that we know that the variance of the random variable `y`, of the previous model, is fixed to a certain value. ForneyLab provides a special factor node to impose this kind of constraint called a `Clamp`. Clamp factor nodes can be implicitly defined by using literals like in the following example
+Suppose we know that the variance of the random variable `y`, of the previous model, is fixed to a certain value. ForneyLab provides a special factor node to impose this kind of constraint called a `Clamp`. Clamp factor nodes can be implicitly defined by using literals like in the following example
 ```@example 1
 g = FactorGraph() # create a new factor graph
 @RV m
@@ -159,10 +159,6 @@ ForneyLab.draw(g)
 The important thing to note here is that we need an extra array of `N` observed random variables where each of these variables is linked to a dedicated index of the placeholder's buffer. This buffer can be thought of as an `N` dimensional array of `Clamp` factor nodes. We achieve this link by means of the `index` parameter of the `placeholder` function.
 
 In section [Executing an algorithm](@ref) we will see examples of how the data is fed to the placeholders in each of these two scenarios.
-
-!!! note
-    Batch processing does not perform well with large datasets at the moment. We are working on this issue.
-
 
 ## Generating an algorithm
 ForneyLab supports code generation for three different types of message-passing algorithms:
@@ -301,13 +297,13 @@ v = placeholder(:v)
 placeholder(y, :y)
 eval(Meta.parse(sumProductAlgorithm(x))) # generate, parse and evaluate the algorithm
 ```
-In order to execute this algorithm we first have to specify a prior for `x`. This is done by choosing some initial values for the hyperparameters `m` and `v`. The algorithm expects 1) the observation and 2) the current bielef about `x`, i.e. the prior. We pass this information as elements of a `data` dictionary where the keys correspond to the `id`s that we defined for their corresponding placeholders. The algorithm performs inference and returns the results inside a different dictionary that we call `marginals`. In the next iteration, we repeat this process by feeding the algorithm with the next observation in the sequence and the posterior distribution for `x` that we obtained in the previous processing step. In other words, the current posterior becomes the prior for the next processing step. We will generate a synthetic dataset by sampling observations from a Gaussian distribution that has a mean of 2.
+In order to execute this algorithm we first have to specify a prior for `x`. This is done by choosing some initial values for the hyperparameters `m` and `v`. The algorithm expects 1) the observation and 2) the current bielef about `x`, i.e. the prior. We pass this information as elements of a `data` dictionary where the keys correspond to the `id`s that we defined for their corresponding placeholders. The algorithm performs inference and returns the results inside a different dictionary that we call `marginals`. In the next iteration, we repeat this process by feeding the algorithm with the next observation in the sequence and the posterior distribution for `x` that we obtained in the previous processing step. In other words, the current posterior becomes the prior for the next processing step. We will generate a synthetic dataset by sampling observations from a Gaussian distribution that has a mean of 5.
 ```@example 1
 using Plots, LaTeXStrings; theme(:default) ;
 pyplot(fillalpha=0.3, leg=false, xlabel=L"x", ylabel=L"p(x|D)", yticks=nothing)
 
 N = 50                      # number of samples
-dataset = randn(N) .+ 2     # sample N observations from a Gaussian with m=2 and v=1
+dataset = randn(N) .+ 5     # sample N observations from a Gaussian with m=5 and v=1
 
 normal(μ, σ²) = x -> (1/(sqrt(2π*σ²))) * exp(-(x - μ)^2 / (2*σ²)) # to plot results
 
