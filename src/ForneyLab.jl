@@ -2,7 +2,6 @@ module ForneyLab
 
 using PDMats
 
-
 # Helpers
 include("helpers.jl")
 include("dependency_graph.jl")

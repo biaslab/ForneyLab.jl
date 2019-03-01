@@ -1,7 +1,7 @@
 export huge, tiny, inv, diageye, eye, format, *, ^, mat
 
 import Base: *, ^, ==, sqrt
-import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky, I
+import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky, I, inv
 import InteractiveUtils: subtypes
 import Printf: @sprintf
 
@@ -18,13 +18,14 @@ const tiny = 1e-12
 
 # Operations related to diagonal matrices
 inv(m::Number) = 1.0/m
-inv(M::AbstractMatrix) = inv(cholesky(Hermitian(Matrix(M)),Val(false)))
+inv(M::AbstractMatrix) = LinearAlgebra.inv(cholesky(Hermitian(Matrix(M)),Val(false)))
 inv(D::Diagonal) = Diagonal(1 ./ D.diag)
 
-inv(M::PDMat) = inv(M.chol)
-inv(M::PDiagMat) = Diagonal(M.inv_diag)
-inv(M::ScalMat) = M.inv_value
-inv(M::PDSparseMat) = inv(M.chol)
+"""inv is already defined in this manner for these PDMats objects"""
+# inv(M::PDMat) = inv(M.chol)
+# inv(M::PDiagMat) = Diagonal(M.inv_diag)
+# inv(M::ScalMat) = M.inv_value
+# inv(M::PDSparseMat) = inv(M.chol)
 
 eye(n::Number) = Diagonal(I,n)
 diageye(dims::Int64) = Diagonal(ones(dims))
@@ -93,25 +94,11 @@ function format(v::Vector{Any})
     return str
 end
 
-function format(d::ScalMat{Float64})
-    n = d.dim
-    value = d.value
-    matrix = value*Matrix{Float64}(I,n,n)
-    format(matrix)
-end
-
-
+"""Formats of PDMats objects"""
+format(d::ScalMat{Float64}) = format(d.value*Matrix{Float64}(I, d.dim, d.dim))
 format(d::PDMat{Float64}) = format(d.mat)
-
-function format(d::PDiagMat{Float64})
-    diag = d.diag
-    format(diag)
-end
-
-function format(d::PDSparseMat{Float64})
-    matrix = d.mat
-    format(matrix)
-end
+format(d::PDiagMat{Float64}) = format(d.diag)
+format(d::PDSparseMat{Float64}) = format(d.mat)
 
 """isApproxEqual: check approximate equality"""
 isApproxEqual(arg1, arg2) = maximum(abs.(arg1-arg2)) < tiny

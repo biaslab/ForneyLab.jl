@@ -1,7 +1,7 @@
 module HelpersTest
 
 using Test
-import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, cholinv, diageye, *, ^
+import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, inv, diageye, *, ^
 import LinearAlgebra: Diagonal, isposdef, I, Hermitian
 
 @testset "Helpers" begin
@@ -34,12 +34,12 @@ import LinearAlgebra: Diagonal, isposdef, I, Hermitian
         @test isRoundedPosDef(Diagonal([1.0, 2.0, 3.0])) == true
     end
 
-    @testset "cholinv" begin
+    @testset "inv" begin
         # should perform a matrix inversion on a positive (semi)definite matrix
-        A = [2.0 1.0; 1.0 2.0]
-        @test cholinv(A) ≈ inv(A)
+        A = [2.0 1.0; 1.0 1.0]
+        @test isApproxEqual(inv(A), [1.0 -1.0; -1.0 2.0])
         A = Diagonal([2.0, 3.0])
-        @test cholinv(A) == inv(A)
+        @test inv(A) == Diagonal([1/2.0, 1/3.0])
     end
 
     @testset "diageye" begin
