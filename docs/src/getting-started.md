@@ -38,7 +38,8 @@ We will assume that the outcome of each coin flip is governed by the Bernoulli d
 where ``y_i=1`` represents "heads", ``y_i=0`` represents "tails", and ``θ \in [0,1]`` is the underlying probability of the coin landing heads up for a single coin flip.
 
 #### Prior
-We will choose the conjugate prior of the Bernoulli likelihood function defined above, shown to be the beta distribution, i.e.
+We will choose the conjugate prior of the Bernoulli likelihood function defined above, namely the beta distribution, i.e.
+
 ``\theta \sim Beta(a, b)``,
 
 where ``a`` and ``b`` are the hyperparameters that encode our prior beliefs about the possible values of ``\theta``. We will assign values to the hyperparameters in a later step.   
@@ -69,7 +70,20 @@ Once we have defined our model, the next step is to instruct ForneyLab to genera
 algo_str = sumProductAlgorithm(θ) # ForneyLab returns the algorithm as a string
 algorithm = Meta.parse(algo_str) # parse the algorithm into a Julia expression
 eval(algorithm); # evaluate the functions contained in the Julia expression
-print("algorithm = ") ; show(algorithm)
+nothing # hide
+```
+
+```julia
+:(function step!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 2))
+      #= none:3 =#
+      messages[1] = ruleSPBetaOutVPP(nothing, Message(Univariate, PointMass, m=data[:a]), Message(Univariate, PointMass, m=data[:b]))
+      #= none:4 =#
+      messages[2] = ruleSPBernoulliIn1PV(Message(Univariate, PointMass, m=data[:y]), nothing)
+      #= none:6 =#
+      marginals[:θ] = (messages[1]).dist * (messages[2]).dist
+      #= none:8 =#
+      return marginals
+  end)
 ```
 
 ### Message-passing inference execution
@@ -95,8 +109,7 @@ end
 The plot below shows the result of the inference procedure. We see how the
 posterior is a “compromise” between the prior and likelihood, as mandated by Bayesian inference.
 ```@example 1
-using Plots, LaTeXStrings, SpecialFunctions;
-theme(:default) ; # hide
+using Plots, LaTeXStrings, SpecialFunctions; theme(:default)
 pyplot(fillalpha=0.3, leg=false, xlabel=L"\theta", yticks=nothing)
 BetaPDF(α, β) = x ->  x^(α-1)*(1-x)^(β-1)/beta(α, β) # beta distribution definition
 BernoulliPDF(z, N) = θ -> θ^z*(1-θ)^(N-z) # Bernoulli distribution definition
