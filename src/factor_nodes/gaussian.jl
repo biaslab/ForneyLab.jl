@@ -4,7 +4,7 @@ import PDMats
 export Gaussian, prod!, convert
 
 function convert(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
-    w = cholinv(dist.params[:v])
+    w = inv(dist.params[:v])
     m = deepcopy(dist.params[:m])
 
     return ProbabilityDistribution(V, GaussianMeanPrecision, m=m, w=w)
@@ -12,20 +12,20 @@ end
 
 function convert(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType
     w = deepcopy(dist.params[:w])
-    m = cholinv(w)*dist.params[:xi]
+    m = inv(w)*dist.params[:xi]
 
     return ProbabilityDistribution(V, GaussianMeanPrecision, m=m, w=w)
 end
 
 function convert(::Type{ProbabilityDistribution{V, GaussianMeanVariance}}, dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
-    v = cholinv(dist.params[:w])
+    v = inv(dist.params[:w])
     m = deepcopy(dist.params[:m])
 
     return ProbabilityDistribution(V, GaussianMeanVariance, m=m, v=v)
 end
 
 function convert(::Type{ProbabilityDistribution{V, GaussianMeanVariance}}, dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType
-    v = cholinv(dist.params[:w])
+    v = inv(dist.params[:w])
     m = v*dist.params[:xi]
 
     return ProbabilityDistribution(V, GaussianMeanVariance, m=m, v=v)
@@ -39,7 +39,7 @@ function convert(::Type{ProbabilityDistribution{V, GaussianWeightedMeanPrecision
 end
 
 function convert(::Type{ProbabilityDistribution{V, GaussianWeightedMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
-    w = cholinv(dist.params[:v])
+    w = inv(dist.params[:v])
     xi = w*dist.params[:m]
 
     return ProbabilityDistribution(V, GaussianWeightedMeanPrecision, xi=xi, w=w)

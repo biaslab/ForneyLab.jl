@@ -1,4 +1,4 @@
-export huge, tiny, cholinv, diageye, eye, format, *, ^, mat
+export huge, tiny, inv, diageye, eye, format, *, ^, mat
 
 import Base: *, ^, ==, sqrt
 import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky, I
@@ -17,14 +17,14 @@ const huge = 1e12
 const tiny = 1e-12
 
 # Operations related to diagonal matrices
-cholinv(m::Number) = 1.0/m
-cholinv(M::AbstractMatrix) = inv(cholesky(Hermitian(Matrix(M)),Val(false)))
-cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
+inv(m::Number) = 1.0/m
+inv(M::AbstractMatrix) = inv(cholesky(Hermitian(Matrix(M)),Val(false)))
+inv(D::Diagonal) = Diagonal(1 ./ D.diag)
 
-cholinv(M::PDMat) = inv(M.chol)
-cholinv(M::PDiagMat) = Diagonal(M.inv_diag)
-cholinv(M::ScalMat) = M.inv_value
-cholinv(M::PDSparseMat) = inv(M.chol)
+inv(M::PDMat) = inv(M.chol)
+inv(M::PDiagMat) = Diagonal(M.inv_diag)
+inv(M::ScalMat) = M.inv_value
+inv(M::PDSparseMat) = inv(M.chol)
 
 eye(n::Number) = Diagonal(I,n)
 diageye(dims::Int64) = Diagonal(ones(dims))

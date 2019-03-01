@@ -64,7 +64,7 @@ unsafeMeanVector(dist::ProbabilityDistribution{Univariate, PointMass}) = [dist.p
 unsafeMeanVector(dist::ProbabilityDistribution{Multivariate, PointMass}) = deepcopy(dist.params[:m])
 
 unsafeInverseMean(dist::ProbabilityDistribution{Univariate, PointMass}) = 1.0/dist.params[:m]
-unsafeInverseMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = cholinv(dist.params[:m])
+unsafeInverseMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = inv(dist.params[:m])
 
 unsafeLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(dist.params[:m])
 unsafeLogMean(dist::ProbabilityDistribution{Multivariate, PointMass}) = log.(dist.params[:m])
@@ -173,7 +173,7 @@ macro RV(expr_options::Expr, expr_def::Any)
                 begin
                 # Use existing Variable if it exists, otherwise create a new one
                 $(target_expr) = try $(target_expr) catch; Variable(id=ForneyLab.pack($(var_id_expr))) end
-        
+
                 # Create new variable if:
                 #   - the existing object is not a Variable
                 #   - the existing object is a Variable from another FactorGraph

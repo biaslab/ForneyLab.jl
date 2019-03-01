@@ -50,11 +50,11 @@ vague(::Type{GaussianMeanPrecision}, dims::Int64) = ProbabilityDistribution(Mult
 unsafeMean(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = deepcopy(dist.params[:m]) # unsafe mean
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}) = 1.0/dist.params[:w] # unsafe variance
-unsafeVar(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}) = diag(cholinv(dist.params[:w]))
+unsafeVar(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}) = diag(inv(dist.params[:w]))
 
-unsafeCov(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = cholinv(dist.params[:w])
+unsafeCov(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = inv(dist.params[:w])
 
-unsafeMeanCov(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = (deepcopy(dist.params[:m]), cholinv(dist.params[:w]))
+unsafeMeanCov(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = (deepcopy(dist.params[:m]), inv(dist.params[:w]))
 
 unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = dist.params[:w]*dist.params[:m] # unsafe weighted mean
 

@@ -1,8 +1,8 @@
 export
-ruleVBGaussianMixtureM, 
-ruleVBGaussianMixtureW, 
-ruleVBGaussianMixtureZBer, 
-ruleVBGaussianMixtureZCat, 
+ruleVBGaussianMixtureM,
+ruleVBGaussianMixtureW,
+ruleVBGaussianMixtureZBer,
+ruleVBGaussianMixtureZCat,
 ruleVBGaussianMixtureOut
 
 function ruleVBGaussianMixtureM(dist_out::ProbabilityDistribution,
@@ -59,7 +59,7 @@ function ruleVBGaussianMixtureW(dist_out::ProbabilityDistribution,
 
     return Message(MatrixVariate, Wishart,
         nu = 1.0 + z_bar[k] + d,
-        v  = cholinv(z_bar[k]*( v_out + v_mean_k + (m_out - m_mean_k)*(m_out - m_mean_k)')))
+        v  = inv(z_bar[k]*( v_out + v_mean_k + (m_out - m_mean_k)*(m_out - m_mean_k)')))
 end
 
 function softmax(v::Vector{Float64})
@@ -133,4 +133,4 @@ function ruleVBGaussianMixtureOut(  dist_out::Any,
     end
 
     return Message(Multivariate, GaussianWeightedMeanPrecision, xi=xi, w=w)
-end    
+end

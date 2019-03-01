@@ -58,14 +58,14 @@ unsafeCov(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:Varia
 
 unsafeMeanCov(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = (deepcopy(dist.params[:m]), deepcopy(dist.params[:v]))
 
-unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = cholinv(dist.params[:v])*dist.params[:m]
+unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = inv(dist.params[:v])*dist.params[:m]
 
-unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = cholinv(dist.params[:v])
+unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = inv(dist.params[:v])
 
 # Converting from m,v to xi,w would require two separate inversions of the covariance matrix;
 # thid function ensures only a singly inversion is performed
 function unsafeWeightedMeanPrecision(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
-    W = cholinv(dist.params[:v])
+    W = inv(dist.params[:v])
     return (W*dist.params[:m], W)
 end
 
@@ -85,8 +85,8 @@ end
 # Average energy functional
 function averageEnergy(::Type{GaussianMeanVariance}, marg_out::ProbabilityDistribution{Univariate}, marg_mean::ProbabilityDistribution{Univariate}, marg_var::ProbabilityDistribution{Univariate})
     (m_mean, v_mean) = unsafeMeanCov(marg_mean)
-    (m_out, v_out) = unsafeMeanCov(marg_out)    
-    
+    (m_out, v_out) = unsafeMeanCov(marg_out)
+
     0.5*log(2*pi) +
     0.5*unsafeLogMean(marg_var) +
     0.5*unsafeInverseMean(marg_var)*(v_out + v_mean + (m_out - m_mean)^2)
@@ -94,7 +94,7 @@ end
 
 function averageEnergy(::Type{GaussianMeanVariance}, marg_out::ProbabilityDistribution{Multivariate}, marg_mean::ProbabilityDistribution{Multivariate}, marg_var::ProbabilityDistribution{MatrixVariate})
     (m_mean, v_mean) = unsafeMeanCov(marg_mean)
-    (m_out, v_out) = unsafeMeanCov(marg_out)    
+    (m_out, v_out) = unsafeMeanCov(marg_out)
 
     0.5*dims(marg_out)*log(2*pi) +
     0.5*unsafeDetLogMean(marg_var) +

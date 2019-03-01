@@ -1,8 +1,8 @@
 export
 ruleSPGaussianMeanVarianceOutVPP,
 ruleSPGaussianMeanVarianceMPVP,
-ruleSPGaussianMeanVarianceOutVGP, 
-ruleSPGaussianMeanVarianceMGVP, 
+ruleSPGaussianMeanVarianceOutVGP,
+ruleSPGaussianMeanVarianceMGVP,
 ruleVBGaussianMeanVarianceM,
 ruleVBGaussianMeanVarianceOut
 
