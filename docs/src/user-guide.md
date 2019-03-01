@@ -52,13 +52,12 @@ nothing # hide
 ```
 associates the variable `x` to an edge of the active factor graph.
 
-Alternatively, the `@RV` macro can be used for the same purpose in a more compact form. Executing the following line is equivalent to the previous approach.
-
+Alternatively, the `@RV` macro can be used for the same purpose in a more compact form. Executing the following line has the same effect as the previous one.
 ```@example 1
 @RV x
 nothing # hide
 ```
-By default, the `@RV` macro uses the variable's name to create a `Symbol` that is assigned to the `id` field of the `Variable` object (`:x` in this example). However, if a variable with that `id` already exists, then ForneyLab will create a name of the form `variable_x`, where `x` is a number that increments. In case you want to provide a custom `id`, the `@RV` macro accepts an optional argument between square brackets for this purpose. For example,
+By default, the `@RV` macro uses the variable's name to create a Julia `Symbol` that is assigned to the `id` field of the `Variable` object (`:x` in this example). However, if this id value has already been assigned to a variable in the factor graph, then ForneyLab will create a default id of the form `:variable_x`, where `x` is a number that increments. In case you want to provide a custom `id`, the `@RV` macro accepts an optional keyword argument between square brackets that allows this. For example,
 ```@example 1
 @RV [id=:my_id] x
 nothing # hide
@@ -93,7 +92,7 @@ ForneyLab.draw(g)
 ```
 Here, the literal `1.0` that is passed as the second argument to `GaussianMeanVariance` function creates a clamp node implicitly. Clamp factor nodes are visualized with a gray background.
 
-On the other hand, if you want to assign a custom `id` to the `Clamp` factor node, then you have to instantiate them explicitly using its constructor function, i.e.
+Alternatively, if you want to assign a custom `id` to a `Clamp` factor node, then you have to instantiate them explicitly using its constructor function, i.e.
 ```@example 1
 g = FactorGraph() # create a new factor graph
 @RV m
@@ -103,7 +102,7 @@ ForneyLab.draw(g)
 ```
 
 ### Placeholders
-Placeholders are a kind of `Clamp` factor nodes that act as entry points for the data. They associate a given random variable with a buffer through which data is fed at a later point. This buffer has an `id`, a dimensionality and a data type. Placeholders are created with the `placeholder` function. Suppose that we observed a series of one-dimensional floating-point data points that we plan to feed to the `y` random variable of the model of the previous section. We would then need to define `y` as a placeholder as follows.
+Placeholders are a kind of `Clamp` factor nodes that act as entry points for data. They associate a given random variable with a buffer through which data is fed at a later point. This buffer has an `id`, a dimensionality and a data type. Placeholders are created with the `placeholder` function. Suppose that we want to feed an array of one-dimensional floating-point data to the `y` random variable of the previous model. We would then need to define `y` as a placeholder as follows.
 ```@example 1
 g = FactorGraph() # create a new factor graph
 @RV m
@@ -120,7 +119,7 @@ In section [Executing an algorithm](@ref) we will see how the data is fed to the
 
 
 ### Overloaded operators
-ForneyLab supports the use of the `+`, `-` and `*` operators between random variables that have certain types of probability distributions. This is known as *operator overloading*. These operators are internally modelled as a factor nodes in ForneyLab. As an example, a two-component Gaussian mixture can be defined as follows  
+ForneyLab supports the use of the `+`, `-` and `*` operators between random variables that have certain types of probability distributions. This is known as *operator overloading*. These operators are represented as deterministic factor nodes in ForneyLab. As an example, a two-component Gaussian mixture can be defined as follows  
 
 ```@example 1
 g = FactorGraph() # create a new factor graph
@@ -132,7 +131,9 @@ ForneyLab.draw(g)
 ```
 
 ### Online vs. offline learning
-In an online setting, observations are fed to the placeholders and processed one at a time. In a Bayesian setting, this reduces to applying Bayes rule in a recursive fashion, i.e. the posterior distribution for a given random variable, becomes the prior for the next processing step. Since we are feeding one observation at each time step, the factor graph will have *one* placeholder for every observed variable. All of the factor graphs that we have seen so far were specified to process data in this fashion. Let's take a look at an example in order to contrast it with its offline counterpart. In this simple example, the mean of a Gaussian distribution denoted as `x` is modelled by another Gaussian distribution with hyperparameters `m` and `v`. The variance is assumed to be known.
+Online learning refers to a procedure where observations are processed as soon as they become available. In the context of factor graphs this means that observations need to be fed to the placeholders and processed one at a time. In a Bayesian setting, this reduces to the application of Bayes rule in a recursive fashion, i.e. the posterior distribution for a given random variable, becomes the prior for the next processing step. Since we are feeding one observation at each time step, the factor graph will have *one* placeholder for every observed variable. All of the factor graphs that we have seen so far were specified to process data in this fashion.
+
+Let's take a look at an example in order to contrast it with its offline counterpart. In this simple example, the mean `x` of a Gaussian distributed random variable `y` is modelled by another Gaussian distribution with hyperparameters `m` and `v`. The variance of `y` is assumed to be known.
 ```@example 1
 g = FactorGraph() # create a new factor graph
 m = placeholder(:m)
@@ -142,9 +143,9 @@ v = placeholder(:v)
 placeholder(y, :y)
 ForneyLab.draw(g)
 ```
-As we have already seen in previous examples, there is one placeholder linked to the observed variable `y` that accepts one observation at a time. Perhaps what is less obvious is the fact that the hyperparameters `m` and `v` are also defined as placeholders. The reason for this is that we will use them to input our prior belief about `x` for every observation that is processed. In section [Executing an algorithm](@ref) we will see how this is done.
+As we have seen in previous examples, there is one placeholder linked to the observed variable `y` that accepts one observation at a time. Perhaps what is less obvious is that the hyperparameters `m` and `v` are also defined as placeholders. The reason for this is that we will use them to input our current (prior) belief about `x` for every observation that is processed. In section [Executing an algorithm](@ref) we will elaborate more on this.
 
-Offline learning, on the other hand, involves feeding and processing a batch of `N` samples (typically all) in a single step. This translates in a factor graph that has one placeholder linked to a random variable for *each* sample in the batch. We can specify this type of models using a `for` loop like in the following example.
+Offline learning, on the other hand, involves feeding and processing a batch of `N` observations (typically all available observations) in a single step. This translates into a factor graph that has one placeholder linked to a random variable for *each* sample in the batch. We can specify this type of models using a `for` loop like in the following example.
 ```@example 1
 g = FactorGraph()   # create a new factor graph
 N = 3               # number of observations
@@ -156,7 +157,7 @@ for i = 1:N
 end
 ForneyLab.draw(g)
 ```
-The important thing to note here is that we need an extra array of `N` observed random variables where each of these variables is linked to a dedicated index of the placeholder's buffer. This buffer can be thought of as an `N` dimensional array of `Clamp` factor nodes. We achieve this link by means of the `index` parameter of the `placeholder` function.
+The important thing to note here is that we need an extra array of `N` observed random variables where each of them is linked to a dedicated index of the placeholder's buffer. This buffer can be thought of as an `N` dimensional array of `Clamp` factor nodes. We achieve this link by means of the `index` parameter of the `placeholder` function.
 
 In section [Executing an algorithm](@ref) we will see examples of how the data is fed to the placeholders in each of these two scenarios.
 
@@ -217,10 +218,10 @@ nothing # hide
 eval(algorithm_expr)
 ```
 
-At this point a new function named `step!` becomes available in the current scope. This function contains a message-passing algorithm that infers `m1` and `m2` given one or more `y` observations. In the section [Executing an algorithm](@ref) we will see how this function is used.
+At this point a new function named `step!` becomes available in the current scope. This function contains a message-passing algorithm that infers both `m1` and `m2` given one or more `y` observations. In the section [Executing an algorithm](@ref) we will see how this function is used.
 
 ### Variational message passing
-Variational message passing (VMP) algorithms are generated much in the same way as the belief propagation algorithm we saw in the previous section. There is a major difference though: for VMP algorithm generation we need to define the factorization properties of our approximate distribution. A common approach is to assume that all random variables of the model factorize with respect to each other. This is known as the *mean field* assumption. In ForneyLab, the specification of such factorization properties is defined using the `RecognitionFactorization` composite type. Let's take a look at a simple example to see how it is used. In this model we want to learn the mean and variance of a Gaussian distribution.
+Variational message passing (VMP) algorithms are generated much in the same way as the belief propagation algorithm we saw in the previous section. There is a major difference though: for VMP algorithm generation we need to define the factorization properties of our approximate distribution. A common approach is to assume that all random variables of the model factorize with respect to each other. This is known as the *mean field* assumption. In ForneyLab, the specification of such factorization properties is defined using the `RecognitionFactorization` composite type. Let's take a look at a simple example to see how it is used. In this model we want to learn the mean and variance of a Gaussian distribution, where the former is modelled with a Gaussian distribution and the latter with a Gamma.
 ```@example 1
 g = FactorGraph() # create a new factor graph
 @RV m ~ GaussianMeanVariance(0, 10)
@@ -241,7 +242,7 @@ ForneyLab.draw(q.recognition_factors[:M])
 ```@example 1
 ForneyLab.draw(q.recognition_factors[:W])
 ```
-Generating the VMP algorithm follows the same procedure that we saw for the belief propagation algorithm.
+Generating the VMP algorithm follows the same procedure that we saw for the belief propagation algorithm. In this case, however, the resulting algorithm will consist of a set of step functions, one for each recognition factor, that need to be executed iteratively until convergence.
 ```@example 1
 # Generate variational update algorithms for each recognition factor
 algo = variationalAlgorithm(q)
@@ -276,15 +277,14 @@ end
 ```
 
 #### Computing free energy
-VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as *free energy*. ForneyLab provides a function to generate an algorithm that can be used to evaluate this quantity called `freeEnergyAlgorithm`. This function takes an object of type `RecognitionFactorization` as argument. Free energy is particularly useful to test for convergence of the VMP iterative procedure. Here is an example that generates, parses and evaluates this algorithm.
+VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as *free energy*. ForneyLab provides the function `freeEnergyAlgorithm` which generates an algorithm that can be used to evaluate this quantity. This function takes an object of type `RecognitionFactorization` as argument. Free energy is particularly useful to test for convergence of the VMP iterative procedure. Here is an example that generates, parses and evaluates this algorithm.
 ```julia
 fe_algorithm = freeEnergyAlgorithm(q)
 eval(Meta.parse(fe_algorithm));
 ```
 
-
 ## Executing an algorithm
-In section [Specifying a model](@ref) we introduced two main ways to learn from data, namely in an online and in an offline setting. We saw that the model specification is performed differently for each of these cases. In this section we will demonstrate how data should be fed to an algorithm in each of this settings. We will use the same examples we used in section [Online vs. offline learning](@ref).
+In section [Specifying a model](@ref) we introduced two main ways to learn from data, namely in an online and in an offline setting. We saw that the factor graph has a different structure in each of these cases. In this section we will demonstrate how to feed data to an algorithm in each of these settings. We will use the same examples we used in section [Online vs. offline learning](@ref).
 
 ### Online learning
 For convenience, let's reproduce the model specification for the problem of estimating the mean `x` of a Gaussian distributed random variable `y`, where `x` is modelled using another Gaussian distribution with hyperparameters `m` and `v`. Let's also generate a belief propagation algorithm for this inference problem like we have seen before.
@@ -324,10 +324,10 @@ anim = @animate for i in 1:N
     global m_prior = mean(marginals[:x]) # today's posterior is tomorrow's prior
     global v_prior = var(marginals[:x])  # today's posterior is tomorrow's prior
 end
-gif(anim, "assets/belief-propagation-online.gif", fps = 10)
 nothing # hide
 ```
-![Online learning](assets/belief-propagation-online.gif)
+![Online learning](../src/assets/belief-propagation-online.gif)
+
 As we process more samples, our belief about the possible values of `m` becomes more confident.
 
 ### Offline learning
