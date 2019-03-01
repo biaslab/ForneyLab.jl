@@ -115,6 +115,14 @@ Placeholders default to one-dimensional floating-point data. In case we want to 
 ```julia
 placeholder(y, :y, dims=(3,), datatype=Int)
 ```
+
+In the previous example, we first created the random variable `y` and then marked it as a placeholder. There is, however, a shorthand version to perform these two steps in one. The syntax consists of calling a `placeholder` method that takes an id `Symbol` as argument and returns the new random variable. Here is an example:
+```@example 1
+x = placeholder(:x)
+nothing # hide
+```
+where `x` is now a random variable linked to a placeholder with id `:x`.
+
 In section [Executing an algorithm](@ref) we will see how the data is fed to the placeholders.
 
 
@@ -284,7 +292,7 @@ eval(Meta.parse(fe_algorithm));
 ```
 
 ## Executing an algorithm
-In section [Specifying a model](@ref) we introduced two main ways to learn from data, namely in an online and in an offline setting. We saw that the factor graph has a different structure in each of these cases. In this section we will demonstrate how to feed data to an algorithm in each of these settings. We will use the same examples we used in section [Online vs. offline learning](@ref).
+In section [Specifying a model](@ref) we introduced two main ways to learn from data, namely in an online and in an offline setting. We saw that the structure of the factor graph is different in each of these settings. In this section we will demonstrate how to feed data to an algorithm in both an online and an offline setting. We will use the same examples from section [Online vs. offline learning](@ref).
 
 ### Online learning
 For convenience, let's reproduce the model specification for the problem of estimating the mean `x` of a Gaussian distributed random variable `y`, where `x` is modelled using another Gaussian distribution with hyperparameters `m` and `v`. Let's also generate a belief propagation algorithm for this inference problem like we have seen before.
@@ -296,8 +304,9 @@ v = placeholder(:v)
 @RV y ~ GaussianMeanVariance(x, 1.0)
 placeholder(y, :y)
 eval(Meta.parse(sumProductAlgorithm(x))) # generate, parse and evaluate the algorithm
+nothing # hide
 ```
-In order to execute this algorithm we first have to specify a prior for `x`. This is done by choosing some initial values for the hyperparameters `m` and `v`. The algorithm expects 1) the observation and 2) the current bielef about `x`, i.e. the prior. We pass this information as elements of a `data` dictionary where the keys correspond to the `id`s that we defined for their corresponding placeholders. The algorithm performs inference and returns the results inside a different dictionary that we call `marginals`. In the next iteration, we repeat this process by feeding the algorithm with the next observation in the sequence and the posterior distribution for `x` that we obtained in the previous processing step. In other words, the current posterior becomes the prior for the next processing step. We will generate a synthetic dataset by sampling observations from a Gaussian distribution that has a mean of 5.
+In order to execute this algorithm we first have to specify a prior for `x`. This is done by choosing some initial values for the hyperparameters `m` and `v`. In each processing step, the algorithm expects an observation and the current belief about `x`, i.e. the prior. We pass this information as elements of a `data` dictionary where the keys are the `id`s of their corresponding placeholders. The algorithm performs inference and returns the results inside a different dictionary (which we call `marginals` in the following script). In the next iteration, we repeat this process by feeding the algorithm with the next observation in the sequence and the posterior distribution of `x` that we obtained in the previous processing step. In other words, the current posterior becomes the prior for the next processing step. Let's illustrate this using an example where we will first generate a synthetic dataset by sampling observations from a Gaussian distribution that has a mean of 5.
 ```@example 1
 using Plots, LaTeXStrings; theme(:default) ;
 pyplot(fillalpha=0.3, leg=false, xlabel=L"x", ylabel=L"p(x|D)", yticks=nothing)
@@ -326,12 +335,12 @@ anim = @animate for i in 1:N
 end
 nothing # hide
 ```
-![Online learning](../src/assets/belief-propagation-online.gif)
+![Online learning](./assets/belief-propagation-online.gif)
 
 As we process more samples, our belief about the possible values of `m` becomes more confident.
 
 ### Offline learning
-Executing an algorithm in an offline fashion is much simpler than in the online case. Let's reproduce the model specification for the model of the previous section in an offline setting (already shown in [Online vs. offline learning](@ref).)
+Executing an algorithm in an offline fashion is much simpler than in the online case. Let's reproduce the model specification of the previous example in an offline setting (also shown in [Online vs. offline learning](@ref).)
 ```@example 1
 g = FactorGraph()   # create a new factor graph
 N = 30              # number of observations
@@ -342,15 +351,14 @@ for i = 1:N
     placeholder(y[i], :y, index=i)
 end
 eval(Meta.parse(sumProductAlgorithm(x))) # generate, parse and evaluate the algorithm
+nothing # hide
 ```
-Since we have a placeholder linked to each observation in the sequence, we can process the data in one step.
+Since we have a placeholder linked to each observation in the sequence, we can process the complete dataset in one step. To do so, we first need to create a dictionary having the complete dataset array as its single element. We then need to pass this dictionary to the `step!` function which, in contrast with the online counterpart, we only need to call once.
 ```@example 1
 data = Dict(:y => dataset)
 marginals = step!(data) # Run the algorithm
-
 plot(-10:0.01:10, normal(mean(marginals[:x]), var(marginals[:x])), fill=true)
 ```
-Theoretically, this solution should be equal to the online equivalent that we saw earlier.
 
 !!! note
     Batch processing does not perform well with large datasets at the moment. We are working on this issue.
