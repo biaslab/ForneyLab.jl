@@ -4,17 +4,7 @@ This user guide outlines the usage of ForneyLab for solving inference problems. 
 - [Generating an algorithm](@ref)
 - [Executing an algorithm](@ref)
 
-## [Installation](@id user-guide-installation)
-ForneyLab can be installed using the Julia package manager. From the Julia REPL, type ] to enter the Pkg REPL mode and run
-
-```julia
-pkg> add ForneyLab
-```
-
-!!! note
-    If you want to use the graph visualization functions, you need to have [GraphViz](http://www.graphviz.org/) installed.
-
-To import ForneyLab into the active Julia session run  
+For installation instructions see the [Getting started](@ref) page. To import ForneyLab into the active Julia session run  
 
 ```@example 1
 using ForneyLab
