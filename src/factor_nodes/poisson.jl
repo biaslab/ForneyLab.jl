@@ -45,13 +45,16 @@ vague(::Type{Poisson}) = ProbabilityDistribution(Univariate, Poisson, l=huge)
 
 isProper(dist::ProbabilityDistribution{Univariate, Poisson}) = (0 < dist.params[:l] < huge)
 
-unsafeMean(dist::ProbabilityDistribution{Univariate, Poisson}) = dist.params[:l]
+unsafeMean(dist::ProbabilityDistribution{Univariate, Poisson}) = Float64(dist.params[:l])
 
-unsafeVar(dist::ProbabilityDistribution{Univariate, Poisson}) = dist.params[:l]
+unsafeVar(dist::ProbabilityDistribution{Univariate, Poisson}) = Float64(dist.params[:l])
 
 # ∑ [λ^k*log(k!)]/k! from k=0 to inf
-# Approximates the above sum for differentialEntropy calculation
-apprSum(l, j=66) = sum([(l)^(k)*lfactorial(k)/exp(lfactorial(k)) for k in collect(0:j)])
+# Approximates the above sum for calculation of averageEnergy and differentialEntropy
+# @ref https://arxiv.org/pdf/1708.06394.pdf
+function apprSum(l, j=100)
+    sum([(l)^(k)*lfactorial(k)/exp(lfactorial(k)) for k in collect(0:j)])
+end
 
 # Entropy functional
 # @ref https://en.wikipedia.org/wiki/Poisson_distribution
@@ -61,16 +64,7 @@ function differentialEntropy(dist::ProbabilityDistribution{Univariate, Poisson})
     l*(1-log(l)) + exp(-l)*apprSum(l)
 end
 
-
-# ∑ binomial(j, k)*(-1)^{-k}*log(k!) k=0 to inf
-# logarithmic difference coefficient
-logDiffCoef(j::Int64) = sum([binomial(j, k)*(-1)^(-k)*lfactorial(k) for k in collect(0:j)])
-# approximation of expectation of logX!
-# @ref https://arxiv.org/pdf/1708.06394.pdf
-unsafeLogFact(l, lim=66) = sum([(-l)^j/exp(lfactorial(j))*logDiffCoef(j) for j in collect(0:lim)])
-
 # Average energy functional
 function averageEnergy(::Type{Poisson}, marg_out::ProbabilityDistribution{Univariate}, marg_l::ProbabilityDistribution{Univariate})
-
-    -unsafeMean(marg_out)*unsafeLogMean(marg_l)+unsafeMean(marg_l)+unsafeLogFact(unsafeMean(marg_out))
+    unsafeMean(marg_l)-unsafeMean(marg_out)*unsafeLogMean(marg_l)+exp(-unsafeMean(marg_out))*apprSum(unsafeMean(marg_out))
 end
