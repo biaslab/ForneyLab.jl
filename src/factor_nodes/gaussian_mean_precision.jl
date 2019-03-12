@@ -40,12 +40,13 @@ format(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:Variate
 
 ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianMeanPrecision}; m=0.0, w=1.0) = ProbabilityDistribution{Univariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>w))
 ProbabilityDistribution(::Type{GaussianMeanPrecision}; m::Number=0.0, w::Number=1.0) = ProbabilityDistribution{Univariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>w))
-ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanPrecision}; m=[0.0], w=transpose([1.0])) = ProbabilityDistribution{Multivariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>w))
+# User can specify numeric matrix as input, will be casted to PDMat at construction
+ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanPrecision}; m=[0.0], w=transpose([1.0])) = ProbabilityDistribution{Multivariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>PDMat(w)))
 
 dims(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = length(dist.params[:m])
 
 vague(::Type{GaussianMeanPrecision}) = ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=tiny)
-vague(::Type{GaussianMeanPrecision}, dims::Int64) = ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(dims), w=ScalMat(dims,tiny))
+vague(::Type{GaussianMeanPrecision}, dims::Int64) = ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(dims), w=PDMat(tiny*Matrix{Float64}(I,dims,dims)))
 
 unsafeMean(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType = deepcopy(dist.params[:m]) # unsafe mean
 

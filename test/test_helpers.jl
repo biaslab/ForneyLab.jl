@@ -51,11 +51,11 @@ import PDMats: PDMat, ScalMat, PDiagMat
         @test isApproxEqual(inv(B), [1.0 -1.0; -1.0 2.0])
         # Matrix inversion on a positive (semi)definite matrix (PDMats objects)
         C = ScalMat(3, 2.0)
-        @test inv(C) == ScalMat(3, 0.5)
+        @test inv(C) == 0.5
         D = PDiagMat([1.0, 2.0, 4.0])
-        @test isApproxEqual(inv(D), PDiagMat([1.0, 0.5, 0.25]))
+        @test isApproxEqual(inv(D), Diagonal([1.0, 0.5, 0.25]))
         E = PDMat([3.0 1.0; 1.0 2.0])
-        @test isApproxEqual(inv(E), PDMat([0.4 -0.2; -0.2 0.6]))
+        @test isApproxEqual(inv(E), Array{Float64,2}([0.4 -0.2; -0.2 0.6]))
     end
 
     @testset "diageye" begin

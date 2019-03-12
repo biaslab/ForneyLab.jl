@@ -19,12 +19,11 @@ const tiny = 1e-12
 
 # Operations related to diagonal matrices
 inv(m::Number) = 1.0/m
-inv(M::AbstractMatrix) = LinearAlgebra.inv(M)
+inv(M::AbstractMatrix) = inv(M)
 inv(D::Diagonal) = Diagonal(1 ./ D.diag)
 inv(M::PDMat) = inv(M.chol)
 inv(M::PDiagMat) = Diagonal(M.inv_diag)
 inv(M::ScalMat) = M.inv_value
-inv(M::PDSparseMat) = inv(M.chol)
 
 eye(n::Number) = Diagonal(I,n)
 diageye(dims::Int64) = Diagonal(ones(dims))
@@ -69,7 +68,16 @@ function format(d::Vector{T}) where T<:Union{Float64, Bool}
     return s
 end
 
-function format(d::Matrix{Float64})
+function format(d::Array{T}) where T<:Union{Float64, Int64}
+    s = "["
+    for r in 1:size(d, 1)
+        s *= format(vec(d[r,:]))
+    end
+    s *= "]"
+    return s
+end
+
+function format(d::Matrix{T}) where T<:Union{Float64, Int64}
     s = "["
     for r in 1:size(d, 1)
         s *= format(vec(d[r,:]))

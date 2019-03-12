@@ -13,7 +13,7 @@ end
 
 @testset "vague" begin
     @test vague(GaussianMeanPrecision) == ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=tiny)
-    @test vague(GaussianMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(2), w=ScalMat(2, tiny))
+    @test vague(GaussianMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(2), w=PDMat(tiny*Matrix{Float64}(I,dims,dims)))
 end
 
 @testset "isProper" begin
