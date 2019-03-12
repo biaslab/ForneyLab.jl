@@ -38,12 +38,12 @@ slug(::Type{Wishart}) = "W"
 
 format(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = "$(slug(Wishart))(v=$(format(dist.params[:v])), nu=$(format(dist.params[:nu])))"
 
-ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Wishart}; v=mat(1.0), nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
-ProbabilityDistribution(::Type{Wishart}; v=mat(1.0), nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Wishart}; v=Matrix{Float64}(I,1,1), nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>PDMat(v), :nu=>nu))
+ProbabilityDistribution(::Type{Wishart}; v=Matrix{Float64}(I,1,1), nu=1.0) = ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>PDMat(v), :nu=>nu))
 
 dims(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = size(dist.params[:v])
 
-vague(::Type{Wishart}, dims::Int64) = ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(dims), nu=Float64(dims)) # Flat prior
+vague(::Type{Wishart}, dims::Int64) = ProbabilityDistribution(MatrixVariate, Wishart, v=PDMat(huge*Matrix{Float64}(I,dims,dims)), nu=Float64(dims)) # Flat prior
 
 unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = dist.params[:nu]*dist.params[:v] # unsafe mean
 
