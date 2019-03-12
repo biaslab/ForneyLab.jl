@@ -6,7 +6,7 @@ ruleSPNonlinearIn1GV
 """
 Find a local linear approximation to the nonlinear vector function g at x_hat
 """
-function approximate(x_hat::Union{Float64, Vector{Float64}}, g::Function, J_g::Function)
+function approximate(x_hat, g::Function, J_g::Function)
     A = J_g(x_hat)
     b = g(x_hat) .- A*x_hat
 
@@ -60,7 +60,7 @@ function ruleSPNonlinearIn1GV(  msg_out::Message{F, Multivariate},
     A_inv = pinv(A)
     W_q = A'*d_out.params[:w]*A
     W_q = W_q + tiny*diageye(size(W_q)[1]) # Ensure W_q is invertible
-    
+
     Message(Multivariate, GaussianMeanPrecision, m=A_inv*(d_out.params[:m] - b), w=W_q)
 end
 
@@ -80,7 +80,7 @@ function ruleSPNonlinearIn1GV(  msg_out::Message{F, Univariate},
 
     (a, b) = approximate(x_hat, g, J_g)
     w_q = clamp(d_out.params[:w]*a^2, tiny, huge)
-    
+
     Message(Univariate, GaussianMeanPrecision, m=(d_out.params[:m] - b)/a, w=w_q)
 end
 
