@@ -2,7 +2,7 @@ module GaussianMeanPrecisionTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
+import ForneyLab: ==, outboundType, isApplicable, isProper, unsafeMean, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
 import ForneyLab: SPGaussianMeanPrecisionOutVPP, SPGaussianMeanPrecisionMPVP, SPGaussianMeanPrecisionOutVGP, SPGaussianMeanPrecisionMGVP, VBGaussianMeanPrecisionOut, VBGaussianMeanPrecisionM, VBGaussianMeanPrecisionW, SVBGaussianMeanPrecisionOutVGD, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionW, MGaussianMeanPrecisionGGD
 import PDMats: PDMat, ScalMat, PDiagMat, PDSparseMat
 
@@ -13,10 +13,7 @@ end
 
 @testset "vague" begin
     @test vague(GaussianMeanPrecision) == ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=tiny)
-    # @test vague(GaussianMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(2), w=tiny*eye(2))
-
-    """Error for test below is caused by inability to compare two ProbabilityDistribution type objects with ScalMat parameters"""
-    # @test vague(GaussianMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(2), w=ScalMat(2, tiny))
+    @test vague(GaussianMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(2), w=ScalMat(2, tiny))
 end
 
 @testset "isProper" begin

@@ -2,6 +2,7 @@ export huge, tiny, inv, diageye, eye, format, *, ^, mat
 
 import Base: *, ^, ==, sqrt
 import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky, I, inv
+import PDMats: AbstractPDMat, PDMat, PDiagMat, ScalMat
 import InteractiveUtils: subtypes
 import Printf: @sprintf
 
@@ -18,14 +19,12 @@ const tiny = 1e-12
 
 # Operations related to diagonal matrices
 inv(m::Number) = 1.0/m
-inv(M::AbstractMatrix) = LinearAlgebra.inv(cholesky(Hermitian(Matrix(M)),Val(false)))
+inv(M::AbstractMatrix) = LinearAlgebra.inv(M)
 inv(D::Diagonal) = Diagonal(1 ./ D.diag)
-
-"""inv is already defined in this manner for these PDMats objects"""
-# inv(M::PDMat) = inv(M.chol)
-# inv(M::PDiagMat) = Diagonal(M.inv_diag)
-# inv(M::ScalMat) = M.inv_value
-# inv(M::PDSparseMat) = inv(M.chol)
+inv(M::PDMat) = inv(M.chol)
+inv(M::PDiagMat) = Diagonal(M.inv_diag)
+inv(M::ScalMat) = M.inv_value
+inv(M::PDSparseMat) = inv(M.chol)
 
 eye(n::Number) = Diagonal(I,n)
 diageye(dims::Int64) = Diagonal(ones(dims))
@@ -95,13 +94,19 @@ function format(v::Vector{Any})
 end
 
 """Formats of PDMats objects"""
-format(d::ScalMat{Float64}) = format(d.value*Matrix{Float64}(I, d.dim, d.dim))
 format(d::PDMat{Float64}) = format(d.mat)
 format(d::PDiagMat{Float64}) = format(d.diag)
 format(d::PDSparseMat{Float64}) = format(d.mat)
+format(d::ScalMat{Float64}) = format(d.value*Matrix{Float64}(I, d.dim, d.dim))
 
 """isApproxEqual: check approximate equality"""
 isApproxEqual(arg1, arg2) = maximum(abs.(arg1-arg2)) < tiny
+isApproxEqual(arg1::PDMat{Float64}, arg2::PDMat{Float64}) = maximum(abs.(arg1.mat - arg2.mat)) < tiny
+isApproxEqual(arg1::PDiagMat{Float64}, arg2::PDiagMat{Float64}) = maximum(abs.(arg1.diag - arg2.diag)) < tiny
+isApproxEqual(arg1::PDSparseMat{Float64}, arg2::PDSparseMat{Float64}) = maximum(abs.(arg1.mat - arg2.mat)) < tiny
+isApproxEqual(arg1::ScalMat{Float64}, arg2::ScalMat{Float64}) = maximum(abs.(arg1.value - arg2.value)) < tiny
+isApproxEqual(arg1::PDiagMat{Float64}, arg2::ScalMat{Float64}) = maximum(abs.(arg1.diag - arg2.value*ones(arg2.dim,))) < tiny
+
 
 """isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from."""
 isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round.(Matrix(arr), digits=round(Int, log10(huge)))) && isposdef(Hermitian(Matrix(arr), :L))

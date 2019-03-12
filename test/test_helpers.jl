@@ -3,6 +3,7 @@ module HelpersTest
 using Test
 import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, inv, diageye, *, ^
 import LinearAlgebra: Diagonal, isposdef, I, Hermitian
+import PDMats: PDMat, ScalMat, PDiagMat
 
 @testset "Helpers" begin
     @testset "ensureMatrix" begin
@@ -22,6 +23,14 @@ import LinearAlgebra: Diagonal, isposdef, I, Hermitian
         @test isApproxEqual([1.0, 1.0], [1.0, 1.0].+1e-9) == false
         @test isApproxEqual(Matrix(1.0I,3,3), Matrix(1.0I,3,3).+1e-15) == true
         @test isApproxEqual(Matrix(1.0I,3,3), Matrix(1.0I,3,3).+1e-9) == false
+        @test isApproxEqual(PDMat(Matrix(1.0I,3,3)), PDMat(Matrix(1.0I,3,3).+1e-15)) == true
+        @test isApproxEqual(PDMat(Matrix(1.0I,3,3)), PDMat(Matrix(1.0I,3,3).+1e-9)) == false
+        @test isApproxEqual(PDiagMat([3.0,3.0]), PDiagMat([3.0,3.0].+1e-15)) == true
+        @test isApproxEqual(PDiagMat([3.0,3.0]), PDiagMat([3.0,3.0].+1e-9)) == false
+        @test isApproxEqual(ScalMat(3,0.1), ScalMat(3,0.1+1e-15)) == true
+        @test isApproxEqual(ScalMat(3,0.1), ScalMat(3,0.1+1e-9)) == false
+        @test isApproxEqual(PDiagMat([3.0,3.0]), ScalMat(2,3.0)) == true
+        @test isApproxEqual(PDiagMat([3.0,1.0]), ScalMat(2,3.0)) == false
     end
 
     @testset "isRoundedPosDef" begin
@@ -35,11 +44,18 @@ import LinearAlgebra: Diagonal, isposdef, I, Hermitian
     end
 
     @testset "inv" begin
-        # should perform a matrix inversion on a positive (semi)definite matrix
-        A = [2.0 1.0; 1.0 1.0]
-        @test isApproxEqual(inv(A), [1.0 -1.0; -1.0 2.0])
+        # Matrix inversion on a positive (semi)definite matrix (Array)
         A = Diagonal([2.0, 3.0])
         @test inv(A) == Diagonal([1/2.0, 1/3.0])
+        B = [2.0 1.0; 1.0 1.0]
+        @test isApproxEqual(inv(B), [1.0 -1.0; -1.0 2.0])
+        # Matrix inversion on a positive (semi)definite matrix (PDMats objects)
+        C = ScalMat(3, 2.0)
+        @test inv(C) == ScalMat(3, 0.5)
+        D = PDiagMat([1.0, 2.0, 4.0])
+        @test isApproxEqual(inv(D), PDiagMat([1.0, 0.5, 0.25]))
+        E = PDMat([3.0 1.0; 1.0 2.0])
+        @test isApproxEqual(inv(E), PDMat([0.4 -0.2; -0.2 0.6]))
     end
 
     @testset "diageye" begin
