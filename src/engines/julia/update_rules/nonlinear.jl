@@ -6,7 +6,7 @@ ruleSPNonlinearIn1GV
 """
 Find a local linear approximation to the nonlinear vector function g at x_hat
 """
-function approximate(x_hat, g::Function, J_g::Function)
+function approximate(x_hat::Union{T, Vector{T}} where T <: Number, g::Function, J_g::Function)
     A = J_g(x_hat)
     b = g(x_hat) .- A*x_hat
 
