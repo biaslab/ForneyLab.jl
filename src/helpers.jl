@@ -1,10 +1,5 @@
 export huge, tiny, cholinv, diageye, eye, format, *, ^, mat
 
-import Base: *, ^, ==, sqrt
-import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky, I
-import InteractiveUtils: subtypes
-import Printf: @sprintf
-
 """ensureMatrix: cast input to a Matrix if necessary"""
 ensureMatrix(arr::AbstractMatrix{T}) where T<:Number = arr
 ensureMatrix(arr::Vector{T}) where T<:Number = Diagonal(arr)

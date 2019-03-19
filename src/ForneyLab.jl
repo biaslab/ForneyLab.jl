@@ -1,17 +1,20 @@
 module ForneyLab
 
+using Base.Meta: parse
+using Base64: base64encode
+using LinearAlgebra: diag, det, tr, cholesky, pinv
+using SparseArrays: spzeros
+using SpecialFunctions: digamma, lgamma, lbeta, erfc
+using LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, I
+using InteractiveUtils: subtypes
+using Printf: @sprintf
+
+import Statistics: mean, var, cov
+import Base: ^, *, ==
+
 # Helpers
 include("helpers.jl")
 include("dependency_graph.jl")
-
-# Other includes
-import Base: show, convert, ==, *
-import Base.Meta: parse
-import Base64: base64encode
-import LinearAlgebra: diag, det, tr, cholesky, pinv
-import SparseArrays: spzeros
-import SpecialFunctions: digamma, lgamma, lbeta, erfc
-import Statistics: mean, var, cov
 
 # High level abstracts
 abstract type AbstractEdge end # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface
