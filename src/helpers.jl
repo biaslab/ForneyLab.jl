@@ -1,7 +1,7 @@
 export huge, tiny, cholinv, diageye, eye, format, *, ^, mat
 
 import Base: *, ^, ==, sqrt
-import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky, I
+import LinearAlgebra: Diagonal, Hermitian, isposdef, PosDefException, ishermitian, cholesky, I
 import InteractiveUtils: subtypes
 import Printf: @sprintf
 
@@ -18,7 +18,26 @@ const tiny = 1e-12
 
 # Operations related to diagonal matrices
 cholinv(m::Number) = 1.0/m
-cholinv(M::AbstractMatrix) = inv(cholesky(Hermitian(Matrix(M)),Val(false)))
+function cholinv(M::AbstractMatrix)
+    """
+    Matrix inversion using Cholesky decomposition,
+    attempts with added regularization (1e-8*I) on failure.
+    """
+    try
+        return inv(cholesky(M))
+    catch
+        try
+            return inv(cholesky(M + 1e-8*Matrix(I, size(M))))
+        catch exception
+            if exception == PosDefException
+                throw("PosDefException: Matrix is not positive-definite,
+                      even after regularization")
+            else
+                rethrow(exception)
+            end
+        end
+    end
+end
 cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
 eye(n::Number) = Diagonal(I,n)
 diageye(dims::Int64) = Diagonal(ones(dims))
