@@ -21,7 +21,8 @@ function ruleSPNonlinearOutVG(  msg_out::Nothing,
     d_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
 
     (A, b) = approximate(d_in1.params[:m], g, J_g)
-    V_q = A*d_in1.params[:v]*A'
+    # V_q = A*d_in1.params[:v]*A'
+    V_q = Xt_A_X(d_in1.params[:v],A)
     V_q = V_q + tiny*diageye(size(V_q)[1]) # Ensure V_q is invertible
 
     Message(Multivariate, GaussianMeanVariance, m=A*d_in1.params[:m] + b, v=V_q)
@@ -49,9 +50,10 @@ function ruleSPNonlinearIn1GV(  msg_out::Message{F, Multivariate},
 
     (A, b) = approximate(unsafeMean(msg_in1.dist), g, J_g)
     A_inv = pinv(A)
-    W_q = A'*d_out.params[:w]*A
+    # W_q = A'*d_out.params[:w]*A
+    W_q = Xt_A_X(d_out.params[:w],A)
     W_q = W_q + tiny*diageye(size(W_q)[1]) # Ensure W_q is invertible
-    
+
     Message(Multivariate, GaussianMeanPrecision, m=A_inv*(d_out.params[:m] - b), w=W_q)
 end
 
@@ -64,7 +66,7 @@ function ruleSPNonlinearIn1GV(  msg_out::Message{F, Univariate},
 
     (a, b) = approximate(unsafeMean(msg_in1.dist), g, J_g)
     w_q = clamp(d_out.params[:w]*a^2, tiny, huge)
-    
+
     Message(Univariate, GaussianMeanPrecision, m=(d_out.params[:m] - b)/a, w=w_q)
 end
 

@@ -1,6 +1,6 @@
-export huge, tiny, inv, diageye, eye, format, *, ^, mat
+export huge, tiny, inv, diageye, eye, format, *, ^, mat, isapprox
 
-import Base: *, ^, ==, sqrt
+import Base: *, ^, ==, sqrt, isapprox
 import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky, I, inv
 import PDMats: AbstractPDMat, PDMat, PDiagMat, ScalMat
 import InteractiveUtils: subtypes

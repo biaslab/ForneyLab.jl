@@ -11,7 +11,8 @@ function ruleSPDotProductOutVPG(msg_out::Nothing,
     x = msg_in1.dist.params[:m]
     β = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in2.dist)
     out_m = x' * β.params[:m]
-    out_v = x' * β.params[:v] * x
+    # out_v = x' * β.params[:v] * x
+    out_v = quad(β.params[:v],x)
 
     return Message(Univariate, GaussianMeanVariance, m=out_m, v=out_v)
 

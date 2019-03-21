@@ -254,7 +254,7 @@ function ==(t::ProbabilityDistribution{var_t, fam_t}, u::ProbabilityDistribution
     t.params === u.params && return true
     if length(t.params) != length(u.params) return false end
     for pair in t.params
-        if !in(pair, u.params, (a,b)->isapprox(a, b, atol=tiny))
+        if !in(pair, u.params, (a,b)->isApproxEqual(a, b))
             return false
         end
     end
