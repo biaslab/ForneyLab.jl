@@ -10,7 +10,8 @@ using InteractiveUtils: subtypes
 using Printf: @sprintf
 
 import Statistics: mean, var, cov
-import Base: ^, *, ==
+import Base: +, -, *, ^, ==, exp, convert, show, prod!
+import LinearAlgebra: dot
 
 # Helpers
 include("helpers.jl")

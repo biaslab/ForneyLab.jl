@@ -1,7 +1,4 @@
-export DotProduct
-
-import LinearAlgebra: dot
-export dot
+export DotProduct, dot
 
 """
 Description:
