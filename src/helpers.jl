@@ -104,14 +104,12 @@ end
 """Formats of PDMats objects"""
 format(d::PDMat{Float64}) = format(d.mat)
 format(d::PDiagMat{Float64}) = format(d.diag)
-format(d::PDSparseMat{Float64}) = format(d.mat)
 format(d::ScalMat{Float64}) = format(d.value*Matrix{Float64}(I, d.dim, d.dim))
 
 """isApproxEqual: check approximate equality"""
 isApproxEqual(arg1, arg2) = maximum(abs.(arg1-arg2)) < tiny
 isApproxEqual(arg1::PDMat{Float64}, arg2::PDMat{Float64}) = maximum(abs.(arg1.mat - arg2.mat)) < tiny
 isApproxEqual(arg1::PDiagMat{Float64}, arg2::PDiagMat{Float64}) = maximum(abs.(arg1.diag - arg2.diag)) < tiny
-isApproxEqual(arg1::PDSparseMat{Float64}, arg2::PDSparseMat{Float64}) = maximum(abs.(arg1.mat - arg2.mat)) < tiny
 isApproxEqual(arg1::ScalMat{Float64}, arg2::ScalMat{Float64}) = maximum(abs.(arg1.value - arg2.value)) < tiny
 isApproxEqual(arg1::PDiagMat{Float64}, arg2::ScalMat{Float64}) = maximum(abs.(arg1.diag - arg2.value*ones(arg2.dim,))) < tiny
 

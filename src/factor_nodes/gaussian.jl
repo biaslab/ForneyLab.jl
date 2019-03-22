@@ -1,5 +1,4 @@
 import Base: prod!, convert
-import PDMats
 
 export Gaussian, prod!, convert
 

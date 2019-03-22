@@ -125,7 +125,7 @@ function ruleVBGaussianMixtureOut(  dist_out::Any,
     z_bar = unsafeMeanVector(dist_switch)
     d = dims(dist_means[1])
 
-    w = Diagonal(zeros(d))
+    w = PDiagMat(zeros(d))
     xi = zeros(d)
     for k = 1:length(z_bar)
         w  += z_bar[k]*unsafeMean(dist_precs[k])

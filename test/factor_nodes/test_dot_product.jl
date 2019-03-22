@@ -31,7 +31,7 @@ end
     @test outboundType(SPDotProductIn1GVP) == Message{GaussianWeightedMeanPrecision}
     @test isApplicable(SPDotProductIn1GVP, [Message{Gaussian}, Nothing, Message{PointMass}])
 
-    @test ruleSPDotProductIn1GVP(Message(Univariate, GaussianWeightedMeanPrecision, xi=3.0, w=2.0), nothing, Message(Multivariate, PointMass, m=[4.0])) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[12.0], w=mat(32.000000000001))
+    @test ruleSPDotProductIn1GVP(Message(Univariate, GaussianWeightedMeanPrecision, xi=3.0, w=2.0), nothing, Message(Multivariate, PointMass, m=[4.0])) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[12.0], w=mat(32.0))
 end
 
 @testset "SPDotProductIn2GPV" begin
@@ -39,7 +39,7 @@ end
     @test outboundType(SPDotProductIn2GPV) == Message{GaussianWeightedMeanPrecision}
     @test isApplicable(SPDotProductIn2GPV, [Message{Gaussian}, Message{PointMass}, Nothing])
 
-    @test ruleSPDotProductIn2GPV(Message(Univariate, GaussianWeightedMeanPrecision, xi=3.0, w=2.0), Message(Multivariate, PointMass, m=[4.0]), nothing) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[12.0], w=mat(32.000000000001))
+    @test ruleSPDotProductIn2GPV(Message(Univariate, GaussianWeightedMeanPrecision, xi=3.0, w=2.0), Message(Multivariate, PointMass, m=[4.0]), nothing) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[12.0], w=mat(32.0))
 end
 
 end # module

@@ -37,7 +37,6 @@ function ruleSPDotProductIn2GPV(msg_out::Message{F, Univariate},
     y = convert(ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}, msg_out.dist)
     xi = x * y.params[:xi]
     w = x * y.params[:w] * x'
-    w += tiny*diageye(size(w)[1]) # Ensure w is invertible
 
     return Message(Multivariate, GaussianWeightedMeanPrecision, xi=xi, w=w)
 end
