@@ -1,7 +1,4 @@
-export Exponential
-
-import Base: exp
-export exp
+export Exponential, exp
 
 """
 Description:

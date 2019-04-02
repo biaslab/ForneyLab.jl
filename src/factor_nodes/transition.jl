@@ -1,8 +1,5 @@
 export Transition
 
-# import Base: *
-# export *
-
 """
 Description:
 

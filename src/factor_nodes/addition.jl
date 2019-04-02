@@ -1,7 +1,4 @@
-export Addition
-
-import Base: +, -
-export +, -
+export Addition, +, -
 
 """
 Description:

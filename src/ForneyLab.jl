@@ -1,17 +1,21 @@
 module ForneyLab
 
+using Base.Meta: parse
+using Base64: base64encode
+using LinearAlgebra: diag, det, tr, cholesky, pinv, PosDefException
+using SparseArrays: spzeros
+using SpecialFunctions: digamma, lgamma, lbeta, erfc, lfactorial
+using LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, I
+using InteractiveUtils: subtypes
+using Printf: @sprintf
+
+import Statistics: mean, var, cov
+import Base: +, -, *, ^, ==, exp, convert, show, prod!
+import LinearAlgebra: dot
+
 # Helpers
 include("helpers.jl")
 include("dependency_graph.jl")
-
-# Other includes
-import Base: show, convert, ==, *
-import Base.Meta: parse
-import Base64: base64encode
-import LinearAlgebra: diag, det, tr, cholesky, pinv
-import SparseArrays: spzeros
-import SpecialFunctions: digamma, lgamma, lbeta, erfc
-import Statistics: mean, var, cov
 
 # High level abstracts
 abstract type AbstractEdge end # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface
@@ -48,6 +52,8 @@ include("factor_nodes/gaussian_mixture.jl")
 include("factor_nodes/sigmoid.jl")
 include("factor_nodes/nonlinear.jl")
 include("factor_nodes/dot_product.jl")
+include("factor_nodes/poisson.jl")
+
 
 # Factor graph
 include("factor_graph.jl")
@@ -90,6 +96,8 @@ include("update_rules/gaussian_mixture.jl")
 include("update_rules/sigmoid.jl")
 include("update_rules/nonlinear.jl")
 include("update_rules/dot_product.jl")
+include("update_rules/poisson.jl")
+
 
 *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
 
