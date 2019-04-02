@@ -2,7 +2,7 @@ module ForneyLab
 
 using Base.Meta: parse
 using Base64: base64encode
-using LinearAlgebra: diag, det, tr, cholesky, pinv
+using LinearAlgebra: diag, det, tr, cholesky, pinv, PosDefException
 using SparseArrays: spzeros
 using SpecialFunctions: digamma, lgamma, lbeta, erfc, lfactorial
 using LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, I
