@@ -82,9 +82,9 @@ end
 end
 
 @testset "averageEnergy and differentialEntropy" begin
-    for value in collect(1:100)
-        @test isapprox(differentialEntropy(ProbabilityDistribution(Poisson, l=value)), averageEnergy(Poisson, ProbabilityDistribution(Poisson, l=value), ProbabilityDistribution(Univariate, PointMass, m=value)))
-    end
+    @test isapprox(differentialEntropy(ProbabilityDistribution(Poisson, l=1.0)), averageEnergy(Poisson, ProbabilityDistribution(Poisson, l=1.0), ProbabilityDistribution(Univariate, PointMass, m=1.0)))
+    @test isapprox(differentialEntropy(ProbabilityDistribution(Poisson, l=10.0)), averageEnergy(Poisson, ProbabilityDistribution(Poisson, l=10.0), ProbabilityDistribution(Univariate, PointMass, m=10.0)))
+    @test isapprox(differentialEntropy(ProbabilityDistribution(Poisson, l=100.0)), averageEnergy(Poisson, ProbabilityDistribution(Poisson, l=100.0), ProbabilityDistribution(Univariate, PointMass, m=100.0)))
 end
 
 

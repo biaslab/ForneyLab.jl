@@ -59,12 +59,13 @@ end
 # Entropy functional
 # @ref https://en.wikipedia.org/wiki/Poisson_distribution
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Poisson})
-
     l = clamp(dist.params[:l], tiny, huge)
     l*(1-log(l)) + exp(-l)*apprSum(l)
 end
 
 # Average energy functional
 function averageEnergy(::Type{Poisson}, marg_out::ProbabilityDistribution{Univariate}, marg_l::ProbabilityDistribution{Univariate})
-    unsafeMean(marg_l)-unsafeMean(marg_out)*unsafeLogMean(marg_l)+exp(-unsafeMean(marg_out))*apprSum(unsafeMean(marg_out))
+    unsafeMean(marg_l) - 
+    unsafeMean(marg_out)*unsafeLogMean(marg_l) +
+    exp(-unsafeMean(marg_out))*apprSum(unsafeMean(marg_out))
 end
