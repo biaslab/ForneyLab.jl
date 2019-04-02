@@ -1,5 +1,4 @@
 export Poisson
-import SpecialFunctions.lfactorial
 
 """
 Description:

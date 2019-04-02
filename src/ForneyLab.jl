@@ -4,7 +4,7 @@ using Base.Meta: parse
 using Base64: base64encode
 using LinearAlgebra: diag, det, tr, cholesky, pinv
 using SparseArrays: spzeros
-using SpecialFunctions: digamma, lgamma, lbeta, erfc
+using SpecialFunctions: digamma, lgamma, lbeta, erfc, lfactorial
 using LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, I
 using InteractiveUtils: subtypes
 using Printf: @sprintf
