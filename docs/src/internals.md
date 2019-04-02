@@ -24,8 +24,8 @@ The name of an update rule is composed of several parts:
 1. The word `rule`
 2. Type of algorithm
     - `SP`: sum-product
-    - `VB`: variational bayes
-    - `SVB`: structured variational bayes
+    - `VB`: variational Bayes
+    - `SVB`: structured variational Bayes
     - `M`: marginal, used with SVB
 3. Type of factor node
 4. Interface of the outgoing message
@@ -47,7 +47,7 @@ The name of an update rule is composed of several parts:
 
 ###### Example 2: `ruleVBBernoulliOut`
 1. `rule`: update rule
-2. `VB`: variational bayes algorithm
+2. `VB`: variational Bayes algorithm
 3. `Bernoulli`: Bernoulli factor node
 4. `Out`: outgoing message through 'Out' interface
 5. `-`

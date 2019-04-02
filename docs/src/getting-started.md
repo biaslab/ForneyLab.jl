@@ -51,6 +51,23 @@ The joint probability is given by the multiplication of the likelihood and the p
 
 Now let's see how to specify this model using ForneyLab's syntax.
 
+```@setup 1
+import ForneyLab: draw
+using ForneyLab: dot2svg, genDot, FactorGraph, RecognitionFactor
+
+struct SVG
+    code :: String
+end
+Base.show(io::IO, ::MIME"image/svg+xml", b::SVG) = write(io, b.code)
+
+draw(f::FactorGraph) = SVG(dot2svg(genDot(nodes(f), edges(f))))
+function draw(rf::RecognitionFactor)
+    subgraph_nodes = nodes(rf.internal_edges)
+    external_edges = setdiff(edges(subgraph_nodes), rf.internal_edges)
+    SVG(dot2svg(genDot(subgraph_nodes, rf.internal_edges, external_edges=external_edges)))
+end
+```
+
 ```@example 1
 using ForneyLab
 g = FactorGraph()       # create a factor graph
