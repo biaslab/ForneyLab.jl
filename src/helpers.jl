@@ -16,18 +16,16 @@ ensureMatrix(n::Nothing) = nothing
 const huge = 1e12
 const tiny = 1e-12
 
-# Operations related to diagonal matrices
-cholinv(m::Number) = 1.0/m
+"""
+Matrix inversion using Cholesky decomposition,
+attempts with added regularization (1e-8*I) on failure.
+"""
 function cholinv(M::AbstractMatrix)
-    """
-    Matrix inversion using Cholesky decomposition,
-    attempts with added regularization (1e-8*I) on failure.
-    """
     try
         return inv(cholesky(M))
     catch
         try
-            return inv(cholesky(M + 1e-8*Matrix(I, size(M))))
+            return inv(cholesky(M + 1e-8*I))
         catch exception
             if exception == PosDefException
                 throw("PosDefException: Matrix is not positive-definite,
@@ -38,6 +36,7 @@ function cholinv(M::AbstractMatrix)
         end
     end
 end
+cholinv(m::Number) = 1.0/m
 cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
 eye(n::Number) = Diagonal(I,n)
 diageye(dims::Int64) = Diagonal(ones(dims))
