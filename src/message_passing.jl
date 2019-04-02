@@ -4,8 +4,6 @@ MessageUpdateRule,
 ScheduleEntry,
 Schedule
 
-import Base: ==
-
 """Encodes a message, which is a probability distribution with a scaling factor"""
 struct Message{family<:FactorNode, var_type<:VariateType} # Note that parameter order is switched w.r.t. ProbabilityDistribution, for ease of overloading
     dist::ProbabilityDistribution{var_type, family}
