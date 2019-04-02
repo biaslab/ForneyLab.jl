@@ -38,6 +38,7 @@ using Test
     include("factor_nodes/test_sigmoid.jl")
     include("factor_nodes/test_nonlinear.jl")
     include("factor_nodes/test_dot_product.jl")
+    include("factor_nodes/test_poisson.jl")
 
     include("./test_dependency_graph.jl")
     include("./test_message_passing.jl")
