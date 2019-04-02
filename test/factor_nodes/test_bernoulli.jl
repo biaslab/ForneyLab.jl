@@ -3,7 +3,7 @@ module BernoulliTest
 using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims
-import ForneyLab: SPBernoulliOutVP, VBBernoulliOut, VBBernoulliIn1
+import ForneyLab: SPBernoulliOutVP, SPBernoulliIn1PV, SPBernoulliOutVB, VBBernoulliOut, VBBernoulliIn1
 
 @testset "Bernoulli ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Univariate, Bernoulli, p=0.2) == ProbabilityDistribution{Univariate, Bernoulli}(Dict(:p=>0.2))
@@ -40,9 +40,25 @@ end
 @testset "SPBernoulliOutVP" begin
     @test SPBernoulliOutVP <: SumProductRule{Bernoulli}
     @test outboundType(SPBernoulliOutVP) == Message{Bernoulli}
-    @test isApplicable(SPBernoulliOutVP, [Nothing, Message{PointMass}]) 
+    @test isApplicable(SPBernoulliOutVP, [Nothing, Message{PointMass}])
 
-    @test ruleSPBernoulliOutVP(nothing, Message(Univariate, PointMass, m=0.2)) == Message(Univariate, Bernoulli, p=0.2)
+    @test ruleSPBernoulliOutVP(nothing, Message(Univariate, PointMass, m=1.0)) == Message(Univariate, Bernoulli, p=1.0)
+end
+
+@testset "SPBernoulliIn1PV" begin
+    @test SPBernoulliIn1PV <: SumProductRule{Bernoulli}
+    @test outboundType(SPBernoulliIn1PV) == Message{Beta}
+    @test isApplicable(SPBernoulliIn1PV, [Message{PointMass}, Nothing])
+
+    @test ruleSPBernoulliIn1PV(Message(Univariate, PointMass, m=1.0), nothing) == Message(Univariate, Beta, a=2.0, b=1.0)
+end
+
+@testset "SPBernoulliOutVB" begin
+    @test SPBernoulliOutVB <: SumProductRule{Bernoulli}
+    @test outboundType(SPBernoulliOutVB) == Message{Bernoulli}
+    @test isApplicable(SPBernoulliOutVB, [Nothing, Message{Beta}])
+
+    @test ruleSPBernoulliOutVB(nothing, Message(Univariate, Beta, a=1.0, b=1.0)) == Message(Univariate, Bernoulli, p=0.5)
 end
 
 @testset "VBBernoulliOut" begin

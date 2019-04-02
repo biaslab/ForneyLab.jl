@@ -2,6 +2,12 @@ export CompositeNode, @composite
 
 abstract type CompositeNode <: FactorNode end
 
+"""
+The `@composite` macro allows for defining custom (composite) nodes. Composite
+nodes allow for implementating of custom update rules that may be computationally
+more efficient or convenient. A composite node can be defined with or without an 
+internal model. For detailed usage instructions we refer to the `composite_nodes` demo.
+"""
 macro composite(name::Symbol, exposed_vars::Expr, model::Expr)
     (exposed_vars.head == :tuple) || error("Exposed variables should be passed as Tuple")
 

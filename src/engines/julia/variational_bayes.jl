@@ -99,6 +99,11 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
     return inbounds
 end
 
+"""
+The `freeEnergyAlgorithm` function accepts a `RecognitionFactorization` and returns
+(if possible) Julia code for computing the variational free energy with respect to 
+the argument recognition factorization and corresponding `FactorGraph` (model).
+"""
 function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="")
     # Write evaluation function for free energy
     energy_block = ""
