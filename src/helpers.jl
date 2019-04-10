@@ -57,7 +57,9 @@ format(d::Bool) = string(d)
 
 format(d::Symbol) = string(d)
 
-function format(d::Float64)
+format(d::Int) = string(d)
+
+function format(d::AbstractFloat)
     if 0.01 < d < 100.0 || -100 < d < -0.01 || d==0.0
         return @sprintf("%.2f", d)
     else
@@ -65,7 +67,7 @@ function format(d::Float64)
     end
 end
 
-function format(d::Vector{T}) where T<:Union{Float64, Bool}
+function format(d::Vector{T}) where T<:Union{AbstractFloat, Bool}
     s = "["
     for d_k in d[1:end-1]
         s*=format(d_k)
@@ -76,7 +78,7 @@ function format(d::Vector{T}) where T<:Union{Float64, Bool}
     return s
 end
 
-function format(d::Matrix{Float64})
+function format(d::Matrix{AbstractFloat})
     s = "["
     for r in 1:size(d, 1)
         s *= format(vec(d[r,:]))
@@ -85,7 +87,7 @@ function format(d::Matrix{Float64})
     return s
 end
 
-format(d::Diagonal{Float64}) = "diag$(format(d.diag))"
+format(d::Diagonal{AbstractFloat}) = "diag$(format(d.diag))"
 
 function format(v::Vector{Any})
     str = ""
