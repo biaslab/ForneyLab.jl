@@ -78,7 +78,7 @@ function format(d::Vector{T}) where T<:Union{AbstractFloat, Bool}
     return s
 end
 
-function format(d::Matrix{AbstractFloat})
+function format(d::Matrix{T}) where T<:AbstractFloat
     s = "["
     for r in 1:size(d, 1)
         s *= format(vec(d[r,:]))
@@ -87,7 +87,7 @@ function format(d::Matrix{AbstractFloat})
     return s
 end
 
-format(d::Diagonal{AbstractFloat}) = "diag$(format(d.diag))"
+format(d::Diagonal{T}) where T<:AbstractFloat = "diag$(format(d.diag))"
 
 function format(v::Vector{Any})
     str = ""
