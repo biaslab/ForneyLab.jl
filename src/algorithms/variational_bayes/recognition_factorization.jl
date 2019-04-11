@@ -201,7 +201,7 @@ RecognitionFactorization() = setCurrentRecognitionFactorization(
 Construct a RecognitionFactorization consisting of one
 RecognitionFactor for each argument
 """
-function RecognitionFactorization(args...; ids=Symbol[])
+function RecognitionFactorization(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[])
     rf = RecognitionFactorization()
     isempty(ids) || (length(ids) == length(args)) || error("Length of ids must match length of recognition factor arguments")
     for (i, arg) in enumerate(args)
