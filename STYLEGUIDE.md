@@ -76,25 +76,27 @@ Avoid extraneous whitespace in the following situations:
     ham[lower + offset : upper + offset]
     ```
 
-- More than one space around an assignment (or other) operator to align it with another.
+- More than one space around an assignment (or other) operator to align it with
+  another.
 
-```julia
-#Yes:
-x = 1
-y = 2
-long_variable = 3
+    ```julia
+    #Yes:
+    x = 1
+    y = 2
+    long_variable = 3
 
-#No:
-x             = 1
-y             = 2
-long_variable = 3
-```
+    #No:
+    x             = 1
+    y             = 2
+    long_variable = 3
+    ```
 
 Other rules:
 
 - Always surround these binary operators with a single space on either side:
-  assignment (=), updating operators (+=, -= etc.), comparisons (==, ===, <, >, !=,
-  <>, <=, >=, etc.), Booleans (and, or, not).
+  assignment (=), updating operators (+=, -= etc.), comparisons (==, ===, <, >,
+  !=,
+  <>, <=, >=, etc.), Booleans (and, or, not), infix operators (`is`, `isa`).
 
 - If operators with different priorities are used, consider adding whitespace around the operators with the lowest priority(ies). However, never use more than one space, and always have the same amount of whitespace on both sides of a binary operator.
 
@@ -165,7 +167,7 @@ end
 
 ### `return` keyword
 
-Always use the `return` keyword in multiline function definitions:
+Always use `return` keyword in multiline function definitions:
 
 ```julia
 # Yes:
@@ -188,4 +190,27 @@ Whenever possible, import only specific things into the scope. E.g., rather than
 `using SpecialFunctions`, write `using SpecialFunctions: lgamma`. This way you
 avoid bringing unnecessary objects into scope.
 
-Use `import` keyword only if you extend the imported methods: `import Base: show`.
+Use `import` keyword only if you extend the imported methods: `import Base:
+show`.
+
+### Comments
+
+Whenever you write comments, avoid explicitly listing what does the code do:
+
+```julia
+# Yes:
+
+# No:
+```
+
+Comments that contradict the code are worse than no comments. Always make a
+priority of keeping the comments up-to-date when the code changes!
+
+Comments should be complete sentences. The first word should be capitalized,
+unless it is an identifier that begins with a lower case letter (never alter the
+case of identifiers!).
+
+Block comments generally consist of one or more paragraphs built out of complete
+sentences, with each sentence ending in a period.
+
+### Documentation
