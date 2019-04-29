@@ -244,3 +244,35 @@ Block comments generally consist of one or more paragraphs built out of complete
 sentences, with each sentence ending in a period.
 
 ### Documentation
+
+All exported types and functions have to have docstrings. We also recommend
+including docstrings to most functions and types.
+
+We provide useful documentation templates below:
+
+#### Documentation template for a node type
+
+```julia
+"""
+Description:
+
+    A gamma node with shape-rate parameterization:
+
+    f(out,a,b) = Gam(out|a,b) = 1/Γ(a) b^a out^{a - 1} exp(-b out)
+
+Interfaces:
+
+    1. out
+    2. a (shape)
+    3. b (rate)
+
+Construction:
+
+    Gamma(out, a, b, id=:some_id)
+"""
+mutable struct Gamma <: SoftFactor
+    ...
+end
+```
+
+For more details on documenting Julia code we refer the reader to Julia [documentation](https://docs.julialang.org/en/v1.1/manual/documentation/).
