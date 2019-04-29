@@ -4,10 +4,11 @@ This document describes style and coding conventions that we use when developing
 ForneyLab.jl. We strongly believe that having consistent code style facilitates
 contributions and makes code review process easier for all parties.
 Unfortunately, tools like [rustfmt](https://github.com/rust-lang/rustfmt) and
-[gofmt](https://golang.org/cmd/gofmt/) are not yet available for Julia.
+[gofmt](https://golang.org/cmd/gofmt/) are not yet available for Julia. For this
+reason we have assembled a set of guidelines for writing source code and
+documentation.
 
-
-This style guide is largely inspired by default [Julia style
+This style guide is largely inspired by [Julia style
 guidelines](https://docs.julialang.org/en/v1/manual/style-guide/index.html) and
 [PEP-8](https://www.python.org/dev/peps/pep-0008/). It is also by no means
 comprehensive. We suggest that readers get familiar with standard Julia style
@@ -38,27 +39,54 @@ is in the red zone.
 ### Indentation
 
 Julia, unlike Python, is largely insensitive to whitespace characters and
-indentation levels. However, for consistency, use 4 spaces for indentation.
+indentation levels. However, for consistency, use 4 spaces per indentation
+level. Start all new blocks with new level of indentation except for the first
+level inside the module:
+
+```julia
+# Yes:
+module MyModule
+
+function add2(x::Number)
+    return x+2
+end
+
+end
+
+# No:
+module MyModule
+
+    function add2(x::Number)
+    return x+2
+    end
+
+end
+```
 
 ### Whitespace
+
 Avoid extraneous whitespace in the following situations:
 
 - Immediately inside parentheses, brackets or braces.
 
     ```julia
-    # Yes: 
+    # Yes:
     spam(ham[1], Dict("eggs"=>2))
     # No:  
     spam( ham[ 1 ], Dict( "eggs"=>2 ) )
     ```
+
 - Between a trailing comma and a following close parenthesis.
+    
     ```julia
     # Yes: 
         foo = (0,)
     # No:  
         bar = (0, )
     ```
+
 - Immediately before a comma, semicolon, or colon:
+    
     ```julia
     Yes: if x == 4 println((x, y)); x, y = y, x end
     No:  if x == 4 println((x , y)) ; x , y = y , x end
@@ -199,8 +227,10 @@ Whenever you write comments, avoid explicitly listing what does the code do:
 
 ```julia
 # Yes:
+i = i+1     # Correct the index for the dummy message
 
 # No:
+i = i+1     # Increase i
 ```
 
 Comments that contradict the code are worse than no comments. Always make a
