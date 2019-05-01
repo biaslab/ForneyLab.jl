@@ -249,7 +249,7 @@ sentences, with each sentence ending in a period.
 All exported types and functions have to have docstrings. We also recommend
 including docstrings for most functions and types.
 
-We provide useful documentation templates below:
+We provide useful documentation template below:
 
 #### Documentation template for a node type
 
