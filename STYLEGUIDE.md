@@ -32,9 +32,9 @@ reformatted due to strict coding conventions.
 
 Instead we suggest following approach to organizing your code. Imagine three
 zones: green, yellow, and red. Green is under 80 characters, yellow is between
-80 and 100 characters and red is above 100 characters. Try to write your code
-in such a way that ~95% of lines of your code are in the green zone, and no code
-is in the red zone.
+80 and 100 characters and red is above 100 characters. Try to write your code in
+such a way that ~95% of your code is in the green zone, and no code is in the
+red zone.
 
 ### Indentation
 
@@ -223,7 +223,8 @@ show`.
 
 ### Comments
 
-Whenever you write comments, avoid explicitly listing what does the code do:
+Whenever you write comments, avoid simply explicitly listing what does the code
+do:
 
 ```julia
 # Yes:
@@ -246,7 +247,7 @@ sentences, with each sentence ending in a period.
 ### Documentation
 
 All exported types and functions have to have docstrings. We also recommend
-including docstrings to most functions and types.
+including docstrings for most functions and types.
 
 We provide useful documentation templates below:
 
@@ -275,4 +276,11 @@ mutable struct Gamma <: SoftFactor
 end
 ```
 
-For more details on documenting Julia code we refer the reader to Julia [documentation](https://docs.julialang.org/en/v1.1/manual/documentation/).
+We suggest to include following in the docstring:
+
+- Brief description (1-2 sentences)
+- Node function
+- List of interfaces and corresponding variables
+
+For more details on documenting Julia code we refer the reader to Julia
+[documentation](https://docs.julialang.org/en/v1.1/manual/documentation/).
