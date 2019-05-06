@@ -3,7 +3,7 @@ module DirichletTest
 using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeVar, vague, dims
-import ForneyLab: SPDirichletOutVP, VBDirichletOut
+import ForneyLab: SPDirichletOutNP, VBDirichletOut
 import SpecialFunctions: digamma
 
 @testset "Dirichlet ProbabilityDistribution and Message construction" begin
@@ -55,13 +55,13 @@ end
 # Update rules
 #-------------
 
-@testset "SPDirichletOutVP" begin
-    @test SPDirichletOutVP <: SumProductRule{Dirichlet}
-    @test outboundType(SPDirichletOutVP) == Message{Dirichlet}
-    @test isApplicable(SPDirichletOutVP, [Nothing, Message{PointMass}])
+@testset "SPDirichletOutNP" begin
+    @test SPDirichletOutNP <: SumProductRule{Dirichlet}
+    @test outboundType(SPDirichletOutNP) == Message{Dirichlet}
+    @test isApplicable(SPDirichletOutNP, [Nothing, Message{PointMass}])
 
-    @test ruleSPDirichletOutVP(nothing, Message(Multivariate, PointMass, m=[2.0, 3.0])) == Message(Multivariate, Dirichlet, a=[2.0, 3.0])
-    @test ruleSPDirichletOutVP(nothing, Message(MatrixVariate, PointMass, m=[2.0 3.0; 4.0 5.0])) == Message(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])
+    @test ruleSPDirichletOutNP(nothing, Message(Multivariate, PointMass, m=[2.0, 3.0])) == Message(Multivariate, Dirichlet, a=[2.0, 3.0])
+    @test ruleSPDirichletOutNP(nothing, Message(MatrixVariate, PointMass, m=[2.0 3.0; 4.0 5.0])) == Message(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])
 end
 
 @testset "VBDirichletOut" begin

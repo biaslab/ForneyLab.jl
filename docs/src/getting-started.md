@@ -93,9 +93,9 @@ nothing # hide
 ```julia
 :(function step!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 2))
       #= none:3 =#
-      messages[1] = ruleSPBetaOutVPP(nothing, Message(Univariate, PointMass, m=data[:a]), Message(Univariate, PointMass, m=data[:b]))
+      messages[1] = ruleSPBetaOutNPP(nothing, Message(Univariate, PointMass, m=data[:a]), Message(Univariate, PointMass, m=data[:b]))
       #= none:4 =#
-      messages[2] = ruleSPBernoulliIn1PV(Message(Univariate, PointMass, m=data[:y]), nothing)
+      messages[2] = ruleSPBernoulliIn1PN(Message(Univariate, PointMass, m=data[:y]), nothing)
       #= none:6 =#
       marginals[:θ] = (messages[1]).dist * (messages[2]).dist
       #= none:8 =#

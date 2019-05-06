@@ -1,6 +1,6 @@
 export
-ruleSPNonlinearOutVG,
-ruleSPNonlinearIn1GV
+ruleSPNonlinearOutNG,
+ruleSPNonlinearIn1GN
 
 
 """
@@ -13,7 +13,7 @@ function approximate(x_hat::Union{T, Vector{T}} where T <: Number, g::Function, 
     return (A, b)
 end
 
-function ruleSPNonlinearOutVG(  msg_out::Nothing,
+function ruleSPNonlinearOutNG(  msg_out::Nothing,
                                 msg_in1::Message{F, Multivariate},
                                 g::Function,
                                 J_g::Function,
@@ -28,7 +28,7 @@ function ruleSPNonlinearOutVG(  msg_out::Nothing,
     Message(Multivariate, GaussianMeanVariance, m=A*d_in1.params[:m] + b, v=V_q)
 end
 
-function ruleSPNonlinearOutVG(  msg_out::Nothing,
+function ruleSPNonlinearOutNG(  msg_out::Nothing,
                                 msg_in1::Message{F, Univariate},
                                 g::Function,
                                 J_g::Function,
@@ -42,7 +42,7 @@ function ruleSPNonlinearOutVG(  msg_out::Nothing,
     Message(Univariate, GaussianMeanVariance, m=a*d_in1.params[:m] + b, v=v_q)
 end
 
-function ruleSPNonlinearIn1GV(  msg_out::Message{F, Multivariate},
+function ruleSPNonlinearIn1GN(  msg_out::Message{F, Multivariate},
                                 msg_in1::Message, # Any type of message, used for determining the approximation point
                                 g::Function,
                                 J_g::Function,
@@ -64,7 +64,7 @@ function ruleSPNonlinearIn1GV(  msg_out::Message{F, Multivariate},
     Message(Multivariate, GaussianMeanPrecision, m=A_inv*(d_out.params[:m] - b), w=W_q)
 end
 
-function ruleSPNonlinearIn1GV(  msg_out::Message{F, Univariate},
+function ruleSPNonlinearIn1GN(  msg_out::Message{F, Univariate},
                                 msg_in1::Message, # Any type of message, used for determining the approximation point
                                 g::Function,
                                 J_g::Function,

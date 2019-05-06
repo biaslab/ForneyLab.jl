@@ -1,8 +1,8 @@
 export 
 ruleVBGammaOut,
-ruleSPGammaOutVPP
+ruleSPGammaOutNPP
 
-ruleSPGammaOutVPP(  msg_out::Nothing, 
+ruleSPGammaOutNPP(  msg_out::Nothing, 
                     msg_a::Message{PointMass, Univariate},
                     msg_b::Message{PointMass, Univariate}) =
     Message(Univariate, Gamma, a=deepcopy(msg_a.dist.params[:m]), b=deepcopy(msg_b.dist.params[:m]))

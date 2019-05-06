@@ -3,7 +3,7 @@ module BetaTest
 using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims
-import ForneyLab: SPBetaOutVPP, VBBetaOut
+import ForneyLab: SPBetaOutNPP, VBBetaOut
 import SpecialFunctions: digamma
 
 @testset "Beta ProbabilityDistribution and Message construction" begin
@@ -43,12 +43,12 @@ end
 # Update rules
 #-------------
 
-@testset "SPBetaOutVPP" begin
-    @test SPBetaOutVPP <: SumProductRule{Beta}
-    @test outboundType(SPBetaOutVPP) == Message{Beta}
-    @test isApplicable(SPBetaOutVPP, [Nothing, Message{PointMass}, Message{PointMass}])
+@testset "SPBetaOutNPP" begin
+    @test SPBetaOutNPP <: SumProductRule{Beta}
+    @test outboundType(SPBetaOutNPP) == Message{Beta}
+    @test isApplicable(SPBetaOutNPP, [Nothing, Message{PointMass}, Message{PointMass}])
 
-    @test ruleSPBetaOutVPP(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
+    @test ruleSPBetaOutNPP(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
 end
 
 @testset "VBBetaOut" begin

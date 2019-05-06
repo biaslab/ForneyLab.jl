@@ -1,7 +1,7 @@
 @sumProductRule(:node_type     => Wishart,
                 :outbound_type => Message{Wishart},
                 :inbound_types => (Nothing, Message{PointMass}, Message{PointMass}),
-                :name          => SPWishartOutVPP)
+                :name          => SPWishartOutNPP)
 
 @naiveVariationalRule(:node_type     => Wishart,
                  	  :outbound_type => Message{Wishart},

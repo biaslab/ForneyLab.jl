@@ -1,8 +1,8 @@
 export
 ruleVBWishartOut,
-ruleSPWishartOutVPP
+ruleSPWishartOutNPP
 
-ruleSPWishartOutVPP(msg_out::Nothing, 
+ruleSPWishartOutNPP(msg_out::Nothing, 
                     msg_v::Message{PointMass, MatrixVariate},
                     msg_nu::Message{PointMass, Univariate}) =
     Message(MatrixVariate, Wishart, v=deepcopy(msg_v.dist.params[:m]), nu=deepcopy(msg_nu.dist.params[:m]))

@@ -1,7 +1,7 @@
 @sumProductRule(:node_type     => Beta,
                 :outbound_type => Message{Beta},
                 :inbound_types => (Nothing, Message{PointMass}, Message{PointMass}),
-                :name          => SPBetaOutVPP)
+                :name          => SPBetaOutNPP)
 
 @naiveVariationalRule(:node_type     => Beta,
                       :outbound_type => Message{Beta},

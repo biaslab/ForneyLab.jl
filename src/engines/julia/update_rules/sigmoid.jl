@@ -2,12 +2,12 @@
 Φ(x::Union{Float64, Vector{Float64}}) = 0.5*erfc(-x./sqrt(2.))
 
 export
-ruleSPSigmoidBinVG,
+ruleSPSigmoidBinNG,
 ruleEPSigmoidRealGB,
 ruleEPSigmoidRealGC,
 ruleEPSigmoidRealGP
 
-function ruleSPSigmoidBinVG(msg_bin::Nothing,
+function ruleSPSigmoidBinNG(msg_bin::Nothing,
                             msg_real::Message{F, Univariate}) where F<:Gaussian
 
     d_real = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_real.dist)

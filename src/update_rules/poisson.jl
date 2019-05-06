@@ -1,13 +1,13 @@
-# Register sumProductRule: SPPoissonOutVP, SPPoissonLPV
+# Register sumProductRule: SPPoissonOutNP, SPPoissonLPN
 @sumProductRule(:node_type     => Poisson,
                 :outbound_type => Message{Poisson},
                 :inbound_types => (Nothing, Message{PointMass}),
-                :name          => SPPoissonOutVP)
+                :name          => SPPoissonOutNP)
 
 @sumProductRule(:node_type     => Poisson,
                 :outbound_type => Message{Gamma},
                 :inbound_types => (Message{PointMass}, Nothing),
-                :name          => SPPoissonLPV)
+                :name          => SPPoissonLPN)
 
 # Register naiveVariationalRule: VBPoissonOut, VBPoissonL
 

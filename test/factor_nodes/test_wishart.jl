@@ -3,7 +3,7 @@ module WishartTest
 using Test
 using ForneyLab
 import ForneyLab: prod!, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper
-import ForneyLab: SPWishartOutVPP, VBWishartOut
+import ForneyLab: SPWishartOutNPP, VBWishartOut
 import SpecialFunctions: digamma
 
 @testset "dims" begin
@@ -40,12 +40,12 @@ end
 # Update rules
 #-------------
 
-@testset "SPWishartOutVPP" begin
-    @test SPWishartOutVPP <: SumProductRule{Wishart}
-    @test outboundType(SPWishartOutVPP) == Message{Wishart}
-    @test isApplicable(SPWishartOutVPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
+@testset "SPWishartOutNPP" begin
+    @test SPWishartOutNPP <: SumProductRule{Wishart}
+    @test outboundType(SPWishartOutNPP) == Message{Wishart}
+    @test isApplicable(SPWishartOutNPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
 
-    @test ruleSPWishartOutVPP(nothing, Message(MatrixVariate, PointMass, m=transpose([1.0])), Message(Univariate, PointMass, m=2.0)) == Message(MatrixVariate, Wishart, v=transpose([1.0]), nu=2.0)
+    @test ruleSPWishartOutNPP(nothing, Message(MatrixVariate, PointMass, m=transpose([1.0])), Message(Univariate, PointMass, m=2.0)) == Message(MatrixVariate, Wishart, v=transpose([1.0]), nu=2.0)
 end
 
 @testset "VBWishartOut" begin
