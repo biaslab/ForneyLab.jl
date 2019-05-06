@@ -1,6 +1,36 @@
 export GaussianWeightedMeanPrecision
 
-abstract type GaussianWeightedMeanPrecision <: Gaussian end
+"""
+Description:
+
+    A Gaussian with weighted-mean-precision parameterization:
+
+Interfaces:
+
+    1. out
+    2. xi (weighted mean, w*m)
+    3. w (precision)
+
+Construction:
+
+    GaussianWeightedMeanPrecision(out, xi, w, id=:some_id)
+"""
+mutable struct GaussianWeightedMeanPrecision <: Gaussian
+    id::Symbol
+    interfaces::Vector{Interface}
+    i::Dict{Symbol,Interface}
+
+    function GaussianWeightedMeanPrecision(out, xi, w; id=generateId(GaussianWeightedMeanPrecision))
+        @ensureVariables(out, xi, w)
+        self = new(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}())
+        addNode!(currentGraph(), self)
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+        self.i[:xi] = self.interfaces[2] = associate!(Interface(self), xi)
+        self.i[:w] = self.interfaces[3] = associate!(Interface(self), w)
+
+        return self
+    end
+end
 
 slug(::Type{GaussianWeightedMeanPrecision}) = "𝒩"
 

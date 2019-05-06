@@ -2,7 +2,8 @@ module GaussianWeightedMeanPrecisionTest
 
 using Test
 using ForneyLab
-import ForneyLab: isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
+import ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
+import ForneyLab: SPGaussianWeightedMeanPrecisionOutVPP, VBGaussianWeightedMeanPrecisionOut
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=1.0)) == 1
@@ -62,6 +63,30 @@ end
     @test convert(ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.5, v=0.25)) == ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=4.0)
     @test convert(ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}, ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0.5], w=mat(4.0))) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))
     @test convert(ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.5], v=mat(0.25))) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))
+end
+
+#-------------
+# Update rules
+#-------------
+
+@testset "SPGaussianWeightedMeanPrecisionOutVPP" begin
+    @test SPGaussianWeightedMeanPrecisionOutVPP <: SumProductRule{GaussianWeightedMeanPrecision}
+    @test outboundType(SPGaussianWeightedMeanPrecisionOutVPP) == Message{GaussianWeightedMeanPrecision}
+    @test isApplicable(SPGaussianWeightedMeanPrecisionOutVPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
+    @test !isApplicable(SPGaussianWeightedMeanPrecisionOutVPP, [Message{PointMass}, Nothing, Message{PointMass}]) 
+
+    @test ruleSPGaussianWeightedMeanPrecisionOutVPP(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=2.0)
+    @test ruleSPGaussianWeightedMeanPrecisionOutVPP(nothing, Message(Multivariate, PointMass, m=[1.0]), Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(2.0))
+end
+
+@testset "VBGaussianWeightedMeanPrecisionOut" begin
+    @test VBGaussianWeightedMeanPrecisionOut <: NaiveVariationalRule{GaussianWeightedMeanPrecision}
+    @test outboundType(VBGaussianWeightedMeanPrecisionOut) == Message{GaussianWeightedMeanPrecision}
+    @test isApplicable(VBGaussianWeightedMeanPrecisionOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
+    @test !isApplicable(VBGaussianWeightedMeanPrecisionOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing]) 
+
+    @test ruleVBGaussianWeightedMeanPrecisionOut(nothing, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=1.0, v=2.0), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=3.0)
+    @test ruleVBGaussianWeightedMeanPrecisionOut(nothing, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(2.0)), ProbabilityDistribution(MatrixVariate, PointMass, m=mat(3.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(3.0))
 end
 
 end # module
