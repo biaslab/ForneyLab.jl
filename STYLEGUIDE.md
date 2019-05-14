@@ -135,6 +135,7 @@ Other rules:
     x = x*2 - 1
     hypot2 = x*x + y*y
     c = (a+b) * (a-b)
+    c = (a + b)*(a - b)
     
     # No:
     i=i+1
@@ -186,8 +187,8 @@ function condense(
     schedule::Schedule, 
     fg::FactorGraph, 
     variable::Symbol, 
-    id=generateId(variable)
-)
+    id=generateId(variable))
+
     ...
 end
 
