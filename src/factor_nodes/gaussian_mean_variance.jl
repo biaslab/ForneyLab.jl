@@ -43,24 +43,6 @@ format(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateT
 ProbabilityDistribution(::Type{Univariate}, ::Type{GaussianMeanVariance}; m=0.0, v=1.0) = ProbabilityDistribution{Univariate, GaussianMeanVariance}(Dict(:m=>m, :v=>v))
 ProbabilityDistribution(::Type{GaussianMeanVariance}; m::Number=0.0, v::Number=1.0) = ProbabilityDistribution{Univariate, GaussianMeanVariance}(Dict(:m=>m, :v=>v))
 function ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanVariance}; m=[0.0], v=Matrix{Float64}(I,1,1))
-    #
-    # # Check for type of input precision matrix
-    # if typeof(v) == Array{Float64,2}
-    #
-    #     # If standard array, cast directly to full PDMat
-    #     v = PDMat(v)
-    #
-    # elseif typeof(v) == Array{Array{Float64,2},2}
-    #
-    #     # If 'mat' object (from helpers), cast (1,1) element to full PDMat
-    #     v = PDMat(v[1])
-    #
-    # elseif typeof(v) == Diagonal{Float64,Array{Float64,1}}
-    #
-    #     # If Diagional matrix, cast to PDiagMat
-    #     v = PDiagMat(v)
-    #
-    # end
     return ProbabilityDistribution{Multivariate, GaussianMeanVariance}(Dict(:m=>m, :v=>PDMat(Matrix(v))))
 end
 

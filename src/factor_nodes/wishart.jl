@@ -39,55 +39,9 @@ slug(::Type{Wishart}) = "W"
 format(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = "$(slug(Wishart))(v=$(format(dist.params[:v])), nu=$(format(dist.params[:nu])))"
 
 function ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Wishart}; v=Matrix{Float64}(I,1,1), nu=1.0)
-
-    # # Check for type of input precision matrix
-    # if isa(v, Array)
-    #
-    #     # If standard array, cast directly to full PDMat
-    #     v = PDMat(v)
-    #
-    # elseif isa(v, Adjoint{}) or isa(v, Transpose{})
-    #
-    #     # Transpose array back and cast to PDMat (non-symmetric matrices will fail)
-    #     v = PDMat(v')
-    #
-    # elseif isa(v, Array{Array{},2})
-    #
-    #     # If 'mat' object (from helpers), cast (1,1) element to full PDMat
-    #     v = PDMat(v[1])
-    #
-    # elseif isa(v, Diagonal{})
-    #
-    #     # If Diagional matrix, cast to PDiagMat
-    #     v = PDMat(v)
-    #
-    # end
     return ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>PDMat(Matrix(v)), :nu=>nu))
 end
 function ProbabilityDistribution(::Type{Wishart}; v=PDMat(Matrix{Float64}(I,1,1)), nu=1.0)
-
-    # # Check for type of input precision matrix
-    # if isa(v, Array)
-    #
-    #     # If standard array, cast directly to full PDMat
-    #     v = PDMat(v)
-    #
-    # elseif isa(v, Adjoint{}) or isa(v, Transpose{})
-    #
-    #     # Transpose array back and cast to PDMat (non-symmetric matrices will fail)
-    #     v = PDMat(v')
-    #
-    # elseif isa(v, Array{Array{},2})
-    #
-    #     # If 'mat' object (from helpers), cast (1,1) element to full PDMat
-    #     v = PDMat(v[1])
-    #
-    # elseif isa(v, Diagonal{})
-    #
-    #     # If Diagional matrix, cast to PDiagMat
-    #     v = PDMat(v)
-    #
-    # end
     return ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
 end
 
@@ -96,7 +50,7 @@ dims(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = size(dist.params[:
 
 vague(::Type{Wishart}, dims::Int64) = ProbabilityDistribution(MatrixVariate, Wishart, v=PDMat(huge*Matrix{Float64}(I,dims,dims)), nu=Float64(dims)) # Flat prior
 
-unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = dist.params[:nu]*dist.params[:v] # unsafe mean
+unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = dist.params[:nu]*dist.params[:v].mat # unsafe mean
 
 function unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
@@ -119,7 +73,7 @@ end
 function isProper(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     (size(dist.params[:v], 1) == size(dist.params[:v], 2)) || return false
     (dist.params[:nu] > size(dist.params[:v], 1) - 1) || return false
-    isRoundedPosDef(dist.params[:v].mat) || return false
+    isRoundedPosDef(dist.params[:v].mat) || return false # no longer necessary with PDMats
     return true
 end
 
@@ -128,7 +82,7 @@ function prod!( x::ProbabilityDistribution{MatrixVariate, Wishart},
                 z::ProbabilityDistribution{MatrixVariate, Wishart}=ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=1.0))
 
     d = dims(x)[1]
-    z.params[:v] = x.params[:v] * inv(x.params[:v] + y.params[:v]) * y.params[:v]
+    z.params[:v] = PDMat(Matrix(Hermitian(x.params[:v].mat * inv(x.params[:v] + y.params[:v]) * y.params[:v].mat)))
     z.params[:nu] = x.params[:nu] + y.params[:nu] - d - 1.0
 
     return z
