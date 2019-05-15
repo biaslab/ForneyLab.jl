@@ -26,7 +26,7 @@ inv(M::PDiagMat) = Diagonal(M.inv_diag)
 inv(M::ScalMat) = M.inv_value
 
 eye(n::Number) = Diagonal(I,n)
-diageye(dims::Int64) = Diagonal(ones(dims))
+diageye(dims::Int64) = PDiagMat(ones(dims))
 
 Base.broadcast(::typeof(*), D1::Diagonal, D2::Diagonal) = Diagonal(D1.diag.*D2.diag)
 Base.broadcast(::typeof(*), D1::Matrix, D2::Diagonal) = Diagonal(diag(D1).*D2.diag)
