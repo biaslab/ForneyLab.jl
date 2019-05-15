@@ -32,7 +32,7 @@ end
     @test unsafeVar(ProbabilityDistribution(MatrixVariate, Wishart, v=[2.0 1.0; 1.0 2.0], nu=3.0)) == [24.0 15.0; 15.0 24.0]
     @test unsafeVar(ProbabilityDistribution(MatrixVariate, Wishart, v=diageye(3), nu=3.0)) == [6.0 3.0 3.0; 3.0 6.0 3.0; 3.0 3.0 6.0]
     @test unsafeDetLogMean(ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=1.0)) == digamma(0.5) + log(2)
-    @test unsafeDetLogMean(ProbabilityDistribution(MatrixVariate, Wishart, v=eye(2), nu=2.0)) == digamma(0.5) + digamma(1) + 2*log(2)
+    @test unsafeDetLogMean(ProbabilityDistribution(MatrixVariate, Wishart, v=diageye(2), nu=2.0)) == digamma(0.5) + digamma(1) + 2*log(2)
 end
 
 
@@ -43,7 +43,7 @@ end
 @testset "SPWishartOutVPP" begin
     @test SPWishartOutVPP <: SumProductRule{Wishart}
     @test outboundType(SPWishartOutVPP) == Message{Wishart}
-    @test isApplicable(SPWishartOutVPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
+    @test isApplicable(SPWishartOutVPP, [Nothing, Message{PointMass}, Message{PointMass}])
 
     @test ruleSPWishartOutVPP(nothing, Message(MatrixVariate, PointMass, m=transpose([1.0])), Message(Univariate, PointMass, m=2.0)) == Message(MatrixVariate, Wishart, v=transpose([1.0]), nu=2.0)
 end
@@ -51,8 +51,8 @@ end
 @testset "VBWishartOut" begin
     @test VBWishartOut <: NaiveVariationalRule{Wishart}
     @test outboundType(VBWishartOut) == Message{Wishart}
-    @test isApplicable(VBWishartOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution]) 
-    @test !isApplicable(VBWishartOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing]) 
+    @test isApplicable(VBWishartOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
+    @test !isApplicable(VBWishartOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing])
 
     @test ruleVBWishartOut(nothing, ProbabilityDistribution(MatrixVariate, PointMass, m=transpose([1.5])), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(MatrixVariate, Wishart, v=transpose([1.5]), nu=3.0)
 end
