@@ -1,5 +1,6 @@
 module ForneyLab
 
+# Libraries that are not extended
 using PDMats
 
 # Helpers
@@ -10,7 +11,7 @@ include("dependency_graph.jl")
 import Base: show, convert, ==, *
 import Base.Meta: parse
 import Base64: base64encode
-import LinearAlgebra: diag, det, tr, cholesky, pinv
+import LinearAlgebra: diag, det, tr, cholesky, pinv, Adjoint, Transpose
 import SparseArrays: spzeros
 import SpecialFunctions: digamma, lgamma, lbeta, erfc
 import Statistics: mean, var, cov
