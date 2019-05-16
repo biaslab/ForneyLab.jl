@@ -1,12 +1,12 @@
 @sumProductRule(:node_type     => Multiplication,
                 :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Nothing, Message{Gaussian}, Message{PointMass}),
-                :name          => SPMultiplicationOutVGP)
+                :name          => SPMultiplicationOutNGP)
 
 @sumProductRule(:node_type     => Multiplication,
                 :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Nothing, Message{PointMass}, Message{Gaussian}),
-                :name          => SPMultiplicationOutVPG)
+                :name          => SPMultiplicationOutNPG)
 
 @sumProductRule(:node_type     => Multiplication,
                 :outbound_type => Message{PointMass},
@@ -16,19 +16,19 @@
 @sumProductRule(:node_type     => Multiplication,
                 :outbound_type => Message{GaussianWeightedMeanPrecision},
                 :inbound_types => (Message{Gaussian}, Nothing, Message{PointMass}),
-                :name          => SPMultiplicationIn1GVP)
+                :name          => SPMultiplicationIn1GNP)
 
 @sumProductRule(:node_type     => Multiplication,
                 :outbound_type => Message{PointMass},
                 :inbound_types => (Message{PointMass}, Nothing, Message{PointMass}),
-                :name          => SPMultiplicationIn1PVP)
+                :name          => SPMultiplicationIn1PNP)
 
 @sumProductRule(:node_type     => Multiplication,
                 :outbound_type => Message{GaussianWeightedMeanPrecision},
                 :inbound_types => (Message{Gaussian}, Message{PointMass}, Nothing),
-                :name          => SPMultiplicationAGPV)
+                :name          => SPMultiplicationAGPN)
 
 @sumProductRule(:node_type     => Multiplication,
                 :outbound_type => Message{PointMass},
                 :inbound_types => (Message{PointMass}, Message{PointMass}, Nothing),
-                :name          => SPMultiplicationAPPV)
+                :name          => SPMultiplicationAPPN)

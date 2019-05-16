@@ -1,7 +1,7 @@
 @sumProductRule(:node_type     => Sigmoid,
                 :outbound_type => Message{Bernoulli},
                 :inbound_types => (Nothing, Message{Gaussian}),
-                :name          => SPSigmoidBinVG)
+                :name          => SPSigmoidBinNG)
 
 @expectationPropagationRule(:node_type     => Sigmoid,
                             :outbound_type => Message{GaussianWeightedMeanPrecision},

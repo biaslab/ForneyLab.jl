@@ -1,8 +1,8 @@
 export
-ruleSPGaussianMeanPrecisionOutVPP,
-ruleSPGaussianMeanPrecisionMPVP,
-ruleSPGaussianMeanPrecisionOutVGP, 
-ruleSPGaussianMeanPrecisionMGVP, 
+ruleSPGaussianMeanPrecisionOutNPP,
+ruleSPGaussianMeanPrecisionMPNP,
+ruleSPGaussianMeanPrecisionOutNGP, 
+ruleSPGaussianMeanPrecisionMGNP, 
 ruleVBGaussianMeanPrecisionM, 
 ruleVBGaussianMeanPrecisionW, 
 ruleVBGaussianMeanPrecisionOut,
@@ -11,15 +11,15 @@ ruleSVBGaussianMeanPrecisionW,
 ruleSVBGaussianMeanPrecisionMGVD,
 ruleMGaussianMeanPrecisionGGD
 
-ruleSPGaussianMeanPrecisionOutVPP(  msg_out::Nothing,
+ruleSPGaussianMeanPrecisionOutNPP(  msg_out::Nothing,
                                     msg_mean::Message{PointMass, V},
                                     msg_prec::Message{PointMass}) where V<:VariateType =
     Message(V, GaussianMeanPrecision, m=deepcopy(msg_mean.dist.params[:m]), w=deepcopy(msg_prec.dist.params[:m]))
 
-ruleSPGaussianMeanPrecisionMPVP(msg_out::Message{PointMass}, msg_mean::Nothing, msg_prec::Message{PointMass}) = 
-    ruleSPGaussianMeanPrecisionOutVPP(msg_mean, msg_out, msg_prec)
+ruleSPGaussianMeanPrecisionMPNP(msg_out::Message{PointMass}, msg_mean::Nothing, msg_prec::Message{PointMass}) = 
+    ruleSPGaussianMeanPrecisionOutNPP(msg_mean, msg_out, msg_prec)
 
-function ruleSPGaussianMeanPrecisionOutVGP(msg_out::Nothing,
+function ruleSPGaussianMeanPrecisionOutNGP(msg_out::Nothing,
                                                                         msg_mean::Message{F, V},
                                                                         msg_prec::Message{PointMass}) where {F<:Gaussian, V<:VariateType}
 
@@ -28,8 +28,8 @@ function ruleSPGaussianMeanPrecisionOutVGP(msg_out::Nothing,
     Message(V, GaussianMeanVariance, m=d_mean.params[:m], v=d_mean.params[:v] + cholinv(msg_prec.dist.params[:m]))
 end
 
-ruleSPGaussianMeanPrecisionMGVP(msg_out::Message{F}, msg_mean::Nothing, msg_prec::Message{PointMass}) where F<:Gaussian = 
-    ruleSPGaussianMeanPrecisionOutVGP(msg_mean, msg_out, msg_prec)
+ruleSPGaussianMeanPrecisionMGNP(msg_out::Message{F}, msg_mean::Nothing, msg_prec::Message{PointMass}) where F<:Gaussian = 
+    ruleSPGaussianMeanPrecisionOutNGP(msg_mean, msg_out, msg_prec)
 
 ruleVBGaussianMeanPrecisionM(   dist_out::ProbabilityDistribution{V},
                                                 dist_mean::Any,

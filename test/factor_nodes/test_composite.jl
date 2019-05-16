@@ -3,7 +3,7 @@ module CompositeTest
 using Test
 using ForneyLab
 import ForneyLab: @composite, outboundType, isApplicable
-import ForneyLab: SPClamp, SPGaussianMeanVarianceOutVPP, Product
+import ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product
 
 
 # Define new node type called StateTransition, with exposed variables called (y, x_prev, x):
@@ -71,7 +71,7 @@ end
     @test length(schedule) == 5
     @test ScheduleEntry(nd.i[:m].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd.i[:v].partner, SPClamp{Univariate}) in schedule
-    @test ScheduleEntry(nd.i[:out], SPGaussianMeanVarianceOutVPP) in schedule
+    @test ScheduleEntry(nd.i[:out], SPGaussianMeanVarianceOutNPP) in schedule
     @test ScheduleEntry(cnd.i[:y].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(cnd.i[:x], SPStateTransitionX) in schedule
 
@@ -85,7 +85,7 @@ end
     # Build SP algorithm for Julia execution
     algo = ForneyLab.messagePassingAlgorithm(schedule, marginal_schedule)
     @test occursin("Array{Message}(undef, 2)", algo)
-    @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo)
+    @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo)
     @test occursin("messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)", algo)
     @test occursin("marginals[:x] = messages[2].dist", algo)
 end
@@ -99,7 +99,7 @@ end
 
     messages = Array{Message}(undef, 2)
 
-    messages[1] = ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))
+    messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))
     messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)
 
     marginals[:x] = messages[2].dist

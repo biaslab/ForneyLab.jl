@@ -196,13 +196,13 @@ nothing # hide
 ```julia
 :(function step!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 4))
       #= none:3 =#
-      messages[1] = ruleSPGaussianMeanVarianceOutVPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))
+      messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))
       #= none:4 =#
-      messages[2] = ruleSPGaussianMeanVarianceOutVGP(nothing, messages[1], Message(Univariate, PointMass, m=1.0))
+      messages[2] = ruleSPGaussianMeanVarianceOutNGP(nothing, messages[1], Message(Univariate, PointMass, m=1.0))
       #= none:5 =#
-      messages[3] = ruleSPGaussianMeanVarianceMPVP(Message(Univariate, PointMass, m=data[:y]), nothing, Message(Univariate, PointMass, m=1.0))
+      messages[3] = ruleSPGaussianMeanVarianceMPNP(Message(Univariate, PointMass, m=data[:y]), nothing, Message(Univariate, PointMass, m=1.0))
       #= none:6 =#
-      messages[4] = ruleSPGaussianMeanVarianceMGVP(messages[3], nothing, Message(Univariate, PointMass, m=1.0))
+      messages[4] = ruleSPGaussianMeanVarianceMGNP(messages[3], nothing, Message(Univariate, PointMass, m=1.0))
       #= none:8 =#
       marginals[:m1] = (messages[2]).dist * (messages[3]).dist
       #= none:9 =#

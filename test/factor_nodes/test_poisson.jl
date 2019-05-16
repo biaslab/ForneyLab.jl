@@ -4,7 +4,7 @@ using Test
 using ForneyLab
 
 import ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, FactorNode, SoftFactor, Interface, FactorGraph
-import ForneyLab: VBPoissonOut, VBPoissonL, SPPoissonOutVP, SPPoissonLPV
+import ForneyLab: VBPoissonOut, VBPoissonL, SPPoissonOutNP, SPPoissonLPN
 
 @testset "Poisson ProbabilityDistribution construction" begin
     @test ProbabilityDistribution(Univariate, Poisson, l=2.0) == ProbabilityDistribution{Univariate, Poisson}(Dict(:l=>2.0))
@@ -48,20 +48,20 @@ end
 # Update rules
 #-------------
 
-@testset "SPPoissonOutVP" begin
-    @test SPPoissonOutVP <: SumProductRule{Poisson}
-    @test outboundType(SPPoissonOutVP) == Message{Poisson}
-    @test isApplicable(SPPoissonOutVP, [Nothing, Message{PointMass}])
+@testset "SPPoissonOutNP" begin
+    @test SPPoissonOutNP <: SumProductRule{Poisson}
+    @test outboundType(SPPoissonOutNP) == Message{Poisson}
+    @test isApplicable(SPPoissonOutNP, [Nothing, Message{PointMass}])
 
-    @test ruleSPPoissonOutVP(nothing, Message(Univariate, PointMass, m=2.0)) == Message(Poisson, l=2.0)
+    @test ruleSPPoissonOutNP(nothing, Message(Univariate, PointMass, m=2.0)) == Message(Poisson, l=2.0)
 end
 
-@testset "SPPoissonLPV" begin
-    @test SPPoissonLPV <: SumProductRule{Poisson}
-    @test outboundType(SPPoissonLPV) == Message{Gamma}
-    @test isApplicable(SPPoissonLPV, [Message{PointMass}, Nothing])
+@testset "SPPoissonLPN" begin
+    @test SPPoissonLPN <: SumProductRule{Poisson}
+    @test outboundType(SPPoissonLPN) == Message{Gamma}
+    @test isApplicable(SPPoissonLPN, [Message{PointMass}, Nothing])
 
-    @test ruleSPPoissonLPV(Message(Univariate, PointMass, m=2.0), nothing) == Message(Gamma, a=3.0, b=1.0)
+    @test ruleSPPoissonLPN(Message(Univariate, PointMass, m=2.0), nothing) == Message(Gamma, a=3.0, b=1.0)
 end
 
 @testset "VBPoissonOut" begin

@@ -3,7 +3,7 @@ module CategoricalTest
 using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims
-import ForneyLab: SPCategoricalOutVP, VBCategoricalOut, VBCategoricalIn1
+import ForneyLab: SPCategoricalOutNP, VBCategoricalOut, VBCategoricalIn1
 import SparseArrays: SparseVector
 
 @testset "Categorical ProbabilityDistribution and Message construction" begin
@@ -46,12 +46,12 @@ end
 # Update rules
 #-------------
 
-@testset "SPCategoricalOutVP" begin
-    @test SPCategoricalOutVP <: SumProductRule{Categorical}
-    @test outboundType(SPCategoricalOutVP) == Message{Categorical}
-    @test isApplicable(SPCategoricalOutVP, [Nothing, Message{PointMass}]) 
+@testset "SPCategoricalOutNP" begin
+    @test SPCategoricalOutNP <: SumProductRule{Categorical}
+    @test outboundType(SPCategoricalOutNP) == Message{Categorical}
+    @test isApplicable(SPCategoricalOutNP, [Nothing, Message{PointMass}]) 
 
-    @test ruleSPCategoricalOutVP(nothing, Message(Multivariate, PointMass, m=[0.1, 0.8, 0.1])) == Message(Univariate, Categorical, p=[0.1, 0.8, 0.1])
+    @test ruleSPCategoricalOutNP(nothing, Message(Multivariate, PointMass, m=[0.1, 0.8, 0.1])) == Message(Univariate, Categorical, p=[0.1, 0.8, 0.1])
 end
 
 @testset "VBCategoricalOut" begin

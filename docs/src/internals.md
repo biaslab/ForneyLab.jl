@@ -30,18 +30,18 @@ The name of an update rule is composed of several parts:
 3. Type of factor node
 4. Interface of the outgoing message
 5. Types of incoming messages (absent for `VB` rules)
-    - `V`: void
+    - `N`: Nothing
     - `P`: point mass
     - `D`: distribution
     - `[I]`: first letter of the message's probability distribution
 
 
-###### Example 1: `ruleSPGaussianMeanPrecisionMPVP`
+###### Example 1: `ruleSPGaussianMeanPrecisionMPNP`
 1. `rule` : update rule
 2. `SP` : sum-product algorithm
 3. `GaussianMeanPrecision`: Gaussian mean precision factor node
 4. `M`: outgoing message through 'Mean' interface
-5. `PVP`: incoming message types are: point mass, void and point mass
+5. `PNP`: incoming message types are: point mass, Nothing and point mass
 
 
 

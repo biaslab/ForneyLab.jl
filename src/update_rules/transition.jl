@@ -1,12 +1,12 @@
 @sumProductRule(:node_type     => Transition,
                 :outbound_type => Message{Categorical},
                 :inbound_types => (Nothing, Message{Categorical}, Message{PointMass}),
-                :name          => SPTransitionOutVCP)
+                :name          => SPTransitionOutNCP)
 
 @sumProductRule(:node_type     => Transition,
                 :outbound_type => Message{Categorical},
                 :inbound_types => (Message{Categorical}, Nothing, Message{PointMass}),
-                :name          => SPTransitionIn1CVP)
+                :name          => SPTransitionIn1CNP)
 
 @naiveVariationalRule(:node_type     => Transition,
                       :outbound_type => Message{Categorical},

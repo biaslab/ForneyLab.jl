@@ -1,9 +1,9 @@
 export
-ruleSPCategoricalOutVP,
+ruleSPCategoricalOutNP,
 ruleVBCategoricalOut,
 ruleVBCategoricalIn1
 
-ruleSPCategoricalOutVP(msg_out::Nothing, msg_p::Message{PointMass, Multivariate}) = Message(Univariate, Categorical, p=deepcopy(msg_p.dist.params[:m]))
+ruleSPCategoricalOutNP(msg_out::Nothing, msg_p::Message{PointMass, Multivariate}) = Message(Univariate, Categorical, p=deepcopy(msg_p.dist.params[:m]))
 
 function ruleVBCategoricalOut(marg_out::Any, marg_p::ProbabilityDistribution{Multivariate})
     rho = clamp.(exp.(unsafeLogMean(marg_p)), tiny, huge)
