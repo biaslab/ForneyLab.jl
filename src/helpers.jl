@@ -17,10 +17,10 @@ attempts with added regularization (1e-8*I) on failure.
 """
 function cholinv(M::AbstractMatrix)
     try
-        return inv(cholesky(M))
+        return inv(cholesky(Hermitian(M)))
     catch
         try
-            return inv(cholesky(M + 1e-8*I))
+            return inv(cholesky(Hermitian(M + 1e-8*I)))
         catch exception
             if exception == PosDefException
                 throw("PosDefException: Matrix is not positive-definite,
