@@ -4,7 +4,6 @@ addons:
     - gfortran
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-        brew cask uninstall oclint;
         brew install gcc;
     fi
 os:
@@ -17,5 +16,4 @@ julia:
 notifications:
   email: false
 script:
-  - julia -e 'mv("_Project.toml", "Project.toml")'
   - julia -e 'import Pkg; Pkg.build(); Pkg.test()'
