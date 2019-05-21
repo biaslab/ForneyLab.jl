@@ -1,6 +1,6 @@
 # Internals
 
-This page documents the internals of the ForneyLab package. It is mainly tailored for software developers interested in understanding the inner workings of the package.
+This page documents the internals of the ForneyLab package. It is mainly tailored for software developers interested in understanding the inner workings of the package. Coding style conventions can be found in `STYLEGUIDE.md`.
 
 ## Directory structure
 

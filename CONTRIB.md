@@ -54,18 +54,6 @@ We use the standard [GitHub Flow](https://guides.github.com/introduction/flow/) 
 Before opening a pull request, please make sure that all tests pass without
 failing! All demos (can be found in `/demo/` directory) have to run without errors as well.
 
-### Style conventions
-
-We use default [Julia style
-conventions](https://docs.julialang.org/en/stable/manual/style-guide/). We list here a few important points and our modifications to the Julia style guide:
-
-- Use 4 spaces for indentation
-- Type names use `UpperCamelCase`. E.g., `FactorNode`, `Gaussian`
-- Function names are `lowerCamelCase` (differs from the official Julia
-  convention). For example, `isApplicable`, `currentGraph`
-- Variable names and function arguments (e.g. `inbound_messages`) use `snake_case`
-- The name of a method that modifies its argument(s) must end in `!`
-
 ### Unit tests
 
 We use the test-driven design (TDD) methodology for ForneyLab.jl development. The test coverage should be as complete as possible. Please make sure that you write tests for each piece of code that you want to add.
