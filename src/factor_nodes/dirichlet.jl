@@ -4,15 +4,14 @@ export Dirichlet
 Description:
     Dirichlet factor node
 
-    Real vector
-    a .> 0
-
-    Multivariate:
+    Multivariate:    
     f(out, a) = Dir(out|a)
               = Γ(Σ_i a_i)/(Π_i Γ(a_i)) Π_i out_i^{a_i}
-
-    Matrix variate with independent columns (left-stochastic matrix):
+    where 'a' is a vector with every a_i > 0
+    
+    Matrix variate:
     f(out, a) = Π_k Dir(out|a_*k)
+    where 'a' represents a left-stochastic matrix with every a_jk > 0
 
 Interfaces:
     1. out
