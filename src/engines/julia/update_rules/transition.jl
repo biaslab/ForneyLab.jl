@@ -1,4 +1,6 @@
 export
+ruleSPTransitionOutNPP,
+ruleSPTransitionIn1PNP,
 ruleSPTransitionOutNCP,
 ruleSPTransitionIn1CNP,
 ruleVBTransitionOut,
@@ -8,6 +10,24 @@ ruleSVBTransitionOutVCD,
 ruleSVBTransitionIn1CVD,
 ruleSVBTransitionADV,
 ruleMTransitionCCD
+
+function ruleSPTransitionOutNPP(msg_out::Nothing,
+                                msg_in1::Message{PointMass, Multivariate},
+                                msg_a::Message{PointMass, MatrixVariate})
+
+    a = msg_a.dist.params[:m]*msg_in1.dist.params[:m]
+    
+    Message(Univariate, Categorical, p=a./sum(a))
+end
+
+function ruleSPTransitionIn1PNP(msg_out::Message{PointMass, Multivariate},
+                                msg_in1::Nothing,
+                                msg_a::Message{PointMass, MatrixVariate})
+
+    a = msg_a.dist.params[:m]'*msg_out.dist.params[:m]
+    
+    Message(Univariate, Categorical, p=a./sum(a))
+end
 
 function ruleSPTransitionOutNCP(msg_out::Nothing,
                                 msg_in1::Message{Categorical, Univariate},

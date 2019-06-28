@@ -8,6 +8,8 @@ Description:
 
     f(out, in1, a) = Cat(out | a*in1)
 
+    Where a is a left-stochastic matrix (columns sum to one)
+
 Interfaces:
 
     1. out

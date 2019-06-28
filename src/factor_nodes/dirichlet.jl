@@ -4,16 +4,14 @@ export Dirichlet
 Description:
     Dirichlet factor node
 
-    Real vector
-    a .> 0
-
-    Multivariate:
+    Multivariate:    
     f(out, a) = Dir(out|a)
               = Γ(Σ_i a_i)/(Π_i Γ(a_i)) Π_i out_i^{a_i}
-
-    Matrix variate with independent rows:
-    f(out, a) = Π_j Dir(out|a_j.)
-              = Π_j Γ(Σ_k a_jk)/(Π_k Γ(a_jk)) Π_k out_jk^{a_jk}
+    where 'a' is a vector with every a_i > 0
+    
+    Matrix variate:
+    f(out, a) = Π_k Dir(out|a_*k)
+    where 'a' represents a left-stochastic matrix with every a_jk > 0
 
 Interfaces:
     1. out
@@ -55,10 +53,10 @@ vague(::Type{Dirichlet}, dims::Tuple{Int64, Int64}) = ProbabilityDistribution(Ma
 isProper(dist::ProbabilityDistribution{V, Dirichlet}) where V<:VariateType = all(dist.params[:a] .> 0.0)
 
 unsafeMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a])
-unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a],dims=2)
+unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = dist.params[:a]./sum(dist.params[:a],dims=1) # Normalize columns
 
 unsafeLogMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a]))
-unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a],dims=2))
+unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a],dims=1)) # Normalize columns
 
 function unsafeVar(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])
@@ -90,8 +88,8 @@ end
                             z::ProbabilityDistribution{MatrixVariate, PointMass}=ProbabilityDistribution(MatrixVariate, PointMass, m=mat(NaN)))
 
     all(0.0 .<= y.params[:m] .<= 1.0) || error("PointMass location entries $(y.params[:m]) should all be between 0 and 1")
-    for j = 1:dims(y)[1]
-        isapprox(sum(y.params[:m][j,:]), 1.0) || error("Pointmass location entries $(y.params[:m][j,:]) of row $j should sum to one")
+    for k = 1:dims(y)[2] # For all columns
+        isapprox(sum(y.params[:m][:,k]), 1.0) || error("Pointmass location entries $(y.params[:m][:,k]) of column $k should sum to one")
     end
 
     z.params[:m] = deepcopy(y.params[:m])
@@ -110,12 +108,12 @@ end
 
 function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Dirichlet})
     H = 0.0
-    for j = 1:dims(dist)[1]
-        a_sum = sum(dist.params[:a][j,:])
+    for k = 1:dims(dist)[2] # For all columns
+        a_sum = sum(dist.params[:a][:,k])
 
-        H += -sum( (dist.params[:a][j,:] .- 1.0).*(digamma.(dist.params[:a][j,:]) .- digamma.(a_sum)) ) -
+        H += -sum( (dist.params[:a][:,k] .- 1.0).*(digamma.(dist.params[:a][:,k]) .- digamma.(a_sum)) ) -
         lgamma(a_sum) +
-        sum( lgamma.(dist.params[:a][j,:]) )
+        sum( lgamma.(dist.params[:a][:,k]) )
     end
 
     return H
@@ -136,12 +134,12 @@ function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Matr
     log_mean_marg_out = unsafeLogMean(marg_out)
 
     H = 0.0
-    for j = 1:dims(marg_out)[1]
-        a_sum = sum(marg_a.params[:m][j,:])
+    for k = 1:dims(marg_out)[2] # For all columns
+        a_sum = sum(marg_a.params[:m][:,k])
 
         H += -lgamma(a_sum) +
-        sum( lgamma.(marg_a.params[:m][j,:]) ) -
-        sum( (marg_a.params[:m][j,:] .- 1.0).*log_mean_marg_out[j,:] )
+        sum( lgamma.(marg_a.params[:m][:,k]) ) -
+        sum( (marg_a.params[:m][:,k] .- 1.0).*log_mean_marg_out[:,k] )
     end
 
     return H

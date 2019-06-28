@@ -30,9 +30,9 @@ end
 
 @testset "unsafe mean and variance" begin
     @test unsafeMean(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 2.0])) == [0.5, 0.5]
-    @test unsafeMean(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 2.0; 1.0 3.0])) == [0.5 0.5; 0.25 0.75]
+    @test unsafeMean(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 1.0; 2.0 3.0])) == [0.5 0.25; 0.5 0.75]
     @test unsafeLogMean(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0])) == [digamma(2.0), digamma(3.0)] .- digamma(5.0)
-    @test unsafeLogMean(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])) == [digamma(2.0) digamma(3.0); digamma(4.0) digamma(5.0)] - [digamma(5.0) digamma(5.0); digamma(9.0) digamma(9.0)]
+    @test unsafeLogMean(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 4.0; 3.0 5.0])) == [digamma(2.0) digamma(4.0); digamma(3.0) digamma(5.0)] - [digamma(5.0) digamma(9.0); digamma(5.0) digamma(9.0)]
     @test unsafeVar(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 2.0])) == [0.05, 0.05]
 end
 
@@ -46,8 +46,8 @@ end
 
     # MatrixVariate
     @test ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 2.0; 3.0 3.0]) * ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0]) == ProbabilityDistribution(MatrixVariate, Dirichlet, a=[3.0 4.0; 6.0 7.0])
-    @test ProbabilityDistribution(MatrixVariate, Dirichlet, a=[1.0 2.0; 3.0 4.0]) * ProbabilityDistribution(MatrixVariate, PointMass, m=[0.1 0.9; 0.3 0.7]) == ProbabilityDistribution(MatrixVariate, PointMass, m=[0.1 0.9; 0.3 0.7])
-    @test ProbabilityDistribution(MatrixVariate, PointMass, m=[0.1 0.9; 0.3 0.7]) * ProbabilityDistribution(MatrixVariate, Dirichlet, a=[1.0 2.0; 3.0 4.0]) == ProbabilityDistribution(MatrixVariate, PointMass, m=[0.1 0.9; 0.3 0.7])
+    @test ProbabilityDistribution(MatrixVariate, Dirichlet, a=[1.0 3.0; 2.0 4.0]) * ProbabilityDistribution(MatrixVariate, PointMass, m=[0.1 0.3; 0.9 0.7]) == ProbabilityDistribution(MatrixVariate, PointMass, m=[0.1 0.3; 0.9 0.7])
+    @test ProbabilityDistribution(MatrixVariate, PointMass, m=[0.1 0.3; 0.9 0.7]) * ProbabilityDistribution(MatrixVariate, Dirichlet, a=[1.0 3.0; 2.0 4.0]) == ProbabilityDistribution(MatrixVariate, PointMass, m=[0.1 0.3; 0.9 0.7])
 end
 
 
@@ -79,8 +79,8 @@ end
     @test isapprox(averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[4.0, 5.0]), ProbabilityDistribution(Multivariate, PointMass, m=[2.0, 3.0])), averageEnergy(Beta, ProbabilityDistribution(Univariate, Beta, a=4.0, b=5.0), ProbabilityDistribution(Univariate, PointMass, m=2.0), ProbabilityDistribution(Univariate, PointMass, m=3.0)))
     
     # MatrixVariate
-    @test differentialEntropy(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])) == differentialEntropy(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0])) + differentialEntropy(ProbabilityDistribution(Multivariate, Dirichlet, a=[4.0, 5.0]))
-    @test averageEnergy(Dirichlet, ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0]), ProbabilityDistribution(MatrixVariate, PointMass, m=[6.0 7.0; 8.0 9.0])) == averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0]), ProbabilityDistribution(Multivariate, PointMass, m=[6.0, 7.0])) + averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[4.0, 5.0]), ProbabilityDistribution(Multivariate, PointMass, m=[8.0, 9.0]))
+    @test differentialEntropy(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])) == differentialEntropy(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 4.0])) + differentialEntropy(ProbabilityDistribution(Multivariate, Dirichlet, a=[3.0, 5.0]))
+    @test averageEnergy(Dirichlet, ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0]), ProbabilityDistribution(MatrixVariate, PointMass, m=[6.0 7.0; 8.0 9.0])) == averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 4.0]), ProbabilityDistribution(Multivariate, PointMass, m=[6.0, 8.0])) + averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[3.0, 5.0]), ProbabilityDistribution(Multivariate, PointMass, m=[7.0, 9.0]))
 end
 
 end # module
