@@ -5,12 +5,6 @@ using ForneyLab
 using ForneyLab: outboundType, isApplicable
 using ForneyLab: VBLogitOut, VBLogitIn1, VBLogitXi
 
-@testset "Logit" begin
-    g = FactorGraph()
-    nd = Logit(Variable(), Variable(), Variable())
-    @test length(nd.interfaces) == 3
-    @test nd.id == :logit_1
-end
 
 #-------------
 # Update rules
