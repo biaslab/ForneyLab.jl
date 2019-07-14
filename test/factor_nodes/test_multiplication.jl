@@ -3,7 +3,7 @@ module MultiplicationTest
 using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPMultiplicationOutNGP, SPMultiplicationOutNPG, SPMultiplicationIn1GNP, SPMultiplicationAGPN, SPMultiplicationOutVPP, SPMultiplicationIn1PNP, SPMultiplicationAPPN
+import ForneyLab: SPMultiplicationOutNGP, SPMultiplicationOutNPG, SPMultiplicationIn1GNP, SPMultiplicationAGPN, SPMultiplicationOutNPP, SPMultiplicationIn1PNP, SPMultiplicationAPPN
 
 @testset "Multiplication node construction through * syntax" begin
     g = FactorGraph()
@@ -46,10 +46,10 @@ end
     @test ruleSPMultiplicationOutNPG(nothing, Message(Multivariate, PointMass, m=[2.0]), Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0)) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
 end
 
-@testset "SPMultiplicationOutVPP" begin
-    @test SPMultiplicationOutVPP <: SumProductRule{Multiplication}
-    @test outboundType(SPMultiplicationOutVPP) == Message{PointMass}
-    @test isApplicable(SPMultiplicationOutVPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
+@testset "SPMultiplicationOutNPP" begin
+    @test SPMultiplicationOutNPP <: SumProductRule{Multiplication}
+    @test outboundType(SPMultiplicationOutNPP) == Message{PointMass}
+    @test isApplicable(SPMultiplicationOutNPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
 
     @test ruleSPMultiplicationOutNPP(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, PointMass, m=1.0)) == Message(Univariate, PointMass, m=2.0)
     @test ruleSPMultiplicationOutNPP(nothing, Message(Multivariate, PointMass, m=[2.0]), Message(MatrixVariate, PointMass, m=mat(1.0))) == Message(Multivariate, PointMass, m=[2.0])
