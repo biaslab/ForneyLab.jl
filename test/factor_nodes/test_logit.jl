@@ -23,7 +23,7 @@ end
     @test outboundType(VBLogitIn1) == Message{GaussianWeightedMeanPrecision}
     @test isApplicable(VBLogitIn1, [ProbabilityDistribution, Nothing, ProbabilityDistribution]) 
 
-    @test ruleVBLogitIn1(ProbabilityDistribution(Univariate, Bernoulli, p=0.8), nothing, ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=0.15, w=(1/(1+exp(-3.0)) - 0.5)/6.0)
+    @test ruleVBLogitIn1(ProbabilityDistribution(Univariate, Bernoulli, p=0.8), nothing, ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=0.3, w=(1/(1+exp(-3.0)) - 0.5)/3.0)
 end
 
 @testset "VBLogitXi" begin

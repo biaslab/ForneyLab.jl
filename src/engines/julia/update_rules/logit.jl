@@ -13,7 +13,7 @@ function ruleVBLogitIn1(marg_out::ProbabilityDistribution{Univariate},
     
     xi_hat = marg_xi.params[:m]
     
-    return Message(Univariate, GaussianWeightedMeanPrecision, xi=0.5*(unsafeMean(marg_out) - 0.5), w=logisticLambda(xi_hat))
+    return Message(Univariate, GaussianWeightedMeanPrecision, xi=unsafeMean(marg_out) - 0.5, w=2*logisticLambda(xi_hat))
 end
 
 function ruleVBLogitXi(marg_out::ProbabilityDistribution{Univariate}, 

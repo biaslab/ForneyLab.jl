@@ -37,6 +37,7 @@ using Test
     include("factor_nodes/test_gaussian_mixture.jl")
     include("factor_nodes/test_probit.jl")
     include("factor_nodes/test_logit.jl")
+    include("factor_nodes/test_softmax.jl")
     include("factor_nodes/test_nonlinear.jl")
     include("factor_nodes/test_dot_product.jl")
     include("factor_nodes/test_poisson.jl")
