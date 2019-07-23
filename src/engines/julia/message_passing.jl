@@ -15,7 +15,8 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
             partner = ultimatePartner(entry.interface)
             breaker_types[partner] = outbound_types[partner]
             breaker_dims[partner] = 1
-        elseif isa(entry.interface.node, Nonlinear)
+        elseif isa(entry.interface.node, Nonlinear) && (entry.interface == entry.interface.node.interfaces[2]) && (entry.interface.node.g_inv == nothing)
+            # Set initialization in case of a nonlinear node without given inverse 
             iface = ultimatePartner(entry.interface.node.interfaces[2])
             breaker_types[iface] = outbound_types[iface]
             breaker_dims[iface] = entry.interface.node.dims[1]

@@ -22,10 +22,10 @@ function cholinv(M::AbstractMatrix)
         try
             return inv(cholesky(Hermitian(M + 1e-8*I)))
         catch exception
-            if exception == PosDefException
-                throw("PosDefException: Matrix is not positive-definite,
-                      even after regularization")
+            if isa(exception, PosDefException)
+                error("PosDefException: Matrix is not positive-definite, even after regularization. $(typeof(M)):\n$M")
             else
+                println("Error for $(typeof(M)):\n$M")
                 rethrow(exception)
             end
         end
