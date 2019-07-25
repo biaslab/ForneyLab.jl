@@ -1,8 +1,8 @@
 export
-ruleSPGaussianWeightedMeanPrecisionOutVPP,
+ruleSPGaussianWeightedMeanPrecisionOutNPP,
 ruleVBGaussianWeightedMeanPrecisionOut
 
-ruleSPGaussianWeightedMeanPrecisionOutVPP(  msg_out::Nothing,
+ruleSPGaussianWeightedMeanPrecisionOutNPP(  msg_out::Nothing,
                                             msg_weighted_mean::Message{PointMass, V},
                                             msg_prec::Message{PointMass}) where V<:VariateType =
     Message(V, GaussianWeightedMeanPrecision, xi=deepcopy(msg_weighted_mean.dist.params[:m]), w=deepcopy(msg_prec.dist.params[:m]))

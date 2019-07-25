@@ -11,7 +11,7 @@
 @sumProductRule(:node_type     => Multiplication,
                 :outbound_type => Message{PointMass},
                 :inbound_types => (Nothing, Message{PointMass}, Message{PointMass}),
-                :name          => SPMultiplicationOutVPP)
+                :name          => SPMultiplicationOutNPP)
 
 @sumProductRule(:node_type     => Multiplication,
                 :outbound_type => Message{GaussianWeightedMeanPrecision},
