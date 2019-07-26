@@ -2,42 +2,48 @@ import Base: prod!, convert
 
 export Gaussian, prod!, convert
 
-function convert(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
+function convert(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}},
+                 dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
     w = inv(dist.params[:v])
     m = deepcopy(dist.params[:m])
 
     return ProbabilityDistribution(V, GaussianMeanPrecision, m=m, w=w)
 end
 
-function convert(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType
+function convert(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}},
+                 dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType
     w = deepcopy(dist.params[:w])
     m = inv(w)*dist.params[:xi]
 
     return ProbabilityDistribution(V, GaussianMeanPrecision, m=m, w=w)
 end
 
-function convert(::Type{ProbabilityDistribution{V, GaussianMeanVariance}}, dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
+function convert(::Type{ProbabilityDistribution{V, GaussianMeanVariance}},
+                 dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
     v = inv(dist.params[:w])
     m = deepcopy(dist.params[:m])
 
     return ProbabilityDistribution(V, GaussianMeanVariance, m=m, v=v)
 end
 
-function convert(::Type{ProbabilityDistribution{V, GaussianMeanVariance}}, dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType
+function convert(::Type{ProbabilityDistribution{V, GaussianMeanVariance}},
+                 dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType
     v = inv(dist.params[:w])
     m = v*dist.params[:xi]
 
     return ProbabilityDistribution(V, GaussianMeanVariance, m=m, v=v)
 end
 
-function convert(::Type{ProbabilityDistribution{V, GaussianWeightedMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
+function convert(::Type{ProbabilityDistribution{V, GaussianWeightedMeanPrecision}},
+                 dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
     w = deepcopy(dist.params[:w])
     xi = w*dist.params[:m]
 
     return ProbabilityDistribution(V, GaussianWeightedMeanPrecision, xi=xi, w=w)
 end
 
-function convert(::Type{ProbabilityDistribution{V, GaussianWeightedMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
+function convert(::Type{ProbabilityDistribution{V, GaussianWeightedMeanPrecision}},
+                 dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
     w = inv(dist.params[:v])
     xi = w*dist.params[:m]
 
@@ -78,7 +84,7 @@ end
 function prod!(
     x::ProbabilityDistribution{Multivariate, F1},
     y::ProbabilityDistribution{Multivariate, F2},
-    z::ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}=ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[NaN], w=ScalMat(1,NaN))) where {F1<:Gaussian, F2<:Gaussian}
+    z::ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}=ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[0], w=diageye(1))) where {F1<:Gaussian, F2<:Gaussian}
 
     z.params[:xi] = unsafeWeightedMean(x) + unsafeWeightedMean(y)
     z.params[:w] = unsafePrecision(x) + unsafePrecision(y)
@@ -105,7 +111,7 @@ end
 function sample(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian
     isProper(dist) || error("Cannot sample from improper distribution")
     (m,V) = unsafeMeanCov(dist)
-    return (cholesky(V)).U' *randn(dims(dist)) + m
+    return (V.chol).U' *randn(dims(dist)) + m
 end
 
 # Entropy functional

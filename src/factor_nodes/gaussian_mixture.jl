@@ -50,10 +50,10 @@ end
 slug(::Type{GaussianMixture}) = "GM"
 
 # Average energy functional
-function ForneyLab.averageEnergy(   ::Type{GaussianMixture},
-                                    dist_out::ProbabilityDistribution,
-                                    dist_switch::ProbabilityDistribution,
-                                    dist_factors::Vararg{ProbabilityDistribution})
+function ForneyLab.averageEnergy(::Type{GaussianMixture},
+                                 dist_out::ProbabilityDistribution,
+                                 dist_switch::ProbabilityDistribution,
+                                 dist_factors::Vararg{ProbabilityDistribution})
 
     dist_means = collect(dist_factors[1:2:end])
     dist_precs = collect(dist_factors[2:2:end])

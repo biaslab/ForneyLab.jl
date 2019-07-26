@@ -11,7 +11,7 @@ end
 
 @testset "vague" begin
     @test vague(GaussianWeightedMeanPrecision) == ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=tiny)
-    @test vague(GaussianWeightedMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=zeros(2), w=tiny*eye(2))
+    @test vague(GaussianWeightedMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=zeros(2), w=tiny*diageye(2))
 end
 
 @testset "isProper" begin
@@ -20,9 +20,11 @@ end
     @test !isProper(ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=-1.0))
 
     # Multivariate
-    @test isProper(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[0.0], w=mat(1.0)))
-    @test isProper(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=ones(2), w=diageye(2)))
-    @test !isProper(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[0.0], w=mat(-1.0)))
+    @test isProper(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[0.0], w=1.0*diageye(2)))
+    @test isProper(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=ones(2), w=2.0*diageye(2)))
+
+    # Cannot be done, because an improper distribution cannot be constructed
+    # @test !isProper(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[0.0], w=-1.0*diageye(2)))
 end
 
 @testset "==" begin

@@ -25,8 +25,8 @@ inv(M::PDMat) = inv(M.chol)
 inv(M::PDiagMat) = Diagonal(M.inv_diag)
 inv(M::ScalMat) = M.inv_value
 
-eye(n::Number) = Diagonal(I,n)
-diageye(dims::Int64) = PDiagMat(ones(dims))
+eye(n::Number) = Diagonal(I,n) # Boolean
+diageye(dims::Int64) = PDiagMat(ones(dims)) # integers
 
 Base.broadcast(::typeof(*), D1::Diagonal, D2::Diagonal) = Diagonal(D1.diag.*D2.diag)
 Base.broadcast(::typeof(*), D1::Matrix, D2::Diagonal) = Diagonal(diag(D1).*D2.diag)
@@ -108,14 +108,23 @@ format(d::ScalMat{Float64}) = format(d.value*Matrix{Float64}(I, d.dim, d.dim))
 
 """isApproxEqual: check approximate equality"""
 isApproxEqual(arg1, arg2) = maximum(abs.(arg1-arg2)) < tiny
+isApproxEqual(arg1, arg2::PDMat{Float64}) = maximum(abs.(arg1 - arg2.mat)) < tiny
+isApproxEqual(arg1::PDMat{Float64}, arg2) = maximum(abs.(arg1.mat - arg2)) < tiny
+isApproxEqual(arg1, arg2::PDiagMat{Float64}) = maximum(abs.(arg1 - Diagonal(arg2.diag))) < tiny
+isApproxEqual(arg1::PDiagMat{Float64}, arg2) = maximum(abs.(Diagonal(arg1.diag) - arg2)) < tiny
 isApproxEqual(arg1::PDMat{Float64}, arg2::PDMat{Float64}) = maximum(abs.(arg1.mat - arg2.mat)) < tiny
 isApproxEqual(arg1::PDiagMat{Float64}, arg2::PDiagMat{Float64}) = maximum(abs.(arg1.diag - arg2.diag)) < tiny
-isApproxEqual(arg1::ScalMat{Float64}, arg2::ScalMat{Float64}) = maximum(abs.(arg1.value - arg2.value)) < tiny
-isApproxEqual(arg1::PDiagMat{Float64}, arg2::ScalMat{Float64}) = maximum(abs.(arg1.diag - arg2.value*ones(arg2.dim,))) < tiny
-
+isApproxEqual(arg1::PDMat{Float64}, arg2::PDiagMat{Float64}) = maximum(abs.(arg1.mat - Diagonal(arg2.diag))) < tiny
+isApproxEqual(arg1::PDiagMat{Float64}, arg2::PDMat{Float64}) = maximum(abs.(Diagonal(arg1.diag) - arg2.mat)) < tiny
 
 """isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from."""
-isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round.(Matrix(arr), digits=round(Int, log10(huge)))) && isposdef(Hermitian(Matrix(arr), :L))
+function isRoundedPosDef(arr::AbstractMatrix{Float64})
+    return ishermitian(round.(Matrix(arr), digits=round(Int, log10(huge)))) && isposdef(Hermitian(Matrix(arr), :L))
+end
+
+function isRoundedPosDef(arr::AbstractPDMat)
+    return true
+end
 
 function viewFile(filename::AbstractString)
     # Open a file with the application associated with the file type
