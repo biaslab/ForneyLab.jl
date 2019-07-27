@@ -149,8 +149,8 @@ function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges
     # Therefore, we only need to consider one arbitrary edge to calculate the marginal.
     for variable in variables
         edge = first(variable.edges) # For the sake of consistency, we always take the first edge.
-        (edge.a != nothing && !isa(edge.a.node, Terminal)) && push!(target_sites, edge.a)
-        (edge.b != nothing && !isa(edge.b.node, Terminal)) && push!(target_sites, edge.b)
+        (edge.a != nothing && !isa(edge.a.node, Terminal)) && !isa(edge.a.node, Clamp) && push!(target_sites, edge.a)
+        (edge.b != nothing && !isa(edge.b.node, Terminal)) && !isa(edge.b.node, Clamp) && push!(target_sites, edge.b)
     end
 
     # Determine a feasible ordering of message updates

@@ -14,6 +14,7 @@ end
 @testset "vague" begin
     @test vague(GaussianMeanVariance) == ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=huge)
     @test vague(GaussianMeanVariance, 2) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(2), v=huge*eye(2))
+    @test vague(GaussianMeanVariance, (2,)) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(2), v=huge*eye(2))
 end
 
 @testset "isProper" begin

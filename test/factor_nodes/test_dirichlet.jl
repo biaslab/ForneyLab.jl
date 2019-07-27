@@ -25,6 +25,7 @@ end
 
 @testset "vague" begin
     @test vague(Dirichlet, 3) == ProbabilityDistribution(Dirichlet, a=ones(3))
+    @test vague(Dirichlet, (3,)) == ProbabilityDistribution(Dirichlet, a=ones(3))
     @test vague(Dirichlet, (2,3)) == ProbabilityDistribution(MatrixVariate, Dirichlet, a=ones(2,3))
 end
 
