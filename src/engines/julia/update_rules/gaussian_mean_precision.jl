@@ -11,17 +11,19 @@ ruleSVBGaussianMeanPrecisionW,
 ruleSVBGaussianMeanPrecisionMGVD,
 ruleMGaussianMeanPrecisionGGD
 
-ruleSPGaussianMeanPrecisionOutVPP(  msg_out::Nothing,
-                                    msg_mean::Message{PointMass, V},
-                                    msg_prec::Message{PointMass}) where V<:VariateType =
+ruleSPGaussianMeanPrecisionOutVPP(msg_out::Nothing,
+                                  msg_mean::Message{PointMass, V},
+                                  msg_prec::Message{PointMass}) where V<:VariateType =
     Message(V, GaussianMeanPrecision, m=deepcopy(msg_mean.dist.params[:m]), w=deepcopy(msg_prec.dist.params[:m]))
 
-ruleSPGaussianMeanPrecisionMPVP(msg_out::Message{PointMass}, msg_mean::Nothing, msg_prec::Message{PointMass}) =
+ruleSPGaussianMeanPrecisionMPVP(msg_out::Message{PointMass},
+                                msg_mean::Nothing,
+                                msg_prec::Message{PointMass}) =
     ruleSPGaussianMeanPrecisionOutVPP(msg_mean, msg_out, msg_prec)
 
 function ruleSPGaussianMeanPrecisionOutVGP(msg_out::Nothing,
-                                                                        msg_mean::Message{F, V},
-                                                                        msg_prec::Message{PointMass}) where {F<:Gaussian, V<:VariateType}
+                                           msg_mean::Message{F, V},
+                                           msg_prec::Message{PointMass}) where {F<:Gaussian, V<:VariateType}
 
     d_mean = convert(ProbabilityDistribution{V, GaussianMeanVariance}, msg_mean.dist)
 
@@ -31,14 +33,14 @@ end
 ruleSPGaussianMeanPrecisionMGVP(msg_out::Message{F}, msg_mean::Nothing, msg_prec::Message{PointMass}) where F<:Gaussian =
     ruleSPGaussianMeanPrecisionOutVGP(msg_mean, msg_out, msg_prec)
 
-ruleVBGaussianMeanPrecisionM(   dist_out::ProbabilityDistribution{V},
-                                                dist_mean::Any,
-                                                dist_prec::ProbabilityDistribution) where V<:VariateType =
+ruleVBGaussianMeanPrecisionM(dist_out::ProbabilityDistribution{V},
+                             dist_mean::Any,
+                             dist_prec::ProbabilityDistribution) where V<:VariateType =
     Message(V, GaussianMeanPrecision, m=unsafeMean(dist_out), w=unsafeMean(dist_prec))
 
-function ruleVBGaussianMeanPrecisionW(  dist_out::ProbabilityDistribution{Univariate},
-                                        dist_mean::ProbabilityDistribution{Univariate},
-                                        dist_prec::Any)
+function ruleVBGaussianMeanPrecisionW(dist_out::ProbabilityDistribution{Univariate},
+                                      dist_mean::ProbabilityDistribution{Univariate},
+                                      dist_prec::Any)
 
     (m_mean, v_mean) = unsafeMeanCov(dist_mean)
     (m_out, v_out) = unsafeMeanCov(dist_out)
@@ -46,9 +48,9 @@ function ruleVBGaussianMeanPrecisionW(  dist_out::ProbabilityDistribution{Univar
     Message(Univariate, Gamma, a=1.5, b=0.5*(v_mean + v_out + (m_mean - m_out)^2))
 end
 
-function ruleVBGaussianMeanPrecisionW(  dist_out::ProbabilityDistribution{Multivariate},
-                                        dist_mean::ProbabilityDistribution{Multivariate},
-                                        dist_prec::Any)
+function ruleVBGaussianMeanPrecisionW(dist_out::ProbabilityDistribution{Multivariate},
+                                      dist_mean::ProbabilityDistribution{Multivariate},
+                                      dist_prec::Any)
 
     (m_mean, v_mean) = unsafeMeanCov(dist_mean)
     (m_out, v_out) = unsafeMeanCov(dist_out)
@@ -56,9 +58,9 @@ function ruleVBGaussianMeanPrecisionW(  dist_out::ProbabilityDistribution{Multiv
     Message(MatrixVariate, Wishart, v=inv( v_mean + v_out + (m_mean - m_out)*(m_mean - m_out)' ), nu=dims(dist_out) + 2.0)
 end
 
-ruleVBGaussianMeanPrecisionOut( dist_out::Any,
-                                dist_mean::ProbabilityDistribution{V},
-                                dist_prec::ProbabilityDistribution) where V<:VariateType =
+ruleVBGaussianMeanPrecisionOut(dist_out::Any,
+                               dist_mean::ProbabilityDistribution{V},
+                               dist_prec::ProbabilityDistribution) where V<:VariateType =
     Message(V, GaussianMeanPrecision, m=unsafeMean(dist_mean), w=unsafeMean(dist_prec))
 
 ruleSVBGaussianMeanPrecisionOutVGD(dist_out::Any,
@@ -73,6 +75,8 @@ function ruleSVBGaussianMeanPrecisionW(
     joint_dims = dims(dist_out_mean)
     d_out_mean = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, dist_out_mean)
     (m, V) = unsafeMeanCov(d_out_mean)
+    if isa(V, PDMat); V = V.mat; end
+    
     if joint_dims == 2
         return Message(Univariate, Gamma, a=1.5, b=0.5*(V[1,1] - V[1,2] - V[2,1] + V[2,2] + (m[1] - m[2])^2))
     else

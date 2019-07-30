@@ -22,7 +22,7 @@ end
 end
 
 @testset "prod!" begin
-    @test ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=2.0) * ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0),nu=2.0) == ProbabilityDistribution(MatrixVariate, Wishart, v=PDMat(Matrix(transpose([0.4999999999999999]))),nu=2.0)
+    @test ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=2.0) * ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0),nu=2.0) == ProbabilityDistribution(MatrixVariate, Wishart, v=Matrix(transpose([0.5])),nu=2.0)
     @test ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=2.0) * ProbabilityDistribution(MatrixVariate, PointMass, m=mat(1.0)) == ProbabilityDistribution(MatrixVariate, PointMass, m=mat(1.0))
     @test ProbabilityDistribution(MatrixVariate, PointMass, m=mat(1.0)) * ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=2.0) == ProbabilityDistribution(MatrixVariate, PointMass, m=mat(1.0))
     @test_throws Exception ProbabilityDistribution(MatrixVariate, PointMass, m=transpose([-1.0])) * ProbabilityDistribution(MatrixVariate, Wishart, v=mat(1.0), nu=2.0)

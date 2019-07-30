@@ -51,7 +51,11 @@ function ProbabilityDistribution(::Type{GaussianMeanVariance}; m::Number=0.0, v:
 end
 
 function ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanVariance}; m=[0.0], v=Matrix{Float64}(I,1,1))
-    return ProbabilityDistribution{Multivariate, GaussianMeanVariance}(Dict(:m=>m, :v=>PDMat(Matrix(v))))
+    if isa(v, PDMat)
+        return ProbabilityDistribution{Multivariate, GaussianMeanVariance}(Dict(:m=>m, :v=>v))
+    else
+        return ProbabilityDistribution{Multivariate, GaussianMeanVariance}(Dict(:m=>m, :v=>PDMat(Matrix(v))))
+    end
 end
 
 function dims(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType

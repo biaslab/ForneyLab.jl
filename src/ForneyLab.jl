@@ -1,21 +1,24 @@
 module ForneyLab
 
-# Libraries that are not extended
 using PDMats
+
+# Other includes
+import Base: show, convert, ==, *, ^, sqrt, isapprox
+import Base.Meta: parse
+import Base64: base64encode
+import LinearAlgebra: diag, det, tr, cholesky, pinv, Adjoint, Transpose, I
+import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky, inv
+import LinearAlgebra: logdet
+import SparseArrays: spzeros
+import SpecialFunctions: digamma, lgamma, lbeta, erfc
+import Statistics: mean, var, cov
+import PDMats: AbstractPDMat, PDMat, PDiagMat
+import InteractiveUtils: subtypes
+import Printf: @sprintf
 
 # Helpers
 include("helpers.jl")
 include("dependency_graph.jl")
-
-# Other includes
-import Base: show, convert, ==, *
-import Base.Meta: parse
-import Base64: base64encode
-import LinearAlgebra: diag, det, tr, cholesky, pinv, Adjoint, Transpose
-import SparseArrays: spzeros
-import SpecialFunctions: digamma, lgamma, lbeta, erfc
-import Statistics: mean, var, cov
-
 
 # High level abstracts
 abstract type AbstractEdge end # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface

@@ -3,6 +3,8 @@ module GaussianWeightedMeanPrecisionTest
 using Test
 using ForneyLab
 import ForneyLab: isProper, unsafeMean, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
+import PDMats: PDMat, PDiagMat
+import LinearAlgebra: I, det, diag, logdet
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=1.0)) == 1
@@ -52,9 +54,9 @@ end
     @test unsafeVar(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == [0.25]
     @test unsafeCov(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == mat(0.25)
     @test unsafeMeanCov(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == ([0.5], mat(0.25))
-    @test unsafePrecision(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == mat(4.0)
+    @test unsafePrecision(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == PDMat(mat(4.0))
     @test unsafeWeightedMean(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == [2.0]
-    @test unsafeWeightedMeanPrecision(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == ([2.0], mat(4.0))
+    @test unsafeWeightedMeanPrecision(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == ([2.0], PDMat(mat(4.0)))
 end
 
 @testset "convert" begin

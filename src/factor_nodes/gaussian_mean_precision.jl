@@ -49,7 +49,11 @@ function ProbabilityDistribution(::Type{GaussianMeanPrecision}; m::Number=0.0, w
 end
 
 function ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanPrecision}; m=[0.0], w=Matrix{Float64}(I,1,1))
-    return ProbabilityDistribution{Multivariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>PDMat(Matrix(w))))
+    if isa(w, PDMat)
+        return ProbabilityDistribution{Multivariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>w))
+    else
+        return ProbabilityDistribution{Multivariate, GaussianMeanPrecision}(Dict(:m=>m, :w=>PDMat(Matrix(w))))
+    end
 end
 
 function dims(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
@@ -146,6 +150,7 @@ function averageEnergy(::Type{GaussianMeanPrecision},
                        marg_out_mean::ProbabilityDistribution{Multivariate, F},
                        marg_prec::ProbabilityDistribution{Univariate}) where F<:Gaussian
     (m, V) = unsafeMeanCov(marg_out_mean)
+    if isa(V, PDMat); V = V.mat; end
 
     0.5*log(2*pi) -
     0.5*unsafeLogMean(marg_prec) +
@@ -156,6 +161,8 @@ function averageEnergy(::Type{GaussianMeanPrecision},
                        marg_out_mean::ProbabilityDistribution{Multivariate, F},
                        marg_prec::ProbabilityDistribution{MatrixVariate}) where F<:Gaussian
     (m, V) = unsafeMeanCov(marg_out_mean)
+    if isa(V, PDMat); V = V.mat; end
+
     d = Int64(dims(marg_out_mean)/2)
 
     0.5*d*log(2*pi) -

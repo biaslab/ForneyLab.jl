@@ -15,15 +15,15 @@ using PDMats
     # include("./test_edge.jl")
     # include("./test_variable.jl")
     # include("./test_factor_graph.jl")
-    #
+    
     # # Factor nodes
-    # include("factor_nodes/test_clamp.jl")
-    # include("factor_nodes/test_equality.jl")
-    # include("factor_nodes/test_addition.jl")
-    # include("factor_nodes/test_multiplication.jl")
-    # include("factor_nodes/test_exponential.jl")
-    # include("factor_nodes/test_gaussian_mean_variance.jl")
-    # include("factor_nodes/test_gaussian_mean_precision.jl")
+    include("factor_nodes/test_clamp.jl")
+    include("factor_nodes/test_equality.jl")
+    include("factor_nodes/test_addition.jl")
+    include("factor_nodes/test_multiplication.jl")
+    include("factor_nodes/test_exponential.jl")
+    include("factor_nodes/test_gaussian_mean_variance.jl")
+    include("factor_nodes/test_gaussian_mean_precision.jl")
     include("factor_nodes/test_gaussian_weighted_mean_precision.jl")
     include("factor_nodes/test_gaussian.jl")
     include("factor_nodes/test_gamma.jl")

@@ -17,7 +17,11 @@ function ProbabilityDistribution(::Type{GaussianWeightedMeanPrecision}; xi::Numb
 end
 
 function ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianWeightedMeanPrecision}; xi=[0.0], w=diageye(1))
-    return ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}(Dict(:xi=>xi, :w=>w))
+    if isa(w, PDMat)
+        return ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}(Dict(:xi=>xi, :w=>w))
+    else
+        return ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}(Dict(:xi=>xi, :w=>PDMat(Matrix(w))))
+    end
 end
 
 function dims(dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType
