@@ -80,6 +80,19 @@ end
     @test_throws Exception Message(Multivariate, PointMass, m=0.2)
 end
 
+@testset "LogPDF ProbabilityDistribution and Message construction" begin
+    f(x) = x
+    @test isa(ProbabilityDistribution(Univariate, LogPDF, f=f).params[:f], Function)
+    @test isa(ProbabilityDistribution(Univariate, LogPDF, f=f), ProbabilityDistribution{Univariate, LogPDF})
+    @test isa(ProbabilityDistribution(Multivariate, LogPDF, f=f), ProbabilityDistribution{Multivariate, LogPDF})
+    @test isa(ProbabilityDistribution(MatrixVariate, LogPDF, f=f), ProbabilityDistribution{MatrixVariate, LogPDF})
+    @test isa(ProbabilityDistribution(LogPDF, f=f), ProbabilityDistribution{Univariate, LogPDF})
+    @test vague(LogPDF).params[:f](0.0) == 1.0
+    @test isa(Message(Univariate, LogPDF).dist.params[:f], Function)
+    @test isa(Message(Univariate, LogPDF), Message{LogPDF, Univariate})
+    @test isa(Message(LogPDF), Message{LogPDF, Univariate})
+end
+
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, PointMass, m=0.0)) == 1
     @test dims(ProbabilityDistribution(Multivariate, PointMass, m=ones(2))) == 2

@@ -3,6 +3,7 @@ ruleSPGaussianMeanVarianceOutNPP,
 ruleSPGaussianMeanVarianceMPNP,
 ruleSPGaussianMeanVarianceOutNGP, 
 ruleSPGaussianMeanVarianceMGNP, 
+ruleSPGaussianMeanVarianceVGGN, 
 ruleVBGaussianMeanVarianceM,
 ruleVBGaussianMeanVarianceOut
 
@@ -25,6 +26,16 @@ end
 
 ruleSPGaussianMeanVarianceMGNP(msg_out::Message{F}, msg_mean::Nothing, msg_var::Message{PointMass}) where F<:Gaussian = 
     ruleSPGaussianMeanVarianceOutNGP(msg_mean, msg_out, msg_var)
+
+function ruleSPGaussianMeanVarianceVGGN(msg_out::Message{F1, Univariate},
+                                        msg_mean::Message{F2, Univariate},
+                                        msg_var::Nothing) where {F1<:Gaussian, F2<:Gaussian}
+
+    d_out  = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_out.dist)
+    d_mean = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_mean.dist)
+
+    Message(Univariate, LogPDF, f=(v)-> -0.5*log(d_out.params[:v] + d_mean.params[:v] + v) - 1/(2*v)*(d_out.params[:m] - d_mean.params[:m])^2)
+end
 
 ruleVBGaussianMeanVarianceM(dist_out::ProbabilityDistribution{V},
                             dist_mean::Any,

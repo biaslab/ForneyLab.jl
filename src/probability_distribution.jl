@@ -4,6 +4,7 @@ Univariate,
 Multivariate,
 MatrixVariate,
 PointMass,
+LogPDF,
 @RV,
 mean,
 mode,
@@ -86,6 +87,21 @@ unsafeMeanCov(dist::ProbabilityDistribution) = (unsafeMean(dist), unsafeCov(dist
 unsafeWeightedMeanPrecision(dist::ProbabilityDistribution) = (unsafeWeightedMean(dist), unsafePrecision(dist)) # Can be overloaded for efficiency
 
 isProper(::ProbabilityDistribution{T, PointMass}) where T<:VariateType = true
+
+"""
+LogPDF is an abstract type used to describe log-pdf functions
+"""
+abstract type LogPDF <: SoftFactor end
+
+slug(::Type{LogPDF}) = "log-pdf"
+
+format(dist::ProbabilityDistribution{V, LogPDF}) where V<:VariateType = "$(slug(LogPDF))(f=$(dist.params[:f]))"
+
+# LogPDF distribution constructors
+ProbabilityDistribution(::Type{V}, ::Type{LogPDF}; f::Function=()->()) where V<:VariateType = ProbabilityDistribution{V, LogPDF}(Dict(:f=>f))
+ProbabilityDistribution(::Type{LogPDF}; f::Function=()->()) = ProbabilityDistribution{Univariate, LogPDF}(Dict(:f=>f))
+
+vague(::Type{LogPDF}) = ProbabilityDistribution(Univariate, LogPDF, f=x->1.0)
 
 """
 Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)
