@@ -71,8 +71,8 @@ function ruleSPNonlinearOutNG(msg_out::Nothing,
 
     # Unscented approximation
     g_sigma = g.(sigma_points)
-    m_fw_out = sum([weights_m[k+1]*g_sigma[k+1] for k=0:2])
-    V_fw_out = sum([weights_c[k+1]*(g_sigma[k+1] - m_fw_out)^2 for k=0:2])
+    m_fw_out = sum(weights_m.*g_sigma)
+    V_fw_out = sum(weights_c.*(g_sigma .- m_fw_out).^2)
 
     return Message(Univariate, GaussianMeanVariance, m=m_fw_out, v=V_fw_out)
 end
@@ -100,8 +100,8 @@ function ruleSPNonlinearIn1GG(msg_out::Message{F, Univariate},
 
     # Unscented approximation
     g_inv_sigma = g_inv.(sigma_points)
-    m_bw_in1 = sum([weights_m[k+1]*g_inv_sigma[k+1] for k=0:2])
-    V_bw_in1 = sum([weights_c[k+1]*(g_inv_sigma[k+1] - m_bw_in1)^2 for k=0:2])
+    m_bw_in1 = sum(weights_m.*g_inv_sigma)
+    V_bw_in1 = sum(weights_c.*(g_inv_sigma .- m_bw_in1).^2)
 
     return Message(Univariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
 end
@@ -132,9 +132,9 @@ function ruleSPNonlinearIn1GG(msg_out::Message{F1, Univariate},
 
     # Unscented approximations
     g_sigma = g.(sigma_points)
-    m_fw_out = sum([weights_m[k+1]*g_sigma[k+1] for k=0:2])
-    V_fw_out = sum([weights_c[k+1]*(g_sigma[k+1] - m_fw_out)^2 for k=0:2])
-    C_fw = sum([weights_c[k+1]*(sigma_points[k+1] - m_fw_in1)*(g_sigma[k+1] - m_fw_out) for k=0:2])
+    m_fw_out = sum(weights_m.*g_sigma)
+    V_fw_out = sum(weights_c.*(g_sigma .- m_fw_out).^2)
+    C_fw = sum(weights_c.*(sigma_points .- m_fw_in1).*(g_sigma .- m_fw_out))
 
     # Update based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
     C_fw_inv = 1/C_fw
