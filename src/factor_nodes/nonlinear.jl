@@ -5,6 +5,9 @@ Description:
 
     Nonlinear node modeling a nonlinear relation. Updates for
     the nonlinear node are computed through the unscented transform.
+    
+    For more details see "On Approximate Nonlinear Gaussian Message Passing on
+    Factor Graphs", Petersen et al. 2018.
 
     f(out, in1) = δ(out - g(in1))
 
@@ -15,7 +18,7 @@ Interfaces:
 
 Construction:
 
-    Nonlinear(out, in1, id=:my_node)
+    Nonlinear(out, in1, g, id=:my_node)
 """
 mutable struct Nonlinear <: DeltaFactor
     id::Symbol
@@ -26,9 +29,9 @@ mutable struct Nonlinear <: DeltaFactor
     g_inv::Union{Function, Nothing} # Inverse of g (optional)
     dims::Tuple # Dimension of breaker message on input interface
 
-    function Nonlinear(out, in1, g::Function; inverse=nothing, dims=(1,), id=ForneyLab.generateId(Nonlinear))
+    function Nonlinear(out, in1, g::Function; g_inv=nothing, dims=(1,), id=ForneyLab.generateId(Nonlinear))
         @ensureVariables(out, in1)
-        self = new(id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), g, inverse, dims)
+        self = new(id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), g, g_inv, dims)
         ForneyLab.addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)

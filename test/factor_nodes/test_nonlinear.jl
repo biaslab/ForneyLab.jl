@@ -62,7 +62,7 @@ end
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    n = Nonlinear(y, x, g, inverse=g_inv)
+    n = Nonlinear(y, x, g, g_inv=g_inv)
 
     # Forward; g_inv should not be present in call
     algo = sumProductAlgorithm(y)
