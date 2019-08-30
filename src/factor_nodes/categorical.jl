@@ -2,6 +2,7 @@ export Categorical
 
 """
 Description:
+
     Categorical factor node
 
     The categorical node defines a one-dimensional probability
@@ -14,10 +15,12 @@ Description:
               = Π_i p_i^{out_i}
 
 Interfaces:
+
     1. out
     2. p
 
 Construction:
+
     Categorical(id=:some_id)
 """
 mutable struct Categorical <: SoftFactor

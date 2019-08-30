@@ -2,6 +2,7 @@ export Beta
 
 """
 Description:
+
     Beta factor node
 
     Real scalars
@@ -11,11 +12,13 @@ Description:
     f(out, a, b) = Beta(out|a, b) = Γ(a + b)/(Γ(a) Γ(b)) out^{a - 1} (1 - out)^{b - 1}
 
 Interfaces:
+
     1. out
     2. a
     3. b
 
 Construction:
+
     Beta(id=:some_id)
 """
 mutable struct Beta <: SoftFactor

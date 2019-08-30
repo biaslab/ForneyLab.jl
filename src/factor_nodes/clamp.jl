@@ -52,7 +52,7 @@ function constant(value::Any; id=generateId(Clamp{variateType(value)}))
 end
 
 """
-@ensureVariables(...) casts all non-Variable arguments to Variable through constant(arg).
+`@ensureVariables(...)` casts all non-`Variable` arguments to `Variable` through constant(arg).
 """
 macro ensureVariables(args...)
     lines = ["isa($arg, Variable) || ($arg = constant($arg))" for arg in args]

@@ -7,10 +7,12 @@ Description:
     f(bin, real) = σ(bin⋅real)
 
 Interfaces:
+
     1. bin
     2. real
 
 Construction:
+
     Sigmoid(id=:some_id)
 """
 mutable struct Sigmoid <: SoftFactor
