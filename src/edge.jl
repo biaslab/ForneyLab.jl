@@ -1,7 +1,7 @@
 export Edge
 
 """
-An Edge joins two interfaces (half-edges) `a` and `b`.
+An `Edge` joins two interfaces (half-edges) `a` and `b`.
 """
 mutable struct Edge <: AbstractEdge
     variable::AbstractVariable

@@ -6,9 +6,10 @@ variationalExpectationPropagationSchedule,
 
 abstract type ExpectationPropagationRule{factor_type} <: MessageUpdateRule end
 
-"""
-expectationPropagationSchedule() generates a expectation propagation message passing schedule.
-"""
+""" 
+`expectationPropagationSchedule()` generates a expectation propagation
+message passing schedule. 
+""" 
 function expectationPropagationSchedule(variables::Vector{Variable})
     ep_sites = collectEPSites(nodes(current_graph))
     breaker_sites = Interface[site.partner for site in ep_sites]
@@ -30,7 +31,7 @@ function expectationPropagationSchedule(variables::Vector{Variable})
 end
 
 """
-variationalExpectationPropagationSchedule() generates an expectation propagation message passing schedule
+`variationalExpectationPropagationSchedule()` generates an expectation propagation message passing schedule
 that is limited to the `recognition_factor`. Updates on EP sites are computed with an `ExpectationPropagationRule`.
 """
 function variationalExpectationPropagationSchedule(recognition_factor::RecognitionFactor)
@@ -140,9 +141,9 @@ function collectInboundTypes(entry::ScheduleEntry,
 end
 
 """
-@expectationPropagationRule registers a expectation propagation update 
-rule by defining the rule type and the corresponding methods for the outboundType 
-and isApplicable functions. If no name (type) for the new rule is passed, a 
+`@expectationPropagationRule` registers a expectation propagation update 
+rule by defining the rule type and the corresponding methods for the `outboundType` 
+and `isApplicable` functions. If no name (type) for the new rule is passed, a 
 unique name (type) will be generated. Returns the rule type.
 """
 macro expectationPropagationRule(fields...)

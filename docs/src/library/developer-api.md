@@ -1,26 +1,21 @@
-# Internal API
+# Developer API
 
-Documentation for `ForneyLab.jl`'s internal API.
+Documentation for `ForneyLab.jl`'s developer API.
 
 ## Contents
 ```@contents
-Pages = ["internal-api.md"]
+Pages = ["developer-api.md"]
 Depth = 5
 ```
 
 ## Index
 ```@index
 Modules = [ForneyLab]
-Pages = ["internal-api.md"]
+Pages = ["developer-api.md"]
 Order = [:macro, :module, :constant, :type, :function]
 ```
 
-## Extended factor nodes
-```@docs
-ForneyLab.@composite
-```
-
-## Extended rules
+## Extended rules registration
 ```@docs
 ForneyLab.@expectationPropagationRule
 ForneyLab.@marginalRule

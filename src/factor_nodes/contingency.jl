@@ -2,6 +2,7 @@ export Contingency
 
 """
 Description:
+
     Contingency factor node
 
     The contingency distribution is a multivariate generalization of
@@ -21,11 +22,13 @@ Description:
     higher-order tensors as parameters; these are not implemented in ForneyLab.
 
 Interfaces:
+
     1. out1
     2. out2
     3. p
 
 Construction:
+
     Contingency(id=:some_id)
 """
 mutable struct Contingency <: SoftFactor

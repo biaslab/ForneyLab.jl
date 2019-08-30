@@ -1,19 +1,19 @@
 # User API
 
-Documentation for `ForneyLab.jl`'s public API.
+Documentation for `ForneyLab.jl`'s user API.
 
-See [Internal API](@ref) for internal package docs.
+If you want to know how you can extend `ForneyLab.jl` (e.g. register new update rules), see [Developer API](@ref).
 
 ## Contents
 ```@contents
-Pages = ["public-api.md"]
+Pages = ["user-api.md"]
 Depth = 5
 ```
 
 ## Index
 ```@index
 Modules = [ForneyLab]
-Pages = ["public-api.md"]
+Pages = ["user-api.md"]
 Order = [:macro, :module, :constant, :type, :function]
 ```
 

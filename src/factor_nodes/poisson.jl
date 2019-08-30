@@ -2,6 +2,7 @@ export Poisson
 
 """
 Description:
+
     Poisson factor node
 
     Real scalars
@@ -10,10 +11,12 @@ Description:
     f(out, l) = Poisson(out|l) = 1/(x!) * l^x * exp(-l)
 
 Interfaces:
+
     1. out
     2. l
 
 Construction:
+
     Poisson(id=:some_id)
 """
 mutable struct Poisson <: SoftFactor

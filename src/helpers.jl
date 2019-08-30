@@ -1,6 +1,6 @@
 export huge, tiny, cholinv, diageye, eye, format, *, ^, mat
 
-"""ensureMatrix: cast input to a Matrix if necessary"""
+"""Cast input to a `Matrix` if necessary"""
 ensureMatrix(arr::AbstractMatrix{T}) where T<:Number = arr
 ensureMatrix(arr::Vector{T}) where T<:Number = Diagonal(arr)
 ensureMatrix(n::Number) = fill!(Array{typeof(n)}(undef,1,1), n)
@@ -102,10 +102,10 @@ function format(v::Vector{Any})
     return str
 end
 
-"""isApproxEqual: check approximate equality"""
+"""Check if arguments are approximately equal"""
 isApproxEqual(arg1, arg2) = maximum(abs.(arg1-arg2)) < tiny
 
-"""isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from."""
+"""Checks if input matrix is positive definite. We also perform rounding in order to prevent floating point precision problems that `isposdef()`` suffers from."""
 isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round.(Matrix(arr), digits=round(Int, log10(huge)))) && isposdef(Hermitian(Matrix(arr), :L))
 
 function viewFile(filename::AbstractString)
@@ -114,7 +114,7 @@ function viewFile(filename::AbstractString)
 end
 
 """
-trigammaInverse(x): solve `trigamma(y) = x` for `y`.
+Solve `trigamma(y) = x` for `y`.
 
 Uses Newton's method on the convex function 1/trigramma(y).
 Iterations converge monotonically.
@@ -194,6 +194,6 @@ function leaftypes(datatype::Type)
 end
 
 """
-Helper function to construct 1x1 Matrix
+Helper function to construct 1x1 `Matrix`
 """
 mat(sc) = reshape([sc],1,1)
