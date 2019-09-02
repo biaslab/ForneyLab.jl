@@ -9,11 +9,11 @@
                       :name          => VBSoftmaxIn1)
 
 @naiveVariationalRule(:node_type     => Softmax,
-                      :outbound_type => Message{PointMass},
+                      :outbound_type => Message{Function},
                       :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Nothing, ProbabilityDistribution),
                       :name          => VBSoftmaxXi)
 
 @naiveVariationalRule(:node_type     => Softmax,
-                      :outbound_type => Message{PointMass},
+                      :outbound_type => Message{Function},
                       :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Nothing),
                       :name          => VBSoftmaxA)

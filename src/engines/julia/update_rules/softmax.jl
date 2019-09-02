@@ -35,7 +35,7 @@ function ruleVBSoftmaxXi(marg_out::ProbabilityDistribution{Univariate},
                          marg_xi::Any,
                          marg_a::ProbabilityDistribution{Univariate, PointMass})
     
-    return Message(Multivariate, PointMass, m=sqrt.(unsafeVar(marg_in1) + (unsafeMean(marg_in1) .- marg_a.params[:m]).^2))
+    return Message(Multivariate, Function, mode=sqrt.(unsafeVar(marg_in1) + (unsafeMean(marg_in1) .- marg_a.params[:m]).^2))
 end
 
 function ruleVBSoftmaxA(marg_out::ProbabilityDistribution{Univariate}, 
@@ -47,5 +47,5 @@ function ruleVBSoftmaxA(marg_out::ProbabilityDistribution{Univariate},
     lambda_xi_hat = logisticLambda.(xi_hat)
     d = length(xi_hat)
 
-    return Message(Univariate, PointMass, m=((d-2)/4 + unsafeMean(marg_in1)'*lambda_xi_hat)/sum(lambda_xi_hat))
+    return Message(Univariate, Function, mode=((d-2)/4 + unsafeMean(marg_in1)'*lambda_xi_hat)/sum(lambda_xi_hat))
 end

@@ -9,6 +9,6 @@
                       :name          => VBLogitIn1)
 
 @naiveVariationalRule(:node_type     => Logit,
-                      :outbound_type => Message{PointMass},
+                      :outbound_type => Message{Function},
                       :inbound_types => (ProbabilityDistribution, ProbabilityDistribution, Nothing),
                       :name          => VBLogitXi)

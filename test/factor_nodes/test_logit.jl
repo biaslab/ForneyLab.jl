@@ -28,10 +28,10 @@ end
 
 @testset "VBLogitXi" begin
     @test VBLogitXi <: NaiveVariationalRule{Logit}
-    @test outboundType(VBLogitXi) == Message{PointMass}
+    @test outboundType(VBLogitXi) == Message{Function}
     @test isApplicable(VBLogitXi, [ProbabilityDistribution, ProbabilityDistribution, Nothing]) 
 
-    @test ruleVBLogitXi(ProbabilityDistribution(Univariate, Bernoulli, p=0.8), ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), nothing) == Message(Univariate, PointMass, m=sqrt(5.0))
+    @test ruleVBLogitXi(ProbabilityDistribution(Univariate, Bernoulli, p=0.8), ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), nothing) == Message(Univariate, Function, mode=sqrt(5.0))
 end
 
 @testset "averageEnergy" begin

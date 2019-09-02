@@ -28,18 +28,18 @@ end
 
 @testset "VBSoftmaxXi" begin
     @test VBSoftmaxXi <: NaiveVariationalRule{Softmax}
-    @test outboundType(VBSoftmaxXi) == Message{PointMass}
+    @test outboundType(VBSoftmaxXi) == Message{Function}
     @test isApplicable(VBSoftmaxXi, [ProbabilityDistribution, ProbabilityDistribution, Nothing, ProbabilityDistribution]) 
 
-    @test ruleVBSoftmaxXi(ProbabilityDistribution(Univariate, Categorical, p=[0.8, 0.2]), ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[-1.0, 1.0], v=diageye(2)), nothing, ProbabilityDistribution(Univariate, PointMass, m=1.0)) == Message(Multivariate, PointMass, m=[2.23606797749979, 1.0])
+    @test ruleVBSoftmaxXi(ProbabilityDistribution(Univariate, Categorical, p=[0.8, 0.2]), ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[-1.0, 1.0], v=diageye(2)), nothing, ProbabilityDistribution(Univariate, PointMass, m=1.0)) == Message(Multivariate, Function, mode=[2.23606797749979, 1.0])
 end
 
 @testset "VBSoftmaxA" begin
     @test VBSoftmaxA <: NaiveVariationalRule{Softmax}
-    @test outboundType(VBSoftmaxA) == Message{PointMass}
+    @test outboundType(VBSoftmaxA) == Message{Function}
     @test isApplicable(VBSoftmaxA, [ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution, Nothing]) 
 
-    @test ruleVBSoftmaxA(ProbabilityDistribution(Univariate, Bernoulli, p=[0.8, 0.2]), ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[-1.0, 1.0], v=diageye(2)), ProbabilityDistribution(Multivariate, PointMass, m=[1.0, 2.0]), nothing) == Message(Univariate, PointMass, m=-0.09647491510115125)
+    @test ruleVBSoftmaxA(ProbabilityDistribution(Univariate, Bernoulli, p=[0.8, 0.2]), ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[-1.0, 1.0], v=diageye(2)), ProbabilityDistribution(Multivariate, PointMass, m=[1.0, 2.0]), nothing) == Message(Univariate, Function, mode=-0.09647491510115125)
 end
 
 @testset "averageEnergy" begin

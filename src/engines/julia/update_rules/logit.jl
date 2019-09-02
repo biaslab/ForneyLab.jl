@@ -20,5 +20,5 @@ function ruleVBLogitXi(marg_out::ProbabilityDistribution{Univariate},
                        marg_in1::ProbabilityDistribution{Univariate}, 
                        marg_xi::Any)
     
-    return Message(Univariate, PointMass, m=sqrt(unsafeMean(marg_in1)^2 + unsafeCov(marg_in1)))
+    return Message(Univariate, Function, mode=sqrt(unsafeMean(marg_in1)^2 + unsafeCov(marg_in1)))
 end
