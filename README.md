@@ -41,4 +41,4 @@ Additionally, the [ForneyLab project page](http://forneylab.org) contains a talk
 License
 =======
 
-(c) 2018 GN Store Nord A/S. Permission to use this software for any non-commercial purpose is granted. See `LICENSE.md` file for details.
+(c) 2019 GN Store Nord A/S. Permission to use this software for any non-commercial purpose is granted. See `LICENSE.md` file for details.

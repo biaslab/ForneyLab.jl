@@ -17,7 +17,7 @@ Probabilistic models incorporate the element of randomness to describe an event 
 Factor graphs are represented by the `FactorGraph` composite type (struct). To instantiate a new (empty) factor graph we use its constructor function that takes no arguments
 ```@example 1
 g = FactorGraph()
-nothing # hide
+;
 ```
 
 ForneyLab keeps track of an *active* factor graph at all times. Future operations on the graph, such as adding variables or nodes, affect the active graph. The call to `FactorGraph()` creates a new instance of a factor graph and registers it as the active graph.
@@ -25,32 +25,32 @@ ForneyLab keeps track of an *active* factor graph at all times. Future operation
 To get the active graph run
 ```@example 1
 fg = currentGraph()
-nothing # hide
+;
 ```
 
 To set the active graph run
 ```@example 1
 setCurrentGraph(g)
-nothing # hide
+;
 ```
 
 ### Adding random variables (edges)
 Random variables are represented as edges on Forney-style factor graphs. You can add a random variable to the active factor graph by instantiating the `Variable` composite type. The constructor function takes an `id` of type `Symbol` as argument. For example, running
 ```@example 1
 x = Variable(id=:x)
-nothing # hide
+;
 ```
 associates the variable `x` to an edge of the active factor graph.
 
 Alternatively, the `@RV` macro can be used for the same purpose in a more compact form. Executing the following line has the same effect as the previous one.
 ```@example 1
 @RV x
-nothing # hide
+;
 ```
 By default, the `@RV` macro uses the variable's name to create a Julia `Symbol` that is assigned to the `id` field of the `Variable` object (`:x` in this example). However, if this id value has already been assigned to a variable in the factor graph, then ForneyLab will create a default id of the form `:variable_x`, where `x` is a number that increments. In case you want to provide a custom `id`, the `@RV` macro accepts an optional keyword argument between square brackets that allows this. For example,
 ```@example 1
 @RV [id=:my_id] x
-nothing # hide
+;
 ```
 adds the variable `x` to the active graph and assigns the `:my_id` symbol to its `id` field. Later we will see that this is useful once we start visualizing the factor graph.
 
@@ -62,7 +62,7 @@ We can assign a probability distribution to a random variable using the `~` oper
 @RV m
 @RV v
 @RV y ~ GaussianMeanVariance(m, v)
-nothing # hide
+;
 ```
 
 ### Visualizing a factor graph
@@ -109,7 +109,7 @@ placeholder(y, :y, dims=(3,), datatype=Int)
 In the previous example, we first created the random variable `y` and then marked it as a placeholder. There is, however, a shorthand version to perform these two steps in one. The syntax consists of calling a `placeholder` method that takes an id `Symbol` as argument and returns the new random variable. Here is an example:
 ```@example 1
 x = placeholder(:x)
-nothing # hide
+;
 ```
 where `x` is now a random variable linked to a placeholder with id `:x`.
 
@@ -160,12 +160,13 @@ The important thing to note here is that we need an extra array of `N` observed 
 In section [Executing an algorithm](@ref) we will see examples of how the data is fed to the placeholders in each of these two scenarios.
 
 ## Generating an algorithm
-ForneyLab supports code generation for three different types of message-passing algorithms:
+ForneyLab supports code generation for four different types of message-passing algorithms:
 - [Belief propagation](https://en.wikipedia.org/wiki/Belief_propagation)
 - [Variational message passing](https://en.wikipedia.org/wiki/Variational_message_passing)
+- [Expectation maximization](https://en.wikipedia.org/wiki/Expectation-maximization_algorithm)
 - [Expectation propagation](https://en.wikipedia.org/wiki/Expectation_propagation)
 
-Whereas belief propagation computes exact inference for the random variables of interest, variational message passing (VMP) and expectation propagation (EP) algorithms are approximation methods that can be applied to a larger range of models.
+Whereas belief propagation computes exact inference for the random variables of interest, the variational message passing (VMP), expectation maximization (EM) and expectation propagation (EP) algorithms are approximation methods that can be applied to a larger range of models.
 
 ### Belief propagation
 The way to instruct ForneyLab to generate a belief propagation algorithm (also known as a sum-product algorithm) is by using the `sumProductAlgorithm` function. This function takes as argument(s) the random variable(s) for which we want to infer the posterior distribution. As an example, consider the following hierarchical model in which the mean of a Gaussian distribution is represented by another Gaussian distribution whose mean is modelled by another Gaussian distribution.  
@@ -180,18 +181,18 @@ ForneyLab.draw(g)
 If we were only interested in inferring the posterior distribution of `m1` then we would run
 ```@example 1
 algorithm_string = sumProductAlgorithm(m1)
-nothing # hide
+;
 ```
 On the other hand, if we were interested in the posterior distributions of both `m1` and `m2` we would then need to pass them as elements of an array, i.e.
 ```@example 1
 algorithm_string = sumProductAlgorithm([m1, m2])
-nothing # hide
+;
 ```
 
 Note that the message-passing algorithm returned by the `sumProductAlgorithm` function is a `String` that contains the definition of a Julia function. In order to be able to execute this function, we first need to parse this string as Julia expression to then evaluate it in the current scope that the program is running on. This can be done as follows
 ```@example 1
 algorithm_expr = Meta.parse(algorithm_string)
-nothing # hide
+;
 ```
 ```julia
 :(function step!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 4))
@@ -231,7 +232,7 @@ draw(g)
 The construct of the `RecognitionFactorization` composite type takes the random variables of interest as arguments and one final argument consisting of an array of symbols used to identify each of these random variables. Here is an example of how to use this construct for the previous model where we want to infer `m` and `w`.
 ```@example 1
 q = RecognitionFactorization(m, w, ids=[:M, :W])
-nothing # hide
+;
 ```
 This recognition factorization constraint that we introduce to guarantee tractability of the approximate distribution has a graphical interpretation. We can view this constraint as a division of the factor graph into a number of different subgraphs, each corresponding to a different factor in the recognition factorization. Minimization of the free energy is performed by iterating over each subgraph in order to update the posterior marginal corresponding to the current factor which depends on messages coming from the other subgraphs. This iteration is repeated until either the free energy converges to a certain value or the posterior marginals of each factor stop changing. We can use the `ids` passed to the `RecognitionFactorization` function to visualize their corresponding subgraphs, as shown below.   
 ```@example 1
@@ -245,7 +246,7 @@ Generating the VMP algorithm follows the same procedure that we saw for the beli
 # Generate variational update algorithms for each recognition factor
 algo = variationalAlgorithm(q)
 eval(Meta.parse(algo))
-nothing # hide
+;
 ```
 ```julia
 Meta.parse(algo) = quote
@@ -281,6 +282,35 @@ fe_algorithm = freeEnergyAlgorithm(q)
 eval(Meta.parse(fe_algorithm));
 ```
 
+### Expectation maximization
+
+The expectation step of the expectation maximization (EM) algorithm can be executed by sum-product message passing, while the maximization step can be performed analytically or numerically. 
+```@example 1
+g = FactorGraph()
+v = placeholder(:v) # parameter of interest
+@RV m ~ GaussianMeanVariance(0.0, 1.0)
+@RV y ~ GaussianMeanVariance(m, v)
+placeholder(y, :y)
+;
+```
+Generating a sum-product algorithm towards a clamped variable signals ForneyLab that the user wishes to optimize this parameter. Next to returning a `step!()` function, ForneyLab will then provide mockup code for an `optimize!()` function as well.
+```@example 1
+algo = sumProductAlgorithm(v)
+;
+```
+```julia
+# You have created an algorithm that requires updates for (a) clamped parameter(s).
+# This algorithm requires the definition of a custom `optimize!` function that updates the parameter value(s)
+# by altering the `data` dictionary in-place. The custom `optimize!` function may be based on the mockup below:
+
+# function optimize!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init())
+#   ...
+#   return data
+# end
+```
+This `optimize!()` function accepts This function needs to be defined by the user and may optionally depend upon external tools. Note that `optimize!()` and `step!()` functions have the same calling signature. However, where a `step!()` function accepts the `data` and updates the `messages` and `marginals`, the `optimize!()` function operates vice-versa. Iterating these functions offers a general mechanism for implementing EM-type algorithms. See the demos for a detailed example.
+
+
 ## Executing an algorithm
 In section [Specifying a model](@ref) we introduced two main ways to learn from data, namely in an online and in an offline setting. We saw that the structure of the factor graph is different in each of these settings. In this section we will demonstrate how to feed data to an algorithm in both an online and an offline setting. We will use the same examples from section [Online vs. offline learning](@ref).
 
@@ -294,7 +324,7 @@ v = placeholder(:v)
 @RV y ~ GaussianMeanVariance(x, 1.0)
 placeholder(y, :y)
 eval(Meta.parse(sumProductAlgorithm(x))) # generate, parse and evaluate the algorithm
-nothing # hide
+;
 ```
 In order to execute this algorithm we first have to specify a prior for `x`. This is done by choosing some initial values for the hyperparameters `m` and `v`. In each processing step, the algorithm expects an observation and the current belief about `x`, i.e. the prior. We pass this information as elements of a `data` dictionary where the keys are the `id`s of their corresponding placeholders. The algorithm performs inference and returns the results inside a different dictionary (which we call `marginals` in the following script). In the next iteration, we repeat this process by feeding the algorithm with the next observation in the sequence and the posterior distribution of `x` that we obtained in the previous processing step. In other words, the current posterior becomes the prior for the next processing step. Let's illustrate this using an example where we will first generate a synthetic dataset by sampling observations from a Gaussian distribution that has a mean of 5.
 ```@example 1
@@ -323,7 +353,7 @@ anim = @animate for i in 1:N
     global m_prior = mean(marginals[:x]) # today's posterior is tomorrow's prior
     global v_prior = var(marginals[:x])  # today's posterior is tomorrow's prior
 end
-nothing # hide
+;
 ```
 ![Online learning](./assets/belief-propagation-online.gif)
 
@@ -341,7 +371,7 @@ for i = 1:N
     placeholder(y[i], :y, index=i)
 end
 eval(Meta.parse(sumProductAlgorithm(x))) # generate, parse and evaluate the algorithm
-nothing # hide
+;
 ```
 Since we have a placeholder linked to each observation in the sequence, we can process the complete dataset in one step. To do so, we first need to create a dictionary having the complete dataset array as its single element. We then need to pass this dictionary to the `step!` function which, in contrast with the online counterpart, we only need to call once.
 ```@example 1

@@ -3,13 +3,13 @@ MarginalRule,
 @marginalRule
 
 """
-MarginalRule{factor_type} specifies a joint marginal update rule with respect
+`MarginalRule{factor_type}` specifies a joint marginal update rule with respect
 to a node of type `factor_type`.
 """
 abstract type MarginalRule{factor_type} <: MarginalUpdateRule end
 
 """
-Construct a MarginalScheduleEntry for computing the marginal over `cluster`
+Construct a `MarginalScheduleEntry` for computing the marginal over `cluster`
 through a node-specific joint marginal update rule.
 """
 function MarginalScheduleEntry(cluster::Cluster, outbound_types::Dict{Interface, Type})
@@ -89,7 +89,7 @@ function marginalSchedule(q_factors::Vector{RecognitionFactor}, schedule::Schedu
     marginal_schedule = MarginalScheduleEntry[]
     for q_factor in q_factors
         # Construct schedule for computing marginals over variables
-        variable_schedule = [MarginalScheduleEntry(variable) for variable in sort(collect(q_factor.variables))]
+        variable_schedule = marginalSchedule(sort(collect(q_factor.variables)))
         marginal_schedule = [marginal_schedule; variable_schedule]
 
         # Construct schedule for computing marginals over clusters
@@ -103,8 +103,8 @@ end
 marginalSchedule(q_factor::RecognitionFactor, schedule::Schedule) = marginalSchedule([q_factor], schedule)
 
 """
-@marginalRule registers a marginal update rule for a (joint) marginal
-by defining the rule type and the corresponding methods for the isApplicable functions.
+`@marginalRule` registers a marginal update rule for a (joint) marginal
+by defining the rule type and the corresponding methods for the `isApplicable` function.
 If no name (type) for the new rule is passed, a unique name (type) will be generated.
 Returns the rule type.
 """

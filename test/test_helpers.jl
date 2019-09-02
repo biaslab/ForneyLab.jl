@@ -2,7 +2,7 @@ module HelpersTest
 
 using Test
 import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, cholinv, diageye, *, ^
-import LinearAlgebra: Diagonal, isposdef, PosDefException, I, Hermitian
+import LinearAlgebra: Diagonal, isposdef, I, Hermitian
 
 @testset "Helpers" begin
     @testset "ensureMatrix" begin
@@ -45,7 +45,7 @@ import LinearAlgebra: Diagonal, isposdef, PosDefException, I, Hermitian
         E = [1.0 1.0+1e8; 1.0+1e8 1.0] #non-PD not due to numerical precision
         @test isApproxEqual(cholinv(B), [1.0 -1.0; -1.0 2.0])
         @test isApproxEqual(cholinv(C), D)
-        @test_throws PosDefException cholinv(E)
+        @test_throws Exception cholinv(E)
         F = Diagonal([2.0, 3.0])
         @test cholinv(F) == inv(F)
     end

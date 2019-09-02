@@ -1,6 +1,6 @@
 name = "ForneyLab"
 uuid = "9fc3f58a-c2cc-5bff-9419-6a294fefdca9"
-version = "0.9.2"
+version = "0.10.0"
 
 [compat]
 julia = "≥ 0.7.0"

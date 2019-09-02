@@ -12,6 +12,7 @@ end
 
 @testset "vague" begin
     @test vague(Wishart, 3) == ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(3), nu=3.0)
+    @test vague(Wishart, (3,3)) == ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(3), nu=3.0)
 end
 
 @testset "isProper" begin

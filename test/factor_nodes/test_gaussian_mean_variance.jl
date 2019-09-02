@@ -3,7 +3,7 @@ module GaussianMeanVarianceTest
 using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
-import ForneyLab: SPGaussianMeanVarianceOutNPP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
+import ForneyLab: SPGaussianMeanVarianceOutNPP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
 import LinearAlgebra: det, diag
 
 @testset "dims" begin
@@ -14,6 +14,7 @@ end
 @testset "vague" begin
     @test vague(GaussianMeanVariance) == ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=huge)
     @test vague(GaussianMeanVariance, 2) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(2), v=huge*eye(2))
+    @test vague(GaussianMeanVariance, (2,)) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(2), v=huge*eye(2))
 end
 
 @testset "isProper" begin
@@ -109,6 +110,27 @@ end
 
     @test ruleSPGaussianMeanVarianceMGNP(Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0)
     @test ruleSPGaussianMeanVarianceMGNP(Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(1.0)), nothing, Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(3.0))
+end
+
+@testset "SPGaussianMeanVarianceVGGN" begin
+    @test SPGaussianMeanVarianceVGGN <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceVGGN) == Message{Function}
+    @test !isApplicable(SPGaussianMeanVarianceVGGN, [Nothing, Message{Gaussian}, Message{Gaussian}]) 
+    @test isApplicable(SPGaussianMeanVarianceVGGN, [Message{Gaussian}, Message{Gaussian}, Nothing]) 
+
+    msg = ruleSPGaussianMeanVarianceVGGN(Message(Univariate, GaussianMeanVariance, m=1.0, v=2.0), Message(Univariate, GaussianMeanVariance, m=3.0, v=4.0), nothing)
+    @test isa(msg, Message{Function, Univariate})
+    @test msg.dist.params[:log_pdf](1.0) == -0.5*log(2.0 + 4.0 + 1.0) - 1/(2*1.0)*(1.0 - 3.0)^2
+end
+
+@testset "SPGaussianMeanVarianceVPGN" begin
+    @test SPGaussianMeanVarianceVPGN <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceVPGN) == Message{Function}
+    @test isApplicable(SPGaussianMeanVarianceVPGN, [Message{PointMass}, Message{Gaussian}, Nothing]) 
+
+    msg = ruleSPGaussianMeanVarianceVPGN(Message(Univariate, PointMass, m=1.0), Message(Univariate, GaussianMeanVariance, m=3.0, v=4.0), nothing)
+    @test isa(msg, Message{Function, Univariate})
+    @test msg.dist.params[:log_pdf](1.0) == -0.5*log(4.0 + 1.0) - 1/(2*1.0)*(1.0 - 3.0)^2
 end
 
 @testset "VBGaussianMeanVarianceM" begin

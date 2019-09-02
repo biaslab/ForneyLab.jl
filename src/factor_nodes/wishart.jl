@@ -2,7 +2,7 @@ export Wishart
 
 """
 Description:
-
+    
     A Wishart node:
 
     f(out,v,nu) = W(out|v, nu) = B(v, nu) |out|^{(nu - D - 1)/2} exp(-1/2 tr(v^{-1} out))
@@ -44,6 +44,7 @@ ProbabilityDistribution(::Type{Wishart}; v=mat(1.0), nu=1.0) = ProbabilityDistri
 dims(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = size(dist.params[:v])
 
 vague(::Type{Wishart}, dims::Int64) = ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(dims), nu=Float64(dims)) # Flat prior
+vague(::Type{Wishart}, dims::Tuple{Int64, Int64}) = ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(dims[1]), nu=Float64(dims[1]))
 
 unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = dist.params[:nu]*dist.params[:v] # unsafe mean
 

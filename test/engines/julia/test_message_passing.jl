@@ -37,6 +37,33 @@ using ForneyLab
         @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo)
         @test occursin("marginals[:variable_1] = messages[1].dist", algo)
     end
+
+    @testset "Estimation of clamped parameter by sum-product rule" begin
+        FactorGraph()
+        x = Variable()
+        GaussianMeanVariance(x, constant([0.0]), constant(mat(1.0)))
+        placeholder(x, :x, dims=(1,))
+
+        algo = sumProductAlgorithm(x)
+
+        @test occursin("function optimize!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init())", algo)
+        @test occursin("function init()", algo)
+        @test occursin("messages[1] = Message(vague(GaussianMeanVariance, (1,)))", algo)
+    end
+
+    @testset "Estimation of clamped parameter by variational rule" begin
+        FactorGraph()
+        x = Variable()
+        GaussianMeanVariance(x, constant([0.0]), constant(mat(1.0)))
+        placeholder(x, :x, dims=(1,))
+
+        q = RecognitionFactorization(x, ids=[:X])
+        algo = ForneyLab.variationalAlgorithm(q)
+
+        @test occursin("function optimizeX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX())", algo)
+        @test occursin("function initX()", algo)
+        @test occursin("messages[1] = Message(vague(GaussianMeanVariance, (1,)))", algo)
+    end
 end
 
 @testset "Julia algorithm execution" begin

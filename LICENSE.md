@@ -1,4 +1,4 @@
-Copyright (c) 2018 GN Store Nord A/S 
+Copyright (c) 2019 GN Store Nord A/S 
 
 This software is distributed under a modified MIT license. The intention of this license is to allow free use of this software for any non-commercial purpose. For instance, any type of exploitation of this Software for academic purposes is granted. Permission for commercial applications of this software is not automatically granted. Anyone who wishes to exploit this software for a commercial purpose is requested to contact the copyright holder at (email) bdevries@gnresound.com.
 

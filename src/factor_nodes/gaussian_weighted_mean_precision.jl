@@ -5,6 +5,8 @@ Description:
 
     A Gaussian with weighted-mean-precision parameterization:
 
+    f(out,xi,w) = 𝒩(out|xi,w) = (2π)^{-D/2} |w|^{1/2} exp(-1/2 xi' w^{-1} xi) exp(-1/2 xi' w xi + out' xi)
+
 Interfaces:
 
     1. out
@@ -44,6 +46,7 @@ dims(dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:V
 
 vague(::Type{GaussianWeightedMeanPrecision}) = ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=tiny)
 vague(::Type{GaussianWeightedMeanPrecision}, dims::Int64) = ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=zeros(dims), w=tiny*diageye(dims))
+vague(::Type{GaussianWeightedMeanPrecision}, dims::Tuple{Int64}) = ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=zeros(dims), w=tiny*diageye(dims[1]))
 
 unsafeMean(dist::ProbabilityDistribution{V, GaussianWeightedMeanPrecision}) where V<:VariateType = cholinv(dist.params[:w])*dist.params[:xi]
 

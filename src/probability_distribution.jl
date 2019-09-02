@@ -1,4 +1,5 @@
 export
+FactorFunction,
 ProbabilityDistribution,
 Univariate,
 Multivariate,
@@ -22,13 +23,16 @@ abstract type Univariate <: VariateType end
 abstract type Multivariate <: VariateType end
 abstract type MatrixVariate <: VariateType end
 
-"""Encodes a probability distribution as a FactorNode of type `family` with fixed interfaces"""
-struct ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
+"""Types through which a probability distribution may be defined"""
+const FactorFunction = Union{FactorNode, Function}
+
+"""Encodes a probability distribution as a `FactorFunction` of type `family` with fixed interfaces"""
+struct ProbabilityDistribution{var_type<:VariateType, family<:FactorFunction}
     params::Dict
 end
 
 """Extract VariateType from dist"""
-variateType(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorNode} = V
+variateType(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorFunction} = V
 
 show(io::IO, dist::ProbabilityDistribution) = println(io, format(dist))
 
@@ -40,10 +44,11 @@ mode(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMode(dist) : error(
 var(dist::ProbabilityDistribution) = isProper(dist) ? unsafeVar(dist) : error("var($(dist)) is undefined because the distribution is improper.")
 cov(dist::ProbabilityDistribution) = isProper(dist) ? unsafeCov(dist) : error("cov($(dist)) is undefined because the distribution is improper.")
 
-"""
-PointMass is an abstract type used to describe point mass distributions.
-It never occurs in a FactorGraph, but it is used as a probability distribution type.
-"""
+""" 
+`PointMass` is an abstract type used to describe point mass distributions.
+It never occurs in a `FactorGraph`, but it is used as a probability distribution
+type. 
+""" 
 abstract type PointMass <: DeltaFactor end
 
 slug(::Type{PointMass}) = "δ"
@@ -87,13 +92,24 @@ unsafeWeightedMeanPrecision(dist::ProbabilityDistribution) = (unsafeWeightedMean
 
 isProper(::ProbabilityDistribution{T, PointMass}) where T<:VariateType = true
 
+# Probability distribution parametrized by function
+slug(::Type{Function}) = "f"
+
+format(dist::ProbabilityDistribution{V, Function}) where V<:VariateType = "$(dist.params)"
+
+# Distribution constructors
+ProbabilityDistribution(::Type{V}, ::Type{Function}; kwargs...) where V<:VariateType = ProbabilityDistribution{V, Function}(kwargs)
+ProbabilityDistribution(::Type{Function}; kwargs...) = ProbabilityDistribution{Univariate, Function}(kwargs)
+
+vague(::Type{Function}) = ProbabilityDistribution(Univariate, Function)
+
 """
 Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)
 """
 conditionalDifferentialEntropy(marg_joint::ProbabilityDistribution{Multivariate}, marg_condition::Vararg{ProbabilityDistribution}) = differentialEntropy(marg_joint) - sum([differentialEntropy(marg) for marg in marg_condition])
 
 """
-@RV provides a convenient way to add Variables and FactorNodes to the graph.
+`@RV` provides a convenient way to add `Variable`s and `FactorNode`s to the graph.
 
 Examples:
 

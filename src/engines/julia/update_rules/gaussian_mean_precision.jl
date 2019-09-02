@@ -19,9 +19,9 @@ ruleSPGaussianMeanPrecisionOutNPP(  msg_out::Nothing,
 ruleSPGaussianMeanPrecisionMPNP(msg_out::Message{PointMass}, msg_mean::Nothing, msg_prec::Message{PointMass}) = 
     ruleSPGaussianMeanPrecisionOutNPP(msg_mean, msg_out, msg_prec)
 
-function ruleSPGaussianMeanPrecisionOutNGP(msg_out::Nothing,
-                                                                        msg_mean::Message{F, V},
-                                                                        msg_prec::Message{PointMass}) where {F<:Gaussian, V<:VariateType}
+function ruleSPGaussianMeanPrecisionOutNGP( msg_out::Nothing,
+                                            msg_mean::Message{F, V},
+                                            msg_prec::Message{PointMass}) where {F<:Gaussian, V<:VariateType}
 
     d_mean = convert(ProbabilityDistribution{V, GaussianMeanVariance}, msg_mean.dist)
 
@@ -32,8 +32,8 @@ ruleSPGaussianMeanPrecisionMGNP(msg_out::Message{F}, msg_mean::Nothing, msg_prec
     ruleSPGaussianMeanPrecisionOutNGP(msg_mean, msg_out, msg_prec)
 
 ruleVBGaussianMeanPrecisionM(   dist_out::ProbabilityDistribution{V},
-                                                dist_mean::Any,
-                                                dist_prec::ProbabilityDistribution) where V<:VariateType =
+                                dist_mean::Any,
+                                dist_prec::ProbabilityDistribution) where V<:VariateType =
     Message(V, GaussianMeanPrecision, m=unsafeMean(dist_out), w=unsafeMean(dist_prec))
 
 function ruleVBGaussianMeanPrecisionW(  dist_out::ProbabilityDistribution{Univariate},

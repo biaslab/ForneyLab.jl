@@ -11,6 +11,7 @@ Given a probabilistic model, ForneyLab generates efficient Julia code for messag
 - Automatic generation of message passing algorithms including
     - [Belief propagation](https://en.wikipedia.org/wiki/Belief_propagation)
     - [Variational message passing](https://en.wikipedia.org/wiki/Variational_message_passing)
+    - [Expectation maximization](https://en.wikipedia.org/wiki/Expectation-maximization_algorithm)
     - [Expectation propagation](https://en.wikipedia.org/wiki/Expectation_propagation)
 - Support for hybrid models combining discrete and continuous latent variables.
 - Evaluation of free energy as a model performance measure.

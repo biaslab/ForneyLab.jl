@@ -80,6 +80,19 @@ end
     @test_throws Exception Message(Multivariate, PointMass, m=0.2)
 end
 
+@testset "ProbabilityDistribution and Message construction with functions" begin
+    f(x) = x
+    @test isa(ProbabilityDistribution(Univariate, Function, f=f).params[:f], Function)
+    @test isa(ProbabilityDistribution(Univariate, Function, f=f), ProbabilityDistribution{Univariate, Function})
+    @test isa(ProbabilityDistribution(Multivariate, Function, f=f), ProbabilityDistribution{Multivariate, Function})
+    @test isa(ProbabilityDistribution(MatrixVariate, Function, f=f), ProbabilityDistribution{MatrixVariate, Function})
+    @test isa(ProbabilityDistribution(Function, f=f), ProbabilityDistribution{Univariate, Function})
+    @test isempty(vague(Function).params)
+    @test isa(Message(Univariate, Function, f=()->()).dist.params[:f], Function)
+    @test isa(Message(Univariate, Function), Message{Function, Univariate})
+    @test isa(Message(Function), Message{Function, Univariate})
+end
+
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, PointMass, m=0.0)) == 1
     @test dims(ProbabilityDistribution(Multivariate, PointMass, m=ones(2))) == 2
