@@ -7,7 +7,7 @@ marginalSchedule
 abstract type AbstractCluster end
 
 """
-A MarginalUpdateRule specifies how a (joint) marginal is calculated from
+A `MarginalUpdateRule` specifies how a (joint) marginal is calculated from
 incoming messages (and a node function).
 """
 abstract type MarginalUpdateRule end
@@ -30,7 +30,7 @@ A `MarginalSchedule` defines the update order for marginal computations.
 const MarginalSchedule = Vector{MarginalScheduleEntry}
 
 """
-marginalSchedule() generates a marginal schedule that computes the marginals for target variables
+Generate a `MarginalSchedule` that computes the marginals for target variables
 """
 function marginalSchedule(targets::Vector{Variable})
     marginal_schedule = MarginalScheduleEntry[]

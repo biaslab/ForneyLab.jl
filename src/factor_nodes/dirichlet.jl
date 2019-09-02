@@ -2,6 +2,7 @@ export Dirichlet
 
 """
 Description:
+
     Dirichlet factor node
 
     Multivariate:    
@@ -14,10 +15,12 @@ Description:
     where 'a' represents a left-stochastic matrix with every a_jk > 0
 
 Interfaces:
+
     1. out
     2. a
 
 Construction:
+
     Dirichlet(id=:some_id)
 """
 mutable struct Dirichlet <: SoftFactor

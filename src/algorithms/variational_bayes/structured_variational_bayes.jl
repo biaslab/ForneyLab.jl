@@ -64,12 +64,13 @@ function collectInboundTypes(entry::ScheduleEntry,
     return inbound_types
 end
 
-"""
-@structuredVariationalRule registers a variational update rule for the structured
-factorization by defining the rule type and the corresponding methods for the 
-outboundType and isApplicable functions. If no name (type) for the new rule is
-passed, a unique name (type) will be generated. Returns the rule type.
-"""
+""" 
+`@structuredVariationalRule` registers a variational update rule for the
+structured factorization by defining the rule type and the corresponding methods
+for the `outboundType` and `isApplicable` functions. If no name (type) for the
+new rule is passed, a unique name (type) will be generated. Returns the rule
+type.
+""" 
 macro structuredVariationalRule(fields...)
     # Init required fields in macro scope
     node_type = :unknown

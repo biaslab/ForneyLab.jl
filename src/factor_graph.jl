@@ -20,7 +20,7 @@ mutable struct FactorGraph
 end
 
 """
-Return currently active FactorGraph.
+Return currently active `FactorGraph`.
 Create one if there is none.
 """
 function currentGraph()

@@ -4,6 +4,6 @@
                 :name          => SPNonlinearOutNG)
 
 @sumProductRule(:node_type     => Nonlinear,
-                :outbound_type => Message{GaussianMeanPrecision},
+                :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Message{Gaussian}, Nothing),
-                :name          => SPNonlinearIn1GN)
+                :name          => SPNonlinearIn1GG)
