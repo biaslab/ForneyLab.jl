@@ -46,7 +46,7 @@ using ForneyLab
 
         algo = sumProductAlgorithm(x)
 
-        @test occursin("function stepMax!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init())", algo)
+        @test occursin("function optimize!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init())", algo)
         @test occursin("function init()", algo)
         @test occursin("messages[1] = Message(vague(GaussianMeanVariance, (1,)))", algo)
     end
@@ -60,7 +60,7 @@ using ForneyLab
         q = RecognitionFactorization(x, ids=[:X])
         algo = ForneyLab.variationalAlgorithm(q)
 
-        @test occursin("function stepMaxX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX())", algo)
+        @test occursin("function optimizeX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX())", algo)
         @test occursin("function initX()", algo)
         @test occursin("messages[1] = Message(vague(GaussianMeanVariance, (1,)))", algo)
     end

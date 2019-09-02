@@ -31,9 +31,9 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
 
     if update_clamp_flag # Explain the need for a custom `step!` definition
         code *= "# You have created an algorithm that requires updates for (a) clamped parameter(s).\n"
-        code *= "# This algorithm requires the definition of a custom `step!` function that updates the parameter value(s)\n"
-        code *= "# by altering the `data` dictionary in-place. The custom `step!` function may be based on the mockup below:\n\n"
-        code *= "# function stepMax$(name)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init$(name)())\n"
+        code *= "# This algorithm requires the definition of a custom `optimize!` function that updates the parameter value(s)\n"
+        code *= "# by altering the `data` dictionary in-place. The custom `optimize!` function may be based on the mockup below:\n\n"
+        code *= "# function optimize$(name)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init$(name)())\n"
         code *= "# \t...\n"
         code *= "# \treturn data\n"
         code *= "# end\n\n"
