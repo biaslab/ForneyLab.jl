@@ -23,6 +23,7 @@ abstract type Univariate <: VariateType end
 abstract type Multivariate <: VariateType end
 abstract type MatrixVariate <: VariateType end
 
+"""Types through which a probability distribution may be defined"""
 const FactorFunction = Union{FactorNode, Function}
 
 """Encodes a probability distribution as a `FactorFunction` of type `family` with fixed interfaces"""

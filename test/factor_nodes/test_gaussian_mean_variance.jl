@@ -3,7 +3,7 @@ module GaussianMeanVarianceTest
 using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
-import ForneyLab: SPGaussianMeanVarianceOutNPP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
+import ForneyLab: SPGaussianMeanVarianceOutNPP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
 import LinearAlgebra: det, diag
 
 @testset "dims" begin
@@ -121,6 +121,16 @@ end
     msg = ruleSPGaussianMeanVarianceVGGN(Message(Univariate, GaussianMeanVariance, m=1.0, v=2.0), Message(Univariate, GaussianMeanVariance, m=3.0, v=4.0), nothing)
     @test isa(msg, Message{Function, Univariate})
     @test msg.dist.params[:log_pdf](1.0) == -0.5*log(2.0 + 4.0 + 1.0) - 1/(2*1.0)*(1.0 - 3.0)^2
+end
+
+@testset "SPGaussianMeanVarianceVPGN" begin
+    @test SPGaussianMeanVarianceVPGN <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceVPGN) == Message{Function}
+    @test isApplicable(SPGaussianMeanVarianceVPGN, [Message{PointMass}, Message{Gaussian}, Nothing]) 
+
+    msg = ruleSPGaussianMeanVarianceVPGN(Message(Univariate, PointMass, m=1.0), Message(Univariate, GaussianMeanVariance, m=3.0, v=4.0), nothing)
+    @test isa(msg, Message{Function, Univariate})
+    @test msg.dist.params[:log_pdf](1.0) == -0.5*log(4.0 + 1.0) - 1/(2*1.0)*(1.0 - 3.0)^2
 end
 
 @testset "VBGaussianMeanVarianceM" begin
