@@ -19,7 +19,7 @@
                 :name          => SPGaussianMeanVarianceMGNP)
 
 @sumProductRule(:node_type     => GaussianMeanVariance,
-                :outbound_type => Message{LogPDF},
+                :outbound_type => Message{Function},
                 :inbound_types => (Message{Gaussian}, Message{Gaussian}, Nothing),
                 :name          => SPGaussianMeanVarianceVGGN)
 

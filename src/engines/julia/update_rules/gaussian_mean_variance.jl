@@ -34,7 +34,7 @@ function ruleSPGaussianMeanVarianceVGGN(msg_out::Message{F1, Univariate},
     d_out  = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_out.dist)
     d_mean = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_mean.dist)
 
-    Message(Univariate, LogPDF, f=(v)-> -0.5*log(d_out.params[:v] + d_mean.params[:v] + v) - 1/(2*v)*(d_out.params[:m] - d_mean.params[:m])^2)
+    Message(Univariate, Function, log_pdf=(x)-> -0.5*log(d_out.params[:v] + d_mean.params[:v] + x) - 1/(2*x)*(d_out.params[:m] - d_mean.params[:m])^2)
 end
 
 ruleVBGaussianMeanVarianceM(dist_out::ProbabilityDistribution{V},

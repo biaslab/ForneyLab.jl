@@ -4,7 +4,6 @@ Univariate,
 Multivariate,
 MatrixVariate,
 PointMass,
-LogPDF,
 @RV,
 mean,
 mode,
@@ -16,20 +15,23 @@ averageEnergy,
 ==,
 vague,
 sample,
-dims
+dims,
+FactorFunction
 
 abstract type VariateType end
 abstract type Univariate <: VariateType end
 abstract type Multivariate <: VariateType end
 abstract type MatrixVariate <: VariateType end
 
-"""Encodes a probability distribution as a FactorNode of type `family` with fixed interfaces"""
-struct ProbabilityDistribution{var_type<:VariateType, family<:FactorNode}
+const FactorFunction = Union{FactorNode, Function}
+
+"""Encodes a probability distribution as a FactorFunction of type `family` with fixed interfaces"""
+struct ProbabilityDistribution{var_type<:VariateType, family<:FactorFunction}
     params::Dict
 end
 
 """Extract VariateType from dist"""
-variateType(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorNode} = V
+variateType(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorFunction} = V
 
 show(io::IO, dist::ProbabilityDistribution) = println(io, format(dist))
 
@@ -88,20 +90,16 @@ unsafeWeightedMeanPrecision(dist::ProbabilityDistribution) = (unsafeWeightedMean
 
 isProper(::ProbabilityDistribution{T, PointMass}) where T<:VariateType = true
 
-"""
-LogPDF is an abstract type used to describe log-pdf functions
-"""
-abstract type LogPDF <: SoftFactor end
+# Probability distribution parametrized by function
+slug(::Type{Function}) = "f"
 
-slug(::Type{LogPDF}) = "log-pdf"
+format(dist::ProbabilityDistribution{V, Function}) where V<:VariateType = "$(dist.params)"
 
-format(dist::ProbabilityDistribution{V, LogPDF}) where V<:VariateType = "$(slug(LogPDF))(f=$(dist.params[:f]))"
+# Distribution constructors
+ProbabilityDistribution(::Type{V}, ::Type{Function}; kwargs...) where V<:VariateType = ProbabilityDistribution{V, Function}(kwargs)
+ProbabilityDistribution(::Type{Function}; kwargs...) = ProbabilityDistribution{Univariate, Function}(kwargs)
 
-# LogPDF distribution constructors
-ProbabilityDistribution(::Type{V}, ::Type{LogPDF}; f::Function=()->()) where V<:VariateType = ProbabilityDistribution{V, LogPDF}(Dict(:f=>f))
-ProbabilityDistribution(::Type{LogPDF}; f::Function=()->()) = ProbabilityDistribution{Univariate, LogPDF}(Dict(:f=>f))
-
-vague(::Type{LogPDF}) = ProbabilityDistribution(Univariate, LogPDF, f=x->1.0)
+vague(::Type{Function}) = ProbabilityDistribution(Univariate, Function)
 
 """
 Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)

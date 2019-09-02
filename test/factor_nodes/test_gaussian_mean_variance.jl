@@ -114,13 +114,13 @@ end
 
 @testset "SPGaussianMeanVarianceVGGN" begin
     @test SPGaussianMeanVarianceVGGN <: SumProductRule{GaussianMeanVariance}
-    @test outboundType(SPGaussianMeanVarianceVGGN) == Message{LogPDF}
+    @test outboundType(SPGaussianMeanVarianceVGGN) == Message{Function}
     @test !isApplicable(SPGaussianMeanVarianceVGGN, [Nothing, Message{Gaussian}, Message{Gaussian}]) 
     @test isApplicable(SPGaussianMeanVarianceVGGN, [Message{Gaussian}, Message{Gaussian}, Nothing]) 
 
     msg = ruleSPGaussianMeanVarianceVGGN(Message(Univariate, GaussianMeanVariance, m=1.0, v=2.0), Message(Univariate, GaussianMeanVariance, m=3.0, v=4.0), nothing)
-    @test isa(msg, Message{LogPDF, Univariate})
-    @test msg.dist.params[:f](1.0) == -0.5*log(2.0 + 4.0 + 1.0) - 1/(2*1.0)*(1.0 - 3.0)^2
+    @test isa(msg, Message{Function, Univariate})
+    @test msg.dist.params[:log_pdf](1.0) == -0.5*log(2.0 + 4.0 + 1.0) - 1/(2*1.0)*(1.0 - 3.0)^2
 end
 
 @testset "VBGaussianMeanVarianceM" begin
