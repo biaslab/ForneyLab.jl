@@ -30,25 +30,24 @@ A `MarginalSchedule` defines the update order for marginal computations.
 const MarginalSchedule = Vector{MarginalScheduleEntry}
 
 """
-Construct a `MarginalScheduleEntry` for computing the marginal over `variable`
-through multiplication of colliding messages.
+Generate a `MarginalSchedule` that computes the marginals for target variables
 """
-function MarginalScheduleEntry(variable::Variable)
-    edge = first(variable.edges) # For the sake of consistency, we always take the first edge as reference point for marginal computations.
-    if edge.a == nothing # First handle cases where there is a `dangling` edge
-        entry = MarginalScheduleEntry(variable, [edge.b], Nothing)
-    elseif edge.b == nothing
-        entry = MarginalScheduleEntry(variable, [edge.a], Nothing)
-    else
-        entry = MarginalScheduleEntry(variable, [edge.a, edge.b], Product)
+function marginalSchedule(targets::Vector{Variable})
+    marginal_schedule = MarginalScheduleEntry[]
+    for target in targets
+        edge = first(target.edges) # For the sake of consistency, we always take the first edge as reference point for marginal computations.
+        if edge.a == nothing # First handle cases where there is a `dangling` edge
+            push!(marginal_schedule, MarginalScheduleEntry(target, [edge.b], Nothing))
+        elseif edge.b == nothing
+            push!(marginal_schedule, MarginalScheduleEntry(target, [edge.a], Nothing))
+        elseif isa(edge.a.node, Clamp) || isa(edge.b.node, Clamp)
+            continue # Do not compute marginals for clamped edges
+        else
+            push!(marginal_schedule, MarginalScheduleEntry(target, [edge.a, edge.b], Product))
+        end
     end
 
-    return entry
+    return marginal_schedule
 end
-
-"""
-`marginalSchedule()` generates a marginal schedule that computes the marginals for each target entry
-"""
-marginalSchedule(targets::Vector{Variable}) = [MarginalScheduleEntry(target) for target in targets]
 
 marginalSchedule(target::Variable) = marginalSchedule([target])

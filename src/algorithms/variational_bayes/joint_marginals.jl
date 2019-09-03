@@ -89,7 +89,7 @@ function marginalSchedule(q_factors::Vector{RecognitionFactor}, schedule::Schedu
     marginal_schedule = MarginalScheduleEntry[]
     for q_factor in q_factors
         # Construct schedule for computing marginals over variables
-        variable_schedule = [MarginalScheduleEntry(variable) for variable in sort(collect(q_factor.variables))]
+        variable_schedule = marginalSchedule(sort(collect(q_factor.variables)))
         marginal_schedule = [marginal_schedule; variable_schedule]
 
         # Construct schedule for computing marginals over clusters

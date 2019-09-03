@@ -51,6 +51,7 @@ dims(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = length(dist.param
 dims(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = size(dist.params[:a])
 
 vague(::Type{Dirichlet}, dims::Int64) = ProbabilityDistribution(Multivariate, Dirichlet, a=ones(dims))
+vague(::Type{Dirichlet}, dims::Tuple{Int64}) = ProbabilityDistribution(Multivariate, Dirichlet, a=ones(dims))
 vague(::Type{Dirichlet}, dims::Tuple{Int64, Int64}) = ProbabilityDistribution(MatrixVariate, Dirichlet, a=ones(dims))
 
 isProper(dist::ProbabilityDistribution{V, Dirichlet}) where V<:VariateType = all(dist.params[:a] .> 0.0)

@@ -44,6 +44,7 @@ ProbabilityDistribution(::Type{Wishart}; v=mat(1.0), nu=1.0) = ProbabilityDistri
 dims(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = size(dist.params[:v])
 
 vague(::Type{Wishart}, dims::Int64) = ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(dims), nu=Float64(dims)) # Flat prior
+vague(::Type{Wishart}, dims::Tuple{Int64, Int64}) = ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(dims[1]), nu=Float64(dims[1]))
 
 unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = dist.params[:nu]*dist.params[:v] # unsafe mean
 

@@ -5,16 +5,16 @@ ScheduleEntry,
 Schedule
 
 """Encodes a message, which is a probability distribution with a scaling factor"""
-struct Message{family<:FactorNode, var_type<:VariateType} # Note that parameter order is switched w.r.t. ProbabilityDistribution, for ease of overloading
+struct Message{family<:FactorFunction, var_type<:VariateType} # Note that parameter order is switched w.r.t. ProbabilityDistribution, for ease of overloading
     dist::ProbabilityDistribution{var_type, family}
     scaling_factor::Any
 
     Message{F, V}(dist::ProbabilityDistribution{V, F}) where {F, V}= new(dist) # Constructor for unspecified scaling factor
 end
 
-Message(dist::ProbabilityDistribution{V, F}) where {F<:FactorNode, V<:VariateType} = Message{F, V}(dist)
+Message(dist::ProbabilityDistribution{V, F}) where {F<:FactorFunction, V<:VariateType} = Message{F, V}(dist)
 
-Message(var_type::Type{V}, family::Type{F}; kwargs...) where {F<:FactorNode, V<:VariateType} = Message{family, var_type}(ProbabilityDistribution(var_type, family; kwargs...))
+Message(var_type::Type{V}, family::Type{F}; kwargs...) where {F<:FactorFunction, V<:VariateType} = Message{family, var_type}(ProbabilityDistribution(var_type, family; kwargs...))
 
 function Message(family::Type{F}; kwargs...) where F
     dist = ProbabilityDistribution(family; kwargs...)
@@ -23,7 +23,7 @@ function Message(family::Type{F}; kwargs...) where F
     return Message{family, var_type}(dist)
 end
 
-family(msg_type::Type{Message{F}}) where F<:FactorNode = F
+family(msg_type::Type{Message{F}}) where F<:FactorFunction = F
 
 function show(io::IO, msg::Message)
     if isdefined(msg, :scaling_factor)
@@ -35,14 +35,14 @@ end
 
 """Special inheritance rules for parametric Message types"""
 matches(::Type{T}, ::Type{T}) where T<:Message = true
-matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) where {Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType, Vb<:VariateType} = (Va==Vb) && (Fa<:Fb)
-matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) where {Fa<:FactorNode, Fb<:FactorNode, Va<:VariateType} = (Fa<:Fb)
-matches(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) where {Fa<:FactorNode, Fb<:FactorNode} = (Fa<:Fb)
+matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) where {Fa<:FactorFunction, Fb<:FactorFunction, Va<:VariateType, Vb<:VariateType} = (Va==Vb) && (Fa<:Fb)
+matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction, Va<:VariateType} = (Fa<:Fb)
+matches(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction} = (Fa<:Fb)
 matches(::Type{Nothing}, ::Type{T}) where T<:Message = false
 matches(::Type{P}, ::Type{M}) where {P<:ProbabilityDistribution, M<:Message} = false
 matches(::Type{M}, ::Type{P}) where {P<:ProbabilityDistribution, M<:Message} = false
 
-function ==(t::Message{fam_t, var_t}, u::Message{fam_u, var_u}) where {fam_t<:FactorNode, var_t<:VariateType, fam_u<:FactorNode, var_u<:VariateType}
+function ==(t::Message{fam_t, var_t}, u::Message{fam_u, var_u}) where {fam_t<:FactorFunction, var_t<:VariateType, fam_u<:FactorFunction, var_u<:VariateType}
     (fam_t == fam_u) || return false
     (var_t == var_u) || return false
     (t.dist == u.dist) || return false
@@ -149,8 +149,8 @@ function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges
     # Therefore, we only need to consider one arbitrary edge to calculate the marginal.
     for variable in variables
         edge = first(variable.edges) # For the sake of consistency, we always take the first edge.
-        (edge.a != nothing && !isa(edge.a.node, Terminal)) && push!(target_sites, edge.a)
-        (edge.b != nothing && !isa(edge.b.node, Terminal)) && push!(target_sites, edge.b)
+        (edge.a != nothing && !isa(edge.a.node, Terminal)) && !isa(edge.a.node, Clamp) && push!(target_sites, edge.a)
+        (edge.b != nothing && !isa(edge.b.node, Terminal)) && !isa(edge.b.node, Clamp) && push!(target_sites, edge.b)
     end
 
     # Determine a feasible ordering of message updates

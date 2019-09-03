@@ -8,19 +8,35 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
     end
 
     # Find breaker types and dimensions
+    update_clamp_flag = false # Flag that tracks whether the update of a clamped variable is required
     breaker_types = Dict()
     breaker_dims = Dict()
     for entry in schedule
+        partner = ultimatePartner(entry.interface)
         if (entry.msg_update_rule <: ExpectationPropagationRule)
-            partner = ultimatePartner(entry.interface)
             breaker_types[partner] = outbound_types[partner]
-            breaker_dims[partner] = 1
+            breaker_dims[partner] = () # Univariate only
         elseif isa(entry.interface.node, Nonlinear) && (entry.interface == entry.interface.node.interfaces[2]) && (entry.interface.node.g_inv == nothing)
             # Set initialization in case of a nonlinear node without given inverse 
             iface = ultimatePartner(entry.interface.node.interfaces[2])
             breaker_types[iface] = outbound_types[iface]
-            breaker_dims[iface] = entry.interface.node.dims[1]
+            breaker_dims[iface] = entry.interface.node.dims
+        elseif !(partner == nothing) && isa(partner.node, Clamp)
+            update_clamp_flag = true # Signifies the need for creating a custom `step!` function for optimizing clamped variables
+            iface = entry.interface
+            breaker_types[iface] = outbound_types[iface]
+            breaker_dims[iface] = size(partner.node.value)
         end
+    end
+
+    if update_clamp_flag # Explain the need for a custom `step!` definition
+        code *= "# You have created an algorithm that requires updates for (a) clamped parameter(s).\n"
+        code *= "# This algorithm requires the definition of a custom `optimize!` function that updates the parameter value(s)\n"
+        code *= "# by altering the `data` dictionary in-place. The custom `optimize!` function may be based on the mockup below:\n\n"
+        code *= "# function optimize$(name)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init$(name)())\n"
+        code *= "# \t...\n"
+        code *= "# \treturn data\n"
+        code *= "# end\n\n"
     end
 
     if !isempty(breaker_types) # Initialization block is only required when breakers are present
@@ -31,7 +47,7 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
         for (breaker_site, breaker_type) in breaker_types
             msg_idx = interface_to_msg_idx[breaker_site]
             breaker_type_str = replace(string(family(breaker_type)),"ForneyLab." => "") # Remove module prefixes
-            if breaker_dims[breaker_site] == 1
+            if breaker_dims[breaker_site] == () # Univariate
                 code *= "messages[$(msg_idx)] = Message(vague($(breaker_type_str)))\n"
             else
                 code *= "messages[$(msg_idx)] = Message(vague($(breaker_type_str), $(breaker_dims[breaker_site])))\n"
@@ -85,6 +101,8 @@ function writeMarginalsComputationBlock(schedule::MarginalSchedule, interface_to
             code *= "marginals[:$(schedule_entry.target.id)] = rule$(rule_str)($inbounds_str)\n"
         end
     end
+
+    !isempty(schedule) && (code *= "\n")
 
     return code
 end
@@ -142,7 +160,7 @@ function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::Marginal
     code *= writeMessagePassingBlock(schedule, interface_to_msg_idx)
     code *= "\n"
     code *= writeMarginalsComputationBlock(marginal_schedule, interface_to_msg_idx)
-    code *= "\nreturn marginals\n\n"
+    code *= "return marginals\n\n"
     code *= "end"
 
     # Write to file

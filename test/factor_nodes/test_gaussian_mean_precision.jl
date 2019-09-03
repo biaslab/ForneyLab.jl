@@ -13,6 +13,7 @@ end
 @testset "vague" begin
     @test vague(GaussianMeanPrecision) == ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=tiny)
     @test vague(GaussianMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(2), w=tiny*eye(2))
+    @test vague(GaussianMeanPrecision, (2,)) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(2), w=tiny*eye(2))
 end
 
 @testset "isProper" begin

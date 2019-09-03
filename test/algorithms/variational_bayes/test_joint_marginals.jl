@@ -63,21 +63,11 @@ end
     schedule = variationalSchedule(rf_12)
     marginal_schedule = marginalSchedule(rf_12, schedule)
 
-    @test length(marginal_schedule) == 3
-    @test marginal_schedule[1].target == v1
+    @test length(marginal_schedule) == 1
+    @test marginal_schedule[1].target == first(rf_12.clusters)
     @test marginal_schedule[1].interfaces[1] == nd.i[1].partner
-    @test marginal_schedule[1].interfaces[2] == nd.i[1]
-    @test marginal_schedule[1].marginal_update_rule == Product
-
-    @test marginal_schedule[2].target == v2
-    @test marginal_schedule[2].interfaces[1] == nd.i[2].partner
-    @test marginal_schedule[2].interfaces[2] == nd.i[2]
-    @test marginal_schedule[2].marginal_update_rule == Product
-
-    @test marginal_schedule[3].target == first(rf_12.clusters)
-    @test marginal_schedule[3].interfaces[1] == nd.i[1].partner
-    @test marginal_schedule[3].interfaces[2] == nd.i[2].partner
-    @test marginal_schedule[3].marginal_update_rule == MMockPPD
+    @test marginal_schedule[1].interfaces[2] == nd.i[2].partner
+    @test marginal_schedule[1].marginal_update_rule == MMockPPD
 end
 
 end # module

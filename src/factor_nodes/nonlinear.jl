@@ -29,7 +29,7 @@ mutable struct Nonlinear <: DeltaFactor
     g_inv::Union{Function, Nothing} # Inverse of g (optional)
     dims::Tuple # Dimension of breaker message on input interface
 
-    function Nonlinear(out, in1, g::Function; g_inv=nothing, dims=(1,), id=ForneyLab.generateId(Nonlinear))
+    function Nonlinear(out, in1, g::Function; g_inv=nothing, dims=(), id=ForneyLab.generateId(Nonlinear))
         @ensureVariables(out, in1)
         self = new(id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), g, g_inv, dims)
         ForneyLab.addNode!(currentGraph(), self)
