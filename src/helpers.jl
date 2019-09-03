@@ -104,7 +104,6 @@ end
 
 """Check if arguments are approximately equal"""
 isApproxEqual(arg1, arg2) = maximum(abs.(arg1-arg2)) < tiny
-isApproxEqual(arg1::Function, arg2::Function) = (arg1 == arg2)
 
 """Checks if input matrix is positive definite. We also perform rounding in order to prevent floating point precision problems that `isposdef()`` suffers from."""
 isRoundedPosDef(arr::AbstractMatrix{Float64}) = ishermitian(round.(Matrix(arr), digits=round(Int, log10(huge)))) && isposdef(Hermitian(Matrix(arr), :L))
