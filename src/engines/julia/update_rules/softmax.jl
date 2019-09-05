@@ -11,7 +11,7 @@ function ruleVBSoftmaxOut(marg_out::Any,
     return Message(Univariate, Categorical, p=a./sum(a))
 end
 
-function ruleVBSoftmaxIn1(marg_out::ProbabilityDistribution{Univariate}, 
+function ruleVBSoftmaxIn1(marg_out::ProbabilityDistribution, 
                           marg_in1::Any, 
                           marg_xi::ProbabilityDistribution{Multivariate, PointMass},
                           marg_a::ProbabilityDistribution{Univariate, PointMass})
@@ -30,7 +30,7 @@ function ruleVBSoftmaxIn1(marg_out::ProbabilityDistribution{Univariate},
     return Message(Multivariate, GaussianWeightedMeanPrecision, xi=xi, w=W)
 end
 
-function ruleVBSoftmaxXi(marg_out::ProbabilityDistribution{Univariate}, 
+function ruleVBSoftmaxXi(marg_out::ProbabilityDistribution, 
                          marg_in1::ProbabilityDistribution{Multivariate}, 
                          marg_xi::Any,
                          marg_a::ProbabilityDistribution{Univariate, PointMass})
@@ -38,7 +38,7 @@ function ruleVBSoftmaxXi(marg_out::ProbabilityDistribution{Univariate},
     return Message(Multivariate, Function, mode=sqrt.(unsafeVar(marg_in1) + (unsafeMean(marg_in1) .- marg_a.params[:m]).^2))
 end
 
-function ruleVBSoftmaxA(marg_out::ProbabilityDistribution{Univariate}, 
+function ruleVBSoftmaxA(marg_out::ProbabilityDistribution, 
                         marg_in1::ProbabilityDistribution{Multivariate}, 
                         marg_xi::ProbabilityDistribution{Multivariate, PointMass},
                         marg_a::Any)

@@ -54,6 +54,6 @@ function unsafeBoundMean(marg_in1::ProbabilityDistribution{Multivariate}, marg_x
 end
 
 # Average energy functionals
-function averageEnergy(::Type{Softmax}, marg_out::ProbabilityDistribution{Univariate}, marg_in1::ProbabilityDistribution{Multivariate}, marg_xi::ProbabilityDistribution{Multivariate, PointMass}, marg_a::ProbabilityDistribution{Univariate, PointMass})
+function averageEnergy(::Type{Softmax}, marg_out::ProbabilityDistribution, marg_in1::ProbabilityDistribution{Multivariate}, marg_xi::ProbabilityDistribution{Multivariate, PointMass}, marg_a::ProbabilityDistribution{Univariate, PointMass})
     return unsafeBoundMean(marg_in1, marg_xi, marg_a) - unsafeMean(marg_out)'*unsafeMean(marg_in1)
 end
