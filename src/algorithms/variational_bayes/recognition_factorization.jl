@@ -146,7 +146,12 @@ function extend(edge_set::Set{Edge}; terminate_at_soft_factors=true, limit_set=S
     while !isempty(edges) # As long as there are unchecked edges connected through deterministic nodes
         current_edge = pop!(edges) # Pick one
         push!(cluster, current_edge) # Add to edge cluster
-        for node in [current_edge.a.node, current_edge.b.node] # Check both head and tail node
+        
+        connected_nodes = [] # Find nodes connected to edge (as a vector)
+        (current_edge.a == nothing) || push!(connected_nodes, current_edge.a.node)
+        (current_edge.b == nothing) || push!(connected_nodes, current_edge.b.node)
+
+        for node in connected_nodes # Check both head and tail node (if present)
             if (terminate_at_soft_factors==false) || isa(node, DeltaFactor)
                 for interface in node.interfaces
                     if (interface.edge !== current_edge) && !(interface.edge in cluster) && ( isempty(limit_set) || (interface.edge in limit_set) ) # Is next level edge not seen yet, and is it contained in the limiting set?

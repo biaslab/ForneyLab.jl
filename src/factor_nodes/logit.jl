@@ -44,8 +44,8 @@ logLogisticSigmoid(x::Float64) = -log(1 + exp(-x))
 logisticLambda(x::Float64) = (logisticSigmoid(x) - 0.5)/(2*x)
 
 # Average energy functionals
-function averageEnergy(::Type{Logit}, marg_out::ProbabilityDistribution{Univariate}, marg_in1::ProbabilityDistribution{Univariate}, marg_xi::ProbabilityDistribution{Univariate, PointMass})
-    xi_hat = marg_xi.params[:m]
+function averageEnergy(::Type{Logit}, marg_out::ProbabilityDistribution{Univariate}, marg_in1::ProbabilityDistribution{Univariate}, marg_xi::ProbabilityDistribution{Univariate})
+    xi_hat = unsafeMode(marg_xi)
 
     logisticLambda(xi_hat)*(unsafeMean(marg_in1)^2 + unsafeCov(marg_in1) - xi_hat^2) +
     0.5*(unsafeMean(marg_in1) + xi_hat) -

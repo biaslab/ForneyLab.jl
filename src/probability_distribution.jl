@@ -67,6 +67,8 @@ ProbabilityDistribution(::Type{MatrixVariate}, ::Type{PointMass}; m::AbstractMat
 
 unsafeMean(dist::ProbabilityDistribution{T, PointMass}) where T<:VariateType = deepcopy(dist.params[:m])
 
+unsafeMode(dist::ProbabilityDistribution{T, PointMass}) where T<:VariateType = deepcopy(dist.params[:m])
+
 unsafeMeanVector(dist::ProbabilityDistribution{Univariate, PointMass}) = [dist.params[:m]]
 unsafeMeanVector(dist::ProbabilityDistribution{Multivariate, PointMass}) = deepcopy(dist.params[:m])
 
@@ -100,6 +102,8 @@ format(dist::ProbabilityDistribution{V, Function}) where V<:VariateType = "$(dis
 # Distribution constructors
 ProbabilityDistribution(::Type{V}, ::Type{Function}; kwargs...) where V<:VariateType = ProbabilityDistribution{V, Function}(kwargs)
 ProbabilityDistribution(::Type{Function}; kwargs...) = ProbabilityDistribution{Univariate, Function}(kwargs)
+
+unsafeMode(dist::ProbabilityDistribution{T, Function}) where T<:VariateType = deepcopy(dist.params[:mode])
 
 vague(::Type{Function}) = ProbabilityDistribution(Univariate, Function)
 

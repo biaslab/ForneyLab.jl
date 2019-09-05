@@ -2,8 +2,8 @@ export ruleVBSoftmaxOut, ruleVBSoftmaxIn1, ruleVBSoftmaxXi, ruleVBSoftmaxA
 
 function ruleVBSoftmaxOut(marg_out::Any, 
                           marg_in1::ProbabilityDistribution{Multivariate}, 
-                          marg_xi::ProbabilityDistribution{Multivariate, PointMass},
-                          marg_a::ProbabilityDistribution{Univariate, PointMass})
+                          marg_xi::ProbabilityDistribution{Multivariate},
+                          marg_a::ProbabilityDistribution{Univariate})
     
     b_bar = unsafeBoundMean(marg_in1, marg_xi, marg_a)
     a = exp.(unsafeMean(marg_in1) .- b_bar)
@@ -13,11 +13,11 @@ end
 
 function ruleVBSoftmaxIn1(marg_out::ProbabilityDistribution, 
                           marg_in1::Any, 
-                          marg_xi::ProbabilityDistribution{Multivariate, PointMass},
-                          marg_a::ProbabilityDistribution{Univariate, PointMass})
+                          marg_xi::ProbabilityDistribution{Multivariate},
+                          marg_a::ProbabilityDistribution{Univariate})
     
-    xi_hat = marg_xi.params[:m]
-    a_hat = marg_a.params[:m]
+    xi_hat = unsafeMode(marg_xi)
+    a_hat = unsafeMode(marg_a)
     lambda_xi_hat = logisticLambda.(xi_hat)
 
     gam = 2*unsafeMean(marg_out)*lambda_xi_hat'
@@ -33,17 +33,17 @@ end
 function ruleVBSoftmaxXi(marg_out::ProbabilityDistribution, 
                          marg_in1::ProbabilityDistribution{Multivariate}, 
                          marg_xi::Any,
-                         marg_a::ProbabilityDistribution{Univariate, PointMass})
+                         marg_a::ProbabilityDistribution{Univariate})
     
-    return Message(Multivariate, Function, mode=sqrt.(unsafeVar(marg_in1) + (unsafeMean(marg_in1) .- marg_a.params[:m]).^2))
+    return Message(Multivariate, Function, mode=sqrt.(unsafeVar(marg_in1) + (unsafeMean(marg_in1) .- unsafeMode(marg_a)).^2))
 end
 
 function ruleVBSoftmaxA(marg_out::ProbabilityDistribution, 
                         marg_in1::ProbabilityDistribution{Multivariate}, 
-                        marg_xi::ProbabilityDistribution{Multivariate, PointMass},
+                        marg_xi::ProbabilityDistribution{Multivariate},
                         marg_a::Any)
     
-    xi_hat = marg_xi.params[:m]
+    xi_hat = unsafeMode(marg_xi)
     lambda_xi_hat = logisticLambda.(xi_hat)
     d = length(xi_hat)
 
