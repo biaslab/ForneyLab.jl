@@ -36,12 +36,6 @@ cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
 eye(n::Number) = Diagonal(I,n)
 diageye(dims::Int64) = Diagonal(ones(dims))
 
-# Base.broadcast(::typeof(*), D1::Diagonal, D2::Diagonal) = Diagonal(D1.diag.*D2.diag)
-# Base.broadcast(::typeof(*), D1::Matrix, D2::Diagonal) = Diagonal(diag(D1).*D2.diag)
-# Base.broadcast(::typeof(*), D1::Diagonal, D2::Matrix) = D2.*D1
-
-# ^(D::Diagonal, p::Float64) = Diagonal(D.diag.^p)
-
 # Symbol concatenation
 *(sym::Symbol, num::Number) = Symbol(string(sym, num))
 *(num::Number, sym::Symbol) = Symbol(string(num, sym))
