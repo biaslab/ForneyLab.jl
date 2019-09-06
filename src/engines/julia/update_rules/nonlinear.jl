@@ -2,15 +2,16 @@ export
 ruleSPNonlinearOutNG,
 ruleSPNonlinearIn1GG
 
+# Determine the default value for the spread parameter
+const default_alpha = 1e-3
 
 """
 Return the sigma points and weights for a Gaussian distribution
 """
-function sigmaPointsAndWeights(dist::ProbabilityDistribution{Univariate, F}) where F<:Gaussian
+function sigmaPointsAndWeights(dist::ProbabilityDistribution{Univariate, F}, alpha::Float64) where F<:Gaussian
     (m_x, V_x) = unsafeMeanCov(dist)
 
     kappa = 0
-    alpha = 1e-3
     beta = 2
     lambda = (1 + kappa)*alpha^2 - 1
 
@@ -31,12 +32,11 @@ function sigmaPointsAndWeights(dist::ProbabilityDistribution{Univariate, F}) whe
     return (sigma_points, weights_m, weights_c)
 end
 
-function sigmaPointsAndWeights(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian
+function sigmaPointsAndWeights(dist::ProbabilityDistribution{Multivariate, F}, alpha::Float64) where F<:Gaussian
     d = dims(dist)
     (m_x, V_x) = unsafeMeanCov(dist)
 
     kappa = 0
-    alpha = 1e-3
     beta = 2
     lambda = (d + kappa)*alpha^2 - d
 
@@ -65,9 +65,10 @@ end
 
 function ruleSPNonlinearOutNG(msg_out::Nothing,
                               msg_in1::Message{F, Univariate},
-                              g::Function) where F<:Gaussian
+                              g::Function;
+                              alpha::Float64=default_alpha) where F<:Gaussian
 
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
 
     # Unscented approximation
     g_sigma = g.(sigma_points)
@@ -79,9 +80,10 @@ end
 
 function ruleSPNonlinearOutNG(msg_out::Nothing,
                               msg_in1::Message{F, Multivariate},
-                              g::Function) where F<:Gaussian
+                              g::Function;
+                              alpha::Float64=default_alpha) where F<:Gaussian
     d = dims(msg_in1.dist)
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
 
     # Unscented approximation
     g_sigma = g.(sigma_points)
@@ -94,9 +96,10 @@ end
 function ruleSPNonlinearIn1GG(msg_out::Message{F, Univariate},
                               msg_in1::Nothing,
                               g::Function,
-                              g_inv::Function) where F<:Gaussian
+                              g_inv::Function;
+                              alpha::Float64=default_alpha) where F<:Gaussian
 
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_out.dist)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_out.dist, alpha)
 
     # Unscented approximation
     g_inv_sigma = g_inv.(sigma_points)
@@ -109,9 +112,10 @@ end
 function ruleSPNonlinearIn1GG(msg_out::Message{F, Multivariate},
                               msg_in1::Nothing,
                               g::Function,
-                              g_inv::Function) where F<:Gaussian
+                              g_inv::Function;
+                              alpha::Float64=default_alpha) where F<:Gaussian
     d = dims(msg_out.dist)
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_out.dist)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_out.dist, alpha)
 
     # Unscented approximation
     g_inv_sigma = g_inv.(sigma_points)
@@ -123,12 +127,13 @@ end
 
 function ruleSPNonlinearIn1GG(msg_out::Message{F1, Univariate},
                               msg_in1::Message{F2, Univariate},
-                              g::Function) where {F1<:Gaussian, F2<:Gaussian}
+                              g::Function;
+                              alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian}
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
 
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
 
     # Unscented approximations
     g_sigma = g.(sigma_points)
@@ -146,14 +151,15 @@ end
 
 function ruleSPNonlinearIn1GG(msg_out::Message{F1, Multivariate},
                               msg_in1::Message{F2, Multivariate},
-                              g::Function) where {F1<:Gaussian, F2<:Gaussian}
+                              g::Function;
+                              alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian}
     d_in1 = dims(msg_in1.dist)
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     W_fw_in1 = unsafePrecision(msg_in1.dist)
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
 
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
 
     # Unscented approximations
     g_sigma = g.(sigma_points)
@@ -202,6 +208,11 @@ function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry, in
     push!(inbound_messages, "$(node.g)")
     if (entry.interface == node.interfaces[2]) && (node.g_inv != nothing)
         push!(inbound_messages, "$(node.g_inv)")
+    end
+
+    # Push spread parameter if manually defined
+    if node.alpha != nothing
+        push!(inbound_messages, "alpha=$(node.alpha)")
     end
 
     return inbound_messages
