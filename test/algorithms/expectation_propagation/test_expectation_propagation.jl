@@ -3,7 +3,7 @@ module ExpectationPropagationTest
 using Test
 using ForneyLab
 import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
-import ForneyLab: EPSigmoidRealGP, SPGaussianMeanVarianceOutNPP, SPClamp, VBGaussianMeanPrecisionOut, SPSigmoidBinNG
+import ForneyLab: EPProbitIn1GP, SPGaussianMeanVarianceOutNPP, SPClamp, VBGaussianMeanPrecisionOut, SPProbitOutNG
 
 # Integration helper
 mutable struct MockNode <: SoftFactor
@@ -28,10 +28,10 @@ end
                             :outbound_type => Message{Gaussian},
                             :inbound_types => (Message{PointMass}, Message{Gaussian}),
                             :outbound_id   => 2,
-                            :name          => EPMockRealGP)
+                            :name          => EPMockIn1GP)
 
 @testset "@expectationPropagationRule" begin
-    @test EPMockRealGP <: ExpectationPropagationRule{MockNode}
+    @test EPMockIn1GP <: ExpectationPropagationRule{MockNode}
 end
 
 @testset "inferUpdateRule!" begin
@@ -43,7 +43,7 @@ end
     entry = ScheduleEntry(nd.i[2], ExpectationPropagationRule{MockNode})
     inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
 
-    @test entry.msg_update_rule == EPMockRealGP
+    @test entry.msg_update_rule == EPMockIn1GP
 end
 
 @testset "expectationPropagationSchedule" begin
@@ -54,7 +54,7 @@ end
     nd_z = FactorNode[]
     for i = 1:3
         z_i = Variable()
-        nd_z_i = Sigmoid(z_i, m)
+        nd_z_i = Probit(z_i, m)
         placeholder(z_i, :y, index=i)
         push!(z, z_i)
         push!(nd_z, nd_z_i)
@@ -63,10 +63,10 @@ end
     schedule = expectationPropagationSchedule(m)
 
     @test length(schedule) == 15
-    @test schedule[2] == ScheduleEntry(nd_z[2].i[:real], EPSigmoidRealGP)
-    @test schedule[4] == ScheduleEntry(nd_z[3].i[:real], EPSigmoidRealGP)
+    @test schedule[2] == ScheduleEntry(nd_z[2].i[:in1], EPProbitIn1GP)
+    @test schedule[4] == ScheduleEntry(nd_z[3].i[:in1], EPProbitIn1GP)
     @test schedule[8] == ScheduleEntry(nd_m.i[:out], SPGaussianMeanVarianceOutNPP)
-    @test schedule[11] == ScheduleEntry(nd_z[1].i[:real], EPSigmoidRealGP)
+    @test schedule[11] == ScheduleEntry(nd_z[1].i[:in1], EPProbitIn1GP)
 end
 
 @testset "variationalExpectationPropagationSchedule" begin
@@ -78,7 +78,7 @@ end
     y = Variable()
     nd_y = GaussianMeanPrecision(y, m, w)
     z = Variable()
-    nd_z = Sigmoid(z, y)
+    nd_z = Probit(z, y)
     placeholder(z, :z)
 
     rf = RecognitionFactorization()
@@ -88,9 +88,9 @@ end
 
     @test length(schedule) == 4
     @test ScheduleEntry(nd_y.i[:out], VBGaussianMeanPrecisionOut) in schedule
-    @test ScheduleEntry(nd_z.i[:bin].partner, SPClamp{Univariate}) in schedule
-    @test ScheduleEntry(nd_z.i[:real], EPSigmoidRealGP) in schedule
-    @test ScheduleEntry(nd_z.i[:bin], SPSigmoidBinNG) in schedule
+    @test ScheduleEntry(nd_z.i[:out].partner, SPClamp{Univariate}) in schedule
+    @test ScheduleEntry(nd_z.i[:in1], EPProbitIn1GP) in schedule
+    @test ScheduleEntry(nd_z.i[:out], SPProbitOutNG) in schedule
 end
 
 end # module

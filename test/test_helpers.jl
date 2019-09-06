@@ -48,6 +48,8 @@ import LinearAlgebra: Diagonal, isposdef, I, Hermitian
         @test_throws Exception cholinv(E)
         F = Diagonal([2.0, 3.0])
         @test cholinv(F) == inv(F)
+        G = [Diagonal([2.0]) reshape([1.0],1,1); reshape([1.0],1,1) Diagonal([2.0])]
+        @test isApproxEqual(cholinv(G), inv(Matrix(G)))
     end
 
     @testset "diageye" begin

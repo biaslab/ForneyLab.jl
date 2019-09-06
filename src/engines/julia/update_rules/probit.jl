@@ -2,42 +2,42 @@
 Φ(x::Union{Float64, Vector{Float64}}) = 0.5*erfc(-x./sqrt(2.))
 
 export
-ruleSPSigmoidBinNG,
-ruleEPSigmoidRealGB,
-ruleEPSigmoidRealGC,
-ruleEPSigmoidRealGP
+ruleSPProbitOutNG,
+ruleEPProbitIn1GB,
+ruleEPProbitIn1GC,
+ruleEPProbitIn1GP
 
-function ruleSPSigmoidBinNG(msg_bin::Nothing,
-                            msg_real::Message{F, Univariate}) where F<:Gaussian
+function ruleSPProbitOutNG(msg_out::Nothing,
+                           msg_in1::Message{F, Univariate}) where F<:Gaussian
 
-    d_real = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_real.dist)
+    d_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
     
-    p = Φ(d_real.params[:m] / sqrt(1 + d_real.params[:v]))
+    p = Φ(d_in1.params[:m] / sqrt(1 + d_in1.params[:v]))
     isnan(p) && (p = 0.5)
 
     Message(Univariate, Bernoulli, p=p)
 end
 
-function ruleEPSigmoidRealGB(   msg_bin::Message{Bernoulli, Univariate}, 
-                                msg_real::Message{F, Univariate}) where F<:Gaussian
+function ruleEPProbitIn1GB(msg_out::Message{Bernoulli, Univariate}, 
+                           msg_in1::Message{F, Univariate}) where F<:Gaussian
 
-    # Calculate approximate (Gaussian) message towards i[:real]
+    # Calculate approximate (Gaussian) message towards i[:in1]
     # The approximate message is an 'expectation' under the context (cavity distribution) encoded by incoming message msg_cavity.
     # Propagating the resulting approximate msg through the factor graph results in the expectation propagation (EP) algorithm.
     # Approximation procedure:
-    #  1. Calculate exact (non-Gaussian) message towards i[:real].
-    #  2. Combine exact outbound msg on i[:real] with exact inbound msg (cavity distribution) to find exact marginal.
+    #  1. Calculate exact (non-Gaussian) message towards i[:in1].
+    #  2. Combine exact outbound msg on i[:in1] with exact inbound msg (cavity distribution) to find exact marginal.
     #  3. Approximate the exact (non-Gaussian) marginal with a Gaussian one using moment matching, under the constraint VAR[approximate marginal] > VAR[cavity].
-    #  4. Calculate back the Gaussian outbound msg on i[:real] that yields this approximate Gaussian marginal.
+    #  4. Calculate back the Gaussian outbound msg on i[:in1] that yields this approximate Gaussian marginal.
     # IMPORTANT NOTES:
     #  - This calculation results in an implicit cycle in the factor graph since the outbound message depends on the inbound message (cavity dist.).
 
     # Shorthand notations
-    p = msg_bin.dist.params[:p]
-    (μ, σ2) = unsafeMeanCov(msg_real.dist) # Moments of cavity distribution
-    (ξ, γ) = unsafeWeightedMeanPrecision(msg_real.dist)
+    p = msg_out.dist.params[:p]
+    (μ, σ2) = unsafeMeanCov(msg_in1.dist) # Moments of cavity distribution
+    (ξ, γ) = unsafeWeightedMeanPrecision(msg_in1.dist)
 
-    # Calculate first and second moment (mp_1, mp_2) of the 'true' marginal p(x) on edge connected to i[:real]
+    # Calculate first and second moment (mp_1, mp_2) of the 'true' marginal p(x) on edge connected to i[:in1]
     # p(x) = f(x) / Z
     # f(x) = (1-p)*N(x|μ,σ2) + (2p-1)*Φ(x)*N(x|μ,σ2)
     #      = (1-p)*N(x|μ,σ2) + (2p-1)*Φ(z)*(Φ(x)*N(x|μ,σ2)/Φ(z))
@@ -62,22 +62,24 @@ function ruleEPSigmoidRealGB(   msg_bin::Message{Bernoulli, Univariate},
     marginal_w = 1.0 / marginal_v
     marginal_xi = marginal_w * mp_1
 
-    # Calculate the approximate message towards i[:real]
+    # Calculate the approximate message towards i[:in1]
     outbound_dist_w = marginal_w - γ
     outbound_dist_xi = marginal_xi - ξ
 
     return Message(Univariate, GaussianWeightedMeanPrecision, xi=outbound_dist_xi, w=outbound_dist_w)
 end
 
-function ruleEPSigmoidRealGP(msg_bin::Message{PointMass, Univariate}, msg_real::Message{F, Univariate}) where F<:Gaussian
-    p = mapToBernoulliParameterRange(msg_bin.dist.params[:m])
+function ruleEPProbitIn1GP(msg_out::Message{PointMass, Univariate}, msg_in1::Message{F, Univariate}) where F<:Gaussian
+    p = msg_out.dist.params[:m]
+    isnan(p) && (p = 0.5)
+    (0.0 <= p <= 1.0) || error("Binary input $p must be between 0 and 1")
 
-    return ruleEPSigmoidRealGB(Message(Univariate, Bernoulli, p=p), msg_real)
+    return ruleEPProbitIn1GB(Message(Univariate, Bernoulli, p=p), msg_in1)
 end
 
-function ruleEPSigmoidRealGC(msg_cat::Message{Categorical, Univariate}, msg_real::Message{F, Univariate}) where F<:Gaussian
-    (length(msg_cat.dist.params[:p]) == 2) || error("Sigmoid node only supports categorical messages with 2 categories")
-    p = msg_cat.dist.params[:p][1]
+function ruleEPProbitIn1GC(msg_out::Message{Categorical, Univariate}, msg_in1::Message{F, Univariate}) where F<:Gaussian
+    (length(msg_out.dist.params[:p]) == 2) || error("Probit node only supports categorical messages with 2 categories")
+    p = msg_out.dist.params[:p][1]
 
-    return ruleEPSigmoidRealGB(Message(Univariate, Bernoulli, p=p), msg_real)
+    return ruleEPProbitIn1GB(Message(Univariate, Bernoulli, p=p), msg_in1)
 end

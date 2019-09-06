@@ -17,15 +17,15 @@ attempts with added regularization (1e-8*I) on failure.
 """
 function cholinv(M::AbstractMatrix)
     try
-        return inv(cholesky(Hermitian(M)))
+        return inv(cholesky(Hermitian(Matrix(M))))
     catch
         try
-            return inv(cholesky(Hermitian(M + 1e-8*I)))
+            return inv(cholesky(Hermitian(Matrix(M) + 1e-8*I)))
         catch exception
             if isa(exception, PosDefException)
                 error("PosDefException: Matrix is not positive-definite, even after regularization. $(typeof(M)):\n$M")
             else
-                println("Error for $(typeof(M)):\n$M")
+                println("cholinv() errored when inverting $(typeof(M)):\n$M")
                 rethrow(exception)
             end
         end
@@ -35,12 +35,6 @@ cholinv(m::Number) = 1.0/m
 cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
 eye(n::Number) = Diagonal(I,n)
 diageye(dims::Int64) = Diagonal(ones(dims))
-
-Base.broadcast(::typeof(*), D1::Diagonal, D2::Diagonal) = Diagonal(D1.diag.*D2.diag)
-Base.broadcast(::typeof(*), D1::Matrix, D2::Diagonal) = Diagonal(diag(D1).*D2.diag)
-Base.broadcast(::typeof(*), D1::Diagonal, D2::Matrix) = D2.*D1
-
-^(D::Diagonal, p::Float64) = Diagonal(D.diag.^p)
 
 # Symbol concatenation
 *(sym::Symbol, num::Number) = Symbol(string(sym, num))

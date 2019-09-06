@@ -53,10 +53,10 @@ The name of an update rule is composed of several parts:
 5. `-`
 
 
-###### Example 3: `ruleEPSigmoidRealGB`
+###### Example 3: `ruleEPProbitIn1GB`
 1. `rule`: update rule
 2. `EP`: expectation propagation algorithm
-3. `Sigmoid`: sigmoid factor node
-4. `Real`: outgoing message through 'Real' interface
+3. `Probit`: probit factor node
+4. `In1`: outgoing message through 'in1' interface
 5. `GB`: incoming message types are: Gaussian and Bernoulli
 * *Note that EP update rules do not have `N` (nothing) in the set of incoming messages given that in EP there is an incoming message through the interface of the outgoing message that is being calculated.*

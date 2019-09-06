@@ -70,8 +70,8 @@ Find default EP sites present in `node_set`
 function collectEPSites(node_set::Set{FactorNode})
     ep_sites = Interface[]
     for node in sort(collect(node_set))
-        if isa(node, Sigmoid)
-            push!(ep_sites, node.i[:real]) # EP site for a Sigmoid node is i[:real]
+        if isa(node, Probit)
+            push!(ep_sites, node.i[:in1]) # EP site for a Probit node is i[:in1]
         end
     end
 
@@ -84,8 +84,8 @@ Constructs breaker types dictionary for breaker sites
 function breakerTypes(breaker_sites::Vector{Interface})
     breaker_types = Dict{Interface, Type}()
     for site in breaker_sites
-        if isa(site.partner.node, Sigmoid)
-            breaker_types[site] = Message{GaussianMeanVariance, Univariate} # Sigmoid EP site partner requires Gaussian breaker
+        if isa(site.partner.node, Probit)
+            breaker_types[site] = Message{GaussianMeanVariance, Univariate} # Probit EP site partner requires Gaussian breaker
         end
     end
 

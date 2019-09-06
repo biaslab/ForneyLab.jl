@@ -38,13 +38,12 @@ function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry,
     inbounds = String[]
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        partner_node = inbound_interface.node
         if node_interface == entry.interface
             # Ignore marginal of outbound edge
             push!(inbounds, "nothing")
-        elseif isa(partner_node, Clamp)
+        elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, marginalString(partner_node))
+            push!(inbounds, marginalString(inbound_interface.node))
         else
             # Collect marginal from marginal dictionary
             push!(inbounds, "marginals[:$(node_interface.edge.variable.id)]")
@@ -74,15 +73,14 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
     recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        partner_node = inbound_interface.node
         node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
 
         if node_interface == entry.interface
             # Ignore marginal of outbound edge
             push!(inbounds, "nothing")
-        elseif isa(partner_node, Clamp)
+        elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, marginalString(partner_node))
+            push!(inbounds, marginalString(inbound_interface.node))
         elseif node_interface_recognition_factor_id == entry_recognition_factor_id
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]
@@ -156,12 +154,11 @@ function collectAverageEnergyInbounds(node::FactorNode)
     recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        partner_node = inbound_interface.node
         node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
 
-        if isa(partner_node, Clamp)
+        if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, marginalString(partner_node))
+            push!(inbounds, marginalString(inbound_interface.node))
         elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
             # Collect marginal from marginal dictionary (if marginal is not already accepted)
             marginal_idx = local_cluster_ids[node_interface_recognition_factor_id]
@@ -186,7 +183,6 @@ function collectConditionalDifferentialEntropyInbounds(node::FactorNode)
     # Add conditioning terms to inbounds
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        partner_node = inbound_interface.node
 
         if !(node_interface.edge in cluster.edges)
             # Only collect conditioning variables that are part of the cluster
@@ -194,9 +190,9 @@ function collectConditionalDifferentialEntropyInbounds(node::FactorNode)
         elseif (node_interface.edge == outbound_edge)
             # Skip the outbound edge, whose variable is not part of the conditioning term
             continue
-        elseif isa(partner_node, Clamp)
+        elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in inbounds
-            push!(inbounds, marginalString(partner_node))
+            push!(inbounds, marginalString(inbound_interface.node))
         else
             marginal_idx = node_interface.edge.variable.id
             push!(inbounds, "marginals[:$marginal_idx]")
