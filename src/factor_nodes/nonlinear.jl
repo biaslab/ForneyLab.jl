@@ -27,11 +27,12 @@ mutable struct Nonlinear <: DeltaFactor
 
     g::Function # Vector function that expresses the output vector as a function of the input vector; reduces to scalar for 1-d
     g_inv::Union{Function, Nothing} # Inverse of g (optional)
+    alpha::Union{Float64, Nothing} # Spread parameter for unscented transform
     dims::Tuple # Dimension of breaker message on input interface
 
-    function Nonlinear(out, in1, g::Function; g_inv=nothing, dims=(), id=ForneyLab.generateId(Nonlinear))
+    function Nonlinear(out, in1, g::Function; g_inv=nothing, alpha=nothing, dims=(), id=ForneyLab.generateId(Nonlinear))
         @ensureVariables(out, in1)
-        self = new(id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), g, g_inv, dims)
+        self = new(id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), g, g_inv, alpha, dims)
         ForneyLab.addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)
