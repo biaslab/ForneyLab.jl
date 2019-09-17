@@ -51,6 +51,10 @@ end
     @test ProbabilityDistribution(MatrixVariate, PointMass, m=[0.1 0.3; 0.9 0.7]) * ProbabilityDistribution(MatrixVariate, Dirichlet, a=[1.0 3.0; 2.0 4.0]) == ProbabilityDistribution(MatrixVariate, PointMass, m=[0.1 0.3; 0.9 0.7])
 end
 
+@testset "log pdf" begin
+    @test isapprox(logPdf(ProbabilityDistribution(Multivariate, Dirichlet, a=[0.2,3.0,1.5]),[2,3,7]), 3.2556382883760024)
+    @test isapprox(logPdf(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[0.2 1.4; 3.0 1.8]),[2 7; 3 3]), 3.0442561618507087)
+end
 
 #-------------
 # Update rules
@@ -78,7 +82,7 @@ end
     # Multivariate
     @test isapprox(differentialEntropy(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0])), averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0]), ProbabilityDistribution(Multivariate, PointMass, m=[2.0, 3.0])))
     @test isapprox(averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[4.0, 5.0]), ProbabilityDistribution(Multivariate, PointMass, m=[2.0, 3.0])), averageEnergy(Beta, ProbabilityDistribution(Univariate, Beta, a=4.0, b=5.0), ProbabilityDistribution(Univariate, PointMass, m=2.0), ProbabilityDistribution(Univariate, PointMass, m=3.0)))
-    
+
     # MatrixVariate
     @test differentialEntropy(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])) == differentialEntropy(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 4.0])) + differentialEntropy(ProbabilityDistribution(Multivariate, Dirichlet, a=[3.0, 5.0]))
     @test averageEnergy(Dirichlet, ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0]), ProbabilityDistribution(MatrixVariate, PointMass, m=[6.0 7.0; 8.0 9.0])) == averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 4.0]), ProbabilityDistribution(Multivariate, PointMass, m=[6.0, 8.0])) + averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[3.0, 5.0]), ProbabilityDistribution(Multivariate, PointMass, m=[7.0, 9.0]))

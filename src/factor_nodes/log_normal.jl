@@ -54,6 +54,7 @@ unsafeLogVar(dist::ProbabilityDistribution{Univariate, LogNormal}) = dist.params
 unsafeCov(dist::ProbabilityDistribution{Univariate, LogNormal}) = unsafeVar(dist)
 unsafeLogCov(dist::ProbabilityDistribution{Univariate, LogNormal}) = dist.params[:s]
 
+logPdf(dist::ProbabilityDistribution{Univariate, LogNormal},x) = -log(sqrt(2pi*dist.params[:s])) -log(x) -0.5*(log(x)-dist.params[:m])^2/dist.params[:s]
 isProper(dist::ProbabilityDistribution{Univariate, LogNormal}) = (dist.params[:s] > 0.0)
 
 """

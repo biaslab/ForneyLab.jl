@@ -2,7 +2,7 @@ module WishartTest
 
 using Test
 using ForneyLab
-import ForneyLab: prod!, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper
+import ForneyLab: prod!, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper, logPdf
 import ForneyLab: SPWishartOutNPP, VBWishartOut
 import SpecialFunctions: digamma
 
@@ -36,6 +36,10 @@ end
     @test unsafeDetLogMean(ProbabilityDistribution(MatrixVariate, Wishart, v=eye(2), nu=2.0)) == digamma(0.5) + digamma(1) + 2*log(2)
 end
 
+@testset "log pdf" begin
+    @test isapprox(logPdf(ProbabilityDistribution(MatrixVariate, Wishart, v=[3.0 1.0; 1.0 1.2], nu=6.0),[2.0 1.0; 1.0 2.0]), -8.15846321016661)
+end
+
 
 #-------------
 # Update rules
@@ -44,7 +48,7 @@ end
 @testset "SPWishartOutNPP" begin
     @test SPWishartOutNPP <: SumProductRule{Wishart}
     @test outboundType(SPWishartOutNPP) == Message{Wishart}
-    @test isApplicable(SPWishartOutNPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
+    @test isApplicable(SPWishartOutNPP, [Nothing, Message{PointMass}, Message{PointMass}])
 
     @test ruleSPWishartOutNPP(nothing, Message(MatrixVariate, PointMass, m=transpose([1.0])), Message(Univariate, PointMass, m=2.0)) == Message(MatrixVariate, Wishart, v=transpose([1.0]), nu=2.0)
 end
@@ -52,8 +56,8 @@ end
 @testset "VBWishartOut" begin
     @test VBWishartOut <: NaiveVariationalRule{Wishart}
     @test outboundType(VBWishartOut) == Message{Wishart}
-    @test isApplicable(VBWishartOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution]) 
-    @test !isApplicable(VBWishartOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing]) 
+    @test isApplicable(VBWishartOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
+    @test !isApplicable(VBWishartOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing])
 
     @test ruleVBWishartOut(nothing, ProbabilityDistribution(MatrixVariate, PointMass, m=transpose([1.5])), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(MatrixVariate, Wishart, v=transpose([1.5]), nu=3.0)
 end

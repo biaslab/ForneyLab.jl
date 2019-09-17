@@ -2,7 +2,7 @@ module BetaTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims
+import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf
 import ForneyLab: SPBetaOutNPP, VBBetaOut
 import SpecialFunctions: digamma
 
@@ -29,6 +29,10 @@ end
     @test unsafeLogMean(ProbabilityDistribution(Beta, a=2.0, b=3.0)) == digamma(2.0) - digamma(5.0)
     @test unsafeMirroredLogMean(ProbabilityDistribution(Beta, a=2.0, b=3.0)) == digamma(3.0) - digamma(5.0)
     @test unsafeVar(ProbabilityDistribution(Beta, a=2.0, b=2.0)) == 0.05
+end
+
+@testset "log pdf" begin
+    @test isapprox(logPdf(ProbabilityDistribution(Beta, a=2.0, b=2.0),0.3), 0.2311117209633866)
 end
 
 @testset "prod!" begin

@@ -16,7 +16,8 @@ averageEnergy,
 ==,
 vague,
 sample,
-dims
+dims,
+logPdf
 
 abstract type VariateType end
 abstract type Univariate <: VariateType end
@@ -43,12 +44,13 @@ mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error(
 mode(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMode(dist) : error("mode($(dist)) is undefined because the distribution is improper.")
 var(dist::ProbabilityDistribution) = isProper(dist) ? unsafeVar(dist) : error("var($(dist)) is undefined because the distribution is improper.")
 cov(dist::ProbabilityDistribution) = isProper(dist) ? unsafeCov(dist) : error("cov($(dist)) is undefined because the distribution is improper.")
+logPdf(dist::ProbabilityDistribution) = isProper(dist) ? logPdf(dist) : error("logPdf($(dist)) is undefined.")
 
-""" 
+"""
 `PointMass` is an abstract type used to describe point mass distributions.
 It never occurs in a `FactorGraph`, but it is used as a probability distribution
-type. 
-""" 
+type.
+"""
 abstract type PointMass <: DeltaFactor end
 
 slug(::Type{PointMass}) = "δ"
@@ -195,7 +197,7 @@ macro RV(expr_options::Expr, expr_def::Any)
                 begin
                 # Use existing Variable if it exists, otherwise create a new one
                 $(target_expr) = try $(target_expr) catch; Variable(id=ForneyLab.pack($(var_id_expr))) end
-        
+
                 # Create new variable if:
                 #   - the existing object is not a Variable
                 #   - the existing object is a Variable from another FactorGraph

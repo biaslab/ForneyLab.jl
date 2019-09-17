@@ -51,6 +51,8 @@ unsafeMean(dist::ProbabilityDistribution{Univariate, Poisson}) = Float64(dist.pa
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, Poisson}) = Float64(dist.params[:l])
 
+logPdf(dist::ProbabilityDistribution{Univariate, Poisson}, x) = x*log(dist.params[:l]) - dist.params[:l] - lfactorial(x)
+
 # ∑ [λ^k*log(k!)]/k! from k=0 to inf
 # Approximates the above sum for calculation of averageEnergy and differentialEntropy
 # @ref https://arxiv.org/pdf/1708.06394.pdf
@@ -67,7 +69,7 @@ end
 
 # Average energy functional
 function averageEnergy(::Type{Poisson}, marg_out::ProbabilityDistribution{Univariate}, marg_l::ProbabilityDistribution{Univariate})
-    unsafeMean(marg_l) - 
+    unsafeMean(marg_l) -
     unsafeMean(marg_out)*unsafeLogMean(marg_l) +
     exp(-unsafeMean(marg_out))*apprSum(unsafeMean(marg_out))
 end

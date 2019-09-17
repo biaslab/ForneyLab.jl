@@ -56,6 +56,8 @@ unsafeMean(dist::ProbabilityDistribution{Univariate, Categorical}) = deepcopy(di
 
 unsafeMeanVector(dist::ProbabilityDistribution{Univariate, Categorical}) = deepcopy(dist.params[:p])
 
+logPdf(dist::ProbabilityDistribution{Univariate, Categorical}, x) = sum(x .* log.(dist.params[:p]))
+
 function sample(dist::ProbabilityDistribution{Univariate, Categorical})
     isProper(dist) || error("Cannot sample from improper distribution $dist")
 

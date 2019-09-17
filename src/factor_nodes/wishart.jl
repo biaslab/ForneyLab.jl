@@ -2,7 +2,7 @@ export Wishart
 
 """
 Description:
-    
+
     A Wishart node:
 
     f(out,v,nu) = W(out|v, nu) = B(v, nu) |out|^{(nu - D - 1)/2} exp(-1/2 tr(v^{-1} out))
@@ -64,6 +64,11 @@ function unsafeVar(dist::ProbabilityDistribution{MatrixVariate, Wishart}) # unsa
         end
     end
     return M
+end
+
+function logPdf(dist::ProbabilityDistribution{MatrixVariate, Wishart},x)
+    d = dims(dist)[1]
+    0.5*((dist.params[:nu]-d-1)*log(det(x)) - tr(inv(dist.params[:v])*x) - dist.params[:nu]*d*log(2) - dist.params[:nu]*log(det(dist.params[:v]))) - logmvgamma(d,0.5*dist.params[:nu])
 end
 
 function isProper(dist::ProbabilityDistribution{MatrixVariate, Wishart})
