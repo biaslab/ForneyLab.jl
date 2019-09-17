@@ -44,6 +44,7 @@ mean(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMean(dist) : error(
 mode(dist::ProbabilityDistribution) = isProper(dist) ? unsafeMode(dist) : error("mode($(dist)) is undefined because the distribution is improper.")
 var(dist::ProbabilityDistribution) = isProper(dist) ? unsafeVar(dist) : error("var($(dist)) is undefined because the distribution is improper.")
 cov(dist::ProbabilityDistribution) = isProper(dist) ? unsafeCov(dist) : error("cov($(dist)) is undefined because the distribution is improper.")
+logPdf(dist::ProbabilityDistribution) = isProper(dist) ? logPdf(dist) : error("logPdf($(dist)) is undefined.")
 
 """
 `PointMass` is an abstract type used to describe point mass distributions.
