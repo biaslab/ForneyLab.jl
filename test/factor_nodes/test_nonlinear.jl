@@ -72,12 +72,12 @@ end
 
     # Forward; g_inv should not be present in call
     algo = sumProductAlgorithm(y)
-    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], Main.ForneyLabTest.NonlinearTest.g)", algo)
+    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], $(string(g))", algo)
     @test !occursin("g_inv", algo)
 
     # Backward; g_inv should be present in call
     algo = sumProductAlgorithm(x)
-    @test occursin("ruleSPNonlinearIn1GG(messages[2], nothing, Main.ForneyLabTest.NonlinearTest.g, Main.ForneyLabTest.NonlinearTest.g_inv)", algo)
+    @test occursin("ruleSPNonlinearIn1GG(messages[2], nothing, $(string(g)), $(string(g_inv)))", algo)
 end
 
 @testset "Nonlinear integration with given alpha" begin
@@ -89,7 +89,7 @@ end
 
     # Forward; alpha should be present in call
     algo = sumProductAlgorithm(y)
-    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], Main.ForneyLabTest.NonlinearTest.g, alpha=1.0)", algo)
+    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], $(string(g)), alpha=1.0)", algo)
 end
 
 @testset "Nonlinear integration without given inverse" begin
@@ -101,13 +101,13 @@ end
 
     # Forward; g_inv should not be present in call
     algo = sumProductAlgorithm(y)
-    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], Main.ForneyLabTest.NonlinearTest.g)", algo)
-    @test !occursin("g_inv", algo)
+    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], $(string(g)))", algo)
+    @test !occursin("$(string(g_inv))", algo)
 
     # Backward; g_inv should not be present in call, 
     # both messages should be required, and initialization should take place
     algo = sumProductAlgorithm(x)
-    @test occursin("ruleSPNonlinearIn1GG(messages[2], messages[1], Main.ForneyLabTest.NonlinearTest.g)", algo)
+    @test occursin("ruleSPNonlinearIn1GG(messages[2], messages[1], $(string(g)))", algo)
     @test !occursin("g_inv", algo)
     @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", algo)
 end
