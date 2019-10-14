@@ -5,11 +5,11 @@ Description:
 
     Dirichlet factor node
 
-    Multivariate:    
+    Multivariate:
     f(out, a) = Dir(out|a)
               = Γ(Σ_i a_i)/(Π_i Γ(a_i)) Π_i out_i^{a_i}
     where 'a' is a vector with every a_i > 0
-    
+
     Matrix variate:
     f(out, a) = Π_k Dir(out|a_*k)
     where 'a' represents a left-stochastic matrix with every a_jk > 0
@@ -61,6 +61,9 @@ unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = dist.param
 
 unsafeLogMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a]))
 unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a],dims=1)) # Normalize columns
+
+logPdf(dist::ProbabilityDistribution{Multivariate, Dirichlet}, x) = sum((dist.params[:a].-1).*log.(x)) - sum(lgamma.(dist.params[:a])) + lgamma(sum(dist.params[:a]))
+logPdf(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}, x) = sum(sum((dist.params[:a].-1).*log.(x),dims=1) - sum(lgamma.(dist.params[:a]),dims=1) + lgamma.(sum(dist.params[:a],dims=1)))
 
 function unsafeVar(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])

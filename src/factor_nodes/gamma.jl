@@ -51,6 +51,8 @@ unsafeLogMean(dist::ProbabilityDistribution{Univariate, Gamma}) = digamma(dist.p
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, Gamma}) = dist.params[:a]/dist.params[:b]^2 # unsafe variance
 
+logPdf(dist::ProbabilityDistribution{Univariate, Gamma}, x) = dist.params[:a]*log(dist.params[:b]) - lgamma(dist.params[:a]) + (dist.params[:a]-1)*log(x) - dist.params[:b]*x
+
 isProper(dist::ProbabilityDistribution{Univariate, Gamma}) = (dist.params[:a] >= tiny) && (dist.params[:b] >= tiny)
 
 function prod!( x::ProbabilityDistribution{Univariate, Gamma},

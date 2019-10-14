@@ -43,6 +43,10 @@ end
     @test unsafeVar(ProbabilityDistribution(Poisson, l=2.0)) == 2.0
 end
 
+@testset "log pdf" begin
+    @test isapprox(logPdf(ProbabilityDistribution(Poisson, l=2.5),1), -1.583709268125845)
+end
+
 
 #-------------
 # Update rules

@@ -2,9 +2,9 @@ module CategoricalTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims
+import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims, logPdf
 import ForneyLab: SPCategoricalOutNP, VBCategoricalOut, VBCategoricalIn1
-import SparseArrays: SparseVector
+import SparseArrays: SparseVector, spzeros
 
 @testset "Categorical ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Univariate, Categorical, p=[0.1, 0.8, 0.1]) == ProbabilityDistribution{Univariate, Categorical}(Dict(:p=>[0.1, 0.8, 0.1]))
@@ -36,8 +36,14 @@ end
     @test sum(s.==0.0) == 2
 end
 
+@testset "log pdf" begin
+    x = spzeros(Float64, 3)
+    x[3] = 1.0
+    @test isapprox(logPdf(ProbabilityDistribution(Categorical, p=[0.2, 0.3, 0.5]),x), -0.6931471805599453)
+end
+
 @testset "prod!" begin
-    @test ProbabilityDistribution(Categorical, p=[0.2, 0.8])*ProbabilityDistribution(Categorical, p=[0.8, 0.2]) == ProbabilityDistribution(Categorical, p=[0.5, 0.5])    
+    @test ProbabilityDistribution(Categorical, p=[0.2, 0.8])*ProbabilityDistribution(Categorical, p=[0.8, 0.2]) == ProbabilityDistribution(Categorical, p=[0.5, 0.5])
     @test ProbabilityDistribution(Categorical, p=[0.25, 0.5, 0.25]) * ProbabilityDistribution(Categorical, p=[1/3, 1/3, 1/3]) == ProbabilityDistribution(Categorical, p=[0.25, 0.5, 0.25])
     @test_throws Exception ProbabilityDistribution(Categorical, p=[0.0, 0.5, 0.5]) * ProbabilityDistribution(Categorical, p=[1.0, 0.0, 0.0])
 end
@@ -49,7 +55,7 @@ end
 @testset "SPCategoricalOutNP" begin
     @test SPCategoricalOutNP <: SumProductRule{Categorical}
     @test outboundType(SPCategoricalOutNP) == Message{Categorical}
-    @test isApplicable(SPCategoricalOutNP, [Nothing, Message{PointMass}]) 
+    @test isApplicable(SPCategoricalOutNP, [Nothing, Message{PointMass}])
 
     @test ruleSPCategoricalOutNP(nothing, Message(Multivariate, PointMass, m=[0.1, 0.8, 0.1])) == Message(Univariate, Categorical, p=[0.1, 0.8, 0.1])
 end

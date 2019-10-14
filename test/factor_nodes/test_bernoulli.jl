@@ -2,7 +2,7 @@ module BernoulliTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims
+import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, vague, dims, logPdf
 import ForneyLab: SPBernoulliOutNP, SPBernoulliIn1PN, SPBernoulliOutNB, VBBernoulliOut, VBBernoulliIn1
 
 @testset "Bernoulli ProbabilityDistribution and Message construction" begin
@@ -26,6 +26,10 @@ end
 @testset "unsafe mean and variance" begin
     @test unsafeMean(ProbabilityDistribution(Bernoulli, p=0.2)) == 0.2
     @test unsafeVar(ProbabilityDistribution(Bernoulli, p=0.5)) == 0.25
+end
+
+@testset "log pmf" begin
+    @test isapprox(logPdf(ProbabilityDistribution(Bernoulli, p=0.2),1), -1.6094379124341003)
 end
 
 @testset "prod!" begin
@@ -63,6 +67,8 @@ end
 
 @testset "VBBernoulliOut" begin
     @test VBBernoulliOut <: NaiveVariationalRule{Bernoulli}
+
+
     @test outboundType(VBBernoulliOut) == Message{Bernoulli}
     @test isApplicable(VBBernoulliOut, [Nothing, ProbabilityDistribution])
     @test !isApplicable(VBBernoulliOut, [ProbabilityDistribution, Nothing])

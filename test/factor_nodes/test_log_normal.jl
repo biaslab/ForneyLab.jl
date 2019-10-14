@@ -22,6 +22,10 @@ end
     @test unsafeLogCov(ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=2.0)) == 2.0
 end
 
+@testset "log pdf" begin
+    @test isapprox(logPdf(ProbabilityDistribution(Univariate, LogNormal, m=1.2, s=0.5),2), -1.522411904058978)
+end
+
 @testset "Gamma approximatons to LogNormal" begin
     @test ForneyLab.laplace(Gamma, ProbabilityDistribution(Univariate, LogNormal, m=0.0, s=2.0)) == ProbabilityDistribution(Univariate, Gamma, a=0.5, b=0.5)
 end
@@ -40,7 +44,7 @@ end
 @testset "SPLogNormalOutNPP" begin
     @test SPLogNormalOutNPP <: SumProductRule{LogNormal}
     @test outboundType(SPLogNormalOutNPP) == Message{LogNormal}
-    @test isApplicable(SPLogNormalOutNPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
+    @test isApplicable(SPLogNormalOutNPP, [Nothing, Message{PointMass}, Message{PointMass}])
 
     @test ruleSPLogNormalOutNPP(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, LogNormal, m=1.0, s=2.0)
 end
@@ -48,8 +52,8 @@ end
 @testset "VBLogNormalOut" begin
     @test VBLogNormalOut <: NaiveVariationalRule{LogNormal}
     @test outboundType(VBLogNormalOut) == Message{LogNormal}
-    @test isApplicable(VBLogNormalOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution]) 
-    @test !isApplicable(VBLogNormalOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing]) 
+    @test isApplicable(VBLogNormalOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
+    @test !isApplicable(VBLogNormalOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing])
 
     @test ruleVBLogNormalOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=1.5), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, LogNormal, m=1.5, s=3.0)
 end
