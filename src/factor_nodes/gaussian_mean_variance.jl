@@ -65,7 +65,7 @@ unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where
 
 unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = cholinv(dist.params[:v])
 
-logPdf(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance},x) = -log(sqrt(2pi*dist.params[:v])) - 0.5*(x-dist.params[:m])^2/dist.params[:v]
+logPdf(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance},x) = -0.5*(log(2pi)+log(dist.params[:v]) + (x-dist.params[:m])^2/dist.params[:v])
 logPdf(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance},x) = -0.5*(dims(dist)*log(2pi) + log(det(dist.params[:v])) + transpose(x-dist.params[:m])*inv(dist.params[:v])*(x-dist.params[:m]))
 # Converting from m,v to xi,w would require two separate inversions of the covariance matrix;
 # thid function ensures only a singly inversion is performed
