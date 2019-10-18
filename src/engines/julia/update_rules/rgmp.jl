@@ -15,29 +15,80 @@ function ruleSPRGMPOutNG(msg_out::Nothing,msg_z::Message{F1, V},g::Function, num
     Message(V, RGMP_dist, m=z_m, v=z_v, f=g)
 end
 
-function prod!(
+const product = Iterators.product
+const PIterator = Iterators.ProductIterator
+
+function generate_multidim_points(n::Int, p::Int)
+   sigma_points, sigma_weights = gausshermite(p)
+   points_iter = product(repeat([sigma_points],n)...)
+   weights_iter = product(repeat([sigma_weights],n)...)
+   return points_iter, weights_iter
+end
+function gaussHermiteCubature(g::Function, d::ProbabilityDistribution{Univariate,GaussianMeanVariance}, points_iter::PIterator, weights_iter::PIterator)
+   result = 0.0
+   # println(d.params[:v])
+   sqrtP = sqrt(d.params[:v])
+   for (point_tuple, weights) in zip(points_iter, weights_iter)
+       weight = prod(weights)
+       point = collect(point_tuple)
+       result += weight.*g(d.params[:m] + sqrtP*point)
+   end
+   return result
+end
+function gaussHermiteCubature1D(g::Function, d::ProbabilityDistribution{Univariate,GaussianMeanVariance}, points_iter::Array, weights_iter::Array)
+   result = 0.0
+   # println(d.params[:v])
+   sqrtP = sqrt(d.params[:v])
+   for (point_tuple, weights) in zip(points_iter, weights_iter)
+       weight = prod(weights)
+       point = collect(point_tuple)
+       result += weight.*g(d.params[:m] + sqrtP*point)
+   end
+   return result
+end
+function gaussHermiteCubatureMean(g::Function, d::ProbabilityDistribution{Univariate,GaussianMeanVariance}, points_iter::PIterator, weights_iter::PIterator)
+   result = zeros(dims(d))
+   sqrtP = sqrt(d.params[:v])
+   for (point_tuple, weights) in zip(points_iter, weights_iter)
+       weight = prod(weights)
+       point = collect(point_tuple)
+       result = result + weight.*g(d.params[:m] + sqrtP*point)
+   end
+   return result
+end
+function gaussHermiteCubatureCov(g::Function, d::ProbabilityDistribution{Univariate,GaussianMeanVariance}, points_iter::PIterator, weights_iter::PIterator)
+   result = zeros(dims(d),dims(d))
+   sqrtP = sqrt(d.params[:v])
+   for (point_tuple, weights) in zip(points_iter, weights_iter)
+       weight = prod(weights)
+       point = collect(point_tuple)
+       result = result + weight.*g(d.params[:m] + sqrtP*point)
+   end
+   return result
+end
+
+
+@symmetrical function prod!(
     x::ProbabilityDistribution{Univariate, Function},
     y::ProbabilityDistribution{Univariate, F2},
     z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F2<:Gaussian}
 
-    log_FB(s) = x.params[:log_pdf](s)
-    #pdf of prior which refers to the upcoming message from the previous time dependent variable
-    #fA(mu,v,s) = Distributions.pdf(Distributions.Normal(mu, v),s)
     y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
     y_m = y.params[:m]
     y_v = y.params[:v]
-    #Insert the parameters of previous message into prior function
-    #log_FA(s) = log(fA(y_m,y_v,s))
-    log_FA(s) = logPdf(y,s)
-    #approximate the posterior with Gaussian distribution family
-    eta_a = x.params[:eta_a]
-    eta_b = x.params[:eta_b]
-    num_epoch = x.params[:num_epoch]
-    num_epoch2 = x.params[:num_epoch2]
-    mu_zt, v_zt = gaussian_avi1(log_FA, log_FB, y_m, y_v, eta_a, eta_b, num_epoch, num_epoch2)
-
-    z.params[:m] = mu_zt
-    z.params[:v] = v_zt
+    log_FB(s) = exp(x.params[:log_pdf](s))
+    dim = dims(y)
+    #points_iter, weights_iter = generate_multidim_points(dim, 10)
+    points_iter, weights_iter = gausshermite(100)
+    normalization_constant = gaussHermiteCubature1D(log_FB,y,points_iter,weights_iter)
+    t(s) = s.*log_FB(s)./normalization_constant
+    #mean = gaussHermiteCubatureMean(t,y,points_iter,weights_iter)
+    mean = gaussHermiteCubature1D(t,y,points_iter,weights_iter)
+    c(s) = log_FB(s) .* (s-mean)*transpose(s-mean)./normalization_constant
+    #cov = gaussHermiteCubatureCov(d,y,points_iter,weights_iter)
+    cov = gaussHermiteCubature1D(c,y,points_iter,weights_iter)
+    z.params[:m] = mean
+    z.params[:v] = cov
 
     return z
 end
