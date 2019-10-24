@@ -9,7 +9,6 @@ function ruleSPNonconjugateInFN(msg_out::Message,msg_z::Nothing,g::Function)
 end
 
 function ruleSPNonconjugateOutNG(msg_out::Nothing,msg_z::Message{F1, V},g::Function) where {F1<:Gaussian, V<:Univariate}
-    #z = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_z)
     z_m = msg_z.dist.params[:m]
     z_v = msg_z.dist.params[:v]
     Message(V, Abstract_dist, m=z_m, v=z_v, f=g)
