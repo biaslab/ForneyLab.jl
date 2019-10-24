@@ -17,10 +17,10 @@ end
 @testset "unsafe mean and variance" begin
     f_dummy(x) = x
     sigmoid(x) = 1/(1+exp(-x))
-    @test abs(unsafeMean(ProbabilityDistribution(Univariate, Abstract_dist, m=0.0, v=1.0, f=f_dummy)) - 0.0) < 0.05
-    @test abs(unsafeVar(ProbabilityDistribution(Univariate, Abstract_dist, m=0.0, v=1.0, f=f_dummy)) - 1.0) < 0.05
-    @test abs(unsafeLogMean(ProbabilityDistribution(Univariate, Abstract_dist, m=20000.0, v=0.01, f=sigmoid)) - 0.0) < 0.05
-    @test abs(unsafeMirroredLogMean(ProbabilityDistribution(Univariate, Abstract_dist, m=-10000.0, v=0.1, f=sigmoid)) - 0.0) < 0.05
+    @test abs(unsafeMean(ProbabilityDistribution(Univariate, Abstract_dist, m=0.0, v=1.0, f=f_dummy)) - 0.0) < 0.1
+    @test abs(unsafeVar(ProbabilityDistribution(Univariate, Abstract_dist, m=0.0, v=1.0, f=f_dummy)) - 1.0) < 0.1
+    @test abs(unsafeLogMean(ProbabilityDistribution(Univariate, Abstract_dist, m=20000.0, v=0.01, f=sigmoid)) - 0.0) < 0.1
+    @test abs(unsafeMirroredLogMean(ProbabilityDistribution(Univariate, Abstract_dist, m=-10000.0, v=0.1, f=sigmoid)) - 0.0) < 0.1
 end
 
 @testset "prod!" begin

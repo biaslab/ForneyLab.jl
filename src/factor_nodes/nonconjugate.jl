@@ -6,7 +6,7 @@ Description:
     Deterministic functions that cause non-conjugacy can be incorporated into
     the existing factor graph with Nonconjugate node. Primitive implementation requires input
     to be Gaussian distributed random variable and approximates the posterior marginal by
-    Gauss-Hermite quadrature/cubature technique. The node computes a pdf function by change of random variables
+    importance sampling technique. The node computes a pdf function by change of random variables
     and autodiff, then transmits the pdf message through in1 interface. When it is needed out interface carries
     an abstract distribution message which is not a parametric distribution but supplies the
     required sufficient statistics to carry out VMP and free energy computation.

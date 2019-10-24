@@ -15,15 +15,6 @@ function ruleSPNonconjugateOutNG(msg_out::Nothing,msg_z::Message{F1, V},g::Funct
     Message(V, Abstract_dist, m=z_m, v=z_v, f=g)
 end
 
-const product = Iterators.product
-const PIterator = Iterators.ProductIterator
-
-function gaussHermiteQuadrature(g::Function, d::ProbabilityDistribution{Univariate,GaussianMeanVariance}, points_iter::Array, weights_iter::Array)
-   std = sqrt(d.params[:v])
-   result = sum((weights_iter./ (2 .^ collect(0:19) .* sqrt(pi))).*g.(d.params[:m] .+ std.*points_iter))
-   return result
-end
-
 @symmetrical function prod!(
     x::ProbabilityDistribution{Univariate, Function},
     y::ProbabilityDistribution{Univariate, F2},
@@ -33,14 +24,11 @@ end
     y_m = y.params[:m]
     y_v = y.params[:v]
     FB(s) = exp(x.params[:log_pdf](s))
-    points_iter, weights_iter = gausshermite(20)
-    normalization_constant = gaussHermiteQuadrature(FB,y,points_iter,weights_iter)
-    t(s) = s*FB(s)/normalization_constant
-    mean = gaussHermiteQuadrature(t,y,points_iter,weights_iter)
-    c(s) = FB(s)*(s-mean)^2/normalization_constant
-    cov = gaussHermiteQuadrature(c,y,points_iter,weights_iter)
+    samples = y_m .+ sqrt(y_v) .* randn(1000)
+    mean = sum(FB.(samples) ./ sum(FB.(samples)) .* samples)
+    var = sum(FB.(samples) ./ sum(FB.(samples)) .* (samples.-mean).^2)
     z.params[:m] = mean
-    z.params[:v] = cov
+    z.params[:v] = var
 
     return z
 end
