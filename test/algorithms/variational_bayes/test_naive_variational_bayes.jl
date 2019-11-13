@@ -31,6 +31,8 @@ end
 
 @testset "@naiveVariationalRule" begin
     @test VBMockOut <: NaiveVariationalRule{MockNode}
+    @test isApplicable(VBMockOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
+    @test !isApplicable(VBMockOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution, ProbabilityDistribution])    
 end
 
 @testset "inferUpdateRule!" begin
