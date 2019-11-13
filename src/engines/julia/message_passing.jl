@@ -48,8 +48,10 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
             msg_idx = interface_to_msg_idx[breaker_site]
             breaker_type_str = replace(string(family(breaker_type)),"ForneyLab." => "") # Remove module prefixes
             if breaker_dims[breaker_site] == () # Univariate
+                (family(breaker_type) == Union{Gamma, Wishart}) && (breaker_type_str = "Gamma") # Catch special case
                 code *= "messages[$(msg_idx)] = Message(vague($(breaker_type_str)))\n"
             else
+                (family(breaker_type) == Union{Gamma, Wishart}) && (breaker_type_str = "Wishart") # Catch special case
                 code *= "messages[$(msg_idx)] = Message(vague($(breaker_type_str), $(breaker_dims[breaker_site])))\n"
             end
         end
