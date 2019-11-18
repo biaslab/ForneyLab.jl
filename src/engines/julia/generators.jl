@@ -60,8 +60,10 @@ Generate code for initialization block
 """
 function initializationString(subgraph::Dict)
     init_str = "function init$(subgraph[:name])()\n\n"
-    for message in subgraph[:initialization][:messages]
-        init_str *= "messages[$(message[:schedule_index])] = Message($(vagueString(message)))\n"
+    for message in subgraph[:messages]
+        if message[:initialize]
+            init_str *= "messages[$(message[:schedule_index])] = Message($(vagueString(message)))\n"
+        end
     end
     init_str *= "\nreturn messages\n\n"
     init_str *= "end"
