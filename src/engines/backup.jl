@@ -61,50 +61,32 @@ function writeInitializationBlock(schedule::Schedule, interface_to_msg_idx::Dict
     return code
 end
 
-function writeMessagePassingBlock(schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
-    code = ""
-    
-    for schedule_entry in schedule
-        # Collect inbounds and assign message id
+function buildMessagePassingBlock!(step_dict::Dict, schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
+    for (i, schedule_entry) in enumerate(schedule)
+        message = step_dict[:messages][i]
+        message[:schedule_index] = i
+        message[:message_update_rule] = schedule_entry.msg_update_rule
+
         inbounds = collectInbounds(schedule_entry, schedule_entry.msg_update_rule, interface_to_msg_idx)
-
-        # Apply update rule
-        rule_id = schedule_entry.msg_update_rule
-        rule_str = split(string(rule_id),'.')[end] # Remove module prefixes
-        inbounds_str = join(inbounds, ", ")
-        msg_idx = interface_to_msg_idx[schedule_entry.interface]
-        code *= "messages[$msg_idx] = rule$(rule_str)($inbounds_str)\n"
-    end
-
-    return code
-end
-
-function writeMarginalsComputationBlock(schedule::MarginalSchedule, interface_to_msg_idx::Dict{Interface, Int})
-    code = ""
-
-    for schedule_entry in schedule
-        if schedule_entry.marginal_update_rule == Nothing
-            iface = schedule_entry.interfaces[1]
-            code *= "marginals[:$(schedule_entry.target.id)] = messages[$(interface_to_msg_idx[iface])].dist\n"
-        elseif schedule_entry.marginal_update_rule == Product
-            iface1 = schedule_entry.interfaces[1]
-            iface2 = schedule_entry.interfaces[2]
-            code *= "marginals[:$(schedule_entry.target.id)] = messages[$(interface_to_msg_idx[iface1])].dist * messages[$(interface_to_msg_idx[iface2])].dist\n"
-        else
-            # Collect inbounds for marginal computation
-            inbounds = collectInbounds(schedule_entry, interface_to_msg_idx)
-
-            # Apply marginal update rule
-            rule_id = schedule_entry.marginal_update_rule
-            rule_str = split(string(rule_id),'.')[end] # Remove module prefixes
-            inbounds_str = join(inbounds, ", ")
-            code *= "marginals[:$(schedule_entry.target.id)] = rule$(rule_str)($inbounds_str)\n"
+        for (k, inbound) in enumerate(inbounds)
+            message[:inbounds][k] = inbound
         end
     end
 
-    !isempty(schedule) && (code *= "\n")
+    return step_dict
+end
 
-    return code
+function buildMarginalsComputationBlock!(marginals::Dict, schedule::MarginalSchedule, interface_to_msg_idx::Dict{Interface, Int})
+    for schedule_entry in schedule
+        marginals[:marginal_id] = schedule_entry.target.id
+        marginals[:marginal_update_rule] = schedule_entry.marginal_update_rule        
+        inbounds = collectInbounds(schedule_entry.marginal_update_rule, schedule_entry, interface_to_msg_idx)
+        for (k, inbound) in enumerate(inbounds)
+            marginals[:inbounds][k] = inbound
+        end
+    end
+
+    return marginals
 end
 
 """
@@ -146,12 +128,10 @@ function collectMarginalNodeInbounds(::FactorNode, entry::MarginalScheduleEntry,
 end
 
 function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::MarginalSchedule=MarginalScheduleEntry[]; file::String="", name::String="")
-    schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
-    n_messages = length(schedule)
-
     # Assign message numbers to each interface in the schedule
     schedule = ForneyLab.flatten(schedule) # Inline all internal message passing
     schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
+    n_messages = length(schedule)
     interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
 
     code = ""
@@ -163,13 +143,14 @@ function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::Marginal
     code *= "return marginals\n\n"
     code *= "end"
 
-    # Write to file
+    Write to file
     if !isempty(file)
         write(file, code)
     end
 
     return code
 end
+
 
 """
 Depending on the origin of the Clamp node message,
@@ -229,4 +210,60 @@ function marginalString(node::Clamp{T}) where T<:VariateType
     end
 
     return str
+end
+
+function collectAverageEnergyInbounds(node::FactorNode)
+    inbounds = String[]
+
+    local_cluster_ids = localRecognitionFactorization(node)
+
+    recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
+    for node_interface in node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
+
+        if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, marginalString(inbound_interface.node))
+        elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
+            # Collect marginal from marginal dictionary (if marginal is not already accepted)
+            marginal_idx = local_cluster_ids[node_interface_recognition_factor_id]
+            push!(inbounds, "marginals[:$marginal_idx]")
+        end
+
+        push!(recognition_factor_ids, node_interface_recognition_factor_id)
+    end
+
+    return inbounds
+end
+
+function collectConditionalDifferentialEntropyInbounds(node::FactorNode)
+    inbounds = String[]
+
+    outbound_edge = node.interfaces[1].edge
+    dict = current_recognition_factorization.node_edge_to_cluster
+    cluster = dict[(node, outbound_edge)]
+
+    push!(inbounds, "marginals[:$(cluster.id)]") # Add joint term to inbounds
+
+    # Add conditioning terms to inbounds
+    for node_interface in node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+
+        if !(node_interface.edge in cluster.edges)
+            # Only collect conditioning variables that are part of the cluster
+            continue
+        elseif (node_interface.edge == outbound_edge)
+            # Skip the outbound edge, whose variable is not part of the conditioning term
+            continue
+        elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+            # Hard-code marginal of constant node in inbounds
+            push!(inbounds, marginalString(inbound_interface.node))
+        else
+            marginal_idx = node_interface.edge.variable.id
+            push!(inbounds, "marginals[:$marginal_idx]")
+        end
+    end
+
+    return inbounds
 end

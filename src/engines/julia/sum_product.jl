@@ -7,6 +7,7 @@ function sumProductAlgorithm(variables::Vector{Variable}; file::String="", name:
     schedule = sumProductSchedule(variables)
     marginal_schedule = marginalSchedule(variables)
 
+    # TODO: build algo structure and convert to code
     algo = "begin\n\n"
     algo *= messagePassingAlgorithm(schedule, marginal_schedule, file=file, name=name)
     algo *= "\n\nend # block"

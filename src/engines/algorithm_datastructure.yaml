@@ -1,0 +1,51 @@
+# "If we need to write the algorithm from scratch, what information do we need?"
+algorithm:
+    subgraphs: (per item)
+        - name::String # subgraph name
+        - optimize::Bool # require optimize block
+        initialization:
+            messages: (per item)
+                - schedule_index::Int # position of message in schedule
+                - family::FactorFunction # family of message distribution
+                - dimensionality::Tuple # dimensionality of message distribution
+        messages: (per item)
+            - schedule_index::Int # position of message in schedule
+            - message_update_rule::Type # update rule type for message computation
+            inbounds: (per item)
+                - schedule_index::Int # position of inbound message in schedule; e.g. "message[1]"
+                - marginal_id::Symbol # identifier for inbound marginal; e.g. "marginals[:x]"
+                - buffer_id::Symbol # identifier for placeholder; e.g. "data[:x]"
+                - buffer_index::Symbol # position of datapoint in placeholder; e.g. "data[:x][1]"
+                - value::Any # value assigned to Clamp node; e.g. a scalar or matrix
+                - variate_type::VariateType # variate type for placeholder distribution of message
+                - dist_or_msg::Union{ProbabilityDistribution, Message} # e.g. "ProbabilityDistribution(Univariate, PointMass, m=data[:x][1])", or "Message(...)"
+                - nothing::Bool # require no inbound; e.g. "nothing"
+        marginals: (per item)
+            - marginals_id::Symbol # identifier for the marginal
+            - marginal_update_rule::Union{Nothing, Product, Type} # update rule type for marginal computation
+            inbounds: (per item)
+                - schedule_index::Int # for message inbound
+                - marginal_id::Symbol # for marginal inbound
+                - buffer_id::Symbol # for placeholder inbound
+                - buffer_index::Symbol # for placeholder inbound
+                - value::Any # for value inbound
+                - variate_type::VariateType # for placeholder/value inbound
+                - dist_or_msg::Union{ProbabilityDistribution, Message} # for placeholder/value inbound
+    free_energy:
+        - name::String # name appended to the free energy function
+        average_energies: (per item)
+            - node::FactorNode # node for average energy computation
+            inbounds: (per item)
+                - marginal_id::Symbol # for marginal inbound
+                - buffer_id::Symbol # for placeholder inbound
+                - buffer_index::Symbol # for placeholder inbound
+                - value::Any # for value inbound
+                - variate_type::VariateType # for placeholder/value inbound
+        entropies: (per item)
+            - conditional::Bool # require conditional entropy computation
+            inbounds: (per item)
+                - marginal_id::Symbol # for marginal inbound
+                - buffer_id::Symbol # for placeholder inbound
+                - buffer_index::Symbol # for placeholder inbound
+                - value::Any # for value inbound
+                - variate_type::VariateType # for placeholder/value inbound   
