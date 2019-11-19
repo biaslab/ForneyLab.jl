@@ -23,7 +23,7 @@ end
     y_m = y.params[:m]
     y_v = y.params[:v]
     FB(s) = exp(x.params[:log_pdf](s))
-    samples = y_m .+ sqrt(y_v) .* randn(1000)
+    samples = y_m .+ sqrt(y_v) .* randn(100)
     mean = sum(FB.(samples) ./ sum(FB.(samples)) .* samples)
     var = sum(FB.(samples) ./ sum(FB.(samples)) .* (samples.-mean).^2)
     z.params[:m] = mean

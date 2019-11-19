@@ -28,27 +28,27 @@ ProbabilityDistribution(::Type{Munivariate}, ::Type{Abstract_dist}; m=[0.0, 0.0]
 
 dims(dist::ProbabilityDistribution{Univariate, Abstract_dist}) = 1
 
-samples(dist::ProbabilityDistribution{Univariate, Abstract_dist}) = dist.params[:m] .+ sqrt(dist.params[:v]) .* randn(1000)
+samples(dist::ProbabilityDistribution{Univariate, Abstract_dist}) = dist.params[:m] .+ sqrt(dist.params[:v]) .* randn(100)
 transformed_samples(dist::ProbabilityDistribution{Univariate, Abstract_dist}) = dist.params[:f].(samples(dist))
 
-unsafeMean(dist::ProbabilityDistribution{Univariate, Abstract_dist}) = sum(transformed_samples(dist))/1000 # unsafe mean
+unsafeMean(dist::ProbabilityDistribution{Univariate, Abstract_dist}) = sum(transformed_samples(dist))/100 # unsafe mean
 
-unsafeLogMean(dist::ProbabilityDistribution{Univariate, Abstract_dist}) = sum(log.(transformed_samples(dist)))/1000
+unsafeLogMean(dist::ProbabilityDistribution{Univariate, Abstract_dist}) = sum(log.(transformed_samples(dist)))/100
 
 function unsafeVar(dist::ProbabilityDistribution{Univariate, Abstract_dist})
     tr_samples = transformed_samples(dist)
-    sum((tr_samples .- sum(tr_samples)/1000).^2)/999
+    sum((tr_samples .- sum(tr_samples)/100).^2)/99
 end
 
 function unsafeMeanCov(dist::ProbabilityDistribution{Univariate, Abstract_dist})
     tr_samples = transformed_samples(dist)
-    sum(tr_samples)/1000, sum((tr_samples .- sum(tr_samples)/1000).^2)/999
+    sum(tr_samples)/100, sum((tr_samples .- sum(tr_samples)/100).^2)/99
 end
 
 function  unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, Abstract_dist})
     tr_samples = transformed_samples(dist)
     if all(0 .<= tr_samples .< 1)
-        return sum(log.(1 .- transformed_samples(dist)))/1000
+        return sum(log.(1 .- transformed_samples(dist)))/100
     else
         return error("Transformed samples are not in the range of [0,1]. Check your transformation function!")
     end
