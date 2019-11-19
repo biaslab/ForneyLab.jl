@@ -31,6 +31,8 @@ end
 
 @testset "@SumProductRule" begin
     @test SPMockOutPP <: SumProductRule{MockNode}
+    @test isApplicable(SPMockOutPP, [Nothing, Message{PointMass}, Message{PointMass}])
+    @test !isApplicable(SPMockOutPP, [Nothing, Message{PointMass}, Message{PointMass}, Message{PointMass}])    
 end
 
 # Composite definition for inferUpdateRule! testset
