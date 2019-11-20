@@ -3,7 +3,7 @@ module NonlinearTest
 using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights
-import ForneyLab: SPNonlinearOutNG, SPNonlinearIn1GG
+import ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG
 
 @testset "sigmaPointsAndWeights" begin
     dist = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
@@ -29,33 +29,33 @@ g(x::Vector{Float64}) = x.^2 .- 5.0
 g_inv(x::Float64) = sqrt(x + 5.0)
 g_inv(x::Vector{Float64}) = sqrt.(x .+ 5.0)
 
-@testset "SPNonlinearOutNG" begin
-    @test SPNonlinearOutNG <: SumProductRule{Nonlinear}
-    @test outboundType(SPNonlinearOutNG) == Message{GaussianMeanVariance}
-    @test isApplicable(SPNonlinearOutNG, [Nothing, Message{Gaussian}]) 
+@testset "SPNonlinearUTOutNG" begin
+    @test SPNonlinearUTOutNG <: SumProductRule{Nonlinear}
+    @test outboundType(SPNonlinearUTOutNG) == Message{GaussianMeanVariance}
+    @test isApplicable(SPNonlinearUTOutNG, [Nothing, Message{Gaussian}]) 
 
-    @test ruleSPNonlinearOutNG(nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), g) == Message(Univariate, GaussianMeanVariance, m=2.0000000001164153, v=66.00000000093132)
-    @test ruleSPNonlinearOutNG(nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), g, alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.0, v=66.0)
-    @test ruleSPNonlinearOutNG(nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), g) == Message(Multivariate, GaussianMeanVariance, m=[2.0000000001164153], v=mat(66.00000000093132))
-    @test ruleSPNonlinearOutNG(nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), g, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(66.0))
+    @test ruleSPNonlinearUTOutNG(nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), g) == Message(Univariate, GaussianMeanVariance, m=2.0000000001164153, v=66.00000000093132)
+    @test ruleSPNonlinearUTOutNG(nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), g, alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.0, v=66.0)
+    @test ruleSPNonlinearUTOutNG(nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), g) == Message(Multivariate, GaussianMeanVariance, m=[2.0000000001164153], v=mat(66.00000000093132))
+    @test ruleSPNonlinearUTOutNG(nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), g, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(66.0))
 end
 
-@testset "SPNonlinearIn1GG" begin
-    @test SPNonlinearIn1GG <: SumProductRule{Nonlinear}
-    @test outboundType(SPNonlinearIn1GG) == Message{GaussianMeanVariance}
-    @test isApplicable(SPNonlinearIn1GG, [Message{Gaussian}, Nothing]) 
+@testset "SPNonlinearUTIn1GG" begin
+    @test SPNonlinearUTIn1GG <: SumProductRule{Nonlinear}
+    @test outboundType(SPNonlinearUTIn1GG) == Message{GaussianMeanVariance}
+    @test isApplicable(SPNonlinearUTIn1GG, [Message{Gaussian}, Nothing]) 
 
     # Without given inverse
-    @test ruleSPNonlinearIn1GG(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), g) == Message(Univariate, GaussianMeanVariance, m=2.499999999868301, v=0.3125000002253504)
-    @test ruleSPNonlinearIn1GG(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), g, alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.5, v=0.3125)
-    @test ruleSPNonlinearIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), g) == Message(Multivariate, GaussianMeanVariance, m=[2.499999999868301], v=mat(0.31250000021807445))
-    @test ruleSPNonlinearIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), g, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.5], v=mat(0.3125))
+    @test ruleSPNonlinearUTIn1GG(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), g) == Message(Univariate, GaussianMeanVariance, m=2.499999999868301, v=0.3125000002253504)
+    @test ruleSPNonlinearUTIn1GG(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), g, alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.5, v=0.3125)
+    @test ruleSPNonlinearUTIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), g) == Message(Multivariate, GaussianMeanVariance, m=[2.499999999868301], v=mat(0.31250000021807445))
+    @test ruleSPNonlinearUTIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), g, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.5], v=mat(0.3125))
 
     # With given inverse
-    @test ruleSPNonlinearIn1GG(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, g, g_inv) == Message(Univariate, GaussianMeanVariance, m=2.6255032138433307, v=0.10796282966583703)
-    @test ruleSPNonlinearIn1GG(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, g, g_inv, alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.6251028535207217, v=0.10968772603524787)
-    @test ruleSPNonlinearIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, g, g_inv) == Message(Multivariate, GaussianMeanVariance, m=[2.6255032138433307], v=mat(0.10796282966583703))
-    @test ruleSPNonlinearIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, g, g_inv, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.6251028535207217], v=mat(0.10968772603524787))
+    @test ruleSPNonlinearUTIn1GG(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, g, g_inv) == Message(Univariate, GaussianMeanVariance, m=2.6255032138433307, v=0.10796282966583703)
+    @test ruleSPNonlinearUTIn1GG(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, g, g_inv, alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.6251028535207217, v=0.10968772603524787)
+    @test ruleSPNonlinearUTIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, g, g_inv) == Message(Multivariate, GaussianMeanVariance, m=[2.6255032138433307], v=mat(0.10796282966583703))
+    @test ruleSPNonlinearUTIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, g, g_inv, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.6251028535207217], v=mat(0.10968772603524787))
 end
 
 

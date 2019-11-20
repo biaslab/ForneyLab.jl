@@ -1,6 +1,10 @@
 export
-ruleSPNonlinearOutNG,
-ruleSPNonlinearIn1GG
+ruleSPNonlinearUTOutNG,
+ruleSPNonlinearUTIn1GG,
+ruleSPNonlinearPTInMN,
+ruleSPNonlinearPTOutNG,
+prod!
+
 
 # Determine the default value for the spread parameter
 const default_alpha = 1e-3
@@ -63,7 +67,7 @@ function sigmaPointsAndWeights(dist::ProbabilityDistribution{Multivariate, F}, a
     return (sigma_points, weights_m, weights_c)
 end
 
-function ruleSPNonlinearOutNG(msg_out::Nothing,
+function ruleSPNonlinearUTOutNG(msg_out::Nothing,
                               msg_in1::Message{F, Univariate},
                               g::Function;
                               alpha::Float64=default_alpha) where F<:Gaussian
@@ -78,7 +82,7 @@ function ruleSPNonlinearOutNG(msg_out::Nothing,
     return Message(Univariate, GaussianMeanVariance, m=m_fw_out, v=V_fw_out)
 end
 
-function ruleSPNonlinearOutNG(msg_out::Nothing,
+function ruleSPNonlinearUTOutNG(msg_out::Nothing,
                               msg_in1::Message{F, Multivariate},
                               g::Function;
                               alpha::Float64=default_alpha) where F<:Gaussian
@@ -93,7 +97,7 @@ function ruleSPNonlinearOutNG(msg_out::Nothing,
     return Message(Multivariate, GaussianMeanVariance, m=m_fw_out, v=V_fw_out)
 end
 
-function ruleSPNonlinearIn1GG(msg_out::Message{F, Univariate},
+function ruleSPNonlinearUTIn1GG(msg_out::Message{F, Univariate},
                               msg_in1::Nothing,
                               g::Function,
                               g_inv::Function;
@@ -109,7 +113,7 @@ function ruleSPNonlinearIn1GG(msg_out::Message{F, Univariate},
     return Message(Univariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
 end
 
-function ruleSPNonlinearIn1GG(msg_out::Message{F, Multivariate},
+function ruleSPNonlinearUTIn1GG(msg_out::Message{F, Multivariate},
                               msg_in1::Nothing,
                               g::Function,
                               g_inv::Function;
@@ -125,7 +129,7 @@ function ruleSPNonlinearIn1GG(msg_out::Message{F, Multivariate},
     return Message(Multivariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
 end
 
-function ruleSPNonlinearIn1GG(msg_out::Message{F1, Univariate},
+function ruleSPNonlinearUTIn1GG(msg_out::Message{F1, Univariate},
                               msg_in1::Message{F2, Univariate},
                               g::Function;
                               alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian}
@@ -149,7 +153,7 @@ function ruleSPNonlinearIn1GG(msg_out::Message{F1, Univariate},
     return Message(Univariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
 end
 
-function ruleSPNonlinearIn1GG(msg_out::Message{F1, Multivariate},
+function ruleSPNonlinearUTIn1GG(msg_out::Message{F1, Multivariate},
                               msg_in1::Message{F2, Multivariate},
                               g::Function;
                               alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian}
@@ -219,4 +223,76 @@ function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry)
     end
 
     return inbounds
+end
+
+function ruleSPNonlinearPTInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
+    # The backward message is computed by a change of variables,
+    # where the Jacobian follows from automatic differentiation
+    log_grad_g(z) = log(abs(ForwardDiff.derivative(g, z)))
+
+    Message(Univariate, Function, log_pdf=(z) -> log_grad_g(z) + logPdf(msg_out.dist, g(z)))
+end
+
+function ruleSPNonlinearPTOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}, g::Function) where {F<:Gaussian}
+    # The forward message is parameterized by a SampleList
+    dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
+
+    sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(100))
+
+    Message(Univariate, SampleList, s=sample_list)
+end
+
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Univariate, Function},
+    y::ProbabilityDistribution{Univariate, F},
+    z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F<:Gaussian}
+
+    # The product of a log-pdf and Gaussian distribution is computed by importance sampling
+    y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
+    samples = y.params[:m] .+ sqrt(y.params[:v]).*randn(100)
+
+    p = exp.((x.params[:log_pdf]).(samples))
+    Z = sum(p)
+    mean = sum(p./Z.*samples)
+    var = sum(p./Z.*(samples .- mean).^2)
+
+    z.params[:m] = mean
+    z.params[:v] = var
+    return z
+end
+
+function prod!(
+    x::ProbabilityDistribution{Univariate, Function},
+    y::ProbabilityDistribution{Univariate, Function},
+    z::ProbabilityDistribution{Univariate, Function}=ProbabilityDistribution(Univariate, Function, log_pdf=(s)->s))
+
+    z.params[:log_pdf] = ((s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s))
+
+    return z
+end
+
+#--------------------------
+# Custom inbounds collector
+#--------------------------
+
+function collectSumProductNodeInbounds(node::NonlinearPT, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
+    inbound_messages = String[]
+    for node_interface in entry.interface.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        if node_interface == entry.interface
+            # Ignore inbound message on outbound interface
+            push!(inbound_messages, "nothing")
+        elseif isa(inbound_interface.node, Clamp)
+            # Hard-code outbound message of constant node in schedule
+            push!(inbound_messages, messageString(inbound_interface.node))
+        else
+            # Collect message from previous result
+            inbound_idx = interface_to_msg_idx[inbound_interface]
+            push!(inbound_messages, "messages[$inbound_idx]")
+        end
+    end
+
+    push!(inbound_messages, "$(node.g)")
+
+    return inbound_messages
 end

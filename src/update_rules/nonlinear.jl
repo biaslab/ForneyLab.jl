@@ -1,9 +1,19 @@
-@sumProductRule(:node_type     => Nonlinear,
+@sumProductRule(:node_type     => NonlinearUT,
                 :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Nothing, Message{Gaussian}),
-                :name          => SPNonlinearOutNG)
+                :name          => SPNonlinearUTOutNG)
 
-@sumProductRule(:node_type     => Nonlinear,
+@sumProductRule(:node_type     => NonlinearUT,
                 :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Message{Gaussian}, Nothing),
-                :name          => SPNonlinearIn1GG)
+                :name          => SPNonlinearUTIn1GG)
+
+@sumProductRule(:node_type     => NonlinearPT,
+                :outbound_type => Message{Function},
+                :inbound_types => (Message{FactorFunction}, Nothing),
+                :name          => SPNonlinearPTInMN)
+
+@sumProductRule(:node_type     => NonlinearPT,
+                :outbound_type => Message{SampleList},
+                :inbound_types => (Nothing, Message{Gaussian}),
+                :name          => SPNonlinearPTOutNG)
