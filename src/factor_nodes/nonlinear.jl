@@ -1,4 +1,4 @@
-export Nonlinear, NonlinearUT, NonlinearPT
+export Nonlinear, NonlinearUT, NonlinearPT, unscentedTransform
 
 """
 Description:
@@ -22,13 +22,17 @@ Construction:
 """
 mutable struct Nonlinear <: DeltaFactor
     id::Symbol
-    out::Variable
-    in1::Variable
+    interfaces::Array{Interface,1}
+    i::Dict{Symbol, Interface}
+
     g::Function # Vector function that expresses the output vector as a function of the input vector; reduces to scalar for 1-d
 
     function Nonlinear(out, in1, g::Function; id=ForneyLab.generateId(Nonlinear))
         @ensureVariables(out, in1)
-        self = new(id, out, in1, g)
+        self = new(id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), g)
+        ForneyLab.addNode!(currentGraph(), self)
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+        self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)
         return self
     end
 end
@@ -57,9 +61,14 @@ mutable struct NonlinearUT <: DeltaFactor
 
     function NonlinearUT(node::Nonlinear; g_inv=nothing, alpha=nothing, dims=())
         self = new(node.id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), node.g, g_inv, alpha, dims)
-        ForneyLab.addNode!(currentGraph(), self)
-        self.i[:out] = self.interfaces[1] = associate!(Interface(self), node.out)
-        self.i[:in1] = self.interfaces[2] = associate!(Interface(self), node.in1)
+        graph = currentGraph()
+        
+        graph.nodes[node.id] = self
+        node.i[:out].node = self
+        node.i[:in1].node = self
+
+        self.i[:out] = self.interfaces[1] = node.i[:out]
+        self.i[:in1] = self.interfaces[2] = node.i[:in1]
 
         return self
     end
@@ -102,12 +111,50 @@ mutable struct NonlinearPT <: DeltaFactor
 
     function NonlinearPT(node::Nonlinear)
         self = new(node.id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), node.g)
-        ForneyLab.addNode!(currentGraph(), self)
-        self.i[:out] = self.interfaces[1] = associate!(Interface(self), node.out)
-        self.i[:in1] = self.interfaces[2] = associate!(Interface(self), node.in1)
+        graph = currentGraph()
+        
+        graph.nodes[node.id] = self
+        node.i[:out].node = self
+        node.i[:in1].node = self
 
+        self.i[:out] = self.interfaces[1] = node.i[:out]
+        self.i[:in1] = self.interfaces[2] = node.i[:in1]
+        
         return self
     end
 end
 
 slug(::Type{NonlinearPT}) = "g"
+
+function unscentedTransform()
+    for node in currentGraph.nodes
+        if node isa Nonlinear
+            NonlinearUT(node)
+        end
+    end
+end
+
+function unscentedTransform(var::Variable)
+    # find connected Nonlinear node
+    node = nothing
+    for edge in edges(var)
+        if (edge.a !== nothing) && (edge.a.node isa Nonlinear)
+            node = edge.a.node
+        elseif (edge.b !== nothing) && (edge.b.node isa Nonlinear)
+            node = edge.b.node
+        end
+    end
+    
+    if node === nothing
+        # Should it be an error?
+        error("Cannot apply unscented transform to $(var).")
+    else
+        NonlinearUT(node)
+    end
+end
+
+function unscentedTransform(vars::Vector{Variable})
+    for var in vars
+        unscentedTransform(var)
+    end
+end
