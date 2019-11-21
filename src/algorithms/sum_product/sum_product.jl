@@ -116,6 +116,8 @@ function inferUpdateRule!(entry::ScheduleEntry,
             # Try to fall back to msg passing on the internal graph.
             entry.internal_schedule = internalSumProductSchedule(entry.interface.node, entry.interface, inferred_outbound_types)
             entry.message_update_rule = entry.internal_schedule[end].message_update_rule
+        elseif isa(entry.interface.node, Nonlinear)
+            error("No inference method is specified for Nonlinear node.")
         else
             error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
         end

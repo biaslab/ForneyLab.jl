@@ -1,4 +1,4 @@
-export Nonlinear, NonlinearUT, NonlinearPT, unscentedTransform, particleTransform
+export Nonlinear, NonlinearUT, NonlinearPT, applyUnscentedTransform, applyParticleTransform
 
 """
 Description:
@@ -76,32 +76,28 @@ end
 
 slug(::Type{NonlinearUT}) = "g"
 
-function unscentedTransform(var::Variable; g_inv=nothing, alpha=nothing, dims=())
+function applyUnscentedTransform(var::Variable; g_inv=nothing, alpha=nothing, dims=())
     # find connected Nonlinear node
     node = nothing
     for edge in edges(var)
         if (edge.a !== nothing) && (edge.a.node isa Nonlinear)
             node = edge.a.node
-        elseif (edge.b !== nothing) && (edge.b.node isa Nonlinear)
-            node = edge.b.node
-        end
     end
     
     if node === nothing
-        # Should it be an error?
-        error("Cannot apply unscented transform to $(var).")
+        error("Cannot apply unscented transform to variable $(var.id).")
     else
         node = NonlinearUT(node, g_inv=g_inv, alpha=alpha, dims=dims)
     end
 end
 
-function unscentedTransform(vars::Vector{Variable}; g_inv=nothing, alpha=nothing, dims=())
+function applyUnscentedTransform(vars::Vector{Variable}; g_inv=nothing, alpha=nothing, dims=())
     for var in vars
         unscentedTransform(var, g_inv=g_inv, alpha=alpha, dims=dims)
     end
 end
 
-function unscentedTransform(;g_inv=nothing, alpha=nothing, dims=())
+function applyUnscentedTransform(;g_inv=nothing, alpha=nothing, dims=())
     for node in currentGraph.nodes
         if node isa Nonlinear
             NonlinearUT(node, g_inv=g_inv, alpha=alpha, dims=dims)
@@ -159,32 +155,29 @@ end
 
 slug(::Type{NonlinearPT}) = "g"
 
-function particleTransform(var::Variable)
+function applyParticleTransform(var::Variable)
     # find connected Nonlinear node
     node = nothing
     for edge in edges(var)
         if (edge.a !== nothing) && (edge.a.node isa Nonlinear)
             node = edge.a.node
-        elseif (edge.b !== nothing) && (edge.b.node isa Nonlinear)
-            node = edge.b.node
         end
     end
     
     if node === nothing
-        # Should it be an error?
-        error("Cannot apply unscented transform to $(var).")
+        error("Cannot apply particle transform to variable $(var.id).")
     else
         node = NonlinearPT(node)
     end
 end
 
-function particleTransform(vars::Vector{Variable})
+function applyParticleTransform(vars::Vector{Variable})
     for var in vars
         unscentedTransform(var)
     end
 end
 
-function particleTransform()
+function applyParticleTransform()
     for node in currentGraph.nodes
         if node isa Nonlinear
             node = NonlinearPT(node)
