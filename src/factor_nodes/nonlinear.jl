@@ -1,4 +1,4 @@
-export Nonlinear, NonlinearUT, NonlinearPT, unscentedTransform
+export Nonlinear, NonlinearUT, NonlinearPT, unscentedTransform, particleTransform
 
 """
 Description:
@@ -76,6 +76,39 @@ end
 
 slug(::Type{NonlinearUT}) = "g"
 
+function unscentedTransform(var::Variable; g_inv=nothing, alpha=nothing, dims=())
+    # find connected Nonlinear node
+    node = nothing
+    for edge in edges(var)
+        if (edge.a !== nothing) && (edge.a.node isa Nonlinear)
+            node = edge.a.node
+        elseif (edge.b !== nothing) && (edge.b.node isa Nonlinear)
+            node = edge.b.node
+        end
+    end
+    
+    if node === nothing
+        # Should it be an error?
+        error("Cannot apply unscented transform to $(var).")
+    else
+        node = NonlinearUT(node, g_inv=g_inv, alpha=alpha, dims=dims)
+    end
+end
+
+function unscentedTransform(vars::Vector{Variable}; g_inv=nothing, alpha=nothing, dims=())
+    for var in vars
+        unscentedTransform(var, g_inv=g_inv, alpha=alpha, dims=dims)
+    end
+end
+
+function unscentedTransform(;g_inv=nothing, alpha=nothing, dims=())
+    for node in currentGraph.nodes
+        if node isa Nonlinear
+            NonlinearUT(node, g_inv=g_inv, alpha=alpha, dims=dims)
+        end
+    end
+end
+
 """
 Description:
 
@@ -126,15 +159,7 @@ end
 
 slug(::Type{NonlinearPT}) = "g"
 
-function unscentedTransform()
-    for node in currentGraph.nodes
-        if node isa Nonlinear
-            NonlinearUT(node)
-        end
-    end
-end
-
-function unscentedTransform(var::Variable)
+function particleTransform(var::Variable)
     # find connected Nonlinear node
     node = nothing
     for edge in edges(var)
@@ -149,12 +174,20 @@ function unscentedTransform(var::Variable)
         # Should it be an error?
         error("Cannot apply unscented transform to $(var).")
     else
-        NonlinearUT(node)
+        node = NonlinearPT(node)
     end
 end
 
-function unscentedTransform(vars::Vector{Variable})
+function particleTransform(vars::Vector{Variable})
     for var in vars
         unscentedTransform(var)
+    end
+end
+
+function particleTransform()
+    for node in currentGraph.nodes
+        if node isa Nonlinear
+            node = NonlinearPT(node)
+        end
     end
 end
