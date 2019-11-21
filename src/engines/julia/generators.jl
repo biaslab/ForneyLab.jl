@@ -3,8 +3,8 @@ Generate complete algorithm code
 """
 function algorithmString(algo::Dict)
     algo = "begin\n\n"
-    for subgraph in algo[:subgraphs]
-        algo *= subgraphString(subgraph)
+    for rf in algo[:recognition_factors]
+        algo *= recognitionFactorString(rf)
         algo *= "\n\n"
     end
     algo *= "\nend # block"
@@ -13,41 +13,39 @@ function algorithmString(algo::Dict)
 end
 
 """
-Generate algorithm code for a single subgraph
+Generate algorithm code for a single recognition factor
 """
-function subgraphString(subgraph::Dict)
-    subgraph_str = ""
-    if haskey(subgraph, :optimize) && subgraph[:optimize]
-        subgraph_str *= optimizeString(subgraph)
-        subgraph_str *= "\n\n"
+function recognitionFactorString(rf::Dict)
+    rf_str = ""
+    if haskey(rf, :optimize) && rf[:optimize]
+        rf_str *= optimizeString(rf)
+        rf_str *= "\n\n"
     end
 
-    if haskey(subgraph, :initialization)
-        subgraph_str *= initializationString(subgraph)
-        subgraph_str *= "\n\n"
+    if haskey(rf, :initialization)
+        rf_str *= initializationString(rf)
+        rf_str *= "\n\n"
     end
 
-    n_messages = length(subgraph[:messages])
-    subgraph_str *= "function step$(subgraph[:name])!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_messages))\n\n"
-    subgraph_str *= messagesString(subgraph[:messages])
-    subgraph_str *= "\n"
-    subgraph_str *= marginalsString(subgraph[:marginals])
-    subgraph_str *= "return marginals\n\n"
-    subgraph_str *= "end"
+    n_entries = length(rf[:schedule])
+    rf_str *= "function step$(rf[:id])!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_entries))\n\n"
+    rf_str *= scheduleString(rf[:schedule])
+    rf_str *= "\n"
+    rf_str *= marginalScheduleString(rf[:marginal_schedule])
+    rf_str *= "return marginals\n\n"
+    rf_str *= "end"
 
-    return subgraph_str
+    return rf_str
 end
 
 """
 Generate template code for optimize block
 """
-function optimizeString(subgraph::Dict)
-    name_str = subgraph[:name]
-
+function optimizeString(rf::Dict)
     optim_str =  "# You have created an algorithm that requires updates for (a) clamped parameter(s).\n"
     optim_str *= "# This algorithm requires the definition of a custom `optimize!` function that updates the parameter value(s)\n"
     optim_str *= "# by altering the `data` dictionary in-place. The custom `optimize!` function may be based on the mockup below:\n\n"
-    optim_str *= "# function optimize$(name_str)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init$(name_str)())\n"
+    optim_str *= "# function optimize$(rf[:id])!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init$(rf[:id])())\n"
     optim_str *= "# \t...\n"
     optim_str *= "# \treturn data\n"
     optim_str *= "# end"
@@ -58,10 +56,10 @@ end
 """
 Generate code for initialization block
 """
-function initializationString(subgraph::Dict)
-    init_str = "function init$(subgraph[:name])()\n\n"
-    for message in subgraph[:messages]
-        if message[:initialize]
+function initializationString(rf::Dict)
+    init_str = "function init$(rf[:id])()\n\n"
+    for message in rf[:schedule]
+        if haskey(message, :initialize) && message[:initialize]
             init_str *= "messages[$(message[:schedule_index])] = Message($(vagueString(message)))\n"
         end
     end
@@ -94,9 +92,9 @@ typeString(type::Type) = split(string(type), '.')[end]
 """
 Construct code for messages computation block
 """
-function messagesString(messages::Dict)
+function scheduleString(schedule::Vector)
     messages_str = ""
-    for message in messages
+    for message in schedule
         rule_str = typeString(message[:message_update_rule])
         inbounds_str = inboundsString(message[:inbounds])
         messages_str *= "messages[$(message[:schedule_index])] = rule$(rule_str)($inbounds_str)\n"
@@ -108,7 +106,7 @@ end
 """
 Concatenate code for separate inbounds to a string
 """
-function inboundsString(inbounds::Dict)
+function inboundsString(inbounds::Vector)
     inbounds_str = String[]
     for inbound in inbounds
         push!(inbounds_str, inboundString(inbound))
@@ -143,7 +141,7 @@ function bufferString(inbound::Dict)
     variate_type_str = inbound[:variate_type]
     buffer_id_str = inbound[:buffer_id]
     inbound_str = "$dist_or_msg_str($variate_type_str, PointMass, m=data[:$buffer_id_str]"
-    if haskey(inbound, buffer_index)
+    if haskey(inbound, :buffer_index)
         inbound_str *= "[$(inbound[:buffer_index])]"
     end
     inbound_str *= ")"
@@ -157,16 +155,15 @@ Generate code for a clamped inbound
 function valueString(inbound::Dict)
     dist_or_msg_str = inbound[:dist_or_msg]
     variate_type_str = inbound[:variate_type]
-    buffer_id_str = inbound[:buffer_id]
     inbound_str = "$dist_or_msg_str($variate_type_str, PointMass, m="
-    if size(node[:value]) == (1,1)
-        inbound_str *= "mat($(node[:value][1]))"
-    elseif isa(node[:value], Diagonal)
-        inbound_str *= "Diagonal($(node[:value].diag))"
-    elseif isa(node[:value], AbstractMatrix) && (size(node[:value])[2] == 1)
-        inbound_str *= "[$(join(node[:value], " "))]'"
+    if size(inbound[:value]) == (1,1)
+        inbound_str *= "mat($(inbound[:value][1]))"
+    elseif isa(inbound[:value], Diagonal)
+        inbound_str *= "Diagonal($(inbound[:value].diag))"
+    elseif isa(inbound[:value], AbstractMatrix) && (size(inbound[:value])[2] == 1)
+        inbound_str *= "[$(join(inbound[:value], " "))]'"
     else
-        inbound_str *= "$(node[:value])"
+        inbound_str *= "$(inbound[:value])"
     end
     inbound_str *= ")"
 
@@ -176,7 +173,7 @@ end
 """
 Generate code for marginals computation block
 """
-function marginalsString(marginals::Dict)
+function marginalScheduleString(marginals::Vector)
     marginals_str = ""
     for marginal in marginals
         marginals_str *= "marginals[:$(marginals[:marginal_id])] = "
@@ -202,7 +199,7 @@ end
 function freeEnergyString(algo::Dict)
     free_energy = algo[:free_energy]
 
-    fe_str  = "function freeEnergy$(free_energy[:name])(data::Dict, marginals::Dict)\n\n"
+    fe_str  = "function freeEnergy$(algo[:name])(data::Dict, marginals::Dict)\n\n"
     fe_str *= "F = 0.0\n\n"
     fe_str *= energiesString(free_energy[:average_energies])
     fe_str *= "\n"
@@ -213,7 +210,7 @@ function freeEnergyString(algo::Dict)
     return fe_str
 end
 
-function energiesString(average_energies::Dict)
+function energiesString(average_energies::Vector)
     energies_str = ""
     for energy in average_energies
         node_str = typeString(energy[:node])
@@ -224,7 +221,7 @@ function energiesString(average_energies::Dict)
     return energies_str
 end
 
-function entropiesString(entropies::Dict)
+function entropiesString(entropies::Vector)
     entropies_str = ""
     for entropy in entropies
         if entropy[:conditional]

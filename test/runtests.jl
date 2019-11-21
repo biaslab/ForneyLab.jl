@@ -55,7 +55,7 @@ using Test
     include("./algorithms/expectation_propagation/test_expectation_propagation.jl")
 
     # Engines
-    include("./engines/julia/test_generators.jl")
+    include("./engines/julia/test_message_passing.jl")
 
     # Composite node
     include("factor_nodes/test_composite.jl")

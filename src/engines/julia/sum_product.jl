@@ -3,18 +3,23 @@ export sumProductAlgorithm
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function sumProductAlgorithm(variables::Vector{Variable}; file::String="", name::String="")
+function sumProductAlgorithm(variables::Vector{Variable}; name::String="")
     schedule = sumProductSchedule(variables)
     marginal_schedule = marginalSchedule(variables)
-
-    # TODO: build algo structure and convert to code
-    algo = "begin\n\n"
-    algo *= messagePassingAlgorithm(schedule, marginal_schedule, file=file, name=name)
-    algo *= "\n\nend # block"
     
-    return algo
+    # Build recognition factor datastructure
+    rf_dict = messagePassingAlgorithm(schedule, marginal_schedule)
+    rf_dict[:id] = Symbol("")
+
+    # Build algorithm datastructure
+    algo_dict = Dict(:name => name,
+                     :recognition_factors => [rf_dict])
+
+    algo_str = algorithmString(algo)
+    
+    return algo_str
 end
-sumProductAlgorithm(variable::Variable; file::String="", name::String="") = sumProductAlgorithm([variable], file=file, name=name)
+sumProductAlgorithm(variable::Variable; name::String="") = sumProductAlgorithm([variable], name=name)
 
 """
 Collect and construct SP update code for each inbound.
@@ -27,19 +32,20 @@ overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
 function collectSumProductNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
-    inbound_messages = String[]
+    inbound_messages = Dict[]
+
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         if node_interface == entry.interface
             # Ignore inbound message on outbound interface
-            push!(inbound_messages, "nothing")
+            push!(inbound_messages, Dict())
         elseif isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
-            push!(inbound_messages, messageString(inbound_interface.node))
+            push!(inbound_messages, messageDict(inbound_interface.node))
         else
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]
-            push!(inbound_messages, "messages[$inbound_idx]")
+            push!(inbound_messages, Dict(:schedule_index => inbound_idx))
         end
     end
 

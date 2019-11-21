@@ -1,27 +1,27 @@
 # "If we need to write the algorithm from scratch, what information do we need?"
 algorithm:
-    subgraphs: (per item)
-        - name::String # subgraph name
+    name::String
+    recognition_factors: (per item)
+        - id::Symbol # recognition factor id
         - optimize::Bool # require optimize block
-        messages: (per item)
-            - schedule_index::Int # position of message in schedule
+        schedule: (per item)
+            - schedule_index::Int # position of entry in schedule
             - message_update_rule::Type # update rule type for message computation
             - initialize::Bool # require initialization
             - family::FactorFunction # family of message distribution (for initialization)
             - dimensionality::Tuple # dimensionality of message distribution (for initialization)
             inbounds: (per item)
-                - inbound::Dict # inbound, see below
+                - inbound::Inbound # inbound, see below
         marginals: (per item)
-            - marginals_id::Symbol # identifier for the marginal
+            - marginal_id::Symbol # identifier for the marginal
             - marginal_update_rule::Union{Nothing, Product, Type} # update rule type for marginal computation
             inbounds: (per item)
-                - inbound::Dict # inbound, see below
+                - inbound::Inbound # inbound, see below
     free_energy:
-        - name::String # name appended to the free energy function
         average_energies: (per item)
             - node::FactorNode # node for average energy computation
             inbounds: (per item)
-                - inbound::Dict # inbound, see below
+                - inbound::Inbound # inbound, see below
         entropies: (per item)
             - conditional::Bool # require conditional entropy computation
             inbounds: (per item)
@@ -34,5 +34,5 @@ inbound:
     - buffer_id::Symbol # identifier for placeholder; e.g. "data[:x]"
     - buffer_index::Symbol # position of datapoint in placeholder; e.g. "data[:x][1]"
     - value::Any # value assigned to Clamp node; e.g. "m=1.0"
-    - variate_type::VariateType # variate type for placeholder/clamp
-    - dist_or_msg::Union{ProbabilityDistribution, Message} # e.g. "ProbabilityDistribution(Univariate, PointMass, m=data[:x][1])", or "Message(...)"
+    - variate_type::VariateType # variate type for placeholder/clamp; e.g "Univariate"
+    - dist_or_msg::Union{ProbabilityDistribution, Message} # cast to Message or PD when reading from buffer; e.g. "ProbabilityDistribution(Univariate, PointMass, m=data[:x][1])", or "Message(...)"

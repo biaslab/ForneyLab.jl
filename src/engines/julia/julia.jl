@@ -1,5 +1,6 @@
 export messagePassingAlgorithm
 
+include("message_passing.jl")
 include("generators.jl")
 include("sum_product.jl")
 include("variational_bayes.jl")
