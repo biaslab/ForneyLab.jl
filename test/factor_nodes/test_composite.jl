@@ -83,7 +83,9 @@ end
     @test marginal_schedule[1].marginal_update_rule == Nothing
 
     # Build SP algorithm for Julia execution
-    algo = ForneyLab.messagePassingAlgorithm(schedule, marginal_schedule)
+    rf_dict = ForneyLab.messagePassingAlgorithm(schedule, marginal_schedule)
+    algo = ForneyLab.recognitionFactorString(rf_dict)
+
     @test occursin("Array{Message}(undef, 2)", algo)
     @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo)
     @test occursin("messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)", algo)

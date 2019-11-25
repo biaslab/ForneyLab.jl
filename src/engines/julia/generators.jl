@@ -2,14 +2,14 @@
 Generate complete algorithm code
 """
 function algorithmString(algo::Dict)
-    algo = "begin\n\n"
+    algo_str = "begin\n\n"
     for rf in algo[:recognition_factors]
-        algo *= recognitionFactorString(rf)
-        algo *= "\n\n"
+        algo_str *= recognitionFactorString(rf)
+        algo_str *= "\n\n"
     end
-    algo *= "\nend # block"
+    algo_str *= "\nend # block"
 
-    return algo
+    return algo_str
 end
 
 """
@@ -22,7 +22,7 @@ function recognitionFactorString(rf::Dict)
         rf_str *= "\n\n"
     end
 
-    if haskey(rf, :initialization)
+    if haskey(rf, :initialize) && rf[:initialize]
         rf_str *= initializationString(rf)
         rf_str *= "\n\n"
     end
@@ -31,7 +31,7 @@ function recognitionFactorString(rf::Dict)
     rf_str *= "function step$(rf[:id])!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_entries))\n\n"
     rf_str *= scheduleString(rf[:schedule])
     rf_str *= "\n"
-    rf_str *= marginalScheduleString(rf[:marginal_schedule])
+    rf_str *= marginalScheduleString(rf[:marginals])
     rf_str *= "return marginals\n\n"
     rf_str *= "end"
 
@@ -118,7 +118,9 @@ end
 Generate code for a specific inbound
 """
 function inboundString(inbound::Dict)
-    if haskey(inbound, :schedule_index) # message inbound
+    if haskey(inbound, :nothing) && inbound[:nothing]
+        inbound_str = "nothing"
+    elseif haskey(inbound, :schedule_index) # message inbound
         inbound_str = "messages[$(inbound[:schedule_index])]"
     elseif haskey(inbound, :marginal_id) # marginal inbound
         inbound_str = "marginals[$(inbound[:marginal_id])]"
@@ -126,8 +128,8 @@ function inboundString(inbound::Dict)
         inbound_str = bufferString(inbound)
     elseif haskey(inbound, :value) # value inbound
         inbound_str = valueString(inbound)
-    else
-        inbound_str = "nothing"
+    else # Custom field
+        inbound_str = customString(inbound)
     end
 
     return inbound_str
@@ -137,8 +139,8 @@ end
 Generate code for an inbound read from a buffer
 """
 function bufferString(inbound::Dict)
-    dist_or_msg_str = inbound[:dist_or_msg]
-    variate_type_str = inbound[:variate_type]
+    dist_or_msg_str = typeString(inbound[:dist_or_msg])
+    variate_type_str = typeString(inbound[:variate_type])
     buffer_id_str = inbound[:buffer_id]
     inbound_str = "$dist_or_msg_str($variate_type_str, PointMass, m=data[:$buffer_id_str]"
     if haskey(inbound, :buffer_index)
@@ -153,8 +155,8 @@ end
 Generate code for a clamped inbound
 """
 function valueString(inbound::Dict)
-    dist_or_msg_str = inbound[:dist_or_msg]
-    variate_type_str = inbound[:variate_type]
+    dist_or_msg_str = typeString(inbound[:dist_or_msg])
+    variate_type_str = typeString(inbound[:variate_type])
     inbound_str = "$dist_or_msg_str($variate_type_str, PointMass, m="
     if size(inbound[:value]) == (1,1)
         inbound_str *= "mat($(inbound[:value][1]))"
@@ -171,22 +173,45 @@ function valueString(inbound::Dict)
 end
 
 """
+Generate code for a custom inbound
+"""
+function customString(inbound::Dict)
+    keyword_flag = true # Default includes keyword in custom argument
+    if haskey(inbound, :keyword)
+        keyword_flag = inbound[:keyword]
+    end
+
+    inbound_str = ""
+    for (key, val) in inbound
+        if key != :keyword
+            if keyword_flag
+                inbound_str = "$(string(key))=$(string(val))"
+            else
+                inbound_str = string(val)
+            end
+        end
+    end
+
+    return inbound_str
+end
+
+"""
 Generate code for marginals computation block
 """
-function marginalScheduleString(marginals::Vector)
+function marginalScheduleString(marginals_vect::Vector)
     marginals_str = ""
-    for marginal in marginals
-        marginals_str *= "marginals[:$(marginals[:marginal_id])] = "
-        if marginal[:marginal_update_rule] == Nothing
-            inbound = marginals[:inbounds][1]
+    for marginal_dict in marginals_vect
+        marginals_str *= "marginals[:$(marginal_dict[:marginal_id])] = "
+        if marginal_dict[:marginal_update_rule] == Nothing
+            inbound = marginal_dict[:inbounds][1]
             marginals_str *= "messages[$(inbound[:schedule_index])].dist"
-        elseif marginal[:marginal_update_rule] == Product
-            inbound1 = marginals[:inbounds][1]
-            inbound2 = marginals[:inbounds][2]
+        elseif marginal_dict[:marginal_update_rule] == Product
+            inbound1 = marginal_dict[:inbounds][1]
+            inbound2 = marginal_dict[:inbounds][2]
             marginals_str *= "messages[$(inbound1[:schedule_index])].dist * messages[$(inbound2[:schedule_index])].dist"
         else
-            rule_str = typeString(marginal[:marginal_update_rule])
-            inbounds_str = inboundsString(marginal[:inbounds])
+            rule_str = typeString(marginal_dict[:marginal_update_rule])
+            inbounds_str = inboundsString(marginal_dict[:inbounds])
             code *= "rule$(rule_str)($inbounds_str)"
         end
         marginals_str *= "\n"
@@ -196,10 +221,8 @@ function marginalScheduleString(marginals::Vector)
     return marginals_str
 end
 
-function freeEnergyString(algo::Dict)
-    free_energy = algo[:free_energy]
-
-    fe_str  = "function freeEnergy$(algo[:name])(data::Dict, marginals::Dict)\n\n"
+function freeEnergyString(free_energy::Dict)
+    fe_str  = "function freeEnergy$(free_energy[:name])(data::Dict, marginals::Dict)\n\n"
     fe_str *= "F = 0.0\n\n"
     fe_str *= energiesString(free_energy[:average_energies])
     fe_str *= "\n"
@@ -224,11 +247,11 @@ end
 function entropiesString(entropies::Vector)
     entropies_str = ""
     for entropy in entropies
-        if entropy[:conditional]
-            inbounds_str = inboundsString(entropy[:inbounds])
+        inbounds_str = inboundsString(entropy[:inbounds])
+        if haskey(entropy, :conditional) && entropy[:conditional]
             entropies_str *= "F -= conditionalDifferentialEntropy($inbounds_str)\n"
         else
-            entropies_str *= "F -= differentialEntropy(marginals[:$(entropy[:marginal_id])])\n"
+            entropies_str *= "F -= differentialEntropy($inbounds_str)\n"
         end
     end
 

@@ -7,15 +7,14 @@ function sumProductAlgorithm(variables::Vector{Variable}; name::String="")
     schedule = sumProductSchedule(variables)
     marginal_schedule = marginalSchedule(variables)
     
-    # Build recognition factor datastructure
+    # Build (empty) recognition factor datastructure
     rf_dict = messagePassingAlgorithm(schedule, marginal_schedule)
-    rf_dict[:id] = Symbol("")
 
     # Build algorithm datastructure
-    algo_dict = Dict(:name => name,
-                     :recognition_factors => [rf_dict])
+    algo_dict = Dict{Symbol, Any}(:name => name,
+                                  :recognition_factors => [rf_dict])
 
-    algo_str = algorithmString(algo)
+    algo_str = algorithmString(algo_dict)
     
     return algo_str
 end
@@ -32,22 +31,21 @@ overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
 function collectSumProductNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
-    inbound_messages = Dict[]
-
+    inbounds = Dict{Symbol, Any}[]
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         if node_interface == entry.interface
             # Ignore inbound message on outbound interface
-            push!(inbound_messages, Dict())
+            push!(inbounds, Dict{Symbol, Any}(:nothing => true))
         elseif isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
-            push!(inbound_messages, messageDict(inbound_interface.node))
+            push!(inbounds, messageDict(inbound_interface.node))
         else
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]
-            push!(inbound_messages, Dict(:schedule_index => inbound_idx))
+            push!(inbounds, Dict{Symbol, Any}(:schedule_index => inbound_idx))
         end
     end
 
-    return inbound_messages
+    return inbounds
 end

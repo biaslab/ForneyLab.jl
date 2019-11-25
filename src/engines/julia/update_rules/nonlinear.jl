@@ -182,38 +182,41 @@ end
 #--------------------------
 
 function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
-    inbound_messages = String[]
+    inbounds = Dict{Symbol, Any}[]
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         if (node_interface == entry.interface == node.interfaces[2]) && (node.g_inv == nothing)
             # Collect the message inbound on the out edge if no inverse is available
             haskey(interface_to_msg_idx, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
             inbound_idx = interface_to_msg_idx[inbound_interface]
-            push!(inbound_messages, "messages[$inbound_idx]")
+            push!(inbounds, Dict{Symbol, Any}(:schedule_index => inbound_idx))
         elseif node_interface == entry.interface
             # Ignore inbound message on outbound interface
-            push!(inbound_messages, "nothing")
+            push!(inbounds, Dict{Symbol, Any}(:nothing => true))
         elseif isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
-            push!(inbound_messages, messageString(inbound_interface.node))
+            push!(inbounds, messageDict(inbound_interface.node))
         else
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]
-            push!(inbound_messages, "messages[$inbound_idx]")
+            push!(inbounds, Dict{Symbol, Any}(:schedule_index => inbound_idx))
         end
     end
 
     # Push function (and inverse) to calling signature
     # These functions needs to be defined in the scope of the user
-    push!(inbound_messages, "$(node.g)")
+    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
+                                      :keyword => false))
     if (entry.interface == node.interfaces[2]) && (node.g_inv != nothing)
-        push!(inbound_messages, "$(node.g_inv)")
+        push!(inbounds, Dict{Symbol, Any}(:g_inv => node.g_inv,
+                                          :keyword => false))
     end
 
     # Push spread parameter if manually defined
     if node.alpha != nothing
-        push!(inbound_messages, "alpha=$(node.alpha)")
+        push!(inbounds, Dict{Symbol, Any}(:alpha => node.alpha,
+                                          :keyword => true))
     end
 
-    return inbound_messages
+    return inbounds
 end

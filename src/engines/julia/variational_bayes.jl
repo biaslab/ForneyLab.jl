@@ -3,24 +3,23 @@ export variationalAlgorithm, freeEnergyAlgorithm
 """
 Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
-function variationalAlgorithm(q_factors::Vector{RecognitionFactor}; file::String="", name::String="")
-    q_schedule = variationalSchedule(q_factors)
-    marginal_schedule = marginalSchedule(q_factors, q_schedule)
+function variationalAlgorithm(q::RecognitionFactorization=currentRecognitionFactorization(); name::String="")
+    recognition_factors_vect = Vector{Dict{Symbol, Any}}(undef, length(q.recognition_factors))
+    algo_dict = Dict{Symbol, Any}(:name => name,
+                                  :recognition_factors => recognition_factors_vect)
 
-    algo = messagePassingAlgorithm(q_schedule, marginal_schedule, file=file, name=name)
+    for (i, (id, q_factor)) in enumerate(q.recognition_factors)
+        schedule = variationalSchedule(q_factor)
+        marginal_schedule = marginalSchedule(q_factor, schedule)
 
-    return algo
-end
-variationalAlgorithm(q_factor::RecognitionFactor; file::String="", name::String="") = variationalAlgorithm([q_factor]; file=file, name=name)
-function variationalAlgorithm(q::RecognitionFactorization=currentRecognitionFactorization())
-    algos = "begin\n\n"
-    for (id, q_factor) in q.recognition_factors
-        algos *= variationalAlgorithm(q_factor, name="$(id)")
-        algos *= "\n\n"
+        # Populate algorithm datastructure
+        algo_dict[:recognition_factors][i] = messagePassingAlgorithm(schedule, marginal_schedule)
+        algo_dict[:recognition_factors][i][:id] = q_factor.id
     end
-    algos *= "\nend # block"
-    
-    return algos
+
+    algo_str = algorithmString(algo_dict)
+
+    return algo_str
 end
 
 """
@@ -34,19 +33,18 @@ overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
 function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
-    # Collect inbounds
-    inbounds = String[]
+    inbounds = Dict{Symbol, Any}[]
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         if node_interface == entry.interface
             # Ignore marginal of outbound edge
-            push!(inbounds, "nothing")
+            push!(inbounds, Dict{Symbol, Any}(:nothing => true))
         elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, marginalString(inbound_interface.node))
+            push!(inbounds, marginalDict(inbound_interface.node))
         else
             # Collect marginal from marginal dictionary
-            push!(inbounds, "marginals[:$(node_interface.edge.variable.id)]")
+            push!(inbounds, Dict{Symbol, Any}(:marginal_id => node_interface.edge.variable.id))
         end
     end
 
@@ -65,8 +63,7 @@ overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
 function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
-    # Collect inbounds
-    inbounds = String[]
+    inbounds = Dict{Symbol, Any}[]
     entry_recognition_factor_id = recognitionFactorId(entry.interface.edge)
     local_cluster_ids = localRecognitionFactorization(entry.interface.node)
 
@@ -77,18 +74,18 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
 
         if node_interface == entry.interface
             # Ignore marginal of outbound edge
-            push!(inbounds, "nothing")
+            push!(inbounds, Dict{Symbol, Any}(:nothing => true))
         elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, marginalString(inbound_interface.node))
+            push!(inbounds, marginalDict(inbound_interface.node))
         elseif node_interface_recognition_factor_id == entry_recognition_factor_id
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]
-            push!(inbounds, "messages[$inbound_idx]")
+            push!(inbounds, Dict{Symbol, Any}(:schedule_index => inbound_idx))
         elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
             # Collect marginal from marginal dictionary (if marginal is not already accepted)
             marginal_idx = local_cluster_ids[node_interface_recognition_factor_id]
-            push!(inbounds, "marginals[:$marginal_idx]")
+            push!(inbounds, Dict{Symbol, Any}(:marginal_id => marginal_idx))
         end
 
         push!(recognition_factor_ids, node_interface_recognition_factor_id)
@@ -103,9 +100,11 @@ The `freeEnergyAlgorithm` function accepts a `RecognitionFactorization` and retu
 the argument recognition factorization and corresponding `FactorGraph` (model).
 """
 function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="")
-    # Write evaluation function for free energy
-    energy_block = ""
-    entropy_block = ""
+    average_energies_vect = Vector{Dict{Symbol, Any}}()
+    entropies_vect = Vector{Dict{Symbol, Any}}()
+    free_energy_dict = Dict{Symbol, Any}(:name => name,
+                                         :average_energies => average_energies_vect,
+                                         :entropies => entropies_vect)
 
     for rf in values(q.recognition_factors)
         hasCollider(rf) && error("Cannot construct localized free energy algorithm. Recognition distribution for factor with id :$(rf.id) does not factor according to local graph structure. This is likely due to a conditional dependence in the posterior distribution (see Bishop p.485). Consider wrapping conditionally dependent variables in a composite node.")
@@ -113,11 +112,10 @@ function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="
 
     for node in sort(collect(values(q.graph.nodes)))
         if !isa(node, DeltaFactor) # Non-deterministic factor, add to free energy functional
-            # Construct average energy term
-            node_str = replace(string(typeof(node)), "ForneyLab." => "") # Remove module prefixes
-            inbounds = collectAverageEnergyInbounds(node)
-            inbounds_str = join(inbounds, ", ")
-            energy_block *= "F += averageEnergy($node_str, $inbounds_str)\n"
+            # Include average energy term
+            average_energy = Dict{Symbol, Any}(:node => typeof(node),
+                                               :inbounds => collectAverageEnergyInbounds(node))
+            push!(average_energies_vect, average_energy)
 
             # Construct differential entropy term
             outbound_interface = node.interfaces[1]
@@ -125,23 +123,73 @@ function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="
             if !(outbound_partner == nothing) && !isa(outbound_partner.node, Clamp) # Differential entropy is required
                 dict = q.node_edge_to_cluster
                 if haskey(dict, (node, outbound_interface.edge)) # Outbound edge is part of a cluster
-                    inbounds = collectConditionalDifferentialEntropyInbounds(node) # Collect conditioning terms for conditional differential entropy
-                    inbounds_str = join(inbounds, ", ")
-                    entropy_block *= "F -= conditionalDifferentialEntropy($inbounds_str)\n"
+                    inbounds = collectConditionalDifferentialEntropyInbounds(node)
+                    entropy = Dict{Symbol, Any}(:conditional => true,
+                                                :inbounds => inbounds)
                 else
-                    marginal_idx = outbound_interface.edge.variable.id
-                    entropy_block *= "F -= differentialEntropy(marginals[:$marginal_idx])\n"
+                    inbounds = [Dict{Symbol, Any}(:marginal_id => marginal_idx)]
+                    entropy = Dict{Symbol, Any}(:inbounds => inbounds)
                 end
+                push!(entropies_vect, entropy)
             end        
         end
     end
 
-    # Combine blocks
-    code = "function freeEnergy$(name)(data::Dict, marginals::Dict)\n\n"
-    code *= "F = 0.0\n\n"
-    code *= energy_block*"\n"*entropy_block
-    code *= "\nreturn F\n\n" 
-    code *= "end"
+    free_energy_str = freeEnergyString(free_energy_dict)
 
-    return code
+    return free_energy_str
+end
+
+function collectAverageEnergyInbounds(node::FactorNode)
+    inbounds = Dict{Symbol, Any}[]
+    local_cluster_ids = localRecognitionFactorization(entry.interface.node)
+
+    recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
+    for node_interface in node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
+
+        if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, marginalDict(inbound_interface.node))
+        elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
+            # Collect marginal from marginal dictionary (if marginal is not already accepted)
+            marginal_idx = local_cluster_ids[node_interface_recognition_factor_id]
+            push!(inbounds, Dict{Symbol, Any}(:marginal_id => marginal_idx))
+        end
+
+        push!(recognition_factor_ids, node_interface_recognition_factor_id)
+    end
+
+    return inbounds
+end
+
+function collectConditionalDifferentialEntropyInbounds(node::FactorNode)
+    inbounds = Dict{Symbol, Any}[]
+    outbound_edge = node.interfaces[1].edge
+    dict = current_recognition_factorization.node_edge_to_cluster
+    cluster = dict[(node, outbound_edge)]
+
+    push!(inbounds, Dict{Symbol, Any}(:marginal_id => cluster.id)) # Add joint term to inbounds
+
+    # Add conditioning terms to inbounds
+    for node_interface in node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+
+        if !(node_interface.edge in cluster.edges)
+            # Only collect conditioning variables that are part of the cluster
+            continue
+        elseif (node_interface.edge == outbound_edge)
+            # Skip the outbound edge, whose variable is not part of the conditioning term
+            continue
+        elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, marginalDict(inbound_interface.node))
+        else
+            marginal_idx = node_interface.edge.variable.id
+            push!(inbounds, Dict{Symbol, Any}(:marginal_id => marginal_idx))
+        end
+    end
+
+    return inbounds
 end

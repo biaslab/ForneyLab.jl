@@ -4,7 +4,7 @@ function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::Marginal
     schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
     interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
 
-    rf_dict = Dict()
+    rf_dict = Dict{Symbol, Any}(:id => Symbol("")) # Preset empty id
     rf_dict[:schedule] = writeMessagePassingBlock(schedule, interface_to_msg_idx)
     writeInitializationBlock!(rf_dict, schedule, interface_to_msg_idx)
     rf_dict[:marginals] = writeMarginalsComputationBlock(marginal_schedule, interface_to_msg_idx)
@@ -13,14 +13,15 @@ function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::Marginal
 end
 
 function writeMessagePassingBlock(schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
-    schedule_vect = Vector{Dict}(undef, length(schedule))
+    schedule_vect = Vector{Dict{Symbol, Any}}(undef, length(schedule))
+    # Collect inbounds and assign message id
     for (msg_idx, schedule_entry) in enumerate(schedule)
-        schedule_entry_dict = schedule_vect[msg_idx]
+        inbounds = collectInbounds(schedule_entry, schedule_entry.msg_update_rule, interface_to_msg_idx)
+        schedule_entry_dict = Dict{Symbol, Any}(:schedule_index => msg_idx,
+                                                :message_update_rule => schedule_entry.msg_update_rule,
+                                                :inbounds => inbounds)
 
-        # Collect inbounds and assign message id
-        schedule_entry_dict[:schedule_index] = msg_idx
-        schedule_entry_dict[:message_update_rule] = schedule_entry.msg_update_rule
-        schedule_entry_dict[:inbounds] = collectInbounds(schedule_entry, schedule_entry.msg_update_rule, interface_to_msg_idx)
+        schedule_vect[msg_idx] = schedule_entry_dict
     end
 
     return schedule_vect
@@ -30,8 +31,8 @@ end
 Depending on the origin of the Clamp node message, contruct the inbound stucture
 """
 function messageDict(node::Clamp{T}) where T<:VariateType
-    inbound = Dict(:variate_type => T,
-                   :dist_or_msg  => Message)
+    inbound = Dict{Symbol, Any}(:variate_type => T,
+                                :dist_or_msg  => Message)
     if node in keys(ForneyLab.current_graph.placeholders)
         # Message comes from data array
         (buffer, idx) = ForneyLab.current_graph.placeholders[node]
@@ -52,8 +53,8 @@ Depending on the origin of the Clamp node message,
 contruct the marginal code.
 """
 function marginalDict(node::Clamp{T}) where T<:VariateType
-    inbound = Dict(:variate_type => T,
-                   :dist_or_msg  => ProbabilityDistribution)
+    inbound = Dict{Symbol, Any}(:variate_type => T,
+                                :dist_or_msg  => ProbabilityDistribution)
     if node in keys(ForneyLab.current_graph.placeholders)
         # Distribution comes from data array
         (buffer, idx) = ForneyLab.current_graph.placeholders[node]
@@ -69,37 +70,42 @@ function marginalDict(node::Clamp{T}) where T<:VariateType
     return inbound
 end
 
-function writeInitializationBlock!(rf_dict::Dict, schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int}, n_messages::Int, name::String)
+function writeInitializationBlock!(rf_dict::Dict, schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
     # Collect outbound types from schedule
-    outbound_types = Dict()
+    outbound_types = Dict{Interface, Type}()
     for entry in schedule
         outbound_types[entry.interface] = outboundType(entry.msg_update_rule)
     end
 
     # Find breaker types and dimensions
     update_clamp_flag = false # Flag that tracks whether the update of a clamped variable is required
+    initialize_flag = false # Indicate need for initialization block
     for entry in schedule
         partner = ultimatePartner(entry.interface)
         if (entry.msg_update_rule <: ExpectationPropagationRule)
             breaker_idx = interface_to_msg_idx[partner]
             breaker_dict = rf_dict[:schedule][breaker_idx]
-            writeBreaker!(breaker_dict, outbound_types[partner], ()) # Univariate only
+            writeBreaker!(breaker_dict, family(outbound_types[partner]), ()) # Univariate only
+            initialize_flag = true 
         elseif isa(entry.interface.node, Nonlinear) && (entry.interface == entry.interface.node.interfaces[2]) && (entry.interface.node.g_inv == nothing)
             # Set initialization in case of a nonlinear node without given inverse 
             iface = ultimatePartner(entry.interface.node.interfaces[2])
             breaker_idx = interface_to_msg_idx[iface]
             breaker_dict = rf_dict[:schedule][breaker_idx]
-            writeBreaker!(breaker_dict, outbound_types[iface], entry.interface.node.dims)
+            writeBreaker!(breaker_dict, family(outbound_types[iface]), entry.interface.node.dims)
+            initialize_flag = true
         elseif !(partner == nothing) && isa(partner.node, Clamp)
             update_clamp_flag = true # Signifies the need for creating a custom `step!` function for optimizing clamped variables
             iface = entry.interface
             breaker_idx = interface_to_msg_idx[iface]
             breaker_dict = rf_dict[:schedule][breaker_idx]
-            writeBreaker!(breaker_dict, outbound_types[iface], size(partner.node.value))
+            writeBreaker!(breaker_dict, family(outbound_types[iface]), size(partner.node.value))
+            initialize_flag = true
         end
     end
 
     rf_dict[:optimize] = update_clamp_flag
+    rf_dict[:initialize] = initialize_flag
 
     return rf_dict
 end
@@ -121,23 +127,23 @@ function writeBreaker!(breaker_dict::Dict, family::Type, dimensionality::Tuple)
 end
 
 function writeMarginalsComputationBlock(schedule::MarginalSchedule, interface_to_msg_idx::Dict{Interface, Int})
-    schedule_vect = Vector{Dict}(undef, length(schedule))
+    schedule_vect = Vector{Dict{Symbol, Any}}(undef, length(schedule))
     for (marg_idx, schedule_entry) in enumerate(schedule)
         if schedule_entry.marginal_update_rule == Nothing
             iface = schedule_entry.interfaces[1]
-            inbounds = [Dict(:schedule_index => interface_to_msg_idx[iface])]
+            inbounds = [Dict{Symbol, Any}(:schedule_index => interface_to_msg_idx[iface])]
         elseif schedule_entry.marginal_update_rule == Product
             iface1 = schedule_entry.interfaces[1]
             iface2 = schedule_entry.interfaces[2]
-            inbounds = [Dict(:schedule_index => interface_to_msg_idx[iface1]),
-                        Dict(:schedule_index => interface_to_msg_idx[iface2])]
+            inbounds = [Dict{Symbol, Any}(:schedule_index => interface_to_msg_idx[iface1]),
+                        Dict{Symbol, Any}(:schedule_index => interface_to_msg_idx[iface2])]
         else
             inbounds = collectInbounds(schedule_entry, interface_to_msg_idx)
         end
 
-        schedule_vect[marg_idx] = Dict(:marginal_update_rule => schedule_entry.marginal_update_rule,
-                                       :marginal_id => schedule_entry.target.id,
-                                       :inbounds => inbounds)
+        schedule_vect[marg_idx] = Dict{Symbol, Any}(:marginal_update_rule => schedule_entry.marginal_update_rule,
+                                                    :marginal_id => schedule_entry.target.id,
+                                                    :inbounds => inbounds)
     end
 
     return schedule_vect
@@ -152,7 +158,7 @@ collectInbounds(entry::MarginalScheduleEntry, interface_to_msg_idx::Dict{Interfa
 
 function collectMarginalNodeInbounds(::FactorNode, entry::MarginalScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
     # Collect inbounds
-    inbounds = Dict[]
+    inbounds = Dict{Symbol, Any}[]
     entry_recognition_factor_id = recognitionFactorId(first(entry.target.edges))
     local_cluster_ids = localRecognitionFactorization(entry.target.node)
 
@@ -168,11 +174,11 @@ function collectMarginalNodeInbounds(::FactorNode, entry::MarginalScheduleEntry,
         elseif node_interface_recognition_factor_id == entry_recognition_factor_id
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]
-            push!(inbounds, Dict(:schedule_index => inbound_idx))
+            push!(inbounds, Dict{Symbol, Any}(:schedule_index => inbound_idx))
         elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
             # Collect marginal from marginal dictionary (if marginal is not already accepted)
             marginal_idx = local_cluster_ids[node_interface_recognition_factor_id]
-            push!(inbounds, Dict(:marginal_id => marginal_idx))
+            push!(inbounds, Dict{Symbol, Any}(:marginal_id => marginal_idx))
         end
 
         push!(recognition_factor_ids, node_interface_recognition_factor_id)

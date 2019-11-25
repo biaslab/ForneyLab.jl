@@ -12,10 +12,7 @@ using ForneyLab
         GaussianMeanVariance(x, m, constant(1.0))
         placeholder(x, :x)
 
-        schedule = sumProductSchedule(m)
-        marginal_schedule = marginalSchedule(m)
-
-        algo = ForneyLab.messagePassingAlgorithm(schedule, marginal_schedule)
+        algo = sumProductAlgorithm(m)
 
         @test occursin("Array{Message}(undef, 2)", algo)
         @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo)
@@ -28,10 +25,7 @@ using ForneyLab
         x = Variable()
         GaussianMeanVariance(x, constant(0.0), constant(1.0))
 
-        schedule = sumProductSchedule(x)
-        marginal_schedule = marginalSchedule(x)
-
-        algo = ForneyLab.messagePassingAlgorithm(schedule, marginal_schedule)
+        algo = sumProductAlgorithm(x)
 
         @test occursin("Array{Message}(undef, 1)", algo)
         @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo)

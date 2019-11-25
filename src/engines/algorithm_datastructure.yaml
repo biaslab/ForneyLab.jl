@@ -3,32 +3,35 @@ algorithm:
     name::String
     recognition_factors: (per item)
         - id::Symbol # recognition factor id
-        - optimize::Bool # require optimize block
+        - optimize::Bool # require optimization block
+        - initialize::Bool # require initialization block
         schedule: (per item)
             - schedule_index::Int # position of entry in schedule
             - message_update_rule::Type # update rule type for message computation
-            - initialize::Bool # require initialization
+            - initialize::Bool # require message initialization
             - family::FactorFunction # family of message distribution (for initialization)
             - dimensionality::Tuple # dimensionality of message distribution (for initialization)
             inbounds: (per item)
-                - inbound::Inbound # inbound, see below
+                - inbound::Dict # inbound, see below
         marginals: (per item)
             - marginal_id::Symbol # identifier for the marginal
             - marginal_update_rule::Union{Nothing, Product, Type} # update rule type for marginal computation
             inbounds: (per item)
-                - inbound::Inbound # inbound, see below
-    free_energy:
-        average_energies: (per item)
-            - node::FactorNode # node for average energy computation
-            inbounds: (per item)
-                - inbound::Inbound # inbound, see below
-        entropies: (per item)
-            - conditional::Bool # require conditional entropy computation
-            inbounds: (per item)
                 - inbound::Dict # inbound, see below
 
+free_energy:
+    name::String
+    average_energies: (per item)
+        - node::Type # node type for average energy computation
+        inbounds: (per item)
+            - inbound::Dict # inbound, see below
+    entropies: (per item)
+        - conditional::Bool # require conditional entropy computation
+        inbounds: (per item)
+            - inbound::Dict # inbound, see below
+
 inbound:
-    # an empty inbound qualifies as "nothing"
+    - nothing::Bool # ignore inbound; "nothing"
     - schedule_index::Int # position of inbound message in schedule; e.g. "message[1]"
     - marginal_id::Symbol # identifier for inbound marginal; e.g. "marginals[:x]"
     - buffer_id::Symbol # identifier for placeholder; e.g. "data[:x]"
@@ -36,3 +39,5 @@ inbound:
     - value::Any # value assigned to Clamp node; e.g. "m=1.0"
     - variate_type::VariateType # variate type for placeholder/clamp; e.g "Univariate"
     - dist_or_msg::Union{ProbabilityDistribution, Message} # cast to Message or PD when reading from buffer; e.g. "ProbabilityDistribution(Univariate, PointMass, m=data[:x][1])", or "Message(...)"
+    - ::Any # custom inbound; e.g. "g" for NonLinear node
+    - keyword::Bool # indicates whether key should be included in custom inbound; e.g. "alpha=1.0"
