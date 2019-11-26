@@ -3,42 +3,30 @@ export expectationPropagationAlgorithm, variationalExpectationPropagationAlgorit
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function expectationPropagationAlgorithm(variables::Vector{Variable}; name::String="")
+function expectationPropagationAlgorithm(variables::Vector{Variable}, rfz::RecognitionFactorization=currentRecognitionFactorization())
     schedule = expectationPropagationSchedule(variables)
     marginal_schedule = marginalSchedule(variables)
     
-    # Assemble algorithm in an empty recognition factor datastructure
-    rf_dict = assembleAlgorithm(schedule, marginal_schedule)
-    rf_dict[:id] = Symbol("")
-
-    # Assemble algorithm datastructure
-    algo_dict = Dict{Symbol, Any}(:name => name,
-                                  :recognition_factors => [rf_dict])
-
-    algo_str = algorithmString(algo_dict)
+    # Assemble algorithm in a container recognition factor
+    rf = RecognitionFactor(rfz, id=Symbol(""))
+    assembleAlgorithm!(rf, schedule, marginal_schedule)
+    algo_str = algorithmString(rfz)
     
     return algo_str
 end
-expectationPropagationAlgorithm(variable::Variable; name::String="") = expectationPropagationAlgorithm([variable], name=name)
+expectationPropagationAlgorithm(variable::Variable, rfz::RecognitionFactorization=currentRecognitionFactorization()) = expectationPropagationAlgorithm([variable], rfz)
 
 """
 Create a variational EP algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
-function variationalExpectationPropagationAlgorithm(q::RecognitionFactorization=currentRecognitionFactorization())
-    recognition_factors_vect = Vector{Dict{Symbol, Any}}(undef, length(q.recognition_factors))
-    algo_dict = Dict{Symbol, Any}(:name => name,
-                                  :recognition_factors => recognition_factors_vect)
-
-    for (i, (id, q_factor)) in enumerate(q.recognition_factors)
-        schedule = variationalExpectationPropagationSchedule(q_factor)
-        marginal_schedule = marginalSchedule(q_factor, schedule)
-
-        # Populate algorithm datastructure
-        algo_dict[:recognition_factors][i] = assembleAlgorithm(schedule, marginal_schedule)
-        algo_dict[:recognition_factors][i][:id] = q_factor.id
+function variationalExpectationPropagationAlgorithm(rfz::RecognitionFactorization=currentRecognitionFactorization())
+    for (id, rf) in rfz.recognition_factors
+        schedule = variationalExpectationPropagationSchedule(rf)
+        marginal_schedule = marginalSchedule(rf, schedule)
+        assembleAlgorithm!(rf, schedule, marginal_schedule)
     end
 
-    algo_str = algorithmString(algo_dict)
+    algo_str = algorithmString(rfz)
 
     return algo_str
 end

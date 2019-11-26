@@ -128,43 +128,45 @@ end
 end
 
 @testset "initializationString" begin
-    rf_dict = Dict(:id         => :X,
-                   :initialize => true,
-                   :schedule => [Dict(:schedule_index => 1,
-                                      :initialize     => true,
-                                      :family         => GaussianMeanPrecision,
-                                      :dimensionality => ())])
-    rf_str = initializationString(rf_dict)
+    rfz = RecognitionFactorization()
+    rf = RecognitionFactor(rfz, id=:X)
+    rf.initialize = true
+    rf.schedule = [Dict(:schedule_index => 1,
+                        :initialize     => true,
+                        :family         => GaussianMeanPrecision,
+                        :dimensionality => ())]
+    rf_str = initializationString(rf)
     @test occursin("function initX()", rf_str)
     @test occursin("messages[1] = Message(vague(GaussianMeanPrecision))", rf_str)
 end
 
 @testset "optimizeString" begin
-    rf_dict = Dict(:id       => :X,
-                   :optimize => true)
-    rf_str = optimizeString(rf_dict)
+    rfz = RecognitionFactorization()
+    rf = RecognitionFactor(rfz, id=:X)
+    rf.optimize = true
+    rf_str = optimizeString(rf)
     @test occursin("function optimizeX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX()", rf_str)    
 end
 
 @testset "recognitionFactorString" begin
-    rf_dict = Dict(:id                => :X,
-                   :schedule          => [],
-                   :marginal_schedule => [])
-    rf_str = recognitionFactorString(rf_dict)
+    rfz = RecognitionFactorization()
+    rf = RecognitionFactor(rfz, id=:X)
+    rf.schedule = []
+    rf.marginal_schedule = []
+    rf_str = recognitionFactorString(rf)
     @test occursin("function stepX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 0))", rf_str)
 end
 
 @testset "freeEnergyString" begin
-    rfz_dict = Dict(:average_energies => [],
-                            :entropies => [])
-    free_energy_str = freeEnergyString(rfz_dict)
+    rfz = RecognitionFactorization()
+    free_energy_str = freeEnergyString(rfz)
 
     @test occursin("function freeEnergy(data::Dict, marginals::Dict)", free_energy_str)
 end
 
 @testset "algorithmString" begin
-    rfz_dict = Dict(:recognition_factors => [])
-    algo_str = algorithmString(rfz_dict)
+    rfz = RecognitionFactorization()
+    algo_str = algorithmString(rfz)
     @test occursin("begin", algo_str)
 end
 

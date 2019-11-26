@@ -1,15 +1,14 @@
-function assembleAlgorithm(schedule::Schedule, marginal_schedule::MarginalSchedule=MarginalScheduleEntry[])
+function assembleAlgorithm!(rf::RecognitionFactor, schedule::Schedule, marginal_schedule::MarginalSchedule=MarginalScheduleEntry[])
     # Assign message numbers to each interface in the schedule
     schedule = ForneyLab.flatten(schedule) # Inline all internal message passing
     schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
     interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
 
-    rf_dict = Dict{Symbol, Any}(:id => Symbol("")) # Preset empty id
-    rf_dict[:schedule] = assembleSchedule(schedule, interface_to_msg_idx)
-    assembleInitialization!(rf_dict, schedule, interface_to_msg_idx)
-    rf_dict[:marginal_schedule] = assembleMarginalSchedule(marginal_schedule, interface_to_msg_idx)
+    rf.schedule = assembleSchedule(schedule, interface_to_msg_idx)
+    assembleInitialization!(rf, schedule, interface_to_msg_idx)
+    rf.marginal_schedule = assembleMarginalSchedule(marginal_schedule, interface_to_msg_idx)
 
-    return rf_dict
+    return rf
 end
 
 function assembleSchedule(schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
@@ -27,7 +26,7 @@ function assembleSchedule(schedule::Schedule, interface_to_msg_idx::Dict{Interfa
     return schedule_vect
 end
 
-function assembleInitialization!(rf_dict::Dict, schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
+function assembleInitialization!(rf::RecognitionFactor, schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
     # Collect outbound types from schedule
     outbound_types = Dict{Interface, Type}()
     for entry in schedule
@@ -41,30 +40,30 @@ function assembleInitialization!(rf_dict::Dict, schedule::Schedule, interface_to
         partner = ultimatePartner(entry.interface)
         if (entry.msg_update_rule <: ExpectationPropagationRule)
             breaker_idx = interface_to_msg_idx[partner]
-            breaker_dict = rf_dict[:schedule][breaker_idx]
+            breaker_dict = rf.schedule[breaker_idx]
             assembleBreaker!(breaker_dict, family(outbound_types[partner]), ()) # Univariate only
             initialize_flag = true 
         elseif isa(entry.interface.node, Nonlinear) && (entry.interface == entry.interface.node.interfaces[2]) && (entry.interface.node.g_inv == nothing)
             # Set initialization in case of a nonlinear node without given inverse 
             iface = ultimatePartner(entry.interface.node.interfaces[2])
             breaker_idx = interface_to_msg_idx[iface]
-            breaker_dict = rf_dict[:schedule][breaker_idx]
+            breaker_dict = rf.schedule[breaker_idx]
             assembleBreaker!(breaker_dict, family(outbound_types[iface]), entry.interface.node.dims)
             initialize_flag = true
         elseif !(partner == nothing) && isa(partner.node, Clamp)
             update_clamp_flag = true # Signifies the need for creating a custom `step!` function for optimizing clamped variables
             iface = entry.interface
             breaker_idx = interface_to_msg_idx[iface]
-            breaker_dict = rf_dict[:schedule][breaker_idx]
+            breaker_dict = rf.schedule[breaker_idx]
             assembleBreaker!(breaker_dict, family(outbound_types[iface]), size(partner.node.value))
             initialize_flag = true
         end
     end
 
-    rf_dict[:optimize] = update_clamp_flag
-    rf_dict[:initialize] = initialize_flag
+    rf.optimize = update_clamp_flag
+    rf.initialize = initialize_flag
 
-    return rf_dict
+    return rf
 end
 
 function assembleBreaker!(breaker_dict::Dict, family::Type, dimensionality::Tuple)

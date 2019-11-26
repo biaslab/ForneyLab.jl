@@ -65,6 +65,8 @@ end
     x = Variable(id=:x)
     y = Variable(id=:y)
     cnd = StateTransition(placeholder(y, :y), x_prev, x)
+    rfz = RecognitionFactorization()
+    rf = RecognitionFactor()
 
     # Build SP schedule
     schedule = sumProductSchedule(x)
@@ -83,8 +85,8 @@ end
     @test marginal_schedule[1].marginal_update_rule == Nothing
 
     # Build SP algorithm for Julia execution
-    rf_dict = ForneyLab.assembleAlgorithm(schedule, marginal_schedule)
-    algo = ForneyLab.recognitionFactorString(rf_dict)
+    ForneyLab.assembleAlgorithm!(rf, schedule, marginal_schedule)
+    algo = ForneyLab.recognitionFactorString(rf)
 
     @test occursin("Array{Message}(undef, 2)", algo)
     @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo)

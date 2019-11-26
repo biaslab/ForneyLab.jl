@@ -28,6 +28,20 @@ mutable struct RecognitionFactor
     clusters::Set{Cluster}
     internal_edges::Set{Edge}
 
+    # Fields set by algorithm assembler
+    schedule::Vector{Dict{Symbol, Any}}
+    marginal_schedule::Vector{Dict{Symbol, Any}}
+    optimize::Bool
+    initialize::Bool
+
+    function RecognitionFactor(rfz=currentRecognitionFactorization(); id=generateId(RecognitionFactor))
+        # Constructor for empty container
+        self = new(id)
+        rfz.recognition_factors[id] = self # Register self with recognition factorization
+
+        return self
+    end
+
     function RecognitionFactor(variables::Set{Variable}; rfz=currentRecognitionFactorization(), id=generateId(RecognitionFactor))
         # Determine nodes connected to external edges
         internal_edges = ForneyLab.extend(edges(variables))
@@ -179,6 +193,10 @@ mutable struct RecognitionFactorization
     # Bookkeeping for faster lookup during scheduling
     edge_to_recognition_factor::Dict{Edge, RecognitionFactor}
     node_edge_to_cluster::Dict{Tuple{FactorNode, Edge}, Cluster}
+
+    # Fields for free energy algorithm assembly
+    average_energies::Vector{Dict{Symbol, Any}}
+    entropies::Vector{Dict{Symbol, Any}}
 end
 
 """
@@ -200,7 +218,9 @@ RecognitionFactorization() = setCurrentRecognitionFactorization(
         currentGraph(),
         Dict{Symbol, RecognitionFactor}(),
         Dict{Edge, RecognitionFactor}(),
-        Dict{Tuple{FactorNode, Edge}, Symbol}()))
+        Dict{Tuple{FactorNode, Edge}, Symbol}(),
+        Dict{Symbol, Any}[],
+        Dict{Symbol, Any}[]))
 
 """
 Construct a `RecognitionFactorization` consisting of one

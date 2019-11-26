@@ -1,9 +1,9 @@
 """
 Generate complete message passing algorithm code from recognition factorization
 """
-function algorithmString(rfz::Dict)
+function algorithmString(rfz::RecognitionFactorization)
     algo_str = "begin\n\n"
-    for rf in rfz[:recognition_factors]
+    for (id, rf) in rfz.recognition_factors
         algo_str *= recognitionFactorString(rf)
         algo_str *= "\n\n"
     end
@@ -15,12 +15,12 @@ end
 """
 Generate complete free energy evaluation code from recognition factorization
 """
-function freeEnergyString(rfz::Dict)
+function freeEnergyString(rfz::RecognitionFactorization)
     fe_str  = "function freeEnergy(data::Dict, marginals::Dict)\n\n"
     fe_str *= "F = 0.0\n\n"
-    fe_str *= energiesString(rfz[:average_energies])
+    fe_str *= energiesString(rfz.average_energies)
     fe_str *= "\n"
-    fe_str *= entropiesString(rfz[:entropies])
+    fe_str *= entropiesString(rfz.entropies)
     fe_str *= "\nreturn F\n\n" 
     fe_str *= "end"
 
@@ -30,23 +30,23 @@ end
 """
 Generate algorithm code for a single recognition factor
 """
-function recognitionFactorString(rf::Dict)
+function recognitionFactorString(rf::RecognitionFactor)
     rf_str = ""
-    if haskey(rf, :optimize) && rf[:optimize]
+    if isdefined(rf, :optimize) && rf.optimize
         rf_str *= optimizeString(rf)
         rf_str *= "\n\n"
     end
 
-    if haskey(rf, :initialize) && rf[:initialize]
+    if isdefined(rf, :initialize) && rf.initialize
         rf_str *= initializationString(rf)
         rf_str *= "\n\n"
     end
 
-    n_entries = length(rf[:schedule])
-    rf_str *= "function step$(rf[:id])!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_entries))\n\n"
-    rf_str *= scheduleString(rf[:schedule])
+    n_entries = length(rf.schedule)
+    rf_str *= "function step$(rf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_entries))\n\n"
+    rf_str *= scheduleString(rf.schedule)
     rf_str *= "\n"
-    rf_str *= marginalScheduleString(rf[:marginal_schedule])
+    rf_str *= marginalScheduleString(rf.marginal_schedule)
     rf_str *= "return marginals\n\n"
     rf_str *= "end"
 
@@ -56,11 +56,11 @@ end
 """
 Generate template code for optimize block
 """
-function optimizeString(rf::Dict)
+function optimizeString(rf::RecognitionFactor)
     optim_str =  "# You have created an algorithm that requires updates for (a) clamped parameter(s).\n"
     optim_str *= "# This algorithm requires the definition of a custom `optimize!` function that updates the parameter value(s)\n"
     optim_str *= "# by altering the `data` dictionary in-place. The custom `optimize!` function may be based on the mockup below:\n\n"
-    optim_str *= "# function optimize$(rf[:id])!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init$(rf[:id])())\n"
+    optim_str *= "# function optimize$(rf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init$(rf.id)())\n"
     optim_str *= "# \t...\n"
     optim_str *= "# \treturn data\n"
     optim_str *= "# end"
@@ -71,9 +71,9 @@ end
 """
 Generate code for initialization block
 """
-function initializationString(rf::Dict)
-    init_str = "function init$(rf[:id])()\n\n"
-    for entry in rf[:schedule]
+function initializationString(rf::RecognitionFactor)
+    init_str = "function init$(rf.id)()\n\n"
+    for entry in rf.schedule
         if haskey(entry, :initialize) && entry[:initialize]
             init_str *= "messages[$(entry[:schedule_index])] = Message($(vagueString(entry)))\n"
         end

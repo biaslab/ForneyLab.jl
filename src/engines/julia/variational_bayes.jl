@@ -3,20 +3,14 @@ export variationalAlgorithm, freeEnergyAlgorithm
 """
 Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
-function variationalAlgorithm(q::RecognitionFactorization=currentRecognitionFactorization())
-    recognition_factors_vect = Vector{Dict{Symbol, Any}}(undef, length(q.recognition_factors))
-    algo_dict = Dict{Symbol, Any}(:recognition_factors => recognition_factors_vect)
-
-    for (i, (id, q_factor)) in enumerate(q.recognition_factors)
-        schedule = variationalSchedule(q_factor)
-        marginal_schedule = marginalSchedule(q_factor, schedule)
-
-        # Populate algorithm datastructure
-        algo_dict[:recognition_factors][i] = assembleAlgorithm(schedule, marginal_schedule)
-        algo_dict[:recognition_factors][i][:id] = q_factor.id
+function variationalAlgorithm(rfz::RecognitionFactorization=currentRecognitionFactorization())
+    for (id, rf) in rfz.recognition_factors
+        schedule = variationalSchedule(rf)
+        marginal_schedule = marginalSchedule(rf, schedule)
+        assembleAlgorithm!(rf, schedule, marginal_schedule)
     end
 
-    algo_str = algorithmString(algo_dict)
+    algo_str = algorithmString(rfz)
 
     return algo_str
 end
