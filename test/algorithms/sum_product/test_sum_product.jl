@@ -45,9 +45,9 @@ end
     inferred_outbound_types = Dict(nd.i[2].partner => Message{PointMass}, nd.i[3].partner => Message{PointMass})
 
     entry = ScheduleEntry(nd.i[1], SumProductRule{MockNode})
-    inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
+    inferUpdateRule!(entry, entry.message_update_rule, inferred_outbound_types)
 
-    @test entry.msg_update_rule == SPMockOutPP
+    @test entry.message_update_rule == SPMockOutPP
 
     # Internal msg passing tests
     FactorGraph()
@@ -57,11 +57,11 @@ end
     inferred_outbound_types = Dict(tc.i[:a].partner => Message{PointMass})
     entry = ScheduleEntry(tc.i[:b], SumProductRule{Nothing})
 
-    inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
+    inferUpdateRule!(entry, entry.message_update_rule, inferred_outbound_types)
 
     @test isdefined(entry, :internal_schedule)
     @test length(entry.internal_schedule) == 4
-    @test entry.msg_update_rule == entry.internal_schedule[end].msg_update_rule
+    @test entry.message_update_rule == entry.internal_schedule[end].message_update_rule
 end
 
 @testset "sumProductSchedule" begin

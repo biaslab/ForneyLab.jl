@@ -29,8 +29,8 @@ mutable struct RecognitionFactor
     internal_edges::Set{Edge}
 
     # Fields set by algorithm assembler
-    schedule::Vector{Dict{Symbol, Any}}
-    marginal_schedule::Vector{Dict{Symbol, Any}}
+    schedule::Schedule
+    marginal_schedule::MarginalSchedule
     optimize::Bool
     initialize::Bool
 

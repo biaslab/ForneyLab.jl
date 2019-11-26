@@ -74,8 +74,8 @@ Generate code for initialization block
 function initializationString(rf::RecognitionFactor)
     init_str = "function init$(rf.id)()\n\n"
     for entry in rf.schedule
-        if haskey(entry, :initialize) && entry[:initialize]
-            init_str *= "messages[$(entry[:schedule_index])] = Message($(vagueString(entry)))\n"
+        if isdefined(entry, :initialize) && entry.initialize
+            init_str *= "messages[$(entry.schedule_index)] = Message($(vagueString(entry)))\n"
         end
     end
     init_str *= "\nreturn messages\n\n"
@@ -118,12 +118,12 @@ end
 """
 Construct code for messages computation block
 """
-function scheduleString(schedule::Vector)
+function scheduleString(schedule::Schedule)
     schedule_str = ""
     for entry in schedule
-        rule_str = typeString(entry[:message_update_rule])
-        inbounds_str = inboundsString(entry[:inbounds])
-        schedule_str *= "messages[$(entry[:schedule_index])] = rule$(rule_str)($inbounds_str)\n"
+        rule_str = typeString(entry.message_update_rule)
+        inbounds_str = inboundsString(entry.inbounds)
+        schedule_str *= "messages[$(entry.schedule_index)] = rule$(rule_str)($inbounds_str)\n"
     end
 
     return schedule_str
@@ -132,20 +132,20 @@ end
 """
 Generate code for marginals computation block
 """
-function marginalScheduleString(marginal_schedule::Vector)
+function marginalScheduleString(marginal_schedule::MarginalSchedule)
     marginal_schedule_str = ""
-    for marginal_dict in marginal_schedule
-        marginal_schedule_str *= "marginals[:$(marginal_dict[:marginal_id])] = "
-        if marginal_dict[:marginal_update_rule] == Nothing
-            inbound = marginal_dict[:inbounds][1]
+    for entry in marginal_schedule
+        marginal_schedule_str *= "marginals[:$(entry.marginal_id)] = "
+        if entry.marginal_update_rule == Nothing
+            inbound = entry.inbounds[1]
             marginal_schedule_str *= "messages[$(inbound[:schedule_index])].dist"
-        elseif marginal_dict[:marginal_update_rule] == Product
-            inbound1 = marginal_dict[:inbounds][1]
-            inbound2 = marginal_dict[:inbounds][2]
+        elseif entry.marginal_update_rule == Product
+            inbound1 = entry.inbounds[1]
+            inbound2 = entry.inbounds[2]
             marginal_schedule_str *= "messages[$(inbound1[:schedule_index])].dist * messages[$(inbound2[:schedule_index])].dist"
         else
-            rule_str = typeString(marginal_dict[:marginal_update_rule])
-            inbounds_str = inboundsString(marginal_dict[:inbounds])
+            rule_str = typeString(entry.marginal_update_rule)
+            inbounds_str = inboundsString(entry.inbounds)
             marginal_schedule_str *= "rule$(rule_str)($inbounds_str)"
         end
         marginal_schedule_str *= "\n"
@@ -158,9 +158,9 @@ end
 """
 Generate code for vague initializations
 """
-function vagueString(entry::Dict)
-    family_str = typeString(entry[:family])
-    dims = entry[:dimensionality]
+function vagueString(entry::ScheduleEntry)
+    family_str = typeString(entry.family)
+    dims = entry.dimensionality
     if dims == ()
         vague_str = "vague($family_str)"
     else

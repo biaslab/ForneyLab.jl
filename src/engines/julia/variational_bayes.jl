@@ -6,8 +6,9 @@ Create a variational algorithm to infer marginals over a recognition distributio
 function variationalAlgorithm(rfz::RecognitionFactorization=currentRecognitionFactorization())
     for (id, rf) in rfz.recognition_factors
         schedule = variationalSchedule(rf)
-        marginal_schedule = marginalSchedule(rf, schedule)
-        assembleAlgorithm!(rf, schedule, marginal_schedule)
+        rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+        rf.marginal_schedule = marginalSchedule(rf, schedule)
+        assembleAlgorithm!(rf)
     end
 
     algo_str = algorithmString(rfz)

@@ -19,9 +19,9 @@ function expectationPropagationSchedule(variables::Vector{Variable})
 
     for entry in schedule
         if entry.interface in ep_sites
-            entry.msg_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
+            entry.message_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
         else
-            entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
+            entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
         end
     end
 
@@ -46,16 +46,16 @@ function variationalExpectationPropagationSchedule(recognition_factor::Recogniti
     nodes_connected_to_external_edges = nodesConnectedToExternalEdges(recognition_factor)
     for entry in schedule
         if entry.interface in ep_sites
-            entry.msg_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
+            entry.message_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
         elseif entry.interface.node in nodes_connected_to_external_edges
             local_recognition_factor_ids = localRecognitionFactorIds(entry.interface.node)
             if unique(local_recognition_factor_ids) == local_recognition_factor_ids # Local recognition factorization is naive
-                entry.msg_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
+                entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
             else
-                entry.msg_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}
+                entry.message_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}
             end
         else
-            entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
+            entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
         end
     end
 
@@ -106,7 +106,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
     
     # Find applicable rule(s)
     applicable_rules = Type[]
-    for rule in leaftypes(entry.msg_update_rule)
+    for rule in leaftypes(entry.message_update_rule)
         if isApplicable(rule, inbound_types, outbound_id)
             push!(applicable_rules, rule)
         end
@@ -118,7 +118,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
     elseif length(applicable_rules) > 1
         error("Multiple applicable msg update rules for $(entry) with outbound id $(outbound_id)")
     else
-        entry.msg_update_rule = first(applicable_rules)
+        entry.message_update_rule = first(applicable_rules)
     end
 
     return entry

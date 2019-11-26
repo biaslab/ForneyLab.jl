@@ -4,12 +4,13 @@ export sumProductAlgorithm
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
 function sumProductAlgorithm(variables::Vector{Variable}, rfz::RecognitionFactorization=currentRecognitionFactorization())
-    schedule = sumProductSchedule(variables)
-    marginal_schedule = marginalSchedule(variables)
-
-    # Assemble algorithm in a container recognition factor
+    # Initialize a container recognition factor
     rf = RecognitionFactor(rfz, id=Symbol(""))
-    assembleAlgorithm!(rf, schedule, marginal_schedule)
+    schedule = sumProductSchedule(variables)
+    rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+    rf.marginal_schedule = marginalSchedule(variables)
+
+    assembleAlgorithm!(rf)
     algo_str = algorithmString(rfz)
     
     return algo_str

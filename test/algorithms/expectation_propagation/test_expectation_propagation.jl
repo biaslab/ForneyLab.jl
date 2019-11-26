@@ -41,9 +41,9 @@ end
     inferred_outbound_types = Dict(nd.i[2].partner => Message{Gaussian}, nd.i[1].partner => Message{PointMass})
 
     entry = ScheduleEntry(nd.i[2], ExpectationPropagationRule{MockNode})
-    inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
+    inferUpdateRule!(entry, entry.message_update_rule, inferred_outbound_types)
 
-    @test entry.msg_update_rule == EPMockIn1GP
+    @test entry.message_update_rule == EPMockIn1GP
 end
 
 @testset "expectationPropagationSchedule" begin

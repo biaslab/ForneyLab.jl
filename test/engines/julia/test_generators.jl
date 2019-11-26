@@ -65,29 +65,36 @@ end
 end
 
 @testset "vagueString" begin
-    entry_dict = Dict(:family         => GaussianMeanPrecision,
-                        :dimensionality => ())
-    entry_str = vagueString(entry_dict)
+    entry = ScheduleEntry()
+    entry.family = GaussianMeanPrecision
+    entry.dimensionality = ()
+    entry_str = vagueString(entry)
     @test entry_str == "vague(GaussianMeanPrecision)"
 
-    entry_dict = Dict(:family         => GaussianMeanPrecision,
-                        :dimensionality => (1,))
-    entry_str = vagueString(entry_dict)
+    entry = ScheduleEntry()
+    entry.family = GaussianMeanPrecision
+    entry.dimensionality = (1,)
+    entry_str = vagueString(entry)
     @test entry_str == "vague(GaussianMeanPrecision, (1,))"
 end
 
 @testset "marginalScheduleString" begin
-    marginal_schedule = [Dict(:marginal_id          => :x,
-                              :marginal_update_rule => Nothing,
-                              :inbounds             => [Dict(:schedule_index => 1)]),
-                         Dict(:marginal_id          => :y,
-                              :marginal_update_rule => ForneyLab.Product,
-                              :inbounds             => [Dict(:schedule_index => 1),
-                                                        Dict(:schedule_index => 2)]),
-                         Dict(:marginal_id          => :z,
-                              :marginal_update_rule => ForneyLab.MGaussianMeanPrecisionGGD,
-                              :inbounds             => [Dict(:schedule_index => 1),
-                                                        Dict(:schedule_index => 2)])]
+    marginal_schedule = Vector{MarginalScheduleEntry}(undef, 3)
+    marginal_schedule[1] = MarginalScheduleEntry()
+    marginal_schedule[1].marginal_id = :x
+    marginal_schedule[1].marginal_update_rule = Nothing
+    marginal_schedule[1].inbounds = [Dict(:schedule_index => 1)]
+    marginal_schedule[2] = MarginalScheduleEntry()
+    marginal_schedule[2].marginal_id = :y
+    marginal_schedule[2].marginal_update_rule = ForneyLab.Product
+    marginal_schedule[2].inbounds = [Dict(:schedule_index => 1),
+                                     Dict(:schedule_index => 2)]
+    marginal_schedule[3] = MarginalScheduleEntry()
+    marginal_schedule[3].marginal_id = :z
+    marginal_schedule[3].marginal_update_rule = ForneyLab.MGaussianMeanPrecisionGGD
+    marginal_schedule[3].inbounds = [Dict(:schedule_index => 1),
+                                     Dict(:schedule_index => 2)]
+
     marginal_schedule_str = marginalScheduleString(marginal_schedule)
 
     @test occursin("marginals[:x] = messages[1].dist", marginal_schedule_str)
@@ -96,12 +103,16 @@ end
 end
 
 @testset "scheduleString" begin
-    schedule = [Dict(:message_update_rule => ForneyLab.SPGaussianMeanPrecisionOutNPP,
-                     :schedule_index      => 2,
-                     :inbounds            => [Dict(:schedule_index => 1)]),
-                Dict(:message_update_rule => ForneyLab.SPGaussianMeanPrecisionOutNPP,
-                     :schedule_index      => 3,
-                     :inbounds            => [Dict(:schedule_index => 1)])]
+    schedule = Vector{ScheduleEntry}(undef, 2)
+    schedule[1] = ScheduleEntry()
+    schedule[1].message_update_rule = ForneyLab.SPGaussianMeanPrecisionOutNPP
+    schedule[1].schedule_index = 2
+    schedule[1].inbounds = [Dict(:schedule_index => 1)]
+    schedule[2] = ScheduleEntry()
+    schedule[2].message_update_rule = ForneyLab.SPGaussianMeanPrecisionOutNPP
+    schedule[2].schedule_index = 3
+    schedule[2].inbounds = [Dict(:schedule_index => 1)]
+
     schedule_str = scheduleString(schedule)
     @test occursin("messages[2] = ruleSPGaussianMeanPrecisionOutNPP(messages[1])", schedule_str)
     @test occursin("messages[3] = ruleSPGaussianMeanPrecisionOutNPP(messages[1])", schedule_str)
@@ -131,10 +142,13 @@ end
     rfz = RecognitionFactorization()
     rf = RecognitionFactor(rfz, id=:X)
     rf.initialize = true
-    rf.schedule = [Dict(:schedule_index => 1,
-                        :initialize     => true,
-                        :family         => GaussianMeanPrecision,
-                        :dimensionality => ())]
+    entry = ScheduleEntry()
+    entry.schedule_index = 1
+    entry.initialize = true
+    entry.family = GaussianMeanPrecision
+    entry.dimensionality = ()
+    rf.schedule = [entry]
+
     rf_str = initializationString(rf)
     @test occursin("function initX()", rf_str)
     @test occursin("messages[1] = Message(vague(GaussianMeanPrecision))", rf_str)
@@ -144,6 +158,7 @@ end
     rfz = RecognitionFactorization()
     rf = RecognitionFactor(rfz, id=:X)
     rf.optimize = true
+
     rf_str = optimizeString(rf)
     @test occursin("function optimizeX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX()", rf_str)    
 end
@@ -153,6 +168,7 @@ end
     rf = RecognitionFactor(rfz, id=:X)
     rf.schedule = []
     rf.marginal_schedule = []
+
     rf_str = recognitionFactorString(rf)
     @test occursin("function stepX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 0))", rf_str)
 end
@@ -160,7 +176,6 @@ end
 @testset "freeEnergyString" begin
     rfz = RecognitionFactorization()
     free_energy_str = freeEnergyString(rfz)
-
     @test occursin("function freeEnergy(data::Dict, marginals::Dict)", free_energy_str)
 end
 

@@ -82,7 +82,7 @@ function marginalSchedule(q_factors::Vector{RecognitionFactor}, schedule::Schedu
     # Construct outbound types dictionary
     outbound_types = Dict{Interface, Type}()
     for entry in schedule
-        outbound_types[entry.interface] = outboundType(entry.msg_update_rule)
+        outbound_types[entry.interface] = outboundType(entry.message_update_rule)
     end
 
     # Construct marginal schedule

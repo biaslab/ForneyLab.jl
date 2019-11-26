@@ -38,9 +38,9 @@ end
     nd = MockNode([Variable(), constant(0.0), constant(0.0)])
 
     entry = ScheduleEntry(nd.i[1], NaiveVariationalRule{MockNode})
-    inferUpdateRule!(entry, entry.msg_update_rule, Dict{Interface, Type}())
+    inferUpdateRule!(entry, entry.message_update_rule, Dict{Interface, Type}())
 
-    @test entry.msg_update_rule == VBMockOut
+    @test entry.message_update_rule == VBMockOut
 end
 
 @testset "variationalSchedule" begin

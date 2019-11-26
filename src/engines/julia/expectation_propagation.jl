@@ -4,12 +4,13 @@ export expectationPropagationAlgorithm, variationalExpectationPropagationAlgorit
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
 function expectationPropagationAlgorithm(variables::Vector{Variable}, rfz::RecognitionFactorization=currentRecognitionFactorization())
-    schedule = expectationPropagationSchedule(variables)
-    marginal_schedule = marginalSchedule(variables)
-    
-    # Assemble algorithm in a container recognition factor
+    # Initialize a container recognition factor
     rf = RecognitionFactor(rfz, id=Symbol(""))
-    assembleAlgorithm!(rf, schedule, marginal_schedule)
+    schedule = expectationPropagationSchedule(variables)
+    rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+    rf.marginal_schedule = marginalSchedule(variables)
+    
+    assembleAlgorithm!(rf)
     algo_str = algorithmString(rfz)
     
     return algo_str
@@ -22,8 +23,9 @@ Create a variational EP algorithm to infer marginals over a recognition distribu
 function variationalExpectationPropagationAlgorithm(rfz::RecognitionFactorization=currentRecognitionFactorization())
     for (id, rf) in rfz.recognition_factors
         schedule = variationalExpectationPropagationSchedule(rf)
-        marginal_schedule = marginalSchedule(rf, schedule)
-        assembleAlgorithm!(rf, schedule, marginal_schedule)
+        rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+        rf.marginal_schedule = marginalSchedule(rf, schedule)
+        assembleAlgorithm!(rf)
     end
 
     algo_str = algorithmString(rfz)

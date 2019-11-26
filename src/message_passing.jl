@@ -63,25 +63,33 @@ abstract type MessageUpdateRule end
 
 """
 A `ScheduleEntry` defines a message computation.
-The `msg_update_rule <: MessageUpdateRule` defines the rule that is used
+The `message_update_rule <: MessageUpdateRule` defines the rule that is used
 to calculate the message coming out of `interface`.
 """
 mutable struct ScheduleEntry
     interface::Interface
-    msg_update_rule::Type
+    message_update_rule::Type
     internal_schedule::Vector{ScheduleEntry}
 
-    ScheduleEntry(interface::Interface, msg_update_rule::Type) = new(interface, msg_update_rule)
+    # Fields for algorithm assembly
+    schedule_index::Int
+    initialize::Bool
+    family::Type
+    dimensionality::Tuple
+    inbounds::Vector{Dict{Symbol, Any}}
+
+    ScheduleEntry() = new()
+    ScheduleEntry(interface::Interface, message_update_rule::Type) = new(interface, message_update_rule)
 end
 
 function show(io::IO, entry::ScheduleEntry)
-    rule_str = replace(string(entry.msg_update_rule), "ForneyLab." => "") # Remove "Forneylab."
+    rule_str = replace(string(entry.message_update_rule), "ForneyLab." => "") # Remove "Forneylab."
     internal_schedule = isdefined(entry, :internal_schedule) ? "(INTERNAL SCHEDULE) " : ""
     print(io, "$(internal_schedule)$(rule_str) on $(entry.interface)")
 end
 
 function ==(a::ScheduleEntry, b::ScheduleEntry)
-    return (a.interface == b.interface) && (a.msg_update_rule == b.msg_update_rule)
+    return (a.interface == b.interface) && (a.message_update_rule == b.message_update_rule)
 end
 
 """
@@ -169,14 +177,14 @@ inferUpdateRules!(schedule) infers specific message update rules for all schedul
 """
 function inferUpdateRules!(schedule::Schedule; inferred_outbound_types=Dict{Interface, Type}())
     for entry in schedule
-        (entry.msg_update_rule == Nothing) && error("No msg update rule type specified for $(entry)")
-        if !isconcretetype(entry.msg_update_rule)
-            # In this case entry.msg_update_rule is a update rule type, but not a specific rule.
-            # Here we infer the specific rule that is applicable, which should be a subtype of entry.msg_update_rule.
-            inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
+        (entry.message_update_rule == Nothing) && error("No msg update rule type specified for $(entry)")
+        if !isconcretetype(entry.message_update_rule)
+            # In this case entry.message_update_rule is a update rule type, but not a specific rule.
+            # Here we infer the specific rule that is applicable, which should be a subtype of entry.message_update_rule.
+            inferUpdateRule!(entry, entry.message_update_rule, inferred_outbound_types)
         end
         # Store the rule's outbound type
-        inferred_outbound_types[entry.interface] = outboundType(entry.msg_update_rule)
+        inferred_outbound_types[entry.interface] = outboundType(entry.message_update_rule)
     end
 
     return schedule

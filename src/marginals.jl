@@ -22,6 +22,13 @@ mutable struct MarginalScheduleEntry
     target::Union{Variable, AbstractCluster}
     interfaces::Vector{Interface}
     marginal_update_rule::DataType
+
+    # Fields for algorithm assembly
+    marginal_id::Symbol # target.id
+    inbounds::Vector{Dict{Symbol, Any}}
+
+    MarginalScheduleEntry() = new()
+    MarginalScheduleEntry(target::Union{Variable, AbstractCluster}, interfaces::Vector{Interface}, marginal_update_rule::DataType) = new(target, interfaces, marginal_update_rule)
 end
 
 """

@@ -2,7 +2,7 @@ module JuliaMessagePassingTest
 
 using Test
 using ForneyLab
-import ForneyLab: assembleAlgorithm!, assembleSchedule, assembleInitialization!, assembleBreaker!, assembleMarginalSchedule, assembleMessageInbound, assembleMarginalInbound
+import ForneyLab: assembleAlgorithm!, assembleSchedule!, assembleInitialization!, assembleBreaker!, assembleMarginalSchedule!, assembleMessageInbound, assembleMarginalInbound, condense, flatten
 
 @testset "assembleMarginalInbound" begin
     g = FactorGraph()
@@ -24,17 +24,18 @@ end
                                :dist_or_msg  => Message)
 end
 
-@testset "assembleMarginalSchedule" begin
+@testset "assembleMarginalSchedule!" begin
     # Nothing rule
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     schedule = sumProductSchedule(x)
     interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
     marginal_schedule = marginalSchedule(x)
-    marginal_schedule_vect = assembleMarginalSchedule(marginal_schedule, interface_to_msg_idx)
-    @test marginal_schedule_vect[1] == Dict(:marginal_id => :x,
-                                            :marginal_update_rule => Nothing,
-                                            :inbounds => Dict{Symbol,Any}[Dict(:schedule_index => 3)])
+    assembleMarginalSchedule!(marginal_schedule, interface_to_msg_idx)
+    @test marginal_schedule[1].marginal_update_rule == Nothing
+    @test marginal_schedule[1].marginal_id == :x
+    @test marginal_schedule[1].inbounds == Dict{Symbol,Any}[Dict(:schedule_index => 3)]
+
     # Product rule
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
@@ -42,11 +43,11 @@ end
     schedule = sumProductSchedule(x)
     interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
     marginal_schedule = marginalSchedule(x)
-    marginal_schedule_vect = assembleMarginalSchedule(marginal_schedule, interface_to_msg_idx)
-    @test marginal_schedule_vect[1] == Dict(:marginal_id => :x,
-                                            :marginal_update_rule => ForneyLab.Product,
-                                            :inbounds => Dict{Symbol,Any}[Dict(:schedule_index => 3), 
-                                                                          Dict(:schedule_index => 6)])
+    assembleMarginalSchedule!(marginal_schedule, interface_to_msg_idx)
+    @test marginal_schedule[1].marginal_update_rule == ForneyLab.Product
+    @test marginal_schedule[1].marginal_id == :x
+    @test marginal_schedule[1].inbounds == Dict{Symbol,Any}[Dict(:schedule_index => 3), 
+                                                            Dict(:schedule_index => 6)]
     # Marginal rule
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
@@ -56,37 +57,45 @@ end
     schedule = variationalSchedule(rf.recognition_factors[:XY])
     interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
     marginal_schedule = marginalSchedule(rf.recognition_factors[:XY], schedule)
-    marginal_schedule_vect = assembleMarginalSchedule(marginal_schedule, interface_to_msg_idx)
-    @test marginal_schedule_vect[3] == Dict(:marginal_id => :y_x,
-                                            :marginal_update_rule => ForneyLab.MGaussianMeanPrecisionGGD,
-                                            :inbounds => Dict{Symbol,Any}[Dict(:schedule_index => 3), 
-                                                                          Dict(:schedule_index => 1), 
-                                                                          Dict(:variate_type => Univariate,
-                                                                               :value => 1.0,
-                                                                               :dist_or_msg => ProbabilityDistribution)])
+    assembleMarginalSchedule!(marginal_schedule, interface_to_msg_idx)
+    @test marginal_schedule[3].marginal_update_rule == ForneyLab.MGaussianMeanPrecisionGGD
+    @test marginal_schedule[3].marginal_id == :y_x
+    @test marginal_schedule[3].inbounds == Dict{Symbol,Any}[Dict(:schedule_index => 3), 
+                                                            Dict(:schedule_index => 1), 
+                                                            Dict(:variate_type => Univariate,
+                                                                 :value => 1.0,
+                                                                 :dist_or_msg => ProbabilityDistribution)]
 end
 
 @testset "assembleBreaker!" begin
-    @test assembleBreaker!(Dict(), GaussianMeanPrecision, ()) == Dict(:family         => GaussianMeanPrecision,
-                                                                      :initialize     => true,
-                                                                      :dimensionality => ())
-    @test assembleBreaker!(Dict(), Union{Gamma, Wishart}, ()) == Dict(:family         => Gamma,
-                                                                      :initialize     => true,
-                                                                      :dimensionality => ())
-    @test assembleBreaker!(Dict(), Union{Gamma, Wishart}, (1,1)) == Dict(:family         => Wishart,
-                                                                         :initialize     => true,
-                                                                         :dimensionality => (1,1))
+    breaker_entry = ScheduleEntry()
+    assembleBreaker!(breaker_entry, GaussianMeanPrecision, ())
+    @test breaker_entry.family == GaussianMeanPrecision
+    @test breaker_entry.initialize == true
+    @test breaker_entry.dimensionality == ()
+
+    breaker_entry = ScheduleEntry()
+    assembleBreaker!(breaker_entry, Union{Gamma, Wishart}, ())
+    @test breaker_entry.family == Gamma
+    @test breaker_entry.initialize == true
+    @test breaker_entry.dimensionality == ()
+
+    breaker_entry = ScheduleEntry()
+    assembleBreaker!(breaker_entry, Union{Gamma, Wishart}, (1,1))
+    @test breaker_entry.family == Wishart
+    @test breaker_entry.initialize == true
+    @test breaker_entry.dimensionality == (1,1)
 end
 
-@testset "assembleSchedule" begin
+@testset "assembleSchedule!" begin
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     GaussianMeanPrecision(x, 0.0, 1.0)
     schedule = sumProductSchedule(x)
     interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
-    schedule_vect = assembleSchedule(schedule, interface_to_msg_idx)
-    @test schedule_vect[3][:message_update_rule] == ForneyLab.SPGaussianMeanPrecisionOutNPP
-    @test schedule_vect[6][:message_update_rule] == ForneyLab.SPGaussianMeanPrecisionOutNPP
+    assembleSchedule!(schedule, interface_to_msg_idx)
+    @test schedule[3].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
+    @test schedule[6].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
 end
 
 @testset "assembleInitialization!" begin
@@ -97,12 +106,12 @@ end
     placeholder(y, :y)
     rfz = RecognitionFactorization()
     rf = RecognitionFactor(rfz)
-    schedule = expectationPropagationSchedule(x)
-    interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
-    rf.schedule = assembleSchedule(schedule, interface_to_msg_idx)
-    assembleInitialization!(rf, schedule, interface_to_msg_idx)
-    @test rf.schedule[5][:message_update_rule] == ForneyLab.EPProbitIn1GP
-    @test rf.schedule[3][:initialize]
+    rf.schedule = expectationPropagationSchedule(x)
+    interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(rf.schedule)
+    assembleSchedule!(rf.schedule, interface_to_msg_idx)
+    assembleInitialization!(rf, interface_to_msg_idx)
+    @test rf.schedule[5].message_update_rule == ForneyLab.EPProbitIn1GP
+    @test rf.schedule[3].initialize
 
     # Nonlinear
     f(z) = z
@@ -112,12 +121,12 @@ end
     GaussianMeanPrecision(y, 0.0, 1.0)
     rfz = RecognitionFactorization()
     rf = RecognitionFactor(rfz)
-    schedule = sumProductSchedule(x)
-    interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
-    rf.schedule = assembleSchedule(schedule, interface_to_msg_idx)
-    assembleInitialization!(rf, schedule, interface_to_msg_idx)
-    @test rf.schedule[7][:message_update_rule] == ForneyLab.SPNonlinearIn1GG
-    @test rf.schedule[3][:initialize]
+    rf.schedule = sumProductSchedule(x)
+    interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(rf.schedule)
+    assembleSchedule!(rf.schedule, interface_to_msg_idx)
+    assembleInitialization!(rf, interface_to_msg_idx)
+    @test rf.schedule[7].message_update_rule == ForneyLab.SPNonlinearIn1GG
+    @test rf.schedule[3].initialize
 
     # Optimize
     g = FactorGraph()
@@ -125,11 +134,11 @@ end
     placeholder(x, :x)
     rfz = RecognitionFactorization()
     rf = RecognitionFactor(rfz)
-    schedule = sumProductSchedule(x)
-    interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
-    rf.schedule = assembleSchedule(schedule, interface_to_msg_idx)
-    assembleInitialization!(rf, schedule, interface_to_msg_idx)
-    @test rf.schedule[3][:initialize]
+    rf.schedule = sumProductSchedule(x)
+    interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(rf.schedule)
+    assembleSchedule!(rf.schedule, interface_to_msg_idx)
+    assembleInitialization!(rf, interface_to_msg_idx)
+    @test rf.schedule[3].initialize
 end
 
 @testset "assembleAlgorithm!" begin
@@ -139,30 +148,31 @@ end
     rfz = RecognitionFactorization()
     rf = RecognitionFactor(rfz)
     schedule = sumProductSchedule(x)
-    marginal_schedule = marginalSchedule(x)
-    assembleAlgorithm!(rf, schedule, marginal_schedule)
-    @test rf.schedule == [Dict(:schedule_index => 1,
-                               :message_update_rule => ForneyLab.SPGaussianMeanPrecisionOutNPP,
-                               :inbounds => Dict{Symbol,Any}[Dict(:nothing => true), 
-                                                             Dict(:variate_type => Univariate,
-                                                                  :value => 0.0,
-                                                                  :dist_or_msg => Message), 
-                                                             Dict(:variate_type => Univariate,
-                                                                  :value => 1.0,
-                                                                  :dist_or_msg => Message)]),
-                          Dict(:schedule_index => 2,
-                               :message_update_rule => ForneyLab.SPGaussianMeanPrecisionOutNPP,
-                               :inbounds => Dict{Symbol,Any}[Dict(:nothing => true), 
-                                                             Dict(:variate_type => Univariate,
-                                                                  :value => 0.0,
-                                                                  :dist_or_msg => Message), 
-                                                             Dict(:variate_type => Univariate,
-                                                                  :value => 1.0,
-                                                                  :dist_or_msg => Message)])]
-    @test rf.marginal_schedule == [Dict(:marginal_id => :x,
-                                        :marginal_update_rule => ForneyLab.Product,
-                                        :inbounds => Dict{Symbol,Any}[Dict(:schedule_index => 1), 
-                                                                      Dict(:schedule_index => 2)])]
+    rf.schedule = condense(flatten(schedule))
+    rf.marginal_schedule = marginalSchedule(x)
+    assembleAlgorithm!(rf)
+    @test rf.schedule[1].schedule_index == 1
+    @test rf.schedule[1].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
+    @test rf.schedule[1].inbounds == Dict{Symbol,Any}[Dict(:nothing => true), 
+                                                      Dict(:variate_type => Univariate,
+                                                           :value => 0.0,
+                                                           :dist_or_msg => Message), 
+                                                      Dict(:variate_type => Univariate,
+                                                           :value => 1.0,
+                                                           :dist_or_msg => Message)]
+    @test rf.schedule[2].schedule_index == 2
+    @test rf.schedule[2].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
+    @test rf.schedule[2].inbounds == Dict{Symbol,Any}[Dict(:nothing => true), 
+                                                      Dict(:variate_type => Univariate,
+                                                           :value => 0.0,
+                                                           :dist_or_msg => Message), 
+                                                      Dict(:variate_type => Univariate,
+                                                           :value => 1.0,
+                                                           :dist_or_msg => Message)]
+    @test rf.marginal_schedule[1].marginal_id == :x
+    @test rf.marginal_schedule[1].marginal_update_rule == ForneyLab.Product
+    @test rf.marginal_schedule[1].inbounds == Dict{Symbol,Any}[Dict(:schedule_index => 1), 
+                                                               Dict(:schedule_index => 2)]
 end
 
 end # module

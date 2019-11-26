@@ -15,7 +15,7 @@ function sumProductSchedule(variables::Vector{Variable})
 
     # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule
-        entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
+        entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
     end
 
     inferUpdateRules!(schedule)
@@ -53,7 +53,7 @@ function internalSumProductSchedule(cnode::CompositeNode,
 
     # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule
-        entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
+        entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
     end
 
     # Sanity check
@@ -76,7 +76,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
 
     # Find applicable rule(s)
     applicable_rules = Type[]
-    for rule in leaftypes(entry.msg_update_rule)
+    for rule in leaftypes(entry.message_update_rule)
         if isApplicable(rule, inbound_types)
             push!(applicable_rules, rule)
         end
@@ -88,14 +88,14 @@ function inferUpdateRule!(entry::ScheduleEntry,
             # No 'shortcut rule' available for CompositeNode.
             # Try to fall back to msg passing on the internal graph.
             entry.internal_schedule = internalSumProductSchedule(entry.interface.node, entry.interface, inferred_outbound_types)
-            entry.msg_update_rule = entry.internal_schedule[end].msg_update_rule
+            entry.message_update_rule = entry.internal_schedule[end].message_update_rule
         else
             error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
         end
     elseif length(applicable_rules) > 1
         error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types): $(applicable_rules)")
     else
-        entry.msg_update_rule = first(applicable_rules)
+        entry.message_update_rule = first(applicable_rules)
     end
 
     return entry

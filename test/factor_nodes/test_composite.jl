@@ -3,7 +3,7 @@ module CompositeTest
 using Test
 using ForneyLab
 import ForneyLab: @composite, outboundType, isApplicable
-import ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product
+import ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product, condense, flatten
 
 
 # Define new node type called StateTransition, with exposed variables called (y, x_prev, x):
@@ -66,7 +66,7 @@ end
     y = Variable(id=:y)
     cnd = StateTransition(placeholder(y, :y), x_prev, x)
     rfz = RecognitionFactorization()
-    rf = RecognitionFactor()
+    rf = RecognitionFactor(rfz)
 
     # Build SP schedule
     schedule = sumProductSchedule(x)
@@ -76,6 +76,7 @@ end
     @test ScheduleEntry(nd.i[:out], SPGaussianMeanVarianceOutNPP) in schedule
     @test ScheduleEntry(cnd.i[:y].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(cnd.i[:x], SPStateTransitionX) in schedule
+    rf.schedule = condense(flatten(schedule))
 
     # Build marginal schedule
     marginal_schedule = marginalSchedule(x)
@@ -83,9 +84,10 @@ end
     @test marginal_schedule[1].target == x
     @test marginal_schedule[1].interfaces[1] == cnd.i[:x]
     @test marginal_schedule[1].marginal_update_rule == Nothing
+    rf.marginal_schedule = marginal_schedule
 
     # Build SP algorithm for Julia execution
-    ForneyLab.assembleAlgorithm!(rf, schedule, marginal_schedule)
+    ForneyLab.assembleAlgorithm!(rf)
     algo = ForneyLab.recognitionFactorString(rf)
 
     @test occursin("Array{Message}(undef, 2)", algo)
