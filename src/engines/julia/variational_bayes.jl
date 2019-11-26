@@ -3,17 +3,16 @@ export variationalAlgorithm, freeEnergyAlgorithm
 """
 Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
-function variationalAlgorithm(q::RecognitionFactorization=currentRecognitionFactorization(); name::String="")
+function variationalAlgorithm(q::RecognitionFactorization=currentRecognitionFactorization())
     recognition_factors_vect = Vector{Dict{Symbol, Any}}(undef, length(q.recognition_factors))
-    algo_dict = Dict{Symbol, Any}(:name => name,
-                                  :recognition_factors => recognition_factors_vect)
+    algo_dict = Dict{Symbol, Any}(:recognition_factors => recognition_factors_vect)
 
     for (i, (id, q_factor)) in enumerate(q.recognition_factors)
         schedule = variationalSchedule(q_factor)
         marginal_schedule = marginalSchedule(q_factor, schedule)
 
         # Populate algorithm datastructure
-        algo_dict[:recognition_factors][i] = messagePassingAlgorithm(schedule, marginal_schedule)
+        algo_dict[:recognition_factors][i] = assembleAlgorithm(schedule, marginal_schedule)
         algo_dict[:recognition_factors][i][:id] = q_factor.id
     end
 
@@ -41,7 +40,7 @@ function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry,
             push!(inbounds, Dict{Symbol, Any}(:nothing => true))
         elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, marginalDict(inbound_interface.node))
+            push!(inbounds, assembleMarginalInbound(inbound_interface.node))
         else
             # Collect marginal from marginal dictionary
             push!(inbounds, Dict{Symbol, Any}(:marginal_id => node_interface.edge.variable.id))
@@ -77,7 +76,7 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
             push!(inbounds, Dict{Symbol, Any}(:nothing => true))
         elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, marginalDict(inbound_interface.node))
+            push!(inbounds, assembleMarginalInbound(inbound_interface.node))
         elseif node_interface_recognition_factor_id == entry_recognition_factor_id
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]
@@ -99,11 +98,10 @@ The `freeEnergyAlgorithm` function accepts a `RecognitionFactorization` and retu
 (if possible) Julia code for computing the variational free energy with respect to 
 the argument recognition factorization and corresponding `FactorGraph` (model).
 """
-function freeEnergyAlgorithm(q=currentRecognitionFactorization(); name::String="")
+function freeEnergyAlgorithm(q=currentRecognitionFactorization())
     average_energies_vect = Vector{Dict{Symbol, Any}}()
     entropies_vect = Vector{Dict{Symbol, Any}}()
-    free_energy_dict = Dict{Symbol, Any}(:name => name,
-                                         :average_energies => average_energies_vect,
+    free_energy_dict = Dict{Symbol, Any}(:average_energies => average_energies_vect,
                                          :entropies => entropies_vect)
 
     for rf in values(q.recognition_factors)
@@ -151,7 +149,7 @@ function collectAverageEnergyInbounds(node::FactorNode)
 
         if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, marginalDict(inbound_interface.node))
+            push!(inbounds, assembleMarginalInbound(inbound_interface.node))
         elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
             # Collect marginal from marginal dictionary (if marginal is not already accepted)
             marginal_idx = local_cluster_ids[node_interface_recognition_factor_id]
@@ -184,7 +182,7 @@ function collectConditionalDifferentialEntropyInbounds(node::FactorNode)
             continue
         elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, marginalDict(inbound_interface.node))
+            push!(inbounds, assembleMarginalInbound(inbound_interface.node))
         else
             marginal_idx = node_interface.edge.variable.id
             push!(inbounds, Dict{Symbol, Any}(:marginal_id => marginal_idx))

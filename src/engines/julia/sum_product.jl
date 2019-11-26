@@ -8,7 +8,7 @@ function sumProductAlgorithm(variables::Vector{Variable}; name::String="")
     marginal_schedule = marginalSchedule(variables)
     
     # Build (empty) recognition factor datastructure
-    rf_dict = messagePassingAlgorithm(schedule, marginal_schedule)
+    rf_dict = assembleAlgorithm(schedule, marginal_schedule)
 
     # Build algorithm datastructure
     algo_dict = Dict{Symbol, Any}(:name => name,
@@ -39,7 +39,7 @@ function collectSumProductNodeInbounds(::FactorNode, entry::ScheduleEntry, inter
             push!(inbounds, Dict{Symbol, Any}(:nothing => true))
         elseif isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
-            push!(inbounds, messageDict(inbound_interface.node))
+            push!(inbounds, assembleMessageInbound(inbound_interface.node))
         else
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]

@@ -1,18 +1,18 @@
-function messagePassingAlgorithm(schedule::Schedule, marginal_schedule::MarginalSchedule=MarginalScheduleEntry[])
+function assembleAlgorithm(schedule::Schedule, marginal_schedule::MarginalSchedule=MarginalScheduleEntry[])
     # Assign message numbers to each interface in the schedule
     schedule = ForneyLab.flatten(schedule) # Inline all internal message passing
     schedule = ForneyLab.condense(schedule) # Remove Clamp node entries
     interface_to_msg_idx = ForneyLab.interfaceToScheduleEntryIdx(schedule)
 
     rf_dict = Dict{Symbol, Any}(:id => Symbol("")) # Preset empty id
-    rf_dict[:schedule] = writeMessagePassingBlock(schedule, interface_to_msg_idx)
-    writeInitializationBlock!(rf_dict, schedule, interface_to_msg_idx)
-    rf_dict[:marginals] = writeMarginalsComputationBlock(marginal_schedule, interface_to_msg_idx)
+    rf_dict[:schedule] = assembleSchedule(schedule, interface_to_msg_idx)
+    assembleInitialization!(rf_dict, schedule, interface_to_msg_idx)
+    rf_dict[:marginal_schedule] = assembleMarginalSchedule(marginal_schedule, interface_to_msg_idx)
 
     return rf_dict
 end
 
-function writeMessagePassingBlock(schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
+function assembleSchedule(schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
     schedule_vect = Vector{Dict{Symbol, Any}}(undef, length(schedule))
     # Collect inbounds and assign message id
     for (msg_idx, schedule_entry) in enumerate(schedule)
@@ -28,9 +28,9 @@ function writeMessagePassingBlock(schedule::Schedule, interface_to_msg_idx::Dict
 end
 
 """
-Depending on the origin of the Clamp node message, contruct the inbound stucture
+Depending on the origin of the Clamp node message, contruct a message inbound
 """
-function messageDict(node::Clamp{T}) where T<:VariateType
+function assembleMessageInbound(node::Clamp{T}) where T<:VariateType
     inbound = Dict{Symbol, Any}(:variate_type => T,
                                 :dist_or_msg  => Message)
     if node in keys(ForneyLab.current_graph.placeholders)
@@ -49,10 +49,9 @@ function messageDict(node::Clamp{T}) where T<:VariateType
 end
 
 """
-Depending on the origin of the Clamp node message,
-contruct the marginal code.
+Depending on the origin of the Clamp node message, contruct a marginal inbound
 """
-function marginalDict(node::Clamp{T}) where T<:VariateType
+function assembleMarginalInbound(node::Clamp{T}) where T<:VariateType
     inbound = Dict{Symbol, Any}(:variate_type => T,
                                 :dist_or_msg  => ProbabilityDistribution)
     if node in keys(ForneyLab.current_graph.placeholders)
@@ -70,7 +69,7 @@ function marginalDict(node::Clamp{T}) where T<:VariateType
     return inbound
 end
 
-function writeInitializationBlock!(rf_dict::Dict, schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
+function assembleInitialization!(rf_dict::Dict, schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
     # Collect outbound types from schedule
     outbound_types = Dict{Interface, Type}()
     for entry in schedule
@@ -85,21 +84,21 @@ function writeInitializationBlock!(rf_dict::Dict, schedule::Schedule, interface_
         if (entry.msg_update_rule <: ExpectationPropagationRule)
             breaker_idx = interface_to_msg_idx[partner]
             breaker_dict = rf_dict[:schedule][breaker_idx]
-            writeBreaker!(breaker_dict, family(outbound_types[partner]), ()) # Univariate only
+            assembleBreaker!(breaker_dict, family(outbound_types[partner]), ()) # Univariate only
             initialize_flag = true 
         elseif isa(entry.interface.node, Nonlinear) && (entry.interface == entry.interface.node.interfaces[2]) && (entry.interface.node.g_inv == nothing)
             # Set initialization in case of a nonlinear node without given inverse 
             iface = ultimatePartner(entry.interface.node.interfaces[2])
             breaker_idx = interface_to_msg_idx[iface]
             breaker_dict = rf_dict[:schedule][breaker_idx]
-            writeBreaker!(breaker_dict, family(outbound_types[iface]), entry.interface.node.dims)
+            assembleBreaker!(breaker_dict, family(outbound_types[iface]), entry.interface.node.dims)
             initialize_flag = true
         elseif !(partner == nothing) && isa(partner.node, Clamp)
             update_clamp_flag = true # Signifies the need for creating a custom `step!` function for optimizing clamped variables
             iface = entry.interface
             breaker_idx = interface_to_msg_idx[iface]
             breaker_dict = rf_dict[:schedule][breaker_idx]
-            writeBreaker!(breaker_dict, family(outbound_types[iface]), size(partner.node.value))
+            assembleBreaker!(breaker_dict, family(outbound_types[iface]), size(partner.node.value))
             initialize_flag = true
         end
     end
@@ -110,7 +109,7 @@ function writeInitializationBlock!(rf_dict::Dict, schedule::Schedule, interface_
     return rf_dict
 end
 
-function writeBreaker!(breaker_dict::Dict, family::Type, dimensionality::Tuple)
+function assembleBreaker!(breaker_dict::Dict, family::Type, dimensionality::Tuple)
     breaker_dict[:initialize] = true
     breaker_dict[:dimensionality] = dimensionality
     if family == Union{Gamma, Wishart} # Catch special case
@@ -126,7 +125,7 @@ function writeBreaker!(breaker_dict::Dict, family::Type, dimensionality::Tuple)
     return breaker_dict
 end
 
-function writeMarginalsComputationBlock(schedule::MarginalSchedule, interface_to_msg_idx::Dict{Interface, Int})
+function assembleMarginalSchedule(schedule::MarginalSchedule, interface_to_msg_idx::Dict{Interface, Int})
     schedule_vect = Vector{Dict{Symbol, Any}}(undef, length(schedule))
     for (marg_idx, schedule_entry) in enumerate(schedule)
         if schedule_entry.marginal_update_rule == Nothing
@@ -170,7 +169,7 @@ function collectMarginalNodeInbounds(::FactorNode, entry::MarginalScheduleEntry,
 
         if isa(partner_node, Clamp)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, marginalDict(partner_node))
+            push!(inbounds, assembleMarginalInbound(partner_node))
         elseif node_interface_recognition_factor_id == entry_recognition_factor_id
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]

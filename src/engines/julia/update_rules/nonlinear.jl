@@ -195,7 +195,7 @@ function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry, in
             push!(inbounds, Dict{Symbol, Any}(:nothing => true))
         elseif isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
-            push!(inbounds, messageDict(inbound_interface.node))
+            push!(inbounds, assembleMessageInbound(inbound_interface.node))
         else
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]

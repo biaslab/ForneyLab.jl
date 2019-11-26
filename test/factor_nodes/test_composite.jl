@@ -83,7 +83,7 @@ end
     @test marginal_schedule[1].marginal_update_rule == Nothing
 
     # Build SP algorithm for Julia execution
-    rf_dict = ForneyLab.messagePassingAlgorithm(schedule, marginal_schedule)
+    rf_dict = ForneyLab.assembleAlgorithm(schedule, marginal_schedule)
     algo = ForneyLab.recognitionFactorString(rf_dict)
 
     @test occursin("Array{Message}(undef, 2)", algo)

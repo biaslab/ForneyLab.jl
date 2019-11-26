@@ -8,7 +8,7 @@ function expectationPropagationAlgorithm(variables::Vector{Variable}; name::Stri
     marginal_schedule = marginalSchedule(variables)
     
     # Build (empty) recognition factor datastructure
-    rf_dict = messagePassingAlgorithm(schedule, marginal_schedule)
+    rf_dict = assembleAlgorithm(schedule, marginal_schedule)
     rf_dict[:id] = Symbol("")
 
     # Build algorithm datastructure
@@ -34,7 +34,7 @@ function variationalExpectationPropagationAlgorithm(q::RecognitionFactorization=
         marginal_schedule = marginalSchedule(q_factor, schedule)
 
         # Populate algorithm datastructure
-        algo_dict[:recognition_factors][i] = messagePassingAlgorithm(schedule, marginal_schedule)
+        algo_dict[:recognition_factors][i] = assembleAlgorithm(schedule, marginal_schedule)
         algo_dict[:recognition_factors][i][:id] = q_factor.id
     end
 
@@ -53,7 +53,7 @@ function collectInbounds(entry::ScheduleEntry, ::Type{T}, interface_to_msg_idx::
         inbound_interface = ultimatePartner(node_interface)
         if isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
-            push!(inbounds, messageDict(inbound_interface.node))
+            push!(inbounds, assembleMessageInbound(inbound_interface.node))
         else
             # Collect message from previous result
             inbound_idx = interface_to_msg_idx[inbound_interface]

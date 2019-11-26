@@ -3,7 +3,7 @@ module JuliaMessagePassingTest
 using Test
 using ForneyLab
 
-@testset "Julia messagePassingAlgorithm" begin
+@testset "assembleAlgorithm" begin
     @testset "Read from data" begin
         g = FactorGraph()
         x = Variable()

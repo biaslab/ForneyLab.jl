@@ -1,6 +1,5 @@
-# "If we need to write the algorithm from scratch, what information do we need?"
-algorithm:
-    name::String
+# "If we need to write the message-passing algorithm and free energy evaluation from scratch, what information do we need?"
+recognition_factorization:
     recognition_factors: (per item)
         - id::Symbol # recognition factor id
         - optimize::Bool # require optimization block
@@ -13,14 +12,11 @@ algorithm:
             - dimensionality::Tuple # dimensionality of message distribution (for initialization)
             inbounds: (per item)
                 - inbound::Dict # inbound, see below
-        marginals: (per item)
+        marginal_schedule: (per item)
             - marginal_id::Symbol # identifier for the marginal
             - marginal_update_rule::Union{Nothing, Product, Type} # update rule type for marginal computation
             inbounds: (per item)
                 - inbound::Dict # inbound, see below
-
-free_energy:
-    name::String
     average_energies: (per item)
         - node::Type # node type for average energy computation
         inbounds: (per item)
