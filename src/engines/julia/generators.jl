@@ -123,7 +123,7 @@ function inboundString(inbound::Dict)
     elseif haskey(inbound, :schedule_index) # message inbound
         inbound_str = "messages[$(inbound[:schedule_index])]"
     elseif haskey(inbound, :marginal_id) # marginal inbound
-        inbound_str = "marginals[$(inbound[:marginal_id])]"
+        inbound_str = "marginals[:$(inbound[:marginal_id])]"
     elseif haskey(inbound, :buffer_id) # placeholder inbound
         inbound_str = bufferString(inbound)
     elseif haskey(inbound, :value) # value inbound
@@ -212,7 +212,7 @@ function marginalScheduleString(marginals_vect::Vector)
         else
             rule_str = typeString(marginal_dict[:marginal_update_rule])
             inbounds_str = inboundsString(marginal_dict[:inbounds])
-            code *= "rule$(rule_str)($inbounds_str)"
+            marginals_str *= "rule$(rule_str)($inbounds_str)"
         end
         marginals_str *= "\n"
     end
