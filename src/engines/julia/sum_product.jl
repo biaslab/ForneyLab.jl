@@ -7,10 +7,10 @@ function sumProductAlgorithm(variables::Vector{Variable}; name::String="")
     schedule = sumProductSchedule(variables)
     marginal_schedule = marginalSchedule(variables)
     
-    # Build (empty) recognition factor datastructure
+    # Assemble algorithm in an empty recognition factor datastructure
     rf_dict = assembleAlgorithm(schedule, marginal_schedule)
 
-    # Build algorithm datastructure
+    # Assemble algorithm datastructure
     algo_dict = Dict{Symbol, Any}(:name => name,
                                   :recognition_factors => [rf_dict])
 

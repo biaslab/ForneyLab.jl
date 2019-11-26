@@ -27,48 +27,6 @@ function assembleSchedule(schedule::Schedule, interface_to_msg_idx::Dict{Interfa
     return schedule_vect
 end
 
-"""
-Depending on the origin of the Clamp node message, contruct a message inbound
-"""
-function assembleMessageInbound(node::Clamp{T}) where T<:VariateType
-    inbound = Dict{Symbol, Any}(:variate_type => T,
-                                :dist_or_msg  => Message)
-    if node in keys(ForneyLab.current_graph.placeholders)
-        # Message comes from data array
-        (buffer, idx) = ForneyLab.current_graph.placeholders[node]
-        inbound[:buffer_id] = buffer
-        if idx > 0
-            inbound[:buffer_index] = idx
-        end
-    else
-        # Insert constant
-        inbound[:value] = node.value
-    end
-
-    return inbound
-end
-
-"""
-Depending on the origin of the Clamp node message, contruct a marginal inbound
-"""
-function assembleMarginalInbound(node::Clamp{T}) where T<:VariateType
-    inbound = Dict{Symbol, Any}(:variate_type => T,
-                                :dist_or_msg  => ProbabilityDistribution)
-    if node in keys(ForneyLab.current_graph.placeholders)
-        # Distribution comes from data array
-        (buffer, idx) = ForneyLab.current_graph.placeholders[node]
-        inbound[:buffer_id] = buffer
-        if idx > 0
-            inbound[:buffer_index] = idx
-        end
-    else
-        # Insert constant
-        inbound[:value] = node.value
-    end
-
-    return inbound
-end
-
 function assembleInitialization!(rf_dict::Dict, schedule::Schedule, interface_to_msg_idx::Dict{Interface, Int})
     # Collect outbound types from schedule
     outbound_types = Dict{Interface, Type}()
@@ -146,6 +104,48 @@ function assembleMarginalSchedule(schedule::MarginalSchedule, interface_to_msg_i
     end
 
     return schedule_vect
+end
+
+"""
+Depending on the origin of the Clamp node message, contruct a message inbound
+"""
+function assembleMessageInbound(node::Clamp{T}) where T<:VariateType
+    inbound = Dict{Symbol, Any}(:variate_type => T,
+                                :dist_or_msg  => Message)
+    if node in keys(ForneyLab.current_graph.placeholders)
+        # Message comes from data array
+        (buffer, idx) = ForneyLab.current_graph.placeholders[node]
+        inbound[:buffer_id] = buffer
+        if idx > 0
+            inbound[:buffer_index] = idx
+        end
+    else
+        # Insert constant
+        inbound[:value] = node.value
+    end
+
+    return inbound
+end
+
+"""
+Depending on the origin of the Clamp node message, contruct a marginal inbound
+"""
+function assembleMarginalInbound(node::Clamp{T}) where T<:VariateType
+    inbound = Dict{Symbol, Any}(:variate_type => T,
+                                :dist_or_msg  => ProbabilityDistribution)
+    if node in keys(ForneyLab.current_graph.placeholders)
+        # Distribution comes from data array
+        (buffer, idx) = ForneyLab.current_graph.placeholders[node]
+        inbound[:buffer_id] = buffer
+        if idx > 0
+            inbound[:buffer_index] = idx
+        end
+    else
+        # Insert constant
+        inbound[:value] = node.value
+    end
+
+    return inbound
 end
 
 """
