@@ -60,8 +60,8 @@ end
     RecognitionFactorization()
     rf_12 = RecognitionFactor([v1, v2])
 
-    schedule = variationalSchedule(rf_12)
-    marginal_table = marginalTable(rf_12, schedule)
+    rf_12.schedule = variationalSchedule(rf_12)
+    marginal_table = marginalTable(rf_12)
 
     @test length(marginal_table) == 1
     @test marginal_table[1].target == first(rf_12.clusters)

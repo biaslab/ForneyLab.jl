@@ -12,21 +12,21 @@ abstract type MarginalRule{factor_type} <: MarginalUpdateRule end
 Construct a `MarginalEntry` for computing the marginal over `cluster`
 through a node-specific joint marginal update rule.
 """
-function MarginalEntry(cluster::Cluster, outbound_types::Dict{Interface, Type})
-    inbound_types = collectInboundTypes(cluster, outbound_types)
-    marginal_update_rule = inferMarginalRule(cluster, inbound_types)
+function MarginalEntry(target::Cluster, outbound_types::Dict{Interface, Type})
+    inbound_types = collectInboundTypes(target, outbound_types)
+    marginal_update_rule = inferMarginalRule(target, inbound_types)
     
     # Collect inbound interfaces 
     inbound_interfaces = Interface[]
-    for edge in cluster.edges
-        if edge.a in cluster.node.interfaces
+    for edge in target.edges
+        if edge.a in target.node.interfaces
             push!(inbound_interfaces, edge.a.partner) # Partner is the required inbound interface
         else
             push!(inbound_interfaces, edge.b.partner)
         end
     end
 
-    return MarginalEntry(cluster, inbound_interfaces, marginal_update_rule)
+    return MarginalEntry(target, inbound_interfaces, marginal_update_rule)
 end
 
 """
@@ -54,6 +54,22 @@ function inferMarginalRule(cluster::Cluster, inbound_types::Vector{<:Type})
 end
 
 """
+Construct the marginal computations table for a given recognition factor
+"""
+function marginalTable(rf::RecognitionFactor)
+    # Construct outbound types dictionary
+    outbound_types = Dict{Interface, Type}()
+    for entry in rf.schedule
+        outbound_types[entry.interface] = outboundType(entry.message_update_rule)
+    end
+
+    variable_table = marginalTable(sort(collect(rf.variables)))
+    cluster_table = [MarginalEntry(cluster, outbound_types) for cluster in sort(collect(rf.clusters))]
+
+    return [variable_table; cluster_table]
+end
+
+"""
 Find the inbound types that are required to compute a joint marginal over `target`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
@@ -77,30 +93,6 @@ function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, T
 
     return inbound_types
 end
-
-function marginalTable(q_factors::Vector{RecognitionFactor}, schedule::Schedule)
-    # Construct outbound types dictionary
-    outbound_types = Dict{Interface, Type}()
-    for entry in schedule
-        outbound_types[entry.interface] = outboundType(entry.message_update_rule)
-    end
-
-    # Construct marginal table
-    marginal_table = MarginalEntry[]
-    for q_factor in q_factors
-        # Construct table for computing marginals over variables
-        variable_table = marginalTable(sort(collect(q_factor.variables)))
-        marginal_table = [marginal_table; variable_table]
-
-        # Construct table for computing marginals over clusters
-        cluster_table = [MarginalEntry(cluster, outbound_types) for cluster in sort(collect(q_factor.clusters))]
-        marginal_table = [marginal_table; cluster_table]
-    end
-
-    return marginal_table
-end
-
-marginalTable(q_factor::RecognitionFactor, schedule::Schedule) = marginalTable([q_factor], schedule)
 
 """
 `@marginalRule` registers a marginal update rule for a (joint) marginal

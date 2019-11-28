@@ -28,6 +28,10 @@ mutable struct RecognitionFactor
     clusters::Set{Cluster}
     internal_edges::Set{Edge}
 
+    # Fields for fast lookup during assembly
+    interface_to_schedule_entry::Dict{Interface, ScheduleEntry}
+    target_to_marginal_entry::Dict{Union{Variable, Cluster}, MarginalEntry}
+
     # Fields set by algorithm assembler
     schedule::Schedule
     marginal_table::MarginalTable

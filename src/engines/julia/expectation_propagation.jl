@@ -24,7 +24,7 @@ function variationalExpectationPropagationAlgorithm(rfz::RecognitionFactorizatio
     for (id, rf) in rfz.recognition_factors
         schedule = variationalExpectationPropagationSchedule(rf)
         rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-        rf.marginal_table = marginalTable(rf, schedule)
+        rf.marginal_table = marginalTable(rf)
         assembleAlgorithm!(rf)
     end
 
