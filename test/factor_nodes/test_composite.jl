@@ -79,12 +79,12 @@ end
     rf.schedule = condense(flatten(schedule))
 
     # Build marginal schedule
-    marginal_schedule = marginalSchedule(x)
-    @test length(marginal_schedule) == 1
-    @test marginal_schedule[1].target == x
-    @test marginal_schedule[1].interfaces[1] == cnd.i[:x]
-    @test marginal_schedule[1].marginal_update_rule == Nothing
-    rf.marginal_schedule = marginal_schedule
+    marginal_table = marginalTable(x)
+    @test length(marginal_table) == 1
+    @test marginal_table[1].target == x
+    @test marginal_table[1].interfaces[1] == cnd.i[:x]
+    @test marginal_table[1].marginal_update_rule == Nothing
+    rf.marginal_table = marginal_table
 
     # Build SP algorithm for Julia execution
     ForneyLab.assembleAlgorithm!(rf)

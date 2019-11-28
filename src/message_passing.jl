@@ -230,7 +230,9 @@ Contruct a condensed schedule.
 function condense(schedule::Schedule)
     condensed_schedule = ScheduleEntry[]
     for entry in schedule
-        if !isa(entry.interface.node, Clamp)
+        if isdefined(entry, :internal_schedule)
+            entry.internal_schedule = condense(entry.internal_schedule)
+        elseif !isa(entry.interface.node, Clamp)
             push!(condensed_schedule, entry)
         end
     end

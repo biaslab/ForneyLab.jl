@@ -46,7 +46,7 @@ function recognitionFactorString(rf::RecognitionFactor)
     rf_str *= "function step$(rf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_entries))\n\n"
     rf_str *= scheduleString(rf.schedule)
     rf_str *= "\n"
-    rf_str *= marginalScheduleString(rf.marginal_schedule)
+    rf_str *= marginalTableString(rf.marginal_table)
     rf_str *= "return marginals\n\n"
     rf_str *= "end"
 
@@ -132,27 +132,27 @@ end
 """
 Generate code for marginals computation block
 """
-function marginalScheduleString(marginal_schedule::MarginalSchedule)
-    marginal_schedule_str = ""
-    for entry in marginal_schedule
-        marginal_schedule_str *= "marginals[:$(entry.marginal_id)] = "
+function marginalTableString(table::MarginalTable)
+    table_str = ""
+    for entry in table
+        table_str *= "marginals[:$(entry.marginal_id)] = "
         if entry.marginal_update_rule == Nothing
             inbound = entry.inbounds[1]
-            marginal_schedule_str *= "messages[$(inbound.schedule_index)].dist"
+            table_str *= "messages[$(inbound.schedule_index)].dist"
         elseif entry.marginal_update_rule == Product
             inbound1 = entry.inbounds[1]
             inbound2 = entry.inbounds[2]
-            marginal_schedule_str *= "messages[$(inbound1.schedule_index)].dist * messages[$(inbound2.schedule_index)].dist"
+            table_str *= "messages[$(inbound1.schedule_index)].dist * messages[$(inbound2.schedule_index)].dist"
         else
             rule_str = typeString(entry.marginal_update_rule)
             inbounds_str = inboundsString(entry.inbounds)
-            marginal_schedule_str *= "rule$(rule_str)($inbounds_str)"
+            table_str *= "rule$(rule_str)($inbounds_str)"
         end
-        marginal_schedule_str *= "\n"
+        table_str *= "\n"
     end
-    isempty(marginal_schedule_str) || (marginal_schedule_str *= "\n")
+    isempty(table_str) || (table_str *= "\n")
 
-    return marginal_schedule_str
+    return table_str
 end
 
 """
@@ -186,7 +186,7 @@ Generate code for specific inbound types
 """
 inboundString(inbound::Nothing) = "nothing"
 inboundString(inbound::ScheduleEntry) = "messages[$(inbound.schedule_index)]"
-inboundString(inbound::MarginalScheduleEntry) = "marginals[:$(inbound.marginal_id)]"
+inboundString(inbound::MarginalEntry) = "marginals[:$(inbound.marginal_id)]"
 function inboundString(inbound::Dict) # Custom inbound
     keyword_flag = true # Default includes keyword in custom argument
     if haskey(inbound, :keyword)

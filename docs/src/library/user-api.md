@@ -35,7 +35,7 @@ Order = [:macro, :module, :constant, :type, :function]
 
 ## Scheduling
 ```@docs
-ForneyLab.MarginalSchedule
+ForneyLab.MarginalTable
 ForneyLab.RecognitionFactorization
 ForneyLab.Schedule
 ForneyLab.currentRecognitionFactorization

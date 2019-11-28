@@ -7,7 +7,7 @@ function variationalAlgorithm(rfz::RecognitionFactorization=currentRecognitionFa
     for (id, rf) in rfz.recognition_factors
         schedule = variationalSchedule(rf)
         rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-        rf.marginal_schedule = marginalSchedule(rf, schedule)
+        rf.marginal_table = marginalTable(rf, schedule)
         assembleAlgorithm!(rf)
     end
 

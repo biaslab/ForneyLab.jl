@@ -30,7 +30,7 @@ mutable struct RecognitionFactor
 
     # Fields set by algorithm assembler
     schedule::Schedule
-    marginal_schedule::MarginalSchedule
+    marginal_table::MarginalTable
     optimize::Bool
     initialize::Bool
 
@@ -312,9 +312,9 @@ function nodesConnectedToExternalEdges(internal_edges::Set{Edge})
 end
 
 function targetToMarginalEntry(rfz::RecognitionFactorization)
-    mapping = Dict{Union{Cluster, Variable}, MarginalScheduleEntry}()
+    mapping = Dict{Union{Cluster, Variable}, MarginalEntry}()
     for rf in rfz.recognition_factors
-        rf_mapping = targetToMarginalEntry(rf.marginal_schedule)
+        rf_mapping = targetToMarginalEntry(rf.marginal_table)
         merge!(mapping, rf_mapping)
     end
 

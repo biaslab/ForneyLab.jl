@@ -9,10 +9,10 @@ to a node of type `factor_type`.
 abstract type MarginalRule{factor_type} <: MarginalUpdateRule end
 
 """
-Construct a `MarginalScheduleEntry` for computing the marginal over `cluster`
+Construct a `MarginalEntry` for computing the marginal over `cluster`
 through a node-specific joint marginal update rule.
 """
-function MarginalScheduleEntry(cluster::Cluster, outbound_types::Dict{Interface, Type})
+function MarginalEntry(cluster::Cluster, outbound_types::Dict{Interface, Type})
     inbound_types = collectInboundTypes(cluster, outbound_types)
     marginal_update_rule = inferMarginalRule(cluster, inbound_types)
     
@@ -26,7 +26,7 @@ function MarginalScheduleEntry(cluster::Cluster, outbound_types::Dict{Interface,
         end
     end
 
-    return MarginalScheduleEntry(cluster, inbound_interfaces, marginal_update_rule)
+    return MarginalEntry(cluster, inbound_interfaces, marginal_update_rule)
 end
 
 """
@@ -78,29 +78,29 @@ function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, T
     return inbound_types
 end
 
-function marginalSchedule(q_factors::Vector{RecognitionFactor}, schedule::Schedule)
+function marginalTable(q_factors::Vector{RecognitionFactor}, schedule::Schedule)
     # Construct outbound types dictionary
     outbound_types = Dict{Interface, Type}()
     for entry in schedule
         outbound_types[entry.interface] = outboundType(entry.message_update_rule)
     end
 
-    # Construct marginal schedule
-    marginal_schedule = MarginalScheduleEntry[]
+    # Construct marginal table
+    marginal_table = MarginalEntry[]
     for q_factor in q_factors
-        # Construct schedule for computing marginals over variables
-        variable_schedule = marginalSchedule(sort(collect(q_factor.variables)))
-        marginal_schedule = [marginal_schedule; variable_schedule]
+        # Construct table for computing marginals over variables
+        variable_table = marginalTable(sort(collect(q_factor.variables)))
+        marginal_table = [marginal_table; variable_table]
 
-        # Construct schedule for computing marginals over clusters
-        cluster_schedule = [MarginalScheduleEntry(cluster, outbound_types) for cluster in sort(collect(q_factor.clusters))]
-        marginal_schedule = [marginal_schedule; cluster_schedule]
+        # Construct table for computing marginals over clusters
+        cluster_table = [MarginalEntry(cluster, outbound_types) for cluster in sort(collect(q_factor.clusters))]
+        marginal_table = [marginal_table; cluster_table]
     end
 
-    return marginal_schedule
+    return marginal_table
 end
 
-marginalSchedule(q_factor::RecognitionFactor, schedule::Schedule) = marginalSchedule([q_factor], schedule)
+marginalTable(q_factor::RecognitionFactor, schedule::Schedule) = marginalTable([q_factor], schedule)
 
 """
 `@marginalRule` registers a marginal update rule for a (joint) marginal

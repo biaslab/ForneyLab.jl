@@ -3,7 +3,7 @@ module GeneratorsTest
 using Test
 using ForneyLab
 import LinearAlgebra: Diagonal
-import ForneyLab: entropiesString, energiesString, freeEnergyString, marginalScheduleString, inboundString, scheduleString, typeString, vagueString, initializationString, optimizeString, recognitionFactorString, algorithmString, valueString
+import ForneyLab: entropiesString, energiesString, freeEnergyString, marginalTableString, inboundString, scheduleString, typeString, vagueString, initializationString, optimizeString, recognitionFactorString, algorithmString, valueString
 
 @testset "typeString" begin
     @test typeString(ForneyLab.SPGaussianMeanPrecisionOutNPP) == "SPGaussianMeanPrecisionOutNPP"
@@ -53,7 +53,7 @@ end
     @test inboundString(inbound) == "Message(Univariate, PointMass, m=data[:x])"
 
     # marginal
-    inbound = MarginalScheduleEntry()
+    inbound = MarginalEntry()
     inbound.marginal_id = :x
     @test inboundString(inbound) == "marginals[:x]"
     
@@ -80,32 +80,32 @@ end
     @test entry_str == "vague(GaussianMeanPrecision, (1,))"
 end
 
-@testset "marginalScheduleString" begin
+@testset "marginalTableString" begin
     inbounds = Vector{ScheduleEntry}(undef, 2)
     inbounds[1] = ScheduleEntry()
     inbounds[1].schedule_index = 1
     inbounds[2] = ScheduleEntry()
     inbounds[2].schedule_index = 2
 
-    marginal_schedule = Vector{MarginalScheduleEntry}(undef, 3)
-    marginal_schedule[1] = MarginalScheduleEntry()
-    marginal_schedule[1].marginal_id = :x
-    marginal_schedule[1].marginal_update_rule = Nothing
-    marginal_schedule[1].inbounds = [inbounds[1]]
-    marginal_schedule[2] = MarginalScheduleEntry()
-    marginal_schedule[2].marginal_id = :y
-    marginal_schedule[2].marginal_update_rule = ForneyLab.Product
-    marginal_schedule[2].inbounds = inbounds
-    marginal_schedule[3] = MarginalScheduleEntry()
-    marginal_schedule[3].marginal_id = :z
-    marginal_schedule[3].marginal_update_rule = ForneyLab.MGaussianMeanPrecisionGGD
-    marginal_schedule[3].inbounds = inbounds
+    marginal_table = Vector{MarginalEntry}(undef, 3)
+    marginal_table[1] = MarginalEntry()
+    marginal_table[1].marginal_id = :x
+    marginal_table[1].marginal_update_rule = Nothing
+    marginal_table[1].inbounds = [inbounds[1]]
+    marginal_table[2] = MarginalEntry()
+    marginal_table[2].marginal_id = :y
+    marginal_table[2].marginal_update_rule = ForneyLab.Product
+    marginal_table[2].inbounds = inbounds
+    marginal_table[3] = MarginalEntry()
+    marginal_table[3].marginal_id = :z
+    marginal_table[3].marginal_update_rule = ForneyLab.MGaussianMeanPrecisionGGD
+    marginal_table[3].inbounds = inbounds
 
-    marginal_schedule_str = marginalScheduleString(marginal_schedule)
+    marginal_table_str = marginalTableString(marginal_table)
 
-    @test occursin("marginals[:x] = messages[1].dist", marginal_schedule_str)
-    @test occursin("marginals[:y] = messages[1].dist * messages[2].dist", marginal_schedule_str)
-    @test occursin("marginals[:z] = ruleMGaussianMeanPrecisionGGD(messages[1], messages[2])", marginal_schedule_str)
+    @test occursin("marginals[:x] = messages[1].dist", marginal_table_str)
+    @test occursin("marginals[:y] = messages[1].dist * messages[2].dist", marginal_table_str)
+    @test occursin("marginals[:z] = ruleMGaussianMeanPrecisionGGD(messages[1], messages[2])", marginal_table_str)
 end
 
 @testset "scheduleString" begin
@@ -124,10 +124,10 @@ end
 end
 
 @testset "entropiesString" begin
-    inbounds = Vector{MarginalScheduleEntry}(undef, 2)
-    inbounds[1] = MarginalScheduleEntry()
+    inbounds = Vector{MarginalEntry}(undef, 2)
+    inbounds[1] = MarginalEntry()
     inbounds[1].marginal_id = :y_x
-    inbounds[2] = MarginalScheduleEntry()
+    inbounds[2] = MarginalEntry()
     inbounds[2].marginal_id = :x
 
     entropies_vect = [Dict(:conditional => false,
@@ -142,7 +142,7 @@ end
 end
 
 @testset "energiesString" begin
-    inbound = MarginalScheduleEntry()
+    inbound = MarginalEntry()
     inbound.marginal_id = :x
     energies_vect = [Dict(:node     => GaussianMeanPrecision,
                           :inbounds => [inbound])]
@@ -180,7 +180,7 @@ end
     rfz = RecognitionFactorization()
     rf = RecognitionFactor(rfz, id=:X)
     rf.schedule = []
-    rf.marginal_schedule = []
+    rf.marginal_table = []
 
     rf_str = recognitionFactorString(rf)
     @test occursin("function stepX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 0))", rf_str)

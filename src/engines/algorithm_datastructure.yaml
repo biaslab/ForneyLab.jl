@@ -1,29 +1,29 @@
 # "If we need to write the message-passing algorithm and free energy evaluation from scratch, what information do we need?"
-recognition_factorization:
-    recognition_factors: (per item)
+recognition_factorization::RecognitionFactorization:
+    recognition_factors::Vector{RecognitionFactor}: (per item)
         - id::Symbol # recognition factor id
         - optimize::Bool # require optimization block
         - initialize::Bool # require initialization block
-        schedule: (per item)
+        schedule::Schedule: (per item)
             - schedule_index::Int # position of entry in schedule
             - message_update_rule::Type # update rule type for message computation
             - initialize::Bool # require message initialization
             - family::FactorFunction # family of message distribution (for initialization)
             - dimensionality::Tuple # dimensionality of message distribution (for initialization)
-            inbounds: (per item)
+            inbounds::Vector: (per item)
                 - inbound # inbound, see below
-        marginal_schedule: (per item)
+        marginal_table::MarginalTable: (per item)
             - marginal_id::Symbol # identifier for the marginal
             - marginal_update_rule::Union{Nothing, Product, Type} # update rule type for marginal computation
-            inbounds: (per item)
+            inbounds::Vector: (per item)
                 - inbound # inbound, see below
-    average_energies: (per item)
+    average_energies::Dict: (per item)
         - node::Type # node type for average energy computation
-        inbounds: (per item)
+        inbounds::Vector: (per item)
             - inbound # inbound, see below
-    entropies: (per item)
+    entropies::Dict: (per item)
         - conditional::Bool # require conditional entropy computation
-        inbounds: (per item)
+        inbounds::Vector: (per item)
             - inbound # inbound, see below
 
-# inbounds are of type Union{Nothing, ScheduleEntry, MarginalScheduleEntry, Dict, Clamp}
+# inbounds are of type Union{Nothing, ScheduleEntry, MarginalEntry, Dict, Clamp}

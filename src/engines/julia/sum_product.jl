@@ -8,7 +8,7 @@ function sumProductAlgorithm(variables::Vector{Variable}, rfz::RecognitionFactor
     rf = RecognitionFactor(rfz, id=Symbol(""))
     schedule = sumProductSchedule(variables)
     rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-    rf.marginal_schedule = marginalSchedule(variables)
+    rf.marginal_table = marginalTable(variables)
 
     assembleAlgorithm!(rf)
     algo_str = algorithmString(rfz)

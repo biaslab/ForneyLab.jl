@@ -8,7 +8,7 @@ function expectationPropagationAlgorithm(variables::Vector{Variable}, rfz::Recog
     rf = RecognitionFactor(rfz, id=Symbol(""))
     schedule = expectationPropagationSchedule(variables)
     rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-    rf.marginal_schedule = marginalSchedule(variables)
+    rf.marginal_table = marginalTable(variables)
     
     assembleAlgorithm!(rf)
     algo_str = algorithmString(rfz)
@@ -24,7 +24,7 @@ function variationalExpectationPropagationAlgorithm(rfz::RecognitionFactorizatio
     for (id, rf) in rfz.recognition_factors
         schedule = variationalExpectationPropagationSchedule(rf)
         rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-        rf.marginal_schedule = marginalSchedule(rf, schedule)
+        rf.marginal_table = marginalTable(rf, schedule)
         assembleAlgorithm!(rf)
     end
 

@@ -50,7 +50,7 @@ end
                            :inbound_types => (Message{PointMass}, Nothing, ProbabilityDistribution),
                            :name          => SVBMock2GVD)
 
-@testset "marginalSchedule" begin
+@testset "marginalTable" begin
     FactorGraph()
     v1 = constant(0.0)
     v2 = constant(0.0)
@@ -61,13 +61,13 @@ end
     rf_12 = RecognitionFactor([v1, v2])
 
     schedule = variationalSchedule(rf_12)
-    marginal_schedule = marginalSchedule(rf_12, schedule)
+    marginal_table = marginalTable(rf_12, schedule)
 
-    @test length(marginal_schedule) == 1
-    @test marginal_schedule[1].target == first(rf_12.clusters)
-    @test marginal_schedule[1].interfaces[1] == nd.i[1].partner
-    @test marginal_schedule[1].interfaces[2] == nd.i[2].partner
-    @test marginal_schedule[1].marginal_update_rule == MMockPPD
+    @test length(marginal_table) == 1
+    @test marginal_table[1].target == first(rf_12.clusters)
+    @test marginal_table[1].interfaces[1] == nd.i[1].partner
+    @test marginal_table[1].interfaces[2] == nd.i[2].partner
+    @test marginal_table[1].marginal_update_rule == MMockPPD
 end
 
 end # module

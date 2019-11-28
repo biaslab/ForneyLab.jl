@@ -1,11 +1,11 @@
 function assembleAlgorithm!(rf::RecognitionFactor)
     # Assign message numbers to each interface in the schedule
     interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(rf.schedule)
-    target_to_marginal_entry = ForneyLab.targetToMarginalEntry(rf.marginal_schedule)
+    target_to_marginal_entry = ForneyLab.targetToMarginalEntry(rf.marginal_table)
 
     assembleSchedule!(rf.schedule, interface_to_schedule_entry, target_to_marginal_entry)
     assembleInitialization!(rf, interface_to_schedule_entry)
-    assembleMarginalSchedule!(rf.marginal_schedule, interface_to_schedule_entry, target_to_marginal_entry)
+    assembleMarginalTable!(rf.marginal_table, interface_to_schedule_entry, target_to_marginal_entry)
 
     return rf
 end
@@ -73,8 +73,8 @@ function assembleBreaker!(breaker_entry::ScheduleEntry, family::Type, dimensiona
     return breaker_entry
 end
 
-function assembleMarginalSchedule!(schedule::MarginalSchedule, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict)
-    for entry in schedule
+function assembleMarginalTable!(table::MarginalTable, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict)
+    for entry in table
         if entry.marginal_update_rule == Nothing
             iface = entry.interfaces[1]
             inbounds = [interface_to_schedule_entry[iface]]
@@ -91,7 +91,7 @@ function assembleMarginalSchedule!(schedule::MarginalSchedule, interface_to_sche
         entry.inbounds = inbounds
     end
 
-    return schedule
+    return table
 end
 
 """
@@ -116,9 +116,9 @@ Construct the inbound code that computes the marginal for `entry`. Allows for
 overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
-collectInbounds(entry::MarginalScheduleEntry, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict) = collectMarginalNodeInbounds(entry.target.node, entry, interface_to_schedule_entry, target_to_marginal_entry)
+collectInbounds(entry::MarginalEntry, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict) = collectMarginalNodeInbounds(entry.target.node, entry, interface_to_schedule_entry, target_to_marginal_entry)
 
-function collectMarginalNodeInbounds(::FactorNode, entry::MarginalScheduleEntry, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict)
+function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict)
     # Collect inbounds
     inbounds = Any[]
     entry_recognition_factor = recognitionFactor(first(entry.target.edges))
