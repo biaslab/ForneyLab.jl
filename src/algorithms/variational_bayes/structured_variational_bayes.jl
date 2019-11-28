@@ -43,22 +43,22 @@ function collectInboundTypes(entry::ScheduleEntry,
                              inferred_outbound_types::Dict{Interface, Type}
                             ) where T<:StructuredVariationalRule
     inbound_types = Type[]
-    entry_recognition_factor_id = recognitionFactorId(entry.interface.edge) # Recognition factor id for outbound edge
-    recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
+    entry_recognition_factor = recognitionFactor(entry.interface.edge) # Recognition factor for outbound edge
+    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in entry.interface.node.interfaces
-        node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
+        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
 
-        if node_interface == entry.interface
+        if node_interface === entry.interface
             push!(inbound_types, Nothing)
-        elseif node_interface_recognition_factor_id == entry_recognition_factor_id
+        elseif node_interface_recognition_factor === entry_recognition_factor
             # Edge is internal, accept message
             push!(inbound_types, inferred_outbound_types[node_interface.partner])
-        elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
+        elseif !(node_interface_recognition_factor in recognition_factors)
             # Edge is external, accept marginal (if marginal is not already accepted)
             push!(inbound_types, ProbabilityDistribution) 
         end
 
-        push!(recognition_factor_ids, node_interface_recognition_factor_id)
+        push!(recognition_factors, node_interface_recognition_factor)
     end
 
     return inbound_types

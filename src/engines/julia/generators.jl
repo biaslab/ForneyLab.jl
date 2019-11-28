@@ -138,11 +138,11 @@ function marginalScheduleString(marginal_schedule::MarginalSchedule)
         marginal_schedule_str *= "marginals[:$(entry.marginal_id)] = "
         if entry.marginal_update_rule == Nothing
             inbound = entry.inbounds[1]
-            marginal_schedule_str *= "messages[$(inbound[:schedule_index])].dist"
+            marginal_schedule_str *= "messages[$(inbound.schedule_index)].dist"
         elseif entry.marginal_update_rule == Product
             inbound1 = entry.inbounds[1]
             inbound2 = entry.inbounds[2]
-            marginal_schedule_str *= "messages[$(inbound1[:schedule_index])].dist * messages[$(inbound2[:schedule_index])].dist"
+            marginal_schedule_str *= "messages[$(inbound1.schedule_index)].dist * messages[$(inbound2.schedule_index)].dist"
         else
             rule_str = typeString(entry.marginal_update_rule)
             inbounds_str = inboundsString(entry.inbounds)
@@ -182,67 +182,12 @@ function inboundsString(inbounds::Vector)
 end
 
 """
-Generate code for a specific inbound
+Generate code for specific inbound types
 """
-function inboundString(inbound::Dict)
-    if haskey(inbound, :nothing) && inbound[:nothing]
-        inbound_str = "nothing"
-    elseif haskey(inbound, :schedule_index) # message inbound
-        inbound_str = "messages[$(inbound[:schedule_index])]"
-    elseif haskey(inbound, :marginal_id) # marginal inbound
-        inbound_str = "marginals[:$(inbound[:marginal_id])]"
-    elseif haskey(inbound, :buffer_id) # placeholder inbound
-        inbound_str = bufferString(inbound)
-    elseif haskey(inbound, :value) # value inbound
-        inbound_str = valueString(inbound)
-    else # Custom field
-        inbound_str = customString(inbound)
-    end
-
-    return inbound_str
-end
-
-"""
-Generate code for an inbound read from a buffer
-"""
-function bufferString(inbound::Dict)
-    dist_or_msg_str = typeString(inbound[:dist_or_msg])
-    variate_type_str = typeString(inbound[:variate_type])
-    buffer_id_str = inbound[:buffer_id]
-    inbound_str = "$dist_or_msg_str($variate_type_str, PointMass, m=data[:$buffer_id_str]"
-    if haskey(inbound, :buffer_index)
-        inbound_str *= "[$(inbound[:buffer_index])]"
-    end
-    inbound_str *= ")"
-
-    return inbound_str
-end
-
-"""
-Generate code for a clamped inbound
-"""
-function valueString(inbound::Dict)
-    dist_or_msg_str = typeString(inbound[:dist_or_msg])
-    variate_type_str = typeString(inbound[:variate_type])
-    inbound_str = "$dist_or_msg_str($variate_type_str, PointMass, m="
-    if size(inbound[:value]) == (1,1)
-        inbound_str *= "mat($(inbound[:value][1]))"
-    elseif isa(inbound[:value], Diagonal)
-        inbound_str *= "Diagonal($(inbound[:value].diag))"
-    elseif isa(inbound[:value], AbstractMatrix) && (size(inbound[:value])[2] == 1)
-        inbound_str *= "[$(join(inbound[:value], " "))]'"
-    else
-        inbound_str *= "$(inbound[:value])"
-    end
-    inbound_str *= ")"
-
-    return inbound_str
-end
-
-"""
-Generate code for a custom inbound
-"""
-function customString(inbound::Dict)
+inboundString(inbound::Nothing) = "nothing"
+inboundString(inbound::ScheduleEntry) = "messages[$(inbound.schedule_index)]"
+inboundString(inbound::MarginalScheduleEntry) = "marginals[:$(inbound.marginal_id)]"
+function inboundString(inbound::Dict) # Custom inbound
     keyword_flag = true # Default includes keyword in custom argument
     if haskey(inbound, :keyword)
         keyword_flag = inbound[:keyword]
@@ -260,6 +205,40 @@ function customString(inbound::Dict)
     end
 
     return inbound_str
+end
+function inboundString(inbound::Clamp{V}) where V<:VariateType # Buffer or value inbound
+    dist_or_msg_str = typeString(inbound.dist_or_msg)
+    variate_type_str = typeString(V)
+
+    inbound_str = "$dist_or_msg_str($variate_type_str, PointMass, m="
+    if isdefined(inbound, :buffer_id)
+        # Inbound is read from buffer
+        inbound_str *= "data[:$(inbound.buffer_id)]"
+        if isdefined(inbound, :buffer_index) && (inbound.buffer_index > 0)
+            inbound_str *= "[$(inbound.buffer_index)]"
+        end
+    else
+        # Inbound is read from clamp node value
+        inbound_str *= valueString(inbound.value)
+    end
+    inbound_str *= ")"
+
+    return inbound_str
+end
+
+"""
+Convert a value to parseable code
+"""
+valueString(val::Union{Vector, Number}) = string(val)
+valueString(val::Diagonal) = "Diagonal($(val.diag))"
+function valueString(val::AbstractMatrix)
+    if size(val) == (1,1)
+        val_str = "mat($(val[1]))"
+    else
+        val_str = string(val)
+    end
+
+    return val_str
 end
 
 """

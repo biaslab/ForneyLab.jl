@@ -2,66 +2,68 @@ module GeneratorsTest
 
 using Test
 using ForneyLab
-import ForneyLab: entropiesString, energiesString, freeEnergyString, marginalScheduleString, inboundString, scheduleString, typeString, vagueString, initializationString, optimizeString, recognitionFactorString, algorithmString
+import LinearAlgebra: Diagonal
+import ForneyLab: entropiesString, energiesString, freeEnergyString, marginalScheduleString, inboundString, scheduleString, typeString, vagueString, initializationString, optimizeString, recognitionFactorString, algorithmString, valueString
 
 @testset "typeString" begin
     @test typeString(ForneyLab.SPGaussianMeanPrecisionOutNPP) == "SPGaussianMeanPrecisionOutNPP"
 end
 
+@testset "valueString" begin
+    @test valueString(1) == "1"
+    @test valueString([1]) == "[1]"
+    @test valueString(mat(1)) == "mat(1)"
+    @test valueString([1 2; 2 1]) == "[1 2; 2 1]"
+    @test valueString(Diagonal([1])) == "Diagonal([1])"
+end
+
 @testset "inboundString" begin
     f() = 1.0 # Define a function
 
-    # customString
-    inbound_dict = Dict(:keyword => false,
-                        :g       => f)
-    inbound_str = inboundString(inbound_dict)
-    @test inbound_str == "f"
+    # custom inbound
+    inbound = Dict(:keyword => false,
+                   :g       => f)
+    @test inboundString(inbound) == "f"
 
-    inbound_dict = Dict(:g => f)
-    inbound_str = inboundString(inbound_dict)
-    @test inbound_str == "g=f"
+    inbound = Dict(:g => f)
+    @test inboundString(inbound) == "g=f"
 
-    # valueString
-    inbound_dict = Dict(:dist_or_msg  => Message,
-                        :variate_type => Univariate,
-                        :value        => 1.0)
-    inbound_str = inboundString(inbound_dict)
-    @test inbound_str == "Message(Univariate, PointMass, m=1.0)"
+    # value inbound
+    g = FactorGraph()
+    var = Variable()
+    inbound = Clamp(var, 1.0)
+    inbound.dist_or_msg = Message
+    @test inboundString(inbound) == "Message(Univariate, PointMass, m=1.0)"
 
-    inbound_dict = Dict(:dist_or_msg  => ProbabilityDistribution,
-                        :variate_type => MatrixVariate,
-                        :value        => mat(1.0))
-    inbound_str = inboundString(inbound_dict)
-    @test inbound_str == "ProbabilityDistribution(MatrixVariate, PointMass, m=mat(1.0))"
+    # buffer inbound
+    g = FactorGraph()
+    var = Variable()
+    inbound = Clamp(var, 1.0)
+    inbound.dist_or_msg = Message
+    inbound.buffer_id = :x
+    inbound.buffer_index = 1
+    @test inboundString(inbound) == "Message(Univariate, PointMass, m=data[:x][1])"
 
-    # bufferString
-    inbound_dict = Dict(:dist_or_msg  => Message,
-                        :variate_type => Univariate,
-                        :buffer_id    => :x)
-    inbound_str = inboundString(inbound_dict)
-    @test inbound_str == "Message(Univariate, PointMass, m=data[:x])"
-
-    inbound_dict = Dict(:dist_or_msg  => ProbabilityDistribution,
-                        :variate_type => MatrixVariate,
-                        :buffer_id    => :x,
-                        :buffer_index => 1)
-    inbound_str = inboundString(inbound_dict)
-    @test inbound_str == "ProbabilityDistribution(MatrixVariate, PointMass, m=data[:x][1])"
+    g = FactorGraph()
+    var = Variable()
+    inbound = Clamp(var, 1.0)
+    inbound.dist_or_msg = Message
+    inbound.buffer_id = :x
+    inbound.buffer_index = 0
+    @test inboundString(inbound) == "Message(Univariate, PointMass, m=data[:x])"
 
     # marginal
-    inbound_dict = Dict(:marginal_id => :x)
-    inbound_str = inboundString(inbound_dict)
-    @test inbound_str == "marginals[:x]"
+    inbound = MarginalScheduleEntry()
+    inbound.marginal_id = :x
+    @test inboundString(inbound) == "marginals[:x]"
     
     # message
-    inbound_dict = Dict(:schedule_index => 1)
-    inbound_str = inboundString(inbound_dict)
-    @test inbound_str == "messages[1]"
+    inbound = ScheduleEntry()
+    inbound.schedule_index = 1
+    @test inboundString(inbound) == "messages[1]"
 
     # nothing
-    inbound_dict = Dict(:nothing => true)
-    inbound_str = inboundString(inbound_dict)
-    @test inbound_str == "nothing"
+    @test inboundString(nothing) == "nothing"
 end
 
 @testset "vagueString" begin
@@ -79,21 +81,25 @@ end
 end
 
 @testset "marginalScheduleString" begin
+    inbounds = Vector{ScheduleEntry}(undef, 2)
+    inbounds[1] = ScheduleEntry()
+    inbounds[1].schedule_index = 1
+    inbounds[2] = ScheduleEntry()
+    inbounds[2].schedule_index = 2
+
     marginal_schedule = Vector{MarginalScheduleEntry}(undef, 3)
     marginal_schedule[1] = MarginalScheduleEntry()
     marginal_schedule[1].marginal_id = :x
     marginal_schedule[1].marginal_update_rule = Nothing
-    marginal_schedule[1].inbounds = [Dict(:schedule_index => 1)]
+    marginal_schedule[1].inbounds = [inbounds[1]]
     marginal_schedule[2] = MarginalScheduleEntry()
     marginal_schedule[2].marginal_id = :y
     marginal_schedule[2].marginal_update_rule = ForneyLab.Product
-    marginal_schedule[2].inbounds = [Dict(:schedule_index => 1),
-                                     Dict(:schedule_index => 2)]
+    marginal_schedule[2].inbounds = inbounds
     marginal_schedule[3] = MarginalScheduleEntry()
     marginal_schedule[3].marginal_id = :z
     marginal_schedule[3].marginal_update_rule = ForneyLab.MGaussianMeanPrecisionGGD
-    marginal_schedule[3].inbounds = [Dict(:schedule_index => 1),
-                                     Dict(:schedule_index => 2)]
+    marginal_schedule[3].inbounds = inbounds
 
     marginal_schedule_str = marginalScheduleString(marginal_schedule)
 
@@ -105,25 +111,30 @@ end
 @testset "scheduleString" begin
     schedule = Vector{ScheduleEntry}(undef, 2)
     schedule[1] = ScheduleEntry()
-    schedule[1].message_update_rule = ForneyLab.SPGaussianMeanPrecisionOutNPP
-    schedule[1].schedule_index = 2
-    schedule[1].inbounds = [Dict(:schedule_index => 1)]
+    schedule[1].schedule_index = 1
+    schedule[1].message_update_rule = Nothing
+    schedule[1].inbounds = []
     schedule[2] = ScheduleEntry()
     schedule[2].message_update_rule = ForneyLab.SPGaussianMeanPrecisionOutNPP
-    schedule[2].schedule_index = 3
-    schedule[2].inbounds = [Dict(:schedule_index => 1)]
+    schedule[2].schedule_index = 2
+    schedule[2].inbounds = [schedule[1]]
 
     schedule_str = scheduleString(schedule)
     @test occursin("messages[2] = ruleSPGaussianMeanPrecisionOutNPP(messages[1])", schedule_str)
-    @test occursin("messages[3] = ruleSPGaussianMeanPrecisionOutNPP(messages[1])", schedule_str)
 end
 
 @testset "entropiesString" begin
+    inbounds = Vector{MarginalScheduleEntry}(undef, 2)
+    inbounds[1] = MarginalScheduleEntry()
+    inbounds[1].marginal_id = :y_x
+    inbounds[2] = MarginalScheduleEntry()
+    inbounds[2].marginal_id = :x
+
     entropies_vect = [Dict(:conditional => false,
-                           :inbounds    => [Dict(:marginal_id => :x)]), 
+                           :inbounds    => [inbounds[2]]), 
                       Dict(:conditional => true,
-                           :inbounds    => [Dict(:marginal_id => :y_x),
-                                            Dict(:marginal_id => :x)])]
+                           :inbounds    => inbounds)]
+
     entropies_str = entropiesString(entropies_vect)
 
     @test occursin("F -= differentialEntropy(marginals[:x])", entropies_str)
@@ -131,8 +142,10 @@ end
 end
 
 @testset "energiesString" begin
+    inbound = MarginalScheduleEntry()
+    inbound.marginal_id = :x
     energies_vect = [Dict(:node     => GaussianMeanPrecision,
-                          :inbounds => [Dict(:marginal_id => :x)])]
+                          :inbounds => [inbound])]
     energies_str = energiesString(energies_vect)
 
     @test occursin("F += averageEnergy(GaussianMeanPrecision, marginals[:x])", energies_str)

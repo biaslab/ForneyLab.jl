@@ -20,8 +20,8 @@ function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
 
     for entry in schedule
         if entry.interface.node in nodes_connected_to_external_edges
-            local_recognition_factor_ids = localRecognitionFactorIds(entry.interface.node)
-            if allunique(local_recognition_factor_ids) # Local recognition factorization is naive
+            local_recognition_factors = localRecognitionFactors(entry.interface.node)
+            if allunique(local_recognition_factors) # Local recognition factorization is naive
                 entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
             else
                 entry.message_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}
@@ -75,7 +75,7 @@ function collectInboundTypes(   entry::ScheduleEntry,
                                 inferred_outbound_types::Dict{Interface, Type}) where T<:NaiveVariationalRule
     inbound_types = Type[]
     for node_interface in entry.interface.node.interfaces
-        if node_interface == entry.interface
+        if node_interface === entry.interface
             push!(inbound_types, Nothing)
         else
             # Edge is external, accept marginal

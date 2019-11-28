@@ -59,20 +59,20 @@ Returns a vector with inbound types that correspond with required interfaces.
 """
 function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, Type})
     inbound_types = Type[]
-    cluster_recognition_factor_id = recognitionFactorId(first(cluster.edges)) # Recognition factor id for cluster
-    recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
+    cluster_recognition_factor = recognitionFactor(first(cluster.edges)) # Recognition factor for cluster
+    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in cluster.node.interfaces
-        node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge) # Note: edges that are not assigned to a recognition factorization are assumed mean-field 
+        node_interface_recognition_factor = recognitionFactor(node_interface.edge) # Note: edges that are not assigned to a recognition factorization are assumed mean-field 
 
-        if node_interface_recognition_factor_id == cluster_recognition_factor_id
+        if node_interface_recognition_factor === cluster_recognition_factor
             # Edge is internal, accept message
             push!(inbound_types, outbound_types[node_interface.partner])
-        elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
+        elseif !(node_interface_recognition_factor in recognition_factors)
             # Edge is external, accept marginal (if marginal is not already accepted)
             push!(inbound_types, ProbabilityDistribution) 
         end
 
-        push!(recognition_factor_ids, node_interface_recognition_factor_id)
+        push!(recognition_factors, node_interface_recognition_factor)
     end
 
     return inbound_types

@@ -48,8 +48,8 @@ function variationalExpectationPropagationSchedule(recognition_factor::Recogniti
         if entry.interface in ep_sites
             entry.message_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
         elseif entry.interface.node in nodes_connected_to_external_edges
-            local_recognition_factor_ids = localRecognitionFactorIds(entry.interface.node)
-            if unique(local_recognition_factor_ids) == local_recognition_factor_ids # Local recognition factorization is naive
+            local_recognition_factors = localRecognitionFactors(entry.interface.node)
+            if allunique(local_recognition_factors) # Local recognition factorization is naive
                 entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
             else
                 entry.message_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}

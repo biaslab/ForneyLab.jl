@@ -25,7 +25,7 @@ mutable struct MarginalScheduleEntry
 
     # Fields for algorithm assembly
     marginal_id::Symbol # target.id
-    inbounds::Vector{Dict{Symbol, Any}}
+    inbounds::Vector{Any}
 
     MarginalScheduleEntry() = new()
     MarginalScheduleEntry(target::Union{Variable, AbstractCluster}, interfaces::Vector{Interface}, marginal_update_rule::DataType) = new(target, interfaces, marginal_update_rule)
@@ -58,3 +58,16 @@ function marginalSchedule(targets::Vector{Variable})
 end
 
 marginalSchedule(target::Variable) = marginalSchedule([target])
+
+"""
+Generate a mapping from target to marginal entry.
+"""
+function targetToMarginalEntry(schedule::MarginalSchedule)
+    mapping = Dict{Union{Cluster, Variable}, MarginalScheduleEntry}()
+    for entry in schedule
+        target = entry.target
+        mapping[target] = entry
+    end
+
+    return mapping
+end

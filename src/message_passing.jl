@@ -76,7 +76,7 @@ mutable struct ScheduleEntry
     initialize::Bool
     family::Type
     dimensionality::Tuple
-    inbounds::Vector{Dict{Symbol, Any}}
+    inbounds::Vector{Any}
 
     ScheduleEntry() = new()
     ScheduleEntry(interface::Interface, message_update_rule::Type) = new(interface, message_update_rule)
@@ -240,18 +240,18 @@ end
 
 
 """
-Generate a mapping from interface to schedule entry index.
+Generate a mapping from interface to schedule entry.
 Multiple interfaces can map to the same schedule entry if the
 graph contains composite nodes.
 """
-function interfaceToScheduleEntryIdx(schedule::Schedule)
-    mapping = Dict{Interface, Int}()
-    for (idx, entry) in enumerate(schedule)
+function interfaceToScheduleEntry(schedule::Schedule)
+    mapping = Dict{Interface, ScheduleEntry}()
+    for entry in schedule
         interface = entry.interface
-        mapping[interface] = idx
+        mapping[interface] = entry
         while (interface.partner != nothing) && isa(interface.partner.node, Terminal)
             interface = interface.partner.node.outer_interface
-            mapping[interface] = idx
+            mapping[interface] = entry
         end
     end
 

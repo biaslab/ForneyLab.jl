@@ -181,25 +181,23 @@ end
 # Custom inbounds collector
 #--------------------------
 
-function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
-    inbounds = Dict{Symbol, Any}[]
+function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry, interface_to_schedule_entry::Dict)
+    inbounds = Any[]
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         if (node_interface == entry.interface == node.interfaces[2]) && (node.g_inv == nothing)
             # Collect the message inbound on the out edge if no inverse is available
-            haskey(interface_to_msg_idx, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
-            inbound_idx = interface_to_msg_idx[inbound_interface]
-            push!(inbounds, Dict{Symbol, Any}(:schedule_index => inbound_idx))
+            haskey(interface_to_schedule_entry, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif node_interface == entry.interface
             # Ignore inbound message on outbound interface
-            push!(inbounds, Dict{Symbol, Any}(:nothing => true))
+            push!(inbounds, nothing)
         elseif isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
-            push!(inbounds, assembleMessageInbound(inbound_interface.node))
+            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
         else
             # Collect message from previous result
-            inbound_idx = interface_to_msg_idx[inbound_interface]
-            push!(inbounds, Dict{Symbol, Any}(:schedule_index => inbound_idx))
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
         end
     end
 

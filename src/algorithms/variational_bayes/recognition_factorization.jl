@@ -240,55 +240,55 @@ function RecognitionFactorization(args::Vararg{Union{T, Set{T}, Vector{T}} where
 end
 
 """
-Return the id of the `RecognitionFactor` that `edge` belongs to
+Find the `RecognitionFactor` that `edge` belongs to (if available)
 """
-function recognitionFactorId(edge::Edge)
+function recognitionFactor(edge::Edge)
     dict = current_recognition_factorization.edge_to_recognition_factor
     if haskey(dict, edge)
-        rf_id = dict[edge].id
-    else # No recognition factor is found, return a unique id
-        rf_id = Symbol(name(edge))
+        rf = dict[edge]
+    else # No recognition factor is found, return the edge itself
+        rf = edge
     end
 
-    return rf_id
+    return rf::Union{RecognitionFactor, Edge}
 end
 
 """
 Return the ids of the recognition factors to which edges connected to `node` belong
 """
-localRecognitionFactorIds(node::FactorNode) = [recognitionFactorId(interface.edge) for interface in node.interfaces]
+localRecognitionFactors(node::FactorNode) = Any[recognitionFactor(interface.edge) for interface in node.interfaces]
 
 """
-Return the id of the cluster/variable that the node-edge combination belongs to 
+Return the cluster that the node-edge combination belongs to (if available)
 """
-function clusterId(node::FactorNode, edge::Edge)
+function cluster(node::FactorNode, edge::Edge)
     dict = current_recognition_factorization.node_edge_to_cluster
     if haskey(dict, (node, edge))
-        id = dict[(node, edge)].id
-    else # No cluster is found, return the variable id
-        id = edge.variable.id
+        cl = dict[(node, edge)]
+    else # No cluster is found, return the variable itself
+        cl = edge.variable
     end
 
-    return id
+    return cl::Union{Cluster, Variable}
 end
 
 """
-Return the ids of the clusters/variables to which edges connected to `node` belong
+Return the local clusters/variables around `node`
 """
-localClusterIds(node::FactorNode) = [clusterId(node, interface.edge) for interface in node.interfaces]
+localClusters(node::FactorNode) = [cluster(node, interface.edge) for interface in node.interfaces]
 
 """
 Return a dictionary from recognition factor-id to variable/cluster-ids local to `node`
 """
 function localRecognitionFactorization(node::FactorNode)
     # For each edge connected to node, collect the recognition factor and cluster id
-    local_recognition_factor_ids = localRecognitionFactorIds(node)
-    local_cluster_ids = localClusterIds(node)
+    local_recognition_factors = localRecognitionFactors(node)
+    local_clusters = localClusters(node)
 
     # Construct dictionary for local recognition factorization
-    local_recognition_factorization = Dict{Symbol, Symbol}()
-    for (idx, factor_id) in enumerate(local_recognition_factor_ids)
-        local_recognition_factorization[factor_id] = local_cluster_ids[idx]
+    local_recognition_factorization = Dict{Union{RecognitionFactor, Edge}, Union{Cluster, Variable}}()
+    for (idx, factor) in enumerate(local_recognition_factors)
+        local_recognition_factorization[factor] = local_clusters[idx]
     end
 
     return local_recognition_factorization
@@ -311,3 +311,12 @@ function nodesConnectedToExternalEdges(internal_edges::Set{Edge})
     return nodes_connected_to_external_edges
 end
 
+function targetToMarginalEntry(rfz::RecognitionFactorization)
+    mapping = Dict{Union{Cluster, Variable}, MarginalScheduleEntry}()
+    for rf in rfz.recognition_factors
+        rf_mapping = targetToMarginalEntry(rf.marginal_schedule)
+        merge!(mapping, rf_mapping)
+    end
+
+    return mapping    
+end
