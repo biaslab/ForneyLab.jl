@@ -1,3 +1,5 @@
+export algorithmString, freeEnergyString
+
 """
 Generate complete message passing algorithm code from recognition factorization
 """

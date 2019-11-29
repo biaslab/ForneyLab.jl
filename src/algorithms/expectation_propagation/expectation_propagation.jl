@@ -1,8 +1,23 @@
 export
 ExpectationPropagationRule,
 expectationPropagationSchedule,
-variationalExpectationPropagationSchedule,
 @expectationPropagationRule
+
+"""
+Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
+"""
+function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm())
+    # Initialize a container recognition factor
+    rf = RecognitionFactor(algo, id=Symbol(""))
+    schedule = expectationPropagationSchedule(variables)
+    rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+    rf.marginal_table = marginalTable(variables)
+    
+    assembleAlgorithm!(rf)
+    
+    return algo
+end
+expectationPropagationAlgorithm(variable::Variable, algo::Algorithm=currentAlgorithm()) = expectationPropagationAlgorithm([variable], algo)
 
 """
 A non-specific expectation propagation update
@@ -23,40 +38,6 @@ function expectationPropagationSchedule(variables::Vector{Variable})
     for entry in schedule
         if entry.interface in ep_sites
             entry.message_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
-        else
-            entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
-        end
-    end
-
-    inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
-
-    return schedule
-end
-
-"""
-`variationalExpectationPropagationSchedule()` generates an expectation propagation message passing schedule
-that is limited to the `recognition_factor`. Updates on EP sites are computed with an `ExpectationPropagationRule`.
-"""
-function variationalExpectationPropagationSchedule(recognition_factor::RecognitionFactor)
-    internal_edges = recognition_factor.internal_edges
-    ep_sites = collectEPSites(nodes(internal_edges))
-    breaker_sites = Interface[site.partner for site in ep_sites]
-    breaker_types = breakerTypes(breaker_sites)
-
-    # Schedule messages towards recognition distributions and target sites, limited to the internal edges
-    schedule = summaryPropagationSchedule(sort(collect(recognition_factor.variables), rev=true); target_sites=[breaker_sites; ep_sites], limit_set=internal_edges)
-
-    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(recognition_factor)
-    for entry in schedule
-        if entry.interface in ep_sites
-            entry.message_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
-        elseif entry.interface.node in nodes_connected_to_external_edges
-            local_recognition_factors = localRecognitionFactors(entry.interface.node)
-            if allunique(local_recognition_factors) # Local recognition factorization is naive
-                entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
-            else
-                entry.message_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}
-            end
         else
             entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
         end
@@ -205,5 +186,24 @@ macro expectationPropagationRule(fields...)
     """)
 
     return esc(expr)
+end
 
+"""
+Find the inbound types that are required to compute the message for `entry`.
+Returns a vector with inbound types that correspond with required interfaces.
+"""
+function collectInbounds(entry::ScheduleEntry, ::Type{T}, interface_to_schedule_entry::Dict, ::Dict) where T<:ExpectationPropagationRule
+    inbounds = Any[]
+    for node_interface in entry.interface.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        if isa(inbound_interface.node, Clamp)
+            # Hard-code outbound message of constant node in schedule
+            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
+        else
+            # Collect message from previous result
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        end
+    end
+
+    return inbounds
 end

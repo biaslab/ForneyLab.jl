@@ -1,91 +1,4 @@
-export variationalAlgorithm, freeEnergyAlgorithm
-
-"""
-Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
-"""
-function variationalAlgorithm(algo::Algorithm=currentAlgorithm())
-    for (id, rf) in algo.recognition_factors
-        schedule = variationalSchedule(rf)
-        rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-        rf.marginal_table = marginalTable(rf)
-        assembleAlgorithm!(rf)
-    end
-
-    algo_str = algorithmString(algo)
-
-    return algo_str
-end
-
-"""
-Construct argument code for naive VB updates
-"""
-collectInbounds(entry::ScheduleEntry, ::Type{T}, ::Dict, target_to_marginal_entry::Dict) where T<:NaiveVariationalRule = collectNaiveVariationalNodeInbounds(entry.interface.node, entry, target_to_marginal_entry)
-
-"""
-Construct the inbound code that computes the message for `entry`. Allows for
-overloading and for a user the define custom node-specific inbounds collection.
-Returns a vector with inbounds that correspond with required interfaces.
-"""
-function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, target_to_marginal_entry::Dict)
-    inbounds = Any[]
-    for node_interface in entry.interface.node.interfaces
-        inbound_interface = ultimatePartner(node_interface)
-        if node_interface === entry.interface
-            # Ignore marginal of outbound edge
-            push!(inbounds, nothing)
-        elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
-            # Hard-code marginal of constant node in schedule
-            push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
-        else
-            # Collect entry from marginal schedule
-            push!(inbounds, target_to_marginal_entry[node_interface.edge.variable])
-        end
-    end
-
-    return inbounds
-end
-
-
-"""
-Construct argument code for structured VB updates
-"""
-collectInbounds(entry::ScheduleEntry, ::Type{T}, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict) where T<:StructuredVariationalRule = collectStructuredVariationalNodeInbounds(entry.interface.node, entry, interface_to_schedule_entry, target_to_marginal_entry)
-
-"""
-Construct the inbound code that computes the message for `entry`. Allows for
-overloading and for a user the define custom node-specific inbounds collection.
-Returns a vector with inbounds that correspond with required interfaces.
-"""
-function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict)
-    inbounds = Any[]
-    entry_recognition_factor = recognitionFactor(entry.interface.edge)
-    local_clusters = localAlgorithm(entry.interface.node)
-
-    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
-    for node_interface in entry.interface.node.interfaces
-        inbound_interface = ultimatePartner(node_interface)
-        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
-
-        if node_interface === entry.interface
-            # Ignore marginal of outbound edge
-            push!(inbounds, nothing)
-        elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
-            # Hard-code marginal of constant node in schedule
-            push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
-        elseif node_interface_recognition_factor === entry_recognition_factor
-            # Collect message from previous result
-            push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        elseif !(node_interface_recognition_factor in recognition_factors)
-            # Collect marginal from marginal dictionary (if marginal is not already accepted)
-            target = local_clusters[node_interface_recognition_factor]
-            push!(inbounds, target_to_marginal_entry[target])
-        end
-
-        push!(recognition_factors, node_interface_recognition_factor)
-    end
-
-    return inbounds
-end
+export freeEnergyAlgorithm
 
 """
 The `freeEnergyAlgorithm` function accepts a `Algorithm` and returns
@@ -129,9 +42,7 @@ function freeEnergyAlgorithm(algo=currentAlgorithm())
         end
     end
 
-    free_energy_str = freeEnergyString(free_energy_dict)
-
-    return free_energy_str
+    return algo
 end
 
 function collectAverageEnergyInbounds(node::FactorNode, target_to_marginal_entry::Dict)

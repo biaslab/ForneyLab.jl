@@ -72,12 +72,14 @@ include("marginals.jl")
 include("visualization.jl")
 
 # InferenceAlgorithms
-include("algorithms/variational_bayes/algorithm.jl")
+include("algorithms/algorithm.jl")
 include("algorithms/sum_product/sum_product.jl")
 include("algorithms/variational_bayes/joint_marginals.jl")
 include("algorithms/variational_bayes/naive_variational_bayes.jl")
 include("algorithms/variational_bayes/structured_variational_bayes.jl")
+include("algorithms/variational_bayes/free_energy.jl")
 include("algorithms/expectation_propagation/expectation_propagation.jl")
+include("algorithms/expectation_propagation/variational_expectation_propagation.jl")
 
 # Update rules
 include("update_rules/clamp.jl")
@@ -111,11 +113,6 @@ include("update_rules/poisson.jl")
 
 # Engines
 include("engines/assemblers.jl")
-include("engines/sum_product.jl")
-include("engines/variational_bayes.jl")
-include("engines/expectation_propagation.jl")
-
-# Julia-specific implementation
 include("engines/julia/julia.jl")
 
 end # module ForneyLab

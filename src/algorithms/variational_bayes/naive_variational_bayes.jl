@@ -1,7 +1,22 @@
 export
 NaiveVariationalRule,
+variationalAlgorithm,
 variationalSchedule,
 @naiveVariationalRule
+
+"""
+Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
+"""
+function variationalAlgorithm(algo::Algorithm=currentAlgorithm())
+    for (id, rf) in algo.recognition_factors
+        schedule = variationalSchedule(rf)
+        rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+        rf.marginal_table = marginalTable(rf)
+        assembleAlgorithm!(rf)
+    end
+
+    return algo
+end
 
 """
 A non-specific naive variational update
@@ -149,4 +164,33 @@ macro naiveVariationalRule(fields...)
     """)
 
     return esc(expr)
+end
+
+"""
+Construct argument code for naive VB updates
+"""
+collectInbounds(entry::ScheduleEntry, ::Type{T}, ::Dict, target_to_marginal_entry::Dict) where T<:NaiveVariationalRule = collectNaiveVariationalNodeInbounds(entry.interface.node, entry, target_to_marginal_entry)
+
+"""
+Construct the inbound code that computes the message for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
+Returns a vector with inbounds that correspond with required interfaces.
+"""
+function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, target_to_marginal_entry::Dict)
+    inbounds = Any[]
+    for node_interface in entry.interface.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        if node_interface === entry.interface
+            # Ignore marginal of outbound edge
+            push!(inbounds, nothing)
+        elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
+        else
+            # Collect entry from marginal schedule
+            push!(inbounds, target_to_marginal_entry[node_interface.edge.variable])
+        end
+    end
+
+    return inbounds
 end
