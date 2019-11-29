@@ -5,18 +5,17 @@
 module ForneyLabTest
 
 using Test
-using PDMats
 
 @testset "ForneyLab" begin
-    # include("./test_helpers.jl")
-    # include("./test_factor_node.jl")
-    # include("./test_interface.jl")
-    # include("./test_probability_distribution.jl")
-    # include("./test_edge.jl")
-    # include("./test_variable.jl")
-    # include("./test_factor_graph.jl")
-    
-    # # Factor nodes
+    include("./test_helpers.jl")
+    include("./test_factor_node.jl")
+    include("./test_interface.jl")
+    include("./test_probability_distribution.jl")
+    include("./test_edge.jl")
+    include("./test_variable.jl")
+    include("./test_factor_graph.jl")
+
+    # Factor nodes
     include("factor_nodes/test_clamp.jl")
     include("factor_nodes/test_equality.jl")
     include("factor_nodes/test_addition.jl")

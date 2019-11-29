@@ -3,6 +3,7 @@ module ProbabilityDistributionTest
 using Test
 import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, mat, isProper, isValid, invalidate!, gaussianQuadrature, dims, eye, diageye, matches, Message
 import LinearAlgebra: Diagonal
+import PDMats: PDMat
 using ForneyLab
 
 @testset "matches" begin
@@ -45,7 +46,7 @@ end
     @test !isa(gaussian, ProbabilityDistribution{Univariate})
     @test !isa(gaussian, ProbabilityDistribution{MatrixVariate})
     @test gaussian.params[:m] == [0.0]
-    @test gaussian.params[:v] == mat(1.0)
+    @test gaussian.params[:v] == PDMat(mat(1.0))
 
     # PointMass should be defined as a special family
     point_mass = ProbabilityDistribution(Multivariate, PointMass, m=[0.0])

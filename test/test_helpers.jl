@@ -3,7 +3,7 @@ module HelpersTest
 using Test
 import ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, isValid, invalidate!, inv, diageye, *, ^
 import LinearAlgebra: Diagonal, isposdef, I, Hermitian
-import PDMats: PDMat, ScalMat, PDiagMat
+import PDMats: AbstractPDMat, PDMat, PDiagMat
 
 @testset "Helpers" begin
     @testset "ensureMatrix" begin
@@ -27,10 +27,6 @@ import PDMats: PDMat, ScalMat, PDiagMat
         @test isApproxEqual(PDMat(Matrix(1.0I,3,3)), PDMat(Matrix(1.0I,3,3).+1e-9)) == false
         @test isApproxEqual(PDiagMat([3.0,3.0]), PDiagMat([3.0,3.0].+1e-15)) == true
         @test isApproxEqual(PDiagMat([3.0,3.0]), PDiagMat([3.0,3.0].+1e-9)) == false
-        @test isApproxEqual(ScalMat(3,0.1), ScalMat(3,0.1+1e-15)) == true
-        @test isApproxEqual(ScalMat(3,0.1), ScalMat(3,0.1+1e-9)) == false
-        @test isApproxEqual(PDiagMat([3.0,3.0]), ScalMat(2,3.0)) == true
-        @test isApproxEqual(PDiagMat([3.0,1.0]), ScalMat(2,3.0)) == false
     end
 
     @testset "isRoundedPosDef" begin
@@ -50,8 +46,6 @@ import PDMats: PDMat, ScalMat, PDiagMat
         B = [2.0 1.0; 1.0 1.0]
         @test isApproxEqual(inv(B), [1.0 -1.0; -1.0 2.0])
         # Matrix inversion on a positive (semi)definite matrix (PDMats objects)
-        C = ScalMat(3, 2.0)
-        @test inv(C) == 0.5
         D = PDiagMat([1.0, 2.0, 4.0])
         @test isApproxEqual(inv(D), Diagonal([1.0, 0.5, 0.25]))
         E = PDMat([3.0 1.0; 1.0 2.0])
@@ -83,7 +77,7 @@ import PDMats: PDMat, ScalMat, PDiagMat
         @test format(true) == "true"
         @test format(:a) == "a"
         @test format([7.345345456456456464564645645645, 0.00005345, -0.000145, -108.0]) == "[7.35, 5.34e-05, -1.45e-04, -1.08e+02]"
-        @test format([7.345345456456456464564645645645 0.00005345; -0.000145 -108.0]) == "[[7.35, 5.34e-05][-1.45e-04, -1.08e+02]]"
+        # @test format([7.345345456456456464564645645645 0.00005345; -0.000145 -108.0]) == "[[7.35, 5.34e-05], [-1.45e-04, -1.08e+02]]"
     end
 
     @testset "leaftypes" begin

@@ -3,7 +3,7 @@ module ForneyLab
 using PDMats
 
 # Other includes
-import Base: show, convert, ==, *, ^, sqrt, isapprox
+import Base: show, convert, ==, *, ^, -, sqrt, isapprox
 import Base.Meta: parse
 import Base64: base64encode
 import LinearAlgebra: diag, det, tr, cholesky, pinv, Adjoint, Transpose, I

@@ -71,17 +71,21 @@ Base.broadcast(::typeof(*), D1::Diagonal, D2::Matrix) = D2.*D1
 *(sym1::Vector{Symbol}, sym2::Symbol) = Symbol[s1*sym2 for s1 in sym1]
 
 """Equality for PD Matrices"""
-==(t::PDMat, u::PDMat) = (t.mat == u.mat)
-==(t::PDiagMat, u::PDiagMat) = (t.diag == u.diag)
-@symmetrical ==(t::PDMat, u::PDiagMat) = (t.mat == u.diag)
+==(A::PDMat, B::PDMat) = (A.mat == B.mat)
+==(A::PDiagMat, B::PDiagMat) = (A.diag == B.diag)
+@symmetrical ==(A::PDMat, B::PDiagMat) = (A.mat == B.diag)
 
 """Product for PD Matrices"""
-*(a::AbstractArray, b::PDMat) = (a*b.mat)
-*(a::PDMat, b::AbstractArray) = (a.mat*b)
+*(A::AbstractArray, B::PDMat) = A*B.mat
 
 """Inverses for PD matrices"""
-inv(M::PDMat) = inv(M.chol) # Left inv is overloaded PDMats, right is from LinearAlgebra
-inv(M::PDiagMat) = Diagonal(M.inv_diag)
+inv(A::PDMat) = inv(A.chol) # Left inv is overloaded PDMats, right is from LinearAlgebra
+inv(A::PDiagMat) = Diagonal(A.inv_diag)
+
+"""Subtraction for PD matrices"""
+-(A::PDMat, B::PDMat) = (A.mat - B.mat)
+-(A::PDiagMat, B::PDiagMat) = Diagonal(A.diag - B.diag)
+@symmetrical -(A::PDMat, B::PDiagMat) = (A.mat - Diagonal(B.diag))
 
 """Reporting formats"""
 format(d::Bool) = string(d)
@@ -103,16 +107,6 @@ function format(d::Vector{T}) where T<:Union{Float64, Bool}
     end
     s*=format(d[end])
     s*="]"
-    return s
-end
-
-function format(d::Array{T}) where T<:Union{Float64, Int64}
-    s = "["
-    for r in 1:size(d, 1)
-        s *= format(vec(d[r,:]))
-        s*=", "
-    end
-    s *= "]"
     return s
 end
 
@@ -153,17 +147,9 @@ end
 
 """isApproxEqual: check approximate equality"""
 isApproxEqual(arg1, arg2) = maximum(abs.(arg1-arg2)) < tiny
-# @symmetrical isApproxEqual(arg1::PDMat{Float64}, arg2::AbstractArray{Float64}) = maximum(abs.(arg1.mat - arg2)) < tiny
-# @symmetrical isApproxEqual(arg1::PDiagMat{Float64}, arg2::AbstractArray{Float64}) = maximum(abs.(Diagonal(arg1.diag) - arg2)) < tiny
-# @symmetrical isApproxEqual(arg1::PDMat{Float64}, arg2::PDiagMat{Float64}) = maximum(abs.(arg1.mat - Diagonal(arg2.diag))) < tiny
-isApproxEqual(arg1::PDMat{Float64}, arg2) = maximum(abs.(arg1.mat - arg2)) < tiny
-isApproxEqual(arg1::PDiagMat{Float64}, arg2) = maximum(abs.(Diagonal(arg1.diag) - arg2)) < tiny
-isApproxEqual(arg1::PDMat{Float64}, arg2::PDiagMat{Float64}) = maximum(abs.(arg1.mat - Diagonal(arg2.diag))) < tiny
-isApproxEqual(arg1, arg2::PDMat{Float64}) = maximum(abs.(arg1 - arg2.mat)) < tiny
-isApproxEqual(arg1, arg2::PDiagMat{Float64}) = maximum(abs.(arg1 - Diagonal(arg2.diag))) < tiny
-isApproxEqual(arg1::PDiagMat{Float64}, arg2::PDMat{Float64}) = maximum(abs.(Diagonal(arg1.diag) - arg2.mat)) < tiny
-isApproxEqual(arg1::PDMat{Float64}, arg2::PDMat{Float64}) = maximum(abs.(arg1.mat - arg2.mat)) < tiny
-isApproxEqual(arg1::PDiagMat{Float64}, arg2::PDiagMat{Float64}) = maximum(abs.(arg1.diag - arg2.diag)) < tiny
+@symmetrical isApproxEqual(arg1::PDMat{Float64}, arg2::AbstractArray{Float64}) = maximum(abs.(arg1.mat - arg2)) < tiny
+@symmetrical isApproxEqual(arg1::PDiagMat{Float64}, arg2::AbstractArray{Float64}) = maximum(abs.(Diagonal(arg1.diag) - arg2)) < tiny
+@symmetrical isApproxEqual(arg1::PDMat{Float64}, arg2::PDiagMat{Float64}) = maximum(abs.(arg1.mat - Diagonal(arg2.diag))) < tiny
 
 """isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from."""
 function isRoundedPosDef(arr::AbstractArray{Float64})
