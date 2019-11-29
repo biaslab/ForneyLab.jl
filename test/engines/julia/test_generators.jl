@@ -152,8 +152,8 @@ end
 end
 
 @testset "initializationString" begin
-    rfz = RecognitionFactorization()
-    rf = RecognitionFactor(rfz, id=:X)
+    algo = Algorithm()
+    rf = RecognitionFactor(algo, id=:X)
     rf.initialize = true
     entry = ScheduleEntry()
     entry.schedule_index = 1
@@ -168,8 +168,8 @@ end
 end
 
 @testset "optimizeString" begin
-    rfz = RecognitionFactorization()
-    rf = RecognitionFactor(rfz, id=:X)
+    algo = Algorithm()
+    rf = RecognitionFactor(algo, id=:X)
     rf.optimize = true
 
     rf_str = optimizeString(rf)
@@ -177,8 +177,8 @@ end
 end
 
 @testset "recognitionFactorString" begin
-    rfz = RecognitionFactorization()
-    rf = RecognitionFactor(rfz, id=:X)
+    algo = Algorithm()
+    rf = RecognitionFactor(algo, id=:X)
     rf.schedule = []
     rf.marginal_table = []
 
@@ -187,14 +187,14 @@ end
 end
 
 @testset "freeEnergyString" begin
-    rfz = RecognitionFactorization()
-    free_energy_str = freeEnergyString(rfz)
+    algo = Algorithm()
+    free_energy_str = freeEnergyString(algo)
     @test occursin("function freeEnergy(data::Dict, marginals::Dict)", free_energy_str)
 end
 
 @testset "algorithmString" begin
-    rfz = RecognitionFactorization()
-    algo_str = algorithmString(rfz)
+    algo = Algorithm()
+    algo_str = algorithmString(algo)
     @test occursin("begin", algo_str)
 end
 

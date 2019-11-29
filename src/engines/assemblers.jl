@@ -122,7 +122,7 @@ function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry, interfa
     # Collect inbounds
     inbounds = Any[]
     entry_recognition_factor = recognitionFactor(first(entry.target.edges))
-    local_clusters = localRecognitionFactorization(entry.target.node)
+    local_clusters = localAlgorithm(entry.target.node)
 
     recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in entry.target.node.interfaces

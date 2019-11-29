@@ -1,5 +1,5 @@
 # "If we need to write the message-passing algorithm and free energy evaluation from scratch, what information do we need?"
-recognition_factorization::RecognitionFactorization:
+algorithm::Algorithm:
     recognition_factors::Vector{RecognitionFactor}: (per item)
         - id::Symbol # recognition factor id
         - optimize::Bool # require optimization block

@@ -4,6 +4,9 @@ expectationPropagationSchedule,
 variationalExpectationPropagationSchedule,
 @expectationPropagationRule
 
+"""
+A non-specific expectation propagation update
+"""
 abstract type ExpectationPropagationRule{factor_type} <: MessageUpdateRule end
 
 """ 

@@ -48,7 +48,7 @@ using Test
 
     # Algorithms
     include("./algorithms/sum_product/test_sum_product.jl")
-    include("./algorithms/variational_bayes/test_recognition_factorization.jl")
+    include("./algorithms/variational_bayes/test_algorithm.jl")
     include("./algorithms/variational_bayes/test_joint_marginals.jl")
     include("./algorithms/variational_bayes/test_naive_variational_bayes.jl")
     include("./algorithms/variational_bayes/test_structured_variational_bayes.jl")

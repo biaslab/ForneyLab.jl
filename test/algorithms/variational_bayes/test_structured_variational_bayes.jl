@@ -54,7 +54,7 @@ end
     v3 = constant(0.0)
     nd = MockNode([v1, v2, v3])
 
-    RecognitionFactorization()
+    Algorithm()
     RecognitionFactor([v1, v2])
     RecognitionFactor(v3)
 
@@ -93,7 +93,7 @@ end
     nd_s_i = GaussianMeanVariance(s_min, constant(0.0), constant(huge))
     push!(nd_s, nd_s_i)
 
-    rf = RecognitionFactorization()
+    rf = Algorithm()
     q_w = RecognitionFactor(w)
     q_s = RecognitionFactor([s_0; s])
 

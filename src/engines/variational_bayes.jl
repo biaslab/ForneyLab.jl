@@ -3,15 +3,15 @@ export variationalAlgorithm, freeEnergyAlgorithm
 """
 Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
-function variationalAlgorithm(rfz::RecognitionFactorization=currentRecognitionFactorization())
-    for (id, rf) in rfz.recognition_factors
+function variationalAlgorithm(algo::Algorithm=currentAlgorithm())
+    for (id, rf) in algo.recognition_factors
         schedule = variationalSchedule(rf)
         rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
         rf.marginal_table = marginalTable(rf)
         assembleAlgorithm!(rf)
     end
 
-    algo_str = algorithmString(rfz)
+    algo_str = algorithmString(algo)
 
     return algo_str
 end
@@ -59,7 +59,7 @@ Returns a vector with inbounds that correspond with required interfaces.
 function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict)
     inbounds = Any[]
     entry_recognition_factor = recognitionFactor(entry.interface.edge)
-    local_clusters = localRecognitionFactorization(entry.interface.node)
+    local_clusters = localAlgorithm(entry.interface.node)
 
     recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in entry.interface.node.interfaces
@@ -88,23 +88,23 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
 end
 
 """
-The `freeEnergyAlgorithm` function accepts a `RecognitionFactorization` and returns
+The `freeEnergyAlgorithm` function accepts a `Algorithm` and returns
 (if possible) Julia code for computing the variational free energy with respect to 
 the argument recognition factorization and corresponding `FactorGraph` (model).
 """
-function freeEnergyAlgorithm(rfz=currentRecognitionFactorization())
+function freeEnergyAlgorithm(algo=currentAlgorithm())
     average_energies_vect = Vector{Dict{Symbol, Any}}()
     entropies_vect = Vector{Dict{Symbol, Any}}()
     free_energy_dict = Dict{Symbol, Any}(:average_energies => average_energies_vect,
                                          :entropies => entropies_vect)
 
-    for rf in values(rfz.recognition_factors)
+    for rf in values(algo.recognition_factors)
         hasCollider(rf) && error("Cannot construct localized free energy algorithm. Recognition distribution for factor with id :$(rf.id) does not factor according to local graph structure. This is likely due to a conditional dependence in the posterior distribution (see Bishop p.485). Consider wrapping conditionally dependent variables in a composite node.")
     end
 
-    target_to_marginal_entry = targetToMarginalEntry(rfz)
+    target_to_marginal_entry = targetToMarginalEntry(algo)
 
-    for node in sort(collect(values(rfz.graph.nodes)))
+    for node in sort(collect(values(algo.graph.nodes)))
         if !isa(node, DeltaFactor) # Non-deterministic factor, add to free energy functional
             # Include average energy term
             average_energy = Dict{Symbol, Any}(:node => typeof(node),
@@ -115,7 +115,7 @@ function freeEnergyAlgorithm(rfz=currentRecognitionFactorization())
             outbound_interface = node.interfaces[1]
             outbound_partner = ultimatePartner(outbound_interface)
             if !(outbound_partner == nothing) && !isa(outbound_partner.node, Clamp) # Differential entropy is required
-                dict = rfz.node_edge_to_cluster
+                dict = algo.node_edge_to_cluster
                 if haskey(dict, (node, outbound_interface.edge)) # Outbound edge is part of a cluster
                     inbounds = collectConditionalDifferentialEntropyInbounds(node, target_to_marginal_entry)
                     entropy = Dict{Symbol, Any}(:conditional => true,
@@ -136,7 +136,7 @@ end
 
 function collectAverageEnergyInbounds(node::FactorNode, target_to_marginal_entry::Dict)
     inbounds = Any[]
-    local_clusters = localRecognitionFactorization(entry.interface.node)
+    local_clusters = localAlgorithm(entry.interface.node)
 
     recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in node.interfaces
@@ -161,7 +161,7 @@ end
 function collectConditionalDifferentialEntropyInbounds(node::FactorNode, target_to_marginal_entry::Dict)
     inbounds = Any[]
     outbound_edge = node.interfaces[1].edge
-    dict = current_recognition_factorization.node_edge_to_cluster
+    dict = current_algorithm.node_edge_to_cluster
     cluster = dict[(node, outbound_edge)]
 
     push!(inbounds, target_to_marginal_entry[cluster]) # Add joint term to inbounds

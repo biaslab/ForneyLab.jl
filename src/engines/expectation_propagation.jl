@@ -3,32 +3,32 @@ export expectationPropagationAlgorithm, variationalExpectationPropagationAlgorit
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function expectationPropagationAlgorithm(variables::Vector{Variable}, rfz::RecognitionFactorization=currentRecognitionFactorization())
+function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm())
     # Initialize a container recognition factor
-    rf = RecognitionFactor(rfz, id=Symbol(""))
+    rf = RecognitionFactor(algo, id=Symbol(""))
     schedule = expectationPropagationSchedule(variables)
     rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
     rf.marginal_table = marginalTable(variables)
     
     assembleAlgorithm!(rf)
-    algo_str = algorithmString(rfz)
+    algo_str = algorithmString(algo)
     
     return algo_str
 end
-expectationPropagationAlgorithm(variable::Variable, rfz::RecognitionFactorization=currentRecognitionFactorization()) = expectationPropagationAlgorithm([variable], rfz)
+expectationPropagationAlgorithm(variable::Variable, algo::Algorithm=currentAlgorithm()) = expectationPropagationAlgorithm([variable], algo)
 
 """
 Create a variational EP algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
-function variationalExpectationPropagationAlgorithm(rfz::RecognitionFactorization=currentRecognitionFactorization())
-    for (id, rf) in rfz.recognition_factors
+function variationalExpectationPropagationAlgorithm(algo::Algorithm=currentAlgorithm())
+    for (id, rf) in algo.recognition_factors
         schedule = variationalExpectationPropagationSchedule(rf)
         rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
         rf.marginal_table = marginalTable(rf)
         assembleAlgorithm!(rf)
     end
 
-    algo_str = algorithmString(rfz)
+    algo_str = algorithmString(algo)
 
     return algo_str
 end

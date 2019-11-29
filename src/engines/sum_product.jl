@@ -3,19 +3,19 @@ export sumProductAlgorithm
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function sumProductAlgorithm(variables::Vector{Variable}, rfz::RecognitionFactorization=currentRecognitionFactorization())
+function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm())
     # Initialize a container recognition factor
-    rf = RecognitionFactor(rfz, id=Symbol(""))
+    rf = RecognitionFactor(algo, id=Symbol(""))
     schedule = sumProductSchedule(variables)
     rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
     rf.marginal_table = marginalTable(variables)
 
     assembleAlgorithm!(rf)
-    algo_str = algorithmString(rfz)
+    algo_str = algorithmString(algo)
     
     return algo_str
 end
-sumProductAlgorithm(variable::Variable, rfz::RecognitionFactorization=currentRecognitionFactorization()) = sumProductAlgorithm([variable], rfz)
+sumProductAlgorithm(variable::Variable, algo::Algorithm=currentAlgorithm()) = sumProductAlgorithm([variable], algo)
 
 """
 Collect and construct SP update code for each inbound.

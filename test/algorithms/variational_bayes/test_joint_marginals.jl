@@ -59,7 +59,7 @@ end
     v3 = constant(0.0)
     nd = MockNode([v1, v2, v3])
 
-    RecognitionFactorization()
+    Algorithm()
     rf_12 = RecognitionFactor([v1, v2])
 
     rf_12.schedule = variationalSchedule(rf_12)

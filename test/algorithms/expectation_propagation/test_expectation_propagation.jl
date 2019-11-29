@@ -83,7 +83,7 @@ end
     nd_z = Probit(z, y)
     placeholder(z, :z)
 
-    rf = RecognitionFactorization()
+    rf = Algorithm()
     q_y_z = RecognitionFactor([y, z])
 
     schedule = variationalExpectationPropagationSchedule(q_y_z)

@@ -3,6 +3,9 @@ SumProductRule,
 sumProductSchedule,
 @sumProductRule
 
+"""
+A non-specific sum-product update
+"""
 abstract type SumProductRule{factor_type} <: MessageUpdateRule end
 
 """ 

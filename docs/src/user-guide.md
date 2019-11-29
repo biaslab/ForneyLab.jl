@@ -220,7 +220,7 @@ eval(algorithm_expr)
 At this point a new function named `step!` becomes available in the current scope. This function contains a message-passing algorithm that infers both `m1` and `m2` given one or more `y` observations. In the section [Executing an algorithm](@ref) we will see how this function is used.
 
 ### Variational message passing
-Variational message passing (VMP) algorithms are generated much in the same way as the belief propagation algorithm we saw in the previous section. There is a major difference though: for VMP algorithm generation we need to define the factorization properties of our approximate distribution. A common approach is to assume that all random variables of the model factorize with respect to each other. This is known as the *mean field* assumption. In ForneyLab, the specification of such factorization properties is defined using the `RecognitionFactorization` composite type. Let's take a look at a simple example to see how it is used. In this model we want to learn the mean and variance of a Gaussian distribution, where the former is modelled with a Gaussian distribution and the latter with a Gamma.
+Variational message passing (VMP) algorithms are generated much in the same way as the belief propagation algorithm we saw in the previous section. There is a major difference though: for VMP algorithm generation we need to define the factorization properties of our approximate distribution. A common approach is to assume that all random variables of the model factorize with respect to each other. This is known as the *mean field* assumption. In ForneyLab, the specification of such factorization properties is defined using the `Algorithm` composite type. Let's take a look at a simple example to see how it is used. In this model we want to learn the mean and variance of a Gaussian distribution, where the former is modelled with a Gaussian distribution and the latter with a Gamma.
 ```@example 1
 g = FactorGraph() # create a new factor graph
 @RV m ~ GaussianMeanVariance(0, 10)
@@ -229,12 +229,12 @@ g = FactorGraph() # create a new factor graph
 placeholder(y, :y)
 draw(g)
 ```
-The construct of the `RecognitionFactorization` composite type takes the random variables of interest as arguments and one final argument consisting of an array of symbols used to identify each of these random variables. Here is an example of how to use this construct for the previous model where we want to infer `m` and `w`.
+The construct of the `Algorithm` composite type takes the random variables of interest as arguments and one final argument consisting of an array of symbols used to identify each of these random variables. Here is an example of how to use this construct for the previous model where we want to infer `m` and `w`.
 ```@example 1
-q = RecognitionFactorization(m, w, ids=[:M, :W])
+q = Algorithm(m, w, ids=[:M, :W])
 ;
 ```
-This recognition factorization constraint that we introduce to guarantee tractability of the approximate distribution has a graphical interpretation. We can view this constraint as a division of the factor graph into a number of different subgraphs, each corresponding to a different factor in the recognition factorization. Minimization of the free energy is performed by iterating over each subgraph in order to update the posterior marginal corresponding to the current factor which depends on messages coming from the other subgraphs. This iteration is repeated until either the free energy converges to a certain value or the posterior marginals of each factor stop changing. We can use the `ids` passed to the `RecognitionFactorization` function to visualize their corresponding subgraphs, as shown below.   
+This recognition factorization constraint that we introduce to guarantee tractability of the approximate distribution has a graphical interpretation. We can view this constraint as a division of the factor graph into a number of different subgraphs, each corresponding to a different factor in the recognition factorization. Minimization of the free energy is performed by iterating over each subgraph in order to update the posterior marginal corresponding to the current factor which depends on messages coming from the other subgraphs. This iteration is repeated until either the free energy converges to a certain value or the posterior marginals of each factor stop changing. We can use the `ids` passed to the `Algorithm` function to visualize their corresponding subgraphs, as shown below.   
 ```@example 1
 ForneyLab.draw(q.recognition_factors[:M])
 ```
@@ -276,7 +276,7 @@ end
 ```
 
 #### Computing free energy
-VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as *free energy*. ForneyLab provides the function `freeEnergyAlgorithm` which generates an algorithm that can be used to evaluate this quantity. This function takes an object of type `RecognitionFactorization` as argument. Free energy is particularly useful to test for convergence of the VMP iterative procedure. Here is an example that generates, parses and evaluates this algorithm.
+VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as *free energy*. ForneyLab provides the function `freeEnergyAlgorithm` which generates an algorithm that can be used to evaluate this quantity. This function takes an object of type `Algorithm` as argument. Free energy is particularly useful to test for convergence of the VMP iterative procedure. Here is an example that generates, parses and evaluates this algorithm.
 ```julia
 fe_algorithm = freeEnergyAlgorithm(q)
 eval(Meta.parse(fe_algorithm));

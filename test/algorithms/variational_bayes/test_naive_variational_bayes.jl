@@ -61,7 +61,7 @@ end
         push!(nd_y, nd_y_i)
     end
 
-    rf = RecognitionFactorization()
+    rf = Algorithm()
     q_m = RecognitionFactor(m)
 
     schedule = variationalSchedule(q_m)

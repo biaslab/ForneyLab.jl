@@ -1,4 +1,4 @@
-export RecognitionFactor, RecognitionFactorization, currentRecognitionFactorization
+export RecognitionFactor, Algorithm, currentAlgorithm
 
 """
 A `Cluster` specifies a collection of `edges` adjacent to `node` that belong to the same
@@ -38,15 +38,15 @@ mutable struct RecognitionFactor
     optimize::Bool
     initialize::Bool
 
-    function RecognitionFactor(rfz=currentRecognitionFactorization(); id=generateId(RecognitionFactor))
+    function RecognitionFactor(algo=currentAlgorithm(); id=generateId(RecognitionFactor))
         # Constructor for empty container
         self = new(id)
-        rfz.recognition_factors[id] = self # Register self with recognition factorization
+        algo.recognition_factors[id] = self # Register self with recognition factorization
 
         return self
     end
 
-    function RecognitionFactor(variables::Set{Variable}; rfz=currentRecognitionFactorization(), id=generateId(RecognitionFactor))
+    function RecognitionFactor(variables::Set{Variable}; algo=currentAlgorithm(), id=generateId(RecognitionFactor))
         # Determine nodes connected to external edges
         internal_edges = ForneyLab.extend(edges(variables))
         subgraph_nodes = nodes(internal_edges)
@@ -75,17 +75,17 @@ mutable struct RecognitionFactor
 
         # Create new recognition factor
         self = new(id, union(variables, recognition_variables), recognition_clusters, internal_edges)
-        rfz.recognition_factors[id] = self # Register self with recognition factorization
+        algo.recognition_factors[id] = self # Register self with recognition factorization
 
         # Register relevant edges with the recognition factorization for fast lookup during scheduling
         for edge in internal_edges_connected_to_external_nodes
-            rfz.edge_to_recognition_factor[edge] = self
+            algo.edge_to_recognition_factor[edge] = self
         end
 
         # Register clusters with the recognition factorization for fast lookup during scheduling
         for cluster in recognition_clusters
             for edge in cluster.edges
-                rfz.node_edge_to_cluster[(cluster.node, edge)] = cluster
+                algo.node_edge_to_cluster[(cluster.node, edge)] = cluster
             end
         end 
 
@@ -187,10 +187,10 @@ end
 extend(edge::Edge; terminate_at_soft_factors=true, limit_set=Set{Edge}()) = extend(Set{Edge}([edge]), terminate_at_soft_factors=terminate_at_soft_factors, limit_set=limit_set)
 
 """
-A `RecognitionFactorization` holds a collection of (non-overlapping) recognition factors that
+A `Algorithm` holds a collection of (non-overlapping) recognition factors that
 specify the recognition factorization over a factor graph that is used for variational inference.
 """
-mutable struct RecognitionFactorization
+mutable struct Algorithm
     graph::FactorGraph
     recognition_factors::Dict{Symbol, RecognitionFactor}
 
@@ -204,21 +204,21 @@ mutable struct RecognitionFactorization
 end
 
 """
-Return currently active `RecognitionFactorization`.
+Return currently active `Algorithm`.
 Create one if there is none.
 """
-function currentRecognitionFactorization()
+function currentAlgorithm()
     try
-        return current_recognition_factorization
+        return current_algorithm
     catch
-        return RecognitionFactorization()
+        return Algorithm()
     end
 end
 
-setCurrentRecognitionFactorization(rf::RecognitionFactorization) = global current_recognition_factorization = rf
+setCurrentAlgorithm(rf::Algorithm) = global current_algorithm = rf
 
-RecognitionFactorization() = setCurrentRecognitionFactorization(
-    RecognitionFactorization(
+Algorithm() = setCurrentAlgorithm(
+    Algorithm(
         currentGraph(),
         Dict{Symbol, RecognitionFactor}(),
         Dict{Edge, RecognitionFactor}(),
@@ -227,11 +227,11 @@ RecognitionFactorization() = setCurrentRecognitionFactorization(
         Dict{Symbol, Any}[]))
 
 """
-Construct a `RecognitionFactorization` consisting of one
+Construct a `Algorithm` consisting of one
 `RecognitionFactor` for each argument
 """
-function RecognitionFactorization(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[])
-    rf = RecognitionFactorization()
+function Algorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[])
+    rf = Algorithm()
     isempty(ids) || (length(ids) == length(args)) || error("Length of ids must match length of recognition factor arguments")
     for (i, arg) in enumerate(args)
         if isempty(ids)
@@ -247,7 +247,7 @@ end
 Find the `RecognitionFactor` that `edge` belongs to (if available)
 """
 function recognitionFactor(edge::Edge)
-    dict = current_recognition_factorization.edge_to_recognition_factor
+    dict = current_algorithm.edge_to_recognition_factor
     if haskey(dict, edge)
         rf = dict[edge]
     else # No recognition factor is found, return the edge itself
@@ -266,7 +266,7 @@ localRecognitionFactors(node::FactorNode) = Any[recognitionFactor(interface.edge
 Return the cluster that the node-edge combination belongs to (if available)
 """
 function cluster(node::FactorNode, edge::Edge)
-    dict = current_recognition_factorization.node_edge_to_cluster
+    dict = current_algorithm.node_edge_to_cluster
     if haskey(dict, (node, edge))
         cl = dict[(node, edge)]
     else # No cluster is found, return the variable itself
@@ -284,18 +284,18 @@ localClusters(node::FactorNode) = [cluster(node, interface.edge) for interface i
 """
 Return a dictionary from recognition factor-id to variable/cluster-ids local to `node`
 """
-function localRecognitionFactorization(node::FactorNode)
+function localAlgorithm(node::FactorNode)
     # For each edge connected to node, collect the recognition factor and cluster id
     local_recognition_factors = localRecognitionFactors(node)
     local_clusters = localClusters(node)
 
     # Construct dictionary for local recognition factorization
-    local_recognition_factorization = Dict{Union{RecognitionFactor, Edge}, Union{Cluster, Variable}}()
+    local_algorithm = Dict{Union{RecognitionFactor, Edge}, Union{Cluster, Variable}}()
     for (idx, factor) in enumerate(local_recognition_factors)
-        local_recognition_factorization[factor] = local_clusters[idx]
+        local_algorithm[factor] = local_clusters[idx]
     end
 
-    return local_recognition_factorization
+    return local_algorithm
 end
 
 """
@@ -315,9 +315,9 @@ function nodesConnectedToExternalEdges(internal_edges::Set{Edge})
     return nodes_connected_to_external_edges
 end
 
-function targetToMarginalEntry(rfz::RecognitionFactorization)
+function targetToMarginalEntry(algo::Algorithm)
     mapping = Dict{Union{Cluster, Variable}, MarginalEntry}()
-    for rf in rfz.recognition_factors
+    for rf in algo.recognition_factors
         rf_mapping = targetToMarginalEntry(rf.marginal_table)
         merge!(mapping, rf_mapping)
     end

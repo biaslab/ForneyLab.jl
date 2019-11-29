@@ -3,6 +3,9 @@ NaiveVariationalRule,
 variationalSchedule,
 @naiveVariationalRule
 
+"""
+A non-specific naive variational update
+"""
 abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
 
 """

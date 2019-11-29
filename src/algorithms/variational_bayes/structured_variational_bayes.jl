@@ -2,6 +2,9 @@ export
 StructuredVariationalRule,
 @structuredVariationalRule
 
+"""
+A non-specific structured variational update
+"""
 abstract type StructuredVariationalRule{factor_type} <: MessageUpdateRule end
 
 """

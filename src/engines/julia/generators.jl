@@ -1,9 +1,9 @@
 """
 Generate complete message passing algorithm code from recognition factorization
 """
-function algorithmString(rfz::RecognitionFactorization)
+function algorithmString(algo::Algorithm)
     algo_str = "begin\n\n"
-    for (id, rf) in rfz.recognition_factors
+    for (id, rf) in algo.recognition_factors
         algo_str *= recognitionFactorString(rf)
         algo_str *= "\n\n"
     end
@@ -15,12 +15,12 @@ end
 """
 Generate complete free energy evaluation code from recognition factorization
 """
-function freeEnergyString(rfz::RecognitionFactorization)
+function freeEnergyString(algo::Algorithm)
     fe_str  = "function freeEnergy(data::Dict, marginals::Dict)\n\n"
     fe_str *= "F = 0.0\n\n"
-    fe_str *= energiesString(rfz.average_energies)
+    fe_str *= energiesString(algo.average_energies)
     fe_str *= "\n"
-    fe_str *= entropiesString(rfz.entropies)
+    fe_str *= entropiesString(algo.entropies)
     fe_str *= "\nreturn F\n\n" 
     fe_str *= "end"
 
