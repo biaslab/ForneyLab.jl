@@ -30,6 +30,8 @@ end
 
 @testset "@marginalRule" begin
     @test MMockPPD <: MarginalRule{MockNode}
+    @test isApplicable(MMockPPD, [Message{PointMass}, Message{PointMass}, ProbabilityDistribution])
+    @test !isApplicable(MMockPPD, [Message{PointMass}, Message{PointMass}, ProbabilityDistribution, ProbabilityDistribution])    
 end
 
 @testset "inferMarginalRule" begin

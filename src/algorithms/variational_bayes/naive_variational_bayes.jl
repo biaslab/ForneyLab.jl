@@ -127,7 +127,8 @@ macro naiveVariationalRule(fields...)
     end
 
     # Build validators for isApplicable
-    input_type_validators = String[]
+    input_type_validators = 
+        String["length(input_types) == $(length(inbound_types.args))"]
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
             # Only validate inbounds required for message update

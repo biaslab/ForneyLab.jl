@@ -32,6 +32,8 @@ end
 
 @testset "@expectationPropagationRule" begin
     @test EPMockIn1GP <: ExpectationPropagationRule{MockNode}
+    @test isApplicable(EPMockIn1GP, [Message{PointMass}, Message{Gaussian}], 2)
+    @test !isApplicable(EPMockIn1GP, [Message{PointMass}, Message{Gaussian}, Message{Gaussian}], 2)
 end
 
 @testset "inferUpdateRule!" begin

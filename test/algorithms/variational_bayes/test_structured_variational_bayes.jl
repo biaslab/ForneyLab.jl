@@ -43,6 +43,8 @@ end
     @test SVBMock1VGD <: StructuredVariationalRule{MockNode}
     @test SVBMock2GVD <: StructuredVariationalRule{MockNode}
     @test SVBMock3DV <: StructuredVariationalRule{MockNode}
+    @test isApplicable(SVBMock1VGD, [Nothing, Message{PointMass}, ProbabilityDistribution])
+    @test !isApplicable(SVBMock1VGD, [Nothing, Message{PointMass}, ProbabilityDistribution, ProbabilityDistribution])    
 end
 
 @testset "inferUpdateRule!" begin
