@@ -110,6 +110,12 @@ include("update_rules/poisson.jl")
 # include("docstrings.jl")
 
 # Engines
+include("engines/assemblers.jl")
+include("engines/sum_product.jl")
+include("engines/variational_bayes.jl")
+include("engines/expectation_propagation.jl")
+
+# Julia-specific implementation
 include("engines/julia/julia.jl")
 
 end # module ForneyLab
