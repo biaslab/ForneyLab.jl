@@ -142,7 +142,7 @@ Returns a vector with inbounds that correspond with required interfaces.
 function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict)
     inbounds = Any[]
     entry_recognition_factor = recognitionFactor(entry.interface.edge)
-    local_clusters = localAlgorithm(entry.interface.node)
+    local_clusters = localRecognitionFactorization(entry.interface.node)
 
     recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in entry.interface.node.interfaces

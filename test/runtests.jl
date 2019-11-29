@@ -47,7 +47,10 @@ using Test
     include("./test_marginals.jl")
 
     # Algorithms
+    include("./algorithms/test_cluster.jl")
+    include("./algorithms/test_recognition_factor.jl")
     include("./algorithms/test_algorithm.jl")
+
     include("./algorithms/sum_product/test_sum_product.jl")
     include("./algorithms/variational_bayes/test_joint_marginals.jl")
     include("./algorithms/variational_bayes/test_naive_variational_bayes.jl")
@@ -55,7 +58,6 @@ using Test
     include("./algorithms/expectation_propagation/test_expectation_propagation.jl")
 
     # Engines
-    include("./engines/test_assemblers.jl")
     include("./engines/julia/test_generators.jl")
 
     # Composite node

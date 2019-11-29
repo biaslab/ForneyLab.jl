@@ -110,6 +110,22 @@ function show(io::IO, schedule::Schedule)
     end
 end
 
+function assembleBreaker!(breaker_entry::ScheduleEntry, family::Type, dimensionality::Tuple)
+    breaker_entry.initialize = true
+    breaker_entry.dimensionality = dimensionality
+    if family == Union{Gamma, Wishart} # Catch special case
+        if dimensionality == ()
+            breaker_entry.family = ForneyLab.Gamma
+        else
+            breaker_entry.family = ForneyLab.Wishart
+        end
+    else
+        breaker_entry.family = family
+    end
+
+    return breaker_entry
+end
+
 """
 summaryDependencyGraph(edgeset)
 

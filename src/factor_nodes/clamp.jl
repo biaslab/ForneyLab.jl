@@ -118,3 +118,20 @@ function placeholder(   buffer_id::Symbol;
     var = Variable(id=var_id)
     return placeholder(var, buffer_id, index=index, default=default, datatype=datatype, dims=dims)
 end
+
+"""
+Depending on the origin of the Clamp node message, contruct a message or marginal inbound
+"""
+function assembleClamp!(inbound::Clamp, dist_or_msg::Type)
+    inbound.dist_or_msg = dist_or_msg
+    if inbound in keys(ForneyLab.current_graph.placeholders)
+        # Message comes from data buffer
+        (buffer, idx) = ForneyLab.current_graph.placeholders[inbound]
+        inbound.buffer_id = buffer
+        if idx > 0
+            inbound.buffer_index = idx
+        end
+    end
+
+    return inbound
+end

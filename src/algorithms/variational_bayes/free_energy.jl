@@ -47,7 +47,7 @@ end
 
 function collectAverageEnergyInbounds(node::FactorNode, target_to_marginal_entry::Dict)
     inbounds = Any[]
-    local_clusters = localAlgorithm(entry.interface.node)
+    local_clusters = localRecognitionFactorization(entry.interface.node)
 
     recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in node.interfaces

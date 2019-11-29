@@ -72,7 +72,10 @@ include("marginals.jl")
 include("visualization.jl")
 
 # InferenceAlgorithms
+include("algorithms/cluster.jl")
+include("algorithms/recognition_factor.jl")
 include("algorithms/algorithm.jl")
+
 include("algorithms/sum_product/sum_product.jl")
 include("algorithms/variational_bayes/joint_marginals.jl")
 include("algorithms/variational_bayes/naive_variational_bayes.jl")
@@ -112,7 +115,6 @@ include("update_rules/poisson.jl")
 # include("docstrings.jl")
 
 # Engines
-include("engines/assemblers.jl")
 include("engines/julia/julia.jl")
 
 end # module ForneyLab

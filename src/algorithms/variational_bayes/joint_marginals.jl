@@ -149,3 +149,40 @@ macro marginalRule(fields...)
 
     return esc(expr)
 end
+
+"""
+Construct the inbound code that computes the marginal for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
+Returns a vector with inbounds that correspond with required interfaces.
+"""
+collectInbounds(entry::MarginalEntry, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict) = collectMarginalNodeInbounds(entry.target.node, entry, interface_to_schedule_entry, target_to_marginal_entry)
+
+function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict)
+    # Collect inbounds
+    inbounds = Any[]
+    entry_recognition_factor = recognitionFactor(first(entry.target.edges))
+    local_clusters = localRecognitionFactorization(entry.target.node)
+
+    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
+    for node_interface in entry.target.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        partner_node = inbound_interface.node
+        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
+
+        if isa(partner_node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, assembleClamp!(partner_node, ProbabilityDistribution))
+        elseif node_interface_recognition_factor === entry_recognition_factor
+            # Collect message from previous result
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        elseif !(node_interface_recognition_factor in recognition_factors)
+            # Collect marginal from marginal dictionary (if marginal is not already accepted)
+            target = local_clusters[node_interface_recognition_factor]
+            push!(inbounds, target_to_marginal_entry[target])
+        end
+
+        push!(recognition_factors, node_interface_recognition_factor)
+    end
+
+    return inbounds
+end
