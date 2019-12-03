@@ -1,22 +1,22 @@
 @sumProductRule(:node_type     => GaussianMeanPrecision,
                 :outbound_type => Message{GaussianMeanPrecision},
                 :inbound_types => (Nothing, Message{PointMass}, Message{PointMass}),
-                :name          => SPGaussianMeanPrecisionOutVPP)
+                :name          => SPGaussianMeanPrecisionOutNPP)
 
 @sumProductRule(:node_type     => GaussianMeanPrecision,
                 :outbound_type => Message{GaussianMeanPrecision},
                 :inbound_types => (Message{PointMass}, Nothing, Message{PointMass}),
-                :name          => SPGaussianMeanPrecisionMPVP)
+                :name          => SPGaussianMeanPrecisionMPNP)
 
 @sumProductRule(:node_type     => GaussianMeanPrecision,
                 :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Nothing, Message{Gaussian}, Message{PointMass}),
-                :name          => SPGaussianMeanPrecisionOutVGP)
+                :name          => SPGaussianMeanPrecisionOutNGP)
 
 @sumProductRule(:node_type     => GaussianMeanPrecision,
                 :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Message{Gaussian}, Nothing, Message{PointMass}),
-                :name          => SPGaussianMeanPrecisionMGVP)
+                :name          => SPGaussianMeanPrecisionMGNP)
 
 @naiveVariationalRule(:node_type     => GaussianMeanPrecision,
                       :outbound_type => Message{GaussianMeanPrecision},

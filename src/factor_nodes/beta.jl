@@ -2,6 +2,7 @@ export Beta
 
 """
 Description:
+
     Beta factor node
 
     Real scalars
@@ -11,11 +12,13 @@ Description:
     f(out, a, b) = Beta(out|a, b) = Γ(a + b)/(Γ(a) Γ(b)) out^{a - 1} (1 - out)^{b - 1}
 
 Interfaces:
+
     1. out
     2. a
     3. b
 
 Construction:
+
     Beta(id=:some_id)
 """
 mutable struct Beta <: SoftFactor
@@ -55,6 +58,8 @@ unsafeLogMean(dist::ProbabilityDistribution{Univariate, Beta}) = digamma(dist.pa
 unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, Beta}) = digamma(dist.params[:b]) - digamma(dist.params[:a] + dist.params[:b]) # E[log(1 - X)]
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, Beta}) = dist.params[:a]*dist.params[:b]/((dist.params[:a] + dist.params[:b])^2*(dist.params[:a] + dist.params[:b] + 1.0))
+
+logPdf(dist::ProbabilityDistribution{Univariate, Beta}, x) = (dist.params[:a]-1)*log(x) + (dist.params[:b]-1)*log(1.0-x) - lgamma(dist.params[:a]) - lgamma(dist.params[:b]) + lgamma(dist.params[:a]+dist.params[:b])
 
 function prod!( x::ProbabilityDistribution{Univariate, Beta},
                 y::ProbabilityDistribution{Univariate, Beta},

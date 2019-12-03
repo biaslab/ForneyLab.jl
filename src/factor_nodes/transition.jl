@@ -1,8 +1,5 @@
 export Transition
 
-# import Base: *
-# export *
-
 """
 Description:
 
@@ -10,6 +7,8 @@ Description:
     random variables, with node function
 
     f(out, in1, a) = Cat(out | a*in1)
+
+    Where a is a left-stochastic matrix (columns sum to one)
 
 Interfaces:
 

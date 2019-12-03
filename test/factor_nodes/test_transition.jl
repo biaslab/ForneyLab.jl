@@ -3,28 +3,45 @@ module TransitionTest
 using Test
 using ForneyLab
 import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPTransitionOutVCP, SPTransitionIn1CVP, VBTransitionOut, VBTransitionIn1, VBTransitionA, SVBTransitionOutVCD, SVBTransitionIn1CVD, SVBTransitionADV, MTransitionCCD
+import ForneyLab: SPTransitionOutNPP, SPTransitionIn1PNP, SPTransitionOutNCP, SPTransitionIn1CNP, VBTransitionOut, VBTransitionIn1, VBTransitionA, SVBTransitionOutVCD, SVBTransitionIn1CVD, SVBTransitionADV, MTransitionCCD
 
 
 #-------------
 # Update rules
 #-------------
 
-@testset "SPTransitionOutVCP" begin
-    @test SPTransitionOutVCP <: SumProductRule{Transition}
-    @test outboundType(SPTransitionOutVCP) == Message{Categorical}
-    @test isApplicable(SPTransitionOutVCP, [Nothing, Message{Categorical}, Message{PointMass}]) 
-    @test !isApplicable(SPTransitionOutVCP, [Message{Categorical}, Nothing, Message{PointMass}]) 
+@testset "SPTransitionOutNPP" begin
+    @test SPTransitionOutNPP <: SumProductRule{Transition}
+    @test outboundType(SPTransitionOutNPP) == Message{Categorical}
+    @test isApplicable(SPTransitionOutNPP, [Nothing, Message{PointMass}, Message{PointMass}]) 
+    @test !isApplicable(SPTransitionOutNPP, [Message{PointMass}, Nothing, Message{PointMass}]) 
 
-    @test ruleSPTransitionOutVCP(nothing, Message(Univariate, Categorical, p=[0.1, 0.4, 0.5]), Message(MatrixVariate, PointMass, m=[0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])) == Message(Univariate, Categorical, p=[0.3660714285714285, 0.27678571428571425, 0.35714285714285715])
+    @test ruleSPTransitionOutNPP(nothing, Message(Multivariate, PointMass, m=[0.1, 0.4, 0.5]), Message(MatrixVariate, PointMass, m=[0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])) == Message(Univariate, Categorical, p=[0.3660714285714285, 0.27678571428571425, 0.35714285714285715])
 end
 
-@testset "SPTransitionIn1CVP" begin
-    @test SPTransitionIn1CVP <: SumProductRule{Transition}
-    @test outboundType(SPTransitionIn1CVP) == Message{Categorical}
-    @test isApplicable(SPTransitionIn1CVP, [Message{Categorical}, Nothing, Message{PointMass}]) 
+@testset "SPTransitionIn1PNP" begin
+    @test SPTransitionIn1PNP <: SumProductRule{Transition}
+    @test outboundType(SPTransitionIn1PNP) == Message{Categorical}
+    @test isApplicable(SPTransitionIn1PNP, [Message{PointMass}, Nothing, Message{PointMass}]) 
 
-    @test ruleSPTransitionIn1CVP(Message(Univariate, Categorical, p=[0.1, 0.4, 0.5]), nothing, Message(MatrixVariate, PointMass, m=[0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])) == Message(Univariate, Categorical, p=[0.23000000000000004, 0.43, 0.33999999999999997])
+    @test ruleSPTransitionIn1PNP(Message(Multivariate, PointMass, m=[0.1, 0.4, 0.5]), nothing, Message(MatrixVariate, PointMass, m=[0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])) == Message(Univariate, Categorical, p=[0.23000000000000004, 0.43, 0.33999999999999997])
+end
+
+@testset "SPTransitionOutNCP" begin
+    @test SPTransitionOutNCP <: SumProductRule{Transition}
+    @test outboundType(SPTransitionOutNCP) == Message{Categorical}
+    @test isApplicable(SPTransitionOutNCP, [Nothing, Message{Categorical}, Message{PointMass}]) 
+    @test !isApplicable(SPTransitionOutNCP, [Message{Categorical}, Nothing, Message{PointMass}]) 
+
+    @test ruleSPTransitionOutNCP(nothing, Message(Univariate, Categorical, p=[0.1, 0.4, 0.5]), Message(MatrixVariate, PointMass, m=[0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])) == Message(Univariate, Categorical, p=[0.3660714285714285, 0.27678571428571425, 0.35714285714285715])
+end
+
+@testset "SPTransitionIn1CNP" begin
+    @test SPTransitionIn1CNP <: SumProductRule{Transition}
+    @test outboundType(SPTransitionIn1CNP) == Message{Categorical}
+    @test isApplicable(SPTransitionIn1CNP, [Message{Categorical}, Nothing, Message{PointMass}]) 
+
+    @test ruleSPTransitionIn1CNP(Message(Univariate, Categorical, p=[0.1, 0.4, 0.5]), nothing, Message(MatrixVariate, PointMass, m=[0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])) == Message(Univariate, Categorical, p=[0.23000000000000004, 0.43, 0.33999999999999997])
 end
 
 @testset "VBTransitionOut" begin

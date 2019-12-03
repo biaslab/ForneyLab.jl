@@ -1,5 +1,3 @@
-import Base: prod!, convert
-
 export Gaussian, prod!, convert
 
 function convert(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}},

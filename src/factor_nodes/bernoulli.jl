@@ -2,6 +2,7 @@ export Bernoulli
 
 """
 Description:
+
     Bernoulli factor node
 
     out ∈ {0, 1}
@@ -10,10 +11,12 @@ Description:
     f(out, p) = Ber(out|p) = p^out (1 - p)^{1 - out}
 
 Interfaces:
+
     1. out
     2. p
 
 Construction:
+
     Bernoulli(id=:some_id)
 """
 mutable struct Bernoulli <: SoftFactor
@@ -50,6 +53,8 @@ unsafeMean(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:
 unsafeMeanVector(dist::ProbabilityDistribution{Univariate, Bernoulli}) = [dist.params[:p], 1 - dist.params[:p]]
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:p]*(1 - dist.params[:p])
+
+logPdf(dist::ProbabilityDistribution{Univariate, Bernoulli}, x) = x*log(dist.params[:p]) + (1.0-x)*log(1.0-dist.params[:p])
 
 sample(dist::ProbabilityDistribution{Univariate, Bernoulli}) = 1.0*(rand() < dist.params[:p])
 

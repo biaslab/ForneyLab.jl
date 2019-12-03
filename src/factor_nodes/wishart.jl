@@ -36,27 +36,52 @@ end
 
 slug(::Type{Wishart}) = "W"
 
-format(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = "$(slug(Wishart))(v=$(format(dist.params[:v])), nu=$(format(dist.params[:nu])))"
+function format(dist::ProbabilityDistribution{MatrixVariate, Wishart})
+    return "$(slug(Wishart))(v=$(format(dist.params[:v])), nu=$(format(dist.params[:nu])))"
+end
 
 function ProbabilityDistribution(::Type{MatrixVariate}, ::Type{Wishart}; v=Matrix{Float64}(I,1,1), nu=1.0)
-    return ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>PDMat(Matrix(v)), :nu=>nu))
+    if isa(v, PDMat)
+        return ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+    else
+        return ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>PDMat(Matrix(v)), :nu=>nu))
+    end
 end
-function ProbabilityDistribution(::Type{Wishart}; v=PDMat(Matrix{Float64}(I,1,1)), nu=1.0)
-    return ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+
+function ProbabilityDistribution(::Type{Wishart}; v=Matrix{Float64}(I,1,1), nu=1.0)
+    if isa(v, PDMat)
+        return ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>v, :nu=>nu))
+    else
+        return ProbabilityDistribution{MatrixVariate, Wishart}(Dict(:v=>PDMat(Matrix(v)), :nu=>nu))
+    end
 end
 
+function logPdf(dist::ProbabilityDistribution{MatrixVariate, Wishart},x)
+    d = dims(dist)[1]
+    0.5*((dist.params[:nu]-d-1)*log(det(x)) - tr(inv(dist.params[:v])*x) - dist.params[:nu]*d*log(2) - dist.params[:nu]*logdet(dist.params[:v])) - logmvgamma(d,0.5*dist.params[:nu])
+end
 
-dims(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = size(dist.params[:v])
+function dims(dist::ProbabilityDistribution{MatrixVariate, Wishart})
+    return size(dist.params[:v])
+end
 
-vague(::Type{Wishart}, dims::Int64) = ProbabilityDistribution(MatrixVariate, Wishart, v=PDMat(huge*Matrix{Float64}(I,dims,dims)), nu=Float64(dims)) # Flat prior
+function vague(::Type{Wishart}, dims::Int64)
+    return ProbabilityDistribution(MatrixVariate, Wishart, v=PDMat(huge*Matrix{Float64}(I,dims,dims)), nu=Float64(dims))
+end
 
-unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = dist.params[:nu]*dist.params[:v].mat # unsafe mean
+function vague(::Type{Wishart}, dims::Tuple{Int64, Int64})
+    return ProbabilityDistribution(MatrixVariate, Wishart, v=PDMat(huge*Matrix{Float64}(I,dims[1],dims[1])), nu=Float64(dims[1]))
+end
+
+function unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart})
+    return dist.params[:nu]*dist.params[:v].mat
+end
 
 function unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
     sum([digamma.(0.5*(dist.params[:nu] + 1 - i)) for i = 1:d]) +
     d*log(2) +
-    PDMats.logdet(dist.params[:v])
+    logdet(dist.params[:v])
 end
 
 function unsafeVar(dist::ProbabilityDistribution{MatrixVariate, Wishart}) # unsafe variance
@@ -73,7 +98,7 @@ end
 function isProper(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     (size(dist.params[:v], 1) == size(dist.params[:v], 2)) || return false
     (dist.params[:nu] > size(dist.params[:v], 1) - 1) || return false
-    isRoundedPosDef(dist.params[:v].mat) || return false # no longer necessary with PDMats
+    isRoundedPosDef(dist.params[:v]) || return false # no longer necessary with PDMats
     return true
 end
 
@@ -101,7 +126,7 @@ end
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Wishart})
     d = dims(dist)[1]
-    0.5*(d + 1.0)*PDMats.logdet(dist.params[:v]) +
+    0.5*(d + 1.0)*logdet(dist.params[:v]) +
     0.5*d*(d + 1.0)*log(2) +
     0.25*d*(d - 1.0)*log(pi) +
     sum([lgamma(0.5*(dist.params[:nu] + 1.0 - i)) for i=1:d]) -

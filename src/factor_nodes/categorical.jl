@@ -2,6 +2,7 @@ export Categorical
 
 """
 Description:
+
     Categorical factor node
 
     The categorical node defines a one-dimensional probability
@@ -14,10 +15,12 @@ Description:
               = Π_i p_i^{out_i}
 
 Interfaces:
+
     1. out
     2. p
 
 Construction:
+
     Categorical(id=:some_id)
 """
 mutable struct Categorical <: SoftFactor
@@ -52,6 +55,8 @@ isProper(dist::ProbabilityDistribution{Univariate, Categorical}) = (abs(sum(dist
 unsafeMean(dist::ProbabilityDistribution{Univariate, Categorical}) = deepcopy(dist.params[:p])
 
 unsafeMeanVector(dist::ProbabilityDistribution{Univariate, Categorical}) = deepcopy(dist.params[:p])
+
+logPdf(dist::ProbabilityDistribution{Univariate, Categorical}, x) = sum(x .* log.(dist.params[:p]))
 
 function sample(dist::ProbabilityDistribution{Univariate, Categorical})
     isProper(dist) || error("Cannot sample from improper distribution $dist")

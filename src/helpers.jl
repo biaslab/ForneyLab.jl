@@ -38,9 +38,9 @@ function swap_arguments(orig::Expr)
     return mirrored
 end
 
-"""ensureMatrix: cast input to a Matrix if necessary"""
-ensureMatrix(arr::AbstractMatrix{T}) where T<:Number = arr
-ensureMatrix(arr::Vector{T}) where T<:Number = Diagonal(arr)
+"""Cast input to a `Matrix` if necessary"""
+ensureMatrix(A::AbstractMatrix{T}) where T<:Number = A
+ensureMatrix(A::Vector{T}) where T<:Number = Diagonal(A)
 ensureMatrix(n::Number) = fill!(Array{typeof(n)}(undef,1,1), n)
 ensureMatrix(n::Nothing) = nothing
 
@@ -70,28 +70,56 @@ Base.broadcast(::typeof(*), D1::Diagonal, D2::Matrix) = D2.*D1
 *(sym1::Symbol, sym2::Vector{Symbol}) = Symbol[sym1*s2 for s2 in sym2]
 *(sym1::Vector{Symbol}, sym2::Symbol) = Symbol[s1*sym2 for s1 in sym1]
 
-"""Equality for PD Matrices"""
-==(A::PDMat, B::PDMat) = (A.mat == B.mat)
-==(A::PDiagMat, B::PDiagMat) = (A.diag == B.diag)
-@symmetrical ==(A::PDMat, B::PDiagMat) = (A.mat == B.diag)
+"""
+Matrix inversion via Cholesky decomp., retries with regularization (1e-8*I) on failure.
+"""
+function cholinv(A::AbstractArray)
+    try
+        return inv(cholesky(Hermitian(Matrix(A))))
+    catch
+        try
+            return inv(cholesky(Hermitian(Matrix(A) + 1e-8*I)))
+        catch exception
+            if isa(exception, PosDefException)
+                error("PosDefException: Matrix is not positive-definite, even after regularization. $(typeof(M)):\n$M")
+            else
+                println("cholinv() errored when inverting $(typeof(M)):\n$M")
+                rethrow(exception)
+            end
+        end
+    end
+end
+cholinv(A::PDMat) = inv(A).mat
+cholinv(A::PDiagMat) = Diagonal(A.inv_diag)
+cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
+cholinv(m::Number) = 1.0/m
 
 """Product for PD Matrices"""
-*(A::AbstractArray, B::PDMat) = A*B.mat
+*(A::AbstractArray, B::PDMat) = A*B.mat # Reverse exists within PDMats
 
-"""Inverses for PD matrices"""
-inv(A::PDMat) = inv(A.chol) # Left inv is overloaded PDMats, right is from LinearAlgebra
-inv(A::PDiagMat) = Diagonal(A.inv_diag)
-
-"""Subtraction for PD matrices"""
+"""Subtraction for PD Matrices"""
 -(A::PDMat, B::PDMat) = (A.mat - B.mat)
 -(A::PDiagMat, B::PDiagMat) = Diagonal(A.diag - B.diag)
 @symmetrical -(A::PDMat, B::PDiagMat) = (A.mat - Diagonal(B.diag))
+@symmetrical -(A::AbstractArray, B::PDMat) = A - B.mat
+
+"""Equality for PD Matrices"""
+==(A::PDMat, B::PDMat) = (A.mat == B.mat)
+==(A::PDiagMat, B::PDiagMat) = (A.diag == B.diag)
+@symmetrical ==(A::PDMat, B::PDiagMat) = (A.mat == Diagonal(B.diag))
+@symmetrical ==(A::AbstractArray, B::PDMat) = (A == B.mat)
+
+"""Hermitian for PD Matrices"""
+Hermitian(A::PDMat) = Hermitian(A.mat)
+Hermitian(A::PDiagMat) = Hermitian(Diagonal(A.diag))
 
 """Reporting formats"""
 format(d::Bool) = string(d)
 format(d::Symbol) = string(d)
 
-function format(d::Float64)
+format(d::Int) = string(d)
+
+function format(d::AbstractFloat)
     if 0.01 < d < 100.0 || -100 < d < -0.01 || d==0.0
         return @sprintf("%.2f", d)
     else
@@ -99,7 +127,7 @@ function format(d::Float64)
     end
 end
 
-function format(d::Vector{T}) where T<:Union{Float64, Bool}
+function format(d::Vector{T}) where T<:Union{AbstractFloat, Bool}
     s = "["
     for d_k in d[1:end-1]
         s*=format(d_k)
@@ -110,7 +138,7 @@ function format(d::Vector{T}) where T<:Union{Float64, Bool}
     return s
 end
 
-function format(d::Matrix{T}) where T<:Union{Float64, Int64}
+function format(d::Matrix{T}) where T<:Union{AbstractFloat, Int}
     s = "["
     for r in 1:size(d, 1)
         s *= format(vec(d[r,:]))
@@ -120,7 +148,7 @@ function format(d::Matrix{T}) where T<:Union{Float64, Int64}
     return s
 end
 
-function format(d::Diagonal{Float64})
+function format(d::Diagonal{AbstractFloat})
     return "diag$(format(d.diag))"
 end
 
@@ -145,18 +173,29 @@ function format(d::PDiagMat{Float64})
     return format(d.diag)
 end
 
-"""isApproxEqual: check approximate equality"""
-isApproxEqual(arg1, arg2) = maximum(abs.(arg1-arg2)) < tiny
-@symmetrical isApproxEqual(arg1::PDMat{Float64}, arg2::AbstractArray{Float64}) = maximum(abs.(arg1.mat - arg2)) < tiny
-@symmetrical isApproxEqual(arg1::PDiagMat{Float64}, arg2::AbstractArray{Float64}) = maximum(abs.(Diagonal(arg1.diag) - arg2)) < tiny
-@symmetrical isApproxEqual(arg1::PDMat{Float64}, arg2::PDiagMat{Float64}) = maximum(abs.(arg1.mat - Diagonal(arg2.diag))) < tiny
-
-"""isRoundedPosDef: is input matrix positive definite? Round to prevent fp precision problems that isposdef() suffers from."""
-function isRoundedPosDef(arr::AbstractArray{Float64})
-    return ishermitian(round.(Matrix(arr), digits=round(Int, log10(huge)))) && isposdef(Hermitian(Matrix(arr), :L))
+"""Check if arguments are approximately equal"""
+function isApproxEqual(arg1, arg2)
+    return maximum(abs.(arg1-arg2)) < tiny
 end
 
-function isRoundedPosDef(arr::AbstractPDMat)
+@symmetrical function isApproxEqual(arg1::PDMat{Float64}, arg2::AbstractArray{Float64})
+    return maximum(abs.(arg1.mat - arg2)) < tiny
+end
+
+@symmetrical function isApproxEqual(arg1::PDiagMat{Float64}, arg2::AbstractArray{Float64})
+    return maximum(abs.(Diagonal(arg1.diag) - arg2)) < tiny
+end
+
+@symmetrical function isApproxEqual(arg1::PDMat{Float64}, arg2::PDiagMat{Float64})
+    return maximum(abs.(arg1.mat - Diagonal(arg2.diag))) < tiny
+end
+
+"""Checks if input matrix is positive definite. We also perform rounding in order to prevent floating point precision problems that `isposdef()`` suffers from."""
+function isRoundedPosDef(A::AbstractArray{Float64})
+    return ishermitian(round.(Matrix(A), digits=round(Int, log10(huge)))) && isposdef(Hermitian(Matrix(A), :L))
+end
+
+function isRoundedPosDef(A::AbstractPDMat)
     return true
 end
 
@@ -166,7 +205,7 @@ function viewFile(filename::AbstractString)
 end
 
 """
-trigammaInverse(x): solve `trigamma(y) = x` for `y`.
+Solve `trigamma(y) = x` for `y`.
 
 Uses Newton's method on the convex function 1/trigramma(y).
 Iterations converge monotonically.
@@ -208,6 +247,6 @@ function leaftypes(datatype::Type)
 end
 
 """
-Helper function to construct 1x1 Matrix
+Helper function to construct 1x1 `Matrix`
 """
 mat(sc) = reshape([sc],1,1)

@@ -1,7 +1,4 @@
-export Multiplication
-
-import Base: *
-export *
+export Multiplication, *
 
 """
 Description:

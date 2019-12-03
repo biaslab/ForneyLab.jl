@@ -2,8 +2,8 @@ module BetaTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims
-import ForneyLab: SPBetaOutVPP, VBBetaOut
+import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf
+import ForneyLab: SPBetaOutNPP, VBBetaOut
 import SpecialFunctions: digamma
 
 @testset "Beta ProbabilityDistribution and Message construction" begin
@@ -31,6 +31,10 @@ end
     @test unsafeVar(ProbabilityDistribution(Beta, a=2.0, b=2.0)) == 0.05
 end
 
+@testset "log pdf" begin
+    @test isapprox(logPdf(ProbabilityDistribution(Beta, a=2.0, b=2.0),0.3), 0.2311117209633866)
+end
+
 @testset "prod!" begin
     @test ProbabilityDistribution(Beta, a=2.0, b=2.0) * ProbabilityDistribution(Beta, a=2.0, b=3.0) == ProbabilityDistribution(Beta, a=3.0, b=4.0)
     @test ProbabilityDistribution(Univariate, Beta, a=1.0, b=2.0) * ProbabilityDistribution(Univariate, PointMass, m=0.2) == ProbabilityDistribution(Univariate, PointMass, m=0.2)
@@ -43,12 +47,12 @@ end
 # Update rules
 #-------------
 
-@testset "SPBetaOutVPP" begin
-    @test SPBetaOutVPP <: SumProductRule{Beta}
-    @test outboundType(SPBetaOutVPP) == Message{Beta}
-    @test isApplicable(SPBetaOutVPP, [Nothing, Message{PointMass}, Message{PointMass}])
+@testset "SPBetaOutNPP" begin
+    @test SPBetaOutNPP <: SumProductRule{Beta}
+    @test outboundType(SPBetaOutNPP) == Message{Beta}
+    @test isApplicable(SPBetaOutNPP, [Nothing, Message{PointMass}, Message{PointMass}])
 
-    @test ruleSPBetaOutVPP(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
+    @test ruleSPBetaOutNPP(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
 end
 
 @testset "VBBetaOut" begin

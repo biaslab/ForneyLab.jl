@@ -56,6 +56,14 @@ function ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanPrecis
     end
 end
 
+function logPdf(dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision},x)
+    return -0.5*(log(2pi)-log(dist.params[:w]) + (x-dist.params[:m])^2*dist.params[:w])
+end
+
+function logPdf(dist::ProbabilityDistribution{Multivariate, GaussianMeanPrecision},x)
+    return -0.5*(dims(dist)*log(2pi) + logdet(dist.params[:w]) + transpose(x-dist.params[:m])*dist.params[:w]*(x-dist.params[:m]))
+end
+
 function dims(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
     return length(dist.params[:m])
 end
@@ -65,8 +73,15 @@ function vague(::Type{GaussianMeanPrecision})
 end
 
 function vague(::Type{GaussianMeanPrecision}, dims::Int64)
-    w = PDMat(tiny*Matrix{Float64}(I,dims,dims))
-    return ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(dims), w=w)
+    return ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(dims), w=PDMat(tiny*Matrix{Float64}(I,dims,dims)))
+end
+
+function vague(::Type{GaussianMeanPrecision}, dims::Tuple{Int64})
+    return ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(dims), w=PDMat(tiny*Matrix{Float64}(I,dims[1],dims[1])))
+end
+
+function unsafeMode(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
+    return deepcopy(dist.params[:m])
 end
 
 function unsafeMean(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
@@ -81,20 +96,16 @@ function unsafeVar(dist::ProbabilityDistribution{Multivariate, GaussianMeanPreci
     return diag(inv(dist.params[:w]))
 end
 
+function unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
+    return deepcopy(dist.params[:w])
+end
+
 function unsafeCov(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
     return inv(dist.params[:w])
 end
 
-function unsafeMeanCov(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
-    return (deepcopy(dist.params[:m]), inv(dist.params[:w]))
-end
-
 function unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
     return dist.params[:w]*dist.params[:m]
-end
-
-function unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
-    return deepcopy(dist.params[:w])
 end
 
 function unsafeWeightedMeanPrecision(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
