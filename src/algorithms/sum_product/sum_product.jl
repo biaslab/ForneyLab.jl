@@ -5,10 +5,10 @@ sumProductSchedule,
 
 abstract type SumProductRule{factor_type} <: MessageUpdateRule end
 
-"""
-sumProductSchedule() generates a sum-product message passing schedule that computes the
-marginals for each of the argument variables.
-"""
+""" 
+`sumProductSchedule()` generates a sum-product message passing schedule that
+computes the marginals for each of the argument variables. 
+""" 
 function sumProductSchedule(variables::Vector{Variable})
     # Generate a feasible summary propagation schedule
     schedule = summaryPropagationSchedule(variables)
@@ -26,9 +26,9 @@ end
 sumProductSchedule(variable::Variable) = sumProductSchedule([variable])
 
 """
-internalSumProductSchedule() generates a sum-product message passing schedule
-for the inner graph of a CompositeNode. This schedule produces the sum-product
-message out of the specified outbound_interface.
+`internalSumProductSchedule()` generates a sum-product message passing schedule
+for the inner graph of a `CompositeNode`. This schedule produces the sum-product
+message out of the specified `outbound_interface`.
 """
 function internalSumProductSchedule(cnode::CompositeNode,
                                     outbound_interface::Interface,
@@ -120,10 +120,10 @@ function collectInboundTypes(entry::ScheduleEntry,
 end
 
 """
-@sumProductRule registers a sum-product update rule by defining the rule type
-and the corresponding methods for the outboundType and isApplicable functions.
-If no name (type) for the new rule is passed, a unique name (type) will be
-generated. Returns the rule type.
+`@sumProductRule` registers a sum-product update rule by defining the rule type
+and the corresponding methods for the `outboundType` and `isApplicable`
+functions. If no name (type) for the new rule is passed, a unique name (type)
+will be generated. Returns the rule type.
 """
 macro sumProductRule(fields...)
     # Init required fields in macro scope
@@ -160,7 +160,8 @@ macro sumProductRule(fields...)
     end
 
     # Build validators for isApplicable
-    input_type_validators = String[]
+    input_type_validators = 
+        String["length(input_types) == $(length(inbound_types.args))"]
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
             # Only validate inbounds required for message update

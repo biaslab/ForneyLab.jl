@@ -2,9 +2,9 @@ module WishartTest
 
 using Test
 using ForneyLab
-using PDMats
-import ForneyLab: prod!, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper
-import ForneyLab: SPWishartOutVPP, VBWishartOut
+import ForneyLab: prod!, unsafeMode, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper, logPdf
+import ForneyLab: SPWishartOutNPP, VBWishartOut
+import PDMats: AbstractPDMat, PDMat, PDiagMat
 import SpecialFunctions: digamma
 
 @testset "dims" begin
@@ -13,6 +13,7 @@ end
 
 @testset "vague" begin
     @test vague(Wishart, 3) == ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(3), nu=3.0)
+    @test vague(Wishart, (3,3)) == ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(3), nu=3.0)
 end
 #
 @testset "isProper" begin
@@ -36,17 +37,21 @@ end
     @test unsafeDetLogMean(ProbabilityDistribution(MatrixVariate, Wishart, v=diageye(2), nu=2.0)) == digamma(0.5) + digamma(1) + 2*log(2)
 end
 
+@testset "log pdf" begin
+    @test isapprox(logPdf(ProbabilityDistribution(MatrixVariate, Wishart, v=[3.0 1.0; 1.0 1.2], nu=6.0),[2.0 1.0; 1.0 2.0]), -8.15846321016661)
+end
+
 
 #-------------
 # Update rules
 #-------------
 
-@testset "SPWishartOutVPP" begin
-    @test SPWishartOutVPP <: SumProductRule{Wishart}
-    @test outboundType(SPWishartOutVPP) == Message{Wishart}
-    @test isApplicable(SPWishartOutVPP, [Nothing, Message{PointMass}, Message{PointMass}])
+@testset "SPWishartOutNPP" begin
+    @test SPWishartOutNPP <: SumProductRule{Wishart}
+    @test outboundType(SPWishartOutNPP) == Message{Wishart}
+    @test isApplicable(SPWishartOutNPP, [Nothing, Message{PointMass}, Message{PointMass}])
 
-    @test ruleSPWishartOutVPP(nothing, Message(MatrixVariate, PointMass, m=transpose([1.0])), Message(Univariate, PointMass, m=2.0)) == Message(MatrixVariate, Wishart, v=transpose([1.0]), nu=2.0)
+    @test ruleSPWishartOutNPP(nothing, Message(MatrixVariate, PointMass, m=transpose([1.0])), Message(Univariate, PointMass, m=2.0)) == Message(MatrixVariate, Wishart, v=transpose([1.0]), nu=2.0)
 end
 
 @testset "VBWishartOut" begin

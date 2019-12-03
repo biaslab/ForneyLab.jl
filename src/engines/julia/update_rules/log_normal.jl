@@ -1,8 +1,8 @@
 export 
 ruleVBLogNormalOut,
-ruleSPLogNormalOutVPP
+ruleSPLogNormalOutNPP
 
-ruleSPLogNormalOutVPP(  msg_out::Nothing, 
+ruleSPLogNormalOutNPP(  msg_out::Nothing, 
                         msg_m::Message{PointMass, Univariate},
                         msg_s::Message{PointMass, Univariate}) =
     Message(Univariate, LogNormal, m=deepcopy(msg_m.dist.params[:m]), s=deepcopy(msg_s.dist.params[:m]))

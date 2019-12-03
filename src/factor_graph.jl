@@ -20,7 +20,7 @@ mutable struct FactorGraph
 end
 
 """
-Return currently active FactorGraph.
+Return currently active `FactorGraph`.
 Create one if there is none.
 """
 function currentGraph()
@@ -104,8 +104,8 @@ function nodes(edgeset::Set{Edge})
     # Return all nodes connected to edgeset
     connected_nodes = Set{FactorNode}()
     for edge in edgeset
-        push!(connected_nodes, edge.a.node)
-        push!(connected_nodes, edge.b.node)
+        (edge.a == nothing) || push!(connected_nodes, edge.a.node)
+        (edge.b == nothing) || push!(connected_nodes, edge.b.node)
     end
 
     return connected_nodes

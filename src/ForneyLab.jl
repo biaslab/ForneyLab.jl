@@ -1,20 +1,19 @@
 module ForneyLab
 
-using PDMats
+using Base.Meta: parse
+using Base64: base64encode
+using LinearAlgebra: diag, det, tr, cholesky, pinv, PosDefException
+using SparseArrays: spzeros
+using SpecialFunctions: digamma, lgamma, lbeta, erfc, lfactorial
+using LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, I, tr
+using PDMats: AbstractPDMat, PDMat, PDiagMat, inv, logdet, quad, Xt_A_X
+using InteractiveUtils: subtypes
+using Printf: @sprintf
+using StatsFuns: logmvgamma
 
-# Other includes
-import Base: show, convert, ==, *, ^, -, sqrt, isapprox
-import Base.Meta: parse
-import Base64: base64encode
-import LinearAlgebra: diag, det, tr, cholesky, pinv, Adjoint, Transpose, I
-import LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, cholesky, inv
-import LinearAlgebra: logdet
-import SparseArrays: spzeros
-import SpecialFunctions: digamma, lgamma, lbeta, erfc
 import Statistics: mean, var, cov
-import PDMats: AbstractPDMat, PDMat, PDiagMat
-import InteractiveUtils: subtypes
-import Printf: @sprintf
+import Base: +, -, *, ^, ==, exp, convert, show, prod!
+import LinearAlgebra: dot
 
 # Helpers
 include("helpers.jl")
@@ -52,9 +51,13 @@ include("factor_nodes/transition.jl")
 include("factor_nodes/beta.jl")
 include("factor_nodes/dirichlet.jl")
 include("factor_nodes/gaussian_mixture.jl")
-include("factor_nodes/sigmoid.jl")
+include("factor_nodes/probit.jl")
+include("factor_nodes/logit.jl")
+include("factor_nodes/softmax.jl")
 include("factor_nodes/nonlinear.jl")
 include("factor_nodes/dot_product.jl")
+include("factor_nodes/poisson.jl")
+
 
 # Factor graph
 include("factor_graph.jl")
@@ -85,6 +88,7 @@ include("update_rules/multiplication.jl")
 include("update_rules/exponential.jl")
 include("update_rules/gaussian_mean_variance.jl")
 include("update_rules/gaussian_mean_precision.jl")
+include("update_rules/gaussian_weighted_mean_precision.jl")
 include("update_rules/gamma.jl")
 include("update_rules/log_normal.jl")
 include("update_rules/wishart.jl")
@@ -94,9 +98,13 @@ include("update_rules/transition.jl")
 include("update_rules/beta.jl")
 include("update_rules/dirichlet.jl")
 include("update_rules/gaussian_mixture.jl")
-include("update_rules/sigmoid.jl")
+include("update_rules/probit.jl")
+include("update_rules/logit.jl")
+include("update_rules/softmax.jl")
 include("update_rules/nonlinear.jl")
 include("update_rules/dot_product.jl")
+include("update_rules/poisson.jl")
+
 
 *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
 

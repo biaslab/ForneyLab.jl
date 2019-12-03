@@ -6,9 +6,11 @@ Create a sum-product algorithm to infer marginals over `variables`, and compile 
 function sumProductAlgorithm(variables::Vector{Variable}; file::String="", name::String="")
     schedule = sumProductSchedule(variables)
     marginal_schedule = marginalSchedule(variables)
-    
-    algo = messagePassingAlgorithm(schedule, marginal_schedule, file=file, name=name)
 
+    algo = "begin\n\n"
+    algo *= messagePassingAlgorithm(schedule, marginal_schedule, file=file, name=name)
+    algo *= "\n\nend # block"
+    
     return algo
 end
 sumProductAlgorithm(variable::Variable; file::String="", name::String="") = sumProductAlgorithm([variable], file=file, name=name)

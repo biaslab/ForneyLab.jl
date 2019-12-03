@@ -6,9 +6,10 @@ variationalExpectationPropagationSchedule,
 
 abstract type ExpectationPropagationRule{factor_type} <: MessageUpdateRule end
 
-"""
-expectationPropagationSchedule() generates a expectation propagation message passing schedule.
-"""
+""" 
+`expectationPropagationSchedule()` generates a expectation propagation
+message passing schedule. 
+""" 
 function expectationPropagationSchedule(variables::Vector{Variable})
     ep_sites = collectEPSites(nodes(current_graph))
     breaker_sites = Interface[site.partner for site in ep_sites]
@@ -30,7 +31,7 @@ function expectationPropagationSchedule(variables::Vector{Variable})
 end
 
 """
-variationalExpectationPropagationSchedule() generates an expectation propagation message passing schedule
+`variationalExpectationPropagationSchedule()` generates an expectation propagation message passing schedule
 that is limited to the `recognition_factor`. Updates on EP sites are computed with an `ExpectationPropagationRule`.
 """
 function variationalExpectationPropagationSchedule(recognition_factor::RecognitionFactor)
@@ -69,8 +70,8 @@ Find default EP sites present in `node_set`
 function collectEPSites(node_set::Set{FactorNode})
     ep_sites = Interface[]
     for node in sort(collect(node_set))
-        if isa(node, Sigmoid)
-            push!(ep_sites, node.i[:real]) # EP site for a Sigmoid node is i[:real]
+        if isa(node, Probit)
+            push!(ep_sites, node.i[:in1]) # EP site for a Probit node is i[:in1]
         end
     end
 
@@ -83,8 +84,8 @@ Constructs breaker types dictionary for breaker sites
 function breakerTypes(breaker_sites::Vector{Interface})
     breaker_types = Dict{Interface, Type}()
     for site in breaker_sites
-        if isa(site.partner.node, Sigmoid)
-            breaker_types[site] = Message{GaussianMeanVariance, Univariate} # Sigmoid EP site partner requires Gaussian breaker
+        if isa(site.partner.node, Probit)
+            breaker_types[site] = Message{GaussianMeanVariance, Univariate} # Probit EP site partner requires Gaussian breaker
         end
     end
 
@@ -140,9 +141,9 @@ function collectInboundTypes(entry::ScheduleEntry,
 end
 
 """
-@expectationPropagationRule registers a expectation propagation update 
-rule by defining the rule type and the corresponding methods for the outboundType 
-and isApplicable functions. If no name (type) for the new rule is passed, a 
+`@expectationPropagationRule` registers a expectation propagation update 
+rule by defining the rule type and the corresponding methods for the `outboundType` 
+and `isApplicable` functions. If no name (type) for the new rule is passed, a 
 unique name (type) will be generated. Returns the rule type.
 """
 macro expectationPropagationRule(fields...)
@@ -182,7 +183,8 @@ macro expectationPropagationRule(fields...)
     end
 
     # Build validators for isApplicable
-    input_type_validators = String[]
+    input_type_validators = 
+        String["length(input_types) == $(length(inbound_types.args))"]
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
             # Only validate inbounds required for message update

@@ -6,7 +6,7 @@ variationalSchedule,
 abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
 
 """
-variationalSchedule() generates a variational message passing schedule that computes the
+`variationalSchedule()` generates a variational message passing schedule that computes the
 marginals for each of the recognition distributions in the recognition factor.
 """
 function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
@@ -86,12 +86,13 @@ function collectInboundTypes(   entry::ScheduleEntry,
     return inbound_types
 end
 
-"""
-@naiveVariationalRule registers a variational update rule for the naive (mean-field)
-factorization by defining the rule type and the corresponding methods for the 
-outboundType and isApplicable functions. If no name (type) for the new rule is
-passed, a unique name (type) will be generated. Returns the rule type.
-"""
+""" 
+`@naiveVariationalRule` registers a variational update rule for the naive
+(mean-field) factorization by defining the rule type and the corresponding
+methods for the `outboundType` and `isApplicable` functions. If no name (type)
+for the new rule is passed, a unique name (type) will be generated. Returns the
+rule type. 
+""" 
 macro naiveVariationalRule(fields...)
     # Init required fields in macro scope
     node_type = :unknown
@@ -126,7 +127,8 @@ macro naiveVariationalRule(fields...)
     end
 
     # Build validators for isApplicable
-    input_type_validators = String[]
+    input_type_validators = 
+        String["length(input_types) == $(length(inbound_types.args))"]
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
             # Only validate inbounds required for message update

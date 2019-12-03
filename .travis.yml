@@ -1,12 +1,14 @@
 language: julia
+addons:
+  apt_packages:
+    - gfortran
 os:
   - linux
-  - osx
 julia:
-  - 0.7
   - 1.0
+  - 1.1
+  - 1.2
 notifications:
   email: false
 script:
-  - julia -e 'mv("_Project.toml", "Project.toml")'
-  - julia -e 'import Pkg; Pkg.build(); Pkg.test()'
+  - julia -e 'import Pkg; Pkg.test("ForneyLab")'

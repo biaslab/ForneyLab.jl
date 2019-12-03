@@ -2,9 +2,9 @@ module GaussianMeanPrecisionTest
 
 using Test
 using ForneyLab
-import ForneyLab: ==, outboundType, isApplicable, isApproxEqual, isProper, unsafeMean, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
-import ForneyLab: SPGaussianMeanPrecisionOutVPP, SPGaussianMeanPrecisionMPVP, SPGaussianMeanPrecisionOutVGP, SPGaussianMeanPrecisionMGVP, VBGaussianMeanPrecisionOut, VBGaussianMeanPrecisionM, VBGaussianMeanPrecisionW, SVBGaussianMeanPrecisionOutVGD, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionW, MGaussianMeanPrecisionGGD
-import PDMats: PDMat, PDiagMat
+import ForneyLab: ==, outboundType, isApplicable, isApproxEqual, isProper, unsafeMode, unsafeMean, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
+import ForneyLab: SPGaussianMeanPrecisionOutNPP, SPGaussianMeanPrecisionMPNP, SPGaussianMeanPrecisionOutNGP, SPGaussianMeanPrecisionMGNP, VBGaussianMeanPrecisionOut, VBGaussianMeanPrecisionM, VBGaussianMeanPrecisionW, SVBGaussianMeanPrecisionOutVGD, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionW, MGaussianMeanPrecisionGGD
+import PDMats: AbstractPDMat, PDMat, PDiagMat
 import LinearAlgebra: I, det, diag, logdet
 
 @testset "dims" begin
@@ -14,7 +14,8 @@ end
 
 @testset "vague" begin
     @test vague(GaussianMeanPrecision) == ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=tiny)
-    @test vague(GaussianMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(2), w=tiny*diageye(2))
+    @test vague(GaussianMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(2), w=tiny*eye(2))
+    @test vague(GaussianMeanPrecision, (2,)) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=zeros(2), w=tiny*eye(2))
 end
 
 @testset "isProper" begin
@@ -41,6 +42,7 @@ end
 @testset "unsafe statistics" begin
     # Univariate
     @test unsafeMean(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 2.0
+    @test unsafeMode(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 2.0
     @test unsafeVar(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 0.25
     @test unsafeCov(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == 0.25
     @test unsafeMeanCov(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == (2.0, 0.25)
@@ -50,12 +52,18 @@ end
 
     # Multivariate
     @test unsafeMean(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [2.0]
+    @test unsafeMode(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [2.0]
     @test unsafeVar(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [0.25]
-    @test unsafeCov(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == mat(0.25)
-    @test unsafeMeanCov(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == ([2.0], mat(0.25))
+    @test unsafeCov(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == PDMat(mat(0.25))
+    @test unsafeMeanCov(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == ([2.0], PDMat(mat(0.25)))
     @test unsafePrecision(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) ==  PDMat(mat(4.0))
     @test unsafeWeightedMean(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == [8.0]
     @test unsafeWeightedMeanPrecision(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == ([8.0], PDMat(mat(4.0)))
+end
+
+@testset "log pdf" begin
+    @test isapprox(logPdf(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=1, w=1),1), -0.9189385332046728)
+    @test isapprox(logPdf(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0,0], w=[1.0 0.0;0.0 1.0]),[1,0]), -2.3378770664093453)
 end
 
 @testset "convert" begin
@@ -70,44 +78,44 @@ end
 # Update rules
 #-------------
 
-@testset "SPGaussianMeanPrecisionOutVPP" begin
-    @test SPGaussianMeanPrecisionOutVPP <: SumProductRule{GaussianMeanPrecision}
-    @test outboundType(SPGaussianMeanPrecisionOutVPP) == Message{GaussianMeanPrecision}
-    @test isApplicable(SPGaussianMeanPrecisionOutVPP, [Nothing, Message{PointMass}, Message{PointMass}])
-    @test !isApplicable(SPGaussianMeanPrecisionOutVPP, [Message{PointMass}, Nothing, Message{PointMass}])
+@testset "SPGaussianMeanPrecisionOutNPP" begin
+    @test SPGaussianMeanPrecisionOutNPP <: SumProductRule{GaussianMeanPrecision}
+    @test outboundType(SPGaussianMeanPrecisionOutNPP) == Message{GaussianMeanPrecision}
+    @test isApplicable(SPGaussianMeanPrecisionOutNPP, [Nothing, Message{PointMass}, Message{PointMass}])
+    @test !isApplicable(SPGaussianMeanPrecisionOutNPP, [Message{PointMass}, Nothing, Message{PointMass}])
 
-    @test ruleSPGaussianMeanPrecisionOutVPP(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianMeanPrecision, m=1.0, w=2.0)
-    @test ruleSPGaussianMeanPrecisionOutVPP(nothing, Message(Multivariate, PointMass, m=[1.0]), Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianMeanPrecision, m=[1.0], w=mat(2.0))
+    @test ruleSPGaussianMeanPrecisionOutNPP(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianMeanPrecision, m=1.0, w=2.0)
+    @test ruleSPGaussianMeanPrecisionOutNPP(nothing, Message(Multivariate, PointMass, m=[1.0]), Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianMeanPrecision, m=[1.0], w=mat(2.0))
 end
 
-@testset "SPGaussianMeanPrecisionMPVP" begin
-    @test SPGaussianMeanPrecisionMPVP <: SumProductRule{GaussianMeanPrecision}
-    @test outboundType(SPGaussianMeanPrecisionMPVP) == Message{GaussianMeanPrecision}
-    @test !isApplicable(SPGaussianMeanPrecisionMPVP, [Nothing, Message{PointMass}, Message{PointMass}])
-    @test isApplicable(SPGaussianMeanPrecisionMPVP, [Message{PointMass}, Nothing, Message{PointMass}])
+@testset "SPGaussianMeanPrecisionMPNP" begin
+    @test SPGaussianMeanPrecisionMPNP <: SumProductRule{GaussianMeanPrecision}
+    @test outboundType(SPGaussianMeanPrecisionMPNP) == Message{GaussianMeanPrecision}
+    @test !isApplicable(SPGaussianMeanPrecisionMPNP, [Nothing, Message{PointMass}, Message{PointMass}])
+    @test isApplicable(SPGaussianMeanPrecisionMPNP, [Message{PointMass}, Nothing, Message{PointMass}])
 
-    @test ruleSPGaussianMeanPrecisionMPVP(Message(Univariate, PointMass, m=1.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianMeanPrecision, m=1.0, w=2.0)
-    @test ruleSPGaussianMeanPrecisionMPVP(Message(Multivariate, PointMass, m=[1.0]), nothing, Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianMeanPrecision, m=[1.0], w=mat(2.0))
+    @test ruleSPGaussianMeanPrecisionMPNP(Message(Univariate, PointMass, m=1.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianMeanPrecision, m=1.0, w=2.0)
+    @test ruleSPGaussianMeanPrecisionMPNP(Message(Multivariate, PointMass, m=[1.0]), nothing, Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianMeanPrecision, m=[1.0], w=mat(2.0))
 end
 
-@testset "SPGaussianMeanPrecisionOutVGP" begin
-    @test SPGaussianMeanPrecisionOutVGP <: SumProductRule{GaussianMeanPrecision}
-    @test outboundType(SPGaussianMeanPrecisionOutVGP) == Message{GaussianMeanVariance}
-    @test isApplicable(SPGaussianMeanPrecisionOutVGP, [Nothing, Message{Gaussian}, Message{PointMass}])
-    @test !isApplicable(SPGaussianMeanPrecisionOutVGP, [Message{Gaussian}, Nothing, Message{PointMass}])
+@testset "SPGaussianMeanPrecisionOutNGP" begin
+    @test SPGaussianMeanPrecisionOutNGP <: SumProductRule{GaussianMeanPrecision}
+    @test outboundType(SPGaussianMeanPrecisionOutNGP) == Message{GaussianMeanVariance}
+    @test isApplicable(SPGaussianMeanPrecisionOutNGP, [Nothing, Message{Gaussian}, Message{PointMass}])
+    @test !isApplicable(SPGaussianMeanPrecisionOutNGP, [Message{Gaussian}, Nothing, Message{PointMass}])
 
-    @test ruleSPGaussianMeanPrecisionOutVGP(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianMeanVariance, m=1.0, v=1.5)
-    @test ruleSPGaussianMeanPrecisionOutVGP(nothing, Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(1.0)), Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(1.5))
+    @test ruleSPGaussianMeanPrecisionOutNGP(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianMeanVariance, m=1.0, v=1.5)
+    @test ruleSPGaussianMeanPrecisionOutNGP(nothing, Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(1.0)), Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(1.5))
 end
 
-@testset "SPGaussianMeanPrecisionMGVP" begin
-    @test SPGaussianMeanPrecisionMGVP <: SumProductRule{GaussianMeanPrecision}
-    @test outboundType(SPGaussianMeanPrecisionMGVP) == Message{GaussianMeanVariance}
-    @test !isApplicable(SPGaussianMeanPrecisionMGVP, [Nothing, Message{Gaussian}, Message{PointMass}])
-    @test isApplicable(SPGaussianMeanPrecisionMGVP, [Message{Gaussian}, Nothing, Message{PointMass}])
+@testset "SPGaussianMeanPrecisionMGNP" begin
+    @test SPGaussianMeanPrecisionMGNP <: SumProductRule{GaussianMeanPrecision}
+    @test outboundType(SPGaussianMeanPrecisionMGNP) == Message{GaussianMeanVariance}
+    @test !isApplicable(SPGaussianMeanPrecisionMGNP, [Nothing, Message{Gaussian}, Message{PointMass}])
+    @test isApplicable(SPGaussianMeanPrecisionMGNP, [Message{Gaussian}, Nothing, Message{PointMass}])
 
-    @test ruleSPGaussianMeanPrecisionMGVP(Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianMeanVariance, m=1.0, v=1.5)
-    @test ruleSPGaussianMeanPrecisionMGVP(Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(1.0)), nothing, Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(1.5))
+    @test ruleSPGaussianMeanPrecisionMGNP(Message(Univariate, GaussianMeanVariance, m=1.0, v=1.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianMeanVariance, m=1.0, v=1.5)
+    @test ruleSPGaussianMeanPrecisionMGNP(Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(1.0)), nothing, Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(1.5))
 end
 
 @testset "VBGaussianMeanPrecisionM" begin

@@ -58,6 +58,14 @@ function ProbabilityDistribution(::Type{Multivariate}, ::Type{GaussianMeanVarian
     end
 end
 
+function logPdf(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance},x)
+    return -0.5*(log(2pi)+log(dist.params[:v]) + (x-dist.params[:m])^2/dist.params[:v])
+end
+
+function logPdf(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance},x)
+    return -0.5*(dims(dist)*log(2pi) + logdet(dist.params[:v]) + transpose(x-dist.params[:m])*inv(dist.params[:v])*(x-dist.params[:m]))
+end
+
 function dims(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
     return length(dist.params[:m])
 end
@@ -67,8 +75,15 @@ function vague(::Type{GaussianMeanVariance})
 end
 
 function vague(::Type{GaussianMeanVariance}, dims::Int64)
-    v = PDMat(huge*Matrix{Float64}(I,dims,dims))
-    return ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(dims), v=v)
+    return ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(dims), v=PDMat(huge*Matrix{Float64}(I,dims,dims)))
+end
+
+function vague(::Type{GaussianMeanVariance}, dims::Tuple{Int64})
+    return ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=zeros(dims), v=PDMat(huge*Matrix{Float64}(I,dims[1],dims[1])))
+end
+
+function unsafeMode(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
+    return deepcopy(dist.params[:m])
 end
 
 function unsafeMean(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
@@ -83,6 +98,14 @@ function unsafeVar(dist::ProbabilityDistribution{Multivariate, GaussianMeanVaria
     return diag(dist.params[:v])
 end
 
+function unsafePrecision(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance})
+    return inv(dist.params[:v])
+end
+
+function unsafePrecision(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance})
+    return inv(dist.params[:v]).mat
+end
+
 function unsafeCov(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
     return deepcopy(dist.params[:v])
 end
@@ -95,13 +118,8 @@ function unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianMeanVarianc
     return inv(dist.params[:v])*dist.params[:m]
 end
 
-function unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
-    return inv(dist.params[:v])
-end
-
 function unsafeWeightedMeanPrecision(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
-    # Converting from m,v to xi,w would require two separate inversions of the covariance matrix;
-    # this function ensures only a singly inversion is performed
+    # Converting from m,v to xi,w would require two separate inversions of the covariance matrix; this function ensures only a singly inversion is performed
     W = inv(dist.params[:v])
     return (W*dist.params[:m], W)
 end
@@ -111,12 +129,7 @@ function isProper(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance
 end
 
 function isProper(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance})
-    # PDMats ensures proper distributions
-    if typeof(dist.params[:v]) == PDMat{Float64, Array{Float64,2}}
-        return true
-    else
-        return isRoundedPosDef(dist.params[:v])
-    end
+    return isRoundedPosDef(dist.params[:v])
 end
 
 function ==(t::ProbabilityDistribution{V, GaussianMeanVariance},

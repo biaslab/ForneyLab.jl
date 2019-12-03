@@ -1,8 +1,8 @@
 export RecognitionFactor, RecognitionFactorization, currentRecognitionFactorization
 
 """
-A Cluster specifies a collection of `edges` adjacent to `node` that belong to the same
-RecognitionFactor. A joint marginal can be computed over a cluster.
+A `Cluster` specifies a collection of `edges` adjacent to `node` that belong to the same
+`RecognitionFactor`. A joint marginal can be computed over a cluster.
 """
 mutable struct Cluster <: AbstractCluster
     id::Symbol
@@ -19,7 +19,7 @@ end
 Base.isless(c1::Cluster, c2::Cluster) = isless("$(c1.id)", "$(c2.id)")
 
 """
-A RecognitionFactor specifies the subset of variables that comprise
+A `RecognitionFactor` specifies the subset of variables that comprise
 a joint factor in the recognition factorization.
 """
 mutable struct RecognitionFactor
@@ -138,7 +138,7 @@ end
 
 """
 Find the smallest legal subgraph that includes the argument edges. Default setting terminates the search at soft factors
-and does not constrain the search to a limiting set (as specified by an empty limit_set argument).
+and does not constrain the search to a limiting set (as specified by an empty `limit_set` argument).
 """
 function extend(edge_set::Set{Edge}; terminate_at_soft_factors=true, limit_set=Set{Edge}())
     cluster = Set{Edge}() # Set to fill with edges in cluster
@@ -146,7 +146,12 @@ function extend(edge_set::Set{Edge}; terminate_at_soft_factors=true, limit_set=S
     while !isempty(edges) # As long as there are unchecked edges connected through deterministic nodes
         current_edge = pop!(edges) # Pick one
         push!(cluster, current_edge) # Add to edge cluster
-        for node in [current_edge.a.node, current_edge.b.node] # Check both head and tail node
+        
+        connected_nodes = [] # Find nodes connected to edge (as a vector)
+        (current_edge.a == nothing) || push!(connected_nodes, current_edge.a.node)
+        (current_edge.b == nothing) || push!(connected_nodes, current_edge.b.node)
+
+        for node in connected_nodes # Check both head and tail node (if present)
             if (terminate_at_soft_factors==false) || isa(node, DeltaFactor)
                 for interface in node.interfaces
                     if (interface.edge !== current_edge) && !(interface.edge in cluster) && ( isempty(limit_set) || (interface.edge in limit_set) ) # Is next level edge not seen yet, and is it contained in the limiting set?
@@ -164,7 +169,7 @@ end
 extend(edge::Edge; terminate_at_soft_factors=true, limit_set=Set{Edge}()) = extend(Set{Edge}([edge]), terminate_at_soft_factors=terminate_at_soft_factors, limit_set=limit_set)
 
 """
-A RecognitionFactorization holds a collection of (non-overlapping) recognition factors that
+A `RecognitionFactorization` holds a collection of (non-overlapping) recognition factors that
 specify the recognition factorization over a factor graph that is used for variational inference.
 """
 mutable struct RecognitionFactorization
@@ -177,7 +182,7 @@ mutable struct RecognitionFactorization
 end
 
 """
-Return currently active RecognitionFactorization.
+Return currently active `RecognitionFactorization`.
 Create one if there is none.
 """
 function currentRecognitionFactorization()
@@ -198,10 +203,10 @@ RecognitionFactorization() = setCurrentRecognitionFactorization(
         Dict{Tuple{FactorNode, Edge}, Symbol}()))
 
 """
-Construct a RecognitionFactorization consisting of one
-RecognitionFactor for each argument
+Construct a `RecognitionFactorization` consisting of one
+`RecognitionFactor` for each argument
 """
-function RecognitionFactorization(args...; ids=Symbol[])
+function RecognitionFactorization(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[])
     rf = RecognitionFactorization()
     isempty(ids) || (length(ids) == length(args)) || error("Length of ids must match length of recognition factor arguments")
     for (i, arg) in enumerate(args)
@@ -215,7 +220,7 @@ function RecognitionFactorization(args...; ids=Symbol[])
 end
 
 """
-Return the id of the RecognitionFactor that `edge` belongs to
+Return the id of the `RecognitionFactor` that `edge` belongs to
 """
 function recognitionFactorId(edge::Edge)
     dict = current_recognition_factorization.edge_to_recognition_factor
@@ -253,7 +258,7 @@ Return the ids of the clusters/variables to which edges connected to `node` belo
 localClusterIds(node::FactorNode) = [clusterId(node, interface.edge) for interface in node.interfaces]
 
 """
-Return a dictionary from recognition factor-id to variable/cluster-ids local to node
+Return a dictionary from recognition factor-id to variable/cluster-ids local to `node`
 """
 function localRecognitionFactorization(node::FactorNode)
     # For each edge connected to node, collect the recognition factor and cluster id

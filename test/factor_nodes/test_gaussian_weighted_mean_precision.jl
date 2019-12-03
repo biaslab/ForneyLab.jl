@@ -2,8 +2,9 @@ module GaussianWeightedMeanPrecisionTest
 
 using Test
 using ForneyLab
-import ForneyLab: isProper, unsafeMean, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
-import PDMats: PDMat, PDiagMat
+import ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
+import ForneyLab: SPGaussianWeightedMeanPrecisionOutNPP, VBGaussianWeightedMeanPrecisionOut
+import PDMats: AbstractPDMat, PDMat, PDiagMat
 import LinearAlgebra: I, det, diag, logdet
 
 @testset "dims" begin
@@ -13,7 +14,8 @@ end
 
 @testset "vague" begin
     @test vague(GaussianWeightedMeanPrecision) == ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=tiny)
-    @test vague(GaussianWeightedMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=zeros(2), w=tiny*diageye(2))
+    @test vague(GaussianWeightedMeanPrecision, 2) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=zeros(2), w=tiny*eye(2))
+    @test vague(GaussianWeightedMeanPrecision, (2,)) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=zeros(2), w=tiny*eye(2))
 end
 
 @testset "isProper" begin
@@ -42,6 +44,7 @@ end
 @testset "unsafe statistics" begin
     # Univariate
     @test unsafeMean(ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=4.0)) == 0.5
+    @test unsafeMode(ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=4.0)) == 0.5
     @test unsafeVar(ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=4.0)) == 0.25
     @test unsafeCov(ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=4.0)) == 0.25
     @test unsafeMeanCov(ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=4.0)) == (0.5, 0.25)
@@ -51,9 +54,10 @@ end
 
     # Multivariate
     @test unsafeMean(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == [0.5]
+    @test unsafeMode(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == [0.5]
     @test unsafeVar(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == [0.25]
-    @test unsafeCov(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == mat(0.25)
-    @test unsafeMeanCov(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == ([0.5], mat(0.25))
+    @test unsafeCov(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == PDMat(mat(0.25))
+    @test unsafeMeanCov(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == ([0.5], PDMat(mat(0.25)))
     @test unsafePrecision(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == PDMat(mat(4.0))
     @test unsafeWeightedMean(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == [2.0]
     @test unsafeWeightedMeanPrecision(ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))) == ([2.0], PDMat(mat(4.0)))
@@ -64,6 +68,30 @@ end
     @test convert(ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.5, v=0.25)) == ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=4.0)
     @test convert(ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}, ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0.5], w=mat(4.0))) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))
     @test convert(ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.5], v=mat(0.25))) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(4.0))
+end
+
+#-------------
+# Update rules
+#-------------
+
+@testset "SPGaussianWeightedMeanPrecisionOutNPP" begin
+    @test SPGaussianWeightedMeanPrecisionOutNPP <: SumProductRule{GaussianWeightedMeanPrecision}
+    @test outboundType(SPGaussianWeightedMeanPrecisionOutNPP) == Message{GaussianWeightedMeanPrecision}
+    @test isApplicable(SPGaussianWeightedMeanPrecisionOutNPP, [Nothing, Message{PointMass}, Message{PointMass}])
+    @test !isApplicable(SPGaussianWeightedMeanPrecisionOutNPP, [Message{PointMass}, Nothing, Message{PointMass}])
+
+    @test ruleSPGaussianWeightedMeanPrecisionOutNPP(nothing, Message(Univariate, PointMass, m=1.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=2.0)
+    @test ruleSPGaussianWeightedMeanPrecisionOutNPP(nothing, Message(Multivariate, PointMass, m=[1.0]), Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(2.0))
+end
+
+@testset "VBGaussianWeightedMeanPrecisionOut" begin
+    @test VBGaussianWeightedMeanPrecisionOut <: NaiveVariationalRule{GaussianWeightedMeanPrecision}
+    @test outboundType(VBGaussianWeightedMeanPrecisionOut) == Message{GaussianWeightedMeanPrecision}
+    @test isApplicable(VBGaussianWeightedMeanPrecisionOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
+    @test !isApplicable(VBGaussianWeightedMeanPrecisionOut, [ProbabilityDistribution, ProbabilityDistribution, Nothing])
+
+    @test ruleVBGaussianWeightedMeanPrecisionOut(nothing, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=1.0, v=2.0), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=3.0)
+    @test ruleVBGaussianWeightedMeanPrecisionOut(nothing, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(2.0)), ProbabilityDistribution(MatrixVariate, PointMass, m=mat(3.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(3.0))
 end
 
 end # module

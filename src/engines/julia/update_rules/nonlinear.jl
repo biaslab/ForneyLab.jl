@@ -1,71 +1,179 @@
 export
-ruleSPNonlinearOutVG,
-ruleSPNonlinearIn1GV
+ruleSPNonlinearOutNG,
+ruleSPNonlinearIn1GG
 
+# Determine the default value for the spread parameter
+const default_alpha = 1e-3
 
 """
-Find a local linear approximation to the nonlinear vector function g at x_hat
+Return the sigma points and weights for a Gaussian distribution
 """
-function approximate(x_hat::Union{Float64, Vector{Float64}}, g::Function, J_g::Function)
-    A = J_g(x_hat)
-    b = g(x_hat) .- A*x_hat
+function sigmaPointsAndWeights(dist::ProbabilityDistribution{Univariate, F}, alpha::Float64) where F<:Gaussian
+    (m_x, V_x) = unsafeMeanCov(dist)
 
-    return (A, b)
+    kappa = 0
+    beta = 2
+    lambda = (1 + kappa)*alpha^2 - 1
+
+    sigma_points = Vector{Float64}(undef, 3)
+    weights_m = Vector{Float64}(undef, 3)
+    weights_c = Vector{Float64}(undef, 3)
+
+    l = sqrt((1 + lambda)*V_x)
+
+    sigma_points[1] = m_x
+    sigma_points[2] = m_x + l
+    sigma_points[3] = m_x - l
+    weights_m[1] = lambda/(1 + lambda)
+    weights_m[2] = weights_m[3] = 1/(2*(1 + lambda))
+    weights_c[1] = weights_m[1] + (1 - alpha^2 + beta)
+    weights_c[2] = weights_c[3] = 1/(2*(1 + lambda))
+
+    return (sigma_points, weights_m, weights_c)
 end
 
-function ruleSPNonlinearOutVG(  msg_out::Nothing,
-                                msg_in1::Message{F, Multivariate},
-                                g::Function,
-                                J_g::Function) where F<:Gaussian
+function sigmaPointsAndWeights(dist::ProbabilityDistribution{Multivariate, F}, alpha::Float64) where F<:Gaussian
+    d = dims(dist)
+    (m_x, V_x) = unsafeMeanCov(dist)
 
-    d_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
+    kappa = 0
+    beta = 2
+    lambda = (d + kappa)*alpha^2 - d
 
-    (A, b) = approximate(d_in1.params[:m], g, J_g)
-    # Original was " V_q = A*d_in1.params[:v]*A' " (Xt_A_X is PDMats equivalent)
-    V_q = Xt_A_X(d_in1.params[:v], A)
+    sigma_points = Vector{Vector{Float64}}(undef, 2*d+1)
+    weights_m = Vector{Float64}(undef, 2*d+1)
+    weights_c = Vector{Float64}(undef, 2*d+1)
 
-    Message(Multivariate, GaussianMeanVariance, m=A*d_in1.params[:m] + b, v=V_q)
+    if isa(V_x, Diagonal)
+        L = sqrt((d + lambda)*V_x) # Matrix square root
+    else
+        L = sqrt(Hermitian((d + lambda)*V_x))
+    end
+
+    sigma_points[1] = m_x
+    weights_m[1] = lambda/(d + lambda)
+    weights_c[1] = weights_m[1] + (1 - alpha^2 + beta)
+    for i = 1:d
+        sigma_points[2*i] = m_x + L[:,i]
+        sigma_points[2*i+1] = m_x - L[:,i]
+    end
+    weights_m[2:end] .= 1/(2*(d + lambda))
+    weights_c[2:end] .= 1/(2*(d + lambda))
+
+    return (sigma_points, weights_m, weights_c)
 end
 
-function ruleSPNonlinearOutVG(  msg_out::Nothing,
-                                msg_in1::Message{F, Univariate},
-                                g::Function,
-                                J_g::Function) where F<:Gaussian
+function ruleSPNonlinearOutNG(msg_out::Nothing,
+                              msg_in1::Message{F, Univariate},
+                              g::Function;
+                              alpha::Float64=default_alpha) where F<:Gaussian
 
-    d_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
 
-    (a, b) = approximate(d_in1.params[:m], g, J_g)
-    v_q = clamp(d_in1.params[:v]*a^2, tiny, huge)
+    # Unscented approximation
+    g_sigma = g.(sigma_points)
+    m_fw_out = sum(weights_m.*g_sigma)
+    V_fw_out = sum(weights_c.*(g_sigma .- m_fw_out).^2)
 
-    Message(Univariate, GaussianMeanVariance, m=a*d_in1.params[:m] + b, v=v_q)
+    return Message(Univariate, GaussianMeanVariance, m=m_fw_out, v=V_fw_out)
 end
 
-function ruleSPNonlinearIn1GV(  msg_out::Message{F, Multivariate},
-                                msg_in1::Message, # Any type of message, used for determining the approximation point
-                                g::Function,
-                                J_g::Function) where F<:Gaussian
+function ruleSPNonlinearOutNG(msg_out::Nothing,
+                              msg_in1::Message{F, Multivariate},
+                              g::Function;
+                              alpha::Float64=default_alpha) where F<:Gaussian
+    d = dims(msg_in1.dist)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
 
-    d_out = convert(ProbabilityDistribution{Multivariate, GaussianMeanPrecision}, msg_out.dist)
+    # Unscented approximation
+    g_sigma = g.(sigma_points)
+    m_fw_out = sum([weights_m[k+1]*g_sigma[k+1] for k=0:2*d])
+    V_fw_out = sum([weights_c[k+1]*(g_sigma[k+1] - m_fw_out)*(g_sigma[k+1] - m_fw_out)' for k=0:2*d])
 
-    (A, b) = approximate(unsafeMean(msg_in1.dist), g, J_g)
-    A_inv = pinv(A)
-    # Original was " W_q = A'*d_out.params[:w]*A " Xt_A_X is PDMats equivalent.
-    W_q = Xt_A_X(d_out.params[:w],A)
-
-    Message(Multivariate, GaussianMeanPrecision, m=A_inv*(d_out.params[:m] - b), w=W_q)
+    return Message(Multivariate, GaussianMeanVariance, m=m_fw_out, v=V_fw_out)
 end
 
-function ruleSPNonlinearIn1GV(  msg_out::Message{F, Univariate},
-                                msg_in1::Message, # Any type of message, used for determining the approximation point
-                                g::Function,
-                                J_g::Function) where F<:Gaussian
+function ruleSPNonlinearIn1GG(msg_out::Message{F, Univariate},
+                              msg_in1::Nothing,
+                              g::Function,
+                              g_inv::Function;
+                              alpha::Float64=default_alpha) where F<:Gaussian
 
-    d_out = convert(ProbabilityDistribution{Univariate, GaussianMeanPrecision}, msg_out.dist)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_out.dist, alpha)
 
-    (a, b) = approximate(unsafeMean(msg_in1.dist), g, J_g)
-    w_q = clamp(d_out.params[:w]*a^2, tiny, huge)
+    # Unscented approximation
+    g_inv_sigma = g_inv.(sigma_points)
+    m_bw_in1 = sum(weights_m.*g_inv_sigma)
+    V_bw_in1 = sum(weights_c.*(g_inv_sigma .- m_bw_in1).^2)
 
-    Message(Univariate, GaussianMeanPrecision, m=(d_out.params[:m] - b)/a, w=w_q)
+    return Message(Univariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
+end
+
+function ruleSPNonlinearIn1GG(msg_out::Message{F, Multivariate},
+                              msg_in1::Nothing,
+                              g::Function,
+                              g_inv::Function;
+                              alpha::Float64=default_alpha) where F<:Gaussian
+    d = dims(msg_out.dist)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_out.dist, alpha)
+
+    # Unscented approximation
+    g_inv_sigma = g_inv.(sigma_points)
+    m_bw_in1 = sum([weights_m[k+1]*g_inv_sigma[k+1] for k=0:2*d])
+    V_bw_in1 = sum([weights_c[k+1]*(g_inv_sigma[k+1] - m_bw_in1)*(g_inv_sigma[k+1] - m_bw_in1)' for k=0:2*d])
+
+    return Message(Multivariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
+end
+
+function ruleSPNonlinearIn1GG(msg_out::Message{F1, Univariate},
+                              msg_in1::Message{F2, Univariate},
+                              g::Function;
+                              alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian}
+
+    (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
+    (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
+
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
+
+    # Unscented approximations
+    g_sigma = g.(sigma_points)
+    m_fw_out = sum(weights_m.*g_sigma)
+    V_fw_out = sum(weights_c.*(g_sigma .- m_fw_out).^2)
+    C_fw = sum(weights_c.*(sigma_points .- m_fw_in1).*(g_sigma .- m_fw_out))
+
+    # Update based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
+    C_fw_inv = 1/C_fw
+    V_bw_in1 = V_fw_in1^2*C_fw_inv^2*(V_fw_out + V_bw_out) - V_fw_in1
+    m_bw_in1 = m_fw_in1 - (V_fw_in1 + V_bw_in1)*C_fw*(m_fw_out - m_bw_out)/(V_fw_in1*(V_fw_out + V_bw_out))
+
+    return Message(Univariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
+end
+
+function ruleSPNonlinearIn1GG(msg_out::Message{F1, Multivariate},
+                              msg_in1::Message{F2, Multivariate},
+                              g::Function;
+                              alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian}
+    d_in1 = dims(msg_in1.dist)
+
+    (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
+    W_fw_in1 = unsafePrecision(msg_in1.dist)
+    (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
+
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
+
+    # Unscented approximations
+    g_sigma = g.(sigma_points)
+    m_fw_out = sum([weights_m[k+1]*g_sigma[k+1] for k=0:2*d_in1])
+    V_fw_out = sum([weights_c[k+1]*(g_sigma[k+1] - m_fw_out)*(g_sigma[k+1] - m_fw_out)' for k=0:2*d_in1])
+    C_fw = sum([weights_c[k+1]*(sigma_points[k+1] - m_fw_in1)*(g_sigma[k+1] - m_fw_out)' for k=0:2*d_in1])
+
+    # Update based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
+    # Note, this implementation is not as efficient as Petersen et al. (2018), because we explicitly require the outbound messages
+    C_fw_inv = pinv(C_fw)
+    V_bw_in1 = V_fw_in1*C_fw_inv'*(V_fw_out + V_bw_out)*C_fw_inv*V_fw_in1 - V_fw_in1
+    m_bw_in1 = m_fw_in1 - (V_fw_in1 + V_bw_in1)*W_fw_in1*C_fw*cholinv(V_fw_out + V_bw_out)*(m_fw_out - m_bw_out)
+
+    return Message(Multivariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
 end
 
 
@@ -77,9 +185,8 @@ function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry, in
     inbound_messages = String[]
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        if node_interface == node.interfaces[2]
-            # Always collect the message inbound on the in1 edge,
-            # because it is used to obtain the approximation point
+        if (node_interface == entry.interface == node.interfaces[2]) && (node.g_inv == nothing)
+            # Collect the message inbound on the out edge if no inverse is available
             haskey(interface_to_msg_idx, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
             inbound_idx = interface_to_msg_idx[inbound_interface]
             push!(inbound_messages, "messages[$inbound_idx]")
@@ -96,10 +203,17 @@ function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry, in
         end
     end
 
-    # Push function and Jacobi matrix function names to calling signature
-    # These functions need to be defined in the scope of the user
+    # Push function (and inverse) to calling signature
+    # These functions needs to be defined in the scope of the user
     push!(inbound_messages, "$(node.g)")
-    push!(inbound_messages, "$(node.J_g)")
+    if (entry.interface == node.interfaces[2]) && (node.g_inv != nothing)
+        push!(inbound_messages, "$(node.g_inv)")
+    end
+
+    # Push spread parameter if manually defined
+    if node.alpha != nothing
+        push!(inbound_messages, "alpha=$(node.alpha)")
+    end
 
     return inbound_messages
 end
