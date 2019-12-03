@@ -104,6 +104,10 @@ function unsafeCov(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) wher
     return inv(dist.params[:w])
 end
 
+function unsafeMeanCov(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
+    return (deepcopy(dist.params[:m]), inv(dist.params[:w]))
+end
+
 function unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianMeanPrecision}) where V<:VariateType
     return dist.params[:w]*dist.params[:m]
 end

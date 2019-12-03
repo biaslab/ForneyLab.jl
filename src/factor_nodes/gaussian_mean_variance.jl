@@ -98,12 +98,8 @@ function unsafeVar(dist::ProbabilityDistribution{Multivariate, GaussianMeanVaria
     return diag(dist.params[:v])
 end
 
-function unsafePrecision(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance})
+function unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
     return inv(dist.params[:v])
-end
-
-function unsafePrecision(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance})
-    return inv(dist.params[:v]).mat
 end
 
 function unsafeCov(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
