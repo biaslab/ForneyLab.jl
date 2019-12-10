@@ -105,7 +105,7 @@ function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Wishar
     0.5*(d + 1.0)*log(det(dist.params[:v])) +
     0.5*d*(d + 1.0)*log(2) +
     0.25*d*(d - 1.0)*log(pi) +
-    sum([lgamma(0.5*(dist.params[:nu] + 1.0 - i)) for i=1:d]) -
+    sum([logabsgamma(0.5*(dist.params[:nu] + 1.0 - i))[1] for i=1:d]) -
     0.5*(dist.params[:nu] - d - 1.0) * sum([digamma.(0.5*(dist.params[:nu] + 1.0 - i)) for i=1:d]) +
     0.5*dist.params[:nu]*d
 end
@@ -116,7 +116,7 @@ function averageEnergy(::Type{Wishart}, marg_out::ProbabilityDistribution{Matrix
     0.5*marg_nu.params[:m]*unsafeDetLogMean(marg_v) +
     0.5*marg_nu.params[:m]*d*log(2) +
     0.25*d*(d - 1.0)*log(pi) +
-    sum([lgamma(0.5*(marg_nu.params[:m] + 1.0 - i)) for i=1:d]) -
+    sum([logabsgamma(0.5*(marg_nu.params[:m] + 1.0 - i))[1] for i=1:d]) -
     0.5*(marg_nu.params[:m] - d - 1.0)*unsafeDetLogMean(marg_out) +
     0.5*tr(unsafeInverseMean(marg_v)*unsafeMean(marg_out))
 end
