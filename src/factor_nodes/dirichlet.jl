@@ -62,8 +62,8 @@ unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = dist.param
 unsafeLogMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a]))
 unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a],dims=1)) # Normalize columns
 
-logPdf(dist::ProbabilityDistribution{Multivariate, Dirichlet}, x) = sum((dist.params[:a].-1).*log.(x)) - sum([ v for (v, ) in logabsgamma.(dist.params[:a])]) + logabsgamma(sum(dist.params[:a]))[1]
-logPdf(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}, x) = sum(sum((dist.params[:a].-1).*log.(x),dims=1) - sum([ v for (v, ) in logabsgamma.(dist.params[:a])], dims=1) + [ v for (v, ) in logabsgamma.(sum(dist.params[:a],dims=1))])
+logPdf(dist::ProbabilityDistribution{Multivariate, Dirichlet}, x) = sum((dist.params[:a].-1).*log.(x)) - sum(labsgamma.(dist.params[:a])) + labsgamma(sum(dist.params[:a]))
+logPdf(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}, x) = sum(sum((dist.params[:a].-1).*log.(x),dims=1) - sum(labsgamma.(dist.params[:a]), dims=1) + labsgamma.(sum(dist.params[:a],dims=1)))
 
 function unsafeVar(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])
@@ -109,8 +109,8 @@ function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Dirichl
     a_sum = sum(dist.params[:a])
 
     -sum( (dist.params[:a] .- 1.0).*(digamma.(dist.params[:a]) .- digamma.(a_sum)) ) -
-    logabsgamma(a_sum)[1] +
-    sum([ v for (v, ) in logabsgamma.(dist.params[:a])])
+    labsgamma(a_sum) +
+    sum(labsgamma.(dist.params[:a]))
 end
 
 function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Dirichlet})
@@ -119,8 +119,8 @@ function differentialEntropy(dist::ProbabilityDistribution{MatrixVariate, Dirich
         a_sum = sum(dist.params[:a][:,k])
 
         H += -sum( (dist.params[:a][:,k] .- 1.0).*(digamma.(dist.params[:a][:,k]) .- digamma.(a_sum)) ) -
-        logabsgamma(a_sum)[1] +
-        sum([ v for (v, ) in logabsgamma.(dist.params[:a][:,k])])
+        labsgamma(a_sum) +
+        sum(labsgamma.(dist.params[:a][:,k]))
     end
 
     return H
@@ -130,8 +130,8 @@ end
 function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Multivariate}, marg_a::ProbabilityDistribution{Multivariate, PointMass})
     a_sum = sum(marg_a.params[:m])
 
-    -logabsgamma(a_sum)[1] +
-    sum([ v for (v, ) in logabsgamma.(marg_a.params[:m])]) -
+    -labsgamma(a_sum) +
+    sum(labsgamma.(marg_a.params[:m])) -
     sum( (marg_a.params[:m] .- 1.0).*unsafeLogMean(marg_out) )
 end
 
@@ -144,8 +144,8 @@ function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Matr
     for k = 1:dims(marg_out)[2] # For all columns
         a_sum = sum(marg_a.params[:m][:,k])
 
-        H += -logabsgamma(a_sum)[1] +
-        sum([ v for (v, ) in logabsgamma.(marg_a.params[:m][:,k])]) -
+        H += -labsgamma(a_sum) +
+        sum(labsgamma.(marg_a.params[:m][:,k])) -
         sum( (marg_a.params[:m][:,k] .- 1.0).*log_mean_marg_out[:,k] )
     end
 

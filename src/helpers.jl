@@ -12,6 +12,21 @@ const huge = 1e12
 const tiny = 1e-12
 
 """
+Wrapper for `logabsgamma` function that returns first element of its output
+"""
+function labsgamma(x::Number)
+    return logabsgamma(x)[1]
+end
+
+"""
+Wrapper for `logabsbeta` function that returns first element of its output
+"""
+function labsbeta(x::Number, y::Number)
+    return logabsbeta(x, y)[1]
+end
+
+
+"""
 Matrix inversion using Cholesky decomposition,
 attempts with added regularization (1e-8*I) on failure.
 """
