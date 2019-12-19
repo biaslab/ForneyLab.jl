@@ -76,18 +76,28 @@ end
 
 slug(::Type{NonlinearUT}) = "g"
 
-function applyUnscentedTransform(var::Variable; g_inv=nothing, alpha=nothing, dims=())
-    # find connected Nonlinear node
-    node = nothing
-    for edge in edges(var)
-        if (edge.a !== nothing) && (edge.a.node isa Nonlinear)
-            node = edge.a.node
+function applyUnscentedTransform(edge::Edge)
+    applied = false
+    if (edge.a !== nothing) && (edge.a.node isa Nonlinear)
+        edge.a.node = NonlinearUT(edge.a.node)
+        applied = true
     end
-    
-    if node === nothing
+    if (edge.b !== nothing) && (edge.b.node isa Nonlinear)
+        edge.b.node = NonlinearUT(edge.b.node)
+        applied = true
+    end
+    return applied
+end
+
+function applyUnscentedTransform(var::Variable)
+    # find connected Nonlinear node(s)
+    applied = false
+    for edge in edges(var)
+        applied = applied || applyUnscentedTransform(edge)
+    end
+
+    if !applied
         error("Cannot apply unscented transform to variable $(var.id).")
-    else
-        node = NonlinearUT(node, g_inv=g_inv, alpha=alpha, dims=dims)
     end
 end
 
@@ -155,19 +165,28 @@ end
 
 slug(::Type{NonlinearPT}) = "g"
 
-function applyParticleTransform(var::Variable)
-    # find connected Nonlinear node
-    node = nothing
-    for edge in edges(var)
-        if (edge.a !== nothing) && (edge.a.node isa Nonlinear)
-            node = edge.a.node
-        end
+function applyParticleTransform(edge::Edge)
+    applied = false
+    if (edge.a !== nothing) && (edge.a.node isa Nonlinear)
+        edge.a.node = NonlinearPT(edge.a.node)
+        applied = true
     end
-    
-    if node === nothing
+    if (edge.b !== nothing) && (edge.b.node isa Nonlinear)
+        edge.b.node = NonlinearPT(edge.b.node)
+        applied = true
+    end
+    return applied
+end
+
+function applyParticleTransform(var::Variable)
+    # find connected Nonlinear node(s)
+    applied = false
+    for edge in edges(var)
+        applied = applied || applyParticleTransform(edge)
+    end
+
+    if !applied
         error("Cannot apply particle transform to variable $(var.id).")
-    else
-        node = NonlinearPT(node)
     end
 end
 
