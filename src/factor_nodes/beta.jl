@@ -59,7 +59,7 @@ unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, Beta}) = digamma
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, Beta}) = dist.params[:a]*dist.params[:b]/((dist.params[:a] + dist.params[:b])^2*(dist.params[:a] + dist.params[:b] + 1.0))
 
-logPdf(dist::ProbabilityDistribution{Univariate, Beta}, x) = (dist.params[:a]-1)*log(x) + (dist.params[:b]-1)*log(1.0-x) - lgamma(dist.params[:a]) - lgamma(dist.params[:b]) + lgamma(dist.params[:a]+dist.params[:b])
+logPdf(dist::ProbabilityDistribution{Univariate, Beta}, x) = (dist.params[:a]-1)*log(x) + (dist.params[:b]-1)*log(1.0-x) - labsgamma(dist.params[:a]) - labsgamma(dist.params[:b]) + labsgamma(dist.params[:a]+dist.params[:b])
 
 function prod!( x::ProbabilityDistribution{Univariate, Beta},
                 y::ProbabilityDistribution{Univariate, Beta},
@@ -83,7 +83,7 @@ end
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Beta})
-    lbeta(dist.params[:a], dist.params[:b]) -
+    labsbeta(dist.params[:a], dist.params[:b]) -
     (dist.params[:a] - 1.0)*digamma(dist.params[:a]) -
     (dist.params[:b] - 1.0)*digamma(dist.params[:b]) +
     (dist.params[:a] + dist.params[:b] - 2.0)*digamma(dist.params[:a] + dist.params[:b])
@@ -91,7 +91,7 @@ end
 
 # Average energy functional
 function averageEnergy(::Type{Beta}, marg_out::ProbabilityDistribution{Univariate}, marg_a::ProbabilityDistribution{Univariate, PointMass}, marg_b::ProbabilityDistribution{Univariate, PointMass})
-    lbeta(marg_a.params[:m], marg_b.params[:m]) -
+    labsbeta(marg_a.params[:m], marg_b.params[:m]) -
     (marg_a.params[:m] - 1.0)*unsafeLogMean(marg_out) -
     (marg_b.params[:m] - 1.0)*unsafeMirroredLogMean(marg_out)
 end

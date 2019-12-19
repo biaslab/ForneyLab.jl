@@ -51,7 +51,7 @@ unsafeLogMean(dist::ProbabilityDistribution{Univariate, Gamma}) = digamma(dist.p
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, Gamma}) = dist.params[:a]/dist.params[:b]^2 # unsafe variance
 
-logPdf(dist::ProbabilityDistribution{Univariate, Gamma}, x) = dist.params[:a]*log(dist.params[:b]) - lgamma(dist.params[:a]) + (dist.params[:a]-1)*log(x) - dist.params[:b]*x
+logPdf(dist::ProbabilityDistribution{Univariate, Gamma}, x) = dist.params[:a]*log(dist.params[:b]) - labsgamma(dist.params[:a]) + (dist.params[:a]-1)*log(x) - dist.params[:b]*x
 
 isProper(dist::ProbabilityDistribution{Univariate, Gamma}) = (dist.params[:a] >= tiny) && (dist.params[:b] >= tiny)
 
@@ -77,7 +77,7 @@ end
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Gamma})
-    lgamma(dist.params[:a]) -
+    labsgamma(dist.params[:a]) -
     (dist.params[:a] - 1.0)*digamma(dist.params[:a]) -
     log(dist.params[:b]) +
     dist.params[:a]
@@ -85,7 +85,7 @@ end
 
 # Average energy functional
 function averageEnergy(::Type{Gamma}, marg_out::ProbabilityDistribution{Univariate}, marg_a::ProbabilityDistribution{Univariate, PointMass}, marg_b::ProbabilityDistribution{Univariate})
-    lgamma(marg_a.params[:m]) -
+    labsgamma(marg_a.params[:m]) -
     marg_a.params[:m]*unsafeLogMean(marg_b) -
     (marg_a.params[:m] - 1.0)*unsafeLogMean(marg_out) +
     unsafeMean(marg_b)*unsafeMean(marg_out)
