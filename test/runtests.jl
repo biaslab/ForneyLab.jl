@@ -57,6 +57,9 @@ using Test
     include("./algorithms/variational_bayes/test_structured_variational_bayes.jl")
     include("./algorithms/expectation_propagation/test_expectation_propagation.jl")
 
+    # Assemblers
+    include("engines/test_assemblers.jl")
+
     # Engines
     include("./engines/julia/test_generators.jl")
 

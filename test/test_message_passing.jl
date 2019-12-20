@@ -2,7 +2,7 @@ module MessagePassingTest
 
 using Test
 using ForneyLab
-import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, matches, flatten, assembleBreaker!
+import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, matches, flatten
 
 @testset "Message" begin
     msg = Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
@@ -61,26 +61,6 @@ end
     # Schedule should be constructable by hand
     schedule = [ScheduleEntry(nd.i[1], Nothing), ScheduleEntry(nd.i[2], Nothing)]
     @test isa(schedule, Schedule)
-end
-
-@testset "assembleBreaker!" begin
-    breaker_entry = ScheduleEntry()
-    assembleBreaker!(breaker_entry, GaussianMeanPrecision, ())
-    @test breaker_entry.family == GaussianMeanPrecision
-    @test breaker_entry.initialize == true
-    @test breaker_entry.dimensionality == ()
-
-    breaker_entry = ScheduleEntry()
-    assembleBreaker!(breaker_entry, Union{Gamma, Wishart}, ())
-    @test breaker_entry.family == Gamma
-    @test breaker_entry.initialize == true
-    @test breaker_entry.dimensionality == ()
-
-    breaker_entry = ScheduleEntry()
-    assembleBreaker!(breaker_entry, Union{Gamma, Wishart}, (1,1))
-    @test breaker_entry.family == Wishart
-    @test breaker_entry.initialize == true
-    @test breaker_entry.dimensionality == (1,1)
 end
 
 @testset "summaryPropagationSchedule" begin

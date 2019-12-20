@@ -24,8 +24,8 @@ mutable struct MarginalEntry
     marginal_update_rule::DataType
 
     # Fields for algorithm assembly
-    marginal_id::Symbol # target.id
-    inbounds::Vector{Any}
+    marginal_id::Symbol # Specify the marginal identifier
+    inbounds::Vector{Any} # Specify the inbounds required for the marginal update
 
     MarginalEntry() = new()
     MarginalEntry(target::Union{Variable, AbstractCluster}, interfaces::Vector{Interface}, marginal_update_rule::DataType) = new(target, interfaces, marginal_update_rule)

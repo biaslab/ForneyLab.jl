@@ -71,7 +71,7 @@ include("marginals.jl")
 # Utils
 include("visualization.jl")
 
-# InferenceAlgorithms
+# Algorithms
 include("algorithms/cluster.jl")
 include("algorithms/recognition_factor.jl")
 include("algorithms/algorithm.jl")
@@ -83,6 +83,9 @@ include("algorithms/variational_bayes/structured_variational_bayes.jl")
 include("algorithms/variational_bayes/free_energy.jl")
 include("algorithms/expectation_propagation/expectation_propagation.jl")
 include("algorithms/expectation_propagation/variational_expectation_propagation.jl")
+
+# Assemblers
+include("engines/assemblers.jl")
 
 # Update rules
 include("update_rules/clamp.jl")

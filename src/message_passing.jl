@@ -72,11 +72,11 @@ mutable struct ScheduleEntry
     internal_schedule::Vector{ScheduleEntry}
 
     # Fields for algorithm assembly
-    schedule_index::Int
-    initialize::Bool
-    family::Type
-    dimensionality::Tuple
-    inbounds::Vector{Any}
+    schedule_index::Int # Specify the position in the schedule
+    initialize::Bool # Indicate whether this mesage is initialized before schedule execution
+    family::Type # Specify the outbound family for this entry
+    dimensionality::Tuple # Specify the outbound dimensionality
+    inbounds::Vector{Any} # Specify the inbounds required for computing the message update
 
     ScheduleEntry() = new()
     ScheduleEntry(interface::Interface, message_update_rule::Type) = new(interface, message_update_rule)
@@ -108,22 +108,6 @@ function show(io::IO, schedule::Schedule)
             print(io, "\t$(entry)")
         end
     end
-end
-
-function assembleBreaker!(breaker_entry::ScheduleEntry, family::Type, dimensionality::Tuple)
-    breaker_entry.initialize = true
-    breaker_entry.dimensionality = dimensionality
-    if family == Union{Gamma, Wishart} # Catch special case
-        if dimensionality == ()
-            breaker_entry.family = ForneyLab.Gamma
-        else
-            breaker_entry.family = ForneyLab.Wishart
-        end
-    else
-        breaker_entry.family = family
-    end
-
-    return breaker_entry
 end
 
 """

@@ -2,7 +2,7 @@ module ClampTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, @ensureVariables, generateId, addNode!, associate!, assembleClamp!
+import ForneyLab: outboundType, isApplicable, @ensureVariables, generateId, addNode!, associate!
 import ForneyLab: SPClamp
 
 # Integration helper
@@ -78,13 +78,6 @@ end
 
     @test isa(nd_i, Clamp)
     @test g.placeholders[nd_i] == (:y, 1)
-end
-
-@testset "assembleClamp!" begin
-    g = FactorGraph()
-    nd = Clamp(Variable(), 1.0)
-    assembleClamp!(nd, ProbabilityDistribution)    
-    @test nd.dist_or_msg == ProbabilityDistribution
 end
 
 
