@@ -180,12 +180,14 @@ ForneyLab.draw(g)
 ```
 If we were only interested in inferring the posterior distribution of `m1` then we would run
 ```@example 1
-algorithm_string = sumProductAlgorithm(m1)
+algorithm = sumProductAlgorithm(m1)
+algorithm_string = algorithmString(algorithm)
 ;
 ```
 On the other hand, if we were interested in the posterior distributions of both `m1` and `m2` we would then need to pass them as elements of an array, i.e.
 ```@example 1
-algorithm_string = sumProductAlgorithm([m1, m2])
+algorithm = sumProductAlgorithm([m1, m2])
+algorithm_string = algorithmString(algorithm)
 ;
 ```
 
@@ -245,7 +247,8 @@ Generating the VMP algorithm follows the same procedure that we saw for the beli
 ```@example 1
 # Generate variational update algorithms for each recognition factor
 algo = variationalAlgorithm(q)
-eval(Meta.parse(algo))
+algo_str = algorithmString(algo)
+eval(Meta.parse(algo_str))
 ;
 ```
 ```julia
@@ -278,8 +281,9 @@ end
 #### Computing free energy
 VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as *free energy*. ForneyLab provides the function `freeEnergyAlgorithm` which generates an algorithm that can be used to evaluate this quantity. This function takes an object of type `Algorithm` as argument. Free energy is particularly useful to test for convergence of the VMP iterative procedure. Here is an example that generates, parses and evaluates this algorithm.
 ```julia
-fe_algorithm = freeEnergyAlgorithm(q)
-eval(Meta.parse(fe_algorithm));
+fe_algo = freeEnergyAlgorithm(q)
+fe_algo_str = freeEnergyString(fe_algo)
+eval(Meta.parse(fe_algo_str))
 ```
 
 ### Expectation maximization
@@ -323,7 +327,9 @@ v = placeholder(:v)
 @RV x ~ GaussianMeanVariance(m, v)
 @RV y ~ GaussianMeanVariance(x, 1.0)
 placeholder(y, :y)
-eval(Meta.parse(sumProductAlgorithm(x))) # generate, parse and evaluate the algorithm
+
+algo = sumProductAlgorithm(x)
+eval(Meta.parse(algorithmString(algo))) # generate, parse and evaluate the algorithm
 ;
 ```
 In order to execute this algorithm we first have to specify a prior for `x`. This is done by choosing some initial values for the hyperparameters `m` and `v`. In each processing step, the algorithm expects an observation and the current belief about `x`, i.e. the prior. We pass this information as elements of a `data` dictionary where the keys are the `id`s of their corresponding placeholders. The algorithm performs inference and returns the results inside a different dictionary (which we call `marginals` in the following script). In the next iteration, we repeat this process by feeding the algorithm with the next observation in the sequence and the posterior distribution of `x` that we obtained in the previous processing step. In other words, the current posterior becomes the prior for the next processing step. Let's illustrate this using an example where we will first generate a synthetic dataset by sampling observations from a Gaussian distribution that has a mean of 5.
@@ -370,7 +376,9 @@ for i = 1:N
     @RV y[i] ~ GaussianMeanVariance(x, 1.0)
     placeholder(y[i], :y, index=i)
 end
-eval(Meta.parse(sumProductAlgorithm(x))) # generate, parse and evaluate the algorithm
+
+algo = sumProductAlgorithm(x)
+eval(Meta.parse(algorithmString(algo))) # generate, parse and evaluate the algorithm
 ;
 ```
 Since we have a placeholder linked to each observation in the sequence, we can process the complete dataset in one step. To do so, we first need to create a dictionary having the complete dataset array as its single element. We then need to pass this dictionary to the `step!` function which, in contrast with the online counterpart, we only need to call once.

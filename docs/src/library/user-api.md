@@ -45,13 +45,19 @@ ForneyLab.variationalExpectationPropagationSchedule
 ForneyLab.variationalSchedule
 ```
 
-## Algorithm generation
+## Algorithm assembly
 ```@docs
 ForneyLab.expectationPropagationAlgorithm
 ForneyLab.freeEnergyAlgorithm
 ForneyLab.sumProductAlgorithm
 ForneyLab.variationalAlgorithm
 ForneyLab.variationalExpectationPropagationAlgorithm
+```
+
+## Algorithm code generation
+```@docs
+ForneyLab.algorithmString
+ForneyLab.freeEnergyString
 ```
 
 ## Algorithm execution
@@ -62,7 +68,6 @@ ForneyLab.ProbabilityDistribution
 ```
 
 ## Helper
-
 ```@autodocs
 Modules = [ForneyLab]
 Private = true
