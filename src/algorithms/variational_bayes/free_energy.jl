@@ -1,9 +1,8 @@
 export freeEnergyAlgorithm
 
 """
-The `freeEnergyAlgorithm` function accepts a `Algorithm` and returns
-(if possible) Julia code for computing the variational free energy with respect to 
-the argument recognition factorization and corresponding `FactorGraph` (model).
+The `freeEnergyAlgorithm` function accepts an `Algorithm` and populates
+required fields for computing the variational free energy.
 """
 function freeEnergyAlgorithm(algo=currentAlgorithm())
     average_energies_vect = Vector{Dict{Symbol, Any}}()

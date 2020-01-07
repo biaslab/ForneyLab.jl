@@ -1,17 +1,17 @@
 # Contribution guidelines
 
-We welcome all possible contributors. This page details the some of the guidelines that should be followed when contributing to this package.
+This page details the some of the guidelines that should be followed when contributing to this package.
 
 ## Reporting bugs
 
-We track bugs using [GitHub issues](https://github.com/biaslab/ForneyLab.jl/issues). We encourage you to write complete, specific, reproducible bug reports. Mention the versions of Julia and ForneyLab.jl for which you observe unexpected behavior. Please provide a concise description of the problem and complement it with code snippets, test cases, screenshots, tracebacks or any other information that you consider relevant. This will help us to replicate the problem and narrow the search space for solutions.
+We track bugs using [GitHub issues](https://github.com/biaslab/ForneyLab.jl/issues). We encourage you to write complete, specific, reproducible bug reports. Mention the versions of Julia and ForneyLab for which you observe unexpected behavior. Please provide a concise description of the problem and complement it with code snippets, test cases, screenshots, tracebacks or any other information that you consider relevant. This will help us to replicate the problem and narrow the search space for solutions.
 
 ## Suggesting features
 
 We welcome new feature proposals. However, before submitting a feature request, consider a few things:
 
 - Does the feature require changes in the core ForneyLab.jl code? If it doesn't (for example, you would like to add a node for a particular application), consider making a separate repository for your extensions.
-- If you would like to add an implementation of a feature that changes a lot in the core ForneyLab.jl code, please open an issue on GitHub and describe your proposal first. This will allow us to discuss your proposal with you before you invest your time in implementing something that may be difficult to merge later on.
+- If you would like to add an implementation of a feature that changes a lot in the core ForneyLab.jl code, please open an issue on GitHub and describe your proposal first. This enables us to discuss your proposal before you invest your time in implementing something that may be difficult to merge later on.
 
 ## Contributing code
 
@@ -31,8 +31,7 @@ changes to ForneyLab code will be reflected in imported code.
 
 We use the standard [GitHub Flow](https://guides.github.com/introduction/flow/) workflow where all contributions are added through pull requests. In order to contribute, first [fork](https://guides.github.com/activities/forking/) the repository, then commit your contributions to your fork, and then create a pull request on the `master` branch of the ForneyLab.jl repository.
 
-Before opening a pull request, please make sure that all tests pass without
-failing! All demos (can be found in `/demo/` directory) have to run without errors as well.
+Before opening a pull request, please make sure that all tests pass. All demos (can be found in `/demo/` directory) have to run without error as well.
 
 ### Style conventions
 

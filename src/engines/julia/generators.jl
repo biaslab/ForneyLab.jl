@@ -1,7 +1,7 @@
 export algorithmString, freeEnergyString
 
 """
-Generate complete message passing algorithm code from recognition factorization
+Generate Julia code for message passing
 """
 function algorithmString(algo::Algorithm)
     algo_str = "begin\n\n"
@@ -15,7 +15,7 @@ function algorithmString(algo::Algorithm)
 end
 
 """
-Generate complete free energy evaluation code from recognition factorization
+Generate Julia code for free energy evaluation
 """
 function freeEnergyString(algo::Algorithm)
     fe_str  = "function freeEnergy(data::Dict, marginals::Dict)\n\n"
@@ -30,7 +30,7 @@ function freeEnergyString(algo::Algorithm)
 end
 
 """
-Generate algorithm code for a single recognition factor
+Generate Julia code for message passing on a single recognition factor
 """
 function recognitionFactorString(rf::RecognitionFactor)
     rf_str = ""
@@ -71,7 +71,7 @@ function optimizeString(rf::RecognitionFactor)
 end
 
 """
-Generate code for initialization block
+Generate code for initialization block (if required)
 """
 function initializationString(rf::RecognitionFactor)
     init_str = "function init$(rf.id)()\n\n"
@@ -87,7 +87,7 @@ function initializationString(rf::RecognitionFactor)
 end
 
 """
-Generate code for evaluating the complete average energy
+Generate code for evaluating the average energy
 """
 function energiesString(average_energies::Vector)
     energies_str = ""
@@ -101,7 +101,7 @@ function energiesString(average_energies::Vector)
 end
 
 """
-Generate code for evaluating the complete entropy
+Generate code for evaluating the entropy
 """
 function entropiesString(entropies::Vector)
     entropies_str = ""
@@ -118,7 +118,7 @@ function entropiesString(entropies::Vector)
 end
 
 """
-Construct code for messages computation block
+Construct code for message updates
 """
 function scheduleString(schedule::Schedule)
     schedule_str = ""
@@ -132,7 +132,7 @@ function scheduleString(schedule::Schedule)
 end
 
 """
-Generate code for marginals computation block
+Generate code for marginal updates
 """
 function marginalTableString(table::MarginalTable)
     table_str = ""
@@ -173,7 +173,7 @@ function vagueString(entry::ScheduleEntry)
 end
 
 """
-Concatenate code for separate inbounds to a string
+Generate code for message/marginal/energy/entropy computation inbounds
 """
 function inboundsString(inbounds::Vector)
     inbounds_str = String[]
@@ -184,7 +184,7 @@ function inboundsString(inbounds::Vector)
 end
 
 """
-Generate code for specific inbound types
+Generate code for a single inbound (overloaded for specific inbound type)
 """
 inboundString(inbound::Nothing) = "nothing"
 inboundString(inbound::ScheduleEntry) = "messages[$(inbound.schedule_index)]"
@@ -229,7 +229,7 @@ function inboundString(inbound::Clamp{V}) where V<:VariateType # Buffer or value
 end
 
 """
-Convert a value to parseable code
+Convert a value to parseable Julia code
 """
 valueString(val::Union{Vector, Number}) = string(val)
 valueString(val::Diagonal) = "Diagonal($(val.diag))"

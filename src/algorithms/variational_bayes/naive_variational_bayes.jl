@@ -24,8 +24,8 @@ A non-specific naive variational update
 abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
 
 """
-`variationalSchedule()` generates a variational message passing schedule that computes the
-marginals for each of the recognition distributions in the recognition factor.
+`variationalSchedule()` generates a variational message passing schedule
+for each recognition distribution in the recognition factorization.
 """
 function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
     # Schedule messages towards recognition distributions, limited to the internal edges

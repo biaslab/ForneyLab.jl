@@ -1,13 +1,14 @@
 # Internals
 
-This page documents the internals of the ForneyLab package. It is mainly tailored for software developers interested in understanding the inner workings of the package. Coding style conventions can be found in `STYLEGUIDE.md`.
+This page summarizes some of ForneyLab's internal structures. It is mainly tailored for software developers interested in a high-level overview of the inner workings of the package. Coding style conventions can be found in `STYLEGUIDE.md`.
 
 ## Directory structure
 
 ForneyLab's directories and files are structured as follows:
 
 - `/demo/`: demos in Jupyter (iJulia) notebook format (`.ipynb`)
-- `/src/`: all source files
+- `/docs/`: documentation source and build location
+- `/src/`: ForneyLab source files
     - `algorithms/`: inference algorithm implementations
         - `expectation_propagation/`: EP algorithm implementation
         - `sum_product/`: SP algorithm implementation

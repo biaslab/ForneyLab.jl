@@ -23,7 +23,7 @@ mutable struct RecognitionFactor
     function RecognitionFactor(algo=currentAlgorithm(); id=generateId(RecognitionFactor))
         # Constructor for empty container
         self = new(id)
-        algo.recognition_factors[id] = self # Register self with recognition factorization
+        algo.recognition_factors[id] = self # Register self with the algorithm
 
         return self
     end
@@ -57,14 +57,14 @@ mutable struct RecognitionFactor
 
         # Create new recognition factor
         self = new(id, union(variables, recognition_variables), recognition_clusters, internal_edges)
-        algo.recognition_factors[id] = self # Register self with recognition factorization
+        algo.recognition_factors[id] = self # Register self with the algorithm
 
-        # Register relevant edges with the recognition factorization for fast lookup during scheduling
+        # Register relevant edges with the algorithm for fast lookup during scheduling
         for edge in internal_edges_connected_to_external_nodes
             algo.edge_to_recognition_factor[edge] = self
         end
 
-        # Register clusters with the recognition factorization for fast lookup during scheduling
+        # Register clusters with the algorithm for fast lookup during scheduling
         for cluster in recognition_clusters
             for edge in cluster.edges
                 algo.node_edge_to_cluster[(cluster.node, edge)] = cluster

@@ -2,7 +2,7 @@ export Algorithm, currentAlgorithm
 
 """
 An `Algorithm` holds a collection of (non-overlapping) recognition factors that
-specify the recognition factorization over a factor graph that is used for variational inference.
+specify the recognition factorization over a factor graph.
 """
 mutable struct Algorithm
     graph::FactorGraph

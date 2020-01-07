@@ -54,7 +54,8 @@ function inferMarginalRule(cluster::Cluster, inbound_types::Vector{<:Type})
 end
 
 """
-Construct the marginal computations table for a given recognition factor
+Construct the marginal computations table for a given recognition factor.
+The marginal table defines which marginal posteriors are computed.
 """
 function marginalTable(rf::RecognitionFactor)
     # Construct outbound types dictionary
@@ -78,7 +79,7 @@ function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, T
     cluster_recognition_factor = recognitionFactor(first(cluster.edges)) # Recognition factor for cluster
     recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in cluster.node.interfaces
-        node_interface_recognition_factor = recognitionFactor(node_interface.edge) # Note: edges that are not assigned to a recognition factorization are assumed mean-field 
+        node_interface_recognition_factor = recognitionFactor(node_interface.edge) # Note: edges that are not assigned to a recognition factor are assumed mean-field 
 
         if node_interface_recognition_factor === cluster_recognition_factor
             # Edge is internal, accept message

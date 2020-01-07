@@ -159,4 +159,18 @@ end
     @test rf.marginal_table[1].inbounds == [schedule[3], schedule[6]]
 end
 
+@testset "variationalAlgorithm" begin
+    g = FactorGraph() # create a new factor graph
+    @RV m ~ GaussianMeanVariance(0, 10)
+    @RV w ~ Gamma(0.1, 0.1)
+    @RV y ~ GaussianMeanPrecision(m, w)
+    placeholder(y, :y)
+
+    # Construct and compile a variational message passing algorithm
+    q = Algorithm(m, w, ids=[:M, :W]);
+    algo = variationalAlgorithm(q)
+
+    @test isa(algo, Algorithm)
+end
+
 end # module
