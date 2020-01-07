@@ -116,4 +116,32 @@ end
     @test ScheduleEntry(nd_s[3].i[:w], SVBGaussianMeanPrecisionW) in schedule_q_w
 end
 
+@testset "variationalAlgorithm" begin
+    g = FactorGraph()
+    s_0 = Variable()
+    nd_s_0 = GaussianMeanVariance(s_0, constant(0.0), constant(1.0))
+    w = Variable()
+    nd_w = Gamma(w, constant(1.0), constant(1.0))
+
+    s = Variable[]
+    nd_s = FactorNode[]
+
+    s_min = s_0
+    for i = 1:3
+        s_i = Variable()
+        nd_s_i = GaussianMeanPrecision(s_i, s_min, w)
+        push!(s, s_i)
+        push!(nd_s, nd_s_i)
+
+        s_min = s_i
+    end
+    nd_s_i = GaussianMeanVariance(s_min, constant(0.0), constant(huge))
+    push!(nd_s, nd_s_i)
+
+    rf = Algorithm([s_0; s], w)
+    algo = variationalAlgorithm(rf)
+
+    @test isa(algo, Algorithm)    
+end
+
 end # module

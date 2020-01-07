@@ -12,6 +12,10 @@ mutable struct Algorithm
     edge_to_recognition_factor::Dict{Edge, RecognitionFactor}
     node_edge_to_cluster::Dict{Tuple{FactorNode, Edge}, Cluster}
 
+    # Bookkeeping for faster lookup during assembly
+    interface_to_schedule_entry::Dict{Interface, ScheduleEntry}
+    target_to_marginal_entry::Dict{Union{Variable, Cluster}, MarginalEntry}
+
     # Fields for free energy algorithm assembly
     average_energies::Vector{Dict{Symbol, Any}}
     entropies::Vector{Dict{Symbol, Any}}
@@ -37,6 +41,8 @@ Algorithm() = setCurrentAlgorithm(
         Dict{Symbol, RecognitionFactor}(),
         Dict{Edge, RecognitionFactor}(),
         Dict{Tuple{FactorNode, Edge}, Symbol}(),
+        Dict{Interface, ScheduleEntry}(),
+        Dict{Union{Variable, Cluster}, MarginalEntry}(),
         Dict{Symbol, Any}[],
         Dict{Symbol, Any}[]))
 
@@ -57,9 +63,19 @@ function Algorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; 
     return rf
 end
 
+function interfaceToScheduleEntry(algo::Algorithm)
+    mapping = Dict{Interface, ScheduleEntry}()
+    for (id, rf) in algo.recognition_factors
+        rf_mapping = interfaceToScheduleEntry(rf.schedule)
+        merge!(mapping, rf_mapping)
+    end
+
+    return mapping
+end
+
 function targetToMarginalEntry(algo::Algorithm)
     mapping = Dict{Union{Cluster, Variable}, MarginalEntry}()
-    for rf in algo.recognition_factors
+    for (id, rf) in algo.recognition_factors
         rf_mapping = targetToMarginalEntry(rf.marginal_table)
         merge!(mapping, rf_mapping)
     end

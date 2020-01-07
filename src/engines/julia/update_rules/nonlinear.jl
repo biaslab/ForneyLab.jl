@@ -181,7 +181,9 @@ end
 # Custom inbounds collector
 #--------------------------
 
-function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry, interface_to_schedule_entry::Dict)
+function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry)
+    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+
     inbounds = Any[]
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)

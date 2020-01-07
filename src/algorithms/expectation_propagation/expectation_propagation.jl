@@ -1,5 +1,6 @@
 export
 ExpectationPropagationRule,
+expectationPropagationAlgorithm,
 expectationPropagationSchedule,
 @expectationPropagationRule
 
@@ -13,7 +14,7 @@ function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::Algo
     rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
     rf.marginal_table = marginalTable(variables)
     
-    assembleAlgorithm!(rf)
+    assembleAlgorithm!(algo)
     
     return algo
 end
@@ -192,7 +193,9 @@ end
 Find the inbound types that are required to compute the message for `entry`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
-function collectInbounds(entry::ScheduleEntry, ::Type{T}, interface_to_schedule_entry::Dict, ::Dict) where T<:ExpectationPropagationRule
+function collectInbounds(entry::ScheduleEntry, ::Type{T}) where T<:ExpectationPropagationRule
+    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+
     inbounds = Any[]
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)

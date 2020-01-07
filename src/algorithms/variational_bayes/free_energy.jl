@@ -14,13 +14,11 @@ function freeEnergyAlgorithm(algo=currentAlgorithm())
         hasCollider(rf) && error("Cannot construct localized free energy algorithm. Recognition distribution for factor with id :$(rf.id) does not factor according to local graph structure. This is likely due to a conditional dependence in the posterior distribution (see Bishop p.485). Consider wrapping conditionally dependent variables in a composite node.")
     end
 
-    target_to_marginal_entry = targetToMarginalEntry(algo)
-
     for node in sort(collect(values(algo.graph.nodes)))
         if !isa(node, DeltaFactor) # Non-deterministic factor, add to free energy functional
             # Include average energy term
             average_energy = Dict{Symbol, Any}(:node => typeof(node),
-                                               :inbounds => collectAverageEnergyInbounds(node, target_to_marginal_entry))
+                                               :inbounds => collectAverageEnergyInbounds(node, algo.target_to_marginal_entry))
             push!(average_energies_vect, average_energy)
 
             # Construct differential entropy term
@@ -29,12 +27,12 @@ function freeEnergyAlgorithm(algo=currentAlgorithm())
             if !(outbound_partner == nothing) && !isa(outbound_partner.node, Clamp) # Differential entropy is required
                 dict = algo.node_edge_to_cluster
                 if haskey(dict, (node, outbound_interface.edge)) # Outbound edge is part of a cluster
-                    inbounds = collectConditionalDifferentialEntropyInbounds(node, target_to_marginal_entry)
+                    inbounds = collectConditionalDifferentialEntropyInbounds(node, algo.target_to_marginal_entry)
                     entropy = Dict{Symbol, Any}(:conditional => true,
                                                 :inbounds => inbounds)
                 else
-                    inbounds = [target_to_marginal_entry[outbound_interface.edge.variable]]
-                    entropy = Dict{Symbol, Any}(:inbounds => inbounds)
+                    inbound = algo.target_to_marginal_entry[outbound_interface.edge.variable]
+                    entropy = Dict{Symbol, Any}(:inbounds => [inbound])
                 end
                 push!(entropies_vect, entropy)
             end        

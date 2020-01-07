@@ -132,14 +132,17 @@ end
 """
 Construct argument code for structured VB updates
 """
-collectInbounds(entry::ScheduleEntry, ::Type{T}, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict) where T<:StructuredVariationalRule = collectStructuredVariationalNodeInbounds(entry.interface.node, entry, interface_to_schedule_entry, target_to_marginal_entry)
+collectInbounds(entry::ScheduleEntry, ::Type{T}) where T<:StructuredVariationalRule = collectStructuredVariationalNodeInbounds(entry.interface.node, entry)
 
 """
 Construct the inbound code that computes the message for `entry`. Allows for
 overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
-function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict)
+function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry)
+    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+    target_to_marginal_entry = current_algorithm.target_to_marginal_entry
+
     inbounds = Any[]
     entry_recognition_factor = recognitionFactor(entry.interface.edge)
     local_clusters = localRecognitionFactorization(entry.interface.node)

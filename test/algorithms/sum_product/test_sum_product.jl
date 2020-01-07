@@ -79,4 +79,15 @@ end
     @test ScheduleEntry(nd.i[1], SPMockOutPP) in schedule
 end
 
+@testset "sumProductAlgorithm" begin
+    FactorGraph()
+    x = Variable()
+    nd = MockNode([x, constant(0.0), constant(0.0)])
+
+    rf = Algorithm()
+    algo = sumProductAlgorithm(x)
+
+    @test isa(algo, Algorithm)
+end
+
 end # module

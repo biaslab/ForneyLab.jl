@@ -10,8 +10,9 @@ function variationalExpectationPropagationAlgorithm(algo::Algorithm=currentAlgor
         schedule = variationalExpectationPropagationSchedule(rf)
         rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
         rf.marginal_table = marginalTable(rf)
-        assembleAlgorithm!(rf)
     end
+
+    assembleAlgorithm!(algo)
 
     return algo
 end

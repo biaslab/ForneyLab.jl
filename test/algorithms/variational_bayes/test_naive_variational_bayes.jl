@@ -75,4 +75,26 @@ end
     @test ScheduleEntry(nd_m.i[:out].partner, SPEqualityGaussian) in schedule
 end
 
+@testset "variationalAlgorithm" begin
+    g = FactorGraph()
+    m = Variable()
+    nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
+    w = Variable()
+    nd_w = Gamma(w, constant(1.0), constant(1.0))
+    y = Variable[]
+    nd_y = FactorNode[]
+    for i = 1:3
+        y_i = Variable()
+        nd_y_i = GaussianMeanPrecision(y_i, m, w)
+        placeholder(y_i, :y, index=i)
+        push!(y, y_i)
+        push!(nd_y, nd_y_i)
+    end
+
+    rf = Algorithm(m, w)
+    algo = variationalAlgorithm(rf)
+
+    @test isa(algo, Algorithm)
+end
+
 end # module

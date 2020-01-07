@@ -14,7 +14,7 @@ function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=curren
     rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
     rf.marginal_table = marginalTable(variables)
 
-    assembleAlgorithm!(rf)
+    assembleAlgorithm!(algo)
     
     return algo
 end
@@ -204,14 +204,16 @@ end
 """
 Collect and construct SP update code for each inbound.
 """
-collectInbounds(entry::ScheduleEntry, ::Type{T}, interface_to_schedule_entry::Dict, ::Dict) where T<:SumProductRule = collectSumProductNodeInbounds(entry.interface.node, entry, interface_to_schedule_entry)
+collectInbounds(entry::ScheduleEntry, ::Type{T}) where T<:SumProductRule = collectSumProductNodeInbounds(entry.interface.node, entry)
 
 """
 Construct the inbound code that computes the message for `entry`. Allows for
 overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
-function collectSumProductNodeInbounds(::FactorNode, entry::ScheduleEntry, interface_to_schedule_entry::Dict)
+function collectSumProductNodeInbounds(::FactorNode, entry::ScheduleEntry)
+    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+
     inbounds = Any[]
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)

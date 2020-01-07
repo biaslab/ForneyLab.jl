@@ -12,8 +12,9 @@ function variationalAlgorithm(algo::Algorithm=currentAlgorithm())
         schedule = variationalSchedule(rf)
         rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
         rf.marginal_table = marginalTable(rf)
-        assembleAlgorithm!(rf)
     end
+
+    assembleAlgorithm!(algo)
 
     return algo
 end
@@ -169,14 +170,16 @@ end
 """
 Construct argument code for naive VB updates
 """
-collectInbounds(entry::ScheduleEntry, ::Type{T}, ::Dict, target_to_marginal_entry::Dict) where T<:NaiveVariationalRule = collectNaiveVariationalNodeInbounds(entry.interface.node, entry, target_to_marginal_entry)
+collectInbounds(entry::ScheduleEntry, ::Type{T}) where T<:NaiveVariationalRule = collectNaiveVariationalNodeInbounds(entry.interface.node, entry)
 
 """
 Construct the inbound code that computes the message for `entry`. Allows for
 overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
-function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry, target_to_marginal_entry::Dict)
+function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry)
+    target_to_marginal_entry = current_algorithm.target_to_marginal_entry
+    
     inbounds = Any[]
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)

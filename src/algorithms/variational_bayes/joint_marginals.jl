@@ -156,10 +156,12 @@ Construct the inbound code that computes the marginal for `entry`. Allows for
 overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
-collectInbounds(entry::MarginalEntry, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict) = collectMarginalNodeInbounds(entry.target.node, entry, interface_to_schedule_entry, target_to_marginal_entry)
+collectInbounds(entry::MarginalEntry) = collectMarginalNodeInbounds(entry.target.node, entry)
 
-function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry, interface_to_schedule_entry::Dict, target_to_marginal_entry::Dict)
-    # Collect inbounds
+function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
+    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+    target_to_marginal_entry = current_algorithm.target_to_marginal_entry
+
     inbounds = Any[]
     entry_recognition_factor = recognitionFactor(first(entry.target.edges))
     local_clusters = localRecognitionFactorization(entry.target.node)

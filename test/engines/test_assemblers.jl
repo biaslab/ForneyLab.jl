@@ -2,7 +2,7 @@ module AssemblersTest
 
 using Test
 using ForneyLab
-import ForneyLab: assembleBreaker!, assembleClamp!, assembleAlgorithm!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten
+import ForneyLab: assembleBreaker!, assembleClamp!, assembleAlgorithm!, assembleRecognitionFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten
 
 @testset "assembleClamp!" begin
     g = FactorGraph()
@@ -38,8 +38,8 @@ end
     algo = Algorithm()
     rf = RecognitionFactor(algo)
     rf.schedule = sumProductSchedule(x)
-    rf.target_to_marginal_entry = Dict()
-    rf.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(rf.schedule)
+    algo.target_to_marginal_entry = Dict()
+    algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(rf)
     @test rf.schedule[3].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
     @test rf.schedule[6].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
@@ -54,8 +54,8 @@ end
     algo = Algorithm()
     rf = RecognitionFactor(algo)
     rf.schedule = expectationPropagationSchedule(x)
-    rf.target_to_marginal_entry = Dict()
-    rf.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(rf.schedule)
+    algo.target_to_marginal_entry = Dict()
+    algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(rf)
     assembleInitialization!(rf)
     @test rf.schedule[5].message_update_rule == ForneyLab.EPProbitIn1GP
@@ -70,8 +70,8 @@ end
     algo = Algorithm()
     rf = RecognitionFactor(algo)
     rf.schedule = sumProductSchedule(x)
-    rf.target_to_marginal_entry = Dict()
-    rf.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(rf.schedule)
+    algo.target_to_marginal_entry = Dict()
+    algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(rf)
     assembleInitialization!(rf)
     @test rf.schedule[7].message_update_rule == ForneyLab.SPNonlinearIn1GG
@@ -84,8 +84,8 @@ end
     algo = Algorithm()
     rf = RecognitionFactor(algo)
     rf.schedule = sumProductSchedule(x)
-    rf.target_to_marginal_entry = Dict()
-    rf.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(rf.schedule)
+    algo.target_to_marginal_entry = Dict()
+    algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(rf)
     assembleInitialization!(rf)
     @test rf.schedule[3].initialize
@@ -98,9 +98,9 @@ end
     algo = Algorithm()
     rf = RecognitionFactor(algo)
     rf.schedule = sumProductSchedule(x)
-    rf.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(rf.schedule)
     rf.marginal_table = marginalTable(x)
-    rf.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(rf.marginal_table)
+    algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
+    algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
     assembleMarginalTable!(rf)
     @test rf.marginal_table[1].marginal_update_rule == Nothing
     @test rf.marginal_table[1].marginal_id == :x
@@ -113,9 +113,9 @@ end
     algo = Algorithm()
     rf = RecognitionFactor(algo)
     rf.schedule = sumProductSchedule(x)
-    rf.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(rf.schedule)
     rf.marginal_table = marginalTable(x)
-    rf.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(rf.marginal_table)
+    algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
+    algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
     assembleMarginalTable!(rf)
     @test rf.marginal_table[1].marginal_update_rule == ForneyLab.Product
     @test rf.marginal_table[1].marginal_id == :x
@@ -129,16 +129,16 @@ end
     algo = Algorithm([x,y], ids=[:XY])
     rf = algo.recognition_factors[:XY]
     rf.schedule = variationalSchedule(rf)
-    rf.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(rf.schedule)
     rf.marginal_table = marginalTable(rf)
-    rf.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(rf.marginal_table)
+    algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
+    algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
     assembleMarginalTable!(rf)
     @test rf.marginal_table[3].marginal_update_rule == ForneyLab.MGaussianMeanPrecisionGGD
     @test rf.marginal_table[3].marginal_id == :y_x
     @test rf.marginal_table[3].inbounds == [rf.schedule[3], rf.schedule[1], g.nodes[:clamp_3]]
 end
 
-@testset "assembleAlgorithm!" begin
+@testset "assembleRecognitionFactor!" begin
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     GaussianMeanPrecision(x, 0.0, 1.0)
@@ -147,7 +147,9 @@ end
     schedule = sumProductSchedule(x)
     rf.schedule = condense(flatten(schedule))
     rf.marginal_table = marginalTable(x)
-    assembleAlgorithm!(rf)
+    algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
+    algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
+    assembleRecognitionFactor!(rf)
     @test rf.schedule[1].schedule_index == 1
     @test rf.schedule[1].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
     @test rf.schedule[1].inbounds == [nothing, g.nodes[:clamp_1], g.nodes[:clamp_2]]
@@ -159,18 +161,19 @@ end
     @test rf.marginal_table[1].inbounds == [schedule[3], schedule[6]]
 end
 
-@testset "variationalAlgorithm" begin
-    g = FactorGraph() # create a new factor graph
-    @RV m ~ GaussianMeanVariance(0, 10)
-    @RV w ~ Gamma(0.1, 0.1)
-    @RV y ~ GaussianMeanPrecision(m, w)
-    placeholder(y, :y)
+@testset "assembleAlgorithm!" begin
+    g = FactorGraph()
+    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
+    GaussianMeanPrecision(x, 0.0, 1.0)
+    algo = Algorithm()
+    rf = RecognitionFactor(algo)
+    schedule = sumProductSchedule(x)
+    rf.schedule = condense(flatten(schedule))
+    rf.marginal_table = marginalTable(x)
+    assembleAlgorithm!(algo)
 
-    # Construct and compile a variational message passing algorithm
-    q = Algorithm(m, w, ids=[:M, :W]);
-    algo = variationalAlgorithm(q)
-
-    @test isa(algo, Algorithm)
+    @test length(algo.interface_to_schedule_entry) == 2
+    @test length(algo.target_to_marginal_entry) == 1
 end
 
 end # module

@@ -71,12 +71,14 @@ end
     n = Nonlinear(y, x, g, g_inv=g_inv)
 
     # Forward; g_inv should not be present in call
+    algo = Algorithm()
     algo = sumProductAlgorithm(y)
     algo_str = algorithmString(algo)
     @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], $(string(g))", algo_str)
     @test !occursin("g_inv", algo_str)
 
     # Backward; g_inv should be present in call
+    algo = Algorithm()
     algo = sumProductAlgorithm(x)
     algo_str = algorithmString(algo)
     @test occursin("ruleSPNonlinearIn1GG(messages[2], nothing, $(string(g)), $(string(g_inv)))", algo_str)
@@ -90,6 +92,7 @@ end
     n = Nonlinear(y, x, g, alpha=1.0)
 
     # Forward; alpha should be present in call
+    algo = Algorithm()
     algo = sumProductAlgorithm(y)
     algo_str = algorithmString(algo)
     @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], $(string(g)), alpha=1.0)", algo_str)
@@ -103,6 +106,7 @@ end
     n = Nonlinear(y, x, g)
 
     # Forward; g_inv should not be present in call
+    algo = Algorithm()
     algo = sumProductAlgorithm(y)
     algo_str = algorithmString(algo)
     @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], $(string(g)))", algo_str)
@@ -110,6 +114,7 @@ end
 
     # Backward; g_inv should not be present in call, 
     # both messages should be required, and initialization should take place
+    algo = Algorithm()
     algo = sumProductAlgorithm(x)
     algo_str = algorithmString(algo)
     @test occursin("ruleSPNonlinearIn1GG(messages[2], messages[1], $(string(g)))", algo_str)

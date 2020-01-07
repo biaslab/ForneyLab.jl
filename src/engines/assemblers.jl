@@ -1,8 +1,16 @@
-function assembleAlgorithm!(rf::RecognitionFactor)
+function assembleAlgorithm!(algo::Algorithm)
     # Generate structures for fast lookup
-    rf.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(rf.schedule)
-    rf.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(rf.marginal_table)
+    algo.interface_to_schedule_entry = interfaceToScheduleEntry(algo)
+    algo.target_to_marginal_entry = targetToMarginalEntry(algo)
 
+    for (id, rf) in algo.recognition_factors
+        assembleRecognitionFactor!(rf)
+    end
+
+    return algo
+end
+
+function assembleRecognitionFactor!(rf::RecognitionFactor)
     assembleSchedule!(rf)
     assembleInitialization!(rf)
     assembleMarginalTable!(rf)
@@ -13,7 +21,7 @@ end
 function assembleSchedule!(rf::RecognitionFactor)
     # Collect inbounds and assign message index per schedule entry
     for (msg_idx, schedule_entry) in enumerate(rf.schedule)
-        schedule_entry.inbounds = collectInbounds(schedule_entry, schedule_entry.message_update_rule, rf.interface_to_schedule_entry, rf.target_to_marginal_entry)
+        schedule_entry.inbounds = collectInbounds(schedule_entry, schedule_entry.message_update_rule)
         schedule_entry.schedule_index = msg_idx
     end
 
@@ -21,6 +29,8 @@ function assembleSchedule!(rf::RecognitionFactor)
 end
 
 function assembleInitialization!(rf::RecognitionFactor)
+    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+
     # Collect outbound types from schedule
     outbound_types = Dict{Interface, Type}()
     for entry in rf.schedule
@@ -33,19 +43,19 @@ function assembleInitialization!(rf::RecognitionFactor)
     for entry in rf.schedule
         partner = ultimatePartner(entry.interface)
         if (entry.message_update_rule <: ExpectationPropagationRule)
-            breaker_entry = rf.interface_to_schedule_entry[partner]
+            breaker_entry = interface_to_schedule_entry[partner]
             assembleBreaker!(breaker_entry, family(outbound_types[partner]), ()) # Univariate only
             rf_initialize_flag = true 
         elseif isa(entry.interface.node, Nonlinear) && (entry.interface == entry.interface.node.interfaces[2]) && (entry.interface.node.g_inv == nothing)
             # Set initialization in case of a nonlinear node without given inverse 
             iface = ultimatePartner(entry.interface.node.interfaces[2])
-            breaker_entry = rf.interface_to_schedule_entry[iface]
+            breaker_entry = interface_to_schedule_entry[iface]
             assembleBreaker!(breaker_entry, family(outbound_types[iface]), entry.interface.node.dims)
             rf_initialize_flag = true
         elseif !(partner == nothing) && isa(partner.node, Clamp)
             rf_update_clamp_flag = true # Signifies the need for creating a custom `step!` function for optimizing clamped variables
             iface = entry.interface
-            breaker_entry = rf.interface_to_schedule_entry[iface]
+            breaker_entry = interface_to_schedule_entry[iface]
             assembleBreaker!(breaker_entry, family(outbound_types[iface]), size(partner.node.value))
             rf_initialize_flag = true
         end
@@ -58,17 +68,19 @@ function assembleInitialization!(rf::RecognitionFactor)
 end
 
 function assembleMarginalTable!(rf::RecognitionFactor)
+    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+    
     for entry in rf.marginal_table
         if entry.marginal_update_rule == Nothing
             iface = entry.interfaces[1]
-            inbounds = [rf.interface_to_schedule_entry[iface]]
+            inbounds = [interface_to_schedule_entry[iface]]
         elseif entry.marginal_update_rule == Product
             iface1 = entry.interfaces[1]
             iface2 = entry.interfaces[2]
-            inbounds = [rf.interface_to_schedule_entry[iface1], 
-                        rf.interface_to_schedule_entry[iface2]]
+            inbounds = [interface_to_schedule_entry[iface1], 
+                        interface_to_schedule_entry[iface2]]
         else
-            inbounds = collectInbounds(entry, rf.interface_to_schedule_entry, rf.target_to_marginal_entry)
+            inbounds = collectInbounds(entry)
         end
 
         entry.marginal_id = entry.target.id

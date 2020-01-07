@@ -87,13 +87,13 @@ end
     rf.marginal_table = marginal_table
 
     # Build SP algorithm for Julia execution
-    ForneyLab.assembleAlgorithm!(rf)
-    algo = ForneyLab.recognitionFactorString(rf)
+    ForneyLab.assembleAlgorithm!(algo)
+    algo_str = ForneyLab.algorithmString(algo)
 
-    @test occursin("Array{Message}(undef, 2)", algo)
-    @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo)
-    @test occursin("messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)", algo)
-    @test occursin("marginals[:x] = messages[2].dist", algo)
+    @test occursin("Array{Message}(undef, 2)", algo_str)
+    @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo_str)
+    @test occursin("messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)", algo_str)
+    @test occursin("marginals[:x] = messages[2].dist", algo_str)
 end
 
 @testset "Composite node algorithm execution" begin
