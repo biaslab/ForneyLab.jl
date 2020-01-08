@@ -74,14 +74,14 @@ end
     algo = Algorithm()
     algo = sumProductAlgorithm(y)
     algo_str = algorithmString(algo)
-    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], $(string(g))", algo_str)
+    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g)", algo_str)
     @test !occursin("g_inv", algo_str)
 
     # Backward; g_inv should be present in call
     algo = Algorithm()
     algo = sumProductAlgorithm(x)
     algo_str = algorithmString(algo)
-    @test occursin("ruleSPNonlinearIn1GG(messages[2], nothing, $(string(g)), $(string(g_inv)))", algo_str)
+    @test occursin("ruleSPNonlinearIn1GG(messages[2], nothing, g, g_inv)", algo_str)
 end
 
 @testset "Nonlinear integration with given alpha" begin
@@ -95,7 +95,7 @@ end
     algo = Algorithm()
     algo = sumProductAlgorithm(y)
     algo_str = algorithmString(algo)
-    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], $(string(g)), alpha=1.0)", algo_str)
+    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g, alpha=1.0)", algo_str)
 end
 
 @testset "Nonlinear integration without given inverse" begin
@@ -109,7 +109,7 @@ end
     algo = Algorithm()
     algo = sumProductAlgorithm(y)
     algo_str = algorithmString(algo)
-    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], $(string(g)))", algo_str)
+    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g)", algo_str)
     @test !occursin("$(string(g_inv))", algo_str)
 
     # Backward; g_inv should not be present in call, 
@@ -117,7 +117,7 @@ end
     algo = Algorithm()
     algo = sumProductAlgorithm(x)
     algo_str = algorithmString(algo)
-    @test occursin("ruleSPNonlinearIn1GG(messages[2], messages[1], $(string(g)))", algo_str)
+    @test occursin("ruleSPNonlinearIn1GG(messages[2], messages[1], g)", algo_str)
     @test !occursin("g_inv", algo_str)
     @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", algo_str)
 end

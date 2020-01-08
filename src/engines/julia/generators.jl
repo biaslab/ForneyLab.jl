@@ -92,7 +92,7 @@ Generate code for evaluating the average energy
 function energiesString(average_energies::Vector)
     energies_str = ""
     for energy in average_energies
-        node_str = typeString(energy[:node])
+        node_str = removePrefix(energy[:node])
         inbounds_str = inboundsString(energy[:inbounds])
         energies_str *= "F += averageEnergy($node_str, $inbounds_str))\n"
     end
@@ -123,7 +123,7 @@ Construct code for message updates
 function scheduleString(schedule::Schedule)
     schedule_str = ""
     for entry in schedule
-        rule_str = typeString(entry.message_update_rule)
+        rule_str = removePrefix(entry.message_update_rule)
         inbounds_str = inboundsString(entry.inbounds)
         schedule_str *= "messages[$(entry.schedule_index)] = rule$(rule_str)($inbounds_str)\n"
     end
@@ -146,7 +146,7 @@ function marginalTableString(table::MarginalTable)
             inbound2 = entry.inbounds[2]
             table_str *= "messages[$(inbound1.schedule_index)].dist * messages[$(inbound2.schedule_index)].dist"
         else
-            rule_str = typeString(entry.marginal_update_rule)
+            rule_str = removePrefix(entry.marginal_update_rule)
             inbounds_str = inboundsString(entry.inbounds)
             table_str *= "rule$(rule_str)($inbounds_str)"
         end
@@ -161,7 +161,7 @@ end
 Generate code for vague initializations
 """
 function vagueString(entry::ScheduleEntry)
-    family_str = typeString(entry.family)
+    family_str = removePrefix(entry.family)
     dims = entry.dimensionality
     if dims == ()
         vague_str = "vague($family_str)"
@@ -199,9 +199,9 @@ function inboundString(inbound::Dict) # Custom inbound
     for (key, val) in inbound
         if key != :keyword
             if keyword_flag
-                inbound_str = "$(string(key))=$(string(val))"
+                inbound_str = "$(removePrefix(key))=$(removePrefix(val))"
             else
-                inbound_str = string(val)
+                inbound_str = removePrefix(val)
             end
         end
     end
@@ -209,8 +209,8 @@ function inboundString(inbound::Dict) # Custom inbound
     return inbound_str
 end
 function inboundString(inbound::Clamp{V}) where V<:VariateType # Buffer or value inbound
-    dist_or_msg_str = typeString(inbound.dist_or_msg)
-    variate_type_str = typeString(V)
+    dist_or_msg_str = removePrefix(inbound.dist_or_msg)
+    variate_type_str = removePrefix(V)
 
     inbound_str = "$dist_or_msg_str($variate_type_str, PointMass, m="
     if isdefined(inbound, :buffer_id)
@@ -244,6 +244,8 @@ function valueString(val::AbstractMatrix)
 end
 
 """
-Cast a Type to a String and remove any module prefixes
+Remove module prefixes from types and functions
 """
-typeString(type::Type) = split(string(type), '.')[end]
+removePrefix(arg::Any) = arg # Do not remove prefix in general (might otherwise e.g. split floats)
+removePrefix(type::Type) = split(string(type), '.')[end]
+removePrefix(func::Function) = split(string(func), '.')[end]

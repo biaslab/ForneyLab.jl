@@ -3,10 +3,10 @@ module GeneratorsTest
 using Test
 using ForneyLab
 import LinearAlgebra: Diagonal
-import ForneyLab: entropiesString, energiesString, freeEnergyString, marginalTableString, inboundString, scheduleString, typeString, vagueString, initializationString, optimizeString, recognitionFactorString, algorithmString, valueString
+import ForneyLab: entropiesString, energiesString, freeEnergyString, marginalTableString, inboundString, scheduleString, removePrefix, vagueString, initializationString, optimizeString, recognitionFactorString, algorithmString, valueString
 
-@testset "typeString" begin
-    @test typeString(ForneyLab.SPGaussianMeanPrecisionOutNPP) == "SPGaussianMeanPrecisionOutNPP"
+@testset "removePrefix" begin
+    @test removePrefix(ForneyLab.SPGaussianMeanPrecisionOutNPP) == "SPGaussianMeanPrecisionOutNPP"
 end
 
 @testset "valueString" begin
@@ -17,9 +17,9 @@ end
     @test valueString(Diagonal([1])) == "Diagonal([1])"
 end
 
-@testset "inboundString" begin
-    f() = 1.0 # Define a function
+f() = 1.0 # Define a function
 
+@testset "inboundString" begin
     # custom inbound
     inbound = Dict(:keyword => false,
                    :g       => f)
