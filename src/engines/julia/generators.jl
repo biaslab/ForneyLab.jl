@@ -41,12 +41,12 @@ Generate Julia code for message passing on a single recognition factor
 """
 function recognitionFactorSourceCode(rf::RecognitionFactor)
     rf_code = ""
-    if isdefined(rf, :optimize) && rf.optimize
+    if rf.optimize
         rf_code *= optimizeSourceCode(rf)
         rf_code *= "\n\n"
     end
 
-    if isdefined(rf, :initialize) && rf.initialize
+    if rf.initialize
         rf_code *= initializationSourceCode(rf)
         rf_code *= "\n\n"
     end
@@ -85,10 +85,10 @@ function initializationSourceCode(rf::RecognitionFactor)
 
     n_messages = length(rf.schedule)
 
-    init_code *= "messages = Array{Message}(undef, $n_messages)\n"
+    init_code *= "messages = Array{Message}(undef, $n_messages)\n\n"
 
     for entry in rf.schedule
-        if isdefined(entry, :initialize) && entry.initialize
+        if entry.initialize
             init_code *= "messages[$(entry.schedule_index)] = Message($(vagueSourceCode(entry)))\n"
         end
     end
@@ -106,7 +106,7 @@ function energiesSourceCode(average_energies::Vector)
     for energy in average_energies
         node_code = removePrefix(energy[:node])
         inbounds_code = inboundsSourceCode(energy[:inbounds])
-        energies_code *= "F += averageEnergy($node_code, $inbounds_code))\n"
+        energies_code *= "F += averageEnergy($node_code, $inbounds_code)\n"
     end
 
     return energies_code
@@ -119,7 +119,7 @@ function entropiesSourceCode(entropies::Vector)
     entropies_code = ""
     for entropy in entropies
         inbounds_code = inboundsSourceCode(entropy[:inbounds])
-        if haskey(entropy, :conditional) && entropy[:conditional]
+        if entropy[:conditional]
             entropies_code *= "F -= conditionalDifferentialEntropy($inbounds_code)\n"
         else
             entropies_code *= "F -= differentialEntropy($inbounds_code)\n"

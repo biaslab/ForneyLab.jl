@@ -32,19 +32,23 @@ function freeEnergyAlgorithm(algo=currentAlgorithm())
                                                 :inbounds => inbounds)
                 else
                     inbound = algo.target_to_marginal_entry[outbound_interface.edge.variable]
-                    entropy = Dict{Symbol, Any}(:inbounds => [inbound])
+                    entropy = Dict{Symbol, Any}(:conditional => false,
+                                                :inbounds => [inbound])
                 end
                 push!(entropies_vect, entropy)
             end        
         end
     end
-
+    
+    algo.average_energies = average_energies_vect
+    algo.entropies = entropies_vect
+    
     return algo
 end
 
 function collectAverageEnergyInbounds(node::FactorNode, target_to_marginal_entry::Dict)
     inbounds = Any[]
-    local_clusters = localRecognitionFactorization(entry.interface.node)
+    local_clusters = localRecognitionFactorization(node)
 
     recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in node.interfaces

@@ -20,7 +20,7 @@ function variationalAlgorithm(algo::Algorithm=currentAlgorithm())
 end
 
 function variationalAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[])
-    rfz = Algorithm(args, ids=ids)
+    rfz = Algorithm(args..., ids=ids)
     algo = variationalAlgorithm(rfz)
 
     return algo

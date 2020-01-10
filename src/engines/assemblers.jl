@@ -21,6 +21,7 @@ end
 function assembleSchedule!(rf::RecognitionFactor)
     # Collect inbounds and assign message index per schedule entry
     for (msg_idx, schedule_entry) in enumerate(rf.schedule)
+        schedule_entry.initialize = false # Preset initialization to false
         schedule_entry.inbounds = collectInbounds(schedule_entry, schedule_entry.message_update_rule)
         schedule_entry.schedule_index = msg_idx
     end
