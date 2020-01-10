@@ -135,7 +135,7 @@ end
     # Construct algorithm
     algo = Algorithm()
     algo = sumProductAlgorithm(x)
-    algo_str = algorithmString(algo)
+    algo_str = algorithmSourceCode(algo)
     # Load algorithm
     eval(Meta.parse(algo_str))
 

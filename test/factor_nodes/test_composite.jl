@@ -88,7 +88,7 @@ end
 
     # Build SP algorithm for Julia execution
     ForneyLab.assembleAlgorithm!(algo)
-    algo_str = ForneyLab.algorithmString(algo)
+    algo_str = ForneyLab.algorithmSourceCode(algo)
 
     @test occursin("Array{Message}(undef, 2)", algo_str)
     @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo_str)

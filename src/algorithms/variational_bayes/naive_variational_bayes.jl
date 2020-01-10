@@ -19,6 +19,13 @@ function variationalAlgorithm(algo::Algorithm=currentAlgorithm())
     return algo
 end
 
+function variationalAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[])
+    rfz = Algorithm(args, ids=ids)
+    algo = variationalAlgorithm(rfz)
+
+    return algo
+end
+
 """
 A non-specific naive variational update
 """

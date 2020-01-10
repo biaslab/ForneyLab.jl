@@ -17,6 +17,13 @@ function variationalExpectationPropagationAlgorithm(algo::Algorithm=currentAlgor
     return algo
 end
 
+function variationalExpectationPropagationAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[])
+    rfz = Algorithm(args, ids=ids)
+    algo = variationalExpectationPropagationAlgorithm(rfz)
+
+    return algo
+end
+
 """
 `variationalExpectationPropagationSchedule()` generates an expectation propagation message passing schedule
 that is limited to the `recognition_factor`. Updates on EP sites are computed with an `ExpectationPropagationRule`.
