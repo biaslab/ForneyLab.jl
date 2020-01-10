@@ -73,15 +73,15 @@ end
     # Forward; g_inv should not be present in call
     algo = Algorithm()
     algo = sumProductAlgorithm(y)
-    algo_str = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g)", algo_str)
-    @test !occursin("g_inv", algo_str)
+    algo_code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g)", algo_code)
+    @test !occursin("g_inv", algo_code)
 
     # Backward; g_inv should be present in call
     algo = Algorithm()
     algo = sumProductAlgorithm(x)
-    algo_str = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearIn1GG(messages[2], nothing, g, g_inv)", algo_str)
+    algo_code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearIn1GG(messages[2], nothing, g, g_inv)", algo_code)
 end
 
 @testset "Nonlinear integration with given alpha" begin
@@ -94,8 +94,8 @@ end
     # Forward; alpha should be present in call
     algo = Algorithm()
     algo = sumProductAlgorithm(y)
-    algo_str = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g, alpha=1.0)", algo_str)
+    algo_code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g, alpha=1.0)", algo_code)
 end
 
 @testset "Nonlinear integration without given inverse" begin
@@ -108,18 +108,18 @@ end
     # Forward; g_inv should not be present in call
     algo = Algorithm()
     algo = sumProductAlgorithm(y)
-    algo_str = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g)", algo_str)
-    @test !occursin("$(string(g_inv))", algo_str)
+    algo_code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g)", algo_code)
+    @test !occursin("$(string(g_inv))", algo_code)
 
     # Backward; g_inv should not be present in call, 
     # both messages should be required, and initialization should take place
     algo = Algorithm()
     algo = sumProductAlgorithm(x)
-    algo_str = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearIn1GG(messages[2], messages[1], g)", algo_str)
-    @test !occursin("g_inv", algo_str)
-    @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", algo_str)
+    algo_code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearIn1GG(messages[2], messages[1], g)", algo_code)
+    @test !occursin("g_inv", algo_code)
+    @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", algo_code)
 end
 
 end # module

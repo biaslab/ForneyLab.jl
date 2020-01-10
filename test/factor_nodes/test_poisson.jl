@@ -135,9 +135,9 @@ end
     # Construct algorithm
     algo = Algorithm()
     algo = sumProductAlgorithm(x)
-    algo_str = algorithmSourceCode(algo)
+    algo_code = algorithmSourceCode(algo)
     # Load algorithm
-    eval(Meta.parse(algo_str))
+    eval(Meta.parse(algo_code))
 
     # Execute algorithm
     data = Dict(:y => [1.0, 2.0, 3.0])

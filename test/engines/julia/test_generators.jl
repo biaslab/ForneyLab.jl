@@ -3,7 +3,7 @@ module GeneratorsTest
 using Test
 using ForneyLab
 import LinearAlgebra: Diagonal
-import ForneyLab: entropiesSourceCode, energiesSourceCode, freeEnergySourceCode, marginalTableSourceCode, inboundSourceCode, scheduleSourceCode, removePrefix, vagueSourceCode, initializationSourceCode, optimizeString, recognitionFactorSourceCode, algorithmSourceCode, valueSourceCode
+import ForneyLab: entropiesSourceCode, energiesSourceCode, freeEnergySourceCode, marginalTableSourceCode, inboundSourceCode, scheduleSourceCode, removePrefix, vagueSourceCode, initializationSourceCode, optimizeSourceCode, recognitionFactorSourceCode, algorithmSourceCode, valueSourceCode
 
 @testset "removePrefix" begin
     @test removePrefix(ForneyLab.SPGaussianMeanPrecisionOutNPP) == "SPGaussianMeanPrecisionOutNPP"
@@ -70,14 +70,14 @@ end
     entry = ScheduleEntry()
     entry.family = GaussianMeanPrecision
     entry.dimensionality = ()
-    entry_str = vagueSourceCode(entry)
-    @test entry_str == "vague(GaussianMeanPrecision)"
+    entry_code = vagueSourceCode(entry)
+    @test entry_code == "vague(GaussianMeanPrecision)"
 
     entry = ScheduleEntry()
     entry.family = GaussianMeanPrecision
     entry.dimensionality = (1,)
-    entry_str = vagueSourceCode(entry)
-    @test entry_str == "vague(GaussianMeanPrecision, (1,))"
+    entry_code = vagueSourceCode(entry)
+    @test entry_code == "vague(GaussianMeanPrecision, (1,))"
 end
 
 @testset "marginalTableSourceCode" begin
@@ -101,11 +101,11 @@ end
     marginal_table[3].marginal_update_rule = ForneyLab.MGaussianMeanPrecisionGGD
     marginal_table[3].inbounds = inbounds
 
-    marginal_table_str = marginalTableSourceCode(marginal_table)
+    marginal_table_code = marginalTableSourceCode(marginal_table)
 
-    @test occursin("marginals[:x] = messages[1].dist", marginal_table_str)
-    @test occursin("marginals[:y] = messages[1].dist * messages[2].dist", marginal_table_str)
-    @test occursin("marginals[:z] = ruleMGaussianMeanPrecisionGGD(messages[1], messages[2])", marginal_table_str)
+    @test occursin("marginals[:x] = messages[1].dist", marginal_table_code)
+    @test occursin("marginals[:y] = messages[1].dist * messages[2].dist", marginal_table_code)
+    @test occursin("marginals[:z] = ruleMGaussianMeanPrecisionGGD(messages[1], messages[2])", marginal_table_code)
 end
 
 @testset "scheduleSourceCode" begin
@@ -119,8 +119,8 @@ end
     schedule[2].schedule_index = 2
     schedule[2].inbounds = [schedule[1]]
 
-    schedule_str = scheduleSourceCode(schedule)
-    @test occursin("messages[2] = ruleSPGaussianMeanPrecisionOutNPP(messages[1])", schedule_str)
+    schedule_code = scheduleSourceCode(schedule)
+    @test occursin("messages[2] = ruleSPGaussianMeanPrecisionOutNPP(messages[1])", schedule_code)
 end
 
 @testset "entropiesSourceCode" begin
@@ -135,10 +135,10 @@ end
                       Dict(:conditional => true,
                            :inbounds    => inbounds)]
 
-    entropies_str = entropiesSourceCode(entropies_vect)
+    entropies_code = entropiesSourceCode(entropies_vect)
 
-    @test occursin("F -= differentialEntropy(marginals[:x])", entropies_str)
-    @test occursin("F -= conditionalDifferentialEntropy(marginals[:y_x], marginals[:x])", entropies_str)
+    @test occursin("F -= differentialEntropy(marginals[:x])", entropies_code)
+    @test occursin("F -= conditionalDifferentialEntropy(marginals[:y_x], marginals[:x])", entropies_code)
 end
 
 @testset "energiesSourceCode" begin
@@ -146,9 +146,9 @@ end
     inbound.marginal_id = :x
     energies_vect = [Dict(:node     => GaussianMeanPrecision,
                           :inbounds => [inbound])]
-    energies_str = energiesSourceCode(energies_vect)
+    energies_code = energiesSourceCode(energies_vect)
 
-    @test occursin("F += averageEnergy(GaussianMeanPrecision, marginals[:x])", energies_str)
+    @test occursin("F += averageEnergy(GaussianMeanPrecision, marginals[:x])", energies_code)
 end
 
 @testset "initializationSourceCode" begin
@@ -162,18 +162,18 @@ end
     entry.dimensionality = ()
     rf.schedule = [entry]
 
-    rf_str = initializationSourceCode(rf)
-    @test occursin("function initX()", rf_str)
-    @test occursin("messages[1] = Message(vague(GaussianMeanPrecision))", rf_str)
+    rf_code = initializationSourceCode(rf)
+    @test occursin("function initX()", rf_code)
+    @test occursin("messages[1] = Message(vague(GaussianMeanPrecision))", rf_code)
 end
 
-@testset "optimizeString" begin
+@testset "optimizeSourceCode" begin
     algo = Algorithm()
     rf = RecognitionFactor(algo, id=:X)
     rf.optimize = true
 
-    rf_str = optimizeString(rf)
-    @test occursin("function optimizeX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX()", rf_str)    
+    rf_code = optimizeSourceCode(rf)
+    @test occursin("function optimizeX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX()", rf_code)    
 end
 
 @testset "recognitionFactorSourceCode" begin
@@ -182,20 +182,20 @@ end
     rf.schedule = []
     rf.marginal_table = []
 
-    rf_str = recognitionFactorSourceCode(rf)
-    @test occursin("function stepX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 0))", rf_str)
+    rf_code = recognitionFactorSourceCode(rf)
+    @test occursin("function stepX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 0))", rf_code)
 end
 
 @testset "freeEnergySourceCode" begin
     algo = Algorithm()
-    free_energy_str = freeEnergySourceCode(algo)
-    @test occursin("function freeEnergy(data::Dict, marginals::Dict)", free_energy_str)
+    free_energy_code = freeEnergySourceCode(algo)
+    @test occursin("function freeEnergy(data::Dict, marginals::Dict)", free_energy_code)
 end
 
 @testset "algorithmSourceCode" begin
     algo = Algorithm()
-    algo_str = algorithmSourceCode(algo)
-    @test occursin("begin", algo_str)
+    algo_code = algorithmSourceCode(algo)
+    @test occursin("begin", algo_code)
 end
 
 end # module
