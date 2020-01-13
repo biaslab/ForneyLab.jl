@@ -4,6 +4,7 @@ function assembleAlgorithm!(algo::Algorithm)
     algo.target_to_marginal_entry = targetToMarginalEntry(algo)
 
     for (id, rf) in algo.recognition_factors
+        rf.algorithm_id = algo.id
         assembleRecognitionFactor!(rf)
     end
 

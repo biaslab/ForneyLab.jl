@@ -25,7 +25,7 @@ end
 Generate Julia code for free energy evaluation
 """
 function freeEnergySourceCode(algo::Algorithm)
-    fe_code  = "function freeEnergy(data::Dict, marginals::Dict)\n\n"
+    fe_code  = "function freeEnergy$(algo.id)(data::Dict, marginals::Dict)\n\n"
     fe_code *= "F = 0.0\n\n"
     fe_code *= energiesSourceCode(algo.average_energies)
     fe_code *= "\n"
@@ -52,7 +52,7 @@ function recognitionFactorSourceCode(rf::RecognitionFactor)
     end
 
     n_entries = length(rf.schedule)
-    rf_code *= "function step$(rf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_entries))\n\n"
+    rf_code *= "function step$(rf.algorithm_id)$(rf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_entries))\n\n"
     rf_code *= scheduleSourceCode(rf.schedule)
     rf_code *= "\n"
     rf_code *= marginalTableSourceCode(rf.marginal_table)
@@ -69,7 +69,7 @@ function optimizeSourceCode(rf::RecognitionFactor)
     optim_code =  "# You have created an algorithm that requires updates for (a) clamped parameter(s).\n"
     optim_code *= "# This algorithm requires the definition of a custom `optimize!` function that updates the parameter value(s)\n"
     optim_code *= "# by altering the `data` dictionary in-place. The custom `optimize!` function may be based on the mockup below:\n\n"
-    optim_code *= "# function optimize$(rf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init$(rf.id)())\n"
+    optim_code *= "# function optimize$(rf.algorithm_id)$(rf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init$(rf.algorithm_id)$(rf.id)())\n"
     optim_code *= "# \t...\n"
     optim_code *= "# \treturn data\n"
     optim_code *= "# end"
@@ -81,7 +81,7 @@ end
 Generate code for initialization block (if required)
 """
 function initializationSourceCode(rf::RecognitionFactor)
-    init_code = "function init$(rf.id)()\n\n"
+    init_code = "function init$(rf.algorithm_id)$(rf.id)()\n\n"
 
     n_messages = length(rf.schedule)
 

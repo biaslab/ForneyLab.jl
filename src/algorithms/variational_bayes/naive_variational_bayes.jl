@@ -19,8 +19,8 @@ function variationalAlgorithm(algo::Algorithm=currentAlgorithm())
     return algo
 end
 
-function variationalAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[])
-    rfz = Algorithm(args..., ids=ids)
+function variationalAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[], id=Symbol(""))
+    rfz = Algorithm(args...; ids=ids, id=id)
     algo = variationalAlgorithm(rfz)
 
     return algo

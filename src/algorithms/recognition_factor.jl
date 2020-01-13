@@ -11,6 +11,7 @@ mutable struct RecognitionFactor
     internal_edges::Set{Edge}
 
     # Fields set by algorithm assembler
+    algorithm_id::Symbol # Specify the algorithm id for this recognition_factor
     schedule::Schedule # Specify the internal message passing schedule for this recognition factor
     marginal_table::MarginalTable # Specify the marginal updates for internal variables
     optimize::Bool # Indicate the need for an optimization block

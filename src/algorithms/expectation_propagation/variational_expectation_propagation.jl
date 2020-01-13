@@ -17,8 +17,8 @@ function variationalExpectationPropagationAlgorithm(algo::Algorithm=currentAlgor
     return algo
 end
 
-function variationalExpectationPropagationAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[])
-    rfz = Algorithm(args..., ids=ids)
+function variationalExpectationPropagationAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[], id=Symbol(""))
+    rfz = Algorithm(args...; ids=ids, id=id)
     algo = variationalExpectationPropagationAlgorithm(rfz)
 
     return algo

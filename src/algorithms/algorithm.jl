@@ -5,6 +5,8 @@ An `Algorithm` holds a collection of (non-overlapping) recognition factors that
 specify the recognition factorization over a factor graph.
 """
 mutable struct Algorithm
+    id::Symbol
+    
     graph::FactorGraph
     recognition_factors::Dict{Symbol, RecognitionFactor}
 
@@ -35,8 +37,9 @@ end
 
 setCurrentAlgorithm(rf::Algorithm) = global current_algorithm = rf
 
-Algorithm() = setCurrentAlgorithm(
+Algorithm(id=Symbol("")) = setCurrentAlgorithm(
     Algorithm(
+        id,
         currentGraph(),
         Dict{Symbol, RecognitionFactor}(),
         Dict{Edge, RecognitionFactor}(),
@@ -50,8 +53,8 @@ Algorithm() = setCurrentAlgorithm(
 Construct a `Algorithm` consisting of one
 `RecognitionFactor` for each argument
 """
-function Algorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[])
-    rf = Algorithm()
+function Algorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[], id=Symbol(""))
+    rf = Algorithm(id)
     isempty(ids) || (length(ids) == length(args)) || error("Length of ids must match length of recognition factor arguments")
     for (i, arg) in enumerate(args)
         if isempty(ids)
