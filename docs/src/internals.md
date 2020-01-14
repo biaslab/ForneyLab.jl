@@ -1,13 +1,14 @@
 # Internals
 
-This page documents the internals of the ForneyLab package. It is mainly tailored for software developers interested in understanding the inner workings of the package. Coding style conventions can be found in `STYLEGUIDE.md`.
+This page summarizes some of ForneyLab's internal structures. It is mainly tailored for software developers interested in a high-level overview of the inner workings of the package. Coding style conventions can be found in `STYLEGUIDE.md`.
 
 ## Directory structure
 
 ForneyLab's directories and files are structured as follows:
 
 - `/demo/`: demos in Jupyter (iJulia) notebook format (`.ipynb`)
-- `/src/`: all source files
+- `/docs/`: documentation source and build location
+- `/src/`: ForneyLab source files
     - `algorithms/`: inference algorithm implementations
         - `expectation_propagation/`: EP algorithm implementation
         - `sum_product/`: SP algorithm implementation
@@ -17,6 +18,41 @@ ForneyLab's directories and files are structured as follows:
     - `factor_nodes/`: all node-specific files
     - `update_rules/`: message passing update rules
 - `/test/`: test files with directory structure similar to `/src/`.
+
+
+## Algorithm data structure
+
+A ForneyLab `Algorithm` is structured as follows:
+
+- `algorithm::Algorithm`: specifies everything required for algorithm generation
+    - `recognition_factors::Vector{RecognitionFactor}` (per item):
+        - `id::Symbol`: recognition factor id
+        - `optimize::Bool`: require optimization block
+        - `initialize::Bool`: require initialization block
+        - `schedule::Schedule` (per `ScheduleEntry` item):
+            - `schedule_index::Int`: position of entry in schedule
+            - `message_update_rule::Type`: update rule type for message computation
+            - `initialize::Bool`: require message initialization
+            - `family::FactorFunction`: family of message distribution (for initialization)
+            - `dimensionality::Tuple`: dimensionality of message distribution (for initialization)
+            - `inbounds::Vector` (per item):
+                - `inbound::Union`: inbound, see below
+        - `marginal_table::MarginalTable` (per `MarginalEntry` item):
+            - `marginal_id::Symbol`: identifier for the marginal
+            - `marginal_update_rule::Union{Nothing, Product, Type}`: update rule type for marginal computation
+            - `inbounds::Vector` (per item):
+                - `inbound::Union`: inbound, see below
+    - `average_energies::Dict` (per item):
+        - `node::Type`: node type for average energy computation
+        - `inbounds::Vector` (per item):
+            - `inbound::Union`: inbound, see below
+    - `entropies::Dict` (per item):
+        - `conditional::Bool`: require conditional entropy computation
+        - `inbounds::Vector` (per item):
+            - `inbound::Union`: inbound, see below
+
+Inbounds are of type `Union{Nothing, ScheduleEntry, MarginalEntry, Dict, Clamp}`.
+
 
 ## Update rules naming convention
 

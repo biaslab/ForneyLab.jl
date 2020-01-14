@@ -1,10 +1,7 @@
-export messagePassingAlgorithm
+# Julia-specific generators
+include("generators.jl")
 
-include("message_passing.jl")
-include("sum_product.jl")
-include("variational_bayes.jl")
-include("expectation_propagation.jl")
-
+# Julia-specific update implementations
 include("update_rules/equality.jl")
 include("update_rules/addition.jl")
 include("update_rules/multiplication.jl")

@@ -35,23 +35,28 @@ Order = [:macro, :module, :constant, :type, :function]
 
 ## Scheduling
 ```@docs
-ForneyLab.MarginalSchedule
-ForneyLab.RecognitionFactorization
+ForneyLab.MarginalTable
+ForneyLab.Algorithm
 ForneyLab.Schedule
-ForneyLab.currentRecognitionFactorization
+ForneyLab.currentAlgorithm
 ForneyLab.expectationPropagationSchedule
 ForneyLab.sumProductSchedule
 ForneyLab.variationalExpectationPropagationSchedule
 ForneyLab.variationalSchedule
 ```
 
-## Algorithm generation
+## Algorithm assembly
 ```@docs
 ForneyLab.expectationPropagationAlgorithm
-ForneyLab.freeEnergyAlgorithm
 ForneyLab.sumProductAlgorithm
 ForneyLab.variationalAlgorithm
+ForneyLab.freeEnergyAlgorithm
 ForneyLab.variationalExpectationPropagationAlgorithm
+```
+
+## Algorithm code generation
+```@docs
+ForneyLab.algorithmSourceCode
 ```
 
 ## Algorithm execution
@@ -62,7 +67,6 @@ ForneyLab.ProbabilityDistribution
 ```
 
 ## Helper
-
 ```@autodocs
 Modules = [ForneyLab]
 Private = true

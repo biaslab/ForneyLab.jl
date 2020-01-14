@@ -24,17 +24,17 @@ mutable struct MockNode <: FactorNode
     end
 end
 
-@testset "MarginalScheduleEntry" begin
+@testset "MarginalEntry" begin
     FactorGraph()
     x = Variable()
     nd = MockNode([x])
 
-    # Marginal schedule should be constructable by hand
-    marginal_schedule = [MarginalScheduleEntry(x, [nd.i[1]], Nothing)]
-    @test isa(marginal_schedule, MarginalSchedule)
+    # Marginal table should be constructable by hand
+    marginal_table = [MarginalEntry(x, [nd.i[1]], Nothing)]
+    @test isa(marginal_table, MarginalTable)
 end
 
-@testset "marginalSchedule" begin
+@testset "marginalTable" begin
     # Construct
     #
     #    a    b    
@@ -48,17 +48,17 @@ end
     n1 = MockNode([a])
     n2 = MockNode([a, b])
 
-    marginal_schedule = marginalSchedule([a, b])
+    marginal_table = marginalTable([a, b])
 
-    @test length(marginal_schedule) == 2
-    @test marginal_schedule[1].target == a
-    @test marginal_schedule[1].interfaces[1] == n1.i[1]
-    @test marginal_schedule[1].interfaces[2] == n2.i[1]
-    @test marginal_schedule[1].marginal_update_rule == Product
+    @test length(marginal_table) == 2
+    @test marginal_table[1].target == a
+    @test marginal_table[1].interfaces[1] == n1.i[1]
+    @test marginal_table[1].interfaces[2] == n2.i[1]
+    @test marginal_table[1].marginal_update_rule == Product
 
-    @test marginal_schedule[2].target == b
-    @test marginal_schedule[2].interfaces[1] == n2.i[2]
-    @test marginal_schedule[2].marginal_update_rule == Nothing
+    @test marginal_table[2].target == b
+    @test marginal_table[2].interfaces[1] == n2.i[2]
+    @test marginal_table[2].marginal_update_rule == Nothing
 end
 
 end # module

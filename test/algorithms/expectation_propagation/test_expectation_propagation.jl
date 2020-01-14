@@ -43,9 +43,9 @@ end
     inferred_outbound_types = Dict(nd.i[2].partner => Message{Gaussian}, nd.i[1].partner => Message{PointMass})
 
     entry = ScheduleEntry(nd.i[2], ExpectationPropagationRule{MockNode})
-    inferUpdateRule!(entry, entry.msg_update_rule, inferred_outbound_types)
+    inferUpdateRule!(entry, entry.message_update_rule, inferred_outbound_types)
 
-    @test entry.msg_update_rule == EPMockIn1GP
+    @test entry.message_update_rule == EPMockIn1GP
 end
 
 @testset "expectationPropagationSchedule" begin
@@ -83,7 +83,7 @@ end
     nd_z = Probit(z, y)
     placeholder(z, :z)
 
-    rf = RecognitionFactorization()
+    rf = Algorithm()
     q_y_z = RecognitionFactor([y, z])
 
     schedule = variationalExpectationPropagationSchedule(q_y_z)
@@ -93,6 +93,44 @@ end
     @test ScheduleEntry(nd_z.i[:out].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd_z.i[:in1], EPProbitIn1GP) in schedule
     @test ScheduleEntry(nd_z.i[:out], SPProbitOutNG) in schedule
+end
+
+@testset "expectationPropagationAlgorithm" begin
+    g = FactorGraph()
+    m = Variable()
+    nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
+    z = Variable[]
+    nd_z = FactorNode[]
+    for i = 1:3
+        z_i = Variable()
+        nd_z_i = Probit(z_i, m)
+        placeholder(z_i, :y, index=i)
+        push!(z, z_i)
+        push!(nd_z, nd_z_i)
+    end
+
+    rf = Algorithm()
+    algo = expectationPropagationAlgorithm(m)
+
+    @test isa(algo, Algorithm)
+end
+
+@testset "variationalExpectationPropagationAlgorithm" begin
+    g = FactorGraph()
+    m = Variable()
+    nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
+    w = Variable()
+    nd_w = Gamma(w, constant(0.01), constant(0.01))
+    y = Variable()
+    nd_y = GaussianMeanPrecision(y, m, w)
+    z = Variable()
+    nd_z = Probit(z, y)
+    placeholder(z, :z)
+
+    rf = Algorithm([y; z], m, w)
+    algo = variationalExpectationPropagationAlgorithm(rf)
+
+    @test isa(algo, Algorithm)    
 end
 
 end # module

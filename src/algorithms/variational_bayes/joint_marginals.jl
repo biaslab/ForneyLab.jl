@@ -9,24 +9,24 @@ to a node of type `factor_type`.
 abstract type MarginalRule{factor_type} <: MarginalUpdateRule end
 
 """
-Construct a `MarginalScheduleEntry` for computing the marginal over `cluster`
+Construct a `MarginalEntry` for computing the marginal over `cluster`
 through a node-specific joint marginal update rule.
 """
-function MarginalScheduleEntry(cluster::Cluster, outbound_types::Dict{Interface, Type})
-    inbound_types = collectInboundTypes(cluster, outbound_types)
-    marginal_update_rule = inferMarginalRule(cluster, inbound_types)
+function MarginalEntry(target::Cluster, outbound_types::Dict{Interface, Type})
+    inbound_types = collectInboundTypes(target, outbound_types)
+    marginal_update_rule = inferMarginalRule(target, inbound_types)
     
     # Collect inbound interfaces 
     inbound_interfaces = Interface[]
-    for edge in cluster.edges
-        if edge.a in cluster.node.interfaces
+    for edge in target.edges
+        if edge.a in target.node.interfaces
             push!(inbound_interfaces, edge.a.partner) # Partner is the required inbound interface
         else
             push!(inbound_interfaces, edge.b.partner)
         end
     end
 
-    return MarginalScheduleEntry(cluster, inbound_interfaces, marginal_update_rule)
+    return MarginalEntry(target, inbound_interfaces, marginal_update_rule)
 end
 
 """
@@ -54,53 +54,46 @@ function inferMarginalRule(cluster::Cluster, inbound_types::Vector{<:Type})
 end
 
 """
+Construct the marginal computations table for a given recognition factor.
+The marginal table defines which marginal posteriors are computed.
+"""
+function marginalTable(rf::RecognitionFactor)
+    # Construct outbound types dictionary
+    outbound_types = Dict{Interface, Type}()
+    for entry in rf.schedule
+        outbound_types[entry.interface] = outboundType(entry.message_update_rule)
+    end
+
+    variable_table = marginalTable(sort(collect(rf.variables)))
+    cluster_table = [MarginalEntry(cluster, outbound_types) for cluster in sort(collect(rf.clusters))]
+
+    return [variable_table; cluster_table]
+end
+
+"""
 Find the inbound types that are required to compute a joint marginal over `target`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
 function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, Type})
     inbound_types = Type[]
-    cluster_recognition_factor_id = recognitionFactorId(first(cluster.edges)) # Recognition factor id for cluster
-    recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
+    cluster_recognition_factor = recognitionFactor(first(cluster.edges)) # Recognition factor for cluster
+    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in cluster.node.interfaces
-        node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge) # Note: edges that are not assigned to a recognition factorization are assumed mean-field 
+        node_interface_recognition_factor = recognitionFactor(node_interface.edge) # Note: edges that are not assigned to a recognition factor are assumed mean-field 
 
-        if node_interface_recognition_factor_id == cluster_recognition_factor_id
+        if node_interface_recognition_factor === cluster_recognition_factor
             # Edge is internal, accept message
             push!(inbound_types, outbound_types[node_interface.partner])
-        elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
+        elseif !(node_interface_recognition_factor in recognition_factors)
             # Edge is external, accept marginal (if marginal is not already accepted)
             push!(inbound_types, ProbabilityDistribution) 
         end
 
-        push!(recognition_factor_ids, node_interface_recognition_factor_id)
+        push!(recognition_factors, node_interface_recognition_factor)
     end
 
     return inbound_types
 end
-
-function marginalSchedule(q_factors::Vector{RecognitionFactor}, schedule::Schedule)
-    # Construct outbound types dictionary
-    outbound_types = Dict{Interface, Type}()
-    for entry in schedule
-        outbound_types[entry.interface] = outboundType(entry.msg_update_rule)
-    end
-
-    # Construct marginal schedule
-    marginal_schedule = MarginalScheduleEntry[]
-    for q_factor in q_factors
-        # Construct schedule for computing marginals over variables
-        variable_schedule = marginalSchedule(sort(collect(q_factor.variables)))
-        marginal_schedule = [marginal_schedule; variable_schedule]
-
-        # Construct schedule for computing marginals over clusters
-        cluster_schedule = [MarginalScheduleEntry(cluster, outbound_types) for cluster in sort(collect(q_factor.clusters))]
-        marginal_schedule = [marginal_schedule; cluster_schedule]
-    end
-
-    return marginal_schedule
-end
-
-marginalSchedule(q_factor::RecognitionFactor, schedule::Schedule) = marginalSchedule([q_factor], schedule)
 
 """
 `@marginalRule` registers a marginal update rule for a (joint) marginal
@@ -156,4 +149,43 @@ macro marginalRule(fields...)
     """)
 
     return esc(expr)
+end
+
+"""
+Construct the inbound code that computes the marginal for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
+Returns a vector with inbounds that correspond with required interfaces.
+"""
+collectInbounds(entry::MarginalEntry) = collectMarginalNodeInbounds(entry.target.node, entry)
+
+function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
+    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+    target_to_marginal_entry = current_algorithm.target_to_marginal_entry
+
+    inbounds = Any[]
+    entry_recognition_factor = recognitionFactor(first(entry.target.edges))
+    local_clusters = localRecognitionFactorization(entry.target.node)
+
+    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
+    for node_interface in entry.target.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        partner_node = inbound_interface.node
+        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
+
+        if isa(partner_node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, assembleClamp!(partner_node, ProbabilityDistribution))
+        elseif node_interface_recognition_factor === entry_recognition_factor
+            # Collect message from previous result
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        elseif !(node_interface_recognition_factor in recognition_factors)
+            # Collect marginal from marginal dictionary (if marginal is not already accepted)
+            target = local_clusters[node_interface_recognition_factor]
+            push!(inbounds, target_to_marginal_entry[target])
+        end
+
+        push!(recognition_factors, node_interface_recognition_factor)
+    end
+
+    return inbounds
 end

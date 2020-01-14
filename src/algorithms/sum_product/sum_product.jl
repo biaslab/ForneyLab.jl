@@ -1,8 +1,28 @@
 export
 SumProductRule,
+sumProductAlgorithm,
 sumProductSchedule,
 @sumProductRule
 
+"""
+Create a sum-product algorithm to infer marginals over `variables`
+"""
+function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm())
+    # Initialize a container recognition factor
+    rf = RecognitionFactor(algo, id=Symbol(""))
+    schedule = sumProductSchedule(variables)
+    rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+    rf.marginal_table = marginalTable(variables)
+
+    assembleAlgorithm!(algo)
+    
+    return algo
+end
+sumProductAlgorithm(variable::Variable, algo::Algorithm=currentAlgorithm()) = sumProductAlgorithm([variable], algo)
+
+"""
+A non-specific sum-product update
+"""
 abstract type SumProductRule{factor_type} <: MessageUpdateRule end
 
 """ 
@@ -15,7 +35,7 @@ function sumProductSchedule(variables::Vector{Variable})
 
     # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule
-        entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
+        entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
     end
 
     inferUpdateRules!(schedule)
@@ -53,7 +73,7 @@ function internalSumProductSchedule(cnode::CompositeNode,
 
     # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule
-        entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
+        entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
     end
 
     # Sanity check
@@ -76,7 +96,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
 
     # Find applicable rule(s)
     applicable_rules = Type[]
-    for rule in leaftypes(entry.msg_update_rule)
+    for rule in leaftypes(entry.message_update_rule)
         if isApplicable(rule, inbound_types)
             push!(applicable_rules, rule)
         end
@@ -88,14 +108,14 @@ function inferUpdateRule!(entry::ScheduleEntry,
             # No 'shortcut rule' available for CompositeNode.
             # Try to fall back to msg passing on the internal graph.
             entry.internal_schedule = internalSumProductSchedule(entry.interface.node, entry.interface, inferred_outbound_types)
-            entry.msg_update_rule = entry.internal_schedule[end].msg_update_rule
+            entry.message_update_rule = entry.internal_schedule[end].message_update_rule
         else
             error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
         end
     elseif length(applicable_rules) > 1
         error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types): $(applicable_rules)")
     else
-        entry.msg_update_rule = first(applicable_rules)
+        entry.message_update_rule = first(applicable_rules)
     end
 
     return entry
@@ -107,7 +127,7 @@ function collectInboundTypes(entry::ScheduleEntry,
                             ) where T<:SumProductRule
     inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces
-        if node_interface == entry.interface
+        if node_interface === entry.interface
             push!(inbound_message_types, Nothing)
         elseif (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
             push!(inbound_message_types, Message{PointMass})
@@ -179,4 +199,35 @@ macro sumProductRule(fields...)
     """)
 
     return esc(expr)
+end
+
+"""
+Collect and construct SP update code for each inbound.
+"""
+collectInbounds(entry::ScheduleEntry, ::Type{T}) where T<:SumProductRule = collectSumProductNodeInbounds(entry.interface.node, entry)
+
+"""
+Construct the inbound code that computes the message for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
+Returns a vector with inbounds that correspond with required interfaces.
+"""
+function collectSumProductNodeInbounds(::FactorNode, entry::ScheduleEntry)
+    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+
+    inbounds = Any[]
+    for node_interface in entry.interface.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        if node_interface === entry.interface
+            # Ignore inbound message on outbound interface
+            push!(inbounds, nothing)
+        elseif isa(inbound_interface.node, Clamp)
+            # Hard-code outbound message of constant node in schedule
+            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
+        else
+            # Collect message from previous result
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        end
+    end
+
+    return inbounds
 end

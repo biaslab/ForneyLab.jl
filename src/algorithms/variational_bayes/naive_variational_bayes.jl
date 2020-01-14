@@ -1,13 +1,39 @@
 export
 NaiveVariationalRule,
+variationalAlgorithm,
 variationalSchedule,
 @naiveVariationalRule
 
+"""
+Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
+"""
+function variationalAlgorithm(algo::Algorithm=currentAlgorithm())
+    for (id, rf) in algo.recognition_factors
+        schedule = variationalSchedule(rf)
+        rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+        rf.marginal_table = marginalTable(rf)
+    end
+
+    assembleAlgorithm!(algo)
+
+    return algo
+end
+
+function variationalAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[], id=Symbol(""))
+    rfz = Algorithm(args...; ids=ids, id=id)
+    algo = variationalAlgorithm(rfz)
+
+    return algo
+end
+
+"""
+A non-specific naive variational update
+"""
 abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
 
 """
-`variationalSchedule()` generates a variational message passing schedule that computes the
-marginals for each of the recognition distributions in the recognition factor.
+`variationalSchedule()` generates a variational message passing schedule
+for each recognition distribution in the recognition factorization.
 """
 function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
     # Schedule messages towards recognition distributions, limited to the internal edges
@@ -20,14 +46,14 @@ function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
 
     for entry in schedule
         if entry.interface.node in nodes_connected_to_external_edges
-            local_recognition_factor_ids = localRecognitionFactorIds(entry.interface.node)
-            if allunique(local_recognition_factor_ids) # Local recognition factorization is naive
-                entry.msg_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
+            local_recognition_factors = localRecognitionFactors(entry.interface.node)
+            if allunique(local_recognition_factors) # Local recognition factorization is naive
+                entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
             else
-                entry.msg_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}
+                entry.message_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}
             end        
         else
-            entry.msg_update_rule = SumProductRule{typeof(entry.interface.node)}
+            entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
         end
     end
 
@@ -48,7 +74,7 @@ function inferUpdateRule!(  entry::ScheduleEntry,
     
     # Find applicable rule(s)
     applicable_rules = Type[]
-    for rule in leaftypes(entry.msg_update_rule)
+    for rule in leaftypes(entry.message_update_rule)
         if isApplicable(rule, inbound_types)
             push!(applicable_rules, rule)
         end
@@ -60,7 +86,7 @@ function inferUpdateRule!(  entry::ScheduleEntry,
     elseif length(applicable_rules) > 1
         error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types)")
     else
-        entry.msg_update_rule = first(applicable_rules)
+        entry.message_update_rule = first(applicable_rules)
     end
 
     return entry
@@ -75,7 +101,7 @@ function collectInboundTypes(   entry::ScheduleEntry,
                                 inferred_outbound_types::Dict{Interface, Type}) where T<:NaiveVariationalRule
     inbound_types = Type[]
     for node_interface in entry.interface.node.interfaces
-        if node_interface == entry.interface
+        if node_interface === entry.interface
             push!(inbound_types, Nothing)
         else
             # Edge is external, accept marginal
@@ -146,4 +172,35 @@ macro naiveVariationalRule(fields...)
     """)
 
     return esc(expr)
+end
+
+"""
+Construct argument code for naive VB updates
+"""
+collectInbounds(entry::ScheduleEntry, ::Type{T}) where T<:NaiveVariationalRule = collectNaiveVariationalNodeInbounds(entry.interface.node, entry)
+
+"""
+Construct the inbound code that computes the message for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
+Returns a vector with inbounds that correspond with required interfaces.
+"""
+function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry)
+    target_to_marginal_entry = current_algorithm.target_to_marginal_entry
+    
+    inbounds = Any[]
+    for node_interface in entry.interface.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        if node_interface === entry.interface
+            # Ignore marginal of outbound edge
+            push!(inbounds, nothing)
+        elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
+        else
+            # Collect entry from marginal schedule
+            push!(inbounds, target_to_marginal_entry[node_interface.edge.variable])
+        end
+    end
+
+    return inbounds
 end

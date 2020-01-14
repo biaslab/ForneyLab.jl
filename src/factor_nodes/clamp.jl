@@ -21,15 +21,19 @@ mutable struct Clamp{T<:VariateType} <: DeltaFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
     value::Any
-end
 
-function Clamp(out::Variable, value::Any; id=generateId(Clamp{variateType(value)}))
-    self = Clamp{variateType(value)}(id, Array{Interface}(undef, 1), Dict{Symbol,Interface}(), value)
-    addNode!(currentGraph(), self)
+    # Fields for algorithm assembly
+    dist_or_msg::Type # Define whether the clamp outputs a Message or ProbabilityDistribution
+    buffer_id::Symbol # Specify the buffer id for an attached placeholder
+    buffer_index::Int64 # Specify the buffer index when the placeholder attaches a vector
 
-    self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+    function Clamp(out::Variable, value::Any; id=generateId(Clamp{variateType(value)}))
+        self = new{variateType(value)}(id, Array{Interface}(undef, 1), Dict{Symbol,Interface}(), value)
+        addNode!(currentGraph(), self)
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
 
-    return self
+        return self
+    end
 end
 
 variateType(value::Number) = Univariate

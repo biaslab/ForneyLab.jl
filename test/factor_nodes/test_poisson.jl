@@ -3,7 +3,7 @@ module PoissonTest
 using Test
 using ForneyLab
 
-import ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, FactorNode, SoftFactor, Interface, FactorGraph
+import ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, FactorNode, SoftFactor, Interface, FactorGraph, step!
 import ForneyLab: VBPoissonOut, VBPoissonL, SPPoissonOutNP, SPPoissonLPN
 
 @testset "Poisson ProbabilityDistribution construction" begin
@@ -133,10 +133,11 @@ end
     end
 
     # Construct algorithm
+    algo = Algorithm()
     algo = sumProductAlgorithm(x)
-
+    algo_code = algorithmSourceCode(algo)
     # Load algorithm
-    eval(Meta.parse(algo))
+    eval(Meta.parse(algo_code))
 
     # Execute algorithm
     data = Dict(:y => [1.0, 2.0, 3.0])

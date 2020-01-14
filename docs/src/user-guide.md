@@ -11,76 +11,68 @@ using ForneyLab
 ```
 
 ## Specifying a model
-Probabilistic models incorporate the element of randomness to describe an event or phenomenon. They do this by using random variables and probability distributions. These models can be represented diagrammatically using probabilistic graphical models (PGMs). A factor graph is a type of PGM that is well suited to cast inference tasks in terms of graphical manipulations.
+Probabilistic models incorporate the element of randomness to describe an event or phenomenon by using random variables and probability theory. A probabilistic model can be represented diagrammatically by using probabilistic graphical models (PGMs). A factor graph is a type of PGM that is well suited to cast inference tasks in terms of graphical manipulations.
 
 ### Creating a new factor graph
-Factor graphs are represented by the `FactorGraph` composite type (struct). To instantiate a new (empty) factor graph we use its constructor function that takes no arguments
+In ForneyLab, Factor graphs are represented by a `FactorGraph` type (struct). To instantiate a new (empty) factor graph we use the constructor without arguments
 ```@example 1
-g = FactorGraph()
-;
+g = FactorGraph();
 ```
 
-ForneyLab keeps track of an *active* factor graph at all times. Future operations on the graph, such as adding variables or nodes, affect the active graph. The call to `FactorGraph()` creates a new instance of a factor graph and registers it as the active graph.
+ForneyLab tracks the *active* factor graph. Operations on the graph, such as adding variables or nodes, only affect the active graph. The call to `FactorGraph()` creates a new instance of a factor graph and registers it as the active graph.
 
 To get the active graph run
 ```@example 1
-fg = currentGraph()
-;
+fg = currentGraph();
 ```
 
 To set the active graph run
 ```@example 1
-setCurrentGraph(g)
-;
+setCurrentGraph(g);
 ```
 
 ### Adding random variables (edges)
-Random variables are represented as edges on Forney-style factor graphs. You can add a random variable to the active factor graph by instantiating the `Variable` composite type. The constructor function takes an `id` of type `Symbol` as argument. For example, running
+Random variables are represented as edges on Forney-style factor graphs. You can add a random variable to the active graph by instantiating a `Variable`. The constructor accepts an `id` of type `Symbol`. For example,
 ```@example 1
-x = Variable(id=:x)
-;
+x = Variable(id=:x);
 ```
-associates the variable `x` to an edge of the active factor graph.
+associates the variable `x` to an edge of the active graph.
 
-Alternatively, the `@RV` macro can be used for the same purpose in a more compact form. Executing the following line has the same effect as the previous one.
+Alternatively, the `@RV` macro achieves the same by a more compact notation. The following line has the same result as the previous one.
 ```@example 1
-@RV x
-;
+@RV x;
 ```
-By default, the `@RV` macro uses the variable's name to create a Julia `Symbol` that is assigned to the `id` field of the `Variable` object (`:x` in this example). However, if this id value has already been assigned to a variable in the factor graph, then ForneyLab will create a default id of the form `:variable_x`, where `x` is a number that increments. In case you want to provide a custom `id`, the `@RV` macro accepts an optional keyword argument between square brackets that allows this. For example,
+By default, the `@RV` macro uses the Julia-variable's name to create an `id` for the `Variable` object (`:x` in this example). However, if this `id` was already assigned, then ForneyLab creates a default id of the form `:variable_n`, where `n` is a number that increments. In case you want to provide a custom `id`, the `@RV` macro accepts an optional keyword argument between square brackets. For example,
 ```@example 1
-@RV [id=:my_id] x
-;
+@RV [id=:my_id] x;
 ```
 adds the variable `x` to the active graph and assigns the `:my_id` symbol to its `id` field. Later we will see that this is useful once we start visualizing the factor graph.
 
 ### Adding factor nodes
-Factor nodes are used to define the relationship between different random variables. They assign probability distributions to a random variable as a function of other variables. See [Factor nodes](@ref) for a complete list of the available factor nodes in ForneyLab.
+Factor nodes are used to define a relationship between random variables. A factor node defines a probability distribution over selected random variables. See [Factor nodes](@ref) for a complete list of the available factor nodes in ForneyLab.
 
-We can assign a probability distribution to a random variable using the `~` operator together with the `@RV` macro. For example, to create a Gaussian distributed random variable `y`, where its mean and variance are controlled by the random variables `m` and `v` respectively, we could run
+We assign a probability distribution to a random variable using the `~` operator together with the `@RV` macro. For example, to create a Gaussian random variable `y`, where its mean and variance are controlled by the random variables `m` and `v` respectively, we define
 ```@example 1
 @RV m
 @RV v
-@RV y ~ GaussianMeanVariance(m, v)
-;
+@RV y ~ GaussianMeanVariance(m, v);
 ```
 
 ### Visualizing a factor graph
-Factor graphs can be visualized using the `draw` function. It takes a `FactorGraph` object as argument. Let's visualize the factor graph that we defined in the previous section.
+Factor graphs can be visualized using the `draw` function, which takes a `FactorGraph` as argument. Let's visualize the factor graph that we defined in the previous section.
 ```@example 1
 ForneyLab.draw(g)
 ```
-Edges that are not connected to any factor node are not drawn.
 
 ### Clamping
-Suppose we know that the variance of the random variable `y`, of the previous model, is fixed to a certain value. ForneyLab provides a special factor node to impose this kind of constraint called a `Clamp`. Clamp factor nodes can be implicitly defined by using literals like in the following example
+Suppose we know that the variance of the random variable `y`, is fixed to a certain value. ForneyLab provides a `Clamp` node to impose such constraints. Clamp nodes can be implicitly defined by using literals like in the following example
 ```@example 1
 g = FactorGraph() # create a new factor graph
 @RV m
 @RV y ~ GaussianMeanVariance(m, 1.0)
 ForneyLab.draw(g)
 ```
-Here, the literal `1.0` that is passed as the second argument to `GaussianMeanVariance` function creates a clamp node implicitly. Clamp factor nodes are visualized with a gray background.
+Here, the literal `1.0` creates a clamp node implicitly. Clamp nodes are visualized with a gray background.
 
 Alternatively, if you want to assign a custom `id` to a `Clamp` factor node, then you have to instantiate them explicitly using its constructor function, i.e.
 ```@example 1
@@ -92,7 +84,7 @@ ForneyLab.draw(g)
 ```
 
 ### Placeholders
-Placeholders are a kind of `Clamp` factor nodes that act as entry points for data. They associate a given random variable with a buffer through which data is fed at a later point. This buffer has an `id`, a dimensionality and a data type. Placeholders are created with the `placeholder` function. Suppose that we want to feed an array of one-dimensional floating-point data to the `y` random variable of the previous model. We would then need to define `y` as a placeholder as follows.
+Placeholders are `Clamp` factors that act as entry points for data. They associate a given random variable with a buffer through which data is fed at a later point. This buffer has an `id`, a dimensionality and a data type. Placeholders are created with the `placeholder` function. Suppose that we want to feed an array of one-dimensional floating-point data to the `y` random variable of the previous model. We would then need to define `y` as a placeholder as follows.
 ```@example 1
 g = FactorGraph() # create a new factor graph
 @RV m
@@ -108,8 +100,7 @@ placeholder(y, :y, dims=(3,), datatype=Int)
 
 In the previous example, we first created the random variable `y` and then marked it as a placeholder. There is, however, a shorthand version to perform these two steps in one. The syntax consists of calling a `placeholder` method that takes an id `Symbol` as argument and returns the new random variable. Here is an example:
 ```@example 1
-x = placeholder(:x)
-;
+x = placeholder(:x);
 ```
 where `x` is now a random variable linked to a placeholder with id `:x`.
 
@@ -180,19 +171,18 @@ ForneyLab.draw(g)
 ```
 If we were only interested in inferring the posterior distribution of `m1` then we would run
 ```@example 1
-algorithm_string = sumProductAlgorithm(m1)
-;
+algorithm = sumProductAlgorithm(m1)
+algorithm_code = algorithmSourceCode(algorithm);
 ```
 On the other hand, if we were interested in the posterior distributions of both `m1` and `m2` we would then need to pass them as elements of an array, i.e.
 ```@example 1
-algorithm_string = sumProductAlgorithm([m1, m2])
-;
+algorithm = sumProductAlgorithm([m1, m2])
+algorithm_code = algorithmSourceCode(algorithm);
 ```
 
-Note that the message-passing algorithm returned by the `sumProductAlgorithm` function is a `String` that contains the definition of a Julia function. In order to be able to execute this function, we first need to parse this string as Julia expression to then evaluate it in the current scope that the program is running on. This can be done as follows
+Note that the message-passing algorithm returned by the `algorithmSourceCode` function is a `String` that contains the definition of a Julia function. In order to access this function, we need to parse the code and evaluate it in the current scope. This can be done as follows
 ```@example 1
-algorithm_expr = Meta.parse(algorithm_string)
-;
+algorithm_expr = Meta.parse(algorithm_code);
 ```
 ```julia
 :(function step!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 4))
@@ -220,7 +210,7 @@ eval(algorithm_expr)
 At this point a new function named `step!` becomes available in the current scope. This function contains a message-passing algorithm that infers both `m1` and `m2` given one or more `y` observations. In the section [Executing an algorithm](@ref) we will see how this function is used.
 
 ### Variational message passing
-Variational message passing (VMP) algorithms are generated much in the same way as the belief propagation algorithm we saw in the previous section. There is a major difference though: for VMP algorithm generation we need to define the factorization properties of our approximate distribution. A common approach is to assume that all random variables of the model factorize with respect to each other. This is known as the *mean field* assumption. In ForneyLab, the specification of such factorization properties is defined using the `RecognitionFactorization` composite type. Let's take a look at a simple example to see how it is used. In this model we want to learn the mean and variance of a Gaussian distribution, where the former is modelled with a Gaussian distribution and the latter with a Gamma.
+Variational message passing (VMP) algorithms are generated much in the same way as the belief propagation algorithm we saw in the previous section. There is a major difference though: for VMP algorithm generation we need to define the factorization properties of our approximate distribution. A common approach is to assume that all random variables of the model factorize with respect to each other. This is known as the *mean field* assumption. In ForneyLab, the specification of such factorization properties is defined using the `Algorithm` composite type. Let's take a look at a simple example to see how it is used. In this model we want to learn the mean and variance of a Gaussian distribution, where the former is modelled with a Gaussian distribution and the latter with a Gamma.
 ```@example 1
 g = FactorGraph() # create a new factor graph
 @RV m ~ GaussianMeanVariance(0, 10)
@@ -229,24 +219,23 @@ g = FactorGraph() # create a new factor graph
 placeholder(y, :y)
 draw(g)
 ```
-The construct of the `RecognitionFactorization` composite type takes the random variables of interest as arguments and one final argument consisting of an array of symbols used to identify each of these random variables. Here is an example of how to use this construct for the previous model where we want to infer `m` and `w`.
+The construct of the `Algorithm` composite type takes the random variables of interest as arguments and one final argument consisting of an array of symbols used to identify each of these random variables. Here is an example of how to use this construct for the previous model where we want to infer `m` and `w`.
 ```@example 1
-q = RecognitionFactorization(m, w, ids=[:M, :W])
-;
+q = Algorithm(m, w, ids=[:M, :W]);
 ```
-This recognition factorization constraint that we introduce to guarantee tractability of the approximate distribution has a graphical interpretation. We can view this constraint as a division of the factor graph into a number of different subgraphs, each corresponding to a different factor in the recognition factorization. Minimization of the free energy is performed by iterating over each subgraph in order to update the posterior marginal corresponding to the current factor which depends on messages coming from the other subgraphs. This iteration is repeated until either the free energy converges to a certain value or the posterior marginals of each factor stop changing. We can use the `ids` passed to the `RecognitionFactorization` function to visualize their corresponding subgraphs, as shown below.   
+Here, the `Algorithm` constructor specifies a recognition factorization. We can view the recognition factorization as dividing the factor graph into several subgraphs, each corresponding to a separate factor in the recognition factorization. Minimization of the free energy is performed by iterating over each subgraph in order to update the posterior marginal corresponding to the current factor which depends on messages coming from the other subgraphs. This iteration is repeated until either the free energy converges to a certain value or the posterior marginals of each factor stop changing. We can use the `ids` passed to the `Algorithm` constructor to visualize the corresponding subgraphs, as shown below.   
 ```@example 1
 ForneyLab.draw(q.recognition_factors[:M])
 ```
 ```@example 1
 ForneyLab.draw(q.recognition_factors[:W])
 ```
-Generating the VMP algorithm follows the same procedure that we saw for the belief propagation algorithm. In this case, however, the resulting algorithm will consist of a set of step functions, one for each recognition factor, that need to be executed iteratively until convergence.
+Generating the VMP algorithm then follows a similar same procedure as the belief propagation algorithm. In the VMP case however, the resulting algorithm will consist of multiple step functions, one for each recognition factor, that need to be executed iteratively until convergence.
 ```@example 1
-# Generate variational update algorithms for each recognition factor
+# Construct and compile a variational message passing algorithm
 algo = variationalAlgorithm(q)
-eval(Meta.parse(algo))
-;
+algo_code = algorithmSourceCode(algo)
+eval(Meta.parse(algo_code));
 ```
 ```julia
 Meta.parse(algo) = quote
@@ -276,10 +265,11 @@ end
 ```
 
 #### Computing free energy
-VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as *free energy*. ForneyLab provides the function `freeEnergyAlgorithm` which generates an algorithm that can be used to evaluate this quantity. This function takes an object of type `RecognitionFactorization` as argument. Free energy is particularly useful to test for convergence of the VMP iterative procedure. Here is an example that generates, parses and evaluates this algorithm.
+VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as *free energy*. ForneyLab offers to optionally compile code for evaluating the free energy. Free energy is particularly useful to test for convergence of the VMP iterative procedure.
 ```julia
-fe_algorithm = freeEnergyAlgorithm(q)
-eval(Meta.parse(fe_algorithm));
+algo = freeEnergyAlgorithm(q)
+algo_code = algorithmSourceCode(algo, free_energy=true)
+eval(Meta.parse(algo_code))
 ```
 
 ### Expectation maximization
@@ -290,13 +280,11 @@ g = FactorGraph()
 v = placeholder(:v) # parameter of interest
 @RV m ~ GaussianMeanVariance(0.0, 1.0)
 @RV y ~ GaussianMeanVariance(m, v)
-placeholder(y, :y)
-;
+placeholder(y, :y);
 ```
 Generating a sum-product algorithm towards a clamped variable signals ForneyLab that the user wishes to optimize this parameter. Next to returning a `step!()` function, ForneyLab will then provide mockup code for an `optimize!()` function as well.
 ```@example 1
-algo = sumProductAlgorithm(v)
-;
+algo = sumProductAlgorithm(v);
 ```
 ```julia
 # You have created an algorithm that requires updates for (a) clamped parameter(s).
@@ -323,8 +311,9 @@ v = placeholder(:v)
 @RV x ~ GaussianMeanVariance(m, v)
 @RV y ~ GaussianMeanVariance(x, 1.0)
 placeholder(y, :y)
-eval(Meta.parse(sumProductAlgorithm(x))) # generate, parse and evaluate the algorithm
-;
+
+algo = sumProductAlgorithm(x)
+eval(Meta.parse(algorithmSourceCode(algo))); # generate, parse and evaluate the algorithm
 ```
 In order to execute this algorithm we first have to specify a prior for `x`. This is done by choosing some initial values for the hyperparameters `m` and `v`. In each processing step, the algorithm expects an observation and the current belief about `x`, i.e. the prior. We pass this information as elements of a `data` dictionary where the keys are the `id`s of their corresponding placeholders. The algorithm performs inference and returns the results inside a different dictionary (which we call `marginals` in the following script). In the next iteration, we repeat this process by feeding the algorithm with the next observation in the sequence and the posterior distribution of `x` that we obtained in the previous processing step. In other words, the current posterior becomes the prior for the next processing step. Let's illustrate this using an example where we will first generate a synthetic dataset by sampling observations from a Gaussian distribution that has a mean of 5.
 ```@example 1
@@ -370,8 +359,9 @@ for i = 1:N
     @RV y[i] ~ GaussianMeanVariance(x, 1.0)
     placeholder(y[i], :y, index=i)
 end
-eval(Meta.parse(sumProductAlgorithm(x))) # generate, parse and evaluate the algorithm
-;
+
+algo = sumProductAlgorithm(x)
+eval(Meta.parse(algorithmSourceCode(algo))); # generate, parse and evaluate the algorithm
 ```
 Since we have a placeholder linked to each observation in the sequence, we can process the complete dataset in one step. To do so, we first need to create a dictionary having the complete dataset array as its single element. We then need to pass this dictionary to the `step!` function which, in contrast with the online counterpart, we only need to call once.
 ```@example 1

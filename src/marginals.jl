@@ -1,8 +1,8 @@
 export
 MarginalUpdateRule,
-MarginalScheduleEntry,
-MarginalSchedule,
-marginalSchedule
+MarginalEntry,
+MarginalTable,
+marginalTable
 
 abstract type AbstractCluster end
 
@@ -14,40 +14,60 @@ abstract type MarginalUpdateRule end
 abstract type Product <: MarginalUpdateRule end
 
 """
-A `MarginalScheduleEntry` defines a marginal computation.
+A `MarginalEntry` defines a marginal computation.
 The `marginal_update_rule <: MarginalUpdateRule` defines the rule that is used
 to calculate the (joint) marginal over `target`.
 """
-mutable struct MarginalScheduleEntry
+mutable struct MarginalEntry
     target::Union{Variable, AbstractCluster}
     interfaces::Vector{Interface}
     marginal_update_rule::DataType
+
+    # Fields for algorithm assembly
+    marginal_id::Symbol # Specify the marginal identifier
+    inbounds::Vector{Any} # Specify the inbounds required for the marginal update
+
+    MarginalEntry() = new()
+    MarginalEntry(target::Union{Variable, AbstractCluster}, interfaces::Vector{Interface}, marginal_update_rule::DataType) = new(target, interfaces, marginal_update_rule)
 end
 
 """
-A `MarginalSchedule` defines the update order for marginal computations.
+A `MarginalTable` defines the update order for marginal computations.
 """
-const MarginalSchedule = Vector{MarginalScheduleEntry}
+const MarginalTable = Vector{MarginalEntry}
 
 """
-Generate a `MarginalSchedule` that computes the marginals for target variables
+Generate a `MarginalTable` that computes the marginals for target variables
 """
-function marginalSchedule(targets::Vector{Variable})
-    marginal_schedule = MarginalScheduleEntry[]
+function marginalTable(targets::Vector{Variable})
+    marginal_table = MarginalEntry[]
     for target in targets
         edge = first(target.edges) # For the sake of consistency, we always take the first edge as reference point for marginal computations.
         if edge.a == nothing # First handle cases where there is a `dangling` edge
-            push!(marginal_schedule, MarginalScheduleEntry(target, [edge.b], Nothing))
+            push!(marginal_table, MarginalEntry(target, [edge.b], Nothing))
         elseif edge.b == nothing
-            push!(marginal_schedule, MarginalScheduleEntry(target, [edge.a], Nothing))
+            push!(marginal_table, MarginalEntry(target, [edge.a], Nothing))
         elseif isa(edge.a.node, Clamp) || isa(edge.b.node, Clamp)
             continue # Do not compute marginals for clamped edges
         else
-            push!(marginal_schedule, MarginalScheduleEntry(target, [edge.a, edge.b], Product))
+            push!(marginal_table, MarginalEntry(target, [edge.a, edge.b], Product))
         end
     end
 
-    return marginal_schedule
+    return marginal_table
 end
 
-marginalSchedule(target::Variable) = marginalSchedule([target])
+marginalTable(target::Variable) = marginalTable([target])
+
+"""
+Generate a mapping from target to marginal entry.
+"""
+function targetToMarginalEntry(table::MarginalTable)
+    mapping = Dict{Union{Cluster, Variable}, MarginalEntry}()
+    for entry in table
+        target = entry.target
+        mapping[target] = entry
+    end
+
+    return mapping
+end

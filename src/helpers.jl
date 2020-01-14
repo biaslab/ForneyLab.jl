@@ -1,4 +1,4 @@
-export huge, tiny, cholinv, diageye, eye, format, *, ^, mat
+export huge, tiny, cholinv, diageye, eye, format, *, ^, mat, step!, init
 
 """Cast input to a `Matrix` if necessary"""
 ensureMatrix(arr::AbstractMatrix{T}) where T<:Number = arr
@@ -206,3 +206,17 @@ end
 Helper function to construct 1x1 `Matrix`
 """
 mat(sc) = reshape([sc],1,1)
+
+"""
+Helper function to call dynamically generated `step!` functions
+"""
+function step!(id::Symbol, args...)
+    getfield(Main, :step*id*:!)(args...)
+end
+
+"""
+Helper function to call dynamically generated `init` functions
+"""
+function init(id::Symbol)
+    getfield(Main, :init*id)()
+end

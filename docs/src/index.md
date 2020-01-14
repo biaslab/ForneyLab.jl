@@ -25,4 +25,4 @@ Given a probabilistic model, ForneyLab generates efficient Julia code for messag
 - The [ForneyLab project page](http://forneylab.org) provides more background on ForneyLab as well as pointers to related literature and talks.
 
 ## How to get started?
-Head to the [Getting started](@ref) section to get up and running with ForneyLab in no time.
+Head to the [Getting started](@ref) section to get up and running with ForneyLab.

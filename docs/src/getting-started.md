@@ -1,5 +1,5 @@
 # Getting started
-This page provides the necessary information you need to get started with ForneyLab. We will show the general approach to solving inference problems with ForneyLab by means of a running example: Inferring the bias of a coin.
+This page provides the necessary information you need to get started with ForneyLab. We will show the general approach to solving inference problems with ForneyLab by means of a running example: inferring the bias of a coin.
 
 ## Installation
 Install ForneyLab through the Julia package manager:
@@ -12,14 +12,14 @@ Install ForneyLab through the Julia package manager:
 ## Example: Inferring the bias of a coin
 The ForneyLab approach to solving inference problems consists of three phases:
 
-1. [Model specification](@ref getting-started-model-specification): ForneyLab provides a simple metalanguage to specify probabilistic models.
-2. [Message-passing algorithm generation](@ref): Given a model, it is ForneyLab's job to provide you with an algorithm that runs inference on your quantities of interest.
-3. [Message-passing inference execution](@ref): Feed observations and a prior belief over your quantities of interest to the algorithm and you will get an updated posterior in return.
+1. [Model specification](@ref getting-started-model-specification): ForneyLab offers a domain-specific language to specify your probabilistic model.
+2. [Message-passing algorithm generation](@ref): Given a model, ForneyLab contructs an algorithm that infers your quantities of interest.
+3. [Message-passing inference execution](@ref): ForneyLab compiles your algorithm to executable (Julia) code to which you may feed data and prior statistics. Executing the algorithm returns (approximate) posterior beliefs for your quantities of inferest.
 
 ### Coin flip simulation
-Let's start by gathering some data. One approach could be flipping a coin N times and recording each outcome. Here, however, we will simulate this process by sampling some values from a Bernoulli distribution. Each sample can be thought of as the outcome of single flip which is either heads or tails (1 or 0). We will assume that our virtual coin has an underlying probability of 75% of landing heads up.
+Let's start by gathering some data. One approach could be flipping a coin N times and recording each outcome. Here, however, we will simulate this process by sampling some values from a Bernoulli distribution. Each sample can be thought of as the outcome of single flip which is either heads or tails (1 or 0). We will assume that our virtual coin is biased, and lands heads up on 75% of the trials (on average).
 
-```@example 1
+```@example 2
 N = 25          # number of coin tosses
 p = 0.75        # p parameter of the Bernoulli distribution
 sbernoulli(n, p) = [(rand() < p) ? 1 : 0 for _ = 1:n] # define Bernoulli sampler
@@ -51,7 +51,7 @@ The joint probability is given by the multiplication of the likelihood and the p
 
 Now let's see how to specify this model using ForneyLab's syntax.
 
-```@setup 1
+```@setup 2
 import ForneyLab: draw
 using ForneyLab: dot2svg, genDot, FactorGraph, RecognitionFactor
 
@@ -68,7 +68,7 @@ function draw(rf::RecognitionFactor)
 end
 ```
 
-```@example 1
+```@example 2
 using ForneyLab
 g = FactorGraph()       # create a factor graph
 a = placeholder(:a)     # define hyperparameter a as placeholder
@@ -82,12 +82,12 @@ As you can see, ForneyLab offers a model specification syntax that resembles clo
 
 ### Message-passing algorithm generation
 Once we have defined our model, the next step is to instruct ForneyLab to generate a message-passing algorithm that solves our given inference problem. To do this, we need to specify which type of algorithm we want to use. In this case we will use *belief propagation*, also known as the *sum-product algorithm*. Once we execute the following code, we see that a function called `step!(...)` becomes available in the current scope. This function contains the sum-product message-passing algorithm.
-```@example 1
+```@example 2
 # Generate a message passging sum-product algorithm that infers theta
-algo_str = sumProductAlgorithm(θ) # ForneyLab returns the algorithm as a string
-algorithm = Meta.parse(algo_str) # parse the algorithm into a Julia expression
-eval(algorithm); # evaluate the functions contained in the Julia expression
-nothing # hide
+algo = sumProductAlgorithm(θ) # derive a sum-product algorithm to infer θ
+algo_code = algorithmSourceCode(algo) # convert the algorithm to Julia code
+algo_expr = Meta.parse(algo_code) # parse the algorithm into a Julia expression
+eval(algo_expr); # evaluate the functions contained in the Julia expression
 ```
 
 ```julia
@@ -106,7 +106,7 @@ nothing # hide
 ### Message-passing inference execution
 The last step is to execute the message-passing algorithm. In order to do this, we first need to assign values to the hyperparameters ``a`` and ``b`` which characterize our prior beliefs ``p(\theta)`` about the bias of the coin. Then, we need to feed the observations, one at a time, to the algorithm together with our current belief (prior) ``p(\theta)`` about the bias of the coin. The important thing to note here is that the posterior distribution after processing one observation ``p(\theta|y_{i-1})`` becomes the prior for the processing of the next observation.
 
-```@example 1
+```@example 2
 # Create a marginals dictionary, and initialize hyperparameters
 a = 2.0
 b = 7.0
@@ -125,7 +125,7 @@ end
 ### Results
 The plot below shows the result of the inference procedure. We see how the
 posterior is a “compromise” between the prior and likelihood, as mandated by Bayesian inference.
-```@example 1
+```@example 2
 using Plots, LaTeXStrings, SpecialFunctions; theme(:default)
 pyplot(fillalpha=0.3, leg=false, xlabel=L"\theta", yticks=nothing)
 BetaPDF(α, β) = x ->  x^(α-1)*(1-x)^(β-1)/beta(α, β) # beta distribution definition

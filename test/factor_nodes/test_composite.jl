@@ -3,7 +3,7 @@ module CompositeTest
 using Test
 using ForneyLab
 import ForneyLab: @composite, outboundType, isApplicable
-import ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product
+import ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product, condense, flatten, step!
 
 
 # Define new node type called StateTransition, with exposed variables called (y, x_prev, x):
@@ -65,6 +65,8 @@ end
     x = Variable(id=:x)
     y = Variable(id=:y)
     cnd = StateTransition(placeholder(y, :y), x_prev, x)
+    algo = Algorithm()
+    rf = RecognitionFactor(algo)
 
     # Build SP schedule
     schedule = sumProductSchedule(x)
@@ -74,20 +76,24 @@ end
     @test ScheduleEntry(nd.i[:out], SPGaussianMeanVarianceOutNPP) in schedule
     @test ScheduleEntry(cnd.i[:y].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(cnd.i[:x], SPStateTransitionX) in schedule
+    rf.schedule = condense(flatten(schedule))
 
     # Build marginal schedule
-    marginal_schedule = marginalSchedule(x)
-    @test length(marginal_schedule) == 1
-    @test marginal_schedule[1].target == x
-    @test marginal_schedule[1].interfaces[1] == cnd.i[:x]
-    @test marginal_schedule[1].marginal_update_rule == Nothing
+    marginal_table = marginalTable(x)
+    @test length(marginal_table) == 1
+    @test marginal_table[1].target == x
+    @test marginal_table[1].interfaces[1] == cnd.i[:x]
+    @test marginal_table[1].marginal_update_rule == Nothing
+    rf.marginal_table = marginal_table
 
     # Build SP algorithm for Julia execution
-    algo = ForneyLab.messagePassingAlgorithm(schedule, marginal_schedule)
-    @test occursin("Array{Message}(undef, 2)", algo)
-    @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo)
-    @test occursin("messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)", algo)
-    @test occursin("marginals[:x] = messages[2].dist", algo)
+    ForneyLab.assembleAlgorithm!(algo)
+    algo_code = ForneyLab.algorithmSourceCode(algo)
+
+    @test occursin("Array{Message}(undef, 2)", algo_code)
+    @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo_code)
+    @test occursin("messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)", algo_code)
+    @test occursin("marginals[:x] = messages[2].dist", algo_code)
 end
 
 @testset "Composite node algorithm execution" begin

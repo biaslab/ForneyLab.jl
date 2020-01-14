@@ -34,7 +34,7 @@ ForneyLab.Terminal
 ## Scheduler (low-level)
 ```@docs
 ForneyLab.MarginalRule
-ForneyLab.MarginalScheduleEntry
+ForneyLab.MarginalEntry
 ForneyLab.MarginalUpdateRule
 ForneyLab.MessageUpdateRule
 ForneyLab.RecognitionFactor

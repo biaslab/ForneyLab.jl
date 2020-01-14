@@ -81,11 +81,11 @@ function genDot(nodeset::Set{FactorNode}, edgeset::Set{Edge}; schedule::Schedule
     # Build dictionary for message labels
     msg_labels = Dict{Interface, String}()
     for (i, entry) in enumerate(condense(schedule))
-        if entry.msg_update_rule <: SumProductRule
+        if entry.message_update_rule <: SumProductRule
             str = "($i)"
-        elseif entry.msg_update_rule <: Union{NaiveVariationalRule, StructuredVariationalRule}
+        elseif entry.message_update_rule <: Union{NaiveVariationalRule, StructuredVariationalRule}
             str = "(($i))"
-        elseif entry.msg_update_rule <: ExpectationPropagationRule
+        elseif entry.message_update_rule <: ExpectationPropagationRule
             str = "[$i]"
         else
             str = "?$i?"

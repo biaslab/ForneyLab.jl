@@ -2,6 +2,9 @@ export
 StructuredVariationalRule,
 @structuredVariationalRule
 
+"""
+A non-specific structured variational update
+"""
 abstract type StructuredVariationalRule{factor_type} <: MessageUpdateRule end
 
 """
@@ -16,7 +19,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
     
     # Find applicable rule(s)
     applicable_rules = Type[]
-    for rule in leaftypes(entry.msg_update_rule)
+    for rule in leaftypes(entry.message_update_rule)
         if isApplicable(rule, inbound_types)
             push!(applicable_rules, rule)
         end
@@ -28,7 +31,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
     elseif length(applicable_rules) > 1
         error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types)")
     else
-        entry.msg_update_rule = first(applicable_rules)
+        entry.message_update_rule = first(applicable_rules)
     end
 
     return entry
@@ -43,22 +46,22 @@ function collectInboundTypes(entry::ScheduleEntry,
                              inferred_outbound_types::Dict{Interface, Type}
                             ) where T<:StructuredVariationalRule
     inbound_types = Type[]
-    entry_recognition_factor_id = recognitionFactorId(entry.interface.edge) # Recognition factor id for outbound edge
-    recognition_factor_ids = Symbol[] # Keep track of encountered recognition factor ids
+    entry_recognition_factor = recognitionFactor(entry.interface.edge) # Recognition factor for outbound edge
+    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in entry.interface.node.interfaces
-        node_interface_recognition_factor_id = recognitionFactorId(node_interface.edge)
+        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
 
-        if node_interface == entry.interface
+        if node_interface === entry.interface
             push!(inbound_types, Nothing)
-        elseif node_interface_recognition_factor_id == entry_recognition_factor_id
+        elseif node_interface_recognition_factor === entry_recognition_factor
             # Edge is internal, accept message
             push!(inbound_types, inferred_outbound_types[node_interface.partner])
-        elseif !(node_interface_recognition_factor_id in recognition_factor_ids)
+        elseif !(node_interface_recognition_factor in recognition_factors)
             # Edge is external, accept marginal (if marginal is not already accepted)
             push!(inbound_types, ProbabilityDistribution) 
         end
 
-        push!(recognition_factor_ids, node_interface_recognition_factor_id)
+        push!(recognition_factors, node_interface_recognition_factor)
     end
 
     return inbound_types
@@ -124,4 +127,48 @@ macro structuredVariationalRule(fields...)
     """)
 
     return esc(expr)
+end
+
+"""
+Construct argument code for structured VB updates
+"""
+collectInbounds(entry::ScheduleEntry, ::Type{T}) where T<:StructuredVariationalRule = collectStructuredVariationalNodeInbounds(entry.interface.node, entry)
+
+"""
+Construct the inbound code that computes the message for `entry`. Allows for
+overloading and for a user the define custom node-specific inbounds collection.
+Returns a vector with inbounds that correspond with required interfaces.
+"""
+function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry)
+    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+    target_to_marginal_entry = current_algorithm.target_to_marginal_entry
+
+    inbounds = Any[]
+    entry_recognition_factor = recognitionFactor(entry.interface.edge)
+    local_clusters = localRecognitionFactorization(entry.interface.node)
+
+    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
+    for node_interface in entry.interface.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
+
+        if node_interface === entry.interface
+            # Ignore marginal of outbound edge
+            push!(inbounds, nothing)
+        elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+            # Hard-code marginal of constant node in schedule
+            push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
+        elseif node_interface_recognition_factor === entry_recognition_factor
+            # Collect message from previous result
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        elseif !(node_interface_recognition_factor in recognition_factors)
+            # Collect marginal from marginal dictionary (if marginal is not already accepted)
+            target = local_clusters[node_interface_recognition_factor]
+            push!(inbounds, target_to_marginal_entry[target])
+        end
+
+        push!(recognition_factors, node_interface_recognition_factor)
+    end
+
+    return inbounds
 end
