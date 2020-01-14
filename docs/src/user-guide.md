@@ -172,17 +172,17 @@ ForneyLab.draw(g)
 If we were only interested in inferring the posterior distribution of `m1` then we would run
 ```@example 1
 algorithm = sumProductAlgorithm(m1)
-algorithm_string = algorithmString(algorithm);
+algorithm_code = algorithmSourceCode(algorithm);
 ```
 On the other hand, if we were interested in the posterior distributions of both `m1` and `m2` we would then need to pass them as elements of an array, i.e.
 ```@example 1
 algorithm = sumProductAlgorithm([m1, m2])
-algorithm_string = algorithmString(algorithm);
+algorithm_code = algorithmSourceCode(algorithm);
 ```
 
-Note that the message-passing algorithm returned by the `sumProductAlgorithm` function is a `String` that contains the definition of a Julia function. In order to be able to execute this function, we first need to parse this string as Julia expression to then evaluate it in the current scope that the program is running on. This can be done as follows
+Note that the message-passing algorithm returned by the `algorithmSourceCode` function is a `String` that contains the definition of a Julia function. In order to access this function, we need to parse the code and evaluate it in the current scope. This can be done as follows
 ```@example 1
-algorithm_expr = Meta.parse(algorithm_string);
+algorithm_expr = Meta.parse(algorithm_code);
 ```
 ```julia
 :(function step!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 4))
@@ -234,8 +234,8 @@ Generating the VMP algorithm then follows a similar same procedure as the belief
 ```@example 1
 # Construct and compile a variational message passing algorithm
 algo = variationalAlgorithm(q)
-algo_str = algorithmString(algo)
-eval(Meta.parse(algo_str));
+algo_code = algorithmSourceCode(algo)
+eval(Meta.parse(algo_code));
 ```
 ```julia
 Meta.parse(algo) = quote
@@ -265,11 +265,11 @@ end
 ```
 
 #### Computing free energy
-VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as *free energy*. ForneyLab provides the function `freeEnergyAlgorithm` which generates an algorithm that can be used to evaluate this quantity. This function takes an object of type `Algorithm` as argument. Free energy is particularly useful to test for convergence of the VMP iterative procedure. Here is an example that generates, parses and evaluates this algorithm.
+VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as *free energy*. ForneyLab offers to optionally compile code for evaluating the free energy. Free energy is particularly useful to test for convergence of the VMP iterative procedure.
 ```julia
-fe_algo = freeEnergyAlgorithm(q)
-fe_algo_str = freeEnergyString(fe_algo)
-eval(Meta.parse(fe_algo_str))
+algo = freeEnergyAlgorithm(q)
+algo_code = algorithmSourceCode(algo, free_energy=true)
+eval(Meta.parse(algo_code))
 ```
 
 ### Expectation maximization
@@ -313,7 +313,7 @@ v = placeholder(:v)
 placeholder(y, :y)
 
 algo = sumProductAlgorithm(x)
-eval(Meta.parse(algorithmString(algo))); # generate, parse and evaluate the algorithm
+eval(Meta.parse(algorithmSourceCode(algo))); # generate, parse and evaluate the algorithm
 ```
 In order to execute this algorithm we first have to specify a prior for `x`. This is done by choosing some initial values for the hyperparameters `m` and `v`. In each processing step, the algorithm expects an observation and the current belief about `x`, i.e. the prior. We pass this information as elements of a `data` dictionary where the keys are the `id`s of their corresponding placeholders. The algorithm performs inference and returns the results inside a different dictionary (which we call `marginals` in the following script). In the next iteration, we repeat this process by feeding the algorithm with the next observation in the sequence and the posterior distribution of `x` that we obtained in the previous processing step. In other words, the current posterior becomes the prior for the next processing step. Let's illustrate this using an example where we will first generate a synthetic dataset by sampling observations from a Gaussian distribution that has a mean of 5.
 ```@example 1
@@ -361,7 +361,7 @@ for i = 1:N
 end
 
 algo = sumProductAlgorithm(x)
-eval(Meta.parse(algorithmString(algo))); # generate, parse and evaluate the algorithm
+eval(Meta.parse(algorithmSourceCode(algo))); # generate, parse and evaluate the algorithm
 ```
 Since we have a placeholder linked to each observation in the sequence, we can process the complete dataset in one step. To do so, we first need to create a dictionary having the complete dataset array as its single element. We then need to pass this dictionary to the `step!` function which, in contrast with the online counterpart, we only need to call once.
 ```@example 1

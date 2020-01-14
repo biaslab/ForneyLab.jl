@@ -3,7 +3,7 @@ module PoissonTest
 using Test
 using ForneyLab
 
-import ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, FactorNode, SoftFactor, Interface, FactorGraph
+import ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, FactorNode, SoftFactor, Interface, FactorGraph, step!
 import ForneyLab: VBPoissonOut, VBPoissonL, SPPoissonOutNP, SPPoissonLPN
 
 @testset "Poisson ProbabilityDistribution construction" begin

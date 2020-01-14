@@ -48,16 +48,15 @@ ForneyLab.variationalSchedule
 ## Algorithm assembly
 ```@docs
 ForneyLab.expectationPropagationAlgorithm
-ForneyLab.freeEnergyAlgorithm
 ForneyLab.sumProductAlgorithm
 ForneyLab.variationalAlgorithm
+ForneyLab.freeEnergyAlgorithm
 ForneyLab.variationalExpectationPropagationAlgorithm
 ```
 
 ## Algorithm code generation
 ```@docs
-ForneyLab.algorithmString
-ForneyLab.freeEnergyString
+ForneyLab.algorithmSourceCode
 ```
 
 ## Algorithm execution
