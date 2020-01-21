@@ -2,7 +2,7 @@
 A `Cluster` specifies a collection of `edges` adjacent to `node` that belong to the same
 `RecognitionFactor`. A joint marginal can be computed over a cluster.
 """
-mutable struct Cluster <: AbstractCluster
+mutable struct Cluster
     id::Symbol
     node::FactorNode
     edges::Vector{Edge}

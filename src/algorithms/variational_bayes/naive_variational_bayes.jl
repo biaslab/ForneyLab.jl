@@ -39,9 +39,11 @@ function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
     # Schedule messages towards recognition distributions, limited to the internal edges
     schedule = ScheduleEntry[]
     nodes_connected_to_external_edges = Set{FactorNode}()
-    for recognition_factor in recognition_factors
-        schedule = [schedule; summaryPropagationSchedule(sort(collect(recognition_factor.variables), rev=true), limit_set=recognition_factor.internal_edges)]
-        union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(recognition_factor))
+    for rf in recognition_factors
+        schedule = [schedule; summaryPropagationSchedule(sort(collect(rf.variables), rev=true), 
+                                                         sort(collect(rf.clusters), rev=true), 
+                                                         limit_set=rf.internal_edges)]
+        union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(rf))
     end
 
     for entry in schedule

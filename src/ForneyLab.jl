@@ -65,6 +65,7 @@ include("factor_graph.jl")
 include("factor_nodes/composite.jl")
 
 # Generic methods
+include("algorithms/cluster.jl")
 include("message_passing.jl")
 include("marginals.jl")
 
@@ -72,7 +73,6 @@ include("marginals.jl")
 include("visualization.jl")
 
 # Algorithms
-include("algorithms/cluster.jl")
 include("algorithms/recognition_factor.jl")
 include("algorithms/algorithm.jl")
 

@@ -44,12 +44,12 @@ A ForneyLab `Algorithm` is structured as follows:
                 - `inbound::Union`: inbound, see below
     - `average_energies::Dict` (per item):
         - `node::Type`: node type for average energy computation
+        - `counting_number::Int64`: counting number for average energy
         - `inbounds::Vector` (per item):
             - `inbound::Union`: inbound, see below
     - `entropies::Dict` (per item):
-        - `conditional::Bool`: require conditional entropy computation
-        - `inbounds::Vector` (per item):
-            - `inbound::Union`: inbound, see below
+        - `counting_number::Int64`: counting number for (joint) entropy
+        - `inbound::Union`: inbound, see below
 
 Inbounds are of type `Union{Nothing, ScheduleEntry, MarginalEntry, Dict, Clamp}`.
 

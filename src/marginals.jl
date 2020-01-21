@@ -4,8 +4,6 @@ MarginalEntry,
 MarginalTable,
 marginalTable
 
-abstract type AbstractCluster end
-
 """
 A `MarginalUpdateRule` specifies how a (joint) marginal is calculated from
 incoming messages (and a node function).
@@ -19,7 +17,7 @@ The `marginal_update_rule <: MarginalUpdateRule` defines the rule that is used
 to calculate the (joint) marginal over `target`.
 """
 mutable struct MarginalEntry
-    target::Union{Variable, AbstractCluster}
+    target::Union{Variable, Cluster}
     interfaces::Vector{Interface}
     marginal_update_rule::DataType
 
@@ -28,7 +26,7 @@ mutable struct MarginalEntry
     inbounds::Vector{Any} # Specify the inbounds required for the marginal update
 
     MarginalEntry() = new()
-    MarginalEntry(target::Union{Variable, AbstractCluster}, interfaces::Vector{Interface}, marginal_update_rule::DataType) = new(target, interfaces, marginal_update_rule)
+    MarginalEntry(target::Union{Variable, Cluster}, interfaces::Vector{Interface}, marginal_update_rule::DataType) = new(target, interfaces, marginal_update_rule)
 end
 
 """

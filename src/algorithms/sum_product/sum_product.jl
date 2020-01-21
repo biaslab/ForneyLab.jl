@@ -7,12 +7,14 @@ sumProductSchedule,
 """
 Create a sum-product algorithm to infer marginals over `variables`
 """
-function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm())
-    # Initialize a container recognition factor
-    rf = RecognitionFactor(algo, id=Symbol(""))
-    schedule = sumProductSchedule(variables)
-    rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-    rf.marginal_table = marginalTable(variables)
+function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm(), free_energy=false)
+    rf = RecognitionFactor(algo.graph, id=Symbol("")) # Contain the entire graph in a single recognition factor
+    setTargets!(rf, algo, variables, free_energy=free_energy, external_targets=false) # Set the target variables and clusters of the recognition factor
+    
+    # Infer schedule and marginal computations
+    schedule = sumProductSchedule(rf) # For free energy computation, other variable and cluster targets might be required as well
+    rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries from schedule
+    rf.marginal_table = marginalTable(rf)
 
     assembleAlgorithm!(algo)
     
@@ -27,11 +29,12 @@ abstract type SumProductRule{factor_type} <: MessageUpdateRule end
 
 """ 
 `sumProductSchedule()` generates a sum-product message passing schedule that
-computes the marginals for each of the argument variables. 
+computes the marginals for each of the recognition factor targets.
 """ 
-function sumProductSchedule(variables::Vector{Variable})
+function sumProductSchedule(rf::RecognitionFactor)
     # Generate a feasible summary propagation schedule
-    schedule = summaryPropagationSchedule(variables)
+    schedule = summaryPropagationSchedule(sort(collect(rf.variables), rev=true), 
+                                          sort(collect(rf.clusters), rev=true))
 
     # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule
@@ -42,8 +45,6 @@ function sumProductSchedule(variables::Vector{Variable})
 
     return schedule
 end
-
-sumProductSchedule(variable::Variable) = sumProductSchedule([variable])
 
 """
 `internalSumProductSchedule()` generates a sum-product message passing schedule

@@ -147,18 +147,29 @@ function summaryDependencyGraph(edgeset::Set{Edge}; reverse_edges=false)
 end
 
 """
-`summaryPropagationSchedule(variables)` builds a generic summary propagation
+`summaryPropagationSchedule(variables, clusters)` builds a generic
 `Schedule` for calculating the marginal distributions of every variable in
-`variables`. The message update rule in each schedule entry is set to `Nothing`.
+`variables` and every cluster in `clusters`. The message update rule in each 
+schedule entry is set to `Nothing`.
 """
-function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges(current_graph), target_sites=Interface[], breaker_sites=Interface[])
+function summaryPropagationSchedule(variables::Vector{Variable}, clusters::Vector{Cluster}; limit_set=edges(current_graph), target_sites=Interface[], breaker_sites=Interface[])
     # We require the marginal distribution of every variable in variables.
     # If a variable relates to multiple edges, this indicates an equality constraint.
     # Therefore, we only need to consider one arbitrary edge to calculate the marginal.
     for variable in variables
         edge = first(variable.edges) # For the sake of consistency, we always take the first edge.
-        (edge.a != nothing && !isa(edge.a.node, Terminal)) && !isa(edge.a.node, Clamp) && push!(target_sites, edge.a)
-        (edge.b != nothing && !isa(edge.b.node, Terminal)) && !isa(edge.b.node, Clamp) && push!(target_sites, edge.b)
+        (edge.a != nothing) && !isa(edge.a.node, Terminal) && !isa(edge.a.node, Clamp) && push!(target_sites, edge.a)
+        (edge.b != nothing) && !isa(edge.b.node, Terminal) && !isa(edge.b.node, Clamp) && push!(target_sites, edge.b)
+    end
+
+    # A cluster indicates the computation of a joint marginal belief.
+    # In this case, all incoming messages are required, even if the joint marginal
+    # is required over variables of a subset of connected edges.
+    for cluster in clusters
+        for iface in cluster.node.interfaces
+            partner = ultimatePartner(iface)
+            (partner != nothing) && !isa(partner.node, Terminal) && !isa(partner.node, Clamp) && push!(target_sites, partner)
+        end
     end
 
     # Determine a feasible ordering of message updates
@@ -169,8 +180,6 @@ function summaryPropagationSchedule(variables::Vector{Variable}; limit_set=edges
 
     return schedule
 end
-
-summaryPropagationSchedule(variable::Variable; limit_set=edges(current_graph), target_sites=Interface[], breaker_sites=Interface[]) = summaryPropagationSchedule([variable], limit_set=limit_set, target_sites=target_sites, breaker_sites=breaker_sites)
 
 """
 inferUpdateRules!(schedule) infers specific message update rules for all schedule entries.

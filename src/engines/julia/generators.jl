@@ -104,9 +104,10 @@ Generate code for evaluating the average energy
 function energiesSourceCode(average_energies::Vector)
     energies_code = ""
     for energy in average_energies
+        count_code = countingNumberSourceCode(energy[:counting_number])
         node_code = removePrefix(energy[:node])
         inbounds_code = inboundsSourceCode(energy[:inbounds])
-        energies_code *= "F += averageEnergy($node_code, $inbounds_code)\n"
+        energies_code *= "F += $(count_code)averageEnergy($node_code, $inbounds_code)\n"
     end
 
     return energies_code
@@ -118,15 +119,25 @@ Generate code for evaluating the entropy
 function entropiesSourceCode(entropies::Vector)
     entropies_code = ""
     for entropy in entropies
-        inbounds_code = inboundsSourceCode(entropy[:inbounds])
-        if entropy[:conditional]
-            entropies_code *= "F -= conditionalDifferentialEntropy($inbounds_code)\n"
-        else
-            entropies_code *= "F -= differentialEntropy($inbounds_code)\n"
-        end
+        count_code = countingNumberSourceCode(entropy[:counting_number])
+        inbound_code = inboundSourceCode(entropy[:inbound])
+        entropies_code *= "F -= $(count_code)differentialEntropy($inbound_code)\n"
     end
 
     return entropies_code
+end
+
+"""
+Generate code for counting number
+"""
+function countingNumberSourceCode(cnt::Int64)
+    if cnt == 1
+        count_code = ""
+    else
+        count_code = "$(cnt)*"
+    end
+
+    return count_code
 end
 
 """

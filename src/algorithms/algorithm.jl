@@ -17,6 +17,8 @@ mutable struct Algorithm
     # Bookkeeping for faster lookup during assembly
     interface_to_schedule_entry::Dict{Interface, ScheduleEntry}
     target_to_marginal_entry::Dict{Union{Variable, Cluster}, MarginalEntry}
+    energy_counting_numbers::Dict{FactorNode, Int64}
+    entropy_counting_numbers::Dict{Union{Variable, Cluster}, Int64}
 
     # Fields for free energy algorithm assembly
     average_energies::Vector{Dict{Symbol, Any}}
@@ -46,6 +48,8 @@ Algorithm(id=Symbol("")) = setCurrentAlgorithm(
         Dict{Tuple{FactorNode, Edge}, Symbol}(),
         Dict{Interface, ScheduleEntry}(),
         Dict{Union{Variable, Cluster}, MarginalEntry}(),
+        Dict{FactorNode, Int64}(),
+        Dict{Union{Variable, Cluster}, Int64}(),
         Dict{Symbol, Any}[],
         Dict{Symbol, Any}[]))
 
@@ -63,6 +67,95 @@ function Algorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; 
             RecognitionFactor(arg, id=ids[i])
         end
     end
+    return rf
+end
+
+"""
+Pupulate the target variables and clusters fields of the RecognitionFactor.
+The targets depend on the variables of interest, the local recognition
+factorization, and whether free energy will be evaluated. At the same
+time, fields for fast lookup during scheduling are populated in the algorithm.
+"""
+function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{Variable}; free_energy=false, external_targets=false)
+    # Initialize the target sets
+    target_variables = Set{Variable}(variables) # Marginals of the quantities of interest are always required
+    target_clusters = Set{Cluster}() # Initialize empty set of target clusters
+
+    # Determine which variables and clusters are required by other recognition factors
+    if external_targets
+        nodes_connected_to_external_edges = nodesConnectedToExternalEdges(rf)
+        for node in nodes_connected_to_external_edges                
+            target_edges = localInternalEdges(node, rf) # Find internal edges connected to node
+
+            if length(target_edges) == 1 # Only one internal edge, the marginal for a single Variable is required
+                push!(target_variables, target_edges[1].variable)
+            elseif length(target_edges) > 1 # Multiple internal edges, constuct a Cluster for computing the joint marginal
+                push!(target_clusters, Cluster(node, target_edges))
+            end
+        end
+    end
+
+    # Determine which variables and clusters are required for evaluating the free energy
+    if free_energy
+        # Initialize counting numbers
+        variable_counting_numbers = Dict{Variable, Int64}()
+        cluster_counting_numbers = Dict{Cluster, Int64}()
+
+        # Iterate over large regions
+        nodes_connected_to_internal_edges = nodes(rf.internal_edges)
+        for node in nodes_connected_to_internal_edges
+            target_edges = localInternalEdges(node, rf) # Find internal edges connected to node (local cluster/variable)
+            if !isa(node, DeltaFactor) # Node is stochastic
+                cluster = Cluster(node, target_edges) # Create a new cluster,
+                increase!(cluster_counting_numbers, cluster, 1) # and increase the counting number for that cluster
+            elseif isa(node, Equality)
+                increase!(variable_counting_numbers, target_edges[1].variable, 1) # Increase the counting number for the equality-constrained variable
+            elseif !isa(node, Clamp) # Node is deterministic and not a Clamp or Equality
+                if length(target_edges) == 2
+                    increase!(variable_counting_numbers, target_edges[2].variable, 1) # Increase counting number for variable on inbound edge
+                elseif length(target_edges) > 2
+                    cluster = Cluster(node, target_edges[2:end]) # Create a new cluster for inbound edges,
+                    increase!(cluster_counting_numbers, cluster, 1) # and increase the counting number for that cluster
+                end
+            end
+        end
+
+        # Iterate over small regions
+        for edge in rf.internal_edges
+            increase!(variable_counting_numbers, edge.variable, -1) # Discount single variables
+        end
+
+        # All targets with a non-zero counting number are required for free energy evaluation
+        for (variable, cnt) in variable_counting_numbers
+            if cnt != 0
+                push!(target_variables, variable)
+            end
+        end
+        for (cluster, cnt) in cluster_counting_numbers
+            if cnt != 0
+                push!(target_clusters, cluster)
+            end
+        end
+    end
+
+    # Register relevant internal edges with the algorithm for fast lookup during scheduling
+    for variable in target_variables
+        for edge in variable.edges
+            algo.edge_to_recognition_factor[edge] = rf
+        end
+    end
+
+    # Register clusters with the algorithm for fast lookup during scheduling
+    for cluster in target_clusters
+        for edge in cluster.edges
+            algo.node_edge_to_cluster[(cluster.node, edge)] = cluster
+        end
+    end 
+
+    # Register the targets with the recognition factor
+    rf.variables = target_variables
+    rf.clusters = target_clusters
+
     return rf
 end
 
