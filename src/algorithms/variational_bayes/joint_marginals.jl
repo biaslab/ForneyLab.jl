@@ -43,9 +43,9 @@ function inferMarginalRule(cluster::Cluster, inbound_types::Vector{<:Type})
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        error("No applicable msg update rule for $(cluster) with inbound types $(inbound_types)")
+        error("No applicable marginal update rule for $(cluster) with inbound types $(inbound_types)")
     elseif length(applicable_rules) > 1
-        error("Multiple applicable msg update rules for $(cluster) with inbound types $(inbound_types): $(applicable_rules)")
+        error("Multiple applicable marginal update rules for $(cluster) with inbound types $(inbound_types): $(applicable_rules)")
     else
         marginal_update_rule = first(applicable_rules)
     end

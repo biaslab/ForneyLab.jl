@@ -7,8 +7,8 @@ sumProductSchedule,
 """
 Create a sum-product algorithm to infer marginals over `variables`
 """
-function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm(), free_energy=false)
-    rf = RecognitionFactor(algo.graph, id=Symbol("")) # Contain the entire graph in a single recognition factor
+function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm(); free_energy=false)
+    rf = RecognitionFactor(algo, id=Symbol("")) # Contain the entire graph in a single recognition factor
     setTargets!(rf, algo, variables, free_energy=free_energy, external_targets=false) # Set the target variables and clusters of the recognition factor
     
     # Infer schedule and marginal computations
@@ -17,10 +17,11 @@ function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=curren
     rf.marginal_table = marginalTable(rf)
 
     assembleAlgorithm!(algo)
-    
+    free_energy && assembleFreeEnergy!(algo)
+
     return algo
 end
-sumProductAlgorithm(variable::Variable, algo::Algorithm=currentAlgorithm()) = sumProductAlgorithm([variable], algo)
+sumProductAlgorithm(variable::Variable, algo::Algorithm=currentAlgorithm(); free_energy=false) = sumProductAlgorithm([variable], algo, free_energy=free_energy)
 
 """
 A non-specific sum-product update
@@ -111,7 +112,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
             entry.internal_schedule = internalSumProductSchedule(entry.interface.node, entry.interface, inferred_outbound_types)
             entry.message_update_rule = entry.internal_schedule[end].message_update_rule
         else
-            error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
+            error("No applicable message update rule for $(entry) with inbound types $(inbound_types)")
         end
     elseif length(applicable_rules) > 1
         error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types): $(applicable_rules)")

@@ -20,21 +20,25 @@ mutable struct RecognitionFactor
     optimize::Bool # Indicate the need for an optimization block
     initialize::Bool # Indicate the need for a message initialization block
 
-    function RecognitionFactor(graph::FactorGraph=current_graph; id=generateId(RecognitionFactor))
-        internal_edges = stochasticEdges(graph) # Include all stochastic edges in a single recognition factor
-        # TODO: register rf with algo
-        return new(id, internal_edges)
+    function RecognitionFactor(algo=currentAlgorithm(); id=generateId(RecognitionFactor))
+        internal_edges = stochasticEdges(algo.graph) # Include all stochastic edges in a single recognition factor
+        self = new(id, internal_edges)
+        algo.recognition_factors[id] = self # Register self with the algorithm
+
+        return self
     end
 
-    function RecognitionFactor(variables::Set{Variable}; id=generateId(RecognitionFactor))
+    function RecognitionFactor(variables::Set{Variable}; algo=currentAlgorithm(), id=generateId(RecognitionFactor))
         internal_edges = extend(edges(variables)) # Include all deterministically liked variables in a single recognition factor
+        self = new(id, internal_edges)
+        algo.recognition_factors[id] = self # Register self with the algorithm
 
-        return new(id, internal_edges)
+        return self
     end
 end
 
-RecognitionFactor(variable::Variable; id=generateId(RecognitionFactor)) = RecognitionFactor(Set([variable]), id=id)
-RecognitionFactor(variables::Vector{Variable}; id=generateId(RecognitionFactor)) = RecognitionFactor(Set(variables), id=id)
+RecognitionFactor(variable::Variable; algo=currentAlgorithm(), id=generateId(RecognitionFactor)) = RecognitionFactor(Set([variable]), algo=algo, id=id)
+RecognitionFactor(variables::Vector{Variable}; algo=currentAlgorithm(), id=generateId(RecognitionFactor)) = RecognitionFactor(Set(variables), algo=algo, id=id)
 
 """
 Find edges that are internal to the recognition factor and connected to node.

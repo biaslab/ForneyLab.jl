@@ -6,7 +6,6 @@ specify the recognition factorization over a factor graph.
 """
 mutable struct Algorithm
     id::Symbol
-    
     graph::FactorGraph
     recognition_factors::Dict{Symbol, RecognitionFactor}
 
@@ -106,8 +105,12 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
         for node in nodes_connected_to_internal_edges
             target_edges = localInternalEdges(node, rf) # Find internal edges connected to node (local cluster/variable)
             if !isa(node, DeltaFactor) # Node is stochastic
-                cluster = Cluster(node, target_edges) # Create a new cluster,
-                increase!(cluster_counting_numbers, cluster, 1) # and increase the counting number for that cluster
+                if length(target_edges) == 1 # Single internal edge
+                    increase!(variable_counting_numbers, target_edges[1].variable, 1) # Increase the counting number for the edge variable
+                elseif length(target_edges) > 1 # Multiple internal edges
+                    cluster = Cluster(node, target_edges) # Create a new cluster,
+                    increase!(cluster_counting_numbers, cluster, 1) # and increase the counting number for that cluster
+                end
             elseif isa(node, Equality)
                 increase!(variable_counting_numbers, target_edges[1].variable, 1) # Increase the counting number for the equality-constrained variable
             elseif !isa(node, Clamp) # Node is deterministic and not a Clamp or Equality

@@ -3,6 +3,10 @@ The `assembleFreeEnergy` function accepts an `Algorithm` and populates
 required fields for computing the variational free energy.
 """
 function assembleFreeEnergy!(algo=currentAlgorithm())
+    # Find counting numbers for energies and entropies
+    assembleCountingNumbers!(algo)
+
+    # Convert energy counting numbers to energy inbounds
     average_energies_vect = Vector{Dict{Symbol, Any}}()
     entropies_vect = Vector{Dict{Symbol, Any}}()
 
@@ -15,6 +19,7 @@ function assembleFreeEnergy!(algo=currentAlgorithm())
         end
     end
 
+    # Convert entropy counting numbers to entropy inbounds
     for (target, cnt) in algo.entropy_counting_numbers
         if cnt != 0
             entropy = Dict{Symbol, Any}(:counting_number => cnt,
@@ -34,13 +39,13 @@ The `assembleCountingNumbers` function accepts an `Algorithm` and
 populates the counting numbers for the average energies and entropies.
 """
 function assembleCountingNumbers!(algo=currentAlgorithm())
-    energy_counting_numbers = Dict{Node, Int64}()
+    energy_counting_numbers = Dict{FactorNode, Int64}()
     entropy_counting_numbers = Dict{Union{Variable, Cluster}, Int64}()
 
     # Collect regions
     internal_edges = Set{Edge}()
-    for rf in algo.recognition_factors
-        merge!(internal_edges, rf.internal_edges)
+    for (id, rf) in algo.recognition_factors
+        union!(internal_edges, rf.internal_edges)
     end
     nodes_connected_to_internal_edges = nodes(internal_edges)
     

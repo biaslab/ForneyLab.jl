@@ -84,7 +84,7 @@ function inferUpdateRule!(  entry::ScheduleEntry,
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
+        error("No applicable message update rule for $(entry) with inbound types $(inbound_types)")
     elseif length(applicable_rules) > 1
         error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types)")
     else
