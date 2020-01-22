@@ -141,11 +141,9 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
         end
     end
 
-    # Register relevant internal edges with the algorithm for fast lookup during scheduling
-    for variable in target_variables
-        for edge in variable.edges
-            algo.edge_to_recognition_factor[edge] = rf
-        end
+    # Register internal edges with the algorithm for fast lookup during scheduling
+    for edge in rf.internal_edges
+        algo.edge_to_recognition_factor[edge] = rf
     end
 
     # Register clusters with the algorithm for fast lookup during scheduling

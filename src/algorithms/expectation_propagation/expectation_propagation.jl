@@ -99,9 +99,9 @@ function inferUpdateRule!(entry::ScheduleEntry,
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        error("No applicable message update rule for $(entry) with outbound id $(outbound_id)")
+        error("No applicable $(rule_type) update for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
     elseif length(applicable_rules) > 1
-        error("Multiple applicable msg update rules for $(entry) with outbound id $(outbound_id)")
+        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
     else
         entry.message_update_rule = first(applicable_rules)
     end

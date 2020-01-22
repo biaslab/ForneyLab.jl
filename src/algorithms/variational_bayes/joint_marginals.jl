@@ -43,9 +43,9 @@ function inferMarginalRule(cluster::Cluster, inbound_types::Vector{<:Type})
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        error("No applicable marginal update rule for $(cluster) with inbound types $(inbound_types)")
+        error("No applicable marginal update rule for $(typeof(cluster.node)) node with inbound types: $(join(inbound_types, ", "))")
     elseif length(applicable_rules) > 1
-        error("Multiple applicable marginal update rules for $(cluster) with inbound types $(inbound_types): $(applicable_rules)")
+        error("Multiple applicable marginal update rules for $(typeof(cluster.node)) node with inbound types: $(join(inbound_types, ", "))")
     else
         marginal_update_rule = first(applicable_rules)
     end
@@ -74,22 +74,26 @@ end
 Find the inbound types that are required to compute a joint marginal over `target`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
-function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, Type})
+function collectInboundTypes(inbound_cluster::Cluster, outbound_types::Dict{Interface, Type})
     inbound_types = Type[]
-    cluster_recognition_factor = recognitionFactor(first(cluster.edges)) # Recognition factor for cluster
-    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
-    for node_interface in cluster.node.interfaces
-        node_interface_recognition_factor = recognitionFactor(node_interface.edge) # Note: edges that are not assigned to a recognition factor are assumed mean-field 
+    cluster_rf = recognitionFactor(first(inbound_cluster.edges))
+    encountered_external_clusters = Set{Union{Cluster, Variable}}()
+    for node_interface in inbound_cluster.node.interfaces
+        current_cluster = cluster(inbound_cluster.node, node_interface.edge) # Returns a Variable if no cluster is assigned
+        current_rf = recognitionFactor(node_interface.edge) # Returns an Edge if no recognition factor is assigned
+        inbound_interface = ultimatePartner(node_interface)
 
-        if node_interface_recognition_factor === cluster_recognition_factor
-            # Edge is internal, accept message
-            push!(inbound_types, outbound_types[node_interface.partner])
-        elseif !(node_interface_recognition_factor in recognition_factors)
-            # Edge is external, accept marginal (if marginal is not already accepted)
-            push!(inbound_types, ProbabilityDistribution) 
+        if !(current_rf === cluster_rf) && !(current_cluster in encountered_external_clusters)
+            # Edge is external and cluster is not yet encountered, accept probability distribution
+            push!(inbound_types, ProbabilityDistribution)
+            push!(encountered_external_clusters, current_cluster) # Register current cluster with encountered external clusters
+        elseif (current_rf === cluster_rf) && (node_interface.edge in inbound_cluster.edges)
+            # Edge is internal and in cluster, accept message
+            push!(inbound_types, outbound_types[inbound_interface])
+        elseif (current_rf === cluster_rf)
+            # Edge is internal but not in cluster, signal to rule signature that edge will be marginalized out
+            push!(inbound_types, Nothing)
         end
-
-        push!(recognition_factors, node_interface_recognition_factor)
     end
 
     return inbound_types
@@ -161,30 +165,28 @@ collectInbounds(entry::MarginalEntry) = collectMarginalNodeInbounds(entry.target
 function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
     interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
     target_to_marginal_entry = current_algorithm.target_to_marginal_entry
+    inbound_cluster = entry.target
 
     inbounds = Any[]
-    entry_recognition_factor = recognitionFactor(first(entry.target.edges))
-    local_clusters = localRecognitionFactorization(entry.target.node)
-
-    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
+    cluster_rf = recognitionFactor(first(entry.target.edges))
+    encountered_external_clusters = Set{Union{Cluster, Variable}}()
     for node_interface in entry.target.node.interfaces
+        current_cluster = cluster(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a recognition factor are assumed mean-field 
+        current_rf = recognitionFactor(node_interface.edge) # Returns an Edge if no recognition factor is assigned
         inbound_interface = ultimatePartner(node_interface)
         partner_node = inbound_interface.node
-        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
 
         if isa(partner_node, Clamp)
-            # Hard-code marginal of constant node in schedule
+            # Edge is clamped, hard-code marginal of constant node
             push!(inbounds, assembleClamp!(partner_node, ProbabilityDistribution))
-        elseif node_interface_recognition_factor === entry_recognition_factor
-            # Collect message from previous result
+        elseif !(current_rf === cluster_rf) && !(current_cluster in encountered_external_clusters)
+            # Edge is external and cluster is not yet encountered, collect marginal from marginal dictionary
+            push!(inbound_types, ProbabilityDistribution)
+            push!(encountered_external_clusters, current_cluster) # Register current cluster with encountered external clusters
+        elseif (current_rf === cluster_rf)
+            # Edge is internal, collect message from previous result (also when edge is not in cluster)
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        elseif !(node_interface_recognition_factor in recognition_factors)
-            # Collect marginal from marginal dictionary (if marginal is not already accepted)
-            target = local_clusters[node_interface_recognition_factor]
-            push!(inbounds, target_to_marginal_entry[target])
         end
-
-        push!(recognition_factors, node_interface_recognition_factor)
     end
 
     return inbounds

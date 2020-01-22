@@ -16,6 +16,7 @@ function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=curren
     rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries from schedule
     rf.marginal_table = marginalTable(rf)
 
+    # Populate fields for algorithm compilation
     assembleAlgorithm!(algo)
     free_energy && assembleFreeEnergy!(algo)
 
@@ -112,10 +113,10 @@ function inferUpdateRule!(entry::ScheduleEntry,
             entry.internal_schedule = internalSumProductSchedule(entry.interface.node, entry.interface, inferred_outbound_types)
             entry.message_update_rule = entry.internal_schedule[end].message_update_rule
         else
-            error("No applicable message update rule for $(entry) with inbound types $(inbound_types)")
+            error("No applicable $(rule_type) update for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
         end
     elseif length(applicable_rules) > 1
-        error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types): $(applicable_rules)")
+        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
     else
         entry.message_update_rule = first(applicable_rules)
     end
