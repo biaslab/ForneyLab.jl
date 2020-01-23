@@ -178,10 +178,10 @@ function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
 
         if isa(partner_node, Clamp)
             # Edge is clamped, hard-code marginal of constant node
-            push!(inbounds, assembleClamp!(partner_node, ProbabilityDistribution))
+            push!(inbounds, assembleClamp!(copy(partner_node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
         elseif !(current_rf === cluster_rf) && !(current_cluster in encountered_external_clusters)
             # Edge is external and cluster is not yet encountered, collect marginal from marginal dictionary
-            push!(inbound_types, ProbabilityDistribution)
+            push!(inbounds, target_to_marginal_entry[current_cluster])
             push!(encountered_external_clusters, current_cluster) # Register current cluster with encountered external clusters
         elseif (current_rf === cluster_rf)
             # Edge is internal, collect message from previous result (also when edge is not in cluster)

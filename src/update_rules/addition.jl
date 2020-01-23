@@ -59,6 +59,6 @@
                 :name          => SPAdditionIn1PNP)
 
 @marginalRule(:node_type     => Addition,
-              :inbound_types => (Nothing, Message{Gaussian}, Message{Gaussian}), # Nothing indicates marginalization over outbound edge
+              :inbound_types => (Nothing, Message{Gaussian}, Message{Gaussian}), # "Nothing" indicates marginalization over outbound edge
               :name          => MAdditionNGG)
 

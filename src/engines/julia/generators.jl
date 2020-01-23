@@ -16,7 +16,7 @@ function algorithmSourceCode(algo::Algorithm; free_energy=false)
         algo_code *= "\n\n"
     end
 
-    algo_code *= "\nend # block"
+    algo_code *= "end # block"
 
     return algo_code
 end

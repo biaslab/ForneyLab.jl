@@ -97,8 +97,8 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
     # Determine which variables and clusters are required for evaluating the free energy
     if free_energy
         # Initialize counting numbers
-        variable_counting_numbers = Dict{Variable, Int64}()
-        cluster_counting_numbers = Dict{Cluster, Int64}()
+        variable_counting_numbers = Dict{Variable, Number}()
+        cluster_counting_numbers = Dict{Cluster, Number}()
 
         # Iterate over large regions
         nodes_connected_to_internal_edges = nodes(rf.internal_edges)
@@ -106,10 +106,10 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
             target_edges = localInternalEdges(node, rf) # Find internal edges connected to node (local cluster/variable)
             if !isa(node, DeltaFactor) # Node is stochastic
                 if length(target_edges) == 1 # Single internal edge
-                    increase!(variable_counting_numbers, target_edges[1].variable, 1) # Increase the counting number for the edge variable
+                    increase!(variable_counting_numbers, target_edges[1].variable, Inf) # For average energy evaluation, make sure to include the edge variable
                 elseif length(target_edges) > 1 # Multiple internal edges
                     cluster = Cluster(node, target_edges) # Create a new cluster,
-                    increase!(cluster_counting_numbers, cluster, 1) # and increase the counting number for that cluster
+                    increase!(cluster_counting_numbers, cluster, Inf) # and make sure to include the cluster for average energy evaluation
                 end
             elseif isa(node, Equality)
                 increase!(variable_counting_numbers, target_edges[1].variable, 1) # Increase the counting number for the equality-constrained variable

@@ -80,7 +80,7 @@ end
 """
 Increase (or decrease) a counting number
 """
-function increase!(dict::Dict, key::Any, increase::Int64)
+function increase!(dict::Dict, key::Any, increase::Number)
     if haskey(dict, key)
         dict[key] += increase
     else
@@ -101,7 +101,7 @@ function collectAverageEnergyInbounds(node::FactorNode)
 
         if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
-            push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
+            push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
         elseif !(node_interface_recognition_factor in recognition_factors)
             # Collect marginal entry from marginal dictionary (if marginal entry is not already accepted)
             target = local_clusters[node_interface_recognition_factor]
