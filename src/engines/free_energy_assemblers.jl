@@ -89,27 +89,3 @@ function increase!(dict::Dict, key::Any, increase::Number)
 
     return dict
 end
-
-function collectAverageEnergyInbounds(node::FactorNode)
-    inbounds = Any[]
-    local_clusters = localRecognitionFactorization(node)
-
-    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
-    for node_interface in node.interfaces
-        inbound_interface = ultimatePartner(node_interface)
-        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
-
-        if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
-            # Hard-code marginal of constant node in schedule
-            push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
-        elseif !(node_interface_recognition_factor in recognition_factors)
-            # Collect marginal entry from marginal dictionary (if marginal entry is not already accepted)
-            target = local_clusters[node_interface_recognition_factor]
-            push!(inbounds, current_algorithm.target_to_marginal_entry[target])
-        end
-
-        push!(recognition_factors, node_interface_recognition_factor)
-    end
-
-    return inbounds
-end

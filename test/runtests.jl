@@ -50,15 +50,16 @@ using Test
     include("./algorithms/test_cluster.jl")
     include("./algorithms/test_recognition_factor.jl")
     include("./algorithms/test_algorithm.jl")
+    include("./algorithms/test_joint_marginals.jl")
 
     include("./algorithms/sum_product/test_sum_product.jl")
-    include("./algorithms/variational_bayes/test_joint_marginals.jl")
     include("./algorithms/variational_bayes/test_naive_variational_bayes.jl")
     include("./algorithms/variational_bayes/test_structured_variational_bayes.jl")
     include("./algorithms/expectation_propagation/test_expectation_propagation.jl")
 
     # Assemblers
-    include("engines/test_assemblers.jl")
+    include("engines/test_message_passing_assemblers.jl")
+    include("engines/test_free_energy_assemblers.jl")
 
     # Engines
     include("./engines/julia/test_generators.jl")

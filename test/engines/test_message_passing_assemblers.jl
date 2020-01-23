@@ -1,4 +1,4 @@
-module AssemblersTest
+module MessagePassingAssemblersTest
 
 using Test
 using ForneyLab

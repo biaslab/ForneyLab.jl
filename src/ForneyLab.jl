@@ -75,17 +75,17 @@ include("visualization.jl")
 # Algorithms
 include("algorithms/recognition_factor.jl")
 include("algorithms/algorithm.jl")
+include("algorithms/joint_marginals.jl")
 
 include("algorithms/sum_product/sum_product.jl")
-include("algorithms/variational_bayes/joint_marginals.jl")
 include("algorithms/variational_bayes/naive_variational_bayes.jl")
 include("algorithms/variational_bayes/structured_variational_bayes.jl")
-include("algorithms/variational_bayes/free_energy.jl")
 include("algorithms/expectation_propagation/expectation_propagation.jl")
 include("algorithms/expectation_propagation/variational_expectation_propagation.jl")
 
 # Assemblers
-include("engines/assemblers.jl")
+include("engines/message_passing_assemblers.jl")
+include("engines/free_energy_assemblers.jl")
 
 # Update rules
 include("update_rules/clamp.jl")
