@@ -47,21 +47,21 @@ function collectInboundTypes(entry::ScheduleEntry,
                             ) where T<:StructuredVariationalRule
     inbound_types = Type[]
     entry_recognition_factor = recognitionFactor(entry.interface.edge) # Recognition factor for outbound edge
-    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
+    encountered_recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in entry.interface.node.interfaces
-        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
+        current_recognition_factor = recognitionFactor(node_interface.edge)
 
         if node_interface === entry.interface
             push!(inbound_types, Nothing)
-        elseif node_interface_recognition_factor === entry_recognition_factor
+        elseif current_recognition_factor === entry_recognition_factor
             # Edge is internal, accept message
             push!(inbound_types, inferred_outbound_types[node_interface.partner])
-        elseif !(node_interface_recognition_factor in recognition_factors)
+        elseif !(current_recognition_factor in encountered_recognition_factors)
             # Edge is external, accept marginal (if marginal is not already accepted)
             push!(inbound_types, ProbabilityDistribution) 
         end
 
-        push!(recognition_factors, node_interface_recognition_factor)
+        push!(encountered_recognition_factors, current_recognition_factor)
     end
 
     return inbound_types
@@ -145,12 +145,12 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
 
     inbounds = Any[]
     entry_recognition_factor = recognitionFactor(entry.interface.edge)
-    local_clusters = localRecognitionFactorization(entry.interface.node)
+    local_recognition_factor_to_region = localRecognitionFactorToRegion(entry.interface.node)
 
-    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
+    encountered_recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
+        current_recognition_factor = recognitionFactor(node_interface.edge)
 
         if node_interface === entry.interface
             # Ignore marginal of outbound edge
@@ -158,16 +158,16 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
         elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
-        elseif node_interface_recognition_factor === entry_recognition_factor
+        elseif current_recognition_factor === entry_recognition_factor
             # Collect message from previous result
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        elseif !(node_interface_recognition_factor in recognition_factors)
+        elseif !(current_recognition_factor in encountered_recognition_factors)
             # Collect marginal from marginal dictionary (if marginal is not already accepted)
-            target = local_clusters[node_interface_recognition_factor]
+            target = local_recognition_factor_to_region[current_recognition_factor]
             push!(inbounds, target_to_marginal_entry[target])
         end
 
-        push!(recognition_factors, node_interface_recognition_factor)
+        push!(encountered_recognition_factors, current_recognition_factor)
     end
 
     return inbounds

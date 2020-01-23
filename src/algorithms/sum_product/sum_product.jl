@@ -9,10 +9,10 @@ Create a sum-product algorithm to infer marginals over `variables`
 """
 function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm(); free_energy=false)
     rf = RecognitionFactor(algo, id=Symbol("")) # Contain the entire graph in a single recognition factor
-    setTargets!(rf, algo, variables, free_energy=free_energy, external_targets=false) # Set the target variables and clusters of the recognition factor
+    setTargets!(rf, algo, variables, free_energy=free_energy, external_targets=false) # Set the target regions (variables and clusters) of the recognition factor
     
     # Infer schedule and marginal computations
-    schedule = sumProductSchedule(rf) # For free energy computation, other variable and cluster targets might be required as well
+    schedule = sumProductSchedule(rf) # For free energy computation, additional targets might be required
     rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries from schedule
     rf.marginal_table = marginalTable(rf)
 

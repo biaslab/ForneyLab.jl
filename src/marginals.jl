@@ -17,7 +17,7 @@ The `marginal_update_rule <: MarginalUpdateRule` defines the rule that is used
 to calculate the (joint) marginal over `target`.
 """
 mutable struct MarginalEntry
-    target::Union{Variable, Cluster}
+    target::Region
     interfaces::Vector{Interface}
     marginal_update_rule::DataType
 
@@ -26,7 +26,7 @@ mutable struct MarginalEntry
     inbounds::Vector{Any} # Specify the inbounds required for the marginal update
 
     MarginalEntry() = new()
-    MarginalEntry(target::Union{Variable, Cluster}, interfaces::Vector{Interface}, marginal_update_rule::DataType) = new(target, interfaces, marginal_update_rule)
+    MarginalEntry(target::Region, interfaces::Vector{Interface}, marginal_update_rule::DataType) = new(target, interfaces, marginal_update_rule)
 end
 
 """
@@ -61,7 +61,7 @@ marginalTable(target::Variable) = marginalTable([target])
 Generate a mapping from target to marginal entry.
 """
 function targetToMarginalEntry(table::MarginalTable)
-    mapping = Dict{Union{Cluster, Variable}, MarginalEntry}()
+    mapping = Dict{Region, MarginalEntry}()
     for entry in table
         target = entry.target
         mapping[target] = entry

@@ -20,8 +20,8 @@ include("dependency_graph.jl")
 
 # High level abstracts
 abstract type AbstractEdge end # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface
-abstract type AbstractVariable end
-abstract type InferenceAlgorithm end
+abstract type Region end # A Variable and Cluster are both Regions
+abstract type AbstractVariable <: Region end
 
 # Low-level internals
 include("factor_node.jl")

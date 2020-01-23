@@ -15,9 +15,9 @@ mutable struct Algorithm
 
     # Bookkeeping for faster lookup during assembly
     interface_to_schedule_entry::Dict{Interface, ScheduleEntry}
-    target_to_marginal_entry::Dict{Union{Variable, Cluster}, MarginalEntry}
+    target_to_marginal_entry::Dict{Region, MarginalEntry}
     energy_counting_numbers::Dict{FactorNode, Int64}
-    entropy_counting_numbers::Dict{Union{Variable, Cluster}, Int64}
+    entropy_counting_numbers::Dict{Region, Int64}
 
     # Fields for free energy algorithm assembly
     average_energies::Vector{Dict{Symbol, Any}}
@@ -46,9 +46,9 @@ Algorithm(id=Symbol("")) = setCurrentAlgorithm(
         Dict{Edge, RecognitionFactor}(),
         Dict{Tuple{FactorNode, Edge}, Symbol}(),
         Dict{Interface, ScheduleEntry}(),
-        Dict{Union{Variable, Cluster}, MarginalEntry}(),
+        Dict{Region, MarginalEntry}(),
         Dict{FactorNode, Int64}(),
-        Dict{Union{Variable, Cluster}, Int64}(),
+        Dict{Region, Int64}(),
         Dict{Symbol, Any}[],
         Dict{Symbol, Any}[]))
 
@@ -70,7 +70,7 @@ function Algorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; 
 end
 
 """
-Pupulate the target variables and clusters fields of the RecognitionFactor.
+Pupulate the target regions of the RecognitionFactor.
 The targets depend on the variables of interest, the local recognition
 factorization, and whether free energy will be evaluated. At the same
 time, fields for fast lookup during scheduling are populated in the algorithm.
@@ -80,7 +80,7 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
     target_variables = Set{Variable}(variables) # Marginals of the quantities of interest are always required
     target_clusters = Set{Cluster}() # Initialize empty set of target clusters
 
-    # Determine which variables and clusters are required by other recognition factors
+    # Determine which target regions are required by external recognition factors
     if external_targets
         nodes_connected_to_external_edges = nodesConnectedToExternalEdges(rf)
         for node in nodes_connected_to_external_edges                
@@ -94,7 +94,7 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
         end
     end
 
-    # Determine which variables and clusters are required for evaluating the free energy
+    # Determine which targets are required for evaluating the free energy
     if free_energy
         # Initialize counting numbers
         variable_counting_numbers = Dict{Variable, Number}()
@@ -103,7 +103,7 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
         # Iterate over large regions
         nodes_connected_to_internal_edges = nodes(rf.internal_edges)
         for node in nodes_connected_to_internal_edges
-            target_edges = localInternalEdges(node, rf) # Find internal edges connected to node (local cluster/variable)
+            target_edges = localInternalEdges(node, rf) # Find internal edges connected to node
             if !isa(node, DeltaFactor) # Node is stochastic
                 if length(target_edges) == 1 # Single internal edge
                     increase!(variable_counting_numbers, target_edges[1].variable, Inf) # For average energy evaluation, make sure to include the edge variable
@@ -171,7 +171,7 @@ function interfaceToScheduleEntry(algo::Algorithm)
 end
 
 function targetToMarginalEntry(algo::Algorithm)
-    mapping = Dict{Union{Cluster, Variable}, MarginalEntry}()
+    mapping = Dict{Region, MarginalEntry}()
     for (id, rf) in algo.recognition_factors
         rf_mapping = targetToMarginalEntry(rf.marginal_table)
         merge!(mapping, rf_mapping)

@@ -40,7 +40,7 @@ populates the counting numbers for the average energies and entropies.
 """
 function assembleCountingNumbers!(algo=currentAlgorithm())
     energy_counting_numbers = Dict{FactorNode, Int64}()
-    entropy_counting_numbers = Dict{Union{Variable, Cluster}, Int64}()
+    entropy_counting_numbers = Dict{Region, Int64}()
 
     # Collect regions
     internal_edges = Set{Edge}()
@@ -53,15 +53,15 @@ function assembleCountingNumbers!(algo=currentAlgorithm())
     for node in nodes_connected_to_internal_edges
         if !isa(node, DeltaFactor) # Node is stochastic
             increase!(energy_counting_numbers, node, 1) # Count average energy
-            for target in unique!(localClusters(node)) # Collect all unique clusters/variables around node
-                if first(target.edges) in internal_edges # Cluster/variable is internal to a recognition factor
+            for target in unique!(localRegions(node)) # Collect all unique regions around node
+                if first(target.edges) in internal_edges # Region is internal to a recognition factor
                     increase!(entropy_counting_numbers, target, 1) # Count (joint) entropy
                 end
             end
         elseif isa(node, Equality)
             increase!(entropy_counting_numbers, node.i[1].edge.variable, 1) # Count univariate entropy
         elseif !isa(node, Clamp) # Node is deterministic and not clamp or equality
-            target = cluster(node, node.interfaces[2].edge) # Find cluster/variable of inbound edges
+            target = region(node, node.interfaces[2].edge) # Find region of inbound edges
             increase!(entropy_counting_numbers, target, 1) # Count (joint) entropy
         end
     end

@@ -143,41 +143,41 @@ function nodesConnectedToExternalEdges(rf::RecognitionFactor)
 end
 
 """
-Return a dictionary from recognition factor-id to variable/cluster-ids local to `node`
+Return a dictionary from recognition factors to regions local to `node`
 """
-function localRecognitionFactorization(node::FactorNode)
-    # For each edge connected to node, collect the recognition factor and cluster id
+function localRecognitionFactorToRegion(node::FactorNode)
+    # For each edge connected to node, collect the respective recognition factors and regions
     local_recognition_factors = localRecognitionFactors(node)
-    local_clusters = localClusters(node)
+    local_regions = localRegions(node)
 
     # Construct dictionary for local recognition factorization
-    local_recognition_factorization = Dict{Union{RecognitionFactor, Edge}, Union{Cluster, Variable}}()
+    local_recognition_factor_to_region = Dict{Union{RecognitionFactor, Edge}, Region}()
     for (idx, factor) in enumerate(local_recognition_factors)
-        local_recognition_factorization[factor] = local_clusters[idx]
+        local_recognition_factor_to_region[factor] = local_regions[idx]
     end
 
-    return local_recognition_factorization
+    return local_recognition_factor_to_region
 end
 
 function collectAverageEnergyInbounds(node::FactorNode)
     inbounds = Any[]
-    local_clusters = localRecognitionFactorization(node)
+    local_recognition_factor_to_region = localRecognitionFactorToRegion(node)
 
-    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
+    encountered_recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
+        current_recognition_factor = recognitionFactor(node_interface.edge)
 
         if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
             push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
-        elseif !(node_interface_recognition_factor in recognition_factors)
+        elseif !(current_recognition_factor in encountered_recognition_factors)
             # Collect marginal entry from marginal dictionary (if marginal entry is not already accepted)
-            target = local_clusters[node_interface_recognition_factor]
+            target = local_recognition_factor_to_region[current_recognition_factor]
             push!(inbounds, current_algorithm.target_to_marginal_entry[target])
         end
 
-        push!(recognition_factors, node_interface_recognition_factor)
+        push!(encountered_recognition_factors, current_recognition_factor)
     end
 
     return inbounds
