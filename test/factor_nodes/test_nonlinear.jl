@@ -2,8 +2,8 @@ module NonlinearTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights
-import ForneyLab: SPNonlinearOutNG, SPNonlinearIn1GG
+using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights
+using ForneyLab: SPNonlinearOutNG, SPNonlinearIn1GG
 
 @testset "sigmaPointsAndWeights" begin
     dist = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)

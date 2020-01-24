@@ -7,18 +7,25 @@ expectationPropagationSchedule,
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm())
-    # Initialize a container recognition factor
+function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm(); free_energy=false)
+    # Contain the entire graph in a single recognition factor
     rf = RecognitionFactor(algo, id=Symbol(""))
+
+    # Set the target regions (variables and clusters) of the recognition factor
+    setTargets!(rf, algo, variables, free_energy=free_energy, external_targets=false)
+
+    # Infer schedule and marginal computations
     schedule = expectationPropagationSchedule(variables)
     rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
     rf.marginal_table = marginalTable(variables)
     
+    # Populate fields for algorithm compilation
     assembleAlgorithm!(algo)
+    free_energy && assembleFreeEnergy!(algo)
     
     return algo
 end
-expectationPropagationAlgorithm(variable::Variable, algo::Algorithm=currentAlgorithm()) = expectationPropagationAlgorithm([variable], algo)
+expectationPropagationAlgorithm(variable::Variable, algo::Algorithm=currentAlgorithm(); free_energy=false) = expectationPropagationAlgorithm([variable], algo, free_energy=free_energy)
 
 """
 A non-specific expectation propagation update
@@ -29,12 +36,14 @@ abstract type ExpectationPropagationRule{factor_type} <: MessageUpdateRule end
 `expectationPropagationSchedule()` generates a expectation propagation
 message passing schedule. 
 """ 
-function expectationPropagationSchedule(variables::Vector{Variable})
+function expectationPropagationSchedule(rf::RecognitionFactor)
     ep_sites = collectEPSites(nodes(current_graph))
     breaker_sites = Interface[site.partner for site in ep_sites]
     breaker_types = breakerTypes(breaker_sites)
 
-    schedule = summaryPropagationSchedule(variables; target_sites=[breaker_sites; ep_sites])
+    schedule = summaryPropagationSchedule(sort(collect(rf.variables), rev=true), 
+                                          sort(collect(rf.clusters), rev=true);
+                                          target_sites=[breaker_sites; ep_sites])
 
     for entry in schedule
         if entry.interface in ep_sites

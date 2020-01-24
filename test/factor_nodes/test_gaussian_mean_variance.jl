@@ -2,9 +2,9 @@ module GaussianMeanVarianceTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
-import ForneyLab: SPGaussianMeanVarianceOutNPP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
-import LinearAlgebra: det, diag
+using ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
+using ForneyLab: SPGaussianMeanVarianceOutNPP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
+using LinearAlgebra: det, diag
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == 1

@@ -152,7 +152,7 @@ end
 `variables` and every cluster in `clusters`. The message update rule in each 
 schedule entry is set to `Nothing`.
 """
-function summaryPropagationSchedule(variables::Vector{Variable}, clusters::Vector{Cluster}; limit_set=edges(current_graph), target_sites=Interface[], breaker_sites=Interface[])
+function summaryPropagationSchedule(variables::Vector{Variable}, clusters::Vector{Cluster}=Cluster[]; limit_set=edges(current_graph), target_sites=Interface[], breaker_sites=Interface[])
     # We require the marginal distribution of every variable in variables.
     # If a variable relates to multiple edges, this indicates an equality constraint.
     # Therefore, we only need to consider one arbitrary edge to calculate the marginal.

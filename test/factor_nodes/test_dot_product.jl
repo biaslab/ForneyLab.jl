@@ -2,8 +2,8 @@ module DotProductTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPDotProductOutNPG, SPDotProductOutNGP, SPDotProductIn1GNP, SPDotProductIn2GPN
+using ForneyLab: outboundType, isApplicable
+using ForneyLab: SPDotProductOutNPG, SPDotProductOutNGP, SPDotProductIn1GNP, SPDotProductIn2GPN
 
 
 #-------------

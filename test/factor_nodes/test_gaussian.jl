@@ -2,7 +2,7 @@ module GaussianTest
 
 using Test
 using ForneyLab
-import LinearAlgebra: Diagonal
+using LinearAlgebra: Diagonal
 
 @testset "sample" begin
     # Univariate

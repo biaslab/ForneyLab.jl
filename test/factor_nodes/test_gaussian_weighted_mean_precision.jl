@@ -2,8 +2,8 @@ module GaussianWeightedMeanPrecisionTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
-import ForneyLab: SPGaussianWeightedMeanPrecisionOutNPP, VBGaussianWeightedMeanPrecisionOut
+using ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
+using ForneyLab: SPGaussianWeightedMeanPrecisionOutNPP, VBGaussianWeightedMeanPrecisionOut
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=1.0)) == 1

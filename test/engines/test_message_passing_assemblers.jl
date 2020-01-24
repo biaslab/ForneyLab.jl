@@ -2,7 +2,7 @@ module MessagePassingAssemblersTest
 
 using Test
 using ForneyLab
-import ForneyLab: assembleBreaker!, assembleClamp!, assembleAlgorithm!, assembleRecognitionFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten
+using ForneyLab: assembleBreaker!, assembleClamp!, assembleAlgorithm!, assembleRecognitionFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten, setTargets!
 
 @testset "assembleClamp!" begin
     g = FactorGraph()
@@ -37,7 +37,8 @@ end
     GaussianMeanPrecision(x, 0.0, 1.0)
     algo = Algorithm()
     rf = RecognitionFactor(algo)
-    rf.schedule = sumProductSchedule(x)
+    setTargets!(rf, algo, [x])
+    rf.schedule = sumProductSchedule(rf)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(rf)
@@ -69,7 +70,8 @@ end
     GaussianMeanPrecision(y, 0.0, 1.0)
     algo = Algorithm()
     rf = RecognitionFactor(algo)
-    rf.schedule = sumProductSchedule(x)
+    setTargets!(rf, algo, [x])
+    rf.schedule = sumProductSchedule(rf)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(rf)
@@ -83,7 +85,8 @@ end
     placeholder(x, :x)
     algo = Algorithm()
     rf = RecognitionFactor(algo)
-    rf.schedule = sumProductSchedule(x)
+    setTargets!(rf, algo, [x])
+    rf.schedule = sumProductSchedule(rf)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(rf)
@@ -97,7 +100,8 @@ end
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     algo = Algorithm()
     rf = RecognitionFactor(algo)
-    rf.schedule = sumProductSchedule(x)
+    setTargets!(rf, algo, [x])
+    rf.schedule = sumProductSchedule(rf)
     rf.marginal_table = marginalTable(x)
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
@@ -112,7 +116,8 @@ end
     GaussianMeanPrecision(x, 0.0, 1.0)
     algo = Algorithm()
     rf = RecognitionFactor(algo)
-    rf.schedule = sumProductSchedule(x)
+    setTargets!(rf, algo, [x])
+    rf.schedule = sumProductSchedule(rf)
     rf.marginal_table = marginalTable(x)
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
@@ -144,7 +149,8 @@ end
     GaussianMeanPrecision(x, 0.0, 1.0)
     algo = Algorithm()
     rf = RecognitionFactor(algo)
-    schedule = sumProductSchedule(x)
+    setTargets!(rf, algo, [x])
+    schedule = sumProductSchedule(rf)
     rf.schedule = condense(flatten(schedule))
     rf.marginal_table = marginalTable(x)
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -167,7 +173,8 @@ end
     GaussianMeanPrecision(x, 0.0, 1.0)
     algo = Algorithm()
     rf = RecognitionFactor(algo)
-    schedule = sumProductSchedule(x)
+    setTargets!(rf, algo, [x])
+    schedule = sumProductSchedule(rf)
     rf.schedule = condense(flatten(schedule))
     rf.marginal_table = marginalTable(x)
     assembleAlgorithm!(algo)

@@ -2,8 +2,8 @@ module NaiveVariationalBayesTest
 
 using Test
 using ForneyLab
-import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
-import ForneyLab: VBGaussianMeanVarianceOut, VBGaussianMeanPrecisionM, SPEqualityGaussian
+using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!
+using ForneyLab: VBGaussianMeanVarianceOut, VBGaussianMeanPrecisionM, SPEqualityGaussian
 
 # Integration helper
 mutable struct MockNode <: SoftFactor
@@ -61,9 +61,10 @@ end
         push!(nd_y, nd_y_i)
     end
 
-    rf = Algorithm()
+    algo = Algorithm()
     q_m = RecognitionFactor(m)
 
+    setTargets!(q_m, algo, external_targets=true)
     schedule = variationalSchedule(q_m)
 
     @test length(schedule) == 6
@@ -91,8 +92,8 @@ end
         push!(nd_y, nd_y_i)
     end
 
-    rf = Algorithm(m, w)
-    algo = variationalAlgorithm(rf)
+    algo = Algorithm(m, w)
+    variationalAlgorithm(algo)
 
     @test isa(algo, Algorithm)
 end

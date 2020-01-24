@@ -1,7 +1,7 @@
 module FactorGraphTest
 
 using Test
-import ForneyLab: FactorGraph, FactorNode, Interface, Edge, Variable, generateId, currentGraph, setCurrentGraph,
+using ForneyLab: FactorGraph, FactorNode, Interface, Edge, Variable, generateId, currentGraph, setCurrentGraph,
 generateId, addNode!, hasNode, addVariable!, hasVariable, Clamp
 
 # Integration helper

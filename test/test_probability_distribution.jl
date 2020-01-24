@@ -1,9 +1,9 @@
 module ProbabilityDistributionTest
 
 using Test
-import ForneyLab: ProbabilityDistribution, Univariate, Multivariate, MatrixVariate, Gaussian, PointMass, Equality, mean, var, mat, isProper, isValid, invalidate!, gaussianQuadrature, dims, eye, diageye, matches, Message
-import LinearAlgebra: Diagonal
 using ForneyLab
+using ForneyLab: isProper, gaussianQuadrature, matches
+using LinearAlgebra: Diagonal
 
 @testset "matches" begin
     @test matches(ProbabilityDistribution{Univariate, Gaussian}, ProbabilityDistribution)
@@ -98,18 +98,6 @@ end
     @test dims(ProbabilityDistribution(Multivariate, PointMass, m=ones(2))) == 2
     @test dims(ProbabilityDistribution(MatrixVariate, PointMass, m=eye(2))) == (2, 2)
     @test dims(ProbabilityDistribution(MatrixVariate, PointMass, m=diageye(2))) == (2, 2)
-end
-
-@testset "isValid" begin
-    # should check validity of distribution parameters
-    @test isValid(ProbabilityDistribution(Univariate, PointMass, m=1.0), :m)
-    @test !isValid(ProbabilityDistribution(Univariate, PointMass, m=NaN), :m)
-    @test isValid(ProbabilityDistribution(Multivariate, PointMass, m=[1.0, 2.0]), :m)
-    @test !isValid(ProbabilityDistribution(Multivariate, PointMass, m=[NaN, 2.0]), :m)
-    @test isValid(ProbabilityDistribution(MatrixVariate, PointMass, m=eye(2)), :m)
-    @test !isValid(ProbabilityDistribution(MatrixVariate, PointMass, m=[NaN 1.0; 2.0 3.0]), :m)
-    @test isValid(ProbabilityDistribution(MatrixVariate, PointMass, m=Diagonal([1.0, 2.0])), :m)
-    @test !isValid(ProbabilityDistribution(MatrixVariate, PointMass, m=Diagonal([NaN, 2.0])), :m)
 end
 
 @testset "gaussianQuadrature" begin

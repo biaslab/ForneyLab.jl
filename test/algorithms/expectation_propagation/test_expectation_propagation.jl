@@ -2,8 +2,8 @@ module ExpectationPropagationTest
 
 using Test
 using ForneyLab
-import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
-import ForneyLab: EPProbitIn1GP, SPGaussianMeanVarianceOutNPP, SPClamp, VBGaussianMeanPrecisionOut, SPProbitOutNG
+using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!
+using ForneyLab: EPProbitIn1GP, SPGaussianMeanVarianceOutNPP, SPClamp, VBGaussianMeanPrecisionOut, SPProbitOutNG
 
 # Integration helper
 mutable struct MockNode <: SoftFactor
@@ -62,7 +62,10 @@ end
         push!(nd_z, nd_z_i)
     end
 
-    schedule = expectationPropagationSchedule(m)
+    algo = Algorithm()
+    rf = RecognitionFactor(algo)
+    setTargets!(rf, algo, [m])
+    schedule = expectationPropagationSchedule(rf)
 
     @test length(schedule) == 15
     @test schedule[2] == ScheduleEntry(nd_z[2].i[:in1], EPProbitIn1GP)
@@ -83,9 +86,9 @@ end
     nd_z = Probit(z, y)
     placeholder(z, :z)
 
-    rf = Algorithm()
+    algo = Algorithm()
     q_y_z = RecognitionFactor([y, z])
-
+    setTargets!(q_y_z, algo, external_targets=true)
     schedule = variationalExpectationPropagationSchedule(q_y_z)
 
     @test length(schedule) == 4
@@ -109,8 +112,8 @@ end
         push!(nd_z, nd_z_i)
     end
 
-    rf = Algorithm()
-    algo = expectationPropagationAlgorithm(m)
+    algo = Algorithm()
+    expectationPropagationAlgorithm(m)
 
     @test isa(algo, Algorithm)
 end
@@ -127,8 +130,8 @@ end
     nd_z = Probit(z, y)
     placeholder(z, :z)
 
-    rf = Algorithm([y; z], m, w)
-    algo = variationalExpectationPropagationAlgorithm(rf)
+    algo = Algorithm([y; z], m, w)
+    variationalExpectationPropagationAlgorithm(algo)
 
     @test isa(algo, Algorithm)    
 end

@@ -75,7 +75,7 @@ The targets depend on the variables of interest, the local recognition
 factorization, and whether free energy will be evaluated. At the same
 time, fields for fast lookup during scheduling are populated in the algorithm.
 """
-function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{Variable}; free_energy=false, external_targets=false)
+function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{Variable}=Variable[]; free_energy=false, external_targets=false)
     # Initialize the target sets
     target_variables = Set{Variable}(variables) # Marginals of the quantities of interest are always required
     target_clusters = Set{Cluster}() # Initialize empty set of target clusters

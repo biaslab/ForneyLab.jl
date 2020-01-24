@@ -291,13 +291,3 @@ function gaussianQuadrature(h::Function; m::Float64=0.0, v::Float64=1.0)
 
     1/sqrt(pi) * sum([weights[i]*h(sqrt(2*v)*abscissas[i] + m) for i=1:32])
 end
-
-"""isValid: return true if the parameter field exists and (the first element of) the parameter is not NaN"""
-isValid(dist::ProbabilityDistribution, field::Symbol) = ( haskey(dist.params, field) && !isnan(dist.params[field][1]) )
-
-function invalidate!(dist::ProbabilityDistribution, field::Symbol)
-    if haskey(dist.params, field)
-        dist.params[field][1] = NaN
-    end
-    return dist
-end

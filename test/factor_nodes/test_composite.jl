@@ -2,8 +2,8 @@ module CompositeTest
 
 using Test
 using ForneyLab
-import ForneyLab: @composite, outboundType, isApplicable
-import ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product, condense, flatten, step!
+using ForneyLab: @composite, outboundType, isApplicable
+using ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product, condense, flatten, step!
 
 
 # Define new node type called StateTransition, with exposed variables called (y, x_prev, x):

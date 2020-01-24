@@ -2,8 +2,8 @@ module GeneratorsTest
 
 using Test
 using ForneyLab
-import LinearAlgebra: Diagonal
-import ForneyLab: entropiesSourceCode, energiesSourceCode, freeEnergySourceCode, marginalTableSourceCode, inboundSourceCode, scheduleSourceCode, removePrefix, vagueSourceCode, initializationSourceCode, optimizeSourceCode, recognitionFactorSourceCode, algorithmSourceCode, valueSourceCode
+using LinearAlgebra: Diagonal
+using ForneyLab: entropiesSourceCode, energiesSourceCode, freeEnergySourceCode, marginalTableSourceCode, inboundSourceCode, scheduleSourceCode, removePrefix, vagueSourceCode, initializationSourceCode, optimizeSourceCode, recognitionFactorSourceCode, algorithmSourceCode, valueSourceCode
 
 @testset "removePrefix" begin
     @test removePrefix(ForneyLab.SPGaussianMeanPrecisionOutNPP) == "SPGaussianMeanPrecisionOutNPP"

@@ -2,7 +2,7 @@ module ContingencyTest
 
 using Test
 using ForneyLab
-import ForneyLab: vague, dims
+using ForneyLab: vague, dims
 
 @testset "Contingency ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Multivariate, Contingency, p=[0.1 0.4; 0.3 0.2]) == ProbabilityDistribution{Multivariate, Contingency}(Dict(:p=>[0.1 0.4; 0.3 0.2]))

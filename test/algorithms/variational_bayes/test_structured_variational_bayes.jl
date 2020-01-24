@@ -2,8 +2,8 @@ module StructuredVariationalBayesTest
 
 using Test
 using ForneyLab
-import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
-import ForneyLab: VBGaussianMeanVarianceOut, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionOutVGD, VBGammaOut, SVBGaussianMeanPrecisionW
+using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!
+using ForneyLab: VBGaussianMeanVarianceOut, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionOutVGD, VBGammaOut, SVBGaussianMeanPrecisionW
 
 # Integration helper
 mutable struct MockNode <: SoftFactor
@@ -93,10 +93,11 @@ end
     nd_s_i = GaussianMeanVariance(s_min, constant(0.0), constant(huge))
     push!(nd_s, nd_s_i)
 
-    rf = Algorithm()
+    algo = Algorithm()
     q_w = RecognitionFactor(w)
     q_s = RecognitionFactor([s_0; s])
 
+    setTargets!(q_s, algo, external_targets=true)
     schedule_q_s = variationalSchedule(q_s)
     @test length(schedule_q_s) == 8
     @test ScheduleEntry(nd_s_0.i[:out], VBGaussianMeanVarianceOut) in schedule_q_s
@@ -108,6 +109,7 @@ end
     @test ScheduleEntry(nd_s[2].i[:out], SVBGaussianMeanPrecisionOutVGD) in schedule_q_s
     @test ScheduleEntry(nd_s[3].i[:out], SVBGaussianMeanPrecisionOutVGD) in schedule_q_s
 
+    setTargets!(q_w, algo, external_targets=true)
     schedule_q_w = variationalSchedule(q_w)
     @test length(schedule_q_w) == 6
     @test ScheduleEntry(nd_w.i[:out], VBGammaOut) in schedule_q_w
@@ -138,8 +140,8 @@ end
     nd_s_i = GaussianMeanVariance(s_min, constant(0.0), constant(huge))
     push!(nd_s, nd_s_i)
 
-    rf = Algorithm([s_0; s], w)
-    algo = variationalAlgorithm(rf)
+    algo = Algorithm([s_0; s], w)
+    variationalAlgorithm(algo)
 
     @test isa(algo, Algorithm)    
 end

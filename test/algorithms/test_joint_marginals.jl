@@ -2,8 +2,7 @@ module JointMarginalsTest
 
 using Test
 using ForneyLab
-
-import ForneyLab: generateId, addNode!, associate!, inferMarginalRule, isApplicable, Cluster, Product
+using ForneyLab: generateId, addNode!, associate!, inferMarginalRule, isApplicable, Cluster, Product, setTargets!, outboundType
 
 # Integration helper
 mutable struct MockNode <: FactorNode
@@ -25,13 +24,13 @@ mutable struct MockNode <: FactorNode
 end
 
 @marginalRule(:node_type     => MockNode,
-              :inbound_types => (Message{PointMass}, Message{PointMass}, ProbabilityDistribution),
-              :name          => MMockPPD)
+              :inbound_types => (Message, Message, ProbabilityDistribution),
+              :name          => MMockMMD)
 
 @testset "@marginalRule" begin
-    @test MMockPPD <: MarginalRule{MockNode}
-    @test isApplicable(MMockPPD, [Message{PointMass}, Message{PointMass}, ProbabilityDistribution])
-    @test !isApplicable(MMockPPD, [Message{PointMass}, Message{PointMass}, ProbabilityDistribution, ProbabilityDistribution])    
+    @test MMockMMD <: MarginalRule{MockNode}
+    @test isApplicable(MMockMMD, [Message, Message, ProbabilityDistribution])
+    @test !isApplicable(MMockMMD, [Message, Message, ProbabilityDistribution, ProbabilityDistribution])    
 end
 
 @testset "inferMarginalRule" begin
@@ -39,37 +38,34 @@ end
     nd = MockNode([constant(0.0), constant(0.0), constant(0.0)])
     cluster = Cluster(nd, [nd.i[1].edge, nd.i[2].edge])
 
-    @test inferMarginalRule(cluster, [Message{PointMass}, Message{PointMass}, ProbabilityDistribution]) == MMockPPD
+    @test inferMarginalRule(cluster, [Message, Message, ProbabilityDistribution]) == MMockMMD
 end
 
-@structuredVariationalRule(:node_type     => MockNode,
-                           :outbound_type => Message{PointMass},
-                           :inbound_types => (Nothing, Message{PointMass}, ProbabilityDistribution),
-                           :name          => SVBMock1VGD)
-
-@structuredVariationalRule(:node_type     => MockNode,
-                           :outbound_type => Message{PointMass},
-                           :inbound_types => (Message{PointMass}, Nothing, ProbabilityDistribution),
-                           :name          => SVBMock2GVD)
+mutable struct SPMockNode <: SumProductRule{MockNode} end
+ForneyLab.outboundType(SPMockNode) = Message
+ForneyLab.isApplicable(SPMockNode, input_types::Vector{<:Type}) = true
 
 @testset "marginalTable" begin
     FactorGraph()
-    v1 = constant(0.0)
-    v2 = constant(0.0)
+    v1 = Variable()
+    v2 = Variable()
     v3 = constant(0.0)
-    nd = MockNode([v1, v2, v3])
+    nd1 = MockNode([v1])
+    nd2 = MockNode([v2])
+    nd3 = MockNode([v1, v2, v3])
 
-    Algorithm()
+    algo = Algorithm()
     rf_12 = RecognitionFactor([v1, v2])
+    setTargets!(rf_12, algo, external_targets=true)
 
     rf_12.schedule = variationalSchedule(rf_12)
     marginal_table = marginalTable(rf_12)
 
     @test length(marginal_table) == 1
     @test marginal_table[1].target == first(rf_12.clusters)
-    @test marginal_table[1].interfaces[1] == nd.i[1].partner
-    @test marginal_table[1].interfaces[2] == nd.i[2].partner
-    @test marginal_table[1].marginal_update_rule == MMockPPD
+    @test marginal_table[1].interfaces[1] == nd1.i[1]
+    @test marginal_table[1].interfaces[2] == nd2.i[1]
+    @test marginal_table[1].marginal_update_rule == MMockMMD
 end
 
 end # module

@@ -7,21 +7,27 @@ variationalSchedule,
 """
 Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
-function variationalAlgorithm(algo::Algorithm=currentAlgorithm())
+function variationalAlgorithm(algo::Algorithm=currentAlgorithm(); free_energy=false)
     for (id, rf) in algo.recognition_factors
+        # Set the target regions (variables and clusters) of the recognition factor
+        setTargets!(rf, algo, free_energy=free_energy, external_targets=true)
+        
+        # Infer schedule and marginal computations
         schedule = variationalSchedule(rf)
         rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
         rf.marginal_table = marginalTable(rf)
     end
 
+    # Populate fields for algorithm compilation
     assembleAlgorithm!(algo)
+    free_energy && assembleFreeEnergy!(algo)
 
     return algo
 end
 
-function variationalAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[], id=Symbol(""))
+function variationalAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[], id=Symbol(""), free_energy=false)
     rfz = Algorithm(args...; ids=ids, id=id)
-    algo = variationalAlgorithm(rfz)
+    algo = variationalAlgorithm(rfz, free_energy=free_energy)
 
     return algo
 end

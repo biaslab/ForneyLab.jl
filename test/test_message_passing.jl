@@ -2,7 +2,7 @@ module MessagePassingTest
 
 using Test
 using ForneyLab
-import ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, matches, flatten
+using ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, matches, flatten, Cluster
 
 @testset "Message" begin
     msg = Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
@@ -84,14 +84,18 @@ end
     n4 = MockNode([c])
     n5 = MockNode([d])
 
-    schedule = summaryPropagationSchedule(d)
+    cl = Cluster(n1, [a.edges; b.edges])
 
-    @test length(schedule) == 5
+    schedule = summaryPropagationSchedule(Variable[d], Cluster[cl])
+
+    @test length(schedule) == 7
     @test ScheduleEntry(n1.i[1], Nothing) in schedule
     @test ScheduleEntry(n2.i[2], Nothing) in schedule
     @test ScheduleEntry(n4.i[1], Nothing) in schedule
     @test ScheduleEntry(n3.i[3], Nothing) in schedule
     @test ScheduleEntry(n5.i[1], Nothing) in schedule
+    @test ScheduleEntry(n3.i[1], Nothing) in schedule
+    @test ScheduleEntry(n2.i[1], Nothing) in schedule
 end
 
 @testset "flatten" begin
