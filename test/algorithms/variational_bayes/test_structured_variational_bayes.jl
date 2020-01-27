@@ -48,15 +48,20 @@ end
 end
 
 @testset "inferUpdateRule!" begin
-    FactorGraph()
-    v1 = constant(0.0)
-    v2 = constant(0.0)
-    v3 = constant(0.0)
+    g = FactorGraph()
+    v1 = Variable()
+    n1 = MockNode([v1])
+    v2 = Variable()
+    n2 = MockNode([v2])
+    v3 = Variable()
+    n3 = MockNode([v3])
     nd = MockNode([v1, v2, v3])
 
-    Algorithm()
-    RecognitionFactor([v1, v2])
-    RecognitionFactor(v3)
+    algo = Algorithm()
+    rf12 = RecognitionFactor([v1, v2])
+    rf3 = RecognitionFactor(v3)
+    setTargets!(rf12, algo)
+    setTargets!(rf3, algo)
 
     entry1 = ScheduleEntry(nd.i[1], StructuredVariationalRule{MockNode})
     inferUpdateRule!(entry1, entry1.message_update_rule, Dict{Interface, Type}(nd.i[2].partner => Message{PointMass}))

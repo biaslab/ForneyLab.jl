@@ -54,7 +54,8 @@ end
     placeholder(y, :y)
     algo = Algorithm()
     rf = RecognitionFactor(algo)
-    rf.schedule = expectationPropagationSchedule(x)
+    setTargets!(rf, algo, [x])
+    rf.schedule = expectationPropagationSchedule(rf)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(rf)
@@ -133,6 +134,7 @@ end
     GaussianMeanPrecision(y, 0.0, 1.0)
     algo = Algorithm([x,y], ids=[:XY])
     rf = algo.recognition_factors[:XY]
+    setTargets!(rf, algo, external_targets=true)
     rf.schedule = variationalSchedule(rf)
     rf.marginal_table = marginalTable(rf)
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -140,7 +142,7 @@ end
     assembleMarginalTable!(rf)
     @test rf.marginal_table[3].marginal_update_rule == ForneyLab.MGaussianMeanPrecisionGGD
     @test rf.marginal_table[3].marginal_id == :y_x
-    @test rf.marginal_table[3].inbounds == [rf.schedule[3], rf.schedule[1], g.nodes[:clamp_3]]
+    @test length(rf.marginal_table[3].inbounds) == 3
 end
 
 @testset "assembleRecognitionFactor!" begin

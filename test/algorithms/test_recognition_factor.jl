@@ -3,7 +3,7 @@ module RecognitionFactorTest
 using Test
 using ForneyLab
 
-using ForneyLab: nodesConnectedToExternalEdges, Cluster, condense, flatten
+using ForneyLab: nodesConnectedToExternalEdges, Cluster, condense, flatten, setTargets!
 
 @testset "RecognitionFactor" begin
     g = FactorGraph()
@@ -40,7 +40,31 @@ using ForneyLab: nodesConnectedToExternalEdges, Cluster, condense, flatten
 end
 
 @testset "setTargets!" begin
-    @test true == false
+    g = FactorGraph()
+    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV y ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV z = x + y
+    @RV w ~ GaussianMeanPrecision(z, 1.0)
+    placeholder(w, :w)
+
+    algo = Algorithm()
+    rf = RecognitionFactor(algo)
+    setTargets!(rf, algo, [z])
+    @test rf.variables == Set{Variable}([z])
+    @test rf.clusters == Set{Cluster}()
+
+    algo = Algorithm()
+    rf = RecognitionFactor(algo)
+    setTargets!(rf, algo, external_targets=true)
+    @test rf.variables == Set{Variable}([x, y, z])
+    @test rf.clusters == Set{Cluster}()
+
+    algo = Algorithm()
+    rf = RecognitionFactor(algo)
+    setTargets!(rf, algo, free_energy=true)
+    @test rf.variables == Set{Variable}([x, y, z])
+    @test length(rf.clusters) == 1
+    @test first(rf.clusters).id == :x_y
 end
 
 end # module

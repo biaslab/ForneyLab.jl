@@ -15,7 +15,7 @@ function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::Algo
     setTargets!(rf, algo, variables, free_energy=free_energy, external_targets=false)
 
     # Infer schedule and marginal computations
-    schedule = expectationPropagationSchedule(variables)
+    schedule = expectationPropagationSchedule(rf)
     rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
     rf.marginal_table = marginalTable(variables)
     

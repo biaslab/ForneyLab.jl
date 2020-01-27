@@ -3,7 +3,7 @@ module CompositeTest
 using Test
 using ForneyLab
 using ForneyLab: @composite, outboundType, isApplicable
-using ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product, condense, flatten, step!
+using ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product, condense, flatten, step!, setTargets!
 
 
 # Define new node type called StateTransition, with exposed variables called (y, x_prev, x):
@@ -67,9 +67,10 @@ end
     cnd = StateTransition(placeholder(y, :y), x_prev, x)
     algo = Algorithm()
     rf = RecognitionFactor(algo)
+    setTargets!(rf, algo, [x])
 
     # Build SP schedule
-    schedule = sumProductSchedule(x)
+    schedule = sumProductSchedule(rf)
     @test length(schedule) == 5
     @test ScheduleEntry(nd.i[:m].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd.i[:v].partner, SPClamp{Univariate}) in schedule

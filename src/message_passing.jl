@@ -163,12 +163,11 @@ function summaryPropagationSchedule(variables::Vector{Variable}, clusters::Vecto
     end
 
     # A cluster indicates the computation of a joint marginal belief.
-    # In this case, all incoming messages are required, even if the joint marginal
-    # is required over variables of a subset of connected edges.
+    # In this case, all incoming messages on internal edges are required.
     for cluster in clusters
         for iface in cluster.node.interfaces
             partner = ultimatePartner(iface)
-            (partner != nothing) && !isa(partner.node, Terminal) && !isa(partner.node, Clamp) && push!(target_sites, partner)
+            (iface.edge in limit_set) && (partner != nothing) && !isa(partner.node, Terminal) && !isa(partner.node, Clamp) && push!(target_sites, partner)
         end
     end
 

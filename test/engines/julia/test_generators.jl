@@ -130,22 +130,23 @@ end
     inbounds[2] = MarginalEntry()
     inbounds[2].marginal_id = :x
 
-    entropies_vect = [Dict(:conditional => false,
-                           :inbounds    => [inbounds[2]]), 
-                      Dict(:conditional => true,
-                           :inbounds    => inbounds)]
+    entropies_vect = [Dict(:counting_number => -1,
+                           :inbound         => inbounds[1]), 
+                      Dict(:counting_number => 2,
+                           :inbound         => inbounds[2])]
 
     entropies_code = entropiesSourceCode(entropies_vect)
 
-    @test occursin("F -= differentialEntropy(marginals[:x])", entropies_code)
-    @test occursin("F -= conditionalDifferentialEntropy(marginals[:y_x], marginals[:x])", entropies_code)
+    @test occursin("F -= -1*differentialEntropy(marginals[:y_x])", entropies_code)
+    @test occursin("F -= 2*differentialEntropy(marginals[:x])", entropies_code)
 end
 
 @testset "energiesSourceCode" begin
     inbound = MarginalEntry()
     inbound.marginal_id = :x
-    energies_vect = [Dict(:node     => GaussianMeanPrecision,
-                          :inbounds => [inbound])]
+    energies_vect = [Dict(:counting_number => 1,
+                          :node            => GaussianMeanPrecision,
+                          :inbounds        => [inbound])]
     energies_code = energiesSourceCode(energies_vect)
 
     @test occursin("F += averageEnergy(GaussianMeanPrecision, marginals[:x])", energies_code)
