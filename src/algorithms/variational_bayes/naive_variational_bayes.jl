@@ -8,7 +8,8 @@ variationalSchedule,
 Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
 function variationalAlgorithm(
-    rfz::RecognitionFactorization=currentRecognitionFactorization(), id=Symbol(""))
+    rfz::RecognitionFactorization=currentRecognitionFactorization(), 
+    id=Symbol(""))
     
     for (_, rf) in rfz
         schedule = variationalSchedule(rf)
@@ -17,7 +18,6 @@ function variationalAlgorithm(
     end
 
     algo = Algorithm(rfz, id)
-
     assembleAlgorithm!(algo)
 
     return algo
@@ -25,7 +25,7 @@ end
 
 function variationalAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[], id=Symbol(""))
     rfz = RecognitionFactorization(args...; ids=ids)
-    algo = variationalAlgorithm(id, rfz)
+    algo = variationalAlgorithm(rfz, id)
 
     return algo
 end

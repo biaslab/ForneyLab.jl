@@ -93,6 +93,8 @@ end
     @test ScheduleEntry(nd_z.i[:out].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd_z.i[:in1], EPProbitIn1GP) in schedule
     @test ScheduleEntry(nd_z.i[:out], SPProbitOutNG) in schedule
+
+    global test_number = 420
 end
 
 @testset "expectationPropagationAlgorithm" begin
@@ -108,8 +110,8 @@ end
         push!(z, z_i)
         push!(nd_z, nd_z_i)
     end
-
-    rf = Algorithm()
+    
+    rfz = RecognitionFactorization()
     algo = expectationPropagationAlgorithm(m)
 
     @test isa(algo, Algorithm)
@@ -127,8 +129,8 @@ end
     nd_z = Probit(z, y)
     placeholder(z, :z)
 
-    rf = Algorithm([y; z], m, w)
-    algo = variationalExpectationPropagationAlgorithm(rf)
+    rfz = RecognitionFactorization([y; z], m, w)
+    algo = variationalExpectationPropagationAlgorithm(rfz)
 
     @test isa(algo, Algorithm)    
 end

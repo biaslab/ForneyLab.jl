@@ -138,7 +138,7 @@ end
     nd_s_i = GaussianMeanVariance(s_min, constant(0.0), constant(huge))
     push!(nd_s, nd_s_i)
 
-    rf = Algorithm([s_0; s], w)
+    rf = RecognitionFactorization([s_0; s], w)
     algo = variationalAlgorithm(rf)
 
     @test isa(algo, Algorithm)    

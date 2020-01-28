@@ -61,7 +61,7 @@ end
         push!(nd_y, nd_y_i)
     end
 
-    rf = Algorithm()
+    rf = RecognitionFactorization()
     q_m = RecognitionFactor(m)
 
     schedule = variationalSchedule(q_m)
@@ -91,7 +91,7 @@ end
         push!(nd_y, nd_y_i)
     end
 
-    rf = Algorithm(m, w)
+    rf = RecognitionFactorization(m, w)
     algo = variationalAlgorithm(rf)
 
     @test isa(algo, Algorithm)

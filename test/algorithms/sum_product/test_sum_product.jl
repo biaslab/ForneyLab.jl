@@ -84,7 +84,7 @@ end
     x = Variable()
     nd = MockNode([x, constant(0.0), constant(0.0)])
 
-    rf = Algorithm()
+    rf = RecognitionFactorization()
     algo = sumProductAlgorithm(x)
 
     @test isa(algo, Algorithm)

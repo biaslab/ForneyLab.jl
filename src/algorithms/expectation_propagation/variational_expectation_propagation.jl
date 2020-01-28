@@ -5,21 +5,24 @@ variationalExpectationPropagationSchedule
 """
 Create a variational EP algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
-function variationalExpectationPropagationAlgorithm(algo::Algorithm=currentAlgorithm())
-    for (id, rf) in algo.recognition_factorization
+function variationalExpectationPropagationAlgorithm(rfz::RecognitionFactorization=currentRecognitionFactorization(), 
+    id=Symbol(""))
+    
+    for (id, rf) in rfz
         schedule = variationalExpectationPropagationSchedule(rf)
         rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
         rf.marginal_table = marginalTable(rf)
     end
 
+    algo = Algorithm(rfz,id)
     assembleAlgorithm!(algo)
 
     return algo
 end
 
 function variationalExpectationPropagationAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[], id=Symbol(""))
-    rfz = Algorithm(args...; ids=ids, id=id)
-    algo = variationalExpectationPropagationAlgorithm(rfz)
+    rfz = RecognitionFactorization(args...; ids=ids)
+    algo = variationalExpectationPropagationAlgorithm(rfz, id)
 
     return algo
 end

@@ -133,7 +133,6 @@ end
     end
 
     # Construct algorithm
-    algo = Algorithm()
     algo = sumProductAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
     # Load algorithm

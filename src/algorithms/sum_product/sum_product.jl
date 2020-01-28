@@ -25,7 +25,8 @@ function sumProductAlgorithm(
     return algo
 end
 
-sumProductAlgorithm(variable::Variable, algo::Algorithm=currentAlgorithm()) = sumProductAlgorithm([variable], algo)
+sumProductAlgorithm(variable::Variable,rfz::RecognitionFactorization=currentRecognitionFactorization(),
+id=Symbol("")) = sumProductAlgorithm([variable], rfz, id)
 
 """
 A non-specific sum-product update

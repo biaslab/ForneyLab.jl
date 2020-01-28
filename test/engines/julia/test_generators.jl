@@ -152,8 +152,9 @@ end
 end
 
 @testset "initializationSourceCode" begin
-    algo = Algorithm()
-    rf = RecognitionFactor(algo, id=:X)
+    rfz = RecognitionFactorization()
+    rf = RecognitionFactor(rfz, id=:X)
+    algo = Algorithm(rfz)
     rf.algorithm_id = algo.id
     rf.initialize = true
     entry = ScheduleEntry()
@@ -169,8 +170,9 @@ end
 end
 
 @testset "optimizeSourceCode" begin
-    algo = Algorithm()
-    rf = RecognitionFactor(algo, id=:X)
+    rfz = RecognitionFactorization()
+    rf = RecognitionFactor(rfz, id=:X)
+    algo = Algorithm(rfz)
     rf.algorithm_id = algo.id
     rf.optimize = true
 
@@ -179,8 +181,9 @@ end
 end
 
 @testset "recognitionFactorSourceCode" begin
-    algo = Algorithm()
-    rf = RecognitionFactor(algo, id=:X)
+    rfz = RecognitionFactorization() 
+    rf = RecognitionFactor(rfz, id=:X)
+    algo = Algorithm(rfz)
     rf.algorithm_id = algo.id
     rf.schedule = []
     rf.marginal_table = []

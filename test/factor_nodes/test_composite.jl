@@ -65,8 +65,9 @@ end
     x = Variable(id=:x)
     y = Variable(id=:y)
     cnd = StateTransition(placeholder(y, :y), x_prev, x)
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
+    rfz = RecognitionFactorization()
+    rf = RecognitionFactor(rfz)
+    algo = Algorithm(rfz)
 
     # Build SP schedule
     schedule = sumProductSchedule(x)

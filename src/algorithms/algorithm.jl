@@ -42,7 +42,6 @@ function Algorithm(
         id,
         currentGraph(),
         rfz,
-        Dict{Tuple{FactorNode, Edge}, Symbol}(),
         Dict{Interface, ScheduleEntry}(),
         Dict{Union{Variable, Cluster}, MarginalEntry}(),
         Dict{Symbol, Any}[],

@@ -1,4 +1,8 @@
-export RecognitionFactorization
+import Base:iterate, values
+export 
+RecognitionFactorization, 
+currentRecognitionFactorization, 
+setCurrentRecognitionFactorization
 
 mutable struct RecognitionFactorization
     recognition_factors::Dict{Symbol, RecognitionFactor}
@@ -33,15 +37,8 @@ function RecognitionFactorization()
     )
 end
 
-function iterate(rfz::RecognitionFactorization, state=1)
-    iter = iterate(rfz.recognition_factors, state)
-
-    if iter === nothing
-        return nothing
-    end
-
-    return iter
-end
+iterate(rfz::RecognitionFactorization) = iterate(rfz.recognition_factors)
+iterate(rfz::RecognitionFactorization, state) = iterate(rfz.recognition_factors, state)
 
 function values(rfz::RecognitionFactorization)
     return values(rfz.recognition_factors)
@@ -61,5 +58,5 @@ function RecognitionFactorization(args::Vararg{Union{T, Set{T}, Vector{T}} where
             RecognitionFactor(arg, id=ids[i])
         end
     end
-    return rf
+    return rfz
 end
