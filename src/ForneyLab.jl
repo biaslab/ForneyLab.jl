@@ -74,6 +74,7 @@ include("visualization.jl")
 # Algorithms
 include("algorithms/cluster.jl")
 include("algorithms/recognition_factor.jl")
+include("algorithms/recognition_factorization.jl")
 include("algorithms/algorithm.jl")
 
 include("algorithms/sum_product/sum_product.jl")

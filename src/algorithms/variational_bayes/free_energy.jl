@@ -10,7 +10,7 @@ function freeEnergyAlgorithm(algo=currentAlgorithm())
     free_energy_dict = Dict{Symbol, Any}(:average_energies => average_energies_vect,
                                          :entropies => entropies_vect)
 
-    for rf in values(algo.recognition_factors)
+    for rf in values(algo.recognition_factorization)
         hasCollider(rf) && error("Cannot construct localized free energy algorithm. Recognition distribution for factor with id :$(rf.id) does not factor according to local graph structure. This is likely due to a conditional dependence in the posterior distribution (see Bishop p.485). Consider wrapping conditionally dependent variables in a composite node.")
     end
 
@@ -73,7 +73,7 @@ end
 function collectConditionalDifferentialEntropyInbounds(node::FactorNode, target_to_marginal_entry::Dict)
     inbounds = Any[]
     outbound_edge = node.interfaces[1].edge
-    dict = current_algorithm.node_edge_to_cluster
+    dict = current_recognition_factorization.node_edge_to_cluster
     cluster = dict[(node, outbound_edge)]
 
     push!(inbounds, target_to_marginal_entry[cluster]) # Add joint term to inbounds

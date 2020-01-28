@@ -3,7 +3,7 @@ function assembleAlgorithm!(algo::Algorithm)
     algo.interface_to_schedule_entry = interfaceToScheduleEntry(algo)
     algo.target_to_marginal_entry = targetToMarginalEntry(algo)
 
-    for (id, rf) in algo.recognition_factors
+    for (id, rf) in algo.recognition_factorization
         rf.algorithm_id = algo.id
         assembleRecognitionFactor!(rf)
     end

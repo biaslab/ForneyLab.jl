@@ -17,15 +17,19 @@ mutable struct RecognitionFactor
     optimize::Bool # Indicate the need for an optimization block
     initialize::Bool # Indicate the need for a message initialization block
 
-    function RecognitionFactor(algo=currentAlgorithm(); id=generateId(RecognitionFactor))
+    function RecognitionFactor(rfz=currentRecognitionFactorization(); id=generateId(RecognitionFactor))
         # Constructor for empty container
         self = new(id)
-        algo.recognition_factors[id] = self # Register self with the algorithm
+        rfz.recognition_factors[id] = self # Register self with the algorithm
 
         return self
     end
 
-    function RecognitionFactor(variables::Set{Variable}; algo=currentAlgorithm(), id=generateId(RecognitionFactor))
+    function RecognitionFactor(
+        variables::Set{Variable};
+        rfz=currentRecognitionFactorization(),
+        id=generateId(RecognitionFactor))
+        
         # Determine nodes connected to external edges
         internal_edges = ForneyLab.extend(edges(variables))
         subgraph_nodes = nodes(internal_edges)
@@ -54,17 +58,17 @@ mutable struct RecognitionFactor
 
         # Create new recognition factor
         self = new(id, union(variables, recognition_variables), recognition_clusters, internal_edges)
-        algo.recognition_factors[id] = self # Register self with the algorithm
+        rfz.recognition_factors[id] = self # Register self with the algorithm
 
         # Register relevant edges with the algorithm for fast lookup during scheduling
         for edge in internal_edges_connected_to_external_nodes
-            algo.edge_to_recognition_factor[edge] = self
+            rfz.edge_to_recognition_factor[edge] = self
         end
 
         # Register clusters with the algorithm for fast lookup during scheduling
         for cluster in recognition_clusters
             for edge in cluster.edges
-                algo.node_edge_to_cluster[(cluster.node, edge)] = cluster
+                rfz.node_edge_to_cluster[(cluster.node, edge)] = cluster
             end
         end 
 
@@ -169,7 +173,7 @@ extend(edge::Edge; terminate_at_soft_factors=true, limit_set=Set{Edge}()) = exte
 Find the `RecognitionFactor` that `edge` belongs to (if available)
 """
 function recognitionFactor(edge::Edge)
-    dict = current_algorithm.edge_to_recognition_factor
+    dict = current_recognition_factorization.edge_to_recognition_factor
     if haskey(dict, edge)
         rf = dict[edge]
     else # No recognition factor is found, return the edge itself

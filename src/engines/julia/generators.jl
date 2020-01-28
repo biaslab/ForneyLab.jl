@@ -6,7 +6,7 @@ and optional free energy evaluation
 """
 function algorithmSourceCode(algo::Algorithm; free_energy=false)
     algo_code = "begin\n\n"
-    for (id, rf) in algo.recognition_factors
+    for (id, rf) in algo.recognition_factorization
         algo_code *= recognitionFactorSourceCode(rf)
         algo_code *= "\n\n"
     end
