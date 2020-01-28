@@ -33,17 +33,21 @@ end
 
 setCurrentAlgorithm(algo::Algorithm) = global current_algorithm = algo
 
-Algorithm(id=Symbol("")) = setCurrentAlgorithm(
+function Algorithm(
+    rfz=currentRecognitionFactorization(),
+    id=Symbol(""))
+
+    setCurrentAlgorithm(
     Algorithm(
         id,
         currentGraph(),
-        currentRecognitionFactorization(),
+        rfz,
         Dict{Tuple{FactorNode, Edge}, Symbol}(),
         Dict{Interface, ScheduleEntry}(),
         Dict{Union{Variable, Cluster}, MarginalEntry}(),
         Dict{Symbol, Any}[],
         Dict{Symbol, Any}[]))
-
+end
 
 function interfaceToScheduleEntry(algo::Algorithm)
     mapping = Dict{Interface, ScheduleEntry}()

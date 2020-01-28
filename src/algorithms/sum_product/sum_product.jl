@@ -7,17 +7,24 @@ sumProductSchedule,
 """
 Create a sum-product algorithm to infer marginals over `variables`
 """
-function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm())
+function sumProductAlgorithm(
+    variables::Vector{Variable},
+    rfz::RecognitionFactorization=currentRecognitionFactorization(),
+    id=Symbol(""))
+    
     # Initialize a container recognition factor
-    rf = RecognitionFactor(algo, id=Symbol(""))
+    rf = RecognitionFactor(rfz, id=Symbol(""))
     schedule = sumProductSchedule(variables)
     rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
     rf.marginal_table = marginalTable(variables)
+
+    algo = Algorithm(rfz, id)
 
     assembleAlgorithm!(algo)
     
     return algo
 end
+
 sumProductAlgorithm(variable::Variable, algo::Algorithm=currentAlgorithm()) = sumProductAlgorithm([variable], algo)
 
 """

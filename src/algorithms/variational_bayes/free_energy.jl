@@ -25,7 +25,7 @@ function freeEnergyAlgorithm(algo=currentAlgorithm())
             outbound_interface = node.interfaces[1]
             outbound_partner = ultimatePartner(outbound_interface)
             if !(outbound_partner == nothing) && !isa(outbound_partner.node, Clamp) # Differential entropy is required
-                dict = algo.node_edge_to_cluster
+                dict = algo.recognition_factorization.node_edge_to_cluster
                 if haskey(dict, (node, outbound_interface.edge)) # Outbound edge is part of a cluster
                     inbounds = collectConditionalDifferentialEntropyInbounds(node, algo.target_to_marginal_entry)
                     entropy = Dict{Symbol, Any}(:conditional => true,
