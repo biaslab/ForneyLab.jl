@@ -50,18 +50,21 @@ end
     algo = Algorithm()
     rf = RecognitionFactor(algo)
     setTargets!(rf, algo, [z])
+    @test algo.free_energy_flag == false
     @test rf.variables == Set{Variable}([z])
     @test rf.clusters == Set{Cluster}()
 
     algo = Algorithm()
     rf = RecognitionFactor(algo)
     setTargets!(rf, algo, external_targets=true)
+    @test algo.free_energy_flag == false
     @test rf.variables == Set{Variable}([x, y, z])
     @test rf.clusters == Set{Cluster}()
 
     algo = Algorithm()
     rf = RecognitionFactor(algo)
     setTargets!(rf, algo, free_energy=true)
+    @test algo.free_energy_flag == true
     @test rf.variables == Set{Variable}([x, y, z])
     @test length(rf.clusters) == 1
     @test first(rf.clusters).id == :x_y

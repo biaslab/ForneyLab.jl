@@ -190,16 +190,17 @@ end
     @test occursin("function stepX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 0))", rf_code)
 end
 
-@testset "freeEnergySourceCode" begin
-    algo = Algorithm()
-    free_energy_code = freeEnergySourceCode(algo)
-    @test occursin("function freeEnergy(data::Dict, marginals::Dict)", free_energy_code)
-end
-
 @testset "algorithmSourceCode" begin
     algo = Algorithm()
     algo_code = algorithmSourceCode(algo)
     @test occursin("begin", algo_code)
+end
+
+@testset "freeEnergySourceCode" begin
+    algo = Algorithm()
+    algo.free_energy_flag = true
+    free_energy_code = freeEnergySourceCode(algo)
+    @test occursin("function freeEnergy(data::Dict, marginals::Dict)", free_energy_code)
 end
 
 end # module

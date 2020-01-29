@@ -21,7 +21,7 @@ mutable struct RecognitionFactor
     initialize::Bool # Indicate the need for a message initialization block
 
     function RecognitionFactor(algo=currentAlgorithm(); id=generateId(RecognitionFactor))
-        internal_edges = stochasticEdges(algo.graph) # Include all stochastic edges in a single recognition factor
+        internal_edges = nonClampedEdges(algo.graph) # Include all non-clamped edges in a single recognition factor
         self = new(id, internal_edges)
         algo.recognition_factors[id] = self # Register self with the algorithm
 
@@ -43,13 +43,13 @@ RecognitionFactor(variables::Vector{Variable}; algo=currentAlgorithm(), id=gener
 """
 Find edges that are internal to the recognition factor and connected to node.
 This function is used for constructing clusters. Therefore, the edges are returned 
-in the same order as the node's interfaces.
+in the same order as the node's interfaces. Optionally ignores clamped edges.
 """
 function localInternalEdges(node::FactorNode, rf::RecognitionFactor)
     local_internal_edges = Edge[]
     for interface in node.interfaces
         if interface.edge in rf.internal_edges # Edge is internal to rf
-            push!(local_internal_edges, interface.edge)
+            push!(local_internal_edges, interface.edge) # Otherwise include the edge
         end
     end
 
@@ -95,9 +95,9 @@ end
 extend(edge::Edge; terminate_at_soft_factors=true, limit_set=Set{Edge}()) = extend(Set{Edge}([edge]), terminate_at_soft_factors=terminate_at_soft_factors, limit_set=limit_set)
 
 """
-Find all edges that have non-determinisic associated beliefs
+Find all edges that are not clamped
 """
-function stochasticEdges(graph::FactorGraph)
+function nonClampedEdges(graph::FactorGraph)
     clamped_edges = Set{Edge}()
     for (id, node) in graph.nodes # Find edges terminated by a Clamp
         if isa(node, Clamp)
@@ -105,10 +105,9 @@ function stochasticEdges(graph::FactorGraph)
         end
     end
 
-    deterministic_edges = extend(clamped_edges) # Extend terminates at stochastic nodes
-    stochastic_edges = setdiff(edges(graph), deterministic_edges)
+    non_clamped_edges = setdiff(edges(graph), clamped_edges)
 
-    return stochastic_edges
+    return non_clamped_edges
 end
 
 """

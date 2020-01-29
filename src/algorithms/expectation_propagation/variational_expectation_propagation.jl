@@ -1,11 +1,11 @@
 export
-variationalExpectationPropagationAlgorithm,
-variationalExpectationPropagationSchedule
+variationalExpectationPropagationAlgorithm
 
 """
 Create a variational EP algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
-function variationalExpectationPropagationAlgorithm(algo::Algorithm=currentAlgorithm(); free_energy=false)
+function variationalExpectationPropagationAlgorithm(algo::Algorithm=Algorithm(); free_energy=false)
+    (length(algo.recognition_factors) > 0) || warn("Creating empty Algorithm. Pass a factorization or factorized Algorithm object to create a variational algorithm.")
     for (id, rf) in algo.recognition_factors
         # Set the target regions (variables and clusters) of the recognition factor
         setTargets!(rf, algo, free_energy=free_energy, external_targets=true)

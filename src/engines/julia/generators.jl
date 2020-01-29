@@ -25,6 +25,8 @@ end
 Generate Julia code for free energy evaluation
 """
 function freeEnergySourceCode(algo::Algorithm)
+    algo.free_energy_flag || error("Required quantities for free energy evaluation are not computed by the algorithm. Make sure to flag free_energy=true upon algorithm construction to schedule computation of required quantities.")
+
     fe_code  = "function freeEnergy$(algo.id)(data::Dict, marginals::Dict)\n\n"
     fe_code *= "F = 0.0\n\n"
     fe_code *= energiesSourceCode(algo.average_energies)

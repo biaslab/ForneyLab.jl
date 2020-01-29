@@ -39,6 +39,8 @@ The `assembleCountingNumbers` function accepts an `Algorithm` and
 populates the counting numbers for the average energies and entropies.
 """
 function assembleCountingNumbers!(algo=currentAlgorithm())
+    algo.free_energy_flag || error("Required quantities for free energy evaluation are not computed by the algorithm. Make sure to flag free_energy=true upon algorithm construction to schedule computation of required quantities.")
+
     energy_counting_numbers = Dict{FactorNode, Int64}()
     entropy_counting_numbers = Dict{Region, Int64}()
 
@@ -60,7 +62,7 @@ function assembleCountingNumbers!(algo=currentAlgorithm())
             end
         elseif isa(node, Equality)
             increase!(entropy_counting_numbers, node.i[1].edge.variable, 1) # Count univariate entropy
-        elseif !isa(node, Clamp) # Node is deterministic and not clamp or equality
+        elseif length(node.interfaces) >= 2 # Node is deterministic and not equality
             target = region(node, node.interfaces[2].edge) # Find region of inbound edges
             increase!(entropy_counting_numbers, target, 1) # Count (joint) entropy
         end

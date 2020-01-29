@@ -2,7 +2,7 @@ module JointMarginalsTest
 
 using Test
 using ForneyLab
-using ForneyLab: generateId, addNode!, associate!, inferMarginalRule, isApplicable, Cluster, Product, setTargets!, outboundType
+using ForneyLab: generateId, addNode!, associate!, inferMarginalRule, isApplicable, Cluster, Product, setTargets!, outboundType, variationalSchedule
 
 # Integration helper
 mutable struct MockNode <: FactorNode

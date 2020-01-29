@@ -1,13 +1,13 @@
 export
 NaiveVariationalRule,
 variationalAlgorithm,
-variationalSchedule,
 @naiveVariationalRule
 
 """
 Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
-function variationalAlgorithm(algo::Algorithm=currentAlgorithm(); free_energy=false)
+function variationalAlgorithm(algo::Algorithm=Algorithm(); free_energy=false)
+    (length(algo.recognition_factors) > 0) || warn("Creating empty Algorithm. Pass a factorization or factorized Algorithm object to create a variational algorithm.")
     for (id, rf) in algo.recognition_factors
         # Set the target regions (variables and clusters) of the recognition factor
         setTargets!(rf, algo, free_energy=free_energy, external_targets=true)

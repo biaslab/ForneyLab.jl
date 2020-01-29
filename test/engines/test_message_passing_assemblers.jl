@@ -2,7 +2,7 @@ module MessagePassingAssemblersTest
 
 using Test
 using ForneyLab
-using ForneyLab: assembleBreaker!, assembleClamp!, assembleAlgorithm!, assembleRecognitionFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten, setTargets!
+using ForneyLab: assembleBreaker!, assembleClamp!, assembleAlgorithm!, assembleRecognitionFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten, setTargets!, sumProductSchedule, expectationPropagationSchedule, variationalSchedule
 
 @testset "assembleClamp!" begin
     g = FactorGraph()

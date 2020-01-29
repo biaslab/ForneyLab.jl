@@ -39,10 +39,6 @@ ForneyLab.MarginalTable
 ForneyLab.Algorithm
 ForneyLab.Schedule
 ForneyLab.currentAlgorithm
-ForneyLab.expectationPropagationSchedule
-ForneyLab.sumProductSchedule
-ForneyLab.variationalExpectationPropagationSchedule
-ForneyLab.variationalSchedule
 ```
 
 ## Algorithm assembly

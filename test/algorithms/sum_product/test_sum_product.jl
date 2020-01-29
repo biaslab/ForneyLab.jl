@@ -2,7 +2,7 @@ module SumProductTest
 
 using Test
 using ForneyLab
-using ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!
+using ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!, sumProductSchedule
 using ForneyLab: SPClamp
 
 # Integration helper

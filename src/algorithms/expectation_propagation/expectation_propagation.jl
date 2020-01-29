@@ -1,13 +1,12 @@
 export
 ExpectationPropagationRule,
 expectationPropagationAlgorithm,
-expectationPropagationSchedule,
 @expectationPropagationRule
 
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm(); free_energy=false)
+function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::Algorithm=Algorithm(); free_energy=false)
     # Contain the entire graph in a single recognition factor
     rf = RecognitionFactor(algo, id=Symbol(""))
 
@@ -25,7 +24,7 @@ function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::Algo
     
     return algo
 end
-expectationPropagationAlgorithm(variable::Variable, algo::Algorithm=currentAlgorithm(); free_energy=false) = expectationPropagationAlgorithm([variable], algo, free_energy=free_energy)
+expectationPropagationAlgorithm(variable::Variable, algo::Algorithm=Algorithm(); free_energy=false) = expectationPropagationAlgorithm([variable], algo, free_energy=free_energy)
 
 """
 A non-specific expectation propagation update

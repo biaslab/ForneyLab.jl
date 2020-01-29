@@ -2,7 +2,7 @@ module CompositeTest
 
 using Test
 using ForneyLab
-using ForneyLab: @composite, outboundType, isApplicable
+using ForneyLab: @composite, outboundType, isApplicable, sumProductSchedule
 using ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product, condense, flatten, step!, setTargets!
 
 

@@ -1,13 +1,12 @@
 export
 SumProductRule,
 sumProductAlgorithm,
-sumProductSchedule,
 @sumProductRule
 
 """
 Create a sum-product algorithm to infer marginals over `variables`
 """
-function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=currentAlgorithm(); free_energy=false)
+function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=Algorithm(); free_energy=false)
     # Contain the entire graph in a single recognition factor
     rf = RecognitionFactor(algo, id=Symbol(""))
     
@@ -25,7 +24,7 @@ function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=curren
 
     return algo
 end
-sumProductAlgorithm(variable::Variable, algo::Algorithm=currentAlgorithm(); free_energy=false) = sumProductAlgorithm([variable], algo, free_energy=free_energy)
+sumProductAlgorithm(variable::Variable, algo::Algorithm=Algorithm(); free_energy=false) = sumProductAlgorithm([variable], algo, free_energy=free_energy)
 
 """
 A non-specific sum-product update

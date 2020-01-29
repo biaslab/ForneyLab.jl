@@ -3,7 +3,7 @@ module ExpectationPropagationTest
 using Test
 using ForneyLab
 using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!
-using ForneyLab: EPProbitIn1GP, SPGaussianMeanVarianceOutNPP, SPClamp, VBGaussianMeanPrecisionOut, SPProbitOutNG
+using ForneyLab: EPProbitIn1GP, SPGaussianMeanVarianceOutNPP, SPClamp, VBGaussianMeanPrecisionOut, SPProbitOutNG, expectationPropagationSchedule, variationalExpectationPropagationSchedule
 
 # Integration helper
 mutable struct MockNode <: SoftFactor

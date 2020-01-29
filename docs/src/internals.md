@@ -62,7 +62,7 @@ The name of an update rule is composed of several parts:
     - `SP`: sum-product
     - `VB`: variational Bayes
     - `SVB`: structured variational Bayes
-    - `M`: marginal, used with SVB
+    - `M`: marginal (joint)
 3. Type of factor node
 4. Interface of the outgoing message
 5. Types of incoming messages (absent for `VB` rules)

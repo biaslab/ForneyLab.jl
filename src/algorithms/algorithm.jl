@@ -19,6 +19,9 @@ mutable struct Algorithm
     energy_counting_numbers::Dict{FactorNode, Int64}
     entropy_counting_numbers::Dict{Region, Int64}
 
+    # Flag to ensure required quantities for FE evaluation are computed
+    free_energy_flag::Bool
+
     # Fields for free energy algorithm assembly
     average_energies::Vector{Dict{Symbol, Any}}
     entropies::Vector{Dict{Symbol, Any}}
@@ -49,6 +52,7 @@ Algorithm(id=Symbol("")) = setCurrentAlgorithm(
         Dict{Region, MarginalEntry}(),
         Dict{FactorNode, Int64}(),
         Dict{Region, Int64}(),
+        false,
         Dict{Symbol, Any}[],
         Dict{Symbol, Any}[]))
 
@@ -113,7 +117,7 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
                 end
             elseif isa(node, Equality)
                 increase!(variable_counting_numbers, target_edges[1].variable, 1) # Increase the counting number for the equality-constrained variable
-            elseif !isa(node, Clamp) # Node is deterministic and not a Clamp or Equality
+            else # Node is deterministic and not Equality
                 if length(target_edges) == 2
                     increase!(variable_counting_numbers, target_edges[2].variable, 1) # Increase counting number for variable on inbound edge
                 elseif length(target_edges) > 2
@@ -152,6 +156,9 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
             algo.node_edge_to_cluster[(cluster.node, edge)] = cluster
         end
     end 
+
+    # Register whether algorithm is prepared for free energy evaluation
+    algo.free_energy_flag = free_energy
 
     # Register the targets with the recognition factor
     rf.variables = target_variables

@@ -27,6 +27,11 @@ using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
     @test algo.energy_counting_numbers[nd1] == 1
     @test algo.energy_counting_numbers[nd2] == 1
     @test algo.energy_counting_numbers[nd3] == 1
+
+    algo = Algorithm()
+    rf = RecognitionFactor(algo)
+    setTargets!(rf, algo, free_energy=false)
+    @test_throws Exception assembleCountingNumbers!(algo)
 end
 
 @testset "assembleFreeEnergy!" begin
