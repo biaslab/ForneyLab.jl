@@ -7,20 +7,20 @@ expectationPropagationSchedule,
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function expectationPropagationAlgorithm(variables::Vector{Variable}, rfz::RecognitionFactorization=currentRecognitionFactorization(), id=Symbol(""))
+function expectationPropagationAlgorithm(variables::Vector{Variable}, pfz::PosteriorFactorization=currentPosteriorFactorization(), id=Symbol(""))
     # Initialize a container recognition factor
-    rf = RecognitionFactor(rfz, id=Symbol(""))
+    pf = PosteriorFactor(pfz, id=Symbol(""))
     schedule = expectationPropagationSchedule(variables)
-    rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-    rf.marginal_table = marginalTable(variables)
+    pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+    pf.marginal_table = marginalTable(variables)
     
-    algo = Algorithm(rfz, id)
-    assembleAlgorithm!(algo)
+    algo = InferenceAlgorithm(pfz, id)
+    assembleInferenceAlgorithm!(algo)
     
     return algo
 end
 
-expectationPropagationAlgorithm(variable::Variable, rfz::RecognitionFactorization=currentRecognitionFactorization(), id=Symbol("")) = expectationPropagationAlgorithm([variable], rfz, id)
+expectationPropagationAlgorithm(variable::Variable, pfz::PosteriorFactorization=currentPosteriorFactorization(), id=Symbol("")) = expectationPropagationAlgorithm([variable], pfz, id)
 
 """
 A non-specific expectation propagation update
@@ -196,7 +196,7 @@ Find the inbound types that are required to compute the message for `entry`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
 function collectInbounds(entry::ScheduleEntry, ::Type{T}) where T<:ExpectationPropagationRule
-    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     inbounds = Any[]
     for node_interface in entry.interface.node.interfaces

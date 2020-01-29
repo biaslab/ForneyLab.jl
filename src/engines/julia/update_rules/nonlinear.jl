@@ -182,7 +182,7 @@ end
 #--------------------------
 
 function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry)
-    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     inbounds = Any[]
     for node_interface in node.interfaces

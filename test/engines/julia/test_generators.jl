@@ -3,7 +3,7 @@ module GeneratorsTest
 using Test
 using ForneyLab
 import LinearAlgebra: Diagonal
-import ForneyLab: entropiesSourceCode, energiesSourceCode, freeEnergySourceCode, marginalTableSourceCode, inboundSourceCode, scheduleSourceCode, removePrefix, vagueSourceCode, initializationSourceCode, optimizeSourceCode, recognitionFactorSourceCode, algorithmSourceCode, valueSourceCode
+import ForneyLab: entropiesSourceCode, energiesSourceCode, freeEnergySourceCode, marginalTableSourceCode, inboundSourceCode, scheduleSourceCode, removePrefix, vagueSourceCode, initializationSourceCode, optimizeSourceCode, PosteriorFactorSourceCode, algorithmSourceCode, valueSourceCode
 
 @testset "removePrefix" begin
     @test removePrefix(ForneyLab.SPGaussianMeanPrecisionOutNPP) == "SPGaussianMeanPrecisionOutNPP"
@@ -152,54 +152,54 @@ end
 end
 
 @testset "initializationSourceCode" begin
-    rfz = RecognitionFactorization()
-    rf = RecognitionFactor(rfz, id=:X)
-    algo = Algorithm(rfz)
-    rf.algorithm_id = algo.id
-    rf.initialize = true
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz, id=:X)
+    algo = InferenceAlgorithm(pfz)
+    pf.algorithm_id = algo.id
+    pf.initialize = true
     entry = ScheduleEntry()
     entry.schedule_index = 1
     entry.initialize = true
     entry.family = GaussianMeanPrecision
     entry.dimensionality = ()
-    rf.schedule = [entry]
+    pf.schedule = [entry]
 
-    rf_code = initializationSourceCode(rf)
-    @test occursin("function initX()", rf_code)
-    @test occursin("messages[1] = Message(vague(GaussianMeanPrecision))", rf_code)
+    pf_code = initializationSourceCode(pf)
+    @test occursin("function initX()", pf_code)
+    @test occursin("messages[1] = Message(vague(GaussianMeanPrecision))", pf_code)
 end
 
 @testset "optimizeSourceCode" begin
-    rfz = RecognitionFactorization()
-    rf = RecognitionFactor(rfz, id=:X)
-    algo = Algorithm(rfz)
-    rf.algorithm_id = algo.id
-    rf.optimize = true
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz, id=:X)
+    algo = InferenceAlgorithm(pfz)
+    pf.algorithm_id = algo.id
+    pf.optimize = true
 
-    rf_code = optimizeSourceCode(rf)
-    @test occursin("function optimizeX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX()", rf_code)    
+    pf_code = optimizeSourceCode(pf)
+    @test occursin("function optimizeX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX()", pf_code)    
 end
 
-@testset "recognitionFactorSourceCode" begin
-    rfz = RecognitionFactorization() 
-    rf = RecognitionFactor(rfz, id=:X)
-    algo = Algorithm(rfz)
-    rf.algorithm_id = algo.id
-    rf.schedule = []
-    rf.marginal_table = []
+@testset "PosteriorFactorSourceCode" begin
+    pfz = PosteriorFactorization() 
+    pf = PosteriorFactor(pfz, id=:X)
+    algo = InferenceAlgorithm(pfz)
+    pf.algorithm_id = algo.id
+    pf.schedule = []
+    pf.marginal_table = []
 
-    rf_code = recognitionFactorSourceCode(rf)
-    @test occursin("function stepX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 0))", rf_code)
+    pf_code = PosteriorFactorSourceCode(pf)
+    @test occursin("function stepX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 0))", pf_code)
 end
 
 @testset "freeEnergySourceCode" begin
-    algo = Algorithm()
+    algo = InferenceAlgorithm()
     free_energy_code = freeEnergySourceCode(algo)
     @test occursin("function freeEnergy(data::Dict, marginals::Dict)", free_energy_code)
 end
 
 @testset "algorithmSourceCode" begin
-    algo = Algorithm()
+    algo = InferenceAlgorithm()
     algo_code = algorithmSourceCode(algo)
     @test occursin("begin", algo_code)
 end

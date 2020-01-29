@@ -1,6 +1,6 @@
 """
 A `Cluster` specifies a collection of `edges` adjacent to `node` that belong to the same
-`RecognitionFactor`. A joint marginal can be computed over a cluster.
+`PosteriorFactor`. A joint marginal can be computed over a cluster.
 """
 mutable struct Cluster <: AbstractCluster
     id::Symbol
@@ -20,7 +20,7 @@ Base.isless(c1::Cluster, c2::Cluster) = isless("$(c1.id)", "$(c2.id)")
 Return the cluster that the node-edge combination belongs to (if available)
 """
 function cluster(node::FactorNode, edge::Edge)
-    dict = current_recognition_factorization.node_edge_to_cluster
+    dict = current_posterior_factorization.node_edge_to_cluster
     if haskey(dict, (node, edge))
         cl = dict[(node, edge)]
     else # No cluster is found, return the variable itself

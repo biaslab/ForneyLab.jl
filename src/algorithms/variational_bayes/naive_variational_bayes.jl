@@ -8,24 +8,24 @@ variationalSchedule,
 Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
 function variationalAlgorithm(
-    rfz::RecognitionFactorization=currentRecognitionFactorization(), 
+    pfz::PosteriorFactorization=currentPosteriorFactorization(), 
     id=Symbol(""))
     
-    for (_, rf) in rfz
-        schedule = variationalSchedule(rf)
-        rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-        rf.marginal_table = marginalTable(rf)
+    for (_, pf) in pfz
+        schedule = variationalSchedule(pf)
+        pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+        pf.marginal_table = marginalTable(pf)
     end
 
-    algo = Algorithm(rfz, id)
-    assembleAlgorithm!(algo)
+    algo = InferenceAlgorithm(pfz, id)
+    assembleInferenceAlgorithm!(algo)
 
     return algo
 end
 
 function variationalAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[], id=Symbol(""))
-    rfz = RecognitionFactorization(args...; ids=ids)
-    algo = variationalAlgorithm(rfz, id)
+    pfz = PosteriorFactorization(args...; ids=ids)
+    algo = variationalAlgorithm(pfz, id)
 
     return algo
 end
@@ -39,19 +39,19 @@ abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
 `variationalSchedule()` generates a variational message passing schedule
 for each recognition distribution in the recognition factorization.
 """
-function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
+function variationalSchedule(posterior_factors::Vector{PosteriorFactor})
     # Schedule messages towards recognition distributions, limited to the internal edges
     schedule = ScheduleEntry[]
     nodes_connected_to_external_edges = Set{FactorNode}()
-    for recognition_factor in recognition_factors
-        schedule = [schedule; summaryPropagationSchedule(sort(collect(recognition_factor.variables), rev=true), limit_set=recognition_factor.internal_edges)]
-        union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(recognition_factor))
+    for posterior_factor in posterior_factors
+        schedule = [schedule; summaryPropagationSchedule(sort(collect(posterior_factor.variables), rev=true), limit_set=posterior_factor.internal_edges)]
+        union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(posterior_factor))
     end
 
     for entry in schedule
         if entry.interface.node in nodes_connected_to_external_edges
-            local_recognition_factors = localRecognitionFactors(entry.interface.node)
-            if allunique(local_recognition_factors) # Local recognition factorization is naive
+            local_posterior_factors = localPosteriorFactors(entry.interface.node)
+            if allunique(local_posterior_factors) # Local recognition factorization is naive
                 entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
             else
                 entry.message_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}
@@ -65,7 +65,7 @@ function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
 
     return schedule
 end
-variationalSchedule(recognition_factor::RecognitionFactor) = variationalSchedule([recognition_factor])
+variationalSchedule(posterior_factor::PosteriorFactor) = variationalSchedule([posterior_factor])
 
 """
 Infer the update rule that computes the message for `entry`, as dependent on the inbound types
@@ -189,7 +189,7 @@ overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
 function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry)
-    target_to_marginal_entry = current_algorithm.target_to_marginal_entry
+    target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
     
     inbounds = Any[]
     for node_interface in entry.interface.node.interfaces

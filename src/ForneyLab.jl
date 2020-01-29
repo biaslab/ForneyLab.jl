@@ -21,7 +21,6 @@ include("dependency_graph.jl")
 # High level abstracts
 abstract type AbstractEdge end # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface
 abstract type AbstractVariable end
-abstract type InferenceAlgorithm end
 
 # Low-level internals
 include("factor_node.jl")
@@ -73,9 +72,9 @@ include("visualization.jl")
 
 # Algorithms
 include("algorithms/cluster.jl")
-include("algorithms/recognition_factor.jl")
-include("algorithms/recognition_factorization.jl")
-include("algorithms/algorithm.jl")
+include("algorithms/posterior_factor.jl")
+include("algorithms/posterior_factorization.jl")
+include("algorithms/inference_algorithm.jl")
 
 include("algorithms/sum_product/sum_product.jl")
 include("algorithms/variational_bayes/joint_marginals.jl")

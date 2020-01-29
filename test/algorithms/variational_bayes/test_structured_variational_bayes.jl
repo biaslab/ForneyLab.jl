@@ -54,9 +54,9 @@ end
     v3 = constant(0.0)
     nd = MockNode([v1, v2, v3])
 
-    Algorithm()
-    RecognitionFactor([v1, v2])
-    RecognitionFactor(v3)
+    InferenceAlgorithm()
+    PosteriorFactor([v1, v2])
+    PosteriorFactor(v3)
 
     entry1 = ScheduleEntry(nd.i[1], StructuredVariationalRule{MockNode})
     inferUpdateRule!(entry1, entry1.message_update_rule, Dict{Interface, Type}(nd.i[2].partner => Message{PointMass}))
@@ -93,9 +93,9 @@ end
     nd_s_i = GaussianMeanVariance(s_min, constant(0.0), constant(huge))
     push!(nd_s, nd_s_i)
 
-    rf = Algorithm()
-    q_w = RecognitionFactor(w)
-    q_s = RecognitionFactor([s_0; s])
+    rf = InferenceAlgorithm()
+    q_w = PosteriorFactor(w)
+    q_s = PosteriorFactor([s_0; s])
 
     schedule_q_s = variationalSchedule(q_s)
     @test length(schedule_q_s) == 8
@@ -138,10 +138,10 @@ end
     nd_s_i = GaussianMeanVariance(s_min, constant(0.0), constant(huge))
     push!(nd_s, nd_s_i)
 
-    rf = RecognitionFactorization([s_0; s], w)
+    rf = PosteriorFactorization([s_0; s], w)
     algo = variationalAlgorithm(rf)
 
-    @test isa(algo, Algorithm)    
+    @test isa(algo, InferenceAlgorithm)    
 end
 
 end # module

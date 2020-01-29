@@ -65,9 +65,9 @@ end
     x = Variable(id=:x)
     y = Variable(id=:y)
     cnd = StateTransition(placeholder(y, :y), x_prev, x)
-    rfz = RecognitionFactorization()
-    rf = RecognitionFactor(rfz)
-    algo = Algorithm(rfz)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    algo = InferenceAlgorithm(pfz)
 
     # Build SP schedule
     schedule = sumProductSchedule(x)
@@ -77,7 +77,7 @@ end
     @test ScheduleEntry(nd.i[:out], SPGaussianMeanVarianceOutNPP) in schedule
     @test ScheduleEntry(cnd.i[:y].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(cnd.i[:x], SPStateTransitionX) in schedule
-    rf.schedule = condense(flatten(schedule))
+    pf.schedule = condense(flatten(schedule))
 
     # Build marginal schedule
     marginal_table = marginalTable(x)
@@ -85,10 +85,10 @@ end
     @test marginal_table[1].target == x
     @test marginal_table[1].interfaces[1] == cnd.i[:x]
     @test marginal_table[1].marginal_update_rule == Nothing
-    rf.marginal_table = marginal_table
+    pf.marginal_table = marginal_table
 
     # Build SP algorithm for Julia execution
-    ForneyLab.assembleAlgorithm!(algo)
+    ForneyLab.assembleInferenceAlgorithm!(algo)
     algo_code = ForneyLab.algorithmSourceCode(algo)
 
     @test occursin("Array{Message}(undef, 2)", algo_code)
