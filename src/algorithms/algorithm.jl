@@ -87,9 +87,10 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
     # Determine which target regions are required by external recognition factors
     if external_targets
         nodes_connected_to_external_edges = nodesConnectedToExternalEdges(rf)
-        for node in nodes_connected_to_external_edges                
-            target_edges = localInternalEdges(node, rf) # Find internal edges connected to node
+        for node in nodes_connected_to_external_edges
+            isa(node, DeltaFactor) && continue # Skip deterministic nodes
 
+            target_edges = localInternalEdges(node, rf) # Find internal edges connected to node
             if length(target_edges) == 1 # Only one internal edge, the marginal for a single Variable is required
                 push!(target_variables, target_edges[1].variable)
             elseif length(target_edges) > 1 # Multiple internal edges, constuct a Cluster for computing the joint marginal

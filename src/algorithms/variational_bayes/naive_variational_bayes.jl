@@ -6,8 +6,8 @@ variationalAlgorithm,
 """
 Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
 """
-function variationalAlgorithm(algo::Algorithm=Algorithm(); free_energy=false)
-    (length(algo.recognition_factors) > 0) || warn("Creating empty Algorithm. Pass a factorization or factorized Algorithm object to create a variational algorithm.")
+function variationalAlgorithm(algo::Algorithm; free_energy=false)
+    (length(algo.recognition_factors) > 0) || error("No recognition factors defined on algorithm. Pass a factorization or factorized Algorithm object to create a variational algorithm.")
     for (id, rf) in algo.recognition_factors
         # Set the target regions (variables and clusters) of the recognition factor
         setTargets!(rf, algo, free_energy=free_energy, external_targets=true)
@@ -53,7 +53,7 @@ function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
     end
 
     for entry in schedule
-        if entry.interface.node in nodes_connected_to_external_edges
+        if (entry.interface.node in nodes_connected_to_external_edges) && !isa(entry.interface.node, DeltaFactor)
             local_recognition_factors = localRecognitionFactors(entry.interface.node)
             if allunique(local_recognition_factors) # Local recognition factorization is naive
                 entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}

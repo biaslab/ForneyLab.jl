@@ -66,7 +66,7 @@ end
 Find the smallest legal subgraph that includes the argument edges. Default setting terminates the search at soft factors
 and does not constrain the search to a limiting set (as specified by an empty `limit_set` argument).
 """
-function extend(edge_set::Set{Edge}; terminate_at_soft_factors=true, limit_set=Set{Edge}())
+function extend(edge_set::Set{Edge}; terminate_at_soft_factors=true, limit_set=Set{Edge}(), include_clamped=false)
     extension = Set{Edge}() # Initialize extension
     edges = copy(edge_set) # Initialize stack
     while !isempty(edges) # As long as there are unchecked edges connected through deterministic nodes
@@ -80,9 +80,12 @@ function extend(edge_set::Set{Edge}; terminate_at_soft_factors=true, limit_set=S
         for node in connected_nodes # Check both head and tail node (if present)
             if (terminate_at_soft_factors==false) || isa(node, DeltaFactor)
                 for interface in node.interfaces
-                    if (interface.edge !== current_edge) && !(interface.edge in extension) && ( isempty(limit_set) || (interface.edge in limit_set) ) # Is next level edge not seen yet, and is it contained in the limiting set?
-                        # Add unseen edges to the stack (to visit sometime in the future)
-                        push!(edges, interface.edge)
+                    partner = ultimatePartner(interface)
+                    if !include_clamped && (partner != nothing) && isa(partner.node, Clamp) # If clamps should be excluded, and there is a partner, and the partner is clamped
+                        continue # Skip clamped edge (if desired)
+                    end
+                    if (interface.edge !== current_edge) && !(interface.edge in extension) && ( isempty(limit_set) || (interface.edge in limit_set) ) # No backtracking, if edge is not already visited and edge is contained within limit set
+                        push!(edges, interface.edge) # Add unseen edges to the stack (to visit sometime in the future)
                     end
                 end
             end
@@ -92,7 +95,7 @@ function extend(edge_set::Set{Edge}; terminate_at_soft_factors=true, limit_set=S
     return extension
 end
 
-extend(edge::Edge; terminate_at_soft_factors=true, limit_set=Set{Edge}()) = extend(Set{Edge}([edge]), terminate_at_soft_factors=terminate_at_soft_factors, limit_set=limit_set)
+extend(edge::Edge; terminate_at_soft_factors=true, limit_set=Set{Edge}(), include_clamped=false) = extend(Set{Edge}([edge]), terminate_at_soft_factors=terminate_at_soft_factors, limit_set=limit_set, include_clamped=include_clamped)
 
 """
 Find all edges that are not clamped
