@@ -79,7 +79,7 @@ end
 PosteriorFactor(variable::Variable; id=generateId(PosteriorFactor)) = PosteriorFactor(Set([variable]), id=id)
 PosteriorFactor(variables::Vector{Variable}; id=generateId(PosteriorFactor)) = PosteriorFactor(Set(variables), id=id)
 
-function draw(rf::PosteriorFactor; schedule=ScheduleEntry[], args...)
+function draw(pf::PosteriorFactor; schedule=ScheduleEntry[], args...)
     subgraph_nodes = nodes(pf.internal_edges)
     external_edges = setdiff(edges(subgraph_nodes), pf.internal_edges)
     ForneyLab.graphviz(ForneyLab.genDot(subgraph_nodes, pf.internal_edges, schedule=schedule, external_edges=external_edges); args...)
