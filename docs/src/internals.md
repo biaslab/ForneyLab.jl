@@ -20,12 +20,12 @@ ForneyLab's directories and files are structured as follows:
 - `/test/`: test files with directory structure similar to `/src/`.
 
 
-## Algorithm data structure
+## InferenceAlgorithm data structure
 
-A ForneyLab `Algorithm` is structured as follows:
+A ForneyLab `InferenceAlgorithm` is structured as follows:
 
-- `algorithm::Algorithm`: specifies everything required for algorithm generation
-    - `posterior_factorizaiton::PosteriorFactorization`: specifies factorization of the posterior
+- `algorithm::InferenceAlgorithm`: specifies everything required for algorithm generation
+    - `posterior_factorization::PosteriorFactorization`: specifies factorization of the posterior
         - `posterior_factors::Vector{PosteriorFactor}` (per item):
             - `id::Symbol`: posterior factor id
             - `optimize::Bool`: require optimization block
