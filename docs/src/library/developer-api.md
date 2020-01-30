@@ -37,6 +37,6 @@ ForneyLab.MarginalRule
 ForneyLab.MarginalEntry
 ForneyLab.MarginalUpdateRule
 ForneyLab.MessageUpdateRule
-ForneyLab.RecognitionFactor
+ForneyLab.PosteriorFactor
 ForneyLab.ScheduleEntry
 ```

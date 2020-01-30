@@ -59,8 +59,8 @@ end
     v3 = constant(0.0)
     nd = MockNode([v1, v2, v3])
 
-    Algorithm()
-    rf_12 = RecognitionFactor([v1, v2])
+    InferenceAlgorithm()
+    rf_12 = PosteriorFactor([v1, v2])
 
     rf_12.schedule = variationalSchedule(rf_12)
     marginal_table = marginalTable(rf_12)

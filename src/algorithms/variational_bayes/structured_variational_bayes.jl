@@ -46,22 +46,22 @@ function collectInboundTypes(entry::ScheduleEntry,
                              inferred_outbound_types::Dict{Interface, Type}
                             ) where T<:StructuredVariationalRule
     inbound_types = Type[]
-    entry_recognition_factor = recognitionFactor(entry.interface.edge) # Recognition factor for outbound edge
-    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
+    entry_posterior_factor = PosteriorFactor(entry.interface.edge) # posterior factor for outbound edge
+    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
     for node_interface in entry.interface.node.interfaces
-        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
+        node_interface_posterior_factor = PosteriorFactor(node_interface.edge)
 
         if node_interface === entry.interface
             push!(inbound_types, Nothing)
-        elseif node_interface_recognition_factor === entry_recognition_factor
+        elseif node_interface_posterior_factor === entry_posterior_factor
             # Edge is internal, accept message
             push!(inbound_types, inferred_outbound_types[node_interface.partner])
-        elseif !(node_interface_recognition_factor in recognition_factors)
+        elseif !(node_interface_posterior_factor in posterior_factors)
             # Edge is external, accept marginal (if marginal is not already accepted)
             push!(inbound_types, ProbabilityDistribution) 
         end
 
-        push!(recognition_factors, node_interface_recognition_factor)
+        push!(posterior_factors, node_interface_posterior_factor)
     end
 
     return inbound_types
@@ -140,17 +140,17 @@ overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
 function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry)
-    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
-    target_to_marginal_entry = current_algorithm.target_to_marginal_entry
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
+    target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
 
     inbounds = Any[]
-    entry_recognition_factor = recognitionFactor(entry.interface.edge)
-    local_clusters = localRecognitionFactorization(entry.interface.node)
+    entry_posterior_factor = PosteriorFactor(entry.interface.edge)
+    local_clusters = localPosteriorFactorization(entry.interface.node)
 
-    recognition_factors = Union{RecognitionFactor, Edge}[] # Keep track of encountered recognition factors
+    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        node_interface_recognition_factor = recognitionFactor(node_interface.edge)
+        node_interface_posterior_factor = PosteriorFactor(node_interface.edge)
 
         if node_interface === entry.interface
             # Ignore marginal of outbound edge
@@ -158,16 +158,16 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
         elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
-        elseif node_interface_recognition_factor === entry_recognition_factor
+        elseif node_interface_posterior_factor === entry_posterior_factor
             # Collect message from previous result
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        elseif !(node_interface_recognition_factor in recognition_factors)
+        elseif !(node_interface_posterior_factor in posterior_factors)
             # Collect marginal from marginal dictionary (if marginal is not already accepted)
-            target = local_clusters[node_interface_recognition_factor]
+            target = local_clusters[node_interface_posterior_factor]
             push!(inbounds, target_to_marginal_entry[target])
         end
 
-        push!(recognition_factors, node_interface_recognition_factor)
+        push!(posterior_factors, node_interface_posterior_factor)
     end
 
     return inbounds

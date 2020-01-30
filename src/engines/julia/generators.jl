@@ -4,10 +4,10 @@ export algorithmSourceCode
 Generate Julia code for message passing
 and optional free energy evaluation
 """
-function algorithmSourceCode(algo::Algorithm; free_energy=false)
+function algorithmSourceCode(algo::InferenceAlgorithm; free_energy=false)
     algo_code = "begin\n\n"
-    for (id, rf) in algo.recognition_factors
-        algo_code *= recognitionFactorSourceCode(rf)
+    for (id, rf) in algo.posterior_factorization
+        algo_code *= PosteriorFactorSourceCode(rf)
         algo_code *= "\n\n"
     end
 
@@ -24,7 +24,7 @@ end
 """
 Generate Julia code for free energy evaluation
 """
-function freeEnergySourceCode(algo::Algorithm)
+function freeEnergySourceCode(algo::InferenceAlgorithm)
     fe_code  = "function freeEnergy$(algo.id)(data::Dict, marginals::Dict)\n\n"
     fe_code *= "F = 0.0\n\n"
     fe_code *= energiesSourceCode(algo.average_energies)
@@ -37,39 +37,39 @@ function freeEnergySourceCode(algo::Algorithm)
 end
 
 """
-Generate Julia code for message passing on a single recognition factor
+Generate Julia code for message passing on a single posterior factor
 """
-function recognitionFactorSourceCode(rf::RecognitionFactor)
-    rf_code = ""
-    if rf.optimize
-        rf_code *= optimizeSourceCode(rf)
-        rf_code *= "\n\n"
+function PosteriorFactorSourceCode(pf::PosteriorFactor)
+    pf_code = ""
+    if pf.optimize
+        pf_code *= optimizeSourceCode(pf)
+        pf_code *= "\n\n"
     end
 
-    if rf.initialize
-        rf_code *= initializationSourceCode(rf)
-        rf_code *= "\n\n"
+    if pf.initialize
+        pf_code *= initializationSourceCode(pf)
+        pf_code *= "\n\n"
     end
 
-    n_entries = length(rf.schedule)
-    rf_code *= "function step$(rf.algorithm_id)$(rf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_entries))\n\n"
-    rf_code *= scheduleSourceCode(rf.schedule)
-    rf_code *= "\n"
-    rf_code *= marginalTableSourceCode(rf.marginal_table)
-    rf_code *= "return marginals\n\n"
-    rf_code *= "end"
+    n_entries = length(pf.schedule)
+    pf_code *= "function step$(pf.algorithm_id)$(pf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_entries))\n\n"
+    pf_code *= scheduleSourceCode(pf.schedule)
+    pf_code *= "\n"
+    pf_code *= marginalTableSourceCode(pf.marginal_table)
+    pf_code *= "return marginals\n\n"
+    pf_code *= "end"
 
-    return rf_code
+    return pf_code
 end
 
 """
 Generate template code for optimize block
 """
-function optimizeSourceCode(rf::RecognitionFactor)
+function optimizeSourceCode(pf::PosteriorFactor)
     optim_code =  "# You have created an algorithm that requires updates for (a) clamped parameter(s).\n"
     optim_code *= "# This algorithm requires the definition of a custom `optimize!` function that updates the parameter value(s)\n"
     optim_code *= "# by altering the `data` dictionary in-place. The custom `optimize!` function may be based on the mockup below:\n\n"
-    optim_code *= "# function optimize$(rf.algorithm_id)$(rf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init$(rf.algorithm_id)$(rf.id)())\n"
+    optim_code *= "# function optimize$(pf.algorithm_id)$(pf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=init$(pf.algorithm_id)$(pf.id)())\n"
     optim_code *= "# \t...\n"
     optim_code *= "# \treturn data\n"
     optim_code *= "# end"
@@ -80,14 +80,14 @@ end
 """
 Generate code for initialization block (if required)
 """
-function initializationSourceCode(rf::RecognitionFactor)
-    init_code = "function init$(rf.algorithm_id)$(rf.id)()\n\n"
+function initializationSourceCode(pf::PosteriorFactor)
+    init_code = "function init$(pf.algorithm_id)$(pf.id)()\n\n"
 
-    n_messages = length(rf.schedule)
+    n_messages = length(pf.schedule)
 
     init_code *= "messages = Array{Message}(undef, $n_messages)\n\n"
 
-    for entry in rf.schedule
+    for entry in pf.schedule
         if entry.initialize
             init_code *= "messages[$(entry.schedule_index)] = Message($(vagueSourceCode(entry)))\n"
         end

@@ -71,14 +71,14 @@ end
     n = Nonlinear(y, x, g, g_inv=g_inv)
 
     # Forward; g_inv should not be present in call
-    algo = Algorithm()
+    algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
     @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g)", algo_code)
     @test !occursin("g_inv", algo_code)
 
     # Backward; g_inv should be present in call
-    algo = Algorithm()
+    algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
     @test occursin("ruleSPNonlinearIn1GG(messages[2], nothing, g, g_inv)", algo_code)
@@ -92,7 +92,7 @@ end
     n = Nonlinear(y, x, g, alpha=1.0)
 
     # Forward; alpha should be present in call
-    algo = Algorithm()
+    algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
     @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g, alpha=1.0)", algo_code)
@@ -106,7 +106,7 @@ end
     n = Nonlinear(y, x, g)
 
     # Forward; g_inv should not be present in call
-    algo = Algorithm()
+    algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
     @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g)", algo_code)
@@ -114,7 +114,7 @@ end
 
     # Backward; g_inv should not be present in call, 
     # both messages should be required, and initialization should take place
-    algo = Algorithm()
+    algo =  InferenceAlgorithm()
     algo = sumProductAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
     @test occursin("ruleSPNonlinearIn1GG(messages[2], messages[1], g)", algo_code)

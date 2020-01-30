@@ -1,78 +1,78 @@
-function assembleAlgorithm!(algo::Algorithm)
+function assembleInferenceAlgorithm!(algo::InferenceAlgorithm)
     # Generate structures for fast lookup
     algo.interface_to_schedule_entry = interfaceToScheduleEntry(algo)
     algo.target_to_marginal_entry = targetToMarginalEntry(algo)
 
-    for (id, rf) in algo.recognition_factors
-        rf.algorithm_id = algo.id
-        assembleRecognitionFactor!(rf)
+    for (id, pf) in algo.posterior_factorization
+        pf.algorithm_id = algo.id
+        assemblePosteriorFactor!(pf)
     end
 
     return algo
 end
 
-function assembleRecognitionFactor!(rf::RecognitionFactor)
-    assembleSchedule!(rf)
-    assembleInitialization!(rf)
-    assembleMarginalTable!(rf)
+function assemblePosteriorFactor!(pf::PosteriorFactor)
+    assembleSchedule!(pf)
+    assembleInitialization!(pf)
+    assembleMarginalTable!(pf)
 
-    return rf
+    return pf
 end
 
-function assembleSchedule!(rf::RecognitionFactor)
+function assembleSchedule!(pf::PosteriorFactor)
     # Collect inbounds and assign message index per schedule entry
-    for (msg_idx, schedule_entry) in enumerate(rf.schedule)
+    for (msg_idx, schedule_entry) in enumerate(pf.schedule)
         schedule_entry.initialize = false # Preset initialization to false
         schedule_entry.inbounds = collectInbounds(schedule_entry, schedule_entry.message_update_rule)
         schedule_entry.schedule_index = msg_idx
     end
 
-    return rf
+    return pf
 end
 
-function assembleInitialization!(rf::RecognitionFactor)
-    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+function assembleInitialization!(pf::PosteriorFactor)
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     # Collect outbound types from schedule
     outbound_types = Dict{Interface, Type}()
-    for entry in rf.schedule
+    for entry in pf.schedule
         outbound_types[entry.interface] = outboundType(entry.message_update_rule)
     end
 
     # Find breaker types and dimensions
-    rf_update_clamp_flag = false # Flag that tracks whether the update of a clamped variable is required
-    rf_initialize_flag = false # Indicate need for an initialization block
-    for entry in rf.schedule
+    pf_update_clamp_flag = false # Flag that tracks whether the update of a clamped variable is required
+    pf_initialize_flag = false # Indicate need for an initialization block
+    for entry in pf.schedule
         partner = ultimatePartner(entry.interface)
         if (entry.message_update_rule <: ExpectationPropagationRule)
             breaker_entry = interface_to_schedule_entry[partner]
             assembleBreaker!(breaker_entry, family(outbound_types[partner]), ()) # Univariate only
-            rf_initialize_flag = true 
+            pf_initialize_flag = true 
         elseif isa(entry.interface.node, Nonlinear) && (entry.interface == entry.interface.node.interfaces[2]) && (entry.interface.node.g_inv == nothing)
             # Set initialization in case of a nonlinear node without given inverse 
             iface = ultimatePartner(entry.interface.node.interfaces[2])
             breaker_entry = interface_to_schedule_entry[iface]
             assembleBreaker!(breaker_entry, family(outbound_types[iface]), entry.interface.node.dims)
-            rf_initialize_flag = true
+            pf_initialize_flag = true
         elseif !(partner == nothing) && isa(partner.node, Clamp)
-            rf_update_clamp_flag = true # Signifies the need for creating a custom `step!` function for optimizing clamped variables
+            pf_update_clamp_flag = true # Signifies the need for creating a custom `step!` function for optimizing clamped variables
             iface = entry.interface
             breaker_entry = interface_to_schedule_entry[iface]
             assembleBreaker!(breaker_entry, family(outbound_types[iface]), size(partner.node.value))
-            rf_initialize_flag = true
+            pf_initialize_flag = true
         end
     end
 
-    rf.optimize = rf_update_clamp_flag
-    rf.initialize = rf_initialize_flag
+    pf.optimize = pf_update_clamp_flag
+    pf.initialize = pf_initialize_flag
 
-    return rf
+    return pf
 end
 
-function assembleMarginalTable!(rf::RecognitionFactor)
-    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+function assembleMarginalTable!(pf::PosteriorFactor)
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
     
-    for entry in rf.marginal_table
+    for entry in pf.marginal_table
         if entry.marginal_update_rule == Nothing
             iface = entry.interfaces[1]
             inbounds = [interface_to_schedule_entry[iface]]
@@ -89,7 +89,7 @@ function assembleMarginalTable!(rf::RecognitionFactor)
         entry.inbounds = inbounds
     end
 
-    return rf
+    return pf
 end
 
 function assembleBreaker!(breaker_entry::ScheduleEntry, family::Type, dimensionality::Tuple)

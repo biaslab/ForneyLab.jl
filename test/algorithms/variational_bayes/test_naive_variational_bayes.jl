@@ -61,8 +61,8 @@ end
         push!(nd_y, nd_y_i)
     end
 
-    rf = Algorithm()
-    q_m = RecognitionFactor(m)
+    rf = PosteriorFactorization()
+    q_m = PosteriorFactor(m)
 
     schedule = variationalSchedule(q_m)
 
@@ -91,10 +91,10 @@ end
         push!(nd_y, nd_y_i)
     end
 
-    rf = Algorithm(m, w)
+    rf = PosteriorFactorization(m, w)
     algo = variationalAlgorithm(rf)
 
-    @test isa(algo, Algorithm)
+    @test isa(algo, InferenceAlgorithm)
 end
 
 end # module
