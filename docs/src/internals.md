@@ -25,23 +25,24 @@ ForneyLab's directories and files are structured as follows:
 A ForneyLab `Algorithm` is structured as follows:
 
 - `algorithm::Algorithm`: specifies everything required for algorithm generation
-    - `posterior_factors::Vector{PosteriorFactor}` (per item):
-        - `id::Symbol`: posterior factor id
-        - `optimize::Bool`: require optimization block
-        - `initialize::Bool`: require initialization block
-        - `schedule::Schedule` (per `ScheduleEntry` item):
-            - `schedule_index::Int`: position of entry in schedule
-            - `message_update_rule::Type`: update rule type for message computation
-            - `initialize::Bool`: require message initialization
-            - `family::FactorFunction`: family of message distribution (for initialization)
-            - `dimensionality::Tuple`: dimensionality of message distribution (for initialization)
-            - `inbounds::Vector` (per item):
-                - `inbound::Union`: inbound, see below
-        - `marginal_table::MarginalTable` (per `MarginalEntry` item):
-            - `marginal_id::Symbol`: identifier for the marginal
-            - `marginal_update_rule::Union{Nothing, Product, Type}`: update rule type for marginal computation
-            - `inbounds::Vector` (per item):
-                - `inbound::Union`: inbound, see below
+    - `posterior_factorizaiton::PosteriorFactorization`: specifies factorization of the posterior
+        - `posterior_factors::Vector{PosteriorFactor}` (per item):
+            - `id::Symbol`: posterior factor id
+            - `optimize::Bool`: require optimization block
+            - `initialize::Bool`: require initialization block
+            - `schedule::Schedule` (per `ScheduleEntry` item):
+                - `schedule_index::Int`: position of entry in schedule
+                - `message_update_rule::Type`: update rule type for message computation
+                - `initialize::Bool`: require message initialization
+                - `family::FactorFunction`: family of message distribution (for initialization)
+                - `dimensionality::Tuple`: dimensionality of message distribution (for initialization)
+                - `inbounds::Vector` (per item):
+                    - `inbound::Union`: inbound, see below
+            - `marginal_table::MarginalTable` (per `MarginalEntry` item):
+                - `marginal_id::Symbol`: identifier for the marginal
+                - `marginal_update_rule::Union{Nothing, Product, Type}`: update rule type for marginal computation
+                - `inbounds::Vector` (per item):
+                    - `inbound::Union`: inbound, see below
     - `average_energies::Dict` (per item):
         - `node::Type`: node type for average energy computation
         - `inbounds::Vector` (per item):
