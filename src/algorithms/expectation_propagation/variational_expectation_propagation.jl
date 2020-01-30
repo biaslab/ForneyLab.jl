@@ -6,11 +6,14 @@ Create a variational EP algorithm to infer marginals over a recognition distribu
 """
 function variationalExpectationPropagationAlgorithm(algo::Algorithm; free_energy=false)
     (length(algo.recognition_factors) > 0) || error("No recognition factors defined on algorithm. Pass a factorization or factorized Algorithm object to create a variational algorithm.")
-    for (id, rf) in algo.recognition_factors
-        # Set the target regions (variables and clusters) of the recognition factor
-        setTargets!(rf, algo, free_energy=free_energy, external_targets=true)
 
-        # Infer schedule and marginal computations
+    # Set the target regions (variables and clusters) for each recognition factor
+    for (id, rf) in algo.recognition_factors
+        setTargets!(rf, algo, free_energy=free_energy, external_targets=true)
+    end
+
+    # Infer schedule and marginal computations for each recogition factor
+    for (id, rf) in algo.recognition_factors
         schedule = variationalExpectationPropagationSchedule(rf)
         rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
         rf.marginal_table = marginalTable(rf)

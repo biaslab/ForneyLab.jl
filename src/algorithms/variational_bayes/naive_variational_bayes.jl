@@ -8,11 +8,14 @@ Create a variational algorithm to infer marginals over a recognition distributio
 """
 function variationalAlgorithm(algo::Algorithm; free_energy=false)
     (length(algo.recognition_factors) > 0) || error("No recognition factors defined on algorithm. Pass a factorization or factorized Algorithm object to create a variational algorithm.")
+
+    # Set the target regions (variables and clusters) of each recognition factor
     for (id, rf) in algo.recognition_factors
-        # Set the target regions (variables and clusters) of the recognition factor
         setTargets!(rf, algo, free_energy=free_energy, external_targets=true)
-        
-        # Infer schedule and marginal computations
+    end
+
+    # Infer schedule and marginal computations for each recognition factor
+    for (id, rf) in algo.recognition_factors
         schedule = variationalSchedule(rf)
         rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
         rf.marginal_table = marginalTable(rf)
@@ -41,17 +44,13 @@ abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
 `variationalSchedule()` generates a variational message passing schedule
 for each recognition distribution in the recognition factorization.
 """
-function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
-    # Schedule messages towards recognition distributions, limited to the internal edges
-    schedule = ScheduleEntry[]
-    nodes_connected_to_external_edges = Set{FactorNode}()
-    for rf in recognition_factors
-        schedule = [schedule; summaryPropagationSchedule(sort(collect(rf.target_variables), rev=true), 
-                                                         sort(collect(rf.target_clusters), rev=true), 
-                                                         limit_set=rf.internal_edges)]
-        union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(rf))
-    end
+function variationalSchedule(recognition_factor::RecognitionFactor)
+    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(recognition_factor)
 
+    # Schedule messages towards recognition distributions and target sites, limited to the internal edges
+    schedule = summaryPropagationSchedule(sort(collect(recognition_factor.target_variables), rev=true), 
+                                          sort(collect(recognition_factor.target_clusters), rev=true), 
+                                          limit_set=recognition_factor.internal_edges)
     for entry in schedule
         if (entry.interface.node in nodes_connected_to_external_edges) && !isa(entry.interface.node, DeltaFactor)
             local_recognition_factors = localRecognitionFactors(entry.interface.node)
@@ -69,7 +68,6 @@ function variationalSchedule(recognition_factors::Vector{RecognitionFactor})
 
     return schedule
 end
-variationalSchedule(recognition_factor::RecognitionFactor) = variationalSchedule([recognition_factor])
 
 """
 Infer the update rule that computes the message for `entry`, as dependent on the inbound types
