@@ -41,7 +41,7 @@ function variationalExpectationPropagationSchedule(recognition_factor::Recogniti
     breaker_types = breakerTypes(breaker_sites)
 
     # Schedule messages towards recognition distributions and target sites, limited to the internal edges
-    schedule = summaryPropagationSchedule(sort(collect(recognition_factor.variables), rev=true); target_sites=[breaker_sites; ep_sites], limit_set=internal_edges)
+    schedule = summaryPropagationSchedule(sort(collect(recognition_factor.target_variables), rev=true); target_sites=[breaker_sites; ep_sites], limit_set=internal_edges)
 
     nodes_connected_to_external_edges = nodesConnectedToExternalEdges(recognition_factor)
     for entry in schedule

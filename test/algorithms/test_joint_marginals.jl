@@ -62,7 +62,7 @@ ForneyLab.isApplicable(SPMockNode, input_types::Vector{<:Type}) = true
     marginal_table = marginalTable(rf_12)
 
     @test length(marginal_table) == 1
-    @test marginal_table[1].target == first(rf_12.clusters)
+    @test marginal_table[1].target == first(rf_12.target_clusters)
     @test marginal_table[1].interfaces[1] == nd1.i[1]
     @test marginal_table[1].interfaces[2] == nd2.i[1]
     @test marginal_table[1].marginal_update_rule == MMockMMD

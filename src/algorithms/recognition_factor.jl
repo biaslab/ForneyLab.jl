@@ -10,8 +10,8 @@ mutable struct RecognitionFactor
     internal_edges::Set{Edge}
 
     # Fields set by algorithm construction
-    variables::Set{Variable} # Target variables for which marginals are required
-    clusters::Set{Cluster} # Target clusters for which marginals are required
+    target_variables::Set{Variable} # Target variables for which marginals are required
+    target_clusters::Set{Cluster} # Target clusters for which marginals are required
 
     # Fields set by algorithm assembler
     algorithm_id::Symbol # Specify the algorithm id for this recognition_factor

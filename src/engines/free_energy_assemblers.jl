@@ -10,7 +10,8 @@ function assembleFreeEnergy!(algo=currentAlgorithm())
     average_energies_vect = Vector{Dict{Symbol, Any}}()
     entropies_vect = Vector{Dict{Symbol, Any}}()
 
-    for (node, cnt) in algo.energy_counting_numbers
+    energy_counting_numbers_vect = [(node, cnt) for (node, cnt) in algo.energy_counting_numbers] # Order the Dict in a Vector
+    for (node, cnt) in sort(energy_counting_numbers_vect)
         if cnt != 0
             average_energy = Dict{Symbol, Any}(:counting_number => cnt,
                                                :node => typeof(node),
@@ -20,7 +21,8 @@ function assembleFreeEnergy!(algo=currentAlgorithm())
     end
 
     # Convert entropy counting numbers to entropy inbounds
-    for (target, cnt) in algo.entropy_counting_numbers
+    entropy_counting_numbers_vect = [(target, cnt) for (target, cnt) in algo.entropy_counting_numbers] # Order the Dict in a Vector
+    for (target, cnt) in sort(entropy_counting_numbers_vect)
         if cnt != 0
             entropy = Dict{Symbol, Any}(:counting_number => cnt,
                                         :inbound => algo.target_to_marginal_entry[target])

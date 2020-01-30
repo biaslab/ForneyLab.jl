@@ -17,7 +17,7 @@ using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
     setTargets!(rf, algo, free_energy=true)
     assembleCountingNumbers!(algo)
 
-    cl = first(rf.clusters)
+    cl = first(rf.target_clusters)
     nd1 = g.nodes[:gaussianmeanprecision_1]
     nd2 = g.nodes[:gaussianmeanprecision_2]
     nd3 = g.nodes[:gaussianmeanprecision_3]
@@ -46,7 +46,7 @@ end
     sumProductAlgorithm(Variable[], algo, free_energy=true)
     rf = algo.recognition_factors[Symbol("")]
 
-    cl = first(rf.clusters)
+    cl = first(rf.target_clusters)
     nd1 = g.nodes[:gaussianmeanprecision_1]
     nd2 = g.nodes[:gaussianmeanprecision_2]
     nd3 = g.nodes[:gaussianmeanprecision_3]

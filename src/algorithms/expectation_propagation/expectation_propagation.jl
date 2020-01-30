@@ -40,8 +40,8 @@ function expectationPropagationSchedule(rf::RecognitionFactor)
     breaker_sites = Interface[site.partner for site in ep_sites]
     breaker_types = breakerTypes(breaker_sites)
 
-    schedule = summaryPropagationSchedule(sort(collect(rf.variables), rev=true), 
-                                          sort(collect(rf.clusters), rev=true);
+    schedule = summaryPropagationSchedule(sort(collect(rf.target_variables), rev=true), 
+                                          sort(collect(rf.target_clusters), rev=true);
                                           target_sites=[breaker_sites; ep_sites])
 
     for entry in schedule

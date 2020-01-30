@@ -64,8 +64,8 @@ function marginalTable(rf::RecognitionFactor)
         outbound_types[entry.interface] = outboundType(entry.message_update_rule)
     end
 
-    variable_table = marginalTable(sort(collect(rf.variables)))
-    cluster_table = [MarginalEntry(cluster, outbound_types) for cluster in sort(collect(rf.clusters))]
+    variable_table = marginalTable(sort(collect(rf.target_variables)))
+    cluster_table = [MarginalEntry(cluster, outbound_types) for cluster in sort(collect(rf.target_clusters))]
 
     return [variable_table; cluster_table]
 end

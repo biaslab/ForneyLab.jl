@@ -37,8 +37,8 @@ computes the marginals for each of the recognition factor targets.
 """ 
 function sumProductSchedule(rf::RecognitionFactor)
     # Generate a feasible summary propagation schedule
-    schedule = summaryPropagationSchedule(sort(collect(rf.variables), rev=true), 
-                                          sort(collect(rf.clusters), rev=true))
+    schedule = summaryPropagationSchedule(sort(collect(rf.target_variables), rev=true), 
+                                          sort(collect(rf.target_clusters), rev=true))
 
     # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule

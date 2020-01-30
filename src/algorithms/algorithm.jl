@@ -80,9 +80,8 @@ factorization, and whether free energy will be evaluated. At the same
 time, fields for fast lookup during scheduling are populated in the algorithm.
 """
 function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{Variable}=Variable[]; free_energy=false, external_targets=false)
-    # Initialize the target sets
     target_variables = Set{Variable}(variables) # Marginals of the quantities of interest are always required
-    target_clusters = Set{Cluster}() # Initialize empty set of target clusters
+    large_regions = Set{Tuple}() # Initialize empty set of target cluster node and edges. We cannot build a Set of Clusters directly, because duplicate Clusters are not removed.
 
     # Determine which target regions are required by external recognition factors
     if external_targets
@@ -93,8 +92,8 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
             target_edges = localInternalEdges(node, rf) # Find internal edges connected to node
             if length(target_edges) == 1 # Only one internal edge, the marginal for a single Variable is required
                 push!(target_variables, target_edges[1].variable)
-            elseif length(target_edges) > 1 # Multiple internal edges, constuct a Cluster for computing the joint marginal
-                push!(target_clusters, Cluster(node, target_edges))
+            elseif length(target_edges) > 1 # Multiple internal edges, register the region for computing the joint marginal
+                push!(large_regions, (node, target_edges))
             end
         end
     end
@@ -103,7 +102,7 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
     if free_energy
         # Initialize counting numbers
         variable_counting_numbers = Dict{Variable, Number}()
-        cluster_counting_numbers = Dict{Cluster, Number}()
+        cluster_counting_numbers = Dict{Tuple, Number}()
 
         # Iterate over large regions
         nodes_connected_to_internal_edges = nodes(rf.internal_edges)
@@ -113,8 +112,8 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
                 if length(target_edges) == 1 # Single internal edge
                     increase!(variable_counting_numbers, target_edges[1].variable, Inf) # For average energy evaluation, make sure to include the edge variable
                 elseif length(target_edges) > 1 # Multiple internal edges
-                    cluster = Cluster(node, target_edges) # Create a new cluster,
-                    increase!(cluster_counting_numbers, cluster, Inf) # and make sure to include the cluster for average energy evaluation
+                    region = (node, target_edges) # Node and edges for region that will later define the Cluster,
+                    increase!(cluster_counting_numbers, region, Inf) # Make sure to include the region for average energy evaluation
                 end
             elseif isa(node, Equality)
                 increase!(variable_counting_numbers, target_edges[1].variable, 1) # Increase the counting number for the equality-constrained variable
@@ -122,8 +121,8 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
                 if length(target_edges) == 2
                     increase!(variable_counting_numbers, target_edges[2].variable, 1) # Increase counting number for variable on inbound edge
                 elseif length(target_edges) > 2
-                    cluster = Cluster(node, target_edges[2:end]) # Create a new cluster for inbound edges,
-                    increase!(cluster_counting_numbers, cluster, 1) # and increase the counting number for that cluster
+                    region = (node, target_edges[2:end]) # Region for node and inbound edges,
+                    increase!(cluster_counting_numbers, region, 1) # Increase the counting number for that region
                 end
             end
         end
@@ -139,9 +138,9 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
                 push!(target_variables, variable)
             end
         end
-        for (cluster, cnt) in cluster_counting_numbers
+        for (region, cnt) in cluster_counting_numbers
             if cnt != 0
-                push!(target_clusters, cluster)
+                push!(large_regions, region)
             end
         end
     end
@@ -151,8 +150,11 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
         algo.edge_to_recognition_factor[edge] = rf
     end
 
-    # Register clusters with the algorithm for fast lookup during scheduling
-    for cluster in target_clusters
+    # Create clusters, and register clusters with the algorithm for fast lookup during scheduling
+    target_clusters = Set{Cluster}() # Initialize empty set of target clusters
+    for region in large_regions # For each stored region definition
+        cluster = Cluster(region...) # Use the region definition to construct a Cluster
+        push!(target_clusters, cluster)
         for edge in cluster.edges
             algo.node_edge_to_cluster[(cluster.node, edge)] = cluster
         end
@@ -162,8 +164,8 @@ function setTargets!(rf::RecognitionFactor, algo::Algorithm, variables::Vector{V
     algo.free_energy_flag = free_energy
 
     # Register the targets with the recognition factor
-    rf.variables = target_variables
-    rf.clusters = target_clusters
+    rf.target_variables = target_variables
+    rf.target_clusters = target_clusters
 
     return rf
 end

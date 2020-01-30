@@ -15,6 +15,8 @@ mutable struct Cluster <: Region
 end
 
 Base.isless(c1::Cluster, c2::Cluster) = isless("$(c1.id)", "$(c2.id)")
+Base.isless(v::Variable, c::Cluster) = isless("$(v.id)", "$(c.id)")
+Base.isless(c::Cluster, v::Variable) = isless("$(c.id)", "$(v.id)")
 
 """
 Return the region that the node-edge combination belongs to (if available)
