@@ -50,7 +50,7 @@ Construct a `PosteriorFactorization` consisting of one
 """
 function PosteriorFactorization(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[])
     pfz = PosteriorFactorization()
-    isempty(ids) || (length(ids) == length(args)) || error("Length of ids must match length of recognition factor arguments")
+    isempty(ids) || (length(ids) == length(args)) || error("Length of ids must match length of posterior factor arguments")
     for (i, arg) in enumerate(args)
         if isempty(ids)
             PosteriorFactor(arg, id=generateId(PosteriorFactor))

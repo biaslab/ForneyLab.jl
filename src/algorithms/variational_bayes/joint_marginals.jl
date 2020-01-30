@@ -54,7 +54,7 @@ function inferMarginalRule(cluster::Cluster, inbound_types::Vector{<:Type})
 end
 
 """
-Construct the marginal computations table for a given recognition factor.
+Construct the marginal computations table for a given posterior factor.
 The marginal table defines which marginal posteriors are computed.
 """
 function marginalTable(pf::PosteriorFactor)
@@ -76,10 +76,10 @@ Returns a vector with inbound types that correspond with required interfaces.
 """
 function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, Type})
     inbound_types = Type[]
-    cluster_posterior_factor = PosteriorFactor(first(cluster.edges)) # Recognition factor for cluster
-    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered recognition factors
+    cluster_posterior_factor = PosteriorFactor(first(cluster.edges)) # posterior factor for cluster
+    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
     for node_interface in cluster.node.interfaces
-        node_interface_posterior_factor = PosteriorFactor(node_interface.edge) # Note: edges that are not assigned to a recognition factor are assumed mean-field 
+        node_interface_posterior_factor = PosteriorFactor(node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field 
 
         if node_interface_posterior_factor === cluster_posterior_factor
             # Edge is internal, accept message
@@ -166,7 +166,7 @@ function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
     entry_posterior_factor = PosteriorFactor(first(entry.target.edges))
     local_clusters = localPosteriorFactorization(entry.target.node)
 
-    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered recognition factors
+    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
     for node_interface in entry.target.node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         partner_node = inbound_interface.node

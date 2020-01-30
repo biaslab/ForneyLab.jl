@@ -53,7 +53,7 @@ Now let's see how to specify this model using ForneyLab's syntax.
 
 ```@setup 2
 import ForneyLab: draw
-using ForneyLab: dot2svg, genDot, FactorGraph, RecognitionFactor
+using ForneyLab: dot2svg, genDot, FactorGraph, PosteriorFactor
 
 struct SVG
     code :: String
@@ -61,7 +61,7 @@ end
 Base.show(io::IO, ::MIME"image/svg+xml", b::SVG) = write(io, b.code)
 
 draw(f::FactorGraph) = SVG(dot2svg(genDot(nodes(f), edges(f))))
-function draw(rf::RecognitionFactor)
+function draw(rf::PosteriorFactor)
     subgraph_nodes = nodes(rf.internal_edges)
     external_edges = setdiff(edges(subgraph_nodes), rf.internal_edges)
     SVG(dot2svg(genDot(subgraph_nodes, rf.internal_edges, external_edges=external_edges)))

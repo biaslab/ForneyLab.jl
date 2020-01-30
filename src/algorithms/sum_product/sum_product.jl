@@ -12,7 +12,7 @@ function sumProductAlgorithm(
     pfz::PosteriorFactorization=currentPosteriorFactorization(),
     id=Symbol(""))
     
-    # Initialize a container recognition factor
+    # Initialize a container posterior factor
     pf = PosteriorFactor(pfz, id=Symbol(""))
     schedule = sumProductSchedule(variables)
     pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries

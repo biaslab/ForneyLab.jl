@@ -25,8 +25,8 @@ ForneyLab's directories and files are structured as follows:
 A ForneyLab `Algorithm` is structured as follows:
 
 - `algorithm::Algorithm`: specifies everything required for algorithm generation
-    - `recognition_factors::Vector{RecognitionFactor}` (per item):
-        - `id::Symbol`: recognition factor id
+    - `posterior_factors::Vector{PosteriorFactor}` (per item):
+        - `id::Symbol`: posterior factor id
         - `optimize::Bool`: require optimization block
         - `initialize::Bool`: require initialization block
         - `schedule::Schedule` (per `ScheduleEntry` item):

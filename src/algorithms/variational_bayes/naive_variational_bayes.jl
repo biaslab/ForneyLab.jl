@@ -5,7 +5,7 @@ variationalSchedule,
 @naiveVariationalRule
 
 """
-Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
+Create a variational algorithm to infer marginals over a posterior distribution, and compile it to Julia code
 """
 function variationalAlgorithm(
     pfz::PosteriorFactorization=currentPosteriorFactorization(), 
@@ -37,10 +37,10 @@ abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
 
 """
 `variationalSchedule()` generates a variational message passing schedule
-for each recognition distribution in the recognition factorization.
+for each posterior distribution in the posterior factorization.
 """
 function variationalSchedule(posterior_factors::Vector{PosteriorFactor})
-    # Schedule messages towards recognition distributions, limited to the internal edges
+    # Schedule messages towards posterior distributions, limited to the internal edges
     schedule = ScheduleEntry[]
     nodes_connected_to_external_edges = Set{FactorNode}()
     for posterior_factor in posterior_factors
@@ -51,7 +51,7 @@ function variationalSchedule(posterior_factors::Vector{PosteriorFactor})
     for entry in schedule
         if entry.interface.node in nodes_connected_to_external_edges
             local_posterior_factors = localPosteriorFactors(entry.interface.node)
-            if allunique(local_posterior_factors) # Local recognition factorization is naive
+            if allunique(local_posterior_factors) # Local posterior factorization is naive
                 entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
             else
                 entry.message_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}

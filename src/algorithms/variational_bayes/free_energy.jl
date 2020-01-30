@@ -11,7 +11,7 @@ function freeEnergyAlgorithm(algo=currentInferenceAlgorithm())
                                          :entropies => entropies_vect)
 
     for pf in values(algo.posterior_factorization)
-        hasCollider(pf) && error("Cannot construct localized free energy algorithm. Recognition distribution for factor with id :$(pf.id) does not factor according to local graph structure. This is likely due to a conditional dependence in the posterior distribution (see Bishop p.485). Consider wrapping conditionally dependent variables in a composite node.")
+        hasCollider(pf) && error("Cannot construct localized free energy algorithm. Posterior distribution for factor with id :$(pf.id) does not factor according to local graph structure. This is likely due to a conditional dependence in the posterior distribution (see Bishop p.485). Consider wrapping conditionally dependent variables in a composite node.")
     end
 
     for node in sort(collect(values(algo.graph.nodes)))
@@ -50,7 +50,7 @@ function collectAverageEnergyInbounds(node::FactorNode, target_to_marginal_entry
     inbounds = Any[]
     local_clusters = localPosteriorFactorization(node)
 
-    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered recognition factors
+    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         node_interface_posterior_factor = PosteriorFactor(node_interface.edge)

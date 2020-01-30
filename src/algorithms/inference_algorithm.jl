@@ -1,8 +1,8 @@
 export InferenceAlgorithm, currentInferenceAlgorithm
 
 """
-An `Algorithm` holds a collection of (non-overlapping) recognition factors that
-specify the recognition factorization over a factor graph.
+An `Algorithm` holds a collection of (non-overlapping) posterior factors that
+specify the posterior factorization over a factor graph.
 """
 mutable struct InferenceAlgorithm
     id::Symbol

@@ -3,7 +3,7 @@ variationalExpectationPropagationAlgorithm,
 variationalExpectationPropagationSchedule
 
 """
-Create a variational EP algorithm to infer marginals over a recognition distribution, and compile it to Julia code
+Create a variational EP algorithm to infer marginals over a posterior distribution, and compile it to Julia code
 """
 function variationalExpectationPropagationAlgorithm(pfz::PosteriorFactorization=currentPosteriorFactorization(), 
     id=Symbol(""))
@@ -37,7 +37,7 @@ function variationalExpectationPropagationSchedule(posterior_factor::PosteriorFa
     breaker_sites = Interface[site.partner for site in ep_sites]
     breaker_types = breakerTypes(breaker_sites)
 
-    # Schedule messages towards recognition distributions and target sites, limited to the internal edges
+    # Schedule messages towards posterior distributions and target sites, limited to the internal edges
     schedule = summaryPropagationSchedule(sort(collect(posterior_factor.variables), rev=true); target_sites=[breaker_sites; ep_sites], limit_set=internal_edges)
 
     nodes_connected_to_external_edges = nodesConnectedToExternalEdges(posterior_factor)
@@ -46,7 +46,7 @@ function variationalExpectationPropagationSchedule(posterior_factor::PosteriorFa
             entry.message_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
         elseif entry.interface.node in nodes_connected_to_external_edges
             local_posterior_factors = localPosteriorFactors(entry.interface.node)
-            if allunique(local_posterior_factors) # Local recognition factorization is naive
+            if allunique(local_posterior_factors) # Local posterior factorization is naive
                 entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
             else
                 entry.message_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}

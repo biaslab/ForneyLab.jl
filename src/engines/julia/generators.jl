@@ -37,7 +37,7 @@ function freeEnergySourceCode(algo::InferenceAlgorithm)
 end
 
 """
-Generate Julia code for message passing on a single recognition factor
+Generate Julia code for message passing on a single posterior factor
 """
 function PosteriorFactorSourceCode(pf::PosteriorFactor)
     pf_code = ""

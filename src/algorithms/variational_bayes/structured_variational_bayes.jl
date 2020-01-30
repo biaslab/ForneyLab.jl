@@ -46,8 +46,8 @@ function collectInboundTypes(entry::ScheduleEntry,
                              inferred_outbound_types::Dict{Interface, Type}
                             ) where T<:StructuredVariationalRule
     inbound_types = Type[]
-    entry_posterior_factor = PosteriorFactor(entry.interface.edge) # Recognition factor for outbound edge
-    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered recognition factors
+    entry_posterior_factor = PosteriorFactor(entry.interface.edge) # posterior factor for outbound edge
+    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
     for node_interface in entry.interface.node.interfaces
         node_interface_posterior_factor = PosteriorFactor(node_interface.edge)
 
@@ -147,7 +147,7 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
     entry_posterior_factor = PosteriorFactor(entry.interface.edge)
     local_clusters = localPosteriorFactorization(entry.interface.node)
 
-    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered recognition factors
+    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         node_interface_posterior_factor = PosteriorFactor(node_interface.edge)

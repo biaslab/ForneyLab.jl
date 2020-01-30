@@ -2,7 +2,7 @@ export PosteriorFactor
 
 """
 A `PosteriorFactor` specifies the subset of variables that comprise
-a joint factor in the recognition factorization.
+a joint factor in the posterior factorization.
 """
 mutable struct PosteriorFactor
     id::Symbol
@@ -12,7 +12,7 @@ mutable struct PosteriorFactor
 
     # Fields set by algorithm assembler
     algorithm_id::Symbol # Specify the algorithm id for this posterior_factor
-    schedule::Schedule # Specify the internal message passing schedule for this recognition factor
+    schedule::Schedule # Specify the internal message passing schedule for this posterior factor
     marginal_table::MarginalTable # Specify the marginal updates for internal variables
     optimize::Bool # Indicate the need for an optimization block
     initialize::Bool # Indicate the need for a message initialization block
@@ -38,10 +38,10 @@ mutable struct PosteriorFactor
         
         # Determine variables required for variational updates
         internal_edges_connected_to_external_nodes = intersect(edges(nodes_connected_to_external_edges), internal_edges)
-        recognition_variables = Set{Variable}([edge.variable for edge in internal_edges_connected_to_external_nodes])
+        posterior_variables = Set{Variable}([edge.variable for edge in internal_edges_connected_to_external_nodes])
         
         # Construct clusters required for (structured) variational updates
-        recognition_clusters = Set{Cluster}()
+        posterior_clusters = Set{Cluster}()
         for node in nodes_connected_to_external_edges
             # Cluster edges must be ordered according to interfaces (therefore, intersect(edges(node), internal_edges) will not suffice)
             cluster_edges = Edge[]
@@ -52,12 +52,12 @@ mutable struct PosteriorFactor
             end
 
             if length(cluster_edges) > 1 # Constuct Cluster if multiple edges connected to node belong to the current subgraph
-                push!(recognition_clusters, Cluster(node, cluster_edges))
+                push!(posterior_clusters, Cluster(node, cluster_edges))
             end
         end            
 
-        # Create new recognition factor
-        self = new(id, union(variables, recognition_variables), recognition_clusters, internal_edges)
+        # Create new posterior factor
+        self = new(id, union(variables, posterior_variables), posterior_clusters, internal_edges)
         pfz.posterior_factors[id] = self # Register self with the algorithm
 
         # Register relevant edges with the algorithm for fast lookup during scheduling
@@ -66,7 +66,7 @@ mutable struct PosteriorFactor
         end
 
         # Register clusters with the algorithm for fast lookup during scheduling
-        for cluster in recognition_clusters
+        for cluster in posterior_clusters
             for edge in cluster.edges
                 pfz.node_edge_to_cluster[(cluster.node, edge)] = cluster
             end
@@ -86,7 +86,7 @@ function draw(pf::PosteriorFactor; schedule=ScheduleEntry[], args...)
 end
 
 """
-Return whether the subgraph contains a collider. If a collider is found, this will lead to conditional dependencies in the recognition distribution (posterior).
+Return whether the subgraph contains a collider. If a collider is found, this will lead to conditional dependencies in the posterior distribution (posterior).
 """
 function hasCollider(pf::PosteriorFactor)
     stack = copy(pf.internal_edges)
@@ -130,7 +130,7 @@ function hasCollider(connected_cluster::Set{Edge})
         end
 
         # If the subgraph contains more than one prior node, the variables on the outbound
-        # edges of these nodes are conditionally dependent in the recognition distibution (posterior)
+        # edges of these nodes are conditionally dependent in the posterior distibution (posterior)
         (n_prior_nodes > 1) && return true
     end
 
@@ -176,7 +176,7 @@ function PosteriorFactor(edge::Edge)
     dict = current_posterior_factorization.edge_to_posterior_factor
     if haskey(dict, edge)
         pf = dict[edge]
-    else # No recognition factor is found, return the edge itself
+    else # No posterior factor is found, return the edge itself
         pf = edge
     end
 
@@ -184,7 +184,7 @@ function PosteriorFactor(edge::Edge)
 end
 
 """
-Return the ids of the recognition factors to which edges connected to `node` belong
+Return the ids of the posterior factors to which edges connected to `node` belong
 """
 localPosteriorFactors(node::FactorNode) = Any[PosteriorFactor(interface.edge) for interface in node.interfaces]
 
@@ -206,14 +206,14 @@ function nodesConnectedToExternalEdges(internal_edges::Set{Edge})
 end
 
 """
-Return a dictionary from recognition factor-id to variable/cluster-ids local to `node`
+Return a dictionary from posterior factor-id to variable/cluster-ids local to `node`
 """
 function localPosteriorFactorization(node::FactorNode)
-    # For each edge connected to node, collect the recognition factor and cluster id
+    # For each edge connected to node, collect the posterior factor and cluster id
     local_posterior_factors = localPosteriorFactors(node)
     local_clusters = localClusters(node)
 
-    # Construct dictionary for local recognition factorization
+    # Construct dictionary for local posterior factorization
     local_posterior_factorization = Dict{Union{PosteriorFactor, Edge}, Union{Cluster, Variable}}()
     for (idx, factor) in enumerate(local_posterior_factors)
         local_posterior_factorization[factor] = local_clusters[idx]

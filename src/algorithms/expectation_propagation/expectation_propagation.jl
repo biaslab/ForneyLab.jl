@@ -8,7 +8,7 @@ expectationPropagationSchedule,
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
 function expectationPropagationAlgorithm(variables::Vector{Variable}, pfz::PosteriorFactorization=currentPosteriorFactorization(), id=Symbol(""))
-    # Initialize a container recognition factor
+    # Initialize a container posterior factor
     pf = PosteriorFactor(pfz, id=Symbol(""))
     schedule = expectationPropagationSchedule(variables)
     pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
