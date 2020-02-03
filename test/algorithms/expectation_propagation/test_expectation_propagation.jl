@@ -86,9 +86,9 @@ end
     nd_z = Probit(z, y)
     placeholder(z, :z)
 
-    algo = Algorithm()
-    q_y_z = RecognitionFactor([y, z])
-    setTargets!(q_y_z, algo, external_targets=true)
+    pfz = PosteriorFactorization()
+    q_y_z = PosteriorFactor([y, z])
+    setTargets!(q_y_z, pfz, external_targets=true)
     schedule = variationalExpectationPropagationSchedule(q_y_z)
 
     @test length(schedule) == 3
@@ -110,11 +110,11 @@ end
         push!(z, z_i)
         push!(nd_z, nd_z_i)
     end
+    
+    pfz = PosteriorFactorization()
+    algo = expectationPropagationAlgorithm(m)
 
-    algo = Algorithm()
-    expectationPropagationAlgorithm(m)
-
-    @test isa(algo, Algorithm)
+    @test isa(algo, InferenceAlgorithm)
 end
 
 @testset "variationalExpectationPropagationAlgorithm" begin
@@ -129,10 +129,10 @@ end
     nd_z = Probit(z, y)
     placeholder(z, :z)
 
-    algo = Algorithm([y; z], m, w)
-    variationalExpectationPropagationAlgorithm(algo)
+    pfz = PosteriorFactorization([y; z], m, w)
+    algo = variationalExpectationPropagationAlgorithm(pfz)
 
-    @test isa(algo, Algorithm)    
+    @test isa(algo, InferenceAlgorithm)    
 end
 
 end # module

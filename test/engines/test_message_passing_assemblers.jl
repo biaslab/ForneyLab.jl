@@ -2,7 +2,7 @@ module MessagePassingAssemblersTest
 
 using Test
 using ForneyLab
-using ForneyLab: assembleBreaker!, assembleClamp!, assembleAlgorithm!, assembleRecognitionFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten, setTargets!, sumProductSchedule, expectationPropagationSchedule, variationalSchedule
+using ForneyLab: assembleBreaker!, assembleClamp!, assembleInferenceAlgorithm!, assemblePosteriorFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten, setTargets!, sumProductSchedule, expectationPropagationSchedule, variationalSchedule
 
 @testset "assembleClamp!" begin
     g = FactorGraph()
@@ -35,15 +35,15 @@ end
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     GaussianMeanPrecision(x, 0.0, 1.0)
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
-    setTargets!(rf, algo, [x])
-    rf.schedule = sumProductSchedule(rf)
-    algo.target_to_marginal_entry = Dict()
-    algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
-    assembleSchedule!(rf)
-    @test rf.schedule[3].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
-    @test rf.schedule[6].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, [x])
+    pf.schedule = sumProductSchedule(pf)
+    pfz.target_to_marginal_entry = Dict()
+    pfz.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(pfz)
+    assembleSchedule!(pf)
+    @test pf.schedule[3].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
+    @test pf.schedule[6].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
 end
 
 @testset "assembleInitialization!" begin
@@ -52,16 +52,21 @@ end
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     @RV y ~ Probit(x)
     placeholder(y, :y)
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
-    setTargets!(rf, algo, [x])
-    rf.schedule = expectationPropagationSchedule(rf)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, [x])
+    pf.schedule = expectationPropagationSchedule(pf)
+    
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    pf.schedule = expectationPropagationSchedule(x)
+    algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
-    assembleSchedule!(rf)
-    assembleInitialization!(rf)
-    @test rf.schedule[5].message_update_rule == ForneyLab.EPProbitIn1GP
-    @test rf.schedule[3].initialize
+    assembleSchedule!(pf)
+    assembleInitialization!(pf)
+    @test pf.schedule[5].message_update_rule == ForneyLab.EPProbitIn1GP
+    @test pf.schedule[3].initialize
 
     # Nonlinear
     f(z) = z
@@ -69,116 +74,123 @@ end
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     @RV y ~ Nonlinear(x, f)
     GaussianMeanPrecision(y, 0.0, 1.0)
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
-    setTargets!(rf, algo, [x])
-    rf.schedule = sumProductSchedule(rf)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, [x])
+    pf.schedule = sumProductSchedule(pf)
+    algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
-    assembleSchedule!(rf)
-    assembleInitialization!(rf)
-    @test rf.schedule[7].message_update_rule == ForneyLab.SPNonlinearIn1GG
-    @test rf.schedule[3].initialize
+    assembleSchedule!(pf)
+    assembleInitialization!(pf)
+    @test pf.schedule[7].message_update_rule == ForneyLab.SPNonlinearIn1GG
+    @test pf.schedule[3].initialize
 
     # Optimize
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     placeholder(x, :x)
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
-    setTargets!(rf, algo, [x])
-    rf.schedule = sumProductSchedule(rf)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, [x])
+    pf.schedule = sumProductSchedule(pf)
+    algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
-    assembleSchedule!(rf)
-    assembleInitialization!(rf)
-    @test rf.schedule[3].initialize
+    assembleSchedule!(pf)
+    assembleInitialization!(pf)
+    @test pf.schedule[3].initialize
 end
 
 @testset "assembleMarginalTable!" begin
     # Nothing rule
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
-    setTargets!(rf, algo, [x])
-    rf.schedule = sumProductSchedule(rf)
-    rf.marginal_table = marginalTable(x)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, [x])
+    pf.schedule = sumProductSchedule(pf)
+    pf.marginal_table = marginalTable(x)
+    algo = InferenceAlgorithm(pfz)
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
-    assembleMarginalTable!(rf)
-    @test rf.marginal_table[1].marginal_update_rule == Nothing
-    @test rf.marginal_table[1].marginal_id == :x
-    @test rf.marginal_table[1].inbounds == [rf.schedule[3]]
+    assembleMarginalTable!(pf)
+    @test pf.marginal_table[1].marginal_update_rule == Nothing
+    @test pf.marginal_table[1].marginal_id == :x
+    @test pf.marginal_table[1].inbounds == [pf.schedule[3]]
 
     # Product rule
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     GaussianMeanPrecision(x, 0.0, 1.0)
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
-    setTargets!(rf, algo, [x])
-    rf.schedule = sumProductSchedule(rf)
-    rf.marginal_table = marginalTable(x)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, [x])
+    pf.schedule = sumProductSchedule(pf)
+    pf.marginal_table = marginalTable(x)
+    algo = InferenceAlgorithm(pfz)
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
-    assembleMarginalTable!(rf)
-    @test rf.marginal_table[1].marginal_update_rule == ForneyLab.Product
-    @test rf.marginal_table[1].marginal_id == :x
-    @test rf.marginal_table[1].inbounds == [rf.schedule[3], rf.schedule[6]] 
+    assembleMarginalTable!(pf)
+    @test pf.marginal_table[1].marginal_update_rule == ForneyLab.Product
+    @test pf.marginal_table[1].marginal_id == :x
+    @test pf.marginal_table[1].inbounds == [pf.schedule[3], pf.schedule[6]] 
 
     # Marginal rule
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     @RV y ~ GaussianMeanPrecision(x, 1.0)
     GaussianMeanPrecision(y, 0.0, 1.0)
-    algo = Algorithm([x,y], ids=[:XY])
-    rf = algo.recognition_factors[:XY]
-    setTargets!(rf, algo, external_targets=true)
-    rf.schedule = variationalSchedule(rf)
-    rf.marginal_table = marginalTable(rf)
+    pfz = PosteriorFactorization([x,y], ids=[:XY])
+    pf = pfz.posterior_factors[:XY]
+    setTargets!(pf, pfz, external_targets=true)
+    pf.schedule = variationalSchedule(pf)
+    pf.marginal_table = marginalTable(pf)
+    algo = InferenceAlgorithm(pfz)
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
-    assembleMarginalTable!(rf)
-    @test rf.marginal_table[3].marginal_update_rule == ForneyLab.MGaussianMeanPrecisionGGD
-    @test rf.marginal_table[3].marginal_id == :y_x
-    @test length(rf.marginal_table[3].inbounds) == 3
+    assembleMarginalTable!(pf)
+    @test pf.marginal_table[3].marginal_update_rule == ForneyLab.MGaussianMeanPrecisionGGD
+    @test pf.marginal_table[3].marginal_id == :y_x
+    @test length(pf.marginal_table[3].inbounds) == 3
 end
 
-@testset "assembleRecognitionFactor!" begin
+@testset "assemblePosteriorFactor!" begin
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     GaussianMeanPrecision(x, 0.0, 1.0)
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
-    setTargets!(rf, algo, [x])
-    schedule = sumProductSchedule(rf)
-    rf.schedule = condense(flatten(schedule))
-    rf.marginal_table = marginalTable(x)
+    pfz = PosteriorFactorization()
+    pf = RecognitionFactor(pfz)
+    setTargets!(pf, pfz, [x])
+    schedule = sumProductSchedule(pf)
+    pf.schedule = condense(flatten(schedule))
+    pf.marginal_table = marginalTable(x)
+    algo = InferenceAlgorithm()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     algo.target_to_marginal_entry = ForneyLab.targetToMarginalEntry(algo)
-    assembleRecognitionFactor!(rf)
-    @test rf.schedule[1].schedule_index == 1
-    @test rf.schedule[1].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
-    @test rf.schedule[1].inbounds == [nothing, g.nodes[:clamp_1], g.nodes[:clamp_2]]
-    @test rf.schedule[2].schedule_index == 2
-    @test rf.schedule[2].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
-    @test rf.schedule[2].inbounds == [nothing, g.nodes[:clamp_3], g.nodes[:clamp_4]]
-    @test rf.marginal_table[1].marginal_id == :x
-    @test rf.marginal_table[1].marginal_update_rule == ForneyLab.Product
-    @test rf.marginal_table[1].inbounds == [schedule[3], schedule[6]]
+    assemblePosteriorFactor!(pf)
+    @test pf.schedule[1].schedule_index == 1
+    @test pf.schedule[1].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
+    @test pf.schedule[1].inbounds == [nothing, g.nodes[:clamp_1], g.nodes[:clamp_2]]
+    @test pf.schedule[2].schedule_index == 2
+    @test pf.schedule[2].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
+    @test pf.schedule[2].inbounds == [nothing, g.nodes[:clamp_3], g.nodes[:clamp_4]]
+    @test pf.marginal_table[1].marginal_id == :x
+    @test pf.marginal_table[1].marginal_update_rule == ForneyLab.Product
+    @test pf.marginal_table[1].inbounds == [schedule[3], schedule[6]]
 end
 
-@testset "assembleAlgorithm!" begin
+@testset "assembleInferenceAlgorithm!" begin
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     GaussianMeanPrecision(x, 0.0, 1.0)
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
-    setTargets!(rf, algo, [x])
-    schedule = sumProductSchedule(rf)
-    rf.schedule = condense(flatten(schedule))
-    rf.marginal_table = marginalTable(x)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, [x])
+    schedule = sumProductSchedule(pf)
+    pf.schedule = condense(flatten(schedule))
+    pf.marginal_table = marginalTable(x)
+    algo = InferenceAlgorithm(pfz)
     assembleAlgorithm!(algo)
 
     @test length(algo.interface_to_schedule_entry) == 2

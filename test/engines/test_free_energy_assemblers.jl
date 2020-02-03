@@ -12,26 +12,26 @@ using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
     @RV w ~ GaussianMeanPrecision(z, 1.0)
     placeholder(w, :w)
 
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
-    setTargets!(rf, algo, free_energy=true)
-    assembleCountingNumbers!(algo)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, free_energy=true)
+    assembleCountingNumbers!(pfz)
 
-    cl = first(rf.target_clusters)
+    cl = first(pf.target_clusters)
     nd1 = g.nodes[:gaussianmeanprecision_1]
     nd2 = g.nodes[:gaussianmeanprecision_2]
     nd3 = g.nodes[:gaussianmeanprecision_3]
 
-    @test algo.entropy_counting_numbers[x] == 0
-    @test algo.entropy_counting_numbers[cl] == 1
-    @test algo.energy_counting_numbers[nd1] == 1
-    @test algo.energy_counting_numbers[nd2] == 1
-    @test algo.energy_counting_numbers[nd3] == 1
+    @test pfz.entropy_counting_numbers[x] == 0
+    @test pfz.entropy_counting_numbers[cl] == 1
+    @test pfz.energy_counting_numbers[nd1] == 1
+    @test pfz.energy_counting_numbers[nd2] == 1
+    @test pfz.energy_counting_numbers[nd3] == 1
 
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
-    setTargets!(rf, algo, free_energy=false)
-    @test_throws Exception assembleCountingNumbers!(algo)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, free_energy=false)
+    @test_throws Exception assembleCountingNumbers!(pfz)
 end
 
 @testset "assembleFreeEnergy!" begin
@@ -42,11 +42,11 @@ end
     @RV w ~ GaussianMeanPrecision(z, 1.0)
     placeholder(w, :w)
 
-    algo = Algorithm()
-    sumProductAlgorithm(Variable[], algo, free_energy=true)
-    rf = algo.recognition_factors[Symbol("")]
+    pfz = PosteriorFactorization()
+    algo = sumProductAlgorithm(Variable[], pfz, free_energy=true)
+    pf = pfz.posterior_factors[Symbol("")]
 
-    cl = first(rf.target_clusters)
+    cl = first(pf.target_clusters)
     nd1 = g.nodes[:gaussianmeanprecision_1]
     nd2 = g.nodes[:gaussianmeanprecision_2]
     nd3 = g.nodes[:gaussianmeanprecision_3]

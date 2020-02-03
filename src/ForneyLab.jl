@@ -73,8 +73,9 @@ include("marginals.jl")
 include("visualization.jl")
 
 # Algorithms
-include("algorithms/recognition_factor.jl")
-include("algorithms/algorithm.jl")
+include("algorithms/posterior_factor.jl")
+include("algorithms/posterior_factorization.jl")
+include("algorithms/inference_algorithm.jl")
 include("algorithms/joint_marginals.jl")
 
 include("algorithms/sum_product/sum_product.jl")

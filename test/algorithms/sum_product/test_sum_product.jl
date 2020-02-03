@@ -87,10 +87,10 @@ end
     x = Variable()
     nd = MockNode([x, constant(0.0), constant(0.0)])
 
-    rf = Algorithm()
+    rf = PosteriorFactorization()
     algo = sumProductAlgorithm(x)
 
-    @test isa(algo, Algorithm)
+    @test isa(algo, InferenceAlgorithm)
 end
 
 end # module

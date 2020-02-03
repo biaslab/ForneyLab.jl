@@ -4,13 +4,14 @@ required fields for computing the variational free energy.
 """
 function assembleFreeEnergy!(algo=currentAlgorithm())
     # Find counting numbers for energies and entropies
-    assembleCountingNumbers!(algo)
+    pzf = algo.posterior_factorization
+    assembleCountingNumbers!(pfz)
 
     # Convert energy counting numbers to energy inbounds
     average_energies_vect = Vector{Dict{Symbol, Any}}()
     entropies_vect = Vector{Dict{Symbol, Any}}()
 
-    energy_counting_numbers_vect = [(node, cnt) for (node, cnt) in algo.energy_counting_numbers] # Order the Dict in a Vector
+    energy_counting_numbers_vect = [(node, cnt) for (node, cnt) in pfz.energy_counting_numbers] # Order the Dict in a Vector
     for (node, cnt) in sort(energy_counting_numbers_vect)
         if cnt != 0
             average_energy = Dict{Symbol, Any}(:counting_number => cnt,
@@ -21,7 +22,7 @@ function assembleFreeEnergy!(algo=currentAlgorithm())
     end
 
     # Convert entropy counting numbers to entropy inbounds
-    entropy_counting_numbers_vect = [(target, cnt) for (target, cnt) in algo.entropy_counting_numbers] # Order the Dict in a Vector
+    entropy_counting_numbers_vect = [(target, cnt) for (target, cnt) in pfz.entropy_counting_numbers] # Order the Dict in a Vector
     for (target, cnt) in sort(entropy_counting_numbers_vect)
         if cnt != 0
             entropy = Dict{Symbol, Any}(:counting_number => cnt,
@@ -40,15 +41,15 @@ end
 The `assembleCountingNumbers` function accepts an `Algorithm` and
 populates the counting numbers for the average energies and entropies.
 """
-function assembleCountingNumbers!(algo=currentAlgorithm())
-    algo.free_energy_flag || error("Required quantities for free energy evaluation are not computed by the algorithm. Make sure to flag free_energy=true upon algorithm construction to schedule computation of required quantities.")
+function assembleCountingNumbers!(pfz=currentPosteriorFactorization())
+    pfz.free_energy_flag || error("Required quantities for free energy evaluation are not computed by the algorithm. Make sure to flag free_energy=true upon algorithm construction to schedule computation of required quantities.")
 
     energy_counting_numbers = Dict{FactorNode, Int64}()
     entropy_counting_numbers = Dict{Region, Int64}()
 
     # Collect regions
     internal_edges = Set{Edge}()
-    for (id, rf) in algo.recognition_factors
+    for (id, rf) in pfz.recognition_factors
         union!(internal_edges, rf.internal_edges)
     end
     nodes_connected_to_internal_edges = nodes(internal_edges)
@@ -75,10 +76,10 @@ function assembleCountingNumbers!(algo=currentAlgorithm())
         increase!(entropy_counting_numbers, edge.variable, -1) # Discount univariate entropy
     end
 
-    algo.energy_counting_numbers = energy_counting_numbers
-    algo.entropy_counting_numbers = entropy_counting_numbers
+    pfz.energy_counting_numbers = energy_counting_numbers
+    pfz.entropy_counting_numbers = entropy_counting_numbers
 
-    return algo
+    return pfz
 end
 
 """

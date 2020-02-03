@@ -48,8 +48,9 @@ using Test
 
     # Algorithms
     include("./algorithms/test_cluster.jl")
-    include("./algorithms/test_recognition_factor.jl")
-    include("./algorithms/test_algorithm.jl")
+    include("./algorithms/test_posterior_factor.jl")
+    include("./algorithms/test_posterior_factorization.jl")
+    include("./algorithms/test_inference_algorithm.jl")
     include("./algorithms/test_joint_marginals.jl")
 
     include("./algorithms/sum_product/test_sum_product.jl")

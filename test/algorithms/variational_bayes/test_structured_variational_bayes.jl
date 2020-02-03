@@ -57,11 +57,11 @@ end
     n3 = MockNode([v3])
     nd = MockNode([v1, v2, v3])
 
-    algo = Algorithm()
-    rf12 = RecognitionFactor([v1, v2])
-    rf3 = RecognitionFactor(v3)
-    setTargets!(rf12, algo)
-    setTargets!(rf3, algo)
+    pfz = PosteriorFactorization()
+    pf12 = PosteriorFactor([v1, v2])
+    pf3 = PosteriorFactor(v3)
+    setTargets!(pf12, pfz)
+    setTargets!(pf3, pfz)
 
     entry1 = ScheduleEntry(nd.i[1], StructuredVariationalRule{MockNode})
     inferUpdateRule!(entry1, entry1.message_update_rule, Dict{Interface, Type}(nd.i[2].partner => Message{PointMass}))
@@ -98,11 +98,11 @@ end
     nd_s_i = GaussianMeanVariance(s_min, constant(0.0), constant(huge))
     push!(nd_s, nd_s_i)
 
-    algo = Algorithm()
-    q_w = RecognitionFactor(w)
-    q_s = RecognitionFactor([s_0; s])
+    pfz = PosteriorFactorization()
+    q_w = PosteriorFactor(w)
+    q_s = PosteriorFactor([s_0; s])
 
-    setTargets!(q_s, algo, external_targets=true)
+    setTargets!(q_s, pfz, external_targets=true)
     schedule_q_s = variationalSchedule(q_s)
     @test length(schedule_q_s) == 8
     @test ScheduleEntry(nd_s_0.i[:out], VBGaussianMeanVarianceOut) in schedule_q_s
@@ -114,7 +114,7 @@ end
     @test ScheduleEntry(nd_s[2].i[:out], SVBGaussianMeanPrecisionOutVGD) in schedule_q_s
     @test ScheduleEntry(nd_s[3].i[:out], SVBGaussianMeanPrecisionOutVGD) in schedule_q_s
 
-    setTargets!(q_w, algo, external_targets=true)
+    setTargets!(q_w, pfz, external_targets=true)
     schedule_q_w = variationalSchedule(q_w)
     @test length(schedule_q_w) == 6
     @test ScheduleEntry(nd_w.i[:out], VBGammaOut) in schedule_q_w
@@ -145,10 +145,10 @@ end
     nd_s_i = GaussianMeanVariance(s_min, constant(0.0), constant(huge))
     push!(nd_s, nd_s_i)
 
-    algo = Algorithm([s_0; s], w)
-    variationalAlgorithm(algo)
+    pfz = PosteriorFactorization([s_0; s], w)
+    algo = variationalAlgorithm(pfz)
 
-    @test isa(algo, Algorithm)    
+    @test isa(algo, InferenceAlgorithm)    
 end
 
 end # module

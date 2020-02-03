@@ -36,9 +36,10 @@ Order = [:macro, :module, :constant, :type, :function]
 ## Scheduling
 ```@docs
 ForneyLab.MarginalTable
-ForneyLab.Algorithm
+ForneyLab.PosteriorFactorization
+ForneyLab.InferenceAlgorithm
 ForneyLab.Schedule
-ForneyLab.currentAlgorithm
+ForneyLab.currentInferenceAlgorithm
 ```
 
 ## Algorithm assembly

@@ -6,25 +6,25 @@ expectationPropagationAlgorithm,
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::Algorithm=Algorithm(); free_energy=false)
-    # Contain the entire graph in a single recognition factor
-    rf = RecognitionFactor(algo, id=Symbol(""))
+function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::InferenceAlgorithm=InferenceAlgorithm(); free_energy=false)
+    # Contain the entire graph in a single posterior factor
+    pf = PosteriorFactor(algo, id=Symbol(""))
 
-    # Set the target regions (variables and clusters) of the recognition factor
-    setTargets!(rf, algo, variables, free_energy=free_energy, external_targets=false)
+    # Set the target regions (variables and clusters) of the posterior factor
+    setTargets!(pf, algo, variables, free_energy=free_energy, external_targets=false)
 
     # Infer schedule and marginal computations
-    schedule = expectationPropagationSchedule(rf)
-    rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-    rf.marginal_table = marginalTable(variables)
+    schedule = expectationPropagationSchedule(pf)
+    pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+    pf.marginal_table = marginalTable(variables)
     
     # Populate fields for algorithm compilation
-    assembleAlgorithm!(algo)
+    assembleInferenceAlgorithm!(algo)
     free_energy && assembleFreeEnergy!(algo)
     
     return algo
 end
-expectationPropagationAlgorithm(variable::Variable, algo::Algorithm=Algorithm(); free_energy=false) = expectationPropagationAlgorithm([variable], algo, free_energy=free_energy)
+expectationPropagationAlgorithm(variable::Variable, algo::InferenceAlgorithm=InferenceAlgorithm(); free_energy=false) = expectationPropagationAlgorithm([variable], algo, free_energy=free_energy)
 
 """
 A non-specific expectation propagation update
@@ -35,13 +35,13 @@ abstract type ExpectationPropagationRule{factor_type} <: MessageUpdateRule end
 `expectationPropagationSchedule()` generates a expectation propagation
 message passing schedule. 
 """ 
-function expectationPropagationSchedule(rf::RecognitionFactor)
+function expectationPropagationSchedule(pf::PosteriorFactor)
     ep_sites = collectEPSites(nodes(current_graph))
     breaker_sites = Interface[site.partner for site in ep_sites]
     breaker_types = breakerTypes(breaker_sites)
 
-    schedule = summaryPropagationSchedule(sort(collect(rf.target_variables), rev=true), 
-                                          sort(collect(rf.target_clusters), rev=true);
+    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true), 
+                                          sort(collect(pf.target_clusters), rev=true);
                                           target_sites=[breaker_sites; ep_sites])
 
     for entry in schedule
@@ -202,7 +202,7 @@ Find the inbound types that are required to compute the message for `entry`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
 function collectInbounds(entry::ScheduleEntry, ::Type{T}) where T<:ExpectationPropagationRule
-    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     inbounds = Any[]
     for node_interface in entry.interface.node.interfaces

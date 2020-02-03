@@ -6,25 +6,30 @@ sumProductAlgorithm,
 """
 Create a sum-product algorithm to infer marginals over `variables`
 """
-function sumProductAlgorithm(variables::Vector{Variable}, algo::Algorithm=Algorithm(); free_energy=false)
-    # Contain the entire graph in a single recognition factor
-    rf = RecognitionFactor(algo, id=Symbol(""))
+function sumProductAlgorithm(variables::Vector{Variable}, 
+                             pfz::PosteriorFactorization=currentPosteriorFactorization();
+                             id=Symbol(""),
+                             free_energy=false)
+
+    # Contain the entire graph in a single posterior factor
+    pf = PosteriorFactor(pfz, id=Symbol(""))
     
-    # Set the target regions (variables and clusters) of the recognition factor
-    setTargets!(rf, algo, variables, free_energy=free_energy, external_targets=false)
+    # Set the target regions (variables and clusters) of the posterior factor
+    setTargets!(pf, pfz, variables, free_energy=free_energy, external_targets=false)
     
     # Infer schedule and marginal computations
-    schedule = sumProductSchedule(rf) # For free energy computation, additional targets might be required
-    rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries from schedule
-    rf.marginal_table = marginalTable(rf)
+    schedule = sumProductSchedule(pf) # For free energy computation, additional targets might be required
+    pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries from schedule
+    pf.marginal_table = marginalTable(pf)
 
     # Populate fields for algorithm compilation
-    assembleAlgorithm!(algo)
+    algo = InferenceAlgorithm(pfz, id=id)
+    assembleInferenceAlgorithm!(algo)
     free_energy && assembleFreeEnergy!(algo)
 
     return algo
 end
-sumProductAlgorithm(variable::Variable, algo::Algorithm=Algorithm(); free_energy=false) = sumProductAlgorithm([variable], algo, free_energy=free_energy)
+sumProductAlgorithm(variable::Variable, pfz::PosteriorFactorization=PosteriorFactorization(); id=Symbol(""), free_energy=false) = sumProductAlgorithm([variable], pfz, id=id, free_energy=free_energy)
 
 """
 A non-specific sum-product update
@@ -33,7 +38,7 @@ abstract type SumProductRule{factor_type} <: MessageUpdateRule end
 
 """ 
 `sumProductSchedule()` generates a sum-product message passing schedule that
-computes the marginals for each of the recognition factor targets.
+computes the marginals for each of the posterior factor targets.
 """ 
 function sumProductSchedule(rf::RecognitionFactor)
     # Generate a feasible summary propagation schedule
@@ -217,7 +222,7 @@ overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
 function collectSumProductNodeInbounds(::FactorNode, entry::ScheduleEntry)
-    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     inbounds = Any[]
     for node_interface in entry.interface.node.interfaces

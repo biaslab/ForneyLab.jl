@@ -54,18 +54,18 @@ function inferMarginalRule(cluster::Cluster, inbound_types::Vector{<:Type})
 end
 
 """
-Construct the marginal computations table for a given recognition factor.
+Construct the marginal computations table for a given posterior factor.
 The marginal table defines which marginal posteriors are computed.
 """
-function marginalTable(rf::RecognitionFactor)
+function marginalTable(pf::PosteriorFactor)
     # Construct outbound types dictionary
     outbound_types = Dict{Interface, Type}()
-    for entry in rf.schedule
+    for entry in pf.schedule
         outbound_types[entry.interface] = outboundType(entry.message_update_rule)
     end
 
-    variable_table = marginalTable(sort(collect(rf.target_variables)))
-    cluster_table = [MarginalEntry(cluster, outbound_types) for cluster in sort(collect(rf.target_clusters))]
+    variable_table = marginalTable(sort(collect(pf.target_variables)))
+    cluster_table = [MarginalEntry(cluster, outbound_types) for cluster in sort(collect(pf.target_clusters))]
 
     return [variable_table; cluster_table]
 end
@@ -76,17 +76,17 @@ Returns a vector with inbound types that correspond with required interfaces.
 """
 function collectInboundTypes(inbound_cluster::Cluster, outbound_types::Dict{Interface, Type})
     inbound_types = Type[]
-    inbound_cluster_rf = recognitionFactor(first(inbound_cluster.edges))
+    inbound_cluster_pf = posteriorFactor(first(inbound_cluster.edges))
     encountered_external_regions = Set{Region}()
     for node_interface in inbound_cluster.node.interfaces
         current_region = region(inbound_cluster.node, node_interface.edge) # Returns a Variable if no cluster is assigned
-        current_rf = recognitionFactor(node_interface.edge) # Returns an Edge if no recognition factor is assigned
+        current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
         inbound_interface = ultimatePartner(node_interface)
 
-        if (current_rf === inbound_cluster_rf) && (node_interface.edge in inbound_cluster.edges)
+        if (current_pf === inbound_cluster_pf) && (node_interface.edge in inbound_cluster.edges)
             # Edge is internal and in cluster, accept message
             push!(inbound_types, outbound_types[inbound_interface])
-        elseif (current_rf === inbound_cluster_rf)
+        elseif (current_pf === inbound_cluster_pf)
             # Edge is internal but not in cluster, signal to rule signature that edge will be marginalized out by appending "Nothing"
             push!(inbound_types, Nothing)
         elseif !(current_region in encountered_external_regions)
@@ -163,22 +163,22 @@ Returns a vector with inbounds that correspond with required interfaces.
 collectInbounds(entry::MarginalEntry) = collectMarginalNodeInbounds(entry.target.node, entry)
 
 function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
-    interface_to_schedule_entry = current_algorithm.interface_to_schedule_entry
-    target_to_marginal_entry = current_algorithm.target_to_marginal_entry
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
+    target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
     inbound_cluster = entry.target # Entry target is a cluster
 
     inbounds = Any[]
-    entry_rf = recognitionFactor(first(entry.target.edges))
+    entry_pf = posteriorFactor(first(entry.target.edges))
     encountered_external_regions = Set{Region}()
     for node_interface in entry.target.node.interfaces
-        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a recognition factor are assumed mean-field 
-        current_rf = recognitionFactor(node_interface.edge) # Returns an Edge if no recognition factor is assigned
+        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field 
+        current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
         inbound_interface = ultimatePartner(node_interface)
 
         if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Edge is clamped, hard-code marginal of constant node
             push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
-        elseif (current_rf === entry_rf)
+        elseif (current_pf === entry_pf)
             # Edge is internal, collect message from previous result
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif !(current_region in encountered_external_regions)

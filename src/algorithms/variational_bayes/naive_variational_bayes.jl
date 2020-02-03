@@ -4,33 +4,37 @@ variationalAlgorithm,
 @naiveVariationalRule
 
 """
-Create a variational algorithm to infer marginals over a recognition distribution, and compile it to Julia code
+Create a variational algorithm to infer marginals over a posterior distribution, and compile it to Julia code
 """
-function variationalAlgorithm(algo::Algorithm; free_energy=false)
-    (length(algo.recognition_factors) > 0) || error("No recognition factors defined on algorithm. Pass a factorization or factorized Algorithm object to create a variational algorithm.")
+function variationalAlgorithm(pfz::PosteriorFactorization=currentPosteriorFactorization(); 
+                              id=Symbol(""), 
+                              free_energy=false)
 
-    # Set the target regions (variables and clusters) of each recognition factor
-    for (id, rf) in algo.recognition_factors
-        setTargets!(rf, algo, free_energy=free_energy, external_targets=true)
+    (length(pfz.posterior_factors) > 0) || error("No factors defined on posterior factorization.")
+
+    # Set the target regions (variables and clusters) of each posterior factor
+    for (_, pf) in pfz.posterior_factors
+        setTargets!(pf, pfz, free_energy=free_energy, external_targets=true)
     end
 
-    # Infer schedule and marginal computations for each recognition factor
-    for (id, rf) in algo.recognition_factors
-        schedule = variationalSchedule(rf)
-        rf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-        rf.marginal_table = marginalTable(rf)
+    # Infer schedule and marginal computations for each posterior factor
+    for (_, pf) in pfz.posterior_factors
+        schedule = variationalSchedule(pf)
+        pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+        pf.marginal_table = marginalTable(pf)
     end
 
     # Populate fields for algorithm compilation
-    assembleAlgorithm!(algo)
+    algo = InferenceAlgorithm(pfz, id=id)
+    assembleInferenceAlgorithm!(algo)
     free_energy && assembleFreeEnergy!(algo)
 
     return algo
 end
 
 function variationalAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[], id=Symbol(""), free_energy=false)
-    rfz = Algorithm(args...; ids=ids, id=id)
-    algo = variationalAlgorithm(rfz, free_energy=free_energy)
+    pfz = PosteriorFactorization(args...; ids=ids)
+    algo = variationalAlgorithm(pfz, id=id, free_energy=free_energy)
 
     return algo
 end
@@ -42,19 +46,19 @@ abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
 
 """
 `variationalSchedule()` generates a variational message passing schedule
-for each recognition distribution in the recognition factorization.
+for each posterior distribution in the posterior factorization.
 """
-function variationalSchedule(recognition_factor::RecognitionFactor)
-    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(recognition_factor)
+function variationalSchedule(posterior_factor::PosteriorFactor)
+    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(posterior_factor)
 
-    # Schedule messages towards recognition distributions and target sites, limited to the internal edges
-    schedule = summaryPropagationSchedule(sort(collect(recognition_factor.target_variables), rev=true), 
-                                          sort(collect(recognition_factor.target_clusters), rev=true), 
-                                          limit_set=recognition_factor.internal_edges)
+    # Schedule messages towards posterior factors and target sites, limited to the internal edges
+    schedule = summaryPropagationSchedule(sort(collect(posterior_factor.target_variables), rev=true), 
+                                          sort(collect(posterior_factor.target_clusters), rev=true), 
+                                          limit_set=posterior_factor.internal_edges)
     for entry in schedule
         if (entry.interface.node in nodes_connected_to_external_edges) && !isa(entry.interface.node, DeltaFactor)
-            local_recognition_factors = localRecognitionFactors(entry.interface.node)
-            if allunique(local_recognition_factors) # Local recognition factorization is naive
+            local_posterior_factors = localPosteriorFactors(entry.interface.node)
+            if allunique(local_posterior_factors) # Local posterior factorization is naive
                 entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
             else
                 entry.message_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}
@@ -191,7 +195,7 @@ overloading and for a user the define custom node-specific inbounds collection.
 Returns a vector with inbounds that correspond with required interfaces.
 """
 function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry)
-    target_to_marginal_entry = current_algorithm.target_to_marginal_entry
+    target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
     
     inbounds = Any[]
     for node_interface in entry.interface.node.interfaces
