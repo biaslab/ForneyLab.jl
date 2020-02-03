@@ -6,12 +6,16 @@ expectationPropagationAlgorithm,
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::InferenceAlgorithm=InferenceAlgorithm(); free_energy=false)
+function expectationPropagationAlgorithm(variables::Vector{Variable},
+                                         pfz::PosteriorFactorization=PosteriorFactorization(); 
+                                         id=Symbol(""),
+                                         free_energy=false)
+
     # Contain the entire graph in a single posterior factor
-    pf = PosteriorFactor(algo, id=Symbol(""))
+    pf = PosteriorFactor(pfz, id=Symbol(""))
 
     # Set the target regions (variables and clusters) of the posterior factor
-    setTargets!(pf, algo, variables, free_energy=free_energy, external_targets=false)
+    setTargets!(pf, pfz, variables, free_energy=free_energy, external_targets=false)
 
     # Infer schedule and marginal computations
     schedule = expectationPropagationSchedule(pf)
@@ -19,12 +23,13 @@ function expectationPropagationAlgorithm(variables::Vector{Variable}, algo::Infe
     pf.marginal_table = marginalTable(variables)
     
     # Populate fields for algorithm compilation
+    algo = InferenceAlgorithm(pfz, id=id)
     assembleInferenceAlgorithm!(algo)
     free_energy && assembleFreeEnergy!(algo)
     
     return algo
 end
-expectationPropagationAlgorithm(variable::Variable, algo::InferenceAlgorithm=InferenceAlgorithm(); free_energy=false) = expectationPropagationAlgorithm([variable], algo, free_energy=free_energy)
+expectationPropagationAlgorithm(variable::Variable, pfz::PosteriorFactorization=PosteriorFactorization(); id=Symbol(""), free_energy=false) = expectationPropagationAlgorithm([variable], pfz, id=id, free_energy=free_energy)
 
 """
 A non-specific expectation propagation update

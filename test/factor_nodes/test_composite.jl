@@ -71,7 +71,7 @@ end
     algo = InferenceAlgorithm(pfz)
 
     # Build SP schedule
-    schedule = sumProductSchedule(rf)
+    schedule = sumProductSchedule(pf)
     @test length(schedule) == 5
     @test ScheduleEntry(nd.i[:m].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd.i[:v].partner, SPClamp{Univariate}) in schedule

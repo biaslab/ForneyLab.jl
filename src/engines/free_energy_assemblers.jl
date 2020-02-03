@@ -2,9 +2,9 @@
 The `assembleFreeEnergy` function accepts an `Algorithm` and populates
 required fields for computing the variational free energy.
 """
-function assembleFreeEnergy!(algo=currentAlgorithm())
+function assembleFreeEnergy!(algo=currentInferenceAlgorithm())
     # Find counting numbers for energies and entropies
-    pzf = algo.posterior_factorization
+    pfz = algo.posterior_factorization
     assembleCountingNumbers!(pfz)
 
     # Convert energy counting numbers to energy inbounds
@@ -49,8 +49,8 @@ function assembleCountingNumbers!(pfz=currentPosteriorFactorization())
 
     # Collect regions
     internal_edges = Set{Edge}()
-    for (id, rf) in pfz.recognition_factors
-        union!(internal_edges, rf.internal_edges)
+    for (_, pf) in pfz.posterior_factors
+        union!(internal_edges, pf.internal_edges)
     end
     nodes_connected_to_internal_edges = nodes(internal_edges)
     

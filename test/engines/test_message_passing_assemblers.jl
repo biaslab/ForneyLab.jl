@@ -39,8 +39,9 @@ end
     pf = PosteriorFactor(pfz)
     setTargets!(pf, pfz, [x])
     pf.schedule = sumProductSchedule(pf)
-    pfz.target_to_marginal_entry = Dict()
-    pfz.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(pfz)
+    algo = InferenceAlgorithm(pfz)
+    algo.target_to_marginal_entry = Dict()
+    algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(pf)
     @test pf.schedule[3].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
     @test pf.schedule[6].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
@@ -56,10 +57,6 @@ end
     pf = PosteriorFactor(pfz)
     setTargets!(pf, pfz, [x])
     pf.schedule = expectationPropagationSchedule(pf)
-    
-    pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz)
-    pf.schedule = expectationPropagationSchedule(x)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -160,7 +157,7 @@ end
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     GaussianMeanPrecision(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
-    pf = RecognitionFactor(pfz)
+    pf = PosteriorFactor(pfz)
     setTargets!(pf, pfz, [x])
     schedule = sumProductSchedule(pf)
     pf.schedule = condense(flatten(schedule))
@@ -191,7 +188,7 @@ end
     pf.schedule = condense(flatten(schedule))
     pf.marginal_table = marginalTable(x)
     algo = InferenceAlgorithm(pfz)
-    assembleAlgorithm!(algo)
+    assembleInferenceAlgorithm!(algo)
 
     @test length(algo.interface_to_schedule_entry) == 2
     @test length(algo.target_to_marginal_entry) == 1

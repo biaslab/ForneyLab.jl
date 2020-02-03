@@ -61,10 +61,10 @@ end
         push!(nd_y, nd_y_i)
     end
 
-    PosteriorFactorization()
+    pfz = PosteriorFactorization()
     q_m = PosteriorFactor(m)
 
-    setTargets!(q_m, algo, external_targets=true)
+    setTargets!(q_m, pfz, external_targets=true)
     schedule = variationalSchedule(q_m)
 
     @test length(schedule) == 6

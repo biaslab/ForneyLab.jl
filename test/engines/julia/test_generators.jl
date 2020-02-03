@@ -3,7 +3,7 @@ module GeneratorsTest
 using Test
 using ForneyLab
 using LinearAlgebra: Diagonal
-using ForneyLab: entropiesSourceCode, energiesSourceCode, freeEnergySourceCode, marginalTableSourceCode, inboundSourceCode, scheduleSourceCode, removePrefix, vagueSourceCode, initializationSourceCode, optimizeSourceCode, algorithmSourceCode, valueSourceCode
+using ForneyLab: entropiesSourceCode, energiesSourceCode, freeEnergySourceCode, marginalTableSourceCode, inboundSourceCode, scheduleSourceCode, removePrefix, vagueSourceCode, initializationSourceCode, optimizeSourceCode, algorithmSourceCode, valueSourceCode, posteriorFactorSourceCode
 
 @testset "removePrefix" begin
     @test removePrefix(ForneyLab.SPGaussianMeanPrecisionOutNPP) == "SPGaussianMeanPrecisionOutNPP"
@@ -153,6 +153,7 @@ end
 end
 
 @testset "initializationSourceCode" begin
+    g = FactorGraph()
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, id=:X)
     algo = InferenceAlgorithm(pfz)
@@ -171,6 +172,7 @@ end
 end
 
 @testset "optimizeSourceCode" begin
+    g = FactorGraph()
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, id=:X)
     algo = InferenceAlgorithm(pfz)
@@ -181,7 +183,8 @@ end
     @test occursin("function optimizeX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX()", pf_code)    
 end
 
-@testset "PosteriorFactorSourceCode" begin
+@testset "posteriorFactorSourceCode" begin
+    g = FactorGraph()
     pfz = PosteriorFactorization() 
     pf = PosteriorFactor(pfz, id=:X)
     algo = InferenceAlgorithm(pfz)
@@ -189,7 +192,7 @@ end
     pf.schedule = []
     pf.marginal_table = []
 
-    pf_code = PosteriorFactorSourceCode(pf)
+    pf_code = posteriorFactorSourceCode(pf)
     @test occursin("function stepX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 0))", pf_code)
 end
 

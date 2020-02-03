@@ -5,8 +5,6 @@ An `InferenceAlgorithm` specifies the computations for the quantities of interes
 """
 mutable struct InferenceAlgorithm
     id::Symbol
-    
-    graph::FactorGraph
     posterior_factorization::PosteriorFactorization
 
     # Bookkeeping for faster lookup during assembly
@@ -41,7 +39,6 @@ function InferenceAlgorithm(
     setCurrentInferenceAlgorithm(
         InferenceAlgorithm(
             id,
-            currentGraph(),
             pfz,
             Dict{Interface, ScheduleEntry}(),
             Dict{Union{Variable, Cluster}, MarginalEntry}(),

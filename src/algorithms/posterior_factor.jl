@@ -116,7 +116,7 @@ end
 """
 Find the `PosteriorFactor` that `edge` belongs to (if available)
 """
-function PosteriorFactor(edge::Edge)
+function posteriorFactor(edge::Edge)
     dict = current_posterior_factorization.edge_to_posterior_factor
     if haskey(dict, edge)
         pf = dict[edge]
@@ -130,7 +130,7 @@ end
 """
 Return the ids of the posterior factors to which edges connected to `node` belong
 """
-localPosteriorFactors(node::FactorNode) = Any[PosteriorFactor(interface.edge) for interface in node.interfaces]
+localPosteriorFactors(node::FactorNode) = Any[posteriorFactor(interface.edge) for interface in node.interfaces]
 
 """
 Find the nodes in `posterior_factor` that are connected to external edges
@@ -177,7 +177,7 @@ function collectAverageEnergyInbounds(node::FactorNode)
         elseif !(current_posterior_factor in encountered_posterior_factors)
             # Collect marginal entry from marginal dictionary (if marginal entry is not already accepted)
             target = local_posterior_factor_to_region[current_posterior_factor]
-            push!(inbounds, current_algorithm.target_to_marginal_entry[target])
+            push!(inbounds, current_inference_algorithm.target_to_marginal_entry[target])
         end
 
         push!(encountered_posterior_factors, current_posterior_factor)

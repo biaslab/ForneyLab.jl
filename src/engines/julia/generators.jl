@@ -7,7 +7,7 @@ and optional free energy evaluation
 function algorithmSourceCode(algo::InferenceAlgorithm; free_energy=false)
     algo_code = "begin\n\n"
     for (_, pf) in algo.posterior_factorization
-        algo_code *= PosteriorFactorSourceCode(pf)
+        algo_code *= posteriorFactorSourceCode(pf)
         algo_code *= "\n\n"
     end
 
@@ -41,7 +41,7 @@ end
 """
 Generate Julia code for message passing on a single posterior factor
 """
-function PosteriorFactorSourceCode(pf::PosteriorFactor)
+function posteriorFactorSourceCode(pf::PosteriorFactor)
     pf_code = ""
     if pf.optimize
         pf_code *= optimizeSourceCode(pf)

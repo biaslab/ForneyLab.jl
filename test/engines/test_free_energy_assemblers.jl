@@ -44,8 +44,9 @@ end
 
     pfz = PosteriorFactorization()
     algo = sumProductAlgorithm(Variable[], pfz, free_energy=true)
-    pf = pfz.posterior_factors[Symbol("")]
+    assembleFreeEnergy!(algo)
 
+    pf = pfz.posterior_factors[Symbol("")]
     cl = first(pf.target_clusters)
     nd1 = g.nodes[:gaussianmeanprecision_1]
     nd2 = g.nodes[:gaussianmeanprecision_2]

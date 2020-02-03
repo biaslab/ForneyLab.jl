@@ -4,22 +4,26 @@ variationalExpectationPropagationAlgorithm
 """
 Create a variational EP algorithm to infer marginals over a posterior distribution, and compile it to Julia code
 """
-function variationalExpectationPropagationAlgorithm(algo::InferenceAlgorithm; free_energy=false)
-    (length(algo.posterior_factorization.posterior_factors) > 0) || error("No posterior factors defined on algorithm. Pass a factorization or factorized InferenceAlgorithm object to create a variational algorithm.")
+function variationalExpectationPropagationAlgorithm(pfz::PosteriorFactorization=currentPosteriorFactorization(); 
+                                                    id=Symbol(""), 
+                                                    free_energy=false)
+
+    (length(pfz.posterior_factors) > 0) || error("No factors defined on posterior factorization.")
 
     # Set the target regions (variables and clusters) for each posterior factor
-    for (_, pf) in algo.posterior_factorization.posterior_factors
-        setTargets!(pf, algo, free_energy=free_energy, external_targets=true)
+    for (_, pf) in pfz.posterior_factors
+        setTargets!(pf, pfz, free_energy=free_energy, external_targets=true)
     end
 
     # Infer schedule and marginal computations for each recogition factor
-    for (_, pf) in algo.posterior_factorization.posterior_factors
+    for (_, pf) in pfz.posterior_factors
         schedule = variationalExpectationPropagationSchedule(pf)
         pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
         pf.marginal_table = marginalTable(pf)
     end
 
     # Populate fields for algorithm compilation
+    algo = InferenceAlgorithm(pfz, id=id)
     assembleInferenceAlgorithm!(algo)
     free_energy && assembleFreeEnergy!(algo)
 
@@ -51,7 +55,7 @@ function variationalExpectationPropagationSchedule(posterior_factor::PosteriorFa
         if entry.interface in ep_sites
             entry.message_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
         elseif (entry.interface.node in nodes_connected_to_external_edges) && !isa(entry.interface.node, DeltaFactor)
-            local_posterior_factors = localRecognitionFactors(entry.interface.node)
+            local_posterior_factors = localPosteriorFactors(entry.interface.node)
             if allunique(local_posterior_factors) # Local posterior factorization is naive
                 entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
             else

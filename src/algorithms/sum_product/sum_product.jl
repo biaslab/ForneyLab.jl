@@ -7,7 +7,7 @@ sumProductAlgorithm,
 Create a sum-product algorithm to infer marginals over `variables`
 """
 function sumProductAlgorithm(variables::Vector{Variable}, 
-                             pfz::PosteriorFactorization=currentPosteriorFactorization();
+                             pfz::PosteriorFactorization=PosteriorFactorization();
                              id=Symbol(""),
                              free_energy=false)
 
@@ -40,10 +40,10 @@ abstract type SumProductRule{factor_type} <: MessageUpdateRule end
 `sumProductSchedule()` generates a sum-product message passing schedule that
 computes the marginals for each of the posterior factor targets.
 """ 
-function sumProductSchedule(rf::RecognitionFactor)
+function sumProductSchedule(pf::PosteriorFactor)
     # Generate a feasible summary propagation schedule
-    schedule = summaryPropagationSchedule(sort(collect(rf.target_variables), rev=true), 
-                                          sort(collect(rf.target_clusters), rev=true))
+    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true), 
+                                          sort(collect(pf.target_clusters), rev=true))
 
     # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule

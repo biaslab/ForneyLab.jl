@@ -5,6 +5,7 @@ currentPosteriorFactorization,
 setCurrentPosteriorFactorization
 
 mutable struct PosteriorFactorization
+    graph::FactorGraph
     posterior_factors::Dict{Symbol, PosteriorFactor}
 
     # Bookkeeping for faster lookup during scheduling
@@ -31,12 +32,14 @@ function currentPosteriorFactorization()
     end
 end
 
-function setCurrentPosteriorFactorization(pfz::PosteriorFactorization)          global current_posterior_factorization = pfz
+function setCurrentPosteriorFactorization(pfz::PosteriorFactorization)
+    global current_posterior_factorization = pfz
 end
 
 function PosteriorFactorization() 
     setCurrentPosteriorFactorization(
         PosteriorFactorization(
+            currentGraph(),
             Dict{Symbol, PosteriorFactor}(),
             Dict{Edge, PosteriorFactor}(),
             Dict{Tuple{FactorNode, Edge}, Symbol}(),

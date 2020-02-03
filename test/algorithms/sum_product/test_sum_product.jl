@@ -71,10 +71,10 @@ end
     x = Variable()
     nd = MockNode([x, constant(0.0), constant(0.0)])
 
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
-    setTargets!(rf, algo, [x])
-    schedule = sumProductSchedule(rf)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, [x])
+    schedule = sumProductSchedule(pf)
 
     @test length(schedule) == 3
     @test ScheduleEntry(nd.i[2].partner, SPClamp{Univariate}) in schedule
@@ -87,7 +87,7 @@ end
     x = Variable()
     nd = MockNode([x, constant(0.0), constant(0.0)])
 
-    rf = PosteriorFactorization()
+    PosteriorFactorization()
     algo = sumProductAlgorithm(x)
 
     @test isa(algo, InferenceAlgorithm)

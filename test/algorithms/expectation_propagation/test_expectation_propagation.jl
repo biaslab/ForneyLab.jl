@@ -62,10 +62,10 @@ end
         push!(nd_z, nd_z_i)
     end
 
-    algo = Algorithm()
-    rf = RecognitionFactor(algo)
-    setTargets!(rf, algo, [m])
-    schedule = expectationPropagationSchedule(rf)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, [m])
+    schedule = expectationPropagationSchedule(pf)
 
     @test length(schedule) == 15
     @test schedule[2] == ScheduleEntry(nd_z[2].i[:in1], EPProbitIn1GP)
