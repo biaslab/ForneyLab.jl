@@ -47,7 +47,6 @@ ForneyLab.currentInferenceAlgorithm
 ForneyLab.expectationPropagationAlgorithm
 ForneyLab.sumProductAlgorithm
 ForneyLab.variationalAlgorithm
-ForneyLab.freeEnergyAlgorithm
 ForneyLab.variationalExpectationPropagationAlgorithm
 ```
 

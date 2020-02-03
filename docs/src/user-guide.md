@@ -267,7 +267,7 @@ end
 #### Computing free energy
 VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as *free energy*. ForneyLab offers to optionally compile code for evaluating the free energy. Free energy is particularly useful to test for convergence of the VMP iterative procedure.
 ```julia
-algo = freeEnergyAlgorithm(q, free_energy=true)
+algo = variationalAlgorithm(q, free_energy=true)
 algo_code = algorithmSourceCode(algo, free_energy=true)
 eval(Meta.parse(algo_code))
 ```

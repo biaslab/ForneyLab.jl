@@ -117,9 +117,7 @@ function assembleClamp!(inbound::Clamp, dist_or_msg::Type)
         # Message comes from data buffer
         (buffer, idx) = ForneyLab.current_graph.placeholders[inbound]
         inbound.buffer_id = buffer
-        if idx > 0
-            inbound.buffer_index = idx
-        end
+        inbound.buffer_index = idx # Can also be 0, in which case index is ignored
     end
 
     return inbound
