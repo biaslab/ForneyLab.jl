@@ -162,6 +162,7 @@ end
     @test differentialEntropy(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=2.0)) == averageEnergy(GaussianMeanVariance, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=2.0), ProbabilityDistribution(Univariate, PointMass, m=0.0), ProbabilityDistribution(Univariate, PointMass, m=2.0))
     @test differentialEntropy(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=2.0)) == differentialEntropy(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(2.0)))
     @test averageEnergy(GaussianMeanVariance, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=2.0), ProbabilityDistribution(Univariate, PointMass, m=0.0), ProbabilityDistribution(Univariate, PointMass, m=2.0)) == averageEnergy(GaussianMeanVariance, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(2.0)), ProbabilityDistribution(Multivariate, PointMass, m=[0.0]), ProbabilityDistribution(MatrixVariate, PointMass, m=mat(2.0)))
+    @test averageEnergy(GaussianMeanVariance, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0, 1.0], v=[3.0 1.0; 1.0 2.0]), ProbabilityDistribution(Univariate, PointMass, m=0.5)) == averageEnergy(GaussianMeanPrecision, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0, 1.0], v=[3.0 1.0; 1.0 2.0]), ProbabilityDistribution(Univariate, PointMass, m=2.0))
 end
 
 end #module

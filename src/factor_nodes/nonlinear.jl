@@ -42,3 +42,14 @@ mutable struct Nonlinear <: DeltaFactor
 end
 
 slug(::Type{Nonlinear}) = "g"
+
+function averageEnergy(::Type{Nonlinear}, marg_out_in1::ProbabilityDistribution{Multivariate, F}; epsilon=default_epsilon) where F<:Gaussian
+    d = Int64(dims(marg_out_in1)/2) # Node dimensionality
+    if d == 1
+        avg_eng = averageEnergy(GaussianMeanVariance, marg_out_in1, ProbabilityDistribution(Univariate, PointMass, m=epsilon))
+    else
+        avg_eng = averageEnergy(GaussianMeanVariance, marg_out_in1, ProbabilityDistribution(MatrixVariate, PointMass, m=epsilon*diageye(d)))
+    end
+
+    return avg_eng
+end

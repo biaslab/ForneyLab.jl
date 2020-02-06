@@ -105,3 +105,20 @@ function averageEnergy(::Type{GaussianMeanVariance}, marg_out::ProbabilityDistri
     0.5*unsafeDetLogMean(marg_var) +
     0.5*tr( unsafeInverseMean(marg_var)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)'))
 end
+
+function averageEnergy(::Type{GaussianMeanVariance}, marg_out_mean::ProbabilityDistribution{Multivariate, F}, marg_var::ProbabilityDistribution{Univariate}) where F<:Gaussian
+    (m, V) = unsafeMeanCov(marg_out_mean)
+
+    0.5*log(2*pi) +
+    0.5*unsafeLogMean(marg_var) +
+    0.5*unsafeInverseMean(marg_var)*( V[1,1] - V[1,2] - V[2,1] + V[2,2] + (m[1] - m[2])^2 )
+end
+
+function averageEnergy(::Type{GaussianMeanVariance}, marg_out_mean::ProbabilityDistribution{Multivariate, F}, marg_var::ProbabilityDistribution{MatrixVariate}) where F<:Gaussian
+    (m, V) = unsafeMeanCov(marg_out_mean)
+    d = Int64(dims(marg_out_mean)/2)
+
+    0.5*d*log(2*pi) +
+    0.5*unsafeDetLogMean(marg_var) +
+    0.5*tr( unsafeInverseMean(marg_var)*( V[1:d,1:d] - V[1:d,d+1:end] - V[d+1:end,1:d] + V[d+1:end,d+1:end] + (m[1:d] - m[d+1:end])*(m[1:d] - m[d+1:end])' ) )
+end

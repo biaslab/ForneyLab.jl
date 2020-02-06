@@ -1,9 +1,10 @@
 export
 ruleSPNonlinearOutNG,
-ruleSPNonlinearIn1GG
+ruleSPNonlinearIn1GG,
+ruleMNonlinearGG
 
-# Determine the default value for the spread parameter
-const default_alpha = 1e-3
+const default_alpha = 1e-3 # Default value for the spread parameter
+const default_epsilon = 1e-8 # Default value for the node-softening variance
 
 """
 Return the sigma points and weights for a Gaussian distribution
@@ -176,6 +177,28 @@ function ruleSPNonlinearIn1GG(msg_out::Message{F1, Multivariate},
     return Message(Multivariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
 end
 
+function ruleMNonlinearGG(msg_out::Message{F1, Univariate},
+                          msg_in1::Message{F2, Univariate},
+                          g::Function;
+                          alpha::Float64=default_alpha,
+                          epsilon::Float64=default_epsilon) where {F1<:Gaussian, F2<:Gaussian}
+
+    (xi_bw_out, W_bw_out) = unsafeWeightedMeanPrecision(msg_out.dist)
+
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
+
+    # Unscented approximations
+    g_sigma = g.(sigma_points)
+    m_fw_out = sum(weights_m.*g_sigma)
+    V_fw_out = sum(weights_c.*(g_sigma .- m_fw_out).^2)
+    W_fw_out = cholinv(V_fw_out)
+    xi_fw_out = W_fw_out*m_fw_out
+
+    W_bar = 1/epsilon
+
+    return ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[xi_bw_out; xi_fw_out], w=[W_bw_out+W_bar -W_bar; -W_bar W_fw_out+W_bar])
+end
+
 
 #--------------------------
 # Custom inbounds collector
@@ -211,6 +234,46 @@ function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry)
         push!(inbounds, Dict{Symbol, Any}(:g_inv => node.g_inv,
                                           :keyword => false))
     end
+
+    # Push spread parameter if manually defined
+    if node.alpha != nothing
+        push!(inbounds, Dict{Symbol, Any}(:alpha => node.alpha,
+                                          :keyword => true))
+    end
+
+    return inbounds
+end
+
+function collectMarginalNodeInbounds(node::Nonlinear, entry::MarginalEntry)
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
+    target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
+    inbound_cluster = entry.target # Entry target is a cluster
+
+    inbounds = Any[]
+    entry_pf = posteriorFactor(first(entry.target.edges))
+    encountered_external_regions = Set{Region}()
+    for node_interface in entry.target.node.interfaces
+        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field 
+        current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
+        inbound_interface = ultimatePartner(node_interface)
+
+        if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+            # Edge is clamped, hard-code marginal of constant node
+            push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
+        elseif (current_pf === entry_pf)
+            # Edge is internal, collect message from previous result
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        elseif !(current_region in encountered_external_regions)
+            # Edge is external and region is not yet encountered, collect marginal from marginal dictionary
+            push!(inbounds, target_to_marginal_entry[current_region])
+            push!(encountered_external_regions, current_region) # Register current region with encountered external regions
+        end
+    end
+
+    # Push function to calling signature
+    # These functions needs to be defined in the scope of the user
+    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
+                                      :keyword => false))
 
     # Push spread parameter if manually defined
     if node.alpha != nothing

@@ -56,7 +56,7 @@ function assembleCountingNumbers!(pfz=currentPosteriorFactorization())
     
     # Iterate over large regions
     for node in nodes_connected_to_internal_edges
-        if !isa(node, DeltaFactor) # Node is stochastic
+        if !isa(node, DeltaFactor) || isa(node, Nonlinear) # Node is stochastic or nonlinear
             increase!(energy_counting_numbers, node, 1) # Count average energy
             for target in unique!(localRegions(node)) # Collect all unique regions around node
                 if first(target.edges) in internal_edges # Region is internal to a recognition factor

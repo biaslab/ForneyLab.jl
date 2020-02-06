@@ -110,7 +110,7 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization, variables
         nodes_connected_to_internal_edges = nodes(pf.internal_edges)
         for node in nodes_connected_to_internal_edges
             target_edges = localInternalEdges(node, pf) # Find internal edges connected to node
-            if !isa(node, DeltaFactor) # Node is stochastic
+            if !isa(node, DeltaFactor) || isa(node, Nonlinear) # Node is stochastic or nonlinear
                 if length(target_edges) == 1 # Single internal edge
                     increase!(variable_counting_numbers, target_edges[1].variable, Inf) # For average energy evaluation, make sure to include the edge variable
                 elseif length(target_edges) > 1 # Multiple internal edges
