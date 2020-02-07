@@ -6,11 +6,12 @@ sumProductAlgorithm,
 """
 Create a sum-product algorithm to infer marginals over `variables`
 """
-function sumProductAlgorithm(variables::Vector{Variable}, 
-                             pfz::PosteriorFactorization=PosteriorFactorization();
+function sumProductAlgorithm(variables::Vector{Variable};
                              id=Symbol(""),
                              free_energy=false)
 
+    # Initialize empty posterior factorization
+    pfz = PosteriorFactorization()
     # Contain the entire graph in a single posterior factor
     pf = PosteriorFactor(pfz, id=Symbol(""))
     
@@ -29,7 +30,7 @@ function sumProductAlgorithm(variables::Vector{Variable},
 
     return algo
 end
-sumProductAlgorithm(variable::Variable, pfz::PosteriorFactorization=PosteriorFactorization(); id=Symbol(""), free_energy=false) = sumProductAlgorithm([variable], pfz, id=id, free_energy=free_energy)
+sumProductAlgorithm(variable::Variable; id=Symbol(""), free_energy=false) = sumProductAlgorithm([variable], id=id, free_energy=free_energy)
 
 """
 A non-specific sum-product update
