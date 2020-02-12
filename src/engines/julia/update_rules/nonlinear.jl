@@ -249,7 +249,7 @@ end
 
     # The product of a log-pdf and Gaussian distribution is computed by importance sampling
     y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
-    samples = y.params[:m] .+ sqrt(y.params[:v]).*randn(100)
+    samples = y.params[:m] .+ sqrt(y.params[:v]).*randn(1000)
 
     p = exp.((x.params[:log_pdf]).(samples))
     Z = sum(p)

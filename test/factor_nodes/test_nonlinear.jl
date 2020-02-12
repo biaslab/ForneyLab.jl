@@ -2,8 +2,7 @@ module NonlinearTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights
-import ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG
+using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, ProbabilityDistribution, SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearPTInMN, SPNonlinearPTOutNG
 
 @testset "sigmaPointsAndWeights" begin
     dist = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
@@ -30,7 +29,7 @@ g_inv(x::Float64) = sqrt(x + 5.0)
 g_inv(x::Vector{Float64}) = sqrt.(x .+ 5.0)
 
 @testset "SPNonlinearUTOutNG" begin
-    @test SPNonlinearUTOutNG <: SumProductRule{Nonlinear}
+    @test SPNonlinearUTOutNG <: SumProductRule{NonlinearUT}
     @test outboundType(SPNonlinearUTOutNG) == Message{GaussianMeanVariance}
     @test isApplicable(SPNonlinearUTOutNG, [Nothing, Message{Gaussian}]) 
 
@@ -41,7 +40,7 @@ g_inv(x::Vector{Float64}) = sqrt.(x .+ 5.0)
 end
 
 @testset "SPNonlinearUTIn1GG" begin
-    @test SPNonlinearUTIn1GG <: SumProductRule{Nonlinear}
+    @test SPNonlinearUTIn1GG <: SumProductRule{NonlinearUT}
     @test outboundType(SPNonlinearUTIn1GG) == Message{GaussianMeanVariance}
     @test isApplicable(SPNonlinearUTIn1GG, [Message{Gaussian}, Nothing]) 
 
@@ -63,13 +62,14 @@ end
 # Integration
 #------------
 
-@testset "Nonlinear integration with given inverse" begin
+@testset "Nonlinear integration via UT with given inverse" begin
     FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    n = Nonlinear(y, x, g, g_inv=g_inv)
-
+    n = Nonlinear(y, x, g)
+    applyUnscentedTransform(y, g_inv=g_inv)
+    
     # Forward; g_inv should not be present in call
     algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(y)
@@ -84,13 +84,14 @@ end
     @test occursin("ruleSPNonlinearIn1GG(messages[2], nothing, g, g_inv)", algo_code)
 end
 
-@testset "Nonlinear integration with given alpha" begin
+@testset "Nonlinear integration via UT with given alpha" begin
     FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    n = Nonlinear(y, x, g, alpha=1.0)
-
+    n = Nonlinear(y, x, g)
+    applyUnscentedTransform(y, alpha=1.0)
+    
     # Forward; alpha should be present in call
     algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(y)
@@ -98,12 +99,13 @@ end
     @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g, alpha=1.0)", algo_code)
 end
 
-@testset "Nonlinear integration without given inverse" begin
+@testset "Nonlinear integration via UT without given inverse" begin
     FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
     n = Nonlinear(y, x, g)
+    applyUnscentedTransform(y)
 
     # Forward; g_inv should not be present in call
     algo = InferenceAlgorithm()
@@ -122,4 +124,44 @@ end
     @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", algo_code)
 end
 
-end # module
+@testset "prod!" begin
+    f_dummy(x) = x
+    @test abs((convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=4.0, v=2.0)
+            *ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0))).params[:m]
+            -  (ruleSPNonlinearPTInMN(Message(Univariate, GaussianMeanVariance, m=4.0, v=2.0),nothing,f_dummy).dist*ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0)).params[:m]) < 0.1
+    @test abs((convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=4.0, v=2.0)
+            *ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0))).params[:v]
+            -  (ruleSPNonlinearPTInMN(Message(Univariate, GaussianMeanVariance, m=4.0, v=2.0),nothing,f_dummy).dist*ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0)).params[:v]) < 0.1
+    @test abs((convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=1.2, v=1.0)
+            *ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.6, v=0.5))).params[:m]
+            -  (ruleSPNonlinearPTInMN(Message(Univariate, GaussianMeanVariance, m=1.2, v=1.0),nothing,f_dummy).dist*ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.6, v=0.5)).params[:m]) < 0.1
+    @test abs((convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=6.5, v=4.1)
+            *ProbabilityDistribution(Univariate, GaussianMeanVariance, m=12.0, v=3.0))).params[:v]
+            -  (ruleSPNonlinearPTInMN(Message(Univariate, GaussianMeanVariance, m=6.5, v=4.1),nothing,f_dummy).dist*ProbabilityDistribution(Univariate, GaussianMeanVariance, m=12.0, v=3.0)).params[:v]) < 0.1
+end
+
+#-------------
+# Update rules
+#-------------
+
+@testset "SPNonlinearPTInMN" begin
+    f_dummy(x) = x
+    @test SPNonlinearPTInMN <: SumProductRule{NonlinearPT}
+    @test outboundType(SPNonlinearPTInMN) == Message{Function}
+    @test isApplicable(SPNonlinearPTInMN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
+    f(x) = ruleSPNonlinearPTInMN(Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),nothing,f_dummy).dist.params[:log_pdf](x)
+    @test f(1.5) == logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
+end
+
+ @testset "SPNonlinearPTOutNG" begin
+     f_dummy(x) = x
+     samples = 2.0 .+ randn(100000)
+     p_dist = ProbabilityDistribution(Univariate, SampleList, s=samples)
+     @test SPNonlinearPTOutNG <: SumProductRule{NonlinearPT}
+     @test outboundType(SPNonlinearPTOutNG) == Message{SampleList}
+     @test isApplicable(SPNonlinearPTOutNG, [Nothing, Message{Gaussian}])
+     @test abs(unsafeMean(ruleSPNonlinearPTOutNG(nothing,Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),f_dummy).dist) - unsafeMean(p_dist)) < 0.2
+     @test abs(unsafeVar(ruleSPNonlinearPTOutNG(nothing,Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),f_dummy).dist) - unsafeVar(p_dist)) < 0.2
+ end
+
+end #module

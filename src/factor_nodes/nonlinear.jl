@@ -76,24 +76,24 @@ end
 
 slug(::Type{NonlinearUT}) = "g"
 
-function applyUnscentedTransform(edge::Edge)
+function applyUnscentedTransform(edge::Edge; g_inv=nothing, alpha=nothing, dims=())
     applied = false
     if (edge.a !== nothing) && (edge.a.node isa Nonlinear)
-        edge.a.node = NonlinearUT(edge.a.node)
+        edge.a.node = NonlinearUT(edge.a.node, g_inv=g_inv, alpha=alpha, dims=dims)
         applied = true
     end
     if (edge.b !== nothing) && (edge.b.node isa Nonlinear)
-        edge.b.node = NonlinearUT(edge.b.node)
+        edge.b.node = NonlinearUT(edge.b.node, g_inv=g_inv, alpha=alpha, dims=dims)
         applied = true
     end
     return applied
 end
 
-function applyUnscentedTransform(var::Variable)
+function applyUnscentedTransform(var::Variable; g_inv=nothing, alpha=nothing, dims=())
     # find connected Nonlinear node(s)
     applied = false
     for edge in edges(var)
-        applied = applied || applyUnscentedTransform(edge)
+        applied = applied || applyUnscentedTransform(edge, g_inv=g_inv, alpha=alpha, dims=dims)
     end
 
     if !applied
@@ -103,7 +103,7 @@ end
 
 function applyUnscentedTransform(vars::Vector{Variable}; g_inv=nothing, alpha=nothing, dims=())
     for var in vars
-        unscentedTransform(var, g_inv=g_inv, alpha=alpha, dims=dims)
+        applyUnscentedTransform(var, g_inv=g_inv, alpha=alpha, dims=dims)
     end
 end
 
