@@ -74,14 +74,14 @@ end
     algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g)", algo_code)
+    @test occursin("ruleSPNonlinearUTOutNG(nothing, messages[2], g)", algo_code)
     @test !occursin("g_inv", algo_code)
 
     # Backward; g_inv should be present in call
     algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearIn1GG(messages[2], nothing, g, g_inv)", algo_code)
+    @test occursin("ruleSPNonlinearUTIn1GG(messages[2], nothing, g, g_inv)", algo_code)
 end
 
 @testset "Nonlinear integration via UT with given alpha" begin
@@ -96,7 +96,7 @@ end
     algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g, alpha=1.0)", algo_code)
+    @test occursin("ruleSPNonlinearUTOutNG(nothing, messages[2], g, alpha=1.0)", algo_code)
 end
 
 @testset "Nonlinear integration via UT without given inverse" begin
@@ -111,7 +111,7 @@ end
     algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearOutNG(nothing, messages[2], g)", algo_code)
+    @test occursin("ruleSPNonlinearUTOutNG(nothing, messages[2], g)", algo_code)
     @test !occursin("$(string(g_inv))", algo_code)
 
     # Backward; g_inv should not be present in call, 
@@ -119,25 +119,25 @@ end
     algo =  InferenceAlgorithm()
     algo = sumProductAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearIn1GG(messages[2], messages[1], g)", algo_code)
+    @test occursin("ruleSPNonlinearUTIn1GG(messages[2], messages[1], g)", algo_code)
     @test !occursin("g_inv", algo_code)
     @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", algo_code)
 end
 
-@testset "prod!" begin
-    f_dummy(x) = x
-    @test abs((convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=4.0, v=2.0)
-            *ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0))).params[:m]
-            -  (ruleSPNonlinearPTInMN(Message(Univariate, GaussianMeanVariance, m=4.0, v=2.0),nothing,f_dummy).dist*ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0)).params[:m]) < 0.1
-    @test abs((convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=4.0, v=2.0)
-            *ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0))).params[:v]
-            -  (ruleSPNonlinearPTInMN(Message(Univariate, GaussianMeanVariance, m=4.0, v=2.0),nothing,f_dummy).dist*ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0)).params[:v]) < 0.1
-    @test abs((convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=1.2, v=1.0)
-            *ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.6, v=0.5))).params[:m]
-            -  (ruleSPNonlinearPTInMN(Message(Univariate, GaussianMeanVariance, m=1.2, v=1.0),nothing,f_dummy).dist*ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.6, v=0.5)).params[:m]) < 0.1
-    @test abs((convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=6.5, v=4.1)
-            *ProbabilityDistribution(Univariate, GaussianMeanVariance, m=12.0, v=3.0))).params[:v]
-            -  (ruleSPNonlinearPTInMN(Message(Univariate, GaussianMeanVariance, m=6.5, v=4.1),nothing,f_dummy).dist*ProbabilityDistribution(Univariate, GaussianMeanVariance, m=12.0, v=3.0)).params[:v]) < 0.1
+@testset "Nonlinear integration via PT" begin
+    FactorGraph()
+
+    @RV x ~ GaussianMeanVariance(2.0, 1.0)
+    @RV y ~ GaussianMeanVariance(2.0, 3.0)
+    n = Nonlinear(y, x, g)
+    applyParticleTransform(y)
+
+    # Forward; g_inv should not be present in call
+    algo = InferenceAlgorithm()
+    algo = sumProductAlgorithm(y)
+    algo_code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearPTOutNG(nothing, messages[2], g)", algo_code)
+    @test !occursin("$(string(g_inv))", algo_code)
 end
 
 #-------------

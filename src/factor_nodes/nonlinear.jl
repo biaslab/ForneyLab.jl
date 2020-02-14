@@ -108,7 +108,7 @@ function applyUnscentedTransform(vars::Vector{Variable}; g_inv=nothing, alpha=no
 end
 
 function applyUnscentedTransform(;g_inv=nothing, alpha=nothing, dims=())
-    for node in currentGraph.nodes
+    for (_, node) in currentGraph().nodes
         if node isa Nonlinear
             NonlinearUT(node, g_inv=g_inv, alpha=alpha, dims=dims)
         end
@@ -197,7 +197,7 @@ function applyParticleTransform(vars::Vector{Variable})
 end
 
 function applyParticleTransform()
-    for node in currentGraph.nodes
+    for (_, node) in currentGraph().nodes
         if node isa Nonlinear
             node = NonlinearPT(node)
         end

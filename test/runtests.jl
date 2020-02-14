@@ -1,7 +1,5 @@
 # This file is automatically executed if you call Pkg.test("ForneyLab")
 
-# include("testrunner.jl")
-
 module ForneyLabTest
 
 using Test

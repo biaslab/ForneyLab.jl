@@ -10,11 +10,12 @@ using InteractiveUtils: subtypes
 using Printf: @sprintf
 using StatsFuns: logmvgamma
 using ForwardDiff
+using StatsBase:Weights
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, exp, convert, show, prod!
 import LinearAlgebra: dot
-import StatsBase: sample, Weights
+import StatsBase: sample
 
 # Helpers
 include("helpers.jl")

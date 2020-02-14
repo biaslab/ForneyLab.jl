@@ -185,7 +185,7 @@ end
 # Custom inbounds collector
 #--------------------------
 
-function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry)
+function collectSumProductNodeInbounds(node::NonlinearUT, entry::ScheduleEntry)
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     inbounds = Any[]
@@ -275,24 +275,28 @@ end
 # Custom inbounds collector
 #--------------------------
 
-function collectSumProductNodeInbounds(node::NonlinearPT, entry::ScheduleEntry, interface_to_msg_idx::Dict{Interface, Int})
-    inbound_messages = String[]
-    for node_interface in entry.interface.node.interfaces
+function collectSumProductNodeInbounds(node::NonlinearPT, entry::ScheduleEntry)
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
+
+    inbounds = Any[]
+    for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         if node_interface == entry.interface
             # Ignore inbound message on outbound interface
-            push!(inbound_messages, "nothing")
+            push!(inbounds, nothing)
         elseif isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
-            push!(inbound_messages, messageString(inbound_interface.node))
+            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
         else
             # Collect message from previous result
-            inbound_idx = interface_to_msg_idx[inbound_interface]
-            push!(inbound_messages, "messages[$inbound_idx]")
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
         end
     end
 
-    push!(inbound_messages, "$(node.g)")
+    # Push function (and inverse) to calling signature
+    # These functions needs to be defined in the scope of the user
+    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
+                                      :keyword => false))
 
-    return inbound_messages
+    return inbounds
 end
