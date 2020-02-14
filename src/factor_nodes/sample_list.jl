@@ -33,9 +33,9 @@ unsafeVar(dist::ProbabilityDistribution{Univariate, SampleList}) = var(dist.para
 unsafeMeanCov(dist::ProbabilityDistribution{Univariate, SampleList}) = (mean(dist.params[:s]), var(dist.params[:s]))
 
 function unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, SampleList})
-    all(0 .<= dist[:s] .< 1) || error("unsafeMirroredLogMean does not apply to variables outside of the range [0, 1]")
+    all(0 .<= dist.params[:s] .< 1) || error("unsafeMirroredLogMean does not apply to variables outside of the range [0, 1)")
 
-    return mean(log.(1 .- transformed_samples(dist)))
+    return mean(log.(1 .- dist.params[:s]))
 end
 
 isProper(dist::ProbabilityDistribution{Univariate, SampleList}) = true
