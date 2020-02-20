@@ -1,15 +1,14 @@
-export Nonlinear
+export Nonlinear, Unscented, ImportanceSampling
 
 abstract type ApproximationMethod end
 abstract type Unscented <: ApproximationMethod end
 abstract type ImportanceSampling <: ApproximationMethod end
 
-
 """
 Description:
 
     Nonlinear node modeling a nonlinear relation. Updates for
-    the nonlinear node are computed through the unscented transform.
+    the nonlinear node are computed through the unscented transform (by default) or using importance sampling.
 
     For more details see "On Approximate Nonlinear Gaussian Message Passing on
     Factor Graphs", Petersen et al. 2018.
