@@ -70,8 +70,7 @@ end
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     @RV y ~ Nonlinear(x, f)
     GaussianMeanPrecision(y, 0.0, 1.0)
-    applyUnscentedTransform()
-    println(currentGraph().nodes)
+    
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz)
     pf.schedule = sumProductSchedule(x)

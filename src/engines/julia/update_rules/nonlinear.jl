@@ -1,8 +1,8 @@
 export
 ruleSPNonlinearUTOutNG,
 ruleSPNonlinearUTIn1GG,
-ruleSPNonlinearPTInMN,
-ruleSPNonlinearPTOutNG,
+ruleSPNonlinearISInMN,
+ruleSPNonlinearISOutNG,
 prod!
 
 
@@ -185,7 +185,7 @@ end
 # Custom inbounds collector
 #--------------------------
 
-function collectSumProductNodeInbounds(node::NonlinearUT, entry::ScheduleEntry)
+function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::ScheduleEntry)
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     inbounds = Any[]
@@ -225,7 +225,7 @@ function collectSumProductNodeInbounds(node::NonlinearUT, entry::ScheduleEntry)
     return inbounds
 end
 
-function ruleSPNonlinearPTInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
+function ruleSPNonlinearISInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
     # The backward message is computed by a change of variables,
     # where the Jacobian follows from automatic differentiation
     log_grad_g(z) = log(abs(ForwardDiff.derivative(g, z)))
@@ -233,7 +233,7 @@ function ruleSPNonlinearPTInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing
     Message(Univariate, Function, log_pdf=(z) -> log_grad_g(z) + logPdf(msg_out.dist, g(z)))
 end
 
-function ruleSPNonlinearPTOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}, g::Function) where {F<:Gaussian}
+function ruleSPNonlinearISOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}, g::Function) where {F<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
 
@@ -275,7 +275,7 @@ end
 # Custom inbounds collector
 #--------------------------
 
-function collectSumProductNodeInbounds(node::NonlinearPT, entry::ScheduleEntry)
+function collectSumProductNodeInbounds(node::Nonlinear{ImportanceSampling}, entry::ScheduleEntry)
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     inbounds = Any[]

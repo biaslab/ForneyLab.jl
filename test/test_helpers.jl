@@ -82,7 +82,8 @@ import LinearAlgebra: Diagonal, isposdef, I, Hermitian
 
     @testset "leaftypes" begin
         # should return all subtypes that are leafs on the type tree
-        @test Set(leaftypes(Real)) == Set([BigInt, Bool, UInt128, UInt16, UInt32, UInt64, UInt8, Int128, Int16, Int32, Int64, Int8, BigFloat, Float16, Float32, Float64])
+        @test Set(leaftypes(Integer)) == Set([BigInt, Bool, UInt128, UInt16, UInt32, UInt64, UInt8, Int128, Int16, Int32, Int64, Int8])
+        @test Set(leaftypes(AbstractFloat)) == Set([BigFloat, Float16, Float32, Float64])
     end
 end
 

@@ -1,10 +1,13 @@
 module SampleListTest
 
 using Test
+using Random
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, unsafeLogMean, unsafeMeanCov, unsafeMirroredLogMean, dims
 using StatsFuns: betainvcdf
 using SpecialFunctions: digamma
+
+Random.seed!(1234)
 
 @testset "SampleList ProbabilityDistribution construction" begin
     @test_throws Exception ProbabilityDistribution(Multivariate, SampleList)
