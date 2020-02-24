@@ -183,6 +183,8 @@ function ruleMNonlinearGG(msg_out::Message{F1, Univariate},
                           alpha::Float64=default_alpha,
                           epsilon::Float64=default_epsilon) where {F1<:Gaussian, F2<:Gaussian}
 
+    (xi_fw_in1, W_fw_in1) = unsafeWeightedMeanPrecision(msg_in1.dist)
+    m_fw_in1 = unsafeMean(msg_in1.dist)
     (xi_bw_out, W_bw_out) = unsafeWeightedMeanPrecision(msg_out.dist)
 
     (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
@@ -190,13 +192,18 @@ function ruleMNonlinearGG(msg_out::Message{F1, Univariate},
     # Unscented approximations
     g_sigma = g.(sigma_points)
     m_fw_out = sum(weights_m.*g_sigma)
-    V_fw_out = sum(weights_c.*(g_sigma .- m_fw_out).^2)
-    W_fw_out = cholinv(V_fw_out)
-    xi_fw_out = W_fw_out*m_fw_out
+    V_fw_out = sum(weights_c.*(g_sigma .- m_fw_out).^2) + epsilon # With added softening variance
+    C_fw = sum(weights_c.*(sigma_points .- m_fw_in1).*(g_sigma .- m_fw_out))
+    
+    # Compute joint statistics
+    G = 1/(V_fw_out - C_fw'*W_fw_in1*C_fw)
+    xi_q_in1 = G*(m_fw_out - C_fw'*xi_fw_in1)
+    xi_q_out = xi_fw_in1 + W_fw_in1*C_fw*G*(C_fw'*xi_fw_in1 - m_fw_out) + xi_bw_out
+    W_q_in1 = W_fw_in1 + W_fw_in1*C_fw*G*C_fw'*W_fw_in1
+    W_q_out = G + W_bw_out
+    D_q = -W_fw_in1*C_fw*G
 
-    W_bar = 1/epsilon
-
-    return ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[xi_bw_out; xi_fw_out], w=[W_bw_out+W_bar -W_bar; -W_bar W_fw_out+W_bar])
+    return ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[xi_q_out; xi_q_in1], w=[W_q_out D_q'; D_q W_q_in1])
 end
 
 
