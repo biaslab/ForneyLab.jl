@@ -48,7 +48,7 @@ function assembleInitialization!(pf::PosteriorFactor)
             breaker_entry = interface_to_schedule_entry[partner]
             assembleBreaker!(breaker_entry, family(outbound_types[partner]), ()) # Univariate only
             pf_initialize_flag = true 
-        elseif isa(entry.interface.node, Nonlinear) && (entry.interface == entry.interface.node.interfaces[2]) && (entry.interface.node.g_inv == nothing)
+        elseif isa(entry.interface.node, Nonlinear{Unscented}) && (entry.interface == entry.interface.node.interfaces[2]) && (entry.interface.node.g_inv == nothing)
             # Set initialization in case of a nonlinear node without given inverse 
             iface = ultimatePartner(entry.interface.node.interfaces[2])
             breaker_entry = interface_to_schedule_entry[iface]

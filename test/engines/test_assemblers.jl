@@ -2,7 +2,7 @@ module AssemblersTest
 
 using Test
 using ForneyLab
-import ForneyLab: assembleBreaker!, assembleClamp!, assembleInferenceAlgorithm!, assemblePosteriorFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten
+using ForneyLab: assembleBreaker!, assembleClamp!, assembleInferenceAlgorithm!, assemblePosteriorFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten
 
 @testset "assembleClamp!" begin
     g = FactorGraph()
@@ -70,6 +70,7 @@ end
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     @RV y ~ Nonlinear(x, f)
     GaussianMeanPrecision(y, 0.0, 1.0)
+    
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz)
     pf.schedule = sumProductSchedule(x)
@@ -78,7 +79,7 @@ end
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(pf)
     assembleInitialization!(pf)
-    @test pf.schedule[7].message_update_rule == ForneyLab.SPNonlinearIn1GG
+    @test pf.schedule[7].message_update_rule == ForneyLab.SPNonlinearUTIn1GG
     @test pf.schedule[3].initialize
 
     # Optimize

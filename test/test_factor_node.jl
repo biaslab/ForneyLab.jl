@@ -1,7 +1,7 @@
 module FactorNodeTest
 
 using Test
-import ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture, Nonlinear
+using ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture, Nonlinear
 import InteractiveUtils: subtypes
 
 @testset "FactorNode" begin
