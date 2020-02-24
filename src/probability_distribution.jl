@@ -4,7 +4,6 @@ ProbabilityDistribution,
 Univariate,
 Multivariate,
 MatrixVariate,
-Munivariate,
 PointMass,
 @RV,
 mean,
@@ -24,7 +23,6 @@ abstract type VariateType end
 abstract type Univariate <: VariateType end
 abstract type Multivariate <: VariateType end
 abstract type MatrixVariate <: VariateType end
-abstract type Munivariate <: VariateType end
 
 """Types through which a probability distribution may be defined"""
 const FactorFunction = Union{FactorNode, Function}
