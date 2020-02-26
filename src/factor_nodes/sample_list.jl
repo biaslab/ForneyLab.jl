@@ -24,6 +24,8 @@ ProbabilityDistribution(::Type{Univariate}, ::Type{SampleList}; s=[0.0]) = Proba
 
 dims(dist::ProbabilityDistribution{Univariate, SampleList}) = 1
 
+vague(::Type{SampleList}) = ProbabilityDistribution(Univariate, SampleList, s=rand(1000))
+
 unsafeMean(dist::ProbabilityDistribution{Univariate, SampleList}) = mean(dist.params[:s])
 
 unsafeLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = mean(log.(dist.params[:s]))

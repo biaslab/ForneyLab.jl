@@ -3,6 +3,8 @@ ruleSPNonlinearUTOutNG,
 ruleSPNonlinearUTIn1GG,
 ruleSPNonlinearISInMN,
 ruleSPNonlinearISOutNG,
+ruleSPNonlinearLInMN,
+ruleSPNonlinearLOutNG,
 prod!
 
 
@@ -226,20 +228,44 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
 end
 
 function ruleSPNonlinearISInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
-    # The backward message is computed by a change of variables,
-    # where the Jacobian follows from automatic differentiation
-    log_grad_g(z) = log(abs(ForwardDiff.derivative(g, z)))
-
-    Message(Univariate, Function, log_pdf=(z) -> log_grad_g(z) + logPdf(msg_out.dist, g(z)))
+    Message(Univariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="IS")
 end
 
 function ruleSPNonlinearISOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}, g::Function) where {F<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
 
-    sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(100))
+    sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(1000))
 
     Message(Univariate, SampleList, s=sample_list)
+end
+
+function ruleSPNonlinearLInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
+    try
+        ForwardDiff.derivative(g, 0)
+        return Message(Univariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="L")
+    catch
+        return Message(Multivariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="L")
+    end
+end
+
+function ruleSPNonlinearLOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}, g::Function) where {F<:Gaussian}
+    # The forward message is parameterized by a SampleList
+    dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
+
+    sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(1000))
+
+    return Message(Univariate, SampleList, s=sample_list)
+
+    # if length(g(dist_in1.params[:m])) == 1
+    #     sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(1000))
+    #
+    #     return Message(Univariate, SampleList, s=sample_list)
+    # else
+    #     sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(1000))
+    #
+    #     return Message(Multivariate, SampleList, s=sample_list)
+    # end
 end
 
 @symmetrical function prod!(
@@ -247,26 +273,144 @@ end
     y::ProbabilityDistribution{Univariate, F},
     z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F<:Gaussian}
 
-    # The product of a log-pdf and Gaussian distribution is computed by importance sampling
-    y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
-    samples = y.params[:m] .+ sqrt(y.params[:v]).*randn(1000)
+    if x.params[:ApproximationType] == "IS"
+        # The product of a log-pdf and Gaussian distribution is computed by importance sampling
+        y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
+        samples = y.params[:m] .+ sqrt(y.params[:v]).*randn(1000)
 
-    p = exp.((x.params[:log_pdf]).(samples))
-    Z = sum(p)
-    mean = sum(p./Z.*samples)
-    var = sum(p./Z.*(samples .- mean).^2)
+        p = exp.((x.params[:log_pdf]).(samples))
+        Z = sum(p)
+        mean = sum(p./Z.*samples)
+        var = sum(p./Z.*(samples .- mean).^2)
+
+        z.params[:m] = mean
+        z.params[:v] = var
+    else
+        # The product of a log-pdf and Gaussian distribution is approximated by Laplace method
+        y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
+        log_joint(s) = logPdf(y,s) + x.params[:log_pdf](s)
+        #Optimization with gradient ascent
+        d_log_joint(s) = ForwardDiff.derivative(log_joint, s)
+        m_old = y.params[:m] #initial point
+        step_size = 0.01 #initial step size
+        satisfied = 0
+        step_count = 0
+        m_total = 0.0
+        m_average = 0.0
+        m_new = 0.0
+        while satisfied == 0
+            m_new = m_old + step_size*d_log_joint(m_old)
+            if log_joint(m_new) > log_joint(m_old)
+                proposal_step_size = 10*step_size
+                m_proposal = m_old + proposal_step_size*d_log_joint(m_old)
+                if log_joint(m_proposal) > log_joint(m_new)
+                    m_new = m_proposal
+                    step_size = proposal_step_size
+                end
+            else
+                step_size = 0.1*step_size
+                m_new = m_old + step_size*d_log_joint(m_old)
+            end
+            step_count += 1
+            m_total += m_old
+            m_average = m_total / step_count
+            if step_count > 10
+                if abs((m_new-m_average)/m_average) < 0.1
+                    satisfied = 1
+                end
+            elseif step_count > 250
+                satisfied = 1
+            end
+            m_old = m_new
+        end
+        mean = m_new
+        var = - 1.0 / ForwardDiff.derivative(d_log_joint, mean)
+
+        z.params[:m] = mean
+        z.params[:v] = var
+    end
+
+    return z
+end
+
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Multivariate, Function},
+    y::ProbabilityDistribution{Multivariate, F},
+    z::ProbabilityDistribution{Multivariate, GaussianMeanVariance}=ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))) where {F<:Gaussian}
+
+    # The product of a log-pdf and Gaussian distribution is approximated by Laplace method
+    y = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, y)
+    dim = dims(y)
+    log_joint(s) = logPdf(y,s) + x.params[:log_pdf](s)
+    #Optimization with gradient ascent
+    d_log_joint(s) = ForwardDiff.gradient(log_joint, s)
+    m_old = y.params[:m] #initial point
+    step_size = 0.01 #initial step size
+    satisfied = 0
+    step_count = 0
+    m_total = zeros(dim)
+    m_average = zeros(dim)
+    m_new = zeros(dim)
+    while satisfied == 0
+        m_new = m_old .+ step_size.*d_log_joint(m_old)
+        if log_joint(m_new) > log_joint(m_old)
+            proposal_step_size = 10*step_size
+            m_proposal = m_old .+ proposal_step_size.*d_log_joint(m_old)
+            if log_joint(m_proposal) > log_joint(m_new)
+                m_new = m_proposal
+                step_size = proposal_step_size
+            end
+        else
+            step_size = 0.1*step_size
+            m_new = m_old .+ step_size.*d_log_joint(m_old)
+        end
+        step_count += 1
+        m_total .+= m_old
+        m_average = m_total ./ step_count
+        if step_count > 10
+            if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim*0.1
+                satisfied = 1
+            end
+        elseif step_count > 250
+            satisfied = 1
+        end
+        m_old = m_new
+    end
+    mean = m_new
+    var = inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, mean))
 
     z.params[:m] = mean
     z.params[:v] = var
+
     return z
 end
 
 function prod!(
     x::ProbabilityDistribution{Univariate, Function},
     y::ProbabilityDistribution{Univariate, Function},
-    z::ProbabilityDistribution{Univariate, Function}=ProbabilityDistribution(Univariate, Function, log_pdf=(s)->s))
+    z::ProbabilityDistribution{Univariate, Function}=ProbabilityDistribution(Univariate, Function, log_pdf=(s)->s, ApproximationType="IS"))
 
     z.params[:log_pdf] = ((s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s))
+    if x.params[:ApproximationType] == y.params[:ApproximationType]
+        z.params[:ApproximationType] = x.params[:ApproximationType]
+    else
+        z.params[:ApproximationType] = "IS"
+    end
+
+    return z
+end
+
+function prod!(
+    x::ProbabilityDistribution{Multivariate, Function},
+    y::ProbabilityDistribution{Multivariate, Function},
+    z::ProbabilityDistribution{Multivariate, Function}=ProbabilityDistribution(Multivariate, Function, log_pdf=(s)->s, ApproximationType="L"))
+
+    z.params[:log_pdf] = ((s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s))
+    if x.params[:ApproximationType] == y.params[:ApproximationType]
+        z.params[:ApproximationType] = x.params[:ApproximationType]
+    else
+        z.params[:ApproximationType] = "L"
+    end
 
     return z
 end
@@ -276,6 +420,32 @@ end
 #--------------------------
 
 function collectSumProductNodeInbounds(node::Nonlinear{ImportanceSampling}, entry::ScheduleEntry)
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
+
+    inbounds = Any[]
+    for node_interface in node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        if node_interface == entry.interface
+            # Ignore inbound message on outbound interface
+            push!(inbounds, nothing)
+        elseif isa(inbound_interface.node, Clamp)
+            # Hard-code outbound message of constant node in schedule
+            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
+        else
+            # Collect message from previous result
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        end
+    end
+
+    # Push function (and inverse) to calling signature
+    # These functions needs to be defined in the scope of the user
+    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
+                                      :keyword => false))
+
+    return inbounds
+end
+
+function collectSumProductNodeInbounds(node::Nonlinear{Laplace}, entry::ScheduleEntry)
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     inbounds = Any[]

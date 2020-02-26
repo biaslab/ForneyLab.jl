@@ -1,8 +1,9 @@
-export Nonlinear, Unscented, ImportanceSampling
+export Nonlinear, Unscented, ImportanceSampling, Laplace
 
 abstract type ApproximationMethod end
 abstract type Unscented <: ApproximationMethod end
 abstract type ImportanceSampling <: ApproximationMethod end
+abstract type Laplace <: ApproximationMethod end
 
 """
 Description:
@@ -53,6 +54,16 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
 
         return self
     end
+
+    function Nonlinear{Laplace}(out, in1, g::Function; id=ForneyLab.generateId(Nonlinear{Laplace}))
+        @ensureVariables(out, in1)
+        self = new(id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), g, nothing, nothing, ())
+        ForneyLab.addNode!(currentGraph(), self)
+        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
+        self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)
+
+        return self
+    end
 end
 
 function Nonlinear(out, in1, g::Function; g_inv=nothing, alpha=nothing, dims=(), id=ForneyLab.generateId(Nonlinear{Unscented}))
@@ -60,4 +71,3 @@ function Nonlinear(out, in1, g::Function; g_inv=nothing, alpha=nothing, dims=(),
 end
 
 slug(::Type{Nonlinear}) = "g"
-

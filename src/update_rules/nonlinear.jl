@@ -17,3 +17,13 @@
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message{Gaussian}),
                 :name          => SPNonlinearISOutNG)
+
+@sumProductRule(:node_type     => Nonlinear{Laplace},
+                :outbound_type => Message{Function},
+                :inbound_types => (Message{FactorFunction}, Nothing),
+                :name          => SPNonlinearLInMN)
+
+@sumProductRule(:node_type     => Nonlinear{Laplace},
+                :outbound_type => Message{SampleList},
+                :inbound_types => (Nothing, Message{Gaussian}),
+                :name          => SPNonlinearLOutNG)
