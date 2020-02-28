@@ -228,7 +228,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
 end
 
 function ruleSPNonlinearISInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
-    Message(Univariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="IS")
+    Message(Univariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="NonlinearIS")
 end
 
 function ruleSPNonlinearISOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}, g::Function) where {F<:Gaussian}
@@ -243,9 +243,9 @@ end
 function ruleSPNonlinearLInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
     try
         ForwardDiff.derivative(g, 0)
-        return Message(Univariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="L")
+        return Message(Univariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="NonlinearL")
     catch
-        return Message(Multivariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="L")
+        return Message(Multivariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="NonlinearL")
     end
 end
 
@@ -273,7 +273,7 @@ end
     y::ProbabilityDistribution{Univariate, F},
     z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F<:Gaussian}
 
-    if x.params[:ApproximationType] == "IS"
+    if x.params[:ApproximationType] == "NonlinearIS"
         # The product of a log-pdf and Gaussian distribution is computed by importance sampling
         y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
         samples = y.params[:m] .+ sqrt(y.params[:v]).*randn(1000)
@@ -285,7 +285,7 @@ end
 
         z.params[:m] = mean
         z.params[:v] = var
-    else
+    elseif x.params[:ApproximationType] == "NonlinearL"
         # The product of a log-pdf and Gaussian distribution is approximated by Laplace method
         y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
         log_joint(s) = logPdf(y,s) + x.params[:log_pdf](s)
@@ -328,6 +328,9 @@ end
 
         z.params[:m] = mean
         z.params[:v] = var
+    elseif x.params[:ApproximationType] == "BivariateL"
+        z.params[:m] = x.params[:m]
+        z.params[:v] = x.params[:v]
     end
 
     return z
@@ -338,63 +341,69 @@ end
     y::ProbabilityDistribution{Multivariate, F},
     z::ProbabilityDistribution{Multivariate, GaussianMeanVariance}=ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))) where {F<:Gaussian}
 
-    # The product of a log-pdf and Gaussian distribution is approximated by Laplace method
-    y = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, y)
-    dim = dims(y)
-    log_joint(s) = logPdf(y,s) + x.params[:log_pdf](s)
-    #Optimization with gradient ascent
-    d_log_joint(s) = ForwardDiff.gradient(log_joint, s)
-    m_old = y.params[:m] #initial point
-    step_size = 0.01 #initial step size
-    satisfied = 0
-    step_count = 0
-    m_total = zeros(dim)
-    m_average = zeros(dim)
-    m_new = zeros(dim)
-    while satisfied == 0
-        m_new = m_old .+ step_size.*d_log_joint(m_old)
-        if log_joint(m_new) > log_joint(m_old)
-            proposal_step_size = 10*step_size
-            m_proposal = m_old .+ proposal_step_size.*d_log_joint(m_old)
-            if log_joint(m_proposal) > log_joint(m_new)
-                m_new = m_proposal
-                step_size = proposal_step_size
-            end
-        else
-            step_size = 0.1*step_size
+    if x.params[:ApproximationType] == "NonlinearL"
+        # The product of a log-pdf and Gaussian distribution is approximated by Laplace method
+        y = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, y)
+        dim = dims(y)
+        log_joint(s) = logPdf(y,s) + x.params[:log_pdf](s)
+        #Optimization with gradient ascent
+        d_log_joint(s) = ForwardDiff.gradient(log_joint, s)
+        m_old = y.params[:m] #initial point
+        step_size = 0.01 #initial step size
+        satisfied = 0
+        step_count = 0
+        m_total = zeros(dim)
+        m_average = zeros(dim)
+        m_new = zeros(dim)
+        while satisfied == 0
             m_new = m_old .+ step_size.*d_log_joint(m_old)
-        end
-        step_count += 1
-        m_total .+= m_old
-        m_average = m_total ./ step_count
-        if step_count > 10
-            if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim*0.1
+            if log_joint(m_new) > log_joint(m_old)
+                proposal_step_size = 10*step_size
+                m_proposal = m_old .+ proposal_step_size.*d_log_joint(m_old)
+                if log_joint(m_proposal) > log_joint(m_new)
+                    m_new = m_proposal
+                    step_size = proposal_step_size
+                end
+            else
+                step_size = 0.1*step_size
+                m_new = m_old .+ step_size.*d_log_joint(m_old)
+            end
+            step_count += 1
+            m_total .+= m_old
+            m_average = m_total ./ step_count
+            if step_count > 10
+                if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim*0.1
+                    satisfied = 1
+                end
+            elseif step_count > dim*250
                 satisfied = 1
             end
-        elseif step_count > 250
-            satisfied = 1
+            m_old = m_new
         end
-        m_old = m_new
-    end
-    mean = m_new
-    var = inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, mean))
+        mean = m_new
+        var = inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, mean))
 
-    z.params[:m] = mean
-    z.params[:v] = var
+        z.params[:m] = mean
+        z.params[:v] = var
+    elseif x.params[:ApproximationType] == "BivariateL"
+        z.params[:m] = x.params[:m]
+        z.params[:v] = x.params[:v]
+    end
 
     return z
 end
 
+# Think more carefully about the prod of function messages
 function prod!(
     x::ProbabilityDistribution{Univariate, Function},
     y::ProbabilityDistribution{Univariate, Function},
-    z::ProbabilityDistribution{Univariate, Function}=ProbabilityDistribution(Univariate, Function, log_pdf=(s)->s, ApproximationType="IS"))
+    z::ProbabilityDistribution{Univariate, Function}=ProbabilityDistribution(Univariate, Function, log_pdf=(s)->s, ApproximationType="NonlinearIS"))
 
     z.params[:log_pdf] = ((s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s))
     if x.params[:ApproximationType] == y.params[:ApproximationType]
         z.params[:ApproximationType] = x.params[:ApproximationType]
     else
-        z.params[:ApproximationType] = "IS"
+        z.params[:ApproximationType] = "NonlinearIS"
     end
 
     return z
@@ -403,13 +412,13 @@ end
 function prod!(
     x::ProbabilityDistribution{Multivariate, Function},
     y::ProbabilityDistribution{Multivariate, Function},
-    z::ProbabilityDistribution{Multivariate, Function}=ProbabilityDistribution(Multivariate, Function, log_pdf=(s)->s, ApproximationType="L"))
+    z::ProbabilityDistribution{Multivariate, Function}=ProbabilityDistribution(Multivariate, Function, log_pdf=(s)->s, ApproximationType="NonlinearL"))
 
     z.params[:log_pdf] = ((s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s))
     if x.params[:ApproximationType] == y.params[:ApproximationType]
         z.params[:ApproximationType] = x.params[:ApproximationType]
     else
-        z.params[:ApproximationType] = "L"
+        z.params[:ApproximationType] = "NonlinearL"
     end
 
     return z

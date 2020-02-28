@@ -30,7 +30,7 @@ function freeEnergySourceCode(algo::InferenceAlgorithm)
     fe_code *= energiesSourceCode(algo.average_energies)
     fe_code *= "\n"
     fe_code *= entropiesSourceCode(algo.entropies)
-    fe_code *= "\nreturn F\n\n" 
+    fe_code *= "\nreturn F\n\n"
     fe_code *= "end"
 
     return fe_code

@@ -18,21 +18,30 @@ end
 
 slug(::Type{SampleList}) = "SampleList"
 
-format(dist::ProbabilityDistribution{Univariate, SampleList}) = "$(slug(SampleList))(s=$(format(dist.params[:s])))"
+format(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = "$(slug(SampleList))(s=$(format(dist.params[:s])))"
 
 ProbabilityDistribution(::Type{Univariate}, ::Type{SampleList}; s=[0.0]) = ProbabilityDistribution{Univariate, SampleList}(Dict(:s=>s))
+ProbabilityDistribution(::Type{Multivariate}, ::Type{SampleList}; s=[[0.0]]) = ProbabilityDistribution{Multivariate, SampleList}(Dict(:s=>s))
 
 dims(dist::ProbabilityDistribution{Univariate, SampleList}) = 1
+dims(dist::ProbabilityDistribution{Multivariate, SampleList}) = length(dist.params[:s][1])
 
 vague(::Type{SampleList}) = ProbabilityDistribution(Univariate, SampleList, s=rand(1000))
+function vague(::Type{SampleList}, dims::Int64)
+    s_list = []
+    for n=1:1000
+        append!(s_list,rand(dims))
+    end
+    ProbabilityDistribution(Multivariate, SampleList, s=s_list)
+end
 
-unsafeMean(dist::ProbabilityDistribution{Univariate, SampleList}) = mean(dist.params[:s])
+unsafeMean(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = mean(dist.params[:s])
 
 unsafeLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = mean(log.(dist.params[:s]))
 
-unsafeVar(dist::ProbabilityDistribution{Univariate, SampleList}) = var(dist.params[:s]) # Compute corrected variance
+unsafeVar(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = var(dist.params[:s]) # Compute corrected variance
 
-unsafeMeanCov(dist::ProbabilityDistribution{Univariate, SampleList}) = (mean(dist.params[:s]), var(dist.params[:s]))
+unsafeMeanCov(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = (mean(dist.params[:s]), var(dist.params[:s]))
 
 function unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, SampleList})
     all(0 .<= dist.params[:s] .< 1) || error("unsafeMirroredLogMean does not apply to variables outside of the range [0, 1)")
@@ -40,12 +49,27 @@ function unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, SampleL
     return mean(log.(1 .- dist.params[:s]))
 end
 
-isProper(dist::ProbabilityDistribution{Univariate, SampleList}) = true
+isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = true
 
 @symmetrical function prod!(
     x::ProbabilityDistribution{Univariate},
     y::ProbabilityDistribution{Univariate, SampleList},
     z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0]))
+
+    #Importance sampling - resampling
+    log_pdf=(a) -> logPdf(x, a)
+    weights = exp.(log_pdf.(y.params[:s]))
+    weights = Weights(weights./sum(weights))
+    samples = sample(y.params[:s],weights,length(weights))
+
+    z.params[:s] = samples
+    return z
+end
+
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Multivariate},
+    y::ProbabilityDistribution{Multivariate, SampleList},
+    z::ProbabilityDistribution{Multivariate, SampleList}=ProbabilityDistribution(Multivariate, SampleList, s=[[0.0]]))
 
     #Importance sampling - resampling
     log_pdf=(a) -> logPdf(x, a)
