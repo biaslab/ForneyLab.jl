@@ -1,30 +1,28 @@
 export
-ruleSPNonlinearOutNG,
-ruleSPNonlinearIn1GG,
-ruleMNonlinearGG
+ruleSPNonlinearOutNGP,
+ruleSPNonlinearIn1GGP,
+ruleMNonlinearGGD
 
 const default_alpha = 1e-3 # Default value for the spread parameter
-const default_epsilon = 1e-8 # Default value for the node-softening variance
+const default_beta = 2.0
+const default_kappa = 0.0
 
 """
 Return the sigma points and weights for a Gaussian distribution
 """
-function sigmaPointsAndWeights(dist::ProbabilityDistribution{Univariate, F}, alpha::Float64) where F<:Gaussian
-    (m_x, V_x) = unsafeMeanCov(dist)
-
-    kappa = 0
-    beta = 2
+function sigmaPointsAndWeights(dist::ProbabilityDistribution{Univariate, F}; alpha=default_alpha, beta=default_beta, kappa=default_kappa) where F<:Gaussian
+    (m, V) = unsafeMeanCov(dist)
     lambda = (1 + kappa)*alpha^2 - 1
 
     sigma_points = Vector{Float64}(undef, 3)
     weights_m = Vector{Float64}(undef, 3)
     weights_c = Vector{Float64}(undef, 3)
 
-    l = sqrt((1 + lambda)*V_x)
+    l = sqrt((1 + lambda)*V)
 
-    sigma_points[1] = m_x
-    sigma_points[2] = m_x + l
-    sigma_points[3] = m_x - l
+    sigma_points[1] = m
+    sigma_points[2] = m + l
+    sigma_points[3] = m - l
     weights_m[1] = lambda/(1 + lambda)
     weights_m[2] = weights_m[3] = 1/(2*(1 + lambda))
     weights_c[1] = weights_m[1] + (1 - alpha^2 + beta)
@@ -33,30 +31,27 @@ function sigmaPointsAndWeights(dist::ProbabilityDistribution{Univariate, F}, alp
     return (sigma_points, weights_m, weights_c)
 end
 
-function sigmaPointsAndWeights(dist::ProbabilityDistribution{Multivariate, F}, alpha::Float64) where F<:Gaussian
+function sigmaPointsAndWeights(dist::ProbabilityDistribution{Multivariate, F}; alpha=default_alpha, beta=default_beta, kappa=default_kappa) where F<:Gaussian
     d = dims(dist)
-    (m_x, V_x) = unsafeMeanCov(dist)
-
-    kappa = 0
-    beta = 2
+    (m, V) = unsafeMeanCov(dist)
     lambda = (d + kappa)*alpha^2 - d
 
     sigma_points = Vector{Vector{Float64}}(undef, 2*d+1)
     weights_m = Vector{Float64}(undef, 2*d+1)
     weights_c = Vector{Float64}(undef, 2*d+1)
 
-    if isa(V_x, Diagonal)
-        L = sqrt((d + lambda)*V_x) # Matrix square root
+    if isa(V, Diagonal)
+        L = sqrt((d + lambda)*V) # Matrix square root
     else
-        L = sqrt(Hermitian((d + lambda)*V_x))
+        L = sqrt(Hermitian((d + lambda)*V))
     end
 
-    sigma_points[1] = m_x
+    sigma_points[1] = m
     weights_m[1] = lambda/(d + lambda)
     weights_c[1] = weights_m[1] + (1 - alpha^2 + beta)
     for i = 1:d
-        sigma_points[2*i] = m_x + L[:,i]
-        sigma_points[2*i+1] = m_x - L[:,i]
+        sigma_points[2*i] = m + L[:,i]
+        sigma_points[2*i+1] = m - L[:,i]
     end
     weights_m[2:end] .= 1/(2*(d + lambda))
     weights_c[2:end] .= 1/(2*(d + lambda))
@@ -64,146 +59,163 @@ function sigmaPointsAndWeights(dist::ProbabilityDistribution{Multivariate, F}, a
     return (sigma_points, weights_m, weights_c)
 end
 
-function ruleSPNonlinearOutNG(msg_out::Nothing,
-                              msg_in1::Message{F, Univariate},
-                              g::Function;
-                              alpha::Float64=default_alpha) where F<:Gaussian
+function ruleSPNonlinearOutNGP(msg_out::Nothing,
+                               msg_in1::Message{F, Univariate},
+                               msg_var::Message{PointMass, Univariate},
+                               g::Function;
+                               alpha::Float64=default_alpha) where F<:Gaussian
 
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist; alpha=alpha)
 
     # Unscented approximation
     g_sigma = g.(sigma_points)
-    m_fw_out = sum(weights_m.*g_sigma)
-    V_fw_out = sum(weights_c.*(g_sigma .- m_fw_out).^2)
+    m_tilde = sum(weights_m.*g_sigma)
+    V_tilde = sum(weights_c.*(g_sigma .- m_tilde).^2) + msg_var.dist.params[:m] # Include additive noise
 
-    return Message(Univariate, GaussianMeanVariance, m=m_fw_out, v=V_fw_out)
+    return Message(Univariate, GaussianMeanVariance, m=m_tilde, v=V_tilde)
 end
 
-function ruleSPNonlinearOutNG(msg_out::Nothing,
-                              msg_in1::Message{F, Multivariate},
-                              g::Function;
-                              alpha::Float64=default_alpha) where F<:Gaussian
+function ruleSPNonlinearOutNGP(msg_out::Nothing,
+                               msg_in1::Message{F, Multivariate},
+                               msg_var::Message{PointMass, MatrixVariate},
+                               g::Function;
+                               alpha::Float64=default_alpha) where F<:Gaussian
     d = dims(msg_in1.dist)
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist; alpha=alpha)
 
     # Unscented approximation
     g_sigma = g.(sigma_points)
-    m_fw_out = sum([weights_m[k+1]*g_sigma[k+1] for k=0:2*d])
-    V_fw_out = sum([weights_c[k+1]*(g_sigma[k+1] - m_fw_out)*(g_sigma[k+1] - m_fw_out)' for k=0:2*d])
+    m_tilde = sum([weights_m[k+1]*g_sigma[k+1] for k=0:2*d])
+    V_tilde = sum([weights_c[k+1]*(g_sigma[k+1] - m_tilde)*(g_sigma[k+1] - m_tilde)' for k=0:2*d]) + msg_var.dist.params[:m] # Include additive noise
 
-    return Message(Multivariate, GaussianMeanVariance, m=m_fw_out, v=V_fw_out)
+    return Message(Multivariate, GaussianMeanVariance, m=m_tilde, v=V_tilde)
 end
 
-function ruleSPNonlinearIn1GG(msg_out::Message{F, Univariate},
-                              msg_in1::Nothing,
-                              g::Function,
-                              g_inv::Function;
-                              alpha::Float64=default_alpha) where F<:Gaussian
+# Backward rule with given inverse
+function ruleSPNonlinearIn1GGP(msg_out::Message{F, Univariate},
+                               msg_in1::Nothing,
+                               msg_var::Message{PointMass, Univariate},
+                               g::Function,
+                               g_inv::Function;
+                               alpha::Float64=default_alpha) where F<:Gaussian
+    
+    (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
+    noisy_dist_out = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=m_bw_out, v=V_bw_out+msg_var.dist.params[:m])
 
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_out.dist, alpha)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(noisy_dist_out; alpha=alpha)
 
     # Unscented approximation
     g_inv_sigma = g_inv.(sigma_points)
-    m_bw_in1 = sum(weights_m.*g_inv_sigma)
-    V_bw_in1 = sum(weights_c.*(g_inv_sigma .- m_bw_in1).^2)
+    m_tilde = sum(weights_m.*g_inv_sigma)
+    V_tilde = sum(weights_c.*(g_inv_sigma .- m_tilde).^2)
 
-    return Message(Univariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
+    return Message(Univariate, GaussianMeanVariance, m=m_tilde, v=V_tilde)
 end
 
-function ruleSPNonlinearIn1GG(msg_out::Message{F, Multivariate},
-                              msg_in1::Nothing,
-                              g::Function,
-                              g_inv::Function;
-                              alpha::Float64=default_alpha) where F<:Gaussian
+# Backward rule with given inverse
+function ruleSPNonlinearIn1GGP(msg_out::Message{F, Multivariate},
+                               msg_in1::Nothing,
+                               msg_var::Message{PointMass, MatrixVariate},
+                               g::Function,
+                               g_inv::Function;
+                               alpha::Float64=default_alpha) where F<:Gaussian
     d = dims(msg_out.dist)
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_out.dist, alpha)
+    (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
+    noisy_dist_out = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_bw_out, v=V_bw_out+msg_var.dist.params[:m])
+    
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(noisy_dist_out; alpha=alpha)
 
     # Unscented approximation
     g_inv_sigma = g_inv.(sigma_points)
-    m_bw_in1 = sum([weights_m[k+1]*g_inv_sigma[k+1] for k=0:2*d])
-    V_bw_in1 = sum([weights_c[k+1]*(g_inv_sigma[k+1] - m_bw_in1)*(g_inv_sigma[k+1] - m_bw_in1)' for k=0:2*d])
+    m_tilde = sum([weights_m[k+1]*g_inv_sigma[k+1] for k=0:2*d])
+    V_tilde = sum([weights_c[k+1]*(g_inv_sigma[k+1] - m_tilde)*(g_inv_sigma[k+1] - m_tilde)' for k=0:2*d])
 
-    return Message(Multivariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
+    return Message(Multivariate, GaussianMeanVariance, m=m_tilde, v=V_tilde)
 end
 
-function ruleSPNonlinearIn1GG(msg_out::Message{F1, Univariate},
-                              msg_in1::Message{F2, Univariate},
-                              g::Function;
-                              alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian}
+function ruleSPNonlinearIn1GGP(msg_out::Message{F1, Univariate},
+                               msg_in1::Message{F2, Univariate},
+                               msg_var::Message{PointMass, Univariate},
+                               g::Function;
+                               alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian}
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
 
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist; alpha=alpha)
 
     # Unscented approximations
     g_sigma = g.(sigma_points)
-    m_fw_out = sum(weights_m.*g_sigma)
-    V_fw_out = sum(weights_c.*(g_sigma .- m_fw_out).^2)
-    C_fw = sum(weights_c.*(sigma_points .- m_fw_in1).*(g_sigma .- m_fw_out))
+    m_tilde = sum(weights_m.*g_sigma)
+    V_tilde = sum(weights_c.*(g_sigma .- m_tilde).^2) + msg_var.dist.params[:m]
+    C_tilde = sum(weights_c.*(sigma_points .- m_fw_in1).*(g_sigma .- m_tilde))
 
     # Update based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
-    C_fw_inv = 1/C_fw
-    V_bw_in1 = V_fw_in1^2*C_fw_inv^2*(V_fw_out + V_bw_out) - V_fw_in1
-    m_bw_in1 = m_fw_in1 - (V_fw_in1 + V_bw_in1)*C_fw*(m_fw_out - m_bw_out)/(V_fw_in1*(V_fw_out + V_bw_out))
+    C_tilde_inv = 1/C_tilde
+    V_bw_in1 = V_fw_in1^2*C_tilde_inv^2*(V_tilde + V_bw_out) - V_fw_in1
+    m_bw_in1 = m_fw_in1 - (V_fw_in1 + V_bw_in1)*C_tilde*(m_tilde - m_bw_out)/(V_fw_in1*(V_tilde + V_bw_out))
 
     return Message(Univariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
 end
 
-function ruleSPNonlinearIn1GG(msg_out::Message{F1, Multivariate},
-                              msg_in1::Message{F2, Multivariate},
-                              g::Function;
-                              alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian}
+# Backward rule with unknown inverse
+function ruleSPNonlinearIn1GGP(msg_out::Message{F1, Multivariate},
+                               msg_in1::Message{F2, Multivariate},
+                               msg_var::Message{PointMass, MatrixVariate},
+                               g::Function;
+                               alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian}
     d_in1 = dims(msg_in1.dist)
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     W_fw_in1 = unsafePrecision(msg_in1.dist)
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
 
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist; alpha=alpha)
 
     # Unscented approximations
     g_sigma = g.(sigma_points)
-    m_fw_out = sum([weights_m[k+1]*g_sigma[k+1] for k=0:2*d_in1])
-    V_fw_out = sum([weights_c[k+1]*(g_sigma[k+1] - m_fw_out)*(g_sigma[k+1] - m_fw_out)' for k=0:2*d_in1])
-    C_fw = sum([weights_c[k+1]*(sigma_points[k+1] - m_fw_in1)*(g_sigma[k+1] - m_fw_out)' for k=0:2*d_in1])
+    m_tilde = sum([weights_m[k+1]*g_sigma[k+1] for k=0:2*d_in1])
+    V_tilde = sum([weights_c[k+1]*(g_sigma[k+1] - m_tilde)*(g_sigma[k+1] - m_tilde)' for k=0:2*d_in1]) + msg_var.dist.params[:m]
+    C_tilde = sum([weights_c[k+1]*(sigma_points[k+1] - m_fw_in1)*(g_sigma[k+1] - m_tilde)' for k=0:2*d_in1])
 
     # Update based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
     # Note, this implementation is not as efficient as Petersen et al. (2018), because we explicitly require the outbound messages
-    C_fw_inv = pinv(C_fw)
-    V_bw_in1 = V_fw_in1*C_fw_inv'*(V_fw_out + V_bw_out)*C_fw_inv*V_fw_in1 - V_fw_in1
-    m_bw_in1 = m_fw_in1 - (V_fw_in1 + V_bw_in1)*W_fw_in1*C_fw*cholinv(V_fw_out + V_bw_out)*(m_fw_out - m_bw_out)
+    C_tilde_inv = pinv(C_tilde)
+    V_bw_in1 = V_fw_in1*C_tilde_inv'*(V_tilde + V_bw_out)*C_tilde_inv*V_fw_in1 - V_fw_in1
+    m_bw_in1 = m_fw_in1 - (V_fw_in1 + V_bw_in1)*W_fw_in1*C_tilde*cholinv(V_tilde + V_bw_out)*(m_tilde - m_bw_out)
 
     return Message(Multivariate, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
 end
 
-function ruleMNonlinearGG(msg_out::Message{F1, Univariate},
-                          msg_in1::Message{F2, Univariate},
-                          g::Function;
-                          alpha::Float64=default_alpha,
-                          epsilon::Float64=default_epsilon) where {F1<:Gaussian, F2<:Gaussian}
+# Backward rule with unknown inverse
+function ruleMNonlinearGGD(msg_out::Message{F1, Univariate},
+                           msg_in1::Message{F2, Univariate},
+                           dist_var::ProbabilityDistribution{Univariate},
+                           g::Function;
+                           alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian}
 
     (xi_fw_in1, W_fw_in1) = unsafeWeightedMeanPrecision(msg_in1.dist)
     m_fw_in1 = unsafeMean(msg_in1.dist)
     (xi_bw_out, W_bw_out) = unsafeWeightedMeanPrecision(msg_out.dist)
 
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist, alpha)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(msg_in1.dist; alpha=alpha)
 
     # Unscented approximations
     g_sigma = g.(sigma_points)
-    m_fw_out = sum(weights_m.*g_sigma)
-    V_fw_out = sum(weights_c.*(g_sigma .- m_fw_out).^2) + epsilon # With added softening variance
-    C_fw = sum(weights_c.*(sigma_points .- m_fw_in1).*(g_sigma .- m_fw_out))
+    m_tilde = sum(weights_m.*g_sigma)
+    V_tilde = sum(weights_c.*(g_sigma .- m_tilde).^2) + unsafeMean(dist_var)
+    C_tilde = sum(weights_c.*(sigma_points .- m_fw_in1).*(g_sigma .- m_tilde))
     
     # Compute joint statistics
-    G = 1/(V_fw_out - C_fw'*W_fw_in1*C_fw)
-    xi_q_in1 = G*(m_fw_out - C_fw'*xi_fw_in1)
-    xi_q_out = xi_fw_in1 + W_fw_in1*C_fw*G*(C_fw'*xi_fw_in1 - m_fw_out) + xi_bw_out
-    W_q_in1 = W_fw_in1 + W_fw_in1*C_fw*G*C_fw'*W_fw_in1
-    W_q_out = G + W_bw_out
-    D_q = -W_fw_in1*C_fw*G
+    z = m_tilde - C_tilde'*xi_fw_in1
+    G_tilde = 1/(V_tilde - C_tilde'*W_fw_in1*C_tilde)
+    K = W_fw_in1*C_tilde*G_tilde
+    xi_q_out = G_tilde*z + xi_bw_out
+    xi_q_in1 = xi_fw_in1 - K*z
+    W_q_out = G_tilde + W_bw_out
+    W_q_in1 = W_fw_in1 + K*C_tilde'*W_fw_in1
 
-    return ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[xi_q_out; xi_q_in1], w=[W_q_out D_q'; D_q W_q_in1])
+    return ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[xi_q_out; xi_q_in1], w=[W_q_out -K'; -K W_q_in1])
 end
 
 

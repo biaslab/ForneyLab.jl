@@ -69,7 +69,7 @@ end
     f(z) = z
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    @RV y ~ Nonlinear(x, f)
+    @RV y ~ Nonlinear(x, 1.0, f)
     GaussianMeanPrecision(y, 0.0, 1.0)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz)
@@ -80,7 +80,7 @@ end
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(pf)
     assembleInitialization!(pf)
-    @test pf.schedule[7].message_update_rule == ForneyLab.SPNonlinearIn1GG
+    @test pf.schedule[8].message_update_rule == ForneyLab.SPNonlinearIn1GGP
     @test pf.schedule[3].initialize
 
     # Optimize
