@@ -16,7 +16,7 @@ Construction:
 
     Exponential(out, in1, id=:some_id)
 """
-mutable struct Exponential <: DeltaFactor
+mutable struct Exponential <: NonlinearDeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

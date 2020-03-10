@@ -1,12 +1,12 @@
-export Nonlinear
+export NonlinearGaussian
 
 """
 Description:
 
-    Nonlinear node modeling a nonlinear relation. Updates for
-    the nonlinear node are computed through the unscented transform.
+    NonlinearGaussian node modeling a nonlinear relation with additive Gaussian noise.
+    Updates for the NonlinearGaussian node are computed through the unscented transform.
     
-    For more details see "On Approximate Nonlinear Gaussian Message Passing on
+    For more details see "On Approximate NonlinearGaussian Gaussian Message Passing on
     Factor Graphs", Petersen et al. 2018.
 
     f(out, in1, v) = N(out | g(in1), v)
@@ -19,9 +19,9 @@ Interfaces:
 
 Construction:
 
-    Nonlinear(out, in1, v, g, id=:my_node)
+    NonlinearGaussian(out, in1, v, g, id=:my_node)
 """
-mutable struct Nonlinear <: SoftFactor
+mutable struct NonlinearGaussian <: SoftFactor
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol, Interface}
@@ -31,7 +31,7 @@ mutable struct Nonlinear <: SoftFactor
     alpha::Union{Float64, Nothing} # Spread parameter for unscented transform
     dims::Tuple # Dimension of breaker message on input interface
 
-    function Nonlinear(out, in1, v, g::Function; g_inv=nothing, alpha=nothing, dims=(), id=ForneyLab.generateId(Nonlinear))
+    function NonlinearGaussian(out, in1, v, g::Function; g_inv=nothing, alpha=nothing, dims=(), id=ForneyLab.generateId(NonlinearGaussian))
         @ensureVariables(out, in1, v)
         self = new(id, Vector{Interface}(undef, 3), Dict{Symbol,Interface}(), g, g_inv, alpha, dims)
         ForneyLab.addNode!(currentGraph(), self)
@@ -43,9 +43,9 @@ mutable struct Nonlinear <: SoftFactor
     end
 end
 
-slug(::Type{Nonlinear}) = "g"
+slug(::Type{NonlinearGaussian}) = "g"
 
-function averageEnergy(::Type{Nonlinear}, 
+function averageEnergy(::Type{NonlinearGaussian}, 
                        marg_out_in1::ProbabilityDistribution{Multivariate, F},
                        marg_var::ProbabilityDistribution{Univariate},
                        g::Function) where F<:Gaussian
@@ -67,7 +67,7 @@ end
 # Custom inbounds collector
 #--------------------------
 
-function collectAverageEnergyInbounds(node::Nonlinear)
+function collectAverageEnergyInbounds(node::NonlinearGaussian)
     inbounds = Any[]
     local_posterior_factor_to_region = localPosteriorFactorToRegion(node)
 

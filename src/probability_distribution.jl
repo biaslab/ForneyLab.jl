@@ -50,7 +50,7 @@ cov(dist::ProbabilityDistribution) = isProper(dist) ? unsafeCov(dist) : error("c
 It never occurs in a `FactorGraph`, but it is used as a probability distribution
 type.
 """
-abstract type PointMass <: DeltaFactor end
+abstract type PointMass <: LinearDeltaFactor end
 
 slug(::Type{PointMass}) = "δ"
 

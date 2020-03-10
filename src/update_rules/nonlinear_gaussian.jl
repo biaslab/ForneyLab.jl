@@ -1,13 +1,13 @@
-@sumProductRule(:node_type     => Nonlinear,
+@sumProductRule(:node_type     => NonlinearGaussian,
                 :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Nothing, Message{Gaussian}, Message{PointMass}),
-                :name          => SPNonlinearOutNGP)
+                :name          => SPNonlinearGaussianOutNGP)
 
-@sumProductRule(:node_type     => Nonlinear,
+@sumProductRule(:node_type     => NonlinearGaussian,
                 :outbound_type => Message{GaussianMeanVariance},
                 :inbound_types => (Message{Gaussian}, Nothing, Message{PointMass}),
-                :name          => SPNonlinearIn1GGP)
+                :name          => SPNonlinearGaussianIn1GGP)
 
-@marginalRule(:node_type => Nonlinear,
+@marginalRule(:node_type => NonlinearGaussian,
               :inbound_types => (Message{Gaussian}, Message{Gaussian}, ProbabilityDistribution),
-              :name => MNonlinearGGD)
+              :name => MNonlinearGaussianGGD)

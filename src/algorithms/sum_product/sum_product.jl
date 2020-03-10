@@ -57,14 +57,14 @@ end
 
 """
 `internalSumProductSchedule()` generates a sum-product message passing schedule
-for the inner graph of a `CompositeNode`. This schedule produces the sum-product
+for the inner graph of a `CompositeFactor`. This schedule produces the sum-product
 message out of the specified `outbound_interface`.
 """
-function internalSumProductSchedule(cnode::CompositeNode,
+function internalSumProductSchedule(cnode::CompositeFactor,
                                     outbound_interface::Interface,
                                     inferred_outbound_types::Dict{Interface, <:Type})
 
-    # Collect types of messages towards the CompositeNode
+    # Collect types of messages towards the CompositeFactor
     msg_types = Dict{Interface, Type}()
     for (idx, terminal) in enumerate(cnode.terminals)
         (cnode.interfaces[idx] === outbound_interface) && continue # don't need incoming msg on outbound interface
@@ -88,7 +88,7 @@ function internalSumProductSchedule(cnode::CompositeNode,
 
     # Sanity check
     if schedule[end].interface !== internal_outbound_interface
-        error("The last schedule entry should correspond to the message going out of the CompositeNode")
+        error("The last schedule entry should correspond to the message going out of the CompositeFactor")
     end
 
     # Type inference for internal messages
@@ -114,8 +114,8 @@ function inferUpdateRule!(entry::ScheduleEntry,
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        if isa(entry.interface.node, CompositeNode)
-            # No 'shortcut rule' available for CompositeNode.
+        if isa(entry.interface.node, CompositeFactor)
+            # No 'shortcut rule' available for CompositeFactor.
             # Try to fall back to msg passing on the internal graph.
             entry.internal_schedule = internalSumProductSchedule(entry.interface.node, entry.interface, inferred_outbound_types)
             entry.message_update_rule = entry.internal_schedule[end].message_update_rule

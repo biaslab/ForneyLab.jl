@@ -1,7 +1,7 @@
 module FactorNodeTest
 
 using Test
-using ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture, Nonlinear
+using ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture, Nonlinear, NonlinearGaussian
 using InteractiveUtils: subtypes
 
 @testset "FactorNode" begin
@@ -31,6 +31,8 @@ using InteractiveUtils: subtypes
         elseif node_type == GaussianMixture # Required for Vararg argument
             test_node = GaussianMixture(Variable(), Variable(), Variable(), Variable(), Variable(), Variable())
         elseif node_type == Nonlinear
+            test_node = Nonlinear(Variable(), Variable(), ()->())
+        elseif node_type == NonlinearGaussian
             test_node = Nonlinear(Variable(), Variable(), Variable(), ()->())
         else
             constructor_argument_length = length(first(methods(node_type)).sig.parameters) - 1

@@ -24,7 +24,7 @@ Construction:
 
     DotProduct(out, in1, in2, id=:my_node)
 """
-mutable struct DotProduct <: DeltaFactor
+mutable struct DotProduct <: LinearDeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}

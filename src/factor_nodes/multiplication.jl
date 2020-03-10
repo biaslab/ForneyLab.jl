@@ -18,7 +18,7 @@ Construction:
 
     Multiplication(out, in1, a, id=:some_id)
 """
-mutable struct Multiplication <: DeltaFactor
+mutable struct Multiplication <: LinearDeltaFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
