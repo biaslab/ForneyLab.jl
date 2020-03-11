@@ -42,10 +42,10 @@ end
     @RV w ~ GaussianMeanPrecision(z, 1.0)
     placeholder(w, :w)
 
-    pfz = PosteriorFactorization()
-    algo = sumProductAlgorithm(Variable[], pfz, free_energy=true)
+    algo = sumProductAlgorithm(Variable[], free_energy=true)
     assembleFreeEnergy!(algo)
 
+    pfz = algo.posterior_factorization
     pf = pfz.posterior_factors[Symbol("")]
     cl = first(pf.target_clusters)
     nd1 = g.nodes[:gaussianmeanprecision_1]
