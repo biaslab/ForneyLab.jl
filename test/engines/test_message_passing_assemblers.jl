@@ -80,7 +80,7 @@ end
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(pf)
     assembleInitialization!(pf)
-    @test pf.schedule[8].message_update_rule == ForneyLab.SPNonlinearIn1GGP
+    @test pf.schedule[7].message_update_rule == ForneyLab.SPNonlinearIn1GG
     @test pf.schedule[3].initialize
 
     # Optimize

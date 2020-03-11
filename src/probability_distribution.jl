@@ -79,6 +79,8 @@ unsafeInverseMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = cho
 unsafeLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(dist.params[:m])
 unsafeLogMean(dist::ProbabilityDistribution{Multivariate, PointMass}) = log.(dist.params[:m])
 unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = log.(dist.params[:m])
+
+unsafeDetLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(dist.params[:m])
 unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = log(det(dist.params[:m]))
 
 unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(1.0 - dist.params[:m])

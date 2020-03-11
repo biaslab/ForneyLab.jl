@@ -43,23 +43,30 @@ mutable struct NonlinearGaussian <: SoftFactor
     end
 end
 
-slug(::Type{NonlinearGaussian}) = "g"
+slug(::Type{NonlinearGaussian}) = "Ng"
 
 function averageEnergy(::Type{NonlinearGaussian}, 
                        marg_out_in1::ProbabilityDistribution{Multivariate, F},
-                       marg_var::ProbabilityDistribution{Univariate},
+                       marg_var::ProbabilityDistribution,
                        g::Function) where F<:Gaussian
+    
+    (m_out_in1, V_out_in1) = unsafeMeanCov(marg_out_in1)
+    W_bar = unsafeInverseMean(marg_var)
+
+    d_out = dims(marg_var)[1]
+    d_in1 = dims(marg_out_in1) - d_out
 
     # Cubature through unscented approximation
     # See Sarkka (2013), "Bayesian Filtering and Smoothing"
-    (sigma_points, weights, _) = ForneyLab.sigmaPointsAndWeights(marg_out_in1; alpha=1.0, beta=0.0, kappa=1.0)
-    sigma_out = [sigma_point[1] for sigma_point in sigma_points]
-    sigma_in1 = [sigma_point[2] for sigma_point in sigma_points]
-    t = (sigma_out .- g.(sigma_in1)).^2
+    (sigma_points, weights, _) = sigmaPointsAndWeights(m_out_in1, V_out_in1; alpha=1.0, beta=0.0, kappa=1.0)
+    sigma_out = [sigma_point[1:d_in1] for sigma_point in sigma_points]
+    sigma_in1 = [sigma_point[(d_in1+1):end] for sigma_point in sigma_points]
+    t = (sigma_out .- g.(sigma_in1))
+    quad = [t_k'*W_bar*t_k for t_k in t] # Evaluate quadratic form for all sigma points
 
     0.5*log(2*pi) +
-    0.5*unsafeLogMean(marg_var) +
-    0.5*unsafeInverseMean(marg_var)*sum(weights.*t)
+    0.5*unsafeDetLogMean(marg_var) +
+    0.5*sum(weights.*quad)
 end
 
 

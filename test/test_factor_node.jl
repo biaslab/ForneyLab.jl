@@ -33,7 +33,7 @@ using InteractiveUtils: subtypes
         elseif node_type == Nonlinear
             test_node = Nonlinear(Variable(), Variable(), ()->())
         elseif node_type == NonlinearGaussian
-            test_node = Nonlinear(Variable(), Variable(), Variable(), ()->())
+            test_node = NonlinearGaussian(Variable(), Variable(), Variable(), ()->())
         else
             constructor_argument_length = length(first(methods(node_type)).sig.parameters) - 1
             vars = [Variable() for v = 1:constructor_argument_length]
