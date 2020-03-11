@@ -75,7 +75,7 @@ function PosteriorFactorization(args::Vararg{Union{T, Set{T}, Vector{T}} where T
 end
 
 """
-Pupulate the target regions of the PosteriorFactor.
+Populate the target regions of the PosteriorFactor.
 The targets depend on the variables of interest, the local posterior
 factorization, and whether free energy will be evaluated. At the same
 time, fields for fast lookup during scheduling are populated in the

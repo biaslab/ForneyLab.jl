@@ -6,11 +6,12 @@ expectationPropagationAlgorithm,
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function expectationPropagationAlgorithm(variables::Vector{Variable},
-                                         pfz::PosteriorFactorization=PosteriorFactorization(); 
+function expectationPropagationAlgorithm(variables::Vector{Variable}; 
                                          id=Symbol(""),
                                          free_energy=false)
 
+    # Initialize empty posterior factorization
+    pfz = PosteriorFactorization()
     # Contain the entire graph in a single posterior factor
     pf = PosteriorFactor(pfz, id=Symbol(""))
 
@@ -29,7 +30,7 @@ function expectationPropagationAlgorithm(variables::Vector{Variable},
     
     return algo
 end
-expectationPropagationAlgorithm(variable::Variable, pfz::PosteriorFactorization=PosteriorFactorization(); id=Symbol(""), free_energy=false) = expectationPropagationAlgorithm([variable], pfz, id=id, free_energy=free_energy)
+expectationPropagationAlgorithm(variable::Variable; id=Symbol(""), free_energy=false) = expectationPropagationAlgorithm([variable], id=id, free_energy=free_energy)
 
 """
 A non-specific expectation propagation update
