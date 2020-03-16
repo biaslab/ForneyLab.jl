@@ -19,15 +19,15 @@ The [ForneyLab project page](http://forneylab.org) provides more background on F
 Documentation
 =============
 
-A full documentation is available at [BIASlab website](https://biaslab.github.io/forneylab/docs/).
+Full documentation is available at [BIASlab website](https://biaslab.github.io/forneylab/docs/).
 
-It is also possible to build a documentation locally. Just use
+It is also possible to build documentation locally. Just execute
 
 ```bash
 $ julia make.jl
 ```
 
-in the `docs/` directory to build local version of the documentation.
+in the `docs/` directory to build a local version of the documentation.
 
 Installation
 ============
