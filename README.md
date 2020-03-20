@@ -16,6 +16,18 @@ The current version supports [belief propagation](https://en.wikipedia.org/wiki/
 
 The [ForneyLab project page](http://forneylab.org) provides more background on ForneyLab as well as pointers to related literature and talks. For a practical introduction, have a look at [the demos](https://github.com/biaslab/ForneyLab.jl/tree/master/demo).
 
+Documentation
+=============
+
+Full documentation is available at [BIASlab website](https://biaslab.github.io/forneylab/docs/).
+
+It is also possible to build documentation locally. Just execute
+
+```bash
+$ julia make.jl
+```
+
+in the `docs/` directory to build a local version of the documentation.
 
 Installation
 ============

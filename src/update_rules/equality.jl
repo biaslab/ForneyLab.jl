@@ -55,3 +55,27 @@ function isApplicable(::Type{SPEqualityPointMass}, input_types::Vector{Type})
 
     return (Nothing_inputs == 1) && (soft_inputs == 1) && (point_mass_inputs == 1)
 end
+
+mutable struct SPEqualityRGMP <: SumProductRule{Equality} end
+outboundType(::Type{SPEqualityRGMP}) = Message{Function}
+isApplicable(::Type{SPEqualityRGMP}, input_types::Vector{Type}) = matchPermutedCanonical(input_types, Message{Function})
+
+mutable struct SPEqualityGaussianRGMP <: SumProductRule{Equality} end
+outboundType(::Type{SPEqualityGaussianRGMP}) = Message{GaussianMeanVariance}
+function isApplicable(::Type{SPEqualityGaussianRGMP}, input_types::Vector{Type})
+    Nothing_inputs = 0
+    function_inputs = 0
+    gaussian_inputs = 0
+
+    for input_type in input_types
+        if input_type == Nothing
+            Nothing_inputs += 1
+        elseif input_type == Message{Function}
+            function_inputs += 1
+        elseif input_type <: Message{Gaussian}
+            gaussian_inputs += 1
+        end
+    end
+
+    return (Nothing_inputs == 1) && (function_inputs == 1) && (gaussian_inputs == 1)
+end
