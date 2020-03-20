@@ -39,7 +39,6 @@ using Test
     include("factor_nodes/test_logit.jl")
     include("factor_nodes/test_softmax.jl")
     include("factor_nodes/test_nonlinear.jl")
-    include("factor_nodes/test_nonlinear_gaussian.jl")
     include("factor_nodes/test_dot_product.jl")
     include("factor_nodes/test_poisson.jl")
 

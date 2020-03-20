@@ -2,8 +2,6 @@ export FactorNode
 
 abstract type FactorNode end
 abstract type DeltaFactor <: FactorNode end
-abstract type LinearDeltaFactor <: DeltaFactor end
-abstract type NonlinearDeltaFactor <: DeltaFactor end
 abstract type SoftFactor <: FactorNode end
 
 Base.isless(n1::FactorNode, n2::FactorNode) = isless("$(n1.id)", "$(n2.id)")

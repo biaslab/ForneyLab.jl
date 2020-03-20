@@ -20,7 +20,7 @@ Construction:
 
     Nonlinear(out, in1, g, id=:my_node)
 """
-mutable struct Nonlinear <: NonlinearDeltaFactor
+mutable struct Nonlinear <: DeltaFactor
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol, Interface}
