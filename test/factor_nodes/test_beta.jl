@@ -2,9 +2,9 @@ module BetaTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf
-import ForneyLab: SPBetaOutNPP, VBBetaOut
-import SpecialFunctions: digamma
+using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf
+using ForneyLab: SPBetaOutNPP, VBBetaOut
+using SpecialFunctions: digamma
 
 @testset "Beta ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Univariate, Beta, a=2.0, b=3.0) == ProbabilityDistribution{Univariate, Beta}(Dict(:a=>2.0, :b=>3.0))

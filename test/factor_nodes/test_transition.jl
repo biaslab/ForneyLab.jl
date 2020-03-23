@@ -2,8 +2,8 @@ module TransitionTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPTransitionOutNPP, SPTransitionIn1PNP, SPTransitionOutNCP, SPTransitionIn1CNP, VBTransitionOut, VBTransitionIn1, VBTransitionA, SVBTransitionOutVCD, SVBTransitionIn1CVD, SVBTransitionADV, MTransitionCCD
+using ForneyLab: outboundType, isApplicable
+using ForneyLab: SPTransitionOutNPP, SPTransitionIn1PNP, SPTransitionOutNCP, SPTransitionIn1CNP, VBTransitionOut, VBTransitionIn1, VBTransitionA, SVBTransitionOutVCD, SVBTransitionIn1CVD, SVBTransitionADV, MTransitionCCD
 
 
 #-------------

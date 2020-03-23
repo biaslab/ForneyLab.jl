@@ -2,8 +2,8 @@ module EqualityTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPEqualityGaussian, SPEqualityGammaWishart, SPEqualityBernoulli, SPEqualityBeta, SPEqualityCategorical, SPEqualityDirichlet, SPEqualityPointMass
+using ForneyLab: outboundType, isApplicable
+using ForneyLab: SPEqualityGaussian, SPEqualityGammaWishart, SPEqualityBernoulli, SPEqualityBeta, SPEqualityCategorical, SPEqualityDirichlet, SPEqualityPointMass
 
 
 #-------------

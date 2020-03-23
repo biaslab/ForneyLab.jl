@@ -1,7 +1,7 @@
 module InterfaceTest
 
 using Test
-import ForneyLab: Interface, FactorNode
+using ForneyLab: Interface, FactorNode
 
 # Integration helper
 mutable struct MockNode <: FactorNode end

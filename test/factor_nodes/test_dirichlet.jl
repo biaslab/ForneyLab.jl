@@ -2,9 +2,9 @@ module DirichletTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeVar, vague, dims
-import ForneyLab: SPDirichletOutNP, VBDirichletOut
-import SpecialFunctions: digamma
+using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeVar, vague, dims
+using ForneyLab: SPDirichletOutNP, VBDirichletOut
+using SpecialFunctions: digamma
 
 @testset "Dirichlet ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0]) == ProbabilityDistribution{Multivariate, Dirichlet}(Dict(:a=>[2.0, 3.0]))

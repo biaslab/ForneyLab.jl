@@ -2,8 +2,8 @@ module ClampTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable, @ensureVariables, generateId, addNode!, associate!
-import ForneyLab: SPClamp
+using ForneyLab: outboundType, isApplicable, @ensureVariables, generateId, addNode!, associate!
+using ForneyLab: SPClamp
 
 # Integration helper
 mutable struct MockNode <: FactorNode

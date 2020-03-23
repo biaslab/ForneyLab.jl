@@ -60,4 +60,3 @@ function Nonlinear(out, in1, g::Function; g_inv=nothing, alpha=nothing, dims=(),
 end
 
 slug(::Type{Nonlinear}) = "g"
-

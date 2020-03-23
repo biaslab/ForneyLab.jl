@@ -23,7 +23,8 @@ include("dependency_graph.jl")
 
 # High level abstracts
 abstract type AbstractEdge end # An Interface belongs to an Edge, so AbstractEdge has to be defined before Interface
-abstract type AbstractVariable end
+abstract type Region end # A Variable and Cluster are both Regions
+abstract type AbstractVariable <: Region end
 
 # Low-level internals
 include("factor_node.jl")
@@ -68,6 +69,7 @@ include("factor_graph.jl")
 include("factor_nodes/composite.jl")
 
 # Generic methods
+include("algorithms/cluster.jl")
 include("message_passing.jl")
 include("marginals.jl")
 
@@ -75,21 +77,20 @@ include("marginals.jl")
 include("visualization.jl")
 
 # Algorithms
-include("algorithms/cluster.jl")
 include("algorithms/posterior_factor.jl")
 include("algorithms/posterior_factorization.jl")
 include("algorithms/inference_algorithm.jl")
+include("algorithms/joint_marginals.jl")
 
 include("algorithms/sum_product/sum_product.jl")
-include("algorithms/variational_bayes/joint_marginals.jl")
 include("algorithms/variational_bayes/naive_variational_bayes.jl")
 include("algorithms/variational_bayes/structured_variational_bayes.jl")
-include("algorithms/variational_bayes/free_energy.jl")
 include("algorithms/expectation_propagation/expectation_propagation.jl")
 include("algorithms/expectation_propagation/variational_expectation_propagation.jl")
 
 # Assemblers
-include("engines/assemblers.jl")
+include("engines/message_passing_assemblers.jl")
+include("engines/free_energy_assemblers.jl")
 
 # Update rules
 include("update_rules/clamp.jl")

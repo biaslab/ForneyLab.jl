@@ -2,8 +2,8 @@ module ProbitTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPProbitOutNG, EPProbitIn1GB, EPProbitIn1GC, EPProbitIn1GP
+using ForneyLab: outboundType, isApplicable
+using ForneyLab: SPProbitOutNG, EPProbitIn1GB, EPProbitIn1GC, EPProbitIn1GP
 
 
 #-------------

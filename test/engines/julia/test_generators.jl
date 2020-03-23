@@ -2,8 +2,8 @@ module GeneratorsTest
 
 using Test
 using ForneyLab
-import LinearAlgebra: Diagonal
-import ForneyLab: entropiesSourceCode, energiesSourceCode, freeEnergySourceCode, marginalTableSourceCode, inboundSourceCode, scheduleSourceCode, removePrefix, vagueSourceCode, initializationSourceCode, optimizeSourceCode, PosteriorFactorSourceCode, algorithmSourceCode, valueSourceCode
+using LinearAlgebra: Diagonal
+using ForneyLab: entropiesSourceCode, energiesSourceCode, freeEnergySourceCode, marginalTableSourceCode, inboundSourceCode, scheduleSourceCode, removePrefix, vagueSourceCode, initializationSourceCode, optimizeSourceCode, algorithmSourceCode, valueSourceCode, posteriorFactorSourceCode
 
 @testset "removePrefix" begin
     @test removePrefix(ForneyLab.SPGaussianMeanPrecisionOutNPP) == "SPGaussianMeanPrecisionOutNPP"
@@ -130,28 +130,30 @@ end
     inbounds[2] = MarginalEntry()
     inbounds[2].marginal_id = :x
 
-    entropies_vect = [Dict(:conditional => false,
-                           :inbounds    => [inbounds[2]]), 
-                      Dict(:conditional => true,
-                           :inbounds    => inbounds)]
+    entropies_vect = [Dict(:counting_number => -1,
+                           :inbound         => inbounds[1]), 
+                      Dict(:counting_number => 2,
+                           :inbound         => inbounds[2])]
 
     entropies_code = entropiesSourceCode(entropies_vect)
 
-    @test occursin("F -= differentialEntropy(marginals[:x])", entropies_code)
-    @test occursin("F -= conditionalDifferentialEntropy(marginals[:y_x], marginals[:x])", entropies_code)
+    @test occursin("F -= -1*differentialEntropy(marginals[:y_x])", entropies_code)
+    @test occursin("F -= 2*differentialEntropy(marginals[:x])", entropies_code)
 end
 
 @testset "energiesSourceCode" begin
     inbound = MarginalEntry()
     inbound.marginal_id = :x
-    energies_vect = [Dict(:node     => GaussianMeanPrecision,
-                          :inbounds => [inbound])]
+    energies_vect = [Dict(:counting_number => 1,
+                          :node            => GaussianMeanPrecision,
+                          :inbounds        => [inbound])]
     energies_code = energiesSourceCode(energies_vect)
 
     @test occursin("F += averageEnergy(GaussianMeanPrecision, marginals[:x])", energies_code)
 end
 
 @testset "initializationSourceCode" begin
+    g = FactorGraph()
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, id=:X)
     algo = InferenceAlgorithm(pfz)
@@ -170,6 +172,7 @@ end
 end
 
 @testset "optimizeSourceCode" begin
+    g = FactorGraph()
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, id=:X)
     algo = InferenceAlgorithm(pfz)
@@ -180,7 +183,8 @@ end
     @test occursin("function optimizeX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=initX()", pf_code)    
 end
 
-@testset "PosteriorFactorSourceCode" begin
+@testset "posteriorFactorSourceCode" begin
+    g = FactorGraph()
     pfz = PosteriorFactorization() 
     pf = PosteriorFactor(pfz, id=:X)
     algo = InferenceAlgorithm(pfz)
@@ -188,20 +192,21 @@ end
     pf.schedule = []
     pf.marginal_table = []
 
-    pf_code = PosteriorFactorSourceCode(pf)
+    pf_code = posteriorFactorSourceCode(pf)
     @test occursin("function stepX!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 0))", pf_code)
-end
-
-@testset "freeEnergySourceCode" begin
-    algo = InferenceAlgorithm()
-    free_energy_code = freeEnergySourceCode(algo)
-    @test occursin("function freeEnergy(data::Dict, marginals::Dict)", free_energy_code)
 end
 
 @testset "algorithmSourceCode" begin
     algo = InferenceAlgorithm()
     algo_code = algorithmSourceCode(algo)
     @test occursin("begin", algo_code)
+end
+
+@testset "freeEnergySourceCode" begin
+    algo = InferenceAlgorithm()
+    algo.posterior_factorization.free_energy_flag = true
+    free_energy_code = freeEnergySourceCode(algo)
+    @test occursin("function freeEnergy(data::Dict, marginals::Dict)", free_energy_code)
 end
 
 end # module

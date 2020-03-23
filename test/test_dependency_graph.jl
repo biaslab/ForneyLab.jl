@@ -1,7 +1,7 @@
 module DependencyGraphTest
 
 using Test
-import ForneyLab: LinkedList, DependencyGraph, addVertex!, addEdge!, children, neighbors
+using ForneyLab: LinkedList, DependencyGraph, addVertex!, addEdge!, children, neighbors
 
 mutable struct MockVertex
     id::Symbol

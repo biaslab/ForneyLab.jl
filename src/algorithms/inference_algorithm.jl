@@ -1,13 +1,10 @@
 export InferenceAlgorithm, currentInferenceAlgorithm
 
 """
-An `Algorithm` holds a collection of (non-overlapping) posterior factors that
-specify the posterior factorization over a factor graph.
+An `InferenceAlgorithm` specifies the computations for the quantities of interest.
 """
 mutable struct InferenceAlgorithm
     id::Symbol
-    
-    graph::FactorGraph
     posterior_factorization::PosteriorFactorization
 
     # Bookkeeping for faster lookup during assembly
@@ -36,13 +33,12 @@ function setCurrentInferenceAlgorithm(algo::InferenceAlgorithm)
 end
 
 function InferenceAlgorithm(
-    pfz=currentPosteriorFactorization(),
+    pfz=currentPosteriorFactorization();
     id=Symbol(""))
 
     setCurrentInferenceAlgorithm(
         InferenceAlgorithm(
             id,
-            currentGraph(),
             pfz,
             Dict{Interface, ScheduleEntry}(),
             Dict{Union{Variable, Cluster}, MarginalEntry}(),

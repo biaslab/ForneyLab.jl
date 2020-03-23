@@ -3,8 +3,8 @@ module PoissonTest
 using Test
 using ForneyLab
 
-import ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, FactorNode, SoftFactor, Interface, FactorGraph, step!
-import ForneyLab: VBPoissonOut, VBPoissonL, SPPoissonOutNP, SPPoissonLPN
+using ForneyLab: outboundType, isApplicable, unsafeMean, unsafeVar, slug, isProper, FactorNode, SoftFactor, Interface, FactorGraph, step!
+using ForneyLab: VBPoissonOut, VBPoissonL, SPPoissonOutNP, SPPoissonLPN
 
 @testset "Poisson ProbabilityDistribution construction" begin
     @test ProbabilityDistribution(Univariate, Poisson, l=2.0) == ProbabilityDistribution{Univariate, Poisson}(Dict(:l=>2.0))
@@ -89,60 +89,6 @@ end
     @test isapprox(differentialEntropy(ProbabilityDistribution(Poisson, l=1.0)), averageEnergy(Poisson, ProbabilityDistribution(Poisson, l=1.0), ProbabilityDistribution(Univariate, PointMass, m=1.0)))
     @test isapprox(differentialEntropy(ProbabilityDistribution(Poisson, l=10.0)), averageEnergy(Poisson, ProbabilityDistribution(Poisson, l=10.0), ProbabilityDistribution(Univariate, PointMass, m=10.0)))
     @test isapprox(differentialEntropy(ProbabilityDistribution(Poisson, l=100.0)), averageEnergy(Poisson, ProbabilityDistribution(Poisson, l=100.0), ProbabilityDistribution(Univariate, PointMass, m=100.0)))
-end
-
-
-#------------
-# Integration
-#------------
-
-@testset "Poisson node construction" begin
-    g = FactorGraph()
-
-    test_node = Poisson(Variable(), 1.0)
-
-    # Node should be of correct type
-    @test isa(test_node, SoftFactor)
-
-    # Node fields should be of correct types
-    @test isa(test_node.id, Symbol)
-    @test isa(test_node.interfaces, Vector{Interface})
-    @test isa(test_node.i, Dict)
-
-    # Node constructor should automatically assign an id
-    @test !isempty(string(test_node.id))
-
-    # Node constructor should assign interfaces to itself
-    for iface in test_node.interfaces
-        @test ===(iface.node, test_node)
-    end
-
-    # Node constructor should add node to graph
-    @test ===(g.nodes[test_node.id], test_node)
-end
-
-@testset "Parameter estimation" begin
-    g = FactorGraph()
-
-    # Construct model
-    @RV x ~ Gamma(1.0, 1.0)
-    y = Vector{Variable}(undef, 3)
-    for k=1:3
-        @RV y[k] ~ Poisson(x)
-        placeholder(y[k], :y, index=k)
-    end
-
-    # Construct algorithm
-    algo = sumProductAlgorithm(x)
-    algo_code = algorithmSourceCode(algo)
-    # Load algorithm
-    eval(Meta.parse(algo_code))
-
-    # Execute algorithm
-    data = Dict(:y => [1.0, 2.0, 3.0])
-    marginals = step!(data)
-
-    @test marginals[:x] == ProbabilityDistribution(Gamma, a=7.0, b=4.0)
 end
 
 end # module

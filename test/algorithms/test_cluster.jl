@@ -3,7 +3,7 @@ module ClusterTest
 using Test
 using ForneyLab
 
-import ForneyLab: Cluster
+using ForneyLab: Cluster
 
 @testset "Cluster" begin
     g = FactorGraph()

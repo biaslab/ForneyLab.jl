@@ -3,7 +3,7 @@ module PosteriorFactorizationTest
 using Test
 using ForneyLab
 
-import ForneyLab:Cluster
+using ForneyLab: Cluster
 
 @testset "PosteriorFactorization" begin
     pfz = PosteriorFactorization()

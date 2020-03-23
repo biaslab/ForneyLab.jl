@@ -40,10 +40,6 @@ ForneyLab.PosteriorFactorization
 ForneyLab.InferenceAlgorithm
 ForneyLab.Schedule
 ForneyLab.currentInferenceAlgorithm
-ForneyLab.expectationPropagationSchedule
-ForneyLab.sumProductSchedule
-ForneyLab.variationalExpectationPropagationSchedule
-ForneyLab.variationalSchedule
 ```
 
 ## Algorithm assembly
@@ -51,7 +47,6 @@ ForneyLab.variationalSchedule
 ForneyLab.expectationPropagationAlgorithm
 ForneyLab.sumProductAlgorithm
 ForneyLab.variationalAlgorithm
-ForneyLab.freeEnergyAlgorithm
 ForneyLab.variationalExpectationPropagationAlgorithm
 ```
 

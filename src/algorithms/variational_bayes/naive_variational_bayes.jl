@@ -1,31 +1,40 @@
 export
 NaiveVariationalRule,
 variationalAlgorithm,
-variationalSchedule,
 @naiveVariationalRule
 
 """
 Create a variational algorithm to infer marginals over a posterior distribution, and compile it to Julia code
 """
-function variationalAlgorithm(
-    pfz::PosteriorFactorization=currentPosteriorFactorization(), 
-    id=Symbol(""))
-    
-    for (_, pf) in pfz
+function variationalAlgorithm(pfz::PosteriorFactorization=currentPosteriorFactorization(); 
+                              id=Symbol(""), 
+                              free_energy=false)
+
+    (length(pfz.posterior_factors) > 0) || error("No factors defined on posterior factorization.")
+
+    # Set the target regions (variables and clusters) of each posterior factor
+    for (_, pf) in pfz.posterior_factors
+        setTargets!(pf, pfz, free_energy=free_energy, external_targets=true)
+    end
+
+    # Infer schedule and marginal computations for each posterior factor
+    for (_, pf) in pfz.posterior_factors
         schedule = variationalSchedule(pf)
         pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
         pf.marginal_table = marginalTable(pf)
     end
 
-    algo = InferenceAlgorithm(pfz, id)
+    # Populate fields for algorithm compilation
+    algo = InferenceAlgorithm(pfz, id=id)
     assembleInferenceAlgorithm!(algo)
+    free_energy && assembleFreeEnergy!(algo)
 
     return algo
 end
 
-function variationalAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[], id=Symbol(""))
+function variationalAlgorithm(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[], id=Symbol(""), free_energy=false)
     pfz = PosteriorFactorization(args...; ids=ids)
-    algo = variationalAlgorithm(pfz, id)
+    algo = variationalAlgorithm(pfz, id=id, free_energy=free_energy)
 
     return algo
 end
@@ -39,17 +48,15 @@ abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
 `variationalSchedule()` generates a variational message passing schedule
 for each posterior distribution in the posterior factorization.
 """
-function variationalSchedule(posterior_factors::Vector{PosteriorFactor})
-    # Schedule messages towards posterior distributions, limited to the internal edges
-    schedule = ScheduleEntry[]
-    nodes_connected_to_external_edges = Set{FactorNode}()
-    for posterior_factor in posterior_factors
-        schedule = [schedule; summaryPropagationSchedule(sort(collect(posterior_factor.variables), rev=true), limit_set=posterior_factor.internal_edges)]
-        union!(nodes_connected_to_external_edges, nodesConnectedToExternalEdges(posterior_factor))
-    end
+function variationalSchedule(posterior_factor::PosteriorFactor)
+    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(posterior_factor)
 
+    # Schedule messages towards posterior factors and target sites, limited to the internal edges
+    schedule = summaryPropagationSchedule(sort(collect(posterior_factor.target_variables), rev=true), 
+                                          sort(collect(posterior_factor.target_clusters), rev=true), 
+                                          limit_set=posterior_factor.internal_edges)
     for entry in schedule
-        if entry.interface.node in nodes_connected_to_external_edges
+        if (entry.interface.node in nodes_connected_to_external_edges) && !isa(entry.interface.node, DeltaFactor)
             local_posterior_factors = localPosteriorFactors(entry.interface.node)
             if allunique(local_posterior_factors) # Local posterior factorization is naive
                 entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
@@ -65,7 +72,6 @@ function variationalSchedule(posterior_factors::Vector{PosteriorFactor})
 
     return schedule
 end
-variationalSchedule(posterior_factor::PosteriorFactor) = variationalSchedule([posterior_factor])
 
 """
 Infer the update rule that computes the message for `entry`, as dependent on the inbound types
@@ -86,9 +92,9 @@ function inferUpdateRule!(  entry::ScheduleEntry,
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
+        error("No applicable $(rule_type) update for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
     elseif length(applicable_rules) > 1
-        error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types)")
+        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
     else
         entry.message_update_rule = first(applicable_rules)
     end

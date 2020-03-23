@@ -3,19 +3,18 @@ module NonlinearTest
 using Test
 using Random
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, ProbabilityDistribution, SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearISInMN, SPNonlinearISOutNG, Unscented, ImportanceSampling
+using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, ProbabilityDistribution, Unscented, ImportanceSampling
+using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearISInMN, SPNonlinearISOutNG
 
 Random.seed!(1234)
 
 @testset "sigmaPointsAndWeights" begin
-    dist = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(dist, 1e-3)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(0.0, 1.0, alpha=1e-3)
     @test sigma_points == [0.0, 0.0010000000000143778, -0.0010000000000143778]
     @test weights_m == [-999998.9999712444, 499999.9999856222, 499999.9999856222]
     @test weights_c == [-999995.9999722444, 499999.9999856222, 499999.9999856222]
 
-    dist = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(dist, 1e-3)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights([0.0], mat(1.0), alpha=1e-3)
     @test sigma_points == [[0.0], [0.0010000000000143778], [-0.0010000000000143778]]
     @test weights_m == [-999998.9999712444, 499999.9999856222, 499999.9999856222]
     @test weights_c == [-999995.9999722444, 499999.9999856222, 499999.9999856222]
@@ -42,6 +41,18 @@ g_inv(x::Vector{Float64}) = sqrt.(x .+ 5.0)
     @test ruleSPNonlinearUTOutNG(nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), g, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(66.0))
 end
 
+@testset "SPNonlinearISOutNG" begin
+    f_dummy(x) = x
+    samples = 2.0 .+ randn(100000)
+    p_dist = ProbabilityDistribution(Univariate, SampleList, s=samples)
+
+    @test SPNonlinearISOutNG <: SumProductRule{Nonlinear{ImportanceSampling}}
+    @test outboundType(SPNonlinearISOutNG) == Message{SampleList}
+    @test isApplicable(SPNonlinearISOutNG, [Nothing, Message{Gaussian}])
+    @test abs(unsafeMean(ruleSPNonlinearISOutNG(nothing,Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),f_dummy).dist) - unsafeMean(p_dist)) < 0.2
+    @test abs(unsafeVar(ruleSPNonlinearISOutNG(nothing,Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),f_dummy).dist) - unsafeVar(p_dist)) < 0.2
+end
+
 @testset "SPNonlinearUTIn1GG" begin
     @test SPNonlinearUTIn1GG <: SumProductRule{Nonlinear{Unscented}}
     @test outboundType(SPNonlinearUTIn1GG) == Message{GaussianMeanVariance}
@@ -60,6 +71,15 @@ end
     @test ruleSPNonlinearUTIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, g, g_inv, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.6251028535207217], v=mat(0.10968772603524787))
 end
 
+@testset "SPNonlinearISInMN" begin
+    f_dummy(x) = x
+    @test SPNonlinearISInMN <: SumProductRule{Nonlinear{ImportanceSampling}}
+    @test outboundType(SPNonlinearISInMN) == Message{Function}
+    @test isApplicable(SPNonlinearISInMN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
+    f(x) = ruleSPNonlinearISInMN(Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),nothing,f_dummy).dist.params[:log_pdf](x)
+    @test f(1.5) == logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
+end
+
 
 #------------
 # Integration
@@ -75,14 +95,12 @@ end
     @test isa(n, Nonlinear{Unscented})
     
     # Forward; g_inv should not be present in call
-    algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
     @test occursin("ruleSPNonlinearUTOutNG(nothing, messages[2], g)", algo_code)
     @test !occursin("g_inv", algo_code)
 
     # Backward; g_inv should be present in call
-    algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
     @test occursin("ruleSPNonlinearUTIn1GG(messages[2], nothing, g, g_inv)", algo_code)
@@ -96,7 +114,6 @@ end
     n = Nonlinear{Unscented}(y, x, g; alpha=1.0)
     
     # Forward; alpha should be present in call
-    algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
     @test occursin("ruleSPNonlinearUTOutNG(nothing, messages[2], g, alpha=1.0)", algo_code)
@@ -110,7 +127,6 @@ end
     n = Nonlinear{Unscented}(y, x, g)
 
     # Forward; g_inv should not be present in call
-    algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
     @test occursin("ruleSPNonlinearUTOutNG(nothing, messages[2], g)", algo_code)
@@ -118,7 +134,6 @@ end
 
     # Backward; g_inv should not be present in call, 
     # both messages should be required, and initialization should take place
-    algo =  InferenceAlgorithm()
     algo = sumProductAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
     @test occursin("ruleSPNonlinearUTIn1GG(messages[2], messages[1], g)", algo_code)
@@ -140,30 +155,5 @@ end
     @test occursin("ruleSPNonlinearISOutNG(nothing, messages[2], g)", algo_code)
     @test !occursin("$(string(g_inv))", algo_code)
 end
-
-#-------------
-# Update rules
-#-------------
-
-@testset "SPNonlinearISInMN" begin
-    f_dummy(x) = x
-    @test SPNonlinearISInMN <: SumProductRule{Nonlinear{ImportanceSampling}}
-    @test outboundType(SPNonlinearISInMN) == Message{Function}
-    @test isApplicable(SPNonlinearISInMN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
-    f(x) = ruleSPNonlinearISInMN(Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),nothing,f_dummy).dist.params[:log_pdf](x)
-    @test f(1.5) == logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
-end
-
- @testset "SPNonlinearISOutNG" begin
-     f_dummy(x) = x
-     samples = 2.0 .+ randn(100000)
-     p_dist = ProbabilityDistribution(Univariate, SampleList, s=samples)
-     
-     @test SPNonlinearISOutNG <: SumProductRule{Nonlinear{ImportanceSampling}}
-     @test outboundType(SPNonlinearISOutNG) == Message{SampleList}
-     @test isApplicable(SPNonlinearISOutNG, [Nothing, Message{Gaussian}])
-     @test abs(unsafeMean(ruleSPNonlinearISOutNG(nothing,Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),f_dummy).dist) - unsafeMean(p_dist)) < 0.2
-     @test abs(unsafeVar(ruleSPNonlinearISOutNG(nothing,Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),f_dummy).dist) - unsafeVar(p_dist)) < 0.2
- end
 
 end #module

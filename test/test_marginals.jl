@@ -3,7 +3,7 @@ module MarginalsTest
 using Test
 using ForneyLab
 
-import ForneyLab: generateId, addNode!, associate!, Product
+using ForneyLab: generateId, addNode!, associate!, Product
 
 # Integration helper
 mutable struct MockNode <: FactorNode

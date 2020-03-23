@@ -43,9 +43,9 @@ function inferMarginalRule(cluster::Cluster, inbound_types::Vector{<:Type})
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        error("No applicable msg update rule for $(cluster) with inbound types $(inbound_types)")
+        error("No applicable marginal update rule for $(typeof(cluster.node)) node with inbound types: $(join(inbound_types, ", "))")
     elseif length(applicable_rules) > 1
-        error("Multiple applicable msg update rules for $(cluster) with inbound types $(inbound_types): $(applicable_rules)")
+        error("Multiple applicable marginal update rules for $(typeof(cluster.node)) node with inbound types: $(join(inbound_types, ", "))")
     else
         marginal_update_rule = first(applicable_rules)
     end
@@ -64,8 +64,8 @@ function marginalTable(pf::PosteriorFactor)
         outbound_types[entry.interface] = outboundType(entry.message_update_rule)
     end
 
-    variable_table = marginalTable(sort(collect(pf.variables)))
-    cluster_table = [MarginalEntry(cluster, outbound_types) for cluster in sort(collect(pf.clusters))]
+    variable_table = marginalTable(sort(collect(pf.target_variables)))
+    cluster_table = [MarginalEntry(cluster, outbound_types) for cluster in sort(collect(pf.target_clusters))]
 
     return [variable_table; cluster_table]
 end
@@ -74,22 +74,26 @@ end
 Find the inbound types that are required to compute a joint marginal over `target`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
-function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, Type})
+function collectInboundTypes(inbound_cluster::Cluster, outbound_types::Dict{Interface, Type})
     inbound_types = Type[]
-    cluster_posterior_factor = PosteriorFactor(first(cluster.edges)) # posterior factor for cluster
-    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
-    for node_interface in cluster.node.interfaces
-        node_interface_posterior_factor = PosteriorFactor(node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field 
+    inbound_cluster_pf = posteriorFactor(first(inbound_cluster.edges))
+    encountered_external_regions = Set{Region}()
+    for node_interface in inbound_cluster.node.interfaces
+        current_region = region(inbound_cluster.node, node_interface.edge) # Returns a Variable if no cluster is assigned
+        current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
+        inbound_interface = ultimatePartner(node_interface)
 
-        if node_interface_posterior_factor === cluster_posterior_factor
-            # Edge is internal, accept message
-            push!(inbound_types, outbound_types[node_interface.partner])
-        elseif !(node_interface_posterior_factor in posterior_factors)
-            # Edge is external, accept marginal (if marginal is not already accepted)
-            push!(inbound_types, ProbabilityDistribution) 
+        if (current_pf === inbound_cluster_pf) && (node_interface.edge in inbound_cluster.edges)
+            # Edge is internal and in cluster, accept message
+            push!(inbound_types, outbound_types[inbound_interface])
+        elseif (current_pf === inbound_cluster_pf)
+            # Edge is internal but not in cluster, signal to rule signature that edge will be marginalized out by appending "Nothing"
+            push!(inbound_types, Nothing)
+        elseif !(current_region in encountered_external_regions)
+            # Edge is external and cluster is not yet encountered, accept probability distribution
+            push!(inbound_types, ProbabilityDistribution)
+            push!(encountered_external_regions, current_region) # Register current region with encountered external regions
         end
-
-        push!(posterior_factors, node_interface_posterior_factor)
     end
 
     return inbound_types
@@ -161,30 +165,27 @@ collectInbounds(entry::MarginalEntry) = collectMarginalNodeInbounds(entry.target
 function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
     target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
+    inbound_cluster = entry.target # Entry target is a cluster
 
     inbounds = Any[]
-    entry_posterior_factor = PosteriorFactor(first(entry.target.edges))
-    local_clusters = localPosteriorFactorization(entry.target.node)
-
-    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
+    entry_pf = posteriorFactor(first(entry.target.edges))
+    encountered_external_regions = Set{Region}()
     for node_interface in entry.target.node.interfaces
+        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field 
+        current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
         inbound_interface = ultimatePartner(node_interface)
-        partner_node = inbound_interface.node
-        node_interface_posterior_factor = PosteriorFactor(node_interface.edge)
 
-        if isa(partner_node, Clamp)
-            # Hard-code marginal of constant node in schedule
-            push!(inbounds, assembleClamp!(partner_node, ProbabilityDistribution))
-        elseif node_interface_posterior_factor === entry_posterior_factor
-            # Collect message from previous result
+        if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+            # Edge is clamped, hard-code marginal of constant node
+            push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
+        elseif (current_pf === entry_pf)
+            # Edge is internal, collect message from previous result
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        elseif !(node_interface_posterior_factor in posterior_factors)
-            # Collect marginal from marginal dictionary (if marginal is not already accepted)
-            target = local_clusters[node_interface_posterior_factor]
-            push!(inbounds, target_to_marginal_entry[target])
+        elseif !(current_region in encountered_external_regions)
+            # Edge is external and region is not yet encountered, collect marginal from marginal dictionary
+            push!(inbounds, target_to_marginal_entry[current_region])
+            push!(encountered_external_regions, current_region) # Register current region with encountered external regions
         end
-
-        push!(posterior_factors, node_interface_posterior_factor)
     end
 
     return inbounds

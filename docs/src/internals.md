@@ -45,12 +45,12 @@ A ForneyLab `InferenceAlgorithm` is structured as follows:
                     - `inbound::Union`: inbound, see below
     - `average_energies::Dict` (per item):
         - `node::Type`: node type for average energy computation
+        - `counting_number::Int64`: counting number for average energy
         - `inbounds::Vector` (per item):
             - `inbound::Union`: inbound, see below
     - `entropies::Dict` (per item):
-        - `conditional::Bool`: require conditional entropy computation
-        - `inbounds::Vector` (per item):
-            - `inbound::Union`: inbound, see below
+        - `counting_number::Int64`: counting number for (joint) entropy
+        - `inbound::Union`: inbound, see below
 
 Inbounds are of type `Union{Nothing, ScheduleEntry, MarginalEntry, Dict, Clamp}`.
 
@@ -63,7 +63,7 @@ The name of an update rule is composed of several parts:
     - `SP`: sum-product
     - `VB`: variational Bayes
     - `SVB`: structured variational Bayes
-    - `M`: marginal, used with SVB
+    - `M`: marginal (joint)
 3. Type of factor node
 4. Interface of the outgoing message
 5. Types of incoming messages (absent for `VB` rules)

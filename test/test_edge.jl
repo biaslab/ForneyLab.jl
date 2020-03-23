@@ -1,7 +1,7 @@
 module EdgeTest
 
 using Test
-import ForneyLab: Interface, Edge, Variable, Interface, FactorNode, FactorGraph, currentGraph, addNode!, disconnect!, generateId
+using ForneyLab: Interface, Edge, Variable, Interface, FactorNode, FactorGraph, currentGraph, addNode!, disconnect!, generateId
 
 # Integration helper
 mutable struct MockNode <: FactorNode

@@ -2,8 +2,8 @@ module MultiplicationTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPMultiplicationOutNGP, SPMultiplicationOutNPG, SPMultiplicationIn1GNP, SPMultiplicationAGPN, SPMultiplicationOutNPP, SPMultiplicationIn1PNP, SPMultiplicationAPPN
+using ForneyLab: outboundType, isApplicable
+using ForneyLab: SPMultiplicationOutNGP, SPMultiplicationOutNPG, SPMultiplicationIn1GNP, SPMultiplicationAGPN, SPMultiplicationOutNPP, SPMultiplicationIn1PNP, SPMultiplicationAPPN
 
 @testset "Multiplication node construction through * syntax" begin
     g = FactorGraph()

@@ -119,11 +119,11 @@ edges(nodeset::Set{FactorNode}) = union(Set((edges(node) for node=nodeset))...)
 Description:
 
     Terminal is a special type of node that is only used in the internal
-    graph of a CompositeNode. A Terminal is used to terminate an Edge in the
-    internal graph that is linked to an interface of the CompositeNode.
+    graph of a CompositeFactor. A Terminal is used to terminate an Edge in the
+    internal graph that is linked to an interface of the CompositeFactor.
 
     A Terminal is linked to an interface of the
-    CompositeNode containing the Terminal.
+    CompositeFactor containing the Terminal.
 
 Interfaces:
 
@@ -137,7 +137,7 @@ mutable struct Terminal <: FactorNode
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
-    outer_interface::Interface # Interface of CompositeNode linked to this Terminal
+    outer_interface::Interface # Interface of CompositeFactor linked to this Terminal
 
     function Terminal(out::Variable, outer_interface::Interface; id=generateId(Terminal))
         self = new(id, Array{Interface}(undef, 1), Dict{Symbol,Interface}(), outer_interface)
