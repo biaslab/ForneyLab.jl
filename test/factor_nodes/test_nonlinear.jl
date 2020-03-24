@@ -4,7 +4,7 @@ using Test
 using Random
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, ProbabilityDistribution, Unscented, ImportanceSampling
-using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearISInMN, SPNonlinearISOutNG
+using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearISIn1MN, SPNonlinearISOutNG
 
 Random.seed!(1234)
 
@@ -71,12 +71,12 @@ end
     @test ruleSPNonlinearUTIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, g, g_inv, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.6251028535207217], v=mat(0.10968772603524787))
 end
 
-@testset "SPNonlinearISInMN" begin
+@testset "SPNonlinearISIn1MN" begin
     f_dummy(x) = x
-    @test SPNonlinearISInMN <: SumProductRule{Nonlinear{ImportanceSampling}}
-    @test outboundType(SPNonlinearISInMN) == Message{Function}
-    @test isApplicable(SPNonlinearISInMN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
-    f(x) = ruleSPNonlinearISInMN(Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),nothing,f_dummy).dist.params[:log_pdf](x)
+    @test SPNonlinearISIn1MN <: SumProductRule{Nonlinear{ImportanceSampling}}
+    @test outboundType(SPNonlinearISIn1MN) == Message{Function}
+    @test isApplicable(SPNonlinearISIn1MN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
+    f(x) = ruleSPNonlinearISIn1MN(Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),nothing,f_dummy).dist.params[:log_pdf](x)
     @test f(1.5) == logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
 end
 

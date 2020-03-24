@@ -11,7 +11,7 @@
 @sumProductRule(:node_type     => Nonlinear{ImportanceSampling},
                 :outbound_type => Message{Function},
                 :inbound_types => (Message{FactorFunction}, Nothing),
-                :name          => SPNonlinearISInMN)
+                :name          => SPNonlinearISIn1MN)
 
 @sumProductRule(:node_type     => Nonlinear{ImportanceSampling},
                 :outbound_type => Message{SampleList},

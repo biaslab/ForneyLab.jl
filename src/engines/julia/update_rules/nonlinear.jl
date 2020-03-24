@@ -1,7 +1,9 @@
 export
 ruleSPNonlinearUTOutNG,
+ruleSPNonlinearUTOutNGX,
 ruleSPNonlinearUTIn1GG,
-ruleSPNonlinearISInMN,
+ruleSPNonlinearUTInGX,
+ruleSPNonlinearISIn1MN,
 ruleSPNonlinearISOutNG
 
 const default_alpha = 1e-3 # Default value for the spread parameter
@@ -72,6 +74,21 @@ function unscentedStatistics(m::Float64, V::Float64, g::Function; alpha=default_
     return (m_tilde, V_tilde, C_tilde)
 end
 
+# Multiple univariate inbounds
+function unscentedStatistics(ms::Vector{Float64}, Vs::Vector{Float64}, g::Function; alpha=default_alpha, beta=default_beta, kappa=default_kappa)
+    (m, V, ds) = pack(ms, Vs)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha=alpha, beta=beta, kappa=kappa)
+
+    g_sigma = [g(sp...) for sp in sigma_points] # Unpack each sigma point in g
+    
+    d = sum(ds) # Dimensionality of joint
+    m_tilde = sum(weights_m.*g_sigma) # Scalar
+    V_tilde = sum(weights_c.*(g_sigma .- m_tilde).^2) # Scalar
+    C_tilde = sum([weights_c[k+1]*(sigma_points[k+1] - ms)*(g_sigma[k+1] - m_tilde) for k=0:2*d]) # Vector
+
+    return (m_tilde, V_tilde, C_tilde)
+end
+
 function unscentedStatistics(m::Vector{Float64}, V::AbstractMatrix, g::Function; alpha=default_alpha, beta=default_beta, kappa=default_kappa)
     (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha=alpha, beta=beta, kappa=kappa)
     d = length(m)
@@ -84,6 +101,32 @@ function unscentedStatistics(m::Vector{Float64}, V::AbstractMatrix, g::Function;
     return (m_tilde, V_tilde, C_tilde)
 end
 
+# Multiple multivariate inbounds
+function unscentedStatistics(ms::Vector{Vector{Float64}}, Vs::Vector{<:AbstractMatrix}, g::Function; alpha=default_alpha, beta=default_beta, kappa=default_kappa)
+    (m, V, ds) = pack(ms, Vs)
+    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha=alpha, beta=beta, kappa=kappa)
+
+    g_sigma = [g(unpack(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
+    
+    d = sum(ds) # Dimensionality of joint
+    m_tilde = sum([weights_m[k+1]*g_sigma[k+1] for k=0:2*d]) # Vector
+    V_tilde = sum([weights_c[k+1]*(g_sigma[k+1] - m_tilde)*(g_sigma[k+1] - m_tilde)' for k=0:2*d]) # Matrix
+    C_tilde = sum([weights_c[k+1]*(sigma_points[k+1] - m)*(g_sigma[k+1] - m_tilde)' for k=0:2*d]) # Matrix
+
+    return (m_tilde, V_tilde, C_tilde)
+end
+
+"""
+RTS smoother update, based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
+Note, this implementation is not as efficient as Petersen et al. (2018), because we explicitly require the outbound messages
+"""
+function smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, W_fw_in, m_bw_out, V_bw_out)
+    C_tilde_inv = pinv(C_tilde)
+    V_bw_in = V_fw_in*C_tilde_inv'*(V_tilde + V_bw_out)*C_tilde_inv*V_fw_in - V_fw_in
+    m_bw_in = m_fw_in - (V_fw_in + V_bw_in)*W_fw_in*C_tilde*cholinv(V_tilde + V_bw_out)*(m_tilde - m_bw_out)
+    
+    return (m_bw_in, V_bw_in)
+end
 
 #-------------
 # Update Rules
@@ -97,6 +140,18 @@ function ruleSPNonlinearUTOutNG(msg_out::Nothing,
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     (m_tilde, V_tilde, _) = unscentedStatistics(m_fw_in1, V_fw_in1, g; alpha=alpha)
+
+    return Message(V, GaussianMeanVariance, m=m_tilde, v=V_tilde)
+end
+
+# Multi-argument forward rule (unscented transform)
+function ruleSPNonlinearUTOutNGX(g::Function, # Needs to be in front of Vararg
+                                 msg_out::Nothing,
+                                 msgs_in::Vararg{Message{<:Gaussian, V}};
+                                 alpha::Float64=default_alpha) where V<:VariateType
+
+    (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
+    (m_tilde, V_tilde, _) = unscentedStatistics(ms_fw_in, Vs_fw_in, g; alpha=alpha)
 
     return Message(V, GaussianMeanVariance, m=m_tilde, v=V_tilde)
 end
@@ -124,6 +179,19 @@ function ruleSPNonlinearUTIn1GG(msg_out::Message{F, V},
     return Message(V, GaussianMeanVariance, m=m_tilde, v=V_tilde)
 end
 
+# Multi-argument backward rule with given inverse (unscented transform)
+function ruleSPNonlinearUTInGX(g::Function, # Needs to be in front of Vararg
+                               g_inv::Function,
+                               msg_out::Message{<:Gaussian, V},
+                               msgs_in::Vararg{Union{Message{<:Gaussian, V}, Nothing}};
+                               alpha::Float64=default_alpha) where V<:VariateType
+
+    (ms, Vs) = collectStatistics(msg_out, msgs_in...) # Returns arrays with individual means and covariances
+    (m_tilde, V_tilde, _) = unscentedStatistics(ms, Vs, g_inv; alpha=alpha)
+
+    return Message(V, GaussianMeanVariance, m=m_tilde, v=V_tilde)
+end
+
 # Backward rule with unknown inverse (unscented transform)
 function ruleSPNonlinearUTIn1GG(msg_out::Message{F1, V},
                                 msg_in1::Message{F2, V},
@@ -131,22 +199,41 @@ function ruleSPNonlinearUTIn1GG(msg_out::Message{F1, V},
                                 alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian, V<:VariateType}
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
-    W_fw_in1 = unsafePrecision(msg_in1.dist)
-    (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
-
     (m_tilde, V_tilde, C_tilde) = unscentedStatistics(m_fw_in1, V_fw_in1, g; alpha=alpha)
 
-    # Update based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
-    # Note, this implementation is not as efficient as Petersen et al. (2018), because we explicitly require the outbound messages
-    C_tilde_inv = pinv(C_tilde)
-    V_bw_in1 = V_fw_in1*C_tilde_inv'*(V_tilde + V_bw_out)*C_tilde_inv*V_fw_in1 - V_fw_in1
-    m_bw_in1 = m_fw_in1 - (V_fw_in1 + V_bw_in1)*W_fw_in1*C_tilde*cholinv(V_tilde + V_bw_out)*(m_tilde - m_bw_out)
+    # RTS smoother
+    W_fw_in1 = unsafePrecision(msg_in1.dist)
+    (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
+    (m_bw_in1, V_bw_in1) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in1, V_fw_in1, W_fw_in1, m_bw_out, V_bw_out)
 
     return Message(V, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
 end
 
+# Multi-argument backward rule with unknown inverse (unscented transform)
+function ruleSPNonlinearUTInGX(iface::Int64,
+                               g::Function,
+                               msg_out::Message{<:Gaussian, V},
+                               msgs_in::Vararg{Message{<:Gaussian, V}};
+                               alpha::Float64=default_alpha) where V<:VariateType
+    
+    # Approximate joint inbounds
+    (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
+    (m_tilde, V_tilde, C_tilde) = unscentedStatistics(ms_fw_in, Vs_fw_in, g; alpha=alpha)
+
+    # RTS smoother
+    (m_fw_in, V_fw_in, ds) = pack(ms_fw_in, Vs_fw_in)
+    W_fw_in = cholinv(V_fw_in)
+    (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
+    (m_bw_in, V_bw_in) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, W_fw_in, m_bw_out, V_bw_out)
+    
+    # Marginalize
+    (m_bw_inx, V_bw_inx) = slice(V, m_bw_in, V_bw_in, ds, iface)
+    
+    return Message(V, GaussianMeanVariance, m=m_bw_inx, v=V_bw_inx)
+end
+
 # Backward rule (importance sampling)
-function ruleSPNonlinearISInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
+function ruleSPNonlinearISIn1MN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
     # The backward message is computed by a change of variables,
     # where the Jacobian follows from automatic differentiation
     log_grad_g(z) = log(abs(ForwardDiff.derivative(g, z)))
@@ -225,4 +312,89 @@ function collectSumProductNodeInbounds(node::Nonlinear{ImportanceSampling}, entr
                                       :keyword => false))
 
     return inbounds
+end
+
+
+#--------
+# Helpers
+#--------
+
+# Collect separate message statistics in arrays
+function collectStatistics(msgs::Vararg{Union{Message{<:Gaussian}, Nothing}})
+    stats = []
+    for msg in msgs
+        (msg == nothing) && continue # Skip unreported messages
+        push!(stats, unsafeMeanCov(msg.dist))
+    end
+
+    ms = [stat[1] for stat in stats]
+    Vs = [stat[2] for stat in stats]
+        
+    return (ms, Vs) # Return tuple with vectors for means and covariances
+end
+
+# Multivariate slice, return vector/matrix
+function slice(T::Type{<:Multivariate}, m::Vector{Float64}, V::AbstractMatrix, ds::Vector{Int64}, iface::Int64)
+    ds_start = cumsum([1; ds]) # Starting indices
+    inx = iface - 1
+    d_start = ds_start[inx]
+    d_end = ds_start[inx + 1] - 1
+    mx = m[d_start:d_end] # Vector
+    Vx = V[d_start:d_end, d_start:d_end] # Matrix
+    
+    return (mx, Vx)
+end
+
+# Univariate slice, return scalars
+function slice(T::Type{<:Univariate}, m::Vector{Float64}, V::AbstractMatrix, ds::Vector{Int64}, iface::Int64)
+    ds_start = cumsum([1; ds]) # Starting indices
+    inx = iface - 1
+    mx = m[inx] # Scalar
+    Vx = V[inx, inx] # Scalar
+    
+    return (mx, Vx)
+end
+
+# Pack multiple univariate statistics
+pack(ms::Vector{Float64}, Vs::Vector{Float64}) = (ms, Diagonal(Vs), ones(Int64, length(ms)))
+
+# Pack multiple multivariate statistics
+function pack(ms::Vector{Vector{Float64}}, Vs::Vector{<:AbstractMatrix})
+    # Extract dimensions
+    ds = [length(m_k) for m_k in ms]
+    d_in_tot = sum(ds)
+    
+    # Initialize packed statistics
+    m = zeros(d_in_tot)
+    V = zeros(d_in_tot, d_in_tot)
+    
+    # Construct packed statistics
+    d_start = 1
+    for k = 1:length(ms) # For each inbound message
+        d_end = d_start + ds[k] - 1
+        
+        m[d_start:d_end] = ms[k]
+        V[d_start:d_end, d_start:d_end] = Vs[k]
+        
+        d_start = d_end + 1
+    end
+    
+    return (m, V, ds)    
+end
+
+# Unpack a vector into separate vectors of lengths specified by ds
+function unpack(vec::Vector{Float64}, ds::Vector{Int64})
+    N = length(ds)
+    res = Vector{Vector{Float64}}(undef, N)
+    
+    d_start = 1
+    for k = 1:N # For each packed entry
+        d_end = d_start + ds[k] - 1
+        
+        res[k] = vec[d_start:d_end]
+        
+        d_start = d_end + 1
+    end
+
+    return res
 end
