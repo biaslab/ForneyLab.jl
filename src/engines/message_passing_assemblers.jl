@@ -48,12 +48,24 @@ function assembleInitialization!(pf::PosteriorFactor)
             breaker_entry = interface_to_schedule_entry[partner]
             assembleBreaker!(breaker_entry, family(outbound_types[partner]), ()) # Univariate only
             pf_initialize_flag = true 
-        elseif isa(entry.interface.node, Nonlinear{Unscented}) && (entry.interface == entry.interface.node.interfaces[2]) && (entry.interface.node.g_inv == nothing)
+        elseif isa(entry.interface.node, Nonlinear{Unscented}) && (entry.interface != entry.interface.node.interfaces[1]) # Nonlinear node with inbound entry
+            node = entry.interface.node
+            multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
+            inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
+
             # Set initialization in case of a nonlinear node without given inverse 
-            iface = ultimatePartner(entry.interface.node.interfaces[2])
-            breaker_entry = interface_to_schedule_entry[iface]
-            assembleBreaker!(breaker_entry, family(outbound_types[iface]), entry.interface.node.dims)
-            pf_initialize_flag = true
+            if (node.g_inv == nothing) || (multi_in && (node.g_inv[inx] == nothing)) # If no inverse is given
+                if isa(node.dims, Tuple)
+                    dims_inx = node.dims # Same breaker dimensions for all inbounds
+                else
+                    dims_inx = node.dims[inx] # Inbound-specific breaker dimensions
+                end
+
+                iface = ultimatePartner(node.interfaces[inx+1])
+                breaker_entry = interface_to_schedule_entry[iface]
+                assembleBreaker!(breaker_entry, family(outbound_types[iface]), dims_inx)
+                pf_initialize_flag = true
+            end
         elseif !(partner == nothing) && isa(partner.node, Clamp)
             pf_update_clamp_flag = true # Signifies the need for creating a custom `step!` function for optimizing clamped variables
             iface = entry.interface

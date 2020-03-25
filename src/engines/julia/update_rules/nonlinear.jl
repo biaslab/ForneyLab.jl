@@ -4,7 +4,8 @@ ruleSPNonlinearUTOutNGX,
 ruleSPNonlinearUTIn1GG,
 ruleSPNonlinearUTInGX,
 ruleSPNonlinearISIn1MN,
-ruleSPNonlinearISOutNG
+ruleSPNonlinearISOutNG,
+ruleMNonlinearUTNGX
 
 const default_alpha = 1e-3 # Default value for the spread parameter
 const default_beta = 2.0
@@ -89,6 +90,7 @@ function unscentedStatistics(ms::Vector{Float64}, Vs::Vector{Float64}, g::Functi
     return (m_tilde, V_tilde, C_tilde)
 end
 
+# Single multivariate inbound
 function unscentedStatistics(m::Vector{Float64}, V::AbstractMatrix, g::Function; alpha=default_alpha, beta=default_beta, kappa=default_kappa)
     (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha=alpha, beta=beta, kappa=kappa)
     d = length(m)
@@ -133,9 +135,9 @@ end
 #-------------
 
 # Forward rule (unscented transform)
-function ruleSPNonlinearUTOutNG(msg_out::Nothing,
-                                msg_in1::Message{F, V},
-                                g::Function;
+function ruleSPNonlinearUTOutNG(g::Function,
+                                msg_out::Nothing,
+                                msg_in1::Message{F, V};
                                 alpha::Float64=default_alpha) where {F<:Gaussian, V<:VariateType}
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
@@ -157,7 +159,10 @@ function ruleSPNonlinearUTOutNGX(g::Function, # Needs to be in front of Vararg
 end
 
 # Forward rule (importance sampling)
-function ruleSPNonlinearISOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}, g::Function) where {F<:Gaussian}
+function ruleSPNonlinearISOutNG(g::Function,
+                                msg_out::Nothing,
+                                msg_in1::Message{F, Univariate}) where F<:Gaussian
+
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
 
@@ -167,10 +172,10 @@ function ruleSPNonlinearISOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate
 end
 
 # Backward rule with given inverse (unscented transform)
-function ruleSPNonlinearUTIn1GG(msg_out::Message{F, V},
-                                msg_in1::Nothing,
-                                g::Function,
-                                g_inv::Function;
+function ruleSPNonlinearUTIn1GG(g::Function,
+                                g_inv::Function,
+                                msg_out::Message{F, V},
+                                msg_in1::Nothing;
                                 alpha::Float64=default_alpha) where {F<:Gaussian, V<:VariateType}
     
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
@@ -193,9 +198,9 @@ function ruleSPNonlinearUTInGX(g::Function, # Needs to be in front of Vararg
 end
 
 # Backward rule with unknown inverse (unscented transform)
-function ruleSPNonlinearUTIn1GG(msg_out::Message{F1, V},
-                                msg_in1::Message{F2, V},
-                                g::Function;
+function ruleSPNonlinearUTIn1GG(g::Function,
+                                msg_out::Message{F1, V},
+                                msg_in1::Message{F2, V};
                                 alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian, V<:VariateType}
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
@@ -210,8 +215,8 @@ function ruleSPNonlinearUTIn1GG(msg_out::Message{F1, V},
 end
 
 # Multi-argument backward rule with unknown inverse (unscented transform)
-function ruleSPNonlinearUTInGX(iface::Int64,
-                               g::Function,
+function ruleSPNonlinearUTInGX(g::Function,
+                               inx::Int64, # Index of inbound interface inx
                                msg_out::Message{<:Gaussian, V},
                                msgs_in::Vararg{Message{<:Gaussian, V}};
                                alpha::Float64=default_alpha) where V<:VariateType
@@ -227,18 +232,40 @@ function ruleSPNonlinearUTInGX(iface::Int64,
     (m_bw_in, V_bw_in) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, W_fw_in, m_bw_out, V_bw_out)
     
     # Marginalize
-    (m_bw_inx, V_bw_inx) = slice(V, m_bw_in, V_bw_in, ds, iface)
+    (m_bw_inx, V_bw_inx) = slice(V, m_bw_in, V_bw_in, ds, inx)
     
     return Message(V, GaussianMeanVariance, m=m_bw_inx, v=V_bw_inx)
 end
 
 # Backward rule (importance sampling)
-function ruleSPNonlinearISIn1MN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
+function ruleSPNonlinearISIn1MN(g::Function, msg_out::Message{F, Univariate}, msg_in1::Nothing) where {F<:SoftFactor}
     # The backward message is computed by a change of variables,
     # where the Jacobian follows from automatic differentiation
     log_grad_g(z) = log(abs(ForwardDiff.derivative(g, z)))
 
     Message(Univariate, Function, log_pdf=(z) -> log_grad_g(z) + logPdf(msg_out.dist, g(z)))
+end
+
+function ruleMNonlinearUTNGX(g::Function,
+                             msg_out::Message{<:Gaussian, V}, 
+                             msgs_in::Vararg{Message{<:Gaussian, V}};
+                             alpha::Float64=default_alpha) where V<:VariateType
+
+    # Approximate joint inbounds
+    (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
+    (m_tilde, V_tilde, C_tilde) = unscentedStatistics(ms_fw_in, Vs_fw_in, g; alpha=alpha)
+
+    (m_fw_in, V_fw_in, ds) = pack(ms_fw_in, Vs_fw_in) # Statistics of joint forward messages
+    (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
+
+    # Compute joint marginal on ins; based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
+    P = cholinv(V_tilde + V_bw_out)
+    W_tilde = cholinv(V_tilde)
+    V_in = V_fw_in + C_tilde'*W_tilde*V_bw_out*P*C_tilde - C_tilde'*W_tilde*C_tilde
+    m_out = V_tilde*P*m_bw_out + V_bw_out*P*m_tilde
+    m_in = C_tilde'*W_tilde*(m_out - m_tilde)
+
+    return ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_in, v=V_in)
 end
 
 
@@ -248,9 +275,33 @@ end
 
 # Unscented transform
 function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::ScheduleEntry)
-    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
-
     inbounds = Any[]
+
+    # Push function (and inverse) to calling signature
+    # These functions needs to be defined in the scope of the user
+    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
+                                      :keyword => false))
+
+    multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
+    inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
+
+    if inx > 0 # A backward message is required
+        if multi_in && (node.g_inv == nothing) # Multi-inbound with no inverses defined whatsoever
+            push!(inbounds, Dict{Symbol, Any}(:inx => inx, # Push inbound identifier
+                                              :keyword => false))
+        elseif multi_in && (node.g_inv[inx] == nothing) # Multi-inbound with undefined specific inverse
+            push!(inbounds, Dict{Symbol, Any}(:inx => inx, # Push inbound identifier
+                                              :keyword => false))
+        elseif multi_in && (node.g_inv[inx] != nothing) # Multi-inbound with defined specific inverse
+            push!(inbounds, Dict{Symbol, Any}(:g_inv => node.g_inv[inx], # Push corresponding inverse
+                                              :keyword => false))
+        elseif !multi_in && (node.g_inv != nothing) # Single-inbound with defined inverse
+            push!(inbounds, Dict{Symbol, Any}(:g_inv => node.g_inv, # Push inverse
+                                              :keyword => false))
+        end # Single-inbound with undefined inverse pushes nothing
+    end
+
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         if (node_interface == entry.interface == node.interfaces[2]) && (node.g_inv == nothing)
@@ -269,16 +320,6 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
         end
     end
 
-    # Push function (and inverse) to calling signature
-    # These functions needs to be defined in the scope of the user
-    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
-                                      :keyword => false))
-
-    if (entry.interface == node.interfaces[2]) && (node.g_inv != nothing)
-        push!(inbounds, Dict{Symbol, Any}(:g_inv => node.g_inv,
-                                          :keyword => false))
-    end
-
     # Push spread parameter if manually defined
     if node.alpha != nothing
         push!(inbounds, Dict{Symbol, Any}(:alpha => node.alpha,
@@ -290,9 +331,13 @@ end
 
 # Importance sampling
 function collectSumProductNodeInbounds(node::Nonlinear{ImportanceSampling}, entry::ScheduleEntry)
-    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
-
     inbounds = Any[]
+
+    # Push function to calling signature; function needs to be defined in the scope of the user
+    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
+                                      :keyword => false))
+
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         if node_interface == entry.interface
@@ -307,10 +352,6 @@ function collectSumProductNodeInbounds(node::Nonlinear{ImportanceSampling}, entr
         end
     end
 
-    # Push function to calling signature; function needs to be defined in the scope of the user
-    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
-                                      :keyword => false))
-
     return inbounds
 end
 
@@ -319,7 +360,9 @@ end
 # Helpers
 #--------
 
-# Collect separate message statistics in arrays
+"""
+Collect the statistics of separate Gaussian messages in unified statistics
+"""
 function collectStatistics(msgs::Vararg{Union{Message{<:Gaussian}, Nothing}})
     stats = []
     for msg in msgs
@@ -333,10 +376,13 @@ function collectStatistics(msgs::Vararg{Union{Message{<:Gaussian}, Nothing}})
     return (ms, Vs) # Return tuple with vectors for means and covariances
 end
 
-# Multivariate slice, return vector/matrix
-function slice(T::Type{<:Multivariate}, m::Vector{Float64}, V::AbstractMatrix, ds::Vector{Int64}, iface::Int64)
+"""
+Marginalize the unified statistics according to the inbound interface number
+"""
+slice(T::Type{<:Univariate}, m::Vector{Float64}, V::AbstractMatrix, ds::Vector{Int64}, inx::Int64) = (m[inx], V[inx, inx])
+
+function slice(T::Type{<:Multivariate}, m::Vector{Float64}, V::AbstractMatrix, ds::Vector{Int64}, inx::Int64)
     ds_start = cumsum([1; ds]) # Starting indices
-    inx = iface - 1
     d_start = ds_start[inx]
     d_end = ds_start[inx + 1] - 1
     mx = m[d_start:d_end] # Vector
@@ -345,17 +391,9 @@ function slice(T::Type{<:Multivariate}, m::Vector{Float64}, V::AbstractMatrix, d
     return (mx, Vx)
 end
 
-# Univariate slice, return scalars
-function slice(T::Type{<:Univariate}, m::Vector{Float64}, V::AbstractMatrix, ds::Vector{Int64}, iface::Int64)
-    ds_start = cumsum([1; ds]) # Starting indices
-    inx = iface - 1
-    mx = m[inx] # Scalar
-    Vx = V[inx, inx] # Scalar
-    
-    return (mx, Vx)
-end
-
-# Pack multiple univariate statistics
+"""
+Pack multiple statistics in a unified mean and covariance
+"""
 pack(ms::Vector{Float64}, Vs::Vector{Float64}) = (ms, Diagonal(Vs), ones(Int64, length(ms)))
 
 # Pack multiple multivariate statistics
@@ -379,10 +417,12 @@ function pack(ms::Vector{Vector{Float64}}, Vs::Vector{<:AbstractMatrix})
         d_start = d_end + 1
     end
     
-    return (m, V, ds)    
+    return (m, V, ds) # Return packed mean and covariance with original dimensions (for unpacking)    
 end
 
-# Unpack a vector into separate vectors of lengths specified by ds
+"""
+Unpack a vector into separate vectors of lengths specified by ds
+"""
 function unpack(vec::Vector{Float64}, ds::Vector{Int64})
     N = length(ds)
     res = Vector{Vector{Float64}}(undef, N)

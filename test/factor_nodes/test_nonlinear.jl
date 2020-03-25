@@ -35,10 +35,10 @@ g_inv(x::Vector{Float64}) = sqrt.(x .+ 5.0)
     @test outboundType(SPNonlinearUTOutNG) == Message{GaussianMeanVariance}
     @test isApplicable(SPNonlinearUTOutNG, [Nothing, Message{Gaussian}]) 
 
-    @test ruleSPNonlinearUTOutNG(nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), g) == Message(Univariate, GaussianMeanVariance, m=2.0000000001164153, v=66.00000000093132)
-    @test ruleSPNonlinearUTOutNG(nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), g, alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.0, v=66.0)
-    @test ruleSPNonlinearUTOutNG(nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), g) == Message(Multivariate, GaussianMeanVariance, m=[2.0000000001164153], v=mat(66.00000000093132))
-    @test ruleSPNonlinearUTOutNG(nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), g, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(66.0))
+    @test ruleSPNonlinearUTOutNG(g, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0)) == Message(Univariate, GaussianMeanVariance, m=2.0000000001164153, v=66.00000000093132)
+    @test ruleSPNonlinearUTOutNG(g, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.0, v=66.0)
+    @test ruleSPNonlinearUTOutNG(g, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.0000000001164153], v=mat(66.00000000093132))
+    @test ruleSPNonlinearUTOutNG(g, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(66.0))
 end
 
 @testset "SPNonlinearISOutNG" begin
@@ -49,8 +49,8 @@ end
     @test SPNonlinearISOutNG <: SumProductRule{Nonlinear{ImportanceSampling}}
     @test outboundType(SPNonlinearISOutNG) == Message{SampleList}
     @test isApplicable(SPNonlinearISOutNG, [Nothing, Message{Gaussian}])
-    @test abs(unsafeMean(ruleSPNonlinearISOutNG(nothing,Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),f_dummy).dist) - unsafeMean(p_dist)) < 0.2
-    @test abs(unsafeVar(ruleSPNonlinearISOutNG(nothing,Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),f_dummy).dist) - unsafeVar(p_dist)) < 0.2
+    @test abs(unsafeMean(ruleSPNonlinearISOutNG(f_dummy, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0)).dist) - unsafeMean(p_dist)) < 0.2
+    @test abs(unsafeVar(ruleSPNonlinearISOutNG(f_dummy, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0)).dist) - unsafeVar(p_dist)) < 0.2
 end
 
 @testset "SPNonlinearUTIn1GG" begin
@@ -59,16 +59,16 @@ end
     @test isApplicable(SPNonlinearUTIn1GG, [Message{Gaussian}, Nothing]) 
 
     # Without given inverse
-    @test ruleSPNonlinearUTIn1GG(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), g) == Message(Univariate, GaussianMeanVariance, m=2.499999999868301, v=0.3125000002253504)
-    @test ruleSPNonlinearUTIn1GG(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), g, alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.5, v=0.3125)
-    @test ruleSPNonlinearUTIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), g) == Message(Multivariate, GaussianMeanVariance, m=[2.499999999868301], v=mat(0.31250000021807445))
-    @test ruleSPNonlinearUTIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), g, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.5], v=mat(0.3125))
+    @test ruleSPNonlinearUTIn1GG(g, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=2.499999999868301, v=0.3125000002253504)
+    @test ruleSPNonlinearUTIn1GG(g, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.5, v=0.3125)
+    @test ruleSPNonlinearUTIn1GG(g, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.499999999868301], v=mat(0.31250000021807445))
+    @test ruleSPNonlinearUTIn1GG(g, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.5], v=mat(0.3125))
 
     # With given inverse
-    @test ruleSPNonlinearUTIn1GG(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, g, g_inv) == Message(Univariate, GaussianMeanVariance, m=2.6255032138433307, v=0.10796282966583703)
-    @test ruleSPNonlinearUTIn1GG(Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, g, g_inv, alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.6251028535207217, v=0.10968772603524787)
-    @test ruleSPNonlinearUTIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, g, g_inv) == Message(Multivariate, GaussianMeanVariance, m=[2.6255032138433307], v=mat(0.10796282966583703))
-    @test ruleSPNonlinearUTIn1GG(Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, g, g_inv, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.6251028535207217], v=mat(0.10968772603524787))
+    @test ruleSPNonlinearUTIn1GG(g, g_inv, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing) == Message(Univariate, GaussianMeanVariance, m=2.6255032138433307, v=0.10796282966583703)
+    @test ruleSPNonlinearUTIn1GG(g, g_inv, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.6251028535207217, v=0.10968772603524787)
+    @test ruleSPNonlinearUTIn1GG(g, g_inv, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing) == Message(Multivariate, GaussianMeanVariance, m=[2.6255032138433307], v=mat(0.10796282966583703))
+    @test ruleSPNonlinearUTIn1GG(g, g_inv, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, alpha=1.0) == Message(Multivariate, GaussianMeanVariance, m=[2.6251028535207217], v=mat(0.10968772603524787))
 end
 
 @testset "SPNonlinearISIn1MN" begin
@@ -76,7 +76,7 @@ end
     @test SPNonlinearISIn1MN <: SumProductRule{Nonlinear{ImportanceSampling}}
     @test outboundType(SPNonlinearISIn1MN) == Message{Function}
     @test isApplicable(SPNonlinearISIn1MN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
-    f(x) = ruleSPNonlinearISIn1MN(Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0),nothing,f_dummy).dist.params[:log_pdf](x)
+    f(x) = ruleSPNonlinearISIn1MN(f_dummy, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), nothing).dist.params[:log_pdf](x)
     @test f(1.5) == logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
 end
 
@@ -90,20 +90,20 @@ end
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    n = Nonlinear(y, x, g; g_inv=g_inv)
+    n = Nonlinear(y, x, g=g, g_inv=g_inv)
     
     @test isa(n, Nonlinear{Unscented})
     
     # Forward; g_inv should not be present in call
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNG(nothing, messages[2], g)", algo_code)
+    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[2])", algo_code)
     @test !occursin("g_inv", algo_code)
 
     # Backward; g_inv should be present in call
     algo = sumProductAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTIn1GG(messages[2], nothing, g, g_inv)", algo_code)
+    @test occursin("ruleSPNonlinearUTIn1GG(g, g_inv, messages[2], nothing)", algo_code)
 end
 
 @testset "Nonlinear integration via UT with given alpha" begin
@@ -111,12 +111,12 @@ end
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    n = Nonlinear{Unscented}(y, x, g; alpha=1.0)
+    n = Nonlinear{Unscented}(y, x, g=g, alpha=1.0)
     
     # Forward; alpha should be present in call
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNG(nothing, messages[2], g, alpha=1.0)", algo_code)
+    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[2], alpha=1.0)", algo_code)
 end
 
 @testset "Nonlinear integration via UT without given inverse" begin
@@ -124,19 +124,19 @@ end
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    n = Nonlinear{Unscented}(y, x, g)
+    n = Nonlinear{Unscented}(y, x, g=g)
 
     # Forward; g_inv should not be present in call
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNG(nothing, messages[2], g)", algo_code)
+    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[2])", algo_code)
     @test !occursin("$(string(g_inv))", algo_code)
 
     # Backward; g_inv should not be present in call, 
     # both messages should be required, and initialization should take place
     algo = sumProductAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTIn1GG(messages[2], messages[1], g)", algo_code)
+    @test occursin("ruleSPNonlinearUTIn1GG(g, messages[2], messages[1])", algo_code)
     @test !occursin("g_inv", algo_code)
     @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", algo_code)
 end
@@ -146,13 +146,13 @@ end
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    n = Nonlinear{ImportanceSampling}(y, x, g)
+    n = Nonlinear{ImportanceSampling}(y, x, g=g)
 
     # Forward; g_inv should not be present in call
     algo = InferenceAlgorithm()
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearISOutNG(nothing, messages[2], g)", algo_code)
+    @test occursin("ruleSPNonlinearISOutNG(g, nothing, messages[2])", algo_code)
     @test !occursin("$(string(g_inv))", algo_code)
 end
 
