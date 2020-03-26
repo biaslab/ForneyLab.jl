@@ -2,11 +2,25 @@ module NonlinearTest
 
 using Test
 using Random
+using LinearAlgebra
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, ProbabilityDistribution, Unscented, ImportanceSampling
 using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearUTOutNGX, SPNonlinearUTInGX, SPNonlinearISIn1MN, SPNonlinearISOutNG, MNonlinearUTNGX
+using ForneyLab: unscentedStatistics, smoothRTS, collectStatistics, slice, pack, unpack
 
 Random.seed!(1234)
+
+f(x) = x
+
+g(x::Float64) = x^2 - 5.0
+g(x::Vector{Float64}) = x.^2 .- 5.0
+g_inv(y::Float64) = sqrt(y + 5.0)
+g_inv(y::Vector{Float64}) = sqrt.(y .+ 5.0)
+
+h(x::Float64, y::Float64) = x^2 - y
+h(x::Vector{Float64}, y::Vector{Float64}) = x.^2 .- y
+h_inv_x(z::Float64, y::Float64) = sqrt(z + y)
+h_inv_x(z::Vector{Float64}, y::Vector{Float64}) = sqrt.(z .+ y)
 
 
 #--------
@@ -26,45 +40,64 @@ Random.seed!(1234)
 end
 
 @testset "unscentedStatistics" begin
-    @test true == false
+    m_x = 0.0
+    v_x = 1.0
+    m_y = 2.0
+    v_y = 3.0
+
+    # Single univariate inbound
+    (m_tilde, V_tilde, C_tilde) = unscentedStatistics(m_x, v_x, g)
+    @test m_tilde == -4.0
+    @test V_tilde == 1.9999999997671694
+    @test C_tilde == 0.0
+
+    # Multiple univariate inbounds
+    (m_tilde, V_tilde, C_tilde) = unscentedStatistics([m_x, m_y], [v_x, v_y], h)
+    @test m_tilde == -1.0000000000582077
+    @test V_tilde == 5.0000009994837455
+    @test C_tilde == [0.0, -2.9999999999442934]
+
+    # Single multivariate inbound
+    (m_tilde, V_tilde, C_tilde) = unscentedStatistics([m_x, m_y], Diagonal([v_x, v_y]), g)
+    @test m_tilde == [-4.000000000465661, 1.9999999997380655]
+    @test V_tilde == [2.000000997039024 5.999996995087713; 5.999996995087713 66.00000899611041]
+    @test C_tilde == [0.0 0.0; 5.547917680814862e-11 12.000000000165528]
+
+    # Multiple multivariate inbounds
+    (m_tilde, V_tilde, C_tilde) = unscentedStatistics([[m_x, m_x], [m_y, m_y]], [Diagonal([v_x, v_x]), Diagonal([v_y, v_y])], h)
+    @test m_tilde == [-1.000000000174623, -1.000000000174623]
+    @test V_tilde == [5.000002998916898 1.9999989990901668; 1.999998999031959 5.000002998946002]
+    @test C_tilde == [0.0 0.0; 0.0 0.0; -2.9999999999998863 0.0; 0.0 -2.9999999999998863]
 end
 
 @testset "smoothRTS" begin
-    @test true == false
+    @test smoothRTS(-4.0, 2.0, 1.0, 3.0, 5.0, 0.2, 4.0, 6.0) == (43.0, 195.0)
+    @test smoothRTS([-4.0], mat(2.0), mat(1.0), [3.0], mat(5.0), mat(0.2), [4.0], mat(6.0)) == ([42.99999999999999], mat(195.0))
 end
 
 @testset "collectStatistics" begin
-    @test true == false
+    @test collectStatistics(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0)) == ([0.0, 2.0], [1.0, 3.0])
+    @test collectStatistics(Message(Univariate, GaussianMeanVariance, m=[0.0], v=mat(1.0)), nothing, Message(Univariate, GaussianMeanVariance, m=[2.0], v=mat(3.0))) == ([[0.0], [2.0]], [mat(1.0), mat(3.0)])
 end
 
 @testset "slice" begin
-    @test true == false
+    @test slice(Univariate, [0.0, 1.0], [2.0 0.5; 0.5 3.0], ones(Int64, 2), 1) == (0.0, 2.0)
+    @test slice(Multivariate, [0.0, 1.0, 2.0], [2.0 0.0 0.5; 0.0 3.0 0.0; 0.5 0.0 4.0], [1, 2], 2) == ([1.0, 2.0], [3.0 0.0; 0.0 4.0])
 end
 
 @testset "pack" begin
-    @test true == false
+    @test pack([1.0, 2.0, 3.0], [4.0, 5.0, 6.0]) == ([1.0, 2.0, 3.0], Diagonal([4.0, 5.0, 6.0]), ones(Int64, 3))
+    @test pack([[1.0], [2.0, 3.0]], [mat(4.0), Diagonal([5.0, 6.0])]) == ([1.0, 2.0, 3.0], [4.0 0.0 0.0; 0.0 5.0 0.0; 0.0 0.0 6.0], [1, 2])
 end
 
 @testset "unpack" begin
-    @test true == false
+    @test unpack([1.0, 2.0, 3.0], [1, 2]) == [[1.0], [2.0, 3.0]]
 end
 
 
 #-------------
 # Update rules
 #-------------
-
-f(x) = x
-
-g(x::Float64) = x^2 - 5.0
-g(x::Vector{Float64}) = x.^2 .- 5.0
-g_inv(y::Float64) = sqrt(y + 5.0)
-g_inv(y::Vector{Float64}) = sqrt.(y .+ 5.0)
-
-h(x::Float64, y::Float64) = x^2 - y
-h(x::Vector{Float64}, y::Vector{Float64}) = x.^2 .- y
-h_inv_x(z::Float64, y::Float64) = sqrt(z + y)
-h_inv_x(z::Vector{Float64}, y::Vector{Float64}) = sqrt.(z .+ y)
 
 @testset "SPNonlinearUTOutNG" begin
     @test SPNonlinearUTOutNG <: SumProductRule{Nonlinear{Unscented}}
