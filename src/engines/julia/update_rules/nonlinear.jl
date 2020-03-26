@@ -261,9 +261,9 @@ function ruleMNonlinearUTNGX(g::Function,
     # Compute joint marginal on ins; based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
     P = cholinv(V_tilde + V_bw_out)
     W_tilde = cholinv(V_tilde)
-    V_in = V_fw_in + C_tilde'*W_tilde*V_bw_out*P*C_tilde - C_tilde'*W_tilde*C_tilde
+    V_in = V_fw_in + C_tilde*W_tilde*V_bw_out*P*C_tilde' - C_tilde*W_tilde*C_tilde'
     m_out = V_tilde*P*m_bw_out + V_bw_out*P*m_tilde
-    m_in = C_tilde'*W_tilde*(m_out - m_tilde)
+    m_in = C_tilde*W_tilde*(m_out - m_tilde)
 
     return ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_in, v=V_in)
 end
@@ -284,28 +284,26 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
 
     multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
     inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
+    undefined_inverse = (node.g_inv == nothing) || (multi_in && (inx > 0) && (node.g_inv[inx] == nothing))
 
     if inx > 0 # A backward message is required
-        if multi_in && (node.g_inv == nothing) # Multi-inbound with no inverses defined whatsoever
+        if multi_in && undefined_inverse # Multi-inbound with undefined inverse
             push!(inbounds, Dict{Symbol, Any}(:inx => inx, # Push inbound identifier
                                               :keyword => false))
-        elseif multi_in && (node.g_inv[inx] == nothing) # Multi-inbound with undefined specific inverse
-            push!(inbounds, Dict{Symbol, Any}(:inx => inx, # Push inbound identifier
-                                              :keyword => false))
-        elseif multi_in && (node.g_inv[inx] != nothing) # Multi-inbound with defined specific inverse
+        elseif multi_in && !undefined_inverse # Multi-inbound with defined specific inverse
             push!(inbounds, Dict{Symbol, Any}(:g_inv => node.g_inv[inx], # Push corresponding inverse
                                               :keyword => false))
-        elseif !multi_in && (node.g_inv != nothing) # Single-inbound with defined inverse
+        elseif !multi_in && !undefined_inverse # Single-inbound with defined inverse
             push!(inbounds, Dict{Symbol, Any}(:g_inv => node.g_inv, # Push inverse
                                               :keyword => false))
-        end # Single-inbound with undefined inverse pushes nothing
+        end # Single-inbound with undefined inverse does not push inbound
     end
 
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        if (node_interface == entry.interface == node.interfaces[2]) && (node.g_inv == nothing)
-            # Collect the message inbound on the out edge if no inverse is available
+        if (node_interface == entry.interface != node.interfaces[1]) && undefined_inverse
+            # Collect the message inbound if no inverse is available for backward rule
             haskey(interface_to_schedule_entry, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif node_interface == entry.interface
@@ -349,6 +347,42 @@ function collectSumProductNodeInbounds(node::Nonlinear{ImportanceSampling}, entr
         else
             # Collect message from previous result
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        end
+    end
+
+    return inbounds
+end
+
+# Unscented transform
+function collectMarginalNodeInbounds(node::Nonlinear{Unscented}, entry::MarginalEntry)
+    inbounds = Any[]
+
+    # Push function (and inverse) to calling signature
+    # These functions needs to be defined in the scope of the user
+    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
+                                      :keyword => false))
+
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
+    target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
+    inbound_cluster = entry.target # Entry target is a cluster
+
+    entry_pf = posteriorFactor(first(entry.target.edges))
+    encountered_external_regions = Set{Region}()
+    for node_interface in entry.target.node.interfaces
+        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field 
+        current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
+        inbound_interface = ultimatePartner(node_interface)
+
+        if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+            # Edge is clamped, hard-code marginal of constant node
+            push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
+        elseif (current_pf === entry_pf)
+            # Edge is internal, collect message from previous result
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        elseif !(current_region in encountered_external_regions)
+            # Edge is external and region is not yet encountered, collect marginal from marginal dictionary
+            push!(inbounds, target_to_marginal_entry[current_region])
+            push!(encountered_external_regions, current_region) # Register current region with encountered external regions
         end
     end
 

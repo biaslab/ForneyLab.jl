@@ -271,6 +271,7 @@ end
 """
 Remove module prefixes from types and functions
 """
-removePrefix(arg::Any) = arg # Do not remove prefix in general (might otherwise e.g. split floats)
+removePrefix(arg::Any) = arg # Do not remove prefix in general
+removePrefix(num::Number) = string(num)
 removePrefix(type::Type) = split(string(type), '.')[end]
 removePrefix(func::Function) = split(string(func), '.')[end]

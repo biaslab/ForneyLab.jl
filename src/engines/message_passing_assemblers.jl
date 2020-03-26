@@ -52,9 +52,10 @@ function assembleInitialization!(pf::PosteriorFactor)
             node = entry.interface.node
             multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
             inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
+            undefined_inverse = (node.g_inv == nothing) || (multi_in && (inx > 0) && (node.g_inv[inx] == nothing))
 
             # Set initialization in case of a nonlinear node without given inverse 
-            if (node.g_inv == nothing) || (multi_in && (node.g_inv[inx] == nothing)) # If no inverse is given
+            if undefined_inverse # If no inverse is given
                 if isa(node.dims, Tuple)
                     dims_inx = node.dims # Same breaker dimensions for all inbounds
                 else

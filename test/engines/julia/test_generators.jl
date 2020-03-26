@@ -22,6 +22,10 @@ f() = 1.0 # Define a function
 @testset "inboundSourceCode" begin
     # custom inbound
     inbound = Dict(:keyword => false,
+                   :inx     => 1)
+    @test inboundSourceCode(inbound) == "1"
+
+    inbound = Dict(:keyword => false,
                    :g       => f)
     @test inboundSourceCode(inbound) == "f"
 
