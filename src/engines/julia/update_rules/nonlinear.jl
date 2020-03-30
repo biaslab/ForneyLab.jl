@@ -255,7 +255,7 @@ function ruleMNonlinearUTNGX(g::Function,
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
     (m_tilde, V_tilde, C_tilde) = unscentedStatistics(ms_fw_in, Vs_fw_in, g; alpha=alpha)
 
-    (m_fw_in, V_fw_in, ds) = pack(ms_fw_in, Vs_fw_in) # Statistics of joint forward messages
+    (_, V_fw_in, _) = pack(ms_fw_in, Vs_fw_in) # Statistics of joint forward messages
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
 
     # Compute joint marginal on ins; based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
