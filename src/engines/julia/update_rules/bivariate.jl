@@ -12,11 +12,12 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Univariate
     samples2 = dist_in2.params[:m] .+ sqrt(dist_in2.params[:v]).*randn(1000)
 
     sample_list = g.(samples1, samples2)
+    weight_list = ones(1000)/1000
 
     if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list)
+        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
     else
-        return Message(Multivariate, SampleList, s=sample_list)
+        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
     end
 end
 
@@ -35,11 +36,12 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Multivaria
     samples2 = dist_in2.params[:m] .+ sqrt(dist_in2.params[:v]).*randn(1000)
 
     sample_list = g.(samples1, samples2)
+    weight_list = ones(1000)/1000
 
     if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list)
+        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
     else
-        return Message(Multivariate, SampleList, s=sample_list)
+        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
     end
 end
 
@@ -59,11 +61,12 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Univariate
     end
 
     sample_list = g.(samples1, samples2)
+    weight_list = ones(1000)/1000
 
     if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list)
+        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
     else
-        return Message(Multivariate, SampleList, s=sample_list)
+        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
     end
 end
 
@@ -88,11 +91,12 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Multivaria
     end
 
     sample_list = g.(samples1, samples2)
+    weight_list = ones(1000)/1000
 
     if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list)
+        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
     else
-        return Message(Multivariate, SampleList, s=sample_list)
+        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
     end
 end
 

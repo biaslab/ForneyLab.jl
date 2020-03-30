@@ -237,7 +237,9 @@ function ruleSPNonlinearISOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate
 
     sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(1000))
 
-    Message(Univariate, SampleList, s=sample_list)
+    weight_list = ones(1000)/1000
+
+    Message(Univariate, SampleList, s=sample_list, w=weight_list)
 end
 
 function ruleSPNonlinearLInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
@@ -255,7 +257,9 @@ function ruleSPNonlinearLOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}
 
     sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(1000))
 
-    return Message(Univariate, SampleList, s=sample_list)
+    weight_list = ones(1000)/1000
+
+    return Message(Univariate, SampleList, s=sample_list, w=weight_list)
 
     # if length(g(dist_in1.params[:m])) == 1
     #     sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(1000))
