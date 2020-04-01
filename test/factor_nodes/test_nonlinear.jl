@@ -71,8 +71,8 @@ end
 end
 
 @testset "smoothRTS" begin
-    @test smoothRTS(-4.0, 2.0, 1.0, 3.0, 5.0, 0.2, 4.0, 6.0) == (43.0, 195.0)
-    @test smoothRTS([-4.0], mat(2.0), mat(1.0), [3.0], mat(5.0), mat(0.2), [4.0], mat(6.0)) == ([42.99999999999999], mat(195.0))
+    @test smoothRTS(-4.0, 2.0, 1.0, 3.0, 5.0, 4.0, 6.0) == (43.0, 195.0)
+    @test smoothRTS([-4.0], mat(2.0), mat(1.0), [3.0], mat(5.0), [4.0], mat(6.0)) == ([43.0], mat(195.0))
 end
 
 @testset "collectStatistics" begin

@@ -122,10 +122,10 @@ end
 RTS smoother update, based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
 Note, this implementation is not as efficient as Petersen et al. (2018), because we explicitly require the outbound messages
 """
-function smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, W_fw_in, m_bw_out, V_bw_out)
+function smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
     C_tilde_inv = pinv(C_tilde)
     V_bw_in = V_fw_in*C_tilde_inv'*(V_tilde + V_bw_out)*C_tilde_inv*V_fw_in - V_fw_in
-    m_bw_in = m_fw_in - (V_fw_in + V_bw_in)*W_fw_in*C_tilde*cholinv(V_tilde + V_bw_out)*(m_tilde - m_bw_out)
+    m_bw_in = m_fw_in + V_fw_in*C_tilde_inv'*(m_bw_out - m_tilde)
     
     return (m_bw_in, V_bw_in)
 end
@@ -209,7 +209,7 @@ function ruleSPNonlinearUTIn1GG(g::Function,
     # RTS smoother
     W_fw_in1 = unsafePrecision(msg_in1.dist)
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
-    (m_bw_in1, V_bw_in1) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in1, V_fw_in1, W_fw_in1, m_bw_out, V_bw_out)
+    (m_bw_in1, V_bw_in1) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in1, V_fw_in1, m_bw_out, V_bw_out)
 
     return Message(V, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
 end
@@ -229,7 +229,7 @@ function ruleSPNonlinearUTInGX(g::Function,
     (m_fw_in, V_fw_in, ds) = pack(ms_fw_in, Vs_fw_in)
     W_fw_in = cholinv(V_fw_in)
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
-    (m_bw_in, V_bw_in) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, W_fw_in, m_bw_out, V_bw_out)
+    (m_bw_in, V_bw_in) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
     
     # Marginalize
     (m_bw_inx, V_bw_inx) = slice(V, m_bw_in, V_bw_in, ds, inx)
