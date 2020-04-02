@@ -6,7 +6,7 @@ using LinearAlgebra
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, ProbabilityDistribution, Unscented, ImportanceSampling
 using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearUTOutNGX, SPNonlinearUTInGX, SPNonlinearISIn1MN, SPNonlinearISOutNG, MNonlinearUTNGX
-using ForneyLab: unscentedStatistics, smoothRTS, collectStatistics, slice, pack, unpack
+using ForneyLab: unscentedStatistics, smoothRTS, collectStatistics, marginalizeGaussianMV, concatenateGaussianMV, split
 
 Random.seed!(1234)
 
@@ -80,18 +80,18 @@ end
     @test collectStatistics(Message(Univariate, GaussianMeanVariance, m=[0.0], v=mat(1.0)), nothing, Message(Univariate, GaussianMeanVariance, m=[2.0], v=mat(3.0))) == ([[0.0], [2.0]], [mat(1.0), mat(3.0)])
 end
 
-@testset "slice" begin
-    @test slice(Univariate, [0.0, 1.0], [2.0 0.5; 0.5 3.0], ones(Int64, 2), 1) == (0.0, 2.0)
-    @test slice(Multivariate, [0.0, 1.0, 2.0], [2.0 0.0 0.5; 0.0 3.0 0.0; 0.5 0.0 4.0], [1, 2], 2) == ([1.0, 2.0], [3.0 0.0; 0.0 4.0])
+@testset "marginalizeGaussianMV" begin
+    @test marginalizeGaussianMV(Univariate, [0.0, 1.0], [2.0 0.5; 0.5 3.0], ones(Int64, 2), 1) == (0.0, 2.0)
+    @test marginalizeGaussianMV(Multivariate, [0.0, 1.0, 2.0], [2.0 0.0 0.5; 0.0 3.0 0.0; 0.5 0.0 4.0], [1, 2], 2) == ([1.0, 2.0], [3.0 0.0; 0.0 4.0])
 end
 
-@testset "pack" begin
-    @test pack([1.0, 2.0, 3.0], [4.0, 5.0, 6.0]) == ([1.0, 2.0, 3.0], Diagonal([4.0, 5.0, 6.0]), ones(Int64, 3))
-    @test pack([[1.0], [2.0, 3.0]], [mat(4.0), Diagonal([5.0, 6.0])]) == ([1.0, 2.0, 3.0], [4.0 0.0 0.0; 0.0 5.0 0.0; 0.0 0.0 6.0], [1, 2])
+@testset "concatenateGaussianMV" begin
+    @test concatenateGaussianMV([1.0, 2.0, 3.0], [4.0, 5.0, 6.0]) == ([1.0, 2.0, 3.0], Diagonal([4.0, 5.0, 6.0]), ones(Int64, 3))
+    @test concatenateGaussianMV([[1.0], [2.0, 3.0]], [mat(4.0), Diagonal([5.0, 6.0])]) == ([1.0, 2.0, 3.0], [4.0 0.0 0.0; 0.0 5.0 0.0; 0.0 0.0 6.0], [1, 2])
 end
 
-@testset "unpack" begin
-    @test unpack([1.0, 2.0, 3.0], [1, 2]) == [[1.0], [2.0, 3.0]]
+@testset "split" begin
+    @test split([1.0, 2.0, 3.0], [1, 2]) == [[1.0], [2.0, 3.0]]
 end
 
 

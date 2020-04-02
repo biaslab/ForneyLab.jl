@@ -1,3 +1,5 @@
+import Base: split
+
 export
 ruleSPNonlinearUTOutNG,
 ruleSPNonlinearUTOutNGX,
@@ -77,7 +79,7 @@ end
 
 # Multiple univariate inbounds
 function unscentedStatistics(ms::Vector{Float64}, Vs::Vector{Float64}, g::Function; alpha=default_alpha, beta=default_beta, kappa=default_kappa)
-    (m, V, ds) = pack(ms, Vs)
+    (m, V, ds) = concatenateGaussianMV(ms, Vs)
     (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha=alpha, beta=beta, kappa=kappa)
 
     g_sigma = [g(sp...) for sp in sigma_points] # Unpack each sigma point in g
@@ -105,10 +107,10 @@ end
 
 # Multiple multivariate inbounds
 function unscentedStatistics(ms::Vector{Vector{Float64}}, Vs::Vector{<:AbstractMatrix}, g::Function; alpha=default_alpha, beta=default_beta, kappa=default_kappa)
-    (m, V, ds) = pack(ms, Vs)
+    (m, V, ds) = concatenateGaussianMV(ms, Vs)
     (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha=alpha, beta=beta, kappa=kappa)
 
-    g_sigma = [g(unpack(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
+    g_sigma = [g(split(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
     
     d = sum(ds) # Dimensionality of joint
     m_tilde = sum([weights_m[k+1]*g_sigma[k+1] for k=0:2*d]) # Vector
@@ -226,13 +228,13 @@ function ruleSPNonlinearUTInGX(g::Function,
     (m_tilde, V_tilde, C_tilde) = unscentedStatistics(ms_fw_in, Vs_fw_in, g; alpha=alpha)
 
     # RTS smoother
-    (m_fw_in, V_fw_in, ds) = pack(ms_fw_in, Vs_fw_in)
+    (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in)
     W_fw_in = cholinv(V_fw_in)
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_bw_in, V_bw_in) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
     
     # Marginalize
-    (m_bw_inx, V_bw_inx) = slice(V, m_bw_in, V_bw_in, ds, inx)
+    (m_bw_inx, V_bw_inx) = marginalizeGaussianMV(V, m_bw_in, V_bw_in, ds, inx)
     
     return Message(V, GaussianMeanVariance, m=m_bw_inx, v=V_bw_inx)
 end
@@ -255,7 +257,7 @@ function ruleMNonlinearUTNGX(g::Function,
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
     (m_tilde, V_tilde, C_tilde) = unscentedStatistics(ms_fw_in, Vs_fw_in, g; alpha=alpha)
 
-    (_, V_fw_in, _) = pack(ms_fw_in, Vs_fw_in) # Statistics of joint forward messages
+    (_, V_fw_in, _) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Statistics of joint forward messages
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
 
     # Compute joint marginal on ins; based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
@@ -395,7 +397,7 @@ end
 #--------
 
 """
-Collect the statistics of separate Gaussian messages in unified statistics
+Collect the statistics of separate Gaussian messages
 """
 function collectStatistics(msgs::Vararg{Union{Message{<:Gaussian}, Nothing}})
     stats = []
@@ -411,11 +413,11 @@ function collectStatistics(msgs::Vararg{Union{Message{<:Gaussian}, Nothing}})
 end
 
 """
-Marginalize the unified statistics according to the inbound interface number
+Return the marginalized statistics of the Gaussian corresponding to an inbound inx
 """
-slice(T::Type{<:Univariate}, m::Vector{Float64}, V::AbstractMatrix, ds::Vector{Int64}, inx::Int64) = (m[inx], V[inx, inx])
+marginalizeGaussianMV(T::Type{<:Univariate}, m::Vector{Float64}, V::AbstractMatrix, ds::Vector{Int64}, inx::Int64) = (m[inx], V[inx, inx])
 
-function slice(T::Type{<:Multivariate}, m::Vector{Float64}, V::AbstractMatrix, ds::Vector{Int64}, inx::Int64)
+function marginalizeGaussianMV(T::Type{<:Multivariate}, m::Vector{Float64}, V::AbstractMatrix, ds::Vector{Int64}, inx::Int64)
     ds_start = cumsum([1; ds]) # Starting indices
     d_start = ds_start[inx]
     d_end = ds_start[inx + 1] - 1
@@ -426,23 +428,24 @@ function slice(T::Type{<:Multivariate}, m::Vector{Float64}, V::AbstractMatrix, d
 end
 
 """
-Pack multiple statistics in a unified mean and covariance
+Concatenate independent means and (co)variances of separate Gaussians in a unified mean and covariance.
+Additionally returns a vector with the original dimensionalities, so statistics can later be re-separated.
 """
-pack(ms::Vector{Float64}, Vs::Vector{Float64}) = (ms, Diagonal(Vs), ones(Int64, length(ms)))
+concatenateGaussianMV(ms::Vector{Float64}, Vs::Vector{Float64}) = (ms, Diagonal(Vs), ones(Int64, length(ms)))
 
-# Pack multiple multivariate statistics
-function pack(ms::Vector{Vector{Float64}}, Vs::Vector{<:AbstractMatrix})
+# Concatenate multiple multivariate statistics
+function concatenateGaussianMV(ms::Vector{Vector{Float64}}, Vs::Vector{<:AbstractMatrix})
     # Extract dimensions
     ds = [length(m_k) for m_k in ms]
     d_in_tot = sum(ds)
     
-    # Initialize packed statistics
+    # Initialize concatenated statistics
     m = zeros(d_in_tot)
     V = zeros(d_in_tot, d_in_tot)
     
-    # Construct packed statistics
+    # Construct concatenated statistics
     d_start = 1
-    for k = 1:length(ms) # For each inbound message
+    for k = 1:length(ms) # For each inbound statistic
         d_end = d_start + ds[k] - 1
         
         m[d_start:d_end] = ms[k]
@@ -451,18 +454,18 @@ function pack(ms::Vector{Vector{Float64}}, Vs::Vector{<:AbstractMatrix})
         d_start = d_end + 1
     end
     
-    return (m, V, ds) # Return packed mean and covariance with original dimensions (for unpacking)    
+    return (m, V, ds) # Return concatenated mean and covariance with original dimensions (for splitting)    
 end
 
 """
-Unpack a vector into separate vectors of lengths specified by ds
+Split a vector in chunks of lengths specified by ds.
 """
-function unpack(vec::Vector{Float64}, ds::Vector{Int64})
+function split(vec::Vector{Float64}, ds::Vector{Int64})
     N = length(ds)
     res = Vector{Vector{Float64}}(undef, N)
     
     d_start = 1
-    for k = 1:N # For each packed entry
+    for k = 1:N # For each original statistic
         d_end = d_start + ds[k] - 1
         
         res[k] = vec[d_start:d_end]
