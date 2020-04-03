@@ -177,7 +177,8 @@ function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F
                 if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim_tot*0.1
                     satisfied = 1
                 end
-            elseif step_count > dim_tot*250
+            end
+            if step_count > dim_tot*250
                 satisfied = 1
             end
             m_old = m_new
@@ -287,7 +288,8 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
                 if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim_tot*0.1
                     satisfied = 1
                 end
-            elseif step_count > dim_tot*250
+            end
+            if step_count > dim_tot*250
                 satisfied = 1
             end
             m_old = m_new

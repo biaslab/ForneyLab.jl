@@ -77,9 +77,7 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
     w = w./sum(w)
     #compute effective number of particles to decide if resampling is needed
     n_eff = 1/sum(w.^2)
-    @show n_eff
     if n_eff < length(w)/10
-        @show length(w)/10
         weights = Weights(w)
         samples = sample(y.params[:s],weights,length(weights))
 

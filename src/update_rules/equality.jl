@@ -72,7 +72,7 @@ function isApplicable(::Type{SPEqualityGaussianRGMP}, input_types::Vector{Type})
             Nothing_inputs += 1
         elseif input_type == Message{Function}
             function_inputs += 1
-        elseif input_type <: Message{Gaussian}
+        elseif input_type <: Message{F} where {F<:Gaussian}
             gaussian_inputs += 1
         end
     end
