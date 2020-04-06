@@ -446,3 +446,43 @@ function collectSumProductNodeInbounds(node::Bivariate{Laplace}, entry::Schedule
 
     return inbounds
 end
+
+#--------------------------
+# Custom marginal inbounds collector
+#--------------------------
+
+function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
+    target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
+    inbound_cluster = entry.target # Entry target is a cluster
+
+    inbounds = Any[]
+    entry_pf = posteriorFactor(first(entry.target.edges))
+    encountered_external_regions = Set{Region}()
+    for node_interface in entry.target.node.interfaces
+        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field 
+        current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
+        inbound_interface = ultimatePartner(node_interface)
+
+        if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+            # Edge is clamped, hard-code marginal of constant node
+            push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
+        elseif (current_pf === entry_pf)
+            # Edge is internal, collect message from previous result
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        elseif !(current_region in encountered_external_regions)
+            # Edge is external and region is not yet encountered, collect marginal from marginal dictionary
+            push!(inbounds, target_to_marginal_entry[current_region])
+            push!(encountered_external_regions, current_region) # Register current region with encountered external regions
+        end
+    end
+    
+    # Push function and status to calling signature
+    # The function needs to be defined in the scope of the user
+    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
+                                      :keyword => false))
+    status = "currentGraph().nodes[:$(node.id)].status"
+    push!(inbounds, Dict{Symbol, Any}(:status => status,
+                                      :keyword => false))
+                                  
+    return inbounds
