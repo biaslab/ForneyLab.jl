@@ -209,6 +209,7 @@ function ruleSPAdditionIn2SPN(
     msg_in2::Nothing) where {V<:Union{Univariate, Multivariate}}
 
     ruleSPAdditionIn1SNP(msg_out, nothing, msg_in1)
+end
 
 function ruleMAdditionNGG(
     msg_out::Message{<:Gaussian, V}, 
