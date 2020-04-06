@@ -334,9 +334,12 @@ function collectSumProductNodeInbounds(node::Bivariate{Laplace}, entry::Schedule
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         if node_interface == entry.interface
-            # Ignore inbound message on outbound interface
             haskey(interface_to_schedule_entry, node_interface) || error("This rule requires the incoming message on the out interface. Try altering execution order to ensure its availability.")
-            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+            if entry.message_update_rule == SPBivariateLOutNGG
+                push!(inbounds, nothing)
+            else
+                push!(inbounds, interface_to_schedule_entry[inbound_interface])
+            end
         elseif isa(inbound_interface.node, Clamp)
             # Hard-code outbound message of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, Message))
