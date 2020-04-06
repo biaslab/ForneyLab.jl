@@ -127,7 +127,6 @@ function ruleSPAdditionIn1PNP(
     Message(V, PointMass, m=msg_out.dist.params[:m] - msg_in2.dist.params[:m])
 end
 
-<<<<<<< HEAD
 function ruleSPAdditionOutNSP(
     msg_out::Nothing,
     msg_in1::Message{SampleList, Univariate},
@@ -210,7 +209,7 @@ function ruleSPAdditionIn2SPN(
     msg_in2::Nothing) where {V<:Union{Univariate, Multivariate}}
 
     ruleSPAdditionIn1SNP(msg_out, nothing, msg_in1)
-=======
+
 function ruleMAdditionNGG(
     msg_out::Message{<:Gaussian, V}, 
     msg_in1::Message{<:Gaussian, V}, 
@@ -228,5 +227,4 @@ function ruleMAdditionNGG(
     W_in2 = d_in2.params[:w]
 
     return ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[xi_in1+xi_out; xi_in2+xi_out], w=[W_in1+W_out W_out; W_out W_in2+W_out])
->>>>>>> master
 end
