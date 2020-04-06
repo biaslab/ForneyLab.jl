@@ -486,3 +486,4 @@ function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
                                       :keyword => false))
                                   
     return inbounds
+end
