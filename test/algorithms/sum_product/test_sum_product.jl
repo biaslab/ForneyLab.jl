@@ -2,8 +2,8 @@ module SumProductTest
 
 using Test
 using ForneyLab
-import ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
-import ForneyLab: SPClamp
+using ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!, sumProductSchedule
+using ForneyLab: SPClamp
 
 # Integration helper
 mutable struct MockNode <: FactorNode
@@ -71,7 +71,10 @@ end
     x = Variable()
     nd = MockNode([x, constant(0.0), constant(0.0)])
 
-    schedule = sumProductSchedule(x)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, [x])
+    schedule = sumProductSchedule(pf)
 
     @test length(schedule) == 3
     @test ScheduleEntry(nd.i[2].partner, SPClamp{Univariate}) in schedule
@@ -84,7 +87,7 @@ end
     x = Variable()
     nd = MockNode([x, constant(0.0), constant(0.0)])
 
-    rf = PosteriorFactorization()
+    PosteriorFactorization()
     algo = sumProductAlgorithm(x)
 
     @test isa(algo, InferenceAlgorithm)

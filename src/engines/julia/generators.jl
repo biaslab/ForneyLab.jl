@@ -6,8 +6,8 @@ and optional free energy evaluation
 """
 function algorithmSourceCode(algo::InferenceAlgorithm; free_energy=false)
     algo_code = "begin\n\n"
-    for (id, rf) in algo.posterior_factorization
-        algo_code *= PosteriorFactorSourceCode(rf)
+    for (_, pf) in algo.posterior_factorization
+        algo_code *= posteriorFactorSourceCode(pf)
         algo_code *= "\n\n"
     end
 
@@ -16,7 +16,7 @@ function algorithmSourceCode(algo::InferenceAlgorithm; free_energy=false)
         algo_code *= "\n\n"
     end
 
-    algo_code *= "\nend # block"
+    algo_code *= "end # block"
 
     return algo_code
 end
@@ -25,6 +25,8 @@ end
 Generate Julia code for free energy evaluation
 """
 function freeEnergySourceCode(algo::InferenceAlgorithm)
+    algo.posterior_factorization.free_energy_flag || error("Required quantities for free energy evaluation are not computed by the algorithm. Make sure to flag free_energy=true upon algorithm construction to schedule computation of required quantities.")
+
     fe_code  = "function freeEnergy$(algo.id)(data::Dict, marginals::Dict)\n\n"
     fe_code *= "F = 0.0\n\n"
     fe_code *= energiesSourceCode(algo.average_energies)
@@ -39,7 +41,7 @@ end
 """
 Generate Julia code for message passing on a single posterior factor
 """
-function PosteriorFactorSourceCode(pf::PosteriorFactor)
+function posteriorFactorSourceCode(pf::PosteriorFactor)
     pf_code = ""
     if pf.optimize
         pf_code *= optimizeSourceCode(pf)
@@ -104,9 +106,10 @@ Generate code for evaluating the average energy
 function energiesSourceCode(average_energies::Vector)
     energies_code = ""
     for energy in average_energies
+        count_code = countingNumberSourceCode(energy[:counting_number])
         node_code = removePrefix(energy[:node])
         inbounds_code = inboundsSourceCode(energy[:inbounds])
-        energies_code *= "F += averageEnergy($node_code, $inbounds_code)\n"
+        energies_code *= "F += $(count_code)averageEnergy($node_code, $inbounds_code)\n"
     end
 
     return energies_code
@@ -118,15 +121,25 @@ Generate code for evaluating the entropy
 function entropiesSourceCode(entropies::Vector)
     entropies_code = ""
     for entropy in entropies
-        inbounds_code = inboundsSourceCode(entropy[:inbounds])
-        if entropy[:conditional]
-            entropies_code *= "F -= conditionalDifferentialEntropy($inbounds_code)\n"
-        else
-            entropies_code *= "F -= differentialEntropy($inbounds_code)\n"
-        end
+        count_code = countingNumberSourceCode(entropy[:counting_number])
+        inbound_code = inboundSourceCode(entropy[:inbound])
+        entropies_code *= "F -= $(count_code)differentialEntropy($inbound_code)\n"
     end
 
     return entropies_code
+end
+
+"""
+Generate code for counting number
+"""
+function countingNumberSourceCode(cnt::Int64)
+    if cnt == 1
+        count_code = ""
+    else
+        count_code = "$(cnt)*"
+    end
+
+    return count_code
 end
 
 """
@@ -258,6 +271,7 @@ end
 """
 Remove module prefixes from types and functions
 """
-removePrefix(arg::Any) = arg # Do not remove prefix in general (might otherwise e.g. split floats)
+removePrefix(arg::Any) = arg # Do not remove prefix in general
+removePrefix(num::Number) = string(num)
 removePrefix(type::Type) = split(string(type), '.')[end]
 removePrefix(func::Function) = split(string(func), '.')[end]

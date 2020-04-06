@@ -17,6 +17,7 @@ ruleSPAdditionIn1PNS,
 ruleSPAdditionIn1SNP,
 ruleSPAdditionIn2PSN,
 ruleSPAdditionIn2SPN
+ruleMAdditionNGG
 
 function ruleSPAdditionOutNGG(
     msg_out::Nothing,
@@ -126,6 +127,7 @@ function ruleSPAdditionIn1PNP(
     Message(V, PointMass, m=msg_out.dist.params[:m] - msg_in2.dist.params[:m])
 end
 
+<<<<<<< HEAD
 function ruleSPAdditionOutNSP(
     msg_out::Nothing,
     msg_in1::Message{SampleList, Univariate},
@@ -208,4 +210,23 @@ function ruleSPAdditionIn2SPN(
     msg_in2::Nothing) where {V<:Union{Univariate, Multivariate}}
 
     ruleSPAdditionIn1SNP(msg_out, nothing, msg_in1)
+=======
+function ruleMAdditionNGG(
+    msg_out::Message{<:Gaussian, V}, 
+    msg_in1::Message{<:Gaussian, V}, 
+    msg_in2::Message{<:Gaussian, V}) where V<:Union{Univariate, Multivariate}
+
+    d_out = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_out.dist)
+    d_in1 = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_in1.dist)
+    d_in2 = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_in2.dist)
+
+    xi_out = d_out.params[:xi]
+    W_out = d_out.params[:w]
+    xi_in1 = d_in1.params[:xi]
+    W_in1 = d_in1.params[:w]
+    xi_in2 = d_in2.params[:xi]
+    W_in2 = d_in2.params[:w]
+
+    return ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[xi_in1+xi_out; xi_in2+xi_out], w=[W_in1+W_out W_out; W_out W_in2+W_out])
+>>>>>>> master
 end

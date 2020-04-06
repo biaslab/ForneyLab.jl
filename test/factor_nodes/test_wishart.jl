@@ -2,9 +2,9 @@ module WishartTest
 
 using Test
 using ForneyLab
-import ForneyLab: prod!, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper, logPdf
-import ForneyLab: SPWishartOutNPP, VBWishartOut
-import SpecialFunctions: digamma
+using ForneyLab: prod!, unsafeMean, unsafeVar, unsafeDetLogMean, outboundType, isApplicable, dims, isProper, logPdf
+using ForneyLab: SPWishartOutNPP, VBWishartOut
+using SpecialFunctions: digamma
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(MatrixVariate, Wishart, v=diageye(3), nu=4.0)) == (3, 3)

@@ -2,8 +2,8 @@ module ExpectationPropagationTest
 
 using Test
 using ForneyLab
-import ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable
-import ForneyLab: EPProbitIn1GP, SPGaussianMeanVarianceOutNPP, SPClamp, VBGaussianMeanPrecisionOut, SPProbitOutNG
+using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!
+using ForneyLab: EPProbitIn1GP, SPGaussianMeanVarianceOutNPP, SPClamp, VBGaussianMeanPrecisionOut, SPProbitOutNG, expectationPropagationSchedule, variationalExpectationPropagationSchedule
 
 # Integration helper
 mutable struct MockNode <: SoftFactor
@@ -62,7 +62,10 @@ end
         push!(nd_z, nd_z_i)
     end
 
-    schedule = expectationPropagationSchedule(m)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, [m])
+    schedule = expectationPropagationSchedule(pf)
 
     @test length(schedule) == 15
     @test schedule[2] == ScheduleEntry(nd_z[2].i[:in1], EPProbitIn1GP)
@@ -83,18 +86,15 @@ end
     nd_z = Probit(z, y)
     placeholder(z, :z)
 
-    rf = InferenceAlgorithm()
+    pfz = PosteriorFactorization()
     q_y_z = PosteriorFactor([y, z])
-
+    setTargets!(q_y_z, pfz, external_targets=true)
     schedule = variationalExpectationPropagationSchedule(q_y_z)
 
-    @test length(schedule) == 4
+    @test length(schedule) == 3
     @test ScheduleEntry(nd_y.i[:out], VBGaussianMeanPrecisionOut) in schedule
     @test ScheduleEntry(nd_z.i[:out].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd_z.i[:in1], EPProbitIn1GP) in schedule
-    @test ScheduleEntry(nd_z.i[:out], SPProbitOutNG) in schedule
-
-    global test_number = 420
 end
 
 @testset "expectationPropagationAlgorithm" begin

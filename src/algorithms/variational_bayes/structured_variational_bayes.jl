@@ -27,9 +27,9 @@ function inferUpdateRule!(entry::ScheduleEntry,
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
+        error("No applicable $(rule_type) update for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
     elseif length(applicable_rules) > 1
-        error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types)")
+        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
     else
         entry.message_update_rule = first(applicable_rules)
     end
@@ -46,22 +46,22 @@ function collectInboundTypes(entry::ScheduleEntry,
                              inferred_outbound_types::Dict{Interface, Type}
                             ) where T<:StructuredVariationalRule
     inbound_types = Type[]
-    entry_posterior_factor = PosteriorFactor(entry.interface.edge) # posterior factor for outbound edge
-    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
+    entry_posterior_factor = posteriorFactor(entry.interface.edge) # Collect posterior factor for outbound edge
+    encountered_posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
     for node_interface in entry.interface.node.interfaces
-        node_interface_posterior_factor = PosteriorFactor(node_interface.edge)
+        current_posterior_factor = posteriorFactor(node_interface.edge)
 
         if node_interface === entry.interface
             push!(inbound_types, Nothing)
-        elseif node_interface_posterior_factor === entry_posterior_factor
+        elseif current_posterior_factor === entry_posterior_factor
             # Edge is internal, accept message
             push!(inbound_types, inferred_outbound_types[node_interface.partner])
-        elseif !(node_interface_posterior_factor in posterior_factors)
+        elseif !(current_posterior_factor in encountered_posterior_factors)
             # Edge is external, accept marginal (if marginal is not already accepted)
             push!(inbound_types, ProbabilityDistribution) 
         end
 
-        push!(posterior_factors, node_interface_posterior_factor)
+        push!(encountered_posterior_factors, current_posterior_factor)
     end
 
     return inbound_types
@@ -144,13 +144,13 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
     target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
 
     inbounds = Any[]
-    entry_posterior_factor = PosteriorFactor(entry.interface.edge)
-    local_clusters = localPosteriorFactorization(entry.interface.node)
+    entry_posterior_factor = posteriorFactor(entry.interface.edge)
+    local_posterior_factor_to_region = localPosteriorFactorToRegion(entry.interface.node)
 
-    posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
+    encountered_posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        node_interface_posterior_factor = PosteriorFactor(node_interface.edge)
+        current_posterior_factor = posteriorFactor(node_interface.edge)
 
         if node_interface === entry.interface
             # Ignore marginal of outbound edge
@@ -158,16 +158,16 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
         elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
             # Hard-code marginal of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
-        elseif node_interface_posterior_factor === entry_posterior_factor
+        elseif current_posterior_factor === entry_posterior_factor
             # Collect message from previous result
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        elseif !(node_interface_posterior_factor in posterior_factors)
+        elseif !(current_posterior_factor in encountered_posterior_factors)
             # Collect marginal from marginal dictionary (if marginal is not already accepted)
-            target = local_clusters[node_interface_posterior_factor]
+            target = local_posterior_factor_to_region[current_posterior_factor]
             push!(inbounds, target_to_marginal_entry[target])
         end
 
-        push!(posterior_factors, node_interface_posterior_factor)
+        push!(encountered_posterior_factors, current_posterior_factor)
     end
 
     return inbounds

@@ -1,26 +1,36 @@
 export
 ExpectationPropagationRule,
 expectationPropagationAlgorithm,
-expectationPropagationSchedule,
 @expectationPropagationRule
 
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function expectationPropagationAlgorithm(variables::Vector{Variable}, pfz::PosteriorFactorization=currentPosteriorFactorization(), id=Symbol(""))
-    # Initialize a container posterior factor
+function expectationPropagationAlgorithm(variables::Vector{Variable}; 
+                                         id=Symbol(""),
+                                         free_energy=false)
+
+    # Initialize empty posterior factorization
+    pfz = PosteriorFactorization()
+    # Contain the entire graph in a single posterior factor
     pf = PosteriorFactor(pfz, id=Symbol(""))
-    schedule = expectationPropagationSchedule(variables)
+
+    # Set the target regions (variables and clusters) of the posterior factor
+    setTargets!(pf, pfz, variables, free_energy=free_energy, external_targets=false)
+
+    # Infer schedule and marginal computations
+    schedule = expectationPropagationSchedule(pf)
     pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
     pf.marginal_table = marginalTable(variables)
     
-    algo = InferenceAlgorithm(pfz, id)
+    # Populate fields for algorithm compilation
+    algo = InferenceAlgorithm(pfz, id=id)
     assembleInferenceAlgorithm!(algo)
+    free_energy && assembleFreeEnergy!(algo)
     
     return algo
 end
-
-expectationPropagationAlgorithm(variable::Variable, pfz::PosteriorFactorization=currentPosteriorFactorization(), id=Symbol("")) = expectationPropagationAlgorithm([variable], pfz, id)
+expectationPropagationAlgorithm(variable::Variable; id=Symbol(""), free_energy=false) = expectationPropagationAlgorithm([variable], id=id, free_energy=free_energy)
 
 """
 A non-specific expectation propagation update
@@ -31,12 +41,14 @@ abstract type ExpectationPropagationRule{factor_type} <: MessageUpdateRule end
 `expectationPropagationSchedule()` generates a expectation propagation
 message passing schedule. 
 """ 
-function expectationPropagationSchedule(variables::Vector{Variable})
+function expectationPropagationSchedule(pf::PosteriorFactor)
     ep_sites = collectEPSites(nodes(current_graph))
     breaker_sites = Interface[site.partner for site in ep_sites]
     breaker_types = breakerTypes(breaker_sites)
 
-    schedule = summaryPropagationSchedule(variables; target_sites=[breaker_sites; ep_sites])
+    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true), 
+                                          sort(collect(pf.target_clusters), rev=true);
+                                          target_sites=[breaker_sites; ep_sites])
 
     for entry in schedule
         if entry.interface in ep_sites
@@ -101,9 +113,9 @@ function inferUpdateRule!(entry::ScheduleEntry,
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        error("No applicable msg update rule for $(entry) with outbound id $(outbound_id)")
+        error("No applicable $(rule_type) update for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
     elseif length(applicable_rules) > 1
-        error("Multiple applicable msg update rules for $(entry) with outbound id $(outbound_id)")
+        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
     else
         entry.message_update_rule = first(applicable_rules)
     end

@@ -1,6 +1,6 @@
-export CompositeNode, @composite
+export CompositeFactor, @composite
 
-abstract type CompositeNode <: FactorNode end
+abstract type CompositeFactor <: FactorNode end
 
 """
 The `@composite` macro allows for defining custom (composite) nodes. Composite
@@ -32,7 +32,7 @@ macro composite(name::Symbol, exposed_vars::Expr, model::Expr)
     end
 
     expr = parse("""
-    mutable struct $name <: CompositeNode
+    mutable struct $name <: CompositeFactor
         id::Symbol
         interfaces::Vector{Interface}
         i::Dict{Symbol, Interface}

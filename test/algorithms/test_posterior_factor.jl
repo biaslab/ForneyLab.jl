@@ -3,7 +3,7 @@ module PosteriorFactorTest
 using Test
 using ForneyLab
 
-import ForneyLab: nodesConnectedToExternalEdges, Cluster, hasCollider, condense, flatten
+using ForneyLab: nodesConnectedToExternalEdges, Cluster, condense, flatten, setTargets!
 
 @testset "PosteriorFactor" begin
     g = FactorGraph()
@@ -19,138 +19,55 @@ import ForneyLab: nodesConnectedToExternalEdges, Cluster, hasCollider, condense,
     pfz = PosteriorFactorization()
     q_m = PosteriorFactor(m)
     @test q_m.id == :posteriorfactor_1
-    @test q_m.variables == Set([m])
-    @test q_m.clusters == Set{Cluster}()
     @test q_m.internal_edges == edges(m)
     @test pfz.posterior_factors[:posteriorfactor_1] === q_m
 
     q_w = PosteriorFactor(w)
     @test q_w.id == :posteriorfactor_2
-    @test q_w.variables == Set([w])
-    @test q_w.clusters == Set{Cluster}()
     @test q_w.internal_edges == edges(w)
     @test pfz.posterior_factors[:posteriorfactor_2] === q_w
 
     # Joint factorizations
     q_m_w = PosteriorFactor([m, w])
     @test q_m_w.id == :posteriorfactor_3
-    @test q_m_w.variables == Set([m, w])
-    @test length(q_m_w.clusters) == 3 
     @test q_m_w.internal_edges == edges(Set([m, w]))
     @test pfz.posterior_factors[:posteriorfactor_3] === q_m_w
 
     q_y = PosteriorFactor(y)
     @test q_y.id == :posteriorfactor_4
-    @test q_y.variables == Set(y)
-    @test q_y.clusters == Set{Cluster}()
     @test q_y.internal_edges == edges(Set(y))
     @test pfz.posterior_factors[:posteriorfactor_4] === q_y
 end
 
-@testset "hasCollider()" begin
-
-    # [N]--->[+]<---[N]
-    #     a   |   b
-    #         v c
-    #        [N]
-    #         |
-    #         v d
-    #         ■
-
+@testset "setTargets!" begin
     g = FactorGraph()
-    @RV a ~ GaussianMeanVariance(0.0, 1.0)
-    @RV b ~ GaussianMeanVariance(0.0, 1.0)
-    @RV c = a + b
-    @RV d ~ GaussianMeanVariance(c, 1.0)
-    placeholder(d, :d)
-    algo = InferenceAlgorithm()
-    q = PosteriorFactor([a,b,c])
-    @test hasCollider(q) == true
+    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV y ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV z = x + y
+    @RV w ~ GaussianMeanPrecision(z, 1.0)
+    placeholder(w, :w)
 
-    # [N]--->[=]<---[N]
-    #     a   |   b
-    #         v c
-    #        [N]
-    #         |
-    #         v d
-    #         ■
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, [z])
+    @test pfz.free_energy_flag == false
+    @test pf.target_variables == Set{Variable}([z])
+    @test pf.target_clusters == Set{Cluster}()
 
-    g = FactorGraph()
-    @RV a ~ GaussianMeanVariance(0.0, 1.0)
-    @RV b ~ GaussianMeanVariance(0.0, 1.0)
-    @RV c = equal(a, b)
-    @RV d ~ GaussianMeanVariance(c, 1.0)
-    placeholder(d, :d)
-    algo = InferenceAlgorithm()
-    q = PosteriorFactor([a,b,c])
-    @test hasCollider(q) == true
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, external_targets=true)
+    @test pfz.free_energy_flag == false
+    @test pf.target_variables == Set{Variable}([x, y, z])
+    @test pf.target_clusters == Set{Cluster}()
 
-    # [N]--->[=]--->[N]--->■
-    #         |  a      b
-    #         v 
-    #        [N]
-    #         |
-    #         v c
-    #         ■
-
-    g = FactorGraph()
-    @RV a ~ GaussianMeanVariance(0.0, 1.0)
-    @RV b ~ GaussianMeanVariance(a, 1.0)
-    @RV c ~ GaussianMeanVariance(a, 1.0)
-    placeholder(b, :b)
-    placeholder(c, :c)
-    algo = InferenceAlgorithm()
-    q = PosteriorFactor(a)
-    @test hasCollider(q) == false
-
-    # [N]--->[N]--->[N]--->■
-    #     a      b      c
-
-    g = FactorGraph()
-    @RV a ~ GaussianMeanVariance(0.0, 1.0)
-    @RV b ~ GaussianMeanVariance(a, 1.0)
-    @RV c ~ GaussianMeanVariance(b, 1.0)
-    placeholder(c, :c)
-    algo = InferenceAlgorithm()
-    q = PosteriorFactor([a,b])
-    @test hasCollider(q) == false
-
-    # [N]--->[N]--->■
-    #     a      b 
-    #
-    # [N]--->[N]--->■
-    #     c      d    
-
-    g = FactorGraph()
-    @RV a ~ GaussianMeanVariance(0.0, 1.0)
-    @RV b ~ GaussianMeanVariance(a, 1.0)
-    @RV c ~ GaussianMeanVariance(0.0, 1.0)
-    @RV d ~ GaussianMeanVariance(c, 1.0)
-    placeholder(b, :b)
-    placeholder(d, :d)
-    algo = InferenceAlgorithm()
-    q = PosteriorFactor([a,c])
-    @test hasCollider(q) == false
-
-    # [N]--->[+]<---[N]
-    #     a   |   b
-    #         v c
-    # [N]<---[=]--->[N]
-    #  |             |
-    #  v d           v e 
-    #  ■             ■
-
-    g = FactorGraph()
-    @RV a ~ GaussianMeanVariance(0.0, 1.0)
-    @RV b ~ GaussianMeanVariance(0.0, 1.0)
-    @RV c = a + b
-    @RV d ~ GaussianMeanVariance(c, 1.0)
-    @RV e ~ GaussianMeanVariance(c, 1.0)
-    placeholder(d, :d)
-    placeholder(e, :e)
-    algo = InferenceAlgorithm()
-    q = PosteriorFactor([a,b,c])
-    @test hasCollider(q) == true
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(pfz)
+    setTargets!(pf, pfz, free_energy=true)
+    @test pfz.free_energy_flag == true
+    @test pf.target_variables == Set{Variable}([x, y, z])
+    @test length(pf.target_clusters) == 1
+    @test first(pf.target_clusters).id == :x_y
 end
 
 end # module

@@ -1,31 +1,36 @@
 export
 SumProductRule,
 sumProductAlgorithm,
-sumProductSchedule,
 @sumProductRule
 
 """
 Create a sum-product algorithm to infer marginals over `variables`
 """
-function sumProductAlgorithm(
-    variables::Vector{Variable},
-    pfz::PosteriorFactorization=currentPosteriorFactorization(),
-    id=Symbol(""))
-    
-    # Initialize a container posterior factor
-    pf = PosteriorFactor(pfz, id=Symbol(""))
-    schedule = sumProductSchedule(variables)
-    pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-    pf.marginal_table = marginalTable(variables)
+function sumProductAlgorithm(variables::Vector{Variable};
+                             id=Symbol(""),
+                             free_energy=false)
 
-    algo = InferenceAlgorithm(pfz, id)
-    assembleInferenceAlgorithm!(algo)
+    # Initialize empty posterior factorization
+    pfz = PosteriorFactorization()
+    # Contain the entire graph in a single posterior factor
+    pf = PosteriorFactor(pfz, id=Symbol(""))
     
+    # Set the target regions (variables and clusters) of the posterior factor
+    setTargets!(pf, pfz, variables, free_energy=free_energy, external_targets=false)
+    
+    # Infer schedule and marginal computations
+    schedule = sumProductSchedule(pf) # For free energy computation, additional targets might be required
+    pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries from schedule
+    pf.marginal_table = marginalTable(pf)
+
+    # Populate fields for algorithm compilation
+    algo = InferenceAlgorithm(pfz, id=id)
+    assembleInferenceAlgorithm!(algo)
+    free_energy && assembleFreeEnergy!(algo)
+
     return algo
 end
-
-sumProductAlgorithm(variable::Variable,pfz::PosteriorFactorization=currentPosteriorFactorization(),
-id=Symbol("")) = sumProductAlgorithm([variable], pfz, id)
+sumProductAlgorithm(variable::Variable; id=Symbol(""), free_energy=false) = sumProductAlgorithm([variable], id=id, free_energy=free_energy)
 
 """
 A non-specific sum-product update
@@ -34,11 +39,12 @@ abstract type SumProductRule{factor_type} <: MessageUpdateRule end
 
 """ 
 `sumProductSchedule()` generates a sum-product message passing schedule that
-computes the marginals for each of the argument variables. 
+computes the marginals for each of the posterior factor targets.
 """ 
-function sumProductSchedule(variables::Vector{Variable})
+function sumProductSchedule(pf::PosteriorFactor)
     # Generate a feasible summary propagation schedule
-    schedule = summaryPropagationSchedule(variables)
+    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true), 
+                                          sort(collect(pf.target_clusters), rev=true))
 
     # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule
@@ -50,18 +56,16 @@ function sumProductSchedule(variables::Vector{Variable})
     return schedule
 end
 
-sumProductSchedule(variable::Variable) = sumProductSchedule([variable])
-
 """
 `internalSumProductSchedule()` generates a sum-product message passing schedule
-for the inner graph of a `CompositeNode`. This schedule produces the sum-product
+for the inner graph of a `CompositeFactor`. This schedule produces the sum-product
 message out of the specified `outbound_interface`.
 """
-function internalSumProductSchedule(cnode::CompositeNode,
+function internalSumProductSchedule(cnode::CompositeFactor,
                                     outbound_interface::Interface,
                                     inferred_outbound_types::Dict{Interface, <:Type})
 
-    # Collect types of messages towards the CompositeNode
+    # Collect types of messages towards the CompositeFactor
     msg_types = Dict{Interface, Type}()
     for (idx, terminal) in enumerate(cnode.terminals)
         (cnode.interfaces[idx] === outbound_interface) && continue # don't need incoming msg on outbound interface
@@ -85,7 +89,7 @@ function internalSumProductSchedule(cnode::CompositeNode,
 
     # Sanity check
     if schedule[end].interface !== internal_outbound_interface
-        error("The last schedule entry should correspond to the message going out of the CompositeNode")
+        error("The last schedule entry should correspond to the message going out of the CompositeFactor")
     end
 
     # Type inference for internal messages
@@ -111,16 +115,16 @@ function inferUpdateRule!(entry::ScheduleEntry,
 
     # Select and set applicable rule
     if isempty(applicable_rules)
-        if isa(entry.interface.node, CompositeNode)
-            # No 'shortcut rule' available for CompositeNode.
+        if isa(entry.interface.node, CompositeFactor)
+            # No 'shortcut rule' available for CompositeFactor.
             # Try to fall back to msg passing on the internal graph.
             entry.internal_schedule = internalSumProductSchedule(entry.interface.node, entry.interface, inferred_outbound_types)
             entry.message_update_rule = entry.internal_schedule[end].message_update_rule
         else
-            error("No applicable msg update rule for $(entry) with inbound types $(inbound_types)")
+            error("No applicable $(rule_type) update for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
         end
     elseif length(applicable_rules) > 1
-        error("Multiple applicable msg update rules for $(entry) with inbound types $(inbound_types): $(applicable_rules)")
+        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
     else
         entry.message_update_rule = first(applicable_rules)
     end

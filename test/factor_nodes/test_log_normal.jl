@@ -2,8 +2,8 @@ module LogNormalTest
 
 using Test
 using ForneyLab
-import ForneyLab: prod!, unsafeMean, unsafeLogMean, unsafeVar, unsafeLogVar, unsafeCov, unsafeLogCov, outboundType, isApplicable, dims
-import ForneyLab: SPLogNormalOutNPP, VBLogNormalOut
+using ForneyLab: prod!, unsafeMean, unsafeLogMean, unsafeVar, unsafeLogVar, unsafeCov, unsafeLogCov, outboundType, isApplicable, dims
+using ForneyLab: SPLogNormalOutNPP, VBLogNormalOut
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, LogNormal, m=1.0, s=1.0)) == 1

@@ -1,8 +1,8 @@
-module AssemblersTest
+module MessagePassingAssemblersTest
 
 using Test
 using ForneyLab
-using ForneyLab: assembleBreaker!, assembleClamp!, assembleInferenceAlgorithm!, assemblePosteriorFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten
+using ForneyLab: assembleBreaker!, assembleClamp!, assembleInferenceAlgorithm!, assemblePosteriorFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten, setTargets!, sumProductSchedule, expectationPropagationSchedule, variationalSchedule
 
 @testset "assembleClamp!" begin
     g = FactorGraph()
@@ -37,7 +37,8 @@ end
     GaussianMeanPrecision(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz)
-    pf.schedule = sumProductSchedule(x)
+    setTargets!(pf, pfz, [x])
+    pf.schedule = sumProductSchedule(pf)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -52,10 +53,10 @@ end
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     @RV y ~ Probit(x)
     placeholder(y, :y)
-    
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz)
-    pf.schedule = expectationPropagationSchedule(x)
+    setTargets!(pf, pfz, [x])
+    pf.schedule = expectationPropagationSchedule(pf)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -68,12 +69,13 @@ end
     f(z) = z
     g = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    @RV y ~ Nonlinear(x, f)
+    @RV y ~ Nonlinear(x, g=f)
     GaussianMeanPrecision(y, 0.0, 1.0)
     
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz)
-    pf.schedule = sumProductSchedule(x)
+    setTargets!(pf, pfz, [x])
+    pf.schedule = sumProductSchedule(pf)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -88,7 +90,8 @@ end
     placeholder(x, :x)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz)
-    pf.schedule = sumProductSchedule(x)
+    setTargets!(pf, pfz, [x])
+    pf.schedule = sumProductSchedule(pf)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -103,7 +106,8 @@ end
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz)
-    pf.schedule = sumProductSchedule(x)
+    setTargets!(pf, pfz, [x])
+    pf.schedule = sumProductSchedule(pf)
     pf.marginal_table = marginalTable(x)
     algo = InferenceAlgorithm(pfz)
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -119,7 +123,8 @@ end
     GaussianMeanPrecision(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz)
-    pf.schedule = sumProductSchedule(x)
+    setTargets!(pf, pfz, [x])
+    pf.schedule = sumProductSchedule(pf)
     pf.marginal_table = marginalTable(x)
     algo = InferenceAlgorithm(pfz)
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -136,6 +141,7 @@ end
     GaussianMeanPrecision(y, 0.0, 1.0)
     pfz = PosteriorFactorization([x,y], ids=[:XY])
     pf = pfz.posterior_factors[:XY]
+    setTargets!(pf, pfz, external_targets=true)
     pf.schedule = variationalSchedule(pf)
     pf.marginal_table = marginalTable(pf)
     algo = InferenceAlgorithm(pfz)
@@ -144,7 +150,7 @@ end
     assembleMarginalTable!(pf)
     @test pf.marginal_table[3].marginal_update_rule == ForneyLab.MGaussianMeanPrecisionGGD
     @test pf.marginal_table[3].marginal_id == :y_x
-    @test pf.marginal_table[3].inbounds == [pf.schedule[3], pf.schedule[1], g.nodes[:clamp_3]]
+    @test length(pf.marginal_table[3].inbounds) == 3
 end
 
 @testset "assemblePosteriorFactor!" begin
@@ -153,7 +159,8 @@ end
     GaussianMeanPrecision(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz)
-    schedule = sumProductSchedule(x)
+    setTargets!(pf, pfz, [x])
+    schedule = sumProductSchedule(pf)
     pf.schedule = condense(flatten(schedule))
     pf.marginal_table = marginalTable(x)
     algo = InferenceAlgorithm()
@@ -177,7 +184,8 @@ end
     GaussianMeanPrecision(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz)
-    schedule = sumProductSchedule(x)
+    setTargets!(pf, pfz, [x])
+    schedule = sumProductSchedule(pf)
     pf.schedule = condense(flatten(schedule))
     pf.marginal_table = marginalTable(x)
     algo = InferenceAlgorithm(pfz)

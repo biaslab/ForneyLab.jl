@@ -1,16 +1,16 @@
 function matchPermutedCanonical(input_types::Vector{Type}, outbound_type::Type)
     # TODO: this implementation only works when the inbound types match the outbound type
-    Nothing_inputs = 0
+    nothing_inputs = 0
     message_inputs = 0
     for input_type in input_types
         if input_type == Nothing
-            Nothing_inputs += 1
+            nothing_inputs += 1
         elseif matches(input_type, outbound_type)
             message_inputs += 1
         end
     end
 
-    return (Nothing_inputs == 1) && (message_inputs == 2)
+    return (nothing_inputs == 1) && (message_inputs == 2)
 end
 
 mutable struct SPEqualityGaussian <: SumProductRule{Equality} end
@@ -40,12 +40,12 @@ isApplicable(::Type{SPEqualityDirichlet}, input_types::Vector{Type}) = matchPerm
 mutable struct SPEqualityPointMass <: SumProductRule{Equality} end
 outboundType(::Type{SPEqualityPointMass}) = Message{PointMass}
 function isApplicable(::Type{SPEqualityPointMass}, input_types::Vector{Type})
-    Nothing_inputs = 0
+    nothing_inputs = 0
     soft_inputs = 0
     point_mass_inputs = 0
     for input_type in input_types
         if input_type == Nothing
-            Nothing_inputs += 1
+            nothing_inputs += 1
         elseif matches(input_type, Message{SoftFactor})
             soft_inputs += 1
         elseif matches(input_type, Message{PointMass})
@@ -53,7 +53,7 @@ function isApplicable(::Type{SPEqualityPointMass}, input_types::Vector{Type})
         end
     end
 
-    return (Nothing_inputs == 1) && (soft_inputs == 1) && (point_mass_inputs == 1)
+    return (nothing_inputs == 1) && (soft_inputs == 1) && (point_mass_inputs == 1)
 end
 
 mutable struct SPEqualityRGMP <: SumProductRule{Equality} end
@@ -63,19 +63,19 @@ isApplicable(::Type{SPEqualityRGMP}, input_types::Vector{Type}) = matchPermutedC
 mutable struct SPEqualityGaussianRGMP <: SumProductRule{Equality} end
 outboundType(::Type{SPEqualityGaussianRGMP}) = Message{GaussianMeanVariance}
 function isApplicable(::Type{SPEqualityGaussianRGMP}, input_types::Vector{Type})
-    Nothing_inputs = 0
+    nothing_inputs = 0
     function_inputs = 0
     gaussian_inputs = 0
 
     for input_type in input_types
         if input_type == Nothing
-            Nothing_inputs += 1
-        elseif input_type == Message{Function}
+            nothing_inputs += 1
+        elseif matches(input_type, Message{Function})
             function_inputs += 1
-        elseif input_type <: Message{F} where {F<:Gaussian}
+        elseif matches(input_type, Message{Gaussian})
             gaussian_inputs += 1
         end
     end
 
-    return (Nothing_inputs == 1) && (function_inputs == 1) && (gaussian_inputs == 1)
+    return (nothing_inputs == 1) && (function_inputs == 1) && (gaussian_inputs == 1)
 end

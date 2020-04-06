@@ -1,3 +1,4 @@
+import Base: copy
 export Clamp, constant, placeholder, @ensureVariables
 
 """
@@ -27,6 +28,8 @@ mutable struct Clamp{T<:VariateType} <: DeltaFactor
     buffer_id::Symbol # Specify the buffer id for an attached placeholder
     buffer_index::Int64 # Specify the buffer index when the placeholder attaches a vector
 
+    Clamp(V::Type) = new{V}() # Instantiate an empty clamp without adding it to the graph
+
     function Clamp(out::Variable, value::Any; id=generateId(Clamp{variateType(value)}))
         self = new{variateType(value)}(id, Array{Interface}(undef, 1), Dict{Symbol,Interface}(), value)
         addNode!(currentGraph(), self)
@@ -34,6 +37,20 @@ mutable struct Clamp{T<:VariateType} <: DeltaFactor
 
         return self
     end
+end
+
+"""
+Make a shallow copy of a Clamp without adding it to the graph.
+The copied Clamp can be used as altered inboud during algorithm
+assembly, without altering the original source Clamp.
+"""
+function copy(src::Clamp{V}) where V<:VariateType
+    nd = Clamp(V)
+    for field in fieldnames(Clamp)
+        isdefined(src, field) && setfield!(nd, field, getfield(src, field))
+    end
+
+    return nd
 end
 
 variateType(value::Number) = Univariate

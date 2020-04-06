@@ -2,8 +2,8 @@ module GammaTest
 
 using Test
 using ForneyLab
-import ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable, dims
-import ForneyLab: SPGammaOutNPP, VBGammaOut
+using ForneyLab: prod!, unsafeMean, unsafeVar, outboundType, isApplicable, dims
+using ForneyLab: SPGammaOutNPP, VBGammaOut
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, Gamma, a=1.0, b=1.0)) == 1

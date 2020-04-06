@@ -2,8 +2,8 @@ module ExponentialTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPExponentialOutNG, SPExponentialOutNP, SPExponentialIn1LN, SPExponentialIn1PN
+using ForneyLab: outboundType, isApplicable
+using ForneyLab: SPExponentialOutNG, SPExponentialOutNP, SPExponentialIn1LN, SPExponentialIn1PN
 
 @testset "Exponential node construction through exp() syntax" begin
     g = FactorGraph()

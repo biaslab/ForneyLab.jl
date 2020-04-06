@@ -2,8 +2,8 @@ module AdditionTest
 
 using Test
 using ForneyLab
-import ForneyLab: outboundType, isApplicable
-import ForneyLab: SPAdditionOutNGG, SPAdditionOutNGP, SPAdditionOutNPG, SPAdditionIn1GNG, SPAdditionIn1PNG, SPAdditionIn2GGN, SPAdditionIn2PGN, SPAdditionIn1GNP, SPAdditionIn2GPN, SPAdditionOutNPP, SPAdditionIn1PNP, SPAdditionIn2PPN
+using ForneyLab: outboundType, isApplicable
+using ForneyLab: SPAdditionOutNGG, SPAdditionOutNGP, SPAdditionOutNPG, SPAdditionIn1GNG, SPAdditionIn1PNG, SPAdditionIn2GGN, SPAdditionIn2PGN, SPAdditionIn1GNP, SPAdditionIn2GPN, SPAdditionOutNPP, SPAdditionIn1PNP, SPAdditionIn2PPN, MAdditionNGG
 
 @testset "Addition node construction through + syntax" begin
     g = FactorGraph()
@@ -151,6 +151,14 @@ end
 
     @test ruleSPAdditionIn1PNP(Message(Univariate, PointMass, m=3.0), nothing, Message(Univariate, PointMass, m=1.0)) == Message(Univariate, PointMass, m=2.0)
     @test ruleSPAdditionIn1PNP(Message(Multivariate, PointMass, m=[3.0]), nothing, Message(Multivariate, PointMass, m=[1.0])) == Message(Multivariate, PointMass, m=[2.0])
+end
+
+@testset "MAdditionNGG" begin
+    @test MAdditionNGG <: MarginalRule{Addition}
+    @test isApplicable(MAdditionNGG, [Nothing, Message{Gaussian}, Message{Gaussian}])
+
+    @test ruleMAdditionNGG(Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=2.0), Message(Univariate, GaussianWeightedMeanPrecision, xi=3.0, w=4.0), Message(Univariate, GaussianWeightedMeanPrecision, xi=5.0, w=6.0)) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[4.0, 6.0], w=[6.0 2.0; 2.0 8.0])
+    @test ruleMAdditionNGG(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(2.0)), Message(Multivariate, GaussianWeightedMeanPrecision, xi=[3.0], w=mat(4.0)), Message(Multivariate, GaussianWeightedMeanPrecision, xi=[5.0], w=mat(6.0))) == ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[4.0, 6.0], w=[6.0 2.0; 2.0 8.0])
 end
 
 end # module

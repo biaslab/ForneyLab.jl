@@ -2,7 +2,7 @@
 A `Cluster` specifies a collection of `edges` adjacent to `node` that belong to the same
 `PosteriorFactor`. A joint marginal can be computed over a cluster.
 """
-mutable struct Cluster <: AbstractCluster
+mutable struct Cluster <: Region
     id::Symbol
     node::FactorNode
     edges::Vector{Edge}
@@ -15,22 +15,24 @@ mutable struct Cluster <: AbstractCluster
 end
 
 Base.isless(c1::Cluster, c2::Cluster) = isless("$(c1.id)", "$(c2.id)")
+Base.isless(v::Variable, c::Cluster) = isless("$(v.id)", "$(c.id)")
+Base.isless(c::Cluster, v::Variable) = isless("$(c.id)", "$(v.id)")
 
 """
-Return the cluster that the node-edge combination belongs to (if available)
+Return the region that the node-edge combination belongs to (if available)
 """
-function cluster(node::FactorNode, edge::Edge)
+function region(node::FactorNode, edge::Edge)
     dict = current_posterior_factorization.node_edge_to_cluster
     if haskey(dict, (node, edge))
         cl = dict[(node, edge)]
-    else # No cluster is found, return the variable itself
+    else # No cluster is registered, return the edge variable
         cl = edge.variable
     end
 
-    return cl::Union{Cluster, Variable}
+    return cl::Region
 end
 
 """
-Return the local clusters/variables around `node`
+Return the local regions around `node`
 """
-localClusters(node::FactorNode) = [cluster(node, interface.edge) for interface in node.interfaces]
+localRegions(node::FactorNode) = [region(node, interface.edge) for interface in node.interfaces]

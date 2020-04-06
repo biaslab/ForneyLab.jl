@@ -87,3 +87,8 @@
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Message{SampleList}, Message{PointMass}, Nothing),
                 :name          => SPAdditionIn2SPN)
+                
+@marginalRule(:node_type     => Addition,
+              :inbound_types => (Nothing, Message{Gaussian}, Message{Gaussian}), # "Nothing" indicates marginalization over outbound edge
+              :name          => MAdditionNGG)
+
