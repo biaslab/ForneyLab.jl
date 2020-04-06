@@ -16,7 +16,7 @@ ruleSPAdditionOutNPS,
 ruleSPAdditionIn1PNS,
 ruleSPAdditionIn1SNP,
 ruleSPAdditionIn2PSN,
-ruleSPAdditionIn2SPN
+ruleSPAdditionIn2SPN,
 ruleMAdditionNGG
 
 function ruleSPAdditionOutNGG(
