@@ -451,7 +451,7 @@ end
 # Custom marginal inbounds collector
 #--------------------------
 
-function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
+function collectMarginalNodeInbounds(node::Bivariate, entry::MarginalEntry)
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
     target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
     inbound_cluster = entry.target # Entry target is a cluster
