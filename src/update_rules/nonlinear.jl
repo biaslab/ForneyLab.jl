@@ -42,16 +42,6 @@ function isApplicable(::Type{SPNonlinearUTInGX}, input_types::Vector{<:Type})
     return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-1)
 end
 
-@sumProductRule(:node_type     => Nonlinear{ImportanceSampling},
-                :outbound_type => Message{Function},
-                :inbound_types => (Message{FactorFunction}, Nothing),
-                :name          => SPNonlinearISInMN)
-
-@sumProductRule(:node_type     => Nonlinear{ImportanceSampling},
-                :outbound_type => Message{SampleList},
-                :inbound_types => (Nothing, Message{Gaussian}),
-                :name          => SPNonlinearISOutNG)
-
 @sumProductRule(:node_type     => Nonlinear{Laplace},
                 :outbound_type => Message{Function},
                 :inbound_types => (Message{FactorFunction}, Nothing),

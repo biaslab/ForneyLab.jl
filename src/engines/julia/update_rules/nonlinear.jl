@@ -5,8 +5,6 @@ ruleSPNonlinearUTOutNG,
 ruleSPNonlinearUTOutNGX,
 ruleSPNonlinearUTIn1GG,
 ruleSPNonlinearUTInGX,
-ruleSPNonlinearISInMN,
-ruleSPNonlinearISOutNG,
 ruleSPNonlinearLInMN,
 ruleSPNonlinearLOutNG,
 ruleMNonlinearUTNGX,
@@ -310,21 +308,6 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
     return inbounds
 end
 
-function ruleSPNonlinearISInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
-    Message(Univariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="NonlinearIS")
-end
-
-function ruleSPNonlinearISOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}, g::Function) where {F<:Gaussian}
-    # The forward message is parameterized by a SampleList
-    dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
-
-    sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(1000))
-
-    weight_list = ones(1000)/1000
-
-    Message(Univariate, SampleList, s=sample_list, w=weight_list)
-end
-
 function ruleSPNonlinearLInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
     try
         ForwardDiff.derivative(g, 0)
@@ -360,19 +343,7 @@ end
     y::ProbabilityDistribution{Univariate, F},
     z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F<:Gaussian}
 
-    if x.params[:ApproximationType] == "NonlinearIS"
-        # The product of a log-pdf and Gaussian distribution is computed by importance sampling
-        y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
-        samples = y.params[:m] .+ sqrt(y.params[:v]).*randn(1000)
-
-        p = exp.((x.params[:log_pdf]).(samples))
-        Z = sum(p)
-        mean = sum(p./Z.*samples)
-        var = sum(p./Z.*(samples .- mean).^2)
-
-        z.params[:m] = mean
-        z.params[:v] = var
-    elseif x.params[:ApproximationType] == "NonlinearL"
+    if x.params[:ApproximationType] == "NonlinearL"
         # The product of a log-pdf and Gaussian distribution is approximated by Laplace method
         y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
         log_joint(s) = logPdf(y,s) + x.params[:log_pdf](s)
@@ -415,7 +386,8 @@ end
 
         z.params[:m] = mean
         z.params[:v] = var
-    elseif x.params[:ApproximationType] == "BivariateL"
+    end
+    if x.params[:ApproximationType] == "BivariateL"
         z.params[:m] = x.params[:m]
         z.params[:v] = x.params[:v]
     end
@@ -472,7 +444,8 @@ end
 
         z.params[:m] = mean
         z.params[:v] = var
-    elseif x.params[:ApproximationType] == "BivariateL"
+    end
+    if x.params[:ApproximationType] == "BivariateL"
         z.params[:m] = x.params[:m]
         z.params[:v] = x.params[:v]
     end
@@ -484,15 +457,15 @@ end
 function prod!(
     x::ProbabilityDistribution{Univariate, Function},
     y::ProbabilityDistribution{Univariate, Function},
-    z::ProbabilityDistribution{Univariate, Function}=ProbabilityDistribution(Univariate, Function, log_pdf=(s)->s, ApproximationType="NonlinearIS"))
+    z::ProbabilityDistribution{Univariate, Function}=ProbabilityDistribution(Univariate, Function, log_pdf=(s)->s, ApproximationType="NonlinearL"))
 
     z.params[:log_pdf] = ((s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s))
     if x.params[:ApproximationType] == y.params[:ApproximationType]
         z.params[:ApproximationType] = x.params[:ApproximationType]
     else
-        z.params[:ApproximationType] = "NonlinearIS"
+        z.params[:ApproximationType] = "NonlinearL"
     end
-
+    @show z
     return z
 end
 
@@ -509,31 +482,6 @@ function prod!(
     end
 
     return z
-end
-# Importance sampling
-function collectSumProductNodeInbounds(node::Nonlinear{ImportanceSampling}, entry::ScheduleEntry)
-    inbounds = Any[]
-
-    # Push function to calling signature; function needs to be defined in the scope of the user
-    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
-                                      :keyword => false))
-
-    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
-    for node_interface in node.interfaces
-        inbound_interface = ultimatePartner(node_interface)
-        if node_interface == entry.interface
-            # Ignore inbound message on outbound interface
-            push!(inbounds, nothing)
-        elseif isa(inbound_interface.node, Clamp)
-            # Hard-code outbound message of constant node in schedule
-            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
-        else
-            # Collect message from previous result
-            push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        end
-    end
-
-    return inbounds
 end
 
 # Unscented transform

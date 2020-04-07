@@ -1,8 +1,7 @@
-export Nonlinear, Unscented, ImportanceSampling, Laplace
+export Nonlinear, Unscented, Laplace
 
 abstract type ApproximationMethod end
 abstract type Unscented <: ApproximationMethod end
-abstract type ImportanceSampling <: ApproximationMethod end
 abstract type Laplace <: ApproximationMethod end
 
 """
@@ -24,7 +23,6 @@ Interfaces:
 Construction:
 
     Nonlinear(out, in1; g=g, id=:my_node)
-    Nonlinear{ImportanceSampling}(out, in1; g=g, id=:my_node)
     Nonlinear(out, in1; g=g, g_inv=g_inv, id=:my_node)
     Nonlinear(out, in1, in2, ...; g=g, id=:my_node)
     Nonlinear(out, in1, in2, ...; g=g, g_inv=(g_inv_in1, g_inv_in2, ...), id=:my_node)
@@ -52,16 +50,6 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
         for k = 1:n_args
             self.i[:in*k] = self.interfaces[k+1] = associate!(Interface(self), args[k])
         end
-
-        return self
-    end
-
-    function Nonlinear{ImportanceSampling}(out, in1; g::Function, id=ForneyLab.generateId(Nonlinear{ImportanceSampling}))
-        @ensureVariables(out, in1)
-        self = new(id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), g, nothing, nothing, ())
-        ForneyLab.addNode!(currentGraph(), self)
-        self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
-        self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)
 
         return self
     end
