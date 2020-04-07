@@ -32,7 +32,7 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Multivaria
     samples1 = []
     for j=1:1000
         sample = dist_in1.params[:m] + C1L*randn(dim)
-        append!(samples1,sample)
+        push!(samples1,sample)
     end
     samples2 = dist_in2.params[:m] .+ sqrt(dist_in2.params[:v]).*randn(1000)
 
@@ -58,7 +58,7 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Univariate
     samples2 = []
     for j=1:1000
         sample = dist_in2.params[:m] + C2L*randn(dim)
-        append!(samples2,sample)
+        push!(samples2,sample)
     end
 
     sample_list = g.(samples1, samples2)
@@ -87,8 +87,8 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Multivaria
     for j=1:1000
         sample1 = dist_in1.params[:m] + C1L*randn(dim1)
         sample2 = dist_in2.params[:m] + C2L*randn(dim2)
-        append!(samples1,sample1)
-        append!(samples2,sample2)
+        push!(samples1,sample1)
+        push!(samples2,sample2)
     end
 
     sample_list = g.(samples1, samples2)
@@ -460,7 +460,7 @@ function collectMarginalNodeInbounds(node::Bivariate, entry::MarginalEntry)
     entry_pf = posteriorFactor(first(entry.target.edges))
     encountered_external_regions = Set{Region}()
     for node_interface in entry.target.node.interfaces
-        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field 
+        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field
         current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
         inbound_interface = ultimatePartner(node_interface)
 
@@ -476,7 +476,7 @@ function collectMarginalNodeInbounds(node::Bivariate, entry::MarginalEntry)
             push!(encountered_external_regions, current_region) # Register current region with encountered external regions
         end
     end
-    
+
     # Push function and status to calling signature
     # The function needs to be defined in the scope of the user
     push!(inbounds, Dict{Symbol, Any}(:g => node.g,
@@ -484,6 +484,6 @@ function collectMarginalNodeInbounds(node::Bivariate, entry::MarginalEntry)
     status = "currentGraph().nodes[:$(node.id)].status"
     push!(inbounds, Dict{Symbol, Any}(:status => status,
                                       :keyword => false))
-                                  
+
     return inbounds
 end

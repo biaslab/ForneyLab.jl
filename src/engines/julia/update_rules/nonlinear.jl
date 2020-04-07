@@ -163,19 +163,6 @@ function ruleSPNonlinearUTOutNGX(g::Function, # Needs to be in front of Vararg
     return Message(V, GaussianMeanVariance, m=m_tilde, v=V_tilde)
 end
 
-# Forward rule (importance sampling)
-function ruleSPNonlinearISOutNG(g::Function,
-                                msg_out::Nothing,
-                                msg_in1::Message{F, Univariate}) where F<:Gaussian
-
-    # The forward message is parameterized by a SampleList
-    dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
-
-    sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(100))
-
-    Message(Univariate, SampleList, s=sample_list)
-end
-
 # Backward rule with given inverse (unscented transform)
 function ruleSPNonlinearUTIn1GG(g::Function,
                                 g_inv::Function,
