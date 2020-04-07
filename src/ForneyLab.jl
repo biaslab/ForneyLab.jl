@@ -11,6 +11,7 @@ using Printf: @sprintf
 using StatsFuns: logmvgamma
 using ForwardDiff
 using StatsBase:Weights
+using Roots: find_zero
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, exp, convert, show, prod!
@@ -60,6 +61,7 @@ include("factor_nodes/nonlinear.jl")
 include("factor_nodes/dot_product.jl")
 include("factor_nodes/poisson.jl")
 include("factor_nodes/sample_list.jl")
+include("factor_nodes/expectation_constraint.jl")
 
 
 # Factor graph
@@ -116,6 +118,7 @@ include("update_rules/softmax.jl")
 include("update_rules/nonlinear.jl")
 include("update_rules/dot_product.jl")
 include("update_rules/poisson.jl")
+include("update_rules/expectation_constraint.jl")
 
 *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
 
