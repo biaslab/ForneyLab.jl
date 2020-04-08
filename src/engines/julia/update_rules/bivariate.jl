@@ -261,7 +261,7 @@ function approxMessageBivariate(m_prior::Array,v_prior::Array,m_post::Array,v_po
 end
 
 
-function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F, V1}, msg_in2::Message{F, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F<:Gaussian, V1<:VariateType, V2<:VariateType}
+function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
     if status[:count_update] == 1
         status[:count_update] = 0
@@ -373,7 +373,7 @@ function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
 end
 
-function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F, V1}, msg_in2::Message{F, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F<:Gaussian, V1<:VariateType, V2<:VariateType}
+function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F1, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
     if status[:count_update] == 1
         status[:count_update] = 0
