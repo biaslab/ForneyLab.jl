@@ -465,7 +465,7 @@ function prod!(
     else
         z.params[:ApproximationType] = "NonlinearL"
     end
-    @show z
+
     return z
 end
 

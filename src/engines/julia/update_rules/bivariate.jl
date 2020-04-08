@@ -101,6 +101,166 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Multivaria
     end
 end
 
+KL_between_2Gaussians(m1::Number, v1::Number, m2::Number, v2::Number) = log(sqrt(v2)/sqrt(v1)) + (v1+(m1-m2)^2)/(2*v2) - 0.5
+
+function KL_between_2Gaussians(m1::Array, v1, m2::Array, v2)
+    v2_inv = inv(v2+1e-5*diageye(length(m1)))
+    return 0.5*(log(det(v2)/det(v1)) - length(m1) + tr(v2_inv*v1) + transpose(m2-m1)*v2_inv*(m2-m1))
+end
+
+function approxMessageBivariate(m_prior::Number,v_prior::Number,m_post::Number,v_post::Number)
+    # #gradient descent to find m_message, v_message that minimizes KL objective
+    # m_prod(m1,v1,m2,v2) = (v1*m2 + v2*m1)/(v1+v2) #mean of prod of two univariate Gaussian dist.s
+    # v_prod(m1,v1,m2,v2) = 1/(1/v1+1/v2) #var of prod of two univariate Gaussian dist.s
+    #
+    # KL_objective(m,v) = 0.5*(KL_between_2Gaussians(m_prod(m,v,m_prior,v_prior),v_prod(m,v,m_prior,v_prior),m_post,v_post)+KL_between_2Gaussians(m_post,v_post,m_prod(m,v,m_prior,v_prior),v_prod(m,v,m_prior,v_prior)))
+    # #KL_objective(m,v) = KL_between_2Gaussians(m_prod(m,v,m_prior,v_prior),v_prod(m,v,m_prior,v_prior),m_post,v_post)
+    #
+    # step_size = 0.01
+    # satisfied = 0
+    # step_count = 0
+    # m_message, s_message =  m_post, sqrt(v_post) #initial values for mean and std
+    # m_total, s_total = 0, 0
+    # m_average, s_average = 0, 0
+    # m_new, s_new = 0, 0
+    # @show m_post
+    # @show v_post
+    # while satisfied == 0
+    #     KL_m(m) = KL_objective(m,s_message^2)
+    #     KL_s(s) = KL_objective(m_message,s^2)
+    #     d_KL_m(m) = ForwardDiff.derivative(KL_m,m)
+    #     d_KL_s(s) = ForwardDiff.derivative(KL_s,s)
+    #     m_new = m_message - step_size*d_KL_m(m_message)
+    #     @show d_KL_s(s_message)
+    #     s_new = s_message - step_size*d_KL_s(s_message)
+    #     if KL_objective(m_new,s_new^2) < KL_objective(m_message,s_message^2)
+    #         proposal_step_size = 10*step_size
+    #         m_proposal = m_message - proposal_step_size*d_KL_m(m_message)
+    #         s_proposal = s_message - proposal_step_size*d_KL_s(s_message)
+    #         if KL_objective(m_proposal,s_proposal^2) < KL_objective(m_new,s_new^2)
+    #             m_new = m_proposal
+    #             s_new = s_proposal
+    #             step_size = proposal_step_size
+    #         end
+    #     else
+    #         step_size = 0.1*step_size
+    #         m_new = m_message - step_size*d_KL_m(m_message)
+    #         s_new = s_message - step_size*d_KL_s(s_message)
+    #     end
+    #     step_count += 1
+    #     m_total += m_message
+    #     m_average = m_total / step_count
+    #     s_total += s_message
+    #     s_average = s_total / step_count
+    #     if step_count > 10
+    #         if abs((m_new-m_average)/m_average) < 0.001 && abs((s_new-s_average)/s_average) < 0.001
+    #             satisfied = 1
+    #             @show m_message
+    #             @show s_message^2
+    #         end
+    #     end
+    #     if step_count > 250
+    #         satisfied = 1
+    #         @show m_message
+    #         @show s_message^2
+    #     end
+    #     m_message = m_new
+    #     s_message = s_new
+    # end
+    # v_message = s_message^2
+    # @show m_message
+    # @show s_message^2
+    # return Message(Univariate, GaussianMeanVariance, m=m_message, v=v_message)
+    if abs(v_prior-v_post) < 1e-5
+        v_message = 1e-5
+    else
+        v_message = v_prior*v_post/(v_prior-v_post)
+    end
+    m_message = (m_post*(v_prior+v_message) - m_prior*v_message)/v_prior
+    return Message(Univariate, GaussianMeanVariance, m=m_message, v=v_message)
+end
+
+function approxMessageBivariate(m_prior::Array,v_prior::Array,m_post::Array,v_post::Array)
+    # #gradient descent to find m_message, v_message that minimizes KL objective
+    # #Mean and Variance of prod of two multivariate Gaussian dist.s
+    # function G_prod(m1,v1,m2,v2)
+    #     L = cholesky(Hermitian(v1+v2)).L
+    #     inv_L = inv(L)
+    #     V1, V2 = inv_L*v1, inv_L*v2
+    #     M1, M2 = inv_L*m1, inv_L*m2
+    #     return transpose(V2)*m1 + transpose(V1)*m2, Hermitian(transpose(V1)*V2)
+    # end
+    #
+    # function KL_objective(m,v)
+    #     m_p, v_p = G_prod(m,v,m_prior,v_prior)
+    #     0.5*(KL_between_2Gaussians(m_p,v_p,m_post,v_post)+KL_between_2Gaussians(m_post,v_post,m_p,v_p))
+    # end
+    #
+    # step_size = 0.001
+    # satisfied = 0
+    # step_count = 0
+    # m_message, s_message =  m_post, cholesky(v_post).L #initial values for mean and lower triangular cholesky component
+    # m_total, s_total = zeros(length(m_post)), zeros(length(m_post),length(m_post))
+    # m_average, s_average = zeros(length(m_post)), zeros(length(m_post),length(m_post))
+    # m_new, s_new = zeros(length(m_post)), zeros(length(m_post),length(m_post))
+    # while satisfied == 0
+    #     KL_m(m) = KL_objective(m,s_message*transpose(s_message))
+    #     KL_s(s) = KL_objective(m_message,s*transpose(s))
+    #     d_KL_m(m) = ForwardDiff.gradient(KL_m,m)
+    #     d_KL_s(s) = ForwardDiff.gradient(KL_s,s)
+    #     #be sure that v_new is positive definite
+    #     p_satisfied = 0
+    #     while p_satisfied == 0
+    #         m_new = m_message .- step_size.*d_KL_m(m_message)
+    #         s_new = s_message .- step_size.*d_KL_s(s_message)
+    #         if all(diag(s_new).>0)
+    #             p_satisfied = 1
+    #         else
+    #             step_size = 0.1*step_size
+    #         end
+    #     end
+    #     if KL_objective(m_new,s_new*transpose(s_new)) < KL_objective(m_message,s_message*transpose(s_message))
+    #         proposal_step_size = 10*step_size
+    #         m_proposal = m_message .- proposal_step_size.*d_KL_m(m_message)
+    #         s_proposal = s_message .- proposal_step_size.*d_KL_s(s_message)
+    #         if all(diag(s_proposal).>0) #be sure that v_proposal is positive definite
+    #             if KL_objective(m_proposal,s_proposal*transpose(s_proposal)) < KL_objective(m_new,s_new*transpose(s_new))
+    #                 m_new = m_proposal
+    #                 s_new = s_proposal
+    #                 step_size = proposal_step_size
+    #             end
+    #         end
+    #     else
+    #         step_size = 0.1*step_size
+    #         m_new = m_message .- step_size.*d_KL_m(m_message)
+    #         s_new = s_message .- step_size.*d_KL_s(s_message)
+    #     end
+    #     step_count += 1
+    #     m_total .+= m_message
+    #     m_average = m_total ./ step_count
+    #     s_total .+= s_message
+    #     s_average = s_total ./ step_count
+    #     if step_count > 10
+    #         if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < length(m_post)*0.1 && sum(sqrt.(((s_new.-s_average)./s_average).^2)) < length(m_post)*0.1
+    #             satisfied = 1
+    #         end
+    #     end
+    #     if step_count > length(m_post)*250
+    #         satisfied = 1
+    #     end
+    #     m_message = m_new
+    #     s_message = s_new
+    #     @show s_message
+    # end
+    # v_message = s_message*transpose(s_message)
+    # return Message(Multivariate, GaussianMeanVariance, m=m_message, v=v_message)
+    w_prior, w_post = inv(v_prior+2e-5*diageye(length(m_prior))), inv(v_post+1e-5*diageye(length(m_prior)))
+    w_message = w_post - w_prior
+    xi_message = (w_prior+w_message)*m_post - w_prior*m_prior
+    return Message(Multivariate, GaussianWeightedMeanPrecision, xi=xi_message, w=w_message)
+end
+
+
 function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F, V1}, msg_in2::Message{F, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F<:Gaussian, V1<:VariateType, V2<:VariateType}
 
     if status[:count_update] == 1
@@ -185,7 +345,7 @@ function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F
             m_old = m_new
         end
         m_post = m_new
-        var_post = inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, m_post))
+        var_post = Hermitian(inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, m_post)))
 
         #decompose posterior estimations
         status[:count_update] = 1
@@ -193,21 +353,21 @@ function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F
         if dim2 == 1
             mean2 = m_post[end]
             var2 = var_post[end]
-            status[:message] = Message(Univariate, Function, m=mean2, v=var2, ApproximationType="BivariateL")
+            status[:message] = approxMessageBivariate(dist_in2.params[:m],dist_in2.params[:v],mean2,var2)
         else
             mean2 = m_post[dim1+1:end]
             var2 = var_post[dim1+1:end,dim1+1:end]
-            status[:message] = Message(Multivariate, Function, m=mean2, v=var2, ApproximationType="BivariateL")
+            status[:message] = approxMessageBivariate(dist_in2.params[:m],dist_in2.params[:v],mean2,var2)
         end
 
         if dim1 == 1
             mean1 = m_post[1]
             var1 = var_post[1]
-            return Message(Univariate, Function, m=mean1, v=var1, ApproximationType="BivariateL")
+            return approxMessageBivariate(dist_in1.params[:m],dist_in1.params[:v],mean1,var1)
         else
             mean1 = m_post[1:dim1]
             var1 = var_post[1:dim1,1:dim1]
-            return Message(Multivariate, Function, m=mean1, v=var1, ApproximationType="BivariateL")
+            return approxMessageBivariate(dist_in1.params[:m],dist_in1.params[:v],mean1,var1)
         end
     end
 
@@ -296,7 +456,7 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
             m_old = m_new
         end
         m_post = m_new
-        var_post = inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, m_post))
+        var_post = Hermitian(inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, m_post)))
 
         #decompose posterior estimations
         status[:count_update] = 1
@@ -304,21 +464,21 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
         if dim1 == 1
             mean1 = m_post[1]
             var1 = var_post[1]
-            status[:message] = Message(Univariate, Function, m=mean1, v=var1, ApproximationType="BivariateL")
+            status[:message] = approxMessageBivariate(dist_in1.params[:m],dist_in1.params[:v],mean1,var1)
         else
             mean1 = m_post[1:dim1]
             var1 = var_post[1:dim1,1:dim1]
-            status[:message] = Message(Multivariate, Function, m=mean1, v=var1, ApproximationType="BivariateL")
+            status[:message] = approxMessageBivariate(dist_in1.params[:m],dist_in1.params[:v],mean1,var1)
         end
 
         if dim2 == 1
             mean2 = m_post[end]
             var2 = var_post[end]
-            return Message(Univariate, Function, m=mean2, v=var2, ApproximationType="BivariateL")
+            return approxMessageBivariate(dist_in2.params[:m],dist_in2.params[:v],mean2,var2)
         else
             mean2 = m_post[dim1+1:end]
             var2 = var_post[dim1+1:end,dim1+1:end]
-            return Message(Multivariate, Function, m=mean2, v=var2, ApproximationType="BivariateL")
+            return approxMessageBivariate(dist_in2.params[:m],dist_in2.params[:v],mean2,var2)
         end
     end
 
