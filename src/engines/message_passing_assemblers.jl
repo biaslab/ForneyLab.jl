@@ -48,6 +48,10 @@ function assembleInitialization!(pf::PosteriorFactor)
             breaker_entry = interface_to_schedule_entry[partner]
             assembleBreaker!(breaker_entry, family(outbound_types[partner]), ()) # Univariate only
             pf_initialize_flag = true 
+        elseif isa(entry.interface.node, ExpectationConstraint)
+            breaker_entry = interface_to_schedule_entry[partner]
+            assembleBreaker!(breaker_entry, family(outbound_types[partner]), ()) # Univariate only
+            pf_initialize_flag = true 
         elseif isa(entry.interface.node, Nonlinear{Unscented}) && (entry.interface != entry.interface.node.interfaces[1]) # Nonlinear node with inbound entry
             node = entry.interface.node
             multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
