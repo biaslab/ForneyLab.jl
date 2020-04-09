@@ -4,7 +4,7 @@ ruleSPBivariateLIn2MGN,
 ruleSPBivariateLOutNGG,
 ruleMBivariateLOutNGG
 
-function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Univariate}, msg_in2::Message{F, Univariate}, g::Function, status::Dict) where {F<:Gaussian}
+function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Univariate}, g::Function, status::Dict) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in2.dist)
@@ -22,7 +22,7 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Univariate
     end
 end
 
-function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Multivariate}, msg_in2::Message{F, Univariate}, g::Function, status::Dict) where {F<:Gaussian}
+function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Univariate}, g::Function, status::Dict) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in2.dist)
@@ -46,7 +46,7 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Multivaria
     end
 end
 
-function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Univariate}, msg_in2::Message{F, Multivariate}, g::Function, status::Dict) where {F<:Gaussian}
+function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Multivariate}, g::Function, status::Dict) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in2.dist)
@@ -71,7 +71,7 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Univariate
     end
 end
 
-function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F, Multivariate}, msg_in2::Message{F, Multivariate}, g::Function, status::Dict) where {F<:Gaussian}
+function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Multivariate}, g::Function, status::Dict) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in2.dist)
@@ -261,7 +261,7 @@ function approxMessageBivariate(m_prior::Array,v_prior::Array,m_post::Array,v_po
 end
 
 
-function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F, V1}, msg_in2::Message{F, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F<:Gaussian, V1<:VariateType, V2<:VariateType}
+function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, F2<:Gaussian, V1<:VariateType, V2<:VariateType}
 
     if status[:count_update] == 1
         status[:count_update] = 0
@@ -373,7 +373,7 @@ function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
 end
 
-function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F, V1}, msg_in2::Message{F, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F<:Gaussian, V1<:VariateType, V2<:VariateType}
+function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, F2<:Gaussian, V1<:VariateType, V2<:VariateType}
 
     if status[:count_update] == 1
         status[:count_update] = 0
@@ -383,7 +383,6 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
         dist_in2 = convert(ProbabilityDistribution{V2, GaussianMeanVariance}, msg_in2.dist)
 
         m_concat = [dist_in1.params[:m];dist_in2.params[:m]]
-
         dim1 = dims(dist_in1)
         dim2 = dims(dist_in2)
         dim_tot = dim1 + dim2
@@ -484,7 +483,7 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
 end
 
-function ruleMBivariateLOutNGG(msg_out::Message{Fout, Vout}, msg_in1::Message{F, V1}, msg_in2::Message{F, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F<:Gaussian, V1<:VariateType, V2<:VariateType}
+function ruleMBivariateLOutNGG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, F2<:Gaussian, V1<:VariateType, V2<:VariateType}
 
     dist_in1 = convert(ProbabilityDistribution{V1, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{V2, GaussianMeanVariance}, msg_in2.dist)
