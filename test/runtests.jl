@@ -41,6 +41,7 @@ using Test
     include("factor_nodes/test_poisson.jl")
     include("factor_nodes/test_sample_list.jl")
     include("factor_nodes/test_expectation_constraint.jl")
+    include("factor_nodes/test_chance_constraint.jl")
 
     include("./test_dependency_graph.jl")
     include("./test_message_passing.jl")

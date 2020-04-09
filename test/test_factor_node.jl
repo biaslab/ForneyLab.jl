@@ -34,6 +34,8 @@ using InteractiveUtils: subtypes
             test_node = Nonlinear(Variable(), Variable(), g=()->())
         elseif node_type == ExpectationConstraint
             test_node = ExpectationConstraint(Variable(), g=()->(), G=0.0, eta_init=0.0)
+        elseif node_type == ChanceConstraint
+            test_node = ChanceConstraint(Variable(), g=()->(), epsilon=0.05)
         else
             constructor_argument_length = length(first(methods(node_type)).sig.parameters) - 1
             vars = [Variable() for v = 1:constructor_argument_length]

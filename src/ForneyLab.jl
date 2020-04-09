@@ -62,6 +62,7 @@ include("factor_nodes/dot_product.jl")
 include("factor_nodes/poisson.jl")
 include("factor_nodes/sample_list.jl")
 include("factor_nodes/expectation_constraint.jl")
+include("factor_nodes/chance_constraint.jl")
 
 
 # Factor graph
@@ -119,6 +120,7 @@ include("update_rules/nonlinear.jl")
 include("update_rules/dot_product.jl")
 include("update_rules/poisson.jl")
 include("update_rules/expectation_constraint.jl")
+include("update_rules/chance_constraint.jl")
 
 *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
 

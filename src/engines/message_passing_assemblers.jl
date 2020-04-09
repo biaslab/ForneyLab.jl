@@ -48,7 +48,7 @@ function assembleInitialization!(pf::PosteriorFactor)
             breaker_entry = interface_to_schedule_entry[partner]
             assembleBreaker!(breaker_entry, family(outbound_types[partner]), ()) # Univariate only
             pf_initialize_flag = true 
-        elseif isa(entry.interface.node, ExpectationConstraint)
+        elseif isa(entry.interface.node, ExpectationConstraint) || isa(entry.interface.node, ChanceConstraint)
             breaker_entry = interface_to_schedule_entry[partner]
             assembleBreaker!(breaker_entry, family(outbound_types[partner]), ()) # Univariate only
             pf_initialize_flag = true 
