@@ -180,7 +180,8 @@ function approxMessageBivariate(m_prior::Number,v_prior::Number,m_post::Number,v
     return Message(Univariate, GaussianMeanVariance, m=m_message, v=v_message)
 end
 
-function approxMessageBivariate(m_prior::Array,v_prior::Array,m_post::Array,v_post::Array)
+#function approxMessageBivariate(m_prior::Array,v_prior::Array,m_post::Array,v_post::Array)
+function approxMessageBivariate(m_prior::Array,v_prior,m_post::Array,v_post)
     # #gradient descent to find m_message, v_message that minimizes KL objective
     # #Mean and Variance of prod of two multivariate Gaussian dist.s
     # function G_prod(m1,v1,m2,v2)
