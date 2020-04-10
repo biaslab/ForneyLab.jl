@@ -68,7 +68,7 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
 @symmetrical function prod!(
     x::ProbabilityDistribution{Univariate},
     y::ProbabilityDistribution{Univariate, SampleList},
-    z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0]))
+    z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
 
     #Importance sampling - resampling
     log_pdf=(a) -> logPdf(x, a)
@@ -94,7 +94,7 @@ end
 @symmetrical function prod!(
     x::ProbabilityDistribution{Multivariate},
     y::ProbabilityDistribution{Multivariate, SampleList},
-    z::ProbabilityDistribution{Multivariate, SampleList}=ProbabilityDistribution(Multivariate, SampleList, s=[[0.0]]))
+    z::ProbabilityDistribution{Multivariate, SampleList}=ProbabilityDistribution(Multivariate, SampleList, s=[[0.0]], w=[1.0]))
 
     #Importance sampling - resampling
     log_pdf=(a) -> logPdf(x, a)
@@ -115,4 +115,22 @@ end
         z.params[:s] = y.params[:s]
         return z
     end
+end
+
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Univariate},
+    y::ProbabilityDistribution{Univariate, Function},
+    z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
+
+    sample_factor = []
+    for i=1:1000
+        push!(sample_factor,sample(x))
+    end
+
+    log_pdf=(a) -> y.params[:log_pdf](a)
+    w = exp.(log_pdf.(sample_factor))
+    w = w./sum(w)
+    z.params[:w] = w
+    z.params[:s] = sample_factor
+    return z
 end

@@ -7,6 +7,7 @@ ruleSPNonlinearUTIn1GG,
 ruleSPNonlinearUTInGX,
 ruleSPNonlinearLInMN,
 ruleSPNonlinearLOutNG,
+ruleSPNonlinearLOutNB,
 ruleMNonlinearUTNGX,
 prod!
 
@@ -336,6 +337,18 @@ function ruleSPNonlinearLOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}
     #
     #     return Message(Multivariate, SampleList, s=sample_list)
     # end
+end
+
+function ruleSPNonlinearLOutNB(msg_out::Nothing, msg_in1::Message{F, Univariate}, g::Function) where {F<:Bernoulli}
+    # The forward message is parameterized by a SampleList
+    sample_list = []
+    for i=1:1000
+        push!(sample_list,g(sample(msg_in1.dist)))
+    end
+
+    weight_list = ones(1000)/1000
+
+    return Message(Univariate, SampleList, s=sample_list, w=weight_list)
 end
 
 @symmetrical function prod!(

@@ -52,6 +52,11 @@ end
                 :inbound_types => (Nothing, Message{Gaussian}),
                 :name          => SPNonlinearLOutNG)
 
+@sumProductRule(:node_type     => Nonlinear{Laplace},
+                :outbound_type => Message{SampleList},
+                :inbound_types => (Nothing, Message{Bernoulli}),
+                :name          => SPNonlinearLOutNB)
+
 mutable struct MNonlinearUTNGX <: MarginalRule{Nonlinear{Unscented}} end
 function isApplicable(::Type{MNonlinearUTNGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
