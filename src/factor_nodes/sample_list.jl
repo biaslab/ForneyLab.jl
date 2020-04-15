@@ -134,3 +134,21 @@ end
     z.params[:s] = sample_factor
     return z
 end
+
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Multivariate},
+    y::ProbabilityDistribution{Multivariate, Function},
+    z::ProbabilityDistribution{Multivariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[[0.0]], w=[1.0]))
+
+    sample_factor = []
+    for i=1:1000
+        push!(sample_factor,sample(x))
+    end
+
+    log_pdf=(a) -> y.params[:log_pdf](a)
+    w = exp.(log_pdf.(sample_factor))
+    w = w./sum(w)
+    z.params[:w] = w
+    z.params[:s] = sample_factor
+    return z
+end
