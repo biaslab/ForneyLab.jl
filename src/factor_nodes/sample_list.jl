@@ -4,10 +4,13 @@ mutable struct SampleList <: SoftFactor
     id::Symbol
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
+    
+    # Tells what distribution the samples were from (if known)
+    origin_dist::Union{ProbabilityDistribution, Nothing}
 
-    function SampleList(out, s, w; id=generateId(SampleList))
+    function SampleList(out, s, w; id=generateId(SampleList), dist=nothing)
         @ensureVariables(out, s, w)
-        self = new(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}(), dist)
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:s] = self.interfaces[2] = associate!(Interface(self), s)
@@ -151,4 +154,12 @@ end
     z.params[:w] = w
     z.params[:s] = sample_factor
     return z
+end
+
+# Monte-Carlo integration of differential entropy for SampleList
+function differentialEntropy(dist::ProbabilityDistribution{V, SampleList} where V<:VariateType)
+    dist.origin_dist === nothing && error("Can't calculate differential entropy for SampleList distribution without known origin distribution.")
+    n_samples = length(dist.params[:s])
+
+    return -sum(dist.params[:w].*logPdf(dist.origin_dist, dist.params[:s]))/n_samples
 end
