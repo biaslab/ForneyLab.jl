@@ -326,17 +326,34 @@ function ruleSPNonlinearLOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}
 
     weight_list = ones(1000)/1000
 
-    return Message(Univariate, SampleList, s=sample_list, w=weight_list)
+    if length(sample_list[1]) == 1
+        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
+    else
+        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
+    end
 
-    # if length(g(dist_in1.params[:m])) == 1
-    #     sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(1000))
-    #
-    #     return Message(Univariate, SampleList, s=sample_list)
-    # else
-    #     sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(1000))
-    #
-    #     return Message(Multivariate, SampleList, s=sample_list)
-    # end
+end
+
+function ruleSPNonlinearLOutNG(msg_out::Nothing, msg_in1::Message{F, Multivariate}, g::Function) where {F<:Gaussian}
+    # The forward message is parameterized by a SampleList
+    dist_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
+
+    CL = cholesky(dist_in1.params[:v]).L
+    dim = dims(dist_in1)
+    sample_list = []
+    for j=1:1000
+        sample = g(dist_in1.params[:m] + CL*randn(dim))
+        push!(sample_list,sample)
+    end
+
+    weight_list = ones(1000)/1000
+
+    if length(sample_list[1]) == 1
+        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
+    else
+        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
+    end
+
 end
 
 function ruleSPNonlinearLOutNB(msg_out::Nothing, msg_in1::Message{F, Univariate}, g::Function) where {F<:Bernoulli}
