@@ -24,8 +24,8 @@ slug(::Type{SampleList}) = "SampleList"
 
 format(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = "$(slug(SampleList))(s=$(format(dist.params[:s])),w=$(format(dist.params[:w])))"
 
-ProbabilityDistribution(::Type{Univariate}, ::Type{SampleList}; s=[0.0], w=[1.0], diff_ent=nothing) = ProbabilityDistribution{Univariate, SampleList}(Dict(:s=>s, :w=>w, :diff_ent=>diff_ent))
-ProbabilityDistribution(::Type{Multivariate}, ::Type{SampleList}; s=[[0.0]], w=[1.0], diff_ent=nothing) = ProbabilityDistribution{Multivariate, SampleList}(Dict(:s=>s, :w=>w, :diff_ent=>diff_ent))
+ProbabilityDistribution(::Type{Univariate}, ::Type{SampleList}; s=[0.0], w=[1.0], diff_ent=nothing) = ProbabilityDistribution{Univariate, SampleList}(Dict{Symbol, Any}(:s=>s, :w=>w, :diff_ent=>diff_ent))
+ProbabilityDistribution(::Type{Multivariate}, ::Type{SampleList}; s=[[0.0]], w=[1.0], diff_ent=nothing) = ProbabilityDistribution{Multivariate, SampleList}(Dict{Symbol, Any}(:s=>s, :w=>w, :diff_ent=>diff_ent))
 
 dims(dist::ProbabilityDistribution{Univariate, SampleList}) = 1
 dims(dist::ProbabilityDistribution{Multivariate, SampleList}) = length(dist.params[:s][1])
