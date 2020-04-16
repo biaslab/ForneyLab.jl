@@ -5,9 +5,12 @@ mutable struct SampleList <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function SampleList(out, s, w; id=generateId(SampleList))
+    # For instant calculation of differential entropy
+    diff_ent::Number
+
+    function SampleList(out, s, w; id=generateId(SampleList), diff_ent=nothing)
         @ensureVariables(out, s, w)
-        self = new(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}())
+        self = new(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}(), diff_ent)
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:s] = self.interfaces[2] = associate!(Interface(self), s)
@@ -128,10 +131,16 @@ end
     end
 
     log_pdf=(a) -> y.params[:log_pdf](a)
-    w = exp.(log_pdf.(sample_factor))
+    log_pdf_sf = log_pdf.(sample_factor)
+    w = exp.(log_pdf_sf)
+    H2 = log(sum(w)/1000) #to compute differential entropy
     w = w./sum(w)
     z.params[:w] = w
     z.params[:s] = sample_factor
+    log_pdfx=(a) -> logPdf(x, a)
+    H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) #to compute differential entropy
+    @show z.diff_ent
+    z.diff_ent = H1+H2
     return z
 end
 
@@ -146,16 +155,20 @@ end
     end
 
     log_pdf=(a) -> y.params[:log_pdf](a)
-    w = exp.(log_pdf.(sample_factor))
+    log_pdf_sf = log_pdf.(sample_factor)
+    w = exp.(log_pdf_sf)
+    H2 = log(sum(w)/1000) #to compute differential entropy
     w = w./sum(w)
     z.params[:w] = w
     z.params[:s] = sample_factor
+    log_pdfx=(a) -> logPdf(x, a)
+    H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) #to compute differential entropy
+    z.diff_ent = H1+H2
     return z
 end
 
-# Approximate differential entropy for SampleList
+# Differential entropy for SampleList
 function differentialEntropy(dist::ProbabilityDistribution{V, SampleList} where V<:VariateType)
-
-    return -sum(dist.params[:w] .* log.(dist.params[:w] .+ 1e-30))
-
+    dist.diff_ent === nothing && error("No applicable rule to approximate differential entropy for SampleList distribution")
+    return dist.diff_ent
 end
