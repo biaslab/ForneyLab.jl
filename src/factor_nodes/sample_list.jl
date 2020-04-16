@@ -6,7 +6,7 @@ mutable struct SampleList <: SoftFactor
     i::Dict{Symbol,Interface}
 
     # For instant calculation of differential entropy
-    diff_ent::Number
+    diff_ent::Union{Number, Nothing}
 
     function SampleList(out, s, w; id=generateId(SampleList), diff_ent=nothing)
         @ensureVariables(out, s, w)
@@ -24,8 +24,8 @@ slug(::Type{SampleList}) = "SampleList"
 
 format(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = "$(slug(SampleList))(s=$(format(dist.params[:s])),w=$(format(dist.params[:w])))"
 
-ProbabilityDistribution(::Type{Univariate}, ::Type{SampleList}; s=[0.0], w=[1.0]) = ProbabilityDistribution{Univariate, SampleList}(Dict(:s=>s, :w=>w))
-ProbabilityDistribution(::Type{Multivariate}, ::Type{SampleList}; s=[[0.0]], w=[1.0]) = ProbabilityDistribution{Multivariate, SampleList}(Dict(:s=>s, :w=>w))
+ProbabilityDistribution(::Type{Univariate}, ::Type{SampleList}; s=[0.0], w=[1.0], diff_ent=nothing) = ProbabilityDistribution{Univariate, SampleList}(Dict(:s=>s, :w=>w, :diff_ent=>diff_ent))
+ProbabilityDistribution(::Type{Multivariate}, ::Type{SampleList}; s=[[0.0]], w=[1.0], diff_ent=nothing) = ProbabilityDistribution{Multivariate, SampleList}(Dict(:s=>s, :w=>w, :diff_ent=>diff_ent))
 
 dims(dist::ProbabilityDistribution{Univariate, SampleList}) = 1
 dims(dist::ProbabilityDistribution{Multivariate, SampleList}) = length(dist.params[:s][1])
@@ -139,15 +139,14 @@ end
     z.params[:s] = sample_factor
     log_pdfx=(a) -> logPdf(x, a)
     H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) #to compute differential entropy
-    @show z.diff_ent
-    z.diff_ent = H1+H2
+    z.params[:diff_ent] = H1+H2
     return z
 end
 
 @symmetrical function prod!(
     x::ProbabilityDistribution{Multivariate},
     y::ProbabilityDistribution{Multivariate, Function},
-    z::ProbabilityDistribution{Multivariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[[0.0]], w=[1.0]))
+    z::ProbabilityDistribution{Multivariate, SampleList}=ProbabilityDistribution(Multivariate, SampleList, s=[[0.0]], w=[1.0]))
 
     sample_factor = []
     for i=1:1000
@@ -163,12 +162,12 @@ end
     z.params[:s] = sample_factor
     log_pdfx=(a) -> logPdf(x, a)
     H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) #to compute differential entropy
-    z.diff_ent = H1+H2
+    z.params[:diff_ent] = H1+H2
     return z
 end
 
 # Differential entropy for SampleList
 function differentialEntropy(dist::ProbabilityDistribution{V, SampleList} where V<:VariateType)
-    dist.diff_ent === nothing && error("No applicable rule to approximate differential entropy for SampleList distribution")
-    return dist.diff_ent
+    dist.params[:diff_ent] === nothing && error("No applicable rule to approximate differential entropy for SampleList distribution")
+    return dist.params[:diff_ent]
 end
