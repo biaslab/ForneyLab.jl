@@ -156,6 +156,6 @@ end
 # Approximate differential entropy for SampleList
 function differentialEntropy(dist::ProbabilityDistribution{V, SampleList} where V<:VariateType)
 
-    return -sum(dist.params[:w] .* log.(dist.params[:w]))
+    return -sum(dist.params[:w] .* log.(dist.params[:w] .+ 1e-30))
 
 end
