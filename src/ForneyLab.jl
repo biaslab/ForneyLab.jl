@@ -11,6 +11,7 @@ using Printf: @sprintf
 using StatsFuns: logmvgamma
 using ForwardDiff
 using StatsBase:Weights
+using Distributions:betainvcdf, gammainvcdf, poisinvcdf
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, exp, convert, show, prod!

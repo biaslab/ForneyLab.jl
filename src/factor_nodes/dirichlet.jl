@@ -104,10 +104,10 @@ end
     return z
 end
 
-function sample(dist::ProbabilityDistribution{Univariate, Dirichlet})
+function sample(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     smpl = Vector{Float64}(undef, length(dist.params[:a]))
     for (i, alpha_i) in enumerate(dist.params[:a])
-        smpl[i] = sample(Gamma(alpha_i),1.0)
+        smpl[i] = sample(ProbabilityDistribution(Univariate,Gamma,a=alpha_i,b=1.0))
     end
     smpl = smpl./sum(smpl)
     return smpl
