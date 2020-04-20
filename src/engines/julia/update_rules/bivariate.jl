@@ -29,10 +29,10 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivari
 
     C1L = cholesky(dist_in1.params[:v]).L
     dim = dims(dist_in1)
-    samples1 = []
+    samples1 = Vector{Vector{Float64}}(undef, 1000)
+    
     for j=1:1000
-        sample = dist_in1.params[:m] + C1L*randn(dim)
-        push!(samples1,sample)
+        samples1[j] = dist_in1.params[:m] + C1L*randn(dim)
     end
     samples2 = dist_in2.params[:m] .+ sqrt(dist_in2.params[:v]).*randn(1000)
 
@@ -55,10 +55,10 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariat
 
     C2L = cholesky(dist_in2.params[:v]).L
     dim = dims(dist_in2)
-    samples2 = []
+    samples2 = Vector{Vector{Float64}}(undef, 1000)
+    
     for j=1:1000
-        sample = dist_in2.params[:m] + C2L*randn(dim)
-        push!(samples2,sample)
+        samples2[j] = dist_in2.params[:m] + C2L*randn(dim)
     end
 
     sample_list = g.(samples1, samples2)
@@ -78,17 +78,15 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivari
 
     C1L = cholesky(dist_in1.params[:v]).L
     dim1 = dims(dist_in1)
-    samples1 = []
+    samples1 = Vector{Vector{Float64}}(undef, 1000)
 
     C2L = cholesky(dist_in2.params[:v]).L
     dim2 = dims(dist_in2)
-    samples2 = []
+    samples2 = Vector{Vector{Float64}}(undef, 1000)
 
     for j=1:1000
-        sample1 = dist_in1.params[:m] + C1L*randn(dim1)
-        sample2 = dist_in2.params[:m] + C2L*randn(dim2)
-        push!(samples1,sample1)
-        push!(samples2,sample2)
+        samples1[j] = dist_in1.params[:m] + C1L*randn(dim1)
+        samples2[j] = dist_in2.params[:m] + C2L*randn(dim2)
     end
 
     sample_list = g.(samples1, samples2)
@@ -119,46 +117,6 @@ function approxMessageBivariate(m_prior::Array,v_prior,m_post::Array,v_post)
     xi_message = (w_prior+w_message)*m_post - w_prior*m_prior
     return Message(Multivariate, GaussianWeightedMeanPrecision, xi=xi_message, w=w_message)
 end
-
-function gradientOptimization(log_joint::Function, d_log_joint::Function, m_initial, step_size)
-    
-    dim_tot = length(m_initial)
-    m_total = zeros(dim_tot)
-    m_average = zeros(dim_tot)
-    m_new = zeros(dim_tot)
-    m_old = m_initial
-    satisfied = false
-    step_count = 0
-
-    while !satisfied
-        m_new = m_old .+ step_size.*d_log_joint(m_old)
-        if log_joint(m_new) > log_joint(m_old)
-            proposal_step_size = 10*step_size
-            m_proposal = m_old .+ proposal_step_size.*d_log_joint(m_old)
-            if log_joint(m_proposal) > log_joint(m_new)
-                m_new = m_proposal
-                step_size = proposal_step_size
-            end
-        else
-            step_size = 0.1*step_size
-            m_new = m_old .+ step_size.*d_log_joint(m_old)
-        end
-        step_count += 1
-        m_total .+= m_old
-        m_average = m_total ./ step_count
-        if step_count > 10
-            if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim_tot*0.1
-                satisfied = true
-            end
-        end
-        if step_count > dim_tot*250
-            satisfied = true
-        end
-        m_old = m_new
-    end
-    return m_new
-end
-
 
 function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
@@ -199,78 +157,12 @@ function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
         status[:updated] = true
 
-        if dim2 == 1
-            mean2 = m_post[end]
-            var2 = var_post[end]
-            status[:message] = approxMessageBivariate(dist_in2.params[:m],dist_in2.params[:v], mean2, var2)
-        else
-            mean2 = m_post[dim1+1:end]
-            var2 = var_post[dim1+1:end,dim1+1:end]
-            status[:message] = approxMessageBivariate(dist_in2.params[:m],dist_in2.params[:v], mean2, var2)
-        end
-
-        if dim1 == 1
-            mean1 = m_post[1]
-            var1 = var_post[1]
-            return approxMessageBivariate(dist_in1.params[:m],dist_in1.params[:v],mean1,var1)
-        else
-            mean1 = m_post[1:dim1]
-            var1 = var_post[1:dim1,1:dim1]
-            return approxMessageBivariate(dist_in1.params[:m],dist_in1.params[:v],mean1,var1)
-        end
+        mean1, var1, mean2, var2 = decomposePosteriorParameters(dist_in1, dist_in2, m_post, var_post)
+        
+        status[:message] = approxMessageBivariate(dist_in2.params[:m],dist_in2.params[:v], mean2, var2)
+        return approxMessageBivariate(dist_in1.params[:m],dist_in1.params[:v],mean1,var1)
     end
 
-end
-
-function mergeInputs(dist1::ProbabilityDistribution, dist2::ProbabilityDistribution)
-    
-    m_concat = [dist1.params[:m];dist2.params[:m]]
-    dim1 = dims(dist1)
-    dim2 = dims(dist2)
-    dim_tot = dim1 + dim2
-    
-    v_concat = zeros(dim_tot, dim_tot)
-
-    if dim1 == 1
-        v_concat[dim1,dim1] = dist1.params[:v]
-    else
-        v_concat[1:dim1,1:dim1] = dist1.params[:v]
-    end
-
-    if dim2 == 1
-        v_concat[end,end] = dist2.params[:v]
-    else
-        v_concat[dim1+1:end,dim1+1:end] = dist2.params[:v]
-    end
-
-    return (m_concat, v_concat, dim1, dim2)
-end
-
-function decomposePosteriors(dist1::ProbabilityDistribution,
-    dist2::ProbabilityDistribution, m_post, v_post)
-
-    dim1 = dims(dist1)
-    dim2 = dims(dist2)
-    
-    if dim1 == 1
-        mean = m_post[1]
-        var = var_post[1]
-        status[:message] = approxMessageBivariate(dist1.params[:m], dist1.params[:v], mean, var)
-    else
-        mean = m_post[1:dim1]
-        var = var_post[1:dim1, 1:dim1]
-        status[:message] = approxMessageBivariate(dist1.params[:m], dist1.params[:v], mean, var)
-    end
-
-    if dim2 == 1
-        mean = m_post[end]
-        var = var_post[end]
-        return approxMessageBivariate(dist2.params[:m], dist2.params[:v], mean, var)
-    else
-        mean = m_post[dim1+1:end]
-        var = var_post[dim1+1:end,dim1+1:end]
-        return approxMessageBivariate(dist2.params[:m], dist2.params[:v], mean,var)
-    end
 end
 
 function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
@@ -311,7 +203,10 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
         status[:updated] = true
 
-        return decomposePosteriors(dist_in1, dist_in2, m_post, v_post)
+        mean1, var1, mean2, var2 = decomposePosteriorParameters(dist_in1, dist_in2, m_post, var_post)
+
+        status[:message] = approxMessageBivariate(dist_in1.params[:m],dist_in1.params[:v], mean1, var1)
+        return approxMessageBivariate(dist_in2.params[:m],dist_in2.params[:v],mean2,var2)
     end
 
 end
@@ -428,4 +323,98 @@ function collectMarginalNodeInbounds(node::Bivariate, entry::MarginalEntry)
                                       :keyword => false))
 
     return inbounds
+end
+
+################################################################################
+# Gradient optimization subroutine
+################################################################################
+function gradientOptimization(log_joint::Function, d_log_joint::Function, m_initial, step_size)
+    
+    dim_tot = length(m_initial)
+    m_total = zeros(dim_tot)
+    m_average = zeros(dim_tot)
+    m_new = zeros(dim_tot)
+    m_old = m_initial
+    satisfied = false
+    step_count = 0
+
+    while !satisfied
+        m_new = m_old .+ step_size.*d_log_joint(m_old)
+        if log_joint(m_new) > log_joint(m_old)
+            proposal_step_size = 10*step_size
+            m_proposal = m_old .+ proposal_step_size.*d_log_joint(m_old)
+            if log_joint(m_proposal) > log_joint(m_new)
+                m_new = m_proposal
+                step_size = proposal_step_size
+            end
+        else
+            step_size = 0.1*step_size
+            m_new = m_old .+ step_size.*d_log_joint(m_old)
+        end
+        step_count += 1
+        m_total .+= m_old
+        m_average = m_total ./ step_count
+        if step_count > 10
+            if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim_tot*0.1
+                satisfied = true
+            end
+        end
+        if step_count > dim_tot*250
+            satisfied = true
+        end
+        m_old = m_new
+    end
+    return m_new
+end
+
+
+################################################################################
+# Helper functions for update rules
+################################################################################
+function mergeInputs(dist1::ProbabilityDistribution, dist2::ProbabilityDistribution)
+    
+    m_concat = [dist1.params[:m];dist2.params[:m]]
+    dim1 = dims(dist1)
+    dim2 = dims(dist2)
+    dim_tot = dim1 + dim2
+    
+    v_concat = zeros(dim_tot, dim_tot)
+
+    if dim1 == 1
+        v_concat[dim1,dim1] = dist1.params[:v]
+    else
+        v_concat[1:dim1,1:dim1] = dist1.params[:v]
+    end
+
+    if dim2 == 1
+        v_concat[end,end] = dist2.params[:v]
+    else
+        v_concat[dim1+1:end,dim1+1:end] = dist2.params[:v]
+    end
+
+    return (m_concat, v_concat, dim1, dim2)
+end
+
+function decomposePosteriorParameters(dist1::ProbabilityDistribution,
+    dist2::ProbabilityDistribution, m_post, var_post)
+
+    dim1 = dims(dist1)
+    dim2 = dims(dist2)
+    
+    if dim1 == 1
+        mean1 = m_post[1]
+        var1 = var_post[1]
+    else
+        mean1 = m_post[1:dim1]
+        var1 = var_post[1:dim1, 1:dim1]
+    end
+
+    if dim2 == 1
+        mean2 = m_post[end]
+        var2 = var_post[end]
+    else
+        mean2 = m_post[dim1+1:end]
+        var2 = var_post[dim1+1:end,dim1+1:end]
+    end
+    return (mean1, var1, mean2, var2)
 end
