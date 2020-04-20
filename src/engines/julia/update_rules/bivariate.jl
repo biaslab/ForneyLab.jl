@@ -233,6 +233,55 @@ function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
 end
 
+function mergeInputs(dist1::ProbabilityDistribution, dist2::ProbabilityDistribution)
+    
+    m_concat = [dist_in1.params[:m];dist_in2.params[:m]]
+    dim1 = dims(dist_in1)
+    dim2 = dims(dist_in2)
+    dim_tot = dim1 + dim2
+    
+    if dim1 == 1
+        v_concat[dim1,dim1] = dist_in1.params[:v]
+    else
+        v_concat[1:dim1,1:dim1] = dist_in1.params[:v]
+    end
+
+    if dim2 == 1
+        v_concat[end,end] = dist_in2.params[:v]
+    else
+        v_concat[dim1+1:end,dim1+1:end] = dist_in2.params[:v]
+    end
+
+    return (m_concat, v_concat, dim1, dim2)
+end
+
+function decomposePosteriors(dist1::ProbabilityDistribution,
+    dist2::ProbabilityDistribution, m_post, v_post)
+
+    dim1 = dims(dist_in1)
+    dim2 = dims(dist_in2)
+    
+    if dim1 == 1
+        mean = m_post[1]
+        var = var_post[1]
+        status[:message] = approxMessageBivariate(dist1.params[:m], dist1.params[:v], mean, var)
+    else
+        mean = m_post[1:dim1]
+        var = var_post[1:dim1, 1:dim1]
+        status[:message] = approxMessageBivariate(dist1.params[:m], dist1.params[:v], mean, var)
+    end
+
+    if dim2 == 1
+        mean = m_post[end]
+        var = var_post[end]
+        return approxMessageBivariate(dist2.params[:m], dist2.params[:v], mean, var)
+    else
+        mean = m_post[dim1+1:end]
+        var = var_post[dim1+1:end,dim1+1:end]
+        return approxMessageBivariate(dist2.params[:m], dist2.params[:v], mean,var)
+    end
+end
+
 function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
     if status[:updated]
@@ -242,24 +291,8 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
         dist_in1 = convert(ProbabilityDistribution{V1, GaussianMeanVariance}, msg_in1.dist)
         dist_in2 = convert(ProbabilityDistribution{V2, GaussianMeanVariance}, msg_in2.dist)
 
-        m_concat = [dist_in1.params[:m];dist_in2.params[:m]]
-        dim1 = dims(dist_in1)
-        dim2 = dims(dist_in2)
-        dim_tot = dim1 + dim2
-        v_concat = zeros(dim_tot,dim_tot)
-
-        if dim1 == 1
-            v_concat[dim1,dim1] = dist_in1.params[:v]
-        else
-            v_concat[1:dim1,1:dim1] = dist_in1.params[:v]
-        end
-
-        if dim2 == 1
-            v_concat[end,end] = dist_in2.params[:v]
-        else
-            v_concat[dim1+1:end,dim1+1:end] = dist_in2.params[:v]
-        end
-
+        m_concat, v_concat, dim1, dim2 = mergeInputs(dist_in1, dist_in2)
+            
         log_prior_pdf(x) = -0.5*(dim_tot*log(2pi) + log(det(v_concat)) + transpose(x-m_concat)*inv(v_concat)*(x-m_concat))
 
         function log_joint_dims(s::Array, dim1::Int64, dim2::Int64)
@@ -283,12 +316,12 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
         d_log_joint(s) = ForwardDiff.gradient(log_joint, s)
         m_old = m_concat #initial point
         step_size = 0.01 #initial step size
-        satisfied = 0
+        satisfied = false
         step_count = 0
         m_total = zeros(dim_tot)
         m_average = zeros(dim_tot)
         m_new = zeros(dim_tot)
-        while satisfied == 0
+        while !satisfied
             m_new = m_old .+ step_size.*d_log_joint(m_old)
             if log_joint(m_new) > log_joint(m_old)
                 proposal_step_size = 10*step_size
@@ -306,11 +339,11 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
             m_average = m_total ./ step_count
             if step_count > 10
                 if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim_tot*0.1
-                    satisfied = 1
+                    satisfied = true
                 end
             end
             if step_count > dim_tot*250
-                satisfied = 1
+                satisfied = true
             end
             m_old = m_new
         end
@@ -320,25 +353,7 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
         #decompose posterior estimations
         status[:updated] = true
 
-        if dim1 == 1
-            mean1 = m_post[1]
-            var1 = var_post[1]
-            status[:message] = approxMessageBivariate(dist_in1.params[:m],dist_in1.params[:v],mean1,var1)
-        else
-            mean1 = m_post[1:dim1]
-            var1 = var_post[1:dim1,1:dim1]
-            status[:message] = approxMessageBivariate(dist_in1.params[:m],dist_in1.params[:v],mean1,var1)
-        end
-
-        if dim2 == 1
-            mean2 = m_post[end]
-            var2 = var_post[end]
-            return approxMessageBivariate(dist_in2.params[:m],dist_in2.params[:v],mean2,var2)
-        else
-            mean2 = m_post[dim1+1:end]
-            var2 = var_post[dim1+1:end,dim1+1:end]
-            return approxMessageBivariate(dist_in2.params[:m],dist_in2.params[:v],mean2,var2)
-        end
+        return decomposePosteriors(dist_in1, dist_in2, m_post, v_post)
     end
 
 end
@@ -348,24 +363,7 @@ function ruleMBivariateLOutNGG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1
     dist_in1 = convert(ProbabilityDistribution{V1, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{V2, GaussianMeanVariance}, msg_in2.dist)
 
-    m_concat = [dist_in1.params[:m];dist_in2.params[:m]]
-
-    dim1 = dims(dist_in1)
-    dim2 = dims(dist_in2)
-    dim_tot = dim1 + dim2
-    v_concat = zeros(dim_tot,dim_tot)
-
-    if dim1 == 1
-        v_concat[dim1,dim1] = dist_in1.params[:v]
-    else
-        v_concat[1:dim1,1:dim1] = dist_in1.params[:v]
-    end
-
-    if dim2 == 1
-        v_concat[end,end] = dist_in2.params[:v]
-    else
-        v_concat[dim1+1:end,dim1+1:end] = dist_in2.params[:v]
-    end
+    m_concat, v_concat, dim1, dim2 = mergeInputs(dist_in1, dist_in2)
 
     log_prior_pdf(x) = -0.5*(dim_tot*log(2pi) + log(det(v_concat)) + transpose(x-m_concat)*inv(v_concat)*(x-m_concat))
 
@@ -391,12 +389,12 @@ function ruleMBivariateLOutNGG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1
     d_log_joint(s) = ForwardDiff.gradient(log_joint, s)
     m_old = m_concat #initial point
     step_size = 0.01 #initial step size
-    satisfied = 0
+    satisfied = false
     step_count = 0
     m_total = zeros(dim_tot)
     m_average = zeros(dim_tot)
     m_new = zeros(dim_tot)
-    while satisfied == 0
+    while !satisfied
         m_new = m_old .+ step_size.*d_log_joint(m_old)
         if log_joint(m_new) > log_joint(m_old)
             proposal_step_size = 10*step_size
@@ -414,11 +412,11 @@ function ruleMBivariateLOutNGG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1
         m_average = m_total ./ step_count
         if step_count > 10
             if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim_tot*0.1
-                satisfied = 1
+                satisfied = true
             end
         end
         if step_count > dim_tot*250
-            satisfied = 1
+            satisfied = true
         end
         m_old = m_new
     end

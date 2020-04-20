@@ -1,4 +1,4 @@
-export Bivariate, Laplace
+export Bivariate
 
 """
 Description:
