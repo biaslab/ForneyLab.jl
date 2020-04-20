@@ -101,13 +101,6 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivari
     end
 end
 
-KL_between_2Gaussians(m1::Number, v1::Number, m2::Number, v2::Number) = log(sqrt(v2)/sqrt(v1)) + (v1+(m1-m2)^2)/(2*v2) - 0.5
-
-function KL_between_2Gaussians(m1::Array, v1, m2::Array, v2)
-    v2_inv = inv(v2+1e-5*diageye(length(m1)))
-    return 0.5*(log(det(v2)/det(v1)) - length(m1) + tr(v2_inv*v1) + transpose(m2-m1)*v2_inv*(m2-m1))
-end
-
 function approxMessageBivariate(m_prior::Number,v_prior::Number,m_post::Number,v_post::Number)
 
     if abs(v_prior-v_post) < 1e-5
