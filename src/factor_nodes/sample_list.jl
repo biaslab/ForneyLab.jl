@@ -31,10 +31,11 @@ dims(dist::ProbabilityDistribution{Univariate, SampleList}) = 1
 dims(dist::ProbabilityDistribution{Multivariate, SampleList}) = length(dist.params[:s][1])
 
 vague(::Type{SampleList}) = ProbabilityDistribution(Univariate, SampleList, s=rand(1000), w=ones(1000)/1000)
+
 function vague(::Type{SampleList}, dims::Int64)
-    s_list = []
+    s_list = Vector{Vector{Number}}(undef, 1000)
     for n=1:1000
-        append!(s_list,rand(dims))
+        s_list[n] = rand(dims)
     end
     ProbabilityDistribution(Multivariate, SampleList, s=s_list, w=ones(1000)/1000)
 end
@@ -67,18 +68,18 @@ end
 
 isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = abs(sum(dist.params[:w]) - 1) < 0.001
 
-#Prod functions are defined in such a way that bootstrap particle filter will be allowed
+# Prod functions are defined in such a way that bootstrap particle filter will be allowed
 @symmetrical function prod!(
     x::ProbabilityDistribution{Univariate},
     y::ProbabilityDistribution{Univariate, SampleList},
     z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
 
-    #Importance sampling - resampling
+    # Importance sampling - resampling
     log_pdf=(a) -> logPdf(x, a)
     w = exp.(log_pdf.(y.params[:s]))
     w = w .* y.params[:w]
     w = w./sum(w)
-    #compute effective number of particles to decide if resampling is needed
+    # Compute effective number of particles to decide if resampling is needed
     n_eff = 1/sum(w.^2)
     if n_eff < length(w)/10
         weights = Weights(w)
@@ -99,12 +100,12 @@ end
     y::ProbabilityDistribution{Multivariate, SampleList},
     z::ProbabilityDistribution{Multivariate, SampleList}=ProbabilityDistribution(Multivariate, SampleList, s=[[0.0]], w=[1.0]))
 
-    #Importance sampling - resampling
+    # Importance sampling - resampling
     log_pdf=(a) -> logPdf(x, a)
     w = exp.(log_pdf.(y.params[:s]))
     w = w .* y.params[:w]
     w = w./sum(w)
-    #compute effective number of particles to decide if resampling is needed
+    # Compute effective number of particles to decide if resampling is needed
     n_eff = 1/sum(w.^2)
     if n_eff < length(w)/10
         weights = Weights(w)
@@ -125,20 +126,20 @@ end
     y::ProbabilityDistribution{Univariate, Function},
     z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
 
-    sample_factor = []
+    sample_factor = Vector{Number}(undef, 1000)
     for i=1:1000
-        push!(sample_factor,sample(x))
+        sample_factor[i] = sample(x)
     end
 
     log_pdf=(a) -> y.params[:log_pdf](a)
     log_pdf_sf = log_pdf.(sample_factor)
     w = exp.(log_pdf_sf)
-    H2 = log(sum(w)/1000) #to compute differential entropy
+    H2 = log(sum(w)/1000) # To compute differential entropy
     w = w./sum(w)
     z.params[:w] = w
     z.params[:s] = sample_factor
     log_pdfx=(a) -> logPdf(x, a)
-    H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) #to compute differential entropy
+    H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) # To compute differential entropy
     z.params[:diff_ent] = H1+H2
     return z
 end
@@ -148,20 +149,20 @@ end
     y::ProbabilityDistribution{Multivariate, Function},
     z::ProbabilityDistribution{Multivariate, SampleList}=ProbabilityDistribution(Multivariate, SampleList, s=[[0.0]], w=[1.0]))
 
-    sample_factor = []
+    sample_factor = Vector{Vector{Number}}(undef, 1000)
     for i=1:1000
-        push!(sample_factor,sample(x))
+        sample_factor[i] = sample(x)
     end
 
     log_pdf=(a) -> y.params[:log_pdf](a)
     log_pdf_sf = log_pdf.(sample_factor)
     w = exp.(log_pdf_sf)
-    H2 = log(sum(w)/1000) #to compute differential entropy
+    H2 = log(sum(w)/1000) # To compute differential entropy
     w = w./sum(w)
     z.params[:w] = w
     z.params[:s] = sample_factor
     log_pdfx=(a) -> logPdf(x, a)
-    H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) #to compute differential entropy
+    H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) # To compute differential entropy
     z.params[:diff_ent] = H1+H2
     return z
 end

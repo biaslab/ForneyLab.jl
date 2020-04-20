@@ -1,8 +1,5 @@
 export Bivariate, Laplace
 
-abstract type ApproximationMethod end
-abstract type Laplace <: ApproximationMethod end
-
 """
 Description:
 
