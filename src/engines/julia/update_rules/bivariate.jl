@@ -123,8 +123,8 @@ end
 
 function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
-    if status[:count_update] == 1
-        status[:count_update] = 0
+    if status[:updated]
+        status[:updated] = false
         return status[:message]
     else
         dist_in1 = convert(ProbabilityDistribution{V1, GaussianMeanVariance}, msg_in1.dist)
@@ -208,7 +208,7 @@ function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F
         var_post = Hermitian(inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, m_post)))
 
         #decompose posterior estimations
-        status[:count_update] = 1
+        status[:count_update] = true
 
         if dim2 == 1
             mean2 = m_post[end]
@@ -235,8 +235,8 @@ end
 
 function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
-    if status[:count_update] == 1
-        status[:count_update] = 0
+    if status[:updated]
+        status[:updated] = false
         return status[:message]
     else
         dist_in1 = convert(ProbabilityDistribution{V1, GaussianMeanVariance}, msg_in1.dist)
@@ -318,7 +318,7 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
         var_post = Hermitian(inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, m_post)))
 
         #decompose posterior estimations
-        status[:count_update] = 1
+        status[:updated] = true
 
         if dim1 == 1
             mean1 = m_post[1]
