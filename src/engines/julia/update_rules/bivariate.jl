@@ -208,7 +208,7 @@ function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F
         var_post = Hermitian(inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, m_post)))
 
         #decompose posterior estimations
-        status[:count_update] = true
+        status[:updated] = true
 
         if dim2 == 1
             mean2 = m_post[end]
@@ -262,7 +262,7 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
         log_prior_pdf(x) = -0.5*(dim_tot*log(2pi) + log(det(v_concat)) + transpose(x-m_concat)*inv(v_concat)*(x-m_concat))
 
-        function log_joint_dims(s::Array,dim1::Int64,dim2::Int64)
+        function log_joint_dims(s::Array, dim1::Int64, dim2::Int64)
             if dim1 == 1
                 if dim2 == 1
                     return log_prior_pdf(s) + logPdf(msg_out.dist,g(s[1]::Number,s[end]::Number))
