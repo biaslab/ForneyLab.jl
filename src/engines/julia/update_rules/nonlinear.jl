@@ -552,38 +552,8 @@ end
         log_joint(s) = logPdf(y,s) + x.params[:log_pdf](s)
         #Optimization with gradient ascent
         d_log_joint(s) = ForwardDiff.gradient(log_joint, s)
-        m_old = y.params[:m] #initial point
-        step_size = 0.01 #initial step size
-        satisfied = 0
-        step_count = 0
-        m_total = zeros(dim)
-        m_average = zeros(dim)
-        m_new = zeros(dim)
-        while satisfied == 0
-            m_new = m_old .+ step_size.*d_log_joint(m_old)
-            if log_joint(m_new) > log_joint(m_old)
-                proposal_step_size = 10*step_size
-                m_proposal = m_old .+ proposal_step_size.*d_log_joint(m_old)
-                if log_joint(m_proposal) > log_joint(m_new)
-                    m_new = m_proposal
-                    step_size = proposal_step_size
-                end
-            else
-                step_size = 0.1*step_size
-                m_new = m_old .+ step_size.*d_log_joint(m_old)
-            end
-            step_count += 1
-            m_total .+= m_old
-            m_average = m_total ./ step_count
-            if step_count > 10
-                if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim*0.1
-                    satisfied = 1
-                end
-            elseif step_count > dim*250
-                satisfied = 1
-            end
-            m_old = m_new
-        end
+        m_initial = y.params[:m] #initial point
+        gradientOptimization(log_joint, d_log_joint, m_initial, 0.01)
         mean = m_new
         var = inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, mean))
 
