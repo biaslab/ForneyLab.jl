@@ -4,16 +4,16 @@ ruleSPBivariateLIn2MGN,
 ruleSPBivariateLOutNGG,
 ruleMBivariateLOutNGG
 
-function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Univariate}, g::Function, status::Dict) where {F1<:Gaussian,F2<:Gaussian}
+function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Univariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in2.dist)
 
-    samples1 = dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(1000)
-    samples2 = dist_in2.params[:m] .+ sqrt(dist_in2.params[:v]).*randn(1000)
+    samples1 = dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(n_samples)
+    samples2 = dist_in2.params[:m] .+ sqrt(dist_in2.params[:v]).*randn(n_samples)
 
     sample_list = g.(samples1, samples2)
-    weight_list = ones(1000)/1000
+    weight_list = ones(n_samples)/n_samples
 
     if length(sample_list[1]) == 1
         return Message(Univariate, SampleList, s=sample_list, w=weight_list)
@@ -22,22 +22,22 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariat
     end
 end
 
-function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Univariate}, g::Function, status::Dict) where {F1<:Gaussian,F2<:Gaussian}
+function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Univariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in2.dist)
 
     C1L = cholesky(dist_in1.params[:v]).L
     dim = dims(dist_in1)
-    samples1 = Vector{Vector{Float64}}(undef, 1000)
+    samples1 = Vector{Vector{Float64}}(undef, n_samples)
     
-    for j=1:1000
+    for j=1:n_samples
         samples1[j] = dist_in1.params[:m] + C1L*randn(dim)
     end
-    samples2 = dist_in2.params[:m] .+ sqrt(dist_in2.params[:v]).*randn(1000)
+    samples2 = dist_in2.params[:m] .+ sqrt(dist_in2.params[:v]).*randn(n_samples)
 
     sample_list = g.(samples1, samples2)
-    weight_list = ones(1000)/1000
+    weight_list = ones(n_samples)/n_samples
 
     if length(sample_list[1]) == 1
         return Message(Univariate, SampleList, s=sample_list, w=weight_list)
@@ -46,23 +46,23 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivari
     end
 end
 
-function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Multivariate}, g::Function, status::Dict) where {F1<:Gaussian,F2<:Gaussian}
+function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Multivariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in2.dist)
 
-    samples1 = dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(1000)
+    samples1 = dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(n_samples)
 
     C2L = cholesky(dist_in2.params[:v]).L
     dim = dims(dist_in2)
-    samples2 = Vector{Vector{Float64}}(undef, 1000)
+    samples2 = Vector{Vector{Float64}}(undef, n_samples)
     
-    for j=1:1000
+    for j=1:n_samples
         samples2[j] = dist_in2.params[:m] + C2L*randn(dim)
     end
 
     sample_list = g.(samples1, samples2)
-    weight_list = ones(1000)/1000
+    weight_list = ones(n_samples)/n_samples
 
     if length(sample_list[1]) == 1
         return Message(Univariate, SampleList, s=sample_list, w=weight_list)
@@ -71,26 +71,26 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariat
     end
 end
 
-function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Multivariate}, g::Function, status::Dict) where {F1<:Gaussian,F2<:Gaussian}
+function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Multivariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in2.dist)
 
     C1L = cholesky(dist_in1.params[:v]).L
     dim1 = dims(dist_in1)
-    samples1 = Vector{Vector{Float64}}(undef, 1000)
+    samples1 = Vector{Vector{Float64}}(undef, n_samples)
 
     C2L = cholesky(dist_in2.params[:v]).L
     dim2 = dims(dist_in2)
-    samples2 = Vector{Vector{Float64}}(undef, 1000)
+    samples2 = Vector{Vector{Float64}}(undef, n_samples)
 
-    for j=1:1000
+    for j=1:n_samples
         samples1[j] = dist_in1.params[:m] + C1L*randn(dim1)
         samples2[j] = dist_in2.params[:m] + C2L*randn(dim2)
     end
 
     sample_list = g.(samples1, samples2)
-    weight_list = ones(1000)/1000
+    weight_list = ones(n_samples)/n_samples
 
     if length(sample_list[1]) == 1
         return Message(Univariate, SampleList, s=sample_list, w=weight_list)
@@ -118,7 +118,7 @@ function approxMessageBivariate(m_prior::Array,v_prior,m_post::Array,v_post)
     return Message(Multivariate, GaussianWeightedMeanPrecision, xi=xi_message, w=w_message)
 end
 
-function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
+function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
     if status[:updated]
         status[:updated] = false
@@ -165,7 +165,7 @@ function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
 end
 
-function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
+function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
     if status[:updated]
         status[:updated] = false
@@ -211,7 +211,7 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
 end
 
-function ruleMBivariateLOutNGG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
+function ruleMBivariateLOutNGG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
     dist_in1 = convert(ProbabilityDistribution{V1, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{V2, GaussianMeanVariance}, msg_in2.dist)
@@ -280,7 +280,7 @@ function collectSumProductNodeInbounds(node::Bivariate{Laplace}, entry::Schedule
     status = "currentGraph().nodes[:$(node.id)].status"
     push!(inbounds, Dict{Symbol, Any}(:status => status,
                                       :keyword => false))
-
+    push!(inbounds, node.n_samples)
     return inbounds
 end
 
@@ -321,7 +321,7 @@ function collectMarginalNodeInbounds(node::Bivariate, entry::MarginalEntry)
     status = "currentGraph().nodes[:$(node.id)].status"
     push!(inbounds, Dict{Symbol, Any}(:status => status,
                                       :keyword => false))
-
+    push!(inbounds, n_samples)
     return inbounds
 end
 
