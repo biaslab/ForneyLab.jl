@@ -321,7 +321,7 @@ function collectMarginalNodeInbounds(node::Bivariate, entry::MarginalEntry)
     status = "currentGraph().nodes[:$(node.id)].status"
     push!(inbounds, Dict{Symbol, Any}(:status => status,
                                       :keyword => false))
-    push!(inbounds, n_samples)
+    push!(inbounds, node.n_samples)
     return inbounds
 end
 

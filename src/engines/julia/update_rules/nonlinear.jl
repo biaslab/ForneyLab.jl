@@ -467,7 +467,7 @@ function ruleSPNonlinearLOutNP(msg_out::Nothing, msg_in1::Message{Poisson, Univa
     end
 end
 
-function ruleSPNonlinearLOutND(msg_out::Nothing, msg_in1::Message{F, Univariate}, g::Function, n_samples::Int) where {F<:Dirichlet}
+function ruleSPNonlinearLOutND(msg_out::Nothing, msg_in1::Message{Dirichlet, Univariate}, g::Function, n_samples::Int)
     # The forward message is parameterized by a SampleList
     sample_list = []
     for i=1:n_samples
@@ -687,7 +687,11 @@ function collectSumProductNodeInbounds(node::Nonlinear{Laplace}, entry::Schedule
     # These functions needs to be defined in the scope of the user
     push!(inbounds, Dict{Symbol, Any}(:g => node.g,
                                       :keyword => false))
-    push!(inbounds, node.n_samples)
+    
+    # Push n_samples argument only for rules that do sampling
+    if entry.message_update_rule in Set([SPNonlinearLOutNG, SPNonlinearLOutNB, SPNonlinearLOutNC, SPNonlinearLOutNLn, SPNonlinearLOutNGamma, SPNonlinearLOutNBeta, SPNonlinearLOutNP, SPNonlinearLOutND])
+        push!(inbounds, node.n_samples)
+    end
     return inbounds
 end
 
