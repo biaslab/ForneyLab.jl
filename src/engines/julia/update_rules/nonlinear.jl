@@ -403,7 +403,7 @@ function ruleSPNonlinearLOutNC(msg_out::Nothing, msg_in1::Message{Categorical, U
     end
 end
 
-function ruleSPNonlinearLOutNLn(msg_out::Nothing, msg_in1::Message{LogNormal, Univariate}, g::Function, n_samples::Int) where {F<:LogNormal}
+function ruleSPNonlinearLOutNLn(msg_out::Nothing, msg_in1::Message{LogNormal, Univariate}, g::Function, n_samples::Int)
     # The forward message is parameterized by a SampleList
     sample_list = []
     for i=1:n_samples
