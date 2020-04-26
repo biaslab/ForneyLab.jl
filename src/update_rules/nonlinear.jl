@@ -42,47 +42,47 @@ function isApplicable(::Type{SPNonlinearUTInGX}, input_types::Vector{<:Type})
     return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-1)
 end
 
-@sumProductRule(:node_type     => Nonlinear{Laplace},
+@sumProductRule(:node_type     => Nonlinear{Sampling},
                 :outbound_type => Message{Function},
                 :inbound_types => (Message{FactorFunction}, Nothing),
                 :name          => SPNonlinearLInMN)
 
-@sumProductRule(:node_type     => Nonlinear{Laplace},
+@sumProductRule(:node_type     => Nonlinear{Sampling},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message{Gaussian}),
                 :name          => SPNonlinearLOutNG)
 
-@sumProductRule(:node_type     => Nonlinear{Laplace},
+@sumProductRule(:node_type     => Nonlinear{Sampling},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message{Bernoulli}),
                 :name          => SPNonlinearLOutNB)
 
-@sumProductRule(:node_type     => Nonlinear{Laplace},
+@sumProductRule(:node_type     => Nonlinear{Sampling},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message{Categorical}),
                 :name          => SPNonlinearLOutNC)
 
-@sumProductRule(:node_type     => Nonlinear{Laplace},
+@sumProductRule(:node_type     => Nonlinear{Sampling},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message{LogNormal}),
                 :name          => SPNonlinearLOutNLn)
 
-@sumProductRule(:node_type     => Nonlinear{Laplace},
+@sumProductRule(:node_type     => Nonlinear{Sampling},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message{Gamma}),
                 :name          => SPNonlinearLOutNGamma)
 
-@sumProductRule(:node_type     => Nonlinear{Laplace},
+@sumProductRule(:node_type     => Nonlinear{Sampling},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message{Beta}),
                 :name          => SPNonlinearLOutNBeta)
 
-@sumProductRule(:node_type     => Nonlinear{Laplace},
+@sumProductRule(:node_type     => Nonlinear{Sampling},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message{Poisson}),
                 :name          => SPNonlinearLOutNP)
 
-@sumProductRule(:node_type     => Nonlinear{Laplace},
+@sumProductRule(:node_type     => Nonlinear{Sampling},
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message{Dirichlet}),
                 :name          => SPNonlinearLOutND)

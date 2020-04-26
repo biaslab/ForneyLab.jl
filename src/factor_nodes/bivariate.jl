@@ -23,9 +23,9 @@ mutable struct Bivariate{T<:ApproximationMethod} <: DeltaFactor
     g::Function # Vector function that expresses the output vector as a function of the input vector; reduces to scalar for 1-d
     dims::Tuple # Dimension of breaker message on input interface
     status::Dict{Symbol, Union{Bool, Message}} #Keeps the status of node to ensure that input variables are updated simultaneously
-    n_samples::Int # Number of samples for Laplace sampling
+    n_samples::Int # Number of samples for sampling
 
-    function Bivariate{Laplace}(out, in1, in2, g::Function; dims=(), n_samples=1000, id=ForneyLab.generateId(Bivariate{Laplace}))
+    function Bivariate{Sampling}(out, in1, in2, g::Function; dims=(), n_samples=1000, id=ForneyLab.generateId(Bivariate{Sampling}))
         @ensureVariables(out, in1, in2)
         self = new(id, Vector{Interface}(undef, 3), Dict{Symbol,Interface}(), g, dims, Dict(:updated=>false), n_samples)
         ForneyLab.addNode!(currentGraph(), self)

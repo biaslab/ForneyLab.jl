@@ -251,7 +251,7 @@ end
 # Custom inbounds collector
 #--------------------------
 
-function collectSumProductNodeInbounds(node::Bivariate{Laplace}, entry::ScheduleEntry)
+function collectSumProductNodeInbounds(node::Bivariate{Sampling}, entry::ScheduleEntry)
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     inbounds = Any[]

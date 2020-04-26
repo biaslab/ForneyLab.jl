@@ -489,7 +489,7 @@ end
     z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F<:Gaussian}
 
     if x.params[:ApproximationType] == "NonlinearL"
-        # The product of a log-pdf and Gaussian distribution is approximated by Laplace method
+        # The product of a log-pdf and Gaussian distribution is approximated by Sampling method
         y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
         log_joint(s) = logPdf(y,s) + x.params[:log_pdf](s)
         #Optimization with gradient ascent
@@ -546,7 +546,7 @@ end
     z::ProbabilityDistribution{Multivariate, GaussianMeanVariance}=ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))) where {F<:Gaussian}
 
     if x.params[:ApproximationType] == "NonlinearL"
-        # The product of a log-pdf and Gaussian distribution is approximated by Laplace method
+        # The product of a log-pdf and Gaussian distribution is approximated by Sampling method
         y = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, y)
         dim = dims(y)
         log_joint(s) = logPdf(y,s) + x.params[:log_pdf](s)
@@ -635,7 +635,7 @@ function collectMarginalNodeInbounds(node::Nonlinear{Unscented}, entry::Marginal
     return inbounds
 end
 
-function collectSumProductNodeInbounds(node::Nonlinear{Laplace}, entry::ScheduleEntry)
+function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::ScheduleEntry)
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     inbounds = Any[]

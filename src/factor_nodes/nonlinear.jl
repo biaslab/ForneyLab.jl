@@ -1,8 +1,8 @@
-export Nonlinear, Unscented, Laplace
+export Nonlinear, Unscented, Sampling
 
 abstract type ApproximationMethod end
 abstract type Unscented <: ApproximationMethod end
-abstract type Laplace <: ApproximationMethod end
+abstract type Sampling <: ApproximationMethod end
 
 """
 Description:
@@ -37,7 +37,7 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
     g_inv::Union{Function, Nothing, Vector} # Inverse of g with respect to individual inbounds (optional)
     alpha::Union{Float64, Nothing} # Spread parameter for unscented transform
     dims::Union{Tuple, Vector} # Dimension of breaker message(s) on input interface(s)
-    n_samples::Int # Number of samples for Laplace sampling
+    n_samples::Int # Number of samples for sampling
 
     function Nonlinear{Unscented}(out, args::Vararg; g::Function, g_inv=nothing, alpha=nothing, dims=(), id=ForneyLab.generateId(Nonlinear{Unscented}))
         @ensureVariables(out)
@@ -55,7 +55,7 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
         return self
     end
 
-    function Nonlinear{Laplace}(out, in1, g::Function; n_samples=1000, id=ForneyLab.generateId(Nonlinear{Laplace}))
+    function Nonlinear{Sampling}(out, in1, g::Function; n_samples=1000, id=ForneyLab.generateId(Nonlinear{Sampling}))
         @ensureVariables(out, in1)
         self = new(id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), g, nothing, nothing, (), n_samples)
         ForneyLab.addNode!(currentGraph(), self)
