@@ -145,6 +145,8 @@ function trigammaInverse(x::Float64)
 end
 
 """
+    @symmetrical `function_definition`
+
 Duplicate a method definition with the order of the first two arguments swapped.
 This macro is used to duplicate methods that are symmetrical in their first two input arguments,
 but require explicit definitions for the different argument orders.

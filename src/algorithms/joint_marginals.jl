@@ -15,8 +15,8 @@ through a node-specific joint marginal update rule.
 function MarginalEntry(target::Cluster, outbound_types::Dict{Interface, Type})
     inbound_types = collectInboundTypes(target, outbound_types)
     marginal_update_rule = inferMarginalRule(target, inbound_types)
-    
-    # Collect inbound interfaces 
+
+    # Collect inbound interfaces
     inbound_interfaces = Interface[]
     for edge in target.edges
         if edge.a in target.node.interfaces
@@ -135,22 +135,22 @@ macro marginalRule(fields...)
     end
 
     # Build validators for isApplicable
-    input_type_validators = 
-        String["length(input_types) == $(length(inbound_types.args))"]
+    input_type_validators = Expr[]
+
+    push!(input_type_validators, quote length(input_types) == $(length(inbound_types.args)) end)
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
             # Only validate inbounds required for update
-            push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
+            push!(input_type_validators, quote ForneyLab.matches(input_types[$i], $i_type) end)
         end
     end
 
-    expr = parse("""
-        begin
-            mutable struct $name <: MarginalRule{$node_type} end
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = $(join(input_type_validators, " && "))
-            $name
+    expr = quote
+        struct $name <: MarginalRule{$node_type} end
+        ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = begin
+            $(reduce((current, item) -> quote $current && $item end, input_type_validators, init = quote true end))
         end
-    """)
+    end
 
     return esc(expr)
 end
@@ -171,7 +171,7 @@ function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
     entry_pf = posteriorFactor(first(entry.target.edges))
     encountered_external_regions = Set{Region}()
     for node_interface in entry.target.node.interfaces
-        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field 
+        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field
         current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
         inbound_interface = ultimatePartner(node_interface)
 

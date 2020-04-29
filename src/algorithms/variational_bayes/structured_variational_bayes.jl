@@ -16,7 +16,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
                          ) where T<:StructuredVariationalRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
-    
+
     # Find applicable rule(s)
     applicable_rules = Type[]
     for rule in leaftypes(entry.message_update_rule)
@@ -58,7 +58,7 @@ function collectInboundTypes(entry::ScheduleEntry,
             push!(inbound_types, inferred_outbound_types[node_interface.partner])
         elseif !(current_posterior_factor in encountered_posterior_factors)
             # Edge is external, accept marginal (if marginal is not already accepted)
-            push!(inbound_types, ProbabilityDistribution) 
+            push!(inbound_types, ProbabilityDistribution)
         end
 
         push!(encountered_posterior_factors, current_posterior_factor)
@@ -67,13 +67,13 @@ function collectInboundTypes(entry::ScheduleEntry,
     return inbound_types
 end
 
-""" 
+"""
 `@structuredVariationalRule` registers a variational update rule for the
 structured factorization by defining the rule type and the corresponding methods
 for the `outboundType` and `isApplicable` functions. If no name (type) for the
 new rule is passed, a unique name (type) will be generated. Returns the rule
 type.
-""" 
+"""
 macro structuredVariationalRule(fields...)
     # Init required fields in macro scope
     node_type = :unknown
@@ -108,23 +108,23 @@ macro structuredVariationalRule(fields...)
     end
 
     # Build validators for isApplicable
-    input_type_validators = 
-        String["length(input_types) == $(length(inbound_types.args))"]
+    input_type_validators = Expr[]
+
+    push!(input_type_validators, quote length(input_types) == $(length(inbound_types.args)) end)
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
             # Only validate inbounds required for message update
-            push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
+            push!(input_type_validators, quote ForneyLab.matches(input_types[$i], $i_type) end)
         end
     end
 
-    expr = parse("""
-        begin
-            mutable struct $name <: StructuredVariationalRule{$node_type} end
-            ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = $(join(input_type_validators, " && "))
-            $name
+    expr = quote
+        struct $name <: StructuredVariationalRule{$node_type} end
+        ForneyLab.outboundType(::Type{$name}) = $outbound_type
+        ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = begin
+            $(reduce((current, item) -> quote $current && $item end, input_type_validators, init = quote true end))
         end
-    """)
+    end
 
     return esc(expr)
 end

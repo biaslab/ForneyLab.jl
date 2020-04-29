@@ -6,8 +6,8 @@ variationalAlgorithm,
 """
 Create a variational algorithm to infer marginals over a posterior distribution, and compile it to Julia code
 """
-function variationalAlgorithm(pfz::PosteriorFactorization=currentPosteriorFactorization(); 
-                              id=Symbol(""), 
+function variationalAlgorithm(pfz::PosteriorFactorization=currentPosteriorFactorization();
+                              id=Symbol(""),
                               free_energy=false)
 
     (length(pfz.posterior_factors) > 0) || error("No factors defined on posterior factorization.")
@@ -52,8 +52,8 @@ function variationalSchedule(posterior_factor::PosteriorFactor)
     nodes_connected_to_external_edges = nodesConnectedToExternalEdges(posterior_factor)
 
     # Schedule messages towards posterior factors and target sites, limited to the internal edges
-    schedule = summaryPropagationSchedule(sort(collect(posterior_factor.target_variables), rev=true), 
-                                          sort(collect(posterior_factor.target_clusters), rev=true), 
+    schedule = summaryPropagationSchedule(sort(collect(posterior_factor.target_variables), rev=true),
+                                          sort(collect(posterior_factor.target_clusters), rev=true),
                                           limit_set=posterior_factor.internal_edges)
     for entry in schedule
         if (entry.interface.node in nodes_connected_to_external_edges) && !isa(entry.interface.node, DeltaFactor)
@@ -62,7 +62,7 @@ function variationalSchedule(posterior_factor::PosteriorFactor)
                 entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
             else
                 entry.message_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}
-            end        
+            end
         else
             entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
         end
@@ -81,7 +81,7 @@ function inferUpdateRule!(  entry::ScheduleEntry,
                             inferred_outbound_types::Dict{Interface, Type}) where T<:NaiveVariationalRule
     # Collect inbound types
     inbound_types = collectInboundTypes(entry, rule_type, inferred_outbound_types)
-    
+
     # Find applicable rule(s)
     applicable_rules = Type[]
     for rule in leaftypes(entry.message_update_rule)
@@ -115,20 +115,20 @@ function collectInboundTypes(   entry::ScheduleEntry,
             push!(inbound_types, Nothing)
         else
             # Edge is external, accept marginal
-            push!(inbound_types, ProbabilityDistribution) 
+            push!(inbound_types, ProbabilityDistribution)
         end
     end
 
     return inbound_types
 end
 
-""" 
+"""
 `@naiveVariationalRule` registers a variational update rule for the naive
 (mean-field) factorization by defining the rule type and the corresponding
 methods for the `outboundType` and `isApplicable` functions. If no name (type)
 for the new rule is passed, a unique name (type) will be generated. Returns the
-rule type. 
-""" 
+rule type.
+"""
 macro naiveVariationalRule(fields...)
     # Init required fields in macro scope
     node_type = :unknown
@@ -163,23 +163,23 @@ macro naiveVariationalRule(fields...)
     end
 
     # Build validators for isApplicable
-    input_type_validators = 
-        String["length(input_types) == $(length(inbound_types.args))"]
+    input_type_validators = Expr[]
+
+    push!(input_type_validators, quote length(input_types) == $(length(inbound_types.args)) end)
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
             # Only validate inbounds required for message update
-            push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
+            push!(input_type_validators, quote ForneyLab.matches(input_types[$i], $i_type) end)
         end
     end
 
-    expr = parse("""
-        begin
-            mutable struct $name <: NaiveVariationalRule{$node_type} end
-            ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = $(join(input_type_validators, " && "))
-            $name
+    expr = quote
+        struct $name <: NaiveVariationalRule{$node_type} end
+        ForneyLab.outboundType(::Type{$name}) = $outbound_type
+        ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = begin
+            $(reduce((current, item) -> quote $current && $item end, input_type_validators, init = quote true end))
         end
-    """)
+    end
 
     return esc(expr)
 end
@@ -196,7 +196,7 @@ Returns a vector with inbounds that correspond with required interfaces.
 """
 function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry)
     target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
-    
+
     inbounds = Any[]
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)

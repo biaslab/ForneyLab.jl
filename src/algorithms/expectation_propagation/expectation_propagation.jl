@@ -6,7 +6,7 @@ expectationPropagationAlgorithm,
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function expectationPropagationAlgorithm(variables::Vector{Variable}; 
+function expectationPropagationAlgorithm(variables::Vector{Variable};
                                          id=Symbol(""),
                                          free_energy=false)
 
@@ -22,12 +22,12 @@ function expectationPropagationAlgorithm(variables::Vector{Variable};
     schedule = expectationPropagationSchedule(pf)
     pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
     pf.marginal_table = marginalTable(variables)
-    
+
     # Populate fields for algorithm compilation
     algo = InferenceAlgorithm(pfz, id=id)
     assembleInferenceAlgorithm!(algo)
     free_energy && assembleFreeEnergy!(algo)
-    
+
     return algo
 end
 expectationPropagationAlgorithm(variable::Variable; id=Symbol(""), free_energy=false) = expectationPropagationAlgorithm([variable], id=id, free_energy=free_energy)
@@ -37,16 +37,16 @@ A non-specific expectation propagation update
 """
 abstract type ExpectationPropagationRule{factor_type} <: MessageUpdateRule end
 
-""" 
+"""
 `expectationPropagationSchedule()` generates a expectation propagation
-message passing schedule. 
-""" 
+message passing schedule.
+"""
 function expectationPropagationSchedule(pf::PosteriorFactor)
     ep_sites = collectEPSites(nodes(current_graph))
     breaker_sites = Interface[site.partner for site in ep_sites]
     breaker_types = breakerTypes(breaker_sites)
 
-    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true), 
+    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true),
                                           sort(collect(pf.target_clusters), rev=true);
                                           target_sites=[breaker_sites; ep_sites])
 
@@ -102,7 +102,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
 
     # Find outbound id
     outbound_id = something(findfirst(isequal(entry.interface), entry.interface.node.interfaces), 0)
-    
+
     # Find applicable rule(s)
     applicable_rules = Type[]
     for rule in leaftypes(entry.message_update_rule)
@@ -140,9 +140,9 @@ function collectInboundTypes(entry::ScheduleEntry,
 end
 
 """
-`@expectationPropagationRule` registers a expectation propagation update 
-rule by defining the rule type and the corresponding methods for the `outboundType` 
-and `isApplicable` functions. If no name (type) for the new rule is passed, a 
+`@expectationPropagationRule` registers a expectation propagation update
+rule by defining the rule type and the corresponding methods for the `outboundType`
+and `isApplicable` functions. If no name (type) for the new rule is passed, a
 unique name (type) will be generated. Returns the rule type.
 """
 macro expectationPropagationRule(fields...)
@@ -182,23 +182,23 @@ macro expectationPropagationRule(fields...)
     end
 
     # Build validators for isApplicable
-    input_type_validators = 
-        String["length(input_types) == $(length(inbound_types.args))"]
+    input_type_validators = Expr[]
+
+    push!(input_type_validators, quote length(input_types) == $(length(inbound_types.args)) end)
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
             # Only validate inbounds required for message update
-            push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
+            push!(input_type_validators, quote ForneyLab.matches(input_types[$i], $i_type) end)
         end
     end
 
-    expr = parse("""
-        begin
-            mutable struct $name <: ExpectationPropagationRule{$node_type} end
-            ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}, outbound_id::Int64) = $(join(input_type_validators, " && ")) && (outbound_id == $outbound_id)
-            $name
+    expr = quote
+        struct $name <: ExpectationPropagationRule{$node_type} end
+        ForneyLab.outboundType(::Type{$name}) = $outbound_type
+        ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}, outbound_id::Int64) = begin
+            $(reduce((current, item) -> quote $current && $item end, input_type_validators, init = quote outbound_id === $outbound_id end))
         end
-    """)
+    end
 
     return esc(expr)
 end
