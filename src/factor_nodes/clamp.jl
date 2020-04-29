@@ -76,8 +76,8 @@ end
 `@ensureVariables(...)` casts all non-`Variable` arguments to `Variable` through constant(arg).
 """
 macro ensureVariables(args...)
-    checks = map(arg -> quote isa($arg, Variable) || ($arg = constant($arg)) end, args)
-    expr   = reduce((current, item) -> quote $current; $item end, checks)
+    checks = map(arg -> :(isa($arg, Variable) || ($arg = constant($arg))), args)
+    expr   = reduce((current, item) -> :($current; $item), checks)
     return esc(expr)
 end
 

@@ -184,11 +184,11 @@ macro expectationPropagationRule(fields...)
     # Build validators for isApplicable
     input_type_validators = Expr[]
 
-    push!(input_type_validators, quote length(input_types) == $(length(inbound_types.args)) end)
+    push!(input_type_validators, :(length(input_types) == $(length(inbound_types.args))))
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
             # Only validate inbounds required for message update
-            push!(input_type_validators, quote ForneyLab.matches(input_types[$i], $i_type) end)
+            push!(input_type_validators, :(ForneyLab.matches(input_types[$i], $i_type)))
         end
     end
 
@@ -196,7 +196,7 @@ macro expectationPropagationRule(fields...)
         struct $name <: ExpectationPropagationRule{$node_type} end
         ForneyLab.outboundType(::Type{$name}) = $outbound_type
         ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}, outbound_id::Int64) = begin
-            $(reduce((current, item) -> quote $current && $item end, input_type_validators, init = quote outbound_id === $outbound_id end))
+            $(reduce((current, item) -> :($current && $item), input_type_validators, init = :(outbound_id === $outbound_id)))
         end
     end
 

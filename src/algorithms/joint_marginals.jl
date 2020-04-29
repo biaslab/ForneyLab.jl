@@ -137,18 +137,18 @@ macro marginalRule(fields...)
     # Build validators for isApplicable
     input_type_validators = Expr[]
 
-    push!(input_type_validators, quote length(input_types) == $(length(inbound_types.args)) end)
+    push!(input_type_validators, :(length(input_types) == $(length(inbound_types.args))))
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
             # Only validate inbounds required for update
-            push!(input_type_validators, quote ForneyLab.matches(input_types[$i], $i_type) end)
+            push!(input_type_validators, :(ForneyLab.matches(input_types[$i], $i_type)))
         end
     end
 
     expr = quote
         struct $name <: MarginalRule{$node_type} end
         ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = begin
-            $(reduce((current, item) -> quote $current && $item end, input_type_validators, init = quote true end))
+            $(reduce((current, item) -> :($current && $item), input_type_validators, init = :true))
         end
     end
 
