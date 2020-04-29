@@ -169,11 +169,21 @@ macro RV(expr_options::Expr, expr_def::Any)
     # Extract variable id from expression?
     if !(:id in keys(options))
         if isa(target_expr, Symbol)
-            options[:id_suggestion] = "Symbol(\"$(target_expr)\")"
+            options[:id_suggestion] = :($(string(target_expr)))
         elseif isa(target_expr, Expr) && target_expr.head == :ref
-            arg_strings = ["\$($(arg))" for arg in target_expr.args[2:end]]
-            options[:id_suggestion] = "Symbol(\"" * string(target_expr.args[1]) * "_" * join(arg_strings, "_")*"\")"
+            arg_strings = [ :(string($arg)) for arg in target_expr.args[2:end] ]
+            options[:id_suggestion] = :($(string(target_expr.args[1]) * "_") * $(reduce((current, item) -> :($current * "_" * $item), arg_strings)))
         end
+    end
+
+    # Determine Variable id
+    if haskey(options, :id)
+        var_id_expr = options[:id]
+    elseif haskey(options, :id_suggestion)
+        var_id_sym = :(Symbol($(options[:id_suggestion])))
+        var_id_expr = :(!haskey(currentGraph().variables, $var_id_sym) ? $var_id_sym : ForneyLab.generateId(Variable))
+    else
+        var_id_expr = :(ForneyLab.generateId(Variable))
     end
 
     if form == 1
@@ -185,20 +195,11 @@ macro RV(expr_options::Expr, expr_def::Any)
             node_expr.args = vcat([node_expr.args[1]; target_expr], node_expr.args[2:end])
         end
 
-        # Logic for determining Variable id
-        if haskey(options, :id)
-            var_id_expr = "$(options[:id])"
-        elseif haskey(options, :id_suggestion)
-            var_id_expr = "!haskey(currentGraph().variables, $(options[:id_suggestion])) ? $(options[:id_suggestion]) : ForneyLab.generateId(Variable)"
-        else
-            var_id_expr = "ForneyLab.generateId(Variable)"
-        end
-
         # Build total expression
-        expr = parse("""
-                begin
+        expr = quote
+            begin
                 # Use existing Variable if it exists, otherwise create a new one
-                $(target_expr) = try $(target_expr) catch; Variable(id=ForneyLab.pack($(var_id_expr))) end
+                $(target_expr) = try $(target_expr) catch; Variable(id = $(var_id_expr)) end
 
                 # Create new variable if:
                 #   - the existing object is not a Variable
@@ -207,31 +208,26 @@ macro RV(expr_options::Expr, expr_def::Any)
                     || !haskey(currentGraph().variables, $(target_expr).id)
                     || currentGraph().variables[$(target_expr).id] !== $(target_expr))
 
-                    $(target_expr) = Variable(id=ForneyLab.pack($(var_id_expr)))
+                    $(target_expr) = Variable(id = $(var_id_expr))
                 end
 
                 $(node_expr)
                 $(target_expr)
-                end
-            """)
+            end
+        end
     elseif form == 2
         # Form 2 always creates a new Variable
         # We try to update the id after the Variable has been created
         if haskey(options, :id)
             # Verify that the user-specified id is available
-            before_node_expr = "!haskey(currentGraph().variables, $(options[:id])) || error(\"Specified id is already assigned to another Variable\")"
-            var_id_expr = "$(options[:id])"
-        elseif haskey(options, :id_suggestion)
-            before_node_expr = ""
-            var_id_expr = "!haskey(currentGraph().variables, $(options[:id_suggestion])) ? $(options[:id_suggestion]) : :auto"
+            before_node_expr = :(!haskey(currentGraph().variables, $(options[:id])) || error("Specified id is already assigned to another Variable"))
         else
-            before_node_expr = ""
-            var_id_expr = ":auto"
+            before_node_expr = quote end
         end
 
         # Build total expression
-        expr = parse("""
-                begin
+        expr = quote
+            begin
                 $(before_node_expr)
                 var_id = $(var_id_expr)
                 $(expr_def)
@@ -243,22 +239,14 @@ macro RV(expr_options::Expr, expr_def::Any)
                     $(target_expr).id = var_id
                 end
                 $(target_expr)
-                end
-            """)
-    elseif form == 3
-        # Determine Variable id
-        if haskey(options, :id)
-            var_id_expr = "$(options[:id])"
-        elseif haskey(options, :id_suggestion)
-            var_id_expr = "!haskey(currentGraph().variables, $(options[:id_suggestion])) ? $(options[:id_suggestion]) : ForneyLab.generateId(Variable)"
-        else
-            var_id_expr = "ForneyLab.generateId(Variable)"
+            end
         end
-
-        expr = parse("$(target_expr) = Variable(id=$(var_id_expr))")
+    elseif form == 3
+        expr = quote $(target_expr) = Variable(id = $(var_id_expr)) end
     else
         error("Unsupported usage of @RV.")
     end
+
     return esc(expr)
 end
 
