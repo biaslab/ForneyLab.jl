@@ -86,16 +86,12 @@ using LinearAlgebra: Diagonal, isposdef, I, Hermitian
         @test foo(1, 1.0) === 1
         @test foo(1.0, 1) === 1
 
-        struct DummyType{A}
-            a :: A
-        end
+        @symmetrical bar(a::Int, b::Tuple{L, R}) where { L <: Real, R <: Real } = 1
 
-        @symmetrical bar(a::Int, b::DummyType{T}) where { T <: Real } = 1
-
-        @test bar(1, DummyType{Float64}(1.0))   === 1
-        @test bar(1, DummyType{Float32}(1.0f0)) === 1
-        @test bar(DummyType{Float64}(1.0), 1)   === 1
-        @test bar(DummyType{Float32}(1.0f0), 1) === 1
+        @test bar(1, Tuple{Float64, Float32}((1.0, 1.0f0)))   === 1
+        @test bar(1, Tuple{Float32, Float64}((1.0f0, 1.0)))   === 1
+        @test bar(Tuple{Float64, Float32}((1.0, 1.0f0)), 1)   === 1
+        @test bar(Tuple{Float32, Float64}((1.0f0, 1.0)), 1)   === 1
 
         @symmetrical function baz(a::Int, b::Float64, c::String) where A where B where C
             return 1
