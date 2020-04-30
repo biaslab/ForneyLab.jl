@@ -1,7 +1,7 @@
 module HelpersTest
 
 using Test
-using ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, cholinv, diageye, *, ^
+using ForneyLab: ensureMatrix, isApproxEqual, isRoundedPosDef, huge, tiny, format, leaftypes, cholinv, diageye, *, ^, @symmetrical
 using LinearAlgebra: Diagonal, isposdef, I, Hermitian
 
 @testset "Helpers" begin
@@ -78,6 +78,31 @@ using LinearAlgebra: Diagonal, isposdef, I, Hermitian
         @test format(:a) == "a"
         @test format([7.345345456456456464564645645645, 0.00005345, -0.000145, -108.0]) == "[7.35, 5.34e-05, -1.45e-04, -1.08e+02]"
         @test format([7.345345456456456464564645645645 0.00005345; -0.000145 -108.0]) == "[[7.35, 5.34e-05][-1.45e-04, -1.08e+02]]"
+    end
+
+    @testset "symmetrical" begin
+        @symmetrical foo(a::Int, b::Float64) = 1
+
+        @test foo(1, 1.0) === 1
+        @test foo(1.0, 1) === 1
+
+        struct DummyType{A}
+            a :: A
+        end
+
+        @symmetrical bar(a::Int, b::DummyType{T}) where { T <: Real } = 1
+
+        @test bar(1, DummyType{Float64}(1.0))   === 1
+        @test bar(1, DummyType{Float32}(1.0f0)) === 1
+        @test bar(DummyType{Float64}(1.0), 1)   === 1
+        @test bar(DummyType{Float32}(1.0f0), 1) === 1
+
+        @symmetrical function baz(a::Int, b::Float64, c::String) where A where B where C
+            return 1
+        end
+
+        @test baz(1, 1.0, "1") === 1
+        @test baz(1.0, 1, "1") === 1
     end
 
     @testset "leaftypes" begin
