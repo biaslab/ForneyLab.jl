@@ -132,6 +132,15 @@ end
     @RV [id=:x_new] x
     @test g.variables[:x_new] === x
     @test length(g.variables) == 2
+
+    # @RV should throw on incorrect usage
+    @test_throws ErrorException @RV 1
+    @test_throws ErrorException @RV [ 1 ]
+    @test_throws ErrorException @RV [ 1 ] 1
+    @test_throws ErrorException @RV [ 1 ] x
+    @test_throws ErrorException @RV [ x ] x
+    @test_throws ErrorException @RV [ x = :x_id ]
+    @test_throws ErrorException @RV [ x = :x_id ] 1
 end
 
 end #module

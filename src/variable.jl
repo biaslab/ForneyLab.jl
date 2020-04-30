@@ -72,10 +72,11 @@ Examples:
 """
 macro RV(options_expr::Expr, definition)
     # Parse options
-    options_expr.head == :vect || error("Incorrect use of @RV macro: options argument should be a vector expression")
+    options_expr.head == :vect || return :(error("Incorrect use of @RV macro: options argument should be a vector expression"))
+    definition isa Expr || definition isa Symbol || return :(error("Incorrect use of @RV macro: definition expression should be a valid expression or symbol"))
     options = Dict{Symbol, Any}()
     for arg in options_expr.args
-        arg.head == :(=) || error("Incorrect use of @RV macro: options item should be an assignment expression")
+        arg isa Expr && arg.head == :(=) || return :(error("Incorrect use of @RV macro: options item should be an assignment expression"))
         options[arg.args[1]] = arg.args[2]
     end
 
