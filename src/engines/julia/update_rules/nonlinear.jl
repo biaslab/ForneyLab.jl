@@ -5,15 +5,15 @@ ruleSPNonlinearUTOutNG,
 ruleSPNonlinearUTOutNGX,
 ruleSPNonlinearUTIn1GG,
 ruleSPNonlinearUTInGX,
-ruleSPNonlinearLInMN,
-ruleSPNonlinearLOutNG,
-ruleSPNonlinearLOutNB,
-ruleSPNonlinearLOutNC,
-ruleSPNonlinearLOutNLn,
-ruleSPNonlinearLOutNGamma,
-ruleSPNonlinearLOutNBeta,
-ruleSPNonlinearLOutNP,
-ruleSPNonlinearLOutND,
+ruleSPNonlinearSInMN,
+ruleSPNonlinearSOutNG,
+ruleSPNonlinearSOutNB,
+ruleSPNonlinearSOutNC,
+ruleSPNonlinearSOutNLn,
+ruleSPNonlinearSOutNGamma,
+ruleSPNonlinearSOutNBeta,
+ruleSPNonlinearSOutNP,
+ruleSPNonlinearSOutND,
 ruleMNonlinearUTNGX,
 prod!
 
@@ -315,7 +315,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
     return inbounds
 end
 
-function ruleSPNonlinearLInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
+function ruleSPNonlinearSInMN(g::Function, msg_out::Message{F, Univariate}, msg_in1::Nothing) where {F<:SoftFactor}
     try
         ForwardDiff.derivative(g, 0)
         return Message(Univariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="NonlinearL")
@@ -324,7 +324,7 @@ function ruleSPNonlinearLInMN(msg_out::Message{F, Univariate}, msg_in1::Nothing,
     end
 end
 
-function ruleSPNonlinearLInMN(msg_out::Message{F, Multivariate}, msg_in1::Nothing, g::Function) where {F<:SoftFactor}
+function ruleSPNonlinearSInMN(g::Function, msg_out::Message{F, Multivariate}, msg_in1::Nothing) where {F<:SoftFactor}
     try
         ForwardDiff.derivative(g, 0)
         return Message(Univariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="NonlinearL")
@@ -333,11 +333,11 @@ function ruleSPNonlinearLInMN(msg_out::Message{F, Multivariate}, msg_in1::Nothin
     end
 end
 
-function ruleSPNonlinearLOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}, g::Function, n_samples::Int) where {F<:Gaussian}
+function ruleSPNonlinearSOutNG(g::Function, msg_out::Nothing, msg_in1::Message{F, Univariate}, n_samples::Int) where {F<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
 
-    sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(n_samples))
+    sample_list = g.(dist_in1.params[:m] .+ (sqrt(dist_in1.params[:v]).*randn(n_samples)))
 
     weight_list = ones(n_samples)/n_samples
 
@@ -349,7 +349,7 @@ function ruleSPNonlinearLOutNG(msg_out::Nothing, msg_in1::Message{F, Univariate}
 
 end
 
-function ruleSPNonlinearLOutNG(msg_out::Nothing, msg_in1::Message{F, Multivariate}, g::Function, n_samples::Int) where {F<:Gaussian}
+function ruleSPNonlinearSOutNG(g::Function, msg_out::Nothing, msg_in1::Message{F, Multivariate}, n_samples::Int) where {F<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
 
@@ -371,7 +371,7 @@ function ruleSPNonlinearLOutNG(msg_out::Nothing, msg_in1::Message{F, Multivariat
 
 end
 
-function ruleSPNonlinearLOutNB(msg_out::Nothing, msg_in1::Message{Bernoulli, Univariate}, g::Function, n_samples::Int)
+function ruleSPNonlinearSOutNB(g::Function, msg_out::Nothing, msg_in1::Message{Bernoulli, Univariate}, n_samples::Int)
     # The forward message is parameterized by a SampleList
     sample_list = []
     for i=1:n_samples
@@ -387,7 +387,7 @@ function ruleSPNonlinearLOutNB(msg_out::Nothing, msg_in1::Message{Bernoulli, Uni
     end
 end
 
-function ruleSPNonlinearLOutNC(msg_out::Nothing, msg_in1::Message{Categorical, Univariate}, g::Function, n_samples::Int)
+function ruleSPNonlinearSOutNC(g::Function, msg_out::Nothing, msg_in1::Message{Categorical, Univariate}, n_samples::Int)
     # The forward message is parameterized by a SampleList
     sample_list = []
     for i=1:n_samples
@@ -403,7 +403,7 @@ function ruleSPNonlinearLOutNC(msg_out::Nothing, msg_in1::Message{Categorical, U
     end
 end
 
-function ruleSPNonlinearLOutNLn(msg_out::Nothing, msg_in1::Message{LogNormal, Univariate}, g::Function, n_samples::Int)
+function ruleSPNonlinearSOutNLn(g::Function, msg_out::Nothing, msg_in1::Message{LogNormal, Univariate}, n_samples::Int)
     # The forward message is parameterized by a SampleList
     sample_list = []
     for i=1:n_samples
@@ -419,7 +419,7 @@ function ruleSPNonlinearLOutNLn(msg_out::Nothing, msg_in1::Message{LogNormal, Un
     end
 end
 
-function ruleSPNonlinearLOutNGamma(msg_out::Nothing, msg_in1::Message{Gamma, Univariate}, g::Function, n_samples::Int)
+function ruleSPNonlinearSOutNGamma(g::Function, msg_out::Nothing, msg_in1::Message{Gamma, Univariate}, n_samples::Int)
     # The forward message is parameterized by a SampleList
     sample_list = []
     for i=1:n_samples
@@ -435,7 +435,7 @@ function ruleSPNonlinearLOutNGamma(msg_out::Nothing, msg_in1::Message{Gamma, Uni
     end
 end
 
-function ruleSPNonlinearLOutNBeta(msg_out::Nothing, msg_in1::Message{Beta, Univariate}, g::Function, n_samples::Int)
+function ruleSPNonlinearSOutNBeta(g::Function, msg_out::Nothing, msg_in1::Message{Beta, Univariate}, n_samples::Int)
     # The forward message is parameterized by a SampleList
     sample_list = []
     for i=1:n_samples
@@ -451,7 +451,7 @@ function ruleSPNonlinearLOutNBeta(msg_out::Nothing, msg_in1::Message{Beta, Univa
     end
 end
 
-function ruleSPNonlinearLOutNP(msg_out::Nothing, msg_in1::Message{Poisson, Univariate}, g::Function, n_samples::Int)
+function ruleSPNonlinearSOutNP(g::Function, msg_out::Nothing, msg_in1::Message{Poisson, Univariate}, n_samples::Int)
     # The forward message is parameterized by a SampleList
     sample_list = []
     for i=1:n_samples
@@ -467,7 +467,7 @@ function ruleSPNonlinearLOutNP(msg_out::Nothing, msg_in1::Message{Poisson, Univa
     end
 end
 
-function ruleSPNonlinearLOutND(msg_out::Nothing, msg_in1::Message{Dirichlet, Univariate}, g::Function, n_samples::Int)
+function ruleSPNonlinearSOutND(g::Function, msg_out::Nothing, msg_in1::Message{Dirichlet, Univariate}, n_samples::Int)
     # The forward message is parameterized by a SampleList
     sample_list = []
     for i=1:n_samples
@@ -639,6 +639,12 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     inbounds = Any[]
+    
+    # Push function (and inverse) to calling signature
+    # These functions needs to be defined in the scope of the user
+    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
+                                      :keyword => false))
+
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         if node_interface == entry.interface
@@ -653,13 +659,8 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
         end
     end
 
-    # Push function (and inverse) to calling signature
-    # These functions needs to be defined in the scope of the user
-    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
-                                      :keyword => false))
-    
     # Push n_samples argument only for rules that do sampling
-    if entry.message_update_rule in Set([SPNonlinearLOutNG, SPNonlinearLOutNB, SPNonlinearLOutNC, SPNonlinearLOutNLn, SPNonlinearLOutNGamma, SPNonlinearLOutNBeta, SPNonlinearLOutNP, SPNonlinearLOutND])
+    if entry.message_update_rule in Set([SPNonlinearSOutNG, SPNonlinearSOutNB, SPNonlinearSOutNC, SPNonlinearSOutNLn, SPNonlinearSOutNGamma, SPNonlinearSOutNBeta, SPNonlinearSOutNP, SPNonlinearSOutND])
         push!(inbounds, node.n_samples)
     end
     return inbounds

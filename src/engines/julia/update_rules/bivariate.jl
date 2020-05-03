@@ -1,10 +1,10 @@
 export
-ruleSPBivariateLIn1MNG,
-ruleSPBivariateLIn2MGN,
-ruleSPBivariateLOutNGG,
-ruleMBivariateLOutNGG
+ruleSPBivariateSIn1MNG,
+ruleSPBivariateSIn2MGN,
+ruleSPBivariateSOutNGG,
+ruleMBivariateSOutNGG
 
-function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Univariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
+function ruleSPBivariateSOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Univariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in2.dist)
@@ -22,7 +22,7 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariat
     end
 end
 
-function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Univariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
+function ruleSPBivariateSOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Univariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in2.dist)
@@ -46,7 +46,7 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivari
     end
 end
 
-function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Multivariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
+function ruleSPBivariateSOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Multivariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in2.dist)
@@ -71,7 +71,7 @@ function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariat
     end
 end
 
-function ruleSPBivariateLOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Multivariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
+function ruleSPBivariateSOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Multivariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in2.dist)
@@ -118,7 +118,7 @@ function approxMessageBivariate(m_prior::Array,v_prior,m_post::Array,v_post)
     return Message(Multivariate, GaussianWeightedMeanPrecision, xi=xi_message, w=w_message)
 end
 
-function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
+function ruleSPBivariateSIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
     if status[:updated]
         status[:updated] = false
@@ -165,7 +165,7 @@ function ruleSPBivariateLIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
 end
 
-function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
+function ruleSPBivariateSIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
     if status[:updated]
         status[:updated] = false
@@ -211,7 +211,7 @@ function ruleSPBivariateLIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
 end
 
-function ruleMBivariateLOutNGG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
+function ruleMBivariateSOutNGG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
     dist_in1 = convert(ProbabilityDistribution{V1, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{V2, GaussianMeanVariance}, msg_in2.dist)
@@ -259,7 +259,7 @@ function collectSumProductNodeInbounds(node::Bivariate{Sampling}, entry::Schedul
         inbound_interface = ultimatePartner(node_interface)
         if node_interface == entry.interface
             haskey(interface_to_schedule_entry, node_interface) || error("This rule requires the incoming message on the out interface. Try altering execution order to ensure its availability.")
-            if entry.message_update_rule == SPBivariateLOutNGG
+            if entry.message_update_rule == SPBivariateSOutNGG
                 push!(inbounds, nothing)
             else
                 push!(inbounds, interface_to_schedule_entry[inbound_interface])
