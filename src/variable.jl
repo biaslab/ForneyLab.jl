@@ -153,15 +153,16 @@ function rv_form2(def, target, node, options)
 
     # Form 2 always creates a new Variable
     # Build total expression
+    var_id_sym = gensym()
     return quote
         begin
             $(def)
-            var_id = $(var_id)
-            if var_id != :auto
+            $(var_id_sym) = $(var_id)
+            if $(var_id_sym) != :auto
                 # update id of newly created Variable
-                currentGraph().variables[var_id] = $(target)
+                currentGraph().variables[$(var_id_sym)] = $(target)
                 delete!(currentGraph().variables, $(target).id)
-                $(target).id = var_id
+                $(target).id = $(var_id_sym)
             end
             $(target)
         end
