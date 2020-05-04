@@ -1,4 +1,4 @@
-export Variable
+export Variable, @RV
 
 """
 A `Variable` encompasses one or more edges in a `FactorGraph`.
