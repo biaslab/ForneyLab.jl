@@ -126,9 +126,14 @@ end
     y::ProbabilityDistribution{Univariate, Function},
     z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
 
-    sample_factor = Vector{Number}(undef, 1000)
+    # sample_factor = Vector{Number}(undef, 1000)
+    # for i=1:1000
+    #     sample_factor[i] = sample(x)
+    # end
+
+    sample_factor = []
     for i=1:1000
-        sample_factor[i] = sample(x)
+        push!(sample_factor,sample(x))
     end
 
     log_pdf=(a) -> y.params[:log_pdf](a)
