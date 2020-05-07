@@ -66,6 +66,8 @@ function unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, SampleL
     return sum(log.(1 .- dist.params[:s]) .* dist.params[:w])
 end
 
+unsafeMeanVector(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = sum(dist.params[:s].*dist.params[:w])
+
 isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = abs(sum(dist.params[:w]) - 1) < 0.001
 
 # Prod functions are defined in such a way that bootstrap particle filter will be allowed
@@ -126,14 +128,9 @@ end
     y::ProbabilityDistribution{Univariate, Function},
     z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
 
-    # sample_factor = Vector{Number}(undef, 1000)
-    # for i=1:1000
-    #     sample_factor[i] = sample(x)
-    # end
-
-    sample_factor = []
+    sample_factor = Vector{Number}(undef, 1000)
     for i=1:1000
-        push!(sample_factor,sample(x))
+        sample_factor[i] = sample(x)
     end
 
     log_pdf=(a) -> y.params[:log_pdf](a)
@@ -159,6 +156,30 @@ end
         sample_factor[i] = sample(x)
     end
 
+    log_pdf=(a) -> y.params[:log_pdf](a)
+    log_pdf_sf = log_pdf.(sample_factor)
+    w = exp.(log_pdf_sf)
+    H2 = log(sum(w)/1000) # To compute differential entropy
+    w = w./sum(w)
+    z.params[:w] = w
+    z.params[:s] = sample_factor
+    log_pdfx=(a) -> logPdf(x, a)
+    H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) # To compute differential entropy
+    z.params[:diff_ent] = H1+H2
+    return z
+end
+
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Univariate, Categorical},
+    y::ProbabilityDistribution{Multivariate, Function},
+    z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
+
+
+    sample_factor = []
+    for i=1:1000
+        push!(sample_factor,sample(x))
+    end
+    
     log_pdf=(a) -> y.params[:log_pdf](a)
     log_pdf_sf = log_pdf.(sample_factor)
     w = exp.(log_pdf_sf)
