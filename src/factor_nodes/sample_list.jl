@@ -167,6 +167,30 @@ end
     return z
 end
 
+#This prod function is defined especially for nonconjugate inference
+function prod!(
+    x::ProbabilityDistribution{Univariate},
+    y::ProbabilityDistribution{Univariate},
+    z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
+
+    sample_factor = Vector{Number}(undef, 1000)
+    for i=1:1000
+        sample_factor[i] = sample(x)
+    end
+
+    log_pdf=(a) -> logPdf(y,a)
+    log_pdf_sf = log_pdf.(sample_factor)
+    w = exp.(log_pdf_sf)
+    H2 = log(sum(w)/1000) # To compute differential entropy
+    w = w./sum(w)
+    z.params[:w] = w
+    z.params[:s] = sample_factor
+    log_pdfx=(a) -> logPdf(x, a)
+    H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) # To compute differential entropy
+    z.params[:diff_ent] = H1+H2
+    return z
+end
+
 # Differential entropy for SampleList
 function differentialEntropy(dist::ProbabilityDistribution{V, SampleList} where V<:VariateType)
     dist.params[:diff_ent] === nothing && error("No applicable rule to approximate differential entropy for SampleList distribution")

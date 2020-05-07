@@ -532,10 +532,6 @@ end
         z.params[:m] = mean
         z.params[:v] = var
     end
-    if x.params[:ApproximationType] == "BivariateL"
-        z.params[:m] = x.params[:m]
-        z.params[:v] = x.params[:v]
-    end
 
     return z
 end
@@ -559,10 +555,6 @@ end
 
         z.params[:m] = mean
         z.params[:v] = var
-    end
-    if x.params[:ApproximationType] == "BivariateL"
-        z.params[:m] = x.params[:m]
-        z.params[:v] = x.params[:v]
     end
 
     return z
@@ -595,6 +587,112 @@ function prod!(
     else
         z.params[:ApproximationType] = "NonlinearL"
     end
+
+    return z
+end
+
+#Following prod functions has nothing to do with nonlinear node but to make inference with nonconjugacies that include Gaussian message
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Univariate, F1},
+    y::ProbabilityDistribution{Univariate, F2},
+    z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F1<:Union{Bernoulli,Beta,Categorical,Gamma,LogNormal,Poisson},F2<:Gaussian}
+
+    y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
+    log_joint(s) = logPdf(y,s) + logPdf(x,s)
+    #Optimization with gradient ascent
+    d_log_joint(s) = ForwardDiff.derivative(log_joint, s)
+    m_old = y.params[:m] #initial point
+    step_size = 0.01 #initial step size
+    satisfied = 0
+    step_count = 0
+    m_total = 0.0
+    m_average = 0.0
+    m_new = 0.0
+    while satisfied == 0
+        m_new = m_old + step_size*d_log_joint(m_old)
+        if log_joint(m_new) > log_joint(m_old)
+            proposal_step_size = 10*step_size
+            m_proposal = m_old + proposal_step_size*d_log_joint(m_old)
+            if log_joint(m_proposal) > log_joint(m_new)
+                m_new = m_proposal
+                step_size = proposal_step_size
+            end
+        else
+            step_size = 0.1*step_size
+            m_new = m_old + step_size*d_log_joint(m_old)
+        end
+        step_count += 1
+        m_total += m_old
+        m_average = m_total / step_count
+        if step_count > 10
+            if abs((m_new-m_average)/m_average) < 0.1
+                satisfied = 1
+            end
+        elseif step_count > 250
+            satisfied = 1
+        end
+        m_old = m_new
+    end
+    mean = m_new
+    var = - 1.0 / ForwardDiff.derivative(d_log_joint, mean)
+
+    z.params[:m] = mean
+    z.params[:v] = var
+
+    return z
+end
+
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Multivariate, F1},
+    y::ProbabilityDistribution{Multivariate, F2},
+    z::ProbabilityDistribution{Multivariate, GaussianMeanVariance}=ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))) where {F1<:Union{Dirichlet,Wishart},F2<:Gaussian}
+
+    y = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, y)
+    dim = dims(y)
+    log_joint(s) = logPdf(y,s) + logPdf(x,s)
+    #Optimization with gradient ascent
+    d_log_joint(s) = ForwardDiff.gradient(log_joint, s)
+    m_initial = y.params[:m] #initial point
+    step_size = 0.01 #initial step size
+    dim_tot = length(m_initial)
+    m_total = zeros(dim_tot)
+    m_average = zeros(dim_tot)
+    m_new = zeros(dim_tot)
+    m_old = m_initial
+    satisfied = false
+    step_count = 0
+
+    while !satisfied
+        m_new = m_old .+ step_size.*d_log_joint(m_old)
+        if log_joint(m_new) > log_joint(m_old)
+            proposal_step_size = 10*step_size
+            m_proposal = m_old .+ proposal_step_size.*d_log_joint(m_old)
+            if log_joint(m_proposal) > log_joint(m_new)
+                m_new = m_proposal
+                step_size = proposal_step_size
+            end
+        else
+            step_size = 0.1*step_size
+            m_new = m_old .+ step_size.*d_log_joint(m_old)
+        end
+        step_count += 1
+        m_total .+= m_old
+        m_average = m_total ./ step_count
+        if step_count > 10
+            if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim_tot*0.1
+                satisfied = true
+            end
+        end
+        if step_count > dim_tot*250
+            satisfied = true
+        end
+        m_old = m_new
+    end
+    mean = m_new
+    var = inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, mean))
+
+    z.params[:m] = mean
+    z.params[:v] = var
 
     return z
 end
@@ -639,7 +737,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
 
     inbounds = Any[]
-    
+
     # Push function (and inverse) to calling signature
     # These functions needs to be defined in the scope of the user
     push!(inbounds, Dict{Symbol, Any}(:g => node.g,
