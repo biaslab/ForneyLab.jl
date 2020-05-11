@@ -72,16 +72,16 @@ Examples:
 """
 macro RV(options_expr::Expr, definition)
     # Parse options
-    options_expr.head == :vect || return :(error("Incorrect use of @RV macro: options argument should be a vector expression"))
-    definition isa Expr || definition isa Symbol || return :(error("Incorrect use of @RV macro: definition expression should be a valid expression or symbol"))
+    options_expr.head == :vect || return :(error("Incorrect use of @RV macro: options argument must be a vector expression"))
+    definition isa Expr || definition isa Symbol || return :(error("Incorrect use of @RV macro: definition expression must be a valid expression or symbol"))
     options = Dict{Symbol, Any}()
     for arg in options_expr.args
-        arg isa Expr && arg.head == :(=) || return :(error("Incorrect use of @RV macro: options item should be an assignment expression"))
+        arg isa Expr && arg.head == :(=) || return :(error("Incorrect use of @RV macro: options item must be an assignment expression"))
         options[arg.args[1]] = arg.args[2]
     end
 
     # Parse RV definition expression
-    # It can take three forms.
+    # It can take three forms:
     # FORM 1: @RV x ~ Probdist(...)
     # FORM 2: @RV x = a + b
     # FORM 3: @RV x
@@ -152,7 +152,7 @@ function rv_form2(def, target, node, options)
     var_id = extract_variable_id(target, options)
 
     # Form 2 always creates a new Variable
-    # Build total expression
+    # Build complete expression
     var_id_sym = gensym()
     return quote
         begin
@@ -180,7 +180,7 @@ function rv_form3(def, target, node, options)
     end
 end
 
-# In case variable is a symbol
+# If variable expression is a symbol
 # RV x ...
 function extract_variable_id(expr::Symbol, options)
     if haskey(options, :id)
@@ -190,7 +190,7 @@ function extract_variable_id(expr::Symbol, options)
     end
 end
 
-# In case variable is an indexing expression
+# If variable expression is an indexing expression
 # RV x[i] ...
 function extract_variable_id(expr::Expr, options)
     if haskey(options, :id)
@@ -211,7 +211,7 @@ function check_id_available(expr)
     return :(!haskey(currentGraph().variables, $(expr)) ? $(expr) : error("Specified id is already assigned to another Variable"))
 end
 
-# Ensure variable has a unique id in a current factor graph, generate a new one otherwise
+# Ensure that variable has a unique id in a current factor graph, generate a new one otherwise
 function guard_variable_id(expr)
     idsymbol = :(Symbol($(expr)))
     return :(!haskey(currentGraph().variables, $idsymbol) ? $idsymbol : ForneyLab.generateId(Variable))

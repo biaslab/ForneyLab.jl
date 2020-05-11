@@ -6,7 +6,7 @@ using ForneyLab
 @testset "Variable" begin
     g = FactorGraph()
 
-    # Variable should construct and be assigned to graph
+    # Variable call should construct a Variable that is assigned to graph
     var = Variable(id=:my_var)
     @test isa(var, Variable)
     @test length(g.variables) == 1
@@ -86,7 +86,7 @@ end
     x = constant(0.0)
     @RV y ~ GaussianMeanVariance(x, constant(1.0))
     @test length(g.variables) == 3 # including constants
-    @test y.id == :y # automatically assign id based on variable name in code
+    @test y.id == :y # automatically assigned id based on variable name in code
     @test haskey(g.variables, y.id)
     @test g.variables[y.id] === y
 
@@ -133,7 +133,7 @@ end
     @test g.variables[:x_new] === x
     @test length(g.variables) == 2
 
-    # @RV should throw on incorrect usage
+    # @RV should throw an exception on incorrect usage
     @test_throws ErrorException @RV 1
     @test_throws ErrorException @RV [ 1 ]
     @test_throws ErrorException @RV [ 1 ] 1

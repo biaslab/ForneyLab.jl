@@ -157,8 +157,8 @@ Example:
     end
 """
 macro symmetrical(fn::Expr)
-    # Check we are actually on a function definition and not something else
-    # Function definitions maybe something like
+    # Check if macro is applied to a function definition
+    # Valid function definitions include:
     # 1. foo([ args... ]) [ where ... [ where ... [ ... ] ] ] = :block
     # 2. function foo([ args... ]) [ where ... [ where ... [ ... ] ] ]
     #        :block
@@ -171,7 +171,7 @@ macro symmetrical(fn::Expr)
             $(swap_arguments(fn))
         end)
     else
-        error("@symmetrical macro can be used as a meta flag only for functions definitions")
+        error("@symmetrical macro can be applied only to function definitions")
     end
 end
 
@@ -184,7 +184,7 @@ function swap_arguments(fn::Expr)
         swapped.args[1].args[2] = fn.args[1].args[3]
         swapped.args[1].args[3] = fn.args[1].args[2]
     else
-        error("Function method passed for @symmetrical macro should have more than 2 arguments")
+        error("Function method passed for @symmetrical macro must have more than 2 arguments")
     end
 
     return swapped
