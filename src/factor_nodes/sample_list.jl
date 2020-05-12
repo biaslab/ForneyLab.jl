@@ -44,10 +44,12 @@ unsafeMean(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = 
 
 unsafeLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = sum(log.(dist.params[:s]).*dist.params[:w])
 
-#Unbiased variance estimates
+# Unbiased (co)variance estimates
 unsafeVar(dist::ProbabilityDistribution{Univariate, SampleList}) = (length(dist.params[:s])/(length(dist.params[:s])-1))*sum((dist.params[:s].-unsafeMean(dist)).^2 .*dist.params[:w])
+unsafeCov(dist::ProbabilityDistribution{Univariate, SampleList}) = unsafeVar(dist)
 
-function unsafeVar(dist::ProbabilityDistribution{Multivariate, SampleList})
+unsafeVar(dist::ProbabilityDistribution{Multivariate, SampleList}) = diag(unsafeCov(dist))
+function unsafeCov(dist::ProbabilityDistribution{Multivariate, SampleList})
     tot = zeros(dims(dist), dims(dist))
     m = unsafeMean(dist)
     samples = dist.params[:s]
@@ -58,7 +60,7 @@ function unsafeVar(dist::ProbabilityDistribution{Multivariate, SampleList})
     return (length(dist.params[:s])/(length(dist.params[:s])-1)).*tot
 end
 
-unsafeMeanCov(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = (unsafeMean(dist), unsafeVar(dist))
+unsafeMeanCov(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = (unsafeMean(dist), unsafeCov(dist))
 
 function unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, SampleList})
     all(0 .<= dist.params[:s] .< 1) || error("unsafeMirroredLogMean does not apply to variables outside of the range [0, 1)")
