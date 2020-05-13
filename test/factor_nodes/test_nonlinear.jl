@@ -5,7 +5,7 @@ using Random
 using LinearAlgebra
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, ProbabilityDistribution, Unscented, Sampling
-using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearUTOutNGX, SPNonlinearUTInGX, SPNonlinearSInMN, SPNonlinearSOutNG, MNonlinearUTNGX
+using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearUTOutNGX, SPNonlinearUTInGX, SPNonlinearSIn1MN, SPNonlinearSOutNM, MNonlinearUTNGX
 using ForneyLab: unscentedStatistics, smoothRTS, collectStatistics, marginalizeGaussianMV, concatenateGaussianMV, split
 
 Random.seed!(1234)
@@ -121,16 +121,17 @@ end
     @test ruleSPNonlinearUTOutNGX(h, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[1.9999999997671694], v=mat(67.00000899657607))
 end
 
-@testset "SPNonlinearSOutNG" begin
+@testset "SPNonlinearSOutNM" begin
     samples = 2.0 .+ randn(100000)
     p_dist = ProbabilityDistribution(Univariate, SampleList, s=samples, w=ones(100000)/100000)
 
-    @test SPNonlinearSOutNG <: SumProductRule{Nonlinear{Sampling}}
-    @test outboundType(SPNonlinearSOutNG) == Message{SampleList}
-    @test isApplicable(SPNonlinearSOutNG, [Nothing, Message{Gaussian}])
+    @test SPNonlinearSOutNM <: SumProductRule{Nonlinear{Sampling}}
+    @test outboundType(SPNonlinearSOutNM) == Message{SampleList}
+    @test isApplicable(SPNonlinearSOutNM, [Nothing, Message{Gaussian}])
+    @test isApplicable(SPNonlinearSOutNM, [Nothing, Message{Bernoulli}])
     
-    @test abs(unsafeMean(ruleSPNonlinearSOutNG(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 100000).dist) - unsafeMean(p_dist)) < 0.2
-    @test abs(unsafeVar(ruleSPNonlinearSOutNG(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 100000).dist) - unsafeVar(p_dist)) < 0.2
+    @test abs(unsafeMean(ruleSPNonlinearSOutNM(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 100000).dist) - unsafeMean(p_dist)) < 0.2
+    @test abs(unsafeVar(ruleSPNonlinearSOutNM(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 100000).dist) - unsafeVar(p_dist)) < 0.2
 end
 
 @testset "SPNonlinearUTIn1GG" begin
@@ -167,12 +168,12 @@ end
     @test ruleSPNonlinearUTInGX(h, h_inv_x, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.6187538476660848], v=mat(0.14431487274475785))
 end
 
-@testset "SPNonlinearSInMN" begin
-    @test SPNonlinearSInMN <: SumProductRule{Nonlinear{Sampling}}
-    @test outboundType(SPNonlinearSInMN) == Message{Function}
-    @test isApplicable(SPNonlinearSInMN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
+@testset "SPNonlinearSIn1MN" begin
+    @test SPNonlinearSIn1MN <: SumProductRule{Nonlinear{Sampling}}
+    @test outboundType(SPNonlinearSIn1MN) == Message{Function}
+    @test isApplicable(SPNonlinearSIn1MN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
     
-    log_pdf(x) = ruleSPNonlinearSInMN(f, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), nothing).dist.params[:log_pdf](x)
+    log_pdf(x) = ruleSPNonlinearSIn1MN(f, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), nothing).dist.params[:log_pdf](x)
     @test log_pdf(1.5) == logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
 end
 
@@ -281,7 +282,7 @@ end
 
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearSOutNG(g, nothing, messages[2], 1000)", algo_code)
+    @test occursin("ruleSPNonlinearSOutNM(g, nothing, messages[2], 1000)", algo_code)
 end
 
 end #module

@@ -86,7 +86,7 @@ unsafeMeanVector(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateT
 isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = abs(sum(dist.params[:w]) - 1) < 0.001
 
 @symmetrical function prod!(
-    x::ProbabilityDistribution{V},
+    x::ProbabilityDistribution{V}, # Includes function distributions
     y::ProbabilityDistribution{V, SampleList},
     z::ProbabilityDistribution{V, SampleList}=ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
 
@@ -113,11 +113,33 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
     return z
 end
 
-"""
-Compute product weights and entropy from log-pdf transformed samples
-"""
-function sampleWeightsAndEntropy(log_samples_x::Vector, log_samples_y::Vector)
-    n_samples = length(log_samples_x)
+# Disambiguate beteen SampleList product and nonlinear product of any distribution with a Gaussian
+# Following two definitions must be parameterized on separate Univariate and Multivariate types
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Univariate, F},
+    y::ProbabilityDistribution{Univariate, SampleList}) where F<:Gaussian
+
+    z = ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0])
+
+    return prod!(x, y, z) # Return a SampleList
+end
+
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Multivariate, F},
+    y::ProbabilityDistribution{Multivariate, SampleList}) where F<:Gaussian
+
+    z = ProbabilityDistribution(Multivariate, SampleList, s=[[0.0]], w=[1.0])
+    
+    return prod!(x, y, z) # Return a SampleList
+end
+
+function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistribution)
+    n_samples = 1000 # Number of samples is fixed
+    samples = sample(x, n_samples)
+
+    # Apply log-pdf functions to the samples
+    log_samples_x = logPdf.([x], samples)
+    log_samples_y = logPdf.([y], samples)
 
     # Extract the sample weights
     w_raw = exp.(log_samples_y) # Unnormalized weights
@@ -132,62 +154,26 @@ function sampleWeightsAndEntropy(log_samples_x::Vector, log_samples_y::Vector)
     return (weights, entropy)
 end
 
-# General product definition that returns a SampleList instead od a ProbabilityDistribution
+# General product definition that returns a SampleList
 function prod!(
     x::ProbabilityDistribution{V},
     y::ProbabilityDistribution{V},
     z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
 
-    n_samples = 1000 # Number of samples is fixed
-    samples = sample(x, n_samples)
-
-    # Apply log-pdf functions to the samples
-    log_samples_x = logPdf.([x], samples)
-    log_samples_y = logPdf.([y], samples)
-
-    (weights, entropy) = sampleWeightsAndEntropy(log_samples_x, log_samples_y)
+    (weights, entropy) = sampleWeightsAndEntropy(x, y)
 
     z.params[:s] = samples
     z.params[:w] = weights
     z.params[:entropy] = entropy
 end
 
-# Product between a general distribution and a distribution defined through a Function
-@symmetrical function prod!(
-    x::ProbabilityDistribution{V},
-    y::ProbabilityDistribution{V, Function},
-    z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
-
-    n_samples = 1000 # Number of samples is fixed
-    samples = sample(x, n_samples)
-
-    # Apply log-pdf functions to the samples
-    log_samples_x = logPdf.([x], samples)
-    log_samples_y = y.params[:log_pdf].(samples)
-
-    (weights, entropy) = sampleWeightsAndEntropy(log_samples_x, log_samples_y)
-
-    z.params[:s] = samples
-    z.params[:w] = weights
-    z.params[:entropy] = entropy
-
-    return z
-end
-
-# Specialized product definition accounts for the Categorical VariateType
+# Specialized product definition that accounts for the Categorical VariateType
 @symmetrical function prod!(
     x::ProbabilityDistribution{Univariate, Categorical},
     y::ProbabilityDistribution{Multivariate, Function},
     z::ProbabilityDistribution{Univariate, SampleList} = ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
 
-    n_samples = 1000 # Number of samples is fixed
-    samples = sample(x, n_samples)
-
-    # Apply log-pdf functions to the samples
-    log_samples_x = logPdf.([x], samples)
-    log_samples_y = y.params[:log_pdf].(samples)
-
-    (weights, entropy) = sampleWeightsAndEntropy(log_samples_x, log_samples_y)
+    (weights, entropy) = sampleWeightsAndEntropy(x, y)
 
     z.params[:s] = samples
     z.params[:w] = weights

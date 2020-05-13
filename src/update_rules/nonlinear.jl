@@ -45,49 +45,12 @@ end
 @sumProductRule(:node_type     => Nonlinear{Sampling},
                 :outbound_type => Message{Function},
                 :inbound_types => (Message{FactorFunction}, Nothing),
-                :name          => SPNonlinearSInMN)
+                :name          => SPNonlinearSIn1MN)
 
 @sumProductRule(:node_type     => Nonlinear{Sampling},
                 :outbound_type => Message{SampleList},
-                :inbound_types => (Nothing, Message{Gaussian}),
-                :name          => SPNonlinearSOutNG)
-
-@sumProductRule(:node_type     => Nonlinear{Sampling},
-                :outbound_type => Message{SampleList},
-                :inbound_types => (Nothing, Message{Bernoulli}),
-                :name          => SPNonlinearSOutNB)
-
-@sumProductRule(:node_type     => Nonlinear{Sampling},
-                :outbound_type => Message{SampleList},
-                :inbound_types => (Nothing, Message{Categorical}),
-                :name          => SPNonlinearSOutNC)
-
-@sumProductRule(:node_type     => Nonlinear{Sampling},
-                :outbound_type => Message{SampleList},
-                :inbound_types => (Nothing, Message{LogNormal}),
-                :name          => SPNonlinearSOutNLn)
-
-@sumProductRule(:node_type     => Nonlinear{Sampling},
-                :outbound_type => Message{SampleList},
-                :inbound_types => (Nothing, Message{Gamma}),
-                :name          => SPNonlinearSOutNGamma)
-
-@sumProductRule(:node_type     => Nonlinear{Sampling},
-                :outbound_type => Message{SampleList},
-                :inbound_types => (Nothing, Message{Beta}),
-                :name          => SPNonlinearSOutNBeta)
-
-@sumProductRule(:node_type     => Nonlinear{Sampling},
-                :outbound_type => Message{SampleList},
-                :inbound_types => (Nothing, Message{Poisson}),
-                :name          => SPNonlinearSOutNP)
-
-@sumProductRule(:node_type     => Nonlinear{Sampling},
-                :outbound_type => Message{SampleList},
-                :inbound_types => (Nothing, Message{Dirichlet}),
-                :name          => SPNonlinearSOutND)
-
-
+                :inbound_types => (Nothing, Message),
+                :name          => SPNonlinearSOutNM)
 
 mutable struct MNonlinearUTNGX <: MarginalRule{Nonlinear{Unscented}} end
 function isApplicable(::Type{MNonlinearUTNGX}, input_types::Vector{<:Type})

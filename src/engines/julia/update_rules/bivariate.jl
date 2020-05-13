@@ -325,11 +325,12 @@ function collectMarginalNodeInbounds(node::Bivariate, entry::MarginalEntry)
     return inbounds
 end
 
-################################################################################
+
+#---------------------------------
 # Gradient optimization subroutine
-################################################################################
+#---------------------------------
+
 function gradientOptimization(log_joint::Function, d_log_joint::Function, m_initial, step_size)
-    
     dim_tot = length(m_initial)
     m_total = zeros(dim_tot)
     m_average = zeros(dim_tot)
@@ -364,6 +365,7 @@ function gradientOptimization(log_joint::Function, d_log_joint::Function, m_init
         end
         m_old = m_new
     end
+
     return m_new
 end
 

@@ -114,6 +114,10 @@ unsafeMode(dist::ProbabilityDistribution{T, Function}) where T<:VariateType = de
 
 vague(::Type{Function}) = ProbabilityDistribution(Univariate, Function)
 
+isProper(dist::ProbabilityDistribution{<:VariateType, Function}) = haskey(dist.params, :log_pdf)
+
+logPdf(dist::ProbabilityDistribution{<:VariateType, Function}, x) = dist.params[:log_pdf](x)
+
 """
 Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)
 """

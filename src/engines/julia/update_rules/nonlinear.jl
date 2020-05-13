@@ -5,15 +5,8 @@ ruleSPNonlinearUTOutNG,
 ruleSPNonlinearUTOutNGX,
 ruleSPNonlinearUTIn1GG,
 ruleSPNonlinearUTInGX,
-ruleSPNonlinearSInMN,
-ruleSPNonlinearSOutNG,
-ruleSPNonlinearSOutNB,
-ruleSPNonlinearSOutNC,
-ruleSPNonlinearSOutNLn,
-ruleSPNonlinearSOutNGamma,
-ruleSPNonlinearSOutNBeta,
-ruleSPNonlinearSOutNP,
-ruleSPNonlinearSOutND,
+ruleSPNonlinearSIn1MN,
+ruleSPNonlinearSOutNM,
 ruleMNonlinearUTNGX,
 prod!
 
@@ -140,9 +133,10 @@ function smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_o
     return (m_bw_in, V_bw_in)
 end
 
-#-------------
-# Update Rules
-#-------------
+
+#-----------------------
+# Unscented Update Rules
+#-----------------------
 
 # Forward rule (unscented transform)
 function ruleSPNonlinearUTOutNG(g::Function,
@@ -315,384 +309,69 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
     return inbounds
 end
 
-function ruleSPNonlinearSInMN(g::Function, msg_out::Message{F, Univariate}, msg_in1::Nothing) where {F<:SoftFactor}
-    try
-        ForwardDiff.derivative(g, 0)
-        return Message(Univariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="NonlinearL")
-    catch
-        return Message(Multivariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="NonlinearL")
-    end
+
+#----------------------
+# Sampling Update Rules
+#----------------------
+
+function ruleSPNonlinearSIn1MN(g::Function, msg_out::Message{F, V}, msg_in1::Nothing) where {F<:FactorFunction, V<:VariateType}
+    return Message(V, Function, log_pdf = (z)->logPdf(msg_out.dist, g(z)))
 end
 
-function ruleSPNonlinearSInMN(g::Function, msg_out::Message{F, Multivariate}, msg_in1::Nothing) where {F<:SoftFactor}
-    try
-        ForwardDiff.derivative(g, 0)
-        return Message(Univariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="NonlinearL")
-    catch
-        return Message(Multivariate, Function, log_pdf=(z) -> logPdf(msg_out.dist, g(z)), ApproximationType="NonlinearL")
-    end
+function ruleSPNonlinearSOutNM(g::Function, msg_out::Nothing, msg_in1::Message, n_samples::Int)
+    samples = g.(sample(msg_in1.dist, n_samples))
+    weights = ones(n_samples)/n_samples
+
+    d_out = length(samples[1])
+    (d_out == 1) ? V=Univariate : V=Multivariate # Extract outbound VariateType from function output
+
+    return Message(V, SampleList, s=samples, w=weights)
 end
 
-function ruleSPNonlinearSOutNG(g::Function, msg_out::Nothing, msg_in1::Message{F, Univariate}, n_samples::Int) where {F<:Gaussian}
-    # The forward message is parameterized by a SampleList
-    dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
+function prod!(
+    x::ProbabilityDistribution{V, Function},
+    y::ProbabilityDistribution{V, Function},
+    z::ProbabilityDistribution{V, Function}=ProbabilityDistribution(V, Function, log_pdf=(s)->s)) where V<:VariateType
 
-    sample_list = g.(dist_in1.params[:m] .+ (sqrt(dist_in1.params[:v]).*randn(n_samples)))
+    z.params[:log_pdf] = ( (s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s) )
 
-    weight_list = ones(n_samples)/n_samples
-
-    if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
-    else
-        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
-    end
-
-end
-
-function ruleSPNonlinearSOutNG(g::Function, msg_out::Nothing, msg_in1::Message{F, Multivariate}, n_samples::Int) where {F<:Gaussian}
-    # The forward message is parameterized by a SampleList
-    dist_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
-
-    CL = cholesky(dist_in1.params[:v]).L
-    dim = dims(dist_in1)
-    sample_list = []
-    for j=1:n_samples
-        sample = g(dist_in1.params[:m] + CL*randn(dim))
-        push!(sample_list,sample)
-    end
-
-    weight_list = ones(n_samples)/n_samples
-
-    if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
-    else
-        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
-    end
-
-end
-
-function ruleSPNonlinearSOutNB(g::Function, msg_out::Nothing, msg_in1::Message{Bernoulli, Univariate}, n_samples::Int)
-    # The forward message is parameterized by a SampleList
-    sample_list = []
-    for i=1:n_samples
-        push!(sample_list,g(sample(msg_in1.dist)))
-    end
-
-    weight_list = ones(n_samples)/n_samples
-
-    if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
-    else
-        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
-    end
-end
-
-function ruleSPNonlinearSOutNC(g::Function, msg_out::Nothing, msg_in1::Message{Categorical, Univariate}, n_samples::Int)
-    # The forward message is parameterized by a SampleList
-    sample_list = []
-    for i=1:n_samples
-        push!(sample_list,g(sample(msg_in1.dist)))
-    end
-
-    weight_list = ones(n_samples)/n_samples
-
-    if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
-    else
-        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
-    end
-end
-
-function ruleSPNonlinearSOutNLn(g::Function, msg_out::Nothing, msg_in1::Message{LogNormal, Univariate}, n_samples::Int)
-    # The forward message is parameterized by a SampleList
-    sample_list = []
-    for i=1:n_samples
-        push!(sample_list,g(sample(msg_in1.dist)))
-    end
-
-    weight_list = ones(n_samples)/n_samples
-
-    if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
-    else
-        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
-    end
-end
-
-function ruleSPNonlinearSOutNGamma(g::Function, msg_out::Nothing, msg_in1::Message{Gamma, Univariate}, n_samples::Int)
-    # The forward message is parameterized by a SampleList
-    sample_list = []
-    for i=1:n_samples
-        push!(sample_list,g(sample(msg_in1.dist)))
-    end
-
-    weight_list = ones(n_samples)/n_samples
-
-    if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
-    else
-        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
-    end
-end
-
-function ruleSPNonlinearSOutNBeta(g::Function, msg_out::Nothing, msg_in1::Message{Beta, Univariate}, n_samples::Int)
-    # The forward message is parameterized by a SampleList
-    sample_list = []
-    for i=1:n_samples
-        push!(sample_list,g(sample(msg_in1.dist)))
-    end
-
-    weight_list = ones(n_samples)/n_samples
-
-    if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
-    else
-        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
-    end
-end
-
-function ruleSPNonlinearSOutNP(g::Function, msg_out::Nothing, msg_in1::Message{Poisson, Univariate}, n_samples::Int)
-    # The forward message is parameterized by a SampleList
-    sample_list = []
-    for i=1:n_samples
-        push!(sample_list,g(sample(msg_in1.dist)))
-    end
-
-    weight_list = ones(n_samples)/n_samples
-
-    if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
-    else
-        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
-    end
-end
-
-function ruleSPNonlinearSOutND(g::Function, msg_out::Nothing, msg_in1::Message{Dirichlet, Univariate}, n_samples::Int)
-    # The forward message is parameterized by a SampleList
-    sample_list = []
-    for i=1:n_samples
-        push!(sample_list,g(sample(msg_in1.dist)))
-    end
-
-    weight_list = ones(n_samples)/n_samples
-
-    if length(sample_list[1]) == 1
-        return Message(Univariate, SampleList, s=sample_list, w=weight_list)
-    else
-        return Message(Multivariate, SampleList, s=sample_list, w=weight_list)
-    end
+    return z
 end
 
 @symmetrical function prod!(
-    x::ProbabilityDistribution{Univariate, Function},
+    x::ProbabilityDistribution{Univariate}, # Includes function distributions
     y::ProbabilityDistribution{Univariate, F},
     z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F<:Gaussian}
 
-    if x.params[:ApproximationType] == "NonlinearL"
-        # The product of a log-pdf and Gaussian distribution is approximated by Sampling method
-        y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
-        log_joint(s) = logPdf(y,s) + x.params[:log_pdf](s)
-        #Optimization with gradient ascent
-        d_log_joint(s) = ForwardDiff.derivative(log_joint, s)
-        m_old = y.params[:m] #initial point
-        step_size = 0.01 #initial step size
-        satisfied = 0
-        step_count = 0
-        m_total = 0.0
-        m_average = 0.0
-        m_new = 0.0
-        while satisfied == 0
-            m_new = m_old + step_size*d_log_joint(m_old)
-            if log_joint(m_new) > log_joint(m_old)
-                proposal_step_size = 10*step_size
-                m_proposal = m_old + proposal_step_size*d_log_joint(m_old)
-                if log_joint(m_proposal) > log_joint(m_new)
-                    m_new = m_proposal
-                    step_size = proposal_step_size
-                end
-            else
-                step_size = 0.1*step_size
-                m_new = m_old + step_size*d_log_joint(m_old)
-            end
-            step_count += 1
-            m_total += m_old
-            m_average = m_total / step_count
-            if step_count > 10
-                if abs((m_new-m_average)/m_average) < 0.1
-                    satisfied = 1
-                end
-            elseif step_count > 250
-                satisfied = 1
-            end
-            m_old = m_new
-        end
-        mean = m_new
-        var = - 1.0 / ForwardDiff.derivative(d_log_joint, mean)
+    # Optimize with gradient ascent
+    log_joint(s) = logPdf(y,s) + logPdf(x,s)
+    d_log_joint(s) = ForwardDiff.derivative(log_joint, s)
+    m_initial = unsafeMean(y)
+    
+    mean = gradientOptimization(log_joint, d_log_joint, m_initial, 0.01)
+    prec = -ForwardDiff.derivative(d_log_joint, mean)
 
-        z.params[:m] = mean
-        z.params[:v] = var
-    end
+    z.params[:m] = mean
+    z.params[:w] = prec
 
     return z
 end
 
 @symmetrical function prod!(
-    x::ProbabilityDistribution{Multivariate, Function},
+    x::ProbabilityDistribution{Multivariate}, # Includes function distributions
     y::ProbabilityDistribution{Multivariate, F},
     z::ProbabilityDistribution{Multivariate, GaussianMeanVariance}=ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))) where {F<:Gaussian}
 
-    if x.params[:ApproximationType] == "NonlinearL"
-        # The product of a log-pdf and Gaussian distribution is approximated by Sampling method
-        y = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, y)
-        dim = dims(y)
-        log_joint(s) = logPdf(y,s) + x.params[:log_pdf](s)
-        #Optimization with gradient ascent
-        d_log_joint(s) = ForwardDiff.gradient(log_joint, s)
-        m_initial = y.params[:m] #initial point
-        gradientOptimization(log_joint, d_log_joint, m_initial, 0.01)
-        mean = m_new
-        var = inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, mean))
-
-        z.params[:m] = mean
-        z.params[:v] = var
-    end
-
-    return z
-end
-
-# Think more carefully about the prod of function messages
-function prod!(
-    x::ProbabilityDistribution{Univariate, Function},
-    y::ProbabilityDistribution{Univariate, Function},
-    z::ProbabilityDistribution{Univariate, Function}=ProbabilityDistribution(Univariate, Function, log_pdf=(s)->s, ApproximationType="NonlinearL"))
-
-    z.params[:log_pdf] = ((s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s))
-    if x.params[:ApproximationType] == y.params[:ApproximationType]
-        z.params[:ApproximationType] = x.params[:ApproximationType]
-    else
-        z.params[:ApproximationType] = "NonlinearL"
-    end
-
-    return z
-end
-
-function prod!(
-    x::ProbabilityDistribution{Multivariate, Function},
-    y::ProbabilityDistribution{Multivariate, Function},
-    z::ProbabilityDistribution{Multivariate, Function}=ProbabilityDistribution(Multivariate, Function, log_pdf=(s)->s, ApproximationType="NonlinearL"))
-
-    z.params[:log_pdf] = ((s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s))
-    if x.params[:ApproximationType] == y.params[:ApproximationType]
-        z.params[:ApproximationType] = x.params[:ApproximationType]
-    else
-        z.params[:ApproximationType] = "NonlinearL"
-    end
-
-    return z
-end
-
-#Following prod functions has nothing to do with nonlinear node but to make inference with nonconjugacies that include Gaussian message
-@symmetrical function prod!(
-    x::ProbabilityDistribution{Univariate, F1},
-    y::ProbabilityDistribution{Univariate, F2},
-    z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F1<:Union{Bernoulli,Beta,Categorical,Gamma,LogNormal,Poisson},F2<:Gaussian}
-
-    y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
+    # Optimize with gradient ascent
     log_joint(s) = logPdf(y,s) + logPdf(x,s)
-    #Optimization with gradient ascent
-    d_log_joint(s) = ForwardDiff.derivative(log_joint, s)
-    m_old = y.params[:m] #initial point
-    step_size = 0.01 #initial step size
-    satisfied = 0
-    step_count = 0
-    m_total = 0.0
-    m_average = 0.0
-    m_new = 0.0
-    while satisfied == 0
-        m_new = m_old + step_size*d_log_joint(m_old)
-        if log_joint(m_new) > log_joint(m_old)
-            proposal_step_size = 10*step_size
-            m_proposal = m_old + proposal_step_size*d_log_joint(m_old)
-            if log_joint(m_proposal) > log_joint(m_new)
-                m_new = m_proposal
-                step_size = proposal_step_size
-            end
-        else
-            step_size = 0.1*step_size
-            m_new = m_old + step_size*d_log_joint(m_old)
-        end
-        step_count += 1
-        m_total += m_old
-        m_average = m_total / step_count
-        if step_count > 10
-            if abs((m_new-m_average)/m_average) < 0.1
-                satisfied = 1
-            end
-        elseif step_count > 250
-            satisfied = 1
-        end
-        m_old = m_new
-    end
-    mean = m_new
-    var = - 1.0 / ForwardDiff.derivative(d_log_joint, mean)
-
-    z.params[:m] = mean
-    z.params[:v] = var
-
-    return z
-end
-
-@symmetrical function prod!(
-    x::ProbabilityDistribution{Multivariate, F1},
-    y::ProbabilityDistribution{Multivariate, F2},
-    z::ProbabilityDistribution{Multivariate, GaussianMeanVariance}=ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))) where {F1<:Union{Dirichlet,Wishart},F2<:Gaussian}
-
-    y = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, y)
-    dim = dims(y)
-    log_joint(s) = logPdf(y,s) + logPdf(x,s)
-    #Optimization with gradient ascent
     d_log_joint(s) = ForwardDiff.gradient(log_joint, s)
-    m_initial = y.params[:m] #initial point
-    step_size = 0.01 #initial step size
-    dim_tot = length(m_initial)
-    m_total = zeros(dim_tot)
-    m_average = zeros(dim_tot)
-    m_new = zeros(dim_tot)
-    m_old = m_initial
-    satisfied = false
-    step_count = 0
+    m_initial = unsafeMean(y)
 
-    while !satisfied
-        m_new = m_old .+ step_size.*d_log_joint(m_old)
-        if log_joint(m_new) > log_joint(m_old)
-            proposal_step_size = 10*step_size
-            m_proposal = m_old .+ proposal_step_size.*d_log_joint(m_old)
-            if log_joint(m_proposal) > log_joint(m_new)
-                m_new = m_proposal
-                step_size = proposal_step_size
-            end
-        else
-            step_size = 0.1*step_size
-            m_new = m_old .+ step_size.*d_log_joint(m_old)
-        end
-        step_count += 1
-        m_total .+= m_old
-        m_average = m_total ./ step_count
-        if step_count > 10
-            if sum(sqrt.(((m_new.-m_average)./m_average).^2)) < dim_tot*0.1
-                satisfied = true
-            end
-        end
-        if step_count > dim_tot*250
-            satisfied = true
-        end
-        m_old = m_new
-    end
-    mean = m_new
-    var = inv(- 1.0 .* ForwardDiff.jacobian(d_log_joint, mean))
+    mean = gradientOptimization(log_joint, d_log_joint, m_initial, 0.01)
+    prec = -ForwardDiff.jacobian(d_log_joint, mean)
 
     z.params[:m] = mean
-    z.params[:v] = var
+    z.params[:w] = prec
 
     return z
 end
@@ -757,12 +436,15 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
         end
     end
 
-    # Push n_samples argument only for rules that do sampling
-    if entry.message_update_rule in Set([SPNonlinearSOutNG, SPNonlinearSOutNB, SPNonlinearSOutNC, SPNonlinearSOutNLn, SPNonlinearSOutNGamma, SPNonlinearSOutNBeta, SPNonlinearSOutNP, SPNonlinearSOutND])
-        push!(inbounds, node.n_samples)
+    # Push n_samples to calling signature for forward message
+    if entry.interface == node.interfaces[1]
+        push!(inbounds, Dict{Symbol, Any}(:n_samples => node.n_samples,
+                                          :keyword   => false))
     end
+
     return inbounds
 end
+
 
 #--------
 # Helpers
