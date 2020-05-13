@@ -1,16 +1,120 @@
 export
-ruleSPBivariateSIn1MNG,
-ruleSPBivariateSIn2MGN,
-ruleSPBivariateSOutNGG,
-ruleMBivariateSOutNGG
+ruleSPNonlinearSIn1MNG,
+ruleSPNonlinearSIn2MGN,
+ruleSPNonlinearSOutNGG,
+ruleMNonlinearSOutNGG,
+ruleSPNonlinearSIn1MN,
+ruleSPNonlinearSOutNM,
+prod!
 
-function ruleSPBivariateSOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Univariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
+#----------------------
+# Sampling Update Rules
+#----------------------
+
+function ruleSPNonlinearSIn1MN(g::Function, msg_out::Message{F, V}, msg_in1::Nothing, status::Dict, n_samples::Int) where {F<:FactorFunction, V<:VariateType}
+    return Message(V, Function, log_pdf = (z)->logPdf(msg_out.dist, g(z)))
+end
+
+function ruleSPNonlinearSOutNM(g::Function, msg_out::Nothing, msg_in1::Message, status::Dict, n_samples::Int)
+    samples = g.(sample(msg_in1.dist, n_samples))
+    weights = ones(n_samples)/n_samples
+
+    d_out = length(samples[1])
+    (d_out == 1) ? V=Univariate : V=Multivariate # Extract outbound VariateType from function output
+
+    return Message(V, SampleList, s=samples, w=weights)
+end
+
+function prod!(
+    x::ProbabilityDistribution{V, Function},
+    y::ProbabilityDistribution{V, Function},
+    z::ProbabilityDistribution{V, Function}=ProbabilityDistribution(V, Function, log_pdf=(s)->s)) where V<:VariateType
+    SPNonlinearSIn1MN
+    return z
+end
+
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Univariate}, # Includes function distributions
+    y::ProbabilityDistribution{Univariate, F},
+    z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F<:Gaussian}
+
+    # Optimize with gradient ascent
+    log_joint(s) = logPdf(y,s) + logPdf(x,s)
+    d_log_joint(s) = ForwardDiff.derivative(log_joint, s)
+    m_initial = unsafeMean(y)
+    
+    mean = gradientOptimization(log_joint, d_log_joint, m_initial, 0.01)
+    prec = -ForwardDiff.derivative(d_log_joint, mean)
+
+    z.params[:m] = mean
+    z.params[:w] = prec
+
+    return z
+end
+
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Multivariate}, # Includes function distributions
+    y::ProbabilityDistribution{Multivariate, F},
+    z::ProbabilityDistribution{Multivariate, GaussianMeanVariance}=ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))) where {F<:Gaussian}
+
+    # Optimize with gradient ascent
+    log_joint(s) = logPdf(y,s) + logPdf(x,s)
+    d_log_joint(s) = ForwardDiff.gradient(log_joint, s)
+    m_initial = unsafeMean(y)
+
+    mean = gradientOptimization(log_joint, d_log_joint, m_initial, 0.01)
+    prec = -ForwardDiff.jacobian(d_log_joint, mean)
+
+    z.params[:m] = mean
+    z.params[:w] = prec
+
+    return z
+end
+
+function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::ScheduleEntry)
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
+
+    inbounds = Any[]
+
+    # Push function (and inverse) to calling signature
+    # These functions needs to be defined in the scope of the user
+    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
+                                      :keyword => false))
+
+    for node_interface in node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        if node_interface == entry.interface
+            haskey(interface_to_schedule_entry, node_interface) || error("This rule requires the incoming message on the out interface. Try altering execution order to ensure its availability.")
+            if entry.message_update_rule in [SPNonlinearSOutNGG, SPNonlinearSIn1MN, SPNonlinearSOutNM]
+                push!(inbounds, nothing)
+            else
+                push!(inbounds, interface_to_schedule_entry[inbound_interface])
+            end
+        elseif isa(inbound_interface.node, Clamp)
+            # Hard-code outbound message of constant node in schedule
+            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
+        else
+            # Collect message from previous result
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        end
+    end
+
+    status = "currentGraph().nodes[:$(node.id)].status"
+    push!(inbounds, Dict{Symbol, Any}(:status => status,
+                                      :keyword => false))
+    push!(inbounds, node.n_samples)
+
+    return inbounds
+end
+
+
+function ruleSPNonlinearSOutNGG(g::Function, msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Univariate},  status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in2.dist)
 
-    samples1 = dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(n_samples)
-    samples2 = dist_in2.params[:m] .+ sqrt(dist_in2.params[:v]).*randn(n_samples)
+    samples1 = dist_in1.params[:m] .+ (sqrt(dist_in1.params[:v]).*randn(n_samples))
+    samples2 = dist_in2.params[:m] .+ (sqrt(dist_in2.params[:v]).*randn(n_samples))
 
     sample_list = g.(samples1, samples2)
     weight_list = ones(n_samples)/n_samples
@@ -22,7 +126,7 @@ function ruleSPBivariateSOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariat
     end
 end
 
-function ruleSPBivariateSOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Univariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
+function ruleSPNonlinearSOutNGG(g::Function, msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Univariate}, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in2.dist)
@@ -46,7 +150,7 @@ function ruleSPBivariateSOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivari
     end
 end
 
-function ruleSPBivariateSOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Multivariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
+function ruleSPNonlinearSOutNGG(g::Function, msg_out::Nothing, msg_in1::Message{F1, Univariate}, msg_in2::Message{F2, Multivariate}, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in2.dist)
@@ -71,7 +175,7 @@ function ruleSPBivariateSOutNGG(msg_out::Nothing, msg_in1::Message{F1, Univariat
     end
 end
 
-function ruleSPBivariateSOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Multivariate}, g::Function, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
+function ruleSPNonlinearSOutNGG(g::Function, msg_out::Nothing, msg_in1::Message{F1, Multivariate}, msg_in2::Message{F2, Multivariate}, status::Dict, n_samples::Int) where {F1<:Gaussian,F2<:Gaussian}
     # The forward message is parameterized by a SampleList
     dist_in1 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, msg_in2.dist)
@@ -99,7 +203,7 @@ function ruleSPBivariateSOutNGG(msg_out::Nothing, msg_in1::Message{F1, Multivari
     end
 end
 
-function approxMessageBivariate(m_prior::Number,v_prior::Number,m_post::Number,v_post::Number)
+function approxMessageNonlinear(m_prior::Number,v_prior::Number,m_post::Number,v_post::Number)
 
     if abs(v_prior-v_post) < 1e-5
         v_message = 1e-5
@@ -110,7 +214,7 @@ function approxMessageBivariate(m_prior::Number,v_prior::Number,m_post::Number,v
     return Message(Univariate, GaussianMeanVariance, m=m_message, v=v_message)
 end
 
-function approxMessageBivariate(m_prior::Array,v_prior,m_post::Array,v_post)
+function approxMessageNonlinear(m_prior::Array,v_prior,m_post::Array,v_post)
 
     w_prior, w_post = inv(v_prior+2e-5*diageye(length(m_prior))), inv(v_post+1e-5*diageye(length(m_prior)))
     w_message = w_post - w_prior
@@ -118,7 +222,7 @@ function approxMessageBivariate(m_prior::Array,v_prior,m_post::Array,v_post)
     return Message(Multivariate, GaussianWeightedMeanPrecision, xi=xi_message, w=w_message)
 end
 
-function ruleSPBivariateSIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
+function ruleSPNonlinearSIn1MNG(g::Function, msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
     if status[:updated]
         status[:updated] = false
@@ -159,13 +263,13 @@ function ruleSPBivariateSIn1MNG(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
         mean1, var1, mean2, var2 = decomposePosteriorParameters(dist_in1, dist_in2, m_post, var_post)
         
-        status[:message] = approxMessageBivariate(dist_in2.params[:m],dist_in2.params[:v], mean2, var2)
-        return approxMessageBivariate(dist_in1.params[:m],dist_in1.params[:v],mean1,var1)
+        status[:message] = approxMessageNonlinear(dist_in2.params[:m],dist_in2.params[:v], mean2, var2)
+        return approxMessageNonlinear(dist_in1.params[:m],dist_in1.params[:v],mean1,var1)
     end
 
 end
 
-function ruleSPBivariateSIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
+function ruleSPNonlinearSIn2MGN(g::Function, msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
     if status[:updated]
         status[:updated] = false
@@ -205,13 +309,13 @@ function ruleSPBivariateSIn2MGN(msg_out::Message{Fout, Vout}, msg_in1::Message{F
 
         mean1, var1, mean2, var2 = decomposePosteriorParameters(dist_in1, dist_in2, m_post, var_post)
 
-        status[:message] = approxMessageBivariate(dist_in1.params[:m],dist_in1.params[:v], mean1, var1)
-        return approxMessageBivariate(dist_in2.params[:m],dist_in2.params[:v],mean2,var2)
+        status[:message] = approxMessageNonlinear(dist_in1.params[:m],dist_in1.params[:v], mean1, var1)
+        return approxMessageNonlinear(dist_in2.params[:m],dist_in2.params[:v],mean2,var2)
     end
 
 end
 
-function ruleMBivariateSOutNGG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, g::Function, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
+function ruleMNonlinearSOutNGG(g::Function, msg_out::Message{Fout, Vout}, msg_in1::Message{F1, V1}, msg_in2::Message{F2, V2}, status::Dict, n_samples::Int) where {Fout<:SoftFactor, Vout<:VariateType, F1<:Gaussian, V1<:VariateType, F2<:Gaussian, V2<:VariateType}
 
     dist_in1 = convert(ProbabilityDistribution{V1, GaussianMeanVariance}, msg_in1.dist)
     dist_in2 = convert(ProbabilityDistribution{V2, GaussianMeanVariance}, msg_in2.dist)
@@ -247,48 +351,12 @@ function ruleMBivariateSOutNGG(msg_out::Message{Fout, Vout}, msg_in1::Message{F1
 
 end
 
-#--------------------------
-# Custom inbounds collector
-#--------------------------
-
-function collectSumProductNodeInbounds(node::Bivariate{Sampling}, entry::ScheduleEntry)
-    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
-
-    inbounds = Any[]
-    for node_interface in node.interfaces
-        inbound_interface = ultimatePartner(node_interface)
-        if node_interface == entry.interface
-            haskey(interface_to_schedule_entry, node_interface) || error("This rule requires the incoming message on the out interface. Try altering execution order to ensure its availability.")
-            if entry.message_update_rule == SPBivariateSOutNGG
-                push!(inbounds, nothing)
-            else
-                push!(inbounds, interface_to_schedule_entry[inbound_interface])
-            end
-        elseif isa(inbound_interface.node, Clamp)
-            # Hard-code outbound message of constant node in schedule
-            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
-        else
-            # Collect message from previous result
-            push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        end
-    end
-
-    # Push function (and inverse) to calling signature
-    # These functions needs to be defined in the scope of the user
-    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
-                                      :keyword => false))
-    status = "currentGraph().nodes[:$(node.id)].status"
-    push!(inbounds, Dict{Symbol, Any}(:status => status,
-                                      :keyword => false))
-    push!(inbounds, node.n_samples)
-    return inbounds
-end
 
 #--------------------------
 # Custom marginal inbounds collector
 #--------------------------
 
-function collectMarginalNodeInbounds(node::Bivariate, entry::MarginalEntry)
+function collectMarginalNodeInbounds(node::Nonlinear{Sampling}, entry::MarginalEntry)
     interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
     target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
     inbound_cluster = entry.target # Entry target is a cluster
@@ -301,7 +369,7 @@ function collectMarginalNodeInbounds(node::Bivariate, entry::MarginalEntry)
         current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
         inbound_interface = ultimatePartner(node_interface)
 
-        if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+        if (inbound_interface !== nothing) && isa(inbound_interface.node, Clamp)
             # Edge is clamped, hard-code marginal of constant node
             push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
         elseif (current_pf === entry_pf)

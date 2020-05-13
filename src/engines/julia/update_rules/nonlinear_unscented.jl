@@ -5,8 +5,8 @@ ruleSPNonlinearUTOutNG,
 ruleSPNonlinearUTOutNGX,
 ruleSPNonlinearUTIn1GG,
 ruleSPNonlinearUTInGX,
-ruleSPNonlinearSIn1MN,
-ruleSPNonlinearSOutNM,
+# ruleSPNonlinearSIn1MN,
+# ruleSPNonlinearSOutNM,
 ruleMNonlinearUTNGX,
 prod!
 
@@ -310,71 +310,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
 end
 
 
-#----------------------
-# Sampling Update Rules
-#----------------------
 
-function ruleSPNonlinearSIn1MN(g::Function, msg_out::Message{F, V}, msg_in1::Nothing) where {F<:FactorFunction, V<:VariateType}
-    return Message(V, Function, log_pdf = (z)->logPdf(msg_out.dist, g(z)))
-end
-
-function ruleSPNonlinearSOutNM(g::Function, msg_out::Nothing, msg_in1::Message, n_samples::Int)
-    samples = g.(sample(msg_in1.dist, n_samples))
-    weights = ones(n_samples)/n_samples
-
-    d_out = length(samples[1])
-    (d_out == 1) ? V=Univariate : V=Multivariate # Extract outbound VariateType from function output
-
-    return Message(V, SampleList, s=samples, w=weights)
-end
-
-function prod!(
-    x::ProbabilityDistribution{V, Function},
-    y::ProbabilityDistribution{V, Function},
-    z::ProbabilityDistribution{V, Function}=ProbabilityDistribution(V, Function, log_pdf=(s)->s)) where V<:VariateType
-
-    z.params[:log_pdf] = ( (s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s) )
-
-    return z
-end
-
-@symmetrical function prod!(
-    x::ProbabilityDistribution{Univariate}, # Includes function distributions
-    y::ProbabilityDistribution{Univariate, F},
-    z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F<:Gaussian}
-
-    # Optimize with gradient ascent
-    log_joint(s) = logPdf(y,s) + logPdf(x,s)
-    d_log_joint(s) = ForwardDiff.derivative(log_joint, s)
-    m_initial = unsafeMean(y)
-    
-    mean = gradientOptimization(log_joint, d_log_joint, m_initial, 0.01)
-    prec = -ForwardDiff.derivative(d_log_joint, mean)
-
-    z.params[:m] = mean
-    z.params[:w] = prec
-
-    return z
-end
-
-@symmetrical function prod!(
-    x::ProbabilityDistribution{Multivariate}, # Includes function distributions
-    y::ProbabilityDistribution{Multivariate, F},
-    z::ProbabilityDistribution{Multivariate, GaussianMeanVariance}=ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))) where {F<:Gaussian}
-
-    # Optimize with gradient ascent
-    log_joint(s) = logPdf(y,s) + logPdf(x,s)
-    d_log_joint(s) = ForwardDiff.gradient(log_joint, s)
-    m_initial = unsafeMean(y)
-
-    mean = gradientOptimization(log_joint, d_log_joint, m_initial, 0.01)
-    prec = -ForwardDiff.jacobian(d_log_joint, mean)
-
-    z.params[:m] = mean
-    z.params[:w] = prec
-
-    return z
-end
 
 # Unscented transform
 function collectMarginalNodeInbounds(node::Nonlinear{Unscented}, entry::MarginalEntry)
@@ -411,40 +347,6 @@ function collectMarginalNodeInbounds(node::Nonlinear{Unscented}, entry::Marginal
 
     return inbounds
 end
-
-function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::ScheduleEntry)
-    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
-
-    inbounds = Any[]
-
-    # Push function (and inverse) to calling signature
-    # These functions needs to be defined in the scope of the user
-    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
-                                      :keyword => false))
-
-    for node_interface in node.interfaces
-        inbound_interface = ultimatePartner(node_interface)
-        if node_interface == entry.interface
-            # Ignore inbound message on outbound interface
-            push!(inbounds, nothing)
-        elseif isa(inbound_interface.node, Clamp)
-            # Hard-code outbound message of constant node in schedule
-            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
-        else
-            # Collect message from previous result
-            push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        end
-    end
-
-    # Push n_samples to calling signature for forward message
-    if entry.interface == node.interfaces[1]
-        push!(inbounds, Dict{Symbol, Any}(:n_samples => node.n_samples,
-                                          :keyword   => false))
-    end
-
-    return inbounds
-end
-
 
 #--------
 # Helpers

@@ -42,16 +42,6 @@ function isApplicable(::Type{SPNonlinearUTInGX}, input_types::Vector{<:Type})
     return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-1)
 end
 
-@sumProductRule(:node_type     => Nonlinear{Sampling},
-                :outbound_type => Message{Function},
-                :inbound_types => (Message{FactorFunction}, Nothing),
-                :name          => SPNonlinearSIn1MN)
-
-@sumProductRule(:node_type     => Nonlinear{Sampling},
-                :outbound_type => Message{SampleList},
-                :inbound_types => (Nothing, Message),
-                :name          => SPNonlinearSOutNM)
-
 mutable struct MNonlinearUTNGX <: MarginalRule{Nonlinear{Unscented}} end
 function isApplicable(::Type{MNonlinearUTNGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)

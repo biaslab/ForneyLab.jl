@@ -1,9 +1,9 @@
-export Bivariate
+export Nonlinear
 
 """
 Description:
 
-    Bivariate node models a function of two random variables.
+    Nonlinear node models a function of two random variables.
 
 Interfaces:
 
@@ -13,9 +13,9 @@ Interfaces:
 
 Construction:
 
-    Bivariate(out, in1, in2, g, id=:my_node)
+    Nonlinear(out, in1, in2, g, id=:my_node)
 """
-mutable struct Bivariate{T<:ApproximationMethod} <: DeltaFactor
+mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
     id::Symbol
     interfaces::Array{Interface,1}
     i::Dict{Symbol, Interface}
@@ -25,7 +25,7 @@ mutable struct Bivariate{T<:ApproximationMethod} <: DeltaFactor
     status::Dict{Symbol, Union{Bool, Message}} #Keeps the status of node to ensure that input variables are updated simultaneously
     n_samples::Int # Number of samples for sampling
 
-    function Bivariate{Sampling}(out, in1, in2, g::Function; dims=(), n_samples=1000, id=ForneyLab.generateId(Bivariate{Sampling}))
+    function Nonlinear{Sampling}(out, in1, in2, g::Function; dims=(), n_samples=1000, id=ForneyLab.generateId(Nonlinear{Sampling}))
         @ensureVariables(out, in1, in2)
         self = new(id, Vector{Interface}(undef, 3), Dict{Symbol,Interface}(), g, dims, Dict(:updated=>false), n_samples)
         ForneyLab.addNode!(currentGraph(), self)
@@ -37,4 +37,4 @@ mutable struct Bivariate{T<:ApproximationMethod} <: DeltaFactor
     end
 end
 
-slug(::Type{Bivariate}) = "g"
+slug(::Type{Nonlinear}) = "g"

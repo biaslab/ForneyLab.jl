@@ -1,15 +1,16 @@
-module BivariateTest
+module NonlinearSamplingTest
 
 using Test
 using Random
 # using LinearAlgebra
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, ProbabilityDistribution, Unscented, Sampling
-using ForneyLab: SPBivariateSIn1MNG, ruleSPBivariateSIn1MNG, SPBivariateSIn2MGN, ruleSPBivariateSIn2MGN, SPBivariateSOutNGG, ruleSPBivariateSOutNGG, mergeInputs, gradientOptimization, decomposePosteriorParameters
+using ForneyLab: SPNonlinearSIn1MNG, ruleSPNonlinearSIn1MNG, SPNonlinearSIn2MGN, ruleSPNonlinearSIn2MGN, SPNonlinearSOutNGG, ruleSPNonlinearSOutNGG, SPNonlinearSOutNM, ruleSPNonlinearSOutNM, SPNonlinearSIn1MN, ruleSPNonlinearSIn1MN, mergeInputs, gradientOptimization, decomposePosteriorParameters
 using ForwardDiff
 
 Random.seed!(1234)
 
+f(x) = x
 g(x) = x^2
 
 @testset "mergeInputs" begin
@@ -76,29 +77,63 @@ res = gradientOptimization(f, grad, [4.0, 1.0], 0.001)
 
 end
 
-@testset "ruleSPBivariateSOutNGG" begin
-    @test SPBivariateSOutNGG <: SumProductRule{Bivariate{Sampling}}
-    @test outboundType(SPBivariateSOutNGG) == Message{SampleList}
-    @test !isApplicable(SPBivariateSOutNGG, [Nothing, Message{Poisson}]) 
-    @test isApplicable(SPBivariateSOutNGG, [Nothing, Message{Gaussian}, Message{Gaussian}]) 
+@testset "SPNonlinearSOutNM" begin
+    samples = 2.0 .+ randn(100000)
+    p_dist = ProbabilityDistribution(Univariate, SampleList, s=samples, w=ones(100000)/100000)
+
+    @test SPNonlinearSOutNM <: SumProductRule{Nonlinear{Sampling}}
+    @test outboundType(SPNonlinearSOutNM) == Message{SampleList}
+    @test isApplicable(SPNonlinearSOutNM, [Nothing, Message{Gaussian}])
+    @test isApplicable(SPNonlinearSOutNM, [Nothing, Message{Bernoulli}])
+    
+    @test abs(unsafeMean(ruleSPNonlinearSOutNM(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Dict(), 100000).dist) - unsafeMean(p_dist)) < 0.2
+    @test abs(unsafeVar(ruleSPNonlinearSOutNM(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Dict(), 100000).dist) - unsafeVar(p_dist)) < 0.2
+end
+
+@testset "SPNonlinearSIn1MN" begin
+    @test SPNonlinearSIn1MN <: SumProductRule{Nonlinear{Sampling}}
+    @test outboundType(SPNonlinearSIn1MN) == Message{Function}
+    @test isApplicable(SPNonlinearSIn1MN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
+    
+    log_pdf(x) = ruleSPNonlinearSIn1MN(f, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), nothing, Dict(), 0).dist.params[:log_pdf](x)
+    @test log_pdf(1.5) == logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
+end
+
+@testset "Nonlinear integration via sampling" begin
+    FactorGraph()
+
+    @RV x ~ GaussianMeanVariance(2.0, 1.0)
+    @RV y ~ GaussianMeanVariance(2.0, 3.0)
+    n = Nonlinear{Sampling}(y, x, g)
+
+    algo = sumProductAlgorithm(y)
+    algo_code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearSOutNM(g, nothing, messages[2], currentGraph().nodes[:nonlinear_1].status, 1000)", algo_code)
+end
+
+@testset "ruleSPNonlinearSOutNGG" begin
+    @test SPNonlinearSOutNGG <: SumProductRule{Nonlinear{Sampling}}
+    @test outboundType(SPNonlinearSOutNGG) == Message{SampleList}
+    @test !isApplicable(SPNonlinearSOutNGG, [Nothing, Message{Poisson}]) 
+    @test isApplicable(SPNonlinearSOutNGG, [Nothing, Message{Gaussian}, Message{Gaussian}]) 
     
     h(x,y) = x+y
 
     msg_in1 = Message(GaussianMeanVariance, m=0.0, v=1.0)
     msg_in2 = Message(GaussianMeanVariance, m=2.0, v=1.0)
     
-    res = ruleSPBivariateSOutNGG(nothing, msg_in1, msg_in2, h, Dict(), 100000)
+    res = ruleSPNonlinearSOutNGG(h,nothing, msg_in1, msg_in2, Dict(), 100000)
     @test isapprox(mean(res.dist), 2.0, atol=0.1)
     @test isapprox(var(res.dist), 2.0, atol=0.1)
 end
 
 
 
-@testset "ruleSPBivariateSIn1MNG" begin
-    @test SPBivariateSIn1MNG <: SumProductRule{Bivariate{Sampling}}
-    @test outboundType(SPBivariateSIn1MNG) == Message{Gaussian}
-    @test !isApplicable(SPBivariateSIn1MNG, [Nothing, Message{Gaussian}]) 
-    @test isApplicable(SPBivariateSIn1MNG, [Message{FactorFunction}, Nothing, Message{Gaussian}]) 
+@testset "ruleSPNonlinearSIn1MNG" begin
+    @test SPNonlinearSIn1MNG <: SumProductRule{Nonlinear{Sampling}}
+    @test outboundType(SPNonlinearSIn1MNG) == Message{Gaussian}
+    @test !isApplicable(SPNonlinearSIn1MNG, [Nothing, Message{Gaussian}]) 
+    @test isApplicable(SPNonlinearSIn1MNG, [Message{FactorFunction}, Nothing, Message{Gaussian}]) 
     
     msg_out = Message(vague(GaussianMeanVariance))
     msg_in1 = Message(vague(GaussianMeanVariance))
@@ -107,18 +142,18 @@ end
     status[:updated] = true
     status[:message] = Message(GaussianMeanVariance,m=2.0, v=4.0)
     
-    res = ruleSPBivariateSIn1MNG(msg_out, msg_in1, msg_in2, g, status, 1000)
+    res = ruleSPNonlinearSIn1MNG(g, msg_out, msg_in1, msg_in2, status, 1000)
 
     @test mean(res.dist) == 2.0
     @test var(res.dist) == 4.0
     @test !(status[:updated])
 end
 
-@testset "ruleSPBivariateSIn2MGN" begin
-    @test SPBivariateSIn2MGN <: SumProductRule{Bivariate{Sampling}}
-    @test outboundType(SPBivariateSIn2MGN) == Message{Gaussian}
-    @test !isApplicable(SPBivariateSIn2MGN, [Nothing, Message{Gamma}]) 
-    @test isApplicable(SPBivariateSIn2MGN, [Message{FactorFunction}, Message{Gaussian}, Nothing]) 
+@testset "ruleSPNonlinearSIn2MGN" begin
+    @test SPNonlinearSIn2MGN <: SumProductRule{Nonlinear{Sampling}}
+    @test outboundType(SPNonlinearSIn2MGN) == Message{Gaussian}
+    @test !isApplicable(SPNonlinearSIn2MGN, [Nothing, Message{Gamma}]) 
+    @test isApplicable(SPNonlinearSIn2MGN, [Message{FactorFunction}, Message{Gaussian}, Nothing]) 
     
     msg_out = Message(vague(GaussianMeanVariance))
     msg_in1 = Message(vague(GaussianMeanVariance))
@@ -127,26 +162,26 @@ end
     status[:updated] = true
     status[:message] = Message(GaussianMeanVariance,m=2.0, v=4.0)
     
-    res = ruleSPBivariateSIn2MGN(msg_out, msg_in1, msg_in2, g, status, 1000)
+    res = ruleSPNonlinearSIn2MGN(g, msg_out, msg_in1, msg_in2, status, 1000)
 
     @test mean(res.dist) == 2.0
     @test var(res.dist) == 4.0
     @test !(status[:updated])
 end
 
-@testset "Bivariate integration via sampling" begin
+@testset "Nonlinear integration via sampling" begin
     FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
     @RV z ~ GaussianMeanVariance(2.0, 3.0)
-    n = Bivariate{Sampling}(z, x, y, g)
+    n = Nonlinear{Sampling}(z, x, y, g)
 
     # Forward; g_inv should not be present in call
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
     
-    @test occursin("ruleSPBivariateSIn2MGN(messages[3], messages[2], messages[1], g, currentGraph().nodes[:bivariate_1].status, 1000)", algo_code)
+    @test occursin("ruleSPNonlinearSIn2MGN(g, messages[3], messages[2], messages[1], currentGraph().nodes[:nonlinear_1].status, 1000)", algo_code)
 end
 
 end
