@@ -151,7 +151,7 @@ function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistr
     H_x = -sum( weights.*(log_samples_x + log_samples_y) )
     entropy = H_x + H_y
 
-    return (weights, entropy)
+    return (samples, weights, entropy)
 end
 
 # General product definition that returns a SampleList
@@ -160,11 +160,13 @@ function prod!(
     y::ProbabilityDistribution{V},
     z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
 
-    (weights, entropy) = sampleWeightsAndEntropy(x, y)
+    (samples, weights, entropy) = sampleWeightsAndEntropy(x, y)
 
     z.params[:s] = samples
     z.params[:w] = weights
     z.params[:entropy] = entropy
+
+    return z
 end
 
 # Specialized product definition that accounts for the Categorical VariateType
@@ -173,7 +175,7 @@ end
     y::ProbabilityDistribution{Multivariate, Function},
     z::ProbabilityDistribution{Univariate, SampleList} = ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
 
-    (weights, entropy) = sampleWeightsAndEntropy(x, y)
+    (samples, weights, entropy) = sampleWeightsAndEntropy(x, y)
 
     z.params[:s] = samples
     z.params[:w] = weights
