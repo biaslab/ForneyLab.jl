@@ -32,6 +32,9 @@ struct ProbabilityDistribution{var_type<:VariateType, family<:FactorFunction}
     params::Dict
 end
 
+"""Sample multiple realizations from a probability distribution"""
+sample(dist::ProbabilityDistribution, n_samples::Int64) = [sample(dist) for i in 1:n_samples] # TODO: individual samples can be optimized
+
 """Extract VariateType from dist"""
 variateType(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorFunction} = V
 

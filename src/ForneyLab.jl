@@ -10,7 +10,7 @@ using InteractiveUtils: subtypes
 using Printf: @sprintf
 using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf
 using ForwardDiff
-using StatsBase:Weights
+using StatsBase: Weights
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, exp, convert, show, prod!

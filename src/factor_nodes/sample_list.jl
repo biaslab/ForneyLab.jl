@@ -5,12 +5,9 @@ mutable struct SampleList <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    # For instant calculation of differential entropy
-    diff_ent::Union{Number, Nothing}
-
-    function SampleList(out, s, w; id=generateId(SampleList), diff_ent=nothing)
+    function SampleList(out, s, w; id=generateId(SampleList))
         @ensureVariables(out, s, w)
-        self = new(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}(), diff_ent)
+        self = new(id, Array{Interface}(undef, 3), Dict{Symbol,Interface}())
         addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         self.i[:s] = self.interfaces[2] = associate!(Interface(self), s)
@@ -24,20 +21,27 @@ slug(::Type{SampleList}) = "SampleList"
 
 format(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = "$(slug(SampleList))(s=$(format(dist.params[:s])),w=$(format(dist.params[:w])))"
 
-ProbabilityDistribution(::Type{Univariate}, ::Type{SampleList}; s=[0.0], w=[1.0], diff_ent=nothing) = ProbabilityDistribution{Univariate, SampleList}(Dict{Symbol, Any}(:s=>s, :w=>w, :diff_ent=>diff_ent))
-ProbabilityDistribution(::Type{Multivariate}, ::Type{SampleList}; s=[[0.0]], w=[1.0], diff_ent=nothing) = ProbabilityDistribution{Multivariate, SampleList}(Dict{Symbol, Any}(:s=>s, :w=>w, :diff_ent=>diff_ent))
+ProbabilityDistribution(::Type{Univariate}, ::Type{SampleList}; s=[0.0], w=[1.0]) = ProbabilityDistribution{Univariate, SampleList}(Dict{Symbol, Any}(:s=>s, :w=>w))
+ProbabilityDistribution(::Type{Multivariate}, ::Type{SampleList}; s=[[0.0]], w=[1.0]) = ProbabilityDistribution{Multivariate, SampleList}(Dict{Symbol, Any}(:s=>s, :w=>w))
 
 dims(dist::ProbabilityDistribution{Univariate, SampleList}) = 1
 dims(dist::ProbabilityDistribution{Multivariate, SampleList}) = length(dist.params[:s][1])
 
-vague(::Type{SampleList}) = ProbabilityDistribution(Univariate, SampleList, s=rand(1000), w=ones(1000)/1000)
+function vague(::Type{SampleList})
+    n_samples = 1000 # Fixed number of samples
+
+    return ProbabilityDistribution(Univariate, SampleList, s=rand(n_samples), w=ones(n_samples)/n_samples)
+end
 
 function vague(::Type{SampleList}, dims::Int64)
-    s_list = Vector{Vector{Number}}(undef, 1000)
-    for n=1:1000
+    n_samples = 1000 # Fixed number of samples
+
+    s_list = Vector{Vector{Number}}(undef, n_samples)
+    for n=1:n_samples
         s_list[n] = rand(dims)
     end
-    ProbabilityDistribution(Multivariate, SampleList, s=s_list, w=ones(1000)/1000)
+    
+    return ProbabilityDistribution(Multivariate, SampleList, s=s_list, w=ones(n_samples)/n_samples)
 end
 
 unsafeMean(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = sum(dist.params[:s].*dist.params[:w])
@@ -45,25 +49,34 @@ unsafeMean(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = 
 unsafeLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = sum(log.(dist.params[:s]).*dist.params[:w])
 
 # Unbiased (co)variance estimates
-unsafeVar(dist::ProbabilityDistribution{Univariate, SampleList}) = (length(dist.params[:s])/(length(dist.params[:s])-1))*sum((dist.params[:s].-unsafeMean(dist)).^2 .*dist.params[:w])
+function unsafeVar(dist::ProbabilityDistribution{Univariate, SampleList})
+    samples = dist.params[:s]
+    n_samples = length(samples)
+
+    return (n_samples/(n_samples - 1))*sum(dist.params[:w].*(samples .- unsafeMean(dist)).^2)
+end
+
 unsafeCov(dist::ProbabilityDistribution{Univariate, SampleList}) = unsafeVar(dist)
 
 unsafeVar(dist::ProbabilityDistribution{Multivariate, SampleList}) = diag(unsafeCov(dist))
 function unsafeCov(dist::ProbabilityDistribution{Multivariate, SampleList})
-    tot = zeros(dims(dist), dims(dist))
-    m = unsafeMean(dist)
     samples = dist.params[:s]
     weights = dist.params[:w]
-    for i=1:length(samples)
-        tot += (samples[i].-m)*transpose(samples[i].-m) .* weights[i]
+
+    n_samples = length(samples)
+    m = unsafeMean(dist)
+    tot = zeros(dims(dist), dims(dist))
+    for i = 1:n_samples
+        tot += (samples[i] .- m)*transpose(samples[i] .- m).*weights[i]
     end
-    return (length(dist.params[:s])/(length(dist.params[:s])-1)).*tot
+
+    return (n_samples/(n_samples - 1)).*tot
 end
 
 unsafeMeanCov(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = (unsafeMean(dist), unsafeCov(dist))
 
 function unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, SampleList})
-    all(0 .<= dist.params[:s] .< 1) || error("unsafeMirroredLogMean does not apply to variables outside of the range [0, 1)")
+    all(0 .<= dist.params[:s] .< 1) || error("unsafeMirroredLogMean does not apply to variables outside of the range [0, 1]")
 
     return sum(log.(1 .- dist.params[:s]) .* dist.params[:w])
 end
@@ -72,155 +85,120 @@ unsafeMeanVector(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateT
 
 isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = abs(sum(dist.params[:w]) - 1) < 0.001
 
-# Prod functions are defined in such a way that bootstrap particle filter will be allowed
 @symmetrical function prod!(
-    x::ProbabilityDistribution{Univariate},
-    y::ProbabilityDistribution{Univariate, SampleList},
-    z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
+    x::ProbabilityDistribution{V},
+    y::ProbabilityDistribution{V, SampleList},
+    z::ProbabilityDistribution{V, SampleList}=ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
 
-    # Importance sampling - resampling
-    log_pdf=(a) -> logPdf(x, a)
-    w = exp.(log_pdf.(y.params[:s]))
-    w = w .* y.params[:w]
-    w = w./sum(w)
-    # Compute effective number of particles to decide if resampling is needed
-    n_eff = 1/sum(w.^2)
-    if n_eff < length(w)/10
-        weights = Weights(w)
-        samples = sample(y.params[:s],weights,length(weights))
+    samples = y.params[:s]
+    n_samples = length(samples)
+    log_samples_x = logPdf.([x], samples)
 
-        z.params[:w] = ones(length(w))/length(w)
-        z.params[:s] = samples
-        return z
-    else
-        z.params[:w] = w
-        z.params[:s] = y.params[:s]
-        return z
-    end
-end
+    # Compute sample weights
+    w_raw_x = exp.(log_samples_x)
+    w_prod = w_raw_x.*y.params[:w]
+    weights = w_prod./sum(w_prod) # Normalize weights
 
-@symmetrical function prod!(
-    x::ProbabilityDistribution{Multivariate},
-    y::ProbabilityDistribution{Multivariate, SampleList},
-    z::ProbabilityDistribution{Multivariate, SampleList}=ProbabilityDistribution(Multivariate, SampleList, s=[[0.0]], w=[1.0]))
-
-    # Importance sampling - resampling
-    log_pdf=(a) -> logPdf(x, a)
-    w = exp.(log_pdf.(y.params[:s]))
-    w = w .* y.params[:w]
-    w = w./sum(w)
-    # Compute effective number of particles to decide if resampling is needed
-    n_eff = 1/sum(w.^2)
-    if n_eff < length(w)/10
-        weights = Weights(w)
-        samples = sample(y.params[:s],weights,length(weights))
-
-        z.params[:w] = ones(length(w))/length(w)
-        z.params[:s] = samples
-        return z
-    else
-        z.params[:w] = w
-        z.params[:s] = y.params[:s]
-        return z
-    end
-end
-
-@symmetrical function prod!(
-    x::ProbabilityDistribution{Univariate},
-    y::ProbabilityDistribution{Univariate, Function},
-    z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
-
-    sample_factor = Vector{Number}(undef, 1000)
-    for i=1:1000
-        sample_factor[i] = sample(x)
+    # Resample if required
+    n_eff = 1/sum(weights.^2) # Effective number of particles
+    if n_eff < n_samples/10
+        samples = sample(samples, Weights(weights), n_samples) # Use StatsBase for resampling
+        weights = ones(n_samples)./n_samples
     end
 
-    log_pdf=(a) -> y.params[:log_pdf](a)
-    log_pdf_sf = log_pdf.(sample_factor)
-    w = exp.(log_pdf_sf)
-    H2 = log(sum(w)/1000) # To compute differential entropy
-    w = w./sum(w)
-    z.params[:w] = w
-    z.params[:s] = sample_factor
-    log_pdfx=(a) -> logPdf(x, a)
-    H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) # To compute differential entropy
-    z.params[:diff_ent] = H1+H2
+    # TODO: no entropy is computed here; include computation?
+    z.params[:w] = weights
+    z.params[:s] = samples
+
     return z
 end
 
+"""
+Compute product weights and entropy from log-pdf transformed samples
+"""
+function sampleWeightsAndEntropy(log_samples_x::Vector, log_samples_y::Vector)
+    n_samples = length(log_samples_x)
+
+    # Extract the sample weights
+    w_raw = exp.(log_samples_y) # Unnormalized weights
+    w_sum = sum(w_raw)
+    weights = w_raw./w_sum # Normalize the raw weights
+
+    # Compute the separate contributions to the entropy
+    H_y = log(w_sum) - log(n_samples)
+    H_x = -sum( weights.*(log_samples_x + log_samples_y) )
+    entropy = H_x + H_y
+
+    return (weights, entropy)
+end
+
+# General product definition that returns a SampleList instead od a ProbabilityDistribution
+function prod!(
+    x::ProbabilityDistribution{V},
+    y::ProbabilityDistribution{V},
+    z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
+
+    n_samples = 1000 # Number of samples is fixed
+    samples = sample(x, n_samples)
+
+    # Apply log-pdf functions to the samples
+    log_samples_x = logPdf.([x], samples)
+    log_samples_y = logPdf.([y], samples)
+
+    (weights, entropy) = sampleWeightsAndEntropy(log_samples_x, log_samples_y)
+
+    z.params[:s] = samples
+    z.params[:w] = weights
+    z.params[:entropy] = entropy
+end
+
+# Product between a general distribution and a distribution defined through a Function
 @symmetrical function prod!(
-    x::ProbabilityDistribution{Multivariate},
-    y::ProbabilityDistribution{Multivariate, Function},
-    z::ProbabilityDistribution{Multivariate, SampleList}=ProbabilityDistribution(Multivariate, SampleList, s=[[0.0]], w=[1.0]))
+    x::ProbabilityDistribution{V},
+    y::ProbabilityDistribution{V, Function},
+    z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
 
-    sample_factor = Vector{Vector{Number}}(undef, 1000)
-    for i=1:1000
-        sample_factor[i] = sample(x)
-    end
+    n_samples = 1000 # Number of samples is fixed
+    samples = sample(x, n_samples)
 
-    log_pdf=(a) -> y.params[:log_pdf](a)
-    log_pdf_sf = log_pdf.(sample_factor)
-    w = exp.(log_pdf_sf)
-    H2 = log(sum(w)/1000) # To compute differential entropy
-    w = w./sum(w)
-    z.params[:w] = w
-    z.params[:s] = sample_factor
-    log_pdfx=(a) -> logPdf(x, a)
-    H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) # To compute differential entropy
-    z.params[:diff_ent] = H1+H2
+    # Apply log-pdf functions to the samples
+    log_samples_x = logPdf.([x], samples)
+    log_samples_y = y.params[:log_pdf].(samples)
+
+    (weights, entropy) = sampleWeightsAndEntropy(log_samples_x, log_samples_y)
+
+    z.params[:s] = samples
+    z.params[:w] = weights
+    z.params[:entropy] = entropy
+
     return z
 end
 
+# Specialized product definition accounts for the Categorical VariateType
 @symmetrical function prod!(
     x::ProbabilityDistribution{Univariate, Categorical},
     y::ProbabilityDistribution{Multivariate, Function},
-    z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
+    z::ProbabilityDistribution{Univariate, SampleList} = ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
 
+    n_samples = 1000 # Number of samples is fixed
+    samples = sample(x, n_samples)
 
-    sample_factor = []
-    for i=1:1000
-        push!(sample_factor,sample(x))
-    end
-    
-    log_pdf=(a) -> y.params[:log_pdf](a)
-    log_pdf_sf = log_pdf.(sample_factor)
-    w = exp.(log_pdf_sf)
-    H2 = log(sum(w)/1000) # To compute differential entropy
-    w = w./sum(w)
-    z.params[:w] = w
-    z.params[:s] = sample_factor
-    log_pdfx=(a) -> logPdf(x, a)
-    H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) # To compute differential entropy
-    z.params[:diff_ent] = H1+H2
-    return z
-end
+    # Apply log-pdf functions to the samples
+    log_samples_x = logPdf.([x], samples)
+    log_samples_y = y.params[:log_pdf].(samples)
 
-#This prod function is defined especially for nonconjugate inference
-function prod!(
-    x::ProbabilityDistribution{Univariate},
-    y::ProbabilityDistribution{Univariate},
-    z::ProbabilityDistribution{Univariate, SampleList}=ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0]))
+    (weights, entropy) = sampleWeightsAndEntropy(log_samples_x, log_samples_y)
 
-    sample_factor = Vector{Number}(undef, 1000)
-    for i=1:1000
-        sample_factor[i] = sample(x)
-    end
+    z.params[:s] = samples
+    z.params[:w] = weights
+    z.params[:entropy] = entropy
 
-    log_pdf=(a) -> logPdf(y,a)
-    log_pdf_sf = log_pdf.(sample_factor)
-    w = exp.(log_pdf_sf)
-    H2 = log(sum(w)/1000) # To compute differential entropy
-    w = w./sum(w)
-    z.params[:w] = w
-    z.params[:s] = sample_factor
-    log_pdfx=(a) -> logPdf(x, a)
-    H1 = -sum(w .* (log_pdfx.(sample_factor) .+ log_pdf_sf)) # To compute differential entropy
-    z.params[:diff_ent] = H1+H2
     return z
 end
 
 # Differential entropy for SampleList
-function differentialEntropy(dist::ProbabilityDistribution{V, SampleList} where V<:VariateType)
-    dist.params[:diff_ent] === nothing && error("No applicable rule to approximate differential entropy for SampleList distribution")
-    return dist.params[:diff_ent]
+function differentialEntropy(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType
+    haskey(dist.params, :entropy) || error("Missing entropy for SampleList; quantity is requested but not computed")
+    
+    return dist.params[:entropy] # Entropy is pre-computed during computation of the marginal
 end
