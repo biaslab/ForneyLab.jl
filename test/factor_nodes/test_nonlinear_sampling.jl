@@ -71,8 +71,8 @@ end
     
     res = ruleSPNonlinearSInGX(h, 1, msg_out, msg_in1, msg_in2, n_samples=1000)
 
-    @test mean(res.dist) == 0.9999042004346848
-    @test var(res.dist) == 5.000000030387355e7
+    @test isapprox(mean(res.dist), 0.9999042004346848, atol=0.1)
+    @test isapprox(var(res.dist), 5.000000030387355e7, atol=1e6)
 end
 
 @testset "Nonlinear integration via sampling" begin
