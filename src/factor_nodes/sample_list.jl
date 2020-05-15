@@ -28,13 +28,13 @@ dims(dist::ProbabilityDistribution{Univariate, SampleList}) = 1
 dims(dist::ProbabilityDistribution{Multivariate, SampleList}) = length(dist.params[:s][1])
 
 function vague(::Type{SampleList})
-    n_samples = 1000 # Fixed number of samples
+    n_samples = default_n_samples # Fixed number of samples
 
     return ProbabilityDistribution(Univariate, SampleList, s=rand(n_samples), w=ones(n_samples)/n_samples)
 end
 
 function vague(::Type{SampleList}, dims::Int64)
-    n_samples = 1000 # Fixed number of samples
+    n_samples = default_n_samples # Fixed number of samples
 
     s_list = Vector{Vector{Number}}(undef, n_samples)
     for n=1:n_samples
@@ -134,7 +134,7 @@ end
 end
 
 function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistribution)
-    n_samples = 1000 # Number of samples is fixed
+    n_samples = default_n_samples # Number of samples is fixed
     samples = sample(x, n_samples)
 
     # Apply log-pdf functions to the samples

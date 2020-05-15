@@ -67,9 +67,10 @@ function assembleInitialization!(pf::PosteriorFactor)
                 assembleBreaker!(breaker_entry, family(outbound_types[iface]), dims_inx)
                 pf_initialize_flag = true
             end
-        elseif isa(entry.interface.node, Nonlinear{Sampling}) && (entry.interface != entry.interface.node.interfaces[1]) && (entry.interface.node.dims != ()) # Nonlinear node with inbound entry (approximation via sampling)
+        elseif isa(entry.interface.node, Nonlinear{Sampling}) && (entry.interface != entry.interface.node.interfaces[1]) # Nonlinear node with inbound entry
             node = entry.interface.node
             inx = findfirst(isequal(entry.interface), node.interfaces) - 1
+            
             # Set initialization
             if isa(node.dims, Tuple)
                 dims_inx = node.dims # Same breaker dimensions for all inbounds

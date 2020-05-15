@@ -5,9 +5,7 @@ ruleSPNonlinearUTOutNG,
 ruleSPNonlinearUTOutNGX,
 ruleSPNonlinearUTIn1GG,
 ruleSPNonlinearUTInGX,
-# ruleSPNonlinearSIn1MN,
-# ruleSPNonlinearSOutNM,
-ruleMNonlinearUTNGX,
+ruleMNonlinearUTInGX,
 prod!
 
 const default_alpha = 1e-3 # Default value for the spread parameter
@@ -228,10 +226,10 @@ function ruleSPNonlinearUTInGX(g::Function,
     return Message(V, GaussianMeanVariance, m=m_bw_inx, v=V_bw_inx)
 end
 
-function ruleMNonlinearUTNGX(g::Function,
-                             msg_out::Message{<:Gaussian, V},
-                             msgs_in::Vararg{Message{<:Gaussian, V}};
-                             alpha::Float64=default_alpha) where V<:VariateType
+function ruleMNonlinearUTInGX(g::Function,
+                              msg_out::Message{<:Gaussian, V},
+                              msgs_in::Vararg{Message{<:Gaussian, V}};
+                              alpha::Float64=default_alpha) where V<:VariateType
 
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
@@ -309,10 +307,6 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
     return inbounds
 end
 
-
-
-
-# Unscented transform
 function collectMarginalNodeInbounds(node::Nonlinear{Unscented}, entry::MarginalEntry)
     inbounds = Any[]
 
@@ -347,6 +341,7 @@ function collectMarginalNodeInbounds(node::Nonlinear{Unscented}, entry::Marginal
 
     return inbounds
 end
+
 
 #--------
 # Helpers
@@ -416,9 +411,9 @@ end
 """
 Split a vector in chunks of lengths specified by ds.
 """
-function split(vec::Vector{Float64}, ds::Vector{Int64})
+function split(vec::Vector, ds::Vector{Int64})
     N = length(ds)
-    res = Vector{Vector{Float64}}(undef, N)
+    res = Vector{Vector}(undef, N)
 
     d_start = 1
     for k = 1:N # For each original statistic

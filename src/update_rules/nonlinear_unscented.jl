@@ -42,8 +42,8 @@ function isApplicable(::Type{SPNonlinearUTInGX}, input_types::Vector{<:Type})
     return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-1)
 end
 
-mutable struct MNonlinearUTNGX <: MarginalRule{Nonlinear{Unscented}} end
-function isApplicable(::Type{MNonlinearUTNGX}, input_types::Vector{<:Type})
+mutable struct MNonlinearUTInGX <: MarginalRule{Nonlinear{Unscented}} end
+function isApplicable(::Type{MNonlinearUTInGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false
     (input_types[1] == Nothing) || return false # Indicates marginalization over outbound variable
