@@ -14,10 +14,10 @@ function sumProductAlgorithm(variables::Vector{Variable};
     pfz = PosteriorFactorization()
     # Contain the entire graph in a single posterior factor
     pf = PosteriorFactor(pfz, id=Symbol(""))
-    
+
     # Set the target regions (variables and clusters) of the posterior factor
     setTargets!(pf, pfz, variables, free_energy=free_energy, external_targets=false)
-    
+
     # Infer schedule and marginal computations
     schedule = sumProductSchedule(pf) # For free energy computation, additional targets might be required
     pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries from schedule
@@ -37,13 +37,13 @@ A non-specific sum-product update
 """
 abstract type SumProductRule{factor_type} <: MessageUpdateRule end
 
-""" 
+"""
 `sumProductSchedule()` generates a sum-product message passing schedule that
 computes the marginals for each of the posterior factor targets.
-""" 
+"""
 function sumProductSchedule(pf::PosteriorFactor)
     # Generate a feasible summary propagation schedule
-    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true), 
+    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true),
                                           sort(collect(pf.target_clusters), rev=true))
 
     # Assign the sum-product update rule to each of the schedule entries
@@ -162,12 +162,12 @@ macro sumProductRule(fields...)
     outbound_type = :unknown
     inbound_types = :unknown
     name = :auto # Triggers automatic naming unless overwritten
-    
+
     # Loop over fields because order is unknown
     for arg in fields
 
         (arg.args[1] == :(=>)) || error("Invalid call to @sumProductRule")
-    
+
         if arg.args[2].value == :node_type
             node_type = arg.args[3]
         elseif arg.args[2].value == :outbound_type
@@ -191,23 +191,23 @@ macro sumProductRule(fields...)
     end
 
     # Build validators for isApplicable
-    input_type_validators = 
-        String["length(input_types) == $(length(inbound_types.args))"]
+    input_type_validators = Expr[]
+
+    push!(input_type_validators, :(length(input_types) == $(length(inbound_types.args))))
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
             # Only validate inbounds required for message update
-            push!(input_type_validators, "ForneyLab.matches(input_types[$i], $i_type)")
+            push!(input_type_validators, :(ForneyLab.matches(input_types[$i], $i_type)))
         end
     end
 
-    expr = parse("""
-        begin
-            mutable struct $name <: SumProductRule{$node_type} end
-            ForneyLab.outboundType(::Type{$name}) = $outbound_type
-            ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = $(join(input_type_validators, " && "))
-            $name
+    expr = quote
+        struct $name <: SumProductRule{$node_type} end
+        ForneyLab.outboundType(::Type{$name}) = $outbound_type
+        ForneyLab.isApplicable(::Type{$name}, input_types::Vector{<:Type}) = begin
+            $(reduce((current, item) -> :($current && $item), input_type_validators, init = :true))
         end
-    """)
+    end
 
     return esc(expr)
 end
