@@ -114,7 +114,7 @@ end
 @symmetrical function prod!(
     x::ProbabilityDistribution{Univariate}, # Includes function distributions
     y::ProbabilityDistribution{Univariate, F},
-    z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F<:Gaussian}
+    z::ProbabilityDistribution{Univariate, GaussianMeanPrecision}=ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=0.0, w=1.0)) where {F<:Gaussian}
 
     # Optimize with gradient ascent
     log_joint(s) = logPdf(y,s) + logPdf(x,s)
@@ -133,7 +133,7 @@ end
 @symmetrical function prod!(
     x::ProbabilityDistribution{Multivariate}, # Includes function distributions
     y::ProbabilityDistribution{Multivariate, F},
-    z::ProbabilityDistribution{Multivariate, GaussianMeanVariance}=ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0))) where {F<:Gaussian}
+    z::ProbabilityDistribution{Multivariate, GaussianMeanPrecision}=ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0.0], w=mat(1.0))) where {F<:Gaussian}
 
     # Optimize with gradient ascent
     log_joint(s) = logPdf(y,s) + logPdf(x,s)
