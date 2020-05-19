@@ -53,19 +53,31 @@ function ruleSPChanceConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, G:
     (min_G, max_G) = G # Extract minimum and maximum of safe region G
     (Phi_G, m_G, V_G) = truncatedGaussianMoments(m_bw, V_bw, min_G, max_G) # Compute statistics (and normalizing constant) of q in G
     if epsilon <= 1.0 - Phi_G # If constraint is active
-        (Phi_lG, m_lG, V_lG) = truncatedGaussianMoments(m_bw, V_bw, -Inf, min_G) # Statistics for q in region left of G
-        (Phi_rG, m_rG, V_rG) = truncatedGaussianMoments(m_bw, V_bw, max_G, Inf) # Statistics for q in region right of G
+        # Initialize statistics of uncorrected belief
+        m_tilde = m_bw
+        V_tilde = V_bw
+        for i = 1:10 # Iterate at most ten times
+            (Phi_lG, m_lG, V_lG) = truncatedGaussianMoments(m_tilde, V_tilde, -Inf, min_G) # Statistics for q in region left of G
+            (Phi_rG, m_rG, V_rG) = truncatedGaussianMoments(m_tilde, V_tilde, max_G, Inf) # Statistics for q in region right of G
 
-        # Compute moments of non-G region as a mixture of left and right truncations
-        Phi_nG = Phi_lG + Phi_rG
-        m_nG = Phi_lG/Phi_nG*m_lG + Phi_rG/Phi_nG*m_rG
-        V_nG = Phi_lG/Phi_nG*(V_lG + m_lG^2) + Phi_rG/Phi_nG*(V_rG + m_rG^2) - m_nG^2
+            # Compute moments of non-G region as a mixture of left and right truncations
+            Phi_nG = Phi_lG + Phi_rG
+            m_nG = Phi_lG/Phi_nG*m_lG + Phi_rG/Phi_nG*m_rG
+            V_nG = Phi_lG/Phi_nG*(V_lG + m_lG^2) + Phi_rG/Phi_nG*(V_rG + m_rG^2) - m_nG^2
 
-        # Compute moments of constrained marginal as a mixture of G and non-G regions
-        m_tilde = (1.0-epsilon)*m_G + epsilon*m_nG
-        V_tilde = (1.0-epsilon)*(V_G + m_G^2) + epsilon*(V_nG + m_nG^2) - m_tilde^2
+            # Compute moments of corrected belief as a mixture of G and non-G regions
+            m_tilde = (1.0-epsilon)*m_G + epsilon*m_nG
+            V_tilde = (1.0-epsilon)*(V_G + m_G^2) + epsilon*(V_nG + m_nG^2) - m_tilde^2
 
-        # Convert moments of constrained marginal to canonical form
+            # Re-compute statistics (and normalizing constant) of corrected belief
+            (Phi_G, m_G, V_G) = truncatedGaussianMoments(m_tilde, V_tilde, min_G, max_G)
+
+            if isapprox(1.0 - Phi_G, epsilon, atol=1e-3)
+                break # Break the loop if the belief is sufficiently corrected
+            end
+        end
+
+        # Convert moments of corrected belief to canonical form
         W_tilde = inv(V_tilde)
         xi_tilde = W_tilde*m_tilde
 
