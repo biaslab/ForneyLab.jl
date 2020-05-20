@@ -23,10 +23,11 @@ mutable struct ChanceConstraint <: SoftFactor # TODO: how to handle free energy 
 
     G::Tuple # Range for G (1-D only)
     epsilon::Float64 # Threshold
+    atol::Union{Float64, Nothing} # Tolerance for corrected belief
 
-    function ChanceConstraint(out; G::Tuple, epsilon::Float64, id=ForneyLab.generateId(ChanceConstraint))
+    function ChanceConstraint(out; G::Tuple, epsilon::Float64, atol=nothing, id=ForneyLab.generateId(ChanceConstraint))
         @ensureVariables(out)
-        self = new(id, Vector{Interface}(undef, 1), Dict{Symbol,Interface}(), G, epsilon)
+        self = new(id, Vector{Interface}(undef, 1), Dict{Symbol,Interface}(), G, epsilon, atol)
         ForneyLab.addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
 

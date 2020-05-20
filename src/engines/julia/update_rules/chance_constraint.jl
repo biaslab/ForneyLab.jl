@@ -1,5 +1,7 @@
 export ruleSPChanceConstraintOutG
 
+const default_atol = 1e-4
+
 standardGaussianPdf(x::Float64) = sqrt(1/(2*pi))*exp(-0.5*x^2)
 standardGaussianCdf(x::Float64) = 0.5*(1.0 + erf(x/sqrt(2)))
 
@@ -41,7 +43,7 @@ end
 # Update rules
 #-------------
 
-function ruleSPChanceConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, G::Tuple, epsilon::Float64)
+function ruleSPChanceConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, G::Tuple, epsilon::Float64; atol=default_atol)
     (m_bw, V_bw) = unsafeMeanCov(msg_out.dist)
     (xi_bw, W_bw) = unsafeWeightedMeanPrecision(msg_out.dist)
 
@@ -56,7 +58,7 @@ function ruleSPChanceConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, G:
         # Initialize statistics of uncorrected belief
         m_tilde = m_bw
         V_tilde = V_bw
-        for i = 1:10 # Iterate at most ten times
+        for i = 1:100 # Iterate at most one hundred times
             (Phi_lG, m_lG, V_lG) = truncatedGaussianMoments(m_tilde, V_tilde, -Inf, min_G) # Statistics for q in region left of G
             (Phi_rG, m_rG, V_rG) = truncatedGaussianMoments(m_tilde, V_tilde, max_G, Inf) # Statistics for q in region right of G
 
@@ -72,7 +74,7 @@ function ruleSPChanceConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, G:
             # Re-compute statistics (and normalizing constant) of corrected belief
             (Phi_G, m_G, V_G) = truncatedGaussianMoments(m_tilde, V_tilde, min_G, max_G)
 
-            if isapprox(1.0 - Phi_G, epsilon, atol=1e-3)
+            if isapprox(1.0 - Phi_G, epsilon, atol=atol)
                 break # Break the loop if the belief is sufficiently corrected
             end
         end
@@ -114,6 +116,10 @@ function collectSumProductNodeInbounds(node::ChanceConstraint, entry::ScheduleEn
                                       :keyword => false))
     push!(inbounds, Dict{Symbol, Any}(:epsilon => node.epsilon,
                                       :keyword => false))
+    if node.atol != nothing
+        push!(inbounds, Dict{Symbol, Any}(:atol => node.atol,
+                                          :keyword => true))
+    end
 
     return inbounds
 end
