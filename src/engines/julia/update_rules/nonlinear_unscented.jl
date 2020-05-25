@@ -120,10 +120,9 @@ function unscentedStatistics(ms::Vector{Vector{Float64}}, Vs::Vector{<:AbstractM
 end
 
 """
-RTS smoother update, based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
-Note, this implementation is not as efficient as Petersen et al. (2018), because we explicitly require the outbound messages
+RTS smoother update for backward message, based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
 """
-function smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
+function smoothRTSMessage(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
     C_tilde_inv = pinv(C_tilde)
     V_bw_in = V_fw_in*C_tilde_inv'*(V_tilde + V_bw_out)*C_tilde_inv*V_fw_in - V_fw_in
     m_bw_in = m_fw_in + V_fw_in*C_tilde_inv'*(m_bw_out - m_tilde)
@@ -131,6 +130,18 @@ function smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_o
     return (m_bw_in, V_bw_in)
 end
 
+"""
+RTS smoother update for inbound belief, based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
+"""
+function smoothRTSBelief(m_tilde, V_tilde, C_tilde, V_fw_in, m_bw_out, V_bw_out)
+    P = cholinv(V_tilde + V_bw_out)
+    W_tilde = cholinv(V_tilde)
+    V_in = V_fw_in + C_tilde*W_tilde*V_bw_out*P*C_tilde' - C_tilde*W_tilde*C_tilde'
+    m_out = V_tilde*P*m_bw_out + V_bw_out*P*m_tilde
+    m_in = C_tilde*W_tilde*(m_out - m_tilde)
+
+    return (m_in, V_in)
+end
 
 #-----------------------
 # Unscented Update Rules
@@ -198,7 +209,7 @@ function ruleSPNonlinearUTIn1GG(g::Function,
     # RTS smoother
     W_fw_in1 = unsafePrecision(msg_in1.dist)
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
-    (m_bw_in1, V_bw_in1) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in1, V_fw_in1, m_bw_out, V_bw_out)
+    (m_bw_in1, V_bw_in1) = smoothRTSMessage(m_tilde, V_tilde, C_tilde, m_fw_in1, V_fw_in1, m_bw_out, V_bw_out)
 
     return Message(V, GaussianMeanVariance, m=m_bw_in1, v=V_bw_in1)
 end
@@ -216,14 +227,22 @@ function ruleSPNonlinearUTInGX(g::Function,
 
     # RTS smoother
     (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in)
-    W_fw_in = cholinv(V_fw_in)
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
-    (m_bw_in, V_bw_in) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
 
-    # Marginalize
-    (m_bw_inx, V_bw_inx) = marginalizeGaussianMV(V, m_bw_in, V_bw_in, ds, inx)
+    # Compute joint marginal in in's
+    (m_in, V_in) = smoothRTSBelief(m_tilde, V_tilde, C_tilde, V_fw_in, m_bw_out, V_bw_out)
 
-    return Message(V, GaussianMeanVariance, m=m_bw_inx, v=V_bw_inx)
+    # Marginalize joint belief on in's
+    (m_inx, V_inx) = marginalizeGaussianMV(V, m_in, V_in, ds, inx) # Marginalization is overloaded on VariateType V
+    W_inx = cholinv(V_inx) # Convert to canonical statistics
+    xi_inx = W_inx*m_inx
+
+    # Divide marginal on inx by forward message
+    (xi_fw_inx, W_fw_inx) = unsafeWeightedMeanPrecision(msgs_in[inx].dist)
+    xi_bw_inx = xi_inx - xi_fw_inx
+    W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef inconsistencies
+
+    return Message(V, GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
 end
 
 function ruleMNonlinearUTInGX(g::Function,
@@ -238,12 +257,8 @@ function ruleMNonlinearUTInGX(g::Function,
     (_, V_fw_in, _) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Statistics of joint forward messages
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
 
-    # Compute joint marginal on ins; based on (Petersen et al. 2018; On Approximate Nonlinear Gaussian Message Passing on Factor Graphs)
-    P = cholinv(V_tilde + V_bw_out)
-    W_tilde = cholinv(V_tilde)
-    V_in = V_fw_in + C_tilde*W_tilde*V_bw_out*P*C_tilde' - C_tilde*W_tilde*C_tilde'
-    m_out = V_tilde*P*m_bw_out + V_bw_out*P*m_tilde
-    m_in = C_tilde*W_tilde*(m_out - m_tilde)
+    # Compute joint marginal on in's
+    (m_in, V_in) = smoothRTSBelief(m_tilde, V_tilde, C_tilde, V_fw_in, m_bw_out, V_bw_out)
 
     return ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=m_in, v=V_in)
 end
