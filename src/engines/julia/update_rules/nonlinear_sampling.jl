@@ -55,26 +55,25 @@ function ruleSPNonlinearSInGX(g::Function,
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
     (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
     W_fw_in = cholinv(V_fw_in) # Convert to canonical statistics
-    xi_fw_in = W_fw_in*m_fw_in
 
     # Construct joint log-pdf function and gradient
     (log_joint, d_log_joint) = logJointPdfs(V, m_fw_in, W_fw_in, msg_out.dist, g, ds) # Overloaded on VariateType V
 
-    # Compute joint marginal belief on in's by gradient ascent
+    # Compute joint belief on in's by gradient ascent
     m_in = gradientOptimization(log_joint, d_log_joint, m_fw_in, 0.01)
-    W_in = -ForwardDiff.jacobian(d_log_joint, m_in)
-    xi_in = W_in*m_in # Convert to canonical statistics
+    V_in = cholinv(-ForwardDiff.jacobian(d_log_joint, m_in))
 
-    # Compute joint backward message   
-    xi_bw_in = xi_in - xi_fw_in
-    W_bw_in = W_in - W_fw_in # Note: subtraction might lead to posdef inconsistencies
-    V_bw_in = cholinv(W_bw_in) # Convert to moments
-    m_bw_in = V_bw_in*xi_bw_in
+    # Marginalize joint belief on in's
+    (m_inx, V_inx) = marginalizeGaussianMV(V, m_in, V_in, ds, inx) # Marginalization is overloaded on VariateType V
+    W_inx = cholinv(V_inx) # Convert to canonical statistics
+    xi_inx = W_inx*m_inx
 
-    # Compute outbound statistics
-    (m_bw_inx, V_bw_inx) = marginalizeGaussianMV(V, m_bw_in, V_bw_in, ds, inx) # Marginalization is overloaded on VariateType V
+    # Divide marginal on inx by forward message
+    (xi_fw_inx, W_fw_inx) = unsafeWeightedMeanPrecision(msgs_in[inx].dist)
+    xi_bw_inx = xi_inx - xi_fw_inx
+    W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef inconsistencies
 
-    return Message(V, GaussianMeanVariance, m=m_bw_inx, v=V_bw_inx)
+    return Message(V, GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
 end
 
 function ruleMNonlinearSInGX(g::Function,

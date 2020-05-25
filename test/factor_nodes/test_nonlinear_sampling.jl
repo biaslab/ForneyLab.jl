@@ -61,7 +61,7 @@ end
 
 @testset "ruleSPNonlinearSInGX" begin
     @test SPNonlinearSInGX <: SumProductRule{Nonlinear{Sampling}}
-    @test outboundType(SPNonlinearSInGX) == Message{GaussianMeanVariance}
+    @test outboundType(SPNonlinearSInGX) == Message{GaussianWeightedMeanPrecision}
     @test !isApplicable(SPNonlinearSInGX, [Nothing, Message{Gamma}]) 
     @test isApplicable(SPNonlinearSInGX, [Message{Gaussian}, Message{Gaussian}, Nothing]) 
     
@@ -71,8 +71,8 @@ end
     
     res = ruleSPNonlinearSInGX(h, 1, msg_out, msg_in1, msg_in2, n_samples=1000)
 
-    @test isapprox(mean(res.dist), 0.9999042004346848, atol=0.1)
-    @test isapprox(var(res.dist), 5.000000030387355e7, atol=1e6)
+    @test isapprox(mean(res.dist), 0.9998084187686186, atol=0.1)
+    @test isapprox(var(res.dist), 1.9999999999999982, atol=0.1)
 end
 
 @testset "Nonlinear integration via sampling" begin
