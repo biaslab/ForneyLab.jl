@@ -67,6 +67,21 @@ function assembleInitialization!(pf::PosteriorFactor)
                 assembleBreaker!(breaker_entry, family(outbound_types[iface]), dims_inx)
                 pf_initialize_flag = true
             end
+        elseif isa(entry.interface.node, Nonlinear{Sampling}) && (entry.interface != entry.interface.node.interfaces[1]) # Nonlinear node with inbound entry
+            node = entry.interface.node
+            inx = findfirst(isequal(entry.interface), node.interfaces) - 1
+            
+            # Set initialization
+            if isa(node.dims, Tuple)
+                dims_inx = node.dims # Same breaker dimensions for all inbounds
+            else
+                dims_inx = node.dims[inx] # Inbound-specific breaker dimensions
+            end
+
+            iface = ultimatePartner(node.interfaces[inx+1])
+            breaker_entry = interface_to_schedule_entry[iface]
+            assembleBreaker!(breaker_entry, family(outbound_types[iface]), dims_inx)
+            pf_initialize_flag = true
         elseif !(partner == nothing) && isa(partner.node, Clamp)
             pf_update_clamp_flag = true # Signifies the need for creating a custom `step!` function for optimizing clamped variables
             iface = entry.interface

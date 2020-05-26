@@ -1,4 +1,4 @@
-export  
+export
 ruleSPAdditionOutNGG,
 ruleSPAdditionOutNGP,
 ruleSPAdditionOutNPG,
@@ -11,6 +11,12 @@ ruleSPAdditionIn2GGN,
 ruleSPAdditionIn2PGN,
 ruleSPAdditionIn2GPN,
 ruleSPAdditionIn2PPN,
+ruleSPAdditionOutNSP,
+ruleSPAdditionOutNPS,
+ruleSPAdditionIn1PNS,
+ruleSPAdditionIn1SNP,
+ruleSPAdditionIn2PSN,
+ruleSPAdditionIn2SPN,
 ruleMAdditionNGG
 
 function ruleSPAdditionOutNGG(
@@ -37,13 +43,13 @@ end
 
 function ruleSPAdditionIn1GNG(
     msg_out::Message{F1, V},
-    ::Nothing, 
+    ::Nothing,
     msg_in2::Message{F2, V}) where {F1<:Gaussian, F2<:Gaussian, V<:Union{Univariate, Multivariate}}
 
     ruleSPAdditionIn2GGN(msg_out, msg_in2, nothing)
 end
 
-function ruleSPAdditionOutNGP(  
+function ruleSPAdditionOutNGP(
     msg_out::Nothing,
     msg_in1::Message{F, V},
     msg_in2::Message{PointMass, V}) where {F<:Gaussian, V<:Union{Univariate, Multivariate}}
@@ -54,14 +60,14 @@ function ruleSPAdditionOutNGP(
 end
 
 function ruleSPAdditionOutNPG(
-    ::Nothing, 
-    msg_in1::Message{PointMass, V}, 
+    ::Nothing,
+    msg_in1::Message{PointMass, V},
     msg_in2::Message{F, V}) where {F<:Gaussian, V<:Union{Univariate, Multivariate}}
 
     ruleSPAdditionOutNGP(nothing, msg_in2, msg_in1)
 end
 
-function ruleSPAdditionIn1PNG(  
+function ruleSPAdditionIn1PNG(
     msg_out::Message{PointMass, V},
     msg_in1::Nothing,
     msg_in2::Message{F, V}) where {F<:Gaussian, V<:Union{Univariate, Multivariate}}
@@ -72,14 +78,14 @@ function ruleSPAdditionIn1PNG(
 end
 
 function ruleSPAdditionIn2PGN(
-    msg_out::Message{PointMass, V}, 
-    msg_in1::Message{F, V}, 
+    msg_out::Message{PointMass, V},
+    msg_in1::Message{F, V},
     msg_in2::Nothing) where {F<:Gaussian, V<:Union{Univariate, Multivariate}}
-    
+
     ruleSPAdditionIn1PNG(msg_out, nothing, msg_in1)
 end
 
-function ruleSPAdditionIn1GNP(  
+function ruleSPAdditionIn1GNP(
     msg_out::Message{F, V},
     msg_in1::Nothing,
     msg_in2::Message{PointMass, V}) where {F<:Gaussian, V<:Union{Univariate, Multivariate}}
@@ -90,35 +96,119 @@ function ruleSPAdditionIn1GNP(
 end
 
 function ruleSPAdditionIn2GPN(
-    msg_out::Message{F, V}, 
-    msg_in1::Message{PointMass, V}, 
+    msg_out::Message{F, V},
+    msg_in1::Message{PointMass, V},
     msg_in2::Nothing) where {F<:Gaussian, V<:Union{Univariate, Multivariate}}
 
     ruleSPAdditionIn1GNP(msg_out, nothing, msg_in1)
 end
 
 function ruleSPAdditionOutNPP(
-    msg_out::Nothing, 
-    msg_in1::Message{PointMass, V}, 
+    msg_out::Nothing,
+    msg_in1::Message{PointMass, V},
     msg_in2::Message{PointMass, V}) where V<:Union{Univariate, Multivariate}
 
     Message(V, PointMass, m=msg_in1.dist.params[:m] + msg_in2.dist.params[:m])
 end
 
 function ruleSPAdditionIn2PPN(
-    msg_out::Message{PointMass, V}, 
-    msg_in1::Message{PointMass, V}, 
+    msg_out::Message{PointMass, V},
+    msg_in1::Message{PointMass, V},
     msg_in2::Nothing) where V<:Union{Univariate, Multivariate}
 
     Message(V, PointMass, m=msg_out.dist.params[:m] - msg_in1.dist.params[:m])
 end
 
 function ruleSPAdditionIn1PNP(
-    msg_out::Message{PointMass, V}, 
-    msg_in1::Nothing, 
+    msg_out::Message{PointMass, V},
+    msg_in1::Nothing,
     msg_in2::Message{PointMass, V}) where V<:Union{Univariate, Multivariate}
 
     Message(V, PointMass, m=msg_out.dist.params[:m] - msg_in2.dist.params[:m])
+end
+
+function ruleSPAdditionOutNSP(
+    msg_out::Nothing,
+    msg_in1::Message{SampleList, Univariate},
+    msg_in2::Message{PointMass, Univariate})
+
+    new_s = msg_in2.dist.params[:m] .+ msg_in1.dist.params[:s]
+
+    Message(Univariate, SampleList, s=new_s)
+end
+
+function ruleSPAdditionOutNSP(
+    msg_out::Nothing,
+    msg_in1::Message{SampleList, Multivariate},
+    msg_in2::Message{PointMass, Multivariate})
+
+    new_s = [msg_in2.dist.params[:m] .+ sample for sample in msg_in1.dist.params[:s]]
+
+    Message(Multivariate, SampleList, s=new_s)
+end
+
+function ruleSPAdditionOutNPS(
+    ::Nothing,
+    msg_in1::Message{PointMass, V},
+    msg_in2::Message{SampleList, V}) where {V<:Union{Univariate, Multivariate}}
+
+    ruleSPAdditionOutNSP(nothing, msg_in2, msg_in1)
+end
+
+function ruleSPAdditionIn1PNS(
+    msg_out::Message{PointMass, Univariate},
+    msg_in1::Nothing,
+    msg_in2::Message{SampleList, Univariate})
+
+    new_s = msg_in2.dist.params[:m] .- msg_in1.dist.params[:s]
+
+    Message(Univariate, SampleList, s=new_s)
+end
+
+function ruleSPAdditionIn1PNS(
+    msg_out::Message{PointMass, Multivariate},
+    msg_in1::Nothing,
+    msg_in2::Message{SampleList, Multivariate})
+
+    new_s = [msg_in2.dist.params[:m] .- sample for sample in msg_in1.dist.params[:s]]
+
+    Message(Multivariate, SampleList, s=new_s)
+end
+
+function ruleSPAdditionIn2PSN(
+    msg_out::Message{PointMass, V},
+    msg_in1::Message{SampleList, V},
+    msg_in2::Nothing) where {V<:Union{Univariate, Multivariate}}
+
+    ruleSPAdditionIn1PNS(msg_out, nothing, msg_in1)
+end
+
+function ruleSPAdditionIn1SNP(
+    msg_out::Message{SampleList, Univariate},
+    msg_in1::Nothing,
+    msg_in2::Message{PointMass, Univariate})
+
+    new_s = -(msg_in2.dist.params[:m] .- msg_in1.dist.params[:s])
+
+    Message(Univariate, SampleList, s=new_s)
+end
+
+function ruleSPAdditionIn1SNP(
+    msg_out::Message{SampleList, Multivariate},
+    msg_in1::Nothing,
+    msg_in2::Message{PointMass, Multivariate})
+
+    new_s = [-(msg_in2.dist.params[:m] .- sample) for sample in msg_in1.dist.params[:s]]
+
+    Message(Multivariate, SampleList, s=new_s)
+end
+
+function ruleSPAdditionIn2SPN(
+    msg_out::Message{SampleList, V},
+    msg_in1::Message{PointMass, V},
+    msg_in2::Nothing) where {V<:Union{Univariate, Multivariate}}
+
+    ruleSPAdditionIn1SNP(msg_out, nothing, msg_in1)
 end
 
 function ruleMAdditionNGG(

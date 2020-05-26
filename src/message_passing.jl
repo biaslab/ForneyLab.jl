@@ -35,6 +35,8 @@ end
 
 """Special inheritance rules for parametric Message types"""
 matches(::Type{T}, ::Type{T}) where T<:Message = true
+matches(::Type{Message{F, V}}, ::Type{Message}) where {F<:FactorFunction, V<:VariateType} = true
+matches(::Type{Message{F}}, ::Type{Message}) where {F<:FactorFunction} = true
 matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb, Vb}}) where {Fa<:FactorFunction, Fb<:FactorFunction, Va<:VariateType, Vb<:VariateType} = (Va==Vb) && (Fa<:Fb)
 matches(Ta::Type{Message{Fa, Va}}, Tb::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction, Va<:VariateType} = (Fa<:Fb)
 matches(Ta::Type{Message{Fa}}, Tb::Type{Message{Fb}}) where {Fa<:FactorFunction, Fb<:FactorFunction} = (Fa<:Fb)

@@ -31,6 +31,9 @@ struct ProbabilityDistribution{var_type<:VariateType, family<:FactorFunction}
     params::Dict
 end
 
+"""Sample multiple realizations from a probability distribution"""
+sample(dist::ProbabilityDistribution, n_samples::Int64) = [sample(dist) for i in 1:n_samples] # TODO: individual samples can be optimized
+
 """Extract VariateType from dist"""
 variateType(dist::ProbabilityDistribution{V, F}) where {V<:VariateType, F<:FactorFunction} = V
 
@@ -109,6 +112,10 @@ ProbabilityDistribution(::Type{Function}; kwargs...) = ProbabilityDistribution{U
 unsafeMode(dist::ProbabilityDistribution{T, Function}) where T<:VariateType = deepcopy(dist.params[:mode])
 
 vague(::Type{Function}) = ProbabilityDistribution(Univariate, Function)
+
+isProper(dist::ProbabilityDistribution{<:VariateType, Function}) = haskey(dist.params, :log_pdf)
+
+logPdf(dist::ProbabilityDistribution{<:VariateType, Function}, x) = dist.params[:log_pdf](x)
 
 """
 Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)

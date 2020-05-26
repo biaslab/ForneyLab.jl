@@ -65,37 +65,8 @@ unsafeWeightedMean(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where
 
 unsafePrecision(dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType = cholinv(dist.params[:v])
 
-logPdf(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance},x) = -0.5*(log(2pi)+log(dist.params[:v]) + (x-dist.params[:m])^2/dist.params[:v])
-logPdf(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance},x) = -0.5*(dims(dist)*log(2pi) + log(det(dist.params[:v])) + transpose(x-dist.params[:m])*inv(dist.params[:v])*(x-dist.params[:m]))
-
-@symmetrical function prod!(
-    x::ProbabilityDistribution{Univariate, Function},
-    y::ProbabilityDistribution{Univariate, F},
-    z::ProbabilityDistribution{Univariate, GaussianMeanVariance}=ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) where {F<:Gaussian}
-
-    # The product of a log-pdf and Gaussian distribution is computed by importance sampling
-    y = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, y)
-    samples = y.params[:m] .+ sqrt(y.params[:v]).*randn(1000)
-
-    p = exp.((x.params[:log_pdf]).(samples))
-    Z = sum(p)
-    mean = sum(p./Z.*samples)
-    var = sum(p./Z.*(samples .- mean).^2)
-
-    z.params[:m] = mean
-    z.params[:v] = var
-    return z
-end
-
-function prod!(
-    x::ProbabilityDistribution{Univariate, Function},
-    y::ProbabilityDistribution{Univariate, Function},
-    z::ProbabilityDistribution{Univariate, Function}=ProbabilityDistribution(Univariate, Function, log_pdf=(s)->s))
-
-    z.params[:log_pdf] = ((s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s))
-
-    return z
-end
+logPdf(dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}, x) = -0.5*(log(2pi) + log(dist.params[:v]) + (x-dist.params[:m])^2/dist.params[:v])
+logPdf(dist::ProbabilityDistribution{Multivariate, GaussianMeanVariance}, x) = -0.5*(dims(dist)*log(2pi) + log(det(dist.params[:v])) + transpose(x-dist.params[:m])*inv(dist.params[:v])*(x-dist.params[:m]))
 
 # Converting from m,v to xi,w would require two separate inversions of the covariance matrix;
 # this function ensures only a single inversion is performed

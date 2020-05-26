@@ -75,6 +75,8 @@ end
     return z
 end
 
+sample(dist::ProbabilityDistribution{Univariate, Gamma}) = gammainvcdf(dist.params[:a], 1/dist.params[:b], rand())
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Gamma})
     labsgamma(dist.params[:a]) -

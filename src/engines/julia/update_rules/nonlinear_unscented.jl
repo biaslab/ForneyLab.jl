@@ -5,9 +5,8 @@ ruleSPNonlinearUTOutNG,
 ruleSPNonlinearUTOutNGX,
 ruleSPNonlinearUTIn1GG,
 ruleSPNonlinearUTInGX,
-ruleSPNonlinearISIn1MN,
-ruleSPNonlinearISOutNG,
-ruleMNonlinearUTNGX
+ruleMNonlinearUTInGX,
+prod!
 
 const default_alpha = 1e-3 # Default value for the spread parameter
 const default_beta = 2.0
@@ -83,7 +82,7 @@ function unscentedStatistics(ms::Vector{Float64}, Vs::Vector{Float64}, g::Functi
     (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha=alpha, beta=beta, kappa=kappa)
 
     g_sigma = [g(sp...) for sp in sigma_points] # Unpack each sigma point in g
-    
+
     d = sum(ds) # Dimensionality of joint
     m_tilde = sum(weights_m.*g_sigma) # Scalar
     V_tilde = sum(weights_c.*(g_sigma .- m_tilde).^2) # Scalar
@@ -111,7 +110,7 @@ function unscentedStatistics(ms::Vector{Vector{Float64}}, Vs::Vector{<:AbstractM
     (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha=alpha, beta=beta, kappa=kappa)
 
     g_sigma = [g(split(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
-    
+
     d = sum(ds) # Dimensionality of joint
     m_tilde = sum([weights_m[k+1]*g_sigma[k+1] for k=0:2*d]) # Vector
     V_tilde = sum([weights_c[k+1]*(g_sigma[k+1] - m_tilde)*(g_sigma[k+1] - m_tilde)' for k=0:2*d]) # Matrix
@@ -128,13 +127,14 @@ function smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_o
     C_tilde_inv = pinv(C_tilde)
     V_bw_in = V_fw_in*C_tilde_inv'*(V_tilde + V_bw_out)*C_tilde_inv*V_fw_in - V_fw_in
     m_bw_in = m_fw_in + V_fw_in*C_tilde_inv'*(m_bw_out - m_tilde)
-    
+
     return (m_bw_in, V_bw_in)
 end
 
-#-------------
-# Update Rules
-#-------------
+
+#-----------------------
+# Unscented Update Rules
+#-----------------------
 
 # Forward rule (unscented transform)
 function ruleSPNonlinearUTOutNG(g::Function,
@@ -160,26 +160,13 @@ function ruleSPNonlinearUTOutNGX(g::Function, # Needs to be in front of Vararg
     return Message(V, GaussianMeanVariance, m=m_tilde, v=V_tilde)
 end
 
-# Forward rule (importance sampling)
-function ruleSPNonlinearISOutNG(g::Function,
-                                msg_out::Nothing,
-                                msg_in1::Message{F, Univariate}) where F<:Gaussian
-
-    # The forward message is parameterized by a SampleList
-    dist_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
-
-    sample_list = g.(dist_in1.params[:m] .+ sqrt(dist_in1.params[:v]).*randn(100))
-
-    Message(Univariate, SampleList, s=sample_list)
-end
-
 # Backward rule with given inverse (unscented transform)
 function ruleSPNonlinearUTIn1GG(g::Function,
                                 g_inv::Function,
                                 msg_out::Message{F, V},
                                 msg_in1::Nothing;
                                 alpha::Float64=default_alpha) where {F<:Gaussian, V<:VariateType}
-    
+
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_tilde, V_tilde, _) = unscentedStatistics(m_bw_out, V_bw_out, g_inv; alpha=alpha)
 
@@ -222,7 +209,7 @@ function ruleSPNonlinearUTInGX(g::Function,
                                msg_out::Message{<:Gaussian, V},
                                msgs_in::Vararg{Message{<:Gaussian, V}};
                                alpha::Float64=default_alpha) where V<:VariateType
-    
+
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
     (m_tilde, V_tilde, C_tilde) = unscentedStatistics(ms_fw_in, Vs_fw_in, g; alpha=alpha)
@@ -232,26 +219,17 @@ function ruleSPNonlinearUTInGX(g::Function,
     W_fw_in = cholinv(V_fw_in)
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_bw_in, V_bw_in) = smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
-    
+
     # Marginalize
     (m_bw_inx, V_bw_inx) = marginalizeGaussianMV(V, m_bw_in, V_bw_in, ds, inx)
-    
+
     return Message(V, GaussianMeanVariance, m=m_bw_inx, v=V_bw_inx)
 end
 
-# Backward rule (importance sampling)
-function ruleSPNonlinearISIn1MN(g::Function, msg_out::Message{F, Univariate}, msg_in1::Nothing) where {F<:SoftFactor}
-    # The backward message is computed by a change of variables,
-    # where the Jacobian follows from automatic differentiation
-    log_grad_g(z) = log(abs(ForwardDiff.derivative(g, z)))
-
-    Message(Univariate, Function, log_pdf=(z) -> log_grad_g(z) + logPdf(msg_out.dist, g(z)))
-end
-
-function ruleMNonlinearUTNGX(g::Function,
-                             msg_out::Message{<:Gaussian, V}, 
-                             msgs_in::Vararg{Message{<:Gaussian, V}};
-                             alpha::Float64=default_alpha) where V<:VariateType
+function ruleMNonlinearUTInGX(g::Function,
+                              msg_out::Message{<:Gaussian, V},
+                              msgs_in::Vararg{Message{<:Gaussian, V}};
+                              alpha::Float64=default_alpha) where V<:VariateType
 
     # Approximate joint inbounds
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
@@ -329,33 +307,6 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
     return inbounds
 end
 
-# Importance sampling
-function collectSumProductNodeInbounds(node::Nonlinear{ImportanceSampling}, entry::ScheduleEntry)
-    inbounds = Any[]
-
-    # Push function to calling signature; function needs to be defined in the scope of the user
-    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
-                                      :keyword => false))
-
-    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
-    for node_interface in node.interfaces
-        inbound_interface = ultimatePartner(node_interface)
-        if node_interface == entry.interface
-            # Ignore inbound message on outbound interface
-            push!(inbounds, nothing)
-        elseif isa(inbound_interface.node, Clamp)
-            # Hard-code outbound message of constant node in schedule
-            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
-        else
-            # Collect message from previous result
-            push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        end
-    end
-
-    return inbounds
-end
-
-# Unscented transform
 function collectMarginalNodeInbounds(node::Nonlinear{Unscented}, entry::MarginalEntry)
     inbounds = Any[]
 
@@ -371,7 +322,7 @@ function collectMarginalNodeInbounds(node::Nonlinear{Unscented}, entry::Marginal
     entry_pf = posteriorFactor(first(entry.target.edges))
     encountered_external_regions = Set{Region}()
     for node_interface in entry.target.node.interfaces
-        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field 
+        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field
         current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
         inbound_interface = ultimatePartner(node_interface)
 
@@ -408,7 +359,7 @@ function collectStatistics(msgs::Vararg{Union{Message{<:Gaussian}, Nothing}})
 
     ms = [stat[1] for stat in stats]
     Vs = [stat[2] for stat in stats]
-        
+
     return (ms, Vs) # Return tuple with vectors for means and covariances
 end
 
@@ -423,7 +374,7 @@ function marginalizeGaussianMV(T::Type{<:Multivariate}, m::Vector{Float64}, V::A
     d_end = ds_start[inx + 1] - 1
     mx = m[d_start:d_end] # Vector
     Vx = V[d_start:d_end, d_start:d_end] # Matrix
-    
+
     return (mx, Vx)
 end
 
@@ -438,38 +389,38 @@ function concatenateGaussianMV(ms::Vector{Vector{Float64}}, Vs::Vector{<:Abstrac
     # Extract dimensions
     ds = [length(m_k) for m_k in ms]
     d_in_tot = sum(ds)
-    
+
     # Initialize concatenated statistics
     m = zeros(d_in_tot)
     V = zeros(d_in_tot, d_in_tot)
-    
+
     # Construct concatenated statistics
     d_start = 1
     for k = 1:length(ms) # For each inbound statistic
         d_end = d_start + ds[k] - 1
-        
+
         m[d_start:d_end] = ms[k]
         V[d_start:d_end, d_start:d_end] = Vs[k]
-        
+
         d_start = d_end + 1
     end
-    
-    return (m, V, ds) # Return concatenated mean and covariance with original dimensions (for splitting)    
+
+    return (m, V, ds) # Return concatenated mean and covariance with original dimensions (for splitting)
 end
 
 """
 Split a vector in chunks of lengths specified by ds.
 """
-function split(vec::Vector{Float64}, ds::Vector{Int64})
+function split(vec::Vector, ds::Vector{Int64})
     N = length(ds)
-    res = Vector{Vector{Float64}}(undef, N)
-    
+    res = Vector{Vector}(undef, N)
+
     d_start = 1
     for k = 1:N # For each original statistic
         d_end = d_start + ds[k] - 1
-        
+
         res[k] = vec[d_start:d_end]
-        
+
         d_start = d_end + 1
     end
 

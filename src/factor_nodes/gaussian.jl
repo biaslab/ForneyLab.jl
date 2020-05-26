@@ -89,10 +89,26 @@ function sample(dist::ProbabilityDistribution{Univariate, F}) where F<:Gaussian
     return sqrt(v)*randn() + m
 end
 
+function sample(dist::ProbabilityDistribution{Univariate, F}, n_samples::Int64) where F<:Gaussian
+    isProper(dist) || error("Cannot sample from improper distribution")
+    (m,v) = unsafeMeanCov(dist)
+
+    return sqrt(v).*randn(n_samples) .+ m
+end
+
 function sample(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian
     isProper(dist) || error("Cannot sample from improper distribution")
     (m,V) = unsafeMeanCov(dist)
     return (cholesky(V)).U' *randn(dims(dist)) + m
+end
+
+function sample(dist::ProbabilityDistribution{Multivariate, F}, n_samples::Int64) where F<:Gaussian
+    isProper(dist) || error("Cannot sample from improper distribution")
+    (m,V) = unsafeMeanCov(dist)
+    U = (cholesky(V)).U
+    d = dims(dist)
+
+    return [U' *randn(d) + m for i in 1:n_samples]
 end
 
 # Entropy functional

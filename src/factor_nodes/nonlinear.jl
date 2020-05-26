@@ -1,8 +1,8 @@
-export Nonlinear, Unscented, ImportanceSampling
+export Nonlinear, Unscented, Sampling
 
 abstract type ApproximationMethod end
 abstract type Unscented <: ApproximationMethod end
-abstract type ImportanceSampling <: ApproximationMethod end
+abstract type Sampling <: ApproximationMethod end
 
 """
 Description:
@@ -23,7 +23,6 @@ Interfaces:
 Construction:
 
     Nonlinear(out, in1; g=g, id=:my_node)
-    Nonlinear{ImportanceSampling}(out, in1; g=g, id=:my_node)
     Nonlinear(out, in1; g=g, g_inv=g_inv, id=:my_node)
     Nonlinear(out, in1, in2, ...; g=g, id=:my_node)
     Nonlinear(out, in1, in2, ...; g=g, g_inv=(g_inv_in1, g_inv_in2, ...), id=:my_node)
@@ -38,6 +37,7 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
     g_inv::Union{Function, Nothing, Vector} # Inverse of g with respect to individual inbounds (optional)
     alpha::Union{Float64, Nothing} # Spread parameter for unscented transform
     dims::Union{Tuple, Vector} # Dimension of breaker message(s) on input interface(s)
+    n_samples::Union{Int64, Nothing} # Number of samples for sampling
 
     function Nonlinear{Unscented}(out, args::Vararg; g::Function, g_inv=nothing, alpha=nothing, dims=(), id=ForneyLab.generateId(Nonlinear{Unscented}))
         @ensureVariables(out)
@@ -45,7 +45,7 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
         for i=1:n_args
             @ensureVariables(args[i])
         end
-        self = new(id, Vector{Interface}(undef, n_args+1), Dict{Symbol,Interface}(), g, g_inv, alpha, dims)
+        self = new(id, Vector{Interface}(undef, n_args+1), Dict{Symbol,Interface}(), g, g_inv, alpha, dims, nothing)
         ForneyLab.addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
         for k = 1:n_args
@@ -55,12 +55,18 @@ mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
         return self
     end
 
-    function Nonlinear{ImportanceSampling}(out, in1; g::Function, id=ForneyLab.generateId(Nonlinear{ImportanceSampling}))
-        @ensureVariables(out, in1)
-        self = new(id, Vector{Interface}(undef, 2), Dict{Symbol,Interface}(), g, nothing, nothing, ())
+    function Nonlinear{Sampling}(out, args::Vararg; g::Function, dims=(), n_samples=nothing, id=ForneyLab.generateId(Nonlinear{Sampling}))
+        @ensureVariables(out)
+        n_args = length(args)
+        for i=1:n_args
+            @ensureVariables(args[i])
+        end
+        self = new(id, Vector{Interface}(undef, n_args+1), Dict{Symbol,Interface}(), g, nothing, nothing, dims, n_samples)
         ForneyLab.addNode!(currentGraph(), self)
         self.i[:out] = self.interfaces[1] = associate!(Interface(self), out)
-        self.i[:in1] = self.interfaces[2] = associate!(Interface(self), in1)
+        for k = 1:n_args
+            self.i[:in*k] = self.interfaces[k+1] = associate!(Interface(self), args[k])
+        end
 
         return self
     end

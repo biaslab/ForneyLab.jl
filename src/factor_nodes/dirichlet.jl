@@ -104,6 +104,15 @@ end
     return z
 end
 
+function sample(dist::ProbabilityDistribution{Multivariate, Dirichlet})
+    smpl = Vector{Float64}(undef, length(dist.params[:a]))
+    for (i, alpha_i) in enumerate(dist.params[:a])
+        smpl[i] = sample(ProbabilityDistribution(Univariate,Gamma,a=alpha_i,b=1.0))
+    end
+    smpl = smpl./sum(smpl)
+    return smpl
+end
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])

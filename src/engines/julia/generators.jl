@@ -32,7 +32,7 @@ function freeEnergySourceCode(algo::InferenceAlgorithm)
     fe_code *= energiesSourceCode(algo.average_energies)
     fe_code *= "\n"
     fe_code *= entropiesSourceCode(algo.entropies)
-    fe_code *= "\nreturn F\n\n" 
+    fe_code *= "\nreturn F\n\n"
     fe_code *= "end"
 
     return fe_code
@@ -252,6 +252,8 @@ function inboundSourceCode(inbound::Clamp{V}) where V<:VariateType # Buffer or v
 
     return inbound_code
 end
+
+inboundSourceCode(inbound::Number) = string(inbound)
 
 """
 Convert a value to parseable Julia code

@@ -111,6 +111,10 @@ function format(v::Vector{Any})
     return str
 end
 
+function format(x::Any)
+    return string(x)
+end
+
 """Check if arguments are approximately equal"""
 isApproxEqual(arg1, arg2) = maximum(abs.(arg1-arg2)) < tiny
 
