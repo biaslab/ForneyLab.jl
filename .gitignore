@@ -5,3 +5,4 @@
 .ipynb_checkpoints
 demo/*.jl
 docs/build
+Manifest.toml
