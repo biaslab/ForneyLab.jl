@@ -60,16 +60,16 @@ end
     @test unsafeWeightedMeanPrecision(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(4.0))) == ([0.5], mat(0.25))
 end
 
+@testset "log pdf" begin
+    @test isapprox(logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=1.0, v=0.5), 1.0), -0.5723649429247)
+    @test isapprox(logPdf(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[1.0, 1.0], v=[0.5 0.0; 0.0 0.5]), [1.0, 0.0]), -2.1447298858494)
+end
+
 @testset "convert" begin
     @test convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution(Univariate, GaussianWeightedMeanPrecision, xi=8.0, w=4.0)) == ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=0.25)
     @test convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)) == ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=0.25)
     @test convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[8.0], w=mat(4.0))) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.25))
     @test convert(ProbabilityDistribution{Multivariate, GaussianMeanVariance}, ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.25))
-end
-
-@testset "log pdf" begin
-    @test isapprox(logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=1.2, v=0.5),2), -1.2123649429247)
-    @test isapprox(logPdf(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0,0], v=[1.0 0.0;0.0 1.0]),[1,0]), -2.3378770664093453)
 end
 
 
