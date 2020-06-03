@@ -122,4 +122,26 @@ end
     @test marginals[:x] == ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=3.0)
 end
 
+# Composite node definition without custom rule
+@composite StateTransition2 (y, x_prev, x) begin
+    @RV x ~ GaussianMeanVariance(x_prev, 1.0)
+    @RV y ~ GaussianMeanVariance(x, 1.0)
+end
+
+@testset "Composite node algorithm compilation without custom rule" begin
+    fg = FactorGraph()
+
+    @RV x ~ GaussianMeanVariance(1.0, 0.0)    
+    @RV y ~ GaussianMeanVariance(1.0, 0.0)
+    @RV z ~ StateTransition2(x, y)
+    placeholder(z, :z)
+
+    algo = sumProductAlgorithm(x)
+    algo_code = algorithmSourceCode(algo)
+
+    @test occursin("messages::Vector{Message}=Array{Message}(undef, 5)", algo_code)
+    @test !occursin("StateTransition", algo_code)
+end
+
+
 end #module
