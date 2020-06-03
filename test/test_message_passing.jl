@@ -20,6 +20,8 @@ using ForneyLab: generateId, addNode!, associate!, summaryPropagationSchedule, m
 end
 
 @testset "matches" begin
+    @test matches(Message{Gaussian}, Message)
+    @test matches(Message{Gaussian, Univariate}, Message)
     @test matches(Message{Gaussian, Univariate}, Message{Gaussian, Univariate})
     @test matches(Message{GaussianMeanVariance, Univariate}, Message{Gaussian, Univariate})
     @test !matches(Message{GaussianMeanVariance, Univariate}, Message{Gaussian, Multivariate})

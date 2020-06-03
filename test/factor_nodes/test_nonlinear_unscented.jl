@@ -4,9 +4,9 @@ using Test
 using Random
 using LinearAlgebra
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, ProbabilityDistribution, Unscented, ImportanceSampling
-using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearUTOutNGX, SPNonlinearUTInGX, SPNonlinearISIn1MN, SPNonlinearISOutNG, MNonlinearUTNGX
-using ForneyLab: unscentedStatistics, smoothRTS, collectStatistics, marginalizeGaussianMV, concatenateGaussianMV, split
+using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, Unscented
+using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearUTOutNGX, SPNonlinearUTInGX, MNonlinearUTInGX
+using ForneyLab: unscentedStatistics, smoothRTS, smoothRTSMessage, collectStatistics, marginalizeGaussianMV, concatenateGaussianMV, split
 
 Random.seed!(1234)
 
@@ -70,9 +70,14 @@ end
     @test C_tilde == [0.0 0.0; 0.0 0.0; -2.9999999999998863 0.0; 0.0 -2.9999999999998863]
 end
 
+@testset "smoothRTSMessage" begin
+    @test smoothRTSMessage(-4.0, 2.0, 1.0, 3.0, 5.0, 4.0, 6.0) == (43.0, 195.0)
+    @test smoothRTSMessage([-4.0], mat(2.0), mat(1.0), [3.0], mat(5.0), [4.0], mat(6.0)) == ([43.0], mat(195.0))
+end
+
 @testset "smoothRTS" begin
-    @test smoothRTS(-4.0, 2.0, 1.0, 3.0, 5.0, 4.0, 6.0) == (43.0, 195.0)
-    @test smoothRTS([-4.0], mat(2.0), mat(1.0), [3.0], mat(5.0), [4.0], mat(6.0)) == ([43.0], mat(195.0))
+    @test smoothRTS(-4.0, 2.0, 1.0, 3.0, 5.0, 4.0, 6.0) == (4.0, 4.875)
+    @test smoothRTS([-4.0], mat(2.0), mat(1.0), [3.0], mat(5.0), [4.0], mat(6.0)) == ([4.0], mat(4.875))
 end
 
 @testset "collectStatistics" begin
@@ -102,7 +107,7 @@ end
 @testset "SPNonlinearUTOutNG" begin
     @test SPNonlinearUTOutNG <: SumProductRule{Nonlinear{Unscented}}
     @test outboundType(SPNonlinearUTOutNG) == Message{GaussianMeanVariance}
-    @test isApplicable(SPNonlinearUTOutNG, [Nothing, Message{Gaussian}]) 
+    @test isApplicable(SPNonlinearUTOutNG, [Nothing, Message{GaussianMeanVariance}]) 
 
     @test ruleSPNonlinearUTOutNG(g, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0)) == Message(Univariate, GaussianMeanVariance, m=2.0000000001164153, v=66.00000000093132)
     @test ruleSPNonlinearUTOutNG(g, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), alpha=1.0) == Message(Univariate, GaussianMeanVariance, m=2.0, v=66.0)
@@ -119,18 +124,6 @@ end
 
     @test ruleSPNonlinearUTOutNGX(h, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=1.9999999997671694, v=67.00000899797305)
     @test ruleSPNonlinearUTOutNGX(h, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[1.9999999997671694], v=mat(67.00000899657607))
-end
-
-@testset "SPNonlinearISOutNG" begin
-    samples = 2.0 .+ randn(100000)
-    p_dist = ProbabilityDistribution(Univariate, SampleList, s=samples)
-
-    @test SPNonlinearISOutNG <: SumProductRule{Nonlinear{ImportanceSampling}}
-    @test outboundType(SPNonlinearISOutNG) == Message{SampleList}
-    @test isApplicable(SPNonlinearISOutNG, [Nothing, Message{Gaussian}])
-
-    @test abs(unsafeMean(ruleSPNonlinearISOutNG(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0)).dist) - unsafeMean(p_dist)) < 0.2
-    @test abs(unsafeVar(ruleSPNonlinearISOutNG(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0)).dist) - unsafeVar(p_dist)) < 0.2
 end
 
 @testset "SPNonlinearUTIn1GG" begin
@@ -153,35 +146,26 @@ end
 
 @testset "SPNonlinearUTInGX" begin
     @test SPNonlinearUTInGX <: SumProductRule{Nonlinear{Unscented}}
-    @test outboundType(SPNonlinearUTInGX) == Message{GaussianMeanVariance}
+    @test outboundType(SPNonlinearUTInGX) == Message{Gaussian}
     @test !isApplicable(SPNonlinearUTInGX, [Message{Gaussian}, Nothing]) 
     @test !isApplicable(SPNonlinearUTInGX, [Nothing, Message{Gaussian}, Message{Gaussian}]) 
     @test isApplicable(SPNonlinearUTInGX, [Message{Gaussian}, Nothing, Message{Gaussian}]) 
 
     # Without given inverse
-    @test ruleSPNonlinearUTInGX(h, 1, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=2.4705882352587847, v=0.21799313500892237)
-    @test ruleSPNonlinearUTInGX(h, 1, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.4705882352587847], v=mat(0.21799313501053375))
+    @test ruleSPNonlinearUTInGX(h, 1, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=6.666665554160243, w=2.6666662217033044)
+    @test ruleSPNonlinearUTInGX(h, 1, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[6.666665554127903], w=mat(2.666666221690368))
 
     # With given inverse
     @test ruleSPNonlinearUTInGX(h, h_inv_x, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), nothing, Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == Message(Univariate, GaussianMeanVariance, m=2.6187538476660848, v=0.14431487274498522)
     @test ruleSPNonlinearUTInGX(h, h_inv_x, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), nothing, Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.6187538476660848], v=mat(0.14431487274475785))
 end
 
-@testset "SPNonlinearISIn1MN" begin
-    @test SPNonlinearISIn1MN <: SumProductRule{Nonlinear{ImportanceSampling}}
-    @test outboundType(SPNonlinearISIn1MN) == Message{Function}
-    @test isApplicable(SPNonlinearISIn1MN, [Message{Union{Bernoulli, Beta, Categorical, Dirichlet, Gaussian, Gamma, LogNormal, Poisson, Wishart}}, Nothing])
-    
-    log_pdf(x) = ruleSPNonlinearISIn1MN(f, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), nothing).dist.params[:log_pdf](x)
-    @test log_pdf(1.5) == logPdf(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=1.0), 1.5)
-end
+@testset "MNonlinearUTInGX" begin
+    @test MNonlinearUTInGX <: MarginalRule{Nonlinear{Unscented}}
+    @test isApplicable(MNonlinearUTInGX, [Nothing, Message{Gaussian}, Message{Gaussian}])
 
-@testset "MNonlinearUTNGX" begin
-    @test MNonlinearUTNGX <: MarginalRule{Nonlinear{Unscented}}
-    @test isApplicable(MNonlinearUTNGX, [Nothing, Message{Gaussian}, Message{Gaussian}])
-
-    @test ruleMNonlinearUTNGX(h, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.3636363470614056, -0.09090908676656449], v=[0.2727273058237252 0.1818181735464949; 0.18181817354649488 0.9545454566127697])
-    @test ruleMNonlinearUTNGX(h, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.36363634706092446, -0.09090908676644421], v=[0.2727273058246874 0.18181817354625435; 0.18181817354625435 0.9545454566128299])
+    @test ruleMNonlinearUTInGX(h, Message(Univariate, GaussianMeanVariance, m=2.0, v=3.0), Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), Message(Univariate, GaussianMeanVariance, m=5.0, v=1.0)) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.3636363470614055, 4.9090909132334355], v=[0.2727273058237252 0.1818181735464949; 0.18181817354649488 0.9545454566127697])
+    @test ruleMNonlinearUTInGX(h, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(3.0)), Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(1.0)), Message(Multivariate, GaussianMeanVariance, m=[5.0], v=mat(1.0))) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.3636363470609245, 4.909090913233555], v=[0.2727273058246874 0.18181817354625435; 0.18181817354625435 0.9545454566128299])
 end
 
 
@@ -270,19 +254,6 @@ end
     @test occursin("ruleSPNonlinearUTIn1GG(g, messages[2], messages[1])", algo_code)
     @test !occursin("g_inv", algo_code)
     @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", algo_code)
-end
-
-@testset "Nonlinear integration via importance sampling" begin
-    FactorGraph()
-
-    @RV x ~ GaussianMeanVariance(2.0, 1.0)
-    @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    n = Nonlinear{ImportanceSampling}(y, x, g=g)
-
-    # Forward; g_inv should not be present in call
-    algo = sumProductAlgorithm(y)
-    algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearISOutNG(g, nothing, messages[2])", algo_code)
 end
 
 end #module

@@ -81,6 +81,8 @@ end
     return z
 end
 
+sample(dist::ProbabilityDistribution{Univariate, Beta}) = betainvcdf(dist.params[:a], dist.params[:b], rand())
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Beta})
     labsbeta(dist.params[:a], dist.params[:b]) -

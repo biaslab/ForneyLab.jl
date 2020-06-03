@@ -39,7 +39,7 @@ end
     @test outboundType(SPChanceConstraintOutG) == Message{GaussianWeightedMeanPrecision}
     @test isApplicable(SPChanceConstraintOutG, [Nothing]) 
 
-    @test ruleSPChanceConstraintOutG(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), (0.0, Inf), 0.05) == Message(Univariate, GaussianWeightedMeanPrecision, xi=1.4826342923288633, w=1.064673910049474)
+    @test ruleSPChanceConstraintOutG(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), (0.0, Inf), 0.05) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.945382842719278, w=2.2088825025757224)
     @test ruleSPChanceConstraintOutG(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), (-Inf, Inf), 0.05) == Message(Univariate, GaussianWeightedMeanPrecision, xi=0.0, w=tiny)
 end
 

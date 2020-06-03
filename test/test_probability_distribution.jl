@@ -12,6 +12,12 @@ using LinearAlgebra: Diagonal
     @test !matches(Nothing, ProbabilityDistribution)
 end
 
+@testset "sample" begin
+    dist = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
+    samples = sample(dist, 10)
+    @test length(samples) == 10
+end
+
 @testset "Univariate" begin
     # ProbabilityDistribution should be parameterized on a node type (distribution family)
     gaussian = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)
