@@ -40,7 +40,7 @@ function vague(::Type{SampleList}, dims::Int64)
     for n=1:n_samples
         s_list[n] = rand(dims)
     end
-    
+
     return ProbabilityDistribution(Multivariate, SampleList, s=s_list, w=ones(n_samples)/n_samples)
 end
 
@@ -129,7 +129,7 @@ end
     y::ProbabilityDistribution{Multivariate, SampleList}) where F<:Gaussian
 
     z = ProbabilityDistribution(Multivariate, SampleList, s=[[0.0]], w=[1.0])
-    
+
     return prod!(x, y, z) # Return a SampleList
 end
 
@@ -187,6 +187,6 @@ end
 # Differential entropy for SampleList
 function differentialEntropy(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType
     haskey(dist.params, :entropy) || error("Missing entropy for SampleList; quantity is requested but not computed")
-    
+
     return dist.params[:entropy] # Entropy is pre-computed during computation of the marginal
 end

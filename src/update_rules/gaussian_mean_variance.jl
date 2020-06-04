@@ -28,6 +28,11 @@
                 :inbound_types => (Message{PointMass}, Message{Gaussian}, Nothing),
                 :name          => SPGaussianMeanVarianceVPGN)
 
+@sumProductRule(:node_type     => GaussianMeanVariance,
+                :outbound_type => Message{SampleList},
+                :inbound_types => (Nothing, Message{SampleList}, Message{PointMass}),
+                :name          => SPGaussianMeanVarianceOutNSP)
+
 @naiveVariationalRule(:node_type     => GaussianMeanVariance,
                       :outbound_type => Message{GaussianMeanVariance},
                       :inbound_types => (ProbabilityDistribution, Nothing, ProbabilityDistribution),
