@@ -96,7 +96,6 @@ function unsafeCov(dist::ProbabilityDistribution{MatrixVariate, SampleList})
     cov1 = zeros(dims(dist)[1],dims(dist)[1])
     cov2 = zeros(dims(dist)[2],dims(dist)[2])
 
-    tot = zeros(dims(dist)[1]*dims(dist)[2], dims(dist)[1]*dims(dist)[2])
     for i = 1:n_samples
         cov1 += ((samples[i] .- m))*transpose((samples[i] .- m)).*weights[i]
         cov2 += transpose((samples[i] .- m))*((samples[i] .- m)).*weights[i]
