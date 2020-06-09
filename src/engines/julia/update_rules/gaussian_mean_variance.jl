@@ -66,6 +66,23 @@ function ruleSPGaussianMeanVarianceOutNSP(  msg_out::Nothing,
     Message(V, SampleList, s=new_samples, w=weights)
 end
 
+function ruleSPGaussianMeanVarianceOutNDS(  msg_out::Nothing,
+                                            msg_mean::Message{F, V1},
+                                            msg_var::Message{SampleList, V2}) where {F<:Gaussian, V1<:VariateType, V2<:VariateType}
+
+    samples = msg_var.dist.params[:s]
+    weights = msg_var.dist.params[:w]
+    n_samples = length(samples)
+    new_samples = []
+    for i=1:n_samples
+        p = ProbabilityDistribution(V1,GaussianMeanVariance,m=msg_mean.dist.params[:m],v=msg_mean.dist.params[:v] + samples[i])
+        s = sample(p)
+        push!(new_samples,s)
+    end
+
+    Message(V1, SampleList, s=new_samples, w=weights)
+end
+
 ruleVBGaussianMeanVarianceM(dist_out::ProbabilityDistribution{V},
                             dist_mean::Any,
                             dist_var::ProbabilityDistribution) where V<:VariateType =
