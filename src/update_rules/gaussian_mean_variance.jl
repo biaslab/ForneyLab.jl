@@ -35,7 +35,7 @@
 
 @sumProductRule(:node_type     => GaussianMeanVariance,
                 :outbound_type => Message{SampleList},
-                :inbound_types => (Nothing, Message{Union{Gaussian,PointMass}},Message{SampleList}),
+                :inbound_types => (Nothing, Message{Gaussian},Message{SampleList}),
                 :name          => SPGaussianMeanVarianceOutNDS)
 
 @naiveVariationalRule(:node_type     => GaussianMeanVariance,

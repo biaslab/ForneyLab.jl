@@ -67,8 +67,8 @@ function ruleSPGaussianMeanVarianceOutNSP(  msg_out::Nothing,
 end
 
 function ruleSPGaussianMeanVarianceOutNDS(  msg_out::Nothing,
-                                            msg_mean::Message{Union{Gaussian,PointMass}, V1},
-                                            msg_var::Message{SampleList, V2}) where {V1<:VariateType, V2<:VariateType}
+                                            msg_mean::Message{F, V1},
+                                            msg_var::Message{SampleList, V2}) where {F<:Gaussian, V1<:VariateType, V2<:VariateType}
 
     samples = msg_var.dist.params[:s]
     weights = msg_var.dist.params[:w]
