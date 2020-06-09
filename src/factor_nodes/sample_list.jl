@@ -23,9 +23,11 @@ format(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = "$(s
 
 ProbabilityDistribution(::Type{Univariate}, ::Type{SampleList}; s=[0.0], w=[1.0]) = ProbabilityDistribution{Univariate, SampleList}(Dict{Symbol, Any}(:s=>s, :w=>w))
 ProbabilityDistribution(::Type{Multivariate}, ::Type{SampleList}; s=[[0.0]], w=[1.0]) = ProbabilityDistribution{Multivariate, SampleList}(Dict{Symbol, Any}(:s=>s, :w=>w))
+ProbabilityDistribution(::Type{MatrixVariate}, ::Type{SampleList};s=[[1.0 0.0; 0.0 1.0]], w=[1.0]) = ProbabilityDistribution{MatrixVariate, SampleList}(Dict{Symbol,Any}(:s=>s,:w=>w))
 
 dims(dist::ProbabilityDistribution{Univariate, SampleList}) = 1
 dims(dist::ProbabilityDistribution{Multivariate, SampleList}) = length(dist.params[:s][1])
+dims(dist::ProbabilityDistribution{MatrixVariate, SampleList}) = size(dist.params[:s][1])
 
 function vague(::Type{SampleList})
     n_samples = default_n_samples # Fixed number of samples
@@ -39,6 +41,17 @@ function vague(::Type{SampleList}, dims::Int64)
     s_list = Vector{Vector{Number}}(undef, n_samples)
     for n=1:n_samples
         s_list[n] = rand(dims)
+    end
+
+    return ProbabilityDistribution(Multivariate, SampleList, s=s_list, w=ones(n_samples)/n_samples)
+end
+
+function vague(::Type{SampleList}, dims::Tuple{Int64,Int64})
+    n_samples = default_n_samples # Fixed number of samples
+
+    s_list = Vector{Matrix{Number}}(undef, n_samples)
+    for n=1:n_samples
+        s_list[n] = randn(dims)
     end
 
     return ProbabilityDistribution(Multivariate, SampleList, s=s_list, w=ones(n_samples)/n_samples)
@@ -71,6 +84,26 @@ function unsafeCov(dist::ProbabilityDistribution{Multivariate, SampleList})
     end
 
     return (n_samples/(n_samples - 1)).*tot
+end
+
+unsafeVar(dist::ProbabilityDistribution{MatrixVariate, SampleList}) = diag(unsafeCov(dist)[1])
+function unsafeCov(dist::ProbabilityDistribution{MatrixVariate, SampleList})
+    samples = dist.params[:s]
+    weights = dist.params[:w]
+
+    n_samples = length(samples)
+    m = unsafeMean(dist)
+    cov1 = zeros(dims(dist)[1],dims(dist)[1])
+    cov2 = zeros(dims(dist)[2],dims(dist)[2])
+
+    tot = zeros(dims(dist)[1]*dims(dist)[2], dims(dist)[1]*dims(dist)[2])
+    for i = 1:n_samples
+        cov1 += ((samples[i] .- m))*transpose((samples[i] .- m)).*weights[i]
+        cov2 += transpose((samples[i] .- m))*((samples[i] .- m)).*weights[i]
+    end
+    cov1 = (n_samples/(n_samples - 1)).*cov1
+    cov2 = (n_samples/(n_samples - 1)).*cov2
+    return kron(cov1,cov2)
 end
 
 unsafeMeanCov(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = (unsafeMean(dist), unsafeCov(dist))
