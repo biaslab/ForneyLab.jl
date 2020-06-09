@@ -8,11 +8,6 @@
                 :inbound_types => (Message, Nothing),
                 :name          => SPNonlinearSIn1MN)
 
-# @sumProductRule(:node_type     => Nonlinear{Sampling},
-#                 :outbound_type => Message{SampleList},
-#                 :inbound_types => (Nothing, Message{SampleList}),
-#                 :name          => SPNonlinearSOutNS)
-
 mutable struct SPNonlinearSOutNGX <: SumProductRule{Nonlinear{Sampling}} end
 outboundType(::Type{SPNonlinearSOutNGX}) = Message{SampleList}
 function isApplicable(::Type{SPNonlinearSOutNGX}, input_types::Vector{<:Type})
