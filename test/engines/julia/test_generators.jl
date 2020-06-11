@@ -13,6 +13,7 @@ end
     @test valueSourceCode(1) == "1"
     @test valueSourceCode([1]) == "[1]"
     @test valueSourceCode(mat(1)) == "mat(1)"
+    @test valueSourceCode(reshape([1,2,3], 3, 1)) == "reshape([1, 2, 3], (3, 1))"
     @test valueSourceCode([1 2; 2 1]) == "[1 2; 2 1]"
     @test valueSourceCode(Diagonal([1])) == "Diagonal([1])"
 end
