@@ -3,7 +3,7 @@ module GaussianMeanVarianceTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
-using ForneyLab: SPGaussianMeanVarianceOutNPP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
+using ForneyLab: SPGaussianMeanVarianceOutNPP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, SPGaussianMeanVarianceOutNSP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
 using LinearAlgebra: det, diag
 
 @testset "dims" begin
@@ -136,6 +136,20 @@ end
     msg = ruleSPGaussianMeanVarianceVPGN(Message(Univariate, PointMass, m=1.0), Message(Univariate, GaussianMeanVariance, m=3.0, v=4.0), nothing)
     @test isa(msg, Message{Function, Univariate})
     @test msg.dist.params[:log_pdf](1.0) == -0.5*log(4.0 + 1.0) - 1/(2*1.0)*(1.0 - 3.0)^2
+end
+
+@testset "SPGaussianMeanVarianceOutNSP" begin
+    @test SPGaussianMeanVarianceOutNSP <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceOutNSP) == Message{SampleList}
+    @test isApplicable(SPGaussianMeanVarianceOutNSP, [Nothing, Message{SampleList}, Message{PointMass}])
+    @test !isApplicable(SPGaussianMeanVarianceOutNSP, [Message{SampleList}, Nothing, Message{PointMass}])
+
+    msg = ruleSPGaussianMeanVarianceOutNSP(nothing, Message(Univariate, SampleList, s=5. .+randn(10000), w=ones(10000)./10000), Message(Univariate, PointMass, m=2.0))
+    @test abs(mean(msg.dist) - 5)<0.1
+    @test abs(var(msg.dist) - 3)<0.1
+    msg = ruleSPGaussianMeanVarianceOutNSP(nothing, Message(Multivariate, SampleList, s=[randn(2) for i=1:100000], w=ones(100000)./100000), Message(MatrixVariate, PointMass, m=[2.0 0.0;0.0 1.0]))
+    @test abs(sum(mean(msg.dist).-zeros(2)))<0.2
+    @test abs(sum(var(msg.dist).-[3.0,2.0]))<0.2
 end
 
 @testset "VBGaussianMeanVarianceM" begin
