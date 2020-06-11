@@ -3,10 +3,11 @@ module SampleListTest
 using Test
 using Random
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeVar, unsafeLogMean, unsafeMeanCov, unsafeMirroredLogMean, dims
+using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeCov, unsafeVar, unsafeLogMean, unsafeMeanCov, unsafeMirroredLogMean, dims
 using ForneyLab: SPSampleListOutNPP
 using StatsFuns: betainvcdf
 using SpecialFunctions: digamma
+using LinearAlgebra: norm
 
 Random.seed!(1234)
 
@@ -14,6 +15,12 @@ Random.seed!(1234)
     f_dummy(x) = x
     s = randn(10)
     @test dims(ProbabilityDistribution(Univariate, SampleList, s=s)) == 1
+
+    m = Vector{Matrix}(undef,10)
+    for i=1:10
+        m[i] = randn(3,4)
+    end
+    @test dims(ProbabilityDistribution(MatrixVariate,SampleList,s=m)) == (3,4)
 end
 
 @testset "unsafeMean and unsafeVar" begin
@@ -31,6 +38,15 @@ end
 
     @test abs(unsafeLogMean(ProbabilityDistribution(Univariate, SampleList, s=samples, w=ones(1000)/1000)) - log_mean) < 0.1
     @test abs(unsafeMirroredLogMean(ProbabilityDistribution(Univariate, SampleList, s=samples, w=ones(1000)/1000)) - mirrored_log_mean) < 0.1
+
+    m = Vector{Matrix}(undef,100000)
+    mt = Vector{Matrix}(undef,100000)
+    for i=1:100000
+        m[i] = randn(3,4)
+        mt[i] = transpose(m[i])
+    end
+    @test norm(unsafeMean(ProbabilityDistribution(MatrixVariate,SampleList,s=m,w=ones(100000)/100000)) - mean(m)) < 0.3
+    @test norm(unsafeCov(ProbabilityDistribution(MatrixVariate,SampleList,s=m,w=ones(100000)/100000)) - kron(cov(m),cov(mt))) < 0.3
 end
 
 @testset "prod!" begin

@@ -6,6 +6,9 @@ ruleSPGaussianMeanVarianceMGNP,
 ruleSPGaussianMeanVarianceVGGN,
 ruleSPGaussianMeanVarianceVPGN,
 ruleSPGaussianMeanVarianceOutNSP,
+ruleSPGaussianMeanVarianceMSNP,
+ruleSPGaussianMeanVarianceOutNDS,
+ruleSPGaussianMeanVarianceMDNS,
 ruleVBGaussianMeanVarianceM,
 ruleVBGaussianMeanVarianceOut
 
@@ -58,13 +61,17 @@ function ruleSPGaussianMeanVarianceOutNSP(  msg_out::Nothing,
     n_samples = length(samples)
     new_samples = []
     for i=1:n_samples
-        p = ProbabilityDistribution(V,GaussianMeanVariance,m=samples[i],v=msg_var.dist.params[:m])
+        p = ProbabilityDistribution(V,GaussianMeanVariance,m=samples[i],v=unsafeMean(msg_var.dist))
         s = sample(p)
         push!(new_samples,s)
     end
 
     Message(V, SampleList, s=new_samples, w=weights)
 end
+
+ruleSPGaussianMeanVarianceMSNP(  msg_out::Message{SampleList, V},
+                                 msg_mean::Nothing,
+                                 msg_var::Message{PointMass}) where {V<:VariateType} = ruleSPGaussianMeanVarianceOutNSP(msg_mean,msg_out,msg_var)
 
 function ruleSPGaussianMeanVarianceOutNDS(  msg_out::Nothing,
                                             msg_mean::Message{F, V1},
@@ -75,13 +82,18 @@ function ruleSPGaussianMeanVarianceOutNDS(  msg_out::Nothing,
     n_samples = length(samples)
     new_samples = []
     for i=1:n_samples
-        p = ProbabilityDistribution(V1,GaussianMeanVariance,m=msg_mean.dist.params[:m],v=msg_mean.dist.params[:v] + samples[i])
+        p = ProbabilityDistribution(V1,GaussianMeanVariance,m=unsafeMean(msg_mean.dist),v=unsafeCov(msg_mean.dist) + samples[i])
         s = sample(p)
         push!(new_samples,s)
     end
 
     Message(V1, SampleList, s=new_samples, w=weights)
 end
+
+ruleSPGaussianMeanVarianceMDNS(  msg_out::Message{F, V1},
+                                 msg_mean::Nothing,
+                                 msg_var::Message{SampleList, V2}) where {F<:Gaussian, V1<:VariateType, V2<:VariateType} = ruleSPGaussianMeanVarianceOutNDS(msg_mean,msg_out,msg_var)
+
 
 ruleVBGaussianMeanVarianceM(dist_out::ProbabilityDistribution{V},
                             dist_mean::Any,
