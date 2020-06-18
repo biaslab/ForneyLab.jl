@@ -111,3 +111,7 @@ end
 function averageEnergy(::Type{Categorical}, marg_out::ProbabilityDistribution, marg_p::ProbabilityDistribution{Multivariate})
     -sum(unsafeMean(marg_out).*unsafeLogMean(marg_p))
 end
+
+function averageEnergy(::Type{Categorical}, marg_out::ProbabilityDistribution{Multivariate,PointMass}, marg_p::ProbabilityDistribution{Multivariate})
+    -sum(marg_out.params[:m].*unsafeLogMean(marg_p))
+end

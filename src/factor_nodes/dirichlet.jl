@@ -62,8 +62,8 @@ unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = dist.param
 unsafeLogMean(dist::ProbabilityDistribution{Multivariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a]))
 unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}) = digamma.(dist.params[:a]) .- digamma.(sum(dist.params[:a],dims=1)) # Normalize columns
 
-logPdf(dist::ProbabilityDistribution{Multivariate, Dirichlet}, x) = sum((dist.params[:a].-1).*log.(x)) - sum(labsgamma.(dist.params[:a])) + labsgamma(sum(dist.params[:a]))
-logPdf(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}, x) = sum(sum((dist.params[:a].-1).*log.(x),dims=1) - sum(labsgamma.(dist.params[:a]), dims=1) + labsgamma.(sum(dist.params[:a],dims=1)))
+logPdf(dist::ProbabilityDistribution{Multivariate, Dirichlet}, x) = sum((dist.params[:a].-1).*log.(x)) - sum(loggamma.(dist.params[:a])) + loggamma(sum(dist.params[:a]))
+logPdf(dist::ProbabilityDistribution{MatrixVariate, Dirichlet}, x) = sum(sum((dist.params[:a].-1).*log.(x),dims=1) - sum(loggamma.(dist.params[:a]), dims=1) + loggamma.(sum(dist.params[:a],dims=1)))
 
 function unsafeVar(dist::ProbabilityDistribution{Multivariate, Dirichlet})
     a_sum = sum(dist.params[:a])
@@ -142,6 +142,24 @@ function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Mult
     -labsgamma(a_sum) +
     sum(labsgamma.(marg_a.params[:m])) -
     sum( (marg_a.params[:m] .- 1.0).*unsafeLogMean(marg_out) )
+end
+
+#supposed to be marg_a::ProbabilityDistribution{Multivariate, SampleList}
+#however it throws an error when I do so
+function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Multivariate}, marg_a::ProbabilityDistribution{Multivariate})
+    logGammaSum = loggamma(sum(unsafeMeanVector(marg_a)))
+    sumLogGamma = 0
+    for i=1:length(marg_a.params[:s])
+        ssum = 0
+        for sj in marg_a.params[:s][i]
+            ssum += loggamma(sj)
+        end
+        sumLogGamma += ssum*marg_a.params[:w][i]
+    end
+
+    -logGammaSum +
+    sumLogGamma -
+    sum( (unsafeMeanVector(marg_a) .- 1.0).*unsafeLogMean(marg_out) )
 end
 
 function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{MatrixVariate}, marg_a::ProbabilityDistribution{MatrixVariate, PointMass})
