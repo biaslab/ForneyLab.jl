@@ -61,6 +61,8 @@ unsafeMean(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = 
 
 unsafeLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = sum(log.(dist.params[:s]).*dist.params[:w])
 
+unsafeMeanLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = sum(dist.params[:s].*log.(dist.params[:s]).*dist.params[:w])
+
 # Unbiased (co)variance estimates
 function unsafeVar(dist::ProbabilityDistribution{Univariate, SampleList})
     samples = dist.params[:s]
