@@ -59,7 +59,7 @@ unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, Beta}) = digamma
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, Beta}) = dist.params[:a]*dist.params[:b]/((dist.params[:a] + dist.params[:b])^2*(dist.params[:a] + dist.params[:b] + 1.0))
 
-logPdf(dist::ProbabilityDistribution{Univariate, Beta}, x) = (dist.params[:a]-1)*log(x) + (dist.params[:b]-1)*log(1.0-x) - labsgamma(dist.params[:a]) - labsgamma(dist.params[:b]) + labsgamma(dist.params[:a]+dist.params[:b])
+logPdf(dist::ProbabilityDistribution{Univariate, Beta}, x) = (dist.params[:a]-1)*log(x) + (dist.params[:b]-1)*log(1.0-x) - loggamma(dist.params[:a]) - loggamma(dist.params[:b]) + loggamma(dist.params[:a]+dist.params[:b])
 
 function prod!( x::ProbabilityDistribution{Univariate, Beta},
                 y::ProbabilityDistribution{Univariate, Beta},

@@ -118,6 +118,8 @@ isProper(dist::ProbabilityDistribution{<:VariateType, Function}) = haskey(dist.p
 
 logPdf(dist::ProbabilityDistribution{<:VariateType, Function}, x) = dist.params[:log_pdf](x)
 
+sample(dist::ProbabilityDistribution{T, PointMass}) where T<:VariateType = deepcopy(dist.params[:m])
+
 """
 Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)
 """
