@@ -27,12 +27,12 @@ Generate Julia code for free energy evaluation
 function freeEnergySourceCode(algo::InferenceAlgorithm)
     algo.posterior_factorization.free_energy_flag || error("Required quantities for free energy evaluation are not computed by the algorithm. Make sure to flag free_energy=true upon algorithm construction to schedule computation of required quantities.")
 
-    fe_code  = "function freeEnergy$(algo.id)(data::Dict, marginals::Dict)\n\n"
+    fe_code  = "function freeEnergy$(algo.id)(data::Dict, marginals::Dict, dump::Union{Dict, Nothing}=nothing)\n\n"
     fe_code *= "F = 0.0\n\n"
-    fe_code *= energiesSourceCode(algo.average_energies)
+    fe_code *= energiesSourceCode(algo.average_energies, dump)
     fe_code *= "\n"
     fe_code *= entropiesSourceCode(algo.entropies)
-    fe_code *= "\nreturn F\n\n"
+    fe_code *= "\nreturn dump == nothing ? F : (F, dump)\n\n"
     fe_code *= "end"
 
     return fe_code
@@ -103,13 +103,25 @@ end
 """
 Generate code for evaluating the average energy
 """
-function energiesSourceCode(average_energies::Vector)
+function energiesSourceCode(average_energies::Vector, dump=nothing)
     energies_code = ""
     for energy in average_energies
         count_code = countingNumberSourceCode(energy[:counting_number])
         node_code = removePrefix(energy[:node])
         inbounds_code = inboundsSourceCode(energy[:inbounds])
-        energies_code *= "F += $(count_code)averageEnergy($node_code, $inbounds_code)\n"
+
+        energies_code *= """
+                    v = $(count_code)averageEnergy($node_code, $inbounds_code)
+                    if dump !== nothing
+                        n_id = :$(energy[:node_id])
+                        if n_id in keys(dump)
+                            push!(dump[n_id], v)
+                        else
+                            dump[n_id] = [v]
+                        end
+                    end
+                    F += v
+                    """
     end
 
     return energies_code
