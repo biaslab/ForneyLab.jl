@@ -264,6 +264,12 @@ function bootstrap(dist_mean::ProbabilityDistribution{Multivariate, <:Gaussian},
     return [s_U[i]' *randn(d) + m for i in 1:N] # New samples
 end
 
+#Sampling from a distribution in ForneyLab returns equally weighted samples from the distribution
+#To retain the unified standard procedure, we allow sampling from SampleList not through directly returning
+#sample and weight parameters but drawing samples from the existing list of samples according to weights.
+# Inverse-transform sampling
+sample(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = sample(dist.params[:s], Weights(dist.params[:w]))    
+
 # Differential entropy for SampleList
 function differentialEntropy(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType
     haskey(dist.params, :entropy) || error("Missing entropy for SampleList; quantity is requested but not computed")
