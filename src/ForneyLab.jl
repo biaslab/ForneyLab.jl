@@ -11,6 +11,7 @@ using Printf: @sprintf
 using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf
 using ForwardDiff
 using StatsBase: Weights
+using JSON
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, exp, convert, show, prod!
@@ -65,6 +66,7 @@ include("factor_nodes/sample_list.jl")
 
 # Factor graph
 include("factor_graph.jl")
+include("debug.jl")
 
 # Composite nodes
 include("factor_nodes/composite.jl")
