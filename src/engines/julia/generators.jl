@@ -112,7 +112,7 @@ function energiesSourceCode(average_energies::Vector; debug::Bool=false)
 
         if debug
             energies_code *= "v = $(count_code)averageEnergy($node_code, $inbounds_code)\n"
-            energies_code *= "ForneyLab.pushcreate!(dump[:energy], :$(energy[:node_id]), v)\n"
+            energies_code *= "ForneyLab.pushcreate!(dump, :$(energy[:node_id]), v)\n"
             energies_code *= "F += v\n"
         else
             energies_code *= "F += $(count_code)averageEnergy($node_code, $inbounds_code)\n"
@@ -135,7 +135,7 @@ function entropiesSourceCode(entropies::Vector; debug::Bool=false)
             entropies_code *= "v = $(count_code)differentialEntropy($inbound_code)\n"
             for edge in entropy[:target].edges
                 edge_id = string(edge.a.node.id, "_", edge.b.node.id)
-                entropies_code *= "ForneyLab.pushcreate!(dump[:entropy], :$(edge_id), v)\n"
+                entropies_code *= "ForneyLab.pushcreate!(dump, :$(edge_id), v)\n"
             end
             entropies_code *= "F -= v\n"
         else

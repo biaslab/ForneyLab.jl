@@ -7,7 +7,7 @@ function type_class(node::FactorNode)
     (type, class)
 end
 
-function save(fg::FactorGraph)
+function save(fg::FactorGraph; data::Dict = Dict(), output = nothing)
     # get nodes
     n_id = collect(keys(fg.nodes))
     # get labels
@@ -47,11 +47,12 @@ function save(fg::FactorGraph)
     end
     unique!(d_edges)
 
-    data = Dict("nodes" => d_nodes, "edges" => d_edges)
+    data[:nodes] = d_nodes
+    data[:edges] = d_edges
 
     json_string = JSON.json(data)
 
-    open(string(@__DIR__,"/graph.json"),"w") do f
+    open(output !== nothing ? output : string(@__DIR__,"/graph.json"), "w") do f
         JSON.print(f, json_string)
     end
 end
