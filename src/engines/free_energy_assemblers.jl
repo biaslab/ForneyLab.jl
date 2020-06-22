@@ -27,6 +27,7 @@ function assembleFreeEnergy!(algo=currentInferenceAlgorithm())
     for (target, cnt) in sort(entropy_counting_numbers_vect)
         if cnt != 0
             entropy = Dict{Symbol, Any}(:counting_number => cnt,
+                                        :target => target,
                                         :inbound => algo.target_to_marginal_entry[target])
             push!(entropies_vect, entropy)
         end
