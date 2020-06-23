@@ -3,7 +3,7 @@ module GaussianMeanVarianceTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
-using ForneyLab: SPGaussianMeanVarianceOutNDS, SPGaussianMeanVarianceOutNPP,SPGaussianMeanVarianceMSNP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, SPGaussianMeanVarianceOutNSP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
+using ForneyLab: SPGaussianMeanVarianceOutNGS, SPGaussianMeanVarianceOutNPP,SPGaussianMeanVarianceMSNP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, SPGaussianMeanVarianceOutNSP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
 using LinearAlgebra: det, diag, norm
 
 @testset "dims" begin
@@ -76,6 +76,10 @@ end
 #-------------
 # Update rules
 #-------------
+
+@testset "resample" begin
+    @test true == false
+end
 
 @testset "SPGaussianMeanVarianceOutNPP" begin
     @test SPGaussianMeanVarianceOutNPP <: SumProductRule{GaussianMeanVariance}
@@ -159,19 +163,19 @@ end
     @test !isApplicable(SPGaussianMeanVarianceMSNP, [Message{Gaussian}, Nothing, Message{PointMass}])
 end
 
-@testset "SPGaussianMeanVarianceOutNDS" begin
-    @test SPGaussianMeanVarianceOutNDS <: SumProductRule{GaussianMeanVariance}
-    @test outboundType(SPGaussianMeanVarianceOutNDS) == Message{SampleList}
-    @test isApplicable(SPGaussianMeanVarianceOutNDS, [Nothing, Message{Gaussian}, Message{SampleList}])
-    @test !isApplicable(SPGaussianMeanVarianceOutNDS, [Message{Gaussian}, Nothing, Message{SampleList}])
+@testset "SPGaussianMeanVarianceOutNGS" begin
+    @test SPGaussianMeanVarianceOutNGS <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceOutNGS) == Message{SampleList}
+    @test isApplicable(SPGaussianMeanVarianceOutNGS, [Nothing, Message{Gaussian}, Message{SampleList}])
+    @test !isApplicable(SPGaussianMeanVarianceOutNGS, [Message{Gaussian}, Nothing, Message{SampleList}])
 
     samples = exp.(randn(100000))
-    msg = ruleSPGaussianMeanVarianceOutNDS(nothing, Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), Message(Univariate, SampleList, s=samples, w=ones(100000)./100000))
+    msg = ruleSPGaussianMeanVarianceOutNGS(nothing, Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), Message(Univariate, SampleList, s=samples, w=ones(100000)./100000))
     @test abs(mean(msg.dist) - 0.0)<0.3
     @test abs(var(msg.dist) - 3)<0.4
     sample_matrix = [randn(2,2) for i=1:100000]
     sym_matrix = [x*transpose(x) for x in sample_matrix]
-    msg_vector = ruleSPGaussianMeanVarianceOutNDS(nothing, Message(Multivariate, GaussianMeanVariance, m=zeros(2), v=diageye(2)), Message(MatrixVariate, SampleList, s=sym_matrix, w=ones(100000)./100000))
+    msg_vector = ruleSPGaussianMeanVarianceOutNGS(nothing, Message(Multivariate, GaussianMeanVariance, m=zeros(2), v=diageye(2)), Message(MatrixVariate, SampleList, s=sym_matrix, w=ones(100000)./100000))
     @test norm(unsafeMean(msg_vector.dist)-zeros(2))<0.3
     @test norm(unsafeCov(msg_vector.dist)-diageye(2))<3.0
 end

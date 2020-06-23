@@ -1,7 +1,7 @@
 export
 ruleSPNonlinearSOutNM,
 ruleSPNonlinearSIn1MN,
-#ruleSPNonlinearSOutNS,
+#ruleSPNonlinearSOutNM,
 ruleSPNonlinearSOutNGX,
 ruleSPNonlinearSInGX,
 ruleMNonlinearSInGX,
@@ -41,12 +41,7 @@ function ruleSPNonlinearSOutNM(g::Function,
     samples = g.(msg_in1.dist.params[:s])
     weights = msg_in1.dist.params[:w]
 
-    v_type = Univariate
-    if length(samples[1])>1
-        v_type = Multivariate
-    end
-
-    return Message(v_type, SampleList, s=samples, w=weights)
+    return Message(V, SampleList, s=samples, w=weights)
 end
 
 function ruleSPNonlinearSOutNGX(g::Function,
