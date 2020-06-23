@@ -3,7 +3,7 @@ module DirichletTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeVar, vague, dims
-using ForneyLab: SPDirichletOutNP, VBDirichletOut
+using ForneyLab: SPDirichletOutNP, VBDirichletOut, VBDirichletIn1
 using SpecialFunctions: digamma
 
 @testset "Dirichlet ProbabilityDistribution and Message construction" begin
@@ -76,6 +76,12 @@ end
 
     @test ruleVBDirichletOut(nothing, ProbabilityDistribution(Multivariate, PointMass, m=[2.0, 3.0])) == Message(Multivariate, Dirichlet, a=[2.0, 3.0])
     @test ruleVBDirichletOut(nothing, ProbabilityDistribution(MatrixVariate, PointMass, m=[2.0 3.0; 4.0 5.0])) == Message(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])
+end
+
+@testset "VBDirichletIn1" begin
+    @test VBDirichletIn1 <: NaiveVariationalRule{Dirichlet}
+    @test outboundType(VBDirichletIn1) == Message{Function}
+    @test isApplicable(VBDirichletIn1, [ProbabilityDistribution, Nothing])
 end
 
 @testset "averageEnergy and differentialEntropy" begin
