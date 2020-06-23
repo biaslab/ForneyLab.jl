@@ -56,6 +56,7 @@ end
     @test abs(unsafeVar(p_dist) - 0.5) < 0.1
 end
 
+
 #-------------
 # Update rules
 #-------------

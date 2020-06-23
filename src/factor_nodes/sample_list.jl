@@ -23,7 +23,7 @@ format(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = "$(s
 
 ProbabilityDistribution(::Type{Univariate}, ::Type{SampleList}; s=[0.0], w=[1.0]) = ProbabilityDistribution{Univariate, SampleList}(Dict{Symbol, Any}(:s=>s, :w=>w))
 ProbabilityDistribution(::Type{Multivariate}, ::Type{SampleList}; s=[[0.0]], w=[1.0]) = ProbabilityDistribution{Multivariate, SampleList}(Dict{Symbol, Any}(:s=>s, :w=>w))
-ProbabilityDistribution(::Type{MatrixVariate}, ::Type{SampleList};s=[[1.0 0.0; 0.0 1.0]], w=[1.0]) = ProbabilityDistribution{MatrixVariate, SampleList}(Dict{Symbol,Any}(:s=>s,:w=>w))
+ProbabilityDistribution(::Type{MatrixVariate}, ::Type{SampleList};s=[mat(0.0)], w=[1.0]) = ProbabilityDistribution{MatrixVariate, SampleList}(Dict{Symbol,Any}(:s=>s,:w=>w))
 
 dims(dist::ProbabilityDistribution{Univariate, SampleList}) = 1
 dims(dist::ProbabilityDistribution{Multivariate, SampleList}) = length(dist.params[:s][1])
@@ -102,7 +102,8 @@ function unsafeCov(dist::ProbabilityDistribution{MatrixVariate, SampleList})
     end
     cov1 = (n_samples/(n_samples - 1)).*cov1
     cov2 = (n_samples/(n_samples - 1)).*cov2
-    return kron(cov1,cov2)
+    
+    return kron(cov1, cov2)
 end
 
 unsafeMeanCov(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = (unsafeMean(dist), unsafeCov(dist))
