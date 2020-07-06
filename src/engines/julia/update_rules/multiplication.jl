@@ -112,7 +112,7 @@ function ruleSPMultiplicationIn1GNP(msg_out::Message{F, Multivariate},
 
     A = msg_a.dist.params[:m]
     W = A'*d_out.params[:w]*A
-    println(Message(Univariate, GaussianWeightedMeanPrecision, xi=A'*d_out.params[:xi], w=W))
+
     Message(Univariate, GaussianWeightedMeanPrecision, xi=A'*d_out.params[:xi], w=W)
 end
 
