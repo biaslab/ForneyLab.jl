@@ -66,7 +66,6 @@ include("factor_nodes/sample_list.jl")
 
 # Factor graph
 include("factor_graph.jl")
-include("debug.jl")
 
 # Composite nodes
 include("factor_nodes/composite.jl")
@@ -127,5 +126,16 @@ include("update_rules/nonlinear_sampling.jl")
 
 # Engines
 include("engines/julia/julia.jl")
+
+# Debug
+include("debug/marginal_data.jl")
+include("debug/message_data.jl")
+include("debug/score_data.jl")
+include("debug/edge_data.jl")
+include("debug/node_data.jl")
+include("debug/algorithm_step.jl")
+include("debug/graph_data.jl")
+include("debug/graph_dump.jl")
+include("debug/save.jl")
 
 end # module ForneyLab
