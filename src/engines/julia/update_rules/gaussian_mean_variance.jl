@@ -7,8 +7,8 @@ ruleSPGaussianMeanVarianceVGGN,
 ruleSPGaussianMeanVarianceVPGN,
 ruleSPGaussianMeanVarianceOutNSP,
 ruleSPGaussianMeanVarianceMSNP,
-ruleSPGaussianMeanVarianceOutNDS,
-ruleSPGaussianMeanVarianceMDNS,
+ruleSPGaussianMeanVarianceOutNGS,
+ruleSPGaussianMeanVarianceMGNS,
 ruleVBGaussianMeanVarianceM,
 ruleVBGaussianMeanVarianceOut
 
@@ -51,48 +51,37 @@ function ruleSPGaussianMeanVarianceVPGN(msg_out::Message{PointMass, Univariate},
     Message(Univariate, Function, log_pdf=(x)-> -0.5*log(d_mean.params[:v] + x) - 1/(2*x)*(msg_out.dist.params[:m] - d_mean.params[:m])^2)
 end
 
-#Bootstrap particle filter rule
-function ruleSPGaussianMeanVarianceOutNSP(  msg_out::Nothing,
-                                            msg_mean::Message{SampleList, V},
-                                            msg_var::Message{PointMass}) where {V<:VariateType}
-
-    samples = msg_mean.dist.params[:s]
+# Particle update
+function ruleSPGaussianMeanVarianceOutNSP(msg_out::Nothing,
+                                          msg_mean::Message{SampleList, V},
+                                          msg_var::Message{PointMass}) where {V<:VariateType}
+    
+    samples = resample(msg_mean.dist, msg_var.dist)
     weights = msg_mean.dist.params[:w]
-    n_samples = length(samples)
-    new_samples = []
-    for i=1:n_samples
-        p = ProbabilityDistribution(V,GaussianMeanVariance,m=samples[i],v=unsafeMean(msg_var.dist))
-        s = sample(p)
-        push!(new_samples,s)
-    end
 
-    Message(V, SampleList, s=new_samples, w=weights)
+    return Message(V, SampleList, s=samples, w=weights)
 end
 
-ruleSPGaussianMeanVarianceMSNP(  msg_out::Message{SampleList, V},
-                                 msg_mean::Nothing,
-                                 msg_var::Message{PointMass}) where {V<:VariateType} = ruleSPGaussianMeanVarianceOutNSP(msg_mean,msg_out,msg_var)
+# Particle update
+ruleSPGaussianMeanVarianceMSNP(msg_out::Message{SampleList},
+                               msg_mean::Nothing,
+                               msg_var::Message{PointMass}) = ruleSPGaussianMeanVarianceOutNSP(msg_mean, msg_out, msg_var)
 
-function ruleSPGaussianMeanVarianceOutNDS(  msg_out::Nothing,
-                                            msg_mean::Message{F, V1},
-                                            msg_var::Message{SampleList, V2}) where {F<:Gaussian, V1<:VariateType, V2<:VariateType}
+# Particle update
+function ruleSPGaussianMeanVarianceOutNGS(  msg_out::Nothing,
+                                            msg_mean::Message{F, V},
+                                            msg_var::Message{SampleList}) where {F<:Gaussian, V<:VariateType}
 
-    samples = msg_var.dist.params[:s]
+    samples = resample(msg_mean.dist, msg_var.dist)
     weights = msg_var.dist.params[:w]
-    n_samples = length(samples)
-    new_samples = []
-    for i=1:n_samples
-        p = ProbabilityDistribution(V1,GaussianMeanVariance,m=unsafeMean(msg_mean.dist),v=unsafeCov(msg_mean.dist) + samples[i])
-        s = sample(p)
-        push!(new_samples,s)
-    end
 
-    Message(V1, SampleList, s=new_samples, w=weights)
+    Message(V, SampleList, s=samples, w=weights)
 end
 
-ruleSPGaussianMeanVarianceMDNS(  msg_out::Message{F, V1},
-                                 msg_mean::Nothing,
-                                 msg_var::Message{SampleList, V2}) where {F<:Gaussian, V1<:VariateType, V2<:VariateType} = ruleSPGaussianMeanVarianceOutNDS(msg_mean,msg_out,msg_var)
+# Particle update
+ruleSPGaussianMeanVarianceMGNS(msg_out::Message{F},
+                               msg_mean::Nothing,
+                               msg_var::Message{SampleList}) where F<:Gaussian = ruleSPGaussianMeanVarianceOutNGS(msg_mean, msg_out, msg_var)
 
 
 ruleVBGaussianMeanVarianceM(dist_out::ProbabilityDistribution{V},
@@ -104,3 +93,42 @@ ruleVBGaussianMeanVarianceOut(  dist_out::Any,
                                 dist_mean::ProbabilityDistribution{V},
                                 dist_var::ProbabilityDistribution) where V<:VariateType =
     Message(V, GaussianMeanVariance, m=unsafeMean(dist_mean), v=unsafeMean(dist_var))
+
+
+# Resampling for particle updates
+function resample(dist_mean::ProbabilityDistribution{Univariate, SampleList}, dist_var::ProbabilityDistribution{Univariate, PointMass})
+    s_m = dist_mean.params[:s] # Samples representing the mean
+    N = length(s_m)
+    v = dist_var.params[:m] # Fixed variance
+    
+    return sqrt(v)*randn(N) .+ s_m # New samples
+end
+
+function resample(dist_mean::ProbabilityDistribution{Multivariate, SampleList}, dist_var::ProbabilityDistribution{MatrixVariate, PointMass})
+    d = dims(dist_mean)
+    s_m = dist_mean.params[:s] # Samples representing the mean
+    N = length(s_m)
+    V = dist_var.params[:m] # Fixed variance
+    U = (cholesky(V)).U # Precompute Cholesky
+
+    return [U' *randn(d) + s_m[i] for i in 1:N] # New samples
+end
+
+function resample(dist_mean::ProbabilityDistribution{Univariate, <:Gaussian}, dist_var::ProbabilityDistribution{Univariate, SampleList})
+    s_v = dist_var.params[:s] # Samples representing the variance
+    N = length(s_v)
+    (m, v) = unsafeMeanCov(dist_mean)
+    s_u = sqrt.(s_v .+ v) # Standard deviation for each variance sample
+
+    return s_u.*randn(N) .+ m # New samples
+end
+
+function resample(dist_mean::ProbabilityDistribution{Multivariate, <:Gaussian}, dist_var::ProbabilityDistribution{MatrixVariate, SampleList})
+    d = dims(dist_mean)
+    s_V = dist_var.params[:s] # Samples representing the variance
+    N = length(s_V)
+    (m, V) = unsafeMeanCov(dist_mean)
+    s_U = [(cholesky(s_V[i] + V)).U for i in 1:N] # Precompute Cholesky for each covariance sample; this can be expensive
+
+    return [s_U[i]' *randn(d) + m for i in 1:N] # New samples
+end

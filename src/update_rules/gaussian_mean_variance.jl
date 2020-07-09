@@ -41,12 +41,12 @@
 @sumProductRule(:node_type     => GaussianMeanVariance,
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Nothing, Message{Gaussian},Message{SampleList}),
-                :name          => SPGaussianMeanVarianceOutNDS)
+                :name          => SPGaussianMeanVarianceOutNGS)
 
 @sumProductRule(:node_type     => GaussianMeanVariance,
                 :outbound_type => Message{SampleList},
                 :inbound_types => (Message{Gaussian}, Nothing,Message{SampleList}),
-                :name          => SPGaussianMeanVarianceMDNS)
+                :name          => SPGaussianMeanVarianceMGNS)
 
 @naiveVariationalRule(:node_type     => GaussianMeanVariance,
                       :outbound_type => Message{GaussianMeanVariance},
