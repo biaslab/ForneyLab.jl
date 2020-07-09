@@ -1,3 +1,5 @@
+export ScoreData
+
 mutable struct ScoreData{T <: String}
     id::T
     value::Real

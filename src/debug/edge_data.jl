@@ -1,4 +1,6 @@
-mutable struct EdgeData{T<:String}
+export EdgeData
+
+mutable struct EdgeData{T<:Union{String, Symbol}}
     id::T
     label::T
     a::T
@@ -6,5 +8,5 @@ mutable struct EdgeData{T<:String}
     source::T
     target::T
 
-    EdgeData{T}(id, label, a, b, source, target) where {T<:String} = new()
+    EdgeData{T}(id, label, a, b, source, target) where {T<:Union{String, Symbol}} = new()
 end

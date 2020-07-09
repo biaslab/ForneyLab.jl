@@ -1,4 +1,6 @@
-mutable struct NodeData{T <: String}
+export NodeData
+
+mutable struct NodeData{T <: Union{String, Symbol}
     id::T
     label::T
     type::T

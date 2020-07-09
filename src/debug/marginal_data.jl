@@ -1,3 +1,5 @@
+export MarginalData
+
 mutable struct MarginalData
     edgesIDs::Vector{String}
     marginal::ProbabilityDistribution

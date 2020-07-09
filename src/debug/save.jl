@@ -1,4 +1,4 @@
-export save
+export save!
 
 function type_class(node::FactorNode)
     type = occursin("placeholder", string(node.id)) ? "data" :
@@ -7,7 +7,7 @@ function type_class(node::FactorNode)
     (type, class)
 end
 
-function save(fg::FactorGraph; data::Dict = Dict(), output = nothing)
+function save!(gd::GraphDump, fg::FactorGraph)
     # get nodes
     n_id = collect(keys(fg.nodes))
     # get labels
@@ -57,4 +57,4 @@ function save(fg::FactorGraph; data::Dict = Dict(), output = nothing)
     end
 end
 
-save() = save(currentGraph())
+#save() = save(currentGraph())

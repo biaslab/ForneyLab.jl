@@ -1,4 +1,6 @@
-mutable struct MessageData{T <: String}
+export MessageData
+
+mutable struct MessageData{T <: Union{String, Symbol}}
     edgeID::T
     type::T
     marginal::ProbabilityDistribution
