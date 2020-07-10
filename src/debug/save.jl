@@ -1,4 +1,4 @@
-export save!
+export save, makeDump
 
 function type_class(node::FactorNode)
     type = occursin("placeholder", string(node.id)) ? "data" :
@@ -7,54 +7,54 @@ function type_class(node::FactorNode)
     (type, class)
 end
 
-function save!(gd::GraphDump, fg::FactorGraph)
+function makeDump(fg::FactorGraph)
+    dump = GraphDump()
+
     # get nodes
     n_id = collect(keys(fg.nodes))
     # get labels
     n_label = slug.(typeof.(collect(values(fg.nodes))))
     # get types and classes
     n_type_class = type_class.(collect(values(fg.nodes)))
-    d_nodes = [Dict("id" => n_id[i], "label" => n_label[i],
-                    "type" => n_type_class[i][1],
-                    "class" => n_type_class[i][2]) for i in 1:length(n_id)]
-    # get interfaces
-    for (index, d_id) in enumerate(d_nodes)
-        d_nodes[index]["interfaces"] = collect(keys(fg.nodes[d_id["id"]].i))
-    end
 
     # get values for const node
     # change clamp and placeholder labels
-    for d_node in d_nodes
-        if d_node["type"] == "constant"
-            d_node["value"] = string(fg.nodes[d_node["id"]].value)
-            idx = findlast("clamp_", string(d_node["id"]))[end] + 1
-            d_node["label"] = string(d_node["id"])[idx:end]
-        elseif d_node["type"] == "data"
-            idx = findlast("placeholder_", string(d_node["id"]))[end] + 1
-            d_node["label"] = string(d_node["id"])[idx:end]
+    for (id, label, type_class) in zip(n_id, n_label, n_type_class)
+        value = nothing
+        type  = type_class[1]
+        class = type_class[2]
+        if type == "constant"
+            idx   = findlast("clamp_", string(id))[end] + 1
+            label = string(id)[idx:end]
+            value = string(fg.nodes[id].value)
+        elseif type == "data"
+            idx   = findlast("placeholder_", string(id))[end] + 1
+            label = string(id)[idx:end]
         end
+        pushNode!(dump, id, label, type, class, value)
     end
 
     # get edges
-    d_edges = Vector{Dict{String, Any}}()
     for fg_edge in fg.edges
         for edge in fg_edge.variable.edges
-            push!(d_edges, Dict("source" => string(edge.a.node.id), "target" => string(edge.b.node.id),
-                                "a" => handle(edge.a), "b" => handle(edge.b),
-                                "label" => string(edge.variable.id),
-                                "id" => string(edge.a.node.id, "_", edge.b.node.id)))
+            id     = string(edge.a.node.id, "_", edge.b.node.id)
+            label  = string(edge.variable.id)
+            a      = handle(edge.a)
+            b      = handle(edge.b)
+            source = string(edge.a.node.id)
+            target = string(edge.b.node.id)
+            pushEdge!(dump, id, label, a, b, source, target)
+
         end
     end
-    unique!(d_edges)
 
-    data[:nodes] = d_nodes
-    data[:edges] = d_edges
+    return dump
+end
 
-    json_string = JSON.json(data)
+function save(dump::GraphDump; output = nothing)
+    json_string = JSON.json(dump)
 
     open(output !== nothing ? output : string(@__DIR__,"/graph.json"), "w") do f
         JSON.print(f, json_string)
     end
 end
-
-#save() = save(currentGraph())

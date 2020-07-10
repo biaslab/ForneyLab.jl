@@ -1,11 +1,7 @@
 export MarginalData
 
-mutable struct MarginalData
+struct MarginalData
+    id::Union{String, Symbol}
     edgesIDs::Vector{String}
     marginal::ProbabilityDistribution
-
-    function MarginalData(edges, marginal)
-        self = new(edges, marginal)
-        return self
-    end
 end

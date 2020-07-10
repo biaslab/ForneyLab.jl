@@ -1,10 +1,22 @@
 export GraphDump
 
-mutable struct GraphDump
+struct GraphDump
     graph::GraphData
-    marginals::Vector{AlgorithmStep}
+    steps::Vector{AlgorithmStep}
 end
 
-GraphDump() = GraphDump(GraphData(Vector{NodeData}(),
-                                  Vector{EdgeData}()),
-                        Vector{AlgorithmStep}())
+function GraphDump()
+    d = GraphDump(GraphData(), Vector{AlgorithmStep}())
+    push!(d.steps, AlgorithmStep())
+    return d
+end
+
+function pushNode!(dump::GraphDump, id, label, type, class, value=nothing)
+    pushNode!(dump.graph, id, label, type, class, value)
+    return dump
+end
+
+function pushEdge!(dump::GraphDump, id, label, a, b, source, target)
+    pushEdge!(dump.graph, id, label, a, b, source, target)
+    return dump
+end

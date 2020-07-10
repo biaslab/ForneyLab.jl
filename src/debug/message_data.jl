@@ -1,9 +1,7 @@
 export MessageData
 
-mutable struct MessageData{T <: Union{String, Symbol}}
-    edgeID::T
-    type::T
+struct MessageData
+    edgeID::Union{String, Symbol}
+    type::String
     marginal::ProbabilityDistribution
-
-    MessageData{T}(edgeID::T, type::T, marginal::ProbabilityDistribution) where {T<:String} = new()
 end

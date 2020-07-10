@@ -1,9 +1,7 @@
 export ScoreData
 
-mutable struct ScoreData{T <: String}
-    id::T
-    value::Real
-    type::T
-
-    ScoreData{T}(id::T, type::T, value::Real) where {T<:String} = new()
+struct ScoreData
+    id::Union{String, Symbol}
+    value::Float64
+    type::String
 end
