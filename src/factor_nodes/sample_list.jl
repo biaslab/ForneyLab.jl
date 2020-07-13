@@ -86,7 +86,6 @@ function unsafeCov(dist::ProbabilityDistribution{Multivariate, SampleList})
     return (n_samples/(n_samples - 1)).*tot
 end
 
-unsafeVar(dist::ProbabilityDistribution{MatrixVariate, SampleList}) = diag(unsafeCov(dist)[1])
 function unsafeCov(dist::ProbabilityDistribution{MatrixVariate, SampleList})
     samples = dist.params[:s]
     weights = dist.params[:w]
@@ -102,7 +101,7 @@ function unsafeCov(dist::ProbabilityDistribution{MatrixVariate, SampleList})
     end
     cov1 = (n_samples/(n_samples - 1)).*cov1
     cov2 = (n_samples/(n_samples - 1)).*cov2
-    
+
     return kron(cov1, cov2)
 end
 

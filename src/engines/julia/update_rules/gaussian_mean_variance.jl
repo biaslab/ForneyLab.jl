@@ -55,7 +55,7 @@ end
 function ruleSPGaussianMeanVarianceOutNSP(msg_out::Nothing,
                                           msg_mean::Message{SampleList, V},
                                           msg_var::Message{PointMass}) where {V<:VariateType}
-    
+
     samples = resample(msg_mean.dist, msg_var.dist)
     weights = msg_mean.dist.params[:w]
 
@@ -100,7 +100,7 @@ function resample(dist_mean::ProbabilityDistribution{Univariate, SampleList}, di
     s_m = dist_mean.params[:s] # Samples representing the mean
     N = length(s_m)
     v = dist_var.params[:m] # Fixed variance
-    
+
     return sqrt(v)*randn(N) .+ s_m # New samples
 end
 
@@ -125,7 +125,7 @@ end
 
 function resample(dist_mean::ProbabilityDistribution{Multivariate, <:Gaussian}, dist_var::ProbabilityDistribution{MatrixVariate, SampleList})
     d = dims(dist_mean)
-    s_V = dist_var.params[:s] # Samples representing the variance
+    s_V = dist_var.params[:s] # Samples representing the covariance
     N = length(s_V)
     (m, V) = unsafeMeanCov(dist_mean)
     s_U = [(cholesky(s_V[i] + V)).U for i in 1:N] # Precompute Cholesky for each covariance sample; this can be expensive
