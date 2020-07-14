@@ -58,13 +58,13 @@ function posteriorFactorSourceCode(pf::PosteriorFactor; debug::Bool = false)
 
     n_entries = length(pf.schedule)
     pf_code *= "function step$(pf.algorithm_id)$(pf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_entries); dump::Union{GraphDump, Nothing} = nothing)\n\n"
-    pf_code *= scheduleSourceCode(pf.schedule; debug = debug)
-    pf_code *= "\n"
-    pf_code *= marginalTableSourceCode(pf.marginal_table; debug = debug)
     if debug
         pf_code *= "\npush!(dump.steps[end].messages, Vector{MessageData}())\n"
         pf_code *= "\npush!(dump.steps[end].marginals, Vector{MarginalData}())\n"
     end
+    pf_code *= scheduleSourceCode(pf.schedule; debug = debug)
+    pf_code *= "\n"
+    pf_code *= marginalTableSourceCode(pf.marginal_table; debug = debug)
     pf_code *= "return marginals\n\n"
     pf_code *= "end"
 
@@ -119,7 +119,7 @@ function energiesSourceCode(average_energies::Vector; debug::Bool=false)
 
         if debug
             energies_code *= "v = $(count_code)averageEnergy($node_code, $inbounds_code)\n"
-            energies_code *= "push!(dump.steps[end].score, ScoreData(\"$(energy[:node_id])\", v,  \"average_energy\"))\n"
+            energies_code *= "pushScore!(dump, \"$(energy[:node_id])\", v,  \"average_energy\")\n"
             energies_code *= "F += v\n"
         else
             energies_code *= "F += $(count_code)averageEnergy($node_code, $inbounds_code)\n"
@@ -142,7 +142,7 @@ function entropiesSourceCode(entropies::Vector; debug::Bool=false)
             entropies_code *= "v = $(count_code)differentialEntropy($inbound_code)\n"
             for edge in entropy[:target].edges
                 edge_id = string(edge.a.node.id, "_", edge.b.node.id)
-                entropies_code *= "push!(dump.steps[end].score, ScoreData(\"$(edge_id)\", v, \"entropy\"))\n"
+                entropies_code *= "pushScore!(dump, \"$(edge_id)\", v, \"entropy\")\n"
             end
             entropies_code *= "F -= v\n"
         else
@@ -180,7 +180,7 @@ function scheduleSourceCode(schedule::Schedule; debug::Bool = false)
             edge   = entry.interface.edge
             edgeid = string(edge.a.node.id, "_", edge.b.node.id)
             type   = entry.interface.node.id === edge.a.node.id ? "forward" : "backward"
-            schedule_code *= "\npush!(dump.steps[end].messages[end], MessageData(\"$(edgeid)\", \"$(type)\", messages[$(entry.schedule_index)].dist))\n"
+            schedule_code *= "\npushMessage!(dump, \"$(edgeid)\", \"$(type)\", messages[$(entry.schedule_index)])\n"
         end
     end
 
@@ -209,7 +209,7 @@ function marginalTableSourceCode(table::MarginalTable; debug::Bool = false)
 
         if debug
             edgeIDs = map(e -> string(e.a.node.id, "_", e.b.node.id), entry.target.edges)
-            table_code *= "\npush!(dump.steps[end].marginals[end], MarginalData(\"$(entry.marginal_id)\", $(edgeIDs), marginals[:$(entry.marginal_id)]))\n"
+            table_code *= "\npushMarginal!(dump, \"$(entry.marginal_id)\", $(edgeIDs), marginals[:$(entry.marginal_id)])\n"
         end
 
         table_code *= "\n"
