@@ -42,9 +42,12 @@ abstract type SumProductRule{factor_type} <: MessageUpdateRule end
 computes the marginals for each of the posterior factor targets.
 """
 function sumProductSchedule(pf::PosteriorFactor)
+    chance_sites = collectChanceSites(nodes(current_graph)) # Find sites for chance constraints
+
     # Generate a feasible summary propagation schedule
     schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true),
-                                          sort(collect(pf.target_clusters), rev=true))
+                                          sort(collect(pf.target_clusters), rev=true),
+                                          target_sites=chance_sites)
 
     # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule
@@ -54,6 +57,20 @@ function sumProductSchedule(pf::PosteriorFactor)
     inferUpdateRules!(schedule)
 
     return schedule
+end
+
+"""
+Find sites for chance constraints
+"""
+function collectChanceSites(node_set::Set{FactorNode})
+    chance_sites = Interface[]
+    for node in sort(collect(node_set))
+        if isa(node, ChanceConstraint) || isa(node, ExpectationConstraint)
+            push!(chance_sites, ultimatePartner(node.i[:out]))
+        end
+    end
+
+    return chance_sites
 end
 
 """
