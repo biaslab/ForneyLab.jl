@@ -3,7 +3,7 @@ module GaussianMeanVarianceTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
-using ForneyLab: SPGaussianMeanVarianceOutNGS, SPGaussianMeanVarianceOutNPP,SPGaussianMeanVarianceMSNP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, SPGaussianMeanVarianceOutNSP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
+using ForneyLab: SPGaussianMeanVarianceOutNGS, SPGaussianMeanVarianceOutNPP,SPGaussianMeanVarianceMSNP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, SPGaussianMeanVarianceOutNSP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut, bootstrap
 using LinearAlgebra: det, diag, norm
 
 @testset "dims" begin
@@ -77,8 +77,23 @@ end
 # Update rules
 #-------------
 
-@testset "resample" begin
-    @test true == false
+@testset "bootstrap" begin
+    p1 = ProbabilityDistribution(Univariate, SampleList, s=randn(1000), w=ones(1000)./1000)
+    p2 = ProbabilityDistribution(Univariate, PointMass, m=2.0)
+    s = bootstrap(p1,p2)
+    @test abs(mean(s))<0.1
+    @test abs(var(s)-3)<0.1
+
+    samples = [randn(2) for i=1:2000]
+    p1 = ProbabilityDistribution(Multivariate, SampleList, s=samples, w=ones(2000)./2000)
+    p2 = ProbabilityDistribution(MatrixVariate, PointMass, m=[2.0 0.0; 0.0 1.0])
+    s = bootstrap(p1,p2)
+    m = mean(s)
+    v = var(s)
+    @test abs(m[1])<0.1
+    @test abs(m[2])<0.1
+    @test abs(v[1]-3)<0.1
+    @test abs(v[2]-2)<0.1
 end
 
 @testset "SPGaussianMeanVarianceOutNPP" begin

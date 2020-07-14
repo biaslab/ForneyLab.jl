@@ -10,7 +10,8 @@ ruleSPGaussianMeanVarianceMSNP,
 ruleSPGaussianMeanVarianceOutNGS,
 ruleSPGaussianMeanVarianceMGNS,
 ruleVBGaussianMeanVarianceM,
-ruleVBGaussianMeanVarianceOut
+ruleVBGaussianMeanVarianceOut,
+bootstrap
 
 ruleSPGaussianMeanVarianceOutNPP(   msg_out::Nothing,
                                     msg_mean::Message{PointMass, V},
@@ -56,7 +57,7 @@ function ruleSPGaussianMeanVarianceOutNSP(msg_out::Nothing,
                                           msg_mean::Message{SampleList, V},
                                           msg_var::Message{PointMass}) where {V<:VariateType}
 
-    samples = resample(msg_mean.dist, msg_var.dist)
+    samples = bootstrap(msg_mean.dist, msg_var.dist)
     weights = msg_mean.dist.params[:w]
 
     return Message(V, SampleList, s=samples, w=weights)
@@ -72,7 +73,7 @@ function ruleSPGaussianMeanVarianceOutNGS(  msg_out::Nothing,
                                             msg_mean::Message{F, V},
                                             msg_var::Message{SampleList}) where {F<:Gaussian, V<:VariateType}
 
-    samples = resample(msg_mean.dist, msg_var.dist)
+    samples = bootstrap(msg_mean.dist, msg_var.dist)
     weights = msg_var.dist.params[:w]
 
     Message(V, SampleList, s=samples, w=weights)
@@ -96,7 +97,7 @@ ruleVBGaussianMeanVarianceOut(  dist_out::Any,
 
 
 # Resampling for particle updates
-function resample(dist_mean::ProbabilityDistribution{Univariate, SampleList}, dist_var::ProbabilityDistribution{Univariate, PointMass})
+function bootstrap(dist_mean::ProbabilityDistribution{Univariate, SampleList}, dist_var::ProbabilityDistribution{Univariate, PointMass})
     s_m = dist_mean.params[:s] # Samples representing the mean
     N = length(s_m)
     v = dist_var.params[:m] # Fixed variance
@@ -104,7 +105,7 @@ function resample(dist_mean::ProbabilityDistribution{Univariate, SampleList}, di
     return sqrt(v)*randn(N) .+ s_m # New samples
 end
 
-function resample(dist_mean::ProbabilityDistribution{Multivariate, SampleList}, dist_var::ProbabilityDistribution{MatrixVariate, PointMass})
+function bootstrap(dist_mean::ProbabilityDistribution{Multivariate, SampleList}, dist_var::ProbabilityDistribution{MatrixVariate, PointMass})
     d = dims(dist_mean)
     s_m = dist_mean.params[:s] # Samples representing the mean
     N = length(s_m)
@@ -114,7 +115,7 @@ function resample(dist_mean::ProbabilityDistribution{Multivariate, SampleList}, 
     return [U' *randn(d) + s_m[i] for i in 1:N] # New samples
 end
 
-function resample(dist_mean::ProbabilityDistribution{Univariate, <:Gaussian}, dist_var::ProbabilityDistribution{Univariate, SampleList})
+function bootstrap(dist_mean::ProbabilityDistribution{Univariate, <:Gaussian}, dist_var::ProbabilityDistribution{Univariate, SampleList})
     s_v = dist_var.params[:s] # Samples representing the variance
     N = length(s_v)
     (m, v) = unsafeMeanCov(dist_mean)
@@ -123,7 +124,7 @@ function resample(dist_mean::ProbabilityDistribution{Univariate, <:Gaussian}, di
     return s_u.*randn(N) .+ m # New samples
 end
 
-function resample(dist_mean::ProbabilityDistribution{Multivariate, <:Gaussian}, dist_var::ProbabilityDistribution{MatrixVariate, SampleList})
+function bootstrap(dist_mean::ProbabilityDistribution{Multivariate, <:Gaussian}, dist_var::ProbabilityDistribution{MatrixVariate, SampleList})
     d = dims(dist_mean)
     s_V = dist_var.params[:s] # Samples representing the covariance
     N = length(s_V)
