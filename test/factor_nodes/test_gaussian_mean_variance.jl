@@ -215,7 +215,51 @@ end
 
     p1 = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.0))
     p2 = ProbabilityDistribution(MatrixVariate, SampleList, s=[mat(tiny)], w=[1.0])
-    @test isapprox(bootstrap(p1, p2)[1][1], 2.0, atol=1e-4)    
+    @test isapprox(bootstrap(p1, p2)[1][1], 2.0, atol=1e-4)
+end
+
+#------------
+# Integration
+#------------
+
+@testset "bootstrap integration" begin
+    p1 = ProbabilityDistribution(Univariate, SampleList, s=randn(10000), w=ones(10000)./10000)
+    p2 = ProbabilityDistribution(Univariate, PointMass, m=2.0)
+    s = bootstrap(p1,p2)
+    @test abs(mean(s))<0.1
+    @test abs(var(s)-3)<0.1
+
+    samples = [randn(2) for i=1:10000]
+    p1 = ProbabilityDistribution(Multivariate, SampleList, s=samples, w=ones(10000)./10000)
+    p2 = ProbabilityDistribution(MatrixVariate, PointMass, m=[2.0 0.0; 0.0 1.0])
+    s = bootstrap(p1,p2)
+    m = mean(s)
+    v = var(s)
+    @test abs(m[1])<0.1
+    @test abs(m[2])<0.1
+    @test abs(v[1]-3)<0.1
+    @test abs(v[2]-2)<0.1
+end
+
+@testset "SPGaussianMeanVarianceOutNPP integration" begin
+    msg = ruleSPGaussianMeanVarianceOutNSP(nothing, Message(Univariate, SampleList, s=5. .+randn(10000), w=ones(10000)./10000), Message(Univariate, PointMass, m=2.0))
+    @test abs(mean(msg.dist) - 5)<0.1
+    @test abs(var(msg.dist) - 3)<0.1
+    msg = ruleSPGaussianMeanVarianceOutNSP(nothing, Message(Multivariate, SampleList, s=[randn(2) for i=1:100000], w=ones(100000)./100000), Message(MatrixVariate, PointMass, m=[2.0 0.0;0.0 1.0]))
+    @test abs(sum(mean(msg.dist).-zeros(2)))<0.2
+    @test abs(sum(var(msg.dist).-[3.0,2.0]))<0.2
+end
+
+@testset "SPGaussianMeanVarianceMSNP integration" begin
+    samples = exp.(randn(100000))
+    msg = ruleSPGaussianMeanVarianceOutNGS(nothing, Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), Message(Univariate, SampleList, s=samples, w=ones(100000)./100000))
+    @test abs(mean(msg.dist) - 0.0)<0.3
+    @test abs(var(msg.dist) - 3)<0.4
+    sample_matrix = [randn(2,2) for i=1:100000]
+    sym_matrix = [x*transpose(x) for x in sample_matrix]
+    msg_vector = ruleSPGaussianMeanVarianceOutNGS(nothing, Message(Multivariate, GaussianMeanVariance, m=zeros(2), v=diageye(2)), Message(MatrixVariate, SampleList, s=sym_matrix, w=ones(100000)./100000))
+    @test sqrt(sum((unsafeMean(msg_vector.dist)-zeros(2)).^2))<0.3
+    @test sqrt(sum((unsafeCov(msg_vector.dist)-diageye(2)).^2))<3.0
 end
 
 end #module
