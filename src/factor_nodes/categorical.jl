@@ -95,7 +95,7 @@ function prod!( x::ProbabilityDistribution{Univariate, Categorical},
                 z::ProbabilityDistribution{Univariate, Categorical}=ProbabilityDistribution(Univariate, Categorical, p=ones(size(x.params[:p]))./length(x.params[:p])))
 
     # Multiplication of 2 categorical PMFs: p(z) = p(x) * p(y)
-    z.params[:p][:] = clamp.(x.params[:p] .* y.params[:p], tiny, Inf)
+    z.params[:p][:] = clamp.(x.params[:p] .* y.params[:p], tiny, Inf) # Soften vanishing probabilities to enforce the convention [1, 0]*[0, 1] ∝ [1/2, 1/2]
     norm = sum(z.params[:p])
     z.params[:p] = z.params[:p]./norm
 
@@ -104,7 +104,7 @@ end
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Categorical})
-    -sum(dist.params[:p].*log.(clamp.(dist.params[:p], tiny, Inf)))
+    -sum(dist.params[:p].*log.(clamp.(dist.params[:p], tiny, Inf))) # Soften vanishing propbabilities to enforce the convention 0 log 0 = 0
 end
 
 # Average energy functional

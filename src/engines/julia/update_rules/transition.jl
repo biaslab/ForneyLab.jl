@@ -11,6 +11,7 @@ ruleSVBTransitionIn1CVD,
 ruleSVBTransitionADV,
 ruleMTransitionCCD
 
+# Note that vanishing probabilities are softened to prevent singularities
 function ruleSPTransitionOutNPP(msg_out::Nothing,
                                 msg_in1::Message{PointMass, Multivariate},
                                 msg_a::Message{PointMass, MatrixVariate})
