@@ -63,5 +63,5 @@ isProper(dist::ProbabilityDistribution{Multivariate, Contingency}) = (abs(sum(di
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Multivariate, Contingency})
-    -sum(dist.params[:p].*log.(dist.params[:p]))
+    -sum(dist.params[:p].*log.(clamp.(dist.params[:p], tiny, Inf)))
 end

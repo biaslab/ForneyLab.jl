@@ -79,9 +79,9 @@ unsafeMeanVector(dist::ProbabilityDistribution{Multivariate, PointMass}) = deepc
 unsafeInverseMean(dist::ProbabilityDistribution{Univariate, PointMass}) = 1.0/dist.params[:m]
 unsafeInverseMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = cholinv(dist.params[:m])
 
-unsafeLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(dist.params[:m])
-unsafeLogMean(dist::ProbabilityDistribution{Multivariate, PointMass}) = log.(dist.params[:m])
-unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = log.(dist.params[:m])
+unsafeLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(clamp(dist.params[:m], tiny, Inf))
+unsafeLogMean(dist::ProbabilityDistribution{Multivariate, PointMass}) = log.(clamp.(dist.params[:m], tiny, Inf))
+unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = log.(clamp.(dist.params[:m], tiny, Inf))
 
 unsafeDetLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(dist.params[:m])
 unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = log(det(dist.params[:m]))
