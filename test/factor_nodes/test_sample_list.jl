@@ -1,59 +1,36 @@
 module SampleListTest
 
 using Test
-using Random
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeCov, unsafeVar, unsafeLogMean, unsafeMeanCov, unsafeMirroredLogMean, dims
+using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeCov, unsafeVar, dims
 using ForneyLab: SPSampleListOutNPP
-using StatsFuns: betainvcdf
-using SpecialFunctions: digamma
-using LinearAlgebra: norm
 
-Random.seed!(1234)
-
-@testset "SampleList ProbabilityDistribution construction" begin
-    f_dummy(x) = x
-    s = randn(10)
-    @test dims(ProbabilityDistribution(Univariate, SampleList, s=s)) == 1
-
-    m = Vector{Matrix}(undef,10)
-    for i=1:10
-        m[i] = randn(3,4)
-    end
-    @test dims(ProbabilityDistribution(MatrixVariate,SampleList,s=m)) == (3,4)
+@testset "dims" begin
+    @test dims(ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5])) == 1
+    @test dims(ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5])) == 1
+    @test dims(ProbabilityDistribution(MatrixVariate, SampleList, s=[mat(0.0), mat(1.0)], w=[0.5, 0.5])) == (1,1)
 end
 
-@testset "unsafeMean and unsafeVar" begin
-    f_dummy(x) = x
-    sigmoid(x) = 1/(1+exp(-x))
+@testset "unsafeMean" begin
+    @test unsafeMean(ProbabilityDistribution(Univariate, SampleList, s=[1.0, 1.0], w=[0.5, 0.5])) == 1.0
+    @test unsafeMean(ProbabilityDistribution(Multivariate, SampleList, s=[[1.0], [1.0]], w=[0.5, 0.5])) == [1.0]
+    @test unsafeMean(ProbabilityDistribution(MatrixVariate, SampleList, s=[mat(1.0), mat(1.0)], w=[0.5, 0.5])) == mat(1.0)
+end
 
-    s = randn(1000)
-    @test abs(unsafeMean(ProbabilityDistribution(Univariate, SampleList, s=s, w=ones(1000)/1000)) - 0.0) < 0.1
-    @test abs(unsafeVar(ProbabilityDistribution(Univariate, SampleList, s=s, w=ones(1000)/1000)) - 1.0) < 0.1
+@testset "unsafeVar" begin
+    @test unsafeVar(ProbabilityDistribution(Univariate, SampleList, s=[1.0, 1.0], w=[0.5, 0.5])) == 0.0
+    @test unsafeVar(ProbabilityDistribution(Multivariate, SampleList, s=[[1.0], [1.0]], w=[0.5, 0.5])) == [0.0]
+end
 
-    sample_beta = x -> betainvcdf(0.5, 0.5, x)
-    samples = sample_beta.(rand(1000))
-    log_mean = digamma(0.5) - digamma(1.0)
-    mirrored_log_mean = digamma(0.5) - digamma(1.0)
-
-    @test abs(unsafeLogMean(ProbabilityDistribution(Univariate, SampleList, s=samples, w=ones(1000)/1000)) - log_mean) < 0.1
-    @test abs(unsafeMirroredLogMean(ProbabilityDistribution(Univariate, SampleList, s=samples, w=ones(1000)/1000)) - mirrored_log_mean) < 0.1
-
-    m = Vector{Matrix}(undef,100000)
-    mt = Vector{Matrix}(undef,100000)
-    for i=1:100000
-        m[i] = randn(3,4)
-        mt[i] = transpose(m[i])
-    end
-    @test norm(unsafeMean(ProbabilityDistribution(MatrixVariate,SampleList,s=m,w=ones(100000)/100000)) - mean(m)) < 0.3
-    @test norm(unsafeCov(ProbabilityDistribution(MatrixVariate,SampleList,s=m,w=ones(100000)/100000)) - kron(cov(m),cov(mt))) < 0.3
+@testset "unsafeCov" begin
+    @test unsafeCov(ProbabilityDistribution(Univariate, SampleList, s=[1.0, 1.0], w=[0.5, 0.5])) == 0.0
+    @test unsafeCov(ProbabilityDistribution(Multivariate, SampleList, s=[[1.0], [1.0]], w=[0.5, 0.5])) == mat(0.0)
+    @test unsafeCov(ProbabilityDistribution(MatrixVariate, SampleList, s=[eye(2), eye(2)], w=[0.5, 0.5])) == zeros(4,4)
 end
 
 @testset "prod!" begin
-    s = randn(10000)
-    p_dist = ProbabilityDistribution(Univariate, SampleList, s=s, w=ones(10000)/10000) * ProbabilityDistribution(GaussianMeanVariance, m=0.0, v=1.0)
-    @test abs(unsafeMean(p_dist)) < 0.1
-    @test abs(unsafeVar(p_dist) - 0.5) < 0.1
+    @test ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.5, 0.5]) * ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0) == ProbabilityDistribution(Univariate, SampleList, s=[0.0, 1.0], w=[0.6224593312018546, 0.37754066879814546])
+    @test ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.5, 0.5]) * ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(1.0)) == ProbabilityDistribution(Multivariate, SampleList, s=[[0.0], [1.0]], w=[0.6224593312018546, 0.37754066879814546])
 end
 
 

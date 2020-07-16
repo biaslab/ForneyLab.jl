@@ -24,16 +24,17 @@ h(x, y) = x + y
 end
 
 @testset "SPNonlinearSOutNM" begin
-    samples = 2.0 .+ randn(100000)
-    p_dist = ProbabilityDistribution(Univariate, SampleList, s=samples, w=ones(100000)/100000)
-
     @test SPNonlinearSOutNM <: SumProductRule{Nonlinear{Sampling}}
     @test outboundType(SPNonlinearSOutNM) == Message{SampleList}
     @test isApplicable(SPNonlinearSOutNM, [Nothing, Message{Gaussian}])
     @test isApplicable(SPNonlinearSOutNM, [Nothing, Message{Bernoulli}])
     
-    @test abs(unsafeMean(ruleSPNonlinearSOutNM(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), n_samples=100000).dist) - unsafeMean(p_dist)) < 0.2
-    @test abs(unsafeVar(ruleSPNonlinearSOutNM(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), n_samples=100000).dist) - unsafeVar(p_dist)) < 0.2
+    msg = ruleSPNonlinearSOutNM(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=tiny), n_samples=1)
+    @test isapprox(msg.dist.params[:s][1], 2.0, atol=1e-4)
+    @test msg.dist.params[:w] == [1.0]
+    msg = ruleSPNonlinearSOutNM(f, nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(tiny)), n_samples=1)
+    @test isapprox(msg.dist.params[:s][1][1], 2.0, atol=1e-4)
+    @test msg.dist.params[:w] == [1.0]
 end
 
 @testset "SPNonlinearSIn1MN" begin
@@ -51,12 +52,9 @@ end
     @test !isApplicable(SPNonlinearSOutNGX, [Nothing, Message{Poisson}]) 
     @test isApplicable(SPNonlinearSOutNGX, [Nothing, Message{Gaussian}, Message{Gaussian}]) 
     
-    msg_in1 = Message(GaussianMeanVariance, m=0.0, v=1.0)
-    msg_in2 = Message(GaussianMeanVariance, m=2.0, v=1.0)
-    
-    res = ruleSPNonlinearSOutNGX(h, nothing, msg_in1, msg_in2, n_samples=100000)
-    @test isapprox(mean(res.dist), 2.0, atol=0.1)
-    @test isapprox(var(res.dist), 2.0, atol=0.1)
+    msg = ruleSPNonlinearSOutNGX(h, nothing, Message(GaussianMeanVariance, m=1.0, v=tiny), Message(GaussianMeanVariance, m=2.0, v=tiny), n_samples=1)
+    @test isapprox(msg.dist.params[:s][1], 3.0, atol=1e-4)
+    @test msg.dist.params[:w] == [1.0]
 end
 
 @testset "ruleSPNonlinearSInGX" begin

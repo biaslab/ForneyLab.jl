@@ -4,7 +4,6 @@ using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
 using ForneyLab: SPGaussianMeanVarianceOutNGS, SPGaussianMeanVarianceOutNPP,SPGaussianMeanVarianceMSNP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, SPGaussianMeanVarianceOutNSP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut, bootstrap
-using LinearAlgebra: det, diag, norm
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == 1
@@ -77,25 +76,6 @@ end
 # Update rules
 #-------------
 
-@testset "bootstrap" begin
-    p1 = ProbabilityDistribution(Univariate, SampleList, s=randn(1000), w=ones(1000)./1000)
-    p2 = ProbabilityDistribution(Univariate, PointMass, m=2.0)
-    s = bootstrap(p1,p2)
-    @test abs(mean(s))<0.1
-    @test abs(var(s)-3)<0.1
-
-    samples = [randn(2) for i=1:2000]
-    p1 = ProbabilityDistribution(Multivariate, SampleList, s=samples, w=ones(2000)./2000)
-    p2 = ProbabilityDistribution(MatrixVariate, PointMass, m=[2.0 0.0; 0.0 1.0])
-    s = bootstrap(p1,p2)
-    m = mean(s)
-    v = var(s)
-    @test abs(m[1])<0.1
-    @test abs(m[2])<0.1
-    @test abs(v[1]-3)<0.1
-    @test abs(v[2]-2)<0.1
-end
-
 @testset "SPGaussianMeanVarianceOutNPP" begin
     @test SPGaussianMeanVarianceOutNPP <: SumProductRule{GaussianMeanVariance}
     @test outboundType(SPGaussianMeanVarianceOutNPP) == Message{GaussianMeanVariance}
@@ -163,12 +143,10 @@ end
     @test isApplicable(SPGaussianMeanVarianceOutNSP, [Nothing, Message{SampleList}, Message{PointMass}])
     @test !isApplicable(SPGaussianMeanVarianceOutNSP, [Message{SampleList}, Nothing, Message{PointMass}])
 
-    msg = ruleSPGaussianMeanVarianceOutNSP(nothing, Message(Univariate, SampleList, s=5. .+randn(10000), w=ones(10000)./10000), Message(Univariate, PointMass, m=2.0))
-    @test abs(mean(msg.dist) - 5)<0.1
-    @test abs(var(msg.dist) - 3)<0.1
-    msg = ruleSPGaussianMeanVarianceOutNSP(nothing, Message(Multivariate, SampleList, s=[randn(2) for i=1:100000], w=ones(100000)./100000), Message(MatrixVariate, PointMass, m=[2.0 0.0;0.0 1.0]))
-    @test abs(sum(mean(msg.dist).-zeros(2)))<0.2
-    @test abs(sum(var(msg.dist).-[3.0,2.0]))<0.2
+    @test ruleSPGaussianMeanVarianceOutNSP(nothing, Message(Univariate, SampleList, s=[2.0], w=1.0), Message(Univariate, PointMass, m=0.0)) == Message(Univariate, SampleList, s=[2.0], w=1.0)
+    msg = ruleSPGaussianMeanVarianceOutNSP(nothing, Message(Multivariate, SampleList, s=[[2.0]], w=[1.0]), Message(MatrixVariate, PointMass, m=mat(tiny)))
+    @test isapprox(msg.dist.params[:s][1][1], 2.0, atol=1e-4)
+    @test msg.dist.params[:w] == [1.0]
 end
 
 @testset "SPGaussianMeanVarianceMSNP" begin
@@ -184,15 +162,10 @@ end
     @test isApplicable(SPGaussianMeanVarianceOutNGS, [Nothing, Message{Gaussian}, Message{SampleList}])
     @test !isApplicable(SPGaussianMeanVarianceOutNGS, [Message{Gaussian}, Nothing, Message{SampleList}])
 
-    samples = exp.(randn(100000))
-    msg = ruleSPGaussianMeanVarianceOutNGS(nothing, Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0), Message(Univariate, SampleList, s=samples, w=ones(100000)./100000))
-    @test abs(mean(msg.dist) - 0.0)<0.3
-    @test abs(var(msg.dist) - 3)<0.4
-    sample_matrix = [randn(2,2) for i=1:100000]
-    sym_matrix = [x*transpose(x) for x in sample_matrix]
-    msg_vector = ruleSPGaussianMeanVarianceOutNGS(nothing, Message(Multivariate, GaussianMeanVariance, m=zeros(2), v=diageye(2)), Message(MatrixVariate, SampleList, s=sym_matrix, w=ones(100000)./100000))
-    @test norm(unsafeMean(msg_vector.dist)-zeros(2))<0.3
-    @test norm(unsafeCov(msg_vector.dist)-diageye(2))<3.0
+    @test ruleSPGaussianMeanVarianceOutNGS(nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=0.0), Message(Univariate, SampleList, s=[0.0], w=[1.0])) == Message(Univariate, SampleList, s=[2.0], w=[1.0])
+    msg = ruleSPGaussianMeanVarianceOutNGS(nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.0)), Message(MatrixVariate, SampleList, s=[mat(tiny)], w=[1.0]))
+    @test isapprox(msg.dist.params[:s][1][1], 2.0, atol=1e-4)
+    @test msg.dist.params[:w] == [1.0]
 end
 
 @testset "VBGaussianMeanVarianceM" begin
@@ -220,6 +193,29 @@ end
     @test differentialEntropy(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=2.0)) == differentialEntropy(ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(2.0)))
     @test averageEnergy(GaussianMeanVariance, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=2.0), ProbabilityDistribution(Univariate, PointMass, m=0.0), ProbabilityDistribution(Univariate, PointMass, m=2.0)) == averageEnergy(GaussianMeanVariance, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0], v=mat(2.0)), ProbabilityDistribution(Multivariate, PointMass, m=[0.0]), ProbabilityDistribution(MatrixVariate, PointMass, m=mat(2.0)))
     @test averageEnergy(GaussianMeanVariance, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0, 1.0], v=[3.0 1.0; 1.0 2.0]), ProbabilityDistribution(Univariate, PointMass, m=0.5)) == averageEnergy(GaussianMeanPrecision, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0, 1.0], v=[3.0 1.0; 1.0 2.0]), ProbabilityDistribution(Univariate, PointMass, m=2.0))
+end
+
+
+#--------
+# Helpers
+#--------
+
+@testset "bootstrap" begin
+    p1 = ProbabilityDistribution(Univariate, SampleList, s=[2.0], w=[1.0])
+    p2 = ProbabilityDistribution(Univariate, PointMass, m=0.0)
+    @test bootstrap(p1, p2) == [2.0]
+
+    p1 = ProbabilityDistribution(Multivariate, SampleList, s=[[2.0]], w=[1.0])
+    p2 = ProbabilityDistribution(MatrixVariate, PointMass, m=mat(tiny))
+    @test isapprox(bootstrap(p1, p2)[1][1], 2.0, atol=1e-4)
+
+    p1 = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=0.0)
+    p2 = ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0])
+    @test bootstrap(p1, p2) == [2.0]
+
+    p1 = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.0))
+    p2 = ProbabilityDistribution(MatrixVariate, SampleList, s=[mat(tiny)], w=[1.0])
+    @test isapprox(bootstrap(p1, p2)[1][1], 2.0, atol=1e-4)    
 end
 
 end #module
