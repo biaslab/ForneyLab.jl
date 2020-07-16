@@ -66,4 +66,30 @@ end
     @test ruleSPSampleListOutNPP(nothing, Message(Multivariate, PointMass, m=[eye(2),eye(2)]), Message(Multivariate, PointMass, m=[0.4,0.6])) == Message(MatrixVariate, SampleList, s=[eye(2),eye(2)], w=[0.4,0.6])
 end
 
+
+#------------
+# Integration
+#------------
+
+g(x) = x
+
+@testset "Sampling integration" begin
+    # Define a model
+    fg = FactorGraph()
+    N = 4
+    @RV s ~ SampleList(collect(1.0:N), ones(N)/N)
+    @RV x ~ GaussianMeanVariance(s, 0.0)
+    @RV y ~ Nonlinear{Sampling}(x, g=g)
+
+    # Define an algorithm
+    algo = sumProductAlgorithm(y)
+    code = algorithmSourceCode(algo)
+    eval(Meta.parse(code))
+
+    # Execute the algorithm
+    marginals = step!(Dict())
+
+    @test marginals[:y] == ProbabilityDistribution(Univariate, SampleList, s=collect(1.0:N), w=ones(N)/N)
+end
+
 end

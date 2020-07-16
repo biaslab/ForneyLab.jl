@@ -73,6 +73,11 @@ end
     @test isapprox(var(res.dist), 1.9999999999999982, atol=0.1)
 end
 
+
+#------------
+# Integration
+#------------
+
 @testset "Nonlinear integration via sampling" begin
     FactorGraph()
 
@@ -100,25 +105,4 @@ end
     @test occursin("ruleSPNonlinearSInGX(g, 2, messages[3], messages[2], messages[1])", algo_code)
 end
 
-#------------
-# Integration
-#------------
-
-@testset "SPNonlinearSOutNM integration" begin
-    samples = 2.0 .+ randn(100000)
-    p_dist = ProbabilityDistribution(Univariate, SampleList, s=samples, w=ones(100000)/100000)
-
-    @test abs(unsafeMean(ruleSPNonlinearSOutNM(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), n_samples=100000).dist) - unsafeMean(p_dist)) < 0.2
-    @test abs(unsafeVar(ruleSPNonlinearSOutNM(f, nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=1.0), n_samples=100000).dist) - unsafeVar(p_dist)) < 0.2
-end
-
-@testset "SPNonlinearSIn1MN integration" begin
-    msg_in1 = Message(GaussianMeanVariance, m=0.0, v=1.0)
-    msg_in2 = Message(GaussianMeanVariance, m=2.0, v=1.0)
-
-    res = ruleSPNonlinearSOutNGX(h, nothing, msg_in1, msg_in2, n_samples=100000)
-    @test isapprox(mean(res.dist), 2.0, atol=0.1)
-    @test isapprox(var(res.dist), 2.0, atol=0.1)
-end
-
-end
+end # module
