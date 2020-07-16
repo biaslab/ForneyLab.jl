@@ -63,6 +63,18 @@ end
 ruleSPMultiplicationOutNGP(msg_out::Nothing, msg_in1::Message{F, Univariate}, msg_a::Message{PointMass, Multivariate}) where F<:Gaussian =
     ruleSPMultiplicationOutNPG(nothing, msg_a, msg_in1)
 
+function ruleSPMultiplicationIn1GNP(msg_out::Message{F, Multivariate},
+                                    msg_in1::Nothing,
+                                    msg_a::Message{PointMass, Multivariate}) where F<:Gaussian
+
+    d_out = convert(ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}, msg_out.dist)
+
+    A = msg_a.dist.params[:m]
+    W = A'*d_out.params[:w]*A
+
+    Message(Univariate, GaussianWeightedMeanPrecision, xi=A'*d_out.params[:xi], w=W)
+end
+
 function ruleSPMultiplicationOutNGP(msg_out::Nothing,
                                     msg_in1::Message{F, Multivariate},
                                     msg_a::Message{PointMass, Univariate}) where F<:Gaussian
@@ -102,18 +114,6 @@ function ruleSPMultiplicationIn1GNP(msg_out::Message{F, Multivariate},
     W = W + tiny*diageye(size(W)[1]) # Ensure precision is always invertible
 
     Message(Multivariate, GaussianWeightedMeanPrecision, xi=A'*d_out.params[:xi], w=W)
-end
-
-function ruleSPMultiplicationIn1GNP(msg_out::Message{F, Multivariate},
-                                    msg_in1::Nothing,
-                                    msg_a::Message{PointMass, Multivariate}) where F<:Gaussian
-
-    d_out = convert(ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}, msg_out.dist)
-
-    A = msg_a.dist.params[:m]
-    W = A'*d_out.params[:w]*A
-
-    Message(Univariate, GaussianWeightedMeanPrecision, xi=A'*d_out.params[:xi], w=W)
 end
 
 ruleSPMultiplicationOutNPP(msg_out::Nothing, msg_in1::Message{PointMass, Multivariate}, msg_a::Message{PointMass, MatrixVariate}) =
