@@ -6,3 +6,4 @@
 demo/*.jl
 *.gif
 docs/build
+Manifest.toml

@@ -60,8 +60,8 @@ end
 end
 
 @testset "log pdf" begin
-    @test isapprox(logPdf(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=1, w=1),1), -0.9189385332046728)
-    @test isapprox(logPdf(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[0,0], w=[1.0 0.0;0.0 1.0]),[1,0]), -2.3378770664093453)
+    @test isapprox(logPdf(ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=1.0, w=2.0), 1.0), -0.5723649429247)
+    @test isapprox(logPdf(ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[1.0, 1.0], w=[2.0 0.0; 0.0 2.0]), [1.0, 0.0]), -2.1447298858494)
 end
 
 @testset "convert" begin

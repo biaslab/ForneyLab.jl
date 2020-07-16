@@ -69,7 +69,7 @@ Dependency graphs are used for example by message scheduling algorithms.
 """
 mutable struct DependencyGraph{VT}
     vertices::Vector{VT}
-    neighbors::Vector{LinkedList}
+    neighbors::Vector{LinkedList{Int}}
 
     DependencyGraph{VT}() where VT = new(Vector{VT}(), Vector{LinkedList{Int}}())
 end
