@@ -195,27 +195,4 @@ end
     @test averageEnergy(GaussianMeanVariance, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0, 1.0], v=[3.0 1.0; 1.0 2.0]), ProbabilityDistribution(Univariate, PointMass, m=0.5)) == averageEnergy(GaussianMeanPrecision, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0, 1.0], v=[3.0 1.0; 1.0 2.0]), ProbabilityDistribution(Univariate, PointMass, m=2.0))
 end
 
-
-#--------
-# Helpers
-#--------
-
-@testset "bootstrap" begin
-    p1 = ProbabilityDistribution(Univariate, SampleList, s=[2.0], w=[1.0])
-    p2 = ProbabilityDistribution(Univariate, PointMass, m=0.0)
-    @test bootstrap(p1, p2) == [2.0]
-
-    p1 = ProbabilityDistribution(Multivariate, SampleList, s=[[2.0]], w=[1.0])
-    p2 = ProbabilityDistribution(MatrixVariate, PointMass, m=mat(tiny))
-    @test isapprox(bootstrap(p1, p2)[1][1], 2.0, atol=1e-4)
-
-    p1 = ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=0.0)
-    p2 = ProbabilityDistribution(Univariate, SampleList, s=[0.0], w=[1.0])
-    @test bootstrap(p1, p2) == [2.0]
-
-    p1 = ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.0))
-    p2 = ProbabilityDistribution(MatrixVariate, SampleList, s=[mat(tiny)], w=[1.0])
-    @test isapprox(bootstrap(p1, p2)[1][1], 2.0, atol=1e-4)    
-end
-
 end #module

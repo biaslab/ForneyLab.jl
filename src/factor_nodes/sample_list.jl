@@ -216,6 +216,44 @@ end
     return z
 end
 
+# Bootstrap samples
+function bootstrap(dist_mean::ProbabilityDistribution{Univariate, SampleList}, dist_var::ProbabilityDistribution{Univariate, PointMass})
+    s_m = dist_mean.params[:s] # Samples representing the mean
+    N = length(s_m)
+    v = dist_var.params[:m] # Fixed variance
+
+    return sqrt(v)*randn(N) .+ s_m # New samples
+end
+
+function bootstrap(dist_mean::ProbabilityDistribution{Multivariate, SampleList}, dist_var::ProbabilityDistribution{MatrixVariate, PointMass})
+    d = dims(dist_mean)
+    s_m = dist_mean.params[:s] # Samples representing the mean
+    N = length(s_m)
+    V = dist_var.params[:m] # Fixed variance
+    U = (cholesky(V)).U # Precompute Cholesky
+
+    return [U' *randn(d) + s_m[i] for i in 1:N] # New samples
+end
+
+function bootstrap(dist_mean::ProbabilityDistribution{Univariate, <:Gaussian}, dist_var::ProbabilityDistribution{Univariate, SampleList})
+    s_v = dist_var.params[:s] # Samples representing the variance
+    N = length(s_v)
+    (m, v) = unsafeMeanCov(dist_mean)
+    s_u = sqrt.(s_v .+ v) # Standard deviation for each variance sample
+
+    return s_u.*randn(N) .+ m # New samples
+end
+
+function bootstrap(dist_mean::ProbabilityDistribution{Multivariate, <:Gaussian}, dist_var::ProbabilityDistribution{MatrixVariate, SampleList})
+    d = dims(dist_mean)
+    s_V = dist_var.params[:s] # Samples representing the covariance
+    N = length(s_V)
+    (m, V) = unsafeMeanCov(dist_mean)
+    s_U = [(cholesky(s_V[i] + V)).U for i in 1:N] # Precompute Cholesky for each covariance sample; this can be expensive
+
+    return [s_U[i]' *randn(d) + m for i in 1:N] # New samples
+end
+
 # Differential entropy for SampleList
 function differentialEntropy(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType
     haskey(dist.params, :entropy) || error("Missing entropy for SampleList; quantity is requested but not computed")
