@@ -1,7 +1,6 @@
 export
 ruleSPNonlinearSOutNM,
 ruleSPNonlinearSIn1MN,
-#ruleSPNonlinearSOutNM,
 ruleSPNonlinearSOutNGX,
 ruleSPNonlinearSInGX,
 ruleMNonlinearSInGX,

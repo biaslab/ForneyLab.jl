@@ -76,4 +76,4 @@ function Nonlinear(out, args::Vararg; g::Function, g_inv=nothing, alpha=nothing,
     return Nonlinear{Unscented}(out, args...; g=g, g_inv=g_inv, alpha=alpha, dims=dims, id=id)
 end
 
-slug(::Type{Nonlinear}) = "g"
+slug(::Type{Nonlinear{T}}) where T<:ApproximationMethod = "g{$(removePrefix(T))}"

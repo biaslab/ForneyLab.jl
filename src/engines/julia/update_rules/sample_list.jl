@@ -2,15 +2,20 @@ export
 ruleSPSampleListOutNPP
 
 function ruleSPSampleListOutNPP(msg_out::Nothing,
-	                            msg_s::Message{PointMass, V},
-	                            msg_w::Message{PointMass, V}) where V<:VariateType
+	                            msg_s::Message{PointMass, Multivariate}, # Multivariate, because vectors of samples and weight are passed as parameters
+	                            msg_w::Message{PointMass, Multivariate})
     
-    d = length(msg_s.dist.params[:m][1])
-    if d == 1
-	    var_type = Univariate
-	else
-        var_type = Multivariate
+    # Extract the variate type from the first sample
+    s = msg_s.dist.params[:m][1]
+    if isa(s, Number)
+	    V = Univariate
+	elseif isa(s, AbstractVector)
+        V = Multivariate
+    elseif isa(s, AbstractMatrix)
+       	V = MatrixVariate
+    else
+    	error("Unexpected sample type: $(typeof(s))")
     end
 
-    return Message(var_type, SampleList, s=deepcopy(msg_s.dist.params[:m]), w=deepcopy(msg_w.dist.params[:m]))
+    return Message(V, SampleList, s=deepcopy(msg_s.dist.params[:m]), w=deepcopy(msg_w.dist.params[:m]))
 end

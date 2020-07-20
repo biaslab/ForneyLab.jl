@@ -23,7 +23,7 @@ function isApplicable(::Type{SPNonlinearUTOutNGX}, input_types::Vector{<:Type})
 end
 
 mutable struct SPNonlinearUTInGX <: SumProductRule{Nonlinear{Unscented}} end
-outboundType(::Type{SPNonlinearUTInGX}) = Message{GaussianMeanVariance}
+outboundType(::Type{SPNonlinearUTInGX}) = Message{Gaussian}
 function isApplicable(::Type{SPNonlinearUTInGX}, input_types::Vector{<:Type})
     total_inputs = length(input_types)
     (total_inputs > 2) || return false

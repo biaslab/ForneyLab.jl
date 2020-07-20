@@ -9,7 +9,7 @@ ruleSPCategoricalOutNP(msg_out::Nothing, msg_p::Message{PointMass, Multivariate}
 ruleSPCategoricalIn1(msg_out::Message{PointMass, Multivariate}, msg_p::Nothing) = Message(Multivariate, Dirichlet, a=deepcopy(msg_out.dist.params[:m]).+ 1.0)
 
 function ruleVBCategoricalOut(marg_out::Any, marg_p::ProbabilityDistribution{Multivariate})
-    rho = clamp.(exp.(unsafeLogMean(marg_p)), tiny, huge)
+    rho = clamp.(exp.(unsafeLogMean(marg_p)), tiny, Inf) # Softens the parameter
 
     Message(Univariate, Categorical, p=rho./sum(rho))
 end
