@@ -73,7 +73,7 @@ end
 
 g(x) = x
 
-@testset "Sampling integration" begin
+@testset "Sampling code generation" begin
     # Define a model
     fg = FactorGraph()
     N = 4
@@ -84,12 +84,28 @@ g(x) = x
     # Define an algorithm
     algo = sumProductAlgorithm(y)
     code = algorithmSourceCode(algo)
-    eval(Meta.parse(code))
 
-    # Execute the algorithm
+    @test occursin("ruleSPSampleListOutNPP", code)
+    @test occursin("ruleSPGaussianMeanVarianceOutNSP", code)
+    @test occursin("ruleSPNonlinearSOutNM", code)
+end
+
+# Generated algorithm code
+function step!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, 3))
+    messages[1] = ruleSPSampleListOutNPP(nothing, Message(Multivariate, PointMass, m=[1.0, 2.0, 3.0, 4.0]), Message(Multivariate, PointMass, m=[0.25, 0.25, 0.25, 0.25]))
+    messages[2] = ruleSPGaussianMeanVarianceOutNSP(nothing, messages[1], Message(Univariate, PointMass, m=0.0))
+    messages[3] = ruleSPNonlinearSOutNM(g, nothing, messages[2])
+
+    marginals[:y] = messages[3].dist
+
+    return marginals
+end
+
+@testset "Sampling code execution" begin
+    # Execute the algorithm code
     marginals = step!(Dict())
 
-    @test marginals[:y] == ProbabilityDistribution(Univariate, SampleList, s=collect(1.0:N), w=ones(N)/N)
+    @test marginals[:y] == ProbabilityDistribution(Univariate, SampleList, s=collect(1.0:4.0), w=ones(4)/4)
 end
 
 end
