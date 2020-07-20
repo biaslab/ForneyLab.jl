@@ -32,6 +32,17 @@ function ruleSPNonlinearSIn1MN(g::Function,
     return Message(V, Function, log_pdf = (z)->logPdf(msg_out.dist, g(z)))
 end
 
+function ruleSPNonlinearSOutNM(g::Function,
+                               msg_out::Nothing,
+                               msg_in1::Message{SampleList, V};
+                               n_samples=default_n_samples) where {V<:VariateType}
+
+    samples = g.(msg_in1.dist.params[:s])
+    weights = msg_in1.dist.params[:w]
+
+    return Message(V, SampleList, s=samples, w=weights)
+end
+
 function ruleSPNonlinearSOutNGX(g::Function,
                                 msg_out::Nothing,
                                 msgs_in::Vararg{Message{<:Gaussian, V}};
@@ -50,7 +61,7 @@ function ruleSPNonlinearSInGX(g::Function,
                               msg_out::Message{<:Gaussian, V},
                               msgs_in::Vararg{Message{<:Gaussian, V}};
                               n_samples=default_n_samples) where V<:VariateType
-    
+
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
     (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
@@ -79,7 +90,7 @@ end
 function ruleMNonlinearSInGX(g::Function,
                              msg_out::Message{<:Gaussian, V},
                              msgs_in::Vararg{Message{<:Gaussian, V}}) where V<:VariateType
-    
+
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
     (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
@@ -119,7 +130,7 @@ end
     log_joint(s) = logPdf(y,s) + logPdf(x,s)
     d_log_joint(s) = ForwardDiff.derivative(log_joint, s)
     m_initial = unsafeMean(y)
-    
+
     mean = gradientOptimization(log_joint, d_log_joint, m_initial, 0.01)
     prec = -ForwardDiff.derivative(d_log_joint, mean)
 

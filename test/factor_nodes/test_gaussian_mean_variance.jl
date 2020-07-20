@@ -3,8 +3,7 @@ module GaussianMeanVarianceTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, isProper, unsafeMean, unsafeMode, unsafeVar, unsafeCov, unsafeMeanCov, unsafePrecision, unsafeWeightedMean, unsafeWeightedMeanPrecision
-using ForneyLab: SPGaussianMeanVarianceOutNPP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut
-using LinearAlgebra: det, diag
+using ForneyLab: SPGaussianMeanVarianceOutNGS, SPGaussianMeanVarianceOutNPP,SPGaussianMeanVarianceMSNP, SPGaussianMeanVarianceMPNP, SPGaussianMeanVarianceOutNGP, SPGaussianMeanVarianceMGNP, SPGaussianMeanVarianceVGGN, SPGaussianMeanVarianceVPGN, SPGaussianMeanVarianceOutNSP, VBGaussianMeanVarianceM, VBGaussianMeanVarianceOut, bootstrap
 
 @testset "dims" begin
     @test dims(ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == 1
@@ -138,6 +137,37 @@ end
     @test msg.dist.params[:log_pdf](1.0) == -0.5*log(4.0 + 1.0) - 1/(2*1.0)*(1.0 - 3.0)^2
 end
 
+@testset "SPGaussianMeanVarianceOutNSP" begin
+    @test SPGaussianMeanVarianceOutNSP <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceOutNSP) == Message{SampleList}
+    @test isApplicable(SPGaussianMeanVarianceOutNSP, [Nothing, Message{SampleList}, Message{PointMass}])
+    @test !isApplicable(SPGaussianMeanVarianceOutNSP, [Message{SampleList}, Nothing, Message{PointMass}])
+
+    @test ruleSPGaussianMeanVarianceOutNSP(nothing, Message(Univariate, SampleList, s=[2.0], w=1.0), Message(Univariate, PointMass, m=0.0)) == Message(Univariate, SampleList, s=[2.0], w=1.0)
+    msg = ruleSPGaussianMeanVarianceOutNSP(nothing, Message(Multivariate, SampleList, s=[[2.0]], w=[1.0]), Message(MatrixVariate, PointMass, m=mat(tiny)))
+    @test isapprox(msg.dist.params[:s][1][1], 2.0, atol=1e-4)
+    @test msg.dist.params[:w] == [1.0]
+end
+
+@testset "SPGaussianMeanVarianceMSNP" begin
+    @test SPGaussianMeanVarianceMSNP <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceMSNP) == Message{SampleList}
+    @test isApplicable(SPGaussianMeanVarianceMSNP, [Message{SampleList}, Nothing, Message{PointMass}])
+    @test !isApplicable(SPGaussianMeanVarianceMSNP, [Message{Gaussian}, Nothing, Message{PointMass}])
+end
+
+@testset "SPGaussianMeanVarianceOutNGS" begin
+    @test SPGaussianMeanVarianceOutNGS <: SumProductRule{GaussianMeanVariance}
+    @test outboundType(SPGaussianMeanVarianceOutNGS) == Message{SampleList}
+    @test isApplicable(SPGaussianMeanVarianceOutNGS, [Nothing, Message{Gaussian}, Message{SampleList}])
+    @test !isApplicable(SPGaussianMeanVarianceOutNGS, [Message{Gaussian}, Nothing, Message{SampleList}])
+
+    @test ruleSPGaussianMeanVarianceOutNGS(nothing, Message(Univariate, GaussianMeanVariance, m=2.0, v=0.0), Message(Univariate, SampleList, s=[0.0], w=[1.0])) == Message(Univariate, SampleList, s=[2.0], w=[1.0])
+    msg = ruleSPGaussianMeanVarianceOutNGS(nothing, Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.0)), Message(MatrixVariate, SampleList, s=[mat(tiny)], w=[1.0]))
+    @test isapprox(msg.dist.params[:s][1][1], 2.0, atol=1e-4)
+    @test msg.dist.params[:w] == [1.0]
+end
+
 @testset "VBGaussianMeanVarianceM" begin
     @test VBGaussianMeanVarianceM <: NaiveVariationalRule{GaussianMeanVariance}
     @test outboundType(VBGaussianMeanVarianceM) == Message{GaussianMeanVariance}
@@ -165,4 +195,4 @@ end
     @test averageEnergy(GaussianMeanVariance, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0, 1.0], v=[3.0 1.0; 1.0 2.0]), ProbabilityDistribution(Univariate, PointMass, m=0.5)) == averageEnergy(GaussianMeanPrecision, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[0.0, 1.0], v=[3.0 1.0; 1.0 2.0]), ProbabilityDistribution(Univariate, PointMass, m=2.0))
 end
 
-end #module
+end # module
