@@ -98,4 +98,21 @@ end
     @test isa(algo, InferenceAlgorithm)
 end
 
+@testset "variationalAlgorithm with custom target" begin
+    g = FactorGraph()
+
+    # Define model
+    @RV x ~ GaussianMeanPrecision(0.0, 1.0)
+    @RV y = 2.0*x
+    @RV z = y + 1.0
+    @RV w ~ GaussianMeanPrecision(z, 1.0)
+    placeholder(w, :w)
+
+    # Derive algorithm
+    algo = variationalAlgorithm(y, ids=[:Y])
+    code = algorithmSourceCode(algo)
+
+    @test occursin("marginals[:y]", code)
+end
+
 end # module

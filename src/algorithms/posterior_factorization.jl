@@ -81,8 +81,7 @@ factorization, and whether free energy will be evaluated. At the same
 time, fields for fast lookup during scheduling are populated in the
 posterior factorization.
 """
-function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization, variables::Vector{Variable}=Variable[]; free_energy=false, external_targets=false)
-    target_variables = Set{Variable}(variables) # Marginals of the quantities of interest are always required
+function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; free_energy=false, external_targets=false)
     large_regions = Set{Tuple}() # Initialize empty set of target cluster node and edges. We cannot build a Set of Clusters directly, because duplicate Clusters are not removed.
 
     # Determine which target regions are required by external posterior factors
@@ -93,7 +92,7 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization, variables
 
             target_edges = localInternalEdges(node, pf) # Find internal edges connected to node
             if length(target_edges) == 1 # Only one internal edge, the marginal for a single Variable is required
-                push!(target_variables, target_edges[1].variable)
+                push!(pf.target_variables, target_edges[1].variable)
             elseif length(target_edges) > 1 # Multiple internal edges, register the region for computing the joint marginal
                 push!(large_regions, (node, target_edges))
             end
@@ -137,7 +136,7 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization, variables
         # All targets with a non-zero counting number are required for free energy evaluation
         for (variable, cnt) in variable_counting_numbers
             if cnt != 0
-                push!(target_variables, variable)
+                push!(pf.target_variables, variable)
             end
         end
         for (region, cnt) in cluster_counting_numbers
@@ -153,10 +152,9 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization, variables
     end
 
     # Create clusters, and register clusters with the posterior factorization for fast lookup during scheduling
-    target_clusters = Set{Cluster}() # Initialize empty set of target clusters
     for region in large_regions
         cluster = Cluster(region...) # Use the region definition to construct a Cluster
-        push!(target_clusters, cluster)
+        push!(pf.target_clusters, cluster)
         for edge in cluster.edges
             pfz.node_edge_to_cluster[(cluster.node, edge)] = cluster
         end
@@ -164,10 +162,6 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization, variables
 
     # Register whether posterior factorization is prepared for free energy evaluation
     pfz.free_energy_flag = free_energy
-
-    # Register the targets with the posterior factor
-    pf.target_variables = target_variables
-    pf.target_clusters = target_clusters
 
     return pf
 end

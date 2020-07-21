@@ -66,8 +66,8 @@ end
     y = Variable(id=:y)
     cnd = StateTransition(placeholder(y, :y), x_prev, x)
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz)
-    setTargets!(pf, pfz, [x])
+    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
+    setTargets!(pf, pfz)
     algo = InferenceAlgorithm(pfz)
 
     # Build SP schedule
