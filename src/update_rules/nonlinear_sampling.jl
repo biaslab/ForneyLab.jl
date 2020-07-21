@@ -22,6 +22,20 @@ function isApplicable(::Type{SPNonlinearSOutNGX}, input_types::Vector{<:Type})
     return true
 end
 
+mutable struct SPNonlinearSOutNFX <: SumProductRule{Nonlinear{Sampling}} end
+outboundType(::Type{SPNonlinearSOutNFX}) = Message{SampleList}
+function isApplicable(::Type{SPNonlinearSOutNFX}, input_types::Vector{<:Type})
+    total_inputs = length(input_types)
+    (total_inputs > 2) || return false
+    (input_types[1] == Nothing) || return false
+
+    for input_type in input_types[2:end]
+        matches(input_type, Message{SoftFactor}) || return false #Message can be any distribution
+    end
+
+    return true
+end
+
 mutable struct SPNonlinearSInGX <: SumProductRule{Nonlinear{Sampling}} end
 outboundType(::Type{SPNonlinearSInGX}) = Message{GaussianWeightedMeanPrecision}
 function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})

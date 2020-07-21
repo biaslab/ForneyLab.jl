@@ -2,6 +2,7 @@ export
 ruleSPNonlinearSOutNM,
 ruleSPNonlinearSIn1MN,
 ruleSPNonlinearSOutNGX,
+ruleSPNonlinearSOutNFX,
 ruleSPNonlinearSInGX,
 ruleMNonlinearSInGX,
 prod!
@@ -52,6 +53,25 @@ function ruleSPNonlinearSOutNGX(g::Function,
 
     samples = g.(samples_in...)
     weights = ones(n_samples)/n_samples
+
+    Vout = Univariate
+    if length(samples[1])>1 Vout = Multivariate end
+
+    return Message(Vout, SampleList, s=samples, w=weights)
+end
+
+function ruleSPNonlinearSOutNFX(g::Function,
+                                msg_out::Nothing,
+                                msgs_in::Vararg{Message{<:SoftFactor, <:VariateType}};
+                                n_samples=default_n_samples)
+
+    samples_in = [sample(msg_in.dist, n_samples) for msg_in in msgs_in]
+
+    samples = g.(samples_in...)
+    weights = ones(n_samples)/n_samples
+
+    V = Univariate
+    if length(samples[1])>1 V = Multivariate end
 
     return Message(V, SampleList, s=samples, w=weights)
 end
