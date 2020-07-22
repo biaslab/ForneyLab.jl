@@ -4,6 +4,7 @@ ruleSPNonlinearSIn1MN,
 ruleSPNonlinearSOutNGX,
 ruleSPNonlinearSOutNFX,
 ruleSPNonlinearSInGX,
+ruleSPNonlinearSInFX,
 ruleMNonlinearSInGX,
 prod!
 
@@ -105,6 +106,50 @@ function ruleSPNonlinearSInGX(g::Function,
     W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef inconsistencies
 
     return Message(V, GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
+end
+
+function ruleSPNonlinearSInFX(g::Function,
+                              inx::Int64, # Index of inbound interface inx
+                              msg_out::Message{<:FactorFunction, <:VariateType},
+                              msgs_in::Vararg{Message{<:FactorFunction, <:VariateType}};
+                              n_samples=default_n_samples)
+
+    # g2 = (x) -> begin
+    #     before_x   = map(msg -> sample(msg.dist, n_samples), msgs_in[1:inx])
+    #     repeated_x = collect(Iterators.repeat([ x ], n_samples))
+    #     after_x    = map(msg -> sample(msg.dist, n_samples), msgs_in[inx+1:end])
+    #     return sum(g.([before_x, repeated_x, after_x]...))
+    # end
+
+    g2 = (x) -> begin
+        samples_in = []
+        if inx == 1
+            push!(samples_in,collect(Iterators.repeat([ x ], n_samples)))
+            for i=2:length(msgs_in)
+                push!(samples_in,sample(msgs_in[i].dist, n_samples))
+            end
+        elseif inx == length(msgs_in)
+            for i=1:(length(msgs_in)-1)
+                push!(samples_in,sample(msgs_in[i].dist, n_samples))
+            end
+            push!(samples_in,collect(Iterators.repeat([ x ], n_samples)))
+        else
+            for i=1:(inx-1)
+                push!(samples_in,sample(msgs_in[i].dist, n_samples))
+            end
+            push!(samples_in,collect(Iterators.repeat([ x ], n_samples)))
+            for i=(inx+1):n_samples
+                push!(samples_in,sample(msgs_in[i].dist, n_samples))
+            end
+        end
+        return sum(g.(samples_in...))/n_samples
+    end
+
+    V = Univariate
+    if dims(msgs_in[inx].dist)>1 V = Multivariate end
+
+    return Message(V, Function, log_pdf = (z)->logPdf(msg_out.dist, g2(z)))
+
 end
 
 function ruleMNonlinearSInGX(g::Function,
