@@ -72,8 +72,8 @@ end
     nd = MockNode([x, constant(0.0), constant(0.0)])
 
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz)
-    setTargets!(pf, pfz, [x])
+    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
+    setTargets!(pf, pfz)
     schedule = sumProductSchedule(pf)
 
     @test length(schedule) == 3

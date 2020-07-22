@@ -63,8 +63,8 @@ end
     end
 
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz)
-    setTargets!(pf, pfz, [m])
+    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([m]))
+    setTargets!(pf, pfz)
     schedule = expectationPropagationSchedule(pf)
 
     @test length(schedule) == 15
@@ -91,10 +91,11 @@ end
     setTargets!(q_y_z, pfz, external_targets=true)
     schedule = variationalExpectationPropagationSchedule(q_y_z)
 
-    @test length(schedule) == 3
+    @test length(schedule) == 4
     @test ScheduleEntry(nd_y.i[:out], VBGaussianMeanPrecisionOut) in schedule
     @test ScheduleEntry(nd_z.i[:out].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd_z.i[:in1], EPProbitIn1GP) in schedule
+    @test ScheduleEntry(nd_z.i[:out], SPProbitOutNG) in schedule
 end
 
 @testset "expectationPropagationAlgorithm" begin

@@ -20,17 +20,19 @@ mutable struct PosteriorFactor
     optimize::Bool # Indicate the need for an optimization block
     initialize::Bool # Indicate the need for a message initialization block
 
-    function PosteriorFactor(pfz=currentPosteriorFactorization(); id=generateId(PosteriorFactor))
+    # Contruct a posterior factor that encompasses all variables in the graph
+    function PosteriorFactor(pfz=currentPosteriorFactorization(); target_variables=Set{Variable}(), id=generateId(PosteriorFactor))
         internal_edges = nonClampedEdges(pfz.graph) # Include all non-clamped edges in a single posterior factor
-        self = new(id, internal_edges)
+        self = new(id, internal_edges, target_variables, Set{Cluster}()) # Initialize posterior factor without predefined targets
         pfz.posterior_factors[id] = self # Register self with the algorithm
 
         return self
     end
 
-    function PosteriorFactor(variables::Set{Variable}; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor))
-        internal_edges = extend(edges(variables)) # Include all deterministically liked variables in a single posterior factor
-        self = new(id, internal_edges)
+    # Construct a posterior factor that includes all variables deterministically linked to the target variables
+    function PosteriorFactor(target_variables::Set{Variable}; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor))
+        internal_edges = extend(edges(target_variables)) # Include all deterministically liked variables in a single posterior factor
+        self = new(id, internal_edges, target_variables, Set{Cluster}()) # Initialize posterior factor with custom target variables
         pfz.posterior_factors[id] = self # Register self with the posterior factorization
 
         return self

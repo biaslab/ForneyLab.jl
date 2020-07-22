@@ -6,17 +6,18 @@ sumProductAlgorithm,
 """
 Create a sum-product algorithm to infer marginals over `variables`
 """
-function sumProductAlgorithm(variables::Vector{Variable};
+function sumProductAlgorithm(target_variables::Vector{Variable};
                              id=Symbol(""),
                              free_energy=false)
 
     # Initialize empty posterior factorization
     pfz = PosteriorFactorization()
+
     # Contain the entire graph in a single posterior factor
-    pf = PosteriorFactor(pfz, id=Symbol(""))
+    pf = PosteriorFactor(pfz, target_variables=Set{Variable}(target_variables), id=Symbol(""))
 
     # Set the target regions (variables and clusters) of the posterior factor
-    setTargets!(pf, pfz, variables, free_energy=free_energy, external_targets=false)
+    setTargets!(pf, pfz, free_energy=free_energy, external_targets=false)
 
     # Infer schedule and marginal computations
     schedule = sumProductSchedule(pf) # For free energy computation, additional targets might be required

@@ -6,22 +6,22 @@ expectationPropagationAlgorithm,
 """
 Create a sum-product algorithm to infer marginals over `variables`, and compile it to Julia code
 """
-function expectationPropagationAlgorithm(variables::Vector{Variable};
+function expectationPropagationAlgorithm(target_variables::Vector{Variable};
                                          id=Symbol(""),
                                          free_energy=false)
 
     # Initialize empty posterior factorization
     pfz = PosteriorFactorization()
     # Contain the entire graph in a single posterior factor
-    pf = PosteriorFactor(pfz, id=Symbol(""))
+    pf = PosteriorFactor(pfz, target_variables=Set{Variable}(target_variables), id=Symbol(""))
 
     # Set the target regions (variables and clusters) of the posterior factor
-    setTargets!(pf, pfz, variables, free_energy=free_energy, external_targets=false)
+    setTargets!(pf, pfz, free_energy=free_energy, external_targets=false)
 
     # Infer schedule and marginal computations
     schedule = expectationPropagationSchedule(pf)
     pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
-    pf.marginal_table = marginalTable(variables)
+    pf.marginal_table = marginalTable(pf)
 
     # Populate fields for algorithm compilation
     algo = InferenceAlgorithm(pfz, id=id)

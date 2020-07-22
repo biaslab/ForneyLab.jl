@@ -55,7 +55,7 @@ ForneyLab.isApplicable(SPMockNode, input_types::Vector{<:Type}) = true
     nd3 = MockNode([v1, v2, v3])
 
     pfz = PosteriorFactorization()
-    pf_12 = PosteriorFactor([v1, v2])
+    pf_12 = PosteriorFactor(pfz)
     setTargets!(pf_12, pfz, external_targets=true)
 
     pf_12.schedule = variationalSchedule(pf_12)
