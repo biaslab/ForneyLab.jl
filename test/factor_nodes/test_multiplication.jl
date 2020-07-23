@@ -32,7 +32,6 @@ end
 
     @test ruleSPMultiplicationOutNGP(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0), Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianMeanVariance, m=2.0, v=12.0)
     @test ruleSPMultiplicationOutNGP(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0), Message(Multivariate, PointMass, m=[2.0])) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
-    @test ruleSPMultiplicationOutNGP(nothing, Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(3.0)), Message(Univariate, PointMass, m=2.0)) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
     @test ruleSPMultiplicationOutNGP(nothing, Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(3.0)), Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
 end
 
@@ -42,8 +41,6 @@ end
     @test isApplicable(SPMultiplicationOutNPG, [Nothing, Message{PointMass}, Message{Gaussian}])
 
     @test ruleSPMultiplicationOutNPG(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0)) == Message(Univariate, GaussianMeanVariance, m=2.0, v=12.0)
-    @test ruleSPMultiplicationOutNPG(nothing, Message(Univariate, PointMass, m=2.0), Message(Multivariate, GaussianMeanVariance, m=[1.0], v=mat(3.0))) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
-    @test ruleSPMultiplicationOutNPG(nothing, Message(Multivariate, PointMass, m=[2.0]), Message(Univariate, GaussianMeanVariance, m=1.0, v=3.0)) == Message(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(12.0))
 end
 
 @testset "SPMultiplicationOutNPP" begin
@@ -61,7 +58,7 @@ end
     @test isApplicable(SPMultiplicationIn1GNP, [Message{Gaussian}, Nothing, Message{PointMass}])
 
     @test ruleSPMultiplicationIn1GNP(Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=3.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=12.0)
-    @test ruleSPMultiplicationIn1GNP(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(3.0)), nothing, Message(Multivariate, PointMass, m=[2.0])) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=12.0)
+    @test ruleSPMultiplicationIn1GNP(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(3.0)), nothing, Message(Multivariate, PointMass, m=[2.0])) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=12.0 + tiny)
     @test ruleSPMultiplicationIn1GNP(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=mat(3.0)), nothing, Message(MatrixVariate, PointMass, m=mat(2.0))) == Message(Multivariate, GaussianWeightedMeanPrecision, xi=[2.0], w=mat(12.0 + tiny))
 end
 

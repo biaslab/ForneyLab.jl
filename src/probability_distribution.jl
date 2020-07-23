@@ -117,6 +117,14 @@ isProper(dist::ProbabilityDistribution{<:VariateType, Function}) = haskey(dist.p
 
 logPdf(dist::ProbabilityDistribution{<:VariateType, Function}, x) = dist.params[:log_pdf](x)
 
+# Convert VariateTypes
+convert(::Type{ProbabilityDistribution{Multivariate, PointMass}}, dist::ProbabilityDistribution{Univariate, PointMass}) =
+    ProbabilityDistribution(Multivariate, PointMass, m=[dist.params[:m]])
+convert(::Type{ProbabilityDistribution{MatrixVariate, PointMass}}, dist::ProbabilityDistribution{Univariate, PointMass}) =
+    ProbabilityDistribution(MatrixVariate, PointMass, m=mat(dist.params[:m]))
+convert(::Type{ProbabilityDistribution{MatrixVariate, PointMass}}, dist::ProbabilityDistribution{Multivariate, PointMass}) =
+    ProbabilityDistribution(MatrixVariate, PointMass, m=reshape(dist.params[:m], dims(dist), 1))
+
 """
 Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)
 """
