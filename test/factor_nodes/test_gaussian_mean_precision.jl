@@ -69,6 +69,7 @@ end
     @test convert(ProbabilityDistribution{Univariate, GaussianMeanPrecision}, ProbabilityDistribution(Univariate, GaussianMeanVariance, m=2.0, v=0.25)) == ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=2.0, w=4.0)
     @test convert(ProbabilityDistribution{Multivariate, GaussianMeanPrecision}, ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[8.0], w=mat(4.0))) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))
     @test convert(ProbabilityDistribution{Multivariate, GaussianMeanPrecision}, ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[2.0], v=mat(0.25))) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[2.0], w=mat(4.0))
+    @test convert(ProbabilityDistribution{Multivariate, GaussianMeanPrecision}, ProbabilityDistribution(Univariate, GaussianMeanPrecision, m=1.0, w=2.0)) == ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[1.0], w=mat(2.0))
 end
 
 

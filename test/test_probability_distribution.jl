@@ -71,6 +71,12 @@ end
     @test mean(point_mass) == transpose([0.0])
 end
 
+@testset "convert" begin
+    @test convert(ProbabilityDistribution{Multivariate, PointMass}, ProbabilityDistribution(Univariate, PointMass, m=1.0)) == ProbabilityDistribution(Multivariate, PointMass, m=[1.0])
+    @test convert(ProbabilityDistribution{MatrixVariate, PointMass}, ProbabilityDistribution(Univariate, PointMass, m=1.0)) == ProbabilityDistribution(MatrixVariate, PointMass, m=mat(1.0))
+    @test convert(ProbabilityDistribution{MatrixVariate, PointMass}, ProbabilityDistribution(Multivariate, PointMass, m=[1.0, 2.0])) == ProbabilityDistribution(MatrixVariate, PointMass, m=reshape([1.0, 2.0], 2, 1))
+end
+
 @testset "PointMass ProbabilityDistribution and Message construction" begin
     @test ProbabilityDistribution(Univariate, PointMass, m=0.2) == ProbabilityDistribution{Univariate, PointMass}(Dict(:m=>0.2))
     @test_throws Exception ProbabilityDistribution(Multivariate, PointMass, m=0.2)

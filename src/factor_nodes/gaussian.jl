@@ -1,5 +1,6 @@
 export Gaussian, prod!, convert
 
+# Convert parameterizations
 function convert(::Type{ProbabilityDistribution{V, GaussianMeanPrecision}}, dist::ProbabilityDistribution{V, GaussianMeanVariance}) where V<:VariateType
     w = cholinv(dist.params[:v])
     m = deepcopy(dist.params[:m])
@@ -41,6 +42,14 @@ function convert(::Type{ProbabilityDistribution{V, GaussianWeightedMeanPrecision
 
     return ProbabilityDistribution(V, GaussianWeightedMeanPrecision, xi=xi, w=w)
 end
+
+# Convert VariateTypes
+convert(::Type{ProbabilityDistribution{Multivariate, GaussianMeanVariance}}, dist::ProbabilityDistribution{Univariate, GaussianMeanVariance}) =
+    ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[dist.params[:m]], v=mat(dist.params[:v]))
+convert(::Type{ProbabilityDistribution{Multivariate, GaussianMeanPrecision}}, dist::ProbabilityDistribution{Univariate, GaussianMeanPrecision}) =
+    ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=[dist.params[:m]], w=mat(dist.params[:w]))
+convert(::Type{ProbabilityDistribution{Multivariate, GaussianWeightedMeanPrecision}}, dist::ProbabilityDistribution{Univariate, GaussianWeightedMeanPrecision}) =
+    ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[dist.params[:xi]], w=mat(dist.params[:w]))
 
 function prod!(
     x::ProbabilityDistribution{Univariate, F1},
