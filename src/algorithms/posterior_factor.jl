@@ -12,6 +12,7 @@ mutable struct PosteriorFactor
     # Fields set by algorithm construction
     target_variables::Set{Variable} # Target variables for which marginals are required
     target_clusters::Set{Cluster} # Target clusters for which marginals are required
+    target_interfaces::Set{Interface} # Target interfaces for which messages are required
 
     # Fields set by algorithm assembler
     algorithm_id::Symbol # Specify the algorithm id for this posterior_factor
@@ -23,7 +24,7 @@ mutable struct PosteriorFactor
     # Contruct a posterior factor that encompasses all variables in the graph
     function PosteriorFactor(pfz=currentPosteriorFactorization(); target_variables=Set{Variable}(), id=generateId(PosteriorFactor))
         internal_edges = nonClampedEdges(pfz.graph) # Include all non-clamped edges in a single posterior factor
-        self = new(id, internal_edges, target_variables, Set{Cluster}()) # Initialize posterior factor without predefined targets
+        self = new(id, internal_edges, target_variables, Set{Cluster}(), Set{Interface}()) # Initialize posterior factor
         pfz.posterior_factors[id] = self # Register self with the algorithm
 
         return self
@@ -32,7 +33,7 @@ mutable struct PosteriorFactor
     # Construct a posterior factor that includes all variables deterministically linked to the target variables
     function PosteriorFactor(target_variables::Set{Variable}; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor))
         internal_edges = extend(edges(target_variables)) # Include all deterministically liked variables in a single posterior factor
-        self = new(id, internal_edges, target_variables, Set{Cluster}()) # Initialize posterior factor with custom target variables
+        self = new(id, internal_edges, target_variables, Set{Cluster}(), Set{Interface}()) # Initialize posterior factor
         pfz.posterior_factors[id] = self # Register self with the posterior factorization
 
         return self

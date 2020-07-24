@@ -31,3 +31,19 @@ function handle(interface::Interface)
 
     return ""
 end
+
+"""
+Determines whether interface must be initialized with a breaker message;
+i.e. for EP sites, loopy belief propagation, or situations where outbound
+messages depend on inbound messages, such as a Nonlinear update without
+a given inverse (RTS smoothing).
+"""
+function requiresBreaker(interface::Interface)
+    partner_interface = ultimatePartner(interface)
+    (partner_interface == nothing) && return false # Dangling edge
+    
+    partner_node = partner_interface.node
+
+    return requiresBreaker(interface, partner_interface, partner_node) # Dispatch to overloaded methods
+end
+requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::FactorNode) = false # Default, function is overloaded for separate node types

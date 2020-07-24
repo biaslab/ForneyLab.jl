@@ -4,7 +4,7 @@ using Test
 using Random
 # using LinearAlgebra
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, logPdf, unsafeMean, unsafeVar, Sampling
+using ForneyLab: outboundType, isApplicable, prod!, logPdf, unsafeMean, unsafeVar, Sampling, requiresBreaker
 using ForneyLab: SPNonlinearSInGX, SPNonlinearSOutNGX, SPNonlinearSOutNM, SPNonlinearSIn1MN, gradientOptimization
 using ForwardDiff
 
@@ -22,6 +22,21 @@ h(x, y) = x + y
     # Optimum is [0.0, 0.0]
     @test isapprox(res, [0.0, 0.0], atol=1e-16)
 end
+
+@testset "requiresBreaker" begin
+    fg = FactorGraph()
+    x = Variable()
+    y = Variable()
+    nd = GaussianMeanVariance(x, 0.0, 1.0)
+    Nonlinear{Sampling}(y, x, g=g)
+    
+    @test requiresBreaker(nd.i[:out])
+end
+
+
+#-------------
+# Update rules
+#-------------
 
 @testset "SPNonlinearSOutNM" begin
     @test SPNonlinearSOutNM <: SumProductRule{Nonlinear{Sampling}}
