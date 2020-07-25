@@ -85,7 +85,7 @@ function requiresBreaker(interface::Interface, partner_interface::Interface, par
 
     multi_in = (length(partner_node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
     inx = findfirst(isequal(partner_interface), partner_node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
-    undefined_inverse = (partner_node.g_inv == nothing) || (multi_in && (partner_node.g_inv[inx] == nothing)) # (Inbound-specific) inverse is undefined
+    undefined_inverse = (partner_node.g_inv == nothing) || (multi_in && (inx > 0) && (partner_node.g_inv[inx] == nothing)) # (Inbound-specific) inverse is undefined
 
     return backward && undefined_inverse
 end

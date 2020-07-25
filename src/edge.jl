@@ -91,19 +91,7 @@ end
 
 Base.isless(e1::Edge, e2::Edge) = isless(name(e1), name(e2))
 
-function name(edge::Edge)
-    if edge.a == nothing
-        a_part = "a"
-    else
-        a_part = "a$(edge.a.node.id)"
-    end
-    if edge.b == nothing
-        b_part = "b"
-    else
-        b_part = "b$(edge.b.node.id)"
-    end
-    return a_part*b_part
-end
+name(edge::Edge) = name(edge.a)*name(edge.b)
 
 function show(io::IO, edges::Union{Vector{Edge}, Set{Edge}})
     println(io, "Edges:")

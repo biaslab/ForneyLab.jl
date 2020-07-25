@@ -68,10 +68,10 @@ end
     schedule = expectationPropagationSchedule(pf)
 
     @test length(schedule) == 15
-    @test schedule[2] == ScheduleEntry(nd_z[2].i[:in1], EPProbitIn1GP)
-    @test schedule[4] == ScheduleEntry(nd_z[3].i[:in1], EPProbitIn1GP)
-    @test schedule[8] == ScheduleEntry(nd_m.i[:out], SPGaussianMeanVarianceOutNPP)
-    @test schedule[11] == ScheduleEntry(nd_z[1].i[:in1], EPProbitIn1GP)
+    @test schedule[5] == ScheduleEntry(nd_z[1].i[:in1], EPProbitIn1GP)
+    @test schedule[8] == ScheduleEntry(nd_z[2].i[:in1], EPProbitIn1GP)
+    @test schedule[3] == ScheduleEntry(nd_m.i[:out], SPGaussianMeanVarianceOutNPP)
+    @test schedule[11] == ScheduleEntry(nd_z[3].i[:in1], EPProbitIn1GP)
 end
 
 @testset "variationalExpectationPropagationSchedule" begin

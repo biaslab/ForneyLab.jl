@@ -42,14 +42,12 @@ abstract type ExpectationPropagationRule{factor_type} <: MessageUpdateRule end
 message passing schedule.
 """
 function expectationPropagationSchedule(pf::PosteriorFactor)
-    ep_sites = collectEPSites(nodes(current_graph))
-    breaker_sites = Interface[site.partner for site in ep_sites]
-    breaker_types = breakerTypes(breaker_sites)
-
+    target_interfaces = sort(collect(pf.target_interfaces), rev=true)
     schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true),
                                           sort(collect(pf.target_clusters), rev=true);
-                                          target_sites=[breaker_sites; ep_sites])
-
+                                          target_sites=target_interfaces)
+    
+    ep_sites = collectEPSites(nodes(pf.internal_edges))
     for entry in schedule
         if entry.interface in ep_sites
             entry.message_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
@@ -58,6 +56,7 @@ function expectationPropagationSchedule(pf::PosteriorFactor)
         end
     end
 
+    breaker_types = breakerTypes(target_interfaces)
     inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
 
     return schedule

@@ -44,8 +44,10 @@ computes the marginals for each of the posterior factor targets.
 """
 function sumProductSchedule(pf::PosteriorFactor)
     # Generate a feasible summary propagation schedule
+    target_interfaces = sort(collect(pf.target_interfaces), rev=true)
     schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true),
-                                          sort(collect(pf.target_clusters), rev=true))
+                                          sort(collect(pf.target_clusters), rev=true),
+                                          target_sites=target_interfaces)
 
     # Assign the sum-product update rule to each of the schedule entries
     for entry in schedule

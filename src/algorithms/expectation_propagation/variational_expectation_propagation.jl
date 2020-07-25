@@ -39,18 +39,19 @@ end
 
 """
 `variationalExpectationPropagationSchedule()` generates an expectation propagation message passing schedule
-that is limited to the `posterior_factor`. Updates on EP sites are computed with an `ExpectationPropagationRule`.
+that is limited to the posterior factor. Updates on EP sites are computed with an `ExpectationPropagationRule`.
 """
-function variationalExpectationPropagationSchedule(posterior_factor::PosteriorFactor)
-    internal_edges = posterior_factor.internal_edges
-    ep_sites = collectEPSites(nodes(internal_edges))
-    breaker_sites = Interface[site.partner for site in ep_sites]
-    breaker_types = breakerTypes(breaker_sites)
+function variationalExpectationPropagationSchedule(pf::PosteriorFactor)
+    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(pf)
 
     # Schedule messages towards posterior distributions and target sites, limited to the internal edges
-    schedule = summaryPropagationSchedule(sort(collect(posterior_factor.target_variables), rev=true); target_sites=[breaker_sites; ep_sites], limit_set=internal_edges)
+    target_interfaces = sort(collect(pf.target_interfaces), rev=true)
+    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true), 
+                                          sort(collect(pf.target_clusters), rev=true),
+                                          limit_set=pf.internal_edges,
+                                          target_sites=target_interfaces)
 
-    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(posterior_factor)
+    ep_sites = collectEPSites(nodes(pf.internal_edges))
     for entry in schedule
         if entry.interface in ep_sites
             entry.message_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
@@ -66,6 +67,7 @@ function variationalExpectationPropagationSchedule(posterior_factor::PosteriorFa
         end
     end
 
+    breaker_types = breakerTypes(target_interfaces)
     inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
 
     return schedule

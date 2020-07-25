@@ -225,13 +225,13 @@ end
     # Forward; h_inv_x should not be present in call
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNGX(h, nothing, messages[2], messages[3])", algo_code)
+    @test occursin("ruleSPNonlinearUTOutNGX(h, nothing, messages[3], messages[1])", algo_code)
     @test !occursin("h_inv_x", algo_code)
 
     # Backward with given inverse; h_inv_x should be present in call
     algo = sumProductAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTInGX(h, h_inv_x, messages[2], nothing, messages[3])", algo_code)
+    @test occursin("ruleSPNonlinearUTInGX(h, h_inv_x, messages[3], nothing, messages[1])", algo_code)
 
     # Backward without given inverse
     algo = sumProductAlgorithm(z)
@@ -251,7 +251,7 @@ end
     # Forward; alpha should be present in call
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[2], alpha=1.0)", algo_code)
+    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[1], alpha=1.0)", algo_code)
 end
 
 @testset "Nonlinear integration via UT without given inverse" begin
@@ -264,7 +264,7 @@ end
     # Forward; g_inv should not be present in call
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[2])", algo_code)
+    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[1])", algo_code)
     @test !occursin("$(string(g_inv))", algo_code)
 
     # Backward; g_inv should not be present in call, 

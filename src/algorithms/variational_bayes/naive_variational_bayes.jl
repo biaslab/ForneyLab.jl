@@ -48,13 +48,15 @@ abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
 `variationalSchedule()` generates a variational message passing schedule
 for each posterior distribution in the posterior factorization.
 """
-function variationalSchedule(posterior_factor::PosteriorFactor)
-    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(posterior_factor)
+function variationalSchedule(pf::PosteriorFactor)
+    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(pf)
 
     # Schedule messages towards posterior factors and target sites, limited to the internal edges
-    schedule = summaryPropagationSchedule(sort(collect(posterior_factor.target_variables), rev=true),
-                                          sort(collect(posterior_factor.target_clusters), rev=true),
-                                          limit_set=posterior_factor.internal_edges)
+    target_interfaces = sort(collect(pf.target_interfaces), rev=true)
+    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true),
+                                          sort(collect(pf.target_clusters), rev=true),
+                                          limit_set=pf.internal_edges,
+                                          target_sites=target_interfaces)
     for entry in schedule
         if (entry.interface.node in nodes_connected_to_external_edges) && !isa(entry.interface.node, DeltaFactor)
             local_posterior_factors = localPosteriorFactors(entry.interface.node)

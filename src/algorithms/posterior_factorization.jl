@@ -82,7 +82,9 @@ time, fields for fast lookup during scheduling are populated in the
 posterior factorization.
 """
 function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; free_energy=false, external_targets=false)
-    large_regions = Set{Tuple}() # Initialize empty set of target cluster node and edges. We cannot build a Set of Clusters directly, because duplicate Clusters are not removed.
+    # Initialize empty set of target cluster node and edges.
+    # We cannot build a Set of Clusters directly, because duplicate Clusters are not removed.
+    large_regions = Set{Tuple}()
 
     # Determine which target regions are required by external posterior factors
     if external_targets
@@ -146,8 +148,12 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; free_ener
         end
     end
 
-    # Register internal edges with the posterior factorization for fast lookup during scheduling
+    # Determine which interfaces require breakers
     for edge in pf.internal_edges
+        requiresBreaker(edge.a) && push!(pf.target_interfaces, edge.a)
+        requiresBreaker(edge.b) && push!(pf.target_interfaces, edge.b)
+
+        # Register internal edges with the posterior factorization for fast lookup during scheduling
         pfz.edge_to_posterior_factor[edge] = pf
     end
 

@@ -32,6 +32,11 @@ function handle(interface::Interface)
     return ""
 end
 
+Base.isless(i1::Interface, i2::Interface) = isless(name(i1), name(i2))
+
+name(iface::Interface) = string(iface.node.id)*handle(iface)
+name(::Nothing) = ""
+
 """
 Determines whether interface must be initialized with a breaker message;
 i.e. for EP sites, loopy belief propagation, or situations where outbound
@@ -47,3 +52,4 @@ function requiresBreaker(interface::Interface)
     return requiresBreaker(interface, partner_interface, partner_node) # Dispatch to overloaded methods
 end
 requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::FactorNode) = false # Default, function is overloaded for separate node types
+requiresBreaker(::Nothing) = false # Failsafe

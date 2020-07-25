@@ -102,7 +102,7 @@ end
 
     algo = sumProductAlgorithm(y)
     algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearSOutNM(g, nothing, messages[2], n_samples=2000)", algo_code)
+    @test occursin("ruleSPNonlinearSOutNM(g, nothing, messages[1], n_samples=2000)", algo_code)
 end
 
 @testset "Nonlinear integration via sampling" begin
