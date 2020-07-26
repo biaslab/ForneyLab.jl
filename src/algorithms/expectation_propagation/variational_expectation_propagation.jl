@@ -45,11 +45,11 @@ function variationalExpectationPropagationSchedule(pf::PosteriorFactor)
     nodes_connected_to_external_edges = nodesConnectedToExternalEdges(pf)
 
     # Schedule messages towards posterior distributions and target sites, limited to the internal edges
-    target_interfaces = sort(collect(pf.target_interfaces), rev=true)
+    breaker_interfaces = sort(collect(pf.breaker_interfaces), rev=true)
     schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true), 
                                           sort(collect(pf.target_clusters), rev=true),
                                           limit_set=pf.internal_edges,
-                                          target_sites=target_interfaces)
+                                          target_sites=breaker_interfaces)
 
     ep_sites = collectEPSites(nodes(pf.internal_edges))
     for entry in schedule
@@ -67,7 +67,7 @@ function variationalExpectationPropagationSchedule(pf::PosteriorFactor)
         end
     end
 
-    breaker_types = breakerTypes(collect(pf.target_interfaces))
+    breaker_types = breakerTypes(collect(pf.breaker_interfaces))
     inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
 
     return schedule

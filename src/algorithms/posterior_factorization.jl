@@ -150,8 +150,8 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; free_ener
 
     # Determine which interfaces require breakers
     for edge in pf.internal_edges
-        requiresBreaker(edge.a) && push!(pf.target_interfaces, edge.a)
-        requiresBreaker(edge.b) && push!(pf.target_interfaces, edge.b)
+        requiresBreaker(edge.a) && push!(pf.breaker_interfaces, edge.a)
+        requiresBreaker(edge.b) && push!(pf.breaker_interfaces, edge.b)
 
         # Register internal edges with the posterior factorization for fast lookup during scheduling
         pfz.edge_to_posterior_factor[edge] = pf

@@ -12,7 +12,7 @@ mutable struct PosteriorFactor
     # Fields set by algorithm construction
     target_variables::Set{Variable} # Target variables for which marginals are required
     target_clusters::Set{Cluster} # Target clusters for which marginals are required
-    target_interfaces::Set{Interface} # Target interfaces for which messages are required
+    breaker_interfaces::Set{Interface} # Target interfaces for which messages are required
 
     # Fields set by algorithm assembler
     algorithm_id::Symbol # Specify the algorithm id for this posterior_factor
