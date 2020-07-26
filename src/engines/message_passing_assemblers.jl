@@ -47,11 +47,7 @@ function assembleInitialization!(pf::PosteriorFactor)
 
         # Assemble breakers
         if entry.interface in pf.target_interfaces
-            if isdefined(entry.interface.node, :dims)
-                dims = entry.interface.node.dims
-            else
-                dims = ()
-            end
+            (_, dims) = breakerParameters(entry.interface)
             assembleBreaker!(entry, family(outbound_types[entry.interface]), dims)
             pf_initialize_flag = true # Signifies the need for an initialization block
         elseif !(partner == nothing) && isa(partner.node, Clamp)
@@ -92,16 +88,8 @@ end
 
 function assembleBreaker!(breaker_entry::ScheduleEntry, family::Type, dimensionality::Tuple)
     breaker_entry.initialize = true
+    breaker_entry.family = family
     breaker_entry.dimensionality = dimensionality
-    if family == Union{Gamma, Wishart} # Catch special case
-        if dimensionality == ()
-            breaker_entry.family = ForneyLab.Gamma
-        else
-            breaker_entry.family = ForneyLab.Wishart
-        end
-    else
-        breaker_entry.family = family
-    end
 
     return breaker_entry
 end

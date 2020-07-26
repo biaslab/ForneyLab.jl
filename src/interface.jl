@@ -47,9 +47,29 @@ function requiresBreaker(interface::Interface)
     partner_interface = ultimatePartner(interface)
     (partner_interface == nothing) && return false # Dangling edge
     
-    partner_node = partner_interface.node
-
-    return requiresBreaker(interface, partner_interface, partner_node) # Dispatch to overloaded methods
+    return requiresBreaker(interface, partner_interface, partner_interface.node) # Dispatch to overloaded methods
 end
 requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::FactorNode) = false # Default, function is overloaded for separate node types
 requiresBreaker(::Nothing) = false # Failsafe
+
+"""
+Determine the type and dimensionality of the breaker interface message
+"""
+function breakerParameters(interface::Interface)
+    partner_interface = ultimatePartner(interface)
+    
+    return breakerParameters(interface, partner_interface, partner_interface.node) # Dispatch to overloaded methods
+end
+
+"""
+Constructs breaker types dictionary for breaker sites
+"""
+function breakerTypes(breaker_sites::Vector{Interface})
+    breaker_types = Dict{Interface, Type}() # Initialize Interface to Message dictionary
+    for site in breaker_sites
+        (breaker_type, _) = breakerParameters(site)
+        breaker_types[site] = breaker_type
+    end
+
+    return breaker_types
+end

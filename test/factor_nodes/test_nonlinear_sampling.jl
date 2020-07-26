@@ -4,7 +4,7 @@ using Test
 using Random
 # using LinearAlgebra
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, logPdf, unsafeMean, unsafeVar, Sampling, requiresBreaker
+using ForneyLab: outboundType, isApplicable, prod!, logPdf, unsafeMean, unsafeVar, Sampling, requiresBreaker, breakerParameters
 using ForneyLab: SPNonlinearSInGX, SPNonlinearSOutNGX, SPNonlinearSOutNM, SPNonlinearSIn1MN, gradientOptimization
 using ForwardDiff
 
@@ -23,7 +23,7 @@ h(x, y) = x + y
     @test isapprox(res, [0.0, 0.0], atol=1e-16)
 end
 
-@testset "requiresBreaker" begin
+@testset "requiresBreaker and breakerParameters" begin
     fg = FactorGraph()
     x = Variable()
     y = Variable()
@@ -31,6 +31,9 @@ end
     Nonlinear{Sampling}(y, x, g=g)
     
     @test requiresBreaker(nd.i[:out])
+
+    @test_throws Exception breakerParameters(nd.i[:out].partner)
+    @test breakerParameters(nd.i[:out]) == (Message{GaussianMeanVariance, Univariate}, ())
 end
 
 

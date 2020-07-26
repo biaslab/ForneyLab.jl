@@ -54,7 +54,8 @@ function sumProductSchedule(pf::PosteriorFactor)
         entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
     end
 
-    inferUpdateRules!(schedule)
+    breaker_types = breakerTypes(collect(pf.target_interfaces))
+    inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
 
     return schedule
 end

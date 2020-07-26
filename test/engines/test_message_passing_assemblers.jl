@@ -19,14 +19,8 @@ end
     @test breaker_entry.dimensionality == ()
 
     breaker_entry = ScheduleEntry()
-    assembleBreaker!(breaker_entry, Union{Gamma, Wishart}, ())
-    @test breaker_entry.family == Gamma
-    @test breaker_entry.initialize == true
-    @test breaker_entry.dimensionality == ()
-
-    breaker_entry = ScheduleEntry()
     assembleBreaker!(breaker_entry, Union{Gamma, Wishart}, (1,1))
-    @test breaker_entry.family == Wishart
+    @test breaker_entry.family == Union{Gamma, Wishart}
     @test breaker_entry.initialize == true
     @test breaker_entry.dimensionality == (1,1)
 end

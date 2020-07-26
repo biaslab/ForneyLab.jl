@@ -4,7 +4,7 @@ using Test
 using Random
 using LinearAlgebra
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, Unscented, requiresBreaker
+using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, Unscented, requiresBreaker, breakerParameters
 using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearUTOutNGX, SPNonlinearUTInGX, MNonlinearUTInGX
 using ForneyLab: unscentedStatistics, smoothRTS, smoothRTSMessage, collectStatistics, marginalizeGaussianMV, concatenateGaussianMV, split
 
@@ -99,7 +99,7 @@ end
     @test split([1.0, 2.0, 3.0], [1, 2]) == [[1.0], [2.0, 3.0]]
 end
 
-@testset "requiresBreaker" begin
+@testset "requiresBreaker and breakerParameters" begin
     # Without given inverse
     fg = FactorGraph()
     x = Variable()
@@ -108,6 +108,8 @@ end
     Nonlinear{Unscented}(y, x, g=g)
     
     @test requiresBreaker(nd.i[:out])
+    @test_throws Exception breakerParameters(nd.i[:out].partner)
+    @test breakerParameters(nd.i[:out]) == (Message{GaussianMeanVariance, Univariate}, ())
 
     # With given inverse
     fg = FactorGraph()
@@ -117,6 +119,7 @@ end
     Nonlinear{Unscented}(y, x, g=g, g_inv=g)
     
     @test !requiresBreaker(nd.i[:out])
+    @test_throws Exception breakerParameters(nd.i[:out])
 end
 
 

@@ -90,4 +90,24 @@ function requiresBreaker(interface::Interface, partner_interface::Interface, par
     return backward && undefined_inverse
 end
 
+function breakerParameters(interface::Interface, partner_interface::Interface, partner_node::Nonlinear)
+    requiresBreaker(interface, partner_interface, partner_node) || error("Breaker dimensions requested for non-breaker interface: $(interface)")
+
+    if isa(partner_node.dims, Vector) # Varying inbound dimensionalities are defined
+        inx = findfirst(isequal(partner_interface), partner_node.interfaces) - 1 # Find number of inbound interface
+        dims = partner_node.dims[inx] # Extract dimensionality from vector
+    else
+        dims = partner_node.dims # All inbound dimensions are equal
+    end
+
+    # Deterimine message variate type
+    if dims == ()
+        var_type = Univariate
+    else
+        var_type = Multivariate
+    end
+
+    return (Message{GaussianMeanVariance, var_type}, dims)
+end
+
 slug(::Type{Nonlinear{T}}) where T<:ApproximationMethod = "g{$(removePrefix(T))}"

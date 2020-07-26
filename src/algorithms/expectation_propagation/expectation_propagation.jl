@@ -56,7 +56,7 @@ function expectationPropagationSchedule(pf::PosteriorFactor)
         end
     end
 
-    breaker_types = breakerTypes(target_interfaces)
+    breaker_types = breakerTypes(collect(pf.target_interfaces))
     inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
 
     return schedule
@@ -74,20 +74,6 @@ function collectEPSites(node_set::Set{FactorNode})
     end
 
     return ep_sites
-end
-
-"""
-Constructs breaker types dictionary for breaker sites
-"""
-function breakerTypes(breaker_sites::Vector{Interface})
-    breaker_types = Dict{Interface, Type}()
-    for site in breaker_sites
-        if isa(site.partner.node, Probit)
-            breaker_types[site] = Message{GaussianMeanVariance, Univariate} # Probit EP site partner requires Gaussian breaker
-        end
-    end
-
-    return breaker_types
 end
 
 expectationPropagationSchedule(variable::Variable) = expectationPropagationSchedule([variable])

@@ -70,7 +70,8 @@ function variationalSchedule(pf::PosteriorFactor)
         end
     end
 
-    inferUpdateRules!(schedule)
+    breaker_types = breakerTypes(collect(pf.target_interfaces))
+    inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
 
     return schedule
 end
