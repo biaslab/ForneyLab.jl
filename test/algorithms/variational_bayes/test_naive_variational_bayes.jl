@@ -2,7 +2,7 @@ module NaiveVariationalBayesTest
 
 using Test
 using ForneyLab
-using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!, variationalSchedule
+using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!, messagePassingSchedule
 using ForneyLab: VBGaussianMeanVarianceOut, VBGaussianMeanPrecisionM, SPEqualityGaussian
 
 # Integration helper
@@ -45,7 +45,7 @@ end
     @test entry.message_update_rule == VBMockOut
 end
 
-@testset "variationalSchedule" begin
+@testset "messagePassingSchedule" begin
     g = FactorGraph()
     m = Variable()
     nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
@@ -65,7 +65,7 @@ end
     q_m = PosteriorFactor(m)
 
     setTargets!(q_m, pfz, external_targets=true)
-    schedule = variationalSchedule(q_m)
+    schedule = messagePassingSchedule(q_m)
 
     @test length(schedule) == 6
     @test ScheduleEntry(nd_m.i[:out], VBGaussianMeanVarianceOut) in schedule

@@ -56,7 +56,9 @@ function assembleCountingNumbers!(pfz=currentPosteriorFactorization())
     
     # Iterate over large regions
     for node in nodes_connected_to_internal_edges
-        if !isa(node, DeltaFactor) # Node is stochastic
+        if isa(node, Clamp)
+            continue # Clamps are viewed as part of the constraints instead of the model
+        elseif !isa(node, DeltaFactor) # Node is stochastic
             increase!(energy_counting_numbers, node, 1) # Count average energy
             for target in unique!(localRegions(node)) # Collect all unique regions around node
                 if first(target.edges) in internal_edges # Region is internal to a recognition factor
@@ -73,13 +75,28 @@ function assembleCountingNumbers!(pfz=currentPosteriorFactorization())
 
     # Iterate over small regions
     for edge in internal_edges
-        increase!(entropy_counting_numbers, edge.variable, -1) # Discount univariate entropy
+        increase!(entropy_counting_numbers, edge.variable, -(degree(edge) - 1)) # Discount univariate entropy
     end
 
     pfz.energy_counting_numbers = energy_counting_numbers
     pfz.entropy_counting_numbers = entropy_counting_numbers
 
     return pfz
+end
+
+"""
+Return the degree of edge
+"""
+function degree(edge::Edge)
+    deg = 2
+    if (edge.a == nothing) || isa(edge.a.node, Clamp) # Clamps are viewed as part of the constraints instead of the model
+        deg -= 1
+    end
+    if (edge.b == nothing) || isa(edge.b.node, Clamp)
+        deg -= 1
+    end
+
+    return deg
 end
 
 """

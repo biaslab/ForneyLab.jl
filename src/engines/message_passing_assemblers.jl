@@ -46,7 +46,7 @@ function assembleInitialization!(pf::PosteriorFactor)
         partner = ultimatePartner(entry.interface)
 
         # Assemble breakers
-        if entry.interface in pf.target_interfaces
+        if entry.interface in pf.breaker_interfaces
             (_, dims) = breakerParameters(entry.interface)
             assembleBreaker!(entry, family(outbound_types[entry.interface]), dims)
             pf_initialize_flag = true # Signifies the need for an initialization block

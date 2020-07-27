@@ -19,7 +19,7 @@ function expectationPropagationAlgorithm(target_variables::Vector{Variable};
     setTargets!(pf, pfz, free_energy=free_energy, external_targets=false)
 
     # Infer schedule and marginal computations
-    schedule = expectationPropagationSchedule(pf)
+    schedule = messagePassingSchedule(pf)
     pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
     pf.marginal_table = marginalTable(pf)
 
@@ -38,31 +38,6 @@ A non-specific expectation propagation update
 abstract type ExpectationPropagationRule{factor_type} <: MessageUpdateRule end
 
 """
-`expectationPropagationSchedule()` generates a expectation propagation
-message passing schedule.
-"""
-function expectationPropagationSchedule(pf::PosteriorFactor)
-    target_interfaces = sort(collect(pf.target_interfaces), rev=true)
-    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true),
-                                          sort(collect(pf.target_clusters), rev=true);
-                                          target_sites=target_interfaces)
-    
-    ep_sites = collectEPSites(nodes(pf.internal_edges))
-    for entry in schedule
-        if entry.interface in ep_sites
-            entry.message_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
-        else
-            entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
-        end
-    end
-
-    breaker_types = breakerTypes(collect(pf.target_interfaces))
-    inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
-
-    return schedule
-end
-
-"""
 Find default EP sites present in `node_set`
 """
 function collectEPSites(node_set::Set{FactorNode})
@@ -76,7 +51,7 @@ function collectEPSites(node_set::Set{FactorNode})
     return ep_sites
 end
 
-expectationPropagationSchedule(variable::Variable) = expectationPropagationSchedule([variable])
+messagePassingSchedule(variable::Variable) = messagePassingSchedule([variable])
 
 function inferUpdateRule!(entry::ScheduleEntry,
                           rule_type::Type{T},
@@ -114,7 +89,7 @@ function collectInboundTypes(entry::ScheduleEntry,
                             ) where T<:ExpectationPropagationRule
     inbound_message_types = Type[]
     for node_interface in entry.interface.node.interfaces
-        if (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
+        if isClamped(node_interface.partner)
             push!(inbound_message_types, Message{PointMass})
         else
             push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
@@ -198,7 +173,7 @@ function collectInbounds(entry::ScheduleEntry, ::Type{T}) where T<:ExpectationPr
     inbounds = Any[]
     for node_interface in entry.interface.node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        if isa(inbound_interface.node, Clamp)
+        if isClamped(inbound_interface)
             # Hard-code outbound message of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, Message))
         else

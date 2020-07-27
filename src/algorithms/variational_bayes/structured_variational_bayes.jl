@@ -145,7 +145,7 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
 
     inbounds = Any[]
     entry_posterior_factor = posteriorFactor(entry.interface.edge)
-    local_posterior_factor_to_region = localPosteriorFactorToRegion(entry.interface.node)
+    local_edge_to_region = localEdgeToRegion(entry.interface.node)
 
     encountered_posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
     for node_interface in entry.interface.node.interfaces
@@ -163,7 +163,7 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif !(current_posterior_factor in encountered_posterior_factors)
             # Collect marginal from marginal dictionary (if marginal is not already accepted)
-            target = local_posterior_factor_to_region[current_posterior_factor]
+            target = local_edge_to_region[node_interface.edge]
             push!(inbounds, target_to_marginal_entry[target])
         end
 

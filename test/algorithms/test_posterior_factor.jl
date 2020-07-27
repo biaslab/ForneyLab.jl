@@ -22,7 +22,7 @@ using ForneyLab: nodesConnectedToExternalEdges, Cluster, condense, flatten, setT
     @test q_m.internal_edges == edges(m)
     @test q_m.target_variables == Set{Variable}([m])
     @test q_m.target_clusters == Set{Cluster}()
-    @test q_m.target_interfaces == Set{Interface}()
+    @test q_m.breaker_interfaces == Set{Interface}()
     @test pfz.posterior_factors[:posteriorfactor_1] === q_m
 
     q_w = PosteriorFactor(w)
@@ -30,7 +30,7 @@ using ForneyLab: nodesConnectedToExternalEdges, Cluster, condense, flatten, setT
     @test q_w.internal_edges == edges(w)
     @test q_w.target_variables == Set{Variable}([w])
     @test q_w.target_clusters == Set{Cluster}()
-    @test q_w.target_interfaces == Set{Interface}()
+    @test q_w.breaker_interfaces == Set{Interface}()
     @test pfz.posterior_factors[:posteriorfactor_2] === q_w
 
     # Joint factorizations
@@ -39,7 +39,7 @@ using ForneyLab: nodesConnectedToExternalEdges, Cluster, condense, flatten, setT
     @test q_m_w.internal_edges == edges(Set([m, w]))
     @test q_m_w.target_variables == Set{Variable}([m, w])
     @test q_m_w.target_clusters == Set{Cluster}() # Target clusters are not yet set
-    @test q_m_w.target_interfaces == Set{Interface}()
+    @test q_m_w.breaker_interfaces == Set{Interface}()
     @test pfz.posterior_factors[:posteriorfactor_3] === q_m_w
 
     q_y = PosteriorFactor(y)
@@ -47,7 +47,7 @@ using ForneyLab: nodesConnectedToExternalEdges, Cluster, condense, flatten, setT
     @test q_y.internal_edges == edges(Set(y))
     @test q_y.target_variables == Set{Variable}(y)
     @test q_y.target_clusters == Set{Cluster}()
-    @test q_y.target_interfaces == Set{Interface}()
+    @test q_y.breaker_interfaces == Set{Interface}()
     @test pfz.posterior_factors[:posteriorfactor_4] === q_y
 end
 
@@ -70,7 +70,7 @@ end
     pf = PosteriorFactor(pfz)
     setTargets!(pf, pfz, external_targets=true)
     @test pfz.free_energy_flag == false
-    @test pf.target_variables == Set{Variable}([x, y, z])
+    @test pf.target_variables == Set{Variable}()
     @test pf.target_clusters == Set{Cluster}()
 
     pfz = PosteriorFactorization()

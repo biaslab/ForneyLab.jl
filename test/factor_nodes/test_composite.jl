@@ -2,7 +2,7 @@ module CompositeTest
 
 using Test
 using ForneyLab
-using ForneyLab: @composite, outboundType, isApplicable, sumProductSchedule
+using ForneyLab: @composite, outboundType, isApplicable, messagePassingSchedule
 using ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product, condense, flatten, step!, setTargets!
 
 
@@ -71,7 +71,7 @@ end
     algo = InferenceAlgorithm(pfz)
 
     # Build SP schedule
-    schedule = sumProductSchedule(pf)
+    schedule = messagePassingSchedule(pf)
     @test length(schedule) == 5
     @test ScheduleEntry(nd.i[:m].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd.i[:v].partner, SPClamp{Univariate}) in schedule

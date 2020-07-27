@@ -2,7 +2,7 @@ module JointMarginalsTest
 
 using Test
 using ForneyLab
-using ForneyLab: generateId, addNode!, associate!, inferMarginalRule, isApplicable, Cluster, Product, setTargets!, outboundType, variationalSchedule
+using ForneyLab: generateId, addNode!, associate!, inferMarginalRule, isApplicable, Cluster, Product, setTargets!, outboundType, messagePassingSchedule
 
 # Integration helper
 mutable struct MockNode <: FactorNode
@@ -58,7 +58,7 @@ ForneyLab.isApplicable(SPMockNode, input_types::Vector{<:Type}) = true
     pf_12 = PosteriorFactor(pfz)
     setTargets!(pf_12, pfz, external_targets=true)
 
-    pf_12.schedule = variationalSchedule(pf_12)
+    pf_12.schedule = messagePassingSchedule(pf_12)
     marginal_table = marginalTable(pf_12)
 
     @test length(marginal_table) == 1

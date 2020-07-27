@@ -62,7 +62,7 @@ end
     InferenceAlgorithm()
     rf_12 = PosteriorFactor([v1, v2])
 
-    rf_12.schedule = variationalSchedule(rf_12)
+    rf_12.schedule = messagePassingSchedule(rf_12)
     marginal_table = marginalTable(rf_12)
 
     @test length(marginal_table) == 1

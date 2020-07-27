@@ -19,7 +19,7 @@ function variationalAlgorithm(pfz::PosteriorFactorization=currentPosteriorFactor
 
     # Infer schedule and marginal computations for each posterior factor
     for (_, pf) in pfz.posterior_factors
-        schedule = variationalSchedule(pf)
+        schedule = messagePassingSchedule(pf)
         pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
         pf.marginal_table = marginalTable(pf)
     end
@@ -43,38 +43,6 @@ end
 A non-specific naive variational update
 """
 abstract type NaiveVariationalRule{factor_type} <: MessageUpdateRule end
-
-"""
-`variationalSchedule()` generates a variational message passing schedule
-for each posterior distribution in the posterior factorization.
-"""
-function variationalSchedule(pf::PosteriorFactor)
-    nodes_connected_to_external_edges = nodesConnectedToExternalEdges(pf)
-
-    # Schedule messages towards posterior factors and target sites, limited to the internal edges
-    target_interfaces = sort(collect(pf.target_interfaces), rev=true)
-    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true),
-                                          sort(collect(pf.target_clusters), rev=true),
-                                          limit_set=pf.internal_edges,
-                                          target_sites=target_interfaces)
-    for entry in schedule
-        if (entry.interface.node in nodes_connected_to_external_edges) && !isa(entry.interface.node, DeltaFactor)
-            local_posterior_factors = localPosteriorFactors(entry.interface.node)
-            if allunique(local_posterior_factors) # Local posterior factorization is naive
-                entry.message_update_rule = NaiveVariationalRule{typeof(entry.interface.node)}
-            else
-                entry.message_update_rule = StructuredVariationalRule{typeof(entry.interface.node)}
-            end
-        else
-            entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
-        end
-    end
-
-    breaker_types = breakerTypes(collect(pf.target_interfaces))
-    inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
-
-    return schedule
-end
 
 """
 Infer the update rule that computes the message for `entry`, as dependent on the inbound types

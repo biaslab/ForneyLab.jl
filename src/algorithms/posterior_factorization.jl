@@ -111,7 +111,9 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; free_ener
         nodes_connected_to_internal_edges = nodes(pf.internal_edges)
         for node in nodes_connected_to_internal_edges
             target_edges = localInternalEdges(node, pf) # Find internal edges connected to node
-            if !isa(node, DeltaFactor) # Node is stochastic
+            if isa(node, Clamp)
+                continue # Clamps are viewed as part of the constraints instead of the model
+            elseif !isa(node, DeltaFactor) # Node is stochastic
                 if length(target_edges) == 1 # Single internal edge
                     increase!(variable_counting_numbers, target_edges[1].variable, Inf) # For average energy evaluation, make sure to include the edge variable
                 elseif length(target_edges) > 1 # Multiple internal edges
@@ -132,7 +134,7 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; free_ener
 
         # Iterate over small regions
         for edge in pf.internal_edges
-            increase!(variable_counting_numbers, edge.variable, -1) # Discount single variables
+            increase!(variable_counting_numbers, edge.variable, -(degree(edge) - 1)) # Discount single variables
         end
 
         # All targets with a non-zero counting number are required for free energy evaluation
@@ -150,8 +152,8 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; free_ener
 
     # Determine which interfaces require breakers
     for edge in pf.internal_edges
-        requiresBreaker(edge.a) && push!(pf.target_interfaces, edge.a)
-        requiresBreaker(edge.b) && push!(pf.target_interfaces, edge.b)
+        requiresBreaker(edge.a) && push!(pf.breaker_interfaces, edge.a)
+        requiresBreaker(edge.b) && push!(pf.breaker_interfaces, edge.b)
 
         # Register internal edges with the posterior factorization for fast lookup during scheduling
         pfz.edge_to_posterior_factor[edge] = pf

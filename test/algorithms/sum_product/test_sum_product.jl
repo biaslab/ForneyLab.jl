@@ -2,7 +2,7 @@ module SumProductTest
 
 using Test
 using ForneyLab
-using ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!, sumProductSchedule
+using ForneyLab: generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!, messagePassingSchedule
 using ForneyLab: SPClamp
 
 # Integration helper
@@ -66,7 +66,7 @@ end
     @test entry.message_update_rule == entry.internal_schedule[end].message_update_rule
 end
 
-@testset "sumProductSchedule" begin
+@testset "messagePassingSchedule" begin
     FactorGraph()
     x = Variable()
     nd = MockNode([x, constant(0.0), constant(0.0)])
@@ -74,7 +74,7 @@ end
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
     setTargets!(pf, pfz)
-    schedule = sumProductSchedule(pf)
+    schedule = messagePassingSchedule(pf)
 
     @test length(schedule) == 3
     @test ScheduleEntry(nd.i[2].partner, SPClamp{Univariate}) in schedule

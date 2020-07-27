@@ -20,7 +20,7 @@ function sumProductAlgorithm(target_variables::Vector{Variable};
     setTargets!(pf, pfz, free_energy=free_energy, external_targets=false)
 
     # Infer schedule and marginal computations
-    schedule = sumProductSchedule(pf) # For free energy computation, additional targets might be required
+    schedule = messagePassingSchedule(pf) # For free energy computation, additional targets might be required
     pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries from schedule
     pf.marginal_table = marginalTable(pf)
 
@@ -37,28 +37,6 @@ sumProductAlgorithm(variable::Variable; id=Symbol(""), free_energy=false) = sumP
 A non-specific sum-product update
 """
 abstract type SumProductRule{factor_type} <: MessageUpdateRule end
-
-"""
-`sumProductSchedule()` generates a sum-product message passing schedule that
-computes the marginals for each of the posterior factor targets.
-"""
-function sumProductSchedule(pf::PosteriorFactor)
-    # Generate a feasible summary propagation schedule
-    target_interfaces = sort(collect(pf.target_interfaces), rev=true)
-    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true),
-                                          sort(collect(pf.target_clusters), rev=true),
-                                          target_sites=target_interfaces)
-
-    # Assign the sum-product update rule to each of the schedule entries
-    for entry in schedule
-        entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
-    end
-
-    breaker_types = breakerTypes(collect(pf.target_interfaces))
-    inferUpdateRules!(schedule, inferred_outbound_types=breaker_types)
-
-    return schedule
-end
 
 """
 `internalSumProductSchedule()` generates a sum-product message passing schedule
@@ -144,7 +122,7 @@ function collectInboundTypes(entry::ScheduleEntry,
     for node_interface in entry.interface.node.interfaces
         if node_interface === entry.interface
             push!(inbound_message_types, Nothing)
-        elseif (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
+        elseif isClamped(node_interface.partner)
             push!(inbound_message_types, Message{PointMass})
         else
             push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
@@ -235,7 +213,7 @@ function collectSumProductNodeInbounds(::FactorNode, entry::ScheduleEntry)
         if node_interface === entry.interface
             # Ignore inbound message on outbound interface
             push!(inbounds, nothing)
-        elseif isa(inbound_interface.node, Clamp)
+        elseif isClamped(inbound_interface)
             # Hard-code outbound message of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, Message))
         else
