@@ -2,7 +2,7 @@ module MessagePassingAssemblersTest
 
 using Test
 using ForneyLab
-using ForneyLab: assembleBreaker!, assembleClamp!, assembleInferenceAlgorithm!, assemblePosteriorFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten, setTargets!, sumProductSchedule, expectationPropagationSchedule, variationalSchedule
+using ForneyLab: assembleBreaker!, assembleClamp!, assembleInferenceAlgorithm!, assemblePosteriorFactor!, assembleSchedule!, assembleInitialization!, assembleMarginalTable!, condense, flatten, setTargets!, messagePassingSchedule
 
 @testset "assembleClamp!" begin
     g = FactorGraph()
@@ -32,7 +32,7 @@ end
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
     setTargets!(pf, pfz)
-    pf.schedule = sumProductSchedule(pf)
+    pf.schedule = messagePassingSchedule(pf)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -50,7 +50,7 @@ end
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
     setTargets!(pf, pfz)
-    pf.schedule = expectationPropagationSchedule(pf)
+    pf.schedule = messagePassingSchedule(pf)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -69,7 +69,7 @@ end
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
     setTargets!(pf, pfz)
-    pf.schedule = sumProductSchedule(pf)
+    pf.schedule = messagePassingSchedule(pf)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -85,7 +85,7 @@ end
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
     setTargets!(pf, pfz)
-    pf.schedule = sumProductSchedule(pf)
+    pf.schedule = messagePassingSchedule(pf)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -101,7 +101,7 @@ end
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
     setTargets!(pf, pfz)
-    pf.schedule = sumProductSchedule(pf)
+    pf.schedule = messagePassingSchedule(pf)
     pf.marginal_table = marginalTable(x)
     algo = InferenceAlgorithm(pfz)
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -118,7 +118,7 @@ end
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
     setTargets!(pf, pfz)
-    pf.schedule = sumProductSchedule(pf)
+    pf.schedule = messagePassingSchedule(pf)
     pf.marginal_table = marginalTable(x)
     algo = InferenceAlgorithm(pfz)
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -136,7 +136,7 @@ end
     pfz = PosteriorFactorization([x,y], ids=[:XY])
     pf = pfz.posterior_factors[:XY]
     setTargets!(pf, pfz, external_targets=true)
-    pf.schedule = variationalSchedule(pf)
+    pf.schedule = messagePassingSchedule(pf)
     pf.marginal_table = marginalTable(pf)
     algo = InferenceAlgorithm(pfz)
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
@@ -154,7 +154,7 @@ end
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
     setTargets!(pf, pfz)
-    schedule = sumProductSchedule(pf)
+    schedule = messagePassingSchedule(pf)
     pf.schedule = condense(flatten(schedule))
     pf.marginal_table = marginalTable(x)
     algo = InferenceAlgorithm()
@@ -179,7 +179,7 @@ end
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
     setTargets!(pf, pfz)
-    schedule = sumProductSchedule(pf)
+    schedule = messagePassingSchedule(pf)
     pf.schedule = condense(flatten(schedule))
     pf.marginal_table = marginalTable(x)
     algo = InferenceAlgorithm(pfz)

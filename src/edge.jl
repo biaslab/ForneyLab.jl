@@ -26,6 +26,18 @@ end
 
 Edge(var::AbstractVariable, a::Interface, b::Interface) = connect!(Edge(var, a), b)
 
+function degree(edge::Edge)
+    deg = 2
+    if (edge.a == nothing) || isClamped(edge.a)
+        deg -= 1
+    end
+    if (edge.b == nothing) || isClamped(edge.b)
+        deg -= 1
+    end
+
+    return deg
+end
+
 """
 Connect loose end of edge to interface b.
 """

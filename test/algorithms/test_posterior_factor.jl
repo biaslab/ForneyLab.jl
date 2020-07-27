@@ -70,7 +70,7 @@ end
     pf = PosteriorFactor(pfz)
     setTargets!(pf, pfz, external_targets=true)
     @test pfz.free_energy_flag == false
-    @test pf.target_variables == Set{Variable}([x, y, z])
+    @test pf.target_variables == Set{Variable}()
     @test pf.target_clusters == Set{Cluster}()
 
     pfz = PosteriorFactorization()
