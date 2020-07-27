@@ -174,7 +174,7 @@ function collectNaiveVariationalNodeInbounds(::FactorNode, entry::ScheduleEntry)
         if node_interface === entry.interface
             # Ignore marginal of outbound edge
             push!(inbounds, nothing)
-        elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+        elseif isClamped(inbound_interface)
             # Hard-code marginal of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
         else

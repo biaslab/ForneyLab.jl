@@ -49,13 +49,17 @@ function collectInboundTypes(entry::ScheduleEntry,
     entry_posterior_factor = posteriorFactor(entry.interface.edge) # Collect posterior factor for outbound edge
     encountered_posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
     for node_interface in entry.interface.node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
         current_posterior_factor = posteriorFactor(node_interface.edge)
 
         if node_interface === entry.interface
             push!(inbound_types, Nothing)
+        elseif isClamped(inbound_interface)
+            # Clamped edges are considered external
+            push!(inbound_types, ProbabilityDistribution)
         elseif current_posterior_factor === entry_posterior_factor
             # Edge is internal, accept message
-            push!(inbound_types, inferred_outbound_types[node_interface.partner])
+            push!(inbound_types, inferred_outbound_types[inbound_interface])
         elseif !(current_posterior_factor in encountered_posterior_factors)
             # Edge is external, accept marginal (if marginal is not already accepted)
             push!(inbound_types, ProbabilityDistribution)
@@ -155,7 +159,7 @@ function collectStructuredVariationalNodeInbounds(::FactorNode, entry::ScheduleE
         if node_interface === entry.interface
             # Ignore marginal of outbound edge
             push!(inbounds, nothing)
-        elseif (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+        elseif isClamped(inbound_interface)
             # Hard-code marginal of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, ProbabilityDistribution))
         elseif current_posterior_factor === entry_posterior_factor

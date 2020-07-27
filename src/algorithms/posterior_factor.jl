@@ -81,12 +81,12 @@ end
 """
 Find edges that are internal to the posterior factor and connected to node.
 This function is used for constructing clusters. Therefore, the edges are returned 
-in the same order as the node's interfaces. Optionally ignores clamped edges.
+in the same order as the node's interfaces. Ignores clamped edges.
 """
-function localInternalEdges(node::FactorNode, pf::PosteriorFactor)
+function localStochasticInternalEdges(node::FactorNode, pf::PosteriorFactor)
     local_internal_edges = Edge[]
     for interface in node.interfaces
-        if (interface.edge in pf.internal_edges) # Edge is internal to posterior factor and stochastic
+        if (interface.edge in pf.internal_edges) && !isClamped(interface.edge) # Edge is internal to posterior factor and stochastic
             push!(local_internal_edges, interface.edge) # Otherwise include the edge
         end
     end
@@ -186,21 +186,21 @@ function collectAverageEnergyInbounds(node::FactorNode)
     inbounds = Any[]
     local_edge_to_region = localEdgeToRegion(node)
 
-    encountered_posterior_factors = Union{PosteriorFactor, Edge}[] # Keep track of encountered posterior factors
+    encountered_regions = Region[] # Keep track of encountered regions
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
-        current_posterior_factor = posteriorFactor(node_interface.edge)
+        current_region = region(node_interface.node, node_interface.edge)
 
-        if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
+        if isClamped(inbound_interface)
             # Hard-code marginal of constant node in schedule
             push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
-        elseif !(current_posterior_factor in encountered_posterior_factors)
+        elseif !(current_region in encountered_regions)
             # Collect marginal entry from marginal dictionary (if marginal entry is not already accepted)
             target = local_edge_to_region[node_interface.edge]
             push!(inbounds, current_inference_algorithm.target_to_marginal_entry[target])
         end
 
-        push!(encountered_posterior_factors, current_posterior_factor)
+        push!(encountered_regions, current_region)
     end
 
     return inbounds

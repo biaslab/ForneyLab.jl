@@ -33,6 +33,16 @@ function region(node::FactorNode, edge::Edge)
 end
 
 """
-Return the local regions around `node`
+Return the local stochastic regions around `node`
 """
-localRegions(node::FactorNode) = [region(node, interface.edge) for interface in node.interfaces]
+function localStochasticRegions(node::FactorNode)
+    regions = Region[]
+    for interface in node.interfaces
+        partner = ultimatePartner(interface)
+        if !isClamped(partner) # Exclude clamped
+            push!(regions, region(node, interface.edge))
+        end
+    end
+
+    return regions
+end

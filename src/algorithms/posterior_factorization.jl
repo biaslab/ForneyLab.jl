@@ -92,7 +92,7 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; free_ener
         for node in nodes_connected_to_external_edges
             isa(node, DeltaFactor) && continue # Skip deterministic nodes
 
-            target_edges = localInternalEdges(node, pf) # Find internal edges connected to node
+            target_edges = localStochasticInternalEdges(node, pf) # Find internal edges connected to node
             if length(target_edges) == 1 # Only one internal edge, the marginal for a single Variable is required
                 push!(pf.target_variables, target_edges[1].variable)
             elseif length(target_edges) > 1 # Multiple internal edges, register the region for computing the joint marginal
@@ -110,9 +110,9 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; free_ener
         # Iterate over large regions
         nodes_connected_to_internal_edges = nodes(pf.internal_edges)
         for node in nodes_connected_to_internal_edges
-            target_edges = localInternalEdges(node, pf) # Find internal edges connected to node
+            target_edges = localStochasticInternalEdges(node, pf) # Find stochastic internal edges connected to node
             if isa(node, Clamp)
-                continue # Clamps are viewed as part of the constraints instead of the model
+                continue
             elseif !isa(node, DeltaFactor) # Node is stochastic
                 if length(target_edges) == 1 # Single internal edge
                     increase!(variable_counting_numbers, target_edges[1].variable, Inf) # For average energy evaluation, make sure to include the edge variable
@@ -158,7 +158,7 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; free_ener
         # Register internal edges with the posterior factorization for fast lookup during scheduling
         pfz.edge_to_posterior_factor[edge] = pf
     end
-
+    
     # Create clusters, and register clusters with the posterior factorization for fast lookup during scheduling
     for region in large_regions
         cluster = Cluster(region...) # Use the region definition to construct a Cluster
