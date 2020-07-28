@@ -150,6 +150,7 @@ Check if edge or interface is terminated by a clamp node
 """
 isClamped(interface::Interface) = isdefined(interface, :node) && isa(interface.node, Clamp)
 isClamped(edge::Edge) = isClamped(edge.a) || isClamped(edge.b)
+isClamped(::Nothing) = false
 
 """
 Return the ids of the posterior factors to which edges connected to `node` belong

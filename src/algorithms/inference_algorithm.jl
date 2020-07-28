@@ -49,12 +49,14 @@ end
 """
 Create a message passing algorithm to infer marginals over a posterior distribution
 """
-function messagePassingAlgorithm(target_variables::Vector{Variable}, # Quantities of interest
+function messagePassingAlgorithm(target_variables::Vector{Variable}=Variable[], # Quantities of interest
                                  pfz::PosteriorFactorization=currentPosteriorFactorization(); 
                                  id=Symbol(""), 
                                  free_energy=false)
 
-    isempty(pfz.posterior_factors) && error("No factors defined on posterior factorization.")
+    if isempty(pfz.posterior_factors) # If no factorization is defined
+        PosteriorFactor(pfz.graph, pfz=pfz, id=Symbol("")) # Contain the entire graph in a single posterior factor
+    end
 
     # Set the targets for each posterior factor
     for (_, pf) in pfz.posterior_factors

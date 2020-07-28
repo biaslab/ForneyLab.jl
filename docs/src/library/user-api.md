@@ -45,9 +45,6 @@ ForneyLab.currentInferenceAlgorithm
 ## Algorithm assembly
 ```@docs
 ForneyLab.messagePassingAlgorithm
-ForneyLab.messagePassingAlgorithm
-ForneyLab.messagePassingAlgorithm
-ForneyLab.messagePassingAlgorithm
 ```
 
 ## Algorithm code generation

@@ -233,7 +233,7 @@ ForneyLab.draw(q.posterior_factors[:W])
 Generating the VMP algorithm then follows a similar same procedure as the belief propagation algorithm. In the VMP case however, the resulting algorithm will consist of multiple step functions, one for each posterior factor, that need to be executed iteratively until convergence.
 ```@example 1
 # Construct and compile a variational message passing algorithm
-algo = messagePassingAlgorithm(q)
+algo = messagePassingAlgorithm()
 algo_code = algorithmSourceCode(algo)
 eval(Meta.parse(algo_code));
 ```
@@ -267,7 +267,7 @@ end
 #### Computing free energy
 VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as *free energy*. ForneyLab offers to optionally compile code for evaluating the free energy. Free energy is particularly useful to test for convergence of the VMP iterative procedure.
 ```julia
-algo = messagePassingAlgorithm(q, free_energy=true)
+algo = messagePassingAlgorithm(free_energy=true)
 algo_code = algorithmSourceCode(algo, free_energy=true)
 eval(Meta.parse(algo_code))
 ```
