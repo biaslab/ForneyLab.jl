@@ -67,13 +67,13 @@ end
 end
 
 @testset "messagePassingSchedule" begin
-    FactorGraph()
+    fg = FactorGraph()
     x = Variable()
     nd = MockNode([x, constant(0.0), constant(0.0)])
 
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
-    setTargets!(pf, pfz)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
     schedule = messagePassingSchedule(pf)
 
     @test length(schedule) == 3
@@ -82,13 +82,13 @@ end
     @test ScheduleEntry(nd.i[1], SPMockOutPP) in schedule
 end
 
-@testset "sumProductAlgorithm" begin
-    FactorGraph()
+@testset "messagePassingAlgorithm" begin
+    fg = FactorGraph()
     x = Variable()
     nd = MockNode([x, constant(0.0), constant(0.0)])
 
-    PosteriorFactorization()
-    algo = sumProductAlgorithm(x)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(x)
 
     @test isa(algo, InferenceAlgorithm)
 end

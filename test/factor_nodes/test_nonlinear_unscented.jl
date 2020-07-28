@@ -197,7 +197,7 @@ end
 #------------
 
 @testset "Nonlinear integration via UT with given inverse" begin
-    FactorGraph()
+    fg = FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
@@ -206,19 +206,21 @@ end
     @test isa(n, Nonlinear{Unscented})
     
     # Forward; g_inv should not be present in call
-    algo = sumProductAlgorithm(y)
-    algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[2])", algo_code)
-    @test !occursin("g_inv", algo_code)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(y)
+    code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[2])", code)
+    @test !occursin("g_inv", code)
 
     # Backward; g_inv should be present in call
-    algo = sumProductAlgorithm(x)
-    algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTIn1GG(g, g_inv, messages[2], nothing)", algo_code)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(x)
+    code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearUTIn1GG(g, g_inv, messages[2], nothing)", code)
 end
 
 @testset "Multi-argument nonlinear integration via UT" begin
-    FactorGraph()
+    fg = FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
@@ -226,57 +228,63 @@ end
     n = Nonlinear(y, x, z, g=h, g_inv=[h_inv_x, nothing])
     
     # Forward; h_inv_x should not be present in call
-    algo = sumProductAlgorithm(y)
-    algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNGX(h, nothing, messages[3], messages[1])", algo_code)
-    @test !occursin("h_inv_x", algo_code)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(y)
+    code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearUTOutNGX(h, nothing, messages[3], messages[1])", code)
+    @test !occursin("h_inv_x", code)
 
     # Backward with given inverse; h_inv_x should be present in call
-    algo = sumProductAlgorithm(x)
-    algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTInGX(h, h_inv_x, messages[3], nothing, messages[1])", algo_code)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(x)
+    code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearUTInGX(h, h_inv_x, messages[3], nothing, messages[1])", code)
 
     # Backward without given inverse
-    algo = sumProductAlgorithm(z)
-    algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTInGX(h, 2, messages[3], messages[2], messages[1])", algo_code)
-    @test !occursin("h_inv_x", algo_code)
-    @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", algo_code)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(z)
+    code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearUTInGX(h, 2, messages[3], messages[2], messages[1])", code)
+    @test !occursin("h_inv_x", code)
+    @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", code)
 end
 
 @testset "Nonlinear integration via UT with given alpha" begin
-    FactorGraph()
+    fg = FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
     n = Nonlinear{Unscented}(y, x, g=g, alpha=1.0)
     
     # Forward; alpha should be present in call
-    algo = sumProductAlgorithm(y)
-    algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[1], alpha=1.0)", algo_code)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(y)
+    code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[1], alpha=1.0)", code)
 end
 
 @testset "Nonlinear integration via UT without given inverse" begin
-    FactorGraph()
+    fg = FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
     n = Nonlinear{Unscented}(y, x, g=g)
 
     # Forward; g_inv should not be present in call
-    algo = sumProductAlgorithm(y)
-    algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[1])", algo_code)
-    @test !occursin("$(string(g_inv))", algo_code)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(y)
+    code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[1])", code)
+    @test !occursin("$(string(g_inv))", code)
 
     # Backward; g_inv should not be present in call, 
     # both messages should be required, and initialization should take place
-    algo = sumProductAlgorithm(x)
-    algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearUTIn1GG(g, messages[2], messages[1])", algo_code)
-    @test !occursin("g_inv", algo_code)
-    @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", algo_code)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(x)
+    code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearUTIn1GG(g, messages[2], messages[1])", code)
+    @test !occursin("g_inv", code)
+    @test occursin("messages[1] = Message(vague(GaussianMeanVariance))", code)
 end
 
 end #module

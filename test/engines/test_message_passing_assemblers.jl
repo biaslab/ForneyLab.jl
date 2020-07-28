@@ -26,12 +26,12 @@ end
 end
 
 @testset "assembleSchedule!" begin
-    g = FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     GaussianMeanPrecision(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
-    setTargets!(pf, pfz)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
     pf.schedule = messagePassingSchedule(pf)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
@@ -43,13 +43,13 @@ end
 
 @testset "assembleInitialization!" begin
     # Expectation propagation
-    g = FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     @RV y ~ Probit(x)
     placeholder(y, :y)
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
-    setTargets!(pf, pfz)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
     pf.schedule = messagePassingSchedule(pf)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
@@ -61,14 +61,14 @@ end
 
     # Nonlinear
     f(z) = z
-    g = FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     @RV y ~ Nonlinear(x, g=f)
     GaussianMeanPrecision(y, 0.0, 1.0)
     
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
-    setTargets!(pf, pfz)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
     pf.schedule = messagePassingSchedule(pf)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
@@ -79,12 +79,12 @@ end
     @test pf.schedule[3].initialize
 
     # Optimize
-    g = FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     placeholder(x, :x)
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
-    setTargets!(pf, pfz)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
     pf.schedule = messagePassingSchedule(pf)
     algo = InferenceAlgorithm(pfz)
     algo.target_to_marginal_entry = Dict()
@@ -96,11 +96,11 @@ end
 
 @testset "assembleMarginalTable!" begin
     # Nothing rule
-    g = FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
-    setTargets!(pf, pfz)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
     pf.schedule = messagePassingSchedule(pf)
     pf.marginal_table = marginalTable(x)
     algo = InferenceAlgorithm(pfz)
@@ -112,12 +112,12 @@ end
     @test pf.marginal_table[1].inbounds == [pf.schedule[3]]
 
     # Product rule
-    g = FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     GaussianMeanPrecision(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
-    setTargets!(pf, pfz)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
     pf.schedule = messagePassingSchedule(pf)
     pf.marginal_table = marginalTable(x)
     algo = InferenceAlgorithm(pfz)
@@ -129,7 +129,7 @@ end
     @test pf.marginal_table[1].inbounds == [pf.schedule[3], pf.schedule[6]] 
 
     # Marginal rule
-    g = FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     @RV y ~ GaussianMeanPrecision(x, 1.0)
     GaussianMeanPrecision(y, 0.0, 1.0)
@@ -148,12 +148,12 @@ end
 end
 
 @testset "assemblePosteriorFactor!" begin
-    g = FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     GaussianMeanPrecision(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
-    setTargets!(pf, pfz)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
     schedule = messagePassingSchedule(pf)
     pf.schedule = condense(flatten(schedule))
     pf.marginal_table = marginalTable(x)
@@ -163,22 +163,22 @@ end
     assemblePosteriorFactor!(pf)
     @test pf.schedule[1].schedule_index == 1
     @test pf.schedule[1].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
-    @test pf.schedule[1].inbounds == [nothing, g.nodes[:clamp_1], g.nodes[:clamp_2]]
+    @test pf.schedule[1].inbounds == [nothing, fg.nodes[:clamp_1], fg.nodes[:clamp_2]]
     @test pf.schedule[2].schedule_index == 2
     @test pf.schedule[2].message_update_rule == ForneyLab.SPGaussianMeanPrecisionOutNPP
-    @test pf.schedule[2].inbounds == [nothing, g.nodes[:clamp_3], g.nodes[:clamp_4]]
+    @test pf.schedule[2].inbounds == [nothing, fg.nodes[:clamp_3], fg.nodes[:clamp_4]]
     @test pf.marginal_table[1].marginal_id == :x
     @test pf.marginal_table[1].marginal_update_rule == ForneyLab.Product
     @test pf.marginal_table[1].inbounds == [schedule[3], schedule[6]]
 end
 
 @testset "assembleInferenceAlgorithm!" begin
-    g = FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     GaussianMeanPrecision(x, 0.0, 1.0)
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
-    setTargets!(pf, pfz)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
     schedule = messagePassingSchedule(pf)
     pf.schedule = condense(flatten(schedule))
     pf.marginal_table = marginalTable(x)

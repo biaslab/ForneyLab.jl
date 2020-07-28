@@ -36,6 +36,9 @@ function setCurrentPosteriorFactorization(pfz::PosteriorFactorization)
     global current_posterior_factorization = pfz
 end
 
+"""
+Initialize an empty `PosteriorFactorization` for sequential construction
+"""
 function PosteriorFactorization() 
     setCurrentPosteriorFactorization(
         PosteriorFactorization(
@@ -50,11 +53,23 @@ function PosteriorFactorization()
     )
 end
 
-iterate(pfz::PosteriorFactorization) = iterate(pfz.posterior_factors)
-iterate(pfz::PosteriorFactorization, state) = iterate(pfz.posterior_factors, state)
-
-function values(pfz::PosteriorFactorization)
-    return values(pfz.posterior_factors)
+"""
+Construct a `PosteriorFactorization` consisting of a single `PosteriorFactor` for the entire graph
+"""
+function PosteriorFactorization(fg::FactorGraph)
+    pfz = setCurrentPosteriorFactorization(
+        PosteriorFactorization(
+            fg,
+            Dict{Symbol, PosteriorFactor}(),
+            Dict{Edge, PosteriorFactor}(),
+            Dict{Tuple{FactorNode, Edge}, Symbol}(),
+            Dict{FactorNode, Int64}(),
+            Dict{Region, Int64}(),
+            false
+        )
+    )
+    PosteriorFactor(fg, pfz=pfz, id=Symbol(""))
+    return pfz
 end
 
 """
@@ -74,6 +89,10 @@ function PosteriorFactorization(args::Vararg{Union{T, Set{T}, Vector{T}} where T
     return pfz
 end
 
+iterate(pfz::PosteriorFactorization) = iterate(pfz.posterior_factors)
+iterate(pfz::PosteriorFactorization, state) = iterate(pfz.posterior_factors, state)
+values(pfz::PosteriorFactorization) = values(pfz.posterior_factors)
+
 """
 Populate the target regions of the PosteriorFactor.
 The targets depend on the variables of interest, the local posterior
@@ -81,10 +100,18 @@ factorization, and whether free energy will be evaluated. At the same
 time, fields for fast lookup during scheduling are populated in the
 posterior factorization.
 """
-function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; free_energy=false, external_targets=false)
+function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; target_variables=Set{Variable}(), free_energy=false, external_targets=false)
     # Initialize empty set of target cluster node and edges.
     # We cannot build a Set of Clusters directly, because duplicate Clusters are not removed.
     large_regions = Set{Tuple}()
+
+    # Register quantities of interest with the current posterior factor
+    for variable in target_variables
+        edge = first(variable.edges)
+        if edge in pf.internal_edges
+            push!(pf.target_variables, variable)
+        end
+    end
 
     # Determine which target regions are required by external posterior factors
     if external_targets

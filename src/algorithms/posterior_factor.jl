@@ -22,26 +22,26 @@ mutable struct PosteriorFactor
     initialize::Bool # Indicate the need for a message initialization block
 
     # Contruct a posterior factor that encompasses all variables in the graph
-    function PosteriorFactor(pfz=currentPosteriorFactorization(); target_variables=Set{Variable}(), id=generateId(PosteriorFactor))
-        internal_edges = edges(pfz.graph) # Include all edges in a single posterior factor
-        self = new(id, internal_edges, target_variables, Set{Cluster}(), Set{Interface}()) # Initialize posterior factor
+    function PosteriorFactor(fg::FactorGraph; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor))
+        internal_edges = edges(fg) # Include all edges in a single posterior factor
+        self = new(id, internal_edges, Set{Variable}(), Set{Cluster}(), Set{Interface}()) # Initialize posterior factor
         pfz.posterior_factors[id] = self # Register self with the algorithm
 
         return self
     end
 
     # Construct a posterior factor that includes all variables deterministically linked to the target variables
-    function PosteriorFactor(target_variables::Set{Variable}; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor))
-        internal_edges = extend(edges(target_variables)) # Include all deterministically liked variables in a single posterior factor
-        self = new(id, internal_edges, target_variables, Set{Cluster}(), Set{Interface}()) # Initialize posterior factor
+    function PosteriorFactor(seed_variables::Set{Variable}; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor))
+        internal_edges = extend(edges(seed_variables)) # Include all deterministically liked variables in a single posterior factor
+        self = new(id, internal_edges, Set{Variable}(), Set{Cluster}(), Set{Interface}()) # Initialize posterior factor
         pfz.posterior_factors[id] = self # Register self with the posterior factorization
 
         return self
     end
 end
 
-PosteriorFactor(variable::Variable; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor)) = PosteriorFactor(Set([variable]), pfz=pfz, id=id)
-PosteriorFactor(variables::Vector{Variable}; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor)) = PosteriorFactor(Set(variables), pfz=pfz, id=id)
+PosteriorFactor(seed_variable::Variable; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor)) = PosteriorFactor(Set([seed_variable]), pfz=pfz, id=id)
+PosteriorFactor(seed_variables::Vector{Variable}; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor)) = PosteriorFactor(Set(seed_variables), pfz=pfz, id=id)
 
 """
 `messagePassingSchedule()` generates a message passing schedule for the posterior factor

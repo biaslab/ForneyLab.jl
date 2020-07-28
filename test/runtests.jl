@@ -51,11 +51,10 @@ using Test
     include("./algorithms/test_posterior_factorization.jl")
     include("./algorithms/test_inference_algorithm.jl")
     include("./algorithms/test_joint_marginals.jl")
-
-    include("./algorithms/sum_product/test_sum_product.jl")
-    include("./algorithms/variational_bayes/test_naive_variational_bayes.jl")
-    include("./algorithms/variational_bayes/test_structured_variational_bayes.jl")
-    include("./algorithms/expectation_propagation/test_expectation_propagation.jl")
+    include("./algorithms/test_sum_product.jl")
+    include("./algorithms/test_naive_variational_bayes.jl")
+    include("./algorithms/test_structured_variational_bayes.jl")
+    include("./algorithms/test_expectation_propagation.jl")
 
     # Assemblers
     include("engines/test_message_passing_assemblers.jl")

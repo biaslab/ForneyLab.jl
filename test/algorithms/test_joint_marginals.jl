@@ -50,7 +50,7 @@ ForneyLab.outboundType(SVBMockNode) = Message
 ForneyLab.isApplicable(SVBMockNode, input_types::Vector{<:Type}) = true
 
 @testset "marginalTable" begin
-    FactorGraph()
+    fg = FactorGraph()
     v1 = Variable()
     v2 = Variable()
     v3 = constant(0.0)
@@ -65,11 +65,11 @@ ForneyLab.isApplicable(SVBMockNode, input_types::Vector{<:Type}) = true
     pf_12.schedule = messagePassingSchedule(pf_12)
     marginal_table = marginalTable(pf_12)
 
-    @test length(marginal_table) == 3
-    @test marginal_table[3].target == first(pf_12.target_clusters)
-    @test marginal_table[3].interfaces[1] == nd1.i[1]
-    @test marginal_table[3].interfaces[2] == nd2.i[1]
-    @test marginal_table[3].marginal_update_rule == MMockMMD
+    @test length(marginal_table) == 1
+    @test marginal_table[1].target == first(pf_12.target_clusters)
+    @test marginal_table[1].interfaces[1] == nd1.i[1]
+    @test marginal_table[1].interfaces[2] == nd2.i[1]
+    @test marginal_table[1].marginal_update_rule == MMockMMD
 end
 
 end # module

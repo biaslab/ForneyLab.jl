@@ -44,10 +44,10 @@ ForneyLab.currentInferenceAlgorithm
 
 ## Algorithm assembly
 ```@docs
-ForneyLab.expectationPropagationAlgorithm
-ForneyLab.sumProductAlgorithm
-ForneyLab.variationalAlgorithm
-ForneyLab.variationalExpectationPropagationAlgorithm
+ForneyLab.messagePassingAlgorithm
+ForneyLab.messagePassingAlgorithm
+ForneyLab.messagePassingAlgorithm
+ForneyLab.messagePassingAlgorithm
 ```
 
 ## Algorithm code generation

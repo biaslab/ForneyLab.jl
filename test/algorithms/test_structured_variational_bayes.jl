@@ -123,7 +123,7 @@ end
     @test ScheduleEntry(nd_s[3].i[:w], SVBGaussianMeanPrecisionW) in schedule_q_w
 end
 
-@testset "variationalAlgorithm" begin
+@testset "messagePassingAlgorithm" begin
     g = FactorGraph()
     s_0 = Variable()
     nd_s_0 = GaussianMeanVariance(s_0, constant(0.0), constant(1.0))
@@ -146,7 +146,7 @@ end
     push!(nd_s, nd_s_i)
 
     pfz = PosteriorFactorization([s_0; s], w)
-    algo = variationalAlgorithm(pfz)
+    algo = messagePassingAlgorithm(s)
 
     @test isa(algo, InferenceAlgorithm)    
 end

@@ -82,7 +82,8 @@ g(x) = x
     @RV y ~ Nonlinear{Sampling}(x, g=g)
 
     # Define an algorithm
-    algo = sumProductAlgorithm(y)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(y)
     code = algorithmSourceCode(algo)
 
     @test occursin("ruleSPSampleListOutNPP", code)

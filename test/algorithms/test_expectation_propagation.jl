@@ -49,7 +49,7 @@ end
 end
 
 @testset "messagePassingSchedule" begin
-    g = FactorGraph()
+    fg = FactorGraph()
     m = Variable()
     nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
     z = Variable[]
@@ -63,8 +63,8 @@ end
     end
 
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([m]))
-    setTargets!(pf, pfz)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([m]))
     schedule = messagePassingSchedule(pf)
 
     @test length(schedule) == 15
@@ -75,7 +75,7 @@ end
 end
 
 @testset "messagePassingSchedule" begin
-    g = FactorGraph()
+    fg = FactorGraph()
     m = Variable()
     nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
     w = Variable()
@@ -91,15 +91,14 @@ end
     setTargets!(q_y_z, pfz, external_targets=true)
     schedule = messagePassingSchedule(q_y_z)
 
-    @test length(schedule) == 4
+    @test length(schedule) == 3
     @test ScheduleEntry(nd_y.i[:out], VBGaussianMeanPrecisionOut) in schedule
     @test ScheduleEntry(nd_z.i[:out].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd_z.i[:in1], EPProbitIn1GP) in schedule
-    @test ScheduleEntry(nd_z.i[:out], SPProbitOutNG) in schedule
 end
 
-@testset "expectationPropagationAlgorithm" begin
-    g = FactorGraph()
+@testset "messagePassingAlgorithm" begin
+    fg = FactorGraph()
     m = Variable()
     nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
     z = Variable[]
@@ -112,14 +111,14 @@ end
         push!(nd_z, nd_z_i)
     end
     
-    pfz = PosteriorFactorization()
-    algo = expectationPropagationAlgorithm(m)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(m)
 
     @test isa(algo, InferenceAlgorithm)
 end
 
-@testset "variationalExpectationPropagationAlgorithm" begin
-    g = FactorGraph()
+@testset "messagePassingAlgorithm" begin
+    fg = FactorGraph()
     m = Variable()
     nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
     w = Variable()
@@ -131,7 +130,7 @@ end
     placeholder(z, :z)
 
     pfz = PosteriorFactorization([y; z], m, w)
-    algo = variationalExpectationPropagationAlgorithm(pfz)
+    algo = messagePassingAlgorithm(m)
 
     @test isa(algo, InferenceAlgorithm)    
 end

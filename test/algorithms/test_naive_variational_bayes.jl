@@ -76,8 +76,8 @@ end
     @test ScheduleEntry(nd_m.i[:out].partner, SPEqualityGaussian) in schedule
 end
 
-@testset "variationalAlgorithm" begin
-    g = FactorGraph()
+@testset "messagePassingAlgorithm" begin
+    fg = FactorGraph()
     m = Variable()
     nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
     w = Variable()
@@ -93,13 +93,13 @@ end
     end
 
     pfz = PosteriorFactorization(m, w)
-    algo = variationalAlgorithm(pfz)
+    algo = messagePassingAlgorithm(m)
 
     @test isa(algo, InferenceAlgorithm)
 end
 
-@testset "variationalAlgorithm with custom target" begin
-    g = FactorGraph()
+@testset "messagePassingAlgorithm with custom target" begin
+    fg = FactorGraph()
 
     # Define model
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
@@ -109,7 +109,8 @@ end
     placeholder(w, :w)
 
     # Derive algorithm
-    algo = variationalAlgorithm(y, ids=[:Y])
+    pfz = PosteriorFactorization(y)
+    algo = messagePassingAlgorithm(y)
     code = algorithmSourceCode(algo)
 
     @test occursin("marginals[:y]", code)

@@ -5,7 +5,7 @@ using ForneyLab
 using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
 
 @testset "assembleCountingNumbers!" begin
-    g = FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     @RV y ~ GaussianMeanPrecision(0.0, 1.0)
     @RV z = x + y
@@ -13,14 +13,14 @@ using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
     placeholder(w, :w)
 
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz)
+    pf = PosteriorFactor(fg)
     setTargets!(pf, pfz, free_energy=true)
     assembleCountingNumbers!(pfz)
 
     cl = first(pf.target_clusters)
-    nd1 = g.nodes[:gaussianmeanprecision_1]
-    nd2 = g.nodes[:gaussianmeanprecision_2]
-    nd3 = g.nodes[:gaussianmeanprecision_3]
+    nd1 = fg.nodes[:gaussianmeanprecision_1]
+    nd2 = fg.nodes[:gaussianmeanprecision_2]
+    nd3 = fg.nodes[:gaussianmeanprecision_3]
 
     @test pfz.entropy_counting_numbers[x] == 0
     @test pfz.entropy_counting_numbers[cl] == 1
@@ -29,28 +29,28 @@ using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
     @test pfz.energy_counting_numbers[nd3] == 1
 
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz)
+    pf = PosteriorFactor(fg)
     setTargets!(pf, pfz, free_energy=false)
     @test_throws Exception assembleCountingNumbers!(pfz)
 end
 
 @testset "assembleFreeEnergy!" begin
-    g = FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     @RV y ~ GaussianMeanPrecision(0.0, 1.0)
     @RV z = x + y
     @RV w ~ GaussianMeanPrecision(z, 1.0)
     placeholder(w, :w)
 
-    algo = sumProductAlgorithm(Variable[], free_energy=true)
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(fg)
+    algo = messagePassingAlgorithm(Variable[], free_energy=true)
     assembleFreeEnergy!(algo)
 
-    pfz = algo.posterior_factorization
-    pf = pfz.posterior_factors[Symbol("")]
     cl = first(pf.target_clusters)
-    nd1 = g.nodes[:gaussianmeanprecision_1]
-    nd2 = g.nodes[:gaussianmeanprecision_2]
-    nd3 = g.nodes[:gaussianmeanprecision_3]
+    nd1 = fg.nodes[:gaussianmeanprecision_1]
+    nd2 = fg.nodes[:gaussianmeanprecision_2]
+    nd3 = fg.nodes[:gaussianmeanprecision_3]
 
     @test algo.entropies[1][:counting_number] == 1
     @test algo.entropies[1][:inbound].target == cl
