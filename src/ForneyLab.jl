@@ -63,8 +63,7 @@ include("factor_nodes/nonlinear.jl")
 include("factor_nodes/sample_list.jl")
 include("factor_nodes/expectation_constraint.jl")
 include("factor_nodes/chance_constraint.jl")
-
-
+include("factor_nodes/point_mass_constraint.jl")
 
 # Factor graph
 include("factor_graph.jl")
@@ -119,6 +118,7 @@ include("update_rules/dot_product.jl")
 include("update_rules/poisson.jl")
 include("update_rules/expectation_constraint.jl")
 include("update_rules/chance_constraint.jl")
+include("update_rules/point_mass_constraint.jl")
 include("update_rules/nonlinear_unscented.jl")
 include("update_rules/nonlinear_sampling.jl")
 include("update_rules/sample_list.jl")

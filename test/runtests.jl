@@ -42,6 +42,7 @@ using Test
     include("factor_nodes/test_sample_list.jl")
     include("factor_nodes/test_expectation_constraint.jl")
     include("factor_nodes/test_chance_constraint.jl")
+    include("factor_nodes/test_point_mass_constraint.jl")
     include("factor_nodes/test_nonlinear_sampling.jl")
 
     include("./test_dependency_graph.jl")
