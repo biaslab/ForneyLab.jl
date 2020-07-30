@@ -1,77 +1,11 @@
 export
 SumProductRule,
-sumProductAlgorithm,
 @sumProductRule
-
-"""
-Create a sum-product algorithm to infer marginals over `variables`
-"""
-function sumProductAlgorithm(variables::Vector{Variable};
-                             id=Symbol(""),
-                             free_energy=false)
-
-    # Initialize empty posterior factorization
-    pfz = PosteriorFactorization()
-    # Contain the entire graph in a single posterior factor
-    pf = PosteriorFactor(pfz, id=Symbol(""))
-
-    # Set the target regions (variables and clusters) of the posterior factor
-    setTargets!(pf, pfz, variables, free_energy=free_energy, external_targets=false)
-
-    # Infer schedule and marginal computations
-    schedule = sumProductSchedule(pf) # For free energy computation, additional targets might be required
-    pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries from schedule
-    pf.marginal_table = marginalTable(pf)
-
-    # Populate fields for algorithm compilation
-    algo = InferenceAlgorithm(pfz, id=id)
-    assembleInferenceAlgorithm!(algo)
-    free_energy && assembleFreeEnergy!(algo)
-
-    return algo
-end
-sumProductAlgorithm(variable::Variable; id=Symbol(""), free_energy=false) = sumProductAlgorithm([variable], id=id, free_energy=free_energy)
 
 """
 A non-specific sum-product update
 """
 abstract type SumProductRule{factor_type} <: MessageUpdateRule end
-
-"""
-`sumProductSchedule()` generates a sum-product message passing schedule that
-computes the marginals for each of the posterior factor targets.
-"""
-function sumProductSchedule(pf::PosteriorFactor)
-    chance_sites = collectChanceSites(nodes(current_graph)) # Find sites for chance constraints
-
-    # Generate a feasible summary propagation schedule
-    schedule = summaryPropagationSchedule(sort(collect(pf.target_variables), rev=true),
-                                          sort(collect(pf.target_clusters), rev=true),
-                                          target_sites=chance_sites)
-
-    # Assign the sum-product update rule to each of the schedule entries
-    for entry in schedule
-        entry.message_update_rule = SumProductRule{typeof(entry.interface.node)}
-    end
-
-    inferUpdateRules!(schedule)
-
-    return schedule
-end
-
-"""
-Find sites for chance constraints
-"""
-function collectChanceSites(node_set::Set{FactorNode})
-    chance_sites = Interface[]
-    for node in sort(collect(node_set))
-        if isa(node, ChanceConstraint) || isa(node, ExpectationConstraint)
-            push!(chance_sites, ultimatePartner(node.i[:out]))
-        end
-    end
-
-    return chance_sites
-end
 
 """
 `internalSumProductSchedule()` generates a sum-product message passing schedule
@@ -157,7 +91,7 @@ function collectInboundTypes(entry::ScheduleEntry,
     for node_interface in entry.interface.node.interfaces
         if node_interface === entry.interface
             push!(inbound_message_types, Nothing)
-        elseif (node_interface.partner != nothing) && isa(node_interface.partner.node, Clamp)
+        elseif isClamped(node_interface.partner)
             push!(inbound_message_types, Message{PointMass})
         else
             push!(inbound_message_types, inferred_outbound_types[node_interface.partner])
@@ -248,7 +182,7 @@ function collectSumProductNodeInbounds(::FactorNode, entry::ScheduleEntry)
         if node_interface === entry.interface
             # Ignore inbound message on outbound interface
             push!(inbounds, nothing)
-        elseif isa(inbound_interface.node, Clamp)
+        elseif isClamped(inbound_interface)
             # Hard-code outbound message of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, Message))
         else

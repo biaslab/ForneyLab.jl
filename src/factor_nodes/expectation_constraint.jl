@@ -37,3 +37,8 @@ mutable struct ExpectationConstraint <: SoftFactor # TODO: how to handle free en
 end    
 
 slug(::Type{ExpectationConstraint}) = "E"
+
+# A breaker message is required if interface is partnered with an expectation constraint
+requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::ExpectationConstraint) = true
+
+breakerParameters(interface::Interface, partner_interface::Interface, partner_node::ExpectationConstraint) = (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only

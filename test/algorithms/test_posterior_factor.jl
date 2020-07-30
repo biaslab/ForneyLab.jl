@@ -40,7 +40,7 @@ using ForneyLab: nodesConnectedToExternalEdges, Cluster, condense, flatten, setT
 end
 
 @testset "setTargets!" begin
-    g = FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
     @RV y ~ GaussianMeanPrecision(0.0, 1.0)
     @RV z = x + y
@@ -48,22 +48,22 @@ end
     placeholder(w, :w)
 
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz)
-    setTargets!(pf, pfz, [z])
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([z]))
     @test pfz.free_energy_flag == false
     @test pf.target_variables == Set{Variable}([z])
     @test pf.target_clusters == Set{Cluster}()
 
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz)
-    setTargets!(pf, pfz, external_targets=true)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([z]), external_targets=true)
     @test pfz.free_energy_flag == false
-    @test pf.target_variables == Set{Variable}([x, y, z])
+    @test pf.target_variables == Set{Variable}([z])
     @test pf.target_clusters == Set{Cluster}()
 
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz)
-    setTargets!(pf, pfz, free_energy=true)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([z]), free_energy=true)
     @test pfz.free_energy_flag == true
     @test pf.target_variables == Set{Variable}([x, y, z])
     @test length(pf.target_clusters) == 1

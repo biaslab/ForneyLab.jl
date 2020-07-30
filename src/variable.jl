@@ -171,6 +171,7 @@ end
 
 # FORM 3: @RV x
 rv_isa_form3(expr::Symbol) = true
+rv_isa_form3(expr::Expr)   = expr.head === :ref
 rv_isa_form3(expr)         = false
 
 function rv_form3(def, target, node, options)

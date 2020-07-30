@@ -49,10 +49,12 @@ end
 #------------
 
 @testset "ChanceConstraint integration" begin
-    FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanVariance(0.0, 1.0)
     ChanceConstraint(x; G=(0.0, Inf), epsilon=0.05)
-    algo = sumProductAlgorithm(x)
+    
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
 
     @test occursin("ruleSPChanceConstraintOutG(messages[1], (0.0, Inf), 0.05)", algo_code)

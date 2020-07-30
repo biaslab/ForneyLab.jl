@@ -49,12 +49,21 @@ ProbabilityDistribution(::Type{Categorical}; p=[1/3, 1/3, 1/3]) = ProbabilityDis
 dims(dist::ProbabilityDistribution{Univariate, Categorical}) = 1
 
 vague(::Type{Categorical}, n_factors::Int64=3) = ProbabilityDistribution(Univariate, Categorical, p=(1/n_factors)*ones(n_factors))
+vague(::Type{Categorical}, n_factors::Tuple) = vague(Categorical, n_factors[1])
 
 isProper(dist::ProbabilityDistribution{Univariate, Categorical}) = (abs(sum(dist.params[:p])-1.) < 1e-6)
 
 unsafeMean(dist::ProbabilityDistribution{Univariate, Categorical}) = deepcopy(dist.params[:p])
 
 unsafeMeanVector(dist::ProbabilityDistribution{Univariate, Categorical}) = deepcopy(dist.params[:p])
+
+function unsafeMode(dist::ProbabilityDistribution{Univariate, Categorical})
+    i = findfirst(dist.params[:p] .== maximum(dist.params[:p])) # Index of first maximum
+    m = zeros(length(dist.params[:p]))
+    m[i] = 1.0
+
+    return m
+end
 
 logPdf(dist::ProbabilityDistribution{Univariate, Categorical}, x) = sum(x .* log.(dist.params[:p]))
 
@@ -86,9 +95,8 @@ function prod!( x::ProbabilityDistribution{Univariate, Categorical},
                 z::ProbabilityDistribution{Univariate, Categorical}=ProbabilityDistribution(Univariate, Categorical, p=ones(size(x.params[:p]))./length(x.params[:p])))
 
     # Multiplication of 2 categorical PMFs: p(z) = p(x) * p(y)
-    z.params[:p][:] = x.params[:p] .* y.params[:p]
+    z.params[:p][:] = clamp.(x.params[:p] .* y.params[:p], tiny, Inf) # Soften vanishing probabilities to enforce the convention [1, 0]*[0, 1] ∝ [1/2, 1/2]
     norm = sum(z.params[:p])
-    (norm > 0.0) || error("Product of $(x) and $(y) cannot be normalized")
     z.params[:p] = z.params[:p]./norm
 
     return z
@@ -96,10 +104,10 @@ end
 
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Categorical})
-    -sum(dist.params[:p].*log.(dist.params[:p]))
+    -sum(dist.params[:p].*log.(clamp.(dist.params[:p], tiny, Inf))) # Soften vanishing propbabilities to enforce the convention 0 log 0 = 0
 end
 
 # Average energy functional
-function averageEnergy(::Type{Categorical}, marg_out::ProbabilityDistribution{Univariate}, marg_p::ProbabilityDistribution{Multivariate})
+function averageEnergy(::Type{Categorical}, marg_out::ProbabilityDistribution, marg_p::ProbabilityDistribution{Multivariate})
     -sum(unsafeMean(marg_out).*unsafeLogMean(marg_p))
 end

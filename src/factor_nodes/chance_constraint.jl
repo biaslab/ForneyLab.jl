@@ -36,3 +36,8 @@ mutable struct ChanceConstraint <: SoftFactor # TODO: how to handle free energy 
 end    
 
 slug(::Type{ChanceConstraint}) = "P"
+
+# A breaker message is required if interface is partnered with an expectation constraint
+requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::ChanceConstraint) = true
+
+breakerParameters(interface::Interface, partner_interface::Interface, partner_node::ChanceConstraint) = (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only

@@ -44,10 +44,11 @@ end
 #------------
 
 @testset "ExpectationConstraint integration" begin
-    FactorGraph()
+    fg = FactorGraph()
     @RV x ~ GaussianMeanVariance(0.0, 1.0)
     ExpectationConstraint(x; g=f, G=1.0, eta_init=0.0)
-    algo = sumProductAlgorithm(x)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
 
     @test occursin("ruleSPExpectationConstraintOutG(messages[1], f, 1.0, 0.0)", algo_code)

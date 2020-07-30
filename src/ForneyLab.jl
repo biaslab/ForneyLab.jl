@@ -85,12 +85,10 @@ include("algorithms/posterior_factor.jl")
 include("algorithms/posterior_factorization.jl")
 include("algorithms/inference_algorithm.jl")
 include("algorithms/joint_marginals.jl")
-
-include("algorithms/sum_product/sum_product.jl")
-include("algorithms/variational_bayes/naive_variational_bayes.jl")
-include("algorithms/variational_bayes/structured_variational_bayes.jl")
-include("algorithms/expectation_propagation/expectation_propagation.jl")
-include("algorithms/expectation_propagation/variational_expectation_propagation.jl")
+include("algorithms/sum_product.jl")
+include("algorithms/naive_variational_bayes.jl")
+include("algorithms/structured_variational_bayes.jl")
+include("algorithms/expectation_propagation.jl")
 
 # Assemblers
 include("engines/message_passing_assemblers.jl")
@@ -123,6 +121,7 @@ include("update_rules/expectation_constraint.jl")
 include("update_rules/chance_constraint.jl")
 include("update_rules/nonlinear_unscented.jl")
 include("update_rules/nonlinear_sampling.jl")
+include("update_rules/sample_list.jl")
 
 *(x::ProbabilityDistribution, y::ProbabilityDistribution) = prod!(x, y) # * operator for probability distributions
 

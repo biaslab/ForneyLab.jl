@@ -45,7 +45,7 @@ end
 @testset "prod!" begin
     @test ProbabilityDistribution(Categorical, p=[0.2, 0.8])*ProbabilityDistribution(Categorical, p=[0.8, 0.2]) == ProbabilityDistribution(Categorical, p=[0.5, 0.5])
     @test ProbabilityDistribution(Categorical, p=[0.25, 0.5, 0.25]) * ProbabilityDistribution(Categorical, p=[1/3, 1/3, 1/3]) == ProbabilityDistribution(Categorical, p=[0.25, 0.5, 0.25])
-    @test_throws Exception ProbabilityDistribution(Categorical, p=[0.0, 0.5, 0.5]) * ProbabilityDistribution(Categorical, p=[1.0, 0.0, 0.0])
+    @test ProbabilityDistribution(Categorical, p=[0.0, 0.5, 0.5]) * ProbabilityDistribution(Categorical, p=[1.0, 0.0, 0.0]) == ProbabilityDistribution(Categorical, p=ones(3)/3)
 end
 
 #-------------

@@ -5,5 +5,6 @@
 *.cov
 .ipynb_checkpoints
 demo/*.jl
+*.gif
 docs/build
 Manifest.toml

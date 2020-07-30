@@ -261,8 +261,13 @@ Convert a value to parseable Julia code
 valueSourceCode(val::Union{Vector, Number}) = string(val)
 valueSourceCode(val::Diagonal) = "Diagonal($(val.diag))"
 function valueSourceCode(val::AbstractMatrix)
-    if size(val) == (1,1)
-        val_code = "mat($(val[1]))"
+    # If the dimensionality in at least one direction is 1, a matrix needs to be
+    # constructed explicitly; otherwise the output Julia code will construct a vector.
+    d = size(val)
+    if d == (1,1)
+        val_code = "mat($(val[1]))" # Shorthand notation for a (1,1) matrix reshape
+    elseif 1 in d
+        val_code = "reshape($(vec(val)), $d)" # Explicit reshape
     else
         val_code = string(val)
     end

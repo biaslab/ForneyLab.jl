@@ -2,7 +2,7 @@ module StructuredVariationalBayesTest
 
 using Test
 using ForneyLab
-using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!, variationalSchedule
+using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!, messagePassingSchedule
 using ForneyLab: VBGaussianMeanVarianceOut, SVBGaussianMeanPrecisionMGVD, SVBGaussianMeanPrecisionOutVGD, VBGammaOut, SVBGaussianMeanPrecisionW
 
 # Integration helper
@@ -76,7 +76,7 @@ end
     @test entry3.message_update_rule == SVBMock3DV
 end
 
-@testset "variationalSchedule" begin
+@testset "messagePassingSchedule" begin
     g = FactorGraph()
     s_0 = Variable()
     nd_s_0 = GaussianMeanVariance(s_0, constant(0.0), constant(1.0))
@@ -103,7 +103,7 @@ end
     q_s = PosteriorFactor([s_0; s])
 
     setTargets!(q_s, pfz, external_targets=true)
-    schedule_q_s = variationalSchedule(q_s)
+    schedule_q_s = messagePassingSchedule(q_s)
     @test length(schedule_q_s) == 8
     @test ScheduleEntry(nd_s_0.i[:out], VBGaussianMeanVarianceOut) in schedule_q_s
     @test ScheduleEntry(nd_s[4].i[:out], VBGaussianMeanVarianceOut) in schedule_q_s
@@ -115,7 +115,7 @@ end
     @test ScheduleEntry(nd_s[3].i[:out], SVBGaussianMeanPrecisionOutVGD) in schedule_q_s
 
     setTargets!(q_w, pfz, external_targets=true)
-    schedule_q_w = variationalSchedule(q_w)
+    schedule_q_w = messagePassingSchedule(q_w)
     @test length(schedule_q_w) == 6
     @test ScheduleEntry(nd_w.i[:out], VBGammaOut) in schedule_q_w
     @test ScheduleEntry(nd_s[1].i[:w], SVBGaussianMeanPrecisionW) in schedule_q_w
@@ -123,7 +123,7 @@ end
     @test ScheduleEntry(nd_s[3].i[:w], SVBGaussianMeanPrecisionW) in schedule_q_w
 end
 
-@testset "variationalAlgorithm" begin
+@testset "messagePassingAlgorithm" begin
     g = FactorGraph()
     s_0 = Variable()
     nd_s_0 = GaussianMeanVariance(s_0, constant(0.0), constant(1.0))
@@ -146,7 +146,7 @@ end
     push!(nd_s, nd_s_i)
 
     pfz = PosteriorFactorization([s_0; s], w)
-    algo = variationalAlgorithm(pfz)
+    algo = messagePassingAlgorithm(s)
 
     @test isa(algo, InferenceAlgorithm)    
 end

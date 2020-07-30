@@ -2,8 +2,24 @@ module ProbitTest
 
 using Test
 using ForneyLab
-using ForneyLab: outboundType, isApplicable
+using ForneyLab: outboundType, isApplicable, requiresBreaker, breakerParameters
 using ForneyLab: SPProbitOutNG, EPProbitIn1GB, EPProbitIn1GC, EPProbitIn1GP
+
+@testset "requiresBreaker and breakerParameters" begin
+    fg = FactorGraph()
+    x = Variable()
+    y = Variable()
+    ng = GaussianMeanVariance(x, 0.0, 1.0)
+    np = Probit(y, x)
+    
+    @test !requiresBreaker(np.i[:out]) # Dangling
+    @test !requiresBreaker(np.i[:in1])
+    @test !requiresBreaker(ng.i[:m])
+    @test requiresBreaker(ng.i[:out])
+
+    @test_throws Exception breakerParameters(np.i[:out])
+    @test breakerParameters(ng.i[:out]) == (Message{GaussianMeanVariance, Univariate}, ())
+end
 
 
 #-------------
