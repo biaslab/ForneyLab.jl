@@ -3,7 +3,7 @@ module ExpectationPropagationTest
 using Test
 using ForneyLab
 using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!
-using ForneyLab: EPProbitIn1GP, SPGaussianMeanVarianceOutNPP, SPClamp, VBGaussianMeanPrecisionOut, SPProbitOutNG, expectationPropagationSchedule, variationalExpectationPropagationSchedule
+using ForneyLab: EPProbitIn1GP, SPGaussianMeanVarianceOutNPP, SPClamp, VBGaussianMeanPrecisionOut, SPProbitOutNG, messagePassingSchedule
 
 # Integration helper
 mutable struct MockNode <: SoftFactor
@@ -48,8 +48,8 @@ end
     @test entry.message_update_rule == EPMockIn1GP
 end
 
-@testset "expectationPropagationSchedule" begin
-    g = FactorGraph()
+@testset "messagePassingSchedule" begin
+    fg = FactorGraph()
     m = Variable()
     nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
     z = Variable[]
@@ -63,19 +63,19 @@ end
     end
 
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([m]))
-    setTargets!(pf, pfz)
-    schedule = expectationPropagationSchedule(pf)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([m]))
+    schedule = messagePassingSchedule(pf)
 
     @test length(schedule) == 15
-    @test schedule[2] == ScheduleEntry(nd_z[2].i[:in1], EPProbitIn1GP)
-    @test schedule[4] == ScheduleEntry(nd_z[3].i[:in1], EPProbitIn1GP)
-    @test schedule[8] == ScheduleEntry(nd_m.i[:out], SPGaussianMeanVarianceOutNPP)
-    @test schedule[11] == ScheduleEntry(nd_z[1].i[:in1], EPProbitIn1GP)
+    @test schedule[5] == ScheduleEntry(nd_z[1].i[:in1], EPProbitIn1GP)
+    @test schedule[8] == ScheduleEntry(nd_z[2].i[:in1], EPProbitIn1GP)
+    @test schedule[3] == ScheduleEntry(nd_m.i[:out], SPGaussianMeanVarianceOutNPP)
+    @test schedule[11] == ScheduleEntry(nd_z[3].i[:in1], EPProbitIn1GP)
 end
 
-@testset "variationalExpectationPropagationSchedule" begin
-    g = FactorGraph()
+@testset "messagePassingSchedule" begin
+    fg = FactorGraph()
     m = Variable()
     nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
     w = Variable()
@@ -89,17 +89,16 @@ end
     pfz = PosteriorFactorization()
     q_y_z = PosteriorFactor([y, z])
     setTargets!(q_y_z, pfz, external_targets=true)
-    schedule = variationalExpectationPropagationSchedule(q_y_z)
+    schedule = messagePassingSchedule(q_y_z)
 
-    @test length(schedule) == 4
+    @test length(schedule) == 3
     @test ScheduleEntry(nd_y.i[:out], VBGaussianMeanPrecisionOut) in schedule
     @test ScheduleEntry(nd_z.i[:out].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd_z.i[:in1], EPProbitIn1GP) in schedule
-    @test ScheduleEntry(nd_z.i[:out], SPProbitOutNG) in schedule
 end
 
-@testset "expectationPropagationAlgorithm" begin
-    g = FactorGraph()
+@testset "messagePassingAlgorithm" begin
+    fg = FactorGraph()
     m = Variable()
     nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
     z = Variable[]
@@ -112,14 +111,14 @@ end
         push!(nd_z, nd_z_i)
     end
     
-    pfz = PosteriorFactorization()
-    algo = expectationPropagationAlgorithm(m)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(m)
 
     @test isa(algo, InferenceAlgorithm)
 end
 
-@testset "variationalExpectationPropagationAlgorithm" begin
-    g = FactorGraph()
+@testset "messagePassingAlgorithm" begin
+    fg = FactorGraph()
     m = Variable()
     nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
     w = Variable()
@@ -131,7 +130,7 @@ end
     placeholder(z, :z)
 
     pfz = PosteriorFactorization([y; z], m, w)
-    algo = variationalExpectationPropagationAlgorithm(pfz)
+    algo = messagePassingAlgorithm(m)
 
     @test isa(algo, InferenceAlgorithm)    
 end

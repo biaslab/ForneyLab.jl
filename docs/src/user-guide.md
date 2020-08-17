@@ -160,7 +160,7 @@ ForneyLab supports code generation for four different types of message-passing a
 Whereas belief propagation computes exact inference for the random variables of interest, the variational message passing (VMP), expectation maximization (EM) and expectation propagation (EP) algorithms are approximation methods that can be applied to a larger range of models.
 
 ### Belief propagation
-The way to instruct ForneyLab to generate a belief propagation algorithm (also known as a sum-product algorithm) is by using the `sumProductAlgorithm` function. This function takes as argument(s) the random variable(s) for which we want to infer the posterior distribution. As an example, consider the following hierarchical model in which the mean of a Gaussian distribution is represented by another Gaussian distribution whose mean is modelled by another Gaussian distribution.  
+The way to instruct ForneyLab to generate a belief propagation algorithm (also known as a sum-product algorithm) is by using the `messagePassingAlgorithm` function. This function takes as argument(s) the random variable(s) for which we want to infer the posterior distribution. As an example, consider the following hierarchical model in which the mean of a Gaussian distribution is represented by another Gaussian distribution whose mean is modelled by another Gaussian distribution.  
 ```@example 1
 g = FactorGraph() # create a new factor graph
 @RV m2 ~ GaussianMeanVariance(0.0, 1.0)
@@ -171,12 +171,12 @@ ForneyLab.draw(g)
 ```
 If we were only interested in inferring the posterior distribution of `m1` then we would run
 ```@example 1
-algorithm = sumProductAlgorithm(m1)
+algorithm = messagePassingAlgorithm(m1)
 algorithm_code = algorithmSourceCode(algorithm);
 ```
 On the other hand, if we were interested in the posterior distributions of both `m1` and `m2` we would then need to pass them as elements of an array, i.e.
 ```@example 1
-algorithm = sumProductAlgorithm([m1, m2])
+algorithm = messagePassingAlgorithm([m1, m2])
 algorithm_code = algorithmSourceCode(algorithm);
 ```
 
@@ -233,7 +233,7 @@ ForneyLab.draw(q.posterior_factors[:W])
 Generating the VMP algorithm then follows a similar same procedure as the belief propagation algorithm. In the VMP case however, the resulting algorithm will consist of multiple step functions, one for each posterior factor, that need to be executed iteratively until convergence.
 ```@example 1
 # Construct and compile a variational message passing algorithm
-algo = variationalAlgorithm(q)
+algo = messagePassingAlgorithm()
 algo_code = algorithmSourceCode(algo)
 eval(Meta.parse(algo_code));
 ```
@@ -267,7 +267,7 @@ end
 #### Computing free energy
 VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as *free energy*. ForneyLab offers to optionally compile code for evaluating the free energy. Free energy is particularly useful to test for convergence of the VMP iterative procedure.
 ```julia
-algo = variationalAlgorithm(q, free_energy=true)
+algo = messagePassingAlgorithm(free_energy=true)
 algo_code = algorithmSourceCode(algo, free_energy=true)
 eval(Meta.parse(algo_code))
 ```
@@ -284,7 +284,7 @@ placeholder(y, :y);
 ```
 Generating a sum-product algorithm towards a clamped variable signals ForneyLab that the user wishes to optimize this parameter. Next to returning a `step!()` function, ForneyLab will then provide mockup code for an `optimize!()` function as well.
 ```@example 1
-algo = sumProductAlgorithm(v);
+algo = messagePassingAlgorithm(v);
 ```
 ```julia
 # You have created an algorithm that requires updates for (a) clamped parameter(s).
@@ -312,7 +312,7 @@ v = placeholder(:v)
 @RV y ~ GaussianMeanVariance(x, 1.0)
 placeholder(y, :y)
 
-algo = sumProductAlgorithm(x)
+algo = messagePassingAlgorithm(x)
 eval(Meta.parse(algorithmSourceCode(algo))); # generate, parse and evaluate the algorithm
 ```
 In order to execute this algorithm we first have to specify a prior for `x`. This is done by choosing some initial values for the hyperparameters `m` and `v`. In each processing step, the algorithm expects an observation and the current belief about `x`, i.e. the prior. We pass this information as elements of a `data` dictionary where the keys are the `id`s of their corresponding placeholders. The algorithm performs inference and returns the results inside a different dictionary (which we call `marginals` in the following script). In the next iteration, we repeat this process by feeding the algorithm with the next observation in the sequence and the posterior distribution of `x` that we obtained in the previous processing step. In other words, the current posterior becomes the prior for the next processing step. Let's illustrate this using an example where we will first generate a synthetic dataset by sampling observations from a Gaussian distribution that has a mean of 5.
@@ -360,7 +360,7 @@ for i = 1:N
     placeholder(y[i], :y, index=i)
 end
 
-algo = sumProductAlgorithm(x)
+algo = messagePassingAlgorithm(x)
 eval(Meta.parse(algorithmSourceCode(algo))); # generate, parse and evaluate the algorithm
 ```
 Since we have a placeholder linked to each observation in the sequence, we can process the complete dataset in one step. To do so, we first need to create a dictionary having the complete dataset array as its single element. We then need to pass this dictionary to the `step!` function which, in contrast with the online counterpart, we only need to call once.

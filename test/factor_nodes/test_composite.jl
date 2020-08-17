@@ -2,7 +2,7 @@ module CompositeTest
 
 using Test
 using ForneyLab
-using ForneyLab: @composite, outboundType, isApplicable, sumProductSchedule
+using ForneyLab: @composite, outboundType, isApplicable, messagePassingSchedule
 using ForneyLab: SPClamp, SPGaussianMeanVarianceOutNPP, Product, condense, flatten, step!, setTargets!
 
 
@@ -58,7 +58,7 @@ end
 end
 
 @testset "Composite node scheduling and algorithm compilation" begin
-    g = FactorGraph()
+    fg = FactorGraph()
 
     x_prev = Variable(id=:x_prev)
     nd = GaussianMeanVariance(x_prev, constant(0.0), constant(1.0))
@@ -66,12 +66,12 @@ end
     y = Variable(id=:y)
     cnd = StateTransition(placeholder(y, :y), x_prev, x)
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, target_variables=Set{Variable}([x]))
-    setTargets!(pf, pfz)
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
     algo = InferenceAlgorithm(pfz)
 
     # Build SP schedule
-    schedule = sumProductSchedule(pf)
+    schedule = messagePassingSchedule(pf)
     @test length(schedule) == 5
     @test ScheduleEntry(nd.i[:m].partner, SPClamp{Univariate}) in schedule
     @test ScheduleEntry(nd.i[:v].partner, SPClamp{Univariate}) in schedule
@@ -90,12 +90,12 @@ end
 
     # Build SP algorithm for Julia execution
     ForneyLab.assembleInferenceAlgorithm!(algo)
-    algo_code = ForneyLab.algorithmSourceCode(algo)
+    code = ForneyLab.algorithmSourceCode(algo)
 
-    @test occursin("Array{Message}(undef, 2)", algo_code)
-    @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", algo_code)
-    @test occursin("messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)", algo_code)
-    @test occursin("marginals[:x] = messages[2].dist", algo_code)
+    @test occursin("Array{Message}(undef, 2)", code)
+    @test occursin("messages[1] = ruleSPGaussianMeanVarianceOutNPP(nothing, Message(Univariate, PointMass, m=0.0), Message(Univariate, PointMass, m=1.0))", code)
+    @test occursin("messages[2] = ruleSPStateTransitionX(Message(Univariate, PointMass, m=data[:y]), messages[1], nothing)", code)
+    @test occursin("marginals[:x] = messages[2].dist", code)
 end
 
 @testset "Composite node algorithm execution" begin
@@ -136,11 +136,12 @@ end
     @RV z ~ StateTransition2(x, y)
     placeholder(z, :z)
 
-    algo = sumProductAlgorithm(x)
-    algo_code = algorithmSourceCode(algo)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(x)
+    code = algorithmSourceCode(algo)
 
-    @test occursin("messages::Vector{Message}=Array{Message}(undef, 5)", algo_code)
-    @test !occursin("StateTransition", algo_code)
+    @test occursin("messages::Vector{Message}=Array{Message}(undef, 5)", code)
+    @test !occursin("StateTransition", code)
 end
 
 

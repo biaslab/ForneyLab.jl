@@ -1,4 +1,4 @@
-export InferenceAlgorithm, currentInferenceAlgorithm
+export InferenceAlgorithm, currentInferenceAlgorithm, messagePassingAlgorithm
 
 """
 An `InferenceAlgorithm` specifies the computations for the quantities of interest.
@@ -45,6 +45,43 @@ function InferenceAlgorithm(
             Dict{Symbol, Any}[],
             Dict{Symbol, Any}[]))
 end
+
+"""
+Create a message passing algorithm to infer marginals over a posterior distribution
+"""
+function messagePassingAlgorithm(target_variables::Vector{Variable}=Variable[], # Quantities of interest
+                                 pfz::PosteriorFactorization=currentPosteriorFactorization(); 
+                                 id=Symbol(""), 
+                                 free_energy=false)
+
+    if isempty(pfz.posterior_factors) # If no factorization is defined
+        PosteriorFactor(pfz.graph, pfz=pfz, id=Symbol("")) # Contain the entire graph in a single posterior factor
+    end
+
+    # Set the targets for each posterior factor
+    for (_, pf) in pfz.posterior_factors
+        setTargets!(pf, pfz, target_variables=Set(target_variables), free_energy=free_energy, external_targets=true)
+    end
+
+    # Infer schedule and marginal computations for each recogition factor
+    for (_, pf) in pfz.posterior_factors
+        schedule = messagePassingSchedule(pf)
+        pf.schedule = condense(flatten(schedule)) # Inline all internal message passing and remove clamp node entries
+        pf.marginal_table = marginalTable(pf)
+    end
+
+    # Populate fields for algorithm compilation
+    algo = InferenceAlgorithm(pfz, id=id)
+    assembleInferenceAlgorithm!(algo)
+    free_energy && assembleFreeEnergy!(algo)
+
+    return algo
+end
+
+messagePassingAlgorithm(target_variable::Variable,
+                        pfz::PosteriorFactorization=currentPosteriorFactorization(); 
+                        id=Symbol(""), 
+                        free_energy=false) = messagePassingAlgorithm([target_variable], pfz; id=id, free_energy=free_energy)
 
 function interfaceToScheduleEntry(algo::InferenceAlgorithm)
     mapping = Dict{Interface, ScheduleEntry}()

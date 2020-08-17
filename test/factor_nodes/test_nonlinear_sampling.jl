@@ -4,7 +4,7 @@ using Test
 using Random
 # using LinearAlgebra
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, prod!, logPdf, unsafeMean, unsafeVar, Sampling
+using ForneyLab: outboundType, isApplicable, prod!, logPdf, unsafeMean, unsafeVar, Sampling, requiresBreaker, breakerParameters
 using ForneyLab: SPNonlinearSInGX, SPNonlinearSOutNGX, SPNonlinearSOutNM, SPNonlinearSIn1MN, gradientOptimization
 using ForwardDiff
 
@@ -22,6 +22,24 @@ h(x, y) = x + y
     # Optimum is [0.0, 0.0]
     @test isapprox(res, [0.0, 0.0], atol=1e-16)
 end
+
+@testset "requiresBreaker and breakerParameters" begin
+    fg = FactorGraph()
+    x = Variable()
+    y = Variable()
+    nd = GaussianMeanVariance(x, 0.0, 1.0)
+    Nonlinear{Sampling}(y, x, g=g)
+    
+    @test requiresBreaker(nd.i[:out])
+
+    @test_throws Exception breakerParameters(nd.i[:out].partner)
+    @test breakerParameters(nd.i[:out]) == (Message{GaussianMeanVariance, Univariate}, ())
+end
+
+
+#-------------
+# Update rules
+#-------------
 
 @testset "SPNonlinearSOutNM" begin
     @test SPNonlinearSOutNM <: SumProductRule{Nonlinear{Sampling}}
@@ -79,19 +97,20 @@ end
 #------------
 
 @testset "Nonlinear integration via sampling" begin
-    FactorGraph()
+    fg = FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
     n = Nonlinear{Sampling}(y, x, g=g, n_samples=2000)
 
-    algo = sumProductAlgorithm(y)
-    algo_code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearSOutNM(g, nothing, messages[2], n_samples=2000)", algo_code)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(y)
+    code = algorithmSourceCode(algo)
+    @test occursin("ruleSPNonlinearSOutNM(g, nothing, messages[1], n_samples=2000)", code)
 end
 
 @testset "Nonlinear integration via sampling" begin
-    FactorGraph()
+    fg = FactorGraph()
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
@@ -99,10 +118,11 @@ end
     n = Nonlinear{Sampling}(z, x, y, g=g)
 
     # Forward; g_inv should not be present in call
-    algo = sumProductAlgorithm(y)
-    algo_code = algorithmSourceCode(algo)
+    pfz = PosteriorFactorization(fg)
+    algo = messagePassingAlgorithm(y)
+    code = algorithmSourceCode(algo)
 
-    @test occursin("ruleSPNonlinearSInGX(g, 2, messages[3], messages[2], messages[1])", algo_code)
+    @test occursin("ruleSPNonlinearSInGX(g, 2, messages[3], messages[2], messages[1])", code)
 end
 
 end # module

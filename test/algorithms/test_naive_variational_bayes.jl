@@ -2,7 +2,7 @@ module NaiveVariationalBayesTest
 
 using Test
 using ForneyLab
-using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!, variationalSchedule
+using ForneyLab: SoftFactor, generateId, addNode!, associate!, inferUpdateRule!, outboundType, isApplicable, setTargets!, messagePassingSchedule
 using ForneyLab: VBGaussianMeanVarianceOut, VBGaussianMeanPrecisionM, SPEqualityGaussian
 
 # Integration helper
@@ -45,7 +45,7 @@ end
     @test entry.message_update_rule == VBMockOut
 end
 
-@testset "variationalSchedule" begin
+@testset "messagePassingSchedule" begin
     g = FactorGraph()
     m = Variable()
     nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
@@ -65,7 +65,7 @@ end
     q_m = PosteriorFactor(m)
 
     setTargets!(q_m, pfz, external_targets=true)
-    schedule = variationalSchedule(q_m)
+    schedule = messagePassingSchedule(q_m)
 
     @test length(schedule) == 6
     @test ScheduleEntry(nd_m.i[:out], VBGaussianMeanVarianceOut) in schedule
@@ -76,8 +76,8 @@ end
     @test ScheduleEntry(nd_m.i[:out].partner, SPEqualityGaussian) in schedule
 end
 
-@testset "variationalAlgorithm" begin
-    g = FactorGraph()
+@testset "messagePassingAlgorithm" begin
+    fg = FactorGraph()
     m = Variable()
     nd_m = GaussianMeanVariance(m, constant(0.0), constant(1.0))
     w = Variable()
@@ -93,13 +93,13 @@ end
     end
 
     pfz = PosteriorFactorization(m, w)
-    algo = variationalAlgorithm(pfz)
+    algo = messagePassingAlgorithm(m)
 
     @test isa(algo, InferenceAlgorithm)
 end
 
-@testset "variationalAlgorithm with custom target" begin
-    g = FactorGraph()
+@testset "messagePassingAlgorithm with custom target" begin
+    fg = FactorGraph()
 
     # Define model
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
@@ -109,7 +109,8 @@ end
     placeholder(w, :w)
 
     # Derive algorithm
-    algo = variationalAlgorithm(y, ids=[:Y])
+    pfz = PosteriorFactorization(y)
+    algo = messagePassingAlgorithm(y)
     code = algorithmSourceCode(algo)
 
     @test occursin("marginals[:y]", code)

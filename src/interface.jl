@@ -31,3 +31,45 @@ function handle(interface::Interface)
 
     return ""
 end
+
+Base.isless(i1::Interface, i2::Interface) = isless(name(i1), name(i2))
+
+name(iface::Interface) = string(iface.node.id)*handle(iface)
+name(::Nothing) = ""
+
+"""
+Determines whether interface must be initialized with a breaker message;
+i.e. for EP sites, loopy belief propagation, or situations where outbound
+messages depend on inbound messages, such as a Nonlinear update without
+a given inverse (RTS smoothing).
+"""
+function requiresBreaker(interface::Interface)
+    partner_interface = ultimatePartner(interface)
+    (partner_interface == nothing) && return false # Dangling edge
+    
+    return requiresBreaker(interface, partner_interface, partner_interface.node) # Dispatch to overloaded methods
+end
+requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::FactorNode) = false # Default, function is overloaded for separate node types
+requiresBreaker(::Nothing) = false # Failsafe
+
+"""
+Determine the type and dimensionality of the breaker interface message
+"""
+function breakerParameters(interface::Interface)
+    partner_interface = ultimatePartner(interface)
+    
+    return breakerParameters(interface, partner_interface, partner_interface.node) # Dispatch to overloaded methods
+end
+
+"""
+Constructs breaker types dictionary for breaker sites
+"""
+function breakerTypes(breaker_sites::Vector{Interface})
+    breaker_types = Dict{Interface, Type}() # Initialize Interface to Message dictionary
+    for site in breaker_sites
+        (breaker_type, _) = breakerParameters(site)
+        breaker_types[site] = breaker_type
+    end
+
+    return breaker_types
+end
