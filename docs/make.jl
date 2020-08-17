@@ -16,12 +16,15 @@ makedocs(modules = [ForneyLab],
         ],
         "Contributing" => "contributing.md",
         "Internals" => "internals.md"
-    ]
+    ],
+    format   = Documenter.HTML(
+        prettyurls = get(ENV, "CI", nothing) == "true"
+    )
 )
 
-deploydocs(
-    repo = "https://github.com/biaslab/ForneyLab.jl.git",
-    target = "build",
-    deps = nothing,
-    make = nothing,
-)
+
+if get(ENV, "CI", nothing) == "true"
+    deploydocs(
+        repo = "github.com/biaslab/ForneyLab.jl.git"
+    )
+end
