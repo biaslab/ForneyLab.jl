@@ -9,6 +9,7 @@ ForneyLab.jl is a probabilistic programming toolbox for message passing-based ap
 We organize the ForneyLab repository in the following way:
 
 - `/demo/`: demos in Jupyter (iJulia) notebook format (`.ipynb`)
+- `/docs/`: documentation source files
 - `/src/`: all source files
     + `algorithms/`: inference algorithm implementations
         * `expectation_propagation/`: EP algorithm implementation
