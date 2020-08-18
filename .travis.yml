@@ -25,6 +25,7 @@ jobs:
       julia: 1.5
       before_script:
         - sudo apt-get install graphviz
+        - pip3 install matplotlib
       script:
         - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
         - julia --project=docs/ docs/make.jl
