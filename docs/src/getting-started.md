@@ -127,7 +127,7 @@ The plot below shows the result of the inference procedure. We see how the
 posterior is a “compromise” between the prior and likelihood, as mandated by Bayesian inference.
 ```@example 2
 using Plots, LaTeXStrings, SpecialFunctions; theme(:default)
-pyplot(fillalpha=0.3, leg=false, xlabel=L"\theta", yticks=nothing)
+plot(fillalpha=0.3, leg=false, xlabel=L"\theta", yticks=nothing)
 BetaPDF(α, β) = x ->  x^(α-1)*(1-x)^(β-1)/beta(α, β) # beta distribution definition
 BernoulliPDF(z, N) = θ -> θ^z*(1-θ)^(N-z) # Bernoulli distribution definition
 
