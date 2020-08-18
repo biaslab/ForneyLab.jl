@@ -3,9 +3,6 @@ using Documenter, ForneyLab
 makedocs(modules = [ForneyLab],
     clean = true,
     sitename = "ForneyLab.jl",
-    assets = [
-        joinpath("assets", "favicon.ico"),
-    ],
     pages = [
         "Home" => "index.md",
         "Getting started" => "getting-started.md",
@@ -17,7 +14,10 @@ makedocs(modules = [ForneyLab],
         "Contributing" => "contributing.md",
         "Internals" => "internals.md"
     ],
-    format   = Documenter.HTML(
+    format = Documenter.HTML(
+        assets = [
+            joinpath("assets", "favicon.ico"),
+        ],
         prettyurls = get(ENV, "CI", nothing) == "true"
     )
 )
