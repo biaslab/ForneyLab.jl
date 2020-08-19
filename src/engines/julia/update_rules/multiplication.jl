@@ -91,7 +91,7 @@ ruleSPMultiplicationIn1PNP(msg_out::Message{PointMass, Multivariate}, msg_in1::N
 # Namely, Ax = y, where A ∈ R^{nx1}, x ∈ R^1, and y ∈ R^n. In this case, the matrix A
 # can be represented by a n-dimensional vector, and x by a scalar. Before computation,
 # quantities are converted to their proper dimensions (see situational sketch below).
-# 
+#
 #     | a ~ Multivariate -> R^{nx1}
 #     v  out ~ Multivariate -> R^n
 # -->[x]-->
@@ -118,3 +118,5 @@ function ruleSPMultiplicationIn1GNP(msg_out::Message{F, Multivariate},
 
     return Message(Univariate, GaussianWeightedMeanPrecision, xi=msg_in1_mult.dist.params[:xi][1], w=msg_in1_mult.dist.params[:w][1,1])
 end
+
+ruleSPMultiplicationAGPN(msg_out::Message{F, Multivariate}, msg_in1::Message{PointMass, Multivariate}, msg_a::Nothing) where F<:Gaussian = ruleSPMultiplicationIn1GNP(msg_out, nothing, msg_in1)
