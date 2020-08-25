@@ -7,15 +7,21 @@ using ForneyLab: SPMultiplicationOutNGP, SPMultiplicationOutNPG, SPMultiplicatio
 
 @testset "Multiplication node construction through * syntax" begin
     g = FactorGraph()
-
     a = constant(1.0)
     @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
     @RV z = a*x
     @test isa(z, Variable)
     @test isa(g.nodes[:multiplication_1], Multiplication)
 
+    g = FactorGraph()
     @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
     @RV z = 1.0*x
+    @test isa(z, Variable)
+    @test isa(g.nodes[:multiplication_1], Multiplication)
+
+    g = FactorGraph()
+    @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
+    @RV z = x*1.0
     @test isa(z, Variable)
     @test isa(g.nodes[:multiplication_1], Multiplication)
 end
