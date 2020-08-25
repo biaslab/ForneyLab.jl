@@ -43,8 +43,8 @@ function *(a::Variable, in1::Variable)
     return out
 end
 
-function *(a::Variable, in1)
-    @ensureVariables(in1)
+function *(in1::Variable, a)
+    @ensureVariables(a)
     *(a, in1)
 end
 
