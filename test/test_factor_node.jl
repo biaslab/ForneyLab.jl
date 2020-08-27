@@ -1,7 +1,7 @@
 module FactorNodeTest
 
 using Test
-using ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture, Nonlinear
+using ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture, Nonlinear, Poisson
 using InteractiveUtils: subtypes
 
 @testset "FactorNode" begin
@@ -33,7 +33,8 @@ using InteractiveUtils: subtypes
         elseif node_type == Nonlinear
             test_node = Nonlinear(Variable(), Variable(), ()->())
         else
-            constructor_argument_length = length(first(methods(node_type)).sig.parameters) - 1
+            # XXX: This relies on method sorting order which is volatile
+            constructor_argument_length = (node_type == Poisson ? 2 : length(first(methods(node_type)).sig.parameters) - 1)
             vars = [Variable() for v = 1:constructor_argument_length]
             test_node = node_type(vars...)
         end
