@@ -10,11 +10,7 @@ function ruleSPBetaOutNMM(msg_out::Nothing, msg_a::Message{F1, Univariate}, msg_
     n_samples = default_n_samples
     samples_a = sample(msg_a.dist,n_samples)
     samples_b = sample(msg_b.dist,n_samples)
-    s_list = Vector{Float64}(undef, n_samples)
-    for n=1:n_samples
-        c = ProbabilityDistribution(Univariate,Beta,a=samples_a[n],b=samples_b[n])
-        s_list[n] = sample(c)
-    end
+    s_list = betainvcdf.(samples_a, samples_b, rand(n_samples))
     w_list = ones(n_samples)/n_samples
     Message(Univariate,SampleList,s=s_list,w=w_list)
 end
