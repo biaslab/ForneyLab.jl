@@ -3,7 +3,7 @@ module BetaTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf
-using ForneyLab: SPBetaOutNPP, SPBetaA, SPBetaB, VBBetaOut
+using ForneyLab: SPBetaOutNMM, SPBetaMNM, SPBetaMMN, VBBetaOut
 using SpecialFunctions: digamma
 
 @testset "Beta ProbabilityDistribution and Message construction" begin
@@ -47,29 +47,29 @@ end
 # Update rules
 #-------------
 
-@testset "SPBetaOutNPP" begin
-    @test SPBetaOutNPP <: SumProductRule{Beta}
-    @test outboundType(SPBetaOutNPP) == Message{Union{Beta,SampleList}}
-    @test isApplicable(SPBetaOutNPP, [Nothing, Message{PointMass}, Message{PointMass}])
-    @test isApplicable(SPBetaOutNPP, [Nothing, Message{FactorNode}, Message{PointMass}])
-    @test isApplicable(SPBetaOutNPP, [Nothing, Message{PointMass}, Message])
+@testset "SPBetaOutNMM" begin
+    @test SPBetaOutNMM <: SumProductRule{Beta}
+    @test outboundType(SPBetaOutNMM) == Message{Union{Beta,SampleList}}
+    @test isApplicable(SPBetaOutNMM, [Nothing, Message{PointMass}, Message{PointMass}])
+    @test isApplicable(SPBetaOutNMM, [Nothing, Message{FactorNode}, Message{PointMass}])
+    @test isApplicable(SPBetaOutNMM, [Nothing, Message{PointMass}, Message])
 
-    @test ruleSPBetaOutNPP(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
-    d = ruleSPBetaOutNPP(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, Gamma, a=300.0, b=100.0)).dist
+    @test ruleSPBetaOutNMM(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
+    d = ruleSPBetaOutNMM(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, Gamma, a=300.0, b=100.0)).dist
     @test 0.3<mean(d)<0.5
 end
 
-@testset "SPBetaA" begin
-    @test SPBetaA <: SumProductRule{Beta}
-    @test outboundType(SPBetaA) == Message{Function}
-    @test isApplicable(SPBetaA, [Message,Nothing,Message])
+@testset "SPBetaMNM" begin
+    @test SPBetaMNM <: SumProductRule{Beta}
+    @test outboundType(SPBetaMNM) == Message{Function}
+    @test isApplicable(SPBetaMNM, [Message,Nothing,Message])
 end
 
-@testset "SPBetaB" begin
-    @test SPBetaB <: SumProductRule{Beta}
-    @test outboundType(SPBetaB) == Message{Function}
-    @test !isApplicable(SPBetaB, [Message,Nothing,Message])
-    @test isApplicable(SPBetaB, [Message,Message,Nothing])
+@testset "SPBetaMMN" begin
+    @test SPBetaMMN <: SumProductRule{Beta}
+    @test outboundType(SPBetaMMN) == Message{Function}
+    @test !isApplicable(SPBetaMMN, [Message,Nothing,Message])
+    @test isApplicable(SPBetaMMN, [Message,Message,Nothing])
 end
 
 @testset "VBBetaOut" begin
