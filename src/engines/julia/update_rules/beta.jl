@@ -27,7 +27,7 @@ function ruleSPBetaMNM(msg_out::Message{F1,Univariate}, msg_a::Nothing, msg_b::M
     samples_b = sample(msg_b.dist,n_samples)
     logp(x,a,b) = (a-1)*log(x) + (b-1)*log(1.0-x) - loggamma(a) - loggamma(b) + loggamma(a+b)
     logp(a) = sum(logp.(samples_out,a,samples_b))/n_samples
-    Message(Univariate, Function, log_pdf = (a)->logp(a))
+    Message(Univariate, Function, log_pdf = logp)
 end
 
 function ruleSPBetaMMN(msg_out::Message{F1,Univariate}, msg_a::Message{F2,Univariate}, msg_b::Nothing) where {F1<:Union{Function, FactorNode},F2<:Union{Function, FactorNode}}
@@ -36,9 +36,7 @@ function ruleSPBetaMMN(msg_out::Message{F1,Univariate}, msg_a::Message{F2,Univar
     samples_a = sample(msg_a.dist,n_samples)
     logp(x,a,b) = (a-1)*log(x) + (b-1)*log(1.0-x) - loggamma(a) - loggamma(b) + loggamma(a+b)
     logp(b) = sum(logp.(samples_out,samples_a,b))/n_samples
-    Message(Univariate, Function, log_pdf = (b)->logp(b))
+    Message(Univariate, Function, log_pdf = logp)
 end
-
-#ruleVBBetaOut(marg_out::Any, marg_a::ProbabilityDistribution{Univariate, PointMass}, marg_b::ProbabilityDistribution{Univariate, PointMass}) = Message(Univariate, Beta, a=marg_a.params[:m], b=marg_b.params[:m])
 
 ruleVBBetaOut(marg_out::Any, dist_a::ProbabilityDistribution{Univariate}, dist_b::ProbabilityDistribution{Univariate, PointMass}) = Message(Univariate, Beta, a=unsafeMean(dist_a), b=unsafeMean(dist_b))
