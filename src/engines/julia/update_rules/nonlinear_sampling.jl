@@ -3,9 +3,10 @@ ruleSPNonlinearSOutNM,
 ruleSPNonlinearSIn1MN,
 ruleSPNonlinearSOutNGX,
 ruleSPNonlinearSOutNFX,
-ruleSPNonlinearSInGX,
+#ruleSPNonlinearSInGX,
 ruleSPNonlinearSInFX,
 ruleMNonlinearSInGX,
+ruleMNonlinearSInFX,
 prod!
 
 const default_n_samples = 1000 # Default value for the number of samples
@@ -77,36 +78,73 @@ function ruleSPNonlinearSOutNFX(g::Function,
     return Message(V, SampleList, s=samples, w=weights)
 end
 
-function ruleSPNonlinearSInGX(g::Function,
-                              inx::Int64, # Index of inbound interface inx
-                              msg_out::Message{<:Gaussian, V},
-                              msgs_in::Vararg{Message{<:Gaussian, V}};
-                              n_samples=default_n_samples) where V<:VariateType
-
-    # Extract joint statistics of inbound messages
-    (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
-    (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
-    W_fw_in = cholinv(V_fw_in) # Convert to canonical statistics
-
-    # Construct joint log-pdf function and gradient
-    (log_joint, d_log_joint) = logJointPdfs(V, m_fw_in, W_fw_in, msg_out.dist, g, ds) # Overloaded on VariateType V
-
-    # Compute joint belief on in's by gradient ascent
-    m_in = gradientOptimization(log_joint, d_log_joint, m_fw_in, 0.01)
-    V_in = cholinv(-ForwardDiff.jacobian(d_log_joint, m_in))
-
-    # Marginalize joint belief on in's
-    (m_inx, V_inx) = marginalizeGaussianMV(V, m_in, V_in, ds, inx) # Marginalization is overloaded on VariateType V
-    W_inx = cholinv(V_inx) # Convert to canonical statistics
-    xi_inx = W_inx*m_inx
-
-    # Divide marginal on inx by forward message
-    (xi_fw_inx, W_fw_inx) = unsafeWeightedMeanPrecision(msgs_in[inx].dist)
-    xi_bw_inx = xi_inx - xi_fw_inx
-    W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef inconsistencies
-
-    return Message(V, GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
-end
+# function ruleSPNonlinearSInGX(g::Function,
+#                               inx::Int64, # Index of inbound interface inx
+#                               msg_out::Message{<:Gaussian, V},
+#                               msgs_in::Vararg{Message{<:Gaussian, V}};
+#                               n_samples=default_n_samples) where V<:VariateType
+#
+#     # Extract joint statistics of inbound messages
+#     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
+#     (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
+#     W_fw_in = cholinv(V_fw_in) # Convert to canonical statistics
+#
+#     # Construct joint log-pdf function and gradient
+#     (log_joint, d_log_joint) = logJointPdfs(V, m_fw_in, W_fw_in, msg_out.dist, g, ds) # Overloaded on VariateType V
+#
+#     # Compute joint belief on in's by gradient ascent
+#     m_in = gradientOptimization(log_joint, d_log_joint, m_fw_in, 0.01)
+#     V_in = cholinv(-ForwardDiff.jacobian(d_log_joint, m_in))
+#
+#     # Marginalize joint belief on in's
+#     (m_inx, V_inx) = marginalizeGaussianMV(V, m_in, V_in, ds, inx) # Marginalization is overloaded on VariateType V
+#     W_inx = cholinv(V_inx) # Convert to canonical statistics
+#     xi_inx = W_inx*m_inx
+#
+#     # Divide marginal on inx by forward message
+#     (xi_fw_inx, W_fw_inx) = unsafeWeightedMeanPrecision(msgs_in[inx].dist)
+#     xi_bw_inx = xi_inx - xi_fw_inx
+#     W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef inconsistencies
+#
+#     return Message(V, GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
+# end
+#
+# function ruleSPNonlinearSInFX(g::Function,
+#                               inx::Int64, # Index of inbound interface inx
+#                               msg_out::Message{<:FactorFunction, <:VariateType},
+#                               msgs_in::Vararg{Message{<:FactorFunction, <:VariateType}};
+#                               n_samples=default_n_samples)
+#
+#     g2 = (x) -> begin
+#         samples_in = []
+#         if inx == 1
+#             push!(samples_in,collect(Iterators.repeat([ x ], n_samples)))
+#             for i=2:length(msgs_in)
+#                 push!(samples_in,sample(msgs_in[i].dist, n_samples))
+#             end
+#         elseif inx == length(msgs_in)
+#             for i=1:(length(msgs_in)-1)
+#                 push!(samples_in,sample(msgs_in[i].dist, n_samples))
+#             end
+#             push!(samples_in,collect(Iterators.repeat([ x ], n_samples)))
+#         else
+#             for i=1:(inx-1)
+#                 push!(samples_in,sample(msgs_in[i].dist, n_samples))
+#             end
+#             push!(samples_in,collect(Iterators.repeat([ x ], n_samples)))
+#             for i=(inx+1):length(msgs_in)
+#                 push!(samples_in,sample(msgs_in[i].dist, n_samples))
+#             end
+#         end
+#         return sum(g.(samples_in...))/n_samples
+#     end
+#
+#     V = Univariate
+#     if dims(msgs_in[inx].dist)>1 V = Multivariate end
+#
+#     return Message(V, Function, log_pdf = (z)->logPdf(msg_out.dist, g2(z)))
+#
+# end
 
 function ruleSPNonlinearSInFX(g::Function,
                               inx::Int64, # Index of inbound interface inx
@@ -114,41 +152,74 @@ function ruleSPNonlinearSInFX(g::Function,
                               msgs_in::Vararg{Message{<:FactorFunction, <:VariateType}};
                               n_samples=default_n_samples)
 
-    # g2 = (x) -> begin
-    #     before_x   = map(msg -> sample(msg.dist, n_samples), msgs_in[1:inx])
-    #     repeated_x = collect(Iterators.repeat([ x ], n_samples))
-    #     after_x    = map(msg -> sample(msg.dist, n_samples), msgs_in[inx+1:end])
-    #     return sum(g.([before_x, repeated_x, after_x]...))
-    # end
-
-    g2 = (x) -> begin
-        samples_in = []
-        if inx == 1
-            push!(samples_in,collect(Iterators.repeat([ x ], n_samples)))
-            for i=2:length(msgs_in)
-                push!(samples_in,sample(msgs_in[i].dist, n_samples))
-            end
-        elseif inx == length(msgs_in)
-            for i=1:(length(msgs_in)-1)
-                push!(samples_in,sample(msgs_in[i].dist, n_samples))
-            end
-            push!(samples_in,collect(Iterators.repeat([ x ], n_samples)))
-        else
-            for i=1:(inx-1)
-                push!(samples_in,sample(msgs_in[i].dist, n_samples))
-            end
-            push!(samples_in,collect(Iterators.repeat([ x ], n_samples)))
-            for i=(inx+1):n_samples
-                push!(samples_in,sample(msgs_in[i].dist, n_samples))
-            end
+    #check if all inputs Gaussian with same variate type
+    laplace = false
+    varT = variateType(msgs_in[1].dist)
+    gaussian_input = 0
+    for msg_in in msgs_in
+        if matches(typeof(msg_in.dist), Message{Gaussian}) && variateType(msg_in.dist) == varT
+                gaussian_input += 1
         end
-        return sum(g.(samples_in...))/n_samples
     end
+    if gaussian_input==length(msgs_in) laplce = true end
 
-    V = Univariate
-    if dims(msgs_in[inx].dist)>1 V = Multivariate end
+    if laplace == false
+        g2 = (x) -> begin
+            samples_in = []
+            if inx == 1
+                push!(samples_in,collect(Iterators.repeat([ x ], n_samples)))
+                for i=2:length(msgs_in)
+                    push!(samples_in,sample(msgs_in[i].dist, n_samples))
+                end
+            elseif inx == length(msgs_in)
+                for i=1:(length(msgs_in)-1)
+                    push!(samples_in,sample(msgs_in[i].dist, n_samples))
+                end
+                push!(samples_in,collect(Iterators.repeat([ x ], n_samples)))
+            else
+                for i=1:(inx-1)
+                    push!(samples_in,sample(msgs_in[i].dist, n_samples))
+                end
+                push!(samples_in,collect(Iterators.repeat([ x ], n_samples)))
+                for i=(inx+1):length(msgs_in)
+                    push!(samples_in,sample(msgs_in[i].dist, n_samples))
+                end
+            end
+            #return sum(g.(samples_in...))/n_samples
+            return g.(samples_in...)
+        end
 
-    return Message(V, Function, log_pdf = (z)->logPdf(msg_out.dist, g2(z)))
+        V = Univariate
+        if dims(msgs_in[inx].dist)>1 V = Multivariate end
+
+        #return Message(V, Function, log_pdf = (z)->logPdf(msg_out.dist, g2(z)))
+        logMessage(z) = -log(n_samples) + log(sum(exp.(logPdf.([msg_out.dist], g2(z)))))
+        return Message(V, Function, log_pdf = (z)->logMessage(z))
+    else
+        # Extract joint statistics of inbound messages
+        (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
+        (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
+        W_fw_in = cholinv(V_fw_in) # Convert to canonical statistics
+
+        # Construct joint log-pdf function and gradient
+        (log_joint, d_log_joint) = logJointPdfs(V, m_fw_in, W_fw_in, msg_out.dist, g, ds) # Overloaded on VariateType V
+
+        # Compute joint belief on in's by gradient ascent
+        m_in = gradientOptimization(log_joint, d_log_joint, m_fw_in, 0.01)
+        V_in = cholinv(-ForwardDiff.jacobian(d_log_joint, m_in))
+
+        # Marginalize joint belief on in's
+        (m_inx, V_inx) = marginalizeGaussianMV(V, m_in, V_in, ds, inx) # Marginalization is overloaded on VariateType V
+        W_inx = cholinv(V_inx) # Convert to canonical statistics
+        xi_inx = W_inx*m_inx
+
+        # Divide marginal on inx by forward message
+        (xi_fw_inx, W_fw_inx) = unsafeWeightedMeanPrecision(msgs_in[inx].dist)
+        xi_bw_inx = xi_inx - xi_fw_inx
+        W_bw_inx = W_inx - W_fw_inx # Note: subtraction might lead to posdef inconsistencies
+
+        return Message(varT, GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
+    end
 
 end
 
@@ -169,6 +240,39 @@ function ruleMNonlinearSInGX(g::Function,
     W_in = -ForwardDiff.jacobian(d_log_joint, m_in)
 
     return ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=m_in, w=W_in)
+end
+
+function ruleMNonlinearSInFX(g::Function,
+                             msg_out::Message{<:FactorFunction, <:VariateType},
+                             msgs_in::Vararg{Message{<:FactorFunction, <:VariateType}})
+
+    # Monte Carlo approximation to entropy for joint recognition distribution of inputs
+    n_samples = 100 #arbitrary specification TODO: use the user specified number of samples
+    samples_in = [sample(msg_in.dist, n_samples) for msg_in in msgs_in]
+    log_back = logPdf.([msg_out.dist], g.(samples_in...))
+    weights = exp.(log_back)
+    weights = weights / sum(weights) #normalize
+    log_in = zeros(n_samples)
+    for i=1:length(msgs_in)
+        log_in .+= logPdf.([msgs_in[i].dist], samples_in[i])
+    end
+    H1 = -sum(weights .* (log_in .+ log_back))
+    H2 = log(sum(exp.(log_back))/n_samples)
+    H = H1 + H2 #entropy
+    #organize the samples from the joint recognition distribution
+    samples = []
+    for n=1:n_samples
+        s = []
+        for ss in samples_in
+            push!(s,ss[n])
+        end
+        push!(samples,s)
+    end
+
+    joint_recog = ProbabilityDistribution(Multivariate, SampleList, s=samples, w=weights)
+    joint_recog.params[:entropy] = H
+
+    return joint_recog
 end
 
 

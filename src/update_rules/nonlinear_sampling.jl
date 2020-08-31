@@ -43,25 +43,53 @@ function isApplicable(::Type{SPNonlinearSOutNFX}, input_types::Vector{<:Type})
     return true
 end
 
-mutable struct SPNonlinearSInGX <: SumProductRule{Nonlinear{Sampling}} end
-outboundType(::Type{SPNonlinearSInGX}) = Message{GaussianWeightedMeanPrecision}
-function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
-    total_inputs = length(input_types)
-    (total_inputs > 2) || return false
-    (input_types[1] != Nothing) || return false
-
-    nothing_inputs = 0
-    gaussian_inputs = 0
-    for input_type in input_types
-        if input_type == Nothing
-            nothing_inputs += 1
-        elseif matches(input_type, Message{Gaussian})
-            gaussian_inputs += 1
-        end
-    end
-
-    return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-1)
-end
+# Does not properly check if the desired condition is satisfied. Ex: Imagine (in_in:Gaussian,Cat{Nothing}, out_in:Gaussian)
+# mutable struct SPNonlinearSInGX <: SumProductRule{Nonlinear{Sampling}} end
+# outboundType(::Type{SPNonlinearSInGX}) = Message{GaussianWeightedMeanPrecision}
+# function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
+#     total_inputs = length(input_types)
+#     (total_inputs > 2) || return false
+#     (input_types[1] != Nothing) || return false
+#
+#     nothing_inputs = 0
+#     gaussian_inputs = 0
+#     for input_type in input_types
+#         if input_type == Nothing
+#             nothing_inputs += 1
+#         elseif matches(input_type, Message{Gaussian})
+#             gaussian_inputs += 1
+#         end
+#     end
+#
+#     return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-1)
+# end
+#
+# mutable struct SPNonlinearSInFX <: SumProductRule{Nonlinear{Sampling}} end
+# outboundType(::Type{SPNonlinearSInFX}) = Message{Function}
+# function isApplicable(::Type{SPNonlinearSInFX}, input_types::Vector{<:Type})
+#     total_inputs = length(input_types)
+#     (total_inputs > 2) || return false
+#     (input_types[1] != Nothing) || return false
+#
+#     # TODO: Extend to Gaussian variables with different variate types
+#     nothing_inputs = 0
+#     factor_inputs = 0
+#     gaussian_inputs = 0
+#     for input_type in input_types
+#         if input_type == Nothing
+#             nothing_inputs += 1
+#         elseif matches(input_type, Message{FactorFunction})
+#             factor_inputs += 1
+#             if matches(input_type, Message{Gaussian})
+#                 gaussian_inputs += 1
+#             end
+#         end
+#     end
+#
+#     factor_inputs>gaussian_inputs || return false # We have more specific rule for all Gaussian inputs
+#
+#     return (nothing_inputs == 1) && (factor_inputs == total_inputs-1)
+# end
 
 mutable struct SPNonlinearSInFX <: SumProductRule{Nonlinear{Sampling}} end
 outboundType(::Type{SPNonlinearSInFX}) = Message{Function}
@@ -85,8 +113,6 @@ function isApplicable(::Type{SPNonlinearSInFX}, input_types::Vector{<:Type})
         end
     end
 
-    factor_inputs>gaussian_inputs || return false # We have more specific rule for all Gaussian inputs
-
     return (nothing_inputs == 1) && (factor_inputs == total_inputs-1)
 end
 
@@ -99,6 +125,26 @@ function isApplicable(::Type{MNonlinearSInGX}, input_types::Vector{<:Type})
     for input_type in input_types[2:end]
         matches(input_type, Message{Gaussian}) || return false
     end
+
+    return true
+end
+
+mutable struct MNonlinearSInFX <: MarginalRule{Nonlinear{Sampling}} end
+function isApplicable(::Type{MNonlinearSInFX}, input_types::Vector{<:Type})
+    total_inputs = length(input_types)
+    (total_inputs > 2) || return false
+    (input_types[1] == Nothing) || return false # Indicates marginalization over outbound variable
+
+    # TODO: Extend to Gaussian variables with different variate types
+    gaussian_inputs = 0
+    for input_type in input_types[2:end]
+        matches(input_type, Message{SoftFactor}) || return false #Message can be any distribution
+        if matches(input_type, Message{Gaussian})
+            gaussian_inputs += 1
+        end
+    end
+
+    gaussian_inputs<length(input_types)-1 || return false # We have more specific rule for all Gaussian inputs
 
     return true
 end
