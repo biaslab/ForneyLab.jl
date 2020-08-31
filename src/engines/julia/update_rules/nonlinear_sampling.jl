@@ -161,7 +161,7 @@ function ruleSPNonlinearSInFX(g::Function,
                 gaussian_input += 1
         end
     end
-    if gaussian_input==length(msgs_in) laplce = true end
+    if gaussian_input==length(msgs_in) laplace = true end
 
     if laplace == false
         g2 = (x) -> begin
