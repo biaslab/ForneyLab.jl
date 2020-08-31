@@ -1,7 +1,7 @@
 @sumProductRule(:node_type     => Beta,
                 :outbound_type => Message{Union{Beta,SampleList}},
                 :inbound_types => (Nothing, Message, Message),
-                :name          => SPBetaOutNPP)
+                :name          => SPBetaOutNMM)
 
 @sumProductRule(:node_type     => Beta,
                 :outbound_type => Message{Function},

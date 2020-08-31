@@ -22,4 +22,4 @@ ruleVBGammaA( dist_out::ProbabilityDistribution{Univariate},
 ruleVBGammaB( dist_out::ProbabilityDistribution{Univariate},
               dist_a::ProbabilityDistribution{Univariate},
               dist_b::Any) =
-        Message(Univariate, Function, log_pdf = (b)->unsafeMean(dist_a)*log(b)-b*unsafeMean(dist_out))
+        Message(Univariate, Gamma, a=unsafeMean(dist_a)+1, b=unsafeMean(dist_out))
