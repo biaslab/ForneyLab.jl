@@ -6,12 +6,12 @@
 @sumProductRule(:node_type     => Beta,
                 :outbound_type => Message{Function},
                 :inbound_types => (Message, Nothing, Message),
-                :name          => SPBetaA)
+                :name          => SPBetaMNM)
 
 @sumProductRule(:node_type     => Beta,
                 :outbound_type => Message{Function},
                 :inbound_types => (Message, Message, Nothing),
-                :name          => SPBetaB)
+                :name          => SPBetaMMN)
 
 @naiveVariationalRule(:node_type     => Beta,
                       :outbound_type => Message{Beta},
