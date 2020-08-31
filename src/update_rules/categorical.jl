@@ -6,7 +6,7 @@
 @sumProductRule(:node_type     => Categorical,
                 :outbound_type => Message{Dirichlet},
                 :inbound_types => (Message{PointMass}, Nothing),
-                :name          => SPCategoricalIn1)
+                :name          => SPCategoricalIn1PN)
 
 @naiveVariationalRule(:node_type     => Categorical,
                       :outbound_type => Message{Categorical},
