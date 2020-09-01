@@ -3,7 +3,7 @@ module BetaTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf
-using ForneyLab: SPBetaOutNMM, SPBetaMNM, SPBetaMMN, VBBetaOut
+using ForneyLab: SPBetaOutNMM, SPBetaMNM, SPBetaMMN, VBBetaOut, VBBetaA, VBBetaB
 using SpecialFunctions: digamma
 
 @testset "Beta ProbabilityDistribution and Message construction" begin
@@ -78,6 +78,18 @@ end
     @test isApplicable(VBBetaOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
 
     @test ruleVBBetaOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=2.0), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
+end
+
+@testset "VBBetaA" begin
+    @test VBBetaA <: NaiveVariationalRule{Beta}
+    @test outboundType(VBBetaA) == Message{Function}
+    @test isApplicable(VBBetaA, [ProbabilityDistribution, Nothing, ProbabilityDistribution])
+end
+
+@testset "VBBetaB" begin
+    @test VBBetaB <: NaiveVariationalRule{Beta}
+    @test outboundType(VBBetaB) == Message{Function}
+    @test isApplicable(VBBetaB, [ProbabilityDistribution, ProbabilityDistribution, Nothing])
 end
 
 @testset "averageEnergy and differentialEntropy" begin
