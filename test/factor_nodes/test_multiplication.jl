@@ -77,7 +77,7 @@ end
     @test isApplicable(SPMultiplicationAGPN, [Message{Gaussian}, Message{PointMass}, Nothing])
 
     @test ruleSPMultiplicationAGPN(Message(Univariate, GaussianWeightedMeanPrecision, xi=1.0, w=3.0), Message(Univariate, PointMass, m=2.0), nothing) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=12.0)
-    @test ruleSPMultiplicationAGPN(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=[3.0]), Message(Multivariate, PointMass, m=[2.0]), nothing) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=12.0)
+    @test ruleSPMultiplicationAGPN(Message(Multivariate, GaussianWeightedMeanPrecision, xi=[1.0], w=[3.0]), Message(Multivariate, PointMass, m=[2.0]), nothing) == Message(Univariate, GaussianWeightedMeanPrecision, xi=2.0, w=12.0 + tiny)
 end
 
 @testset "SPMultiplicationAPPN" begin
