@@ -56,9 +56,11 @@ end
 
 @testset "VBGammaB" begin
     @test VBGammaB <: NaiveVariationalRule{Gamma}
-    @test outboundType(VBGammaB) == Message{Function}
+    @test outboundType(VBGammaB) == Message{Gamma}
     @test !isApplicable(VBGammaB, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
-    @test isApplicable(VBGammaB, [ProbabilityDistribution, ProbabilityDistribution, Nothing]) 
+    @test isApplicable(VBGammaB, [ProbabilityDistribution, ProbabilityDistribution, Nothing])
+
+    @test ruleVBGammaB(ProbabilityDistribution(Univariate, PointMass, m=1.5), ProbabilityDistribution(Univariate, PointMass, m=3.0), nothing) == Message(Univariate, Gamma, a=4.0, b=1.5)
 end
 
 @testset "averageEnergy and differentialEntropy" begin
