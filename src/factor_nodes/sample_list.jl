@@ -61,6 +61,8 @@ unsafeMean(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = 
 
 unsafeLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = sum(log.(dist.params[:s]).*dist.params[:w])
 
+unsafeMeanLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = sum(dist.params[:s].*log.(dist.params[:s]).*dist.params[:w])
+
 function unsafeLogMean(dist::ProbabilityDistribution{Multivariate, SampleList})
     sum = zeros(length(dist.params[:s][1]))
     for i=1:length(dist.params[:s])
