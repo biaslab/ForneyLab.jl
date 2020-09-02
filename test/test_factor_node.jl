@@ -33,8 +33,7 @@ using InteractiveUtils: subtypes
         elseif node_type == Nonlinear
             test_node = Nonlinear(Variable(), Variable(), ()->())
         else
-            # XXX: This relies on method sorting order which is volatile
-            constructor_argument_length = (node_type == Poisson ? 2 : length(first(methods(node_type)).sig.parameters) - 1)
+            constructor_argument_length = length(first(methods(node_type)).sig.parameters) - 1
             vars = [Variable() for v = 1:constructor_argument_length]
             test_node = node_type(vars...)
         end
