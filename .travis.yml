@@ -32,5 +32,5 @@ jobs:
       after_success: skip
 
 stages:
-  # - test
+  - test
   - documentation
