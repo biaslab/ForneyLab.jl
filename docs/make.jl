@@ -1,6 +1,7 @@
 using Documenter, ForneyLab
 
 ENV["GKS_ENCODING"] = "utf-8"
+ENV["GKSwstype"] = "100"
 
 makedocs(modules = [ForneyLab],
     clean = true,
