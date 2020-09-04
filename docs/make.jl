@@ -1,5 +1,7 @@
 using Documenter, ForneyLab
 
+ENV["GKS_ENCODING"] = "utf-8"
+
 makedocs(modules = [ForneyLab],
     clean = true,
     sitename = "ForneyLab.jl",

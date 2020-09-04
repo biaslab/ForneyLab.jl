@@ -339,7 +339,7 @@ nothing # hide
 In order to execute this algorithm we first have to specify a prior for `x`. This is done by choosing some initial values for the hyperparameters `m` and `v`. In each processing step, the algorithm expects an observation and the current belief about `x`, i.e. the prior. We pass this information as elements of a `data` dictionary where the keys are the `id`s of their corresponding placeholders. The algorithm performs inference and returns the results inside a different dictionary (which we call `marginals` in the following script). In the next iteration, we repeat this process by feeding the algorithm with the next observation in the sequence and the posterior distribution of `x` that we obtained in the previous processing step. In other words, the current posterior becomes the prior for the next processing step. Let's illustrate this using an example where we will first generate a synthetic dataset by sampling observations from a Gaussian distribution that has a mean of 5.
 ```@example gaussian
 using Plots, LaTeXStrings; theme(:default) ;
-pyplot(fillalpha=0.3, leg=false, xlabel=L"x", ylabel=L"p(x|D)", yticks=nothing)
+plot(fillalpha=0.3, leg=false, xlabel=L"x", ylabel=L"p(x|D)", yticks=nothing)
 
 N = 50                      # number of samples
 dataset = randn(N) .+ 5     # sample N observations from a Gaussian with m=5 and v=1
@@ -391,7 +391,7 @@ Since we have a placeholder linked to each observation in the sequence, we can p
 ```@example gaussian
 data = Dict(:y => dataset)
 marginals = step!(data) # Run the algorithm
-plot(-10:0.01:10, normal(mean(marginals[:x]), var(marginals[:x])), fill=true)
+plot(-10:0.01:10, normal(mean(marginals[:x]), var(marginals[:x])), fillalpha=0.3, fillrange = 0)
 ```
 
 !!! note

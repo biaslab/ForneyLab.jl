@@ -25,7 +25,6 @@ jobs:
       julia: 1.5
       addons:
         apt-packages:
-          - python3-matplotlib
           - graphviz
       script:
         - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
