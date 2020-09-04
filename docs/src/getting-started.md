@@ -87,7 +87,8 @@ Once we have defined our model, the next step is to instruct ForneyLab to genera
 algo = messagePassingAlgorithm(θ) # derive a sum-product algorithm to infer θ
 algo_code = algorithmSourceCode(algo) # convert the algorithm to Julia code
 algo_expr = Meta.parse(algo_code) # parse the algorithm into a Julia expression
-eval(algo_expr); # evaluate the functions contained in the Julia expression
+eval(algo_expr) # evaluate the functions contained in the Julia expression
+nothing # hide
 ```
 
 ```julia
