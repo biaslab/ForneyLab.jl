@@ -61,6 +61,16 @@ unsafeMean(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = 
 
 unsafeLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = sum(log.(dist.params[:s]).*dist.params[:w])
 
+unsafeMeanLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = sum(dist.params[:s].*log.(dist.params[:s]).*dist.params[:w])
+
+function unsafeLogMean(dist::ProbabilityDistribution{Multivariate, SampleList})
+    sum = zeros(length(dist.params[:s][1]))
+    for i=1:length(dist.params[:s])
+        sum = sum .+ log.(dist.params[:s][i]).*dist.params[:w][i]
+    end
+    return sum
+end
+
 # Unbiased (co)variance estimates
 function unsafeVar(dist::ProbabilityDistribution{Univariate, SampleList})
     samples = dist.params[:s]
@@ -253,6 +263,12 @@ function bootstrap(dist_mean::ProbabilityDistribution{Multivariate, <:Gaussian},
 
     return [s_U[i]' *randn(d) + m for i in 1:N] # New samples
 end
+
+#Sampling from a distribution in ForneyLab returns equally weighted samples from the distribution
+#To retain the unified standard procedure, we allow sampling from SampleList not through directly returning
+#sample and weight parameters but drawing samples from the existing list of samples according to weights.
+# Inverse-transform sampling
+sample(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = sample(dist.params[:s], Weights(dist.params[:w]))    
 
 # Differential entropy for SampleList
 function differentialEntropy(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType

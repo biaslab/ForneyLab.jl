@@ -3,7 +3,7 @@ module DirichletTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeVar, vague, dims
-using ForneyLab: SPDirichletOutNP, VBDirichletOut
+using ForneyLab: SPDirichletOutNP, VBDirichletOut, VBDirichletIn1
 using SpecialFunctions: digamma
 
 @testset "Dirichlet ProbabilityDistribution and Message construction" begin
@@ -78,10 +78,17 @@ end
     @test ruleVBDirichletOut(nothing, ProbabilityDistribution(MatrixVariate, PointMass, m=[2.0 3.0; 4.0 5.0])) == Message(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])
 end
 
+@testset "VBDirichletIn1" begin
+    @test VBDirichletIn1 <: NaiveVariationalRule{Dirichlet}
+    @test outboundType(VBDirichletIn1) == Message{Function}
+    @test isApplicable(VBDirichletIn1, [ProbabilityDistribution, Nothing])
+end
+
 @testset "averageEnergy and differentialEntropy" begin
     # Multivariate
     @test isapprox(differentialEntropy(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0])), averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 3.0]), ProbabilityDistribution(Multivariate, PointMass, m=[2.0, 3.0])))
     @test isapprox(averageEnergy(Dirichlet, ProbabilityDistribution(Multivariate, Dirichlet, a=[4.0, 5.0]), ProbabilityDistribution(Multivariate, PointMass, m=[2.0, 3.0])), averageEnergy(Beta, ProbabilityDistribution(Univariate, Beta, a=4.0, b=5.0), ProbabilityDistribution(Univariate, PointMass, m=2.0), ProbabilityDistribution(Univariate, PointMass, m=3.0)))
+    @test isapprox(averageEnergy(Dirichlet,ProbabilityDistribution(Multivariate,Dirichlet,a=[2.0,3.0,4.0]),ProbabilityDistribution(Multivariate,SampleList,s=[[1.0,2.0,1.0],[3.,3.,1.],[2.,2.,2]],w=[0.1,0.7,0.3])),0.5093876870003795)
 
     # MatrixVariate
     @test differentialEntropy(ProbabilityDistribution(MatrixVariate, Dirichlet, a=[2.0 3.0; 4.0 5.0])) == differentialEntropy(ProbabilityDistribution(Multivariate, Dirichlet, a=[2.0, 4.0])) + differentialEntropy(ProbabilityDistribution(Multivariate, Dirichlet, a=[3.0, 5.0]))
