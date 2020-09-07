@@ -147,7 +147,7 @@ end
 function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Multivariate}, marg_a::ProbabilityDistribution{Multivariate, SampleList})
     samples, weights = marg_a.params[:s], marg_a.params[:w]
     S = length(weights) #number of samples
-    log_gamma_of_sum, sum_of_log_gamma = 0, 0
+    log_gamma_of_sum, sum_of_log_gamma = 0.0, 0.0
     
     for s=1:S
         log_gamma_of_sum += weights[s]*loggamma(sum(samples[s]))
