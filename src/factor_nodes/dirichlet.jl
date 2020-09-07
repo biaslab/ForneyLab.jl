@@ -144,16 +144,17 @@ function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Mult
     sum( (marg_a.params[:m] .- 1.0).*unsafeLogMean(marg_out) )
 end
 
-function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Multivariate, SampleList}, marg_a::ProbabilityDistribution{Multivariate, SampleList})
-    log_gamma_of_sum = loggamma(sum(unsafeMeanVector(marg_a)))
+function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Multivariate}, marg_a::ProbabilityDistribution{Multivariate, SampleList})
+    samples, weights = marg_a.params[:s], marg_a.params[:w]
+    S = length(weights) #number of samples
+    log_gamma_of_sum, sum_of_log_gamma = 0, 0
     
-    weighted_sum_of_log_gamma = 0.0
-    for (i, sample) in enumerate(marg_a.params[:s])
-        sample_sum = sum(loggamma.(marg_a.params[:s]))
-        weighted_sum_of_log_gamma += sample_sum*marg_a.params[:w][i]
+    for s=1:S
+        log_gamma_of_sum += weights[s]*loggamma(sum(samples[s]))
+        sum_of_log_gamma += weights[s]*sum(loggamma.(samples[s]))
     end
-    
-    return -log_gamma_of_sum + weighted_sum_of_log_gamma - 
+
+    return -log_gamma_of_sum + sum_of_log_gamma -
             sum((unsafeMeanVector(marg_a) .- 1.0).*unsafeLogMean(marg_out))
 end
 
