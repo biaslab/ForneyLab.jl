@@ -17,8 +17,7 @@ function ruleSPBetaOutNMM(msg_out::Nothing, msg_a::Message{F1, Univariate}, msg_
     Message(Univariate,SampleList,s=s_list,w=w_list)
 end
 
-#will not work for incoming function message for now. we need to write a sampler for function messages
-#1000 samples is chosen arbitrarily. Better to be defined by the user.
+# 1000 (default_n_samples) samples is chosen arbitrarily. Better to be defined by the user.
 function ruleSPBetaMNM(msg_out::Message{F1,Univariate}, msg_a::Nothing, msg_b::Message{F2,Univariate}) where {F1<:FactorNode, F2<:FactorNode}
     n_samples = default_n_samples
     samples_out = sample(msg_out.dist,n_samples)
