@@ -71,8 +71,6 @@ function unsafeLogMean(dist::ProbabilityDistribution{Multivariate, SampleList})
     return sum
 end
 
-unsafeMeanLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = sum(dist.params[:s].*log.(dist.params[:s]).*dist.params[:w])
-
 # Unbiased (co)variance estimates
 function unsafeVar(dist::ProbabilityDistribution{Univariate, SampleList})
     samples = dist.params[:s]

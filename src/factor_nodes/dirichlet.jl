@@ -144,22 +144,17 @@ function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Mult
     sum( (marg_a.params[:m] .- 1.0).*unsafeLogMean(marg_out) )
 end
 
-#supposed to be marg_a::ProbabilityDistribution{Multivariate, SampleList}
-#however it throws an error when I do so
-function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Multivariate}, marg_a::ProbabilityDistribution{Multivariate})
-    logGammaSum = loggamma(sum(unsafeMeanVector(marg_a)))
-    sumLogGamma = 0
-    for i=1:length(marg_a.params[:s])
-        ssum = 0
-        for sj in marg_a.params[:s][i]
-            ssum += loggamma(sj)
-        end
-        sumLogGamma += ssum*marg_a.params[:w][i]
+function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{Multivariate, SampleList}, marg_a::ProbabilityDistribution{Multivariate, SampleList})
+    log_gamma_of_sum = loggamma(sum(unsafeMeanVector(marg_a)))
+    
+    weighted_sum_of_log_gamma = 0.0
+    for (i, sample) in enumerate(marg_a.params[:s])
+        sample_sum = sum(loggamma.(marg_a.params[:s]))
+        weighted_sum_of_log_gamma += sample_sum*marg_a.params[:w][i]
     end
-
-    -logGammaSum +
-    sumLogGamma -
-    sum( (unsafeMeanVector(marg_a) .- 1.0).*unsafeLogMean(marg_out) )
+    
+    return -log_gamma_of_sum + weighted_sum_of_log_gamma - 
+            sum((unsafeMeanVector(marg_a) .- 1.0).*unsafeLogMean(marg_out))
 end
 
 function averageEnergy(::Type{Dirichlet}, marg_out::ProbabilityDistribution{MatrixVariate}, marg_a::ProbabilityDistribution{MatrixVariate, PointMass})

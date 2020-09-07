@@ -8,7 +8,7 @@ ruleVBBetaB
 
 ruleSPBetaOutNMM(msg_out::Nothing, msg_a::Message{PointMass, Univariate}, msg_b::Message{PointMass, Univariate}) = Message(Univariate, Beta, a=deepcopy(msg_a.dist.params[:m]), b=deepcopy(msg_b.dist.params[:m]))
 
-function ruleSPBetaOutNMM(msg_out::Nothing, msg_a::Message{F1, Univariate}, msg_b::Message{F2, Univariate}) where {F1<:Union{Function, FactorNode},F2<:Union{Function, FactorNode}}
+function ruleSPBetaOutNMM(msg_out::Nothing, msg_a::Message{F1, Univariate}, msg_b::Message{F2, Univariate}) where {F1<:FactorNode, F2<:FactorNode}
     n_samples = default_n_samples
     samples_a = sample(msg_a.dist,n_samples)
     samples_b = sample(msg_b.dist,n_samples)
@@ -19,7 +19,7 @@ end
 
 #will not work for incoming function message for now. we need to write a sampler for function messages
 #1000 samples is chosen arbitrarily. Better to be defined by the user.
-function ruleSPBetaMNM(msg_out::Message{F1,Univariate}, msg_a::Nothing, msg_b::Message{F2,Univariate}) where {F1<:Union{Function, FactorNode},F2<:Union{Function, FactorNode}}
+function ruleSPBetaMNM(msg_out::Message{F1,Univariate}, msg_a::Nothing, msg_b::Message{F2,Univariate}) where {F1<:FactorNode, F2<:FactorNode}
     n_samples = default_n_samples
     samples_out = sample(msg_out.dist,n_samples)
     samples_b = sample(msg_b.dist,n_samples)
@@ -28,7 +28,7 @@ function ruleSPBetaMNM(msg_out::Message{F1,Univariate}, msg_a::Nothing, msg_b::M
     Message(Univariate, Function, log_pdf = logp)
 end
 
-function ruleSPBetaMMN(msg_out::Message{F1,Univariate}, msg_a::Message{F2,Univariate}, msg_b::Nothing) where {F1<:Union{Function, FactorNode},F2<:Union{Function, FactorNode}}
+function ruleSPBetaMMN(msg_out::Message{F1,Univariate}, msg_a::Message{F2,Univariate}, msg_b::Nothing) where {F1<:FactorNode, F2<:FactorNode}
     n_samples = default_n_samples
     samples_out = sample(msg_out.dist,n_samples)
     samples_a = sample(msg_a.dist,n_samples)
