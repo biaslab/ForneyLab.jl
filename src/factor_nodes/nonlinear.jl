@@ -24,11 +24,13 @@ Interfaces:
 
 Construction:
 
-    Nonlinear(out, in1; g=g, id=:my_node)
-    Nonlinear(out, in1; g=g, g_inv=g_inv, id=:my_node)
-    Nonlinear(out, in1, in2, ...; g=g, id=:my_node)
-    Nonlinear(out, in1, in2, ...; g=g, g_inv=(g_inv_in1, g_inv_in2, ...), id=:my_node)
-    Nonlinear(out, in1, in2, ...; g=g, g_inv=(g_inv_in1, nothing, ...), id=:my_node)
+    Nonlinear{T}(out, in1; g=g, id=:my_node)
+    Nonlinear{T}(out, in1; g=g, g_inv=g_inv, id=:my_node)
+    Nonlinear{T}(out, in1, in2, ...; g=g, id=:my_node)
+    Nonlinear{T}(out, in1, in2, ...; g=g, g_inv=(g_inv_in1, g_inv_in2, ...), id=:my_node)
+    Nonlinear{T}(out, in1, in2, ...; g=g, g_inv=(g_inv_in1, nothing, ...), id=:my_node)
+
+    where T encodes the approximation method: Unscented, Sampling, or Extended.
 """
 mutable struct Nonlinear{T<:ApproximationMethod} <: DeltaFactor
     id::Symbol
