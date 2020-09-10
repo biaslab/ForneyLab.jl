@@ -267,7 +267,7 @@ end
 #---------------------------
 
 # Unscented transform and extended approximation
-function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry)
+function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry) where T<:ApproximationMethod
     inbounds = Any[]
 
     # Push function (and inverse) to calling signature
@@ -312,11 +312,11 @@ function collectSumProductNodeInbounds(node::Nonlinear, entry::ScheduleEntry)
     end
 
     # Push custom arguments if manually defined
-    if node.alpha != nothing
+    if (T == Unscented) && (node.alpha != nothing)
         push!(inbounds, Dict{Symbol, Any}(:alpha => node.alpha,
                                           :keyword => true))
     end
-    if node.n_samples != nothing
+    if (T == Sampling) && (node.n_samples != nothing)
         push!(inbounds, Dict{Symbol, Any}(:n_samples => node.n_samples,
                                           :keyword   => true))
     end
