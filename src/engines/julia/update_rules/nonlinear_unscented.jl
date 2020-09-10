@@ -5,8 +5,7 @@ ruleSPNonlinearUTOutNG,
 ruleSPNonlinearUTOutNGX,
 ruleSPNonlinearUTIn1GG,
 ruleSPNonlinearUTInGX,
-ruleMNonlinearUTInGX,
-prod!
+ruleMNonlinearUTInGX
 
 const default_alpha = 1e-3 # Default value for the spread parameter
 const default_beta = 2.0
@@ -267,8 +266,8 @@ end
 # Custom inbounds collectors
 #---------------------------
 
-# Unscented transform
-function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::ScheduleEntry)
+# Unscented transform and extended approximation
+function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry) where T<:ApproximationMethod
     inbounds = Any[]
 
     # Push function (and inverse) to calling signature
@@ -312,16 +311,20 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
         end
     end
 
-    # Push spread parameter if manually defined
-    if node.alpha != nothing
+    # Push custom arguments if manually defined
+    if (T == Unscented) && (node.alpha != nothing)
         push!(inbounds, Dict{Symbol, Any}(:alpha => node.alpha,
                                           :keyword => true))
+    end
+    if (T == Sampling) && (node.n_samples != nothing)
+        push!(inbounds, Dict{Symbol, Any}(:n_samples => node.n_samples,
+                                          :keyword   => true))
     end
 
     return inbounds
 end
 
-function collectMarginalNodeInbounds(node::Nonlinear{Unscented}, entry::MarginalEntry)
+function collectMarginalNodeInbounds(node::Nonlinear, entry::MarginalEntry)
     inbounds = Any[]
 
     # Push function (and inverse) to calling signature

@@ -63,7 +63,7 @@ end
     f(z) = z
     fg = FactorGraph()
     @RV x ~ GaussianMeanPrecision(0.0, 1.0)
-    @RV y ~ Nonlinear(x, g=f)
+    @RV y ~ Nonlinear{Unscented}(x, g=f)
     GaussianMeanPrecision(y, 0.0, 1.0)
     
     pfz = PosteriorFactorization()
