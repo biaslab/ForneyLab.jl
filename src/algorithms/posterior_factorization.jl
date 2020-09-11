@@ -37,9 +37,27 @@ function setCurrentPosteriorFactorization(pfz::PosteriorFactorization)
 end
 
 """
-Initialize an empty `PosteriorFactorization` consisting of a single `PosteriorFactor` for the entire graph
+Initialize an empty `PosteriorFactorization` for sequential construction
 """
-function PosteriorFactorization(fg::FactorGraph=currentGraph())
+function PosteriorFactorization()
+    setCurrentPosteriorFactorization(
+        PosteriorFactorization(
+            currentGraph(),
+            Dict{Symbol, PosteriorFactor}(),
+            Dict{Edge, PosteriorFactor}(),
+            Dict{Tuple{FactorNode, Edge}, Symbol}(),
+            deterministicEdges(currentGraph()),
+            Dict{FactorNode, Int64}(),
+            Dict{Region, Int64}(),
+            false
+        )
+    )
+end
+
+"""
+Initialize a `PosteriorFactorization` consisting of a single `PosteriorFactor` for the entire graph
+"""
+function PosteriorFactorization(fg::FactorGraph)
     pfz = setCurrentPosteriorFactorization(
         PosteriorFactorization(
             fg,
@@ -127,18 +145,18 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; target_va
                 if length(target_edges) == 1 # Single internal edge
                     increase!(variable_counting_numbers, target_edges[1].variable, Inf) # For average energy evaluation, make sure to include the edge variable
                 elseif length(target_edges) > 1 # Multiple internal edges
-                    region = (node, target_edges) # Node and edges for region that will later define the Cluster,
+                    region = (node, target_edges) # Node and edges for region that will later define the Cluster
                     increase!(cluster_counting_numbers, region, Inf) # Make sure to include the region for average energy evaluation
                 end
             elseif isa(node, Equality)
                 increase!(variable_counting_numbers, target_edges[1].variable, 1) # Increase the counting number for the equality-constrained variable
-            else # Node is deterministic and not Equality
+            else # Node is deterministic and not Equality, requires a joint belief for the inbound variables
                 outbound_edge = node.interfaces[1].edge
-                inbound_target_edges = filter(edge->edge!=outbound_edge, target_edges) # Vector of local internal stochastic inbound edges
-                if length(inbound_target_edges) == 1
+                inbound_target_edges = filter(edge->edge!=outbound_edge, target_edges) # Collect local internal stochastic inbound edges
+                if length(inbound_target_edges) == 1 # Just a single local stochastic inbound edge
                     increase!(variable_counting_numbers, inbound_target_edges[1].variable, 1) # Increase counting number for variable on inbound edge
-                elseif length(inbound_target_edges) >= 2
-                    region = (node, inbound_target_edges) # Region for node and stochastic inbound edges,
+                elseif length(inbound_target_edges) >= 2 # Multiple stochastic inbound edges require the formation of a large (joint) region
+                    region = (node, inbound_target_edges) # Region for node and stochastic inbound edges
                     increase!(cluster_counting_numbers, region, 1) # Increase the counting number for that region
                 end
             end

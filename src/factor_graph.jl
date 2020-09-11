@@ -163,7 +163,11 @@ function ultimatePartner(interface::Interface)
     end
 end
 
+"""
+Deterministic edges are associated with a PointMass distribution
+"""
 function deterministicEdges(fg::FactorGraph)
+    # TODO: generalize to non-clamped deterministic edges
     deterministic_edges = Set{Edge}()
     for node in nodes(fg)
         if isa(node, Clamp)

@@ -66,10 +66,10 @@ function assembleCountingNumbers!(pfz=currentPosteriorFactorization())
             end
         elseif isa(node, Equality)
             increase!(entropy_counting_numbers, node.i[1].edge.variable, 1) # Count univariate entropy
-        elseif length(node.interfaces) >= 2 # Node is deterministic and not equality
+        elseif length(node.interfaces) >= 2 # Node is deterministic and not equality, requires the counting of the joint inbounds region
             outbound_region = region(node, node.interfaces[1].edge)
             for target in target_regions
-                if target != outbound_region
+                if target != outbound_region # Exclude outbound region
                     increase!(entropy_counting_numbers, target, 1) # Count (joint) entropy
                 end
             end
