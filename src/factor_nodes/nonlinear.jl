@@ -79,13 +79,17 @@ function Nonlinear{Extended}(out::Variable, args::Vararg; g::Function, g_inv=not
     return Nonlinear{Extended}(id, g, g_inv, nothing, dims, nothing, out, args...)
 end
 
-# A breaker message is required if interface is partnered with a Nonlinear{Sampling} inbound
-requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Nonlinear{Sampling}) = (partner_interface != partner_node.i[:out])
+# A breaker message is required if interface is partnered with a Nonlinear{Sampling} inbound and there are multiple inbounds
+function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Nonlinear{Sampling})
+    backward = (partner_interface != partner_node.i[:out]) # Interface is partnered with an inbound
+    multi_in = (length(partner_node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
+
+    return backward && multi_in
+end
 
 # A breaker message is required if interface is partnered with a Nonlinear{Unscented} inbound and no inverse is available
 function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Nonlinear{T}) where T<:Union{Unscented, Extended}
     backward = (partner_interface != partner_node.i[:out]) # Interface is partnered with an inbound
-
     multi_in = (length(partner_node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
     inx = findfirst(isequal(partner_interface), partner_node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
     undefined_inverse = (partner_node.g_inv == nothing) || (multi_in && (inx > 0) && (partner_node.g_inv[inx] == nothing)) # (Inbound-specific) inverse is undefined

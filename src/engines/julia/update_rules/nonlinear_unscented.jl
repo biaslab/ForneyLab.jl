@@ -267,7 +267,7 @@ end
 #---------------------------
 
 # Unscented transform and extended approximation
-function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry) where T<:ApproximationMethod
+function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry) where T<:Union{Unscented, Extended}
     inbounds = Any[]
 
     # Push function (and inverse) to calling signature
@@ -296,7 +296,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry)
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         if (node_interface == entry.interface != node.interfaces[1]) && undefined_inverse
-            # Collect the message inbound if no inverse is available for backward rule
+            # Collect the breaker message for a backward update without given inverse
             haskey(interface_to_schedule_entry, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif node_interface == entry.interface
@@ -315,10 +315,6 @@ function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry)
     if (T == Unscented) && (node.alpha != nothing)
         push!(inbounds, Dict{Symbol, Any}(:alpha => node.alpha,
                                           :keyword => true))
-    end
-    if (T == Sampling) && (node.n_samples != nothing)
-        push!(inbounds, Dict{Symbol, Any}(:n_samples => node.n_samples,
-                                          :keyword   => true))
     end
 
     return inbounds
