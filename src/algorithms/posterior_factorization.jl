@@ -11,6 +11,7 @@ mutable struct PosteriorFactorization
     # Bookkeeping for faster lookup during scheduling
     edge_to_posterior_factor::Dict{Edge, PosteriorFactor}
     node_edge_to_cluster::Dict{Tuple{FactorNode, Edge}, Cluster}
+    deterministic_edges::Set{Edge}
 
     # Fields for assembly
     energy_counting_numbers::Dict{FactorNode, Int64}
@@ -21,8 +22,7 @@ mutable struct PosteriorFactorization
 end
 
 """
-Return currently active `PosteriorFactorization`.
-Create one if there is none.
+Return currently active `PosteriorFactorization`. Create one if there is none.
 """
 function currentPosteriorFactorization()
     try
@@ -37,32 +37,16 @@ function setCurrentPosteriorFactorization(pfz::PosteriorFactorization)
 end
 
 """
-Initialize an empty `PosteriorFactorization` for sequential construction
+Initialize an empty `PosteriorFactorization` consisting of a single `PosteriorFactor` for the entire graph
 """
-function PosteriorFactorization() 
-    setCurrentPosteriorFactorization(
-        PosteriorFactorization(
-            currentGraph(),
-            Dict{Symbol, PosteriorFactor}(),
-            Dict{Edge, PosteriorFactor}(),
-            Dict{Tuple{FactorNode, Edge}, Symbol}(),
-            Dict{FactorNode, Int64}(),
-            Dict{Region, Int64}(),
-            false
-        )
-    )
-end
-
-"""
-Construct a `PosteriorFactorization` consisting of a single `PosteriorFactor` for the entire graph
-"""
-function PosteriorFactorization(fg::FactorGraph)
+function PosteriorFactorization(fg::FactorGraph=currentGraph())
     pfz = setCurrentPosteriorFactorization(
         PosteriorFactorization(
             fg,
             Dict{Symbol, PosteriorFactor}(),
             Dict{Edge, PosteriorFactor}(),
             Dict{Tuple{FactorNode, Edge}, Symbol}(),
+            deterministicEdges(fg),
             Dict{FactorNode, Int64}(),
             Dict{Region, Int64}(),
             false
@@ -73,8 +57,7 @@ function PosteriorFactorization(fg::FactorGraph)
 end
 
 """
-Construct a `PosteriorFactorization` consisting of one
-`PosteriorFactor` for each argument
+Construct a `PosteriorFactorization` consisting of one `PosteriorFactor` for each argument
 """
 function PosteriorFactorization(args::Vararg{Union{T, Set{T}, Vector{T}} where T<:Variable}; ids=Symbol[])
     pfz = PosteriorFactorization()
@@ -119,7 +102,7 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; target_va
         for node in nodes_connected_to_external_edges
             isa(node, DeltaFactor) && continue # Skip deterministic nodes
 
-            target_edges = localStochasticInternalEdges(node, pf) # Find internal edges connected to node
+            target_edges = localStochasticInternalEdges(node, pf, pfz) # Find internal edges connected to node
             if length(target_edges) == 1 # Only one internal edge, the marginal for a single Variable is required
                 push!(pf.target_variables, target_edges[1].variable)
             elseif length(target_edges) > 1 # Multiple internal edges, register the region for computing the joint marginal
@@ -137,7 +120,7 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; target_va
         # Iterate over large regions
         nodes_connected_to_internal_edges = nodes(pf.internal_edges)
         for node in nodes_connected_to_internal_edges
-            target_edges = localStochasticInternalEdges(node, pf) # Find stochastic internal edges connected to node
+            target_edges = localStochasticInternalEdges(node, pf, pfz) # Find stochastic internal edges connected to node
             if isa(node, Clamp)
                 continue
             elseif !isa(node, DeltaFactor) # Node is stochastic
@@ -150,10 +133,12 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; target_va
             elseif isa(node, Equality)
                 increase!(variable_counting_numbers, target_edges[1].variable, 1) # Increase the counting number for the equality-constrained variable
             else # Node is deterministic and not Equality
-                if length(target_edges) == 2
-                    increase!(variable_counting_numbers, target_edges[2].variable, 1) # Increase counting number for variable on inbound edge
-                elseif length(target_edges) > 2
-                    region = (node, target_edges[2:end]) # Region for node and inbound edges,
+                outbound_edge = node.interfaces[1].edge
+                inbound_target_edges = filter(edge->edge!=outbound_edge, target_edges) # Vector of local internal stochastic inbound edges
+                if length(inbound_target_edges) == 1
+                    increase!(variable_counting_numbers, inbound_target_edges[1].variable, 1) # Increase counting number for variable on inbound edge
+                elseif length(inbound_target_edges) >= 2
+                    region = (node, inbound_target_edges) # Region for node and stochastic inbound edges,
                     increase!(cluster_counting_numbers, region, 1) # Increase the counting number for that region
                 end
             end
@@ -199,4 +184,35 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; target_va
     pfz.free_energy_flag = free_energy
 
     return pf
+end
+
+"""
+Return the local stochastic regions around `node`
+"""
+function localStochasticRegions(node::FactorNode, pfz::PosteriorFactorization)
+    regions = Region[]
+    for interface in node.interfaces
+        partner = ultimatePartner(interface)
+        if !(interface.edge in pfz.deterministic_edges) # If edge is stochastic
+            push!(regions, region(node, interface.edge))
+        end
+    end
+
+    return regions
+end
+
+"""
+Find stochastic edges that are internal to the posterior factor and connected to node.
+This function is used for constructing clusters. Therefore, the edges are returned 
+in the same order as the node's interfaces.
+"""
+function localStochasticInternalEdges(node::FactorNode, pf::PosteriorFactor, pfz::PosteriorFactorization)
+    local_internal_edges = Edge[]
+    for interface in node.interfaces
+        if (interface.edge in pf.internal_edges) && !(interface.edge in pfz.deterministic_edges) # Edge is internal to posterior factor and stochastic
+            push!(local_internal_edges, interface.edge) # Otherwise include the edge
+        end
+    end
+
+    return local_internal_edges
 end

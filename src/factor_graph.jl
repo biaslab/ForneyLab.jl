@@ -162,3 +162,14 @@ function ultimatePartner(interface::Interface)
         return interface.partner
     end
 end
+
+function deterministicEdges(fg::FactorGraph)
+    deterministic_edges = Set{Edge}()
+    for node in nodes(fg)
+        if isa(node, Clamp)
+            push!(deterministic_edges, node.i[:out].edge)
+        end
+    end
+
+    return deterministic_edges
+end
