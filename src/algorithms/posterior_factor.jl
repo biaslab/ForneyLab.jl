@@ -78,22 +78,6 @@ function messagePassingSchedule(pf::PosteriorFactor)
     return schedule
 end
 
-"""
-Find edges that are internal to the posterior factor and connected to node.
-This function is used for constructing clusters. Therefore, the edges are returned 
-in the same order as the node's interfaces. Ignores clamped edges.
-"""
-function localStochasticInternalEdges(node::FactorNode, pf::PosteriorFactor)
-    local_internal_edges = Edge[]
-    for interface in node.interfaces
-        if (interface.edge in pf.internal_edges) && !isClamped(interface.edge) # Edge is internal to posterior factor and stochastic
-            push!(local_internal_edges, interface.edge) # Otherwise include the edge
-        end
-    end
-
-    return local_internal_edges
-end
-
 function draw(pf::PosteriorFactor; schedule=ScheduleEntry[], args...)
     subgraph_nodes = nodes(pf.internal_edges)
     external_edges = setdiff(edges(subgraph_nodes), pf.internal_edges)
@@ -106,9 +90,9 @@ and does not constrain the search to a limiting set (as specified by an empty `l
 """
 function extend(edge_set::Set{Edge}; terminate_at_soft_factors=true, limit_set=Set{Edge}())
     extension = Set{Edge}() # Initialize extension
-    edges = copy(edge_set) # Initialize stack
-    while !isempty(edges) # As long as there are unchecked edges connected through deterministic nodes
-        current_edge = pop!(edges) # Pick one
+    stack = copy(edge_set) # Initialize stack
+    while !isempty(stack) # As long as there are unchecked edges connected through deterministic nodes
+        current_edge = pop!(stack) # Pick one
         push!(extension, current_edge) # Add to edge extension
         
         connected_nodes = [] # Find nodes connected to edge (as a vector)
@@ -116,10 +100,10 @@ function extend(edge_set::Set{Edge}; terminate_at_soft_factors=true, limit_set=S
         (current_edge.b == nothing) || push!(connected_nodes, current_edge.b.node)
 
         for node in connected_nodes # Check both head and tail node (if present)
-            if (terminate_at_soft_factors==false) || isa(node, DeltaFactor)
+            if !terminate_at_soft_factors || isa(node, DeltaFactor)
                 for interface in node.interfaces
                     if (interface.edge !== current_edge) && !(interface.edge in extension) && ( isempty(limit_set) || (interface.edge in limit_set) ) # No backtracking, if edge is not already visited and edge is contained within limit set
-                        push!(edges, interface.edge) # Add unseen edges to the stack (to visit sometime in the future)
+                        push!(stack, interface.edge) # Add unseen edges to the stack (to visit sometime in the future)
                     end
                 end
             end
