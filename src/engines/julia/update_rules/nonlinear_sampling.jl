@@ -108,6 +108,56 @@ end
 
 
 #---------------------------
+# Custom inbounds collectors
+#---------------------------
+
+# Unscented transform and extended approximation
+function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::ScheduleEntry)
+    inbounds = Any[]
+
+    # Push function to calling signature
+    # This function needs to be defined in the scope of the user
+    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
+                                      :keyword => false))
+
+    multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
+    inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
+
+    if (inx > 0) && multi_in # Multi-inbound backward rule
+        push!(inbounds, Dict{Symbol, Any}(:inx => inx, # Push inbound identifier
+                                          :keyword => false))
+    end
+
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
+    for node_interface in node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        if (node_interface == entry.interface != node.interfaces[1]) && multi_in
+            # Collect the breaker message for a backward rule with multiple inbounds
+            haskey(interface_to_schedule_entry, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        elseif node_interface == entry.interface
+            # Ignore inbound message on outbound interface
+            push!(inbounds, nothing)
+        elseif isa(inbound_interface.node, Clamp)
+            # Hard-code outbound message of constant node in schedule
+            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
+        else
+            # Collect message from previous result
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        end
+    end
+
+    # Push custom arguments if manually defined
+    if (node.n_samples != nothing)
+        push!(inbounds, Dict{Symbol, Any}(:n_samples => node.n_samples,
+                                          :keyword   => true))
+    end
+
+    return inbounds
+end
+
+
+#---------------------------
 # Custom product definitions
 #---------------------------
 
