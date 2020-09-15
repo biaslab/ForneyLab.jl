@@ -125,6 +125,8 @@ convert(::Type{ProbabilityDistribution{MatrixVariate, PointMass}}, dist::Probabi
 convert(::Type{ProbabilityDistribution{MatrixVariate, PointMass}}, dist::ProbabilityDistribution{Multivariate, PointMass}) =
     ProbabilityDistribution(MatrixVariate, PointMass, m=reshape(dist.params[:m], dims(dist), 1))
 
+sample(dist::ProbabilityDistribution{T, PointMass}) where T<:VariateType = deepcopy(dist.params[:m])
+
 """
 Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)
 """

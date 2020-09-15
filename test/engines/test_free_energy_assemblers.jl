@@ -32,6 +32,32 @@ using ForneyLab: assembleCountingNumbers!, setTargets!, assembleFreeEnergy!
     pf = PosteriorFactor(fg)
     setTargets!(pf, pfz, free_energy=false)
     @test_throws Exception assembleCountingNumbers!(pfz)
+
+    # Regression test
+    fg = FactorGraph()
+    @RV x ~ GaussianMeanVariance(placeholder(:mx), placeholder(:vx))
+    @RV y ~ GaussianMeanVariance(placeholder(:my), placeholder(:vy))
+    @RV z = dot(x, 1.0) + dot(y, 1.0)
+    placeholder(z, :z)
+
+    pfz = PosteriorFactorization()
+    pf = PosteriorFactor(fg)
+    setTargets!(pf, pfz, free_energy=true)
+    assembleCountingNumbers!(pfz)
+
+    cl = first(pf.target_clusters)
+    nd1 = fg.nodes[:gaussianmeanvariance_1]
+    nd2 = fg.nodes[:gaussianmeanvariance_2]
+    v1 = fg.variables[:variable_1]
+    v2 = fg.variables[:variable_2]
+
+    @test pfz.entropy_counting_numbers[cl] == 1
+    @test pfz.entropy_counting_numbers[v1] == -1
+    @test pfz.entropy_counting_numbers[v2] == -1
+    @test pfz.entropy_counting_numbers[x] == 1
+    @test pfz.entropy_counting_numbers[y] == 1
+    @test pfz.energy_counting_numbers[nd1] == 1
+    @test pfz.energy_counting_numbers[nd2] == 1
 end
 
 @testset "assembleFreeEnergy!" begin

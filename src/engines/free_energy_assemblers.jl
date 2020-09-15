@@ -56,18 +56,23 @@ function assembleCountingNumbers!(pfz=currentPosteriorFactorization())
     
     # Iterate over large regions
     for node in nodes_connected_to_internal_edges
+        target_regions = unique!(localStochasticRegions(node, pfz)) # Collect all unique stochastic regions around node
         if isa(node, Clamp)
             continue
         elseif !isa(node, DeltaFactor) # Node is stochastic
             increase!(energy_counting_numbers, node, 1) # Count average energy
-            for target in unique!(localStochasticRegions(node)) # Collect all unique regions around node
+            for target in target_regions
                 increase!(entropy_counting_numbers, target, 1) # Count (joint) entropy
             end
         elseif isa(node, Equality)
             increase!(entropy_counting_numbers, node.i[1].edge.variable, 1) # Count univariate entropy
-        elseif length(node.interfaces) >= 2 # Node is deterministic and not equality
-            target = region(node, node.interfaces[2].edge) # Find region of inbound edges
-            increase!(entropy_counting_numbers, target, 1) # Count (joint) entropy
+        elseif length(node.interfaces) >= 2 # Node is deterministic and not equality, requires the counting of the joint inbounds region
+            outbound_region = region(node, node.interfaces[1].edge)
+            for target in target_regions
+                if target != outbound_region # Exclude outbound region
+                    increase!(entropy_counting_numbers, target, 1) # Count (joint) entropy
+                end
+            end
         end
     end
 

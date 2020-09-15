@@ -1,14 +1,11 @@
-module NonlinearTest
+module NonlinearUnscentedTest
 
 using Test
-using Random
 using LinearAlgebra
 using ForneyLab
-using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, prod!, logPdf, unsafeMean, unsafeVar, Unscented, requiresBreaker, breakerParameters
+using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, Unscented, requiresBreaker, breakerParameters
 using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearUTOutNGX, SPNonlinearUTInGX, MNonlinearUTInGX
 using ForneyLab: unscentedStatistics, smoothRTS, smoothRTSMessage, collectStatistics, marginalizeGaussianMV, concatenateGaussianMV, split
-
-Random.seed!(1234)
 
 f(x) = x
 
@@ -201,7 +198,7 @@ end
 
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
-    n = Nonlinear(y, x, g=g, g_inv=g_inv)
+    n = Nonlinear{Unscented}(y, x, g=g, g_inv=g_inv)
     
     @test isa(n, Nonlinear{Unscented})
     
@@ -225,7 +222,7 @@ end
     @RV x ~ GaussianMeanVariance(2.0, 1.0)
     @RV y ~ GaussianMeanVariance(2.0, 3.0)
     @RV z ~ GaussianMeanVariance(5.0, 1.0)
-    n = Nonlinear(y, x, z, g=h, g_inv=[h_inv_x, nothing])
+    n = Nonlinear{Unscented}(y, x, z, g=h, g_inv=[h_inv_x, nothing])
     
     # Forward; h_inv_x should not be present in call
     pfz = PosteriorFactorization(fg)
@@ -275,7 +272,7 @@ end
     algo = messagePassingAlgorithm(y)
     code = algorithmSourceCode(algo)
     @test occursin("ruleSPNonlinearUTOutNG(g, nothing, messages[1])", code)
-    @test !occursin("$(string(g_inv))", code)
+    @test !occursin("g_inv", code)
 
     # Backward; g_inv should not be present in call, 
     # both messages should be required, and initialization should take place

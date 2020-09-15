@@ -3,7 +3,7 @@ module BetaTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf
-using ForneyLab: SPBetaOutNPP, VBBetaOut
+using ForneyLab: SPBetaOutNMM, SPBetaMNM, SPBetaMMN, VBBetaOut, VBBetaA, VBBetaB
 using SpecialFunctions: digamma
 
 @testset "Beta ProbabilityDistribution and Message construction" begin
@@ -47,12 +47,29 @@ end
 # Update rules
 #-------------
 
-@testset "SPBetaOutNPP" begin
-    @test SPBetaOutNPP <: SumProductRule{Beta}
-    @test outboundType(SPBetaOutNPP) == Message{Beta}
-    @test isApplicable(SPBetaOutNPP, [Nothing, Message{PointMass}, Message{PointMass}])
+@testset "SPBetaOutNMM" begin
+    @test SPBetaOutNMM <: SumProductRule{Beta}
+    @test outboundType(SPBetaOutNMM) == Message{Union{Beta,SampleList}}
+    @test isApplicable(SPBetaOutNMM, [Nothing, Message{PointMass}, Message{PointMass}])
+    @test isApplicable(SPBetaOutNMM, [Nothing, Message{FactorNode}, Message{PointMass}])
+    @test isApplicable(SPBetaOutNMM, [Nothing, Message{PointMass}, Message])
 
-    @test ruleSPBetaOutNPP(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
+    @test ruleSPBetaOutNMM(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
+    d = ruleSPBetaOutNMM(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, Gamma, a=300.0, b=100.0)).dist
+    @test 0.3<mean(d)<0.5
+end
+
+@testset "SPBetaMNM" begin
+    @test SPBetaMNM <: SumProductRule{Beta}
+    @test outboundType(SPBetaMNM) == Message{Function}
+    @test isApplicable(SPBetaMNM, [Message,Nothing,Message])
+end
+
+@testset "SPBetaMMN" begin
+    @test SPBetaMMN <: SumProductRule{Beta}
+    @test outboundType(SPBetaMMN) == Message{Function}
+    @test !isApplicable(SPBetaMMN, [Message,Nothing,Message])
+    @test isApplicable(SPBetaMMN, [Message,Message,Nothing])
 end
 
 @testset "VBBetaOut" begin
@@ -61,6 +78,18 @@ end
     @test isApplicable(VBBetaOut, [Nothing, ProbabilityDistribution, ProbabilityDistribution])
 
     @test ruleVBBetaOut(nothing, ProbabilityDistribution(Univariate, PointMass, m=2.0), ProbabilityDistribution(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
+end
+
+@testset "VBBetaA" begin
+    @test VBBetaA <: NaiveVariationalRule{Beta}
+    @test outboundType(VBBetaA) == Message{Function}
+    @test isApplicable(VBBetaA, [ProbabilityDistribution, Nothing, ProbabilityDistribution])
+end
+
+@testset "VBBetaB" begin
+    @test VBBetaB <: NaiveVariationalRule{Beta}
+    @test outboundType(VBBetaB) == Message{Function}
+    @test isApplicable(VBBetaB, [ProbabilityDistribution, ProbabilityDistribution, Nothing])
 end
 
 @testset "averageEnergy and differentialEntropy" begin

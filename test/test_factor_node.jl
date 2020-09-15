@@ -1,14 +1,14 @@
 module FactorNodeTest
 
 using Test
-using ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture, Nonlinear, ExpectationConstraint, ChanceConstraint
+using ForneyLab: FactorGraph, FactorNode, Clamp, Terminal, Variable, Interface, PointMass, GaussianMixture, Nonlinear, Unscented, Sampling, Extended, ExpectationConstraint, ChanceConstraint
 using InteractiveUtils: subtypes
 
 @testset "FactorNode" begin
     g = FactorGraph()
 
     # Collect all node types
-    node_types = Type[]
+    node_types = Type[Nonlinear{Unscented}, Nonlinear{Sampling}, Nonlinear{Extended}] # Initialze with non-concrete types
     stack = Type[FactorNode]
     
     while !isempty(stack)
@@ -30,7 +30,7 @@ using InteractiveUtils: subtypes
             test_node = Terminal(Variable(), Clamp(Variable(), 0.0).interfaces[1])
         elseif node_type == GaussianMixture # Required for Vararg argument
             test_node = GaussianMixture(Variable(), Variable(), Variable(), Variable(), Variable(), Variable())
-        elseif node_type == Nonlinear
+        elseif node_type <: Nonlinear
             test_node = Nonlinear(Variable(), Variable(), g=()->())
         elseif node_type == ExpectationConstraint
             test_node = ExpectationConstraint(Variable(), g=()->(), G=0.0, eta_init=0.0)

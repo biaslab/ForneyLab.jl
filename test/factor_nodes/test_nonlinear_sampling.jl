@@ -29,9 +29,18 @@ end
     y = Variable()
     nd = GaussianMeanVariance(x, 0.0, 1.0)
     Nonlinear{Sampling}(y, x, g=g)
-    
-    @test requiresBreaker(nd.i[:out])
 
+    @test !requiresBreaker(nd.i[:out]) # Single-input Nonlinear{Sampling} does not require breaker
+
+    fg = FactorGraph()
+    x = Variable()
+    z = Variable()
+    y = Variable()
+    GaussianMeanVariance(z, 0.0, 1.0)
+    nd = GaussianMeanVariance(x, 0.0, 1.0)
+    Nonlinear{Sampling}(y, x, z, g=h)
+
+    @test requiresBreaker(nd.i[:out]) # Multi-input Nonlinear{Sampling} requires breaker
     @test_throws Exception breakerParameters(nd.i[:out].partner)
     @test breakerParameters(nd.i[:out]) == (Message{GaussianMeanVariance, Univariate}, ())
 end
@@ -106,7 +115,7 @@ end
     pfz = PosteriorFactorization(fg)
     algo = messagePassingAlgorithm(y)
     code = algorithmSourceCode(algo)
-    @test occursin("ruleSPNonlinearSOutNM(g, nothing, messages[1], n_samples=2000)", code)
+    @test occursin("ruleSPNonlinearSOutNM(g, nothing, messages[2], n_samples=2000)", code)
 end
 
 @testset "Nonlinear integration via sampling" begin

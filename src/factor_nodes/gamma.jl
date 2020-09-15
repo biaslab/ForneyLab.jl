@@ -49,6 +49,9 @@ unsafeMean(dist::ProbabilityDistribution{Univariate, Gamma}) = dist.params[:a]/d
 
 unsafeLogMean(dist::ProbabilityDistribution{Univariate, Gamma}) = digamma(dist.params[:a]) - log(dist.params[:b])
 
+# https://stats.stackexchange.com/questions/457357/what-is-the-expected-value-of-x-logx-of-the-gamma-distribution
+unsafeMeanLogMean(dist::ProbabilityDistribution{Univariate, Gamma}) =  (gamma(dist.params[:a]+1)/(gamma(dist.params[:a])*dist.params[:b])) * (digamma(dist.params[:a]+1) - log(dist.params[:b]))
+
 unsafeVar(dist::ProbabilityDistribution{Univariate, Gamma}) = dist.params[:a]/dist.params[:b]^2 # unsafe variance
 
 logPdf(dist::ProbabilityDistribution{Univariate, Gamma}, x) = dist.params[:a]*log(dist.params[:b]) - labsgamma(dist.params[:a]) + (dist.params[:a]-1)*log(x) - dist.params[:b]*x
@@ -90,5 +93,13 @@ function averageEnergy(::Type{Gamma}, marg_out::ProbabilityDistribution{Univaria
     labsgamma(marg_a.params[:m]) -
     marg_a.params[:m]*unsafeLogMean(marg_b) -
     (marg_a.params[:m] - 1.0)*unsafeLogMean(marg_out) +
+    unsafeMean(marg_b)*unsafeMean(marg_out)
+end
+
+# By Stirling's approximation
+function averageEnergy(::Type{Gamma}, marg_out::ProbabilityDistribution{Univariate}, marg_a::ProbabilityDistribution{Univariate}, marg_b::ProbabilityDistribution{Univariate})
+    unsafeMeanLogMean(marg_a) - unsafeMean(marg_a) + 0.5*(log(2*pi)-unsafeLogMean(marg_a)) -
+    unsafeMean(marg_a)*unsafeLogMean(marg_b) -
+    (unsafeMean(marg_a) - 1.0)*unsafeLogMean(marg_out) +
     unsafeMean(marg_b)*unsafeMean(marg_out)
 end

@@ -24,7 +24,7 @@ mutable struct Poisson <: SoftFactor
     interfaces::Vector{Interface}
     i::Dict{Symbol,Interface}
 
-    function Poisson(out, l, id=generateId(Poisson))
+    function Poisson(out, l; id=generateId(Poisson))
         @ensureVariables(out, l)
         self = new(id, Array{Interface}(undef, 2), Dict{Symbol, Interface}())
         addNode!(currentGraph(), self)
