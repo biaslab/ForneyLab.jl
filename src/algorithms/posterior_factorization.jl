@@ -4,6 +4,8 @@ PosteriorFactorization,
 currentPosteriorFactorization, 
 setCurrentPosteriorFactorization
 
+global current_posterior_factorization = nothing
+
 mutable struct PosteriorFactorization
     graph::FactorGraph
     posterior_factors::Dict{Symbol, PosteriorFactor}
@@ -25,11 +27,7 @@ end
 Return currently active `PosteriorFactorization`. Create one if there is none.
 """
 function currentPosteriorFactorization()
-    try
-        return current_posterior_factorization
-    catch
-        return PosteriorFactorization()
-    end
+    current_posterior_factorization === nothing ? PosteriorFactorization() : current_posterior_factorization
 end
 
 function setCurrentPosteriorFactorization(pfz::PosteriorFactorization)
