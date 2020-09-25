@@ -32,3 +32,23 @@
                 :outbound_type => Message{PointMass},
                 :inbound_types => (Message{PointMass}, Message{PointMass}, Nothing),
                 :name          => SPMultiplicationAPPN)
+
+@sumProductRule(:node_type     => Multiplication,
+                :outbound_type => Message{Gamma},
+                :inbound_types => (Nothing, Message{Gamma}, Message{PointMass}),
+                :name          => SPMultiplicationOutNΓP)
+
+@sumProductRule(:node_type     => Multiplication,
+                :outbound_type => Message{Gamma},
+                :inbound_types => (Nothing, Message{PointMass}, Message{Gamma}),
+                :name          => SPMultiplicationOutNPΓ)
+
+@sumProductRule(:node_type     => Multiplication,
+                :outbound_type => Message{Gamma},
+                :inbound_types => (Message{Gamma}, Nothing, Message{PointMass}),
+                :name          => SPMultiplicationIn1ΓNP)
+
+@sumProductRule(:node_type     => Multiplication,
+                :outbound_type => Message{Gamma},
+                :inbound_types => (Message{Gamma}, Message{PointMass}, Nothing),
+                :name          => SPMultiplicationAΓPN)
