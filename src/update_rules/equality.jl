@@ -79,3 +79,23 @@ function isApplicable(::Type{SPEqualityGaussianRGMP}, input_types::Vector{Type})
 
     return (nothing_inputs == 1) && (function_inputs == 1) && (gaussian_inputs == 1)
 end
+
+mutable struct SPEqualityFactorFunctionRGMP <: SumProductRule{Equality} end
+outboundType(::Type{SPEqualityFactorFunctionRGMP}) = Message{SampleList}
+function isApplicable(::Type{SPEqualityFactorFunctionRGMP}, input_types::Vector{Type})
+    nothing_inputs = 0
+    function_inputs = 0
+    factor_inputs = 0
+
+    for input_type in input_types
+        if input_type == Nothing
+            nothing_inputs += 1
+        elseif matches(input_type, Message{Function})
+            function_inputs += 1
+        elseif matches(input_type, Message{FactorNode})
+            factor_inputs += 1
+        end
+    end
+
+    return (nothing_inputs == 1) && (function_inputs == 1) && (factor_inputs == 1)
+end
