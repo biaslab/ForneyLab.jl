@@ -92,10 +92,57 @@ function isApplicable(::Type{SPEqualityFactorFunctionRGMP}, input_types::Vector{
             nothing_inputs += 1
         elseif matches(input_type, Message{Function})
             function_inputs += 1
+        elseif matches(input_type, Message{Gaussian})
+            return false
         elseif matches(input_type, Message{FactorNode})
             factor_inputs += 1
         end
     end
 
     return (nothing_inputs == 1) && (function_inputs == 1) && (factor_inputs == 1)
+end
+
+mutable struct SPEqualityFactorGaussianRGMP <: SumProductRule{Equality} end
+outboundType(::Type{SPEqualityFactorGaussianRGMP}) = Message{GaussianMeanVariance}
+function isApplicable(::Type{SPEqualityFactorGaussianRGMP}, input_types::Vector{Type})
+    nothing_inputs = 0
+    factor_inputs = 0
+    gaussian_inputs = 0
+
+    for input_type in input_types
+        if input_type == Nothing
+            nothing_inputs += 1
+        elseif matches(input_type, Message{Gaussian})
+            gaussian_inputs += 1
+        elseif matches(input_type, Message{FactorNode})
+            factor_inputs += 1
+        end
+    end
+
+    return (nothing_inputs == 1) && (factor_inputs == 1) && (gaussian_inputs == 1)
+end
+
+mutable struct SPEqualityFactorFactorRGMP <: SumProductRule{Equality} end
+outboundType(::Type{SPEqualityFactorFactorRGMP}) = Message{SampleList}
+function isApplicable(::Type{SPEqualityFactorFactorRGMP}, input_types::Vector{Type})
+    nothing_inputs = 0
+    first_type, second_type = nothing, nothing
+
+    for input_type in input_types
+        if input_type == Nothing
+            nothing_inputs += 1
+        elseif matches(input_type, Message{Gaussian})
+            return false
+        elseif matches(input_type, Message{Function})
+            return false
+        elseif matches(input_type, Message{FactorNode})
+            if first_type === nothing
+                first_type = input_type
+            else
+                second_type = input_type
+            end
+        end
+    end
+
+    return (nothing_inputs == 1) && (first_type != second_type)
 end

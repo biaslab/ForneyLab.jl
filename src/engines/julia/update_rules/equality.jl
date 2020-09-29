@@ -8,7 +8,9 @@ ruleSPEqualityDirichlet,
 ruleSPEqualityPointMass,
 ruleSPEqualityRGMP,
 ruleSPEqualityGaussianRGMP,
-ruleSPEqualityFactorFunctionRGMP
+ruleSPEqualityFactorFunctionRGMP,
+ruleSPEqualityFactorGaussianRGMP,
+ruleSPEqualityFactorFactorRGMP
 
 ruleSPEqualityGaussian(msg_1::Message{F1}, msg_2::Message{F2}, msg_3::Nothing) where {F1<:Gaussian, F2<:Gaussian} = Message(prod!(msg_1.dist, msg_2.dist))
 ruleSPEqualityGaussian(msg_1::Message{F1}, msg_2::Nothing, msg_3::Message{F2}) where {F1<:Gaussian, F2<:Gaussian}= Message(prod!(msg_1.dist, msg_3.dist))
@@ -55,3 +57,14 @@ ruleSPEqualityFactorFunctionRGMP(msg_1::Nothing, msg_2::Message{F1}, msg_3::Mess
 ruleSPEqualityFactorFunctionRGMP(msg_1::Message{F1}, msg_2::Message{F2}, msg_3::Nothing) where {F1<:FactorNode, F2<:Function} = Message(prod!(msg_1.dist, msg_2.dist))
 ruleSPEqualityFactorFunctionRGMP(msg_1::Message{F1}, msg_2::Nothing, msg_3::Message{F2}) where {F1<:FactorNode, F2<:Function}= Message(prod!(msg_1.dist, msg_3.dist))
 ruleSPEqualityFactorFunctionRGMP(msg_1::Nothing, msg_2::Message{F1}, msg_3::Message{F2}) where {F1<:FactorNode, F2<:Function} = Message(prod!(msg_2.dist, msg_3.dist))
+
+ruleSPEqualityFactorGaussianRGMP(msg_1::Message{F1}, msg_2::Message{F2}, msg_3::Nothing) where {F1<:Gaussian, F2<:FactorNode} = Message(prod!(msg_1.dist, msg_2.dist))
+ruleSPEqualityFactorGaussianRGMP(msg_1::Message{F1}, msg_2::Nothing, msg_3::Message{F2}) where {F1<:Gaussian, F2<:FactorNode}= Message(prod!(msg_1.dist, msg_3.dist))
+ruleSPEqualityFactorGaussianRGMP(msg_1::Nothing, msg_2::Message{F1}, msg_3::Message{F2}) where {F1<:Gaussian, F2<:FactorNode} = Message(prod!(msg_2.dist, msg_3.dist))
+ruleSPEqualityFactorGaussianRGMP(msg_1::Message{F1}, msg_2::Message{F2}, msg_3::Nothing) where {F1<:FactorNode, F2<:Gaussian} = Message(prod!(msg_1.dist, msg_2.dist))
+ruleSPEqualityFactorGaussianRGMP(msg_1::Message{F1}, msg_2::Nothing, msg_3::Message{F2}) where {F1<:FactorNode, F2<:Gaussian}= Message(prod!(msg_1.dist, msg_3.dist))
+ruleSPEqualityFactorGaussianRGMP(msg_1::Nothing, msg_2::Message{F1}, msg_3::Message{F2}) where {F1<:FactorNode, F2<:Gaussian} = Message(prod!(msg_2.dist, msg_3.dist))
+
+ruleSPEqualityFactorFactorRGMP(msg_1::Message{F1}, msg_2::Message{F2}, msg_3::Nothing) where {F1<:FactorNode, F2<:FactorNode} = Message(prod!(msg_1.dist, msg_2.dist))
+ruleSPEqualityFactorFactorRGMP(msg_1::Message{F1}, msg_2::Nothing, msg_3::Message{F2}) where {F1<:FactorNode, F2<:FactorNode}= Message(prod!(msg_1.dist, msg_3.dist))
+ruleSPEqualityFactorFactorRGMP(msg_1::Nothing, msg_2::Message{F1}, msg_3::Message{F2}) where {F1<:FactorNode, F2<:FactorNode} = Message(prod!(msg_2.dist, msg_3.dist))

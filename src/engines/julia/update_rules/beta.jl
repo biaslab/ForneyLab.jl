@@ -1,5 +1,6 @@
 export
 ruleSPBetaOutNMM,
+ruleSPBetaOutMCNMM,
 ruleSPBetaMNM,
 ruleSPBetaMMN,
 ruleVBBetaOut,
@@ -8,7 +9,7 @@ ruleVBBetaB
 
 ruleSPBetaOutNMM(msg_out::Nothing, msg_a::Message{PointMass, Univariate}, msg_b::Message{PointMass, Univariate}) = Message(Univariate, Beta, a=deepcopy(msg_a.dist.params[:m]), b=deepcopy(msg_b.dist.params[:m]))
 
-function ruleSPBetaOutNMM(msg_out::Nothing, msg_a::Message{F1, Univariate}, msg_b::Message{F2, Univariate}) where {F1<:FactorNode, F2<:FactorNode}
+function ruleSPBetaOutMCNMM(msg_out::Nothing, msg_a::Message{F1, Univariate}, msg_b::Message{F2, Univariate}) where {F1<:FactorNode, F2<:FactorNode}
     n_samples = default_n_samples
     samples_a = sample(msg_a.dist,n_samples)
     samples_b = sample(msg_b.dist,n_samples)
