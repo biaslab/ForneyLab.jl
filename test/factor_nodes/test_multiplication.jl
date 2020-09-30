@@ -138,4 +138,17 @@ end
     @test ruleSPMultiplicationAΓPN( Message(Univariate, Gamma, a=1.0, b=2.0), Message(Univariate, PointMass, m=2.0), nothing) == Message(Gamma, a=1.0, b=4.0)
 end
 
+@testset "messagePassingAlgorithm" begin
+    fg = FactorGraph()
+
+    @RV τ ~ Gamma(1, 1)
+    @RV x ~ GaussianMeanPrecision(0.0, 10*τ)
+    placeholder(x, :x)
+
+    q = PosteriorFactorization(τ, ids=[:T])
+    algo = messagePassingAlgorithm(free_energy=true)
+
+    @test isa(algo, InferenceAlgorithm)
+end
+
 end # module
