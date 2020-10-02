@@ -33,12 +33,16 @@ end
 
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph
 
-FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, FactorNode}(),
+function FactorGraph() 
+    
+    global current_posterior_factorization = nothing
+    
+    setCurrentGraph(FactorGraph(Dict{Symbol, FactorNode}(),
                                             Edge[],
                                             Dict{Symbol, Variable}(),
                                             Dict{Type, Int}(),
                                             Dict{Clamp, Tuple{Symbol, Int}}()))
-
+end
 """
 Automatically generate a unique id based on the current counter value for the element type.
 """
