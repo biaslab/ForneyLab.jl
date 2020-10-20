@@ -9,7 +9,8 @@ ruleVBTransitionA,
 ruleSVBTransitionOutVCD,
 ruleSVBTransitionIn1CVD,
 ruleSVBTransitionADV,
-ruleMTransitionCCD
+ruleMTransitionCCD,
+ruleMTransitionCCN
 
 # Note that vanishing probabilities are softened to prevent singularities
 function ruleSPTransitionOutNPP(msg_out::Nothing,
@@ -98,6 +99,15 @@ function ruleMTransitionCCD(msg_out::Message{Categorical, Univariate},
                             dist_a::ProbabilityDistribution{MatrixVariate})
 
     B = Diagonal(msg_out.dist.params[:p])*exp.(unsafeLogMean(dist_a))*Diagonal(msg_in1.dist.params[:p])
+
+    ProbabilityDistribution(Multivariate, Contingency, p=B./sum(B))
+end
+
+function ruleMTransitionCCN(msg_out::Message{Categorical, Univariate},
+                            msg_in1::Message{Categorical, Univariate},
+                            msg_a::Message{PointMass, MatrixVariate})
+
+    B = Diagonal(msg_out.dist.params[:p])*msg_a.dist.params[:m]*Diagonal(msg_in1.dist.params[:p])
 
     ProbabilityDistribution(Multivariate, Contingency, p=B./sum(B))
 end
