@@ -242,7 +242,11 @@ function isDeterministic(interface::Interface, is_deterministic::Dict{Interface,
     for iface in node.interfaces
         if iface != interface
             partner = ultimatePartner(iface)
-            push!(inbounds_deterministic, is_deterministic[partner])
+            if partner == nothing # Dangling edge
+                push!(inbounds_deterministic, false) # Unconstrained inbound is considered stochastic (uninformative)
+            else
+                push!(inbounds_deterministic, is_deterministic[partner])
+            end
         end
     end
     
