@@ -91,9 +91,9 @@ function ruleSVBGaussianMeanPrecisionMGVD(  msg_out::Message{F, V},
 end
 
 function ruleMGaussianMeanPrecisionGGD(
-    msg_out::Message{F1, V},
-    msg_mean::Message{F2, V},
-    dist_prec::ProbabilityDistribution) where {F1<:Gaussian, F2<:Gaussian, V<:VariateType}
+    msg_out::Message{<:Gaussian, V},
+    msg_mean::Message{<:Gaussian, V},
+    dist_prec::ProbabilityDistribution) where V<:VariateType
 
     d_mean = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_mean.dist)
     d_out = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_out.dist)
@@ -103,6 +103,23 @@ function ruleMGaussianMeanPrecisionGGD(
     xi_m = d_mean.params[:xi]
     W_m = d_mean.params[:w]
     W_bar = unsafeMean(dist_prec)
+
+    return ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[xi_y; xi_m], w=[W_y+W_bar -W_bar; -W_bar W_m+W_bar])
+end
+
+function ruleMGaussianMeanPrecisionGGN(
+    msg_out::Message{<:Gaussian, V},
+    msg_mean::Message{<:Gaussian, V},
+    msg_prec::Message{PointMass}) where V<:VariateType
+
+    d_mean = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_mean.dist)
+    d_out = convert(ProbabilityDistribution{V, GaussianWeightedMeanPrecision}, msg_out.dist)
+    
+    xi_y = d_out.params[:xi]
+    W_y = d_out.params[:w]
+    xi_m = d_mean.params[:xi]
+    W_m = d_mean.params[:w]
+    W_bar = msg_prec.dist.params[:m]
 
     return ProbabilityDistribution(Multivariate, GaussianWeightedMeanPrecision, xi=[xi_y; xi_m], w=[W_y+W_bar -W_bar; -W_bar W_m+W_bar])
 end
