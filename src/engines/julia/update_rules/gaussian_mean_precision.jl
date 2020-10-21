@@ -9,7 +9,8 @@ ruleVBGaussianMeanPrecisionOut,
 ruleSVBGaussianMeanPrecisionOutVGD,
 ruleSVBGaussianMeanPrecisionW,
 ruleSVBGaussianMeanPrecisionMGVD,
-ruleMGaussianMeanPrecisionGGD
+ruleMGaussianMeanPrecisionGGD,
+ruleMGaussianMeanPrecisionGGN
 
 ruleSPGaussianMeanPrecisionOutNPP(  msg_out::Nothing,
                                     msg_mean::Message{PointMass, V},

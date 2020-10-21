@@ -140,8 +140,9 @@ macro marginalRule(fields...)
     push!(input_type_validators, :(length(input_types) == $(length(inbound_types.args))))
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
-            # Only validate inbounds required for update
             push!(input_type_validators, :(ForneyLab.matches(input_types[$i], $i_type)))
+        else # For a marginal rule, "Nothing" means that the input is marginalized out
+            push!(input_type_validators, :(input_types[$i] == Nothing))
         end
     end
 
