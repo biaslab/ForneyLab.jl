@@ -185,7 +185,7 @@ end
     @test isApplicable(MGaussianMeanPrecisionGGN, [Message{Gaussian}, Message{Gaussian}, Nothing])
 
     @test ruleMGaussianMeanPrecisionGGN(Message(Univariate, GaussianMeanPrecision, m=1.0, w=2.0), Message(Univariate, GaussianMeanPrecision, m=3.0, w=4.0), Message(Univariate, PointMass, m=0.5)) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[1.3636363636363638, 2.8181818181818175], v=[0.4090909090909091 0.04545454545454545; 0.04545454545454545 0.22727272727272724])
-    @test ruleMGaussianMeanPrecisionGGN(Message(Multivariate, GaussianMeanPrecision, m=[1.0], w=mat(2.0)), Message(Multivariate, GaussianMeanPrecision, m=[3.0], w=mat(4.0)), Message(MatrixVariate, PointMass, m=mat(0.5)) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[1.3636363636363638, 2.8181818181818175], v=[0.4090909090909091 0.04545454545454545; 0.04545454545454545 0.22727272727272724])
+    @test ruleMGaussianMeanPrecisionGGN(Message(Multivariate, GaussianMeanPrecision, m=[1.0], w=mat(2.0)), Message(Multivariate, GaussianMeanPrecision, m=[3.0], w=mat(4.0)), Message(MatrixVariate, PointMass, m=mat(0.5))) == ProbabilityDistribution(Multivariate, GaussianMeanVariance, m=[1.3636363636363638, 2.8181818181818175], v=[0.4090909090909091 0.04545454545454545; 0.04545454545454545 0.22727272727272724])
 end
 
 @testset "averageEnergy and differentialEntropy" begin
