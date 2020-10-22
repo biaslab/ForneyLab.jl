@@ -67,4 +67,9 @@ end
     @test ruleEPProbitIn1GP(Message(Univariate, PointMass, m=NaN), Message(Univariate, GaussianMeanVariance, m=1.0, v=0.5)) == Message(Univariate, GaussianWeightedMeanPrecision, xi=4e-12, w=4e-12)
 end
 
+@testset "averageEnergy" begin
+    @test averageEnergy(Probit, ProbabilityDistribution(Univariate, Bernoulli, p=1.0), ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == -1.291942516803335
+    @test averageEnergy(Probit, ProbabilityDistribution(Univariate, PointMass, m=1.0), ProbabilityDistribution(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == -1.291942516803335
+end
+
 end # module
