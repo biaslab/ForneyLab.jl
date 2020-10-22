@@ -3,7 +3,7 @@ module EqualityTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable
-using ForneyLab: SPEqualityGaussian, SPEqualityGammaWishart, SPEqualityBernoulli, SPEqualityBeta, SPEqualityCategorical, SPEqualityDirichlet, SPEqualityPointMass, SPEqualityRGMP, SPEqualityGaussianRGMP, SPEqualityFactorFunctionRGMP, SPEqualityFactorGaussianRGMP, SPEqualityFactorFactorRGMP
+using ForneyLab: SPEqualityGaussian, SPEqualityGammaWishart, SPEqualityBernoulli, SPEqualityBeta, SPEqualityCategorical, SPEqualityDirichlet, SPEqualityPointMass, SPEqualityFn, SPEqualityFnG, SPEqualityFnFactor, SPEqualityGFactor, SPEqualityFactor
 
 
 #-------------
@@ -115,52 +115,52 @@ end
     @test_throws Exception ruleSPEqualityPointMass(Message(Univariate, PointMass, m=-1.0), Message(Univariate, Gamma, a=1.0, b=1.0), nothing)
 end
 
-@testset "SPEqualityRGMP" begin
-    @test SPEqualityRGMP <: SumProductRule{Equality}
-    @test outboundType(SPEqualityRGMP) == Message{Function}
-    @test isApplicable(SPEqualityRGMP, [Message{Function}, Message{Function}, Nothing])
-    @test !isApplicable(SPEqualityRGMP, [Message{Beta}, Nothing, Message{Gamma}])
-    @test !isApplicable(SPEqualityRGMP, [Nothing, Message{Beta}, Message{Gaussian}])
+@testset "SPEqualityFn" begin
+    @test SPEqualityFn <: SumProductRule{Equality}
+    @test outboundType(SPEqualityFn) == Message{Function}
+    @test isApplicable(SPEqualityFn, [Message{Function}, Message{Function}, Nothing])
+    @test !isApplicable(SPEqualityFn, [Message{Beta}, Nothing, Message{Gamma}])
+    @test !isApplicable(SPEqualityFn, [Nothing, Message{Beta}, Message{Gaussian}])
 end
 
-@testset "SPEqualityGaussianRGMP" begin
-    @test SPEqualityGaussianRGMP <: SumProductRule{Equality}
-    @test outboundType(SPEqualityGaussianRGMP) == Message{GaussianMeanVariance}
-    @test isApplicable(SPEqualityGaussianRGMP, [Nothing, Message{Function}, Message{Gaussian}])
-    @test !isApplicable(SPEqualityGaussianRGMP, [Message{Function}, Message{Function}, Nothing])
-    @test !isApplicable(SPEqualityGaussianRGMP, [Message{Beta}, Nothing, Message{Gamma}])
-    @test !isApplicable(SPEqualityGaussianRGMP, [Nothing, Message{Beta}, Message{Gaussian}])
+@testset "SPEqualityFnG" begin
+    @test SPEqualityFnG <: SumProductRule{Equality}
+    @test outboundType(SPEqualityFnG) == Message{GaussianMeanVariance}
+    @test isApplicable(SPEqualityFnG, [Nothing, Message{Function}, Message{Gaussian}])
+    @test !isApplicable(SPEqualityFnG, [Message{Function}, Message{Function}, Nothing])
+    @test !isApplicable(SPEqualityFnG, [Message{Beta}, Nothing, Message{Gamma}])
+    @test !isApplicable(SPEqualityFnG, [Nothing, Message{Beta}, Message{Gaussian}])
 end
 
-@testset "SPEqualityFactorFunctionRGMP" begin
-    @test SPEqualityFactorFunctionRGMP <: SumProductRule{Equality}
-    @test outboundType(SPEqualityFactorFunctionRGMP) == Message{SampleList}
-    @test isApplicable(SPEqualityFactorFunctionRGMP, [Nothing, Message{Function}, Message{Poisson}])
-    @test !isApplicable(SPEqualityFactorFunctionRGMP, [Nothing, Message{Function}, Message{Gaussian}])
-    @test !isApplicable(SPEqualityFactorFunctionRGMP, [Message{Function}, Message{Function}, Nothing])
-    @test !isApplicable(SPEqualityFactorFunctionRGMP, [Message{Beta}, Nothing, Message{Gamma}])
-    @test !isApplicable(SPEqualityFactorFunctionRGMP, [Nothing, Message{Beta}, Message{Gaussian}])
+@testset "SPEqualityFnFactor" begin
+    @test SPEqualityFnFactor <: SumProductRule{Equality}
+    @test outboundType(SPEqualityFnFactor) == Message{SampleList}
+    @test isApplicable(SPEqualityFnFactor, [Nothing, Message{Function}, Message{Poisson}])
+    @test !isApplicable(SPEqualityFnFactor, [Nothing, Message{Function}, Message{Gaussian}])
+    @test !isApplicable(SPEqualityFnFactor, [Message{Function}, Message{Function}, Nothing])
+    @test !isApplicable(SPEqualityFnFactor, [Message{Beta}, Nothing, Message{Gamma}])
+    @test !isApplicable(SPEqualityFnFactor, [Nothing, Message{Beta}, Message{Gaussian}])
 end
 
-@testset "SPEqualityFactorGaussianRGMP" begin
-    @test SPEqualityFactorGaussianRGMP <: SumProductRule{Equality}
-    @test outboundType(SPEqualityFactorGaussianRGMP) == Message{GaussianMeanVariance}
-    @test !isApplicable(SPEqualityFactorGaussianRGMP, [Nothing, Message{Function}, Message{Poisson}])
-    @test !isApplicable(SPEqualityFactorGaussianRGMP, [Nothing, Message{Function}, Message{Gaussian}])
-    @test !isApplicable(SPEqualityFactorGaussianRGMP, [Message{Function}, Message{Function}, Nothing])
-    @test !isApplicable(SPEqualityFactorGaussianRGMP, [Message{Beta}, Nothing, Message{Gamma}])
-    @test isApplicable(SPEqualityFactorGaussianRGMP, [Nothing, Message{Beta}, Message{Gaussian}])
+@testset "SPEqualityGFactor" begin
+    @test SPEqualityGFactor <: SumProductRule{Equality}
+    @test outboundType(SPEqualityGFactor) == Message{GaussianMeanVariance}
+    @test !isApplicable(SPEqualityGFactor, [Nothing, Message{Function}, Message{Poisson}])
+    @test !isApplicable(SPEqualityGFactor, [Nothing, Message{Function}, Message{Gaussian}])
+    @test !isApplicable(SPEqualityGFactor, [Message{Function}, Message{Function}, Nothing])
+    @test !isApplicable(SPEqualityGFactor, [Message{Beta}, Nothing, Message{Gamma}])
+    @test isApplicable(SPEqualityGFactor, [Nothing, Message{Beta}, Message{Gaussian}])
 end
 
-@testset "SPEqualityFactorFactorRGMP" begin
-    @test SPEqualityFactorFactorRGMP <: SumProductRule{Equality}
-    @test outboundType(SPEqualityFactorFactorRGMP) == Message{SampleList}
-    @test !isApplicable(SPEqualityFactorFactorRGMP, [Nothing, Message{Function}, Message{Poisson}])
-    @test !isApplicable(SPEqualityFactorFactorRGMP, [Nothing, Message{Function}, Message{Gaussian}])
-    @test !isApplicable(SPEqualityFactorFactorRGMP, [Message{Function}, Message{Function}, Nothing])
-    @test isApplicable(SPEqualityFactorFactorRGMP, [Message{Beta}, Nothing, Message{Gamma}])
-    @test !isApplicable(SPEqualityFactorFactorRGMP, [Message{Beta}, Nothing, Message{Beta}])
-    @test !isApplicable(SPEqualityFactorFactorRGMP, [Nothing, Message{Beta}, Message{Gaussian}])
+@testset "SPEqualityFactor" begin
+    @test SPEqualityFactor <: SumProductRule{Equality}
+    @test outboundType(SPEqualityFactor) == Message{SampleList}
+    @test !isApplicable(SPEqualityFactor, [Nothing, Message{Function}, Message{Poisson}])
+    @test !isApplicable(SPEqualityFactor, [Nothing, Message{Function}, Message{Gaussian}])
+    @test !isApplicable(SPEqualityFactor, [Message{Function}, Message{Function}, Nothing])
+    @test isApplicable(SPEqualityFactor, [Message{Beta}, Nothing, Message{Gamma}])
+    @test !isApplicable(SPEqualityFactor, [Message{Beta}, Nothing, Message{Beta}])
+    @test !isApplicable(SPEqualityFactor, [Nothing, Message{Beta}, Message{Gaussian}])
 end
 
 end #module
