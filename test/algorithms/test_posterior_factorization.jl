@@ -68,4 +68,17 @@ end
     @test deterministicEdges(fg) == Set{Edge}([e_w, e_a, e_z, e_1, e_2, e_3, e_4])
 end
 
+@testset "deterministicEdges for graph with dangling edge" begin
+    fg = FactorGraph()
+
+    @RV x ~ GaussianMeanVariance(1.0, 1.0)
+    @RV y = 4.0 * x
+
+    e_1 = fg.nodes[:clamp_1].i[:out].edge
+    e_2 = fg.nodes[:clamp_2].i[:out].edge
+    e_3 = fg.nodes[:clamp_3].i[:out].edge
+
+    @test deterministicEdges(fg) == Set{Edge}([e_1, e_2, e_3])
+end
+
 end # module
