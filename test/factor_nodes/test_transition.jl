@@ -3,7 +3,7 @@ module TransitionTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable
-using ForneyLab: SPTransitionOutNPP, SPTransitionIn1PNP, SPTransitionOutNCP, SPTransitionIn1CNP, VBTransitionOut, VBTransitionIn1, VBTransitionA, SVBTransitionOutVCD, SVBTransitionIn1CVD, SVBTransitionADV, MTransitionCCD
+using ForneyLab: SPTransitionOutNPP, SPTransitionIn1PNP, SPTransitionOutNCP, SPTransitionIn1CNP, VBTransitionOut, VBTransitionIn1, VBTransitionA, SVBTransitionOutVCD, SVBTransitionIn1CVD, SVBTransitionADV, MTransitionCCD, MTransitionCCN
 
 
 #-------------
@@ -95,8 +95,17 @@ end
 @testset "MTransitionCCD" begin
     @test MTransitionCCD <: MarginalRule{Transition}
     @test isApplicable(MTransitionCCD, [Message{Categorical}, Message{Categorical}, ProbabilityDistribution]) 
+    @test !isApplicable(MTransitionCCD, [Message{Categorical}, Message{Categorical}, Nothing]) 
 
     @test ruleMTransitionCCD(Message(Univariate, Categorical, p=[0.2, 0.7, 0.1]), Message(Univariate, Categorical, p=[0.1, 0.4, 0.5]), ProbabilityDistribution(MatrixVariate, PointMass, m=[0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])) == ProbabilityDistribution(Multivariate, Contingency, p=[0.011799410029498528 0.023598820058997057 0.20648967551622419; 0.08259587020648967 0.247787610619469 0.3097345132743362; 0.002949852507374632 0.07079646017699116 0.04424778761061947])
+end
+
+@testset "MTransitionCCN" begin
+    @test MTransitionCCN <: MarginalRule{Transition}
+    @test isApplicable(MTransitionCCN, [Message{Categorical}, Message{Categorical}, Nothing]) 
+    @test !isApplicable(MTransitionCCN, [Message{Categorical}, Message{Categorical}, ProbabilityDistribution]) 
+
+    @test ruleMTransitionCCN(Message(Univariate, Categorical, p=[0.2, 0.7, 0.1]), Message(Univariate, Categorical, p=[0.1, 0.4, 0.5]), Message(MatrixVariate, PointMass, m=[0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])) == ProbabilityDistribution(Multivariate, Contingency, p=[0.011799410029498528 0.023598820058997057 0.20648967551622419; 0.08259587020648967 0.247787610619469 0.3097345132743362; 0.002949852507374632 0.07079646017699116 0.04424778761061947])
 end
 
 @testset "averageEnergy" begin

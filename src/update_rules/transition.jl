@@ -48,6 +48,10 @@
                            :inbound_types => (ProbabilityDistribution, Nothing),
                            :name          => SVBTransitionADV)
 
-@marginalRule(:node_type => Transition,
+@marginalRule(:node_type     => Transition,
               :inbound_types => (Message{Categorical}, Message{Categorical}, ProbabilityDistribution),
-              :name => MTransitionCCD)
+              :name          => MTransitionCCD)
+
+@marginalRule(:node_type     => Transition,
+              :inbound_types => (Message{Categorical}, Message{Categorical}, Nothing), # "Nothing" indicates marginalization
+              :name          => MTransitionCCN)

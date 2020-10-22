@@ -51,3 +51,7 @@
 @marginalRule(:node_type => GaussianMeanPrecision,
               :inbound_types => (Message{Gaussian}, Message{Gaussian}, ProbabilityDistribution),
               :name => MGaussianMeanPrecisionGGD)
+
+@marginalRule(:node_type => GaussianMeanPrecision,
+              :inbound_types => (Message{Gaussian}, Message{Gaussian}, Nothing), # Precision is marginalized out
+              :name => MGaussianMeanPrecisionGGN)
