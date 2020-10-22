@@ -56,13 +56,13 @@ function isApplicable(::Type{SPEqualityPointMass}, input_types::Vector{Type})
     return (nothing_inputs == 1) && (soft_inputs == 1) && (point_mass_inputs == 1)
 end
 
-mutable struct SPEqualityRGMP <: SumProductRule{Equality} end
-outboundType(::Type{SPEqualityRGMP}) = Message{Function}
-isApplicable(::Type{SPEqualityRGMP}, input_types::Vector{Type}) = matchPermutedCanonical(input_types, Message{Function})
+mutable struct SPEqualityFn <: SumProductRule{Equality} end
+outboundType(::Type{SPEqualityFn}) = Message{Function}
+isApplicable(::Type{SPEqualityFn}, input_types::Vector{Type}) = matchPermutedCanonical(input_types, Message{Function})
 
-mutable struct SPEqualityGaussianRGMP <: SumProductRule{Equality} end
-outboundType(::Type{SPEqualityGaussianRGMP}) = Message{GaussianMeanVariance}
-function isApplicable(::Type{SPEqualityGaussianRGMP}, input_types::Vector{Type})
+mutable struct SPEqualityFnG <: SumProductRule{Equality} end
+outboundType(::Type{SPEqualityFnG}) = Message{GaussianMeanVariance}
+function isApplicable(::Type{SPEqualityFnG}, input_types::Vector{Type})
     nothing_inputs = 0
     function_inputs = 0
     gaussian_inputs = 0
@@ -78,4 +78,71 @@ function isApplicable(::Type{SPEqualityGaussianRGMP}, input_types::Vector{Type})
     end
 
     return (nothing_inputs == 1) && (function_inputs == 1) && (gaussian_inputs == 1)
+end
+
+mutable struct SPEqualityFnFactor <: SumProductRule{Equality} end
+outboundType(::Type{SPEqualityFnFactor}) = Message{SampleList}
+function isApplicable(::Type{SPEqualityFnFactor}, input_types::Vector{Type})
+    nothing_inputs = 0
+    function_inputs = 0
+    factor_inputs = 0
+
+    for input_type in input_types
+        if input_type == Nothing
+            nothing_inputs += 1
+        elseif matches(input_type, Message{Function})
+            function_inputs += 1
+        elseif matches(input_type, Message{Gaussian})
+            return false
+        elseif matches(input_type, Message{FactorNode})
+            factor_inputs += 1
+        end
+    end
+
+    return (nothing_inputs == 1) && (function_inputs == 1) && (factor_inputs == 1)
+end
+
+mutable struct SPEqualityGFactor <: SumProductRule{Equality} end
+outboundType(::Type{SPEqualityGFactor}) = Message{GaussianMeanVariance}
+function isApplicable(::Type{SPEqualityGFactor}, input_types::Vector{Type})
+    nothing_inputs = 0
+    factor_inputs = 0
+    gaussian_inputs = 0
+
+    for input_type in input_types
+        if input_type == Nothing
+            nothing_inputs += 1
+        elseif matches(input_type, Message{Gaussian})
+            gaussian_inputs += 1
+        elseif matches(input_type, Message{FactorNode})
+            factor_inputs += 1
+        end
+    end
+
+    return (nothing_inputs == 1) && (factor_inputs == 1) && (gaussian_inputs == 1)
+end
+
+mutable struct SPEqualityFactor <: SumProductRule{Equality} end
+outboundType(::Type{SPEqualityFactor}) = Message{SampleList}
+function isApplicable(::Type{SPEqualityFactor}, input_types::Vector{Type})
+    nothing_inputs = 0
+    first_type, second_type = nothing, nothing
+
+    for input_type in input_types
+        if input_type == Nothing
+            nothing_inputs += 1
+        elseif matches(input_type, Message{Gaussian})
+            return false
+        elseif matches(input_type, Message{Function})
+            return false
+        elseif matches(input_type, Message{FactorNode})
+            if first_type === nothing
+                first_type = input_type
+            else
+                second_type = input_type
+            end
+        end
+    end
+
+    return (nothing_inputs == 1) && (first_type != second_type)
 end

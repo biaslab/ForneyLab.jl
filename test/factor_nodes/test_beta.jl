@@ -3,7 +3,7 @@ module BetaTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, prod!, unsafeMean, unsafeLogMean, unsafeMirroredLogMean, unsafeVar, vague, dims, logPdf
-using ForneyLab: SPBetaOutNMM, SPBetaMNM, SPBetaMMN, VBBetaOut, VBBetaA, VBBetaB
+using ForneyLab: SPBetaOutNMM, SPBetaMNM, SPBetaMMN, SPBetaOutMCNMM, VBBetaOut, VBBetaA, VBBetaB
 using SpecialFunctions: digamma
 
 @testset "Beta ProbabilityDistribution and Message construction" begin
@@ -49,13 +49,22 @@ end
 
 @testset "SPBetaOutNMM" begin
     @test SPBetaOutNMM <: SumProductRule{Beta}
-    @test outboundType(SPBetaOutNMM) == Message{Union{Beta,SampleList}}
+    @test outboundType(SPBetaOutNMM) == Message{Beta}
     @test isApplicable(SPBetaOutNMM, [Nothing, Message{PointMass}, Message{PointMass}])
-    @test isApplicable(SPBetaOutNMM, [Nothing, Message{FactorNode}, Message{PointMass}])
-    @test isApplicable(SPBetaOutNMM, [Nothing, Message{PointMass}, Message])
+    @test !isApplicable(SPBetaOutNMM, [Nothing, Message{FactorNode}, Message{PointMass}])
+    @test !isApplicable(SPBetaOutNMM, [Nothing, Message{PointMass}, Message{FactorNode}])
 
     @test ruleSPBetaOutNMM(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, PointMass, m=3.0)) == Message(Univariate, Beta, a=2.0, b=3.0)
-    d = ruleSPBetaOutNMM(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, Gamma, a=300.0, b=100.0)).dist
+end
+
+@testset "SPBetaOutMCNMM" begin
+    @test SPBetaOutMCNMM <: SumProductRule{Beta}
+    @test outboundType(SPBetaOutMCNMM) == Message{SampleList}
+    @test !isApplicable(SPBetaOutMCNMM, [Nothing, Message{PointMass}, Message{PointMass}])
+    @test isApplicable(SPBetaOutMCNMM, [Nothing, Message{FactorNode}, Message{PointMass}])
+    @test isApplicable(SPBetaOutMCNMM, [Nothing, Message{PointMass}, Message{FactorNode}])
+
+    d = ruleSPBetaOutMCNMM(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, Gamma, a=300.0, b=100.0)).dist
     @test 0.3<mean(d)<0.5
 end
 
