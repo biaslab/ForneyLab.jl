@@ -51,11 +51,25 @@ Create a message passing algorithm to infer marginals over a posterior distribut
 """
 function messagePassingAlgorithm(target_variables::Vector{Variable}=Variable[], # Quantities of interest
                                  pfz::PosteriorFactorization=currentPosteriorFactorization(); 
+                                 ep_sites=Tuple[],
                                  id=Symbol(""), 
                                  free_energy=false)
 
     if isempty(pfz.posterior_factors) # If no factorization is defined
         PosteriorFactor(pfz.graph, pfz=pfz, id=Symbol("")) # Contain the entire graph in a single posterior factor
+    end
+
+    # Set the EP sites for each corresponding posterior factor
+    for ep_site in ep_sites
+        site_node = pfz.graph.nodes[ep_site[1]] # Find by node id
+        site_iface = site_node.i[ep_site[2]] # Find by interface id
+        site_edge = site_iface.edge
+        for (_, pf) in pfz.posterior_factors # Find corresponding posterior factor
+            if site_edge in pf.internal_edges
+                push!(pf.ep_sites, site_iface)
+                break # Skip to next site
+            end
+        end
     end
 
     # Set the targets for each posterior factor
@@ -79,9 +93,10 @@ function messagePassingAlgorithm(target_variables::Vector{Variable}=Variable[], 
 end
 
 messagePassingAlgorithm(target_variable::Variable,
-                        pfz::PosteriorFactorization=currentPosteriorFactorization(); 
+                        pfz::PosteriorFactorization=currentPosteriorFactorization();
+                        ep_sites=Tuple[],
                         id=Symbol(""), 
-                        free_energy=false) = messagePassingAlgorithm([target_variable], pfz; id=id, free_energy=free_energy)
+                        free_energy=false) = messagePassingAlgorithm([target_variable], pfz; ep_sites=ep_sites, id=id, free_energy=free_energy)
 
 function interfaceToScheduleEntry(algo::InferenceAlgorithm)
     mapping = Dict{Interface, ScheduleEntry}()

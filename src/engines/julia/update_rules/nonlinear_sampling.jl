@@ -163,12 +163,9 @@ end
 
 function prod!(
     x::ProbabilityDistribution{V, Function},
-    y::ProbabilityDistribution{V, Function},
-    z::ProbabilityDistribution{V, Function}=ProbabilityDistribution(V, Function, log_pdf=(s)->s)) where V<:VariateType
+    y::ProbabilityDistribution{V, Function}) where V<:VariateType # log-pdf for z cannot be predefined, because it cannot be overwritten
 
-    z.params[:log_pdf] = ( (s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s) )
-
-    return z
+    return ProbabilityDistribution(V, Function, log_pdf=(s)->x.params[:log_pdf](s) + y.params[:log_pdf](s))
 end
 
 @symmetrical function prod!(

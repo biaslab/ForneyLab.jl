@@ -49,6 +49,7 @@ end
     placeholder(y, :y)
     pfz = PosteriorFactorization()
     pf = PosteriorFactor(fg)
+    pf.ep_sites = Set{Interface}([fg.nodes[:probit_1].i[:in1]])
     setTargets!(pf, pfz, target_variables=Set{Variable}([x]))
     pf.schedule = messagePassingSchedule(pf)
     algo = InferenceAlgorithm(pfz)
@@ -56,7 +57,7 @@ end
     algo.interface_to_schedule_entry = ForneyLab.interfaceToScheduleEntry(algo)
     assembleSchedule!(pf)
     assembleInitialization!(pf)
-    @test pf.schedule[5].message_update_rule == ForneyLab.EPProbitIn1GP
+    @test pf.schedule[5].message_update_rule == ForneyLab.EPProbitIn1PG
     @test pf.schedule[3].initialize
 
     # Nonlinear

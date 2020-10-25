@@ -3,9 +3,10 @@
 
 export
 ruleSPProbitOutNG,
-ruleEPProbitIn1GB,
-ruleEPProbitIn1GC,
-ruleEPProbitIn1GP
+ruleSPProbitIn1PN,
+ruleEPProbitIn1BG,
+ruleEPProbitIn1CG,
+ruleEPProbitIn1PG
 
 function ruleSPProbitOutNG(msg_out::Nothing,
                            msg_in1::Message{F, Univariate}) where F<:Gaussian
@@ -18,7 +19,22 @@ function ruleSPProbitOutNG(msg_out::Nothing,
     Message(Univariate, Bernoulli, p=p)
 end
 
-function ruleEPProbitIn1GB(msg_out::Message{Bernoulli, Univariate}, 
+function ruleSPProbitIn1PN(msg_out::Message{PointMass, Univariate},
+                           msg_in1::Nothing)
+    
+    m_out = msg_out.dist.params[:m]
+    if m_out == 1.0
+        log_pdf = normlogcdf
+    elseif m_out == 0.0
+        log_pdf = (z)->normlogcdf(-z)
+    else
+        error("Invalid value: $m_out")
+    end
+
+    return Message(Univariate, Function, log_pdf=log_pdf)
+end
+
+function ruleEPProbitIn1BG(msg_out::Message{Bernoulli, Univariate}, 
                            msg_in1::Message{F, Univariate}) where F<:Gaussian
 
     # Calculate approximate (Gaussian) message towards i[:in1]
@@ -69,17 +85,17 @@ function ruleEPProbitIn1GB(msg_out::Message{Bernoulli, Univariate},
     return Message(Univariate, GaussianWeightedMeanPrecision, xi=outbound_dist_xi, w=outbound_dist_w)
 end
 
-function ruleEPProbitIn1GP(msg_out::Message{PointMass, Univariate}, msg_in1::Message{F, Univariate}) where F<:Gaussian
+function ruleEPProbitIn1PG(msg_out::Message{PointMass, Univariate}, msg_in1::Message{F, Univariate}) where F<:Gaussian
     p = msg_out.dist.params[:m]
     isnan(p) && (p = 0.5)
     (0.0 <= p <= 1.0) || error("Binary input $p must be between 0 and 1")
 
-    return ruleEPProbitIn1GB(Message(Univariate, Bernoulli, p=p), msg_in1)
+    return ruleEPProbitIn1BG(Message(Univariate, Bernoulli, p=p), msg_in1)
 end
 
-function ruleEPProbitIn1GC(msg_out::Message{Categorical, Univariate}, msg_in1::Message{F, Univariate}) where F<:Gaussian
+function ruleEPProbitIn1CG(msg_out::Message{Categorical, Univariate}, msg_in1::Message{F, Univariate}) where F<:Gaussian
     (length(msg_out.dist.params[:p]) == 2) || error("Probit node only supports categorical messages with 2 categories")
     p = msg_out.dist.params[:p][1]
 
-    return ruleEPProbitIn1GB(Message(Univariate, Bernoulli, p=p), msg_in1)
+    return ruleEPProbitIn1BG(Message(Univariate, Bernoulli, p=p), msg_in1)
 end
