@@ -82,7 +82,7 @@ end
 # A breaker message is required if interface is partnered with a Nonlinear{Sampling} inbound and there are multiple inbounds
 function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Nonlinear{Sampling})
     backward = (partner_interface != partner_node.i[:out]) # Interface is partnered with an inbound
-    multi_in = (length(partner_node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
+    multi_in = isMultiIn(partner_node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
 
     return backward && multi_in
 end
@@ -90,7 +90,7 @@ end
 # A breaker message is required if interface is partnered with a Nonlinear{Unscented} inbound and no inverse is available
 function requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Nonlinear{T}) where T<:Union{Unscented, Extended}
     backward = (partner_interface != partner_node.i[:out]) # Interface is partnered with an inbound
-    multi_in = (length(partner_node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
+    multi_in = isMultiIn(partner_node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
     inx = findfirst(isequal(partner_interface), partner_node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
     undefined_inverse = (partner_node.g_inv == nothing) || (multi_in && (inx > 0) && (partner_node.g_inv[inx] == nothing)) # (Inbound-specific) inverse is undefined
 
@@ -118,3 +118,17 @@ function breakerParameters(interface::Interface, partner_interface::Interface, p
 end
 
 slug(::Type{Nonlinear{T}}) where T<:ApproximationMethod = "g{$(removePrefix(T))}"
+
+"""
+Determine whether there are multiple stochastic inbound edges
+"""
+function isMultiIn(node::Nonlinear)
+    stochastic_in_count = 0
+    for iface in node.interfaces[2:end]
+        if !isClamped(iface.partner)
+            stochastic_in_count += 1
+        end
+    end
+
+    return stochastic_in_count > 1
+end

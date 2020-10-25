@@ -5,7 +5,7 @@ using LinearAlgebra
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, sigmaPointsAndWeights, Unscented, requiresBreaker, breakerParameters
 using ForneyLab: SPNonlinearUTOutNG, SPNonlinearUTIn1GG, SPNonlinearUTOutNGX, SPNonlinearUTInGX, MNonlinearUTInGX
-using ForneyLab: unscentedStatistics, smoothRTS, smoothRTSMessage, collectStatistics, marginalizeGaussianMV, concatenateGaussianMV, split
+using ForneyLab: unscentedStatistics, smoothRTS, smoothRTSMessage, collectStatistics, marginalizeGaussianMV, concatenateGaussianMV, split, isMultiIn
 
 f(x) = x
 
@@ -117,6 +117,36 @@ end
     
     @test !requiresBreaker(nd.i[:out])
     @test_throws Exception breakerParameters(nd.i[:out])
+end
+
+@testset "isMultiIn" begin
+    fg = FactorGraph()
+    x = Variable()
+    y = Variable()
+    GaussianMeanVariance(x, 0.0, 1.0)
+    nd = Nonlinear{Unscented}(y, x, g=g)
+    Clamp(y, 1.0)
+    @test !isMultiIn(nd)
+
+    fg = FactorGraph()
+    x = Variable()
+    y = Variable()
+    z = Variable()
+    GaussianMeanVariance(x, 0.0, 1.0)
+    GaussianMeanVariance(z, 0.0, 1.0)
+    nd = Nonlinear{Unscented}(y, x, z, g=g)
+    Clamp(y, 1.0)
+    @test isMultiIn(nd)
+
+    fg = FactorGraph()
+    x = Variable()
+    y = Variable()
+    z = Variable()
+    GaussianMeanVariance(x, 0.0, 1.0)
+    Clamp(z, 1.0)
+    nd = Nonlinear{Unscented}(y, x, z, g=g)
+    Clamp(y, 1.0)
+    @test !isMultiIn(nd)
 end
 
 

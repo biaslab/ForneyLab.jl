@@ -120,7 +120,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
     push!(inbounds, Dict{Symbol, Any}(:g => node.g,
                                       :keyword => false))
 
-    multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
+    multi_in = isMultiIn(node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
     inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
 
     if (inx > 0) && multi_in # Multi-inbound backward rule
