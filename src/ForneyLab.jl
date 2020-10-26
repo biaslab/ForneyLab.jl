@@ -70,6 +70,11 @@ include("factor_graph.jl")
 # Composite nodes
 include("factor_nodes/composite.jl")
 
+# Code generation for models
+include("codegen/helpers.jl")
+include("codegen/variable.jl")
+include("codegen/graph.jl")
+
 # Generic methods
 include("algorithms/cluster.jl")
 include("message_passing.jl")
