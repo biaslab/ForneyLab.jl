@@ -11,7 +11,11 @@ function rewrite_expression(expression::Expr)
     else
         expression
     end
-    
+
+    println("====================")
+    dump(expr)
+    println("********************")
+
     return expr
 end
 
@@ -21,7 +25,7 @@ is_tilde(expr::Expr) = expr.head === :call && expr.args[1] === :(~)
 is_tilde(expr)       = false
 
 function rewrite_tilde_expression(def)
-    if def.args[3].args[1] == :(∥)
+    if options_are_defined(def)
         options = get_options(def.args[3].args[3])
         node = def.args[3].args[2]
     else
@@ -70,10 +74,12 @@ is_arrow_assign(expr::Expr) = expr.head === :call && expr.args[1] === :(←)
 is_arrow_assign(expr)       = false
 
 function rewrite_arrow_assign_expression(def)
-    if def.args[3].args[1] == :(∥)
+    if options_are_defined(def)
         options = get_options(def.args[3].args[3])
+        rhs = def.args[3].args[2]
     else
         options = Dict{Symbol,Any}()
+        rhs = def.args[3]
     end
 
     target = def.args[2]
@@ -81,9 +87,10 @@ function rewrite_arrow_assign_expression(def)
     var_id = extract_variable_id(target, options)
     
     var_id_sym = gensym()
+
     return quote
         begin
-            $(target) = $(def.args[3].args[2])
+            $(target) = $(rhs)
             $(var_id_sym) = $(var_id)
             if $(var_id_sym) != :auto
                 # update id of newly created Variable
