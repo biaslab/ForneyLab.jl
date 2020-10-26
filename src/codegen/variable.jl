@@ -2,6 +2,8 @@ function rewrite_expression(expression::Expr)
     
     expr = if is_tilde(expression)
         rewrite_tilde_expression(expression)
+    elseif is_arrow_assign(expression)
+        rewrite_arrow_assign_expression(expression)
     elseif is_assign(expression)
         rewrite_assign_expression(expression)
     elseif is_for(expression)
@@ -63,11 +65,11 @@ function rewrite_tilde_expression(def)
     end
 end
 
-# Assignment with options: x ← a + b
-is_assign(expr::Expr) = expr.head === :call && expr.args[1] === :(←)
-is_assign(expr)       = false
+# Arrow-style assignment: x ← a + b
+is_arrow_assign(expr::Expr) = expr.head === :call && expr.args[1] === :(←)
+is_arrow_assign(expr)       = false
 
-function rewrite_assign_expression(def)
+function rewrite_arrow_assign_expression(def)
     if def.args[3].args[1] == :(∥)
         options = get_options(def.args[3].args[3])
     else
@@ -92,6 +94,14 @@ function rewrite_assign_expression(def)
             $(target)
         end
     end
+end
+
+# Regular assignment, possibly with options: x = a + b ∥ [id=:x]
+is_assign(expr::Expr) = expr.head === :call && expr.args[1] === :(=)
+is_assign(expr)       = false
+
+function rewrite_assign_expression(def)
+    return def
 end
 
 # for loop
