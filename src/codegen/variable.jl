@@ -21,7 +21,7 @@ is_tilde(expr::Expr) = expr.head === :call && expr.args[1] === :(~)
 is_tilde(expr)       = false
 
 function rewrite_tilde_expression(def)
-    if options_are_defined(def)
+    if tilde_options_are_defined(def)
         options = get_options(def.args[3].args[3])
         node = def.args[3].args[2]
     else
@@ -70,7 +70,7 @@ is_arrow_assign(expr::Expr) = expr.head === :call && expr.args[1] === :(←)
 is_arrow_assign(expr)       = false
 
 function rewrite_arrow_assign_expression(def)
-    if options_are_defined(def)
+    if arrow_options_are_defined(def)
         options = get_options(def.args[3].args[3])
         rhs = def.args[3].args[2]
     else
@@ -100,11 +100,37 @@ function rewrite_arrow_assign_expression(def)
 end
 
 # Regular assignment, possibly with options: x = a + b ∥ [id=:x]
-is_assign(expr::Expr) = expr.head === :call && expr.args[1] === :(=)
+is_assign(expr::Expr) = expr.head === Symbol("=")
 is_assign(expr)       = false
 
 function rewrite_assign_expression(def)
-    return def
+    # Perform rewrite only if options are defined
+    if assign_options_are_defined(def)
+        options = get_options(def.args[2].args[3])
+        rhs = def.args[2].args[2]
+    else
+        return def
+    end
+
+    target = def.args[1]
+
+    var_id = extract_variable_id(target, options)
+    
+    var_id_sym = gensym()
+
+    return quote
+        begin
+            $(target) = $(rhs)
+            $(var_id_sym) = $(var_id)
+            if $(var_id_sym) != :auto
+                # update id of newly created Variable
+                currentGraph().variables[$(var_id_sym)] = $(target)
+                delete!(currentGraph().variables, $(target).id)
+                $(target).id = $(var_id_sym)
+            end
+            $(target)
+        end
+    end
 end
 
 # for loop
