@@ -148,48 +148,52 @@ end
 # Unscented Update Rules
 #-----------------------
 
+# Custom message constructors for undetermined VariateType
+Message(::Type{GaussianMeanVariance}, m::Float64, v::Float64) = Message(Univariate, GaussianMeanVariance, m=m, v=v)
+Message(::Type{GaussianMeanVariance}, m::Vector{Float64}, v::AbstractMatrix) = Message(Multivariate, GaussianMeanVariance, m=m, v=v)
+
 # Forward rule (unscented transform)
 function ruleSPNonlinearUTOutNG(g::Function,
                                 msg_out::Nothing,
-                                msg_in1::Message{F, V};
-                                alpha::Float64=default_alpha) where {F<:Gaussian, V<:VariateType}
+                                msg_in1::Message{<:Gaussian};
+                                alpha::Float64=default_alpha)
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     (m_tilde, V_tilde, _) = unscentedStatistics(m_fw_in1, V_fw_in1, g; alpha=alpha)
 
-    return Message(V, GaussianMeanVariance, m=m_tilde, v=V_tilde)
+    return Message(GaussianMeanVariance, m_tilde, V_tilde) # Automatically determine VariateType
 end
 
 # Multi-argument forward rule (unscented transform)
 function ruleSPNonlinearUTOutNGX(g::Function, # Needs to be in front of Vararg
                                  msg_out::Nothing,
-                                 msgs_in::Vararg{Message{<:Gaussian, V}};
+                                 msgs_in::Vararg{Message{<:Gaussian, V}}; # Inbound variate types must match
                                  alpha::Float64=default_alpha) where V<:VariateType
 
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Returns arrays with individual means and covariances
     (m_tilde, V_tilde, _) = unscentedStatistics(ms_fw_in, Vs_fw_in, g; alpha=alpha)
 
-    return Message(V, GaussianMeanVariance, m=m_tilde, v=V_tilde)
+    return Message(GaussianMeanVariance, m_tilde, V_tilde) # Automatically determine VariateType
 end
 
 # Backward rule with given inverse (unscented transform)
 function ruleSPNonlinearUTIn1GG(g::Function,
                                 g_inv::Function,
-                                msg_out::Message{F, V},
+                                msg_out::Message{<:Gaussian},
                                 msg_in1::Nothing;
-                                alpha::Float64=default_alpha) where {F<:Gaussian, V<:VariateType}
+                                alpha::Float64=default_alpha)
 
     (m_bw_out, V_bw_out) = unsafeMeanCov(msg_out.dist)
     (m_tilde, V_tilde, _) = unscentedStatistics(m_bw_out, V_bw_out, g_inv; alpha=alpha)
 
-    return Message(V, GaussianMeanVariance, m=m_tilde, v=V_tilde)
+    return Message(GaussianMeanVariance, m_tilde, V_tilde) # Automatically determine VariateType
 end
 
 # Multi-argument backward rule with given inverse (unscented transform)
 function ruleSPNonlinearUTInGX(g::Function, # Needs to be in front of Vararg
                                g_inv::Function,
-                               msg_out::Message{<:Gaussian, V},
-                               msgs_in::Vararg{Union{Message{<:Gaussian, V}, Nothing}};
+                               msg_out::Message{<:Gaussian},
+                               msgs_in::Vararg{Union{Message{<:Gaussian, V}, Nothing}}; # Inbound variate types must match
                                alpha::Float64=default_alpha) where V<:VariateType
 
     (ms, Vs) = collectStatistics(msg_out, msgs_in...) # Returns arrays with individual means and covariances
@@ -200,9 +204,9 @@ end
 
 # Backward rule with unknown inverse (unscented transform)
 function ruleSPNonlinearUTIn1GG(g::Function,
-                                msg_out::Message{F1, V},
-                                msg_in1::Message{F2, V};
-                                alpha::Float64=default_alpha) where {F1<:Gaussian, F2<:Gaussian, V<:VariateType}
+                                msg_out::Message{<:Gaussian},
+                                msg_in1::Message{<:Gaussian, V};
+                                alpha::Float64=default_alpha) where V<:VariateType
 
     (m_fw_in1, V_fw_in1) = unsafeMeanCov(msg_in1.dist)
     (m_tilde, V_tilde, C_tilde) = unscentedStatistics(m_fw_in1, V_fw_in1, g; alpha=alpha)
@@ -217,7 +221,7 @@ end
 # Multi-argument backward rule with unknown inverse (unscented transform)
 function ruleSPNonlinearUTInGX(g::Function,
                                inx::Int64, # Index of inbound interface inx
-                               msg_out::Message{<:Gaussian, V},
+                               msg_out::Message{<:Gaussian},
                                msgs_in::Vararg{Message{<:Gaussian, V}};
                                alpha::Float64=default_alpha) where V<:VariateType
 
@@ -244,7 +248,7 @@ function ruleSPNonlinearUTInGX(g::Function,
 end
 
 function ruleMNonlinearUTInGX(g::Function,
-                              msg_out::Message{<:Gaussian, V},
+                              msg_out::Message{<:Gaussian},
                               msgs_in::Vararg{Message{<:Gaussian, V}};
                               alpha::Float64=default_alpha) where V<:VariateType
 

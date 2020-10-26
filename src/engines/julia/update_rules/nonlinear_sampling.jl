@@ -13,34 +13,39 @@ const default_n_samples = 1000 # Default value for the number of samples
 # Sampling Update Rules
 #----------------------
 
+# Custom message constructors for undetermined VariateType
+Message(::Type{SampleList}, s::Vector{Float64}, w::Vector{Float64}) = Message(Univariate, SampleList, s=s, w=w)
+Message(::Type{SampleList}, s::Vector{<:AbstractVector}, w::Vector{Float64}) = Message(Multivariate, SampleList, s=s, w=w)
+Message(::Type{SampleList}, s::Vector{<:AbstractMatrix}, w::Vector{Float64}) = Message(MatrixVariate, SampleList, s=s, w=w)
+
 function ruleSPNonlinearSOutNM(g::Function,
                                msg_out::Nothing,
-                               msg_in1::Message{F, V};
-                               n_samples=default_n_samples) where {F<:FactorFunction, V<:VariateType}
+                               msg_in1::Message;
+                               n_samples=default_n_samples)
 
     samples = g.(sample(msg_in1.dist, n_samples))
     weights = ones(n_samples)/n_samples
 
-    return Message(V, SampleList, s=samples, w=weights)
+    return Message(SampleList, samples, weights) # Automatically determine VariateType
 end
 
 function ruleSPNonlinearSIn1MN(g::Function,
-                               msg_out::Message{F, V},
+                               msg_out::Message{<:FactorFunction, V},
                                msg_in1::Nothing;
-                               n_samples=default_n_samples) where {F<:FactorFunction, V<:VariateType}
+                               n_samples=default_n_samples) where V<:VariateType
 
     return Message(V, Function, log_pdf = (z)->logPdf(msg_out.dist, g(z)))
 end
 
 function ruleSPNonlinearSOutNM(g::Function,
                                msg_out::Nothing,
-                               msg_in1::Message{SampleList, V};
-                               n_samples=default_n_samples) where {V<:VariateType}
+                               msg_in1::Message{SampleList};
+                               n_samples=default_n_samples)
 
     samples = g.(msg_in1.dist.params[:s])
     weights = msg_in1.dist.params[:w]
 
-    return Message(V, SampleList, s=samples, w=weights)
+    return Message(SampleList, samples, weights) # Automatically determine VariateType
 end
 
 function ruleSPNonlinearSOutNGX(g::Function,
@@ -53,12 +58,12 @@ function ruleSPNonlinearSOutNGX(g::Function,
     samples = g.(samples_in...)
     weights = ones(n_samples)/n_samples
 
-    return Message(V, SampleList, s=samples, w=weights)
+    return Message(SampleList, samples, weights) # Automatically determine VariateType
 end
 
 function ruleSPNonlinearSInGX(g::Function,
                               inx::Int64, # Index of inbound interface inx
-                              msg_out::Message{<:Gaussian, V},
+                              msg_out::Message{<:Gaussian},
                               msgs_in::Vararg{Message{<:Gaussian, V}};
                               n_samples=default_n_samples) where V<:VariateType
 
@@ -88,8 +93,8 @@ function ruleSPNonlinearSInGX(g::Function,
 end
 
 function ruleMNonlinearSInGX(g::Function,
-                             msg_out::Message{<:Gaussian, V},
-                             msgs_in::Vararg{Message{<:Gaussian, V}}) where V<:VariateType
+                             msg_out::Message{<:Gaussian},
+                             msgs_in::Vararg{Message{<:Gaussian, V}}) where V<:VariateType # Variate types for inbounds must match
 
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
