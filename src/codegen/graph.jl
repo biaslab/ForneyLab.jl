@@ -16,11 +16,13 @@ function generate_model(model_expr::Expr)
     model_definition = program.args[2]
     model_expr = build_model(model_definition)
     
+    graph_sym = gensym(:factor_graph)
+
     result = quote
         function $model_name($(argument_names...))
-            g = FactorGraph()
+            $(graph_sym) = FactorGraph()
             $model_expr
-            return g
+            return $(graph_sym)
         end
     end
 

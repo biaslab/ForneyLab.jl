@@ -43,6 +43,32 @@ end
 PosteriorFactor(seed_variable::Variable; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor)) = PosteriorFactor(Set([seed_variable]), pfz=pfz, id=id)
 PosteriorFactor(seed_variables::Vector{Variable}; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor)) = PosteriorFactor(Set(seed_variables), pfz=pfz, id=id)
 
+function PosteriorFactor(seed_variable_id::Symbol; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor))
+    
+    seed_variable = get(currentGraph().variables, seed_variable_id, nothing)
+    if isnothing(seed_variable)
+        error("Variable with id $(seed_variable_id) does not exist.")
+    end 
+    
+    return PosteriorFactor(Set([seed_variable]), pfz=pfz, id=id)
+end
+
+function PosteriorFactor(seed_variable_ids::Vector{Symbol}; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor)) 
+    seed_variables = Vector{Variable}(undef, length(seed_variable_ids))
+
+    for (i, seed_variable_id) in enumerate(seed_variable_ids)
+        seed_variable = get(currentGraph().variables, seed_variable_id, nothing)
+        if isnothing(seed_variable)
+            error("Variable with id $(seed_variable_id) does not exist.")
+        else
+            seed_variables[i] = seed_variable
+        end
+    end
+    
+    return PosteriorFactor(Set(seed_variables), pfz=pfz, id=id)
+end
+
+
 """
 `messagePassingSchedule()` generates a message passing schedule for the posterior factor
 """
