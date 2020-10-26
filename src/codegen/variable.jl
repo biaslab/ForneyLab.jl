@@ -12,10 +12,6 @@ function rewrite_expression(expression::Expr)
         expression
     end
 
-    println("====================")
-    dump(expr)
-    println("********************")
-
     return expr
 end
 
