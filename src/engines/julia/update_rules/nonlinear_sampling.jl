@@ -143,7 +143,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
         elseif node_interface == entry.interface
             # Ignore inbound message on outbound interface
             push!(inbounds, nothing)
-        elseif isa(inbound_interface.node, Clamp)
+        elseif isClamped(inbound_interface)
             # Hard-code outbound message of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, Message))
         else

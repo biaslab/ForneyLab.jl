@@ -174,7 +174,7 @@ Find all edges in the graph that are deterministic.
 function deterministicEdges(fg::FactorGraph)
     deterministic_edges = Set{Edge}()
     for node in nodes(fg)
-        if isa(node, Clamp)
+        if isPointMassConstraint(node)
             union!(deterministic_edges, deterministicEdgeSet(node.i[:out].edge))
         end
     end
@@ -233,7 +233,7 @@ function isDeterministic(interface::Interface, is_deterministic::Dict{Interface,
         # We assume a non-delta factor sends stochastic messages in all directions.
         # This includes the CompositeFactor, for which this is the conservative choice.
         return false
-    elseif isa(node, Clamp)
+    elseif isPointMassConstraint(node)
         return true # Clamp nodes only send deterministic messages
     end
     

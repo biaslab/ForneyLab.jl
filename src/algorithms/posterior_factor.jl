@@ -130,11 +130,25 @@ function posteriorFactor(edge::Edge)
 end
 
 """
-Check if edge or interface is terminated by a clamp node
+Check if edge or interface is terminated by a Clamp node
 """
 isClamped(interface::Interface) = isdefined(interface, :node) && isa(interface.node, Clamp)
 isClamped(edge::Edge) = isClamped(edge.a) || isClamped(edge.b)
 isClamped(::Nothing) = false
+
+"""
+Check if node imposes a point-mass constraint. This enables external overloading 
+of what it means to be a point-mass constrained.
+"""
+isPointMassConstraint(node::FactorNode) = false
+isPointMassConstraint(node::Clamp) = true # 
+
+"""
+Check if edge or interface is terminated by a point-mass constraint
+"""
+isPointMassConstrained(interface::Interface) = isdefined(interface, :node) && isPointMassConstraint(interface.node)
+isPointMassConstrained(edge::Edge) = isPointMassConstrained(edge.a) || isPointMassConstrained(edge.b)
+isPointMassConstrained(::Nothing) = false
 
 """
 Return the ids of the posterior factors to which edges connected to `node` belong

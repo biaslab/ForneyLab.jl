@@ -75,7 +75,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
             error("No applicable $(rule_type) update for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
         end
     elseif length(applicable_rules) > 1
-        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
+        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", ")): $(join(applicable_rules, ", "))")
     else
         entry.message_update_rule = first(applicable_rules)
     end
@@ -91,7 +91,7 @@ function collectInboundTypes(entry::ScheduleEntry,
     for node_interface in entry.interface.node.interfaces
         if node_interface === entry.interface
             push!(inbound_message_types, Nothing)
-        elseif isClamped(node_interface.partner)
+        elseif isPointMassConstrained(node_interface.partner)
             push!(inbound_message_types, Message{PointMass})
         else
             push!(inbound_message_types, inferred_outbound_types[node_interface.partner])

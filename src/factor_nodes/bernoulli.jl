@@ -50,6 +50,8 @@ isProper(dist::ProbabilityDistribution{Univariate, Bernoulli}) = (0 <= dist.para
 
 unsafeMean(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:p]
 
+unsafeMode(dist::ProbabilityDistribution{Univariate, Bernoulli}) = round(dist.params[:p])
+
 unsafeMeanVector(dist::ProbabilityDistribution{Univariate, Bernoulli}) = [dist.params[:p], 1 - dist.params[:p]]
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, Bernoulli}) = dist.params[:p]*(1 - dist.params[:p])
@@ -65,6 +67,16 @@ function prod!( x::ProbabilityDistribution{Univariate, Bernoulli},
     norm = x.params[:p] * y.params[:p] + (1 - x.params[:p]) * (1 - y.params[:p])
     (norm > 0) || error("Product of $(x) and $(y) cannot be normalized")
     z.params[:p] = (x.params[:p] * y.params[:p]) / norm
+
+    return z
+end
+
+@symmetrical function prod!(
+    x::ProbabilityDistribution{Univariate, Bernoulli},
+    y::ProbabilityDistribution{Univariate, PointMass},
+    z::ProbabilityDistribution{Univariate, PointMass}=ProbabilityDistribution(Univariate, PointMass, m=NaN))
+
+    z.params[:m] = y.params[:m]
 
     return z
 end

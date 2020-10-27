@@ -137,7 +137,7 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; target_va
         nodes_connected_to_internal_edges = nodes(pf.internal_edges)
         for node in nodes_connected_to_internal_edges
             target_edges = localStochasticInternalEdges(node, pf, pfz) # Find stochastic internal edges connected to node
-            if isa(node, Clamp)
+            if isPointMassConstraint(node)
                 continue
             elseif !isa(node, DeltaFactor) # Node is stochastic
                 if length(target_edges) == 1 # Single internal edge

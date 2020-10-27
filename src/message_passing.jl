@@ -242,7 +242,7 @@ function condense(schedule::Schedule)
     for entry in schedule
         if isdefined(entry, :internal_schedule)
             entry.internal_schedule = condense(entry.internal_schedule)
-        elseif !isa(entry.interface.node, Clamp)
+        elseif !isa(entry.interface.node, Clamp) # Only actual Clamps should be consensed
             push!(condensed_schedule, entry)
         end
     end

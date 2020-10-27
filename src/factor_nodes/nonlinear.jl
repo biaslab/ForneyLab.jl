@@ -125,7 +125,7 @@ Determine whether there are multiple stochastic inbound edges
 function isMultiIn(node::Nonlinear)
     stochastic_in_count = 0
     for iface in node.interfaces[2:end]
-        if !isClamped(iface.partner)
+        if !isPointMassConstrained(iface.partner)
             stochastic_in_count += 1
         end
     end

@@ -57,7 +57,7 @@ function assembleCountingNumbers!(pfz=currentPosteriorFactorization())
     # Iterate over large regions
     for node in nodes_connected_to_internal_edges
         target_regions = unique!(localStochasticRegions(node, pfz)) # Collect all unique stochastic regions around node
-        if isa(node, Clamp)
+        if isPointMassConstraint(node)
             continue
         elseif !isa(node, DeltaFactor) # Node is stochastic
             increase!(energy_counting_numbers, node, 1) # Count average energy

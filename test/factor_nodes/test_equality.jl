@@ -161,6 +161,7 @@ end
     @test isApplicable(SPEqualityFactor, [Message{Beta}, Nothing, Message{Gamma}])
     @test !isApplicable(SPEqualityFactor, [Message{Beta}, Nothing, Message{Beta}])
     @test !isApplicable(SPEqualityFactor, [Nothing, Message{Beta}, Message{Gaussian}])
+    @test !isApplicable(SPEqualityFactor, [Nothing, Message{PointMass}, Message{Gaussian}])
 end
 
 end #module
