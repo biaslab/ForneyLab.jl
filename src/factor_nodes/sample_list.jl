@@ -176,24 +176,45 @@ end
 end
 
 function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistribution)
-    n_samples = default_n_samples # Number of samples is fixed
-    samples = sample(x, n_samples)
+    try
+        n_samples = default_n_samples # Number of samples is fixed
+        samples = sample(x, n_samples)
 
-    # Apply log-pdf functions to the samples
-    log_samples_x = logPdf.([x], samples)
-    log_samples_y = logPdf.([y], samples)
+        # Apply log-pdf functions to the samples
+        log_samples_x = logPdf.([x], samples)
+        log_samples_y = logPdf.([y], samples)
 
-    # Extract the sample weights
-    w_raw = exp.(log_samples_y) # Unnormalized weights
-    w_sum = sum(w_raw)
-    weights = w_raw./w_sum # Normalize the raw weights
+        # Extract the sample weights
+        w_raw = exp.(log_samples_y) # Unnormalized weights
+        w_sum = sum(w_raw)
+        weights = w_raw./w_sum # Normalize the raw weights
 
-    # Compute the separate contributions to the entropy
-    H_y = log(w_sum) - log(n_samples)
-    H_x = -sum( weights.*(log_samples_x + log_samples_y) )
-    entropy = H_x + H_y
+        # Compute the separate contributions to the entropy
+        H_y = log(w_sum) - log(n_samples)
+        H_x = -sum( weights.*(log_samples_x + log_samples_y) )
+        entropy = H_x + H_y
 
-    return (samples, weights, entropy)
+        return (samples, weights, entropy)
+    catch
+        n_samples = default_n_samples # Number of samples is fixed
+        samples = sample(y, n_samples)
+
+        # Apply log-pdf functions to the samples
+        log_samples_x = logPdf.([x], samples)
+        log_samples_y = logPdf.([y], samples)
+
+        # Extract the sample weights
+        w_raw = exp.(log_samples_x) # Unnormalized weights
+        w_sum = sum(w_raw)
+        weights = w_raw./w_sum # Normalize the raw weights
+
+        # Compute the separate contributions to the entropy
+        H_x = log(w_sum) - log(n_samples)
+        H_y = -sum( weights.*(log_samples_x + log_samples_y) )
+        entropy = H_x + H_y
+
+        return (samples, weights, entropy)
+    end
 end
 
 # General product definition that returns a SampleList
@@ -268,7 +289,7 @@ end
 #To retain the unified standard procedure, we allow sampling from SampleList not through directly returning
 #sample and weight parameters but drawing samples from the existing list of samples according to weights.
 # Inverse-transform sampling
-sample(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = sample(dist.params[:s], Weights(dist.params[:w]))    
+sample(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = sample(dist.params[:s], Weights(dist.params[:w]))
 
 # Differential entropy for SampleList
 function differentialEntropy(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType
