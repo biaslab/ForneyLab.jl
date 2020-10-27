@@ -175,53 +175,32 @@ end
     return prod!(x, y, z) # Return a SampleList
 end
 
-function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistribution)
-    try
-        n_samples = default_n_samples # Number of samples is fixed
-        samples = sample(x, n_samples)
+function sampleWeightsAndEntropy(x::ProbabilityDistribution{V, F}, y::ProbabilityDistribution) where {V<:VariateType, F<:FactorNode}
+    n_samples = default_n_samples # Number of samples is fixed
+    samples = sample(x, n_samples)
 
-        # Apply log-pdf functions to the samples
-        log_samples_x = logPdf.([x], samples)
-        log_samples_y = logPdf.([y], samples)
+    # Apply log-pdf functions to the samples
+    log_samples_x = logPdf.([x], samples)
+    log_samples_y = logPdf.([y], samples)
 
-        # Extract the sample weights
-        w_raw = exp.(log_samples_y) # Unnormalized weights
-        w_sum = sum(w_raw)
-        weights = w_raw./w_sum # Normalize the raw weights
+    # Extract the sample weights
+    w_raw = exp.(log_samples_y) # Unnormalized weights
+    w_sum = sum(w_raw)
+    weights = w_raw./w_sum # Normalize the raw weights
 
-        # Compute the separate contributions to the entropy
-        H_y = log(w_sum) - log(n_samples)
-        H_x = -sum( weights.*(log_samples_x + log_samples_y) )
-        entropy = H_x + H_y
+    # Compute the separate contributions to the entropy
+    H_y = log(w_sum) - log(n_samples)
+    H_x = -sum( weights.*(log_samples_x + log_samples_y) )
+    entropy = H_x + H_y
 
-        return (samples, weights, entropy)
-    catch
-        n_samples = default_n_samples # Number of samples is fixed
-        samples = sample(y, n_samples)
-
-        # Apply log-pdf functions to the samples
-        log_samples_x = logPdf.([x], samples)
-        log_samples_y = logPdf.([y], samples)
-
-        # Extract the sample weights
-        w_raw = exp.(log_samples_x) # Unnormalized weights
-        w_sum = sum(w_raw)
-        weights = w_raw./w_sum # Normalize the raw weights
-
-        # Compute the separate contributions to the entropy
-        H_x = log(w_sum) - log(n_samples)
-        H_y = -sum( weights.*(log_samples_x + log_samples_y) )
-        entropy = H_x + H_y
-
-        return (samples, weights, entropy)
-    end
+    return (samples, weights, entropy)
 end
 
 # General product definition that returns a SampleList
-function prod!(
-    x::ProbabilityDistribution{V},
+@symmetrical function prod!(
+    x::ProbabilityDistribution{V, F},
     y::ProbabilityDistribution{V},
-    z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
+    z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where {V<:VariateType, F<:FactorNode}
 
     (samples, weights, entropy) = sampleWeightsAndEntropy(x, y)
 
