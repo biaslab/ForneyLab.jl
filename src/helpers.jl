@@ -232,3 +232,18 @@ Helper function to call dynamically generated `init` functions
 function init(id::Symbol)
     getfield(Main, :init*id)()
 end
+
+"""
+Helper function to push a value to an array in dictionary with a given key.
+If dictionary has no array associated with a given key it creates a new one and stores it in a dictionary.
+Does nothing if dictionary has type `Nothing`.
+"""
+function pushcreate!(dictionary, key, value)
+    if dictionary !== nothing
+        if haskey(dictionary, key)
+            push!(dictionary[key], value)
+        else
+            dictionary[key] = [ value ]
+        end
+    end
+end

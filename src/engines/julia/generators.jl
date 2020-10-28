@@ -4,15 +4,15 @@ export algorithmSourceCode
 Generate Julia code for message passing
 and optional free energy evaluation
 """
-function algorithmSourceCode(algo::InferenceAlgorithm; free_energy=false)
+function algorithmSourceCode(algo::InferenceAlgorithm; free_energy=false, debug::Bool=false)
     algo_code = "begin\n\n"
     for (_, pf) in algo.posterior_factorization
-        algo_code *= posteriorFactorSourceCode(pf)
+        algo_code *= posteriorFactorSourceCode(pf; debug = debug)
         algo_code *= "\n\n"
     end
 
     if free_energy
-        algo_code *= freeEnergySourceCode(algo)
+        algo_code *= freeEnergySourceCode(algo; debug = debug)
         algo_code *= "\n\n"
     end
 
@@ -24,14 +24,17 @@ end
 """
 Generate Julia code for free energy evaluation
 """
-function freeEnergySourceCode(algo::InferenceAlgorithm)
+function freeEnergySourceCode(algo::InferenceAlgorithm; debug::Bool=false)
     algo.posterior_factorization.free_energy_flag || error("Required quantities for free energy evaluation are not computed by the algorithm. Make sure to flag free_energy=true upon algorithm construction to schedule computation of required quantities.")
 
-    fe_code  = "function freeEnergy$(algo.id)(data::Dict, marginals::Dict)\n\n"
+    fe_code  = "function freeEnergy$(algo.id)(data::Dict, marginals::Dict; dump::Union{GraphDump, Nothing}=nothing)\n\n"
     fe_code *= "F = 0.0\n\n"
-    fe_code *= energiesSourceCode(algo.average_energies)
+    fe_code *= energiesSourceCode(algo.average_energies, debug = debug)
     fe_code *= "\n"
-    fe_code *= entropiesSourceCode(algo.entropies)
+    fe_code *= entropiesSourceCode(algo.entropies, debug = debug)
+    fe_code *= "\nif dump !== nothing"
+    fe_code *= "\n    push!(dump.steps, AlgorithmStep())"
+    fe_code *= "\nend"
     fe_code *= "\nreturn F\n\n"
     fe_code *= "end"
 
@@ -41,7 +44,7 @@ end
 """
 Generate Julia code for message passing on a single posterior factor
 """
-function posteriorFactorSourceCode(pf::PosteriorFactor)
+function posteriorFactorSourceCode(pf::PosteriorFactor; debug::Bool = false)
     pf_code = ""
     if pf.optimize
         pf_code *= optimizeSourceCode(pf)
@@ -54,10 +57,14 @@ function posteriorFactorSourceCode(pf::PosteriorFactor)
     end
 
     n_entries = length(pf.schedule)
-    pf_code *= "function step$(pf.algorithm_id)$(pf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_entries))\n\n"
-    pf_code *= scheduleSourceCode(pf.schedule)
+    pf_code *= "function step$(pf.algorithm_id)$(pf.id)!(data::Dict, marginals::Dict=Dict(), messages::Vector{Message}=Array{Message}(undef, $n_entries); dump::Union{GraphDump, Nothing} = nothing)\n\n"
+    if debug
+        pf_code *= "\npush!(dump.steps[end].messages, Vector{MessageData}())\n"
+        pf_code *= "\npush!(dump.steps[end].marginals, Vector{MarginalData}())\n"
+    end
+    pf_code *= scheduleSourceCode(pf.schedule; debug = debug)
     pf_code *= "\n"
-    pf_code *= marginalTableSourceCode(pf.marginal_table)
+    pf_code *= marginalTableSourceCode(pf.marginal_table; debug = debug)
     pf_code *= "return marginals\n\n"
     pf_code *= "end"
 
@@ -103,13 +110,20 @@ end
 """
 Generate code for evaluating the average energy
 """
-function energiesSourceCode(average_energies::Vector)
+function energiesSourceCode(average_energies::Vector; debug::Bool=false)
     energies_code = ""
     for energy in average_energies
         count_code = countingNumberSourceCode(energy[:counting_number])
         node_code = removePrefix(energy[:node])
         inbounds_code = inboundsSourceCode(energy[:inbounds])
-        energies_code *= "F += $(count_code)averageEnergy($node_code, $inbounds_code)\n"
+
+        if debug
+            energies_code *= "v = $(count_code)averageEnergy($node_code, $inbounds_code)\n"
+            energies_code *= "pushScore!(dump, \"$(energy[:node_id])\", v,  \"average_energy\")\n"
+            energies_code *= "F += v\n"
+        else
+            energies_code *= "F += $(count_code)averageEnergy($node_code, $inbounds_code)\n"
+        end
     end
 
     return energies_code
@@ -118,12 +132,22 @@ end
 """
 Generate code for evaluating the entropy
 """
-function entropiesSourceCode(entropies::Vector)
+function entropiesSourceCode(entropies::Vector; debug::Bool=false)
     entropies_code = ""
     for entropy in entropies
         count_code = countingNumberSourceCode(entropy[:counting_number])
         inbound_code = inboundSourceCode(entropy[:inbound])
-        entropies_code *= "F -= $(count_code)differentialEntropy($inbound_code)\n"
+
+        if debug
+            entropies_code *= "v = $(count_code)differentialEntropy($inbound_code)\n"
+            for edge in entropy[:target].edges
+                edge_id = string(edge.a.node.id, "_", edge.b.node.id)
+                entropies_code *= "pushScore!(dump, \"$(edge_id)\", v, \"entropy\")\n"
+            end
+            entropies_code *= "F -= v\n"
+        else
+            entropies_code *= "F -= $(count_code)differentialEntropy($inbound_code)\n"
+        end
     end
 
     return entropies_code
@@ -145,12 +169,19 @@ end
 """
 Construct code for message updates
 """
-function scheduleSourceCode(schedule::Schedule)
+function scheduleSourceCode(schedule::Schedule; debug::Bool = false)
     schedule_code = ""
     for entry in schedule
         rule_code = removePrefix(entry.message_update_rule)
         inbounds_code = inboundsSourceCode(entry.inbounds)
         schedule_code *= "messages[$(entry.schedule_index)] = rule$(rule_code)($inbounds_code)\n"
+
+        if debug
+            edge   = entry.interface.edge
+            edgeid = string(edge.a.node.id, "_", edge.b.node.id)
+            type   = entry.interface.node.id === edge.a.node.id ? "forward" : "backward"
+            schedule_code *= "\npushMessage!(dump, \"$(edgeid)\", \"$(type)\", messages[$(entry.schedule_index)])\n"
+        end
     end
 
     return schedule_code
@@ -159,7 +190,7 @@ end
 """
 Generate code for marginal updates
 """
-function marginalTableSourceCode(table::MarginalTable)
+function marginalTableSourceCode(table::MarginalTable; debug::Bool = false)
     table_code = ""
     for entry in table
         table_code *= "marginals[:$(entry.marginal_id)] = "
@@ -175,6 +206,12 @@ function marginalTableSourceCode(table::MarginalTable)
             inbounds_code = inboundsSourceCode(entry.inbounds)
             table_code *= "rule$(rule_code)($inbounds_code)"
         end
+
+        if debug
+            edgeIDs = map(e -> string(e.a.node.id, "_", e.b.node.id), entry.target.edges)
+            table_code *= "\npushMarginal!(dump, \"$(entry.marginal_id)\", $(edgeIDs), marginals[:$(entry.marginal_id)])\n"
+        end
+
         table_code *= "\n"
     end
     isempty(table_code) || (table_code *= "\n")
