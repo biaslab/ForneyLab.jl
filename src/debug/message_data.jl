@@ -13,4 +13,8 @@ struct MessageData
 end
 
 MessageSnapshot(message::Message{F, V}) where { F, V }    = MessageSnapshot(string(V), string(F), message.dist.params)
-MessageSnapshot(message::Message{F, V}) where { F <: Function, V } = error("Cannot dump function message [WIP]")
+
+function MessageSnapshot(message::Message{F, V}) where { F <: Function, V } 
+    # error("Cannot dump function message [WIP]")
+    return MessageSnapshot(string(V), string(F), Dict())
+end

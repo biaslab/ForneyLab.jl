@@ -13,4 +13,8 @@ struct MarginalData
 end
 
 MarginalSnapshot(dist::ProbabilityDistribution{V, F}) where { F, V }     = MarginalSnapshot(string(V), string(F), dist.params)
-MarginalSnapshot(dist::ProbabilityDistribution{V, F}) where { F <: Function, V } = error("Cannot dump function marginal [WIP]")
+
+function MarginalSnapshot(dist::ProbabilityDistribution{V, F}) where { F <: Function, V } 
+    # error("Cannot dump function marginal [WIP]")
+    return MarginalSnapshot(string(V), string(F), Dict())
+end
