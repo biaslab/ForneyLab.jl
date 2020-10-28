@@ -147,7 +147,7 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; target_va
                     increase!(cluster_counting_numbers, region, Inf) # Make sure to include the region for average energy evaluation
                 end
             elseif isa(node, Equality)
-                increase!(variable_counting_numbers, target_edges[1].variable, 1) # Increase the counting number for the equality-constrained variable
+                increase!(variable_counting_numbers, node.i[1].edge.variable, 1) # Increase the counting number for the equality-constrained variable
             else # Node is deterministic and not Equality, requires a joint belief for the inbound variables
                 outbound_edge = node.interfaces[1].edge
                 inbound_target_edges = filter(edge->edge!=outbound_edge, target_edges) # Collect local internal stochastic inbound edges
