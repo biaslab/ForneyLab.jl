@@ -175,7 +175,11 @@ end
     return prod!(x, y, z) # Return a SampleList
 end
 
-function sampleWeightsAndEntropy(x::ProbabilityDistribution{V, F}, y::ProbabilityDistribution) where {V<:VariateType, F<:FactorNode}
+function sampleWeightsAndEntropy(x::ProbabilityDistribution{V,F}, y::ProbabilityDistribution) where {V<:VariateType, F<:Function}
+    sampleWeightsAndEntropy(y, x)
+end
+
+function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistribution)
     n_samples = default_n_samples # Number of samples is fixed
     samples = sample(x, n_samples)
 
@@ -197,10 +201,10 @@ function sampleWeightsAndEntropy(x::ProbabilityDistribution{V, F}, y::Probabilit
 end
 
 # General product definition that returns a SampleList
-@symmetrical function prod!(
-    x::ProbabilityDistribution{V, F},
+function prod!(
+    x::ProbabilityDistribution{V},
     y::ProbabilityDistribution{V},
-    z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where {V<:VariateType, F<:FactorNode}
+    z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where {V<:VariateType}
 
     (samples, weights, entropy) = sampleWeightsAndEntropy(x, y)
 
