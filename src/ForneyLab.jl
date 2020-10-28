@@ -11,6 +11,7 @@ using Printf: @sprintf
 using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf, normlogcdf
 using ForwardDiff
 using StatsBase: Weights
+using JSON
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, exp, convert, show, prod!
@@ -126,5 +127,16 @@ include("update_rules/sample_list.jl")
 
 # Engines
 include("engines/julia/julia.jl")
+
+# Debug
+include("debug/marginal_data.jl")
+include("debug/message_data.jl")
+include("debug/score_data.jl")
+include("debug/edge_data.jl")
+include("debug/node_data.jl")
+include("debug/algorithm_step.jl")
+include("debug/graph_data.jl")
+include("debug/graph_dump.jl")
+include("debug/save.jl")
 
 end # module ForneyLab

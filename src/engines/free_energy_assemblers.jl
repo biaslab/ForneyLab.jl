@@ -16,6 +16,7 @@ function assembleFreeEnergy!(algo=currentInferenceAlgorithm())
         if cnt != 0
             average_energy = Dict{Symbol, Any}(:counting_number => cnt,
                                                :node => typeof(node),
+                                               :node_id => node.id,
                                                :inbounds => collectAverageEnergyInbounds(node))
             push!(average_energies_vect, average_energy)
         end
@@ -26,6 +27,7 @@ function assembleFreeEnergy!(algo=currentInferenceAlgorithm())
     for (target, cnt) in sort(entropy_counting_numbers_vect)
         if cnt != 0
             entropy = Dict{Symbol, Any}(:counting_number => cnt,
+                                        :target => target,
                                         :inbound => algo.target_to_marginal_entry[target])
             push!(entropies_vect, entropy)
         end
@@ -33,8 +35,8 @@ function assembleFreeEnergy!(algo=currentInferenceAlgorithm())
 
     algo.average_energies = average_energies_vect
     algo.entropies = entropies_vect
-    
-    return algo    
+
+    return algo
 end
 
 """
@@ -53,7 +55,7 @@ function assembleCountingNumbers!(pfz=currentPosteriorFactorization())
         union!(internal_edges, pf.internal_edges)
     end
     nodes_connected_to_internal_edges = nodes(internal_edges)
-    
+
     # Iterate over large regions
     for node in nodes_connected_to_internal_edges
         target_regions = unique!(localStochasticRegions(node, pfz)) # Collect all unique stochastic regions around node
