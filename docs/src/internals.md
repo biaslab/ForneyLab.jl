@@ -10,9 +10,6 @@ ForneyLab's directories and files are structured as follows:
 - `/docs/`: documentation source and build location
 - `/src/`: ForneyLab source files
     - `algorithms/`: inference algorithm implementations
-        - `expectation_propagation/`: EP algorithm implementation
-        - `sum_product/`: SP algorithm implementation
-        - `variational_bayes/`: VMP algorithm implementation
     - `engines/`: rendering of message passing schedules to executable code
         - `julia/`: Julia engine and update rule implementations
     - `factor_nodes/`: all node-specific files

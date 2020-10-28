@@ -59,7 +59,7 @@ unsafeMirroredLogMean(dist::ProbabilityDistribution{Univariate, Beta}) = digamma
 
 unsafeVar(dist::ProbabilityDistribution{Univariate, Beta}) = dist.params[:a]*dist.params[:b]/((dist.params[:a] + dist.params[:b])^2*(dist.params[:a] + dist.params[:b] + 1.0))
 
-logPdf(dist::ProbabilityDistribution{Univariate, Beta}, x) = (dist.params[:a]-1)*log(x) + (dist.params[:b]-1)*log(1.0-x) - labsgamma(dist.params[:a]) - labsgamma(dist.params[:b]) + labsgamma(dist.params[:a]+dist.params[:b])
+logPdf(dist::ProbabilityDistribution{Univariate, Beta}, x) = (dist.params[:a]-1)*log(x) + (dist.params[:b]-1)*log(1.0-x) - loggamma(dist.params[:a]) - loggamma(dist.params[:b]) + loggamma(dist.params[:a]+dist.params[:b])
 
 function prod!( x::ProbabilityDistribution{Univariate, Beta},
                 y::ProbabilityDistribution{Univariate, Beta},
@@ -96,4 +96,13 @@ function averageEnergy(::Type{Beta}, marg_out::ProbabilityDistribution{Univariat
     labsbeta(marg_a.params[:m], marg_b.params[:m]) -
     (marg_a.params[:m] - 1.0)*unsafeLogMean(marg_out) -
     (marg_b.params[:m] - 1.0)*unsafeMirroredLogMean(marg_out)
+end
+
+# By Stirling's approximation and Monte Carlo summation
+function averageEnergy(::Type{Beta}, marg_out::ProbabilityDistribution{Univariate}, marg_a::ProbabilityDistribution{Univariate}, marg_b::ProbabilityDistribution{Univariate})
+    unsafeMeanLogMean(marg_a) - unsafeMean(marg_a) + 0.5*(log(2*pi)-unsafeLogMean(marg_a)) +
+    unsafeMeanLogMean(marg_b) - unsafeMean(marg_b) + 0.5*(log(2*pi)-unsafeLogMean(marg_b)) -
+    (unsafeMean(marg_a)-1)*unsafeLogMean(marg_out) -
+    (unsafeMean(marg_b)-1)*unsafeMirroredLogMean(marg_out) -
+    sum(loggamma.(sample(marg_a,default_n_samples).+sample(marg_b,default_n_samples)))/default_n_samples
 end

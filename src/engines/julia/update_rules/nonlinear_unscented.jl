@@ -5,8 +5,7 @@ ruleSPNonlinearUTOutNG,
 ruleSPNonlinearUTOutNGX,
 ruleSPNonlinearUTIn1GG,
 ruleSPNonlinearUTInGX,
-ruleMNonlinearUTInGX,
-prod!
+ruleMNonlinearUTInGX
 
 const default_alpha = 1e-3 # Default value for the spread parameter
 const default_beta = 2.0
@@ -267,8 +266,8 @@ end
 # Custom inbounds collectors
 #---------------------------
 
-# Unscented transform
-function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::ScheduleEntry)
+# Unscented transform and extended approximation
+function collectSumProductNodeInbounds(node::Nonlinear{T}, entry::ScheduleEntry) where T<:Union{Unscented, Extended}
     inbounds = Any[]
 
     # Push function (and inverse) to calling signature
@@ -297,7 +296,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
     for node_interface in node.interfaces
         inbound_interface = ultimatePartner(node_interface)
         if (node_interface == entry.interface != node.interfaces[1]) && undefined_inverse
-            # Collect the message inbound if no inverse is available for backward rule
+            # Collect the breaker message for a backward update without given inverse
             haskey(interface_to_schedule_entry, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
             push!(inbounds, interface_to_schedule_entry[inbound_interface])
         elseif node_interface == entry.interface
@@ -312,8 +311,8 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
         end
     end
 
-    # Push spread parameter if manually defined
-    if node.alpha != nothing
+    # Push custom arguments if manually defined
+    if (T == Unscented) && (node.alpha != nothing)
         push!(inbounds, Dict{Symbol, Any}(:alpha => node.alpha,
                                           :keyword => true))
     end
@@ -321,7 +320,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Unscented}, entry::Schedu
     return inbounds
 end
 
-function collectMarginalNodeInbounds(node::Nonlinear{Unscented}, entry::MarginalEntry)
+function collectMarginalNodeInbounds(node::Nonlinear, entry::MarginalEntry)
     inbounds = Any[]
 
     # Push function (and inverse) to calling signature

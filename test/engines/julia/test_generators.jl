@@ -158,9 +158,9 @@ end
 end
 
 @testset "initializationSourceCode" begin
-    g = FactorGraph()
+    fg = FactorGraph()
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, id=:X)
+    pf = PosteriorFactor(fg, id=:X)
     algo = InferenceAlgorithm(pfz)
     pf.algorithm_id = algo.id
     pf.initialize = true
@@ -177,9 +177,9 @@ end
 end
 
 @testset "optimizeSourceCode" begin
-    g = FactorGraph()
+    fg = FactorGraph()
     pfz = PosteriorFactorization()
-    pf = PosteriorFactor(pfz, id=:X)
+    pf = PosteriorFactor(fg, id=:X)
     algo = InferenceAlgorithm(pfz)
     pf.algorithm_id = algo.id
     pf.optimize = true
@@ -189,9 +189,9 @@ end
 end
 
 @testset "posteriorFactorSourceCode" begin
-    g = FactorGraph()
+    fg = FactorGraph()
     pfz = PosteriorFactorization() 
-    pf = PosteriorFactor(pfz, id=:X)
+    pf = PosteriorFactor(fg, id=:X)
     algo = InferenceAlgorithm(pfz)
     pf.algorithm_id = algo.id
     pf.schedule = []
@@ -203,8 +203,8 @@ end
 
 @testset "algorithmSourceCode" begin
     algo = InferenceAlgorithm()
-    algo_code = algorithmSourceCode(algo)
-    @test occursin("begin", algo_code)
+    code = algorithmSourceCode(algo)
+    @test occursin("begin", code)
 end
 
 @testset "freeEnergySourceCode" begin

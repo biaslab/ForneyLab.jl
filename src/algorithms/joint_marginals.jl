@@ -74,19 +74,19 @@ end
 Find the inbound types that are required to compute a joint marginal over `target`.
 Returns a vector with inbound types that correspond with required interfaces.
 """
-function collectInboundTypes(inbound_cluster::Cluster, outbound_types::Dict{Interface, Type})
+function collectInboundTypes(cluster::Cluster, outbound_types::Dict{Interface, Type})
     inbound_types = Type[]
-    inbound_cluster_pf = posteriorFactor(first(inbound_cluster.edges))
+    cluster_pf = posteriorFactor(first(cluster.edges))
     encountered_external_regions = Set{Region}()
-    for node_interface in inbound_cluster.node.interfaces
-        current_region = region(inbound_cluster.node, node_interface.edge) # Returns a Variable if no cluster is assigned
+    for node_interface in cluster.node.interfaces
+        current_region = region(cluster.node, node_interface.edge) # Returns a Variable if no cluster is assigned
         current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
         inbound_interface = ultimatePartner(node_interface)
 
-        if (current_pf === inbound_cluster_pf) && (node_interface.edge in inbound_cluster.edges)
+        if (current_pf === cluster_pf) && (current_region === cluster)
             # Edge is internal and in cluster, accept message
             push!(inbound_types, outbound_types[inbound_interface])
-        elseif (current_pf === inbound_cluster_pf)
+        elseif (current_pf === cluster_pf)
             # Edge is internal but not in cluster, signal to rule signature that edge will be marginalized out by appending "Nothing"
             push!(inbound_types, Nothing)
         elseif !(current_region in encountered_external_regions)
@@ -140,8 +140,9 @@ macro marginalRule(fields...)
     push!(input_type_validators, :(length(input_types) == $(length(inbound_types.args))))
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
-            # Only validate inbounds required for update
             push!(input_type_validators, :(ForneyLab.matches(input_types[$i], $i_type)))
+        else # For a marginal rule, "Nothing" means that the input is marginalized out
+            push!(input_type_validators, :(input_types[$i] == Nothing))
         end
     end
 
@@ -169,14 +170,17 @@ function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
 
     inbounds = Any[]
     entry_pf = posteriorFactor(first(entry.target.edges))
-    encountered_external_regions = Set{Region}()
+    encountered_external_regions = Region[]
     for node_interface in entry.target.node.interfaces
         current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field
         current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
         inbound_interface = ultimatePartner(node_interface)
 
-        if (inbound_interface != nothing) && isa(inbound_interface.node, Clamp)
-            # Edge is clamped, hard-code marginal of constant node
+        if isClamped(inbound_interface) && (current_pf === entry_pf)
+            # Edge is clamped and internal, hard-code message of clamp node
+            push!(inbounds, assembleClamp!(copy(inbound_interface.node), Message)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
+        elseif isClamped(inbound_interface)
+            # Edge is clamped and external, hard-code marginal of clamp node
             push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
         elseif (current_pf === entry_pf)
             # Edge is internal, collect message from previous result

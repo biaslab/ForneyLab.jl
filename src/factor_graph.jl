@@ -33,18 +33,22 @@ end
 
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph
 
-FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, FactorNode}(),
+function FactorGraph() 
+    
+    global current_posterior_factorization = nothing
+    
+    setCurrentGraph(FactorGraph(Dict{Symbol, FactorNode}(),
                                             Edge[],
                                             Dict{Symbol, Variable}(),
                                             Dict{Type, Int}(),
                                             Dict{Clamp, Tuple{Symbol, Int}}()))
-
+end
 """
 Automatically generate a unique id based on the current counter value for the element type.
 """
 function generateId(t::Type)
     graph = currentGraph()
-    tname = lowercase(split(string(t.name),'.')[end]) # Remove module prefix from typename
+    tname = lowercase(String(nameof(t))) # Remove module prefix from typename
     counter = haskey(graph.counters, tname) ? graph.counters[tname]+1 : 1
     id = Symbol("$(tname)_$(counter)")
 
@@ -160,5 +164,100 @@ function ultimatePartner(interface::Interface)
         return ultimatePartner(interface.partner.node.outer_interface)
     else
         return interface.partner
+    end
+end
+
+"""
+Deterministic edges are associated with a PointMass belief.
+Find all edges in the graph that are deterministic.
+"""
+function deterministicEdges(fg::FactorGraph)
+    deterministic_edges = Set{Edge}()
+    for node in nodes(fg)
+        if isa(node, Clamp)
+            union!(deterministic_edges, deterministicEdgeSet(node.i[:out].edge))
+        end
+    end
+    
+    return deterministic_edges
+end
+
+"""
+Extend the root_edge to a deterministically connected set, and determine
+which edges in the extended set carry PointMass beliefs.
+"""
+function deterministicEdgeSet(root_edge::Edge)
+    # Collect deterministically connected edges
+    edge_set = extend(root_edge, terminate_at_soft_factors=true)
+    
+    # Collect all interfaces in edge set
+    interfaces = Interface[]
+    for edge in edge_set
+        (edge.a == nothing) || push!(interfaces, edge.a)
+        (edge.b == nothing) || push!(interfaces, edge.b)
+    end
+    
+    # Identify a schedule that propagates through the entire edge set
+    dg = summaryDependencyGraph(edge_set)
+    schedule = children(interfaces, dg)
+
+    # Build dictionary of deterministicness
+    is_deterministic = Dict{Interface, Bool}()
+    for interface in schedule
+        is_deterministic[interface] = isDeterministic(interface, is_deterministic)
+    end
+    
+    # Determine deterministic edges
+    deterministic_edges = Set{Edge}()
+    for edge in edge_set
+        deterministic_a = (edge.a != nothing) && is_deterministic[edge.a]
+        deterministic_b = (edge.b != nothing) && is_deterministic[edge.b]
+
+        # An edge is deterministic if any of its interfaces are deterministic
+        if deterministic_a || deterministic_b
+            push!(deterministic_edges, edge)
+        end
+    end
+    
+    return deterministic_edges
+end
+
+"""
+Determine whether interface sends a PointMass message, based on the connected
+node, and the deterministic status of the inbound messages.
+"""
+function isDeterministic(interface::Interface, is_deterministic::Dict{Interface, Bool})
+    # First handle immediate cases
+    node = interface.node
+    if !isa(node, DeltaFactor)
+        # We assume a non-delta factor sends stochastic messages in all directions.
+        # This includes the CompositeFactor, for which this is the conservative choice.
+        return false
+    elseif isa(node, Clamp)
+        return true # Clamp nodes only send deterministic messages
+    end
+    
+    # Collect deterministicness of inbounds
+    inbounds_deterministic = Bool[]
+    for iface in node.interfaces
+        if iface != interface
+            partner = ultimatePartner(iface)
+            if partner == nothing # Dangling edge
+                push!(inbounds_deterministic, false) # Unconstrained inbound is considered stochastic (uninformative)
+            else
+                push!(inbounds_deterministic, is_deterministic[partner])
+            end
+        end
+    end
+    
+    # Determine deterministicness of outbound from inbounds
+    if isa(node, Equality) && any(inbounds_deterministic)
+        return true # Deterministic
+    elseif any(.!inbounds_deterministic)
+        return false # Delta factor with any stochastic inbounds sends a stochastic message
+    elseif all(inbounds_deterministic)
+        return true # Delta factor with all inbounds deterministic sends a deterministic message
+    else # Fallback
+        return false # Stochastic
     end
 end

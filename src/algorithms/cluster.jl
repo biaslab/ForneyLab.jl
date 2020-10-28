@@ -31,8 +31,3 @@ function region(node::FactorNode, edge::Edge)
 
     return cl::Region
 end
-
-"""
-Return the local regions around `node`
-"""
-localRegions(node::FactorNode) = [region(node, interface.edge) for interface in node.interfaces]

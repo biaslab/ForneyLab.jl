@@ -32,6 +32,17 @@ function ruleSPNonlinearSIn1MN(g::Function,
     return Message(V, Function, log_pdf = (z)->logPdf(msg_out.dist, g(z)))
 end
 
+function ruleSPNonlinearSOutNM(g::Function,
+                               msg_out::Nothing,
+                               msg_in1::Message{SampleList, V};
+                               n_samples=default_n_samples) where {V<:VariateType}
+
+    samples = g.(msg_in1.dist.params[:s])
+    weights = msg_in1.dist.params[:w]
+
+    return Message(V, SampleList, s=samples, w=weights)
+end
+
 function ruleSPNonlinearSOutNGX(g::Function,
                                 msg_out::Nothing,
                                 msgs_in::Vararg{Message{<:Gaussian, V}};
@@ -50,7 +61,7 @@ function ruleSPNonlinearSInGX(g::Function,
                               msg_out::Message{<:Gaussian, V},
                               msgs_in::Vararg{Message{<:Gaussian, V}};
                               n_samples=default_n_samples) where V<:VariateType
-    
+
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
     (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
@@ -79,7 +90,7 @@ end
 function ruleMNonlinearSInGX(g::Function,
                              msg_out::Message{<:Gaussian, V},
                              msgs_in::Vararg{Message{<:Gaussian, V}}) where V<:VariateType
-    
+
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
     (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
@@ -93,6 +104,56 @@ function ruleMNonlinearSInGX(g::Function,
     W_in = -ForwardDiff.jacobian(d_log_joint, m_in)
 
     return ProbabilityDistribution(Multivariate, GaussianMeanPrecision, m=m_in, w=W_in)
+end
+
+
+#---------------------------
+# Custom inbounds collectors
+#---------------------------
+
+# Unscented transform and extended approximation
+function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::ScheduleEntry)
+    inbounds = Any[]
+
+    # Push function to calling signature
+    # This function needs to be defined in the scope of the user
+    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
+                                      :keyword => false))
+
+    multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
+    inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
+
+    if (inx > 0) && multi_in # Multi-inbound backward rule
+        push!(inbounds, Dict{Symbol, Any}(:inx => inx, # Push inbound identifier
+                                          :keyword => false))
+    end
+
+    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
+    for node_interface in node.interfaces
+        inbound_interface = ultimatePartner(node_interface)
+        if (node_interface == entry.interface != node.interfaces[1]) && multi_in
+            # Collect the breaker message for a backward rule with multiple inbounds
+            haskey(interface_to_schedule_entry, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        elseif node_interface == entry.interface
+            # Ignore inbound message on outbound interface
+            push!(inbounds, nothing)
+        elseif isa(inbound_interface.node, Clamp)
+            # Hard-code outbound message of constant node in schedule
+            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
+        else
+            # Collect message from previous result
+            push!(inbounds, interface_to_schedule_entry[inbound_interface])
+        end
+    end
+
+    # Push custom arguments if manually defined
+    if (node.n_samples != nothing)
+        push!(inbounds, Dict{Symbol, Any}(:n_samples => node.n_samples,
+                                          :keyword   => true))
+    end
+
+    return inbounds
 end
 
 
@@ -119,7 +180,7 @@ end
     log_joint(s) = logPdf(y,s) + logPdf(x,s)
     d_log_joint(s) = ForwardDiff.derivative(log_joint, s)
     m_initial = unsafeMean(y)
-    
+
     mean = gradientOptimization(log_joint, d_log_joint, m_initial, 0.01)
     prec = -ForwardDiff.derivative(d_log_joint, mean)
 
@@ -146,87 +207,6 @@ end
     z.params[:w] = prec
 
     return z
-end
-
-
-#--------------------------
-# Custom inbound collectors
-#--------------------------
-
-function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::ScheduleEntry)
-    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
-
-    inbounds = Any[]
-
-    # Push function to calling signature; function needs to be defined in the scope of the user
-    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
-                                      :keyword => false))
-
-    multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
-    inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
-    if multi_in && (inx > 0) # Multiple inbounds, and a backward message is required
-        push!(inbounds, Dict{Symbol, Any}(:inx => inx, # Push inbound identifier to calling signature
-                                          :keyword => false))
-    end
-
-    for node_interface in node.interfaces
-        inbound_interface = ultimatePartner(node_interface)
-        if (node_interface == entry.interface != node.interfaces[1]) && multi_in
-            # Collect the message inbound for backward rule
-            haskey(interface_to_schedule_entry, inbound_interface) || error("The nonlinear node's backward rule uses the incoming message on the input edge to determine the approximation point. Try altering the variable order in the scheduler to first perform a forward pass.")
-            push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        elseif node_interface == entry.interface
-            # Ignore inbound message on outbound interface
-            push!(inbounds, nothing)
-        elseif isa(inbound_interface.node, Clamp)
-            # Hard-code outbound message of constant node in schedule
-            push!(inbounds, assembleClamp!(inbound_interface.node, Message))
-        else
-            # Collect message from previous result
-            push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        end
-    end
-
-    if node.n_samples != nothing
-        push!(inbounds, Dict{Symbol, Any}(:n_samples => node.n_samples,
-                                          :keyword   => true))
-    end
-
-    return inbounds
-end
-
-function collectMarginalNodeInbounds(node::Nonlinear{Sampling}, entry::MarginalEntry)
-    interface_to_schedule_entry = current_inference_algorithm.interface_to_schedule_entry
-    target_to_marginal_entry = current_inference_algorithm.target_to_marginal_entry
-    inbound_cluster = entry.target # Entry target is a cluster
-
-    inbounds = Any[]
-
-    # Push function to calling signature; function needs to be defined in the scope of the user
-    push!(inbounds, Dict{Symbol, Any}(:g => node.g,
-                                      :keyword => false))
-
-    entry_pf = posteriorFactor(first(entry.target.edges))
-    encountered_external_regions = Set{Region}()
-    for node_interface in entry.target.node.interfaces
-        current_region = region(inbound_cluster.node, node_interface.edge) # Note: edges that are not assigned to a posterior factor are assumed mean-field
-        current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
-        inbound_interface = ultimatePartner(node_interface)
-
-        if (inbound_interface !== nothing) && isa(inbound_interface.node, Clamp)
-            # Edge is clamped, hard-code marginal of constant node
-            push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
-        elseif (current_pf === entry_pf)
-            # Edge is internal, collect message from previous result
-            push!(inbounds, interface_to_schedule_entry[inbound_interface])
-        elseif !(current_region in encountered_external_regions)
-            # Edge is external and region is not yet encountered, collect marginal from marginal dictionary
-            push!(inbounds, target_to_marginal_entry[current_region])
-            push!(encountered_external_regions, current_region) # Register current region with encountered external regions
-        end
-    end
-
-    return inbounds
 end
 
 

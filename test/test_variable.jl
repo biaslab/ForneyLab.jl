@@ -133,6 +133,14 @@ end
     @test g.variables[:x_new] === x
     @test length(g.variables) == 2
 
+    # @RV without node definition should create a new Variable with a given index
+    g = FactorGraph()
+    xi = Vector{Variable}(undef, 1)
+    t = 1
+    @RV xi[t]
+    @test isa(xi[1], Variable)
+    @test g.variables[:xi_1] === xi[1]
+
     # @RV should throw an exception on incorrect usage
     @test_throws ErrorException @RV 1
     @test_throws ErrorException @RV [ 1 ]

@@ -79,9 +79,9 @@ unsafeMeanVector(dist::ProbabilityDistribution{Multivariate, PointMass}) = deepc
 unsafeInverseMean(dist::ProbabilityDistribution{Univariate, PointMass}) = 1.0/dist.params[:m]
 unsafeInverseMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = cholinv(dist.params[:m])
 
-unsafeLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(dist.params[:m])
-unsafeLogMean(dist::ProbabilityDistribution{Multivariate, PointMass}) = log.(dist.params[:m])
-unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = log.(dist.params[:m])
+unsafeLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(clamp(dist.params[:m], tiny, Inf))
+unsafeLogMean(dist::ProbabilityDistribution{Multivariate, PointMass}) = log.(clamp.(dist.params[:m], tiny, Inf))
+unsafeLogMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = log.(clamp.(dist.params[:m], tiny, Inf))
 
 unsafeDetLogMean(dist::ProbabilityDistribution{Univariate, PointMass}) = log(dist.params[:m])
 unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, PointMass}) = log(det(dist.params[:m]))
@@ -116,6 +116,16 @@ vague(::Type{Function}) = ProbabilityDistribution(Univariate, Function)
 isProper(dist::ProbabilityDistribution{<:VariateType, Function}) = haskey(dist.params, :log_pdf)
 
 logPdf(dist::ProbabilityDistribution{<:VariateType, Function}, x) = dist.params[:log_pdf](x)
+
+# Convert VariateTypes
+convert(::Type{ProbabilityDistribution{Multivariate, PointMass}}, dist::ProbabilityDistribution{Univariate, PointMass}) =
+    ProbabilityDistribution(Multivariate, PointMass, m=[dist.params[:m]])
+convert(::Type{ProbabilityDistribution{MatrixVariate, PointMass}}, dist::ProbabilityDistribution{Univariate, PointMass}) =
+    ProbabilityDistribution(MatrixVariate, PointMass, m=mat(dist.params[:m]))
+convert(::Type{ProbabilityDistribution{MatrixVariate, PointMass}}, dist::ProbabilityDistribution{Multivariate, PointMass}) =
+    ProbabilityDistribution(MatrixVariate, PointMass, m=reshape(dist.params[:m], dims(dist), 1))
+
+sample(dist::ProbabilityDistribution{T, PointMass}) where T<:VariateType = deepcopy(dist.params[:m])
 
 """
 Compute conditional differential entropy: H(Y|X) = H(Y, X) - H(X)

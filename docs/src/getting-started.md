@@ -84,10 +84,11 @@ As you can see, ForneyLab offers a model specification syntax that resembles clo
 Once we have defined our model, the next step is to instruct ForneyLab to generate a message-passing algorithm that solves our given inference problem. To do this, we need to specify which type of algorithm we want to use. In this case we will use *belief propagation*, also known as the *sum-product algorithm*. Once we execute the following code, we see that a function called `step!(...)` becomes available in the current scope. This function contains the sum-product message-passing algorithm.
 ```@example 2
 # Generate a message passging sum-product algorithm that infers theta
-algo = sumProductAlgorithm(θ) # derive a sum-product algorithm to infer θ
+algo = messagePassingAlgorithm(θ) # derive a sum-product algorithm to infer θ
 algo_code = algorithmSourceCode(algo) # convert the algorithm to Julia code
 algo_expr = Meta.parse(algo_code) # parse the algorithm into a Julia expression
-eval(algo_expr); # evaluate the functions contained in the Julia expression
+eval(algo_expr) # evaluate the functions contained in the Julia expression
+nothing # hide
 ```
 
 ```julia
@@ -127,14 +128,14 @@ The plot below shows the result of the inference procedure. We see how the
 posterior is a “compromise” between the prior and likelihood, as mandated by Bayesian inference.
 ```@example 2
 using Plots, LaTeXStrings, SpecialFunctions; theme(:default)
-pyplot(fillalpha=0.3, leg=false, xlabel=L"\theta", yticks=nothing)
+plot(fillalpha=0.3, fillrange = 0, leg=false, xlabel=L"\theta", yticks=nothing)
 BetaPDF(α, β) = x ->  x^(α-1)*(1-x)^(β-1)/beta(α, β) # beta distribution definition
 BernoulliPDF(z, N) = θ -> θ^z*(1-θ)^(N-z) # Bernoulli distribution definition
 
 rθ = range(0, 1, length=100)
-p1 = plot(rθ, BetaPDF(a, b), title="Prior", fill=true, ylabel=L"P(\theta)", c=1,)
-p2 = plot(rθ, BernoulliPDF(sum(dataset), N), title="Likelihood", fill=true, ylabel=L"P(D|\theta)", c=2)
-p3 = plot(rθ, BetaPDF(marginals[:θ].params[:a], marginals[:θ].params[:b]), title="Posterior", fill=true, ylabel=L"P(\theta|D)", c=3)
+p1 = plot(rθ, BetaPDF(a, b), title="Prior", fillalpha=0.3, fillrange = 0, ylabel=L"P(\theta)", c=1,)
+p2 = plot(rθ, BernoulliPDF(sum(dataset), N), title="Likelihood", fillalpha=0.3, fillrange = 0, ylabel=L"P(D|\theta)", c=2)
+p3 = plot(rθ, BetaPDF(marginals[:θ].params[:a], marginals[:θ].params[:b]), title="Posterior", fillalpha=0.3, fillrange = 0, ylabel=L"P(\theta|D)", c=3)
 plot(p1, p2, p3, layout=@layout([a; b; c]))
 ```
 

@@ -23,9 +23,11 @@ format(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = "$(s
 
 ProbabilityDistribution(::Type{Univariate}, ::Type{SampleList}; s=[0.0], w=[1.0]) = ProbabilityDistribution{Univariate, SampleList}(Dict{Symbol, Any}(:s=>s, :w=>w))
 ProbabilityDistribution(::Type{Multivariate}, ::Type{SampleList}; s=[[0.0]], w=[1.0]) = ProbabilityDistribution{Multivariate, SampleList}(Dict{Symbol, Any}(:s=>s, :w=>w))
+ProbabilityDistribution(::Type{MatrixVariate}, ::Type{SampleList};s=[mat(0.0)], w=[1.0]) = ProbabilityDistribution{MatrixVariate, SampleList}(Dict{Symbol,Any}(:s=>s,:w=>w))
 
 dims(dist::ProbabilityDistribution{Univariate, SampleList}) = 1
 dims(dist::ProbabilityDistribution{Multivariate, SampleList}) = length(dist.params[:s][1])
+dims(dist::ProbabilityDistribution{MatrixVariate, SampleList}) = size(dist.params[:s][1])
 
 function vague(::Type{SampleList})
     n_samples = default_n_samples # Fixed number of samples
@@ -40,13 +42,34 @@ function vague(::Type{SampleList}, dims::Int64)
     for n=1:n_samples
         s_list[n] = rand(dims)
     end
-    
+
+    return ProbabilityDistribution(Multivariate, SampleList, s=s_list, w=ones(n_samples)/n_samples)
+end
+
+function vague(::Type{SampleList}, dims::Tuple{Int64,Int64})
+    n_samples = default_n_samples # Fixed number of samples
+
+    s_list = Vector{Matrix{Number}}(undef, n_samples)
+    for n=1:n_samples
+        s_list[n] = randn(dims)
+    end
+
     return ProbabilityDistribution(Multivariate, SampleList, s=s_list, w=ones(n_samples)/n_samples)
 end
 
 unsafeMean(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = sum(dist.params[:s].*dist.params[:w])
 
 unsafeLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = sum(log.(dist.params[:s]).*dist.params[:w])
+
+unsafeMeanLogMean(dist::ProbabilityDistribution{Univariate, SampleList}) = sum(dist.params[:s].*log.(dist.params[:s]).*dist.params[:w])
+
+function unsafeLogMean(dist::ProbabilityDistribution{Multivariate, SampleList})
+    sum = zeros(length(dist.params[:s][1]))
+    for i=1:length(dist.params[:s])
+        sum = sum .+ log.(dist.params[:s][i]).*dist.params[:w][i]
+    end
+    return sum
+end
 
 # Unbiased (co)variance estimates
 function unsafeVar(dist::ProbabilityDistribution{Univariate, SampleList})
@@ -71,6 +94,25 @@ function unsafeCov(dist::ProbabilityDistribution{Multivariate, SampleList})
     end
 
     return (n_samples/(n_samples - 1)).*tot
+end
+
+function unsafeCov(dist::ProbabilityDistribution{MatrixVariate, SampleList})
+    samples = dist.params[:s]
+    weights = dist.params[:w]
+
+    n_samples = length(samples)
+    m = unsafeMean(dist)
+    cov1 = zeros(dims(dist)[1],dims(dist)[1])
+    cov2 = zeros(dims(dist)[2],dims(dist)[2])
+
+    for i = 1:n_samples
+        cov1 += ((samples[i] .- m))*transpose((samples[i] .- m)).*weights[i]
+        cov2 += transpose((samples[i] .- m))*((samples[i] .- m)).*weights[i]
+    end
+    cov1 = (n_samples/(n_samples - 1)).*cov1
+    cov2 = (n_samples/(n_samples - 1)).*cov2
+
+    return kron(cov1, cov2)
 end
 
 unsafeMeanCov(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = (unsafeMean(dist), unsafeCov(dist))
@@ -129,7 +171,7 @@ end
     y::ProbabilityDistribution{Multivariate, SampleList}) where F<:Gaussian
 
     z = ProbabilityDistribution(Multivariate, SampleList, s=[[0.0]], w=[1.0])
-    
+
     return prod!(x, y, z) # Return a SampleList
 end
 
@@ -184,9 +226,53 @@ end
     return z
 end
 
+# Bootstrap samples
+function bootstrap(dist_mean::ProbabilityDistribution{Univariate, SampleList}, dist_var::ProbabilityDistribution{Univariate, PointMass})
+    s_m = dist_mean.params[:s] # Samples representing the mean
+    N = length(s_m)
+    v = dist_var.params[:m] # Fixed variance
+
+    return sqrt(v)*randn(N) .+ s_m # New samples
+end
+
+function bootstrap(dist_mean::ProbabilityDistribution{Multivariate, SampleList}, dist_var::ProbabilityDistribution{MatrixVariate, PointMass})
+    d = dims(dist_mean)
+    s_m = dist_mean.params[:s] # Samples representing the mean
+    N = length(s_m)
+    V = dist_var.params[:m] # Fixed variance
+    U = (cholesky(V)).U # Precompute Cholesky
+
+    return [U' *randn(d) + s_m[i] for i in 1:N] # New samples
+end
+
+function bootstrap(dist_mean::ProbabilityDistribution{Univariate, <:Gaussian}, dist_var::ProbabilityDistribution{Univariate, SampleList})
+    s_v = dist_var.params[:s] # Samples representing the variance
+    N = length(s_v)
+    (m, v) = unsafeMeanCov(dist_mean)
+    s_u = sqrt.(s_v .+ v) # Standard deviation for each variance sample
+
+    return s_u.*randn(N) .+ m # New samples
+end
+
+function bootstrap(dist_mean::ProbabilityDistribution{Multivariate, <:Gaussian}, dist_var::ProbabilityDistribution{MatrixVariate, SampleList})
+    d = dims(dist_mean)
+    s_V = dist_var.params[:s] # Samples representing the covariance
+    N = length(s_V)
+    (m, V) = unsafeMeanCov(dist_mean)
+    s_U = [(cholesky(s_V[i] + V)).U for i in 1:N] # Precompute Cholesky for each covariance sample; this can be expensive
+
+    return [s_U[i]' *randn(d) + m for i in 1:N] # New samples
+end
+
+#Sampling from a distribution in ForneyLab returns equally weighted samples from the distribution
+#To retain the unified standard procedure, we allow sampling from SampleList not through directly returning
+#sample and weight parameters but drawing samples from the existing list of samples according to weights.
+# Inverse-transform sampling
+sample(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = sample(dist.params[:s], Weights(dist.params[:w]))    
+
 # Differential entropy for SampleList
 function differentialEntropy(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType
     haskey(dist.params, :entropy) || error("Missing entropy for SampleList; quantity is requested but not computed")
-    
+
     return dist.params[:entropy] # Entropy is pre-computed during computation of the marginal
 end

@@ -34,6 +34,15 @@ end
 
 slug(::Type{Probit}) = "Φ"
 
+# A breaker message is required if interface is partnered with probit.i[:in1]
+requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Probit) = (partner_interface == partner_node.i[:in1])
+
+function breakerParameters(interface::Interface, partner_interface::Interface, partner_node::Probit)
+    requiresBreaker(interface, partner_interface, partner_node) || error("Breaker dimensions requested for non-breaker interface: $(interface)")
+
+    return (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only
+end
+
 # Average energy functional
 function averageEnergy(::Type{Probit}, marg_out::ProbabilityDistribution{Univariate, Bernoulli}, marg_in1::ProbabilityDistribution{Univariate, F}) where F<:Gaussian
     (marg_in1_m, marg_in1_v) = unsafeMeanCov(marg_in1)

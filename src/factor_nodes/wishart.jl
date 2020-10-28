@@ -46,6 +46,10 @@ dims(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = size(dist.params[:
 vague(::Type{Wishart}, dims::Int64) = ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(dims), nu=Float64(dims)) # Flat prior
 vague(::Type{Wishart}, dims::Tuple{Int64, Int64}) = ProbabilityDistribution(MatrixVariate, Wishart, v=huge*diageye(dims[1]), nu=Float64(dims[1]))
 
+vague(::Type{Union{Gamma, Wishart}}, dims::Int64) = vague(Wishart, dims)
+vague(::Type{Union{Gamma, Wishart}}, dims::Tuple{Int64, Int64}) = vague(Wishart, dims)
+vague(::Type{Union{Gamma, Wishart}}, dims::Tuple) = vague(Gamma) # Univariate fallback
+
 unsafeMean(dist::ProbabilityDistribution{MatrixVariate, Wishart}) = dist.params[:nu]*dist.params[:v] # unsafe mean
 
 function unsafeDetLogMean(dist::ProbabilityDistribution{MatrixVariate, Wishart})
