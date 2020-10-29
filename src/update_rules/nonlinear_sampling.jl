@@ -31,7 +31,7 @@ function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
 
     nothing_inputs = 0
     gaussian_inputs = 0
-    for input_type in input_types
+    for input_type in input_types[2:end]
         if input_type == Nothing
             nothing_inputs += 1
         elseif matches(input_type, Message{Gaussian})
@@ -39,7 +39,7 @@ function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
         end
     end
 
-    return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-1)
+    return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-2)
 end
 
 mutable struct MNonlinearSInGX <: MarginalRule{Nonlinear{Sampling}} end
