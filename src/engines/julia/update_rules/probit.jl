@@ -1,6 +1,3 @@
-# Cummulative Gaussian (CDF of standard normal distribution)
-Φ(x::Union{Float64, Vector{Float64}}) = 0.5*erfc(-x./sqrt(2.))
-
 export
 ruleSPProbitOutNG,
 ruleSPProbitIn1PN,
@@ -13,7 +10,7 @@ function ruleSPProbitOutNG(msg_out::Nothing,
 
     d_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
     
-    p = Φ(d_in1.params[:m] / sqrt(1 + d_in1.params[:v]))
+    p = normcdf(d_in1.params[:m] / sqrt(1 + d_in1.params[:v]))
     isnan(p) && (p = 0.5)
 
     Message(Univariate, Bernoulli, p=p)
@@ -22,13 +19,13 @@ end
 function ruleSPProbitIn1PN(msg_out::Message{PointMass, Univariate},
                            msg_in1::Nothing)
     
-    m_out = msg_out.dist.params[:m]
-    if m_out == 1.0
+    p = msg_out.dist.params[:m]
+    if p == 1.0
         log_pdf = normlogcdf
-    elseif m_out == 0.0
+    elseif p == 0.0
         log_pdf = (z)->normlogcdf(-z)
     else
-        error("Invalid value: $m_out")
+        log_pdf = (z)->log(p*normcdf(z) + (1.0-p)*normcdf(-z))
     end
 
     return Message(Univariate, Function, log_pdf=log_pdf)
@@ -64,11 +61,11 @@ function ruleEPProbitIn1BG(msg_out::Message{Bernoulli, Univariate},
     N = exp(-0.5*z^2)./sqrt(2*pi) # 𝓝(z)
 
     # Moments of g(x)
-    mg_1 = Φ(z)*μ + σ2*N / sqrt(1+σ2)  # First moment of g
-    mg_2 = 2*μ*mg_1 + Φ(z)*(σ2 - μ^2) - σ2^2*z*N / (1+σ2)  # Second moment of g
+    mg_1 = normcdf(z)*μ + σ2*N / sqrt(1+σ2)  # First moment of g
+    mg_2 = 2*μ*mg_1 + normcdf(z)*(σ2 - μ^2) - σ2^2*z*N / (1+σ2)  # Second moment of g
 
     # Moments of f(x) (exact marginal)
-    Z = 1 - p + (2*p-1)*Φ(z)
+    Z = 1 - p + (2*p-1)*normcdf(z)
     mp_1 = ((1-p)*μ + (2*p-1)*mg_1) / Z
     mp_2 = ((1-p)*(μ^2+σ2) + (2*p-1)*mg_2) / Z
 

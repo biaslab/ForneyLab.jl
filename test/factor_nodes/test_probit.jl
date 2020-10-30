@@ -4,6 +4,7 @@ using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable, requiresBreaker, breakerParameters
 using ForneyLab: SPProbitOutNG, SPProbitIn1PN, EPProbitIn1BG, EPProbitIn1CG, EPProbitIn1PG
+using StatsFuns: normcdf
 
 @testset "requiresBreaker and breakerParameters" begin
     fg = FactorGraph()
@@ -32,7 +33,7 @@ end
     @test isApplicable(SPProbitOutNG, [Nothing, Message{Gaussian}]) 
     @test !isApplicable(SPProbitOutNG, [Message{Bernoulli}, Nothing])
 
-    @test ruleSPProbitOutNG(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=0.5)) == Message(Univariate, Bernoulli, p=ForneyLab.Φ(1/sqrt(1+0.5)))
+    @test ruleSPProbitOutNG(nothing, Message(Univariate, GaussianMeanVariance, m=1.0, v=0.5)) == Message(Univariate, Bernoulli, p=normcdf(1/sqrt(1+0.5)))
 end
 
 @testset "SPProbitIn1PN" begin

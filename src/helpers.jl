@@ -28,26 +28,12 @@ end
 
 """
 Matrix inversion using Cholesky decomposition,
-attempts with added regularization (1e-8*I) on failure.
+forces argument to become positive definite
 """
-function cholinv(M::AbstractMatrix)
-    try
-        return inv(cholesky(Hermitian(Matrix(M))))
-    catch
-        try
-            return inv(cholesky(Hermitian(Matrix(M) + 1e-8*I)))
-        catch exception
-            if isa(exception, PosDefException)
-                error("PosDefException: Matrix is not positive-definite, even after regularization. $(typeof(M)):\n$M")
-            else
-                println("cholinv() errored when inverting $(typeof(M)):\n$M")
-                rethrow(exception)
-            end
-        end
-    end
-end
+cholinv(M::AbstractMatrix) = inv(PositiveFactorizations.cholesky(Positive, M))
 cholinv(m::Number) = 1.0/m
 cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
+
 eye(n::Number) = Diagonal(I,n)
 diageye(dims::Int64) = Diagonal(ones(dims))
 
