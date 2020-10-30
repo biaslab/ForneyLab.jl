@@ -60,8 +60,8 @@ end
 function averageEnergy(::Type{Probit}, marg_out::ProbabilityDistribution{Univariate,PointMass}, marg_in1::ProbabilityDistribution{Univariate,SampleList})
     samples = marg_in1.params[:s]
     weights = marg_in1.params[:w]
-    out_hat = marg_out.params[:m]
+    p = marg_out.params[:m]
 
-    -out_hat*sum(weights.*normlogcdf.(samples)) -
-    (1 - out_hat)*sum(weights.*normlogcdf.(-samples))
+    -p*sum(weights.*normlogcdf.(samples)) -
+    (1 - p)*sum(weights.*normlogcdf.(-samples))
 end
