@@ -71,9 +71,9 @@ include("factor_graph.jl")
 include("factor_nodes/composite.jl")
 
 # Code generation for models
+include("codegen/graph.jl")
 include("codegen/helpers.jl")
 include("codegen/variable.jl")
-include("codegen/graph.jl")
 
 # Generic methods
 include("algorithms/cluster.jl")

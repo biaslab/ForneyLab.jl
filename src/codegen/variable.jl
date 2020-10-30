@@ -1,9 +1,7 @@
 function rewrite_expression(expression::Expr)
-    
+    dump(expression)
     expr = if is_tilde(expression)
         rewrite_tilde_expression(expression)
-    elseif is_arrow_assign(expression)
-        rewrite_arrow_assign_expression(expression)
     elseif is_assign(expression)
         rewrite_assign_expression(expression)
     elseif is_for(expression)
@@ -65,46 +63,22 @@ function rewrite_tilde_expression(def)
     end
 end
 
-# Arrow-style assignment: x ← a + b
-is_arrow_assign(expr::Expr) = expr.head === :call && expr.args[1] === :(←)
-is_arrow_assign(expr)       = false
-
-function rewrite_arrow_assign_expression(def)
-    if arrow_options_are_defined(def)
-        options = get_options(def.args[3].args[3])
-        rhs = def.args[3].args[2]
-    else
-        options = Dict{Symbol,Any}()
-        rhs = def.args[3]
-    end
-
-    target = def.args[2]
-
-    var_id = extract_variable_id(target, options)
-    
-    var_id_sym = gensym()
-
-    return quote
-        begin
-            $(target) = $(rhs)
-            $(var_id_sym) = $(var_id)
-            if $(var_id_sym) != :auto
-                # update id of newly created Variable
-                currentGraph().variables[$(var_id_sym)] = $(target)
-                delete!(currentGraph().variables, $(target).id)
-                $(target).id = $(var_id_sym)
-            end
-            $(target)
-        end
-    end
-end
-
-# Regular assignment, possibly with options: x = a + b ∥ [id=:x]
+# Regular assignment, possibly with options: x = a + b where {id=:x}
 is_assign(expr::Expr) = expr.head === Symbol("=")
 is_assign(expr)       = false
 
 function rewrite_assign_expression(def)
     # Perform rewrite only if options are defined
+    println(def)
+    @capture(def, var_=expr_)
+    
+    println(var)
+    println(expr)
+    @capture(last(expr.args), x where {options_})
+    println(options)
+
+    # println(options)
+
     if assign_options_are_defined(def)
         options = get_options(def.args[2].args[3])
         rhs = def.args[2].args[2]

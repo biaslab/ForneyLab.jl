@@ -1,6 +1,6 @@
 export @ffg
 
-using MacroTools: postwalk, rmlines, prettify
+using MacroTools: postwalk, rmlines, prettify, @capture
 
 macro ffg(ex::Expr)
     return esc(postwalk(rmlines, generate_model(ex)))
