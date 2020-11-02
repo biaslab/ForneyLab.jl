@@ -1,48 +1,29 @@
 function rewrite_expression(expression::Expr)
-    dump(expression)
-    expr = if is_tilde(expression)
-        rewrite_tilde_expression(expression)
-    elseif is_assign(expression)
-        rewrite_assign_expression(expression)
+    expr = if @capture(expression, var_ ~ rhs_)
+        rewrite_tilde_expression(var, rhs)
+    elseif @capture(expression, var_ = rhs_)
+        rewrite_assign_expression(var, rhs)
     elseif is_for(expression)
         rewrite_for_block(expression)
     else
         expression
     end
-
     return expr
 end
 
-
-# Tilde expression: x ~ Probdist(...)
-is_tilde(expr::Expr) = expr.head === :call && expr.args[1] === :(~)
-is_tilde(expr)       = false
-
-function rewrite_tilde_expression(def)
-    if tilde_options_are_defined(def)
-        options = get_options(def.args[3].args[3])
-        node = def.args[3].args[2]
-    else
-        options = Dict{Symbol,Any}()
-        node = def.args[3]
-    end
-
-    target = def.args[2]
-
-    var_id = extract_variable_id(target, options)
+function rewrite_tilde_expression(var, rhs)
     
-    if isa(node.args[2], Expr) && (node.args[2].head == :parameters)
-        node.args = vcat(node.args[1:2], [target], node.args[3:end])
-    else
-        node.args = vcat([node.args[1]; target], node.args[2:end])
-    end
+    (rhs, options) = get_options(rhs)
+    @capture(rhs, pdist_(params__))
+    
+    var_id = extract_variable_id(var, options)
     
     # Build total expression
     return quote
         begin
             # Use existing Variable if it exists, otherwise create a new one
-            $(target) = try
-                $(target)
+            $(var) = try
+                $(var)
             catch _
                 Variable(id = $(var_id))
             end
@@ -50,59 +31,42 @@ function rewrite_tilde_expression(def)
             # Create new variable if:
             #   - the existing object is not a Variable
             #   - the existing object is a Variable from another FactorGraph
-            if (!isa($(target), Variable)
-                || !haskey(currentGraph().variables, $(target).id)
-                || currentGraph().variables[$(target).id] !== $(target))
+            if (!isa($(var), Variable)
+                || !haskey(currentGraph().variables, $(var).id)
+                || currentGraph().variables[$(var).id] !== $(var))
 
-                $(target) = Variable(id = $(var_id))
+                $(var) = Variable(id = $(var_id))
             end
 
-            $(node)
-            $(target)
+            $(pdist)($(var), $(params...))
+            $(var)
         end
     end
 end
 
-# Regular assignment, possibly with options: x = a + b where {id=:x}
-is_assign(expr::Expr) = expr.head === Symbol("=")
-is_assign(expr)       = false
+function rewrite_assign_expression(var, rhs)
 
-function rewrite_assign_expression(def)
-    # Perform rewrite only if options are defined
-    println(def)
-    @capture(def, var_=expr_)
+    (rhs, options) = get_options(rhs)
     
-    println(var)
-    println(expr)
-    @capture(last(expr.args), x where {options_})
-    println(options)
-
-    # println(options)
-
-    if assign_options_are_defined(def)
-        options = get_options(def.args[2].args[3])
-        rhs = def.args[2].args[2]
-    else
-        return def
+    if options === nothing
+        return quote $(var) = $(rhs) end
     end
 
-    target = def.args[1]
-
-    var_id = extract_variable_id(target, options)
+    var_id = extract_variable_id(var, options)
     
     var_id_sym = gensym()
 
     return quote
         begin
-            $(target) = $(rhs)
+            $(var) = $(rhs)
             $(var_id_sym) = $(var_id)
             if $(var_id_sym) != :auto
                 # update id of newly created Variable
-                currentGraph().variables[$(var_id_sym)] = $(target)
-                delete!(currentGraph().variables, $(target).id)
-                $(target).id = $(var_id_sym)
+                currentGraph().variables[$(var_id_sym)] = $(var)
+                delete!(currentGraph().variables, $(var).id)
+                $(var).id = $(var_id_sym)
             end
-            $(target)
+            $(var)
         end
     end
 end
