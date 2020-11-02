@@ -2,7 +2,11 @@ function rewrite_expression(expression::Expr)
     expr = if @capture(expression, var_ ~ rhs_)
         rewrite_tilde_expression(var, rhs)
     elseif @capture(expression, var_ = rhs_)
-        rewrite_assign_expression(var, rhs)
+        (rhs, options) = get_options(rhs)
+        if options === nothing
+            return expression
+        end
+        rewrite_assign_expression(var, rhs, options)
     elseif is_for(expression)
         rewrite_for_block(expression)
     else
@@ -21,7 +25,7 @@ function rewrite_tilde_expression(var, rhs)
     var_id = extract_variable_id(var, options)
     
     # Build total expression
-    return quote
+    return :(
         begin
             # Use existing Variable if it exists, otherwise create a new one
             $(var) = try
@@ -43,22 +47,16 @@ function rewrite_tilde_expression(var, rhs)
             $(pdist)($(var), $(params...))
             $(var)
         end
-    end
+    )
 end
 
-function rewrite_assign_expression(var, rhs)
-
-    (rhs, options) = get_options(rhs)
-    
-    if options === nothing
-        return quote $(var) = $(rhs) end
-    end
+function rewrite_assign_expression(var, rhs, options)
 
     var_id = extract_variable_id(var, options)
     
     var_id_sym = gensym()
 
-    return quote
+    return :(
         begin
             $(var) = $(rhs)
             $(var_id_sym) = $(var_id)
@@ -70,7 +68,7 @@ function rewrite_assign_expression(var, rhs)
             end
             $(var)
         end
-    end
+    )
 end
 
 # for loop
