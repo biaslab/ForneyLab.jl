@@ -2,32 +2,26 @@ export @ffg
 
 using MacroTools: postwalk, rmlines, prettify, @capture
 
-macro ffg(ex::Expr)
-    return esc(postwalk(rmlines, generate_model(ex)))
+macro ffg(expr::Expr)
+    return esc(postwalk(rmlines, generate_model(expr)))
 end
 
-function generate_model(model_expr::Expr)
-    program = postwalk(rmlines, model_expr)
-    @assert program.head == :function
+function generate_model(expr::Expr)
     
-    model_signature = program.args[1]
-    model_name, argument_names = analyze_signature(model_signature)
-    
-    model_definition = program.args[2]
-    model_expr = build_model(model_definition)
+    @capture(expr, (mname_(margs__) = body_) | (function mname_(margs__) body_ end)) || error("Model definition has to be a function.")
+
+    body = build_model(body)
     
     graph_sym = gensym(:factor_graph)
 
     result = quote
-        function $model_name($(argument_names...))
+        function $mname($(margs...))
             $(graph_sym) = FactorGraph()
-            $model_expr
+            $body
             return $(graph_sym)
         end
     end
 
-    result = postwalk(rmlines, result)
-    
     return result
 end
 
@@ -38,18 +32,4 @@ function build_model(model_definition::Expr)
     
     return model_definition
 end
-
-function analyze_signature(args_expr)
-    @assert args_expr.head == :call
-    model_name = args_expr.args[1]
-    
-    if length(args_expr.args) > 1
-        argument_names = args_expr.args[2:end]
-    else
-        argument_names = []
-    end
-    
-    return model_name, argument_names
-end
-
 

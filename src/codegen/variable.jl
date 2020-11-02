@@ -11,6 +11,8 @@ function rewrite_expression(expression::Expr)
     return expr
 end
 
+rewrite_expression(ex::Any) = ex
+
 function rewrite_tilde_expression(var, rhs)
     
     (rhs, options) = get_options(rhs)
