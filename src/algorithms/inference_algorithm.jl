@@ -83,6 +83,41 @@ messagePassingAlgorithm(target_variable::Variable,
                         id=Symbol(""), 
                         free_energy=false) = messagePassingAlgorithm([target_variable], pfz; id=id, free_energy=free_energy)
 
+
+# Shorthands for algorithm compilation by passing only variable ids              
+function messagePassingAlgorithm(target_variable_ids::Vector{Symbol}, # Quantities of interest
+                                pfz::PosteriorFactorization=currentPosteriorFactorization(); 
+                                id=Symbol(""), 
+                                free_energy=false)
+    
+    target_variables = Vector{Variable}(undef, length(target_variable_ids))
+
+    for (i, target_variable_id) in enumerate(target_variable_ids)
+        target_variable = get(currentGraph().variables, target_variable_id, nothing)
+        if isnothing(target_variable)
+            error("Variable with id $(target_variable_id) does not exist.")
+        else
+            target_variables[i] = target_variable
+        end 
+    end
+    
+    return messagePassingAlgorithm(target_variables, pfz; id=id, free_energy=free_energy)
+end
+
+
+function messagePassingAlgorithm(target_variable_id::Symbol,
+                        pfz::PosteriorFactorization=currentPosteriorFactorization(); 
+                        id=Symbol(""), 
+                        free_energy=false)
+    
+    target_variable = get(currentGraph().variables, target_variable_id, nothing)
+    if isnothing(target_variable)
+        error("Variable with id $(target_variable_id) does not exist.")
+    end
+    
+    return messagePassingAlgorithm([target_variable], pfz; id=id, free_energy=free_energy)
+end
+
 function interfaceToScheduleEntry(algo::InferenceAlgorithm)
     mapping = Dict{Interface, ScheduleEntry}()
     for (id, pf) in algo.posterior_factorization

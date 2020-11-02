@@ -88,6 +88,22 @@ function PosteriorFactorization(args::Vararg{Union{T, Set{T}, Vector{T}} where T
     return pfz
 end
 
+"""
+Construct a `PosteriorFactorization` consisting of one `PosteriorFactor` for each argument addressed by its id
+"""
+function PosteriorFactorization(args::Vararg{Union{Symbol, Set{Symbol}, Vector{Symbol}}}; ids=Symbol[])
+    pfz = PosteriorFactorization()
+    isempty(ids) || (length(ids) == length(args)) || error("Length of ids must match length of posterior factor arguments")
+    for (i, arg) in enumerate(args)
+        if isempty(ids)
+            PosteriorFactor(arg, id=generateId(PosteriorFactor))
+        else        
+            PosteriorFactor(arg, id=ids[i])
+        end
+    end
+    return pfz
+end
+
 iterate(pfz::PosteriorFactorization) = iterate(pfz.posterior_factors)
 iterate(pfz::PosteriorFactorization, state) = iterate(pfz.posterior_factors, state)
 values(pfz::PosteriorFactorization) = values(pfz.posterior_factors)

@@ -184,7 +184,7 @@ end
 # If variable expression is a symbol
 # RV x ...
 function extract_variable_id(expr::Symbol, options)
-    if haskey(options, :id)
+    if (options !== nothing) && haskey(options, :id)
         return check_id_available(options[:id])
     else
         return guard_variable_id(:($(string(expr))))
@@ -194,7 +194,7 @@ end
 # If variable expression is an indexing expression
 # RV x[i] ...
 function extract_variable_id(expr::Expr, options)
-    if haskey(options, :id)
+    if (options !== nothing) && haskey(options, :id)
         return check_id_available(options[:id])
     else
         argstr = map(arg -> :(string($arg)), @view expr.args[2:end])
