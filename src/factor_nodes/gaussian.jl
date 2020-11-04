@@ -108,13 +108,13 @@ end
 function sample(dist::ProbabilityDistribution{Multivariate, F}) where F<:Gaussian
     isProper(dist) || error("Cannot sample from improper distribution")
     (m,V) = unsafeMeanCov(dist)
-    return (cholesky(V)).U' *randn(dims(dist)) + m
+    return (cholesky(default_cholesky_mode, V)).U' *randn(dims(dist)) + m
 end
 
 function sample(dist::ProbabilityDistribution{Multivariate, F}, n_samples::Int64) where F<:Gaussian
     isProper(dist) || error("Cannot sample from improper distribution")
     (m,V) = unsafeMeanCov(dist)
-    U = (cholesky(V)).U
+    U = (cholesky(default_cholesky_mode, V)).U
     d = dims(dist)
 
     return [U' *randn(d) + m for i in 1:n_samples]

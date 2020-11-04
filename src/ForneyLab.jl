@@ -11,10 +11,11 @@ using Printf: @sprintf
 using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf
 using ForwardDiff
 using StatsBase: Weights
+using PositiveFactorizations
 
 import Statistics: mean, var, cov
 import Base: +, -, *, ^, ==, exp, convert, show, prod!
-import LinearAlgebra: dot
+import LinearAlgebra: dot, cholesky
 import StatsBase: sample
 
 # Helpers

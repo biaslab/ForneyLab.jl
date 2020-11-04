@@ -244,7 +244,7 @@ function bootstrap(dist_mean::ProbabilityDistribution{Multivariate, SampleList},
     s_m = dist_mean.params[:s] # Samples representing the mean
     N = length(s_m)
     V = dist_var.params[:m] # Fixed variance
-    U = (cholesky(V)).U # Precompute Cholesky
+    U = (cholesky(default_cholesky_mode, V)).U # Precompute Cholesky
 
     return [U' *randn(d) + s_m[i] for i in 1:N] # New samples
 end
@@ -263,7 +263,7 @@ function bootstrap(dist_mean::ProbabilityDistribution{Multivariate, <:Gaussian},
     s_V = dist_var.params[:s] # Samples representing the covariance
     N = length(s_V)
     (m, V) = unsafeMeanCov(dist_mean)
-    s_U = [(cholesky(s_V[i] + V)).U for i in 1:N] # Precompute Cholesky for each covariance sample; this can be expensive
+    s_U = [(cholesky(default_cholesky_mode, s_V[i] + V)).U for i in 1:N] # Precompute Cholesky for each covariance sample; this can be expensive
 
     return [s_U[i]' *randn(d) + m for i in 1:N] # New samples
 end
