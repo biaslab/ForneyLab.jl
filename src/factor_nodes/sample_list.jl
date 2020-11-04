@@ -175,6 +175,10 @@ end
     return prod!(x, y, z) # Return a SampleList
 end
 
+function sampleWeightsAndEntropy(x::ProbabilityDistribution{V,F}, y::ProbabilityDistribution) where {V<:VariateType, F<:Function}
+    sampleWeightsAndEntropy(y, x)
+end
+
 function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistribution)
     n_samples = default_n_samples # Number of samples is fixed
     samples = sample(x, n_samples)
@@ -200,7 +204,7 @@ end
 function prod!(
     x::ProbabilityDistribution{V},
     y::ProbabilityDistribution{V},
-    z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
+    z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where {V<:VariateType}
 
     (samples, weights, entropy) = sampleWeightsAndEntropy(x, y)
 
@@ -268,7 +272,7 @@ end
 #To retain the unified standard procedure, we allow sampling from SampleList not through directly returning
 #sample and weight parameters but drawing samples from the existing list of samples according to weights.
 # Inverse-transform sampling
-sample(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = sample(dist.params[:s], Weights(dist.params[:w]))    
+sample(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = sample(dist.params[:s], Weights(dist.params[:w]))
 
 # Differential entropy for SampleList
 function differentialEntropy(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType
