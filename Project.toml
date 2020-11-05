@@ -21,6 +21,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [compat]
 Documenter = "0.25.2"
 ForwardDiff = "0.10.12"
+PositiveFactorizations = "0.2"
 SpecialFunctions = "0.8.0, 0.10.3"
 StatsBase = "0.32.2, 0.33.1"
 StatsFuns = "0.9.5"
