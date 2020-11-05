@@ -30,8 +30,12 @@ function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
     (input_types[1] != Nothing) || return false
 
     nothing_inputs = 0
+    factorfunction_input = false
     gaussian_inputs = 0
-    for input_type in input_types
+    if matches(input_types[1], Message{FactorFunction})
+        factorfunction_input = true
+    end
+    for input_type in input_types[2:end]
         if input_type == Nothing
             nothing_inputs += 1
         elseif matches(input_type, Message{Gaussian})
@@ -39,7 +43,7 @@ function isApplicable(::Type{SPNonlinearSInGX}, input_types::Vector{<:Type})
         end
     end
 
-    return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-1)
+    return (nothing_inputs == 1) && (gaussian_inputs == total_inputs-2) && factorfunction_input
 end
 
 mutable struct MNonlinearSInGX <: MarginalRule{Nonlinear{Sampling}} end

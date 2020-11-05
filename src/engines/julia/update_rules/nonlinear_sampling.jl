@@ -62,7 +62,7 @@ end
 
 function ruleSPNonlinearSInGX(g::Function,
                               inx::Int64, # Index of inbound interface inx
-                              msg_out::Message{<:Gaussian, V},
+                              msg_out::Message{<:FactorFunction, V},
                               msgs_in::Vararg{Message{<:Gaussian, V}};
                               n_samples=default_n_samples,
                               variate=V) where V<:VariateType
@@ -93,7 +93,7 @@ function ruleSPNonlinearSInGX(g::Function,
 end
 
 function ruleMNonlinearSInGX(g::Function,
-                             msg_out::Message{<:Gaussian, V},
+                             msg_out::Message{<:FactorFunction, V},
                              msgs_in::Vararg{Message{<:Gaussian, V}}) where V<:VariateType
 
     # Extract joint statistics of inbound messages
