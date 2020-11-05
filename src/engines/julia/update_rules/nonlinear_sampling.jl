@@ -92,6 +92,44 @@ function ruleSPNonlinearSInGX(g::Function,
     return Message(V, GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
 end
 
+function ruleSPNonlinearSOutNFactorX(g::Function,
+                                     msg_out::Nothing,
+                                     msgs_in::Vararg{Message{<:FactorNode}};
+                                     n_samples=default_n_samples,
+                                     variate)
+
+    samples_in = [sample(msg_in.dist, n_samples) for msg_in in msgs_in]
+
+    samples = g.(samples_in...)
+    weights = ones(n_samples)/n_samples
+
+    return Message(variate, SampleList, s=samples, w=weights)
+end
+
+function ruleSPNonlinearSInFactorX(g::Function,
+                                   inx::Int64, # Index of inbound interface inx
+                                   msg_out::Message{<:FactorFunction},
+                                   msgs_in::Vararg{Message{<:FactorNode}};
+                                   n_samples=default_n_samples,
+                                   variate)
+
+    arg_sample = (z) -> begin
+        samples_in = []
+        for i=1:length(msgs_in)
+            if i==inx
+                push!(samples_in,collect(Iterators.repeat([ z ], n_samples)))
+            else
+                push!(samples_in,sample(msgs_in[i].dist, n_samples))
+            end
+        end
+        return samples_in
+    end
+
+    approximate_pdf(z) = sum(exp.(logPdf.([msg_out.dist],arg_sample(z)...)))/n_samples
+
+    return Message(variate, Function, log_pdf = (z)->log(approximate_pdf(z)))
+end
+
 function ruleMNonlinearSInGX(g::Function,
                              msg_out::Message{<:FactorFunction, V},
                              msgs_in::Vararg{Message{<:Gaussian, V}}) where V<:VariateType
