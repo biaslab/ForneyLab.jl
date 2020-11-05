@@ -106,8 +106,8 @@ slug(::Type{Function}) = "f"
 format(dist::ProbabilityDistribution{V, Function}) where V<:VariateType = "$(dist.params)"
 
 # Distribution constructors
-ProbabilityDistribution(::Type{V}, ::Type{Function}; kwargs...) where V<:VariateType = ProbabilityDistribution{V, Function}(kwargs)
-ProbabilityDistribution(::Type{Function}; kwargs...) = ProbabilityDistribution{Univariate, Function}(kwargs)
+ProbabilityDistribution(::Type{V}, ::Type{Function}; kwargs...) where V<:VariateType = ProbabilityDistribution{V, Function}(Dict{Symbol,Any}(kwargs))
+ProbabilityDistribution(::Type{Function}; kwargs...) = ProbabilityDistribution{Univariate, Function}(Dict{Symbol,Any}(kwargs))
 
 unsafeMode(dist::ProbabilityDistribution{T, Function}) where T<:VariateType = deepcopy(dist.params[:mode])
 

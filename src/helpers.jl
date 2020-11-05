@@ -1,15 +1,18 @@
 export huge, tiny, cholinv, diageye, eye, format, *, ^, mat, step!, init
 
+# Constants to define smallest/largest supported numbers.
+# Used for clipping quantities to ensure numerical stability.
+const huge = 1e12
+const tiny = 1e-12
+
+# Forces cholesky argument to positive definite; replace with "Nothing" for cholesky to error on non-pd argument
+const default_cholesky_mode = Positive
+
 """Cast input to a `Matrix` if necessary"""
 ensureMatrix(arr::AbstractMatrix{T}) where T<:Number = arr
 ensureMatrix(arr::Vector{T}) where T<:Number = Diagonal(arr)
 ensureMatrix(n::Number) = fill!(Array{typeof(n)}(undef,1,1), n)
 ensureMatrix(n::Nothing) = nothing
-
-# Constants to define smallest/largest supported numbers.
-# Used for clipping quantities to ensure numerical stability.
-const huge = 1e12
-const tiny = 1e-12
 
 """
 Wrapper for `logabsgamma` function that returns first element of its output
@@ -25,29 +28,15 @@ function labsbeta(x::Number, y::Number)
     return logabsbeta(x, y)[1]
 end
 
+cholesky(::Type{Nothing}, M::AbstractMatrix) = cholesky(Hermitian(Matrix(M))) # No strategy for enforcing PD-ness of M
 
 """
-Matrix inversion using Cholesky decomposition,
-attempts with added regularization (1e-8*I) on failure.
+Matrix inversion using Cholesky decomposition
 """
-function cholinv(M::AbstractMatrix)
-    try
-        return inv(cholesky(Hermitian(Matrix(M))))
-    catch
-        try
-            return inv(cholesky(Hermitian(Matrix(M) + 1e-8*I)))
-        catch exception
-            if isa(exception, PosDefException)
-                error("PosDefException: Matrix is not positive-definite, even after regularization. $(typeof(M)):\n$M")
-            else
-                println("cholinv() errored when inverting $(typeof(M)):\n$M")
-                rethrow(exception)
-            end
-        end
-    end
-end
+cholinv(M::AbstractMatrix) = inv(cholesky(default_cholesky_mode, M))
 cholinv(m::Number) = 1.0/m
 cholinv(D::Diagonal) = Diagonal(1 ./ D.diag)
+
 eye(n::Number) = Diagonal(I,n)
 diageye(dims::Int64) = Diagonal(ones(dims))
 

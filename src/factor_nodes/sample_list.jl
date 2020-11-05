@@ -175,6 +175,10 @@ end
     return prod!(x, y, z) # Return a SampleList
 end
 
+function sampleWeightsAndEntropy(x::ProbabilityDistribution{V,F}, y::ProbabilityDistribution) where {V<:VariateType, F<:Function}
+    sampleWeightsAndEntropy(y, x)
+end
+
 function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistribution)
     n_samples = default_n_samples # Number of samples is fixed
     samples = sample(x, n_samples)
@@ -200,7 +204,7 @@ end
 function prod!(
     x::ProbabilityDistribution{V},
     y::ProbabilityDistribution{V},
-    z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where V<:VariateType
+    z::ProbabilityDistribution{V, SampleList} = ProbabilityDistribution(V, SampleList, s=[0.0], w=[1.0])) where {V<:VariateType}
 
     (samples, weights, entropy) = sampleWeightsAndEntropy(x, y)
 
@@ -240,7 +244,7 @@ function bootstrap(dist_mean::ProbabilityDistribution{Multivariate, SampleList},
     s_m = dist_mean.params[:s] # Samples representing the mean
     N = length(s_m)
     V = dist_var.params[:m] # Fixed variance
-    U = (cholesky(V)).U # Precompute Cholesky
+    U = (cholesky(default_cholesky_mode, V)).U # Precompute Cholesky
 
     return [U' *randn(d) + s_m[i] for i in 1:N] # New samples
 end
@@ -259,7 +263,7 @@ function bootstrap(dist_mean::ProbabilityDistribution{Multivariate, <:Gaussian},
     s_V = dist_var.params[:s] # Samples representing the covariance
     N = length(s_V)
     (m, V) = unsafeMeanCov(dist_mean)
-    s_U = [(cholesky(s_V[i] + V)).U for i in 1:N] # Precompute Cholesky for each covariance sample; this can be expensive
+    s_U = [(cholesky(default_cholesky_mode, s_V[i] + V)).U for i in 1:N] # Precompute Cholesky for each covariance sample; this can be expensive
 
     return [s_U[i]' *randn(d) + m for i in 1:N] # New samples
 end
@@ -268,7 +272,7 @@ end
 #To retain the unified standard procedure, we allow sampling from SampleList not through directly returning
 #sample and weight parameters but drawing samples from the existing list of samples according to weights.
 # Inverse-transform sampling
-sample(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = sample(dist.params[:s], Weights(dist.params[:w]))    
+sample(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = sample(dist.params[:s], Weights(dist.params[:w]))
 
 # Differential entropy for SampleList
 function differentialEntropy(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType

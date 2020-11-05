@@ -3,7 +3,10 @@ module MultiplicationTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable
-using ForneyLab: SPMultiplicationOutNGP, SPMultiplicationOutNPG, SPMultiplicationIn1GNP, SPMultiplicationAGPN, SPMultiplicationOutNPP, SPMultiplicationIn1PNP, SPMultiplicationAPPN
+using ForneyLab: SPMultiplicationOutNGP, SPMultiplicationOutNPG, SPMultiplicationIn1GNP, SPMultiplicationAGPN,
+                 SPMultiplicationOutNPP, SPMultiplicationIn1PNP, SPMultiplicationAPPN, SPMultiplicationOutNΓP,
+                 SPMultiplicationOutNPΓ, SPMultiplicationIn1ΓNP, SPMultiplicationAΓPN
+
 
 @testset "Multiplication node construction through * syntax" begin
     g = FactorGraph()
@@ -22,6 +25,12 @@ using ForneyLab: SPMultiplicationOutNGP, SPMultiplicationOutNPG, SPMultiplicatio
     g = FactorGraph()
     @RV x ~ GaussianMeanVariance(constant(0.0), constant(1.0))
     @RV z = x*1.0
+    @test isa(z, Variable)
+    @test isa(g.nodes[:multiplication_1], Multiplication)
+
+    g = FactorGraph()
+    @RV x ~ Gamma(constant(1.0), constant(1.0))
+    @RV z = x*2.0
     @test isa(z, Variable)
     @test isa(g.nodes[:multiplication_1], Multiplication)
 end
@@ -91,6 +100,55 @@ end
     @test isApplicable(SPMultiplicationAPPN, [Message{PointMass}, Message{PointMass}, Nothing])
 
     @test ruleSPMultiplicationAPPN(Message(Univariate, PointMass, m=1.0), Message(Univariate, PointMass, m=2.0), nothing) == Message(Univariate, PointMass, m=0.5)
+end
+
+@testset "SPMultiplicationOutNPΓ" begin
+    @test SPMultiplicationOutNPΓ <: SumProductRule{Multiplication}
+
+    @test outboundType(SPMultiplicationOutNPΓ) == Message{Gamma}
+    @test isApplicable(SPMultiplicationOutNPΓ, [Nothing, Message{PointMass}, Message{Gamma}])
+
+    @test ruleSPMultiplicationOutNPΓ(nothing, Message(Univariate, PointMass, m=2.0), Message(Univariate, Gamma, a=1.0, b=2.0)) == Message(Gamma, a=1.0, b=1.0)
+end
+
+@testset "SPMultiplicationOutNΓP" begin
+    @test SPMultiplicationOutNΓP <: SumProductRule{Multiplication}
+
+    @test outboundType(SPMultiplicationOutNΓP) == Message{Gamma}
+    @test isApplicable(SPMultiplicationOutNΓP, [Nothing, Message{Gamma}, Message{PointMass}])
+
+    @test ruleSPMultiplicationOutNΓP(nothing, Message(Univariate, Gamma, a=1.0, b=2.0), Message(Univariate, PointMass, m=2.0)) == Message(Gamma, a=1.0, b=1.0)
+end
+
+@testset "SPMultiplicationIn1ΓNP" begin
+    @test SPMultiplicationIn1ΓNP <: SumProductRule{Multiplication}
+
+    @test outboundType(SPMultiplicationIn1ΓNP) == Message{Gamma}
+    @test isApplicable(SPMultiplicationIn1ΓNP, [Message{Gamma}, Nothing, Message{PointMass}])
+
+    @test ruleSPMultiplicationIn1ΓNP( Message(Univariate, Gamma, a=1.0, b=2.0), nothing, Message(Univariate, PointMass, m=2.0)) == Message(Gamma, a=1.0, b=4.0)
+end
+
+@testset "SPMultiplicationAΓPN" begin
+    @test SPMultiplicationAΓPN <: SumProductRule{Multiplication}
+
+    @test outboundType(SPMultiplicationAΓPN) == Message{Gamma}
+    @test isApplicable(SPMultiplicationAΓPN, [Message{Gamma}, Message{PointMass}, Nothing])
+
+    @test ruleSPMultiplicationAΓPN( Message(Univariate, Gamma, a=1.0, b=2.0), Message(Univariate, PointMass, m=2.0), nothing) == Message(Gamma, a=1.0, b=4.0)
+end
+
+@testset "messagePassingAlgorithm" begin
+    fg = FactorGraph()
+
+    @RV τ ~ Gamma(1, 1)
+    @RV x ~ GaussianMeanPrecision(0.0, 10*τ)
+    placeholder(x, :x)
+
+    q = PosteriorFactorization(τ, ids=[:T])
+    algo = messagePassingAlgorithm(free_energy=true)
+
+    @test isa(algo, InferenceAlgorithm)
 end
 
 end # module

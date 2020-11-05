@@ -140,8 +140,9 @@ macro marginalRule(fields...)
     push!(input_type_validators, :(length(input_types) == $(length(inbound_types.args))))
     for (i, i_type) in enumerate(inbound_types.args)
         if i_type != :Nothing
-            # Only validate inbounds required for update
             push!(input_type_validators, :(ForneyLab.matches(input_types[$i], $i_type)))
+        else # For a marginal rule, "Nothing" means that the input is marginalized out
+            push!(input_type_validators, :(input_types[$i] == Nothing))
         end
     end
 
@@ -175,8 +176,11 @@ function collectMarginalNodeInbounds(::FactorNode, entry::MarginalEntry)
         current_pf = posteriorFactor(node_interface.edge) # Returns an Edge if no posterior factor is assigned
         inbound_interface = ultimatePartner(node_interface)
 
-        if isClamped(inbound_interface)
-            # Edge is clamped, hard-code marginal of constant node
+        if isClamped(inbound_interface) && (current_pf === entry_pf)
+            # Edge is clamped and internal, hard-code message of clamp node
+            push!(inbounds, assembleClamp!(copy(inbound_interface.node), Message)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
+        elseif isClamped(inbound_interface)
+            # Edge is clamped and external, hard-code marginal of clamp node
             push!(inbounds, assembleClamp!(copy(inbound_interface.node), ProbabilityDistribution)) # Copy Clamp before assembly to prevent overwriting dist_or_msg field
         elseif (current_pf === entry_pf)
             # Edge is internal, collect message from previous result

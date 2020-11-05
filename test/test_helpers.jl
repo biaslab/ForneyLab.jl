@@ -39,13 +39,9 @@ using LinearAlgebra: Diagonal, isposdef, I, Hermitian
         A = [2.0 1.0; 1.0 2.0]
         @test cholinv(A) ≈ inv(A)
         B = [2.0 1.0; 1.0 1.0] #PD
-        C = [1.0 1.0-1e-18; 1.0-1e-18 1.0] #non-PD due to numerical precision
-        D = [5.000000030387355e7 -4.9999999803873554e7;
-            -4.9999999803873554e7 5.0000000303873554e7] # computed inverse of C
         E = [1.0 1.0+1e8; 1.0+1e8 1.0] #non-PD not due to numerical precision
         @test isApproxEqual(cholinv(B), [1.0 -1.0; -1.0 2.0])
-        @test isApproxEqual(cholinv(C), D)
-        @test_throws Exception cholinv(E)
+        @test_throws Exception cholesky(Nothing, E)
         F = Diagonal([2.0, 3.0])
         @test cholinv(F) == inv(F)
         G = [Diagonal([2.0]) reshape([1.0],1,1); reshape([1.0],1,1) Diagonal([2.0])]

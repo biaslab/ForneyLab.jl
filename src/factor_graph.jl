@@ -33,12 +33,16 @@ end
 
 setCurrentGraph(graph::FactorGraph) = global current_graph = graph
 
-FactorGraph() = setCurrentGraph(FactorGraph(Dict{Symbol, FactorNode}(),
+function FactorGraph() 
+    
+    global current_posterior_factorization = nothing
+    
+    setCurrentGraph(FactorGraph(Dict{Symbol, FactorNode}(),
                                             Edge[],
                                             Dict{Symbol, Variable}(),
                                             Dict{Type, Int}(),
                                             Dict{Clamp, Tuple{Symbol, Int}}()))
-
+end
 """
 Automatically generate a unique id based on the current counter value for the element type.
 """
@@ -238,7 +242,11 @@ function isDeterministic(interface::Interface, is_deterministic::Dict{Interface,
     for iface in node.interfaces
         if iface != interface
             partner = ultimatePartner(iface)
-            push!(inbounds_deterministic, is_deterministic[partner])
+            if partner == nothing # Dangling edge
+                push!(inbounds_deterministic, false) # Unconstrained inbound is considered stochastic (uninformative)
+            else
+                push!(inbounds_deterministic, is_deterministic[partner])
+            end
         end
     end
     
