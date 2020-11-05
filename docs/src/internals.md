@@ -87,7 +87,7 @@ The name of an update rule is composed of several parts:
 5. `-`
 
 
-###### Example 3: `ruleEPProbitIn1GB`
+###### Example 3: `ruleEPProbitIn1BG`
 1. `rule`: update rule
 2. `EP`: expectation propagation algorithm
 3. `Probit`: probit factor node

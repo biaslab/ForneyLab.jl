@@ -140,7 +140,10 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
     w_raw_x = exp.(log_samples_x)
     w_prod = w_raw_x.*y.params[:w]
     weights = w_prod./sum(w_prod) # Normalize weights
-
+    if any(isnan, weights) # Failsafe
+        weights = ones(n_samples)./n_samples
+    end
+    
     # Resample if required
     n_eff = 1/sum(weights.^2) # Effective number of particles
     if n_eff < n_samples/10

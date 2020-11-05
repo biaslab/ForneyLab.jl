@@ -75,7 +75,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
             error("No applicable $(rule_type) update for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
         end
     elseif length(applicable_rules) > 1
-        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
+        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", ")): $(join(applicable_rules, ", "))")
     else
         entry.message_update_rule = first(applicable_rules)
     end

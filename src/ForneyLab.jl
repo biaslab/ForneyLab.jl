@@ -8,7 +8,7 @@ using SpecialFunctions: digamma, erfc, logfactorial, logabsgamma, logabsbeta, ga
 using LinearAlgebra: Diagonal, Hermitian, isposdef, ishermitian, I, tr
 using InteractiveUtils: subtypes
 using Printf: @sprintf
-using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf
+using StatsFuns: logmvgamma, betainvcdf, gammainvcdf, poisinvcdf, normlogcdf, normcdf
 using ForwardDiff
 using StatsBase: Weights
 using PositiveFactorizations
