@@ -3,6 +3,8 @@ ruleSPNonlinearSOutNM,
 ruleSPNonlinearSIn1MN,
 ruleSPNonlinearSOutNGX,
 ruleSPNonlinearSInGX,
+ruleSPNonlinearSOutNFactorX,
+ruleSPNonlinearSInFactorX,
 ruleMNonlinearSInGX,
 prod!
 
@@ -125,7 +127,7 @@ function ruleSPNonlinearSInFactorX(g::Function,
         return samples_in
     end
 
-    approximate_pdf(z) = sum(exp.(logPdf.([msg_out.dist],arg_sample(z)...)))/n_samples
+    approximate_pdf(z) = sum(exp.(logPdf.([msg_out.dist],g.(arg_sample(z)...))))/n_samples
 
     return Message(variate, Function, log_pdf = (z)->log(approximate_pdf(z)))
 end

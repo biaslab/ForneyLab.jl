@@ -144,5 +144,5 @@ function isApplicable(::Type{SPEqualityFactor}, input_types::Vector{Type})
         end
     end
 
-    return (nothing_inputs == 1) && (first_type != second_type)
+    return (nothing_inputs == 1) && !matches(first_type, second_type) && !matches(second_type, first_type)
 end
