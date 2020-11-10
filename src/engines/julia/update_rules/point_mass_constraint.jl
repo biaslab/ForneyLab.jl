@@ -5,7 +5,7 @@ export ruleSPPointMassConstraintOutG
 # Update rules
 #-------------
 
-ruleSPPointMassConstraintOutG(msg_out::Message{<:Gaussian, Univariate}) = Message(Univariate, PointMass, m=mode(msg_out.dist))
+ruleSPPointMassConstraintOutG(msg_out::Message{<:Gaussian, Univariate}) = Message(Univariate, PointMass, m=unsafeMode(msg_out.dist))
 
 
 #--------------------------

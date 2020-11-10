@@ -2,21 +2,18 @@ export ruleSPChanceConstraintOutG
 
 const default_atol = 1e-4
 
-standardGaussianPdf(x::Float64) = sqrt(1/(2*pi))*exp(-0.5*x^2)
-standardGaussianCdf(x::Float64) = 0.5*(1.0 + erf(x/sqrt(2)))
-
 """
 Computes normalizing constant and central moments of a truncated Gaussian distribution.
 """
 function truncatedGaussianMoments(m::Float64, V::Float64, a::Float64, b::Float64)
     # Normalize parameters
-    sigma = sqrt(V)
+    sigma = sqrt(clamp(V, tiny, huge))
     alpha = (a - m)/sigma
     beta = (b - m)/sigma
     
     # Compute normalizing constant
-    Phi_alpha = standardGaussianCdf(alpha)
-    Phi_beta = standardGaussianCdf(beta)
+    Phi_alpha = normcdf(alpha)
+    Phi_beta = normcdf(beta)
     Z = Phi_beta - Phi_alpha
 
     # Compute moments if truncation is valid
@@ -26,8 +23,8 @@ function truncatedGaussianMoments(m::Float64, V::Float64, a::Float64, b::Float64
         m_tr = 0.0
         V_tr = 0.0
     else
-        phi_alpha = standardGaussianPdf(alpha)
-        phi_beta = standardGaussianPdf(beta)
+        phi_alpha = normpdf(alpha)
+        phi_beta = normpdf(beta)
         alpha_phi_alpha = clamp(alpha, -huge, huge)*phi_alpha
         beta_phi_beta = clamp(beta, -huge, huge)*phi_beta
     
@@ -58,7 +55,7 @@ function ruleSPChanceConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, G:
         # Initialize statistics of uncorrected belief
         m_tilde = m_bw
         V_tilde = V_bw
-        for i = 1:100 # Iterate at most one hundred times
+        for i = 1:1000 # Iterate at most this many times
             (Phi_lG, m_lG, V_lG) = truncatedGaussianMoments(m_tilde, V_tilde, -Inf, min_G) # Statistics for q in region left of G
             (Phi_rG, m_rG, V_rG) = truncatedGaussianMoments(m_tilde, V_tilde, max_G, Inf) # Statistics for q in region right of G
 
@@ -80,7 +77,7 @@ function ruleSPChanceConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, G:
         end
 
         # Convert moments of corrected belief to canonical form
-        W_tilde = inv(V_tilde)
+        W_tilde = cholinv(V_tilde)
         xi_tilde = W_tilde*m_tilde
 
         # Compute canonical parameters of forward message
