@@ -137,10 +137,10 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
     log_samples_x = logPdf.([x], samples)
 
     # Compute sample weights
-    w_raw_x = exp.(log_samples_x)
+    w_raw_x = clamp.(exp.(log_samples_x), tiny, huge)
     w_prod = w_raw_x.*y.params[:w]
     weights = w_prod./sum(w_prod) # Normalize weights
-
+    
     # Resample if required
     n_eff = 1/sum(weights.^2) # Effective number of particles
     if n_eff < n_samples/10
@@ -188,7 +188,7 @@ function sampleWeightsAndEntropy(x::ProbabilityDistribution, y::ProbabilityDistr
     log_samples_y = logPdf.([y], samples)
 
     # Extract the sample weights
-    w_raw = exp.(log_samples_y) # Unnormalized weights
+    w_raw = clamp.(exp.(log_samples_x), tiny, huge) # Unnormalized weights
     w_sum = sum(w_raw)
     weights = w_raw./w_sum # Normalize the raw weights
 

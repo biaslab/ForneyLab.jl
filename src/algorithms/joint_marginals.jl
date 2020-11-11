@@ -45,7 +45,7 @@ function inferMarginalRule(cluster::Cluster, inbound_types::Vector{<:Type})
     if isempty(applicable_rules)
         error("No applicable marginal update rule for $(typeof(cluster.node)) node with inbound types: $(join(inbound_types, ", "))")
     elseif length(applicable_rules) > 1
-        error("Multiple applicable marginal update rules for $(typeof(cluster.node)) node with inbound types: $(join(inbound_types, ", "))")
+        error("Multiple applicable marginal update rules for $(typeof(cluster.node)) node with inbound types: $(join(inbound_types, ", ")): $(join(applicable_rules, ", "))")
     else
         marginal_update_rule = first(applicable_rules)
     end

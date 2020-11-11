@@ -1,24 +1,37 @@
-# Cummulative Gaussian (CDF of standard normal distribution)
-Φ(x::Union{Float64, Vector{Float64}}) = 0.5*erfc(-x./sqrt(2.))
-
 export
 ruleSPProbitOutNG,
-ruleEPProbitIn1GB,
-ruleEPProbitIn1GC,
-ruleEPProbitIn1GP
+ruleSPProbitIn1PN,
+ruleEPProbitIn1BG,
+ruleEPProbitIn1CG,
+ruleEPProbitIn1PG
 
 function ruleSPProbitOutNG(msg_out::Nothing,
                            msg_in1::Message{F, Univariate}) where F<:Gaussian
 
     d_in1 = convert(ProbabilityDistribution{Univariate, GaussianMeanVariance}, msg_in1.dist)
     
-    p = Φ(d_in1.params[:m] / sqrt(1 + d_in1.params[:v]))
+    p = normcdf(d_in1.params[:m] / sqrt(1 + d_in1.params[:v]))
     isnan(p) && (p = 0.5)
 
     Message(Univariate, Bernoulli, p=p)
 end
 
-function ruleEPProbitIn1GB(msg_out::Message{Bernoulli, Univariate}, 
+function ruleSPProbitIn1PN(msg_out::Message{PointMass, Univariate},
+                           msg_in1::Nothing)
+
+    p = msg_out.dist.params[:m]
+    if p == 1.0
+        log_pdf = normlogcdf
+    elseif p == 0.0
+        log_pdf = (z)->normlogcdf(-z)
+    else
+        log_pdf = (z)->log(p*normcdf(z) + (1.0-p)*normcdf(-z))
+    end
+
+    return Message(Univariate, Function, log_pdf=log_pdf)
+end
+
+function ruleEPProbitIn1BG(msg_out::Message{Bernoulli, Univariate}, 
                            msg_in1::Message{F, Univariate}) where F<:Gaussian
 
     # Calculate approximate (Gaussian) message towards i[:in1]
@@ -48,11 +61,11 @@ function ruleEPProbitIn1GB(msg_out::Message{Bernoulli, Univariate},
     N = exp(-0.5*z^2)./sqrt(2*pi) # 𝓝(z)
 
     # Moments of g(x)
-    mg_1 = Φ(z)*μ + σ2*N / sqrt(1+σ2)  # First moment of g
-    mg_2 = 2*μ*mg_1 + Φ(z)*(σ2 - μ^2) - σ2^2*z*N / (1+σ2)  # Second moment of g
+    mg_1 = normcdf(z)*μ + σ2*N / sqrt(1+σ2)  # First moment of g
+    mg_2 = 2*μ*mg_1 + normcdf(z)*(σ2 - μ^2) - σ2^2*z*N / (1+σ2)  # Second moment of g
 
     # Moments of f(x) (exact marginal)
-    Z = 1 - p + (2*p-1)*Φ(z)
+    Z = 1 - p + (2*p-1)*normcdf(z)
     mp_1 = ((1-p)*μ + (2*p-1)*mg_1) / Z
     mp_2 = ((1-p)*(μ^2+σ2) + (2*p-1)*mg_2) / Z
 
@@ -69,17 +82,17 @@ function ruleEPProbitIn1GB(msg_out::Message{Bernoulli, Univariate},
     return Message(Univariate, GaussianWeightedMeanPrecision, xi=outbound_dist_xi, w=outbound_dist_w)
 end
 
-function ruleEPProbitIn1GP(msg_out::Message{PointMass, Univariate}, msg_in1::Message{F, Univariate}) where F<:Gaussian
+function ruleEPProbitIn1PG(msg_out::Message{PointMass, Univariate}, msg_in1::Message{F, Univariate}) where F<:Gaussian
     p = msg_out.dist.params[:m]
     isnan(p) && (p = 0.5)
     (0.0 <= p <= 1.0) || error("Binary input $p must be between 0 and 1")
 
-    return ruleEPProbitIn1GB(Message(Univariate, Bernoulli, p=p), msg_in1)
+    return ruleEPProbitIn1BG(Message(Univariate, Bernoulli, p=p), msg_in1)
 end
 
-function ruleEPProbitIn1GC(msg_out::Message{Categorical, Univariate}, msg_in1::Message{F, Univariate}) where F<:Gaussian
+function ruleEPProbitIn1CG(msg_out::Message{Categorical, Univariate}, msg_in1::Message{F, Univariate}) where F<:Gaussian
     (length(msg_out.dist.params[:p]) == 2) || error("Probit node only supports categorical messages with 2 categories")
     p = msg_out.dist.params[:p][1]
 
-    return ruleEPProbitIn1GB(Message(Univariate, Bernoulli, p=p), msg_in1)
+    return ruleEPProbitIn1BG(Message(Univariate, Bernoulli, p=p), msg_in1)
 end

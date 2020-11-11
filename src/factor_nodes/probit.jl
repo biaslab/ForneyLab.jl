@@ -34,11 +34,8 @@ end
 
 slug(::Type{Probit}) = "Φ"
 
-# A breaker message is required if interface is partnered with probit.i[:in1]
-requiresBreaker(interface::Interface, partner_interface::Interface, partner_node::Probit) = (partner_interface == partner_node.i[:in1])
-
 function breakerParameters(interface::Interface, partner_interface::Interface, partner_node::Probit)
-    requiresBreaker(interface, partner_interface, partner_node) || error("Breaker dimensions requested for non-breaker interface: $(interface)")
+    (partner_interface == partner_node.i[:in1]) || error("Breaker initialization requested for non-breaker interface: $(interface)")
 
     return (Message{GaussianMeanVariance, Univariate}, ()) # Univariate only
 end
@@ -58,4 +55,13 @@ function averageEnergy(::Type{Probit}, marg_out::ProbabilityDistribution{Univari
     (0.0 <= p <= 1.0) || error("Binary input $p must be between 0 and 1")
 
     return averageEnergy(Probit, ProbabilityDistribution(Univariate, Bernoulli, p=p), marg_in1)
+end
+
+function averageEnergy(::Type{Probit}, marg_out::ProbabilityDistribution{Univariate,PointMass}, marg_in1::ProbabilityDistribution{Univariate,SampleList})
+    samples = marg_in1.params[:s]
+    weights = marg_in1.params[:w]
+    p = marg_out.params[:m]
+
+    -p*sum(weights.*normlogcdf.(samples)) -
+    (1 - p)*sum(weights.*normlogcdf.(-samples))
 end
