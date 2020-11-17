@@ -55,7 +55,7 @@ function ruleSPChanceConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, G:
         # Initialize statistics of uncorrected belief
         m_tilde = m_bw
         V_tilde = V_bw
-        for i = 1:1000 # Iterate at most this many times
+        for i = 1:100 # Iterate at most this many times
             (Phi_lG, m_lG, V_lG) = truncatedGaussianMoments(m_tilde, V_tilde, -Inf, min_G) # Statistics for q in region left of G
             (Phi_rG, m_rG, V_rG) = truncatedGaussianMoments(m_tilde, V_tilde, max_G, Inf) # Statistics for q in region right of G
 
@@ -71,7 +71,7 @@ function ruleSPChanceConstraintOutG(msg_out::Message{<:Gaussian, Univariate}, G:
             # Re-compute statistics (and normalizing constant) of corrected belief
             (Phi_G, m_G, V_G) = truncatedGaussianMoments(m_tilde, V_tilde, min_G, max_G)
 
-            if isapprox(1.0 - Phi_G, epsilon, atol=atol)
+            if (1.0 - Phi_G) < (1.0 + atol)*epsilon
                 break # Break the loop if the belief is sufficiently corrected
             end
         end
