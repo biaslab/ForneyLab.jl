@@ -102,6 +102,16 @@ function prod!( x::ProbabilityDistribution{Univariate, Categorical},
     return z
 end
 
+@symmetrical function prod!(x::ProbabilityDistribution{Univariate, Categorical},
+                            y::ProbabilityDistribution{Multivariate, PointMass},
+                            z::ProbabilityDistribution{Multivariate, PointMass}=ProbabilityDistribution(Multivariate, PointMass, m=[0.0]))
+
+    z.params[:m] = deepcopy(y.params[:m])
+
+    return z
+end
+
+
 # Entropy functional
 function differentialEntropy(dist::ProbabilityDistribution{Univariate, Categorical})
     -sum(dist.params[:p].*log.(clamp.(dist.params[:p], tiny, Inf))) # Soften vanishing propbabilities to enforce the convention 0 log 0 = 0

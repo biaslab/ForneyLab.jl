@@ -3,19 +3,19 @@ module PointMassConstraintTest
 using Test
 using ForneyLab
 using ForneyLab: outboundType, isApplicable
-using ForneyLab: SPPointMassConstraintOutG
+using ForneyLab: SPPointMassConstraintOut
 
 
 #-------------
 # Update rules
 #-------------
 
-@testset "SPPointMassConstraintOutG" begin
-    @test SPPointMassConstraintOutG <: SumProductRule{PointMassConstraint}
-    @test outboundType(SPPointMassConstraintOutG) == Message{PointMass}
-    @test isApplicable(SPPointMassConstraintOutG, [Nothing]) 
+@testset "SPPointMassConstraintOut" begin
+    @test SPPointMassConstraintOut <: SumProductRule{PointMassConstraint}
+    @test outboundType(SPPointMassConstraintOut) == Message{PointMass}
+    @test isApplicable(SPPointMassConstraintOut, [Nothing]) 
 
-    @test ruleSPPointMassConstraintOutG(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == Message(Univariate, PointMass, m=0.0)
+    @test ruleSPPointMassConstraintOut(Message(Univariate, GaussianMeanVariance, m=0.0, v=1.0)) == Message(Univariate, PointMass, m=0.0)
 end
 
 
@@ -32,7 +32,7 @@ end
     algo = messagePassingAlgorithm(x)
     algo_code = algorithmSourceCode(algo)
 
-    @test occursin("ruleSPPointMassConstraintOutG(messages[1])", algo_code)
+    @test occursin("ruleSPPointMassConstraintOut(messages[1])", algo_code)
 end
 
 end # module

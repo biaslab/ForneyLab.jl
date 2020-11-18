@@ -1,11 +1,16 @@
-export ruleSPPointMassConstraintOutG
+export ruleSPPointMassConstraintOut
 
 
 #-------------
 # Update rules
 #-------------
 
-ruleSPPointMassConstraintOutG(msg_out::Message{<:Gaussian, Univariate}) = Message(Univariate, PointMass, m=unsafeMode(msg_out.dist))
+function ruleSPPointMassConstraintOut(msg_out::Message)
+    m = unsafeMode(msg_out.dist)
+    V = variateType(m)
+
+    return Message(V, PointMass, m=m)
+end
 
 
 #--------------------------
