@@ -140,7 +140,7 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
     w_raw_x = clamp.(exp.(log_samples_x), tiny, huge)
     w_prod = w_raw_x.*y.params[:w]
     weights = w_prod./sum(w_prod) # Normalize weights
-    
+
     # Resample if required
     n_eff = 1/sum(weights.^2) # Effective number of particles
     if n_eff < n_samples/10
@@ -148,7 +148,7 @@ isProper(dist::ProbabilityDistribution{V, SampleList}) where V<:VariateType = ab
         weights = ones(n_samples)./n_samples
     end
 
-    # TODO: no entropy is computed here; include computation?
+    # No entropy is computed here
     z.params[:w] = weights
     z.params[:s] = samples
 

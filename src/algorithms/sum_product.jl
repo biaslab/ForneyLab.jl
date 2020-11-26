@@ -91,7 +91,7 @@ function collectInboundTypes(entry::ScheduleEntry,
     for node_interface in entry.interface.node.interfaces
         if node_interface === entry.interface
             push!(inbound_message_types, Nothing)
-        elseif isClamped(node_interface.partner)
+        elseif isPointMassConstrained(node_interface.partner)
             push!(inbound_message_types, Message{PointMass})
         else
             push!(inbound_message_types, inferred_outbound_types[node_interface.partner])

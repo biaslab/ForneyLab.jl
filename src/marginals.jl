@@ -45,7 +45,7 @@ function marginalTable(targets::Vector{Variable})
             push!(marginal_table, MarginalEntry(target, [edge.b], Nothing))
         elseif edge.b == nothing
             push!(marginal_table, MarginalEntry(target, [edge.a], Nothing))
-        elseif isa(edge.a.node, Clamp) || isa(edge.b.node, Clamp)
+        elseif isPointMassConstrained(edge)
             continue # Do not compute marginals for clamped edges
         else
             push!(marginal_table, MarginalEntry(target, [edge.a, edge.b], Product))

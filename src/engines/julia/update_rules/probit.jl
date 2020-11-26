@@ -18,7 +18,6 @@ end
 
 function ruleSPProbitIn1PN(msg_out::Message{PointMass, Univariate},
                            msg_in1::Nothing)
-
     p = msg_out.dist.params[:m]
     if p == 1.0
         log_pdf = normlogcdf

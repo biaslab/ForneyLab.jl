@@ -139,6 +139,8 @@ function isApplicable(::Type{SPEqualityFactor}, input_types::Vector{Type})
             return false
         elseif matches(input_type, Message{Function})
             return false
+        elseif matches(input_type, Message{PointMass})
+            return false
         elseif matches(input_type, Message{FactorNode})
             if first_type === nothing
                 first_type = input_type

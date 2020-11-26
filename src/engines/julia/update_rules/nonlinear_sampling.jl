@@ -13,34 +13,39 @@ const default_n_samples = 1000 # Default value for the number of samples
 # Sampling Update Rules
 #----------------------
 
+# Custom message constructors for undetermined VariateType
+Message(::Type{SampleList}, s::Vector{Float64}, w::Vector{Float64}) = Message(Univariate, SampleList, s=s, w=w)
+Message(::Type{SampleList}, s::Vector{<:AbstractVector}, w::Vector{Float64}) = Message(Multivariate, SampleList, s=s, w=w)
+Message(::Type{SampleList}, s::Vector{<:AbstractMatrix}, w::Vector{Float64}) = Message(MatrixVariate, SampleList, s=s, w=w)
+
 function ruleSPNonlinearSOutNM(g::Function,
                                msg_out::Nothing,
-                               msg_in1::Message{F, V};
-                               n_samples=default_n_samples) where {F<:FactorFunction, V<:VariateType}
+                               msg_in1::Message;
+                               n_samples=default_n_samples)
 
     samples = g.(sample(msg_in1.dist, n_samples))
     weights = ones(n_samples)/n_samples
 
-    return Message(V, SampleList, s=samples, w=weights)
+    return Message(SampleList, samples, weights) # Automatically determine VariateType
 end
 
 function ruleSPNonlinearSIn1MN(g::Function,
-                               msg_out::Message{F, V},
+                               msg_out::Message{<:FactorFunction, V},
                                msg_in1::Nothing;
-                               n_samples=default_n_samples) where {F<:FactorFunction, V<:VariateType}
+                               n_samples=default_n_samples) where V<:VariateType
 
     return Message(V, Function, log_pdf = (z)->logPdf(msg_out.dist, g(z)))
 end
 
 function ruleSPNonlinearSOutNM(g::Function,
                                msg_out::Nothing,
-                               msg_in1::Message{SampleList, V};
-                               n_samples=default_n_samples) where {V<:VariateType}
+                               msg_in1::Message{SampleList};
+                               n_samples=default_n_samples)
 
     samples = g.(msg_in1.dist.params[:s])
     weights = msg_in1.dist.params[:w]
 
-    return Message(V, SampleList, s=samples, w=weights)
+    return Message(SampleList, samples, weights) # Automatically determine VariateType
 end
 
 function ruleSPNonlinearSOutNGX(g::Function,
@@ -53,12 +58,12 @@ function ruleSPNonlinearSOutNGX(g::Function,
     samples = g.(samples_in...)
     weights = ones(n_samples)/n_samples
 
-    return Message(V, SampleList, s=samples, w=weights)
+    return Message(SampleList, samples, weights) # Automatically determine VariateType
 end
 
 function ruleSPNonlinearSInGX(g::Function,
                               inx::Int64, # Index of inbound interface inx
-                              msg_out::Message{<:Gaussian, V},
+                              msg_out::Message,
                               msgs_in::Vararg{Message{<:Gaussian, V}};
                               n_samples=default_n_samples) where V<:VariateType
 
@@ -88,8 +93,8 @@ function ruleSPNonlinearSInGX(g::Function,
 end
 
 function ruleMNonlinearSInGX(g::Function,
-                             msg_out::Message{<:Gaussian, V},
-                             msgs_in::Vararg{Message{<:Gaussian, V}}) where V<:VariateType
+                             msg_out::Message,
+                             msgs_in::Vararg{Message{<:Gaussian, V}}) where V<:VariateType # Variate types for inbounds must match
 
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
@@ -120,7 +125,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
     push!(inbounds, Dict{Symbol, Any}(:g => node.g,
                                       :keyword => false))
 
-    multi_in = (length(node.interfaces) > 2) # Boolean to indicate a multi-inbound nonlinear node
+    multi_in = isMultiIn(node) # Boolean to indicate a nonlinear node with multiple stochastic inbounds
     inx = findfirst(isequal(entry.interface), node.interfaces) - 1 # Find number of inbound interface; 0 for outbound
 
     if (inx > 0) && multi_in # Multi-inbound backward rule
@@ -138,7 +143,7 @@ function collectSumProductNodeInbounds(node::Nonlinear{Sampling}, entry::Schedul
         elseif node_interface == entry.interface
             # Ignore inbound message on outbound interface
             push!(inbounds, nothing)
-        elseif isa(inbound_interface.node, Clamp)
+        elseif isClamped(inbound_interface)
             # Hard-code outbound message of constant node in schedule
             push!(inbounds, assembleClamp!(inbound_interface.node, Message))
         else
@@ -163,12 +168,9 @@ end
 
 function prod!(
     x::ProbabilityDistribution{V, Function},
-    y::ProbabilityDistribution{V, Function},
-    z::ProbabilityDistribution{V, Function}=ProbabilityDistribution(V, Function, log_pdf=(s)->s)) where V<:VariateType
+    y::ProbabilityDistribution{V, Function}) where V<:VariateType # log-pdf for z cannot be predefined, because it cannot be overwritten
 
-    z.params[:log_pdf] = ( (s) -> x.params[:log_pdf](s) + y.params[:log_pdf](s) )
-
-    return z
+    return ProbabilityDistribution(V, Function, log_pdf=(s)->x.params[:log_pdf](s) + y.params[:log_pdf](s))
 end
 
 @symmetrical function prod!(
