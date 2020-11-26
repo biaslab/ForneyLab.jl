@@ -83,9 +83,8 @@ end
                             y::ProbabilityDistribution{Multivariate, PointMass},
                             z::ProbabilityDistribution{Multivariate, PointMass}=ProbabilityDistribution(Multivariate, PointMass, m=[NaN]))
 
-    all(0.0 .<= y.params[:m] .<= 1.0) || error("PointMass location entries $(y.params[:m]) should all be between 0 and 1")
-    isapprox(sum(y.params[:m]), 1.0) || error("Pointmass location entries $(y.params[:m]) should sum to one")
-    z.params[:m] = deepcopy(y.params[:m])
+    a_y = clamp.(y.params[:m], 0.0, 1.0)
+    z.params[:m] = deepcopy(a_y)
 
     return z
 end
@@ -94,12 +93,8 @@ end
                             y::ProbabilityDistribution{MatrixVariate, PointMass},
                             z::ProbabilityDistribution{MatrixVariate, PointMass}=ProbabilityDistribution(MatrixVariate, PointMass, m=mat(NaN)))
 
-    all(0.0 .<= y.params[:m] .<= 1.0) || error("PointMass location entries $(y.params[:m]) should all be between 0 and 1")
-    for k = 1:dims(y)[2] # For all columns
-        isapprox(sum(y.params[:m][:,k]), 1.0) || error("Pointmass location entries $(y.params[:m][:,k]) of column $k should sum to one")
-    end
-
-    z.params[:m] = deepcopy(y.params[:m])
+    A_y = clamp.(y.params[:m], 0.0, 1.0)
+    z.params[:m] = deepcopy(A_y)
 
     return z
 end

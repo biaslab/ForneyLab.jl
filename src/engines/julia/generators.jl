@@ -281,5 +281,6 @@ Remove module prefixes from types and functions
 removePrefix(arg::Any) = arg # Do not remove prefix in general
 removePrefix(tup::Tuple) = string(tup)
 removePrefix(num::Number) = string(num)
+removePrefix(vect::Vector) = string(vect)
 removePrefix(type::Type) = split(string(type), '.')[end]
 removePrefix(func::Function) = split(string(func), '.')[end]
