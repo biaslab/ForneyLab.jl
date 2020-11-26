@@ -13,6 +13,7 @@ mutable struct PosteriorFactor
     target_variables::Set{Variable} # Target variables for which marginals are required
     target_clusters::Set{Cluster} # Target clusters for which marginals are required
     breaker_interfaces::Set{Interface} # Target interfaces for which messages are required
+    ep_sites::Set{Interface} # Sites for expectation propagation update
 
     # Fields set by algorithm assembler
     algorithm_id::Symbol # Specify the algorithm id for this posterior_factor
@@ -24,7 +25,7 @@ mutable struct PosteriorFactor
     # Contruct a posterior factor that encompasses all variables in the graph
     function PosteriorFactor(fg::FactorGraph; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor))
         internal_edges = edges(fg) # Include all edges in a single posterior factor
-        self = new(id, internal_edges, Set{Variable}(), Set{Cluster}(), Set{Interface}()) # Initialize posterior factor
+        self = new(id, internal_edges, Set{Variable}(), Set{Cluster}(), Set{Interface}(), Set{Interface}()) # Initialize posterior factor
         pfz.posterior_factors[id] = self # Register self with the algorithm
 
         return self
@@ -33,7 +34,7 @@ mutable struct PosteriorFactor
     # Construct a posterior factor that includes all variables deterministically linked to the target variables
     function PosteriorFactor(seed_variables::Set{Variable}; pfz=currentPosteriorFactorization(), id=generateId(PosteriorFactor))
         internal_edges = extend(edges(seed_variables)) # Include all deterministically liked variables in a single posterior factor
-        self = new(id, internal_edges, Set{Variable}(), Set{Cluster}(), Set{Interface}()) # Initialize posterior factor
+        self = new(id, internal_edges, Set{Variable}(), Set{Cluster}(), Set{Interface}(), Set{Interface}()) # Initialize posterior factor
         pfz.posterior_factors[id] = self # Register self with the posterior factorization
 
         return self
@@ -55,10 +56,8 @@ function messagePassingSchedule(pf::PosteriorFactor)
                                           sort(collect(pf.target_clusters), rev=true),
                                           limit_set=pf.internal_edges,
                                           target_sites=breaker_interfaces)
-
-    ep_sites = collectEPSites(nodes(pf.internal_edges))
     for entry in schedule
-        if entry.interface in ep_sites
+        if entry.interface in pf.ep_sites
             entry.message_update_rule = ExpectationPropagationRule{typeof(entry.interface.node)}
         elseif (entry.interface.node in nodes_connected_to_external_edges) && !isa(entry.interface.node, DeltaFactor)
             local_posterior_factors = localPosteriorFactors(entry.interface.node)
@@ -130,7 +129,7 @@ function posteriorFactor(edge::Edge)
 end
 
 """
-Check if edge or interface is terminated by a clamp node
+Check if edge or interface is terminated by a Clamp node
 """
 isClamped(interface::Interface) = isdefined(interface, :node) && isa(interface.node, Clamp)
 isClamped(edge::Edge) = isClamped(edge.a) || isClamped(edge.b)

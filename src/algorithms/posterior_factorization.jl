@@ -178,7 +178,12 @@ function setTargets!(pf::PosteriorFactor, pfz::PosteriorFactorization; target_va
         end
     end
 
-    # Determine which interfaces require breakers
+    # Determine breaker initialization for EP sites
+    for ep_site in pf.ep_sites
+        push!(pf.breaker_interfaces, ultimatePartner(ep_site))
+    end
+
+    # Determine which interfaces require breakers based on node-specific properties
     for edge in pf.internal_edges
         requiresBreaker(edge.a) && push!(pf.breaker_interfaces, edge.a)
         requiresBreaker(edge.b) && push!(pf.breaker_interfaces, edge.b)

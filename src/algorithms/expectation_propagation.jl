@@ -7,20 +7,6 @@ A non-specific expectation propagation update
 """
 abstract type ExpectationPropagationRule{factor_type} <: MessageUpdateRule end
 
-"""
-Find default EP sites present in `node_set`
-"""
-function collectEPSites(node_set::Set{FactorNode})
-    ep_sites = Interface[]
-    for node in sort(collect(node_set))
-        if isa(node, Probit)
-            push!(ep_sites, node.i[:in1]) # EP site for a Probit node is i[:in1]
-        end
-    end
-
-    return ep_sites
-end
-
 messagePassingSchedule(variable::Variable) = messagePassingSchedule([variable])
 
 function inferUpdateRule!(entry::ScheduleEntry,
@@ -45,7 +31,7 @@ function inferUpdateRule!(entry::ScheduleEntry,
     if isempty(applicable_rules)
         error("No applicable $(rule_type) update for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
     elseif length(applicable_rules) > 1
-        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", "))")
+        error("Multiple applicable $(rule_type) updates for $(typeof(entry.interface.node)) node with inbound types: $(join(inbound_types, ", ")): $(join(applicable_rules, ", "))")
     else
         entry.message_update_rule = first(applicable_rules)
     end
