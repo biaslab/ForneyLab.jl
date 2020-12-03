@@ -167,8 +167,8 @@ function ruleSPNonlinearSInFactorX(g::Function,
 end
 
 function ruleMNonlinearSInGX(g::Function,
-                             msg_out::Message{<:FactorFunction, V},
-                             msgs_in::Vararg{Message{<:Gaussian, V}}) where V<:VariateType
+                             msg_out::Message{<:FactorFunction, <:VariateType},
+                             msgs_in::Vararg{Message{<:Gaussian, <:VariateType}})
 
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
@@ -176,7 +176,7 @@ function ruleMNonlinearSInGX(g::Function,
     W_fw_in = cholinv(V_fw_in) # Convert to canonical statistics
 
     # Construct log-pdf function and gradient
-    (log_joint, d_log_joint) = logJointPdfs(V, m_fw_in, W_fw_in, msg_out.dist, g, ds) # Overloaded on VariateType V
+    (log_joint, d_log_joint) = logJointPdfs(Multivariate, m_fw_in, W_fw_in, msg_out.dist, g, ds) # Overloaded on VariateType V
 
     # Compute joint marginal belief on in's by gradient ascent
     m_in = gradientOptimization(log_joint, d_log_joint, m_fw_in, 0.01)
