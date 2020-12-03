@@ -46,15 +46,14 @@ function ruleSPNonlinearSOutNM(g::Function,
     weights = msg_in1.dist.params[:w]
 
     return Message(variate, SampleList, s=samples, w=weights)
-end
+end 
 
-function 
-
-function ruleSPNonlinearSOutNGX(g::Function,
-                                msg_out::Nothing,
-                                msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
-                                n_samples=default_n_samples,
-                                variate)
+function msgSPNonlinearSOutNGX(g::Function,
+    msg_out::Nothing,
+    msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
+    n_samples=default_n_samples,
+    variate)
+    
     samples_in = [sample(msg_in.dist, n_samples) for msg_in in msgs_in]
 
     samples = g.(samples_in...)
@@ -65,27 +64,26 @@ end
 
 function ruleSPNonlinearSOutNGX(g::Function,
                                 msg_out::Nothing,
+                                msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
+                                n_samples=default_n_samples,
+                                variate)
+    return msgSPNonlinearSOutNGX(g, msg_out, msgs_in..., n_samples=n_samples, variate=variate)
+end
+
+function ruleSPNonlinearSOutNGX(g::Function,
+                                msg_out::Nothing,
                                 msgs_in::Vararg{Message{<:Gaussian, V}};
                                 n_samples=default_n_samples) where V<:VariateType
-    ruleSPNonlinearSOutNGX(g, msg_out, msgs_in..., n_samples=n_samples, variate=V)
+    return msgSPNonlinearSOutNGX(g, msg_out, msgs_in..., n_samples=n_samples, variate=V)
 end
 
-
-
-function ruleSPNonlinearSInGX(g::Function,
-                              inx::Int64, # Index of inbound interface inx
-                              msg_out::Message{<:FactorFunction, V},
-                              msgs_in::Vararg{Message{<:Gaussian, V}};
-                              n_samples=default_n_samples) where V<:VariateType
-    ruleSPNonlinearSInGX(g, inx, msg_out, msg_in..., n_samples=n_samples, variate=V)
-end
-
-function ruleSPNonlinearSInGX(g::Function,
-                              inx::Int64, # Index of inbound interface inx
-                              msg_out::Message{<:FactorFunction, <:VariateType},
-                              msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
-                              n_samples=default_n_samples,
-                              variate)
+function msgSPNonlinearSInGX(g::Function,
+                             inx::Int64, # Index of inbound interface inx
+                             msg_out::Message{<:FactorFunction, <:VariateType},
+                             msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
+                             n_samples=default_n_samples,
+                             variate)
+                            
     # Extract joint statistics of inbound messages
     (ms_fw_in, Vs_fw_in) = collectStatistics(msgs_in...) # Return arrays with individual means and covariances
     (m_fw_in, V_fw_in, ds) = concatenateGaussianMV(ms_fw_in, Vs_fw_in) # Concatenate individual statistics into joint statistics
@@ -111,19 +109,29 @@ function ruleSPNonlinearSInGX(g::Function,
     return Message(variate, GaussianWeightedMeanPrecision, xi=xi_bw_inx, w=W_bw_inx)
 end
 
-function ruleSPNonlinearSOutNFactorX(g::Function,
-                                     msg_out::Nothing,
-                                     msgs_in::Vararg{Message{<:FactorNode, V}};
-                                     n_samples=default_n_samples) where V<:VariateType
-    ruleSPNonlinearSOutNFactorX(g, msg_out, msgs_in..., n_samples=n_samples, variate=V)
+function ruleSPNonlinearSInGX(g::Function,
+                              inx::Int64, # Index of inbound interface inx
+                              msg_out::Message{<:FactorFunction, V},
+                              msgs_in::Vararg{Message{<:Gaussian, V}};
+                              n_samples=default_n_samples) where V<:VariateType
+
+    msgSPNonlinearSInGX(g, inx, msg_out, msgs_in..., n_samples=n_samples, variate=V)
 end
 
-function ruleSPNonlinearSOutNFactorX(g::Function,
-                                     msg_out::Nothing,
-                                     msgs_in::Vararg{Message{<:FactorNode}};
-                                     n_samples=default_n_samples,
-                                     variate)
+function ruleSPNonlinearSInGX(g::Function,
+                              inx::Int64, # Index of inbound interface inx
+                              msg_out::Message{<:FactorFunction, <:VariateType},
+                              msgs_in::Vararg{Message{<:Gaussian, <:VariateType}};
+                              n_samples=default_n_samples,
+                              variate)
+    msgSPNonlinearSInGX(g, inx, msg_out, msg_in..., n_samples=n_samples, variate=variate)
+end
 
+function msgSPNonlinearSOutNFactorX(g::Function,
+                                    msg_out::Nothing,
+                                    msgs_in::Vararg{Message{<:FactorNode}};
+                                    n_samples=default_n_samples,
+                                    variate)
     samples_in = [sample(msg_in.dist, n_samples) for msg_in in msgs_in]
 
     samples = g.(samples_in...)
@@ -132,22 +140,28 @@ function ruleSPNonlinearSOutNFactorX(g::Function,
     return Message(variate, SampleList, s=samples, w=weights)
 end
 
-function ruleSPNonlinearSInFactorX(g::Function,
-                                   inx::Int64, # Index of inbound interface inx
-                                   msg_out::Message{<:FactorFunction, V},
-                                   msgs_in::Vararg{Message{<:FactorNode, V}};
-                                   n_samples=default_n_samples) where V<:VariateType
-
-    ruleSPNonlinearSInFactorX(g, inx, msg_out, msgs_in..., n_samples=n_samples, variate=V)
-
+function ruleSPNonlinearSOutNFactorX(g::Function,
+                                     msg_out::Nothing,
+                                     msgs_in::Vararg{Message{<:FactorNode, V}};
+                                     n_samples=default_n_samples) where V<:VariateType
+    msgSPNonlinearSOutNFactorX(g, msg_out, msgs_in..., n_samples=n_samples, variate=V)
 end
 
-function ruleSPNonlinearSInFactorX(g::Function,
-                                   inx::Int64, # Index of inbound interface inx
-                                   msg_out::Message{<:FactorFunction},
-                                   msgs_in::Vararg{Message{<:FactorNode}};
-                                   n_samples=default_n_samples,
-                                   variate)
+function ruleSPNonlinearSOutNFactorX(g::Function,
+                                     msg_out::Nothing,
+                                     msgs_in::Vararg{Message{<:FactorNode}};
+                                     n_samples=default_n_samples,
+                                     variate)
+    msgSPNonlinearSOutNFactorX(g, msg_out, msgs_in..., n_samples=n_samples, variate=variate)
+end
+
+
+function msgSPNonlinearSInFactorX(g::Function,
+                                  inx::Int64, # Index of inbound interface inx
+                                  msg_out::Message{<:FactorFunction},
+                                  msgs_in::Vararg{Message{<:FactorNode}};
+                                  n_samples=default_n_samples,
+                                  variate)
 
     arg_sample = (z) -> begin
         samples_in = []
@@ -158,12 +172,33 @@ function ruleSPNonlinearSInFactorX(g::Function,
                 push!(samples_in,sample(msgs_in[i].dist, n_samples))
             end
         end
+    
         return samples_in
     end
 
     approximate_pdf(z) = sum(exp.(logPdf.([msg_out.dist],g.(arg_sample(z)...))))/n_samples
 
     return Message(variate, Function, log_pdf = (z)->log(approximate_pdf(z)))
+end
+
+function ruleSPNonlinearSInFactorX(g::Function,
+                                   inx::Int64, # Index of inbound interface inx
+                                   msg_out::Message{<:FactorFunction, V},
+                                   msgs_in::Vararg{Message{<:FactorNode, V}};
+                                   n_samples=default_n_samples) where V<:VariateType
+
+    msgSPNonlinearSInFactorX(g, inx, msg_out, msgs_in..., n_samples=n_samples, variate=V)
+
+end
+
+function ruleSPNonlinearSInFactorX(g::Function,
+                                   inx::Int64, # Index of inbound interface inx
+                                   msg_out::Message{<:FactorFunction},
+                                   msgs_in::Vararg{Message{<:FactorNode}};
+                                   n_samples=default_n_samples,
+                                   variate)
+
+    msgSPNonlinearSInFactorX(g, inx, msg_out, msgs_in..., n_samples=n_samples, variate=variate)
 end
 
 function ruleMNonlinearSInGX(g::Function,
